@@ -51,7 +51,7 @@ for Optimal Data-Dependent Euclidean ANN}
    \[
       \rho_c=\frac{1}{2c^2-1}.
    \]
-   Known worst-case constructions achieve $n^{\rho_c+o(1)}$ query time and $n^{1+\rho_c+o(1)}$ space, but the hidden subpolynomial factor is usually left implicit. We make this loss explicit using a deliberately simple composition. The first ingredient is a spherical Gaussian list decoder whose loss at score depth $k$ is $\exp(O_c(k^{1/3}))$. The second is the standard certified ball recursion for worst-case Euclidean ANN. At geometric slack $\eta$, this recursion perturbs the balanced exponent by $O_c(\eta)$, has $O_c(\eta^{-2})$ recentering phases, and permits the spherical decoder to be restarted independently in every phase. Consequently, the total nonpolynomial overhead is
+   Known worst-case constructions achieve $n^{\rho_c+o(1)}$ query time and $n^{1+\rho_c+o(1)}$ space, but the hidden subpolynomial factor is usually left implicit. We make this loss explicit using one certified branching process. Gaussian score edges perform the spherical filtering, while certified recentering edges are deterministic branches of the same tree. The spherical score loss at depth $k$ is $\exp(O_c(k^{1/3}))$. At geometric slack $\eta$, the certified process perturbs the balanced exponent by $O_c(\eta)$, has $O_c(\eta^{-2})$ recentering phases on every successful route, and restarts the local Gaussian score block after each recentering edge. Consequently, the total nonpolynomial overhead is
    \[
       \exp\!\left(O_c\left(\eta\log n+\eta^{-2}(\log n)^{1/3}\right)\right).
    \]
@@ -63,7 +63,7 @@ for Optimal Data-Dependent Euclidean ANN}
    \[
       dn+n^{1+\rho_c}\exp\!\bigl(O_c((\log n)^{7/9})\bigr).
    \]
-   The construction requires no persistent score state, tempered cohorts, or fractional-to-integer flow rounding. It is a black-box restart wrapper around the established geometric recursion, and is therefore suitable as a simple explicit baseline for sharper subpolynomial losses.
+   The construction requires no persistent score state, tempered cohorts, or fractional-to-integer flow rounding. The Euclidean geometry is expressed directly inside the branching tree, making the argument a simple explicit baseline for sharper subpolynomial losses.
 \end{abstract}
 
 \section{Introduction}
@@ -82,9 +82,9 @@ For Euclidean space, the optimal balanced data-dependent exponent is
 \[
    \rho_c=\frac{1}{2c^2-1}.
 \]
-The landmark construction of Andoni and Razenshteyn obtains query time $d\,n^{\rho_c+o(1)}$ and space $dn+n^{1+\rho_c+o(1)}$ for worst-case data sets~\cite{AR15}. Its geometric component recursively removes dense spherical caps, recenters them as smaller certified balls, and applies a spherical filtering primitive to the residual data. The $o(1)$ term absorbs several losses: shell discretization, geometric slack, spherical list decoding, and the repeated restarting of the filtering process after recentering.
+The landmark construction of Andoni and Razenshteyn obtains query time $d\,n^{\rho_c+o(1)}$ and space $dn+n^{1+\rho_c+o(1)}$ for worst-case data sets~\cite{AR15}. Its geometric component removes dense spherical caps, recenters them as smaller certified balls, and applies a spherical filtering primitive to the residual data. The $o(1)$ term absorbs several losses: shell discretization, geometric slack, spherical list decoding, and the repeated restarting of the filtering process after recentering.
 
-The purpose of this paper is modest but concrete: we quantify these losses while retaining the standard restart architecture. We use the $\exp(O(k^{1/3}))$ spherical list-decoding loss established by the two-dimensional branching-random-walk analysis of Ahle and Knudsen~\cite{AKdraft}. We then inspect how a generic multiplicative spherical loss propagates through the certified ball recursion.
+The purpose of this paper is modest but concrete: we quantify these losses while writing the Euclidean part as the same branching object as the score process. We use the $\exp(O(k^{1/3}))$ spherical list-decoding loss established by the two-dimensional branching-random-walk analysis of Ahle and Knudsen~\cite{AKdraft}. We then inspect how a generic multiplicative spherical loss propagates through certified recentering edges in that process.
 
 \subsection{Main result}
 
@@ -125,15 +125,15 @@ and total logarithmic overhead $O_c(L^{7/9})$.
 
 \subsection{Why this composition is useful}
 
-The most aggressive route toward a polylogarithmic loss attempts to preserve one cumulative score process through every recentering and to round a fractional geometric flow into persistent integer cohorts. That route encounters a genuine coupling problem: a score prefix may isolate a tiny slice of a large certified cluster, so posterior mass alone does not fund a recursive call on the full cluster. The restart construction studied here avoids this issue completely. Every geometric phase begins with a fresh spherical decoder, and the already established geometric recursion handles the integer routing.
+The most aggressive route toward a polylogarithmic loss attempts to preserve one cumulative score process through every recentering and to round a fractional geometric flow into persistent integer cohorts. That route encounters a genuine coupling problem: a score prefix may isolate a tiny slice of a large certified cluster, so posterior mass alone does not fund a recursive call on the full cluster. The construction studied here avoids this issue. Every recentering edge starts a fresh local score block, while the tree itself still records both score and geometry.
 
 The resulting loss is weaker, but the proof is modular and the algorithm is simple. In particular:
 \begin{itemize}
-   \item the spherical argument is used only through a black-box loss function $\Gamma(n)$;
-   \item the geometry is used only through the standard depth and exponent-stability guarantees;
+   \item the spherical argument is used only through a loss function $\Gamma(n)$ for one local score block;
+   \item recentering is an explicit edge type in the same branching tree;
    \item no score offset is transported across centers;
    \item no posterior detector population is maintained;
-   \item every cap or ball used by the recursion is certified by its actual maximum radius.
+   \item every recentering edge is certified by its actual maximum radius.
 \end{itemize}
 
 \subsection{A general loss-propagation rule}
@@ -224,7 +224,7 @@ The filtering constructions naturally give expected numbers of explored nodes an
 
 \section{The spherical Gaussian primitive}
 
-This section records the spherical theorem used by the Euclidean wrapper. The construction is a constant-branching Gaussian score tree analyzed through a two-dimensional branching random walk. The only feature needed later is the explicit loss $\exp(O(k^{1/3}))$ at depth $k$.
+This section records the spherical theorem used by each local score block. The construction is a constant-branching Gaussian score tree analyzed through a two-dimensional branching random walk. The only feature needed later is the explicit loss $\exp(O(k^{1/3}))$ at depth $k$.
 
 \begin{theorem}[Spherical Gaussian decoder]\label{thm:spherical}
    Fix constants $-1<b<a<1$. For every $m\ge2$, there is a randomized data-dependent spherical filtering structure with the following guarantees.
@@ -293,15 +293,15 @@ at $w=\Theta(k^{1/3})$ gives the loss
 \[
    \exp(O(k^{1/3})).
 \]
-A lowest-common-ancestor second-moment calculation converts the first moment into the stated success probability. We use this theorem as a black box and do not alter its score process inside a geometric phase.
+A lowest-common-ancestor second-moment calculation converts the first moment into the stated success probability. We use this local score theorem without modifying its score process inside one phase.
 
 \begin{remark}[One phase versus many phases]\label{rem:restart}
-   The depth $k$ in \cref{thm:spherical} is $\Theta(\log m)$ for one spherical instance. In the construction below, recentering discards the score tree and starts a new instance. We therefore pay the loss in \cref{thm:spherical} once per geometric phase. This is exactly the source of the factor $\Gamma(n)^{O(\eta^{-2})}$.
+   The depth $k$ in \cref{thm:spherical} is $\Theta(\log m)$ for one local score block. In the construction below, a recentering edge ends that block and starts a new score block at the child state. We therefore pay the loss in \cref{thm:spherical} once per recentering phase. This is exactly the source of the factor $\Gamma(n)^{O(\eta^{-2})}$.
 \end{remark}
 
-\section{The standard certified ball recursion}
+\section{The certified score-and-ball process}
 
-We now state the geometric reduction in the form needed for explicit loss accounting. This is the usual worst-case data-dependent reduction from Euclidean ANN to spherical filtering~\cite{AR15}. We separate its geometric guarantees from the implementation of the spherical primitive.
+We now describe the Euclidean part as one branching process. A node of the process carries both a local Gaussian score state and a certified Euclidean ball. Gaussian score edges perform filtering inside the current ball; recentering edges are deterministic branches that move to a smaller certified ball and reset the local score state. Thus the geometric recursion is not a separate wrapper around the score tree.
 
 \subsection{Two elementary geometric facts}
 
@@ -365,20 +365,71 @@ The second fact shows that thin radial shells do not degrade the approximation f
    because $(c^2-1)\Delta^2\ge0$. Shell discretization perturbs $S$, $T$, and $\Delta$ by relative $O_c(\eta)$, which yields the final claim.
 \end{proof}
 
-\subsection{The reduction interface}
+\subsection{The branching tree}
 
-The next theorem is the established geometric part of the optimal data-dependent construction, restated to expose the number of spherical restarts. Its proof consists of bounded-diameter localization, radial shelling, iterative removal of dense caps, certified recentering using \cref{lem:cap}, and spherical filtering on the residual instances. We include the accounting needed here; the complete construction and correctness proof appear in~\cite{AR15}.
+After the usual bounded-diameter localization, the data structure is a rooted tree of states
+\[
+   u=(P_u,o_u,R_u,h_u),
+\]
+where $P_u$ is the multiset of point occurrences at the state, $P_u\subseteq\Ball(o_u,R_u)$, and $h_u$ is the number of recentering edges on the route from the root to $u$. A state is terminal if $R_u$ is below the scan radius or if $|P_u|$ is below a fixed threshold; terminal states store their resident points explicitly.
 
-\begin{theorem}[Certified restart reduction]\label{thm:reduction}
-   Fix $c>1$. There are constants $C_c,\eta_c>0$ with the following property. Let $0<\eta\le\eta_c$, and suppose that every spherical instance on at most $m$ points with correlations
-   \[
-      a\ge 1-\frac1{c^2}-C_c\eta,
-      \qquad
-      b\le C_c\eta
-   \]
-   can be implemented with multiplicative loss at most $\Gamma(m)$ relative to its ideal balanced power-law cost. Assume $\Gamma$ is nondecreasing.
+There are two edge types.
 
-   Then there is a worst-case data-dependent $(c,r)$-ANN structure in $\R^d$ with constant success probability and
+\emph{Score edges.}
+At a nonterminal state, points are first split into radial shells of relative width $\Theta_c(\eta)$. On a residual shell we normalize directions around $o_u$ and run one local Gaussian score block: a constant-branching tree whose edges have independent Gaussian labels. A data point follows a score edge if its incremental score exceeds the edge threshold; a query follows the analogous query score edge. The score block is analyzed by \cref{thm:spherical}. Its local correlations satisfy
+\[
+   a\ge 1-\frac1{c^2}-C_c\eta,
+   \qquad
+   b\le C_c\eta,
+\]
+after shelling and recentering, so by \cref{lem:rho-stability} its balanced exponent is at most
+\[
+   \rho_*=\rho_c+C_c\eta.
+\]
+
+\emph{Recentering edges.}
+A score vertex or a preprocessing cap proposal may be materialized as a certified child. Such an edge stores a subset $C\subseteq P_u$, a center $o_C$, and a certified radius
+\[
+   R_C=\max_{p\in C}\|p-o_C\|_2.
+\]
+The child state is $(C,o_C,R_C,h_u+1)$. In the common cap case, $o_C=o_u+\gamma R_u w$ and every point in $C$ satisfies
+\[
+   \ip{(p-o_u)/R_u}{w}\ge\gamma,
+\]
+so \cref{lem:cap} gives
+\[
+   R_C\le R_u(1-\Theta_c(\eta^2)).
+\]
+The query follows this deterministic edge exactly when
+\[
+   \|q-o_C\|_2\le R_C+r.
+\]
+This is the only query rule needed for recentering: if $p\in C$ and $\|p-q\|_2\le r$, then the triangle inequality forces the query to enter the child containing $p$.
+
+Thus a root-to-leaf route is a single branching process whose edges alternate between local Gaussian score tests and certified Euclidean recenterings. A recentering edge resets the local Gaussian score state; it does not leave the tree.
+
+\subsection{Route-potential invariant}
+
+The following potential is the accounting invariant maintained by the construction. Let $A_j(q)$ be the set of states at recentering depth $j$ that a query $q$ visits by the deterministic recentering rule, before the local score block at those states is expanded. The cap-selection procedure materializes certified children only while preserving
+\[
+   \sum_{u\in A_j(q)} |P_u|^{\rho_*}
+   \le
+   n^{\rho_*}(\eta^{-1}\log(2n))^{C_c}
+   \tag{Q$_j$}
+\]
+for every query point $q$ and every depth $j$, and
+\[
+   \sum_{u:h_u=j} |P_u|^{1+\rho_*}
+   \le
+   n^{1+\rho_*}(\eta^{-1}\log(2n))^{C_c}
+   \tag{S$_j$}
+\]
+for storage. These are the usual dense-cap potential bounds, but stated as invariants of the score-and-ball tree rather than as a separate reduction theorem. They use only disjointness of materialized point sets at a state, the expanded-ball query rule above, and the polynomial number of shells and localized roots.
+
+\begin{theorem}[Certified score-and-ball process]\label{thm:reduction}
+   Fix $c>1$. There are constants $C_c,\eta_c>0$ with the following property. Let $0<\eta\le\eta_c$, and suppose that every local Gaussian score block on at most $m$ point occurrences has multiplicative loss at most $\Gamma(m)$ relative to its ideal balanced power-law cost. Assume $\Gamma$ is nondecreasing.
+
+   Then the certified score-and-ball process gives a worst-case data-dependent $(c,r)$-ANN structure in $\R^d$ with constant success probability and
    \[
       Q(n,d)
       \le
@@ -394,57 +445,55 @@ The next theorem is the established geometric part of the optimal data-dependent
       \Gamma(n)^{C_c\eta^{-2}}
       (\eta^{-1}\log(2n))^{C_c}.
    \]
-   The recursion uses at most
+   Every root-to-leaf route contains at most
    \[
       D\le C_c\eta^{-2}
    \]
-   spherical phases on every root-to-leaf route.
+   recentering edges and hence at most $D$ local Gaussian score blocks.
 \end{theorem}
 
-\begin{proof}[Accounting proof]
-   We recall the properties of the standard recursion that affect the bound.
+\begin{proof}
+   We verify correctness, depth, and cost directly from the process definition.
 
-   \emph{Bounded diameter and shells.}
-   A polylogarithmic family of localized instances ensures that a true near pair occurs together in at least one bounded-diameter instance with constant probability. Each localized set is divided into radial shells of relative width $O_c(\eta)$. By \cref{lem:shell}, normalization to angular distance preserves approximation factor $c$ up to an $O_c(\eta)$ perturbation of the near and ordinary-far correlations. By \cref{lem:rho-stability}, every residual spherical instance therefore has exponent at most
+   \emph{Correctness.}
+   Consider a query $q$ and a near neighbor $p$. At any state $u$ containing $p$, either $p$ is placed in a certified child $C$, or it remains in a residual shell. In the first case the query follows the same recentering edge because
    \[
-      \rho_c+C_c\eta.
+      \|q-o_C\|_2\le \|q-p\|_2+\|p-o_C\|_2\le r+R_C.
    \]
-   All localization and shell multiplicities are absorbed by the displayed polynomial factor in $\eta^{-1}$ and $\log n$.
+   In the second case, \cref{lem:shell} gives the required spherical near/far angular gap up to $O_c(\eta)$ slack, and the local score block finds a common score path with the success probability guaranteed by the spherical primitive. All reported candidates are checked in the original Euclidean metric, so false positives only affect time.
 
-   \emph{Dense caps and radius progress.}
-   Whenever a residual shell contains a dense cap of margin $\Theta_c(\eta)$, the cap is removed and stored in a recursive child. The child center and radius are certified from the actual points. By \cref{lem:cap}, its radius decreases by a factor
+   \emph{Depth.}
+   Every nontrivial recentering edge has cap margin $\Theta_c(\eta)$ and therefore decreases the certified radius by a factor
    \[
-      1-\Theta_c(\eta^2).
+      1-\Theta_c(\eta^2)
    \]
-   The bounded-diameter reduction leaves only a constant-factor range of relevant radii before a resident block may be scanned. Hence every root-to-leaf route has at most
+   by \cref{lem:cap}. The localization step gives a constant-factor interval of relevant radii before a resident scan is used. Hence a route has at most
    \[
       D=O_c(\eta^{-2})
    \]
-   recenterings and therefore at most that many spherical phases.
+   recentering edges.
 
-   \emph{Ideal power-law accounting.}
-   The data-dependent recursion of~\cite{AR15} is designed so that, if a spherical phase of size $m$ has its ideal cost $m^{\rho}$ for queries and $m^{1+\rho}$ for storage, the sum of these power-law costs over all routed states is bounded by
+   \emph{Cost.}
+   First ignore the nonconstant loss $\Gamma$. A local score block at state $u$ has ideal expected query cost $|P_u|^{\rho_*}$ and ideal expected storage $|P_u|^{1+\rho_*}$, up to the polynomial shell and localization factors already included in \((Q_j)\) and \((S_j)\). Summing \((Q_j)\) over the at most $D$ visited recentering depths gives
    \[
-      n^{\rho_c+C_c\eta}\log^{C_c}(2n)
+      n^{\rho_*}(\eta^{-1}\log(2n))^{C_c}
    \]
-   for a query and by
+   after enlarging $C_c$, and summing \((S_j)\) gives
    \[
-      n^{1+\rho_c+C_c\eta}\log^{C_c}(2n)
+      n^{1+\rho_*}(\eta^{-1}\log(2n))^{C_c}.
    \]
-   for storage. This is the standard potential calculation for dense-cap removal and residual filtering. Importantly, the exponent perturbation $C_c\eta$ is global; it is not paid once per radius level.
 
-   \emph{Substitution of a nonconstant spherical loss.}
-   Replace each ideal spherical phase on $m$ points by a concrete implementation whose local work, storage, and routed-state multiplicity are multiplied by at most $\Gamma(m)$. Since $m\le n$ and $\Gamma$ is nondecreasing, each phase contributes a factor at most $\Gamma(n)$. Inducting over the route depth, a state at depth $j$ is inflated by at most $\Gamma(n)^j$. Any data occurrence or query route traverses at most $D$ phases, so every term in the ideal recursion is multiplied by at most
+   Now restore the concrete score-block implementation. Since $|P_u|\le n$ and $\Gamma$ is nondecreasing, a state at recentering depth $j$ is inflated by at most $\Gamma(n)^j$ relative to the ideal process. As $j\le D$, the whole query and storage accounting is multiplied by at most
    \[
       \Gamma(n)^D
       \le
       \Gamma(n)^{C_c\eta^{-2}}.
    \]
-   Finally, choose the per-phase failure probability to be $O(1/D)$ and union bound over the phases on a successful route. The additional $O(\log D)$ repetitions from \cref{thm:spherical} are absorbed by the displayed $(\eta^{-1}\log n)^{C_c}$ factor, as are truncation and rebuilding constants. This proves the theorem.
+   Choose the failure probability of each local score block to be $O(1/D)$ and union bound over a successful route. The extra $O(\log D)$ repetitions are absorbed by the displayed polynomial factor in $\eta^{-1}$ and $\log n$. Truncation and rebuilding are handled as in \cref{thm:spherical} and the preliminary truncation paragraph.
 \end{proof}
 
-\begin{remark}[What is and is not hidden in \cref{thm:reduction}]\label{rem:scope}
-   The theorem does not assume persistent Gaussian scores. On entering a certified child, the query starts a new spherical structure built for that child. The theorem also does not use the posterior-threshold cancellation or any fractional cohort process. The only imported component is the established integer geometric routing of the optimal data-dependent construction. Our contribution is to keep its restart depth explicit and substitute the sharper spherical loss without folding it into an unspecified $n^{o(1)}$ term.
+\begin{remark}[Self-contained accounting]\label{rem:scope}
+   The process still follows the geometry introduced by Andoni and Razenshteyn, but the proof above no longer invokes a black-box Euclidean reduction. The object being analyzed is the tree itself: score edges, recentering edges, certified radii, query activation, route depth, and the query/storage potentials are all explicit. A sharper implementation may choose recentering edges directly from score prefixes; a dense-cap oracle is only one way to propose certified children.
 \end{remark}
 
 \section{Proof of the main theorem}
@@ -467,7 +516,7 @@ For $\eta\le\eta_c$, all correlations requested by \cref{thm:reduction} lie in a
    \le
    \exp(C_cL^{1/3}).
 \]
-The restart reduction therefore gives
+The score-and-ball process therefore gives
 \begin{align*}
    Q(n,d)
                                                &\le
@@ -523,9 +572,9 @@ Absorbing all three factors into one exponential gives
 \]
 This proves \cref{thm:main}.
 
-\section{The algorithm as a restart wrapper}
+\section{The algorithm as one tree}
 
-For clarity, we summarize the construction at the level at which it differs from the standard data-dependent ANN structure.
+For clarity, we summarize the actual data structure as a single tree with two edge types.
 
 \subsection{Preprocessing}
 
@@ -533,32 +582,37 @@ Fix $\eta=L^{-2/9}$.
 
 \begin{enumerate}
    \item Apply the usual bounded-diameter localization and build the associated polylogarithmic family of localized instances.
-   \item At every geometric node, divide the points into thin radial shells of relative width $\Theta_c(\eta)$.
-   \item In each shell, repeatedly identify the dense caps required by the standard data-dependent reduction. Certify every proposed child by explicitly computing
+   \item Create a root state $(P,o,R,0)$ for each localized instance.
+   \item At every nonterminal state, divide the resident points into thin radial shells of relative width $\Theta_c(\eta)$.
+   \item In each shell, create local Gaussian score edges for the residual points. A score prefix whose accepted point set should be routed geometrically is materialized as a recentering edge.
+   \item Certify every recentering edge by explicitly computing
       \[
          R_C=\max_{p\in C}\|p-o_C\|_2.
       \]
       Recurse on a child only after this check.
-   \item Build the residual spherical filtering structures using the Gaussian list decoder of \cref{thm:spherical}.
-   \item On entering any certified child, discard the parent score state and build a fresh spherical decoder for the child coordinates. Amplify each phase exactly as required by the standard recursion.
-   \item Stop the geometric recursion once the node radius or node cardinality is small enough for a resident scan.
+   \item At a recentering child, reset the local Gaussian score state and continue with the new center and certified radius.
+   \item Stop once the node radius or node cardinality is small enough for a resident scan.
 \end{enumerate}
 
-The cap finder may be the one used in the original geometric reduction. Its role is purely to propose a point subset and a center; correctness uses only the subsequent radius certification.
+Correctness does not depend on how a proposed recentering edge is found. A dense-cap routine, a score-prefix detector, or an implementation-specific heuristic may propose the subset and center; the proof uses only the certified radius, the query activation rule, and the route-potential invariant.
 
 \subsection{Query}
 
-A query follows the standard routing of the certified ball recursion. Within a residual spherical phase, it explores the Gaussian score-tree paths, visits their buckets, and verifies encountered candidates in the original space. Whenever routing enters a certified child, the query starts that child's spherical decoder from its root. A root-to-leaf route contains at most $O_c(L^{4/9})$ such restarts.
+A query traverses the same tree. It follows score edges by evaluating the local Gaussian scores. It follows a recentering edge $(C,o_C,R_C)$ exactly when
+\[
+   \|q-o_C\|_2\le R_C+r.
+\]
+At score leaves and resident states it verifies encountered candidates in the original space. A root-to-leaf route contains at most $O_c(L^{4/9})$ recentering edges for the choice $\eta=L^{-2/9}$.
 
-The construction is intentionally nonpersistent: it never carries a cumulative Gaussian score across a change of center. This makes each score phase independent of the preceding geometry and permits a direct invocation of \cref{thm:spherical}.
+The construction is intentionally nonpersistent across recentering edges: it never carries a cumulative Gaussian score after the center changes. Within one state, however, score edges and possible recentering edges are part of the same branching object.
 
 \subsection{Simplicity and implementation}
 
-The filtering work remains level-synchronous. At one phase, all active score paths can be advanced by a batched matrix multiplication, followed by thresholding, compaction, and bucket scans. A recentering ends one batch and begins another with a new coordinate origin. Thus the restart cost is visible in the analysis but does not require complicated state in the implementation.
+The filtering work remains level-synchronous. At one state, all active score paths can be advanced by a batched matrix multiplication, followed by thresholding, compaction, bucket scans, and optional materialization of certified recentering edges. A recentering edge ends one local score block and begins another with a new coordinate origin. Thus the restart cost is visible in the analysis but does not require persistent score offsets.
 
-The data structure stores only the standard geometric metadata:
+The data structure stores only the tree metadata:
 \[
-   (\text{center},\text{certified radius},\text{shell ID},\text{score-tree seed},\text{resident block}).
+   (\text{center},\text{certified radius},\text{shell ID},\text{edge type},\text{score seed},\text{resident block}).
 \]
 No posterior histogram, tempered transition probability, or cohort vote counter is needed.
 
@@ -573,7 +627,7 @@ The preceding argument is not specific to the exponent $1/3$. We record the gene
       \le
       \exp(O_c((\log(2n))^\alpha))
    \]
-   for a constant $0\le\alpha<1$. Then the certified restart reduction gives worst-case Euclidean ANN with
+   for a constant $0\le\alpha<1$. Then the certified score-and-ball process gives worst-case Euclidean ANN with
    \[
       Q(n,d)
       \le
@@ -615,7 +669,7 @@ The preceding argument is not specific to the exponent $1/3$. We record the gene
 
 \begin{table}[t]
    \centering
-   \caption{Loss propagation under independent geometric restarts. Here $L=\log n$.}
+   \caption{Loss propagation under independent recentering restarts. Here $L=\log n$.}
    \label{tab:losses}
    \begin{tabular}{@{}lll@{}}
       \toprule
@@ -662,19 +716,19 @@ At the optimum, the two losses are equal. Therefore improving only one of them c
 
 \section{Discussion and limitations}
 
-The construction gives an explicit baseline, not the conjectured polylogarithmic loss. Its limitation is structural: the same $\exp(O(L^{1/3}))$ spherical loss is paid independently after every recentering. A persistent score process could in principle pay one global branching-random-walk loss, but then one must couple score paths to geometric child activation and round fractional path mass into integer recursive calls. Simple posterior-heavy activation is insufficient because a score prefix may isolate one atypical point of a large child.
+The construction gives an explicit baseline, not the conjectured polylogarithmic loss. Its limitation is structural: the same $\exp(O(L^{1/3}))$ spherical loss is paid independently after every recentering edge. A persistent score process could in principle pay one global branching-random-walk loss, but then one must couple score paths to geometric child activation and round fractional path mass into integer recursive calls. Simple posterior-heavy activation is insufficient because a score prefix may isolate one atypical point of a large child.
 
-The restart theorem makes the quantitative target for future work transparent. To reach exponent loss $L^{-1/2}$ while retaining the same geometry, the cumulative spherical loss across all phases must be at most $\exp(O(\sqrt L))$. This requires substantial persistence or a stronger depth-telescoping property. To reach a polylogarithmic total loss, one must avoid paying any superconstant factor independently over $\Theta(\eta^{-2})$ geometric phases.
+The score-and-ball accounting makes the quantitative target for future work transparent. To reach exponent loss $L^{-1/2}$ while retaining the same geometry, the cumulative spherical loss across all phases must be at most $\exp(O(\sqrt L))$. This requires substantial persistence or a stronger depth-telescoping property. To reach a polylogarithmic total loss, one must avoid paying any superconstant factor independently over $\Theta(\eta^{-2})$ recentering phases.
 
-The present algorithm nevertheless has three practical advantages. First, every spherical phase is independent and can be tested separately. Second, cap centers are heuristic proposals followed by exact radius certification, so approximate clustering does not affect correctness. Third, the level-synchronous Gaussian score computation is well suited to batched linear algebra.
+The present algorithm nevertheless has three practical advantages. First, every local score block is independent and can be tested separately. Second, cap centers are heuristic proposals followed by exact radius certification, so approximate clustering does not affect correctness. Third, the level-synchronous Gaussian score computation is well suited to batched linear algebra.
 
 \section{Conclusion}
 
-Combining the $\exp(O(k^{1/3}))$ spherical Gaussian decoder with the standard certified Euclidean ball recursion yields a simple worst-case data-dependent ANN structure with explicit overhead
+Combining the $\exp(O(k^{1/3}))$ spherical Gaussian decoder with certified recentering edges in one score-and-ball tree yields a simple worst-case data-dependent ANN structure with explicit overhead
 \[
    \exp\!\bigl(O_c((\log n)^{7/9})\bigr).
 \]
-The proof is a black-box composition: geometric slack contributes $\eta\log n$, independent restarts contribute $\eta^{-2}(\log n)^{1/3}$, and $\eta=(\log n)^{-2/9}$ balances the two. The result preserves the optimal balanced exponent $1/(2c^2-1)$ up to $O_c((\log n)^{-2/9})$ while avoiding the unresolved machinery needed for persistent score transfer.
+The proof is an accounting argument on that tree: geometric slack contributes $\eta\log n$, independent local score-block restarts contribute $\eta^{-2}(\log n)^{1/3}$, and $\eta=(\log n)^{-2/9}$ balances the two. The result preserves the optimal balanced exponent $1/(2c^2-1)$ up to $O_c((\log n)^{-2/9})$ while avoiding the unresolved machinery needed for persistent score transfer.
 
 \appendix
 
@@ -749,7 +803,7 @@ This is also the correct worst-case order for cap margins $\Theta(\eta)$, becaus
 
 \section{Bibliographic note}
 
-The spherical theorem is cited to the Ahle--Knudsen manuscript supplied with this project. Its final title, year, and publication information should be updated before submission. The geometric restart theorem is a quantitative restatement of the standard worst-case data-dependent reduction of Andoni and Razenshteyn. A submission version should align notation with the precise theorem statement used from that work and, if desired, include their full geometric construction as a supplementary appendix.
+The spherical theorem is cited to the Ahle--Knudsen manuscript supplied with this project. Its final title, year, and publication information should be updated before submission. The score-and-ball tree follows the geometric ideas of Andoni and Razenshteyn but states the routing and accounting invariants directly. A submission version should align the cap-selection details with the precise implementation used there, or replace them by an explicit score-prefix materialization rule.
 
 \begin{thebibliography}{9}
 
