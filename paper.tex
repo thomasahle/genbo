@@ -1,0 +1,773 @@
+\documentclass[10pt]{article}
+
+\usepackage[margin=0.92in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage[hidelinks]{hyperref}
+\IfFileExists{cleveref.sty}{
+   \usepackage[nameinlink,noabbrev]{cleveref}
+}{
+   \newcommand{\cref}[1]{\ref{##1}}
+   \newcommand{\Cref}[1]{\ref{##1}}
+}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.45em}
+\setlist[itemize]{leftmargin=1.5em,itemsep=0.2em,topsep=0.25em}
+\setlist[enumerate]{leftmargin=1.7em,itemsep=0.2em,topsep=0.25em}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{remark}[theorem]{Remark}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Prb}{\mathbb{P}}
+\newcommand{\polylog}{\operatorname{polylog}}
+\newcommand{\ANN}{\mathrm{ANN}}
+\newcommand{\eps}{\varepsilon}
+\newcommand{\rhoopt}{\rho_c}
+\newcommand{\GammaLoss}{\Gamma}
+\newcommand{\Ball}{\mathrm{B}}
+\newcommand{\ip}[2]{\langle #1,#2\rangle}
+
+\title{A Simple Explicit $\exp\!\bigl(O((\log n)^{7/9})\bigr)$ Loss\\
+for Optimal Data-Dependent Euclidean ANN}
+\author{Anonymous Authors}
+\date{Draft, June 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+   For fixed $c>1$, the optimal balanced exponent for data-dependent approximate nearest neighbor search in Euclidean space is
+   \[
+      \rho_c=\frac{1}{2c^2-1}.
+   \]
+   Known worst-case constructions achieve $n^{\rho_c+o(1)}$ query time and $n^{1+\rho_c+o(1)}$ space, but the hidden subpolynomial factor is usually left implicit. We make this loss explicit using a deliberately simple composition. The first ingredient is a spherical Gaussian list decoder whose loss at score depth $k$ is $\exp(O_c(k^{1/3}))$. The second is the standard certified ball recursion for worst-case Euclidean ANN. At geometric slack $\eta$, this recursion perturbs the balanced exponent by $O_c(\eta)$, has $O_c(\eta^{-2})$ recentering phases, and permits the spherical decoder to be restarted independently in every phase. Consequently, the total nonpolynomial overhead is
+   \[
+      \exp\!\left(O_c\left(\eta\log n+\eta^{-2}(\log n)^{1/3}\right)\right).
+   \]
+   Choosing $\eta=(\log n)^{-2/9}$ gives query time
+   \[
+      d\,n^{\rho_c}\exp\!\bigl(O_c((\log n)^{7/9})\bigr)
+   \]
+   and space
+   \[
+      dn+n^{1+\rho_c}\exp\!\bigl(O_c((\log n)^{7/9})\bigr).
+   \]
+   The construction requires no persistent score state, tempered cohorts, or fractional-to-integer flow rounding. It is a black-box restart wrapper around the established geometric recursion, and is therefore suitable as a simple explicit baseline for sharper subpolynomial losses.
+\end{abstract}
+
+\section{Introduction}
+
+The $(c,r)$-approximate nearest neighbor problem asks us to preprocess a set $P\subseteq\R^d$ of $n$ points so that, given a query $q\in\R^d$ satisfying
+\[
+   \min_{p\in P}\|p-q\|_2\le r,
+\]
+the data structure returns some $p'\in P$ with
+\[
+   \|p'-q\|_2\le cr.
+\]
+Throughout the paper, $c>1$ is fixed. The data structure is randomized and data-dependent, and succeeds with a fixed constant probability. Candidate points are verified using their true Euclidean distances, so the structure never reports an incorrect answer.
+
+For Euclidean space, the optimal balanced data-dependent exponent is
+\[
+   \rho_c=\frac{1}{2c^2-1}.
+\]
+The landmark construction of Andoni and Razenshteyn obtains query time $d\,n^{\rho_c+o(1)}$ and space $dn+n^{1+\rho_c+o(1)}$ for worst-case data sets~\cite{AR15}. Its geometric component recursively removes dense spherical caps, recenters them as smaller certified balls, and applies a spherical filtering primitive to the residual data. The $o(1)$ term absorbs several losses: shell discretization, geometric slack, spherical list decoding, and the repeated restarting of the filtering process after recentering.
+
+The purpose of this paper is modest but concrete: we quantify these losses while retaining the standard restart architecture. We use the $\exp(O(k^{1/3}))$ spherical list-decoding loss established by the two-dimensional branching-random-walk analysis of Ahle and Knudsen~\cite{AKdraft}. We then inspect how a generic multiplicative spherical loss propagates through the certified ball recursion.
+
+\subsection{Main result}
+
+Let all logarithms be natural, and write $L=\log(2n)$.
+
+\begin{theorem}[Main theorem]\label{thm:main}
+   For every fixed $c>1$, there is a randomized data-dependent data structure for worst-case $(c,r)$-approximate nearest neighbor search in $\R^d$ with constant success probability, query time
+   \[
+      Q(n,d)=d\,n^{\rho_c}\exp\!\bigl(O_c(L^{7/9})\bigr),
+   \]
+   and space
+   \[
+      S(n,d)=dn+n^{1+\rho_c}\exp\!\bigl(O_c(L^{7/9})\bigr),
+   \]
+   where $\rho_c=1/(2c^2-1)$. The bounds hold in expectation over preprocessing; standard truncation and rebuilding convert them to capped bounds with only constant-factor changes in success probability and asymptotic cost.
+\end{theorem}
+
+Equivalently,
+\[
+   Q(n,d)=d\,n^{\rho_c+O_c(L^{-2/9})},
+   \qquad
+   S(n,d)=dn+n^{1+\rho_c+O_c(L^{-2/9})}.
+\]
+
+The exponent $7/9$ follows from one line of optimization. A geometric slack parameter $\eta$ contributes
+\[
+   \exp(O_c(\eta L)),
+\]
+while the certified radius recursion has $O_c(\eta^{-2})$ phases. Restarting a spherical decoder with loss $\exp(O_c(L^{1/3}))$ in every phase contributes
+\[
+   \exp(O_c(\eta^{-2}L^{1/3})).
+\]
+Balancing the two terms gives
+\[
+   \eta=L^{-2/9}
+\]
+and total logarithmic overhead $O_c(L^{7/9})$.
+
+\subsection{Why this composition is useful}
+
+The most aggressive route toward a polylogarithmic loss attempts to preserve one cumulative score process through every recentering and to round a fractional geometric flow into persistent integer cohorts. That route encounters a genuine coupling problem: a score prefix may isolate a tiny slice of a large certified cluster, so posterior mass alone does not fund a recursive call on the full cluster. The restart construction studied here avoids this issue completely. Every geometric phase begins with a fresh spherical decoder, and the already established geometric recursion handles the integer routing.
+
+The resulting loss is weaker, but the proof is modular and the algorithm is simple. In particular:
+\begin{itemize}
+   \item the spherical argument is used only through a black-box loss function $\Gamma(n)$;
+   \item the geometry is used only through the standard depth and exponent-stability guarantees;
+   \item no score offset is transported across centers;
+   \item no posterior detector population is maintained;
+   \item every cap or ball used by the recursion is certified by its actual maximum radius.
+\end{itemize}
+
+\subsection{A general loss-propagation rule}
+
+The proof yields a reusable quantitative statement. If the spherical loss has the form
+\[
+   \Gamma(n)=\exp(O_c((\log n)^\alpha)),
+   \qquad 0\le \alpha<1,
+\]
+then independent restarting gives a full Euclidean overhead
+\[
+   \exp\!\left(O_c\left((\log n)^{(2+\alpha)/3}\right)\right).
+\]
+Thus the exponent loss is
+\[
+   O_c\left((\log n)^{-(1-\alpha)/3}\right).
+\]
+For $\alpha=1/3$, this is precisely $O_c((\log n)^{-2/9})$.
+
+\section{Preliminaries}
+
+\subsection{Correlation parameters}
+
+For unit vectors $x,q\in\mathbb{S}^{d-1}$,
+\[
+   \|x-q\|_2^2=2-2\ip{x}{q}.
+\]
+A spherical filtering instance is specified by two correlations
+\[
+   -1<b<a<1.
+\]
+A near pair satisfies $\ip{x}{q}\ge a$, while an ordinary far pair satisfies $\ip{x}{q}\le b$. The balanced Gaussian filtering exponent is
+\[
+   \rho(a,b)
+   =
+   \frac{(1-a)(1+b)}{(1+a)(1-b)}.
+\]
+At the critical Euclidean normalization,
+\[
+   a_0=1-\frac{1}{c^2},
+   \qquad
+   b_0=0,
+\]
+and therefore
+\[
+   \rho(a_0,b_0)=\frac{1}{2c^2-1}=\rho_c.
+\]
+
+We repeatedly use the smoothness of $\rho$ near $(a_0,b_0)$.
+
+\begin{lemma}[Stability of the balanced exponent]\label{lem:rho-stability}
+   For every fixed $c>1$, there are constants $C_c>0$ and $\eta_c>0$ such that, whenever $0<\eta\le\eta_c$ and
+   \[
+      a\ge a_0-C_c\eta,
+      \qquad
+      b\le C_c\eta,
+   \]
+   we have
+   \[
+      \rho(a,b)\le \rho_c+C_c\eta.
+   \]
+\end{lemma}
+
+\begin{proof}
+   The denominator $(1+a)(1-b)$ is bounded away from zero in a fixed neighborhood of $(a_0,0)$. The rational function $\rho(a,b)$ is continuously differentiable there. The claim follows from the mean-value theorem, after enlarging $C_c$.
+\end{proof}
+
+\subsection{Loss notation}
+
+We isolate all subpolynomial overhead in a monotone loss function $\Gamma:[2,\infty)\to[1,\infty)$. The spherical primitive used later has
+\[
+   \Gamma(m)
+   =
+   \exp\!\bigl(O_c((\log(2m))^{1/3})\bigr).
+\]
+Polylogarithmic factors are absorbed into this expression, since
+\[
+   \log^{O_c(1)}m
+   =
+   \exp(O_c(\log\log(2m)))
+   =
+   \exp(o((\log(2m))^{1/3})).
+\]
+
+\subsection{Expected cost and truncation}
+
+The filtering constructions naturally give expected numbers of explored nodes and candidate occurrences. We use the following standard conversion. If one copy succeeds with probability at least $p_0>0$ and has expected query work at most $T$, stop it after $K T$ work for a sufficiently large constant $K=K(p_0)$. Markov's inequality shows that the truncation probability is at most $1/K$, so the truncated copy still succeeds with constant probability. A constant number of independent copies then restores any desired fixed success probability below one. The same idea applies to space: rebuild whenever the realized space exceeds a fixed multiple of its expectation. We therefore state expected bounds in intermediate lemmas and capped bounds in the final theorem.
+
+\section{The spherical Gaussian primitive}
+
+This section records the spherical theorem used by the Euclidean wrapper. The construction is a constant-branching Gaussian score tree analyzed through a two-dimensional branching random walk. The only feature needed later is the explicit loss $\exp(O(k^{1/3}))$ at depth $k$.
+
+\begin{theorem}[Spherical Gaussian decoder]\label{thm:spherical}
+   Fix constants $-1<b<a<1$. For every $m\ge2$, there is a randomized data-dependent spherical filtering structure with the following guarantees.
+
+   If a query $q$ has a data point $p$ with $\ip{p}{q}\ge a$, then the structure finds such a common filtering path with probability at least
+   \[
+      \exp\!\bigl(-O_{a,b}((\log m)^{1/3})\bigr).
+   \]
+   The expected number of query path operations is at most
+   \[
+      m^{\rho(a,b)}
+      \exp\!\bigl(O_{a,b}((\log m)^{1/3})\bigr),
+   \]
+   and the expected number of candidate occurrences contributed by all points $x$ satisfying $\ip{x}{q}\le b$ obeys the same bound. The expected number of stored point-path occurrences is at most
+   \[
+      m^{1+\rho(a,b)}
+      \exp\!\bigl(O_{a,b}((\log m)^{1/3})\bigr).
+   \]
+   After amplification to constant success probability, all three bounds retain the form above, with different constants in the $O_{a,b}(\cdot)$ terms. More generally, amplification to failure probability $\delta$ multiplies these bounds by an additional $O(\log(1/\delta))$ factor after the displayed exponential loss has been paid.
+\end{theorem}
+
+The theorem is the spherical list-decoding result extracted from the branching-random-walk analysis in~\cite{AKdraft}. We recall its parameter calculation because it is the source of the exponent $1/3$.
+
+Choose a constant branching factor $B\ge2$, write $\ell_B=\log B$, and let
+\[
+   t^2=(1+a)\ell_B.
+\]
+A path of depth $k$ carries independent Gaussian edge vectors $g_e\sim N(0,I_d)$ and cumulative score
+\[
+   S_v(x)=\sum_{e\preceq v}\ip{g_e}{x}.
+\]
+A leaf accepts $x$ when $S_v(x)\ge kt$. The depth is chosen as
+\[
+   k
+   =
+   \left\lceil
+      \frac{2(1+b)\log m}
+      {(1+a)(1-b)\ell_B}
+   \right\rceil
+   =
+   \Theta_{a,b}(\log m).
+\]
+The expected number of accepting leaves for one point is
+\[
+   B^k\overline\Phi(t\sqrt{k})
+   =
+   m^{\rho(a,b)}k^{O(1)}.
+\]
+For a pair of correlation at most $b$, the Gaussian joint-tail estimate
+\[
+   \Prb[X\ge u,\,Y\ge u]
+   \le
+   \exp\!\left(-\frac{u^2}{1+b}\right)
+\]
+shows that the expected number of common leaves is at most
+\[
+   m^{-(1-\rho(a,b))}k^{O(1)}.
+\]
+Summing over $m$ ordinary far points gives the desired candidate exponent.
+
+The near-pair analysis tilts the two-dimensional score walk toward the accepting endpoint and confines it to a tube of width $w$. The endpoint likelihood ratio costs $\exp(O(w))$, while confinement costs $\exp(O(k/w^2))$. Balancing
+\[
+   w+\frac{k}{w^2}
+\]
+at $w=\Theta(k^{1/3})$ gives the loss
+\[
+   \exp(O(k^{1/3})).
+\]
+A lowest-common-ancestor second-moment calculation converts the first moment into the stated success probability. We use this theorem as a black box and do not alter its score process inside a geometric phase.
+
+\begin{remark}[One phase versus many phases]\label{rem:restart}
+   The depth $k$ in \cref{thm:spherical} is $\Theta(\log m)$ for one spherical instance. In the construction below, recentering discards the score tree and starts a new instance. We therefore pay the loss in \cref{thm:spherical} once per geometric phase. This is exactly the source of the factor $\Gamma(n)^{O(\eta^{-2})}$.
+\end{remark}
+
+\section{The standard certified ball recursion}
+
+We now state the geometric reduction in the form needed for explicit loss accounting. This is the usual worst-case data-dependent reduction from Euclidean ANN to spherical filtering~\cite{AR15}. We separate its geometric guarantees from the implementation of the spherical primitive.
+
+\subsection{Two elementary geometric facts}
+
+The first fact certifies the radius decrease obtained from a spherical cap.
+
+\begin{lemma}[Cap recentering]\label{lem:cap}
+   Let $P$ lie on the sphere of radius $R$ centered at $o$, and suppose
+   \[
+      \ip{(p-o)/R}{w}\ge\gamma
+   \]
+   for every $p$ in a cap $C\subseteq P$, where $\|w\|_2=1$. Then
+   \[
+      C\subseteq
+      \Ball\!\left(o+\gamma Rw,\,R\sqrt{1-\gamma^2}\right).
+   \]
+   In particular, if $\gamma=\Theta_c(\eta)$, the certified child radius satisfies
+   \[
+      R_C\le R(1-\Theta_c(\eta^2)).
+   \]
+\end{lemma}
+
+\begin{proof}
+   For $p\in C$,
+   \begin{align*}
+      \|p-(o+\gamma Rw)\|_2^2
+                                           &=\|p-o\|_2^2+\gamma^2R^2-2\gamma R\ip{p-o}{w}\\
+                                           &\le R^2+\gamma^2R^2-2\gamma^2R^2\\
+                                           &=R^2(1-\gamma^2).
+   \end{align*}
+   The final estimate follows from $\sqrt{1-x}=1-\Theta(x)$ for sufficiently small positive $x$.
+\end{proof}
+
+The second fact shows that thin radial shells do not degrade the approximation factor.
+
+\begin{lemma}[Angular gap on two shells]\label{lem:shell}
+   Let data points have radius $S$ and let the query have radius $T$ around a common center. Put $\Delta=|S-T|$. If a data-query pair has Euclidean distance at most $r$, its squared angular chord distance is at most
+   \[
+      d_1^2=\frac{r^2-\Delta^2}{ST}.
+   \]
+   If its Euclidean distance is greater than $cr$, its squared angular chord distance is greater than
+   \[
+      d_2^2=\frac{c^2r^2-\Delta^2}{ST}.
+   \]
+   Whenever the near case is feasible,
+   \[
+      \frac{d_2^2}{d_1^2}\ge c^2.
+   \]
+   The same statements hold with $1+O_c(\eta)$ multiplicative slack for shells of relative width $O_c(\eta)$.
+\end{lemma}
+
+\begin{proof}
+   For normalized directions $u=(p-o)/S$ and $v=(q-o)/T$,
+   \[
+      \|p-q\|_2^2=(S-T)^2+ST\|u-v\|_2^2.
+   \]
+   Solving for $\|u-v\|_2^2$ gives the first two formulas. Moreover,
+   \[
+      \frac{c^2r^2-\Delta^2}{r^2-\Delta^2}
+      \ge c^2
+   \]
+   because $(c^2-1)\Delta^2\ge0$. Shell discretization perturbs $S$, $T$, and $\Delta$ by relative $O_c(\eta)$, which yields the final claim.
+\end{proof}
+
+\subsection{The reduction interface}
+
+The next theorem is the established geometric part of the optimal data-dependent construction, restated to expose the number of spherical restarts. Its proof consists of bounded-diameter localization, radial shelling, iterative removal of dense caps, certified recentering using \cref{lem:cap}, and spherical filtering on the residual instances. We include the accounting needed here; the complete construction and correctness proof appear in~\cite{AR15}.
+
+\begin{theorem}[Certified restart reduction]\label{thm:reduction}
+   Fix $c>1$. There are constants $C_c,\eta_c>0$ with the following property. Let $0<\eta\le\eta_c$, and suppose that every spherical instance on at most $m$ points with correlations
+   \[
+      a\ge 1-\frac1{c^2}-C_c\eta,
+      \qquad
+      b\le C_c\eta
+   \]
+   can be implemented with multiplicative loss at most $\Gamma(m)$ relative to its ideal balanced power-law cost. Assume $\Gamma$ is nondecreasing.
+
+   Then there is a worst-case data-dependent $(c,r)$-ANN structure in $\R^d$ with constant success probability and
+   \[
+      Q(n,d)
+      \le
+      d\,n^{\rho_c+C_c\eta}
+      \Gamma(n)^{C_c\eta^{-2}}
+      (\eta^{-1}\log(2n))^{C_c},
+   \]
+   \[
+      S(n,d)
+      \le
+      dn+
+      n^{1+\rho_c+C_c\eta}
+      \Gamma(n)^{C_c\eta^{-2}}
+      (\eta^{-1}\log(2n))^{C_c}.
+   \]
+   The recursion uses at most
+   \[
+      D\le C_c\eta^{-2}
+   \]
+   spherical phases on every root-to-leaf route.
+\end{theorem}
+
+\begin{proof}[Accounting proof]
+   We recall the properties of the standard recursion that affect the bound.
+
+   \emph{Bounded diameter and shells.}
+   A polylogarithmic family of localized instances ensures that a true near pair occurs together in at least one bounded-diameter instance with constant probability. Each localized set is divided into radial shells of relative width $O_c(\eta)$. By \cref{lem:shell}, normalization to angular distance preserves approximation factor $c$ up to an $O_c(\eta)$ perturbation of the near and ordinary-far correlations. By \cref{lem:rho-stability}, every residual spherical instance therefore has exponent at most
+   \[
+      \rho_c+C_c\eta.
+   \]
+   All localization and shell multiplicities are absorbed by the displayed polynomial factor in $\eta^{-1}$ and $\log n$.
+
+   \emph{Dense caps and radius progress.}
+   Whenever a residual shell contains a dense cap of margin $\Theta_c(\eta)$, the cap is removed and stored in a recursive child. The child center and radius are certified from the actual points. By \cref{lem:cap}, its radius decreases by a factor
+   \[
+      1-\Theta_c(\eta^2).
+   \]
+   The bounded-diameter reduction leaves only a constant-factor range of relevant radii before a resident block may be scanned. Hence every root-to-leaf route has at most
+   \[
+      D=O_c(\eta^{-2})
+   \]
+   recenterings and therefore at most that many spherical phases.
+
+   \emph{Ideal power-law accounting.}
+   The data-dependent recursion of~\cite{AR15} is designed so that, if a spherical phase of size $m$ has its ideal cost $m^{\rho}$ for queries and $m^{1+\rho}$ for storage, the sum of these power-law costs over all routed states is bounded by
+   \[
+      n^{\rho_c+C_c\eta}\log^{C_c}(2n)
+   \]
+   for a query and by
+   \[
+      n^{1+\rho_c+C_c\eta}\log^{C_c}(2n)
+   \]
+   for storage. This is the standard potential calculation for dense-cap removal and residual filtering. Importantly, the exponent perturbation $C_c\eta$ is global; it is not paid once per radius level.
+
+   \emph{Substitution of a nonconstant spherical loss.}
+   Replace each ideal spherical phase on $m$ points by a concrete implementation whose local work, storage, and routed-state multiplicity are multiplied by at most $\Gamma(m)$. Since $m\le n$ and $\Gamma$ is nondecreasing, each phase contributes a factor at most $\Gamma(n)$. Inducting over the route depth, a state at depth $j$ is inflated by at most $\Gamma(n)^j$. Any data occurrence or query route traverses at most $D$ phases, so every term in the ideal recursion is multiplied by at most
+   \[
+      \Gamma(n)^D
+      \le
+      \Gamma(n)^{C_c\eta^{-2}}.
+   \]
+   Finally, choose the per-phase failure probability to be $O(1/D)$ and union bound over the phases on a successful route. The additional $O(\log D)$ repetitions from \cref{thm:spherical} are absorbed by the displayed $(\eta^{-1}\log n)^{C_c}$ factor, as are truncation and rebuilding constants. This proves the theorem.
+\end{proof}
+
+\begin{remark}[What is and is not hidden in \cref{thm:reduction}]\label{rem:scope}
+   The theorem does not assume persistent Gaussian scores. On entering a certified child, the query starts a new spherical structure built for that child. The theorem also does not use the posterior-threshold cancellation or any fractional cohort process. The only imported component is the established integer geometric routing of the optimal data-dependent construction. Our contribution is to keep its restart depth explicit and substitute the sharper spherical loss without folding it into an unspecified $n^{o(1)}$ term.
+\end{remark}
+
+\section{Proof of the main theorem}
+
+We now combine \cref{thm:spherical} and \cref{thm:reduction}.
+
+Let
+\[
+   L=\log(2n)
+\]
+and choose
+\[
+   \eta=L^{-2/9}.
+\]
+For sufficiently large $n$, this is below the constant $\eta_c$ from \cref{thm:reduction}; smaller $n$ can be handled by adjusting constants or scanning the data set.
+
+For $\eta\le\eta_c$, all correlations requested by \cref{thm:reduction} lie in a compact neighborhood of $(1-1/c^2,0)$ inside the region $-1<b<a<1$. Thus the constants in \cref{thm:spherical} may be chosen uniformly as constants depending only on $c$. The amplified loss of one spherical phase is therefore
+\[
+   \Gamma(n)
+   \le
+   \exp(C_cL^{1/3}).
+\]
+The restart reduction therefore gives
+\begin{align*}
+   Q(n,d)
+                                               &\le
+                                               d\,n^{\rho_c+C_c\eta}
+                                               \exp(C_c\eta^{-2}L^{1/3})
+                                               (\eta^{-1}L)^{C_c},\\
+                                               S(n,d)
+                                               &\le
+                                               dn+
+                                               n^{1+\rho_c+C_c\eta}
+                                               \exp(C_c\eta^{-2}L^{1/3})
+                                               (\eta^{-1}L)^{C_c}.
+\end{align*}
+
+The geometric exponent perturbation satisfies
+\[
+   n^{C_c\eta}
+   =
+   \exp(C_c\eta\log n)
+   \le
+   \exp(C_cL^{7/9}),
+\]
+because
+\[
+   \eta L=L^{-2/9}L=L^{7/9}.
+\]
+The restarted spherical loss satisfies
+\[
+   \eta^{-2}L^{1/3}
+   =
+   L^{4/9}L^{1/3}
+   =
+   L^{7/9}.
+\]
+Finally, since $\eta^{-1}=L^{2/9}$,
+\[
+   (\eta^{-1}L)^{C_c}=\exp(O_c(\log L))
+   =\exp(o_c(L^{7/9})).
+\]
+Absorbing all three factors into one exponential gives
+\[
+   Q(n,d)
+   \le
+   d\,n^{\rho_c}
+   \exp(O_c(L^{7/9})),
+\]
+\[
+   S(n,d)
+   \le
+   dn+
+   n^{1+\rho_c}
+   \exp(O_c(L^{7/9})).
+\]
+This proves \cref{thm:main}.
+
+\section{The algorithm as a restart wrapper}
+
+For clarity, we summarize the construction at the level at which it differs from the standard data-dependent ANN structure.
+
+\subsection{Preprocessing}
+
+Fix $\eta=L^{-2/9}$.
+
+\begin{enumerate}
+   \item Apply the usual bounded-diameter localization and build the associated polylogarithmic family of localized instances.
+   \item At every geometric node, divide the points into thin radial shells of relative width $\Theta_c(\eta)$.
+   \item In each shell, repeatedly identify the dense caps required by the standard data-dependent reduction. Certify every proposed child by explicitly computing
+      \[
+         R_C=\max_{p\in C}\|p-o_C\|_2.
+      \]
+      Recurse on a child only after this check.
+   \item Build the residual spherical filtering structures using the Gaussian list decoder of \cref{thm:spherical}.
+   \item On entering any certified child, discard the parent score state and build a fresh spherical decoder for the child coordinates. Amplify each phase exactly as required by the standard recursion.
+   \item Stop the geometric recursion once the node radius or node cardinality is small enough for a resident scan.
+\end{enumerate}
+
+The cap finder may be the one used in the original geometric reduction. Its role is purely to propose a point subset and a center; correctness uses only the subsequent radius certification.
+
+\subsection{Query}
+
+A query follows the standard routing of the certified ball recursion. Within a residual spherical phase, it explores the Gaussian score-tree paths, visits their buckets, and verifies encountered candidates in the original space. Whenever routing enters a certified child, the query starts that child's spherical decoder from its root. A root-to-leaf route contains at most $O_c(L^{4/9})$ such restarts.
+
+The construction is intentionally nonpersistent: it never carries a cumulative Gaussian score across a change of center. This makes each score phase independent of the preceding geometry and permits a direct invocation of \cref{thm:spherical}.
+
+\subsection{Simplicity and implementation}
+
+The filtering work remains level-synchronous. At one phase, all active score paths can be advanced by a batched matrix multiplication, followed by thresholding, compaction, and bucket scans. A recentering ends one batch and begins another with a new coordinate origin. Thus the restart cost is visible in the analysis but does not require complicated state in the implementation.
+
+The data structure stores only the standard geometric metadata:
+\[
+   (\text{center},\text{certified radius},\text{shell ID},\text{score-tree seed},\text{resident block}).
+\]
+No posterior histogram, tempered transition probability, or cohort vote counter is needed.
+
+\section{A general restart calculus}
+
+The preceding argument is not specific to the exponent $1/3$. We record the general rule.
+
+\begin{theorem}[Generic spherical-to-Euclidean loss propagation]\label{thm:generic}
+   Suppose the spherical primitive has monotone loss
+   \[
+      \Gamma(n)
+      \le
+      \exp(O_c((\log(2n))^\alpha))
+   \]
+   for a constant $0\le\alpha<1$. Then the certified restart reduction gives worst-case Euclidean ANN with
+   \[
+      Q(n,d)
+      \le
+      d\,n^{\rho_c}
+      \exp\!\left(O_c\left((\log(2n))^{(2+\alpha)/3}\right)\right)
+   \]
+   and
+   \[
+      S(n,d)
+      \le
+      dn+n^{1+\rho_c}
+      \exp\!\left(O_c\left((\log(2n))^{(2+\alpha)/3}\right)\right).
+   \]
+   Equivalently, the exponent loss is
+   \[
+      O_c\left((\log n)^{-(1-\alpha)/3}\right).
+   \]
+\end{theorem}
+
+\begin{proof}
+   Put $L=\log(2n)$. By \cref{thm:reduction}, the logarithm of the nonpolynomial overhead is at most
+   \[
+      O_c\left(\eta L+\eta^{-2}L^\alpha+\log(\eta^{-1}L)\right).
+   \]
+   Balance the first two terms:
+   \[
+      \eta L=\eta^{-2}L^\alpha.
+   \]
+   This gives
+   \[
+      \eta=L^{-(1-\alpha)/3}.
+   \]
+   At this value, both terms equal
+   \[
+      L^{1-(1-\alpha)/3}=L^{(2+\alpha)/3}.
+   \]
+   The final logarithmic term is lower order for this choice of $\eta$.
+\end{proof}
+
+\begin{table}[t]
+   \centering
+   \caption{Loss propagation under independent geometric restarts. Here $L=\log n$.}
+   \label{tab:losses}
+   \begin{tabular}{@{}lll@{}}
+      \toprule
+      Spherical loss & Full Euclidean overhead & Exponent loss $\eps(n)$ \\
+      \midrule
+      $\exp(O(L^{1/2}))$ & $\exp(O(L^{5/6}))$ & $O(L^{-1/6})$ \\
+      $\exp(O(L^{1/3}))$ & $\exp(O(L^{7/9}))$ & $O(L^{-2/9})$ \\
+      $\exp(O(1))$ & $\exp(O(L^{2/3}))$ & $O(L^{-1/3})$ \\
+      \bottomrule
+   \end{tabular}
+\end{table}
+
+A genuinely polylogarithmic spherical loss has $\log\Gamma(n)=O(\log L)$ rather than $O(1)$. Direct optimization then gives
+\[
+   \eta=\Theta\!\left(\left(\frac{\log L}{L}\right)^{1/3}\right)
+\]
+and total overhead
+\[
+   \exp\!\left(O_c\left(L^{2/3}(\log L)^{1/3}\right)\right).
+\]
+Thus independent restarting alone cannot turn a polylogarithmic spherical decoder into a polylogarithmic full Euclidean structure.
+
+\section[Where the 7/9 loss is spent]{Where the $7/9$ loss is spent}
+
+The proof separates the overhead into two terms with different origins.
+
+\paragraph{Geometric slack.}
+Thin shells and cap margins perturb the critical correlations from
+\[
+   \left(1-\frac1{c^2},0\right)
+\]
+by $O_c(\eta)$. Since $\rho(a,b)$ is smooth, the power-law exponent increases by $O_c(\eta)$. This produces
+\[
+   n^{O_c(\eta)}=\exp(O_c(\eta L)).
+\]
+
+\paragraph{Independent restarts.}
+A cap of margin $\Theta_c(\eta)$ decreases radius only by $1-\Theta_c(\eta^2)$. Hence a constant-factor radius reduction may require $\Theta_c(\eta^{-2})$ phases. The spherical decoder loses $\exp(O_c(L^{1/3}))$ in each phase, and independent restart accounting multiplies these losses. This produces
+\[
+   \exp(O_c(\eta^{-2}L^{1/3})).
+\]
+
+At the optimum, the two losses are equal. Therefore improving only one of them cannot improve the final exponent unless the other is also addressed. For example, a better spherical decoder with polylogarithmic loss still leads only to approximately $\exp(L^{2/3})$ overhead under independent restarting. Conversely, carrying scores persistently without improving the geometric $O(\eta)$ perturbation would still leave the term $\exp(O(\eta L))$.
+
+\section{Discussion and limitations}
+
+The construction gives an explicit baseline, not the conjectured polylogarithmic loss. Its limitation is structural: the same $\exp(O(L^{1/3}))$ spherical loss is paid independently after every recentering. A persistent score process could in principle pay one global branching-random-walk loss, but then one must couple score paths to geometric child activation and round fractional path mass into integer recursive calls. Simple posterior-heavy activation is insufficient because a score prefix may isolate one atypical point of a large child.
+
+The restart theorem makes the quantitative target for future work transparent. To reach exponent loss $L^{-1/2}$ while retaining the same geometry, the cumulative spherical loss across all phases must be at most $\exp(O(\sqrt L))$. This requires substantial persistence or a stronger depth-telescoping property. To reach a polylogarithmic total loss, one must avoid paying any superconstant factor independently over $\Theta(\eta^{-2})$ geometric phases.
+
+The present algorithm nevertheless has three practical advantages. First, every spherical phase is independent and can be tested separately. Second, cap centers are heuristic proposals followed by exact radius certification, so approximate clustering does not affect correctness. Third, the level-synchronous Gaussian score computation is well suited to batched linear algebra.
+
+\section{Conclusion}
+
+Combining the $\exp(O(k^{1/3}))$ spherical Gaussian decoder with the standard certified Euclidean ball recursion yields a simple worst-case data-dependent ANN structure with explicit overhead
+\[
+   \exp\!\bigl(O_c((\log n)^{7/9})\bigr).
+\]
+The proof is a black-box composition: geometric slack contributes $\eta\log n$, independent restarts contribute $\eta^{-2}(\log n)^{1/3}$, and $\eta=(\log n)^{-2/9}$ balances the two. The result preserves the optimal balanced exponent $1/(2c^2-1)$ up to $O_c((\log n)^{-2/9})$ while avoiding the unresolved machinery needed for persistent score transfer.
+
+\appendix
+
+\section{More detail on the spherical exponent calculation}
+
+For completeness, we verify the algebra leading to $\rho(a,b)$. Let $B$ be the branching factor and $\ell_B=\log B$. With
+\[
+   t^2=(1+a)\ell_B
+\]
+and
+\[
+   k=
+   \frac{2(1+b)\log m}
+   {(1+a)(1-b)\ell_B}
+   +O(1),
+\]
+the expected number of accepting leaves for one point has logarithm
+\begin{align*}
+   k\ell_B-\frac{kt^2}{2}+O(\log k)
+                                                                                                                  &=
+                                                                                                                  \frac{k\ell_B(1-a)}{2}+O(\log k)\\
+                                                                                                                                                                                                 &=
+                                                                                                                                                                                                 \frac{(1-a)(1+b)}{(1+a)(1-b)}\log m+O(\log\log m).
+\end{align*}
+Thus it equals
+\[
+   m^{\rho(a,b)}\log^{O(1)}m.
+\]
+
+For a pair of correlation at most $b$, the expected number of common accepting leaves has logarithm at most
+\begin{align*}
+   k\ell_B-\frac{kt^2}{1+b}
+                                                                                                                  &=
+                                                                                                                  k\ell_B\left(1-\frac{1+a}{1+b}\right)\\
+                                                                                                                                                                                                 &=-\frac{k\ell_B(a-b)}{1+b}\\
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           &=-\frac{2(a-b)}{(1+a)(1-b)}\log m+O(1).
+\end{align*}
+A direct calculation shows
+\[
+   1-\rho(a,b)
+   =
+   \frac{2(a-b)}{(1+a)(1-b)}.
+\]
+Hence one ordinary far point contributes at most
+\[
+   m^{-(1-\rho(a,b))}\log^{O(1)}m
+\]
+common leaves, and all $m$ ordinary far points contribute at most
+\[
+   m^{\rho(a,b)}\log^{O(1)}m.
+\]
+
+\section{Why the geometric depth is quadratic in the inverse margin}
+
+Suppose each certified child radius satisfies
+\[
+   R_{j+1}\le R_j\sqrt{1-\kappa_c\eta^2}
+\]
+for a constant $\kappa_c>0$. Then
+\[
+   R_D
+   \le
+   R_0(1-\kappa_c\eta^2)^{D/2}
+   \le
+   R_0\exp(-\kappa_c D\eta^2/2).
+\]
+The bounded-diameter reduction ensures that the ratio between the initial relevant radius and the terminal scan radius is at most a constant depending on $c$. Therefore it suffices to choose
+\[
+   D\ge C_c\eta^{-2}.
+\]
+This is also the correct worst-case order for cap margins $\Theta(\eta)$, because one cap recentering changes squared radius by only $\Theta(\eta^2)$.
+
+\section{Bibliographic note}
+
+The spherical theorem is cited to the Ahle--Knudsen manuscript supplied with this project. Its final title, year, and publication information should be updated before submission. The geometric restart theorem is a quantitative restatement of the standard worst-case data-dependent reduction of Andoni and Razenshteyn. A submission version should align notation with the precise theorem statement used from that work and, if desired, include their full geometric construction as a supplementary appendix.
+
+\begin{thebibliography}{9}
+
+   \bibitem{AKdraft}
+   Thomas D. Ahle and Jakob B. T. Knudsen.
+   \newblock Two-dimensional branching random walks and spherical list decoding.
+   \newblock Manuscript, bibliographic details to be updated.
+
+   \bibitem{AR15}
+   Alexandr Andoni and Ilya Razenshteyn.
+   \newblock Optimal data-dependent hashing for approximate near neighbors.
+   \newblock In \emph{Proceedings of the 47th Annual ACM Symposium on Theory of Computing (STOC)}, pages 793--801, 2015.
+
+   \bibitem{IM98}
+   Piotr Indyk and Rajeev Motwani.
+   \newblock Approximate nearest neighbors: Towards removing the curse of dimensionality.
+   \newblock In \emph{Proceedings of the 30th Annual ACM Symposium on Theory of Computing (STOC)}, pages 604--613, 1998.
+
+\end{thebibliography}
+
+\end{document}
