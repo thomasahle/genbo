@@ -2069,6 +2069,34 @@ That inequality would be immediate for a single sampled path, but the continuati
 
 This certificate is the local form of the remaining problem. It is analogous in proof shape to the robust Hamming hashing guarantee of Andoni and Beaglehole~\cite{AB22}: there a per-node min-max inequality over hash choices and adversarial query-neighbor pairs is enough, by induction, to lower-bound the success probability of the whole tree. Here the missing object is the continuation-mass analogue of that local Bellman potential. Proving such a potential would remove the global frontier assumption without replacing the branching decoder by a normalized one-path law.
 
+\begin{corollary}[Budget-gated cap splitting]\label{cor:budget-gated-splits}
+   Fix any predictable nonnegative budget process $\mathcal B_q$ satisfying the first two hypotheses of \cref{lem:bellman-frontier-certificate}. Modify the one-tree query algorithm as follows: at a retained prefix $u$, a stored almost-total cap split is live only if its thinned recursive charge
+   \[
+      F_4((1-z)|P[u]|,R_u)
+      +
+      z^s\frac{\Psi(R_C)}{\Psi(R_u)}F_4(z|P[u]|,R_C)
+   \]
+   is at most $(1-\kappa\eta^2)\mathcal B_q(u)$. If the gate fails, the query ignores that geometric split and continues the score block. Then the weighted recursive child-potential bound in \cref{asm:mixed-continuation-operator} holds for the live splits, without any additional first-frontier assumption.
+\end{corollary}
+
+\begin{proof}
+   The budget gate enforces the local domination hypothesis in \cref{lem:bellman-frontier-certificate}. Applying that lemma to the live first-split frontier gives the claim.
+\end{proof}
+
+\begin{remark}[Why the query-only budget is too small]\label{rem:query-only-budget}
+   The most obvious budget,
+   \[
+      \mathcal B_q(u)=F_4(m,R)\frac{H_q(u)}{H_q(\varnothing)},
+   \]
+   is a normalized query continuation-mass martingale, but it cannot pay for early geometric splits by itself. In a homogeneous balanced bucket at an early level $\ell$, before the continuation barrier prunes many children, a typical query prefix has budget about $F_4(m,R)B^{-\ell}$. The corresponding bucket has size about $mB^{-\ell}$, so its recursive power charge is
+   \[
+      F_4(mB^{-\ell},R)
+      \approx
+      F_4(m,R)B^{-\rho\ell}.
+   \]
+   The ratio is $B^{(1-\rho)\ell}$. Thus the budget certificate cannot be query-only; it must include data-aware information about how the bucket mass contracts under the score process, or else the algorithm must gate early cap splits until such a budget is available.
+\end{remark}
+
 \begin{proposition}[Conditional randomized one-tree polylog endpoint]\label{prop:randomized-polylog}
    Under \cref{asm:mixed-continuation-operator}, the randomized one-tree construction with predictable almost-total cap tests gives worst-case Euclidean ANN bounds
    \[
