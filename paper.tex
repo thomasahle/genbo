@@ -6,6 +6,8 @@
 \usepackage{enumitem}
 \usepackage{microtype}
 \usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{calc,arrows,positioning,angles,backgrounds,decorations.pathmorphing}
 \usepackage[hidelinks]{hyperref}
 \IfFileExists{cleveref.sty}{
    \usepackage[nameinlink,noabbrev]{cleveref}
@@ -211,7 +213,27 @@ for a sufficiently large constant $A=A_{a,b}$. Equivalently, up to lower-order t
    S_v(x)\ge
    kt-\sqrt{2r(r\log B+A\log k)}.
 \]
-Early scores may lie well below the final linear trajectory; the barrier tightens only near the leaf.
+Early scores may lie well below the final linear trajectory; the barrier tightens only near the leaf. See \cref{fig:barrier}.
+
+\begin{figure}[t]\centering
+\begin{tikzpicture}[font=\small,>=stealth,xscale=1.15,yscale=0.9]
+\draw[->] (0,0) -- (8.4,0) node[right]{level $\ell$};
+\draw[->] (0,0) -- (0,4.6) node[above]{score $S$};
+\node[below] at (8,0) {$k$};
+\draw[dashed] (8,0) -- (8,4);
+\node[left] at (0,4) {$kt$};
+\draw[dashed] (0,4) -- (8,4);
+\draw[gray,thick] (0,0) -- (8,4) node[pos=0.5,above,sloped,font=\scriptsize,black]{linear target $\tfrac{\ell}{k}\,kt$};
+\draw[blue,very thick,domain=0:8,samples=80,smooth] plot (\x,{4*(\x/8) - 1.7*sqrt((8-\x)/8)});
+\node[blue,font=\scriptsize,right] at (2.0,0.5) {continuation barrier $S\ge kt-\sqrt{2r(r\ell_B+A\log k)}$};
+\draw[red,thick]
+   (0,0) -- (1,0.15) -- (2,0.05) -- (3,0.9) -- (4,1.3) -- (5,1.7) -- (6,2.6) -- (7,3.2) -- (8,4.05);
+\node[red,font=\scriptsize,above left] at (8,4.05) {retained path};
+\fill[red] (8,4.05) circle (1.4pt);
+\end{tikzpicture}
+\caption{Continuation-mass pruning keeps a score prefix as long as it stays above the soft barrier $S_v\ge kt-\sqrt{2r(r\ell_B+A\log k)}$ (blue), where $r=k-\ell$. The barrier is far below the linear trajectory to the accepting threshold $kt$ early on, and tightens to it only near the leaf, so the decoder tolerates prefixes whose scores start low. A surviving path (red) need only finish in the accepting window $[kt,kt+1]$.}
+\label{fig:barrier}
+\end{figure}
 
 \begin{lemma}[Exact expected work]\label{lem:continuation-work}
    For fixed $-1<b<a<1$, continuation-mass pruning gives expected query path work
@@ -342,6 +364,27 @@ Early scores may lie well below the final linear trajectory; the barrier tighten
    \]
 \end{lemma}
 
+\begin{figure}[t]\centering
+\begin{tikzpicture}[font=\small,>=stealth]
+\draw[very thick] (0,0) -- (3,0) node[midway,above=2pt,font=\scriptsize]{shared prefix (length $j$)};
+\node[circle,fill,inner sep=1.3pt,label=left:{root}] at (0,0){};
+\node[circle,fill,inner sep=1.3pt] (split) at (3,0){};
+\node[below=2pt,font=\scriptsize] at (split) {LCA, depth $j$};
+\draw[thick] (split) -- (6,0.9) node[right]{$v$};
+\draw[thick] (split) -- (6,-0.9) node[right]{$w$};
+\node[font=\scriptsize] at (4.6,0.92) {$r=k-j$};
+\node[font=\scriptsize] at (4.6,-0.92) {$r=k-j$};
+\node[draw,rounded corners,fill=gray!10,font=\scriptsize] at (7.3,0.9) {$S_v(p),S_v(q)\in[kt,kt+1]$};
+\node[draw,rounded corners,fill=gray!10,font=\scriptsize] at (7.3,-0.9) {$S_w(p),S_w(q)\in[kt,kt+1]$};
+\node[align=left,font=\scriptsize,anchor=west] at (0,-2.0)
+  {common coord.\ $C_\ell=\dfrac{S_\ell(p)+S_\ell(q)}{\sqrt{2(1+a)}}$ \quad(drift $\mu=\sqrt{2\ell_B}$, capped $\le H_{a,b}$ at the split)};
+\node[align=left,font=\scriptsize,anchor=west] at (0,-2.9)
+  {difference coord.\ $D_\ell=\dfrac{S_\ell(p)-S_\ell(q)}{\sqrt{2(1-a)}}$ \quad(centered; variance $k$, covariance $j$)};
+\end{tikzpicture}
+\caption{Second-moment decomposition by the lowest common ancestor. Two tame-good leaves $v,w$ share a prefix of length $j$ and then run independently for $r=k-j$ steps. After multiplying the conditional endpoint probability by the $B^{2k-j}$ ordered pairs at split depth $j$, the common-coordinate drift $\mu^2=2\ell_B$ cancels the exponential growth; the upper cap $M_u\le H_{a,b}$ at the split kills prolific high shared prefixes, leaving a summable $\sum_j (j{+}1)^{-1/2}(k{-}j)^{-3/2}k^{-1/2}=O(1)$.}
+\label{fig:lca}
+\end{figure}
+
 \begin{proof}
    We decompose pairs of leaves by the depth $j$ of their lowest common ancestor. Write $r=k-j$, and first consider $0\le j<k$. There are at most $B^{2k-j}$ ordered pairs with split depth $j$.
 
@@ -415,9 +458,76 @@ Early scores may lie well below the final linear trajectory; the barrier tighten
 
 The spherical primitive therefore has polylogarithmic loss: expected work follows from continuation mass, and near-pair survival follows from the tame-good first and second moments. No algorithmic two-sided tube is imposed.
 
+\subsection{Budgeted score blocks}
+
+The spherical block can be run with a budget parameter larger than the number of resident points. This is useful in the Euclidean recursion because the natural query potential is
+\[
+   F(m,R)=m^\rho\left(\frac Rr\right)^{2(1-\rho)},
+\]
+not just $m^\rho$.
+
+\begin{corollary}[Budgeted continuation block]\label{cor:budgeted-block}
+   Fix $-1<b<a<1$ and write $\rho=\rho(a,b)$. Let a spherical node contain $m$ points, and let $N\ge m$. Run the continuation-mass decoder exactly as above, except choose the depth
+   \[
+      k
+      =
+      \left\lceil
+         \frac{2(1+b)\log N}
+         {(1+a)(1-b)\ell_B}
+      \right\rceil .
+   \]
+   Then the expected query path work is
+   \[
+      N^\rho\log^{O_{a,b}(1)}N,
+   \]
+   the expected ordinary-far candidate occurrences are at most
+   \[
+      mN^{-(1-\rho)}\log^{O_{a,b}(1)}N
+      \le
+      N^\rho\log^{O_{a,b}(1)}N,
+   \]
+   and the stored point-path occurrences are at most
+   \[
+      mN^\rho\log^{O_{a,b}(1)}N.
+   \]
+   If a query has a near point with correlation at least $a$, the success probability is at least $\log^{-O_{a,b}(1)}N$.
+\end{corollary}
+
+\begin{proof}
+   The proof of \cref{lem:continuation-work} depends on the depth only through the expected one-point accepting-leaf count and the far joint-tail count. With the displayed depth these become $N^\rho\log^{O(1)}N$ and $N^{-(1-\rho)}\log^{O(1)}N$, respectively. Summing the latter over the $m$ resident points gives the stated far-candidate bound, and $m\le N$ gives the displayed simplification. The storage bound is the one-point accepting count summed over $m$ data points.
+
+   The first- and second-moment near-pair arguments in \cref{lem:good-first-moment}, \cref{lem:tame-second-moment}, and \cref{cor:spherical-survival} use only the score depth $k=\Theta_{a,b}(\log N)$ and the fixed correlations. Replacing $m$ by $N$ in that depth therefore gives success probability $\log^{-O_{a,b}(1)}N$.
+\end{proof}
+
+\begin{corollary}[Radius-budgeted score block]\label{cor:radius-budgeted-block}
+   Fix $\rho=\rho_c$ and $s=1-\rho$. At a Euclidean node with $m$ points in radius $R\ge r$, set
+   \[
+      N=m\left(\frac Rr\right)^{2s/\rho}.
+   \]
+   Then one continuation-mass score block has expected query path work and ordinary-far candidate occurrences
+   \[
+      F(m,R)\log^{O_c(1)}N,
+      \qquad
+      F(m,R)=m^\rho\left(\frac Rr\right)^{2s},
+   \]
+   stored point-path occurrences
+   \[
+      mF(m,R)\log^{O_c(1)}N,
+   \]
+   and inverse-polylogarithmic near-pair survival.
+\end{corollary}
+
+\begin{proof}
+   Since $R\ge r$, the chosen $N$ is at least $m$. Also
+   \[
+      N^\rho=m^\rho\left(\frac Rr\right)^{2s}=F(m,R).
+   \]
+   Apply \cref{cor:budgeted-block}. In the bounded-diameter instances used below, $\log N=\log^{O_c(1)}n$, so the logarithmic factors are absorbed into $\log^{O_c(1)}n$.
+\end{proof}
+
 \section{The certified score-and-ball process}
 
-We now describe the Euclidean part as one branching process. A node of the process carries both a local Gaussian score state and a certified Euclidean ball. Gaussian score edges perform filtering inside the current ball; recentering edges are deterministic branches that move to a smaller certified ball and reset the local score state. Thus the geometric recursion is not a separate wrapper around the score tree.
+We now describe the Euclidean part as one branching process. A node of the process carries both a cumulative Gaussian score state and a certified Euclidean ball. Gaussian score edges perform filtering inside the current ball; recentering edges are deterministic branches that move to a smaller certified ball while retaining the score prefix and updating the coordinate offset. Thus the geometric recursion is not a separate wrapper around the score tree.
 
 \subsection{Two elementary geometric facts}
 
@@ -450,6 +560,35 @@ The first fact certifies the radius decrease obtained from a spherical cap.
    The final estimate follows from $\sqrt{1-x}=1-\Theta(x)$ for sufficiently small positive $x$.
 \end{proof}
 
+\begin{figure}[t]\centering
+\begin{tikzpicture}[font=\small,>=stealth]
+\def\R{2.6}
+\draw[thick] (0,0) circle (\R);
+\node[circle,fill,inner sep=1pt,label=below left:{$o$}] (o) at (0,0) {};
+\draw[->,thick] (0,0) -- (35:1.5) node[midway,below,sloped,font=\scriptsize]{$w$};
+\def\g{0.55}
+\coordinate (oc) at ($(0,0)+(35:{\g*\R})$);
+\pgfmathsetmacro{\Rc}{\R*sqrt(1-\g*\g)}
+\coordinate (p1) at ($(oc)+(125:\Rc)$);
+\coordinate (p2) at ($(oc)+(-55:\Rc)$);
+\begin{scope}
+   \clip (0,0) circle (\R);
+   \fill[blue!12] ($(oc)+(125:\Rc)$) -- ($(oc)+(-55:\Rc)$)
+      -- ($(oc)+(-55:\Rc)+(35:2.5)$) -- ($(oc)+(125:\Rc)+(35:2.5)$) -- cycle;
+\end{scope}
+\draw[blue!60!black] (p1) -- (p2);
+\draw[red,thick,dashed] (oc) circle (\Rc);
+\node[circle,fill=red,inner sep=1pt] at (oc) {};
+\node[red!70!black,font=\scriptsize,above right] at (oc) {$o_C=o+\gamma R w$};
+\draw[->] (0,0) -- (p1) node[midway,above,sloped,font=\scriptsize]{$R$};
+\draw[->,red!70!black] (oc) -- ($(oc)+(160:\Rc)$) node[midway,above,sloped,font=\scriptsize]{$R\sqrt{1-\gamma^2}$};
+\draw[<->,green!50!black] (0,0) -- (oc) node[midway,below,sloped,font=\scriptsize]{$\gamma R$};
+\node[font=\scriptsize,blue!50!black] at ($(oc)+(35:1.4)$) {cap $C$};
+\end{tikzpicture}
+\caption{Cap recentering (\cref{lem:cap}). Every point of a $\gamma$-margin cap $C$ on the sphere of radius $R$ lies in the ball centered at $o_C=o+\gamma Rw$ (red, dashed) of radius $R\sqrt{1-\gamma^2}$. A margin $\gamma=\Theta_c(\eta)$ therefore certifies a relative radius drop of $\Theta_c(\eta^2)$, which is what the activation threshold $\tau=\lambda^2$ pays for.}
+\label{fig:cap}
+\end{figure}
+
 The second fact shows that thin radial shells do not degrade the approximation factor.
 
 \begin{lemma}[Angular gap on two shells]\label{lem:shell}
@@ -480,6 +619,33 @@ The second fact shows that thin radial shells do not degrade the approximation f
    \]
    because $(c^2-1)\Delta^2\ge0$. Shell discretization perturbs $S$, $T$, and $\Delta$ by relative $O_c(\eta)$, which yields the final claim.
 \end{proof}
+
+\begin{figure}[t]\centering
+\begin{tikzpicture}[font=\small,>=stealth]
+\def\S{2.9}\def\T{2.1}
+\node[circle,fill,inner sep=1pt,label=below:{$o$}] (o) at (0,0){};
+\draw[thick] (0,0) circle (\S);
+\draw[thick,gray] (0,0) circle (\T);
+\node[font=\scriptsize] at (-\S+0.2,\S-0.5) {data shell $S$};
+\node[font=\scriptsize,gray!60!black] at (-\T+0.15,-\T+0.45) {query shell $T$};
+\coordinate (q) at (60:\T);
+\fill (q) circle (1.4pt) node[above right,font=\scriptsize]{$q$};
+\coordinate (pn) at (72:\S);
+\fill[blue] (pn) circle (1.4pt) node[above,font=\scriptsize,blue]{$p$ (near)};
+\coordinate (pf) at (20:\S);
+\fill[red] (pf) circle (1.4pt) node[right,font=\scriptsize,red]{far};
+\draw[->] (0,0) -- (q);
+\draw[->] (0,0) -- (pn);
+\draw[blue,thick] (q) -- (pn) node[midway,above right,font=\scriptsize]{$\le r$};
+\draw[red,thick] (q) -- (pf) node[midway,below,font=\scriptsize]{$>cr$};
+\draw (60:0.8) arc (60:72:0.8);
+\node[font=\scriptsize] at (66:1.15) {$\theta_1$};
+\node[font=\scriptsize,align=center,anchor=north] at (0,-\S-0.4)
+   {$d_1^2=\dfrac{r^2-\Delta^2}{ST}$,\quad $d_2^2=\dfrac{c^2r^2-\Delta^2}{ST}$,\quad $\dfrac{d_2^2}{d_1^2}\ge c^2$\quad($\Delta=|S-T|$)};
+\end{tikzpicture}
+\caption{Angular gap on two shells (\cref{lem:shell}). Data points sit on radius $S$ and the query on radius $T$. Subtracting the common radial offset $\Delta=|S-T|$ from both the near radius $r$ and the far radius $cr$ only \emph{increases} the ratio of squared angular chord distances, so the spherical instance keeps the full $c$-approximation gap $d_2^2/d_1^2\ge c^2$.}
+\label{fig:shell}
+\end{figure}
 
 \subsection{Posterior stopping}
 
@@ -548,7 +714,25 @@ Then the fractional cost of entering and recursively searching $C$ is exactly
    =
    \alpha F(m,R).
 \]
-Thus disjoint activated children consume at most the parent potential, because $\sum_C\alpha_C\le1$. No cap geometry, balance condition, or bound on the number of children appears in this cancellation. Geometry enters only through the certified radii $R_C$.
+Thus disjoint activated children consume at most the parent potential, because $\sum_C\alpha_C\le1$. No cap geometry, balance condition, or bound on the number of children appears in this cancellation. Geometry enters only through the certified radii $R_C$. \Cref{fig:bellman} shows the cancellation schematically.
+
+\begin{figure}[t]\centering
+\begin{tikzpicture}[font=\small,>=stealth,node distance=8mm]
+\node[draw,rounded corners,fill=orange!12] (par) at (0,0)
+   {parent\ \ $F(m,R)=m^\rho\!\left(\tfrac Rr\right)^{2s}$};
+\node[draw,rounded corners,fill=blue!8] (c1) at (-3.4,-2) {$C_1:\ \alpha_1 m,\ \lambda_1 R$};
+\node[draw,rounded corners,fill=blue!8] (c2) at (0,-2) {$C_2:\ \alpha_2 m,\ \lambda_2 R$};
+\node[draw,rounded corners,fill=blue!8] (c3) at (3.4,-2) {$\cdots$};
+\draw[->] (par) -- (c1) node[midway,left,font=\scriptsize]{$\tau_1=\lambda_1^2$};
+\draw[->] (par) -- (c2) node[midway,right,font=\scriptsize]{$\tau_2=\lambda_2^2$};
+\draw[->] (par) -- (c3);
+\node[align=center,font=\scriptsize] at (0,-3.4)
+   {child charge $\left(\dfrac{\alpha_C}{\lambda_C^2}\right)^{\!s}\!F(\alpha_C m,\lambda_C R)=\alpha_C F(m,R)$
+   \qquad$\Rightarrow\quad \sum_C \alpha_C F(m,R)\le F(m,R)$ since $\sum_C\alpha_C\le1$};
+\end{tikzpicture}
+\caption{Radius Bellman cancellation. Activating a child of relative size $\alpha_C$ and certified radius $\lambda_C R$ at threshold $\tau_C=\lambda_C^2$ makes the posterior first-hit charge $(\alpha_C/\lambda_C^2)^s$ exactly cancel the radius factor $\lambda_C^{2s}$ in the child potential, leaving a charge of $\alpha_C F(m,R)$. Disjointness ($\sum_C\alpha_C\le1$) then bounds all children by the single parent potential, independently of how many children there are or how unbalanced they are.}
+\label{fig:bellman}
+\end{figure}
 
 The same idea controls space:
 \[
@@ -560,7 +744,53 @@ for disjoint children. Polynomially many shells and bounded-diameter roots contr
 
 \subsection{One cumulative score-and-ball tree}
 
-The data structure is a deterministic certified ball hierarchy coupled to a cumulative Gaussian score tree.
+The data structure is a deterministic certified ball hierarchy coupled to a cumulative Gaussian score tree; see \cref{fig:tree}.
+
+\begin{figure}[t]\centering
+\begin{tikzpicture}[
+   font=\small,
+   score/.style={->,>=stealth,thick},
+   recenter/.style={->,>=stealth,thick,dashed},
+   bnode/.style={circle,draw,fill=blue!8,minimum size=5mm,inner sep=0pt},
+   leaf/.style={rectangle,draw,fill=gray!12,rounded corners=1pt,inner sep=2pt},
+]
+\node[draw,rounded corners,fill=orange!12] (root) at (0,0) {$(P,\,o,\,R)$};
+\node[bnode] (a) at (-2.2,-1.3) {};
+\node[bnode] (b) at (-0.8,-1.3) {};
+\node[bnode] (c) at ( 0.8,-1.3) {};
+\node[bnode] (d) at ( 2.2,-1.3) {};
+\draw[score] (root) -- (a);
+\draw[score] (root) -- (b);
+\draw[score] (root) -- (c);
+\draw[score] (root) -- (d);
+\node[bnode] (a1) at (-2.6,-2.5) {};
+\node[bnode] (a2) at (-1.8,-2.5) {};
+\node[bnode] (c1) at ( 0.4,-2.5) {};
+\node[bnode] (c2) at ( 1.2,-2.5) {};
+\draw[score] (a) -- (a1);
+\draw[score] (a) -- (a2);
+\draw[score] (c) -- (c1);
+\draw[score] (c) -- (c2);
+\node[leaf] (la) at (-2.6,-3.5) {scan};
+\node[leaf] (lc) at ( 1.2,-3.5) {scan};
+\draw[score] (a1) -- (la);
+\draw[score] (c2) -- (lc);
+\node[draw,rounded corners,fill=orange!12] (child) at (3.7,-2.7)
+   {$(C,\,o_C,\,\lambda_C R)$};
+\draw[recenter] (c1) to[bend left=12] node[above,sloped,font=\scriptsize]
+   {activate $\tau_C=\lambda_C^2$} (child);
+\node[bnode] (ch1) at (3.1,-3.8) {};
+\node[bnode] (ch2) at (4.3,-3.8) {};
+\draw[score] (child) -- (ch1);
+\draw[score] (child) -- (ch2);
+\begin{scope}[shift={(-3.4,-4.6)}]
+   \draw[score] (0,0) -- (0.6,0); \node[right,font=\scriptsize] at (0.6,0){score edge: Gaussian filtering within the current ball};
+   \draw[recenter] (0,-0.45) -- (0.6,-0.45); \node[right,font=\scriptsize] at (0.6,-0.45){recentering edge: move to a certified child, retain the score prefix};
+\end{scope}
+\end{tikzpicture}
+\caption{One cumulative score-and-ball tree with two edge types. Solid score edges advance the shared Gaussian filtering inside the current certified ball; ordinary paths follow them to resident scans. A dashed recentering edge fires when a child's posterior reaches $\tau_C=\lambda_C^2$: the query moves into the smaller certified ball $(C,o_C,\lambda_C R)$ but keeps its cumulative score prefix through a stored offset, so no fresh spherical decoder is started.}
+\label{fig:tree}
+\end{figure}
 
 At a state $u=(P_u,o_u,R_u)$, preprocessing proposes a disjoint partition of $P_u$ into certified children $C$ with centers $o_C$ and radii
 \[
@@ -621,7 +851,11 @@ When a query enters an activated child, the cumulative score prefix is retained.
 \end{theorem}
 
 \begin{proof}
-   The continuation-mass score tree gives the ideal spherical query and storage exponents with only polylogarithmic overhead by \cref{lem:continuation-work} and \cref{cor:spherical-survival}. The shell lemma preserves the critical Euclidean angular gap up to inverse-polylogarithmic slack, which is absorbed into the displayed logarithmic factors.
+   The radius-budgeted continuation block in \cref{cor:radius-budgeted-block} gives the parent potential
+   \[
+      F(m,R)=m^\rho\left(\frac Rr\right)^{2(1-\rho)}
+   \]
+   directly as score-tree work, with only polylogarithmic overhead and inverse-polylogarithmic near survival. The shell lemma preserves the critical Euclidean angular gap up to inverse-polylogarithmic slack, which is absorbed into the displayed logarithmic factors.
 
    For every certified child, \cref{lem:first-hit} bounds the fractional query mass that can activate the child, and the choice $\tau_C=\lambda_C^2$ converts that activation cost into $\alpha_C F(m,R)$ by the Bellman cancellation. Summing over disjoint children is therefore bounded by the parent potential. The detector-vote rule is the integer version of this accounting: an activated child has already received its own recursive budget from parent detector votes. Space is controlled by disjointness and convexity of $x^{1+\rho}$.
 
@@ -677,7 +911,7 @@ The same kernels support ordinary paths and detector cohorts; only their transit
 The restart analysis pays for the same loss once per geometric level. The cumulative process avoids that multiplication in two ways.
 
 \paragraph{The score process is global.}
-Continuation-mass pruning controls the total number of explored prefixes in one cumulative tree. Recentered children inherit the score prefix and only change the coordinate offset for future increments. Therefore there is no per-child independent spherical failure penalty.
+Continuation-mass pruning controls the total number of explored prefixes in one cumulative tree. The budgeted form in \cref{cor:radius-budgeted-block} lets a node spend the full radius-weighted potential $F(m,R)$ inside the same score block by using the effective budget $N=m(R/r)^{2(1-\rho)/\rho}$. Recentered children inherit the score prefix and only change the coordinate offset for future increments. Therefore there is no per-child independent spherical failure penalty in the target process.
 
 \paragraph{Geometry is paid by Bellman cancellation.}
 The child activation threshold $\tau_C=\lambda_C^2$ makes the radius decrease cancel the posterior stopping cost. The recursive potential of all activated children is at most the parent potential:
@@ -925,8 +1159,31 @@ which is below the final $2/3$ overhead after the choice of $\eta$ in \cref{prop
    \[
       \eta=\Theta_c\!\left(\left(\frac{\ell^2}{L}\right)^{1/3}\right).
    \]
-   Then both terms are $O_c(L^{2/3}\ell^{2/3})$, proving the displayed bounds.
+   Then both terms are $O_c(L^{2/3}\ell^{2/3})$, proving the displayed bounds. \Cref{fig:balance} shows the balance.
 \end{proof}
+
+\begin{figure}[t]\centering
+\begin{tikzpicture}[font=\small,>=stealth,xscale=1.5,yscale=1.0]
+\draw[->] (0,0) -- (5.2,0) node[right]{$\eta$};
+\draw[->] (0,0) -- (0,4.4) node[above]{overhead exponent $\log(\cdot)$};
+% term1: slack, increasing line ~ eta L
+\draw[blue,thick,domain=0:5,samples=2] plot (\x,{0.5*\x});
+\node[blue,font=\scriptsize,right] at (4.3,2.35) {$\eta L$ (slack)};
+% term2: restart phases, decreasing ~ eta^{-2} ell^2
+\draw[red,thick,domain=0.5:5,samples=80,smooth] plot (\x,{2/\x});
+\node[red,font=\scriptsize,right] at (3.55,0.75) {$\eta^{-2}\ell^2$ (restart phases)};
+% envelope max (the actual overhead), thicker
+\draw[black,very thick,domain=0.5:2,samples=60,smooth] plot (\x,{2/\x});
+\draw[black,very thick,domain=2:5,samples=2] plot (\x,{0.5*\x});
+% optimum marker
+\fill (2,1) circle (1.6pt);
+\draw[dashed] (2,0) -- (2,1) -- (0,1);
+\node[below,font=\scriptsize] at (2,0) {$\eta^*\asymp(\ell^2/L)^{1/3}$};
+\node[left,font=\scriptsize] at (0,1) {$L^{2/3}\ell^{2/3}$};
+\end{tikzpicture}
+\caption{Balancing the two overhead terms in the restartable-slice route (\cref{prop:slice-two-thirds}). The geometric slack contributes $\eta L$ (rising), while paying a fresh polylogarithmic stage cost at each of $\Theta(\eta^{-2}\ell)$ restarts contributes $\eta^{-2}\ell^2$ (falling). The realized overhead is their maximum (thick curve), minimized at $\eta^*\asymp(\ell^2/L)^{1/3}$, where both equal $L^{2/3}\ell^{2/3}$ with $L=\log n$, $\ell=\log\log n$. The Bellman-cohort mechanism removes the falling term entirely, collapsing the optimum to $\polylog$.}
+\label{fig:balance}
+\end{figure}
 
 This result is not the final target: it still pays a fresh polylogarithmic factor after every certified radius reduction. Its value is that the recursive object is the prefix-conditioned slice $C[U,w]$, whose budget is exactly supplied by the hard leaf. The false full-child statement is no longer needed.
 
