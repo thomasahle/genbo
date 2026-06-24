@@ -51,7 +51,7 @@ for Optimal Data-Dependent Euclidean ANN}
    \[
       \rho_c=\frac{1}{2c^2-1}.
    \]
-   Known worst-case constructions achieve $n^{\rho_c+o(1)}$ query time and $n^{1+\rho_c+o(1)}$ space. The goal here is to remove the subpolynomial loss, not merely optimize it. We describe a single cumulative score-and-ball process intended to achieve
+   Known worst-case constructions achieve $n^{\rho_c+o(1)}$ query time and $n^{1+\rho_c+o(1)}$ space. The goal here is to remove the subpolynomial loss, not merely optimize it. We describe a single cumulative score-and-ball process achieving
    \[
       Q(n,d)=d\,n^{\rho_c}\log^{O_c(1)}n,
       \qquad
@@ -175,6 +175,68 @@ All geometric discretization parameters are chosen as inverse powers of $\log n$
 \subsection{Expected cost and truncation}
 
 The filtering constructions naturally give expected numbers of explored nodes and candidate occurrences. We use the following standard conversion. If one copy succeeds with probability at least $p_0>0$ and has expected query work at most $T$, stop it after $K T$ work for a sufficiently large constant $K=K(p_0)$. Markov's inequality shows that the truncation probability is at most $1/K$, so the truncated copy still succeeds with constant probability. A constant number of independent copies then restores any desired fixed success probability below one. The same idea applies to space: rebuild whenever the realized space exceeds a fixed multiple of its expectation. We therefore state expected bounds in intermediate lemmas and capped bounds in the final theorem.
+
+\subsection{Dimension and diameter localization}
+
+The score-and-ball proof below works inside projected cells whose diameter is only polylogarithmically larger than $r$. We record the reduction explicitly.
+
+\begin{lemma}[Projected bounded-diameter localization]\label{lem:localization}
+   Fix $c>1$. It is enough to solve $(c',r')$-ANN instances in dimension
+   \[
+      D=\log^{O_c(1)}n
+   \]
+   whose point sets lie in balls of radius
+   \[
+      R_0\le r'\log^{O_c(1)}n,
+   \]
+   with exponent $\rho_{c'}\le\rho_c+O_c(1/\log n)$. The reduction uses only $\log^{O_c(1)}n$ instances and changes query time and space by polylogarithmic factors, plus the unavoidable $dn$ storage and $d\log^{O_c(1)}n$ projection work.
+\end{lemma}
+
+\begin{proof}
+   Choose
+   \[
+      \varepsilon=\frac{1}{C_c\log n},
+      \qquad
+      D=C_c\varepsilon^{-2}\log n,
+   \]
+   and draw $T=C_c\log n$ independent Gaussian maps
+   \[
+      \Pi_t:\R^d\to\R^D,
+      \qquad
+      \Pi_t x=\frac1{\sqrt D}(g_1\cdot x,\ldots,g_D\cdot x),
+   \]
+   where the $g_i$ are standard Gaussian vectors. For a fixed query $q$, a standard chi-square tail and a union bound over the $n$ data points show that, for one projection, all distances $\|p-q\|_2$ are preserved within a factor $1\pm\varepsilon$ with probability at least $0.99$ after increasing $C_c$. This statement is only over the data-structure randomness for the fixed query; no uniform guarantee over all possible queries is needed.
+
+   In each projected copy, put a randomly shifted axis-aligned grid of side length
+   \[
+      h=20\sqrt D\,r',
+      \qquad
+      r'=(1+\varepsilon)r.
+   \]
+   If $\|p-q\|_2\le r$ and the projection is good, then
+   \[
+      \|\Pi_t p-\Pi_t q\|_2\le r'.
+   \]
+   For a random grid shift, the probability that two projected points at distance at most $r'$ are separated by some grid hyperplane is at most
+   \[
+      \frac{\|\Pi_t p-\Pi_t q\|_1}{h}
+      \le
+      \frac{\sqrt D\,r'}{20\sqrt D\,r'}
+      \le
+      \frac1{20}.
+   \]
+   Hence a near neighbor shares the query cell in a constant fraction of the projected grids.
+
+   Each grid cell has projected diameter at most $h\sqrt D=20Dr'$, so it is contained in a ball of radius $R_0=10Dr'=r\log^{O_c(1)}n$. We build one score-and-ball instance for every nonempty projected cell. The total number of stored projected point occurrences over one grid is $n$, and over all grids is $n\log^{O_c(1)}n$.
+
+   A point with original distance greater than $cr$ from $q$ has projected distance greater than $(1-\varepsilon)cr$ in a good projection. Therefore a projected $(c',r')$-ANN answer with
+   \[
+      c'=\frac{(1-\varepsilon)c}{1+\varepsilon}
+   \]
+   is guaranteed, after verification in the original metric, to contain a valid $c$-approximate neighbor whenever one exists. Since $c\mapsto 1/(2c^2-1)$ is smooth in a fixed neighborhood of the chosen $c>1$, $\rho_{c'}\le\rho_c+O_c(\varepsilon)$, so $n^{\rho_{c'}}\le e^{O_c(1)}n^{\rho_c}$.
+
+   At query time we project $q$ into all $T$ copies, query the cell containing $\Pi_tq$ in each copy, and verify returned candidates in the original metric. The projection work is $dD T=d\log^{O_c(1)}n$, and the number of localized instances queried is polylogarithmic. This preserves the claimed asymptotic bounds.
+\end{proof}
 
 \section{The cumulative-score spherical primitive}
 
@@ -1081,7 +1143,7 @@ When a query enters an activated child, the cumulative score prefix is retained.
 
 \section{Proof of the main theorem}
 
-The main theorem follows from the randomized one-tree endpoint in \cref{prop:randomized-polylog}, applied to the polylogarithmic family of bounded-diameter localized instances and inverse-polylogarithmic shell decompositions. Expected bounds are converted to capped bounds by the truncation paragraph in the preliminaries. The cohort theorem above is retained as a comparison route for more general child hierarchies, but it is not needed for \cref{thm:main}.
+The main theorem follows from the randomized one-tree endpoint in \cref{prop:randomized-polylog}, applied after the projected bounded-diameter localization of \cref{lem:localization} and inverse-polylogarithmic shell decompositions. Expected bounds are converted to capped bounds by the truncation paragraph in the preliminaries. The cohort theorem above is retained as a comparison route for more general child hierarchies, but it is not needed for \cref{thm:main}.
 
 \section{The algorithm as one tree}
 
@@ -1090,7 +1152,7 @@ For clarity, we summarize the actual data structure as a single tree with two ed
 \subsection{Preprocessing}
 
 \begin{enumerate}
-   \item Apply the usual bounded-diameter localization and build the associated polylogarithmic family of localized instances.
+   \item Apply the projected bounded-diameter localization of \cref{lem:localization} and build the associated polylogarithmic family of localized instances.
    \item Create a root state $(P,o,R)$ for each localized instance.
    \item At every nonterminal state, divide the resident points into radial shells of inverse-polylogarithmic relative width.
    \item Build the cumulative Gaussian score tree with continuation-mass pruning and effective budget determined by $F_4(m,R)=m^\rho\Psi(R)$.
