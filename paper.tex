@@ -633,6 +633,18 @@ not just $m^\rho$.
    Apply \cref{cor:budgeted-block}. In the bounded-diameter instances used below, $\log N=\log^{O_c(1)}n$, so the logarithmic factors are absorbed into $\log^{O_c(1)}n$.
 \end{proof}
 
+\begin{lemma}[Continuation-sampled detector tokens]\label{lem:continuation-detector}
+   In any continuation-mass score block, a detector token can be sampled as follows. At a retained prefix $u$, assign every retained child $v$ its one-point continuation mass $H(v)$ for the remaining schedule, choose one child with probability proportional to $H(v)$, and kill the token if the total retained child mass is zero. Then the resulting detector law is normalized: for every prefix-free family $\mathcal U$,
+   \[
+      \sum_{u\in\mathcal U}\Prb[\text{the token reaches }u]\le1.
+   \]
+   The same construction applies to the adaptive schedule of \cref{def:regular-adaptive-score}, using the exact conditional continuation mass for the remaining predictable schedule.
+\end{lemma}
+
+\begin{proof}
+   A detector token has a single current prefix. At each score step it either dies or moves to exactly one child. Hence the events that it first reaches members of a prefix-free family are disjoint. Summing their probabilities gives at most one. The adaptive case is identical because the continuation masses are predictable once the current prefix is fixed.
+\end{proof}
+
 \section{The certified score-and-ball process}
 
 We now describe the Euclidean part as one branching process. A node of the process carries both a cumulative Gaussian score state and a certified Euclidean ball. Gaussian score edges perform filtering inside the current ball; recentering edges are deterministic branches that move to a smaller certified ball while retaining the score prefix and updating the coordinate offset. Thus the geometric recursion is not a separate wrapper around the score tree.
@@ -757,7 +769,7 @@ The second fact shows that thin radial shells do not degrade the approximation f
 
 \subsection{Posterior stopping}
 
-Fix a geometric node containing $m$ points in a certified ball $\Ball(o,R)$. The next two lemmas use a \emph{normalized detector law}, not the ordinary retained-prefix multiplicity of the continuation decoder. A detector token follows one score channel at a time, or dies, so every prefix-free set has total detector mass at most one.
+Fix a geometric node containing $m$ points in a certified ball $\Ball(o,R)$. The next two lemmas use the continuation-sampled detector law of \cref{lem:continuation-detector}, not the ordinary retained-prefix multiplicity of the continuation decoder. A detector token follows one score channel at a time, or dies, so every prefix-free set has total detector mass at most one.
 
 Let $\mu(u)$ be the probability that one detector token driven by a uniformly random data point in the node reaches score prefix $u$, and let $\nu_q(u)$ be the corresponding one-token detector probability for query $q$. Thus, for every prefix-free family $\mathcal U$,
 \[
@@ -1175,7 +1187,7 @@ For comparison with the randomized cap-thinning route, we also record a posterio
 
 \emph{Ordinary paths} use the continuation-mass decoder from \cref{lem:continuation-work}. They find isolated near points and residual leaves.
 
-\emph{Detector cohorts} are used only to activate geometric children. They follow normalized one-token detector laws of the posterior-stopping section, not the raw ordinary branching multiplicity. A detector path votes for at most one child: the first child whose posterior reaches the radius threshold $\tau_C=\lambda_C^2$. Child $C$ is activated only after it receives
+\emph{Detector cohorts} are used only to activate geometric children. They follow the continuation-sampled one-token detector law of \cref{lem:continuation-detector}, not the raw ordinary branching multiplicity. A detector path votes for at most one child: the first child whose posterior reaches the radius threshold $\tau_C=\lambda_C^2$. Child $C$ is activated only after it receives
 \[
    T_C=\log^{A_c}n\,|C|^\rho\left(\frac{R_C}{r}\right)^{2s}
 \]
