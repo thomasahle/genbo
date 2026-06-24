@@ -54,7 +54,7 @@ for Optimal Data-Dependent Euclidean ANN}
       \qquad
       S(n,d)=dn+n^{1+\rho_c}\log^{O_c(1)}n.
    \]
-   The process has three parts. First, local spherical filtering uses a cumulative Gaussian score tree with continuation-mass pruning rather than levelwise hard thresholds. Second, geometric children are activated by an exact posterior stopping rule: a child of radius $\lambda R$ is entered when its posterior reaches $\tau=\lambda^2$. The resulting Bellman cancellation pays for recursion with no dependence on the number or balance of children. Third, tempered detector cohorts materialize this fractional activation while ordinary paths continue to search residual leaves. We prove the exact work and Bellman identities, prove the spherical good-leaf first moment, and isolate the remaining probabilistic tasks as a spherical second-moment lemma and a cohort-or-leaf lemma. Under those lemmas, the structure has the polylogarithmic bounds above.
+   The process has three parts. First, local spherical filtering uses a cumulative Gaussian score tree with continuation-mass pruning rather than levelwise hard thresholds. Second, geometric children are activated by an exact posterior stopping rule: a child of radius $\lambda R$ is entered when its posterior reaches $\tau=\lambda^2$. The resulting Bellman cancellation pays for recursion with no dependence on the number or balance of children. Third, tempered detector cohorts materialize this fractional activation while ordinary paths continue to search residual leaves. We prove the exact work and Bellman identities, prove the spherical tame-good first moment, and isolate the remaining probabilistic tasks as a spherical second-moment lemma and a cohort-or-leaf lemma. Under those lemmas, the structure has the polylogarithmic bounds above.
 \end{abstract}
 
 \section{Introduction}
@@ -249,16 +249,28 @@ Early scores may lie well below the final linear trajectory; the barrier tighten
    Summing over $m$ ordinary far points proves the far-candidate bound. Summing the one-point bound over stored data points proves the storage bound.
 \end{proof}
 
-\begin{definition}[Good near leaf]\label{def:good-near-leaf}
-   Fix a near pair $(p,q)$ with $\ip{p}{q}=a$. A leaf $v$ is good for $(p,q)$ if
+\begin{definition}[Tame good near leaf]\label{def:good-near-leaf}
+   Fix a near pair $(p,q)$ with $\ip{p}{q}=a$. For a prefix $u$ at level $\ell$, write
+   \[
+      Y_u(x)=S_u(x)-\ell t
+   \]
+   and define the centered common coordinate
+   \[
+      M_u=\frac{Y_u(p)+Y_u(q)}{\sqrt{2(1+a)}}.
+   \]
+   A leaf $v$ is tame good for $(p,q)$ if
    \[
       S_v(p),S_v(q)\in[kt,kt+1]
    \]
-   and every prefix $u\preceq v$ satisfies the continuation-mass pruning rule for both $p$ and $q$.
+   every prefix $u\preceq v$ satisfies the continuation-mass pruning rule for both $p$ and $q$, and every prefix satisfies the analytical upper barrier
+   \[
+      M_u\le H_{a,b}
+   \]
+   for a sufficiently large fixed constant $H_{a,b}$. This upper barrier is used only in the proof; the algorithm does not enforce it.
 \end{definition}
 
-\begin{lemma}[Good-leaf first moment]\label{lem:good-first-moment}
-   For every fixed $-1<b<a<1$ and sufficiently large pruning constant $A$, if $Z$ is the number of good near leaves for a pair of correlation exactly $a$, then
+\begin{lemma}[Tame-good first moment]\label{lem:good-first-moment}
+   For every fixed $-1<b<a<1$ and sufficiently large pruning constant $A$, if $Z$ is the number of tame good near leaves for a pair of correlation exactly $a$, then
    \[
       \E Z\ge k^{-O_{a,b}(1)}.
    \]
@@ -287,11 +299,11 @@ Early scores may lie well below the final linear trajectory; the barrier tighten
    \[
       B^k\frac{dP}{dQ}=\exp(O_{a,b}(1)).
    \]
-   Therefore the expected number of good leaves under the original measure is, up to constant factors, the $Q$-probability that one tilted two-dimensional walk has endpoint in the unit square and stays above the two continuation barriers.
+   Therefore the expected number of tame good leaves under the original measure is, up to constant factors, the $Q$-probability that one tilted two-dimensional walk has endpoint in the unit square, stays above the two continuation barriers, and stays below the common-coordinate upper barrier.
 
    Under $Q$, after subtracting the linear drift $\ell t$, each coordinate is a centered Gaussian walk. The endpoint has covariance $k\Sigma$, so the probability that both centered endpoints lie in $[0,1]$ is $\Theta_{a,b}(1/k)$.
 
-   It remains to check that the pruning barriers do not cost more than a polynomial factor. Write $r=k-\ell$ and let
+   It remains to check that the path barriers do not cost more than a polynomial factor. Write $r=k-\ell$ and let
    \[
       d_r=\sqrt{2r(r\ell_B+A\log k)}-rt.
    \]
@@ -304,7 +316,7 @@ Early scores may lie well below the final linear trajectory; the barrier tighten
    \[
       d_r\ge c_{a,b}\sqrt{A r\log k}
    \]
-   after increasing $A$. Conditioned on an endpoint in $[0,1]$, each coordinate is a Gaussian bridge whose variance at distance $r$ from the endpoint is $O(r)$. A union bound over $r$ therefore gives failure probability
+   after increasing $A$. Conditioned on endpoints in $[0,1]^2$, each coordinate is a Gaussian bridge whose variance at distance $r$ from the endpoint is $O(r)$. A union bound over $r$ therefore gives failure probability
    \[
       \sum_{r\ge C\log k}\exp(-\Omega_{a,b}(r))
       +
@@ -312,11 +324,18 @@ Early scores may lie well below the final linear trajectory; the barrier tighten
       =
       o(1)
    \]
-   for $A$ large enough. Applying this to both coordinates proves that the bridge satisfies both continuation barriers with probability at least a positive constant conditional on the endpoint event. Hence $\E Z\ge k^{-O_{a,b}(1)}$.
+   for $A$ large enough.
+
+   The common coordinate $M_u$ is a standard one-dimensional centered Gaussian bridge, independent of the difference coordinate. By the reflection principle for a Gaussian bridge, conditioned on its endpoint lying in a fixed bounded interval below $H_{a,b}$,
+   \[
+      \Prb_Q\!\left[\max_{u\preceq v}M_u\le H_{a,b}\right]
+      \ge k^{-O_{a,b}(1)}.
+   \]
+   On this upper-barrier event, violation of either continuation lower barrier would force the difference-coordinate bridge to make an excursion of size at least $d_r-O_{a,b}(1)$ at distance $r$ from the endpoint. The same union bound as above shows that this has probability $o(1)$ after increasing $A$. Thus, conditional on the endpoint event, all barriers in the definition of tame good hold with probability at least $k^{-O_{a,b}(1)}$. Hence $\E Z\ge k^{-O_{a,b}(1)}$.
 \end{proof}
 
 \begin{assumption}[One-sided spherical second moment]\label{asm:spherical-second-moment}
-   For every fixed $-1<b<a<1$, the good-leaf count $Z$ from \cref{lem:good-first-moment} satisfies
+   For every fixed $-1<b<a<1$, the tame-good leaf count $Z$ from \cref{lem:good-first-moment} satisfies
    \[
       \E Z^2\le k^{O_{a,b}(1)}.
    \]
@@ -335,7 +354,7 @@ Early scores may lie well below the final linear trajectory; the barrier tighten
    Since $k=\Theta_{a,b}(\log m)$, this is the desired inverse-polylogarithmic survival probability. Correlation larger than $a$ can only improve the tilted endpoint exponent; the same constants cover a fixed compact neighborhood of the critical parameters after the usual slack adjustment.
 \end{proof}
 
-The expected-work and first-moment parts of the spherical primitive are therefore already polylogarithmic. The missing spherical part is \cref{asm:spherical-second-moment}: a lowest-common-ancestor second-moment calculation for good leaves using only a one-sided analytical barrier. No algorithmic two-sided tube is imposed.
+The expected-work and first-moment parts of the spherical primitive are therefore already polylogarithmic. The missing spherical part is \cref{asm:spherical-second-moment}: a lowest-common-ancestor second-moment calculation for tame good leaves using the one-sided analytical upper barrier. No algorithmic two-sided tube is imposed.
 
 \section{The certified score-and-ball process}
 
@@ -611,7 +630,7 @@ The remaining issue is not an exponent calculation; it is the cohort-or-leaf pro
 The draft now has two explicit probabilistic obligations.
 
 \paragraph{One-sided spherical second moment.}
-The expected work of continuation-mass pruning is already proved in \cref{lem:continuation-work}, and \cref{lem:good-first-moment} proves an inverse-polynomial first moment for good near leaves. What remains is to prove \cref{asm:spherical-second-moment}: the LCA second moment for those good leaves should be only polynomial in $k$. The intended proof uses a one-sided analytical upper barrier to control prolific early prefixes, while the algorithm itself enforces only continuation-mass pruning.
+The expected work of continuation-mass pruning is already proved in \cref{lem:continuation-work}, and \cref{lem:good-first-moment} proves an inverse-polynomial first moment for tame good near leaves. What remains is to prove \cref{asm:spherical-second-moment}: the LCA second moment for those tame good leaves should be only polynomial in $k$. The one-sided analytical upper barrier controls prolific early prefixes, while the algorithm itself enforces only continuation-mass pruning.
 
 \paragraph{Cohort-or-leaf.}
 \Cref{asm:cohort-or-leaf} should be tested against the hard cases: an isolated near point next to a massive far cluster, a near point on a cluster boundary, a tiny child that becomes heavy only late, and symmetric far shells. The proof should combine the posterior martingale, the one-sided continuation barrier, and concentration for detector votes.

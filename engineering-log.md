@@ -15,3 +15,4 @@
 - Replaced route-depth restart accounting with posterior first-hit and radius Bellman cancellation. The exact threshold is `tau=lambda^2`, which turns the recursive child charge into `alpha F(parent)`.
 - Added the cohort-or-leaf assumption as the central remaining coupling theorem between ordinary paths and detector cohorts.
 - Split the spherical survival gap into a proved good-leaf first moment and a remaining one-sided LCA second-moment assumption. The first moment uses the tilted measure, the endpoint unit square, and a Gaussian-bridge union bound for the continuation barrier.
+- Refined the spherical witness set to "tame good" leaves with an analytical upper barrier on the common score coordinate. This upper barrier is not enforced by the algorithm, but it is needed to make the LCA second-moment target plausible by preventing prolific high shared prefixes.
