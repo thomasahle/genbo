@@ -742,6 +742,101 @@ The same idea controls space:
 \]
 for disjoint children. Polynomially many shells and bounded-diameter roots contribute only $\log^{O_c(1)}n$ factors when shell widths and distortions are inverse-polynomial in $\log n$.
 
+\subsection{Prefix-conditioned slice accounting}
+
+The preceding Bellman cancellation applies to deterministic full children. The full-child version is too coarse for the persistent score process: a rare score prefix can isolate an atypical part of a large child, while the full child would require the budget of all its points. The right recursive object is the slice conditioned on the score prefix itself.
+
+\begin{lemma}[Prefix-conditioned slice accounting]\label{lem:prefix-slice-accounting}
+   Let a parent node contain $m$ points in radius $R$, and let $\mathcal U$ be a prefix-free family of score prefixes. Write $\mu(u)$ for the data predictive mass of prefix $u$ and $\nu_q(u)$ for the query predictive mass. At each prefix $u$, suppose we have disjoint certified slices $C_{u,j}$ with
+   \[
+      |C_{u,j}|=z_{u,j}\,\mu(u)m,
+      \qquad
+      R_{u,j}=\lambda_{u,j}R,
+   \]
+   and at most $J$ slices for each $u$. Then the total query charge of all prefix-conditioned slices satisfies
+   \[
+      \sum_{u\in\mathcal U}\sum_j
+      \nu_q(u)^s F(|C_{u,j}|,R_{u,j})
+      \le
+      J^{1-\rho}F(m,R).
+   \]
+   Their storage charge satisfies
+   \[
+      \sum_{u\in\mathcal U}\sum_j
+      |C_{u,j}|\,F(|C_{u,j}|,R_{u,j})
+      \le
+      mF(m,R).
+   \]
+\end{lemma}
+
+\begin{proof}
+   For the query charge,
+   \[
+      F(|C_{u,j}|,R_{u,j})
+      =
+      z_{u,j}^{\rho}\mu(u)^\rho\lambda_{u,j}^{2s}F(m,R).
+   \]
+   Since $\lambda_{u,j}\le1$ and the slices at a fixed prefix are disjoint,
+   \[
+      \sum_j z_{u,j}^{\rho}
+      \le
+      J^{1-\rho}\left(\sum_j z_{u,j}\right)^\rho
+      \le
+      J^{1-\rho}.
+   \]
+   Therefore
+   \[
+      \sum_{u,j}\nu_q(u)^sF(|C_{u,j}|,R_{u,j})
+      \le
+      J^{1-\rho}F(m,R)
+      \sum_{u\in\mathcal U}\mu(u)^\rho\nu_q(u)^s.
+   \]
+   Hölder's inequality and prefix-freeness give
+   \[
+      \sum_{u\in\mathcal U}\mu(u)^\rho\nu_q(u)^s
+      \le
+      \left(\sum_{u\in\mathcal U}\mu(u)\right)^\rho
+      \left(\sum_{u\in\mathcal U}\nu_q(u)\right)^s
+      \le1.
+   \]
+
+   For storage, put $G(m,R)=mF(m,R)$. Then
+   \[
+      G(|C_{u,j}|,R_{u,j})
+      =
+      z_{u,j}^{1+\rho}\mu(u)^{1+\rho}\lambda_{u,j}^{2s}G(m,R).
+   \]
+   Since $\sum_j z_{u,j}^{1+\rho}\le\sum_j z_{u,j}\le1$ and $\sum_u\mu(u)^{1+\rho}\le\sum_u\mu(u)\le1$, summing over all prefixes and slices gives at most $G(m,R)$.
+\end{proof}
+
+Thus prefix-conditioned recentering avoids the full-child budget obstruction. If a heavy cap is discovered inside a score bucket, the recursive child is that bucket slice, not the global cluster containing the bucket. When the number of peeled slices per prefix is polylogarithmic, \cref{lem:prefix-slice-accounting} gives the desired parent-potential bound directly.
+
+\begin{assumption}[Prefix-slice lineage survival]\label{asm:prefix-slice-survival}
+   In the cumulative score tree with prefix-conditioned recentering slices, fix a true near pair $(p,q)$. With probability at least $\log^{-O_c(1)}n$, there is one cumulative ordinary score path such that the following route succeeds:
+   \begin{enumerate}
+      \item at any reached prefix whose bucket has no heavy compatible cap slice containing $p$, the cap-free residual scan exposes $p$;
+      \item otherwise the path follows a certified prefix-conditioned slice containing $p$ and compatible with $q$, retaining the score prefix and continuing in the recentered coordinates;
+      \item after finitely many such recenterings, the path reaches a resident scan containing $p$.
+   \end{enumerate}
+\end{assumption}
+
+\begin{proposition}[Polylogarithmic prefix-slice process]\label{prop:prefix-slice-process}
+   Under \cref{asm:prefix-slice-survival}, the cumulative score-and-ball process restricted to prefix-conditioned recentering slices has expected query time
+   \[
+      d\,n^{\rho_c}\log^{O_c(1)}n
+   \]
+   and expected space
+   \[
+      dn+n^{1+\rho_c}\log^{O_c(1)}n.
+   \]
+\end{proposition}
+
+\begin{proof}
+   Use the radius-budgeted score block of \cref{cor:radius-budgeted-block} at every state. Prefix-conditioned child slices are charged by \cref{lem:prefix-slice-accounting}; the polylogarithmic number of peeled slices per prefix contributes only the $J^{1-\rho}=\log^{O_c(1)}n$ factor. Space is bounded by the storage part of \cref{lem:prefix-slice-accounting}. Residual scans are charged to ordinary far candidates as in \cref{lem:slice-residual}, after using the shell lemma to preserve the critical angular gap.
+
+   By \cref{asm:prefix-slice-survival}, one copy reaches either a residual scan or a final resident scan containing the true near neighbor with inverse-polylogarithmic probability. Polylogarithmic amplification and the truncation paragraph in the preliminaries convert the expected bounds to the displayed capped bounds with constant success probability.
+\end{proof}
+
 \subsection{One cumulative score-and-ball tree}
 
 The data structure is a deterministic certified ball hierarchy coupled to a cumulative Gaussian score tree; see \cref{fig:tree}.
@@ -797,6 +892,8 @@ At a state $u=(P_u,o_u,R_u)$, preprocessing proposes a disjoint partition of $P_
    R_C=\max_{p\in C}\|p-o_C\|_2.
 \]
 The partition may come from $k$-center, $k$-means, cap proposals, or any other routine; correctness uses only the certified radius. A child is geometrically useful when $R_C=\lambda_C R_u$ with $\lambda_C<1$ bounded away from one, and small or shallow residual sets are stored for resident scan.
+
+In the prefix-slice variant, preprocessing also attaches certified children to score prefixes. For a retained prefix $a$, let $P_u[a]$ be the bucket of resident points reaching that prefix. Heavy cap slices are peeled inside $P_u[a]$ exactly as in the restartable-slice construction, but the recursive child is the conditioned slice $C[a]\subseteq P_u[a]$. These children are not full clusters of $P_u$; their query and storage costs are paid by \cref{lem:prefix-slice-accounting}.
 
 Queries keep two populations on the same cumulative score tree.
 
@@ -1198,7 +1295,7 @@ The continuation-mass spherical decoder is proved in \cref{lem:continuation-work
 \Cref{prop:slice-two-thirds} proves the restartable $2/3$ rung at the current level of detail. The remaining audits for a polished version are to write the high-probability truncation constants for every stage explicitly and to align the bounded-diameter and ball-to-shell localization with the exact constants in the slice construction.
 
 \paragraph{Cohort-or-leaf.}
-\Cref{asm:cohort-or-leaf} is the route-level condition needed for the polylogarithmic endpoint. It should be tested against the hard cases: an isolated near point next to a massive far cluster, a near point on a cluster boundary, a tiny child that becomes heavy only late, and symmetric far shells. The proof must show a whole-lineage inverse-polylogarithmic event, not merely an inverse-polylogarithmic event at each level.
+\Cref{asm:cohort-or-leaf} is the original full-child route-level condition needed for the polylogarithmic endpoint, but \cref{lem:prefix-slice-accounting} shows that a prefix-conditioned formulation is cleaner. The preferred remaining target is now \cref{asm:prefix-slice-survival}: prove that one cumulative near-pair score path either reaches a cap-free residual scan or follows prefix-conditioned certified slices to a resident scan. This should be tested against the hard cases: an isolated near point next to a massive far cluster, a near point on a cluster boundary, a tiny child that becomes heavy only late, and symmetric far shells. The proof must show a whole-lineage inverse-polylogarithmic event, not merely an inverse-polylogarithmic event at each level.
 
 \section{Conclusion}
 
