@@ -2292,10 +2292,104 @@ This certificate is the local form of the remaining problem. It is analogous in 
    Combining the two displays proves the claim.
 \end{proof}
 
+\begin{lemma}[Canonical budget activation factor]\label{lem:canonical-budget-activation}
+   Use the canonical mixed budget of \cref{lem:canonical-mixed-budget} inside
+   one current geometric state. Thus the parent radius factor in the budget is
+   the same $R_u$ that appears in the local split charge. Let $u$ be a retained
+   prefix with nonempty bucket $P[u]$, let
+   \[
+      m_u=|P[u]|,
+      \qquad
+      \overline H(u)=\frac{D(u)}{m_u},
+   \]
+   and define the local thickness factor
+   \[
+      \beta_q(u)
+      =
+      \min\left\{
+         1,\,
+         \frac{\overline H(u)^\rho Q_q(u)^s}{H_0}
+      \right\}.
+   \]
+   If an almost-total cap opportunity at $u$ has weighted recursive charge
+   \[
+      \Gamma(u)\le F_4(m_u,R_u),
+   \]
+   then the budget-thinned activation probability from
+   \cref{lem:budget-thinned-opportunities} satisfies
+   \[
+      \pi(u)\ge (1-\kappa\eta^2)\beta_q(u).
+   \]
+   In particular, whenever
+   \[
+      \overline H(u)^\rho Q_q(u)^s\ge H_0,
+   \]
+   the canonical budget activates the opportunity with probability
+   $1-O(\eta^2)$.
+\end{lemma}
+
+\begin{proof}
+   By definition of the canonical budget,
+   \[
+      \mathcal B_q^{\mathrm{mix}}(u)
+      =
+      \Psi(R_u)\frac{D(u)^\rho Q_q(u)^s}{H_0}
+      =
+      F_4(m_u,R_u)
+      \frac{\overline H(u)^\rho Q_q(u)^s}{H_0}.
+   \]
+   The budget-thinned rule uses
+   \[
+      \pi(u)
+      =
+      \min\left\{
+         1,\,
+         \frac{(1-\kappa\eta^2)\mathcal B_q^{\mathrm{mix}}(u)}
+              {\Gamma(u)}
+      \right\}.
+   \]
+   Since $\Gamma(u)\le F_4(m_u,R_u)$, this is at least
+   \[
+      \min\left\{
+         1,\,
+         (1-\kappa\eta^2)
+         \frac{\overline H(u)^\rho Q_q(u)^s}{H_0}
+      \right\}
+      \ge
+      (1-\kappa\eta^2)\beta_q(u).
+   \]
+   The final statement is the special case $\beta_q(u)=1$.
+\end{proof}
+
 \begin{remark}[Work can be bought by thinning]\label{rem:budget-thinning}
    \Cref{cor:budget-gated-splits} is deterministic: a split is live only when the local budget pays its whole charge. \Cref{lem:budget-thinned-opportunities} is the corresponding randomized rule. It converts any prefix-supermartingale budget, in particular the canonical mixed budget of \cref{lem:canonical-mixed-budget}, into an unconditional expected bound for the activated geometric work.
 
    In a homogeneous balanced prefix at depth $\ell$, the canonical budget is smaller than the local recursive charge by about $B^{(1-\rho)\ell}$, so the activation probability is about $B^{-(1-\rho)\ell}$. This is exactly the missing factor in the naive sum over the $B^\ell$ query prefixes. Thus the balanced-prefix obstruction is no longer a work blow-up; it becomes a near-lineage question: prove that the tame-good near paths supplied by \cref{lem:adaptive-continuation} contain enough budget-thinned first opportunities that one complete radius-decreasing lineage survives with inverse-polylogarithmic probability.
+\end{remark}
+
+\begin{remark}[The remaining value-delivery target]\label{rem:value-delivery-target}
+   \Cref{lem:canonical-budget-activation} makes the near-lineage part of the
+   budget-thinned route quantitative. Along a candidate near path, every
+   necessary cap opportunity contributes the usual geometric thinning factor
+   from \cref{lem:thin-lineage} and, only when the canonical budget is locally
+   insufficient, the additional factor $\beta_q(u)$. The work side is already
+   handled by optional stopping in \cref{lem:budget-thinned-opportunities}.
+   Thus one possible self-contained polylog proof is reduced to showing that,
+   with inverse-polylogarithmic probability over the continuation score tree,
+   there is a tame near path for which
+   \[
+      \prod_{u\in\mathcal O(p,q)}
+      \beta_q(u)
+      \ge
+      \log^{-O_c(1)}n,
+   \]
+   where $\mathcal O(p,q)$ is the set of cap opportunities on that path that
+   contain the true near point. Equivalently, whenever this product is too
+   small, one must prove that the same score tree exposes the near point through
+   a cap-free residual scan before those underfunded opportunities are needed.
+   This is sharper than \cref{asm:mixed-continuation-operator}: the expected
+   work bound is proved, and the remaining statement is only value delivery to
+   the near lineage.
 \end{remark}
 
 \begin{remark}[Why normalized continuation budgets are too small]\label{rem:query-only-budget}
@@ -3061,6 +3155,98 @@ There is an even more collapsed non-channel target. Taking the likelihood expone
    \]
 \end{proof}
 
+\begin{lemma}[Additive Gumbel optimization gives domination]\label{lem:gumbel-additive-domination}
+   Fix real scores $(a_x)_{x\in S}$ and let $(\Gamma_x)_{x\in S}$ be
+   independent standard Gumbel variables. Let
+   \[
+      G(x)=\frac{\exp(a_x)}{\sum_{z\in S}\exp(a_z)}.
+   \]
+   Suppose a certified algorithm, given the realized Gumbel marks, outputs
+   $I\in S$ satisfying
+   \[
+      a_I+\Gamma_I\ge
+      \max_{z\in S}(a_z+\Gamma_z)-\Delta
+   \]
+   always. Then its output law obeys the pointwise domination
+   \[
+      \Pr[I=x]\le e^\Delta G(x)
+      \qquad\text{for every }x\in S.
+   \]
+\end{lemma}
+
+\begin{proof}
+   If $I=x$, then
+   \[
+      a_x+\Delta+\Gamma_x
+      \ge
+      \max_{z\ne x}(a_z+\Gamma_z).
+   \]
+   The right-hand event is exactly the event that $x$ wins the Gumbel-max race
+   after its log-weight is increased by $\Delta$. Hence
+   \[
+      \Pr[I=x]
+      \le
+      \frac{\exp(a_x+\Delta)}
+           {\exp(a_x+\Delta)+\sum_{z\ne x}\exp(a_z)}
+      \le
+      e^\Delta G(x).
+   \]
+\end{proof}
+
+\begin{assumption}[Certified additive Gumbel-MIPS]\label{asm:gumbel-mips}
+   Fix $c>1$ and $\rho=\rho_c$. For every bounded-diameter localized node with
+   $m$ resident points there is a data structure for one independent marked
+   trial. During preprocessing it assigns independent standard Gumbel marks
+   $(\Gamma_x)_{x\in S}$. For every query $q$, the query algorithm chooses
+   \[
+      C_c\log m/r^2\le t\le \log^{O_c(1)}m/r^2,
+      \qquad
+      Y\sim N(tq,tI_d),
+   \]
+   and returns a point $I\in S$ with the certified additive guarantee
+   \[
+      A_Y(I)+\Gamma_I
+      \ge
+      \max_{x\in S}\{A_Y(x)+\Gamma_x\}
+      -O_c(\log\log m)
+   \]
+   with probability at least $\log^{-O_c(1)}m$, using query time
+   \[
+      d\,m^\rho\log^{O_c(1)}m
+   \]
+   and space
+   \[
+      m^{1+\rho}\log^{O_c(1)}m
+   \]
+   over all localized nodes. The additive guarantee is certified or Las Vegas:
+   undetected failure is not counted as success.
+\end{assumption}
+
+\begin{proposition}[Conditional additive Gumbel endpoint]\label{prop:gumbel-mips-polylog}
+   Under \cref{asm:gumbel-mips}, worst-case Euclidean ANN has query time
+   \[
+      Q(n,d)=d\,n^{\rho_c}\log^{O_c(1)}n
+   \]
+   and space
+   \[
+      S(n,d)=dn+n^{1+\rho_c}\log^{O_c(1)}n.
+   \]
+\end{proposition}
+
+\begin{proof}
+   Work after bounded-diameter localization and repeat the primitive a
+   polylogarithmic number of times in a good localized copy containing a near
+   pair. For a successful certified call, apply
+   \cref{lem:gumbel-additive-domination} with $a_x=A_Y(x)$. Since
+   $\Delta=O_c(\log\log m)$, the output law is pointwise dominated by
+   $\log^{O_c(1)}m\,\mathsf G_Y$. By
+   \cref{lem:smoothed-gibbs-suffices}, the returned point is a valid
+   $cr$-neighbor with probability $1-o(1)$ over $Y$ and the Gumbels.
+   Polylogarithmic repetition amplifies the inverse-polylogarithmic certified
+   success probability to a constant. The query and space bounds sum over the
+   localized copies exactly as in \cref{prop:smoothed-gibbs-polylog}.
+\end{proof}
+
 \begin{assumption}[Smoothed Gaussian guard-or-capture reporter]\label{asm:smoothed-gibbs}
    Fix $c>1$ and $\rho=\rho_c$. For every bounded-diameter localized node with
    $m$ resident points, and for every query $q$, there is a data structure with
@@ -3227,6 +3413,43 @@ amplified in the next proposition.
    Hence a black-box ordinary ANN call would make the score-max route circular;
    a proof of \cref{asm:smoothed-score-max} must exploit the smoothed
    maximum-score structure itself.
+\end{remark}
+
+\begin{remark}[Why multiplicative ANN does not implement Gumbel-MIPS]\label{rem:gumbel-mips-not-ann}
+   The Gumbel primitive needs an additive score guarantee, not a multiplicative
+   distance guarantee. If $B\ge\max_x\Gamma_x$, one may lift
+   \[
+      X_x=\left(x,\sqrt{2(B-\Gamma_x)/t}\right),
+      \qquad
+      Y'=(y,0),
+   \]
+   so that minimizing $\|X_x-Y'\|^2$ is equivalent to maximizing
+   $A_Y(x)+\Gamma_x$. However, a $c$-ANN answer in the lifted space gives only
+   \[
+      \|X_I-Y'\|^2
+      \le
+      c^2\min_x\|X_x-Y'\|^2,
+   \]
+   which can translate into additive score error
+   \[
+      \frac t2(c^2-1)\min_x\|X_x-Y'\|^2.
+   \]
+   Under the smoothing distribution, this minimum can contain the common
+   $\|y-q\|^2$ term, of order $d/t$, so the additive score error can be
+   $\Theta(d)$ rather than $O(\log\log m)$.
+
+   The obstruction is real even without Gumbel marks. Take $p=q=0$ and
+   $x=Lr e_1$ with $L>c$. For $y=q+g$ and $g\sim N(0,I_d/t)$,
+   \[
+      \|x-y\|^2-\|p-y\|^2=L^2r^2-2Lrg_1.
+   \]
+   With high probability this is $\Omega(L^2r^2)$, so the Gaussian weight of
+   $x$ is polynomially smaller than that of $p$ when $t=\Theta(\log m/r^2)$.
+   In high dimension, nevertheless, the shared orthogonal term
+   $\|g_\perp\|^2$ can dominate both distances, making
+   $\|x-y\|/\|p-y\|$ arbitrarily close to one. A multiplicative ANN oracle may
+   then return $x$ with constant probability, which would violate the
+   pointwise domination required by \cref{lem:gumbel-additive-domination}.
 \end{remark}
 
 The rank-prefix posterior target itself is captured by the following
@@ -3463,14 +3686,14 @@ The continuation-mass spherical decoder is proved in \cref{lem:continuation-work
 \Cref{prop:one-third} records the cube-root parameter choice from the one-tree notes. The direct tube calculation is kept only as intuition; the formal proposition uses \cref{lem:adaptive-continuation} for whole-lineage score survival and assumes only the cube-root geometric frontier inequality \cref{asm:mixed-operator}. Thus the central open issue is already the work-side first-hit accounting, not near-pair score survival.
 
 \paragraph{Randomized polylog stage.}
-\Cref{lem:adaptive-continuation} replaces the tube proof in the predictable-score setting, so near-pair survival is no longer the obstacle for the randomized one-tree endpoint. \Cref{asm:mixed-continuation-operator} is the remaining work-side target after \cref{lem:cap-free-scan-accounting}: it must prove thinned cap-split contraction over branching cap-discovery frontiers. Conditional on that operator, \cref{prop:randomized-polylog} shows that choosing $\eta\asymp(\log\log n)/\log n$ gives polylogarithmic query and space overhead.
+\Cref{lem:adaptive-continuation} replaces the tube proof in the predictable-score setting, so near-pair survival is no longer the obstacle for the randomized one-tree endpoint. \Cref{asm:mixed-continuation-operator} is the direct remaining work-side target after \cref{lem:cap-free-scan-accounting}: it must prove thinned cap-split contraction over branching cap-discovery frontiers. Conditional on that operator, \cref{prop:randomized-polylog} shows that choosing $\eta\asymp(\log\log n)/\log n$ gives polylogarithmic query and space overhead. A sharper budget-thinned variant is partly proved: \cref{lem:canonical-mixed-budget} and \cref{lem:budget-thinned-opportunities} give the activated geometric work bound by optional stopping, while \cref{lem:canonical-budget-activation} reduces the remaining near-lineage issue to the value-delivery product in \cref{rem:value-delivery-target}.
 
 \paragraph{Structured posterior route.}
 \Cref{lem:posterior-superlevel-compiler} records the negative-moment identity suggested by the latest notes. \Cref{lem:explicit-enumeration-barrier} makes the coarse-child obstruction precise: the scale $\xi=m^{-1/(2c^2)}$ is the price of explicitly enumerating $B\simeq\xi^{-1}$ outcomes, not a geometric limit. \Cref{lem:scale-window-compiler} and \cref{lem:dyadic-structured-amplification} isolate the important arithmetic: if mass windows can be decoded output-sensitively, then $\xi^{-\rho}$ repetitions at each dyadic scale convert negative-moment value into constant hit probability, and summing all scales down to $1/m$ still fits the $m^\rho$ query budget. This scale-aware amplification is essential; a raw negative-moment diagnostic alone does not imply that the near point is actually listed with inverse-polylogarithmic probability.
 
 The continuous likelihood-ball family now proves both analytic sides of the desired posterior decoder: \cref{thm:continuous-likelihood-balls} gives the guard-or-pure-child value, and \cref{lem:ideal-likelihood-scale-profile} gives the scale-normalized query and storage moments. \Cref{lem:likelihood-rank-prefix} further collapses the threshold continuum to rank gaps of a random score order. The cleanest structured target is therefore \cref{asm:multiscale-structured-likelihood}: implement this ideal rank-prefix measure as a query-decodable family of stored representatives. Conditional on that theorem, \cref{prop:multiscale-structured-polylog} gives the desired polylogarithmic ANN bounds in one posterior layer; if the activated prefix is pure for the query, its representative is already a valid answer.
 
-\Cref{lem:smoothed-max-score-margin} gives a still simpler non-channel target: a query-centered Gaussian score direction separates every invalid point from the true near point by an additive $\Theta_c(tr^2)$ score margin, with high probability. The softest resulting primitive is \cref{asm:smoothed-gibbs}: with inverse-polylogarithmic probability, report a list carrying inverse-polylogarithmic mass under the Gaussian Gibbs kernel on data points. Sampling from the kernel restricted to that list gives a pointwise dominated output law by \cref{lem:captured-gibbs-domination}, and \cref{lem:smoothed-gibbs-suffices} then returns a valid answer because invalid points have negligible Gibbs mass and cannot be oversampled too much. A stronger implementation route is smoothed additive nearest-neighbor search for the perturbed center $Y/t$ with additive squared-distance error $\Theta_c(r^2)$, exactly equivalent to additive score maximization by \cref{lem:score-max-additive-nn}. Either oracle would bypass dyadic scales and representatives entirely, as recorded in \cref{prop:smoothed-gibbs-polylog} and \cref{prop:smoothed-score-max-polylog}. These are targets, not implemented theorems. The older finite restricted-channel compiler \cref{asm:finite-restricted-channel} and \cref{prop:finite-channel-polylog} remain as a coarse explicit-enumeration special case and as a useful diagnostic framework.
+\Cref{lem:smoothed-max-score-margin} gives a still simpler non-channel target: a query-centered Gaussian score direction separates every invalid point from the true near point by an additive $\Theta_c(tr^2)$ score margin, with high probability. The softest resulting primitive is \cref{asm:smoothed-gibbs}: with inverse-polylogarithmic probability, report a list carrying inverse-polylogarithmic mass under the Gaussian Gibbs kernel on data points. Sampling from the kernel restricted to that list gives a pointwise dominated output law by \cref{lem:captured-gibbs-domination}, and \cref{lem:smoothed-gibbs-suffices} then returns a valid answer because invalid points have negligible Gibbs mass and cannot be oversampled too much. A more exact sampling route is certified additive Gumbel-MIPS: \cref{lem:gumbel-additive-domination} shows that an $O(\log\log m)$ additive optimizer for the Gumbel-perturbed scores gives precisely the required one-sided Gibbs domination, yielding \cref{prop:gumbel-mips-polylog}. A stronger but different implementation route is smoothed additive nearest-neighbor search for the perturbed center $Y/t$ with additive squared-distance error $\Theta_c(r^2)$, exactly equivalent to additive score maximization by \cref{lem:score-max-additive-nn}. These oracles would bypass dyadic scales and representatives entirely, as recorded in \cref{prop:smoothed-gibbs-polylog}, \cref{prop:gumbel-mips-polylog}, and \cref{prop:smoothed-score-max-polylog}. They are targets, not implemented theorems; \cref{rem:gumbel-mips-not-ann} explains why black-box multiplicative ANN does not supply the Gumbel primitive. The older finite restricted-channel compiler \cref{asm:finite-restricted-channel} and \cref{prop:finite-channel-polylog} remain as a coarse explicit-enumeration special case and as a useful diagnostic framework.
 
 \paragraph{Cohort-or-leaf.}
 \Cref{asm:cohort-or-leaf} is the original full-child route-level condition for the broader posterior-cohort endpoint, but \cref{lem:prefix-slice-accounting} shows that a prefix-conditioned formulation is cleaner. Work accounting for opened children is no longer the hard part: \cref{lem:vote-budget} pays opened recursive calls from realized detector votes. The preferred remaining target for that more general route is \cref{asm:prefix-slice-survival}: prove that one cumulative near-pair score path either reaches a cap-free residual scan or receives enough detector votes to follow prefix-conditioned certified slices to a resident scan. \Cref{lem:detector-inflation} and \cref{lem:off-spine-inflation} reduce the detector-shadowing part of this target to early activation prefixes with large enough continuation mass $H(v)$ and logarithmic spine-ratio sum $\sum H(u^+)/H(u)$; \cref{rem:linear-spine-ratio} explains why long score routes need an aggregate detector-mass argument instead. This should be tested against the hard cases: an isolated near point next to a massive far cluster, a near point on a cluster boundary, a tiny child that becomes heavy only late, and symmetric far shells. The proof must show a whole-lineage inverse-polylogarithmic event, not merely an inverse-polylogarithmic event at each level.
@@ -3487,7 +3710,7 @@ and space
 \]
 The exact pieces now aligned for the randomized cap-thinning route are: continuation-mass pruning gives optimal expected spherical work, adaptive continuation gives whole-lineage near survival, thinned cap splitting gives radius-potential contraction, and cap-free terminal scans are paid by low-correlation collisions.
 
-For the randomized cap-thinning route, the remaining task is the branching first-split work estimate in \cref{asm:mixed-continuation-operator}: prove that the thinned geometric child potentials contract over random cap-discovery frontiers without replacing the branching decoder by a normalized path law. This is a fully non-channel route; the smooth product terminal filter can be used after localization and no longer contributes an inverse-polylogarithmic table-recall penalty. The structured posterior route replaces the cap-frontier obstacle by \cref{asm:multiscale-structured-likelihood}: prove an output-sensitive reporter for pure likelihood rank prefixes, not a small explicitly enumerable channel. The smoothed sampling route replaces both by \cref{asm:smoothed-gibbs}: prove an optimal-exponent reporter that has inverse-polylogarithmic probability of returning a list carrying inverse-polylogarithmic Gaussian Gibbs mass under query-centered perturbations; smoothed additive nearest neighbor is a stronger sufficient primitive. The detector-vote cohort-or-leaf route is a separate possible generalization to arbitrary certified child hierarchies, where the remaining issue is near-lineage coupling between ordinary continuation paths and detector activations.
+For the randomized cap-thinning route, one remaining task is the branching first-split work estimate in \cref{asm:mixed-continuation-operator}: prove that the thinned geometric child potentials contract over random cap-discovery frontiers without replacing the branching decoder by a normalized path law. The newer budget-thinned variant proves the expected work bound from a canonical prefix supermartingale, and leaves the sharper value-delivery target in \cref{rem:value-delivery-target}. This is a fully non-channel route; the smooth product terminal filter can be used after localization and no longer contributes an inverse-polylogarithmic table-recall penalty. The structured posterior route replaces the cap-frontier obstacle by \cref{asm:multiscale-structured-likelihood}: prove an output-sensitive reporter for pure likelihood rank prefixes, not a small explicitly enumerable channel. The smoothed sampling route replaces both by \cref{asm:smoothed-gibbs} or \cref{asm:gumbel-mips}: prove either an optimal-exponent reporter that captures inverse-polylogarithmic Gaussian Gibbs mass, or a certified $O(\log\log n)$-additive Gumbel-MIPS primitive. Smoothed additive nearest neighbor is another stronger sufficient primitive. The detector-vote cohort-or-leaf route is a separate possible generalization to arbitrary certified child hierarchies, where the remaining issue is near-lineage coupling between ordinary continuation paths and detector activations.
 
 \appendix
 
