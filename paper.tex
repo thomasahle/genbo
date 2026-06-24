@@ -58,6 +58,8 @@ for Optimal Data-Dependent Euclidean ANN}
       S(n,d)=dn+n^{1+\rho_c}\log^{O_c(1)}n.
    \]
    The process has three parts. First, local spherical filtering uses a cumulative Gaussian score tree with continuation-mass pruning rather than levelwise hard thresholds. Second, geometric children are activated by an exact posterior stopping rule: a child of radius $\lambda R$ is entered when its posterior reaches $\tau=\lambda^2$. The resulting Bellman cancellation pays for recursion with no dependence on the number or balance of children. Third, tempered detector cohorts materialize this fractional activation while ordinary paths continue to search residual leaves. We prove the spherical continuation-mass decoder with polylogarithmic loss and prove the exact Bellman identities. The remaining probabilistic task is the route-level cohort-or-leaf lemma. Under that lemma, the structure has the polylogarithmic bounds above.
+
+   We also isolate a simpler intermediate route. Almost-total cap splits can be made into randomized geometric edges inside the same score tree: the residual edge is always searched, while the cap edge is followed with the exact probability that makes the radius potential contract. This gives a conditional $\exp(O_c((\log n)^{1/3}))$ overhead once two explicit adaptive score-process inequalities are proved.
 \end{abstract}
 
 \section{Introduction}
@@ -115,6 +117,8 @@ The algorithm in this draft differs from a restart construction in the following
 \subsection{Where the proof stands}
 
 The expected-work calculation for continuation-mass pruning is exact. The posterior stopping inequality and radius Bellman cancellation are exact. The remaining work is probabilistic: prove that, over the whole near-neighbor lineage, the true near point is either exposed by ordinary continuation-mass pruning in a searchable leaf, or every certified child on the lineage receives enough detector votes to be activated. We state this as \cref{asm:cohort-or-leaf} because it is the only place where ordinary paths, detector cohorts, and posterior martingales must be coupled. A merely local inverse-polylogarithmic guarantee at each geometric level would not be enough; those losses could multiply over polylogarithmically many levels.
+
+The new randomized one-tree variant avoids detector cohorts for almost-total cap splits. Its deterministic accounting is proved below; its remaining gap is narrower but different: a lowest-common-ancestor estimate for an adaptive Gaussian branching walk stopped at random cap-discovery frontiers.
 
 \section{Preliminaries}
 
@@ -811,6 +815,122 @@ The preceding Bellman cancellation applies to deterministic full children. The f
 
 Thus prefix-conditioned recentering avoids the full-child budget obstruction. If a heavy cap is discovered inside a score bucket, the recursive child is that bucket slice, not the global cluster containing the bucket. When the number of peeled slices per prefix is polylogarithmic, \cref{lem:prefix-slice-accounting} gives the desired parent-potential bound directly.
 
+\subsection{Randomized geometric branching}
+
+There is a simpler intermediate mechanism for almost-total cap splits. Instead of normalizing a score bucket into a new hard channel, make the geometric split an edge of the same cumulative branching process. The residual child is always searched. The cap child is searched only with a carefully chosen independent probability. This subsection records the deterministic accounting; the adaptive score-process estimates needed to use it appear later as explicit assumptions.
+
+For this route use the padded radius potential
+\[
+   \Psi(R)=1+\left(\frac Rr\right)^4,
+   \qquad
+   F_4(m,R)=m^\rho\Psi(R),
+\]
+and keep $s=1-\rho$. On the bounded-diameter localized instances used for ANN, $R/r=\log^{O_c(1)}n$, so $F_4$ differs from the ideal $m^\rho$ scale only by a polylogarithmic factor. The fourth power is not essential; it is a convenient way to make every certified cap radius decrease produce a uniform multiplicative drop of $\Psi$ even when $R$ is close to $r$.
+
+\begin{lemma}[Thinned cap-split contraction]\label{lem:thin-cap-contraction}
+   Let a score bucket contain $m$ points in a certified ball of radius $R\ge r$. Suppose it is partitioned into a cap child $C$ and a residual child $C^0$ with
+   \[
+      |C|=zm,
+      \qquad
+      z\ge1-\delta,
+      \qquad
+      C\subseteq\Ball(o_C,R_C),
+      \qquad
+      R_C\le R\sqrt{1-\eta^2}.
+   \]
+   Put
+   \[
+      \theta=\frac{\Psi(R_C)}{\Psi(R)}
+      \qquad\text{and}\qquad
+      a_C=z^s\theta .
+   \]
+   If a query always searches $C^0$ and searches $C$ independently with probability $a_C$, then the expected recursive query charge is
+   \[
+      F_4((1-z)m,R)+a_CF_4(zm,R_C)
+      =
+      F_4(m,R)\bigl((1-z)^\rho+z\theta^2\bigr).
+   \]
+   Moreover, for $0<\eta<1/2$ there is an absolute constant $\kappa>0$ such that, whenever $\delta^\rho\le\kappa\eta^2$,
+   \[
+      F_4((1-z)m,R)+a_CF_4(zm,R_C)
+      \le
+      (1-\kappa\eta^2)F_4(m,R).
+   \]
+   The corresponding storage potential $G_4(m,R)=mF_4(m,R)$ is nonincreasing under the deterministic split:
+   \[
+      G_4((1-z)m,R)+G_4(zm,R_C)\le G_4(m,R).
+   \]
+\end{lemma}
+
+\begin{proof}
+   The displayed identity follows by substitution:
+   \[
+      a_CF_4(zm,R_C)
+      =
+      z^s\theta\cdot z^\rho m^\rho\Psi(R_C)
+      =
+      z\theta^2F_4(m,R).
+   \]
+   Since $z^s\le1$ and $\theta\le1$, $a_C$ is a valid probability.
+
+   Write $u=(R/r)^4\ge1$. The radius certificate gives
+   \[
+      \theta
+      \le
+      \frac{1+u(1-\eta^2)^2}{1+u}
+      =
+      1-\frac{u}{1+u}(2\eta^2-\eta^4)
+      \le
+      1-\kappa_0\eta^2
+   \]
+   for an absolute $\kappa_0>0$. Hence $\theta^2\le1-\kappa_1\eta^2$ after decreasing the constant. Also $(1-z)^\rho\le\delta^\rho$, so
+   \[
+      (1-z)^\rho+z\theta^2
+      \le
+      \delta^\rho+1-\kappa_1\eta^2
+      \le
+      1-\kappa\eta^2
+   \]
+   if $\delta^\rho$ is a sufficiently small multiple of $\eta^2$.
+
+   For storage,
+   \[
+      G_4((1-z)m,R)+G_4(zm,R_C)
+      =
+      G_4(m,R)\bigl((1-z)^{1+\rho}+z^{1+\rho}\theta\bigr)
+      \le
+      G_4(m,R),
+   \]
+   because $\theta\le1$ and $x^{1+\rho}\le x$ for $x\in[0,1]$.
+\end{proof}
+
+\begin{lemma}[Lineage thinning telescopes]\label{lem:thin-lineage}
+   Consider a near-neighbor lineage in a randomized geometric branching tree. Residual edges are followed with probability one. For cap edges $i=1,\ldots,h$, let $z_i\ge1-\delta$ and
+   \[
+      \theta_i=\frac{\Psi(R_i)}{\Psi(R_{i-1})}.
+   \]
+   The probability that the query keeps all cap edges of the lineage is
+   \[
+      \prod_{i=1}^h z_i^s\theta_i
+      \ge
+      \exp(-2sh\delta)\,
+      \frac{\Psi(R_h)}{\Psi(R_0)}
+   \]
+   whenever $\delta\le1/2$. In particular, if $R_0/r=\log^{O_c(1)}n$ and $h\delta=O(1)$, this probability is at least $\log^{-O_c(1)}n$.
+\end{lemma}
+
+\begin{proof}
+   The $\theta_i$ factors telescope exactly. Also
+   \[
+      \prod_i z_i^s
+      \ge
+      (1-\delta)^{sh}
+      \ge
+      \exp(-2sh\delta)
+   \]
+   for $\delta\le1/2$. Finally, $\Psi(R_h)\ge1$ and $\Psi(R_0)=\log^{O_c(1)}n$ on a bounded-diameter localized instance.
+\end{proof}
+
 \begin{assumption}[Prefix-slice lineage survival]\label{asm:prefix-slice-survival}
    In the cumulative score tree with prefix-conditioned recentering slices, fix a true near pair $(p,q)$. With probability at least $\log^{-O_c(1)}n$, there is one cumulative ordinary score path such that the following route succeeds:
    \begin{enumerate}
@@ -1061,13 +1181,13 @@ and overhead exponent
       Restart & $k^{1/3}$ spherical loss & $(1,2,1/3)$ & $7/9$ \\
       Score-only & polylog spherical decoder & $(1,2,0)$ & $2/3$ \\
       One geometric gain & fewer phases or quadratic slack & $(1,1,0)$ or $(2,2,0)$ & $1/2$ \\
-      Two geometric gains & fewer phases and quadratic slack & $(2,1,0)$ & $1/3$ \\
+      Randomized one tree & global adaptive score loss & no restart phases; $\eta=L^{-2/3}$ & $1/3$ \\
       Bellman cohorts & no independent phase payment & no $\eta^{-q}$ term & $\polylog$ \\
       \bottomrule
    \end{tabular}
 \end{table}
 
-This ladder is useful for stress testing. The continuation-mass spherical theorem already moves the restart architecture from exponent $7/9$ to roughly $2/3$. Any partial geometric result that either reduces the number of independently paid phases or improves the slack perturbation gives a next rung. The Bellman cohort mechanism is the endpoint: if cohort-or-leaf holds, recursive geometry is paid by the parent potential and the $\eta^{-q}$ term disappears rather than being optimized.
+This ladder is useful for stress testing. The continuation-mass spherical theorem already moves the restart architecture from exponent $7/9$ to roughly $2/3$. The randomized one-tree route below removes the independent phase count for almost-total cap splits, but currently pays a single adaptive branching-walk loss $\exp(O(L^{1/3}))$. The Bellman cohort mechanism is the endpoint: if cohort-or-leaf holds, recursive geometry is paid by the parent potential and the $\eta^{-q}$ term disappears rather than being optimized.
 
 \section{A restartable slice route to the 2/3 rung}
 
@@ -1284,6 +1404,150 @@ which is below the final $2/3$ overhead after the choice of $\eta$ in \cref{prop
 
 This result is not the final target: it still pays a fresh polylogarithmic factor after every certified radius reduction. Its value is that the recursive object is the prefix-conditioned slice $C[U,w]$, whose budget is exactly supplied by the hard leaf. The false full-child statement is no longer needed.
 
+\section{A randomized one-tree route to the 1/3 rung}
+
+The restartable construction still turns each recentered slice into a fresh spherical instance. The following variant does not restart or re-channelize. Geometric splits are randomized edges inside one cumulative score tree, exactly as in \cref{lem:thin-cap-contraction}. This removes the $\eta^{-2}$ independent phase payment from \cref{prop:slice-two-thirds}; what remains is one global adaptive score-process loss.
+
+Fix parameters $\eta,\delta>0$ and put
+\[
+   \varepsilon=\frac{\eta\delta}{16}.
+\]
+Inside a score bucket $U$ on the current shell, call a direction $w$ almost total if its $2\eta$-cap contains all but an $\varepsilon$ fraction of $U$. If such a direction exists, preprocessing stores an $\eta$-cap child containing all but a $\delta$ fraction of $U$ and leaves the rest as the residual child. If no almost-total direction exists, the bucket is terminal and is scanned when reached.
+
+\begin{lemma}[Hinge certificate for almost-total caps]\label{lem:almost-total-cap-finder}
+   Let $U$ be a finite set of unit vectors. Suppose there is a unit vector $w$ such that
+   \[
+      \left|\{x\in U:\ip{x}{w}\ge2\eta\}\right|
+      \ge
+      (1-\varepsilon)|U|,
+      \qquad
+      \varepsilon\le\frac{\eta\delta}{16}.
+   \]
+   Define the empirical hinge loss over the unit ball by
+   \[
+      L(v)=\frac1{|U|}\sum_{x\in U}(2\eta-\ip{x}{v})_+,
+      \qquad
+      \|v\|_2\le1.
+   \]
+   Any $v$ with $L(v)\le4\varepsilon$ has an $\eta$-cap containing at least $(1-\delta)|U|$ points. Such a certificate is checkable by scanning $U$.
+\end{lemma}
+
+\begin{proof}
+   The witness $w$ has loss at most $(1+2\eta)\varepsilon\le2\varepsilon$, since only the exceptional points contribute and each contribution is at most $1+2\eta$. Hence an approximate hinge minimizer with loss at most $4\varepsilon$ is enough.
+
+   If $\ip{x}{v}<\eta$, then $(2\eta-\ip{x}{v})_+\ge\eta$. Therefore the fraction of points outside the $\eta$-cap of $v$ is at most $L(v)/\eta\le4\varepsilon/\eta\le\delta/4$. Normalizing $v$ can only increase positive projections when $\|v\|_2\le1$, so the same cap certificate holds for the stored unit direction.
+\end{proof}
+
+Thus a complete almost-total cap search can be implemented by minimizing a convex empirical hinge loss to inverse-polylogarithmic accuracy and then verifying the resulting cap size directly. Conversely, if no almost-total $2\eta$-cap exists, then for every query direction at least an $\varepsilon$ fraction of the terminal bucket has correlation at most $2\eta$ with the query. Scanning the whole terminal bucket is therefore charged to low-correlation points with only an $\varepsilon^{-1}$ loss.
+
+\begin{assumption}[Adaptive information-time score lemma]\label{asm:adaptive-score}
+   Consider one cumulative mixed score tree, where Gaussian score edges may be separated by deterministic or randomized geometric edges that retain the score prefix and only change the center and radius used by future Gaussian increments. Fix a near pair and a complete mixed lineage for it. Conditional on the past, write the Gaussian increment on score step $i$ as $X_i\sim N(0,\Sigma_i)$, let $t_i$ be the near-pair tilted mean, and put
+   \[
+      D_i=\frac12t_i^\top\Sigma_i^\dagger t_i,
+      \qquad
+      D=\sum_iD_i.
+   \]
+   If $D=O_c(\log n)$, then the cumulative branching decoder has a common near path following the lineage with probability at least
+   \[
+      \exp(-O_c(D^{1/3}))\log^{-O_c(1)}n.
+   \]
+   The statement is required uniformly for prefix-free stopping frontiers generated by almost-total cap discoveries.
+\end{assumption}
+
+The intended proof is the usual tilted lowest-common-ancestor calculation in information time. Under the tilted law, the log-likelihood fluctuation is a centered Gaussian martingale with quadratic variation $2\sum_iD_i$. Keeping it in a tube of width $w$ over information time $D$ costs $\exp(-O(D/w^2))$, while the likelihood ratio varies by $\exp(O(w))$. Optimizing $w=D^{1/3}$ gives the cube-root loss. What still has to be audited is compatibility with random cap-discovery stopping times.
+
+\begin{assumption}[Mixed one-tree operator inequality]\label{asm:mixed-operator}
+   In the randomized one-tree process with almost-total cap splitting, let $\mathcal L(q)$ be the terminal cap-free score frontier reached by query $q$, and let $\mathcal G(q)$ be the collection of cap children reached with their thinning probabilities included. Let
+   \[
+      \alpha=\Theta(\eta\delta),
+      \qquad
+      L=\log n.
+   \]
+   The score and scan work satisfy
+   \[
+      \E\left[
+         \sum_{u\in\mathcal L(q)} |P[u]|
+         +
+         \sum_{v\in\mathcal G(q)} a_vF_4(|P[v]|,R_v)
+      \right]
+      \le
+      \alpha^{-1}
+      \exp(O_c(D^{1/3}+\eta L))
+      F_4(n,R_0),
+   \]
+   where $a_v$ is the product of cap-edge thinning probabilities on the route to $v$, and $D=O_c(L)$ is the global score information clock.
+\end{assumption}
+
+The terminal term is charged to the $\alpha$ fraction of low-correlation points in every cap-free bucket, using \cref{lem:rho-stability}. The geometric term should be controlled by the contraction in \cref{lem:thin-cap-contraction}. The unresolved point is to make this argument commute with the random prefix-free stopping frontiers, again without restarting the score clock.
+
+\begin{proposition}[Conditional randomized one-tree \(1/3\) rung]\label{prop:one-third}
+   Assume \cref{asm:adaptive-score} and \cref{asm:mixed-operator}. For fixed $c>1$, the randomized one-tree construction gives worst-case Euclidean ANN bounds
+   \[
+      Q(n,d)
+      =
+      d\,n^{\rho_c}
+      \exp\!\left(O_c((\log n)^{1/3})\right)
+      \log^{O_c(1)}n
+   \]
+   and
+   \[
+      S(n,d)
+      =
+      dn+n^{1+\rho_c}
+      \exp\!\left(O_c((\log n)^{1/3})\right)
+      \log^{O_c(1)}n.
+   \]
+\end{proposition}
+
+\begin{proof}
+   Work inside one bounded-diameter localized instance, so $R_0/r=\log^{O_c(1)}n$, and put
+   \[
+      L=\log n,
+      \qquad
+      \eta=L^{-2/3},
+      \qquad
+      \delta=\eta^{3/\rho_c}.
+   \]
+   Then $\delta^{\rho_c}=\eta^3=o(\eta^2)$, so every almost-total cap split satisfies the contraction hypothesis of \cref{lem:thin-cap-contraction}. The storage potential is nonincreasing under the deterministic partition, and
+   \[
+      F_4(n,R_0)=n^{\rho_c}\log^{O_c(1)}n.
+   \]
+
+   A cap edge decreases radius by a factor at most $\sqrt{1-\eta^2}$, so a lineage has at most
+   \[
+      H=O_c\!\left(\eta^{-2}\log\frac{R_0}{r}\right)
+      =
+      O_c(\eta^{-2}\log\log n)
+   \]
+   cap edges before the radius is terminal. With the chosen $\delta$,
+   \[
+      H\delta
+      =
+      O_c(\eta^{-2}\delta\log\log n)
+      =
+      o(1).
+   \]
+   Therefore \cref{lem:thin-lineage} shows that all randomized cap-edge thinning along the true near lineage costs only $\log^{-O_c(1)}n$ success probability. Residual edges are followed with probability one.
+
+   The adaptive score lemma supplies a common near score path with probability
+   \[
+      \exp(-O_c(D^{1/3}))\log^{-O_c(1)}n
+      =
+      \exp(-O_c(L^{1/3}))\log^{-O_c(1)}n.
+   \]
+   The far and recursive query work are bounded by \cref{asm:mixed-operator}. Since
+   \[
+      \eta L=L^{1/3},
+      \qquad
+      \alpha^{-1}=(\eta\delta)^{-1}=\log^{O_c(1)}n,
+   \]
+   one copy has expected work and inverse success overhead
+   \[
+      \exp(O_c(L^{1/3}))\log^{O_c(1)}n
+   \]
+   over the $n^{\rho_c}$ scale. Amplifying by this factor and applying the truncation paragraph in the preliminaries gives the displayed query bound. The space bound follows from the storage part of \cref{lem:thin-cap-contraction}, the same global score-clock overhead, and the bounded-diameter localization factors.
+\end{proof}
+
 \section{Proof obligations}
 
 The draft now separates two proof tracks.
@@ -1293,6 +1557,9 @@ The continuation-mass spherical decoder is proved in \cref{lem:continuation-work
 
 \paragraph{Restartable \(2/3\) stage.}
 \Cref{prop:slice-two-thirds} proves the restartable $2/3$ rung at the current level of detail. The remaining audits for a polished version are to write the high-probability truncation constants for every stage explicitly and to align the bounded-diameter and ball-to-shell localization with the exact constants in the slice construction.
+
+\paragraph{Randomized \(1/3\) stage.}
+\Cref{prop:one-third} reduces the $1/3$ rung to two explicit adaptive score-process statements. The deterministic geometric part is no longer a gap: \cref{lem:thin-cap-contraction} proves query-potential contraction for almost-total cap splits, \cref{lem:thin-lineage} proves that near-lineage thinning telescopes, and \cref{lem:almost-total-cap-finder} explains why terminal cap-free scans cost only an inverse-polylogarithmic residual factor at the chosen parameters. The remaining audits are \cref{asm:adaptive-score} and \cref{asm:mixed-operator}: the lowest-common-ancestor/tube proof must allow cap-discovery stopping times, and the far-point operator inequality must charge terminal scans and thinned geometric children in one prefix-free score clock.
 
 \paragraph{Cohort-or-leaf.}
 \Cref{asm:cohort-or-leaf} is the original full-child route-level condition needed for the polylogarithmic endpoint, but \cref{lem:prefix-slice-accounting} shows that a prefix-conditioned formulation is cleaner. The preferred remaining target is now \cref{asm:prefix-slice-survival}: prove that one cumulative near-pair score path either reaches a cap-free residual scan or follows prefix-conditioned certified slices to a resident scan. This should be tested against the hard cases: an isolated near point next to a massive far cluster, a near point on a cluster boundary, a tiny child that becomes heavy only late, and symmetric far shells. The proof must show a whole-lineage inverse-polylogarithmic event, not merely an inverse-polylogarithmic event at each level.
@@ -1308,6 +1575,8 @@ and space
    dn+n^{1+1/(2c^2-1)}\log^{O_c(1)}n.
 \]
 The exact pieces are already simple: continuation-mass pruning gives optimal expected spherical work, posterior first-hit gives the stopping inequality, and $\tau=\lambda^2$ gives exact radius Bellman cancellation. The central remaining task is the probabilistic cohort-or-leaf lemma that couples ordinary paths to detector cohorts without paying the exponent twice.
+
+The randomized one-tree route suggests a more incremental target: prove the adaptive information-time LCA estimate and the mixed first-hit operator inequality. That would already replace the restartable $2/3$ overhead by an $\exp(O_c((\log n)^{1/3}))$ overhead while keeping the standard certified ball recursion inside the same branching score process.
 
 \appendix
 
