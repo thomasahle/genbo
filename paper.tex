@@ -2761,9 +2761,59 @@ For a threshold $u$, the posterior-superlevel child is
    the displayed pure multiscale value is exactly $\mathcal P_\eta(p,q)$, and \cref{thm:continuous-likelihood-balls} lower-bounds it by $\delta_c$.
 \end{proof}
 
+\begin{lemma}[Rank-prefix form of likelihood balls]\label{lem:likelihood-rank-prefix}
+   In the notation of \cref{thm:continuous-likelihood-balls}, fix $Y$. Let
+   \[
+      r_1>r_2>\cdots>r_M>0
+   \]
+   be the distinct values taken by $L_Y$ on $S$, set $r_{M+1}=0$, and put
+   \[
+      P_i(Y)=\{x\in S:L_Y(x)\ge r_i\},
+      \qquad
+      k_i(Y)=|P_i(Y)|.
+   \]
+   For every $a\ge0$ and every nonnegative functional $G$ of the nonempty
+   superlevel set,
+   \[
+      \int_0^{r_1}\alpha u^{\alpha-1}\Phi_Y(u)^a
+      G(C_{Y,u})\,du
+      =
+      \sum_{i=1}^M
+      \left(\frac{k_i(Y)}m\right)^a
+      \left(r_i^\alpha-r_{i+1}^\alpha\right)G(P_i(Y)).
+   \]
+   Consequently, the ideal active process at dyadic scale $\xi$ can be written
+   as a Poisson process over score prefixes $(Y,i)$ with
+   \[
+      \xi/2\le k_i(Y)/m\le\xi
+   \]
+   and query intensity
+   \[
+      d\lambda_q(Y,i)
+      =
+      L_Y(q)^{s_\alpha}
+      \left(\frac{k_i(Y)}m\right)^\rho
+      \left(r_i^\alpha-r_{i+1}^\alpha\right)\,d\gamma_t(Y).
+   \]
+   The negative-moment contribution of such a prefix is obtained by multiplying
+   by $(k_i(Y)/m)^{-\rho}$, so the factor $(k_i(Y)/m)^\rho$ cancels exactly.
+\end{lemma}
+
+\begin{proof}
+   For $u\in(r_{i+1},r_i]$, the superlevel set is $C_{Y,u}=P_i(Y)$ and
+   $\Phi_Y(u)=k_i(Y)/m$. Integrating $\alpha u^{\alpha-1}$ over this interval
+   gives $r_i^\alpha-r_{i+1}^\alpha$. Summing over the intervals proves the
+   identity. The Poisson-process statement is the same identity applied to the
+   preprocessing intensity
+   $\alpha u^{\alpha-1}\Phi_Y(u)^\rho du\,d\gamma_t(Y)$ and then multiplied by
+   the query weight $L_Y(q)^{s_\alpha}$.
+\end{proof}
+
 Choose $\eta_m=m^{-\rho}\log^{A_c}m$. A uniform guard of size $m^\rho\log^{O_c(1)}m$ handles the case where at least $\eta_m m/2$ points are already valid answers. Otherwise \cref{thm:continuous-likelihood-balls} supplies constant pure negative-moment value below mass $\eta_m$, and \cref{lem:ideal-likelihood-scale-profile} shows that the same ideal continuum already has the scale-normalized query and storage moments needed by \cref{lem:dyadic-structured-amplification}. The value need not sit at the top scale $\eta_m$; it may be concentrated near singleton children. This is why the amplification lemma runs all dyadic scales down to $1/m$. The geometric cost of doing so is still only $m^\rho\log^{O_c(1)}m$.
 
-Thus the remaining posterior problem is no longer geometric. It is a materialization problem: replace the ideal continuous likelihood-ball measure by an implicit, query-decodable family of stored representatives that preserves the two scale moments and the pure multiscale value up to polylogarithmic factors.
+Thus the remaining posterior problem is no longer geometric. By \cref{lem:likelihood-rank-prefix}, it is also not inherently a finite-channel quantization problem: after the Gaussian score $Y$ is fixed, the threshold continuum collapses to score-prefix rank gaps. The missing operation is a structured rank-prefix reporter: sample or decode the few active dyadic prefixes of this random score process and return one stored representative from each listed prefix. If such a prefix is pure for the query, any representative is a valid answer. Uniformly choosing a representative from the whole node would lose a factor equal to the prefix mass, so this output-sensitive reporting step is the real data-structural content.
+
+The following assumption abstracts exactly that operation, while allowing either an implicit channel, a signature tree, a multiprobe score index, or a direct sampled-prefix reporter as the implementation.
 
 \begin{assumption}[Multiscale structured likelihood decoder]\label{asm:multiscale-structured-likelihood}
    Fix $c>1$ and $\rho=\rho_c$. For every bounded-diameter localized node with $m$ resident points there is a structured, output-sensitive posterior decoder over dyadic mass scales
@@ -2992,7 +3042,7 @@ The continuation-mass spherical decoder is proved in \cref{lem:continuation-work
 \paragraph{Structured posterior route.}
 \Cref{lem:posterior-superlevel-compiler} records the negative-moment identity suggested by the latest notes. \Cref{lem:scale-window-compiler} and \cref{lem:dyadic-structured-amplification} isolate the important arithmetic: if mass windows can be decoded output-sensitively, then $\xi^{-\rho}$ repetitions at each dyadic scale convert negative-moment value into constant hit probability, and summing all scales down to $1/m$ still fits the $m^\rho$ query budget. Thus the explicit finite-channel scale $\xi=m^{-1/(2c^2)}$ is not fundamental; it is the price of enumerating all outcomes.
 
-The continuous likelihood-ball family now proves both analytic sides of the desired posterior decoder: \cref{thm:continuous-likelihood-balls} gives the guard-or-pure-child value, and \cref{lem:ideal-likelihood-scale-profile} gives the scale-normalized query and storage moments. The cleanest structured target is therefore \cref{asm:multiscale-structured-likelihood}: materialize this ideal measure as a query-decodable family of stored representatives. Conditional on that theorem, \cref{prop:multiscale-structured-polylog} gives the desired polylogarithmic ANN bounds in one posterior layer; if the activated child is pure for the query, its representative is already a valid answer. The older finite restricted-channel compiler \cref{asm:finite-restricted-channel} and \cref{prop:finite-channel-polylog} remain as a coarse explicit-enumeration special case and as a useful diagnostic framework.
+The continuous likelihood-ball family now proves both analytic sides of the desired posterior decoder: \cref{thm:continuous-likelihood-balls} gives the guard-or-pure-child value, and \cref{lem:ideal-likelihood-scale-profile} gives the scale-normalized query and storage moments. \Cref{lem:likelihood-rank-prefix} further collapses the threshold continuum to rank gaps of a random score order. The cleanest structured target is therefore \cref{asm:multiscale-structured-likelihood}: implement this ideal rank-prefix measure as a query-decodable family of stored representatives. Conditional on that theorem, \cref{prop:multiscale-structured-polylog} gives the desired polylogarithmic ANN bounds in one posterior layer; if the activated prefix is pure for the query, its representative is already a valid answer. The older finite restricted-channel compiler \cref{asm:finite-restricted-channel} and \cref{prop:finite-channel-polylog} remain as a coarse explicit-enumeration special case and as a useful diagnostic framework.
 
 \paragraph{Cohort-or-leaf.}
 \Cref{asm:cohort-or-leaf} is the original full-child route-level condition for the broader posterior-cohort endpoint, but \cref{lem:prefix-slice-accounting} shows that a prefix-conditioned formulation is cleaner. Work accounting for opened children is no longer the hard part: \cref{lem:vote-budget} pays opened recursive calls from realized detector votes. The preferred remaining target for that more general route is \cref{asm:prefix-slice-survival}: prove that one cumulative near-pair score path either reaches a cap-free residual scan or receives enough detector votes to follow prefix-conditioned certified slices to a resident scan. \Cref{lem:detector-inflation} and \cref{lem:off-spine-inflation} reduce the detector-shadowing part of this target to early activation prefixes with large enough continuation mass $H(v)$ and logarithmic spine-ratio sum $\sum H(u^+)/H(u)$; \cref{rem:linear-spine-ratio} explains why long score routes need an aggregate detector-mass argument instead. This should be tested against the hard cases: an isolated near point next to a massive far cluster, a near point on a cluster boundary, a tiny child that becomes heavy only late, and symmetric far shells. The proof must show a whole-lineage inverse-polylogarithmic event, not merely an inverse-polylogarithmic event at each level.
@@ -3009,7 +3059,7 @@ and space
 \]
 The exact pieces now aligned for the randomized cap-thinning route are: continuation-mass pruning gives optimal expected spherical work, adaptive continuation gives whole-lineage near survival, thinned cap splitting gives radius-potential contraction, and cap-free terminal scans are paid by low-correlation collisions.
 
-For the randomized cap-thinning route, the remaining task is the branching first-split work estimate in \cref{asm:mixed-continuation-operator}: prove that the thinned geometric child potentials contract over random cap-discovery frontiers without replacing the branching decoder by a normalized path law. This is a fully non-channel route; the smooth product terminal filter can be used after localization and no longer contributes an inverse-polylogarithmic table-recall penalty. The structured posterior route replaces the cap-frontier obstacle by \cref{asm:multiscale-structured-likelihood}: prove an output-sensitive decoder for the pure likelihood-ball value, not a small explicitly enumerable channel. The detector-vote cohort-or-leaf route is a separate possible generalization to arbitrary certified child hierarchies, where the remaining issue is near-lineage coupling between ordinary continuation paths and detector activations.
+For the randomized cap-thinning route, the remaining task is the branching first-split work estimate in \cref{asm:mixed-continuation-operator}: prove that the thinned geometric child potentials contract over random cap-discovery frontiers without replacing the branching decoder by a normalized path law. This is a fully non-channel route; the smooth product terminal filter can be used after localization and no longer contributes an inverse-polylogarithmic table-recall penalty. The structured posterior route replaces the cap-frontier obstacle by \cref{asm:multiscale-structured-likelihood}: prove an output-sensitive reporter for pure likelihood rank prefixes, not a small explicitly enumerable channel. The detector-vote cohort-or-leaf route is a separate possible generalization to arbitrary certified child hierarchies, where the remaining issue is near-lineage coupling between ordinary continuation paths and detector activations.
 
 \appendix
 
