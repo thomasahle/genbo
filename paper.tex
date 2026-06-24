@@ -72,7 +72,7 @@ for Optimal Data-Dependent Euclidean ANN}
    \]
    The key self-contained ingredient is a spherical continuation-mass decoder with polylogarithmic loss; it lets the restart architecture improve from the older $7/9$ optimization to the $2/3$ exponent above. For terminal spherical search we also give a constant-depth smooth product filter with constant single-table recall and the same optimal exponent.
 
-   We then record two stronger conditional routes. Almost-total cap splits can be made randomized geometric edges inside the same cumulative score tree: the residual edge is always searched, while the cap edge is followed with exactly the probability that makes the radius potential contract. This gives a clean conditional route to a $1/3$ exponent and identifies one polylogarithmic target as a mixed continuation operator over random cap-discovery frontiers. Separately, a structured posterior route shows that finite explicit channel enumeration is not the right bottleneck: if fine posterior buckets can be decoded output-sensitively, the negative-moment arithmetic permits near-terminal buckets while staying within the $n^{\rho_c}$ query budget.
+   We then record two stronger conditional routes. Almost-total cap splits can be made randomized geometric edges inside the same cumulative score tree: the residual edge is always searched, while the cap edge is followed with exactly the probability that makes the radius potential contract. This gives a clean conditional route to a $1/3$ exponent and identifies one polylogarithmic target as a mixed continuation operator over random cap-discovery frontiers. Separately, a structured posterior route shows that finite explicit channel enumeration is not the right bottleneck: if pure posterior children can be decoded output-sensitively across dyadic mass scales, the continuous likelihood-ball geometry plus negative-moment arithmetic already gives the $n^{\rho_c}\polylog n$ bound.
 \end{abstract}
 
 \section{Introduction}
@@ -2367,7 +2367,7 @@ This certificate is the local form of the remaining problem. It is analogous in 
 
 \Cref{prop:randomized-polylog} keeps the cap geometry and asks for a branching first-split work estimate. There is another possible route: replace cap discovery by posterior-superlevel children of a stochastic score mechanism. This is closer to the LSH-forest negative-moment calculus and to the local surrogate-success viewpoint of Andoni and Beaglehole~\cite{AB22}. The advantage is that the recursion accounting becomes almost algebraic.
 
-The important distinction is between explicit enumeration and structured decoding. If a channel has $B$ explicitly enumerated outcomes and the relevant child mass is $\xi$, the evaluation cost forces $B\lesssim m^\rho$ and, in the balanced finite construction below, $\xi\simeq m^{-\rho/(1+\rho)}=m^{-1/(2c^2)}$. That is an implementation constraint, not a negative-moment constraint. If the outcome space is implicit and the query decoder lists only the few active outcomes, the repetition cost at mass scale $\xi$ is only $\xi^{-\rho}$; since every nonempty child has $\xi\ge1/m$, any scale down to near-terminal buckets is compatible with the $m^\rho$ budget.
+The important distinction is between explicit enumeration and structured decoding. If a channel has $B$ explicitly enumerated outcomes and the relevant child mass is $\xi$, the evaluation cost forces $B\lesssim m^\rho$ and, in the balanced finite construction below, $\xi\simeq m^{-\rho/(1+\rho)}=m^{-1/(2c^2)}$. That is an implementation constraint, not a negative-moment constraint. If the outcome space is implicit and the query decoder lists only the few active outcomes, the repetition cost at mass scale $\xi$ is only $\xi^{-\rho}$; since every nonempty child has $\xi\ge1/m$, all dyadic scales together still fit the $m^\rho$ budget.
 
 We first write the posterior identity in the finite notation, because it is the cleanest algebraic form. Let a node contain a set $S$ of $m$ points. A finite score channel assigns probabilities $K_x(j)$, $j\in[B]$, to every $x\in S$, with $\sum_jK_x(j)=1$. Put
 \[
@@ -2468,32 +2468,226 @@ For a threshold $u$, the posterior-superlevel child is
    The decoding bound is the same multiplication. Finally $\xi\ge1/m$ gives $\xi^{-\rho}\le m^\rho$.
 \end{proof}
 
-\begin{assumption}[Near-terminal structured posterior decoder]\label{asm:terminal-structured-channel}
-   Fix $c>1$ and $\rho=\rho_c$. For every bounded-diameter localized node with $m$ resident points there is a structured, output-sensitive posterior channel at scale
+\begin{lemma}[Dyadic structured amplification]\label{lem:dyadic-structured-amplification}
+   Let $\mathcal I$ be dyadic scales $\xi\in[1/m,\eta]$. At each scale $\xi$, suppose one independent structured group has children with
    \[
-      \xi_m=\frac{\log^{A_c}m}{m}
+      \xi/2\le\mu(C)\le\xi,
    \]
-   for some constant $A_c$, with the following properties.
+   output-sensitive decoding cost $d\log^{O_c(1)}m$ plus output, and moment bounds
+   \[
+      \sum_{C\text{ at scale }\xi}\lambda_q(C)\mu(C)^\rho
+      \le A\xi^\rho,
+      \qquad
+      \sum_{C\text{ at scale }\xi}\sigma(C)\mu(C)^{1+\rho}
+      \le A\xi^\rho .
+   \]
+   Suppose that, for a near pair $(p,q)$, the total negative-moment value over all scales is
+   \[
+      \sum_{\xi\in\mathcal I}
+      \sum_{\substack{C\text{ at scale }\xi\\p\in C}}
+      \lambda_q(C)\mu(C)^{-\rho}
+      \ge h .
+   \]
+   If scale $\xi$ is repeated
+   \[
+      T_\xi=\left\lceil 2^{\rho+1}\xi^{-\rho}h^{-1}\right\rceil
+   \]
+   times, then the probability of activating some child containing $p$ is at least $1-e^{-2}$. The total decoding and active-output work is
+   \[
+      d\,m^\rho h^{-1}\log^{O_c(1)}m,
+   \]
+   and the total expected number of active children is at most the same bound without the factor $d$. If each stored child is represented by $O(1)$ words, the total expected stored-child descriptions over all repetitions are at most
+   \[
+      m^{1+\rho}h^{-1}\log^{O_c(1)}m.
+   \]
+\end{lemma}
+
+\begin{proof}
+   Let $V_\xi$ be the negative-moment contribution at scale $\xi$ and let $\Lambda_\xi$ be the one-group active intensity of children at that scale containing $p$. Since $\mu(C)\le\xi$ and $\mu(C)\ge\xi/2$ on the scale,
+   \[
+      \Lambda_\xi
+      =
+      \sum_{C\ni p}\lambda_q(C)
+      \ge
+      2^{-\rho}\xi^\rho V_\xi .
+   \]
+   After $T_\xi$ repetitions, the total hit intensity over all scales is at least
+   \[
+      \sum_\xi T_\xi\Lambda_\xi
+      \ge
+      2h^{-1}\sum_\xi V_\xi
+      \ge2,
+   \]
+   so the miss probability is at most $e^{-2}$.
+
+   The decoding cost is proportional to
+   \[
+      \sum_{\xi\in\mathcal I}\xi^{-\rho}h^{-1}
+      \le
+      m^\rho h^{-1}\log^{O_c(1)}m,
+   \]
+   because the dyadic sum is dominated by the smallest scale $1/m$. The one-group expected number of active children at scale $\xi$ is at most
+   \[
+      (\xi/2)^{-\rho}\sum_C\lambda_q(C)\mu(C)^\rho
+      \le
+      2^\rho A,
+   \]
+   so the same dyadic sum bounds the active output.
+
+   Finally, the one-group expected number of stored child descriptions at scale $\xi$ is at most
+   \[
+      (\xi/2)^{-(1+\rho)}
+      \sum_C\sigma(C)\mu(C)^{1+\rho}
+      \le
+      2^{1+\rho}A\xi^{-1}.
+   \]
+   Multiplying by $T_\xi$ and summing $\xi^{-(1+\rho)}$ over dyadic scales gives the stated $m^{1+\rho}h^{-1}\log^{O_c(1)}m$ bound.
+\end{proof}
+
+\begin{theorem}[Continuous likelihood-ball geometry]\label{thm:continuous-likelihood-balls}
+   Let a node contain $S\subset\R^d$, $|S|=m$, and let $\gamma_t$ denote $N(0,tI_d)$. For $Y\sim\gamma_t$ define
+   \[
+      L_Y(x)=\exp\!\left(\ip{Y}{x}-\frac t2\|x\|^2\right),
+      \qquad
+      C_{Y,u}=\{x\in S:L_Y(x)\ge u\},
+      \qquad
+      \Phi_Y(u)=\frac{|C_{Y,u}|}{m}.
+   \]
+   The set $C_{Y,u}$ is a Euclidean ball. For $0<\alpha<\rho$ and $s_\alpha=1-\alpha$,
+   \[
+      \int L_Y(q)^{s_\alpha}\mathbf 1_{\{p\in C_{Y,u}\}}\Phi_Y(u)^{-\rho}
+      \,d\gamma_t(Y)\,\alpha u^{\alpha-1}\Phi_Y(u)^\rho\,du
+      =
+      \exp\!\left(-\frac{\alpha s_\alpha t}{2}\|p-q\|^2\right).
+   \]
+
+   Moreover fix $c>1$ and $\eta\in[1/m,1]$. Let $p,q$ satisfy $\|p-q\|\le r$, and suppose fewer than $\eta m/2$ data points are within distance $cr$ of $q$. With
+   \[
+      \alpha=\kappa/\log m,
+      \qquad
+      t=C_c\frac{\log m}{r^2}
+   \]
+   for sufficiently small $\kappa=\kappa(c)>0$ and sufficiently large $C_c=C_c(c)$, the pure restricted value
+   \[
+      \mathcal P_\eta(p,q)
+      =
+      \int d\gamma_t(Y)L_Y(q)^{s_\alpha}
+      \int_0^{L_Y(p)}
+      \alpha u^{\alpha-1}
+      \mathbf 1_{\{\Phi_Y(u)\le\eta,\ C_{Y,u}\subseteq \Ball(q,cr)\}}\,du
+   \]
+   is at least a positive constant $\delta_c$.
+\end{theorem}
+
+\begin{proof}
+   The level-set identity
+   \[
+      L_Y(x)\ge u
+      \quad\Longleftrightarrow\quad
+      \left\|x-\frac Yt\right\|^2
+      \le
+      \left\|\frac Yt\right\|^2-\frac{2\log u}{t}
+   \]
+   shows that $C_{Y,u}$ is a ball. The negative moment cancels $\Phi_Y(u)^\rho$, and
+   \[
+   \begin{aligned}
+      \int d\gamma_t(Y)L_Y(q)^{s_\alpha}
+      \int_0^{L_Y(p)}\alpha u^{\alpha-1}\,du
+      &=
+      \int L_Y(p)^\alpha L_Y(q)^{s_\alpha}\,d\gamma_t(Y)\\
+      &=
+      \exp\!\left(-\frac{\alpha s_\alpha t}{2}\|p-q\|^2\right),
+   \end{aligned}
+   \]
+   by completing the square for the Gaussian shift family.
+
+   For the pure bound, translate so that $q=0$ and write $d=\|p-q\|\le r$. Under the tilted measure proportional to
+   \[
+      L_Y(p)^\alpha L_Y(q)^{s_\alpha}\,d\gamma_t(Y),
+   \]
+   the vector $Y$ has distribution $N(t\alpha p,tI_d)$, up to the affinity factor displayed above. For an invalid point $x$ with $\|x-q\|>cr$, put
+   \[
+      \ell_x=\log\frac{L_Y(x)}{L_Y(p)}.
+   \]
+   Under this tilted law, $\ell_x$ is Gaussian with variance $t\|x-p\|^2$ and mean
+   \[
+      -\frac t2\Delta_x,
+      \qquad
+      \Delta_x
+      =
+      \alpha\|x-p\|^2+s_\alpha(\|x-q\|^2-d^2).
+   \]
+   Since $\|x-q\|\ge cr$ and $d\le r$,
+   \[
+      \Delta_x\ge s_\alpha(c^2-1)r^2,
+      \qquad
+      \frac{\Delta_x}{\|x-p\|}\ge \|x-q\|-d\ge(c-1)r .
+   \]
+   Therefore, for
+   \[
+      h_0=\frac{ts_\alpha(c^2-1)r^2}{4},
+   \]
+   a Gaussian tail bound gives
+   \[
+      \Pr[\ell_x\ge-h_0]\le
+      \exp\!\left(-\Omega_c(tr^2)\right)\le m^{-3}
+   \]
+   after increasing $C_c$. A union bound over $S$ shows that, with probability $1-O(m^{-2})$ under the tilted law, every invalid point has $L_Y(x)<e^{-h_0}L_Y(p)$.
+
+   On this event, every threshold $u\in[e^{-h_0}L_Y(p),L_Y(p)]$ produces a child containing $p$ and no invalid point. Since fewer than $\eta m/2$ points are valid, such a child also has mass at most $\eta$. Thus
+   \[
+      \int_0^{L_Y(p)}
+      \alpha u^{\alpha-1}
+      \mathbf 1_{\{\Phi_Y(u)\le\eta,\ C_{Y,u}\subseteq \Ball(q,cr)\}}\,du
+      \ge
+      L_Y(p)^\alpha(1-e^{-\alpha h_0})
+   \]
+   except on a tilted event of probability $O(m^{-2})$. Integrating back gives
+   \[
+      \mathcal P_\eta(p,q)
+      \ge
+      \exp\!\left(-\frac{\alpha s_\alpha tr^2}{2}\right)
+      (1-e^{-\alpha h_0})(1-O(m^{-2})).
+   \]
+   The choices $\alpha=\kappa/\log m$ and $t=C_c\log m/r^2$ make both $\alpha tr^2$ and $\alpha h_0$ positive constants depending only on $c$, proving the claim after fixing $\kappa,C_c$.
+\end{proof}
+
+Choose $\eta_m=m^{-\rho}\log^{A_c}m$. A uniform guard of size $m^\rho\log^{O_c(1)}m$ handles the case where at least $\eta_m m/2$ points are already valid answers. Otherwise \cref{thm:continuous-likelihood-balls} supplies constant pure negative-moment value below mass $\eta_m$. That value need not sit at the top scale $\eta_m$; it may be concentrated near singleton children. This is why \cref{lem:dyadic-structured-amplification} runs all dyadic scales down to $1/m$. The geometric cost of doing so is still only $m^\rho\log^{O_c(1)}m$.
+
+\begin{assumption}[Multiscale structured likelihood decoder]\label{asm:multiscale-structured-likelihood}
+   Fix $c>1$ and $\rho=\rho_c$. For every bounded-diameter localized node with $m$ resident points there is a structured, output-sensitive posterior decoder over dyadic mass scales
+   \[
+      \xi\in[1/m,\eta_m],
+      \qquad
+      \eta_m=m^{-\rho}\log^{A_c}m,
+   \]
+   with the following properties.
    \begin{itemize}
-      \item Its children are certified subsets $C\subseteq S$ with $\xi_m/2\le |C|/m\le\xi_m$.
-      \item One independent group can be decoded for a query in $d\log^{O_c(1)}m$ work plus output work.
-      \item For every query $q$, the one-group active-child and stored-child moments satisfy
+      \item At scale $\xi$, children are certified subsets $C\subseteq S$ with $\xi/2\le |C|/m\le\xi$, and each stored child has a representative point.
+      \item One independent group at one scale can be decoded for a query in $d\log^{O_c(1)}m$ work plus output work.
+      \item For every query $q$ and every scale $\xi$, the one-group active-child and stored-child moments satisfy
       \[
-         \sum_C\lambda_q(C)\mu(C)^\rho\le \xi_m^\rho\log^{O_c(1)}m,
+         \sum_{C\text{ at scale }\xi}\lambda_q(C)\mu(C)^\rho
+         \le
+         \xi^\rho\log^{O_c(1)}m,
          \qquad
-         \sum_C\sigma(C)\mu(C)^{1+\rho}\le \xi_m^\rho\log^{O_c(1)}m.
+         \sum_{C\text{ at scale }\xi}\sigma(C)\mu(C)^{1+\rho}
+         \le
+         \xi^\rho\log^{O_c(1)}m.
       \]
-      \item For every near pair $(p,q)$ in the node, either a resident guard finds a valid $cr$-neighbor with constant probability, or
+      \item For every near pair $(p,q)$ in the node, either a uniform resident guard of size $m^\rho\log^{O_c(1)}m$ finds a valid $cr$-neighbor with constant probability, or the pure multiscale value is inverse-polylogarithmic:
       \[
-         \sum_{C\ni p}\lambda_q(C)\mu(C)^{-\rho}
+         \sum_{\xi\le\eta_m}
+         \sum_{\substack{C\text{ at scale }\xi\\p\in C,\ C\subseteq\Ball(q,cr)}}
+         \lambda_q(C)\mu(C)^{-\rho}
          \ge
          \log^{-O_c(1)}m.
       \]
    \end{itemize}
 \end{assumption}
 
-\begin{proposition}[Conditional near-terminal structured endpoint]\label{prop:terminal-structured-polylog}
-   Under \cref{asm:terminal-structured-channel}, worst-case Euclidean ANN has query time
+\begin{proposition}[Conditional multiscale structured endpoint]\label{prop:multiscale-structured-polylog}
+   Under \cref{asm:multiscale-structured-likelihood}, worst-case Euclidean ANN has query time
    \[
       Q(n,d)=d\,n^{\rho_c}\log^{O_c(1)}n
    \]
@@ -2504,36 +2698,23 @@ For a threshold $u$, the posterior-superlevel child is
 \end{proposition}
 
 \begin{proof}
-   Work after bounded-diameter localization. At a node of size $m$, apply \cref{lem:scale-window-compiler} with $\xi=\xi_m$ and $h=\log^{-O_c(1)}m$. The number of independent groups is
+   Work after bounded-diameter localization. At a node of size $m$, first sample the resident guard from \cref{asm:multiscale-structured-likelihood}. If it fails, apply \cref{lem:dyadic-structured-amplification} with
    \[
-      T=\xi_m^{-\rho}h^{-1}
-      =
-      m^\rho\log^{O_c(1)}m,
+      h=\log^{-O_c(1)}m,
+      \qquad
+      \eta=\eta_m=m^{-\rho}\log^{O_c(1)}m.
    \]
-   and the local decoding work is therefore $d\,m^\rho\log^{O_c(1)}m$.
+   The smallest dyadic scale is $1/m$, so the total local decoding and active-output work is
+   \[
+      d\,m^\rho\log^{O_c(1)}m.
+   \]
+   With constant probability, the decoder activates a stored child $C$ containing the true near point and satisfying $C\subseteq\Ball(q,cr)$. Returning and verifying the stored representative of $C$ therefore succeeds. The guard case also succeeds by definition.
 
-   The active children have size $\Theta(\xi_m m)=\log^{O_c(1)}m$, so the query scans them directly. By \cref{lem:scale-window-compiler}, after all groups
+   The expected number of stored child descriptions over all repeated scales is
    \[
-      \E\sum_{C\text{ active}}\mu(C)^\rho\le \log^{O_c(1)}m.
+      m^{1+\rho}\log^{O_c(1)}m
    \]
-   Since every active child has $\mu(C)\le\xi_m$,
-   \[
-      \sum_{C\text{ active}} |C|
-      =
-      m\sum_{C\text{ active}}\mu(C)
-      \le
-      m\xi_m^{1-\rho}
-      \sum_{C\text{ active}}\mu(C)^\rho
-      \le
-      m^\rho\log^{O_c(1)}m.
-   \]
-   Thus terminal verification is within the target query bound. The hit probability is constant by \cref{lem:scale-window-compiler}, unless the guard already succeeds.
-
-   For space, the stored-child power moment after all groups is $\log^{O_c(1)}m$. Storing a terminal child by references costs at most its $(1+\rho)$ power up to a logarithmic factor, because $|C|=\log^{O_c(1)}m$. Hence the total terminal-bucket storage at the node is
-   \[
-      m^{1+\rho}\log^{O_c(1)}m.
-   \]
-   Adding the original data and the polylogarithmic bounded-diameter localization copies gives the displayed space bound.
+   by \cref{lem:dyadic-structured-amplification}. Adding the original data and the bounded-diameter localization copies gives the displayed space bound. Standard truncation and a constant number of independent copies give capped query bounds with constant success probability.
 \end{proof}
 
 The earlier finite-channel route is recovered by collapsing the continuum of thresholds to one explicit top-$\xi$ child per outcome. Let $\xi\in(0,1)$ and let $C_j^\xi$ be the top $\lceil \xi m\rceil$ points by posterior ratio $R_j(x)$. If $r_{j,1}\ge\cdots\ge r_{j,m}$ are these ratios, put
@@ -2570,7 +2751,7 @@ Thus if $B\le\xi^{-1}\log^{O(1)}m$ and $\beta=O(1/\log m)$, one group has only $
    outcomes, evaluable on the node in $dB\log^{O_c(1)}m$ work, such that for every near pair $p,q$ in the node, either a uniformly sampled resident guard block of size $O(\xi^{-1}\log n)$ returns a valid $cr$-neighbor with constant probability, or the restricted top-$\xi$ posterior-superlevel negative moment for $p,q$ is at least $\log^{-O_c(1)}m$.
 \end{assumption}
 
-The continuous Gaussian likelihood-ball channel gives evidence for the posterior approach: its level sets are Euclidean balls and the restricted negative moment is constant unless the resident guard already succeeds. What is not yet proved in the finite special case is the balanced, query-decodable compilation with only $B\simeq\xi^{-1}$ outcomes. The structured endpoint \cref{asm:terminal-structured-channel} asks for a different theorem: an implicit decoder for much finer children, with output-sensitive listing replacing enumeration.
+\Cref{thm:continuous-likelihood-balls} proves the geometric part of the posterior approach: likelihood level sets are Euclidean balls, and unless a resident guard succeeds there is constant negative-moment value on children that contain the near point and no invalid point. What is not yet proved is the structured decoding step in \cref{asm:multiscale-structured-likelihood}: an implicit decoder must preserve that pure value across dyadic mass scales with output-sensitive listing. The finite special case below remains useful as a coarse diagnostic; there the missing statement is balanced, query-decodable compilation with only $B\simeq\xi^{-1}$ outcomes.
 
 The most direct experimental diagnostic for \cref{asm:finite-restricted-channel} is to measure its left-hand side. For a proposed finite channel, let $\tau_j$ be the top-$\xi$ posterior threshold of $R_j(x)$ over the data, and for each planted near pair $(p,q)$ compute
 \[
@@ -2698,9 +2879,9 @@ The continuation-mass spherical decoder is proved in \cref{lem:continuation-work
 \Cref{lem:adaptive-continuation} replaces the tube proof in the predictable-score setting, so near-pair survival is no longer the obstacle for the randomized one-tree endpoint. \Cref{asm:mixed-continuation-operator} is the remaining work-side target after \cref{lem:cap-free-scan-accounting}: it must prove thinned cap-split contraction over branching cap-discovery frontiers. Conditional on that operator, \cref{prop:randomized-polylog} shows that choosing $\eta\asymp(\log\log n)/\log n$ gives polylogarithmic query and space overhead.
 
 \paragraph{Structured posterior route.}
-\Cref{lem:posterior-superlevel-compiler} records the negative-moment identity suggested by the latest notes. \Cref{lem:scale-window-compiler} isolates the important arithmetic: if a scale window of mass $\xi$ can be decoded output-sensitively, then $\xi^{-\rho}$ independent groups convert negative-moment value into constant hit probability, and this fits the $m^\rho$ query budget for every nonempty scale $\xi\ge1/m$. Thus the explicit finite-channel scale $\xi=m^{-1/(2c^2)}$ is not fundamental; it is the price of enumerating all outcomes.
+\Cref{lem:posterior-superlevel-compiler} records the negative-moment identity suggested by the latest notes. \Cref{lem:scale-window-compiler} and \cref{lem:dyadic-structured-amplification} isolate the important arithmetic: if mass windows can be decoded output-sensitively, then $\xi^{-\rho}$ repetitions at each dyadic scale convert negative-moment value into constant hit probability, and summing all scales down to $1/m$ still fits the $m^\rho$ query budget. Thus the explicit finite-channel scale $\xi=m^{-1/(2c^2)}$ is not fundamental; it is the price of enumerating all outcomes.
 
-The cleanest structured target is \cref{asm:terminal-structured-channel}: decode near-terminal posterior buckets of size $\log^{O_c(1)}m$ with inverse-polylogarithmic restricted negative moment and the scale-normalized query/storage moments. Conditional on that theorem, \cref{prop:terminal-structured-polylog} gives the desired polylogarithmic ANN bounds in one posterior layer followed by terminal scanning. The older finite restricted-channel compiler \cref{asm:finite-restricted-channel} and \cref{prop:finite-channel-polylog} remain as a coarse explicit-enumeration special case and as a useful diagnostic framework; the continuous Gaussian likelihood-ball family proves the right guard-or-small-child geometry, but neither the finite balanced compilation nor the finer structured decoder is proved here.
+The cleanest structured target is now \cref{asm:multiscale-structured-likelihood}: decode the pure likelihood-ball value certified by \cref{thm:continuous-likelihood-balls} across dyadic mass scales, storing one representative per child. Conditional on that theorem, \cref{prop:multiscale-structured-polylog} gives the desired polylogarithmic ANN bounds in one posterior layer; if the activated child is pure for the query, its representative is already a valid answer. The older finite restricted-channel compiler \cref{asm:finite-restricted-channel} and \cref{prop:finite-channel-polylog} remain as a coarse explicit-enumeration special case and as a useful diagnostic framework. The geometric guard-or-pure-child theorem is proved here; the structured decoder preserving it is not.
 
 \paragraph{Cohort-or-leaf.}
 \Cref{asm:cohort-or-leaf} is the original full-child route-level condition for the broader posterior-cohort endpoint, but \cref{lem:prefix-slice-accounting} shows that a prefix-conditioned formulation is cleaner. Work accounting for opened children is no longer the hard part: \cref{lem:vote-budget} pays opened recursive calls from realized detector votes. The preferred remaining target for that more general route is \cref{asm:prefix-slice-survival}: prove that one cumulative near-pair score path either reaches a cap-free residual scan or receives enough detector votes to follow prefix-conditioned certified slices to a resident scan. \Cref{lem:detector-inflation} and \cref{lem:off-spine-inflation} reduce the detector-shadowing part of this target to early activation prefixes with large enough continuation mass $H(v)$ and logarithmic spine-ratio sum $\sum H(u^+)/H(u)$; \cref{rem:linear-spine-ratio} explains why long score routes need an aggregate detector-mass argument instead. This should be tested against the hard cases: an isolated near point next to a massive far cluster, a near point on a cluster boundary, a tiny child that becomes heavy only late, and symmetric far shells. The proof must show a whole-lineage inverse-polylogarithmic event, not merely an inverse-polylogarithmic event at each level.
@@ -2717,7 +2898,7 @@ and space
 \]
 The exact pieces now aligned for the randomized cap-thinning route are: continuation-mass pruning gives optimal expected spherical work, adaptive continuation gives whole-lineage near survival, thinned cap splitting gives radius-potential contraction, and cap-free terminal scans are paid by low-correlation collisions.
 
-For the randomized cap-thinning route, the remaining task is the branching first-split work estimate in \cref{asm:mixed-continuation-operator}: prove that the thinned geometric child potentials contract over random cap-discovery frontiers without replacing the branching decoder by a normalized path law. This is a fully non-channel route; the smooth product terminal filter can be used after localization and no longer contributes an inverse-polylogarithmic table-recall penalty. The structured posterior route replaces the cap-frontier obstacle by \cref{asm:terminal-structured-channel}: prove an output-sensitive decoder for fine posterior buckets, not a small explicitly enumerable channel. The detector-vote cohort-or-leaf route is a separate possible generalization to arbitrary certified child hierarchies, where the remaining issue is near-lineage coupling between ordinary continuation paths and detector activations.
+For the randomized cap-thinning route, the remaining task is the branching first-split work estimate in \cref{asm:mixed-continuation-operator}: prove that the thinned geometric child potentials contract over random cap-discovery frontiers without replacing the branching decoder by a normalized path law. This is a fully non-channel route; the smooth product terminal filter can be used after localization and no longer contributes an inverse-polylogarithmic table-recall penalty. The structured posterior route replaces the cap-frontier obstacle by \cref{asm:multiscale-structured-likelihood}: prove an output-sensitive decoder for the pure likelihood-ball value, not a small explicitly enumerable channel. The detector-vote cohort-or-leaf route is a separate possible generalization to arbitrary certified child hierarchies, where the remaining issue is near-lineage coupling between ordinary continuation paths and detector activations.
 
 \appendix
 
