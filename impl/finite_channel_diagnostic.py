@@ -1,0 +1,256 @@
+"""Diagnostics for the finite restricted-channel conjecture.
+
+Given a finite stochastic channel K_x(j), this module computes the restricted
+top-eta negative moment
+
+    H_eta(p,q) = sum_j pi_j^alpha K_q(j)^(1-alpha)
+                 (R_j(p)^alpha - tau_j^alpha)_+
+
+where pi_j is the empirical output mass, R_j(x)=K_x(j)/pi_j, and tau_j is the
+top-eta posterior threshold for outcome j.  The quantity to track is
+g(q)+H_eta(p,q), especially its lower quantiles over near pairs.
+"""
+
+from __future__ import annotations
+
+import argparse
+import math
+from dataclasses import dataclass
+
+import numpy as np
+
+
+_EPS = 1e-300
+
+
+@dataclass
+class DiagnosticResult:
+    h_eta: np.ndarray
+    guard_density: np.ndarray
+    score: np.ndarray
+    pi: np.ndarray
+    tau: np.ndarray
+    eta: float
+    alpha: float
+
+    def summary(self) -> dict[str, float]:
+        qs = [0.0, 0.01, 0.05, 0.1, 0.5]
+        out: dict[str, float] = {
+            "eta": float(self.eta),
+            "alpha": float(self.alpha),
+            "pi_min": float(self.pi.min()),
+            "pi_max": float(self.pi.max()),
+            "tau_min": float(self.tau.min()),
+            "tau_max": float(self.tau.max()),
+            "h_mean": float(self.h_eta.mean()),
+            "guard_mean": float(self.guard_density.mean()),
+            "score_mean": float(self.score.mean()),
+        }
+        for q in qs:
+            out[f"h_q{q:g}"] = float(np.quantile(self.h_eta, q))
+            out[f"score_q{q:g}"] = float(np.quantile(self.score, q))
+        return out
+
+
+def stable_softmax(logits: np.ndarray) -> np.ndarray:
+    shifted = logits - logits.max(axis=1, keepdims=True)
+    exp = np.exp(shifted)
+    return exp / exp.sum(axis=1, keepdims=True)
+
+
+def balance_softmax_offsets(
+    scores: np.ndarray,
+    *,
+    target: np.ndarray | None = None,
+    max_iter: int = 200,
+    damping: float = 1.0,
+    tol: float = 1e-4,
+) -> np.ndarray:
+    """Find offsets b so softmax(scores+b) has approximately target column mass."""
+    m, b_count = scores.shape
+    if target is None:
+        target = np.full(b_count, 1.0 / b_count)
+    target = np.asarray(target, dtype=float)
+    target = target / target.sum()
+
+    offsets = np.zeros(b_count)
+    for _ in range(max_iter):
+        probs = stable_softmax(scores + offsets)
+        pi = probs.mean(axis=0)
+        err = np.max(np.abs(pi - target) / np.maximum(target, _EPS))
+        if err <= tol:
+            break
+        offsets += damping * (np.log(np.maximum(target, _EPS)) - np.log(np.maximum(pi, _EPS)))
+        offsets -= offsets.mean()
+    return offsets
+
+
+def make_panel(
+    d: int,
+    b_count: int,
+    *,
+    kind: str = "gaussian",
+    seed: int = 0,
+    data: np.ndarray | None = None,
+) -> np.ndarray:
+    rng = np.random.default_rng(seed)
+    if kind == "gaussian":
+        return rng.standard_normal((b_count, d)) / math.sqrt(d)
+    if kind == "whitened_gaussian":
+        if data is None:
+            raise ValueError("whitened_gaussian requires data")
+        centered = data - data.mean(axis=0, keepdims=True)
+        cov = centered.T @ centered / max(len(centered), 1)
+        vals, vecs = np.linalg.eigh(cov + 1e-6 * np.eye(d))
+        whitening = vecs @ np.diag(1.0 / np.sqrt(vals)) @ vecs.T
+        return (rng.standard_normal((b_count, d)) @ whitening) / math.sqrt(d)
+    if kind == "cross_polytope":
+        panel = np.zeros((b_count, d))
+        coords = np.arange(b_count) % d
+        signs = np.where((np.arange(b_count) // d) % 2 == 0, 1.0, -1.0)
+        panel[np.arange(b_count), coords] = signs
+        return panel
+    raise ValueError(f"unknown panel kind: {kind}")
+
+
+def softmax_channel(data: np.ndarray, panel: np.ndarray, offsets: np.ndarray | None = None) -> np.ndarray:
+    logits = data @ panel.T
+    if offsets is not None:
+        logits = logits + offsets
+    return stable_softmax(logits)
+
+
+def posterior_thresholds(k_data: np.ndarray, eta: float) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    if not (0 < eta <= 1):
+        raise ValueError("eta must lie in (0, 1]")
+    m = k_data.shape[0]
+    pi = np.maximum(k_data.mean(axis=0), _EPS)
+    ratios = k_data / pi
+    top_k = max(1, int(math.ceil(eta * m)))
+    kth_index = m - top_k
+    tau = np.partition(ratios, kth_index, axis=0)[kth_index]
+    return pi, ratios, tau
+
+
+def h_eta_for_pairs(
+    k_data: np.ndarray,
+    k_query: np.ndarray,
+    near_indices: np.ndarray,
+    *,
+    eta: float,
+    alpha: float,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    pi, ratios, tau = posterior_thresholds(k_data, eta)
+    r_near = ratios[np.asarray(near_indices, dtype=int)]
+    positive = np.maximum(np.power(np.maximum(r_near, _EPS), alpha) - tau[None, :] ** alpha, 0.0)
+    weights = (pi[None, :] ** alpha) * (np.maximum(k_query, _EPS) ** (1.0 - alpha))
+    return np.sum(weights * positive, axis=1), pi, tau
+
+
+def guard_density(data: np.ndarray, queries: np.ndarray, *, c: float, r: float) -> np.ndarray:
+    threshold = c * r
+    out = np.empty(len(queries), dtype=float)
+    for i, q in enumerate(queries):
+        out[i] = np.mean(np.linalg.norm(data - q, axis=1) <= threshold)
+    return out
+
+
+def diagnose_channel(
+    data: np.ndarray,
+    queries: np.ndarray,
+    near_indices: np.ndarray,
+    k_data: np.ndarray,
+    k_query: np.ndarray,
+    *,
+    c: float,
+    r: float,
+    eta: float | None = None,
+    alpha: float | None = None,
+) -> DiagnosticResult:
+    m = len(data)
+    if eta is None:
+        eta = m ** (-1.0 / (2.0 * c * c))
+    if alpha is None:
+        alpha = 1.0 / max(math.log(max(m, 3)), 1.0)
+    h_eta, pi, tau = h_eta_for_pairs(k_data, k_query, near_indices, eta=eta, alpha=alpha)
+    guard = guard_density(data, queries, c=c, r=r)
+    return DiagnosticResult(h_eta=h_eta, guard_density=guard, score=guard + h_eta,
+                            pi=pi, tau=tau, eta=eta, alpha=alpha)
+
+
+def effective_support(k: np.ndarray) -> np.ndarray:
+    return 1.0 / np.sum(k * k, axis=1)
+
+
+def softmax_hessian_condition(panel: np.ndarray, probs: np.ndarray, eps: float = 1e-10) -> np.ndarray:
+    out = np.empty(len(probs), dtype=float)
+    for i, p in enumerate(probs):
+        mean = p @ panel
+        centered = panel - mean
+        cov = centered.T @ (centered * p[:, None])
+        vals = np.linalg.eigvalsh(cov)
+        vals = vals[vals > eps]
+        out[i] = np.inf if len(vals) == 0 else float(vals[-1] / vals[0])
+    return out
+
+
+def _sphere(n: int, d: int, rng: np.random.Generator) -> np.ndarray:
+    x = rng.standard_normal((n, d))
+    return x / np.linalg.norm(x, axis=1, keepdims=True)
+
+
+def _synthetic_near_pairs(n: int, d: int, c: float, n_queries: int, seed: int) -> tuple[np.ndarray, np.ndarray, np.ndarray, float]:
+    rng = np.random.default_rng(seed)
+    data = _sphere(n, d, rng)
+    near_indices = rng.integers(0, n, size=n_queries)
+    r = math.sqrt(2.0 - 2.0 * (1.0 - 1.0 / (c * c)))
+    queries = []
+    for idx in near_indices:
+        p = data[idx]
+        w = rng.standard_normal(d)
+        w -= (w @ p) * p
+        w /= np.linalg.norm(w)
+        # Put q at the critical near correlation with p.
+        a = 1.0 - 1.0 / (c * c)
+        queries.append(a * p + math.sqrt(1.0 - a * a) * w)
+    return data, np.asarray(queries), near_indices, r
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Measure g(q)+H_eta(p,q) for a balanced softmax channel.")
+    parser.add_argument("--n", type=int, default=2000)
+    parser.add_argument("--d", type=int, default=32)
+    parser.add_argument("--c", type=float, default=2.0)
+    parser.add_argument("--queries", type=int, default=200)
+    parser.add_argument("--B", type=int, default=0, help="channel outcomes; default is ceil(m^(1/(2c^2)))")
+    parser.add_argument("--panel", choices=["gaussian", "whitened_gaussian", "cross_polytope"], default="gaussian")
+    parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--balance-iters", type=int, default=200)
+    args = parser.parse_args()
+
+    data, queries, near_indices, r = _synthetic_near_pairs(args.n, args.d, args.c, args.queries, args.seed)
+    eta = args.n ** (-1.0 / (2.0 * args.c * args.c))
+    b_count = args.B or int(math.ceil(1.0 / eta))
+
+    panel = make_panel(args.d, b_count, kind=args.panel, seed=args.seed + 1, data=data)
+    scores = data @ panel.T
+    offsets = balance_softmax_offsets(scores, max_iter=args.balance_iters)
+    k_data = stable_softmax(scores + offsets)
+    k_query = softmax_channel(queries, panel, offsets)
+    result = diagnose_channel(data, queries, near_indices, k_data, k_query, c=args.c, r=r, eta=eta)
+
+    k_z = softmax_channel((result.alpha * data[near_indices] + (1.0 - result.alpha) * queries), panel, offsets)
+    support = effective_support(k_z)
+    cond = softmax_hessian_condition(panel, k_z)
+
+    summary = result.summary()
+    summary["B"] = float(b_count)
+    summary["effective_support_q05"] = float(np.quantile(support, 0.05))
+    summary["effective_support_median"] = float(np.median(support))
+    summary["hessian_cond_median"] = float(np.median(cond[np.isfinite(cond)])) if np.any(np.isfinite(cond)) else float("inf")
+    for key in sorted(summary):
+        print(f"{key:>24s}: {summary[key]:.6g}")
+
+
+if __name__ == "__main__":
+    main()
