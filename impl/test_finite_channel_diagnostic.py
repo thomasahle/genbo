@@ -6,6 +6,7 @@ from finite_channel_diagnostic import (
     diagnose_channel,
     h_eta_for_pairs,
     make_panel,
+    posterior_margin_certificate,
     posterior_thresholds,
     stable_softmax,
     synthetic_near_pairs,
@@ -43,6 +44,12 @@ def test_h_eta_matches_direct_formula():
         expected.append(total)
     assert np.allclose(h, expected)
 
+    affinity, margin_mass, margin_bound = posterior_margin_certificate(
+        k_data, k_query, near, pi, tau, alpha=alpha, margin_delta=0.1)
+    assert np.all(affinity > 0)
+    assert np.all((0 <= margin_mass) & (margin_mass <= 1))
+    assert np.all(margin_bound <= h + 1e-12)
+
 
 def test_diagnostic_adds_guard_density():
     data = np.array([
@@ -61,6 +68,7 @@ def test_diagnostic_adds_guard_density():
     result = diagnose_channel(data, queries, near, k_data, k_query, c=2.0, r=0.2, eta=1 / 3, alpha=0.5)
     assert np.allclose(result.guard_density, [1 / 3, 0.0])
     assert np.allclose(result.score, result.guard_density + result.h_eta)
+    assert np.all(result.margin_bound <= result.h_eta + 1e-12)
 
 
 def test_softmax_balancing_reduces_column_mass_error():

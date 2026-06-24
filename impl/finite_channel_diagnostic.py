@@ -29,10 +29,14 @@ class DiagnosticResult:
     h_eta: np.ndarray
     guard_density: np.ndarray
     score: np.ndarray
+    affinity: np.ndarray
+    margin_mass: np.ndarray
+    margin_bound: np.ndarray
     pi: np.ndarray
     tau: np.ndarray
     eta: float
     alpha: float
+    margin_delta: float
 
     def summary(self) -> dict[str, float]:
         qs = [0.0, 0.01, 0.05, 0.1, 0.5]
@@ -46,10 +50,17 @@ class DiagnosticResult:
             "h_mean": float(self.h_eta.mean()),
             "guard_mean": float(self.guard_density.mean()),
             "score_mean": float(self.score.mean()),
+            "affinity_mean": float(self.affinity.mean()),
+            "margin_delta": float(self.margin_delta),
+            "margin_mass_mean": float(self.margin_mass.mean()),
+            "margin_bound_mean": float(self.margin_bound.mean()),
         }
         for q in qs:
             out[f"h_q{q:g}"] = float(np.quantile(self.h_eta, q))
             out[f"score_q{q:g}"] = float(np.quantile(self.score, q))
+            out[f"affinity_q{q:g}"] = float(np.quantile(self.affinity, q))
+            out[f"margin_mass_q{q:g}"] = float(np.quantile(self.margin_mass, q))
+            out[f"margin_bound_q{q:g}"] = float(np.quantile(self.margin_bound, q))
         return out
 
 
@@ -172,6 +183,33 @@ def h_eta_for_pairs(
     return np.sum(weights * positive, axis=1), pi, tau
 
 
+def posterior_margin_certificate(
+    k_data: np.ndarray,
+    k_query: np.ndarray,
+    near_indices: np.ndarray,
+    pi: np.ndarray,
+    tau: np.ndarray,
+    *,
+    alpha: float,
+    margin_delta: float,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Return affinity, tilted good mass, and the rank-margin lower bound."""
+    if margin_delta < 0:
+        raise ValueError("margin_delta must be nonnegative")
+    near = np.asarray(near_indices, dtype=int)
+    k_near = np.maximum(k_data[near], _EPS)
+    k_query = np.maximum(k_query, _EPS)
+    affinity_terms = (k_near ** alpha) * (k_query ** (1.0 - alpha))
+    affinity = np.sum(affinity_terms, axis=1)
+
+    ratios = k_near / pi[None, :]
+    good = ratios >= math.exp(margin_delta) * tau[None, :]
+    good_affinity = np.sum(np.where(good, affinity_terms, 0.0), axis=1)
+    margin_mass = np.divide(good_affinity, affinity, out=np.zeros_like(affinity), where=affinity > 0)
+    margin_bound = (1.0 - math.exp(-alpha * margin_delta)) * good_affinity
+    return affinity, margin_mass, margin_bound
+
+
 def guard_density(data: np.ndarray, queries: np.ndarray, *, c: float, r: float) -> np.ndarray:
     threshold = c * r
     out = np.empty(len(queries), dtype=float)
@@ -191,6 +229,7 @@ def diagnose_channel(
     r: float,
     eta: float | None = None,
     alpha: float | None = None,
+    margin_delta: float | None = None,
 ) -> DiagnosticResult:
     m = len(data)
     if eta is None:
@@ -198,9 +237,15 @@ def diagnose_channel(
     if alpha is None:
         alpha = 1.0 / max(math.log(max(m, 3)), 1.0)
     h_eta, pi, tau = h_eta_for_pairs(k_data, k_query, near_indices, eta=eta, alpha=alpha)
+    if margin_delta is None:
+        margin_delta = 1.0 / alpha
+    affinity, margin_mass, margin_bound = posterior_margin_certificate(
+        k_data, k_query, near_indices, pi, tau, alpha=alpha, margin_delta=margin_delta)
     guard = guard_density(data, queries, c=c, r=r)
     return DiagnosticResult(h_eta=h_eta, guard_density=guard, score=guard + h_eta,
-                            pi=pi, tau=tau, eta=eta, alpha=alpha)
+                            affinity=affinity, margin_mass=margin_mass,
+                            margin_bound=margin_bound, pi=pi, tau=tau,
+                            eta=eta, alpha=alpha, margin_delta=margin_delta)
 
 
 def effective_support(k: np.ndarray) -> np.ndarray:
