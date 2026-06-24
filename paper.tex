@@ -1778,6 +1778,12 @@ Inside a score bucket $U$ on the current shell, call a direction $w$ almost tota
 
 Thus a complete almost-total cap search can be implemented by minimizing a convex empirical hinge loss to inverse-polylogarithmic accuracy and then verifying the resulting cap size directly. Conversely, if no almost-total $2\eta$-cap exists, then for every query direction at least an $\varepsilon$ fraction of the terminal bucket has correlation at most $2\eta$ with the query. Scanning the whole terminal bucket is therefore charged to low-correlation points with only an $\varepsilon^{-1}$ loss.
 
+In the one-tree route we take the residual allowance at the largest scale compatible with deterministic cap-split contraction,
+\[
+   \delta=\delta_0\eta^{2/\rho_c},
+\]
+where $\delta_0=\delta_0(c)>0$ is a sufficiently small constant. This improves the polynomial logarithmic factors in the residual scan and cap-finder accuracy compared with the safer but unnecessary choice $\eta^{3/\rho_c}$. Since $\rho_c<1$ for every fixed $c>1$, the lineage-thinning condition $H\delta=o(1)$ still holds for both the cube-root and polylogarithmic parameter choices below.
+
 The information-time tube calculation is still a useful sanity check. For a fixed predictable mixed lineage of total information $D$, exponential tilting makes the log-likelihood fluctuation a centered Gaussian martingale with quadratic variation $2D$. Keeping it in a tube of width $w$ costs $\exp(-O(D/w^2))$, while the likelihood ratio varies by $\exp(O(w))$; optimizing $w=D^{1/3}$ gives a fixed-lineage survival loss $\exp(-O(D^{1/3}))$.
 
 We do not use that tube estimate as a formal hypothesis. The adaptive continuation lemma proved in \cref{lem:adaptive-continuation} is stronger for this algorithm: with continuation-mass pruning, predictable mixed score schedules have inverse-polylogarithmic near survival. Thus the cube-root checkpoint below has one conditional ingredient, namely the mixed stopping-frontier work inequality.
@@ -1789,7 +1795,7 @@ We do not use that tube estimate as a formal hypothesis. The adaptive continuati
       \qquad
       \eta=L^{-2/3},
       \qquad
-      \delta=\eta^{3/\rho_c},
+      \delta=\delta_0\eta^{2/\rho_c},
    \]
    let $\mathcal L(q)$ be the terminal cap-free score frontier reached by query $q$, and let $\mathcal G(q)$ be the collection of cap children reached with their thinning probabilities included. Let
    \[
@@ -1840,9 +1846,9 @@ The terminal term is charged to the $\alpha$ fraction of low-correlation points 
       \qquad
       \eta=L^{-2/3},
       \qquad
-      \delta=\eta^{3/\rho_c}.
+      \delta=\delta_0\eta^{2/\rho_c}.
    \]
-   Then $\delta^{\rho_c}=\eta^3=o(\eta^2)$, so every almost-total cap split satisfies the contraction hypothesis of \cref{lem:thin-cap-contraction}. The storage potential is nonincreasing under the deterministic partition, and
+   Choose $\delta_0$ small enough that $\delta^{\rho_c}$ is below the constant required in \cref{lem:thin-cap-contraction}. Then every almost-total cap split satisfies the contraction hypothesis. The storage potential is nonincreasing under the deterministic partition, and
    \[
       F_4(n,R_0)=n^{\rho_c}\log^{O_c(1)}n.
    \]
@@ -1857,7 +1863,7 @@ The terminal term is charged to the $\alpha$ fraction of low-correlation points 
    \[
       H\delta
       =
-      O_c(\eta^{-2}\delta\log\log n)
+      O_c(\eta^{-2+2/\rho_c}\log\log n)
       =
       o(1).
    \]
@@ -1871,7 +1877,7 @@ The terminal term is charged to the $\alpha$ fraction of low-correlation points 
    \[
       \eta L=L^{1/3},
       \qquad
-      \alpha^{-1}=(\eta\delta)^{-1}=\log^{O_c(1)}n,
+      \alpha^{-1}=(\eta\delta)^{-1}=\eta^{-1-2/\rho_c}\delta_0^{-1}=\log^{O_c(1)}n,
    \]
    one copy has expected work and inverse success overhead
    \[
@@ -1968,7 +1974,7 @@ The exact calibration $t_e^2/(1+a_e)=\log B$ is only for the proof. In the ANN a
    \]
    Let $\mathcal L(q)$ be the terminal cap-free accepting-leaf frontier reached by query $q$. Let $\mathcal G(q)$ be the prefix-free collection of first geometric splits reached by $q$, including residual children with query weight $1$ and cap children with query weight $a_C=z^s\Psi(R_C)/\Psi(R)$. For
    \[
-      \delta=\eta^{3/\rho_c},
+      \delta=\delta_0\eta^{2/\rho_c},
       \qquad
       \alpha=\Theta(\eta\delta),
       \qquad
@@ -2023,11 +2029,11 @@ That inequality would be immediate for a single sampled path, but the continuati
       \qquad
       \eta=\Theta_c(\ell/L),
       \qquad
-      \delta=\eta^{3/\rho_c}.
+      \delta=\delta_0\eta^{2/\rho_c}.
    \]
-   Then $\delta^{\rho_c}=\eta^3=o(\eta^2)$, so \cref{lem:thin-cap-contraction} applies to every almost-total cap split. Also
+   Choose $\delta_0$ small enough that \cref{lem:thin-cap-contraction} applies to every almost-total cap split. Also
    \[
-      \alpha^{-1}=(\eta\delta)^{-1}=\log^{O_c(1)}n,
+      \alpha^{-1}=(\eta\delta)^{-1}=\eta^{-1-2/\rho_c}\delta_0^{-1}=\log^{O_c(1)}n,
       \qquad
       \exp(O_c(\eta L))=\log^{O_c(1)}n,
       \qquad
@@ -2051,7 +2057,7 @@ That inequality would be immediate for a single sampled path, but the continuati
    \]
    and
    \[
-      H\delta=O_c(\eta^{-2}\delta\ell)=o(1)
+      H\delta=O_c(\eta^{-2+2/\rho_c}\ell)=o(1)
    \]
    for the displayed choice of $\delta$. Thus \cref{lem:thin-lineage} gives lineage-thinning probability at least $\log^{-O_c(1)}n$. The score depth is $K=O_c(L)$, so \cref{lem:adaptive-continuation} gives a common near score path with probability $K^{-O_c(1)}=\log^{-O_c(1)}n$. Polylogarithmic amplification and the truncation paragraph in the preliminaries give the query bound with constant success probability. The storage bound follows from the storage contraction in \cref{lem:thin-cap-contraction}, the stored-prefix part of \cref{lem:adaptive-continuation}, and bounded-diameter localization.
 \end{proof}
@@ -2087,7 +2093,7 @@ and space
 \]
 The exact pieces now aligned for the randomized cap-thinning route are: continuation-mass pruning gives optimal expected spherical work, adaptive continuation gives whole-lineage near survival, thinned cap splitting gives radius-potential contraction, and cap-free terminal scans are paid by low-correlation collisions.
 
-The remaining task is near-lineage coupling: prove that the ordinary continuation paths and the detector votes jointly keep the true near neighbor alive through all needed recenterings. Proving that would turn the randomized one-tree route into a polylogarithmic-overhead theorem for almost-total cap splits. The broader cohort-or-leaf route remains as a possible generalization to arbitrary certified child hierarchies.
+For the randomized cap-thinning route, the remaining task is the branching first-split work estimate in \cref{asm:mixed-continuation-operator}: prove that the thinned geometric child potentials contract over random cap-discovery frontiers without replacing the branching decoder by a normalized path law. The detector-vote cohort-or-leaf route is a separate possible generalization to arbitrary certified child hierarchies, where the remaining issue is near-lineage coupling between ordinary continuation paths and detector activations.
 
 \appendix
 
