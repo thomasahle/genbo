@@ -757,7 +757,15 @@ The second fact shows that thin radial shells do not degrade the approximation f
 
 \subsection{Posterior stopping}
 
-Fix a geometric node containing $m$ points in a certified ball $\Ball(o,R)$. Let $\mu(u)$ be the probability that a uniformly random data point in the node reaches score prefix $u$, and let $\nu_q(u)$ be the corresponding probability for query $q$. For a deterministic child cluster $C$ of relative size $\alpha=|C|/m$, let $\mu_C(u)$ be the score-prefix law conditioned on the data point belonging to $C$. The posterior mass of $C$ at prefix $u$ is
+Fix a geometric node containing $m$ points in a certified ball $\Ball(o,R)$. The next two lemmas use a \emph{normalized detector law}, not the ordinary retained-prefix multiplicity of the continuation decoder. A detector token follows one score channel at a time, or dies, so every prefix-free set has total detector mass at most one.
+
+Let $\mu(u)$ be the probability that one detector token driven by a uniformly random data point in the node reaches score prefix $u$, and let $\nu_q(u)$ be the corresponding one-token detector probability for query $q$. Thus, for every prefix-free family $\mathcal U$,
+\[
+   \sum_{u\in\mathcal U}\mu(u)\le1,
+   \qquad
+   \sum_{u\in\mathcal U}\nu_q(u)\le1.
+\]
+For a deterministic child cluster $C$ of relative size $\alpha=|C|/m$, let $\mu_C(u)$ be the detector prefix law conditioned on the point belonging to $C$. The posterior mass of $C$ at prefix $u$ is
 \[
    Z_C(u)=\frac{\alpha\mu_C(u)}{\mu(u)}.
 \]
@@ -769,7 +777,7 @@ Put
    \qquad
    s=1-\rho.
 \]
-The Bellman query mass assigned to prefix $u$ is
+The Bellman detector mass assigned to prefix $u$ is
 \[
    w_q(u)=\mu(u)^s\nu_q(u)^\rho.
 \]
@@ -804,6 +812,8 @@ The Bellman query mass assigned to prefix $u$ is
       \le1.
    \]
 \end{proof}
+
+This lemma is deliberately stated for normalized detector mass. It would be false if $\mu$ and $\nu_q$ were interpreted as the raw number of retained ordinary prefixes in the branching continuation decoder; a point or query can occupy many such prefixes. Ordinary retained-prefix work is controlled separately by continuation mass in \cref{lem:continuation-work}.
 
 \subsection{Radius Bellman cancellation}
 
@@ -854,8 +864,8 @@ for disjoint children. Polynomially many shells and bounded-diameter roots contr
 
 The preceding Bellman cancellation applies to deterministic full children. The full-child version is too coarse for the persistent score process: a rare score prefix can isolate an atypical part of a large child, while the full child would require the budget of all its points. The right recursive object is the slice conditioned on the score prefix itself.
 
-\begin{lemma}[Prefix-conditioned slice accounting]\label{lem:prefix-slice-accounting}
-   Let a parent node contain $m$ points in radius $R$, and let $\mathcal U$ be a prefix-free family of score prefixes. Write $\mu(u)$ for the data predictive mass of prefix $u$ and $\nu_q(u)$ for the query predictive mass. At each prefix $u$, suppose we have disjoint certified slices $C_{u,j}$ with
+\begin{lemma}[Prefix-conditioned detector slice accounting]\label{lem:prefix-slice-accounting}
+   Let a parent node contain $m$ points in radius $R$, and let $\mathcal U$ be a prefix-free family of detector prefixes under normalized laws $\mu,\nu_q$ as above. At each prefix $u$, suppose we have disjoint certified slices $C_{u,j}$ with
    \[
       |C_{u,j}|=z_{u,j}\,\mu(u)m,
       \qquad
@@ -917,7 +927,7 @@ The preceding Bellman cancellation applies to deterministic full children. The f
    Since $\sum_j z_{u,j}^{1+\rho}\le\sum_j z_{u,j}\le1$ and $\sum_u\mu(u)^{1+\rho}\le\sum_u\mu(u)\le1$, summing over all prefixes and slices gives at most $G(m,R)$.
 \end{proof}
 
-Thus prefix-conditioned recentering avoids the full-child budget obstruction. If a heavy cap is discovered inside a score bucket, the recursive child is that bucket slice, not the global cluster containing the bucket. When the number of peeled slices per prefix is polylogarithmic, \cref{lem:prefix-slice-accounting} gives the desired parent-potential bound directly.
+Thus prefix-conditioned detector accounting avoids the full-child budget obstruction. If a heavy cap is discovered inside a score bucket, the recursive child charged to detector mass is that bucket slice, not the global cluster containing the bucket. When the number of peeled slices per prefix is polylogarithmic, \cref{lem:prefix-slice-accounting} gives the desired parent-potential bound for detector activation. The separate cohort-or-leaf condition below is exactly the assertion that these normalized detector activations couple to the ordinary continuation paths needed for near-neighbor success.
 
 \subsection{Randomized geometric branching}
 
@@ -1045,7 +1055,7 @@ and keep $s=1-\rho$. On the bounded-diameter localized instances used for ANN, $
 \end{assumption}
 
 \begin{proposition}[Polylogarithmic prefix-slice process]\label{prop:prefix-slice-process}
-   Under \cref{asm:prefix-slice-survival}, the cumulative score-and-ball process restricted to prefix-conditioned recentering slices has expected query time
+   Under \cref{asm:prefix-slice-survival}, and assuming normalized detector activations are materialized with only polylogarithmic concentration overhead, the cumulative score-and-ball process restricted to prefix-conditioned recentering slices has expected query time
    \[
       d\,n^{\rho_c}\log^{O_c(1)}n
    \]
@@ -1056,7 +1066,7 @@ and keep $s=1-\rho$. On the bounded-diameter localized instances used for ANN, $
 \end{proposition}
 
 \begin{proof}
-   Use the radius-budgeted score block of \cref{cor:radius-budgeted-block} at every state. Prefix-conditioned child slices are charged by \cref{lem:prefix-slice-accounting}; the polylogarithmic number of peeled slices per prefix contributes only the $J^{1-\rho}=\log^{O_c(1)}n$ factor. Space is bounded by the storage part of \cref{lem:prefix-slice-accounting}. Residual scans are charged to ordinary far candidates as in \cref{lem:slice-residual}, after using the shell lemma to preserve the critical angular gap.
+   Use the radius-budgeted score block of \cref{cor:radius-budgeted-block} at every state. Normalized detector activations for prefix-conditioned child slices are charged by \cref{lem:prefix-slice-accounting}; the polylogarithmic number of peeled slices per prefix contributes only the $J^{1-\rho}=\log^{O_c(1)}n$ factor. Space is bounded by the storage part of \cref{lem:prefix-slice-accounting}. Residual scans are charged to ordinary far candidates as in \cref{lem:slice-residual}, after using the shell lemma to preserve the critical angular gap.
 
    By \cref{asm:prefix-slice-survival}, one copy reaches either a residual scan or a final resident scan containing the true near neighbor with inverse-polylogarithmic probability. Polylogarithmic amplification and the truncation paragraph in the preliminaries convert the expected bounds to the displayed capped bounds with constant success probability.
 \end{proof}
@@ -1117,13 +1127,13 @@ At a state $u=(P_u,o_u,R_u)$, preprocessing proposes a disjoint partition of $P_
 \]
 The partition may come from $k$-center, $k$-means, cap proposals, or any other routine; correctness uses only the certified radius. A child is geometrically useful when $R_C=\lambda_C R_u$ with $\lambda_C<1$ bounded away from one, and small or shallow residual sets are stored for resident scan.
 
-In the prefix-slice variant, preprocessing also attaches certified children to score prefixes. For a retained prefix $a$, let $P_u[a]$ be the bucket of resident points reaching that prefix. Heavy cap slices are peeled inside $P_u[a]$ exactly as in the restartable-slice construction, but the recursive child is the conditioned slice $C[a]\subseteq P_u[a]$. These children are not full clusters of $P_u$; their query and storage costs are paid by \cref{lem:prefix-slice-accounting}.
+In the prefix-slice variant, preprocessing also attaches certified children to score prefixes. For a retained prefix $a$, let $P_u[a]$ be the bucket of resident points reaching that prefix. Heavy cap slices are peeled inside $P_u[a]$ exactly as in the restartable-slice construction, but the recursive child is the conditioned slice $C[a]\subseteq P_u[a]$. These children are not full clusters of $P_u$; their detector activation and storage costs are paid by \cref{lem:prefix-slice-accounting}.
 
 For comparison with the randomized cap-thinning route, we also record a posterior-cohort variant. In that variant, queries keep two populations on the same cumulative score tree.
 
 \emph{Ordinary paths} use the continuation-mass decoder from \cref{lem:continuation-work}. They find isolated near points and residual leaves.
 
-\emph{Detector cohorts} are used only to activate geometric children. A detector path votes for at most one child: the first child whose posterior reaches the radius threshold $\tau_C=\lambda_C^2$. Child $C$ is activated only after it receives
+\emph{Detector cohorts} are used only to activate geometric children. They follow normalized one-token detector laws of the posterior-stopping section, not the raw ordinary branching multiplicity. A detector path votes for at most one child: the first child whose posterior reaches the radius threshold $\tau_C=\lambda_C^2$. Child $C$ is activated only after it receives
 \[
    T_C=\log^{A_c}n\,|C|^\rho\left(\frac{R_C}{r}\right)^{2s}
 \]
@@ -1132,6 +1142,14 @@ votes. The parent starts with
    T_u=\log^{A_c}n\,|P_u|^\rho\left(\frac{R_u}{r}\right)^{2s}
 \]
 detector budget. Because each detector path casts at most one vote, activated children consume the existing parent budget rather than multiplying it.
+
+The vote accounting is deterministic after the detector tokens are sampled:
+\[
+   \sum_{\text{activated }C} T_C
+   \le
+   \text{number of realized detector votes from the parent}.
+\]
+The logarithmic factor in $T_u$ is chosen large enough that, for every child whose normalized detector mass is a constant multiple above its activation threshold, Chernoff bounds give the required votes simultaneously over all polynomially many stored child IDs. Children below threshold may fail to activate; the cohort-or-leaf condition is exactly the near-neighbor assertion that this does not strand the true lineage without an ordinary residual path.
 
 When a query enters an activated child, the cumulative score prefix is retained. Recentered coordinates only change future score offsets; no new independent spherical decoder is started.
 
@@ -1178,7 +1196,7 @@ When a query enters an activated child, the cumulative score prefix is retained.
    \]
    directly as score-tree work, with only polylogarithmic overhead and inverse-polylogarithmic near survival. The shell lemma preserves the critical Euclidean angular gap up to inverse-polylogarithmic slack, which is absorbed into the displayed logarithmic factors.
 
-   For every certified child, \cref{lem:first-hit} bounds the fractional query mass that can activate the child, and the choice $\tau_C=\lambda_C^2$ converts that activation cost into $\alpha_C F(m,R)$ by the Bellman cancellation. Summing over disjoint children is therefore bounded by the parent potential. The detector-vote rule is the integer version of this accounting: an activated child has already received its own recursive budget from parent detector votes. Space is controlled by disjointness and convexity of $x^{1+\rho}$.
+   For every certified child, \cref{lem:first-hit} bounds the normalized detector mass that can activate the child, and the choice $\tau_C=\lambda_C^2$ converts that activation cost into $\alpha_C F(m,R)$ by the Bellman cancellation. Summing over disjoint children is therefore bounded by the parent potential. The detector-vote rule is the integer version of this accounting: an activated child has already received its own recursive budget from parent detector votes. Space is controlled by disjointness and convexity of $x^{1+\rho}$.
 
    Along the near-neighbor route, \cref{asm:cohort-or-leaf} supplies an inverse-polylogarithmic probability for the entire lineage, not one independent loss per scale: either an ordinary path finds the near point before the next activation is needed, or detector cohorts activate every certified child containing it until a resident scan is reached. Polylogarithmic amplification gives constant success probability, and truncation/rebuilding converts expected bounds to capped bounds as in the preliminaries.
 \end{proof}
