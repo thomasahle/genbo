@@ -1518,14 +1518,14 @@ and overhead exponent
       Restart & $k^{1/3}$ spherical loss & $(1,2,1/3)$ & $7/9$ \\
       Score-only & polylog spherical decoder & $(1,2,0)$ & $2/3$ \\
       One geometric gain & fewer phases or quadratic slack & $(1,1,0)$ or $(2,2,0)$ & $1/2$ \\
-      Randomized one tree & cube-root mixed frontier bound & no restart phases; $\eta=L^{-2/3}$ & $1/3$ \\
+      Randomized one tree & cube-root geometric frontier bound & no restart phases; $\eta=L^{-2/3}$ & $1/3$ \\
       Adaptive continuation & all-scale mixed continuation operator & $\eta\asymp(\log\log n)/L$ & $\polylog$ \\
       Bellman cohorts & no independent phase payment & no $\eta^{-q}$ term & $\polylog$ \\
       \bottomrule
    \end{tabular}
 \end{table}
 
-This ladder is useful for stress testing. The continuation-mass spherical theorem already moves the restart architecture from exponent $7/9$ to roughly $2/3$. The randomized one-tree route below removes the independent phase count for almost-total cap splits; a cube-root-scale mixed frontier inequality gives a conditional $1/3$ rung, while proving the same continuation operator uniformly down to $\eta\asymp(\log\log n)/L$ would give the polylogarithmic rung. The Bellman cohort mechanism is the broader endpoint for arbitrary certified children: if cohort-or-leaf holds, recursive geometry is paid by the parent potential and the $\eta^{-q}$ term disappears rather than being optimized.
+This ladder is useful for stress testing. The continuation-mass spherical theorem already moves the restart architecture from exponent $7/9$ to roughly $2/3$. The randomized one-tree route below removes the independent phase count for almost-total cap splits; a cube-root-scale geometric frontier inequality gives a conditional $1/3$ rung, while proving the same continuation operator uniformly down to $\eta\asymp(\log\log n)/L$ would give the polylogarithmic rung. The Bellman cohort mechanism is the broader endpoint for arbitrary certified children: if cohort-or-leaf holds, recursive geometry is paid by the parent potential and the $\eta^{-q}$ term disappears rather than being optimized.
 
 \section{A restartable slice route to the 2/3 rung}
 
@@ -1788,7 +1788,40 @@ The information-time tube calculation is still a useful sanity check. For a fixe
 
 We do not use that tube estimate as a formal hypothesis. The adaptive continuation lemma proved in \cref{lem:adaptive-continuation} is stronger for this algorithm: with continuation-mass pruning, predictable mixed score schedules have inverse-polylogarithmic near survival. Thus the cube-root checkpoint below has one conditional ingredient, namely the mixed stopping-frontier work inequality.
 
-\begin{assumption}[Cube-root mixed frontier inequality]\label{asm:mixed-operator}
+\begin{lemma}[Cap-free terminal scan accounting]\label{lem:cap-free-scan-accounting}
+   Work inside one bounded-diameter localized state with $m$ points in radius $R$, and choose the score budget $N$ by
+   \[
+      N^{\rho_c}=F_4(m,R).
+   \]
+   Suppose a query scans a prefix-free family $\mathcal L(q)$ of cap-free accepting leaves, and in every scanned bucket at least an $\alpha$ fraction of the resident points have correlation at most $2\eta$ with the query direction. Then the expected score work and terminal scans satisfy
+   \[
+      \E\left[
+         \mathrm{score\ work}
+         +
+         \sum_{u\in\mathcal L(q)} |P[u]|
+      \right]
+      \le
+      \alpha^{-1}
+      \exp(O_c(\eta\log n))
+      F_4(m,R)\log^{O_c(1)}n.
+   \]
+\end{lemma}
+
+\begin{proof}
+   The score-work term is at most $F_4(m,R)\log^{O_c(1)}n$ by the budgeted continuation work bound, and $\alpha\le1$.
+
+   For a scanned bucket $U$, let $U_{\mathrm{lo}}$ be its points whose shell-normalized correlation with the query is at most $2\eta$. By assumption, $|U|\le\alpha^{-1}|U_{\mathrm{lo}}|$. Summing over scanned leaves, the scan count is at most $\alpha^{-1}$ times the number of low-correlation accepting candidate occurrences.
+
+   By \cref{lem:rho-stability}, these low-correlation pairs have spherical exponent at most $\rho_c+O_c(\eta)$. The budgeted far-candidate bound with depth chosen from $N$ gives expected low-correlation accepting occurrences at most
+   \[
+      mN^{-(1-\rho_c-O_c(\eta))}\log^{O_c(1)}N
+      \le
+      N^{\rho_c}\exp(O_c(\eta\log N))\log^{O_c(1)}N.
+   \]
+   In bounded-diameter localized states, $N\le n\log^{O_c(1)}n$, so $\log N=O_c(\log n)$ and $N^{\rho_c}=F_4(m,R)$.
+\end{proof}
+
+\begin{assumption}[Cube-root geometric frontier inequality]\label{asm:mixed-operator}
    In the randomized one-tree process with almost-total cap splitting at the cube-root parameters
    \[
       L=\log n,
@@ -1797,17 +1830,15 @@ We do not use that tube estimate as a formal hypothesis. The adaptive continuati
       \qquad
       \delta=\delta_0\eta^{2/\rho_c},
    \]
-   let $\mathcal L(q)$ be the terminal cap-free score frontier reached by query $q$, and let $\mathcal G(q)$ be the collection of cap children reached with their thinning probabilities included. Let
+   Let $\mathcal G(q)$ be the collection of cap children reached with their thinning probabilities included. Let
    \[
       \alpha=\Theta(\eta\delta),
       \qquad
       F_4(m,R)=m^{\rho_c}\Psi(R).
    \]
-   The score, scan, and recursive-potential frontier terms satisfy
+   The thinned recursive-potential frontier satisfies
    \[
       \E\left[
-         \sum_{u\in\mathcal L(q)} |P[u]|
-         +
          \sum_{v\in\mathcal G(q)} a_vF_4(|P[v]|,R_v)
       \right]
       \le
@@ -1818,7 +1849,7 @@ We do not use that tube estimate as a formal hypothesis. The adaptive continuati
    where $a_v$ is the product of cap-edge thinning probabilities on the route to $v$.
 \end{assumption}
 
-The terminal term is charged to the $\alpha$ fraction of low-correlation points in every cap-free bucket, using \cref{lem:rho-stability}. The geometric term should be controlled by the contraction in \cref{lem:thin-cap-contraction}. The unresolved point is to make this argument commute with the random prefix-free stopping frontiers, again without restarting the score clock. The all-parameter version needed for the polylogarithmic endpoint is isolated later as \cref{asm:mixed-continuation-operator}.
+The terminal term is charged by \cref{lem:cap-free-scan-accounting} to the $\alpha$ fraction of low-correlation points in every cap-free bucket. The geometric term should be controlled by the contraction in \cref{lem:thin-cap-contraction}. The unresolved point is to make this argument commute with the random prefix-free stopping frontiers, again without restarting the score clock. The all-parameter version needed for the polylogarithmic endpoint is isolated later as \cref{asm:mixed-continuation-operator}.
 
 \begin{proposition}[Conditional randomized one-tree \(1/3\) rung]\label{prop:one-third}
    Assume \cref{asm:mixed-operator}. For fixed $c>1$, the randomized one-tree construction gives worst-case Euclidean ANN bounds
@@ -1873,7 +1904,7 @@ The terminal term is charged to the $\alpha$ fraction of low-correlation points 
    \[
       \log^{-O_c(1)}n.
    \]
-   The far and recursive query work are bounded by \cref{asm:mixed-operator}. Since
+   The score work and cap-free scans are bounded by \cref{lem:cap-free-scan-accounting}; the recursive cap-frontier term is bounded by \cref{asm:mixed-operator}. Since
    \[
       \eta L=L^{1/3},
       \qquad
@@ -1888,7 +1919,7 @@ The terminal term is charged to the $\alpha$ fraction of low-correlation points 
 
 \section{A continuation-mass route to the polylog rung}
 
-The cube-root checkpoint in \cref{prop:one-third} is not caused by the score survival analysis. The continuation-mass proof from the spherical section extends to predictable mixed score schedules, so the score side has only inverse-polylogarithmic loss. The remaining work accounting is handled by charging cap-free leaves to low-correlation collisions and cap splits to the thinned radius potential. If the mixed frontier inequality is proved uniformly at smaller $\eta$, the same randomized one-tree algorithm reaches the polylogarithmic endpoint.
+The cube-root checkpoint in \cref{prop:one-third} is not caused by the score survival analysis. The continuation-mass proof from the spherical section extends to predictable mixed score schedules, so the score side has only inverse-polylogarithmic loss. Cap-free leaves are charged to low-correlation collisions by \cref{lem:cap-free-scan-accounting}. The remaining work accounting is the thinned cap-split potential over random first-hit frontiers. If that mixed frontier inequality is proved uniformly at smaller $\eta$, the same randomized one-tree algorithm reaches the polylogarithmic endpoint.
 
 \begin{definition}[Regular adaptive score schedule]\label{def:regular-adaptive-score}
    Fix a compact interval $I=[a_-,a_+]\subset(-1,1)$ and a constant branching factor $B\ge2$. A regular adaptive score schedule of depth $K$ is a rooted score tree in which every score node has $B$ score children, and before an edge $e$ is sampled its coordinate system and a value $a_e\in I$ are measurable with respect to the previous score prefix. Conditional on the past, the two score increments of a fixed near pair are centered Gaussian with covariance
@@ -1972,26 +2003,13 @@ The exact calibration $t_e^2/(1+a_e)=\log B$ is only for the proof. In the ANN a
    \[
       N^\rho=F_4(m,R)=m^\rho\Psi(R).
    \]
-   Let $\mathcal L(q)$ be the terminal cap-free accepting-leaf frontier reached by query $q$. Let $\mathcal G(q)$ be the prefix-free collection of first geometric splits reached by $q$, including residual children with query weight $1$ and cap children with query weight $a_C=z^s\Psi(R_C)/\Psi(R)$. For
+   Let $\mathcal G(q)$ be the prefix-free collection of first geometric splits reached by query $q$, including residual children with query weight $1$ and cap children with query weight $a_C=z^s\Psi(R_C)/\Psi(R)$. For
    \[
       \delta=\delta_0\eta^{2/\rho_c},
       \qquad
       \alpha=\Theta(\eta\delta),
       \qquad
       L=\log n,
-   \]
-   the expected local score work and terminal scans satisfy
-   \[
-      \E\left[
-         \mathrm{score\ work}
-         +
-         \sum_{u\in\mathcal L(q)} |P[u]|
-      \right]
-      \le
-      \eta^{-O_c(1)}
-      \alpha^{-1}
-      \exp(O_c(\eta L))
-      F_4(m,R)\log^{O_c(1)}n.
    \]
    The weighted recursive child potentials satisfy, for an absolute $\kappa>0$,
    \[
@@ -2005,7 +2023,7 @@ The exact calibration $t_e^2/(1+a_e)=\log B$ is only for the proof. In the ANN a
    Here $w_v$ is the query weight of the child at its first split prefix.
 \end{assumption}
 
-The score-work and terminal-scan parts of this operator follow from the already proved continuation-mass work bound and the low-correlation charging argument used in the restartable slice proof. The remaining point is the geometric first-split sum. For a single split prefix the contraction in \cref{lem:thin-cap-contraction} is exact. What still needs proof is a power estimate for the random first-split frontier of the branching decoder, strong enough to replace the invalid normalized-path inequality
+The score-work and terminal-scan terms are handled by \cref{lem:cap-free-scan-accounting}. The remaining point is the geometric first-split sum. For a single split prefix the contraction in \cref{lem:thin-cap-contraction} is exact. What still needs proof is a power estimate for the random first-split frontier of the branching decoder, strong enough to replace the invalid normalized-path inequality
 \[
    \sum_{u\in\mathcal A}\nu_q(u)\mu(u)^\rho\le 1.
 \]
@@ -2043,7 +2061,7 @@ That inequality would be immediate for a single sampled path, but the continuati
    \[
       A(n)=\eta^{-O_c(1)}\alpha^{-1}\exp(O_c(\eta L))\log^{O_c(1)}n.
    \]
-   By \cref{asm:mixed-continuation-operator}, the expected local work at a state is at most $A(n)F_4(m,R)$, while the expected sum of recursive child potentials is at most $(1-\kappa\eta^2)F_4(m,R)$. Unrolling over geometric generations gives total expected query work at most
+   By \cref{lem:cap-free-scan-accounting}, the expected local score work and cap-free terminal scans at a state are at most $A(n)F_4(m,R)$, while \cref{asm:mixed-continuation-operator} bounds the expected sum of recursive child potentials by $(1-\kappa\eta^2)F_4(m,R)$. Unrolling over geometric generations gives total expected query work at most
    \[
       O(\eta^{-2})A(n)F_4(n,R_0).
    \]
@@ -2073,10 +2091,10 @@ The continuation-mass spherical decoder is proved in \cref{lem:continuation-work
 \Cref{prop:slice-two-thirds} proves the restartable $2/3$ rung and is the proof of \cref{thm:main}. It reaches a subpolynomial overhead using deliberate restarts and leaf-conditioned slices.
 
 \paragraph{Randomized \(1/3\) stage.}
-\Cref{prop:one-third} records the cube-root parameter choice from the one-tree notes. The direct tube calculation is kept only as intuition; the formal proposition uses \cref{lem:adaptive-continuation} for whole-lineage score survival and assumes only the cube-root mixed frontier inequality \cref{asm:mixed-operator}. Thus the central open issue is already the work-side first-hit accounting, not near-pair score survival.
+\Cref{prop:one-third} records the cube-root parameter choice from the one-tree notes. The direct tube calculation is kept only as intuition; the formal proposition uses \cref{lem:adaptive-continuation} for whole-lineage score survival and assumes only the cube-root geometric frontier inequality \cref{asm:mixed-operator}. Thus the central open issue is already the work-side first-hit accounting, not near-pair score survival.
 
 \paragraph{Randomized polylog stage.}
-\Cref{lem:adaptive-continuation} replaces the tube proof in the predictable-score setting, so near-pair survival is no longer the obstacle for the randomized one-tree endpoint. \Cref{asm:mixed-continuation-operator} is the remaining work-side target: it must combine continuation-mass work, cap-free residual charging, and thinned cap-split contraction over branching cap-discovery frontiers. Conditional on that operator, \cref{prop:randomized-polylog} shows that choosing $\eta\asymp(\log\log n)/\log n$ gives polylogarithmic query and space overhead.
+\Cref{lem:adaptive-continuation} replaces the tube proof in the predictable-score setting, so near-pair survival is no longer the obstacle for the randomized one-tree endpoint. \Cref{asm:mixed-continuation-operator} is the remaining work-side target after \cref{lem:cap-free-scan-accounting}: it must prove thinned cap-split contraction over branching cap-discovery frontiers. Conditional on that operator, \cref{prop:randomized-polylog} shows that choosing $\eta\asymp(\log\log n)/\log n$ gives polylogarithmic query and space overhead.
 
 \paragraph{Cohort-or-leaf.}
 \Cref{asm:cohort-or-leaf} is the original full-child route-level condition for the broader posterior-cohort endpoint, but \cref{lem:prefix-slice-accounting} shows that a prefix-conditioned formulation is cleaner. Work accounting for opened children is no longer the hard part: \cref{lem:vote-budget} pays opened recursive calls from realized detector votes. The preferred remaining target for that more general route is \cref{asm:prefix-slice-survival}: prove that one cumulative near-pair score path either reaches a cap-free residual scan or receives enough detector votes to follow prefix-conditioned certified slices to a resident scan. \Cref{lem:detector-inflation} and \cref{lem:off-spine-inflation} reduce the detector-shadowing part of this target to early activation prefixes with large enough continuation mass $H(v)$ and logarithmic spine-ratio sum $\sum H(u^+)/H(u)$; \cref{rem:linear-spine-ratio} explains why long score routes need an aggregate detector-mass argument instead. This should be tested against the hard cases: an isolated near point next to a massive far cluster, a near point on a cluster boundary, a tiny child that becomes heavy only late, and symmetric far shells. The proof must show a whole-lineage inverse-polylogarithmic event, not merely an inverse-polylogarithmic event at each level.
