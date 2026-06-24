@@ -860,6 +860,48 @@ The same idea controls space:
 \]
 for disjoint children. Polynomially many shells and bounded-diameter roots contribute only $\log^{O_c(1)}n$ factors when shell widths and distortions are inverse-polynomial in $\log n$.
 
+\begin{lemma}[Vote-budgeted activations]\label{lem:vote-budget}
+   At a state with parent potential $F(m,R)$, give the query
+   \[
+      T_u=A\log^{A_c}n\,F(m,R)
+   \]
+   detector tokens, for a sufficiently large constant $A$. Each token may cast at most one vote, to the first child whose posterior reaches its activation threshold. A child $C$ of size $m_C$ and certified radius $R_C$ is opened only after receiving
+   \[
+      T_C=\log^{A_c}n\,F(m_C,R_C)
+   \]
+   votes. Then, for every realization of the score tree and the detector tokens,
+   \[
+      \sum_{\text{opened }C}F(m_C,R_C)\le A F(m,R).
+   \]
+   The analogous storage charge satisfies
+   \[
+      \sum_{\text{stored children }C} m_C F(m_C,R_C)\le mF(m,R)
+   \]
+   whenever the stored children form a disjoint partition or a disjoint family of prefix-conditioned slices.
+\end{lemma}
+
+\begin{proof}
+   Since each detector token votes once, the number of realized votes is at most $T_u$. Every opened child consumes $T_C$ votes, and these vote sets are disjoint. Hence
+   \[
+      \sum_{\text{opened }C}\log^{A_c}n\,F(m_C,R_C)
+      =
+      \sum_{\text{opened }C}T_C
+      \le
+      T_u
+      =
+      A\log^{A_c}n\,F(m,R),
+   \]
+   which proves the query-potential bound. For storage, if children are disjoint then
+   \[
+      m_C F(m_C,R_C)
+      =
+      m_C^{1+\rho}\left(\frac{R_C}{r}\right)^{2s}
+      \le
+      m_C^{1+\rho}\left(\frac Rr\right)^{2s},
+   \]
+   and convexity gives $\sum_Cm_C^{1+\rho}\le m^{1+\rho}$. The prefix-conditioned slice case is the storage part of \cref{lem:prefix-slice-accounting}.
+\end{proof}
+
 \subsection{Prefix-conditioned slice accounting}
 
 The preceding Bellman cancellation applies to deterministic full children. The full-child version is too coarse for the persistent score process: a rare score prefix can isolate an atypical part of a large child, while the full child would require the budget of all its points. The right recursive object is the slice conditioned on the score prefix itself.
@@ -1139,17 +1181,11 @@ For comparison with the randomized cap-thinning route, we also record a posterio
 \]
 votes. The parent starts with
 \[
-   T_u=\log^{A_c}n\,|P_u|^\rho\left(\frac{R_u}{r}\right)^{2s}
+   T_u=A\log^{A_c}n\,|P_u|^\rho\left(\frac{R_u}{r}\right)^{2s}
 \]
 detector budget. Because each detector path casts at most one vote, activated children consume the existing parent budget rather than multiplying it.
 
-The vote accounting is deterministic after the detector tokens are sampled:
-\[
-   \sum_{\text{activated }C} T_C
-   \le
-   \text{number of realized detector votes from the parent}.
-\]
-The logarithmic factor in $T_u$ is chosen large enough that, for every child whose normalized detector mass is a constant multiple above its activation threshold, Chernoff bounds give the required votes simultaneously over all polynomially many stored child IDs. Children below threshold may fail to activate; the cohort-or-leaf condition is exactly the near-neighbor assertion that this does not strand the true lineage without an ordinary residual path.
+The deterministic accounting is \cref{lem:vote-budget}. The logarithmic factor in $T_u$ is chosen large enough that, for every child whose normalized detector mass is a constant multiple above its activation threshold, Chernoff bounds give the required votes simultaneously over all polynomially many stored child IDs. Children below threshold may fail to activate; the cohort-or-leaf condition is exactly the near-neighbor assertion that this does not strand the true lineage without an ordinary residual path.
 
 When a query enters an activated child, the cumulative score prefix is retained. Recentered coordinates only change future score offsets; no new independent spherical decoder is started.
 
@@ -1196,7 +1232,7 @@ When a query enters an activated child, the cumulative score prefix is retained.
    \]
    directly as score-tree work, with only polylogarithmic overhead and inverse-polylogarithmic near survival. The shell lemma preserves the critical Euclidean angular gap up to inverse-polylogarithmic slack, which is absorbed into the displayed logarithmic factors.
 
-   For every certified child, \cref{lem:first-hit} bounds the normalized detector mass that can activate the child, and the choice $\tau_C=\lambda_C^2$ converts that activation cost into $\alpha_C F(m,R)$ by the Bellman cancellation. Summing over disjoint children is therefore bounded by the parent potential. The detector-vote rule is the integer version of this accounting: an activated child has already received its own recursive budget from parent detector votes. Space is controlled by disjointness and convexity of $x^{1+\rho}$.
+   For every certified child, \cref{lem:first-hit} bounds the normalized detector mass that can activate the child, and the choice $\tau_C=\lambda_C^2$ converts that activation cost into $\alpha_C F(m,R)$ by the Bellman cancellation. In the implemented integer process, \cref{lem:vote-budget} gives the stronger realized statement: an opened child has already received its recursive query budget from parent detector votes. Space is controlled by disjointness and convexity of $x^{1+\rho}$.
 
    Along the near-neighbor route, \cref{asm:cohort-or-leaf} supplies an inverse-polylogarithmic probability for the entire lineage, not one independent loss per scale: either an ordinary path finds the near point before the next activation is needed, or detector cohorts activate every certified child containing it until a resident scan is reached. Polylogarithmic amplification gives constant success probability, and truncation/rebuilding converts expected bounds to capped bounds as in the preliminaries.
 \end{proof}
@@ -1866,7 +1902,7 @@ The continuation-mass spherical decoder is proved in \cref{lem:continuation-work
 \Cref{lem:adaptive-continuation} replaces the tube proof in the predictable-score setting, so near-pair survival is no longer the obstacle for the randomized one-tree endpoint. \Cref{asm:mixed-continuation-operator} is the remaining work-side target: it must combine continuation-mass work, cap-free residual charging, and thinned cap-split contraction over branching cap-discovery frontiers. Conditional on that operator, \cref{prop:randomized-polylog} shows that choosing $\eta\asymp(\log\log n)/\log n$ gives polylogarithmic query and space overhead.
 
 \paragraph{Cohort-or-leaf.}
-\Cref{asm:cohort-or-leaf} is the original full-child route-level condition for the broader posterior-cohort endpoint, but \cref{lem:prefix-slice-accounting} shows that a prefix-conditioned formulation is cleaner. The preferred remaining target for that more general route is \cref{asm:prefix-slice-survival}: prove that one cumulative near-pair score path either reaches a cap-free residual scan or follows prefix-conditioned certified slices to a resident scan. This should be tested against the hard cases: an isolated near point next to a massive far cluster, a near point on a cluster boundary, a tiny child that becomes heavy only late, and symmetric far shells. The proof must show a whole-lineage inverse-polylogarithmic event, not merely an inverse-polylogarithmic event at each level.
+\Cref{asm:cohort-or-leaf} is the original full-child route-level condition for the broader posterior-cohort endpoint, but \cref{lem:prefix-slice-accounting} shows that a prefix-conditioned formulation is cleaner. Work accounting for opened children is no longer the hard part: \cref{lem:vote-budget} pays opened recursive calls from realized detector votes. The preferred remaining target for that more general route is \cref{asm:prefix-slice-survival}: prove that one cumulative near-pair score path either reaches a cap-free residual scan or receives enough detector votes to follow prefix-conditioned certified slices to a resident scan. This should be tested against the hard cases: an isolated near point next to a massive far cluster, a near point on a cluster boundary, a tiny child that becomes heavy only late, and symmetric far shells. The proof must show a whole-lineage inverse-polylogarithmic event, not merely an inverse-polylogarithmic event at each level.
 
 \section{Conclusion}
 
@@ -1880,7 +1916,7 @@ and space
 \]
 The exact pieces now aligned for the randomized cap-thinning route are: continuation-mass pruning gives optimal expected spherical work, adaptive continuation gives whole-lineage near survival, thinned cap splitting gives radius-potential contraction, and cap-free terminal scans are paid by low-correlation collisions.
 
-The remaining task is the mixed continuation operator for branching cap-discovery frontiers. Proving it would turn the randomized one-tree route into a polylogarithmic-overhead theorem for almost-total cap splits. The broader cohort-or-leaf route remains as a possible generalization to arbitrary certified child hierarchies.
+The remaining task is near-lineage coupling: prove that the ordinary continuation paths and the detector votes jointly keep the true near neighbor alive through all needed recenterings. Proving that would turn the randomized one-tree route into a polylogarithmic-overhead theorem for almost-total cap splits. The broader cohort-or-leaf route remains as a possible generalization to arbitrary certified child hierarchies.
 
 \appendix
 
