@@ -70,7 +70,7 @@ for Optimal Data-Dependent Euclidean ANN}
          O_c\!\left((\log n)^{2/3}(\log\log n)^{2/3}\right)
       \right).
    \]
-   The key self-contained ingredient is a spherical continuation-mass decoder with polylogarithmic loss; it lets the restart architecture improve from the older $7/9$ optimization to the $2/3$ exponent above.
+   The key self-contained ingredient is a spherical continuation-mass decoder with polylogarithmic loss; it lets the restart architecture improve from the older $7/9$ optimization to the $2/3$ exponent above. For terminal spherical search we also give a constant-depth smooth product filter with constant single-table recall and the same optimal exponent.
 
    We then record the stronger route suggested by the one-tree notes. Almost-total cap splits can be made randomized geometric edges inside the same cumulative score tree: the residual edge is always searched, while the cap edge is followed with exactly the probability that makes the radius potential contract. This gives a clean conditional route to a $1/3$ exponent and identifies the remaining polylogarithmic target as one mixed continuation operator over random cap-discovery frontiers. We state that operator explicitly rather than hiding it as a black box.
 \end{abstract}
@@ -139,7 +139,7 @@ The algorithm in this draft differs from a restart construction in the following
 
 \subsection{Where the proof stands}
 
-The expected-work calculation for continuation-mass pruning is exact, and the restartable slice construction built from it proves \cref{thm:main}. The randomized cap split has an exact one-step potential contraction, and the cap-thinning probabilities telescope along a true near-neighbor lineage.
+The expected-work calculation for continuation-mass pruning is exact, and the restartable slice construction built from it proves \cref{thm:main}. The smooth product terminal filter gives constant one-table recall once localization has reduced the instance to a spherical gap. The randomized cap split has an exact one-step potential contraction, and the cap-thinning probabilities telescope along a true near-neighbor lineage.
 
 What is not yet a theorem is the global work bound for all cap-discovery stopping frontiers in the non-restarted one-tree process. A prefix-free frontier of a branching decoder is not a normalized path law: a point or query can occupy many prefixes. Thus the desired mixed operator needs a genuine continuation-mass or martingale proof, not just prefix-freeness plus Hölder. We state the needed operator explicitly in the polylog route below.
 
@@ -632,6 +632,96 @@ not just $m^\rho$.
    \]
    Apply \cref{cor:budgeted-block}. In the bounded-diameter instances used below, $\log N=\log^{O_c(1)}n$, so the logarithmic factors are absorbed into $\log^{O_c(1)}n$.
 \end{proof}
+
+\subsection{A constant-recall smooth terminal filter}
+
+The continuation-mass decoder above is designed to survive adaptive score schedules and recentering. For a terminal spherical search, where no further geometric edge has to be coupled to a score prefix, there is a simpler constant-depth smooth product filter with constant one-table recall. This gives a non-channel terminal layer for any localization scheme that can reduce the remaining instance to a spherical near/far gap.
+
+Let
+\[
+   \phi(\gamma)=\frac{1-\gamma}{1+\gamma},
+   \qquad
+   \rho(a,b)=\frac{\phi(a)}{\phi(b)}.
+\]
+
+\begin{theorem}[Smooth product terminal filter]\label{thm:smooth-product-terminal}
+   Fix $-1<b<a<1$ and a fixed integer $k\ge 2/(1-a)$. Let $m$ be the spherical instance size. Put
+   \[
+      t^2=\frac{2\log m}{\phi(b)}+O_{a,b}(\log\log m),
+      \qquad
+      u=\frac{t}{\sqrt k}.
+   \]
+   For each block $i\in[k]$, sample
+   \[
+      g_{i,1},\ldots,g_{i,B}\sim N(0,I_d),
+      \qquad
+      B=\Theta_{a,b}\!\left(J_a(u)^{-1}\right),
+   \]
+   where $J_\gamma(u)=\Pr[X\ge u,Y\ge u]$ for correlated standard Gaussians with correlation $\gamma$. A leaf is a tuple $j=(j_1,\ldots,j_k)\in[B]^k$ with aggregate normal
+   \[
+      G_j=\frac1{\sqrt k}\sum_{i=1}^k g_{i,j_i},
+   \]
+   and accepts a point $x$ if $\ip{G_j}{x}\ge t$.
+
+   Then one table has constant success probability for every near pair of correlation at least $a$. Its expected query leaves, update leaves per point, and ordinary far candidates are
+   \[
+      m^{\rho(a,b)}\log^{O_{a,b}(1)}m,
+   \]
+   and its expected storage is
+   \[
+      m^{1+\rho(a,b)}\log^{O_{a,b}(1)}m.
+   \]
+\end{theorem}
+
+\begin{proof}
+   For a near pair $(p,q)$ of correlation at least $a$, one block contains a column satisfying
+   \[
+      \ip{g_{i,j},p}\ge u,
+      \qquad
+      \ip{g_{i,j},q}\ge u
+   \]
+   with probability bounded below by a positive constant, by the choice $B=\Theta(J_a(u)^{-1})$. The blocks are independent and $k$ is fixed, so with constant probability every block contains such a common column. Choosing one such column per block gives a tuple accepted by both $p$ and $q$, since
+   \[
+      \ip{G_j,p},\ip{G_j,q}\ge\frac{k u}{\sqrt k}=t.
+   \]
+
+   The number of implicit leaves is
+   \[
+      M=B^k
+      =
+      \exp\!\left(\frac{t^2}{1+a}\right)\log^{O_{a,b}(1)}m,
+   \]
+   using the standard bivariate Gaussian tail
+   \[
+      J_a(u)=u^{-O_{a,b}(1)}
+      \exp\!\left(-\frac{u^2}{1+a}\right).
+   \]
+   For each fixed tuple, $G_j\sim N(0,I_d)$. Hence the expected number of leaves entered by one query, and also by one stored point, is
+   \[
+      M\overline\Phi(t)
+      =
+      \exp\!\left(\frac{t^2}{1+a}-\frac{t^2}{2}\right)
+      \log^{O_{a,b}(1)}m
+      =
+      m^{\rho(a,b)}\log^{O_{a,b}(1)}m,
+   \]
+   because $t^2=2\log m/\phi(b)+O(\log\log m)$ and $\rho(a,b)=\phi(a)/\phi(b)$. This proves the query-leaf and storage bounds.
+
+   For a far data point $x$ with $\ip{x}{q}\le b$, the pair $(\ip{G_j,x},\ip{G_j,q})$ is bivariate Gaussian with correlation at most $b$. Therefore
+   \[
+      M J_b(t)
+      \le
+      \exp\!\left(\frac{t^2}{1+a}-\frac{t^2}{1+b}\right)
+      \log^{O_{a,b}(1)}m
+      =
+      m^{-(1-\rho(a,b))}\log^{O_{a,b}(1)}m.
+   \]
+   Summing over the $m$ resident far points gives the far-candidate bound.
+\end{proof}
+
+The leaf set $[B]^k$ is implicit. For a query or data point, sort the $B$ scores in each block and enumerate tuples whose block-score sum is at least $t\sqrt k$ by a best-first heap over the $k$ sorted lists. If $L$ tuples are output, this costs $O_k(B\log B+L\log L)$. The condition $k\ge2/(1-a)$ gives $B\le m^{\rho(a,b)}\log^{O_{a,b}(1)}m$, so the enumeration overhead is absorbed into the stated polynomial logarithmic factors.
+
+The smooth product filter is not a replacement for \cref{lem:adaptive-continuation}: it has no long prefix process on which to hang many recentering decisions. Its role is terminal. Once a localization method produces a bounded spherical subproblem with the critical near/far angular gap, \cref{thm:smooth-product-terminal} gives constant one-table recall and removes the last inverse-polylogarithmic amplification loss.
 
 \begin{lemma}[Continuation-sampled detector tokens]\label{lem:continuation-detector}
    In any continuation-mass score block, a detector token can be sampled as follows. At a retained prefix $u$, assign every retained child $v$ its one-point continuation mass $H(v)$ for the remaining schedule, choose one child with probability proportional to $H(v)$, and kill the token if the total retained child mass is zero. Then the resulting detector law is normalized: for every prefix-free family $\mathcal U$,
@@ -2472,7 +2562,7 @@ One should also separate the resident-guard regime from the genuine finite-chann
 The main self-contained proof path is the restartable slice route of \cref{prop:slice-two-thirds}. The following notes explain which pieces are closed, which one-tree milestones are conditional, and which older formulations remain useful as comparisons or possible extensions.
 
 \paragraph{Spherical stage.}
-The continuation-mass spherical decoder is proved in \cref{lem:continuation-work}, \cref{lem:good-first-moment}, \cref{lem:tame-second-moment}, and \cref{cor:spherical-survival}. The one-sided analytical upper barrier controls prolific early prefixes in the proof, while the algorithm itself enforces only continuation-mass pruning.
+The continuation-mass spherical decoder is proved in \cref{lem:continuation-work}, \cref{lem:good-first-moment}, \cref{lem:tame-second-moment}, and \cref{cor:spherical-survival}. The one-sided analytical upper barrier controls prolific early prefixes in the proof, while the algorithm itself enforces only continuation-mass pruning. Independently, \cref{thm:smooth-product-terminal} gives a constant-recall terminal spherical engine by smooth product filtering. The adaptive decoder is for carrying score through localization; the smooth product filter is for the final localized spherical search.
 
 \paragraph{Restartable \(2/3\) stage.}
 \Cref{prop:slice-two-thirds} proves the restartable $2/3$ rung and is the proof of \cref{thm:main}. It reaches a subpolynomial overhead using deliberate restarts and leaf-conditioned slices.
@@ -2501,7 +2591,7 @@ and space
 \]
 The exact pieces now aligned for the randomized cap-thinning route are: continuation-mass pruning gives optimal expected spherical work, adaptive continuation gives whole-lineage near survival, thinned cap splitting gives radius-potential contraction, and cap-free terminal scans are paid by low-correlation collisions.
 
-For the randomized cap-thinning route, the remaining task is the branching first-split work estimate in \cref{asm:mixed-continuation-operator}: prove that the thinned geometric child potentials contract over random cap-discovery frontiers without replacing the branching decoder by a normalized path law. The finite-channel posterior route replaces that obstacle by \cref{asm:finite-restricted-channel}, a finite compilation problem for Gaussian-likelihood posterior children. The detector-vote cohort-or-leaf route is a separate possible generalization to arbitrary certified child hierarchies, where the remaining issue is near-lineage coupling between ordinary continuation paths and detector activations.
+For the randomized cap-thinning route, the remaining task is the branching first-split work estimate in \cref{asm:mixed-continuation-operator}: prove that the thinned geometric child potentials contract over random cap-discovery frontiers without replacing the branching decoder by a normalized path law. This is a fully non-channel route; the smooth product terminal filter can be used after localization and no longer contributes an inverse-polylogarithmic table-recall penalty. The finite-channel posterior route replaces the cap-frontier obstacle by \cref{asm:finite-restricted-channel}, a finite compilation problem for Gaussian-likelihood posterior children. The detector-vote cohort-or-leaf route is a separate possible generalization to arbitrary certified child hierarchies, where the remaining issue is near-lineage coupling between ordinary continuation paths and detector activations.
 
 \appendix
 
