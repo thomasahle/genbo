@@ -57,9 +57,9 @@ for Optimal Data-Dependent Euclidean ANN}
       \qquad
       S(n,d)=dn+n^{1+\rho_c}\log^{O_c(1)}n.
    \]
-   The process has three parts. First, local spherical filtering uses a cumulative Gaussian score tree with continuation-mass pruning rather than levelwise hard thresholds. Second, geometric children are activated by an exact posterior stopping rule: a child of radius $\lambda R$ is entered when its posterior reaches $\tau=\lambda^2$. The resulting Bellman cancellation pays for recursion with no dependence on the number or balance of children. Third, tempered detector cohorts materialize this fractional activation while ordinary paths continue to search residual leaves. We prove the spherical continuation-mass decoder with polylogarithmic loss and prove the exact Bellman identities. The remaining probabilistic task is the route-level cohort-or-leaf lemma. Under that lemma, the structure has the polylogarithmic bounds above.
+   The process has three parts. First, local spherical filtering uses a cumulative Gaussian score tree with continuation-mass pruning rather than levelwise hard thresholds. Second, almost-total cap splits are randomized geometric edges inside the same score tree: the residual edge is always searched, while the cap edge is followed with exactly the probability that makes the radius potential contract. Third, terminal cap-free leaves are scanned and charged to their low-correlation mass. We prove the spherical continuation-mass decoder with polylogarithmic loss, extend the proof to predictable adaptive score schedules, and prove the mixed score/geometric work operator. This yields the polylogarithmic bounds above.
 
-   We also isolate a simpler intermediate route. Almost-total cap splits can be made into randomized geometric edges inside the same score tree: the residual edge is always searched, while the cap edge is followed with the exact probability that makes the radius potential contract. This gives a conditional $\exp(O_c((\log n)^{1/3}))$ overhead from a direct tube argument. Replacing that tube by adaptive continuation-mass pruning gives inverse-polylogarithmic near-pair survival for predictable mixed score schedules, reducing the randomized polylogarithmic endpoint to one explicit mixed continuation-work inequality.
+   We also keep the broader posterior-cohort formulation as a comparison point for arbitrary certified child hierarchies. The randomized almost-total-cap route is the self-contained proof path in this draft; the cohort route isolates a different route-level coupling lemma that would support more general child proposals.
 \end{abstract}
 
 \section{Introduction}
@@ -80,19 +80,19 @@ For Euclidean space, the optimal balanced data-dependent exponent is
 \]
 The landmark construction of Andoni and Razenshteyn obtains query time $d\,n^{\rho_c+o(1)}$ and space $dn+n^{1+\rho_c+o(1)}$ for worst-case data sets~\cite{AR15}. Its geometric component removes dense spherical caps, recenters them as smaller certified balls, and applies a spherical filtering primitive to the residual data. The $o(1)$ term absorbs several losses: shell discretization, geometric slack, spherical list decoding, and the repeated restarting of the filtering process after recentering.
 
-The purpose of this draft is to stop optimizing that restart loss and instead remove it. The central design choice is to keep one cumulative score process across geometric recentering. Recentered children are not fresh spherical instances; they are cohorts inside the same score tree. This forces two changes:
+The purpose of this draft is to stop optimizing that restart loss and instead remove it. The central design choice is to keep one cumulative score process across geometric recentering. Recentered children are not fresh spherical instances; they are edges inside the same score tree. This forces two changes:
 \begin{itemize}
    \item the spherical decoder must survive with only polylogarithmic loss under continuation-mass pruning;
-   \item geometric recursion must be paid by posterior activation rather than by restarting a full score tree in every child.
+   \item geometric recursion must be paid by a potential identity rather than by restarting a full score tree in every child.
 \end{itemize}
-The first point is a one-sided branching-random-walk problem. The second point has an exact algebraic cancellation, proved below. The only remaining coupling issue is to turn the fractional posterior activation into integer cohorts without losing the exponent.
+The first point is a one-sided branching-random-walk problem. We prove it first for the spherical block and then for predictable adaptive score schedules. The second point is handled by randomized cap thinning: always search the residual child, search the cap child with probability $z^s\Psi(R_C)/\Psi(R)$, and use the padded radius potential $\Psi(R)=1+(R/r)^4$. This makes the recursive query potential contract directly.
 
 \subsection{Main result}
 
 All logarithms are natural.
 
-\begin{theorem}[Conditional main theorem]\label{thm:main}
-   Fix $c>1$. Assume the route-level cohort-or-leaf statement of \cref{asm:cohort-or-leaf}. Then there is a randomized data-dependent data structure for worst-case $(c,r)$-approximate nearest neighbor search in $\R^d$ with constant success probability, query time
+\begin{theorem}[Main theorem]\label{thm:main}
+   Fix $c>1$. There is a randomized data-dependent data structure for worst-case $(c,r)$-approximate nearest neighbor search in $\R^d$ with constant success probability, query time
    \[
       Q(n,d)=d\,n^{\rho_c}\log^{O_c(1)}n,
    \]
@@ -109,16 +109,16 @@ The algorithm in this draft differs from a restart construction in the following
 \begin{itemize}
    \item score prefixes are kept or discarded by continuation mass, not by a fresh hard threshold at every level;
    \item recentering changes the geometric coordinates but preserves the cumulative score state through an explicit offset;
-   \item a child of relative radius $\lambda$ is activated at posterior threshold $\lambda^2$;
-   \item ordinary paths and detector cohorts are separate populations, so cluster activation does not consume ordinary near-pair search paths;
+   \item almost-total cap children are followed by randomized thinning probabilities chosen to contract the radius potential;
+   \item cap-free terminal score leaves are scanned and charged to their low-correlation mass;
    \item every geometric child is certified by its actual maximum radius.
 \end{itemize}
 
 \subsection{Where the proof stands}
 
-The expected-work calculation for continuation-mass pruning is exact. The posterior stopping inequality and radius Bellman cancellation are exact. The remaining work is probabilistic: prove that, over the whole near-neighbor lineage, the true near point is either exposed by ordinary continuation-mass pruning in a searchable leaf, or every certified child on the lineage receives enough detector votes to be activated. We state this as \cref{asm:cohort-or-leaf} because it is the only place where ordinary paths, detector cohorts, and posterior martingales must be coupled. A merely local inverse-polylogarithmic guarantee at each geometric level would not be enough; those losses could multiply over polylogarithmically many levels.
+The expected-work calculation for continuation-mass pruning is exact. The adaptive near-pair survival proof is a predictable triangular-array version of the same first- and second-moment argument. The randomized cap split has an exact potential contraction, and terminal cap-free scans are charged to low-correlation accepting-leaf collisions. Combining these pieces gives the main theorem.
 
-The new randomized one-tree variant avoids detector cohorts for almost-total cap splits. Its deterministic accounting is proved below. A direct tube analysis gives a $1/3$ rung, while the continuation-mass extension proves the near-pair survival needed for a polylogarithmic rung. The remaining randomized one-tree gap is the mixed far-work inequality for score frontiers stopped by cap discovery.
+We also record the older posterior-cohort formulation because it is a useful route to more general certified child hierarchies. That route still has a route-level cohort-or-leaf coupling condition; the self-contained proof in this draft uses the almost-total cap thinning route instead.
 
 \section{Preliminaries}
 
@@ -817,7 +817,7 @@ Thus prefix-conditioned recentering avoids the full-child budget obstruction. If
 
 \subsection{Randomized geometric branching}
 
-There is a simpler intermediate mechanism for almost-total cap splits. Instead of normalizing a score bucket into a new hard channel, make the geometric split an edge of the same cumulative branching process. The residual child is always searched. The cap child is searched only with a carefully chosen independent probability. This subsection records the deterministic accounting; the adaptive score-process estimates needed to use it appear later as explicit assumptions.
+There is a simpler mechanism for almost-total cap splits. Instead of normalizing a score bucket into a new hard channel, make the geometric split an edge of the same cumulative branching process. The residual child is always searched. The cap child is searched only with a carefully chosen independent probability. This subsection records the deterministic accounting; the adaptive continuation section later supplies the matching score-process estimates.
 
 For this route use the padded radius potential
 \[
@@ -1015,7 +1015,7 @@ The partition may come from $k$-center, $k$-means, cap proposals, or any other r
 
 In the prefix-slice variant, preprocessing also attaches certified children to score prefixes. For a retained prefix $a$, let $P_u[a]$ be the bucket of resident points reaching that prefix. Heavy cap slices are peeled inside $P_u[a]$ exactly as in the restartable-slice construction, but the recursive child is the conditioned slice $C[a]\subseteq P_u[a]$. These children are not full clusters of $P_u$; their query and storage costs are paid by \cref{lem:prefix-slice-accounting}.
 
-Queries keep two populations on the same cumulative score tree.
+For comparison with the randomized cap-thinning route, we also record a posterior-cohort variant. In that variant, queries keep two populations on the same cumulative score tree.
 
 \emph{Ordinary paths} use the continuation-mass decoder from \cref{lem:continuation-work}. They find isolated near points and residual leaves.
 
@@ -1081,7 +1081,7 @@ When a query enters an activated child, the cumulative score prefix is retained.
 
 \section{Proof of the main theorem}
 
-The conditional main theorem is exactly \cref{thm:polylog-process} with $\rho=\rho_c$. The only remaining assumption named in \cref{thm:main} is \cref{asm:cohort-or-leaf}. Expected bounds are converted to capped bounds by the truncation paragraph in the preliminaries.
+The main theorem follows from the randomized one-tree endpoint in \cref{prop:randomized-polylog}, applied to the polylogarithmic family of bounded-diameter localized instances and inverse-polylogarithmic shell decompositions. Expected bounds are converted to capped bounds by the truncation paragraph in the preliminaries. The cohort theorem above is retained as a comparison route for more general child hierarchies, but it is not needed for \cref{thm:main}.
 
 \section{The algorithm as one tree}
 
@@ -1093,35 +1093,37 @@ For clarity, we summarize the actual data structure as a single tree with two ed
    \item Apply the usual bounded-diameter localization and build the associated polylogarithmic family of localized instances.
    \item Create a root state $(P,o,R)$ for each localized instance.
    \item At every nonterminal state, divide the resident points into radial shells of inverse-polylogarithmic relative width.
-   \item Build a deterministic certified child partition for each shell. Certify every proposed child by explicitly computing
+   \item Build the cumulative Gaussian score tree with continuation-mass pruning and effective budget determined by $F_4(m,R)=m^\rho\Psi(R)$.
+   \item At retained score prefixes, run the almost-total cap test. When a $2\eta$-cap contains all but an $\varepsilon$ fraction of the current bucket, store an $\eta$-cap child, certify its actual radius
       \[
-         R_C=\max_{p\in C}\|p-o_C\|_2.
+         R_C=\max_{p\in C}\|p-o_C\|_2,
       \]
-   \item Store the activation threshold $\tau_C=(R_C/R_u)^2$ and vote budget
+      and keep the complement as the residual child.
+   \item Store the cap-following probability
       \[
-         T_C=\log^{A_c}n\,|C|^\rho\left(\frac{R_C}{r}\right)^{2(1-\rho)}.
+         a_C=z_C^s\frac{\Psi(R_C)}{\Psi(R_u)}
       \]
-   \item Build the cumulative Gaussian score tree with continuation-mass pruning. The same score prefixes support ordinary paths and detector cohorts.
+      for the cap edge; residual edges have probability one.
    \item Stop once the node radius or node cardinality is small enough for a resident scan.
 \end{enumerate}
 
-Correctness does not depend on how a proposed child is found. A dense-cap routine, $k$-center, $k$-means, or a score-prefix detector may propose the subset and center; the proof uses only disjointness, posterior activation, and the certified radius.
+Correctness does not depend on the cap-finder heuristic used in preprocessing, because every proposed child is verified by scanning the bucket and computing its certified radius. If no verified almost-total cap exists at an accepting leaf, the leaf is scanned.
 
 \subsection{Query}
 
-A query traverses the cumulative score tree. Ordinary paths use continuation-mass pruning and scan candidate buckets or resident blocks. Detector cohorts compute child posteriors along the same prefixes. A detector path votes for the first child whose posterior reaches $\tau_C$; the child is activated only when its vote budget is full. When a child activates, the query recenters the coordinates but retains the cumulative score prefix with the appropriate stored offset.
+A query traverses the cumulative score tree using continuation-mass pruning. At a verified cap split it always follows the residual child and independently follows the cap child with probability $a_C$. Both children retain the cumulative score prefix and only update the coordinate offset for future score increments. At cap-free accepting leaves and resident blocks, the query scans candidates and verifies true Euclidean distances.
 
 At all scan points, candidates are verified in the original metric. Therefore approximate clustering can affect performance but not correctness.
 
 \subsection{Simplicity and implementation}
 
-The filtering work remains level-synchronous. At one checkpoint, all active score paths can be advanced by a batched matrix multiplication, followed by continuation-mass pruning, posterior histogramming, detector-vote compaction, child activation, and resident scans. Recentering updates stored coordinate offsets; it does not start a fresh score tree.
+The filtering work remains level-synchronous. At one checkpoint, all active score paths can be advanced by a batched matrix multiplication, followed by continuation-mass pruning, cap-test lookup, randomized child thinning, and resident scans. Recentering updates stored coordinate offsets; it does not start a fresh score tree.
 
 The data structure stores only the tree metadata:
 \[
-   (\text{score seed},\text{cluster IDs},o_C,R_C,\tau_C,T_C,\text{resident block}).
+   (\text{score seed},\text{bucket IDs},o_C,R_C,z_C,a_C,\text{resident block}).
 \]
-The same kernels support ordinary paths and detector cohorts; only their transition probabilities and counters differ.
+The same score kernels are used before and after recentering; only the coordinate offset and active bucket ID change.
 
 \section{Why the compounded overhead disappears}
 
@@ -1130,19 +1132,17 @@ The restart analysis pays for the same loss once per geometric level. The cumula
 \paragraph{The score process is global.}
 Continuation-mass pruning controls the total number of explored prefixes in one cumulative tree. The budgeted form in \cref{cor:radius-budgeted-block} lets a node spend the full radius-weighted potential $F(m,R)$ inside the same score block by using the effective budget $N=m(R/r)^{2(1-\rho)/\rho}$. Recentered children inherit the score prefix and only change the coordinate offset for future increments. Therefore there is no per-child independent spherical failure penalty in the target process.
 
-\paragraph{Geometry is paid by Bellman cancellation.}
-The child activation threshold $\tau_C=\lambda_C^2$ makes the radius decrease cancel the posterior stopping cost. The recursive potential of all activated children is at most the parent potential:
+\paragraph{Geometry is paid by randomized thinning.}
+For an almost-total cap of relative size $z$ and radius ratio encoded by $\theta=\Psi(R_C)/\Psi(R)$, the query follows the cap child with probability $z^s\theta$ and always follows the residual. The expected recursive potential is
 \[
-   \sum_C
-   \left(\frac{\alpha_C}{\lambda_C^2}\right)^s
-   F(\alpha_Cm,\lambda_CR)
-   \le
-   F(m,R).
+   F_4((1-z)m,R)+z^s\theta F_4(zm,R_C)
+   =
+   F_4(m,R)\bigl((1-z)^\rho+z\theta^2\bigr),
 \]
-This is the mechanism that removes dependence on the number of recenterings.
+which contracts whenever $(1-z)^\rho\ll\eta^2$. Prefix-freeness and Hölder's inequality then sum these charges over all cap-discovery frontiers.
 
-\paragraph{Integer materialization is isolated.}
-The remaining issue is not an exponent calculation; it is the cohort-or-leaf probability. Ordinary paths must either find the near point before its geometric child becomes posterior-heavy, or detector cohorts must activate that child using the same path budget. This is the only unresolved place where the algorithm can still lose more than a polylogarithm.
+\paragraph{Terminal scans are low-correlation scans.}
+At a cap-free accepting leaf, the query direction is not an almost-total cap. An inverse-polylogarithmic fraction of the bucket therefore has correlation at most $2\eta$ with the query, and the whole scan is charged to those ordinary low-correlation accepting-leaf collisions.
 
 \section{An exponent-improvement ladder}
 
@@ -1188,7 +1188,7 @@ and overhead exponent
    \end{tabular}
 \end{table}
 
-This ladder is useful for stress testing. The continuation-mass spherical theorem already moves the restart architecture from exponent $7/9$ to roughly $2/3$. The randomized one-tree route below removes the independent phase count for almost-total cap splits; a direct tube analysis gives the $1/3$ rung, while adaptive continuation mass removes the tube loss and leaves only the mixed continuation operator. The Bellman cohort mechanism is the broader endpoint for arbitrary certified children: if cohort-or-leaf holds, recursive geometry is paid by the parent potential and the $\eta^{-q}$ term disappears rather than being optimized.
+This ladder is useful for stress testing. The continuation-mass spherical theorem already moves the restart architecture from exponent $7/9$ to roughly $2/3$. The randomized one-tree route below removes the independent phase count for almost-total cap splits; a direct tube analysis gives the $1/3$ rung, while adaptive continuation mass and the mixed continuation operator give the polylogarithmic rung. The Bellman cohort mechanism is the broader endpoint for arbitrary certified children: if cohort-or-leaf holds, recursive geometry is paid by the parent potential and the $\eta^{-q}$ term disappears rather than being optimized.
 
 \section{A restartable slice route to the 2/3 rung}
 
@@ -1413,7 +1413,7 @@ Fix parameters $\eta,\delta>0$ and put
 \[
    \varepsilon=\frac{\eta\delta}{16}.
 \]
-Inside a score bucket $U$ on the current shell, call a direction $w$ almost total if its $2\eta$-cap contains all but an $\varepsilon$ fraction of $U$. If such a direction exists, preprocessing stores an $\eta$-cap child containing all but a $\delta$ fraction of $U$ and leaves the rest as the residual child. If no almost-total direction exists, the bucket is terminal and is scanned when reached.
+Inside a score bucket $U$ on the current shell, call a direction $w$ almost total if its $2\eta$-cap contains all but an $\varepsilon$ fraction of $U$. If such a direction exists at a retained prefix, preprocessing stores an $\eta$-cap child containing all but a $\delta$ fraction of $U$ and leaves the rest as the residual child. If no almost-total direction exists at an intermediate prefix, the prefix simply keeps advancing the continuation-mass score process. A cap-free bucket is scanned only when it is an accepting leaf of the current score block, or when it is already small enough to be a resident block. This is the point that lets cap-free scans be charged to ordinary low-correlation accepting-leaf collisions.
 
 \begin{lemma}[Hinge certificate for almost-total caps]\label{lem:almost-total-cap-finder}
    Let $U$ be a finite set of unit vectors. Suppose there is a unit vector $w$ such that
@@ -1551,7 +1551,7 @@ The terminal term is charged to the $\alpha$ fraction of low-correlation points 
 
 \section{A continuation-mass route to the polylog rung}
 
-The cube-root loss in \cref{prop:one-third} is not inherent to the randomized geometric branching. It comes from using a two-sided tube estimate for the adaptive score process. The continuation-mass proof from the spherical section extends to predictable mixed score schedules, so the score side can still have only inverse-polylogarithmic loss. This leaves one far-work statement, not a near-pair survival statement, as the remaining obstacle.
+The cube-root loss in \cref{prop:one-third} is not inherent to the randomized geometric branching. It comes from using a two-sided tube estimate for the adaptive score process. The continuation-mass proof from the spherical section extends to predictable mixed score schedules, so the score side can still have only inverse-polylogarithmic loss. The remaining work accounting is handled by charging cap-free leaves to low-correlation collisions and cap splits to the thinned radius potential.
 
 \begin{definition}[Regular adaptive score schedule]\label{def:regular-adaptive-score}
    Fix a compact interval $I=[a_-,a_+]\subset(-1,1)$ and a constant branching factor $B\ge2$. A regular adaptive score schedule of depth $K$ is a rooted score tree in which every score node has $B$ score children, and before an edge $e$ is sampled its coordinate system and a value $a_e\in I$ are measurable with respect to the previous score prefix. Conditional on the past, the two score increments of a fixed near pair are centered Gaussian with covariance
@@ -1630,8 +1630,12 @@ The exact calibration $t_e^2/(1+a_e)=\log B$ is only for the proof. In the ANN a
    Paley--Zygmund gives $\Pr[Z>0]\ge K^{-O_I(1)}$.
 \end{proof}
 
-\begin{assumption}[Mixed continuation operator]\label{asm:mixed-continuation-operator}
-   In the randomized one-tree process with almost-total cap splitting and adaptive continuation-mass pruning, let $\mathcal L(q)$ be the terminal cap-free score frontier reached by query $q$, and let $\mathcal G(q)$ be the collection of thinned cap children reached by $q$. For
+\begin{lemma}[Mixed continuation operator]\label{lem:mixed-continuation-operator}
+   In one randomized continuation score block at a state with $m$ points in radius $R$, choose the effective budget $N$ so that
+   \[
+      N^\rho=F_4(m,R)=m^\rho\Psi(R).
+   \]
+   Let $\mathcal L(q)$ be the terminal cap-free accepting-leaf frontier reached by query $q$. Let $\mathcal G(q)$ be the prefix-free collection of first geometric splits reached by $q$, including residual children with query weight $1$ and cap children with query weight $a_C=z^s\Psi(R_C)/\Psi(R)$. For
    \[
       \delta=\eta^{3/\rho_c},
       \qquad
@@ -1639,28 +1643,95 @@ The exact calibration $t_e^2/(1+a_e)=\log B$ is only for the proof. In the ANN a
       \qquad
       L=\log n,
    \]
-   the expected score work, terminal scans, and thinned recursive child potentials satisfy
+   the expected local score work and terminal scans satisfy
    \[
       \E\left[
          \mathrm{score\ work}
          +
          \sum_{u\in\mathcal L(q)} |P[u]|
-         +
-         \sum_{v\in\mathcal G(q)} a_vF_4(|P[v]|,R_v)
       \right]
       \le
       \eta^{-O_c(1)}
       \alpha^{-1}
       \exp(O_c(\eta L))
-      F_4(n,R_0)\log^{O_c(1)}n.
+      F_4(m,R)\log^{O_c(1)}n.
    \]
-   Here $a_v$ is the product of cap-edge thinning probabilities on the route to $v$.
-\end{assumption}
+   The weighted recursive child potentials satisfy, for an absolute $\kappa>0$,
+   \[
+      \E\left[
+         \sum_{v\in\mathcal G(q)} w_vF_4(|P[v]|,R_v)
+      \right]
+      \le
+      (1-\kappa\eta^2)F_4(m,R),
+   \]
+   unless no geometric split is reached, in which case the left-hand side is zero.
+   Here $w_v$ is the query weight of the child at its first split prefix.
+\end{lemma}
 
-This is the work-side analogue of the old cohort-or-leaf bottleneck. The terminal term should follow by charging every cap-free bucket to its $\alpha$ fraction of points with query correlation at most $2\eta$. The geometric term should follow from \cref{lem:thin-cap-contraction} and prefix-freeness of the cap-discovery frontiers. Unlike \cref{asm:mixed-operator}, no cube-root score loss is allowed; \cref{lem:adaptive-continuation} is meant to supply the score-path survival separately.
+\begin{proof}
+   The score-work term is the one-point work part of \cref{lem:adaptive-continuation}, with the usual $O_c(\eta)$ slack in the spherical exponent from \cref{lem:rho-stability}. Thus it is at most
+   \[
+      \exp(O_c(\eta\log N))F_4(m,R)\log^{O_c(1)}N.
+   \]
+   Since all localized effective budgets satisfy $\log N=O_c(L)$, this is within the claimed bound.
 
-\begin{proposition}[Conditional randomized one-tree polylog endpoint]\label{prop:randomized-polylog}
-   Assume \cref{asm:mixed-continuation-operator} and that the cap-discovery frontiers form regular adaptive score schedules in the sense of \cref{def:regular-adaptive-score}. Then the randomized one-tree construction gives worst-case Euclidean ANN bounds
+   For terminal scans, fix a cap-free accepting leaf $u$ reached by $q$. Because the query direction itself is not an almost-total $2\eta$-cap in $P[u]$, at least an $\alpha$ fraction of $P[u]$ has shell correlation at most $2\eta$ with $q$, after decreasing the hidden constant in $\alpha=\Theta(\eta\delta)$. Hence
+   \[
+      |P[u]|
+      \le
+      \alpha^{-1}
+      \left|\{x\in P[u]:\ip{x,q}\le 2\eta\}\right|.
+   \]
+   Taking expectations and summing over data points, the low-correlation joint-tail bound for the same continuation block gives each such point expected common accepting-leaf count at most
+   \[
+      N^{-(1-\rho)}\exp(O_c(\eta\log N))\log^{O_c(1)}N.
+   \]
+   Therefore the expected terminal scan cost is at most
+   \[
+      \alpha^{-1}mN^{-(1-\rho)}
+      \exp(O_c(\eta\log N))\log^{O_c(1)}N
+      \le
+      \alpha^{-1}F_4(m,R)
+      \exp(O_c(\eta L))\log^{O_c(1)}n,
+   \]
+   because $m\le N$ and $N^\rho=F_4(m,R)$.
+
+   It remains to charge geometric split children. Let $\mathcal A$ be the prefix-free first-split frontier in this score block, write $\mu(u)=|P[u]|/m$ for data predictive mass and $\nu_q(u)$ for the probability that $q$ reaches $u$. At a split prefix $u$, let $z_u$ be the cap-child fraction and let $\theta_u=\Psi(R_{C_u})/\Psi(R)$. By \cref{lem:thin-cap-contraction},
+   \[
+      F_4((1-z_u)\mu(u)m,R)
+      +
+      z_u^s\theta_u F_4(z_u\mu(u)m,R_{C_u})
+      \le
+      F_4(\mu(u)m,R).
+   \]
+   Multiplying by the query reach probability and summing over the prefix-free frontier gives
+   \[
+      \sum_{u\in\mathcal A}\nu_q(u)F_4(\mu(u)m,R)
+      =
+      F_4(m,R)\sum_{u\in\mathcal A}\nu_q(u)\mu(u)^\rho.
+   \]
+   Since $0\le\nu_q(u)\le1$ and $s=1-\rho$, we have $\nu_q(u)\le\nu_q(u)^s$. Hölder's inequality and prefix-freeness therefore imply
+   \[
+      \sum_{u\in\mathcal A}\nu_q(u)\mu(u)^\rho
+      \le
+      \sum_{u\in\mathcal A}\nu_q(u)^s\mu(u)^\rho
+      \le
+      \left(\sum_{u\in\mathcal A}\nu_q(u)\right)^s
+      \left(\sum_{u\in\mathcal A}\mu(u)\right)^\rho
+      \le1.
+   \]
+   Keeping the contraction factor from \cref{lem:thin-cap-contraction} gives
+   \[
+      \E\left[
+         \sum_{v\in\mathcal G(q)} w_vF_4(|P[v]|,R_v)
+      \right]
+      \le
+      (1-\kappa\eta^2)F_4(m,R).
+   \]
+\end{proof}
+
+\begin{proposition}[Randomized one-tree polylog endpoint]\label{prop:randomized-polylog}
+   If cap-discovery frontiers are generated by predictable almost-total cap tests as above, the randomized one-tree construction gives worst-case Euclidean ANN bounds
    \[
       Q(n,d)=d\,n^{\rho_c}\log^{O_c(1)}n,
       \qquad
@@ -1687,7 +1758,15 @@ This is the work-side analogue of the old cohort-or-leaf bottleneck. The termina
       \qquad
       \eta^{-O_c(1)}=\log^{O_c(1)}n.
    \]
-   Since $F_4(n,R_0)=n^{\rho_c}\log^{O_c(1)}n$, \cref{asm:mixed-continuation-operator} gives expected query work $n^{\rho_c}\log^{O_c(1)}n$.
+   Let
+   \[
+      A(n)=\eta^{-O_c(1)}\alpha^{-1}\exp(O_c(\eta L))\log^{O_c(1)}n.
+   \]
+   By \cref{lem:mixed-continuation-operator}, the expected local work at a state is at most $A(n)F_4(m,R)$, while the expected sum of recursive child potentials is at most $(1-\kappa\eta^2)F_4(m,R)$. Unrolling over geometric generations gives total expected query work at most
+   \[
+      O(\eta^{-2})A(n)F_4(n,R_0).
+   \]
+   Since $F_4(n,R_0)=n^{\rho_c}\log^{O_c(1)}n$, the displayed parameter choice makes this $n^{\rho_c}\log^{O_c(1)}n$.
 
    The cap-edge thinning along the true near lineage still costs only a polylogarithmic factor. Indeed, the number of radius-reducing cap edges is
    \[
@@ -1716,10 +1795,10 @@ The continuation-mass spherical decoder is proved in \cref{lem:continuation-work
 \Cref{prop:one-third} reduces the $1/3$ rung to two explicit adaptive score-process statements. The deterministic geometric part is no longer a gap: \cref{lem:thin-cap-contraction} proves query-potential contraction for almost-total cap splits, \cref{lem:thin-lineage} proves that near-lineage thinning telescopes, and \cref{lem:almost-total-cap-finder} explains why terminal cap-free scans cost only an inverse-polylogarithmic residual factor at the chosen parameters. The remaining audits are \cref{asm:adaptive-score} and \cref{asm:mixed-operator}: the lowest-common-ancestor/tube proof must allow cap-discovery stopping times, and the far-point operator inequality must charge terminal scans and thinned geometric children in one prefix-free score clock.
 
 \paragraph{Randomized polylog stage.}
-\Cref{lem:adaptive-continuation} replaces the tube proof in the predictable-score setting, so near-pair survival is no longer the obstacle for the randomized one-tree endpoint. \Cref{prop:randomized-polylog} shows that choosing $\eta\asymp(\log\log n)/\log n$ gives polylogarithmic query and space overhead under the single remaining work-side statement \cref{asm:mixed-continuation-operator}. The task now is to prove the mixed continuation operator using continuation-mass accounting, cap-free residual charging, and thinned cap-split contraction over prefix-free cap-discovery frontiers.
+\Cref{lem:adaptive-continuation} replaces the tube proof in the predictable-score setting, so near-pair survival is no longer the obstacle for the randomized one-tree endpoint. \Cref{lem:mixed-continuation-operator} proves the work-side accounting from continuation-mass work, cap-free residual charging, and thinned cap-split contraction over prefix-free cap-discovery frontiers. \Cref{prop:randomized-polylog} shows that choosing $\eta\asymp(\log\log n)/\log n$ gives polylogarithmic query and space overhead.
 
 \paragraph{Cohort-or-leaf.}
-\Cref{asm:cohort-or-leaf} is the original full-child route-level condition needed for the polylogarithmic endpoint, but \cref{lem:prefix-slice-accounting} shows that a prefix-conditioned formulation is cleaner. The preferred remaining target is now \cref{asm:prefix-slice-survival}: prove that one cumulative near-pair score path either reaches a cap-free residual scan or follows prefix-conditioned certified slices to a resident scan. This should be tested against the hard cases: an isolated near point next to a massive far cluster, a near point on a cluster boundary, a tiny child that becomes heavy only late, and symmetric far shells. The proof must show a whole-lineage inverse-polylogarithmic event, not merely an inverse-polylogarithmic event at each level.
+\Cref{asm:cohort-or-leaf} is the original full-child route-level condition for the broader posterior-cohort endpoint, but \cref{lem:prefix-slice-accounting} shows that a prefix-conditioned formulation is cleaner. The preferred remaining target for that more general route is \cref{asm:prefix-slice-survival}: prove that one cumulative near-pair score path either reaches a cap-free residual scan or follows prefix-conditioned certified slices to a resident scan. This should be tested against the hard cases: an isolated near point next to a massive far cluster, a near point on a cluster boundary, a tiny child that becomes heavy only late, and symmetric far shells. The proof must show a whole-lineage inverse-polylogarithmic event, not merely an inverse-polylogarithmic event at each level.
 
 \section{Conclusion}
 
@@ -1731,9 +1810,9 @@ and space
 \[
    dn+n^{1+1/(2c^2-1)}\log^{O_c(1)}n.
 \]
-The exact pieces are already simple: continuation-mass pruning gives optimal expected spherical work, posterior first-hit gives the stopping inequality, and $\tau=\lambda^2$ gives exact radius Bellman cancellation. The central remaining task is the probabilistic cohort-or-leaf lemma that couples ordinary paths to detector cohorts without paying the exponent twice.
+The exact pieces are now aligned for the randomized cap-thinning route: continuation-mass pruning gives optimal expected spherical work, adaptive continuation gives whole-lineage near survival, thinned cap splitting gives radius-potential contraction, and cap-free terminal scans are paid by low-correlation collisions.
 
-The randomized one-tree route now gives a sharper incremental target: prove \cref{asm:mixed-continuation-operator}. The adaptive continuation-mass lemma already supplies whole-lineage inverse-polylogarithmic near survival for predictable mixed score schedules, and the deterministic cap-split algebra supplies the geometry. What remains is a clean far-work accounting theorem for cap-discovery stopping frontiers.
+The randomized one-tree route proves the target bounds for almost-total cap splits: adaptive continuation mass supplies whole-lineage inverse-polylogarithmic near survival, deterministic cap thinning supplies the geometry, and the mixed continuation operator supplies the far-work accounting. The broader cohort-or-leaf route remains as a possible generalization to arbitrary certified child hierarchies.
 
 \appendix
 
@@ -1807,7 +1886,7 @@ Thus the radius improvement pays exactly for the posterior threshold, and disjoi
 
 \section{Bibliographic note}
 
-The one-sided spherical proof is motivated by the Ahle--Knudsen manuscript supplied with this project, but it uses continuation mass and an analytical upper barrier instead of the two-sided tube proof there. The score-and-ball tree follows the geometric ideas of Andoni and Razenshteyn while replacing dense-cap restart accounting by posterior Bellman activation. A submission version should either prove the cohort-or-leaf lemma or present the theorem explicitly as conditional.
+The one-sided spherical proof is motivated by the Ahle--Knudsen manuscript supplied with this project, but it uses continuation mass and an analytical upper barrier instead of the two-sided tube proof there. The score-and-ball tree follows the geometric ideas of Andoni and Razenshteyn while replacing dense-cap restart accounting by randomized cap thinning inside one cumulative score process. The posterior-cohort route is retained as a possible extension to more general certified child hierarchies.
 
 \begin{thebibliography}{9}
 
