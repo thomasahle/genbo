@@ -55,7 +55,7 @@ for Optimal Data-Dependent Euclidean ANN}
       \qquad
       S(n,d)=dn+n^{1+\rho_c}\log^{O_c(1)}n.
    \]
-   The process has three parts. First, local spherical filtering uses a cumulative Gaussian score tree with continuation-mass pruning rather than levelwise hard thresholds. Second, geometric children are activated by an exact posterior stopping rule: a child of radius $\lambda R$ is entered when its posterior reaches $\tau=\lambda^2$. The resulting Bellman cancellation pays for recursion with no dependence on the number or balance of children. Third, tempered detector cohorts materialize this fractional activation while ordinary paths continue to search residual leaves. We prove the spherical continuation-mass decoder with polylogarithmic loss and prove the exact Bellman identities. The remaining probabilistic task is the cohort-or-leaf lemma. Under that lemma, the structure has the polylogarithmic bounds above.
+   The process has three parts. First, local spherical filtering uses a cumulative Gaussian score tree with continuation-mass pruning rather than levelwise hard thresholds. Second, geometric children are activated by an exact posterior stopping rule: a child of radius $\lambda R$ is entered when its posterior reaches $\tau=\lambda^2$. The resulting Bellman cancellation pays for recursion with no dependence on the number or balance of children. Third, tempered detector cohorts materialize this fractional activation while ordinary paths continue to search residual leaves. We prove the spherical continuation-mass decoder with polylogarithmic loss and prove the exact Bellman identities. The remaining probabilistic task is the route-level cohort-or-leaf lemma. Under that lemma, the structure has the polylogarithmic bounds above.
 \end{abstract}
 
 \section{Introduction}
@@ -88,7 +88,7 @@ The first point is a one-sided branching-random-walk problem. The second point h
 All logarithms are natural.
 
 \begin{theorem}[Conditional main theorem]\label{thm:main}
-   Fix $c>1$. Assume the cohort-or-leaf statement of \cref{asm:cohort-or-leaf}. Then there is a randomized data-dependent data structure for worst-case $(c,r)$-approximate nearest neighbor search in $\R^d$ with constant success probability, query time
+   Fix $c>1$. Assume the route-level cohort-or-leaf statement of \cref{asm:cohort-or-leaf}. Then there is a randomized data-dependent data structure for worst-case $(c,r)$-approximate nearest neighbor search in $\R^d$ with constant success probability, query time
    \[
       Q(n,d)=d\,n^{\rho_c}\log^{O_c(1)}n,
    \]
@@ -112,7 +112,7 @@ The algorithm in this draft differs from a restart construction in the following
 
 \subsection{Where the proof stands}
 
-The expected-work calculation for continuation-mass pruning is exact. The posterior stopping inequality and radius Bellman cancellation are exact. The remaining work is probabilistic: prove that either the true near point survives ordinary continuation-mass pruning to a searchable leaf, or its deterministic geometric child receives enough detector votes to be activated. We state this as \cref{asm:cohort-or-leaf} because it is the only place where ordinary paths, detector cohorts, and posterior martingales must be coupled.
+The expected-work calculation for continuation-mass pruning is exact. The posterior stopping inequality and radius Bellman cancellation are exact. The remaining work is probabilistic: prove that, over the whole near-neighbor lineage, the true near point is either exposed by ordinary continuation-mass pruning in a searchable leaf, or every certified child on the lineage receives enough detector votes to be activated. We state this as \cref{asm:cohort-or-leaf} because it is the only place where ordinary paths, detector cohorts, and posterior martingales must be coupled. A merely local inverse-polylogarithmic guarantee at each geometric level would not be enough; those losses could multiply over polylogarithmically many levels.
 
 \section{Preliminaries}
 
@@ -584,13 +584,21 @@ detector budget. Because each detector path casts at most one vote, activated ch
 
 When a query enters an activated child, the cumulative score prefix is retained. Recentered coordinates only change future score offsets; no new independent spherical decoder is started.
 
-\begin{assumption}[Cohort-or-leaf]\label{asm:cohort-or-leaf}
-   Let $C$ be the deterministic hierarchy child containing a true near neighbor $p$ of query $q$, and let $\tau_C=\lambda_C^2$ be its activation threshold. For the shared cumulative score tree, at least one of the following occurs with probability $\log^{-O_c(1)}n$:
+\begin{assumption}[Route cohort-or-leaf]\label{asm:cohort-or-leaf}
+   Fix a true near pair $(p,q)$ and let
+   \[
+      u_0,u_1,\ldots,u_h
+   \]
+   be the deterministic hierarchy lineage containing $p$, stopping when the resident block containing $p$ is scanned. Write $C_i=P_{u_{i+1}}\subseteq P_{u_i}$ and
+   \[
+      \tau_i=\left(\frac{R_{u_{i+1}}}{R_{u_i}}\right)^2.
+   \]
+   In one shared cumulative score tree, the following route event has probability at least $\log^{-O_c(1)}n$:
    \begin{enumerate}
-      \item ordinary paths expose $p$ in a searchable residual leaf while $Z_C(u)<\tau_C$ along the route;
-      \item detector paths generate enough first-hit votes to activate $C$.
+      \item an ordinary path exposes $p$ in a searchable residual leaf before the lineage needs another activation; or
+      \item for every $i<h$, detector paths generate enough first-hit votes to activate $C_i$, and the query reaches the final resident scan containing $p$.
    \end{enumerate}
-   Equivalently, in the notation of the hand-off,
+   A useful local inequality to prove en route is, in the notation of the hand-off,
    \[
       \tau_C^{-\rho}\mathcal A_C^{\mathrm{hit}}
       +
@@ -598,6 +606,7 @@ When a query enters an activated child, the cumulative score prefix is retained.
       \ge
       \log^{-O_c(1)}n.
    \]
+   The assumption used here is stronger than this inequality level by level: the local quantities must telescope, or be coupled by a second-moment argument, into the displayed route event. Independent inverse-polylogarithmic success probabilities at the $h$ levels would not suffice.
 \end{assumption}
 
 \begin{theorem}[Polylogarithmic score-and-ball process]\label{thm:polylog-process}
@@ -616,7 +625,7 @@ When a query enters an activated child, the cumulative score prefix is retained.
 
    For every certified child, \cref{lem:first-hit} bounds the fractional query mass that can activate the child, and the choice $\tau_C=\lambda_C^2$ converts that activation cost into $\alpha_C F(m,R)$ by the Bellman cancellation. Summing over disjoint children is therefore bounded by the parent potential. The detector-vote rule is the integer version of this accounting: an activated child has already received its own recursive budget from parent detector votes. Space is controlled by disjointness and convexity of $x^{1+\rho}$.
 
-   Along the near-neighbor route, \cref{asm:cohort-or-leaf} ensures inverse-polylogarithmic progress at each relevant scale: either the ordinary path finds the near point without activating the child, or detector cohorts activate the certified child containing it. The deterministic hierarchy has only $\log^{O_c(1)}n$ relevant scales after bounded-diameter localization and resident scans. Polylogarithmic amplification gives constant success probability, and truncation/rebuilding converts expected bounds to capped bounds as in the preliminaries.
+   Along the near-neighbor route, \cref{asm:cohort-or-leaf} supplies an inverse-polylogarithmic probability for the entire lineage, not one independent loss per scale: either an ordinary path finds the near point before the next activation is needed, or detector cohorts activate every certified child containing it until a resident scan is reached. Polylogarithmic amplification gives constant success probability, and truncation/rebuilding converts expected bounds to capped bounds as in the preliminaries.
 \end{proof}
 
 \section{Proof of the main theorem}
@@ -729,15 +738,146 @@ and overhead exponent
 
 This ladder is useful for stress testing. The continuation-mass spherical theorem already moves the restart architecture from exponent $7/9$ to roughly $2/3$. Any partial geometric result that either reduces the number of independently paid phases or improves the slack perturbation gives a next rung. The Bellman cohort mechanism is the endpoint: if cohort-or-leaf holds, recursive geometry is paid by the parent potential and the $\eta^{-q}$ term disappears rather than being optimized.
 
+\section{A restartable slice route to the 2/3 rung}
+
+There is a more concrete way to reach the $2/3$ milestone without proving the persistent route cohort-or-leaf lemma. The point is to restart deliberately after every recentering, but to recurse only on leaf-conditioned slices. This avoids the obstruction in which one atypical score prefix from a large child would have to fund a recursive search of the whole child.
+
+Fix one spherical stage on a shell in a ball $\Ball(o,R)$. Let $\eta>0$ and set
+\[
+   \tau=\log^{-A_c} n.
+\]
+Run the continuation-mass spherical decoder and regard its accepting buckets as hard leaves for this stage only. At each leaf bucket $U$, repeatedly remove every cap slice of margin $2\eta$ that contains at least a $\tau$ fraction of the current bucket. A removed slice in direction $w$ is
+\[
+   C[U,w]=\left\{x\in U:\ip{(x-o)/R}{w}\ge 2\eta\right\}.
+\]
+It is stored as a certified child. Since every point in it has inner product at least $2\eta R$ with direction $w$,
+\[
+   C[U,w]\subseteq \Ball(o+\eta Rw,\,R\sqrt{1-\eta^2}),
+\]
+and the implementation certifies the actual child radius by computing the maximum distance to the proposed center. After no heavy $2\eta$-cap remains, the residual bucket is scanned. Every certified child starts a fresh spherical stage in its own coordinates.
+
+\begin{lemma}[Residual scan after slice peeling]\label{lem:slice-residual}
+   In one restartable slice stage, scanning the final cap-free residual leaf buckets costs only a $(1+O(\tau))$ factor more than the ordinary far-candidate count of the spherical decoder with far correlation $2\eta$.
+\end{lemma}
+
+\begin{proof}
+   Fix a query $q$ reaching a final residual bucket $U$, and let
+   \[
+      E_q=\left\{x\in U:\ip{(x-o)/R}{(q-o)/R}>2\eta\right\}.
+   \]
+   If $|E_q|\ge\tau |U|$, then the query direction itself defines a heavy $2\eta$-cap that should have been peeled. Hence $|E_q|<\tau |U|$. Therefore
+   \[
+      |U|\le \frac{1}{1-\tau}\,|U\setminus E_q|.
+   \]
+   Every point in $U\setminus E_q$ has correlation at most $2\eta$ with the query direction, so the spherical far-candidate bound controls its expected contribution. Since $(1-\tau)^{-1}=1+O(\tau)$, scanning all of $U$ has the same bound up to this factor.
+\end{proof}
+
+\begin{lemma}[Leaf-conditioned slice budget]\label{lem:slice-budget}
+   Let a hard leaf $U$ have data fraction $\mu=|U|/m$, and let $\nu_q(U)\in\{0,1\}$ indicate whether query $q$ reaches it. Suppose the peeled slices inside $U$ have relative sizes
+   \[
+      z_j=\frac{|C_j|}{|U|}
+   \]
+   and certified radii $R_j=\lambda_jR$. With $\rho=\rho_c+O_c(\eta)$ and $s=1-\rho$,
+   \[
+      F(m,R)\,\mu^\rho\nu_q(U)^s\,z_j^\rho\lambda_j^{2s}
+      =
+      F(|C_j|,R_j)\nu_q(U)^s.
+   \]
+   If at most $J$ slices are peeled from $U$, then summing over the slices loses at most a factor $J^{1-\rho}$.
+\end{lemma}
+
+\begin{proof}
+   The identity follows by substituting $|C_j|=z_j\mu m$ and $R_j=\lambda_jR$ into
+   \[
+      F(m,R)=m^\rho\left(\frac Rr\right)^{2s}.
+   \]
+   The slices are disjoint inside $U$, so $\sum_j z_j\le1$. Concavity of $x^\rho$ gives
+   \[
+      \sum_{j=1}^J z_j^\rho\le J^{1-\rho}\left(\sum_{j=1}^J z_j\right)^\rho\le J^{1-\rho}.
+   \]
+\end{proof}
+
+Since every peeled slice removes at least a $\tau$ fraction of the current bucket, a bucket of size at most $n$ produces only
+\[
+   J=O(\tau^{-1}\log n)=\log^{O_c(1)}n
+\]
+sequential slices. Thus \cref{lem:slice-budget} costs only a polylogarithmic factor per restartable stage.
+
+\begin{proposition}[Restartable slice milestone]\label{prop:slice-two-thirds}
+   Assume the one-stage slice procedure above can be implemented with polylogarithmic overhead in work, space, and inverse success probability, including the cap-finding and hard-channel tail bounds. Then for fixed $c>1$ there is a worst-case Euclidean ANN structure with
+   \[
+      Q(n,d)
+      =
+      d\,n^{\rho_c}
+      \exp\!\left(
+         O_c\!\left((\log n)^{2/3}(\log\log n)^{2/3}\right)
+      \right)
+   \]
+   and
+   \[
+      S(n,d)
+      =
+      dn+n^{1+\rho_c}
+      \exp\!\left(
+         O_c\!\left((\log n)^{2/3}(\log\log n)^{2/3}\right)
+      \right).
+   \]
+\end{proposition}
+
+\begin{proof}
+   Put
+   \[
+      L=\log n,
+      \qquad
+      \ell=\log\log n.
+   \]
+   By \cref{lem:rho-stability} and \cref{lem:shell}, using far correlation $2\eta$ and inverse-polynomial shell widths changes the balanced exponent from $\rho_c$ to
+   \[
+      \rho_c+O_c(\eta),
+   \]
+   contributing
+   \[
+      \exp(O_c(\eta L))
+   \]
+   to the overhead.
+
+   Each accepted slice has certified radius at most $R\sqrt{1-\eta^2}\le R(1-\eta^2/2)$ for small enough $\eta$. After bounded-diameter localization, the relevant ratio $R_0/r$ is at most $\log^{O_c(1)}n$. Hence a near-neighbor lineage has at most
+   \[
+      H=O_c\!\left(\eta^{-2}\log\frac{R_0}{r}\right)
+      =
+      O_c(\eta^{-2}\ell)
+   \]
+   restarts before a resident scan. Paying an independent polylogarithmic stage overhead at every restart contributes
+   \[
+      \log^{O_c(H)}n
+      =
+      \exp(O_c(\eta^{-2}\ell^2)).
+   \]
+   Therefore the logarithm of the nonpolynomial overhead is
+   \[
+      O_c(\eta L+\eta^{-2}\ell^2).
+   \]
+   Balance the two terms by taking
+   \[
+      \eta=\Theta_c\!\left(\left(\frac{\ell^2}{L}\right)^{1/3}\right).
+   \]
+   Then both terms are $O_c(L^{2/3}\ell^{2/3})$, proving the displayed bounds.
+\end{proof}
+
+This result is not the final target: it still pays a fresh polylogarithmic factor after every certified radius reduction. Its value is that the recursive object is the prefix-conditioned slice $C[U,w]$, whose budget is exactly supplied by the hard leaf. The false full-child statement is no longer needed.
+
 \section{Proof obligations}
 
-The draft now has one explicit probabilistic obligation.
+The draft now separates two proof tracks.
 
 \paragraph{Spherical stage.}
 The continuation-mass spherical decoder is proved in \cref{lem:continuation-work}, \cref{lem:good-first-moment}, \cref{lem:tame-second-moment}, and \cref{cor:spherical-survival}. The one-sided analytical upper barrier controls prolific early prefixes in the proof, while the algorithm itself enforces only continuation-mass pruning.
 
+\paragraph{Restartable \(2/3\) stage.}
+\Cref{prop:slice-two-thirds} reduces the $2/3$ rung to a one-stage slice theorem. The remaining audits are to turn continuation-mass accepting buckets into hard channels with high-probability bounds, prove or replace the RANSAC-style cap finder for every heavy $2\eta$-cap, and Poissonize the large slice cohorts so the polylogarithmic oversampling concentration is explicit.
+
 \paragraph{Cohort-or-leaf.}
-\Cref{asm:cohort-or-leaf} should be tested against the hard cases: an isolated near point next to a massive far cluster, a near point on a cluster boundary, a tiny child that becomes heavy only late, and symmetric far shells. The proof should combine the posterior martingale, the one-sided continuation barrier, and concentration for detector votes.
+\Cref{asm:cohort-or-leaf} is the route-level condition needed for the polylogarithmic endpoint. It should be tested against the hard cases: an isolated near point next to a massive far cluster, a near point on a cluster boundary, a tiny child that becomes heavy only late, and symmetric far shells. The proof must show a whole-lineage inverse-polylogarithmic event, not merely an inverse-polylogarithmic event at each level.
 
 \section{Conclusion}
 
