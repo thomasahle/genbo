@@ -2011,7 +2011,7 @@ The exact calibration $t_e^2/(1+a_e)=\log B$ is only for the proof. In the ANN a
       \qquad
       L=\log n,
    \]
-   The weighted recursive child potentials satisfy, for an absolute $\kappa>0$,
+   the weighted recursive child potentials satisfy, for an absolute $\kappa>0$,
    \[
       \E\left[
          \sum_{v\in\mathcal G(q)} w_vF_4(|P[v]|,R_v)
@@ -2028,6 +2028,46 @@ The score-work and terminal-scan terms are handled by \cref{lem:cap-free-scan-ac
    \sum_{u\in\mathcal A}\nu_q(u)\mu(u)^\rho\le 1.
 \]
 That inequality would be immediate for a single sampled path, but the continuation decoder retains a set of prefixes; a data point or query may contribute to many prefix nodes. The desired proof should therefore be an optional-stopping or continuation-mass argument for the branching score process itself.
+
+\begin{lemma}[Bellman certificate for first-split frontiers]\label{lem:bellman-frontier-certificate}
+   Fix one continuation score block at a state with $m$ points and radius $R$. Suppose that, for every query $q$, there is a nonnegative predictable prefix potential $\mathcal B_q(u)$ on retained score prefixes with the following properties.
+   \[
+      \mathcal B_q(\varnothing)\le F_4(m,R).
+   \]
+   For every retained score prefix $u$ before a geometric split or terminal scan, if $\mathrm{ch}(u)$ denotes the next retained score children, then
+   \[
+      \E\left[\sum_{w\in\mathrm{ch}(u)}\mathcal B_q(w)\,\middle|\,u\right]
+      \le
+      \mathcal B_q(u).
+   \]
+   Finally, at every first geometric split prefix $u$, the weighted recursive potential of the children opened from that prefix is at most
+   \[
+      (1-\kappa\eta^2)\mathcal B_q(u).
+   \]
+   Then the geometric part of \cref{asm:mixed-continuation-operator} holds.
+\end{lemma}
+
+\begin{proof}
+   Let $\mathcal A(q)$ be the random prefix-free frontier of first geometric split prefixes reached by the query in this block. The second displayed inequality says that $\sum_{u\in\mathcal U}\mathcal B_q(u)$ is a supermartingale when $\mathcal U$ is the current active retained prefix frontier. Optional stopping at the bounded-depth frontier $\mathcal A(q)$ gives
+   \[
+      \E\sum_{u\in\mathcal A(q)}\mathcal B_q(u)
+      \le
+      \mathcal B_q(\varnothing)
+      \le
+      F_4(m,R).
+   \]
+   Multiplying each stopped prefix by its local split charge and using the last hypothesis gives
+   \[
+      \E\left[
+         \sum_{v\in\mathcal G(q)}w_vF_4(|P[v]|,R_v)
+      \right]
+      \le
+      (1-\kappa\eta^2)F_4(m,R).
+   \]
+   If no split is reached, the child-potential sum is empty.
+\end{proof}
+
+This certificate is the local form of the remaining problem. It is analogous in proof shape to the robust Hamming hashing guarantee of Andoni and Beaglehole~\cite{AB22}: there a per-node min-max inequality over hash choices and adversarial query-neighbor pairs is enough, by induction, to lower-bound the success probability of the whole tree. Here the missing object is the continuation-mass analogue of that local Bellman potential. Proving such a potential would remove the global frontier assumption without replacing the branching decoder by a normalized one-path law.
 
 \begin{proposition}[Conditional randomized one-tree polylog endpoint]\label{prop:randomized-polylog}
    Under \cref{asm:mixed-continuation-operator}, the randomized one-tree construction with predictable almost-total cap tests gives worst-case Euclidean ANN bounds
@@ -2185,7 +2225,7 @@ Thus the radius improvement pays exactly for the posterior threshold, and disjoi
 
 \section{Bibliographic note}
 
-The one-sided spherical proof is motivated by the Ahle--Knudsen manuscript supplied with this project, but it uses continuation mass and an analytical upper barrier instead of the two-sided tube proof there. The score-and-ball tree follows the geometric ideas of Andoni and Razenshteyn while replacing dense-cap restart accounting by randomized cap thinning inside one cumulative score process. The posterior-cohort route is retained as a possible extension to more general certified child hierarchies.
+The one-sided spherical proof is motivated by the Ahle--Knudsen manuscript supplied with this project, but it uses continuation mass and an analytical upper barrier instead of the two-sided tube proof there. The score-and-ball tree follows the geometric ideas of Andoni and Razenshteyn while replacing dense-cap restart accounting by randomized cap thinning inside one cumulative score process. The local Bellman-game viewpoint is inspired by the robust learned hashing framework of Andoni and Beaglehole. The posterior-cohort route is retained as a possible extension to more general certified child hierarchies.
 
 \begin{thebibliography}{9}
 
@@ -2198,6 +2238,11 @@ The one-sided spherical proof is motivated by the Ahle--Knudsen manuscript suppl
    Alexandr Andoni and Ilya Razenshteyn.
    \newblock Optimal data-dependent hashing for approximate near neighbors.
    \newblock In \emph{Proceedings of the 47th Annual ACM Symposium on Theory of Computing (STOC)}, pages 793--801, 2015.
+
+   \bibitem{AB22}
+   Alexandr Andoni and Daniel Beaglehole.
+   \newblock Learning to hash robustly, guaranteed.
+   \newblock In \emph{Proceedings of the 39th International Conference on Machine Learning (ICML)}, PMLR 162, 2022.
 
    \bibitem{IM98}
    Piotr Indyk and Rajeev Motwani.
