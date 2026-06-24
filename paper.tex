@@ -2069,6 +2069,55 @@ That inequality would be immediate for a single sampled path, but the continuati
 
 This certificate is the local form of the remaining problem. It is analogous in proof shape to the robust Hamming hashing guarantee of Andoni and Beaglehole~\cite{AB22}: there a per-node min-max inequality over hash choices and adversarial query-neighbor pairs is enough, by induction, to lower-bound the success probability of the whole tree. Here the missing object is the continuation-mass analogue of that local Bellman potential. Proving such a potential would remove the global frontier assumption without replacing the branching decoder by a normalized one-path law.
 
+\begin{lemma}[Canonical mixed continuation budget]\label{lem:canonical-mixed-budget}
+   In one score block, let $H_0$ be the one-point continuation mass at the root for the chosen effective budget. For a retained prefix $u$, let $Q_q(u)$ be the exact query continuation mass from $u$, and let
+   \[
+      D(u)=\sum_{x\in P_u}H_x(u)
+   \]
+   be the aggregate data continuation mass of the resident bucket at $u$. Define
+   \[
+      \mathcal B_q^{\mathrm{mix}}(u)
+      =
+      \Psi(R)\frac{D(u)^\rho Q_q(u)^s}{H_0},
+      \qquad s=1-\rho.
+   \]
+   Then $\mathcal B_q^{\mathrm{mix}}(\varnothing)=F_4(m,R)$ and $\mathcal B_q^{\mathrm{mix}}$ satisfies the prefix-supermartingale hypothesis of \cref{lem:bellman-frontier-certificate}.
+\end{lemma}
+
+\begin{proof}
+   At the root, $D(\varnothing)=mH_0$ and $Q_q(\varnothing)=H_0$, hence
+   \[
+      \mathcal B_q^{\mathrm{mix}}(\varnothing)
+      =
+      \Psi(R)m^\rho H_0^{\rho+s-1}
+      =
+      m^\rho\Psi(R)
+      =
+      F_4(m,R).
+   \]
+
+   Fix a retained prefix $u$ and reveal its retained score children $w$. For each realization, Hölder's inequality gives
+   \[
+      \sum_wD(w)^\rho Q_q(w)^s
+      \le
+      \left(\sum_wD(w)\right)^\rho
+      \left(\sum_wQ_q(w)\right)^s .
+   \]
+   Before the next Gaussian children are realized, continuation mass is harmonic in expectation, and retention can only delete child mass. Therefore
+   \[
+      \E\!\left[\sum_wD(w)\,\middle|\,u\right]\le D(u),
+      \qquad
+      \E\!\left[\sum_wQ_q(w)\,\middle|\,u\right]\le Q_q(u).
+   \]
+   Since $(a,b)\mapsto a^\rho b^s$ is concave on $\R_+^2$, Jensen's inequality yields
+   \[
+      \E\left[\sum_wD(w)^\rho Q_q(w)^s\,\middle|\,u\right]
+      \le
+      D(u)^\rho Q_q(u)^s.
+   \]
+   Multiplying by $\Psi(R)/H_0$ proves the supermartingale inequality.
+\end{proof}
+
 \begin{corollary}[Budget-gated cap splitting]\label{cor:budget-gated-splits}
    Fix any predictable nonnegative budget process $\mathcal B_q$ satisfying the first two hypotheses of \cref{lem:bellman-frontier-certificate}. Modify the one-tree query algorithm as follows: at a retained prefix $u$, a stored almost-total cap split is live only if its thinned recursive charge
    \[
@@ -2083,12 +2132,12 @@ This certificate is the local form of the remaining problem. It is analogous in 
    The budget gate enforces the local domination hypothesis in \cref{lem:bellman-frontier-certificate}. Applying that lemma to the live first-split frontier gives the claim.
 \end{proof}
 
-\begin{remark}[Why the query-only budget is too small]\label{rem:query-only-budget}
-   The most obvious budget,
+\begin{remark}[Why normalized continuation budgets are too small]\label{rem:query-only-budget}
+   The most obvious query-only budget,
    \[
       \mathcal B_q(u)=F_4(m,R)\frac{H_q(u)}{H_q(\varnothing)},
    \]
-   is a normalized query continuation-mass martingale, but it cannot pay for early geometric splits by itself. In a homogeneous balanced bucket at an early level $\ell$, before the continuation barrier prunes many children, a typical query prefix has budget about $F_4(m,R)B^{-\ell}$. The corresponding bucket has size about $mB^{-\ell}$, so its recursive power charge is
+   is a normalized query continuation-mass martingale, but it cannot pay for early geometric splits by itself. The canonical mixed budget in \cref{lem:canonical-mixed-budget} has the same scale in the homogeneous balanced case. At an early level $\ell$, before the continuation barrier prunes many children, a typical query prefix has budget about $F_4(m,R)B^{-\ell}$. The corresponding bucket has size about $mB^{-\ell}$, so its recursive power charge is
    \[
       F_4(mB^{-\ell},R)
       \approx
