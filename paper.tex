@@ -2652,7 +2652,118 @@ For a threshold $u$, the posterior-superlevel child is
    The choices $\alpha=\kappa/\log m$ and $t=C_c\log m/r^2$ make both $\alpha tr^2$ and $\alpha h_0$ positive constants depending only on $c$, proving the claim after fixing $\kappa,C_c$.
 \end{proof}
 
-Choose $\eta_m=m^{-\rho}\log^{A_c}m$. A uniform guard of size $m^\rho\log^{O_c(1)}m$ handles the case where at least $\eta_m m/2$ points are already valid answers. Otherwise \cref{thm:continuous-likelihood-balls} supplies constant pure negative-moment value below mass $\eta_m$. That value need not sit at the top scale $\eta_m$; it may be concentrated near singleton children. This is why \cref{lem:dyadic-structured-amplification} runs all dyadic scales down to $1/m$. The geometric cost of doing so is still only $m^\rho\log^{O_c(1)}m$.
+\begin{lemma}[Ideal likelihood scale profile]\label{lem:ideal-likelihood-scale-profile}
+   In the notation of \cref{thm:continuous-likelihood-balls}, fix $0<\alpha<\rho$ and $s_\alpha=1-\alpha$. For a dyadic scale $\xi\in[1/m,1]$, restrict the continuous children to
+   \[
+      \xi/2\le \Phi_Y(u)\le \xi
+   \]
+   and give child $(Y,u)$ preprocessing intensity
+   \[
+      d\sigma(Y,u)=d\gamma_t(Y)\,\alpha u^{\alpha-1}\Phi_Y(u)^\rho\,du
+   \]
+   and query-active intensity
+   \[
+      d\lambda_q(Y,u)=L_Y(q)^{s_\alpha}\,d\sigma(Y,u).
+   \]
+   Then, uniformly in the data set and query,
+   \[
+      \int_{\xi/2\le\Phi_Y(u)\le\xi}
+      \Phi_Y(u)^\rho\,d\lambda_q(Y,u)
+      \le
+      C_{\rho,\alpha}\xi^\rho,
+   \]
+   and
+   \[
+      \int_{\xi/2\le\Phi_Y(u)\le\xi}
+      \Phi_Y(u)^{1+\rho}\,d\sigma(Y,u)
+      \le
+      C_{\rho,\alpha}\xi^\rho.
+   \]
+   Moreover, under the guard-failure hypothesis of \cref{thm:continuous-likelihood-balls}, the ideal pure multiscale value satisfies
+   \[
+      \sum_{\xi\le\eta}
+      \int_{\substack{\xi/2\le\Phi_Y(u)\le\xi\\
+                      p\in C_{Y,u},\ C_{Y,u}\subseteq\Ball(q,cr)}}
+      \Phi_Y(u)^{-\rho}\,d\lambda_q(Y,u)
+      \ge
+      \delta_c,
+   \]
+   where the sum ranges over dyadic $\xi\in[1/m,\eta]$.
+\end{lemma}
+
+\begin{proof}
+   For $a>\alpha$, put
+   \[
+      Z_Y=\frac1m\sum_{x\in S}L_Y(x),
+      \qquad
+      R_Y(x)=\frac{L_Y(x)}{Z_Y},
+   \]
+   and let $F_Y(v)=m^{-1}|\{x:R_Y(x)\ge v\}|$. Since $R_Y(X)$ has mean one for a uniform random data point $X$, Markov's inequality gives
+   \[
+      F_Y(v)\le\min\{1,v^{-1}\}.
+   \]
+   Therefore
+   \[
+      \int_0^\infty \alpha u^{\alpha-1}\Phi_Y(u)^a\,du
+      =
+      Z_Y^\alpha
+      \int_0^\infty \alpha v^{\alpha-1}F_Y(v)^a\,dv
+      \le
+      C_{a,\alpha}Z_Y^\alpha.
+   \]
+
+   Jensen's inequality gives
+   \[
+      Z_Y^\alpha\le\frac1m\sum_{x\in S}L_Y(x)^\alpha.
+   \]
+   Hence
+   \[
+      \int L_Y(q)^{s_\alpha}Z_Y^\alpha\,d\gamma_t(Y)
+      \le
+      \frac1m\sum_{x\in S}
+      \int L_Y(q)^{s_\alpha}L_Y(x)^\alpha\,d\gamma_t(Y)
+      \le1,
+   \]
+   by the same Gaussian affinity identity used in \cref{thm:continuous-likelihood-balls}. Similarly,
+   \[
+      \int Z_Y^\alpha\,d\gamma_t(Y)
+      \le
+      \frac1m\sum_{x\in S}\int L_Y(x)^\alpha\,d\gamma_t(Y)
+      \le1.
+   \]
+
+   On the scale $\Phi_Y(u)\le\xi$,
+   \[
+      \Phi_Y(u)^{2\rho}\le\xi^\rho\Phi_Y(u)^\rho.
+   \]
+   Taking $a=\rho$ in the previous bound proves
+   \[
+      \int_{\xi/2\le\Phi_Y(u)\le\xi}
+      \Phi_Y(u)^\rho\,d\lambda_q(Y,u)
+      =
+      \int_{\xi/2\le\Phi_Y(u)\le\xi}
+      L_Y(q)^{s_\alpha}\alpha u^{\alpha-1}\Phi_Y(u)^{2\rho}\,du\,d\gamma_t(Y)
+      \le
+      C_{\rho,\alpha}\xi^\rho .
+   \]
+   Likewise, on the same scale
+   \[
+      \Phi_Y(u)^{1+2\rho}\le\xi^\rho\Phi_Y(u)^{1+\rho},
+   \]
+   and taking $a=1+\rho$ gives the stored-child moment bound.
+
+   Finally, for any child containing $p$, its mass is at least $1/m$. Thus summing the dyadic scales up to $\eta$ partitions the pure event in \cref{thm:continuous-likelihood-balls}. Since
+   \[
+      \Phi_Y(u)^{-\rho}\,d\lambda_q(Y,u)
+      =
+      L_Y(q)^{s_\alpha}\alpha u^{\alpha-1}\,du\,d\gamma_t(Y),
+   \]
+   the displayed pure multiscale value is exactly $\mathcal P_\eta(p,q)$, and \cref{thm:continuous-likelihood-balls} lower-bounds it by $\delta_c$.
+\end{proof}
+
+Choose $\eta_m=m^{-\rho}\log^{A_c}m$. A uniform guard of size $m^\rho\log^{O_c(1)}m$ handles the case where at least $\eta_m m/2$ points are already valid answers. Otherwise \cref{thm:continuous-likelihood-balls} supplies constant pure negative-moment value below mass $\eta_m$, and \cref{lem:ideal-likelihood-scale-profile} shows that the same ideal continuum already has the scale-normalized query and storage moments needed by \cref{lem:dyadic-structured-amplification}. The value need not sit at the top scale $\eta_m$; it may be concentrated near singleton children. This is why the amplification lemma runs all dyadic scales down to $1/m$. The geometric cost of doing so is still only $m^\rho\log^{O_c(1)}m$.
+
+Thus the remaining posterior problem is no longer geometric. It is a materialization problem: replace the ideal continuous likelihood-ball measure by an implicit, query-decodable family of stored representatives that preserves the two scale moments and the pure multiscale value up to polylogarithmic factors.
 
 \begin{assumption}[Multiscale structured likelihood decoder]\label{asm:multiscale-structured-likelihood}
    Fix $c>1$ and $\rho=\rho_c$. For every bounded-diameter localized node with $m$ resident points there is a structured, output-sensitive posterior decoder over dyadic mass scales
@@ -2751,7 +2862,7 @@ Thus if $B\le\xi^{-1}\log^{O(1)}m$ and $\beta=O(1/\log m)$, one group has only $
    outcomes, evaluable on the node in $dB\log^{O_c(1)}m$ work, such that for every near pair $p,q$ in the node, either a uniformly sampled resident guard block of size $O(\xi^{-1}\log n)$ returns a valid $cr$-neighbor with constant probability, or the restricted top-$\xi$ posterior-superlevel negative moment for $p,q$ is at least $\log^{-O_c(1)}m$.
 \end{assumption}
 
-\Cref{thm:continuous-likelihood-balls} proves the geometric part of the posterior approach: likelihood level sets are Euclidean balls, and unless a resident guard succeeds there is constant negative-moment value on children that contain the near point and no invalid point. What is not yet proved is the structured decoding step in \cref{asm:multiscale-structured-likelihood}: an implicit decoder must preserve that pure value across dyadic mass scales with output-sensitive listing. The finite special case below remains useful as a coarse diagnostic; there the missing statement is balanced, query-decodable compilation with only $B\simeq\xi^{-1}$ outcomes.
+\Cref{thm:continuous-likelihood-balls} proves the geometric part of the posterior approach: likelihood level sets are Euclidean balls, and unless a resident guard succeeds there is constant negative-moment value on children that contain the near point and no invalid point. \Cref{lem:ideal-likelihood-scale-profile} proves that the ideal continuous measure also has the exact dyadic query and storage moments required for $m^\rho$ amplification. What is not yet proved is the structured decoding step in \cref{asm:multiscale-structured-likelihood}: an implicit decoder must materialize stored representatives and preserve that pure value across dyadic mass scales with output-sensitive listing. The finite special case below remains useful as a coarse diagnostic; there the missing statement is balanced, query-decodable compilation with only $B\simeq\xi^{-1}$ outcomes.
 
 The most direct experimental diagnostic for \cref{asm:finite-restricted-channel} is to measure its left-hand side. For a proposed finite channel, let $\tau_j$ be the top-$\xi$ posterior threshold of $R_j(x)$ over the data, and for each planted near pair $(p,q)$ compute
 \[
@@ -2881,7 +2992,7 @@ The continuation-mass spherical decoder is proved in \cref{lem:continuation-work
 \paragraph{Structured posterior route.}
 \Cref{lem:posterior-superlevel-compiler} records the negative-moment identity suggested by the latest notes. \Cref{lem:scale-window-compiler} and \cref{lem:dyadic-structured-amplification} isolate the important arithmetic: if mass windows can be decoded output-sensitively, then $\xi^{-\rho}$ repetitions at each dyadic scale convert negative-moment value into constant hit probability, and summing all scales down to $1/m$ still fits the $m^\rho$ query budget. Thus the explicit finite-channel scale $\xi=m^{-1/(2c^2)}$ is not fundamental; it is the price of enumerating all outcomes.
 
-The cleanest structured target is now \cref{asm:multiscale-structured-likelihood}: decode the pure likelihood-ball value certified by \cref{thm:continuous-likelihood-balls} across dyadic mass scales, storing one representative per child. Conditional on that theorem, \cref{prop:multiscale-structured-polylog} gives the desired polylogarithmic ANN bounds in one posterior layer; if the activated child is pure for the query, its representative is already a valid answer. The older finite restricted-channel compiler \cref{asm:finite-restricted-channel} and \cref{prop:finite-channel-polylog} remain as a coarse explicit-enumeration special case and as a useful diagnostic framework. The geometric guard-or-pure-child theorem is proved here; the structured decoder preserving it is not.
+The continuous likelihood-ball family now proves both analytic sides of the desired posterior decoder: \cref{thm:continuous-likelihood-balls} gives the guard-or-pure-child value, and \cref{lem:ideal-likelihood-scale-profile} gives the scale-normalized query and storage moments. The cleanest structured target is therefore \cref{asm:multiscale-structured-likelihood}: materialize this ideal measure as a query-decodable family of stored representatives. Conditional on that theorem, \cref{prop:multiscale-structured-polylog} gives the desired polylogarithmic ANN bounds in one posterior layer; if the activated child is pure for the query, its representative is already a valid answer. The older finite restricted-channel compiler \cref{asm:finite-restricted-channel} and \cref{prop:finite-channel-polylog} remain as a coarse explicit-enumeration special case and as a useful diagnostic framework.
 
 \paragraph{Cohort-or-leaf.}
 \Cref{asm:cohort-or-leaf} is the original full-child route-level condition for the broader posterior-cohort endpoint, but \cref{lem:prefix-slice-accounting} shows that a prefix-conditioned formulation is cleaner. Work accounting for opened children is no longer the hard part: \cref{lem:vote-budget} pays opened recursive calls from realized detector votes. The preferred remaining target for that more general route is \cref{asm:prefix-slice-survival}: prove that one cumulative near-pair score path either reaches a cap-free residual scan or receives enough detector votes to follow prefix-conditioned certified slices to a resident scan. \Cref{lem:detector-inflation} and \cref{lem:off-spine-inflation} reduce the detector-shadowing part of this target to early activation prefixes with large enough continuation mass $H(v)$ and logarithmic spine-ratio sum $\sum H(u^+)/H(u)$; \cref{rem:linear-spine-ratio} explains why long score routes need an aggregate detector-mass argument instead. This should be tested against the hard cases: an isolated near point next to a massive far cluster, a near point on a cluster boundary, a tiny child that becomes heavy only late, and symmetric far shells. The proof must show a whole-lineage inverse-polylogarithmic event, not merely an inverse-polylogarithmic event at each level.
