@@ -1079,6 +1079,26 @@ for disjoint children. Polynomially many shells and bounded-diameter roots contr
    and convexity gives $\sum_Cm_C^{1+\rho}\le m^{1+\rho}$. The prefix-conditioned slice case is the storage part of \cref{lem:prefix-slice-accounting}.
 \end{proof}
 
+\begin{remark}[Cost and value surrogates]\label{rem:cost-value-surrogates}
+   The threshold $T_C=\log^{A_c}n\,F(m_C,R_C)$ is the conservative all-or-nothing version of the same closed-form surrogate idea used by Andoni and Beaglehole~\cite{AB22}. They replace an intractable recursive success probability by a closed-form lower bound in the local min-max game. Here
+   \[
+      W(m,R)=F(m,R),
+      \qquad
+      \sigma(m,R)=W(m,R)^{-1}
+   \]
+   should be viewed as paired work and value surrogates: $W$ is the budget needed to make a child fully searchable, while $\sigma$ is the closed-form value of one unit of unamplified recursive success inside that child.
+
+   This suggests a cleaner integer-materialization target. Instead of opening $C$ only after it has received enough votes to pay for a full child search, let $b_C$ detector votes buy a $b_C/W(m_C,R_C)$ fraction of the child search. If the recursive continuation procedure is made splittable under independent thinning of its query branches, this uses expected work $b_C$ and gives conditional success value
+   \[
+      \Omega\!\left(\frac{b_C}{W(m_C,R_C)}\right)\log^{-O_c(1)}n
+      =
+      \Omega(b_C\,\sigma(m_C,R_C))\log^{-O_c(1)}n
+   \]
+   when the true near point lies in $C$. The current vote threshold is the special case $b_C\simeq W(m_C,R_C)$.
+
+   The posterior mass of a child can then be used as a local payoff multiplier, just as in the hashing game of~\cite{AB22}, but not as an average-case assumption about the unknown near point. The worst-case target should be stated in value form: along the true near-neighbor lineage, either an ordinary continuation path reaches a residual scan, or detector votes deliver enough value $b_C\sigma(m_C,R_C)$ to every required child to preserve inverse-polylogarithmic total success. This may be the right replacement for demanding full integer activation of every child on the lineage.
+\end{remark}
+
 \subsection{Prefix-conditioned slice accounting}
 
 The preceding Bellman cancellation applies to deterministic full children. The full-child version is too coarse for the persistent score process: a rare score prefix can isolate an atypical part of a large child, while the full child would require the budget of all its points. The right recursive object is the slice conditioned on the score prefix itself.
@@ -2131,6 +2151,62 @@ This certificate is the local form of the remaining problem. It is analogous in 
 \begin{proof}
    The budget gate enforces the local domination hypothesis in \cref{lem:bellman-frontier-certificate}. Applying that lemma to the live first-split frontier gives the claim.
 \end{proof}
+
+\begin{lemma}[Budget-thinned first opportunities]\label{lem:budget-thinned-opportunities}
+   Fix any predictable nonnegative budget process $\mathcal B_q$ satisfying the first two hypotheses of \cref{lem:bellman-frontier-certificate}. At a retained prefix $u$, let $\Gamma(u)$ denote the weighted recursive potential of the geometric children that would be opened from $u$; for the almost-total cap split above,
+   \[
+      \Gamma(u)=
+      F_4((1-z)|P[u]|,R_u)
+      +
+      z^s\frac{\Psi(R_C)}{\Psi(R_u)}F_4(z|P[u]|,R_C).
+   \]
+   Let $\mathcal A(q)$ be the prefix-free frontier of first prefixes on which such a geometric opportunity is offered to query $q$. Modify the query rule at these first opportunities as follows: activate the geometric children at $u$ with probability
+   \[
+      \pi(u)=
+      \min\left\{
+         1,\,
+         \frac{(1-\kappa\eta^2)\mathcal B_q(u)}{\Gamma(u)}
+      \right\},
+   \]
+   with the convention $\pi(u)=1$ when $\Gamma(u)=0$. If the activation coin fails, this query branch opens no geometric child in the current score block; it may only continue toward a cap-free terminal scan. Then
+   \[
+      \E\left[
+         \sum_{u\in\mathcal A(q)}
+         \mathbf 1_{\{\text{$u$ activates}\}}\Gamma(u)
+      \right]
+      \le
+      (1-\kappa\eta^2)F_4(m,R).
+   \]
+\end{lemma}
+
+\begin{proof}
+   Condition on the realized score tree and on the first-opportunity frontier $\mathcal A(q)$. The activation coins are independent of the score randomness after $\mathcal A(q)$ is determined, and
+   \[
+      \E\!\left[
+         \mathbf 1_{\{\text{$u$ activates}\}}\Gamma(u)
+         \,\middle|\,\mathcal A(q),u
+      \right]
+      =
+      \pi(u)\Gamma(u)
+      \le
+      (1-\kappa\eta^2)\mathcal B_q(u).
+   \]
+   Optional stopping for the budget supermartingale gives
+   \[
+      \E\sum_{u\in\mathcal A(q)}\mathcal B_q(u)
+      \le
+      \mathcal B_q(\varnothing)
+      \le
+      F_4(m,R).
+   \]
+   Combining the two displays proves the claim.
+\end{proof}
+
+\begin{remark}[Work can be bought by thinning]\label{rem:budget-thinning}
+   \Cref{cor:budget-gated-splits} is deterministic: a split is live only when the local budget pays its whole charge. \Cref{lem:budget-thinned-opportunities} is the corresponding randomized rule. It converts any prefix-supermartingale budget, in particular the canonical mixed budget of \cref{lem:canonical-mixed-budget}, into an unconditional expected bound for the activated geometric work.
+
+   In a homogeneous balanced prefix at depth $\ell$, the canonical budget is smaller than the local recursive charge by about $B^{(1-\rho)\ell}$, so the activation probability is about $B^{-(1-\rho)\ell}$. This is exactly the missing factor in the naive sum over the $B^\ell$ query prefixes. Thus the balanced-prefix obstruction is no longer a work blow-up; it becomes a near-lineage question: prove that the tame-good near paths supplied by \cref{lem:adaptive-continuation} contain enough budget-thinned first opportunities that one complete radius-decreasing lineage survives with inverse-polylogarithmic probability.
+\end{remark}
 
 \begin{remark}[Why normalized continuation budgets are too small]\label{rem:query-only-budget}
    The most obvious query-only budget,
