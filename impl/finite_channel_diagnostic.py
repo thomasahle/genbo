@@ -261,18 +261,22 @@ def main() -> None:
     parser.add_argument("--queries", type=int, default=200)
     parser.add_argument("--B", type=int, default=0, help="channel outcomes; default is ceil(m^(1/(2c^2)))")
     parser.add_argument("--panel", choices=PANEL_KINDS, default="gaussian")
+    parser.add_argument("--scale", type=float, default=1.0,
+                        help="multiply panel scores by this inverse-temperature scale")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--balance-iters", type=int, default=200)
     parser.add_argument("--near-corr", type=float, default=None,
                         help="near-pair sphere correlation; default is 1-1/c^2")
     args = parser.parse_args()
+    if args.scale <= 0:
+        parser.error("--scale must be positive")
 
     data, queries, near_indices, r = synthetic_near_pairs(
         args.n, args.d, args.c, args.queries, args.seed, near_correlation=args.near_corr)
     eta = args.n ** (-1.0 / (2.0 * args.c * args.c))
     b_count = args.B or int(math.ceil(1.0 / eta))
 
-    panel = make_panel(args.d, b_count, kind=args.panel, seed=args.seed + 1, data=data)
+    panel = args.scale * make_panel(args.d, b_count, kind=args.panel, seed=args.seed + 1, data=data)
     scores = data @ panel.T
     offsets = balance_softmax_offsets(scores, max_iter=args.balance_iters)
     k_data = stable_softmax(scores + offsets)
@@ -285,6 +289,7 @@ def main() -> None:
 
     summary = result.summary()
     summary["B"] = float(b_count)
+    summary["scale"] = float(args.scale)
     summary["effective_support_q05"] = float(np.quantile(support, 0.05))
     summary["effective_support_median"] = float(np.median(support))
     summary["hessian_cond_median"] = float(np.median(cond[np.isfinite(cond)])) if np.any(np.isfinite(cond)) else float("inf")

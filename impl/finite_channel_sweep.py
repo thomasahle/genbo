@@ -38,6 +38,7 @@ FIELDNAMES = [
     "near_corr",
     "r",
     "panel",
+    "scale",
     "seed",
     "B",
     "eta",
@@ -96,17 +97,20 @@ def run_trial(
     c: float,
     queries: int,
     panel_kind: str,
+    scale: float,
     seed: int,
     b_count: int,
     balance_iters: int,
     near_correlation: float | None = None,
 ) -> dict[str, object]:
+    if scale <= 0:
+        raise ValueError("scale must be positive")
     data, query_points, near_indices, r = synthetic_near_pairs(
         n, d, c, queries, seed, near_correlation=near_correlation)
     eta = n ** (-1.0 / (2.0 * c * c))
     actual_near_corr = 1.0 - 0.5 * r * r
 
-    panel = make_panel(d, b_count, kind=panel_kind, seed=seed + 1, data=data)
+    panel = scale * make_panel(d, b_count, kind=panel_kind, seed=seed + 1, data=data)
     scores = data @ panel.T
     offsets = balance_softmax_offsets(scores, max_iter=balance_iters)
     k_data = stable_softmax(scores + offsets)
@@ -127,6 +131,7 @@ def run_trial(
         "near_corr": actual_near_corr,
         "r": r,
         "panel": panel_kind,
+        "scale": scale,
         "seed": seed,
         "B": b_count,
         "eta": result.eta,
@@ -170,6 +175,7 @@ def main() -> None:
     parser.add_argument("--c", type=float, default=2.0)
     parser.add_argument("--queries", type=int, default=200)
     parser.add_argument("--panels", default="gaussian,whitened_gaussian,cross_polytope,pca,landmark")
+    parser.add_argument("--scales", default="1", help="comma-separated inverse-temperature scales")
     parser.add_argument("--seeds", default="0,1,2")
     parser.add_argument("--near-corr", type=float, default=None,
                         help="near-pair sphere correlation; default is 1-1/c^2")
@@ -181,7 +187,10 @@ def main() -> None:
 
     ns = parse_csv_list(args.n, int)
     panels = parse_csv_list(args.panels, str)
+    scales = parse_csv_list(args.scales, float)
     seeds = parse_csv_list(args.seeds, int)
+    if any(scale <= 0 for scale in scales):
+        raise ValueError("all scales must be positive")
     unknown = sorted(set(panels) - set(PANEL_KINDS))
     if unknown:
         raise ValueError(f"unknown panel kind(s): {', '.join(unknown)}")
@@ -190,18 +199,20 @@ def main() -> None:
     for n in ns:
         b_count = args.B or default_b_count(n, args.c, args.B_mult)
         for panel in panels:
-            for seed in seeds:
-                rows.append(run_trial(
-                    n=n,
-                    d=args.d,
-                    c=args.c,
-                    queries=args.queries,
-                    panel_kind=panel,
-                    seed=seed,
-                    b_count=b_count,
-                    balance_iters=args.balance_iters,
-                    near_correlation=args.near_corr,
-                ))
+            for scale in scales:
+                for seed in seeds:
+                    rows.append(run_trial(
+                        n=n,
+                        d=args.d,
+                        c=args.c,
+                        queries=args.queries,
+                        panel_kind=panel,
+                        scale=scale,
+                        seed=seed,
+                        b_count=b_count,
+                        balance_iters=args.balance_iters,
+                        near_correlation=args.near_corr,
+                    ))
     write_rows(rows, args.csv)
 
 

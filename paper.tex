@@ -2373,10 +2373,21 @@ Also compute the resident-guard density
 The conjecture predicts that the lower quantiles of $g(q)+\mathcal H_\xi(p,q)$ should be at worst inverse-polylogarithmic in $m$, and ideally bounded below by a constant. For the balanced-softmax candidate
 \[
    K_x(j)=
-   \frac{\exp(\ip{a_j}{x}+b_j)}
-   {\sum_\ell\exp(\ip{a_\ell}{x}+b_\ell)},
+   \frac{\exp(\lambda_{\rm sm}\ip{a_j}{x}+b_j)}
+   {\sum_\ell\exp(\lambda_{\rm sm}\ip{a_\ell}{x}+b_\ell)},
 \]
-the offsets $b_j$ should first be balanced so that $\mu_j\approx1/B$. The diagnostic should then compare Gaussian, whitened Gaussian, cross-polytope, and learned panels; report lower quantiles rather than only averages; and track the effective support and Hessian condition number of $K_z$, where $z=\beta p+(1-\beta)q$. These measurements distinguish the two hoped-for regimes: well-conditioned softmax curvature gives score separation, while concentrated $K_z$ should give posterior contraction.
+the offsets $b_j$ should first be balanced so that $\mu_j\approx1/B$, and the inverse temperature $\lambda_{\rm sm}$ should be swept rather than fixed by an arbitrary normalization of the panel. Writing
+\[
+   A(x)=\log\sum_j\exp(\lambda_{\rm sm}\ip{a_j}{x}+b_j),
+\]
+the unrestricted affinity has the exact form
+\[
+   \sum_j K_p(j)^\beta K_q(j)^{1-\beta}
+   =
+   \exp\!\left(A(z)-\beta A(p)-(1-\beta)A(q)\right),
+   \qquad z=\beta p+(1-\beta)q.
+\]
+Thus $\lambda_{\rm sm}$ controls both the local curvature $\nabla^2A(x)=\lambda_{\rm sm}^2\operatorname{Cov}_{K_x}(a_j)$ and the effective support of $K_z$. The diagnostic should compare Gaussian, whitened Gaussian, cross-polytope, and learned panels; report lower quantiles rather than only averages; and track the effective support and Hessian condition number of $K_z$. These measurements distinguish the two hoped-for regimes: well-conditioned softmax curvature gives score separation, while concentrated $K_z$ should give posterior contraction.
 One should also separate the resident-guard regime from the genuine finite-channel regime. On the critical random sphere, the guard density can already be constant, so $g(q)$ masks the posterior term. A sharper stress test uses isolated planted pairs with smaller radius, where $g(q)\simeq1/m$ and the lower quantiles of $\mathcal H_\xi(p,q)$ carry the conjectural content.
 
 \begin{proposition}[Conditional finite-channel polylog endpoint]\label{prop:finite-channel-polylog}
