@@ -2815,6 +2815,144 @@ Thus the remaining posterior problem is no longer geometric. By \cref{lem:likeli
 
 The following assumption abstracts exactly that operation, while allowing either an implicit channel, a signature tree, a multiprobe score index, or a direct sampled-prefix reporter as the implementation.
 
+\begin{lemma}[Smoothed maximum-score margin]\label{lem:smoothed-max-score-margin}
+   Let $S\subset\R^d$, $|S|=m$, and suppose $\|p-q\|\le r$. For
+   \[
+      A_Y(x)=\ip{Y}{x}-\frac t2\|x\|^2,
+      \qquad
+      Y\sim N(tq,tI_d),
+   \]
+   choose
+   \[
+      t=C_c\frac{\log m}{r^2}
+   \]
+   with $C_c$ sufficiently large. Then, with probability at least
+   $1-m^{-2}$ over $Y$, every invalid point $x\in S$ with
+   $\|x-q\|>cr$ satisfies
+   \[
+      A_Y(x)\le A_Y(p)-\Delta_c\log m
+   \]
+   for a constant $\Delta_c>0$ depending only on $c$. Consequently, on this
+   event, every point $\widehat x$ satisfying
+   \[
+      A_Y(\widehat x)\ge\max_{z\in S}A_Y(z)-\frac12\Delta_c\log m
+   \]
+   is a valid $cr$-neighbor of $q$.
+\end{lemma}
+
+\begin{proof}
+   Write $G=Y-tq$. Up to constants independent of $x$,
+   \[
+      A_Y(x)
+      =
+      \ip{G}{x-q}-\frac t2\|x-q\|^2+\mathrm{const}(Y,q).
+   \]
+   Thus we may translate so that $q=0$ and write $Y$ for
+   $G\sim N(0,tI_d)$. For an invalid point $x$, put
+   \[
+      \ell_x=A_Y(x)-A_Y(p).
+   \]
+   Since $Y\sim N(0,tI_d)$, this is a Gaussian random variable with variance
+   $t\|x-p\|^2$ and mean
+   \[
+      -\frac t2(\|x\|^2-\|p\|^2).
+   \]
+   Also
+   \[
+      \|x\|^2-\|p\|^2\ge(c^2-1)r^2,
+      \qquad
+      \frac{\|x\|^2-\|p\|^2}{\|x-p\|}
+      \ge
+      \|x\|-\|p\|
+      \ge(c-1)r .
+   \]
+   Taking
+   \[
+      \Delta_c\log m=\frac14t(c^2-1)r^2
+   \]
+   and applying a Gaussian tail bound gives
+   \[
+      \Pr\!\left[\ell_x\ge-\Delta_c\log m\right]
+      \le
+      \exp(-\Omega_c(tr^2))
+      \le
+      m^{-3}
+   \]
+   after increasing $C_c$. A union bound over $S$ proves the simultaneous
+   score gap.
+
+   On that event, every invalid point has score at most
+   $A_Y(p)-\Delta_c\log m$. Since $\max_{z\in S}A_Y(z)\ge A_Y(p)$, an additive
+   $\frac12\Delta_c\log m$ maximizer cannot be invalid.
+\end{proof}
+
+\begin{assumption}[Smoothed additive score maximization]\label{asm:smoothed-score-max}
+   Fix $c>1$ and $\rho=\rho_c$. For every bounded-diameter localized node with
+   $m$ resident points, and for every query $q$, there is a data structure that
+   samples $Y\sim N(tq,tI_d)$ with $t=C_c\log m/r^2$ and returns a point
+   $\widehat x\in S$ satisfying
+   \[
+      A_Y(\widehat x)
+      \ge
+      \max_{z\in S}A_Y(z)-\Delta_c\log m/2
+   \]
+   with probability at least $\log^{-O_c(1)}m$, using query time
+   \[
+      d\,m^\rho\log^{O_c(1)}m
+   \]
+   and space
+   \[
+      m^{1+\rho}\log^{O_c(1)}m
+   \]
+   over all localized nodes.
+\end{assumption}
+
+\begin{proposition}[Conditional smoothed score-max endpoint]\label{prop:smoothed-score-max-polylog}
+   Under \cref{asm:smoothed-score-max}, worst-case Euclidean ANN has query time
+   \[
+      Q(n,d)=d\,n^{\rho_c}\log^{O_c(1)}n
+   \]
+   and space
+   \[
+      S(n,d)=dn+n^{1+\rho_c}\log^{O_c(1)}n.
+   \]
+\end{proposition}
+
+\begin{proof}
+   Apply the projected bounded-diameter localization of \cref{lem:localization}.
+   In each localized node, call the smoothed score-max structure a
+   polylogarithmic number of times and verify every returned point in the
+   original metric. For any true near pair in a good localized copy,
+   \cref{lem:smoothed-max-score-margin} says that an additive
+   $\Delta_c\log m/2$ maximizer is valid with probability $1-m^{-2}$ over the
+   sampled score direction. The oracle success probability is inverse
+   polylogarithmic by assumption, so polylogarithmic amplification gives a
+   valid answer with constant probability.
+
+   The assumed local query and space bounds sum over the polylogarithmic
+   localization copies exactly as in \cref{prop:multiscale-structured-polylog}.
+\end{proof}
+
+\begin{remark}[What this shortcut does and does not prove]\label{rem:score-max-shortcut}
+   \Cref{lem:smoothed-max-score-margin} is the $\alpha=0$ endpoint of the
+   likelihood-ball geometry: if one can approximately maximize the smoothed
+   score $A_Y$ for a query-centered Gaussian score direction, the hierarchy,
+   dyadic scales, and representative materialization are unnecessary. This is
+   a sharper possible route than finite channels.
+
+   The lemma is not itself an ANN data structure. Maximizing $A_Y(x)$ is
+   equivalent to nearest-neighbor search for the randomly perturbed center
+   $Y/t$ under the power distance
+   \[
+      \|x-Y/t\|^2
+   \]
+   up to an additive constant independent of $x$. Thus the open algorithmic
+   question becomes whether this smoothed additive maximum-score problem has an
+   optimal-exponent, output-sensitive implementation. Without such an
+   implementation, \cref{asm:smoothed-score-max} should be viewed as a clean
+   alternative target, not as a proof of the polylogarithmic endpoint.
+\end{remark}
+
 \begin{assumption}[Multiscale structured likelihood decoder]\label{asm:multiscale-structured-likelihood}
    Fix $c>1$ and $\rho=\rho_c$. For every bounded-diameter localized node with $m$ resident points there is a structured, output-sensitive posterior decoder over dyadic mass scales
    \[
@@ -3042,7 +3180,9 @@ The continuation-mass spherical decoder is proved in \cref{lem:continuation-work
 \paragraph{Structured posterior route.}
 \Cref{lem:posterior-superlevel-compiler} records the negative-moment identity suggested by the latest notes. \Cref{lem:scale-window-compiler} and \cref{lem:dyadic-structured-amplification} isolate the important arithmetic: if mass windows can be decoded output-sensitively, then $\xi^{-\rho}$ repetitions at each dyadic scale convert negative-moment value into constant hit probability, and summing all scales down to $1/m$ still fits the $m^\rho$ query budget. Thus the explicit finite-channel scale $\xi=m^{-1/(2c^2)}$ is not fundamental; it is the price of enumerating all outcomes.
 
-The continuous likelihood-ball family now proves both analytic sides of the desired posterior decoder: \cref{thm:continuous-likelihood-balls} gives the guard-or-pure-child value, and \cref{lem:ideal-likelihood-scale-profile} gives the scale-normalized query and storage moments. \Cref{lem:likelihood-rank-prefix} further collapses the threshold continuum to rank gaps of a random score order. The cleanest structured target is therefore \cref{asm:multiscale-structured-likelihood}: implement this ideal rank-prefix measure as a query-decodable family of stored representatives. Conditional on that theorem, \cref{prop:multiscale-structured-polylog} gives the desired polylogarithmic ANN bounds in one posterior layer; if the activated prefix is pure for the query, its representative is already a valid answer. The older finite restricted-channel compiler \cref{asm:finite-restricted-channel} and \cref{prop:finite-channel-polylog} remain as a coarse explicit-enumeration special case and as a useful diagnostic framework.
+The continuous likelihood-ball family now proves both analytic sides of the desired posterior decoder: \cref{thm:continuous-likelihood-balls} gives the guard-or-pure-child value, and \cref{lem:ideal-likelihood-scale-profile} gives the scale-normalized query and storage moments. \Cref{lem:likelihood-rank-prefix} further collapses the threshold continuum to rank gaps of a random score order. The cleanest structured target is therefore \cref{asm:multiscale-structured-likelihood}: implement this ideal rank-prefix measure as a query-decodable family of stored representatives. Conditional on that theorem, \cref{prop:multiscale-structured-polylog} gives the desired polylogarithmic ANN bounds in one posterior layer; if the activated prefix is pure for the query, its representative is already a valid answer.
+
+\Cref{lem:smoothed-max-score-margin} gives a still simpler non-channel target: a query-centered Gaussian score direction separates every invalid point from the true near point by an additive $\Theta_c(\log m)$ score margin, with high probability. Thus an additive maximum-score oracle would bypass dyadic scales and representatives entirely, as recorded in \cref{asm:smoothed-score-max} and \cref{prop:smoothed-score-max-polylog}. This is a target, not an implemented theorem: maximum-score search for the perturbed center $Y/t$ is essentially a smoothed exact-nearest-neighbor/MIPS primitive. The older finite restricted-channel compiler \cref{asm:finite-restricted-channel} and \cref{prop:finite-channel-polylog} remain as a coarse explicit-enumeration special case and as a useful diagnostic framework.
 
 \paragraph{Cohort-or-leaf.}
 \Cref{asm:cohort-or-leaf} is the original full-child route-level condition for the broader posterior-cohort endpoint, but \cref{lem:prefix-slice-accounting} shows that a prefix-conditioned formulation is cleaner. Work accounting for opened children is no longer the hard part: \cref{lem:vote-budget} pays opened recursive calls from realized detector votes. The preferred remaining target for that more general route is \cref{asm:prefix-slice-survival}: prove that one cumulative near-pair score path either reaches a cap-free residual scan or receives enough detector votes to follow prefix-conditioned certified slices to a resident scan. \Cref{lem:detector-inflation} and \cref{lem:off-spine-inflation} reduce the detector-shadowing part of this target to early activation prefixes with large enough continuation mass $H(v)$ and logarithmic spine-ratio sum $\sum H(u^+)/H(u)$; \cref{rem:linear-spine-ratio} explains why long score routes need an aggregate detector-mass argument instead. This should be tested against the hard cases: an isolated near point next to a massive far cluster, a near point on a cluster boundary, a tiny child that becomes heavy only late, and symmetric far shells. The proof must show a whole-lineage inverse-polylogarithmic event, not merely an inverse-polylogarithmic event at each level.
@@ -3059,7 +3199,7 @@ and space
 \]
 The exact pieces now aligned for the randomized cap-thinning route are: continuation-mass pruning gives optimal expected spherical work, adaptive continuation gives whole-lineage near survival, thinned cap splitting gives radius-potential contraction, and cap-free terminal scans are paid by low-correlation collisions.
 
-For the randomized cap-thinning route, the remaining task is the branching first-split work estimate in \cref{asm:mixed-continuation-operator}: prove that the thinned geometric child potentials contract over random cap-discovery frontiers without replacing the branching decoder by a normalized path law. This is a fully non-channel route; the smooth product terminal filter can be used after localization and no longer contributes an inverse-polylogarithmic table-recall penalty. The structured posterior route replaces the cap-frontier obstacle by \cref{asm:multiscale-structured-likelihood}: prove an output-sensitive reporter for pure likelihood rank prefixes, not a small explicitly enumerable channel. The detector-vote cohort-or-leaf route is a separate possible generalization to arbitrary certified child hierarchies, where the remaining issue is near-lineage coupling between ordinary continuation paths and detector activations.
+For the randomized cap-thinning route, the remaining task is the branching first-split work estimate in \cref{asm:mixed-continuation-operator}: prove that the thinned geometric child potentials contract over random cap-discovery frontiers without replacing the branching decoder by a normalized path law. This is a fully non-channel route; the smooth product terminal filter can be used after localization and no longer contributes an inverse-polylogarithmic table-recall penalty. The structured posterior route replaces the cap-frontier obstacle by \cref{asm:multiscale-structured-likelihood}: prove an output-sensitive reporter for pure likelihood rank prefixes, not a small explicitly enumerable channel. The smoothed score-max route replaces both by \cref{asm:smoothed-score-max}: prove an optimal-exponent additive maximum-score primitive for query-centered Gaussian perturbations. The detector-vote cohort-or-leaf route is a separate possible generalization to arbitrary certified child hierarchies, where the remaining issue is near-lineage coupling between ordinary continuation paths and detector activations.
 
 \appendix
 
