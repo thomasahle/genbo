@@ -21,6 +21,7 @@ import numpy as np
 
 
 _EPS = 1e-300
+PANEL_KINDS = ("gaussian", "whitened_gaussian", "cross_polytope", "pca", "landmark")
 
 
 @dataclass
@@ -110,6 +111,30 @@ def make_panel(
         signs = np.where((np.arange(b_count) // d) % 2 == 0, 1.0, -1.0)
         panel[np.arange(b_count), coords] = signs
         return panel
+    if kind == "pca":
+        if data is None:
+            raise ValueError("pca requires data")
+        centered = data - data.mean(axis=0, keepdims=True)
+        cov = centered.T @ centered / max(len(centered), 1)
+        vals, vecs = np.linalg.eigh(cov)
+        dirs = vecs[:, np.argsort(vals)[::-1]].T
+        coords = np.arange(b_count) % d
+        signs = np.where((np.arange(b_count) // d) % 2 == 0, 1.0, -1.0)
+        return signs[:, None] * dirs[coords]
+    if kind == "landmark":
+        if data is None:
+            raise ValueError("landmark requires data")
+        centered = data - data.mean(axis=0, keepdims=True)
+        if len(centered) == 0:
+            raise ValueError("landmark requires nonempty data")
+        idx = rng.integers(0, len(centered), size=b_count)
+        panel = centered[idx].copy()
+        norm = np.linalg.norm(panel, axis=1, keepdims=True)
+        bad = norm[:, 0] <= 1e-12
+        if np.any(bad):
+            panel[bad] = rng.standard_normal((int(np.sum(bad)), d))
+            norm = np.linalg.norm(panel, axis=1, keepdims=True)
+        return panel / np.maximum(norm, 1e-12)
     raise ValueError(f"unknown panel kind: {kind}")
 
 
@@ -199,21 +224,33 @@ def _sphere(n: int, d: int, rng: np.random.Generator) -> np.ndarray:
     return x / np.linalg.norm(x, axis=1, keepdims=True)
 
 
-def _synthetic_near_pairs(n: int, d: int, c: float, n_queries: int, seed: int) -> tuple[np.ndarray, np.ndarray, np.ndarray, float]:
+def synthetic_near_pairs(
+    n: int,
+    d: int,
+    c: float,
+    n_queries: int,
+    seed: int,
+    *,
+    near_correlation: float | None = None,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, float]:
     rng = np.random.default_rng(seed)
     data = _sphere(n, d, rng)
     near_indices = rng.integers(0, n, size=n_queries)
-    r = math.sqrt(2.0 - 2.0 * (1.0 - 1.0 / (c * c)))
+    a = 1.0 - 1.0 / (c * c) if near_correlation is None else near_correlation
+    if not (-1.0 < a < 1.0):
+        raise ValueError("near_correlation must lie in (-1, 1)")
+    r = math.sqrt(2.0 - 2.0 * a)
     queries = []
     for idx in near_indices:
         p = data[idx]
         w = rng.standard_normal(d)
         w -= (w @ p) * p
         w /= np.linalg.norm(w)
-        # Put q at the critical near correlation with p.
-        a = 1.0 - 1.0 / (c * c)
         queries.append(a * p + math.sqrt(1.0 - a * a) * w)
     return data, np.asarray(queries), near_indices, r
+
+
+_synthetic_near_pairs = synthetic_near_pairs
 
 
 def main() -> None:
@@ -223,12 +260,15 @@ def main() -> None:
     parser.add_argument("--c", type=float, default=2.0)
     parser.add_argument("--queries", type=int, default=200)
     parser.add_argument("--B", type=int, default=0, help="channel outcomes; default is ceil(m^(1/(2c^2)))")
-    parser.add_argument("--panel", choices=["gaussian", "whitened_gaussian", "cross_polytope"], default="gaussian")
+    parser.add_argument("--panel", choices=PANEL_KINDS, default="gaussian")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--balance-iters", type=int, default=200)
+    parser.add_argument("--near-corr", type=float, default=None,
+                        help="near-pair sphere correlation; default is 1-1/c^2")
     args = parser.parse_args()
 
-    data, queries, near_indices, r = _synthetic_near_pairs(args.n, args.d, args.c, args.queries, args.seed)
+    data, queries, near_indices, r = synthetic_near_pairs(
+        args.n, args.d, args.c, args.queries, args.seed, near_correlation=args.near_corr)
     eta = args.n ** (-1.0 / (2.0 * args.c * args.c))
     b_count = args.B or int(math.ceil(1.0 / eta))
 

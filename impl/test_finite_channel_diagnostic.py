@@ -1,11 +1,14 @@
 import numpy as np
 
 from finite_channel_diagnostic import (
+    PANEL_KINDS,
     balance_softmax_offsets,
     diagnose_channel,
     h_eta_for_pairs,
+    make_panel,
     posterior_thresholds,
     stable_softmax,
+    synthetic_near_pairs,
 )
 
 
@@ -71,8 +74,28 @@ def test_softmax_balancing_reduces_column_mass_error():
     assert np.max(np.abs(after - target)) < 2e-3
 
 
+def test_panel_variants_have_expected_shape_and_unit_adaptive_rows():
+    rng = np.random.default_rng(1)
+    data = rng.normal(size=(30, 4))
+    for kind in PANEL_KINDS:
+        panel = make_panel(4, 6, kind=kind, seed=2, data=data)
+        assert panel.shape == (6, 4)
+        assert np.all(np.isfinite(panel))
+        if kind in {"cross_polytope", "pca", "landmark"}:
+            assert np.allclose(np.linalg.norm(panel, axis=1), 1.0)
+
+
+def test_synthetic_near_pairs_honors_requested_correlation():
+    data, queries, near, r = synthetic_near_pairs(20, 6, 2.0, 5, 3, near_correlation=0.95)
+    dots = np.sum(data[near] * queries, axis=1)
+    assert np.allclose(dots, 0.95)
+    assert np.isclose(r, np.sqrt(0.1))
+
+
 if __name__ == "__main__":
     test_h_eta_matches_direct_formula()
     test_diagnostic_adds_guard_density()
     test_softmax_balancing_reduces_column_mass_error()
+    test_panel_variants_have_expected_shape_and_unit_adaptive_rows()
+    test_synthetic_near_pairs_honors_requested_correlation()
     print("finite_channel_diagnostic tests passed")
