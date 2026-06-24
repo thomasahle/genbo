@@ -7,3 +7,10 @@
 - Local TeX install is missing `cleveref.sty`, so `paper.tex` now has a minimal fallback for local compilation.
 - Refactored the Euclidean part from an external "certified ball recursion" into a certified score-and-ball tree. The important state is now explicit: score edges, recentering edges, certified radii, query activation by expanded balls, depth, and route-potential invariants.
 - The remaining mathematical bottleneck is no longer hidden as a black-box theorem, but the route-potential invariant is still the key thing a fully explicit cap-selection implementation must maintain.
+
+## 2026-06-24
+
+- Reoriented `paper.tex` away from the restart-loss baseline and toward the polylogarithmic target in `notes2.md`.
+- Replaced the old spherical primitive with continuation-mass pruning. The expected-work and far-candidate bounds are proved exactly; near-pair survival is now an explicit one-sided spherical survival assumption.
+- Replaced route-depth restart accounting with posterior first-hit and radius Bellman cancellation. The exact threshold is `tau=lambda^2`, which turns the recursive child charge into `alpha F(parent)`.
+- Added the cohort-or-leaf assumption as the central remaining coupling theorem between ordinary paths and detector cohorts.
