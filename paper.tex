@@ -33,6 +33,7 @@
 \newcommand{\Prb}{\mathbb{P}}
 \newcommand{\ANN}{\mathrm{ANN}}
 \newcommand{\Ball}{\mathrm{B}}
+\newcommand{\polylog}{\operatorname{polylog}}
 \newcommand{\ip}[2]{\langle #1,#2\rangle}
 
 \title{A Cumulative-Score Route to Polylogarithmic Loss\\
@@ -54,7 +55,7 @@ for Optimal Data-Dependent Euclidean ANN}
       \qquad
       S(n,d)=dn+n^{1+\rho_c}\log^{O_c(1)}n.
    \]
-   The process has three parts. First, local spherical filtering uses a cumulative Gaussian score tree with continuation-mass pruning rather than levelwise hard thresholds. Second, geometric children are activated by an exact posterior stopping rule: a child of radius $\lambda R$ is entered when its posterior reaches $\tau=\lambda^2$. The resulting Bellman cancellation pays for recursion with no dependence on the number or balance of children. Third, tempered detector cohorts materialize this fractional activation while ordinary paths continue to search residual leaves. We prove the exact work and Bellman identities, prove the spherical tame-good first moment, and isolate the remaining probabilistic tasks as a spherical second-moment lemma and a cohort-or-leaf lemma. Under those lemmas, the structure has the polylogarithmic bounds above.
+   The process has three parts. First, local spherical filtering uses a cumulative Gaussian score tree with continuation-mass pruning rather than levelwise hard thresholds. Second, geometric children are activated by an exact posterior stopping rule: a child of radius $\lambda R$ is entered when its posterior reaches $\tau=\lambda^2$. The resulting Bellman cancellation pays for recursion with no dependence on the number or balance of children. Third, tempered detector cohorts materialize this fractional activation while ordinary paths continue to search residual leaves. We prove the spherical continuation-mass decoder with polylogarithmic loss and prove the exact Bellman identities. The remaining probabilistic task is the cohort-or-leaf lemma. Under that lemma, the structure has the polylogarithmic bounds above.
 \end{abstract}
 
 \section{Introduction}
@@ -87,7 +88,7 @@ The first point is a one-sided branching-random-walk problem. The second point h
 All logarithms are natural.
 
 \begin{theorem}[Conditional main theorem]\label{thm:main}
-   Fix $c>1$. Assume the one-sided spherical second-moment statement of \cref{asm:spherical-second-moment} and the cohort-or-leaf statement of \cref{asm:cohort-or-leaf}. Then there is a randomized data-dependent data structure for worst-case $(c,r)$-approximate nearest neighbor search in $\R^d$ with constant success probability, query time
+   Fix $c>1$. Assume the cohort-or-leaf statement of \cref{asm:cohort-or-leaf}. Then there is a randomized data-dependent data structure for worst-case $(c,r)$-approximate nearest neighbor search in $\R^d$ with constant success probability, query time
    \[
       Q(n,d)=d\,n^{\rho_c}\log^{O_c(1)}n,
    \]
@@ -334,19 +335,77 @@ Early scores may lie well below the final linear trajectory; the barrier tighten
    On this upper-barrier event, violation of either continuation lower barrier would force the difference-coordinate bridge to make an excursion of size at least $d_r-O_{a,b}(1)$ at distance $r$ from the endpoint. The same union bound as above shows that this has probability $o(1)$ after increasing $A$. Thus, conditional on the endpoint event, all barriers in the definition of tame good hold with probability at least $k^{-O_{a,b}(1)}$. Hence $\E Z\ge k^{-O_{a,b}(1)}$.
 \end{proof}
 
-\begin{assumption}[One-sided spherical second moment]\label{asm:spherical-second-moment}
+\begin{lemma}[Tame-good second moment]\label{lem:tame-second-moment}
    For every fixed $-1<b<a<1$, the tame-good leaf count $Z$ from \cref{lem:good-first-moment} satisfies
    \[
       \E Z^2\le k^{O_{a,b}(1)}.
    \]
-\end{assumption}
+\end{lemma}
+
+\begin{proof}
+   We decompose pairs of leaves by the depth $j$ of their lowest common ancestor. Write $r=k-j$, and first consider $0\le j<k$. There are at most $B^{2k-j}$ ordered pairs with split depth $j$.
+
+   Use the independent common and difference coordinates
+   \[
+      C_\ell=\frac{S_\ell(p)+S_\ell(q)}{\sqrt{2(1+a)}},
+      \qquad
+      D_\ell=\frac{S_\ell(p)-S_\ell(q)}{\sqrt{2(1-a)}}.
+   \]
+   The common coordinate has unit Gaussian increments and endpoint threshold
+   \[
+      \mu k,
+      \qquad
+      \mu=\sqrt{\frac{2}{1+a}}\,t=\sqrt{2\ell_B}.
+   \]
+   If both leaves are tame good, then at the split prefix the centered common value $y=C_j-\mu j$ satisfies $y\le H_{a,b}$, and both common-coordinate suffixes end in a fixed unit interval around $\mu k$. Ignoring all other constraints, the common-coordinate probability is at most
+   \[
+      \int_{-\infty}^{H_{a,b}}
+      \frac{1}{\sqrt{j+1}}
+      \exp\!\left(-\frac{(\mu j+y)^2}{2j}\right)
+      \left[
+         \frac{C}{\sqrt r}
+         \exp\!\left(-\frac{(\mu r-y)^2}{2r}\right)
+      \right]^2dy,
+   \]
+   with the evident interpretation when $j=0$. Multiplying by the pair count $B^{2k-j}$ and using $\mu^2=2\ell_B$ cancels the exponential main term and leaves
+   \[
+      C_{a,b}\frac{1}{\sqrt{j+1}\,r}
+      \int_{-\infty}^{H_{a,b}}\exp(\mu y)\,dy
+      \le
+      \frac{C_{a,b}}{\sqrt{j+1}\,r}.
+   \]
+
+   The difference coordinates for the two leaves are centered jointly Gaussian with variances $k$ and covariance $j$. The event that both endpoint differences lie in the fixed interval forced by
+   \[
+      S_v(p),S_v(q),S_w(p),S_w(q)\in[kt,kt+1]
+   \]
+   has probability at most the maximum bivariate Gaussian density times a constant area:
+   \[
+      O_{a,b}\!\left(\frac{1}{\sqrt{k^2-j^2}}\right)
+      =
+      O_{a,b}\!\left(\frac{1}{\sqrt{kr}}\right).
+   \]
+   Since the common and difference coordinates are independent, the total contribution of split depth $j<k$ to $\E Z^2$ is at most
+   \[
+      \frac{C_{a,b}}{\sqrt{j+1}\,r^{3/2}\sqrt k}.
+   \]
+   Summing over $j<k$ gives a bounded quantity:
+   \[
+      \sum_{j=0}^{k-1}
+      \frac{1}{\sqrt{j+1}\,(k-j)^{3/2}\sqrt k}
+      =
+      O(1).
+   \]
+
+   The diagonal contribution $v=w$ is at most the first moment of accepting near leaves, hence at most $k^{O_{a,b}(1)}$ by the same endpoint calculation used in \cref{lem:good-first-moment}. Therefore $\E Z^2\le k^{O_{a,b}(1)}$.
+\end{proof}
 
 \begin{corollary}[One-sided spherical survival]\label{cor:spherical-survival}
-   Under \cref{asm:spherical-second-moment}, if a query $q$ has a data point $p$ with $\ip{p}{q}\ge a$, then the continuation-mass decoder produces a common accepting leaf for $(p,q)$ with probability at least $\log^{-O_{a,b}(1)}m$.
+   If a query $q$ has a data point $p$ with $\ip{p}{q}\ge a$, then the continuation-mass decoder produces a common accepting leaf for $(p,q)$ with probability at least $\log^{-O_{a,b}(1)}m$.
 \end{corollary}
 
 \begin{proof}
-   By \cref{lem:good-first-moment} and \cref{asm:spherical-second-moment}, Paley--Zygmund gives
+   By \cref{lem:good-first-moment} and \cref{lem:tame-second-moment}, Paley--Zygmund gives
    \[
       \Prb[Z>0]\ge \frac{(\E Z)^2}{\E Z^2}
       \ge k^{-O_{a,b}(1)}.
@@ -354,7 +413,7 @@ Early scores may lie well below the final linear trajectory; the barrier tighten
    Since $k=\Theta_{a,b}(\log m)$, this is the desired inverse-polylogarithmic survival probability. Correlation larger than $a$ can only improve the tilted endpoint exponent; the same constants cover a fixed compact neighborhood of the critical parameters after the usual slack adjustment.
 \end{proof}
 
-The expected-work and first-moment parts of the spherical primitive are therefore already polylogarithmic. The missing spherical part is \cref{asm:spherical-second-moment}: a lowest-common-ancestor second-moment calculation for tame good leaves using the one-sided analytical upper barrier. No algorithmic two-sided tube is imposed.
+The spherical primitive therefore has polylogarithmic loss: expected work follows from continuation mass, and near-pair survival follows from the tame-good first and second moments. No algorithmic two-sided tube is imposed.
 
 \section{The certified score-and-ball process}
 
@@ -542,7 +601,7 @@ When a query enters an activated child, the cumulative score prefix is retained.
 \end{assumption}
 
 \begin{theorem}[Polylogarithmic score-and-ball process]\label{thm:polylog-process}
-   Under \cref{asm:spherical-second-moment} and \cref{asm:cohort-or-leaf}, the cumulative score-and-ball process has expected query time
+   Under \cref{asm:cohort-or-leaf}, the cumulative score-and-ball process has expected query time
    \[
       d\,n^{\rho_c}\log^{O_c(1)}n
    \]
@@ -562,7 +621,7 @@ When a query enters an activated child, the cumulative score prefix is retained.
 
 \section{Proof of the main theorem}
 
-The conditional main theorem is exactly \cref{thm:polylog-process} with $\rho=\rho_c$. The assumptions named in \cref{thm:main} are precisely the two probabilistic inputs used in that theorem. Expected bounds are converted to capped bounds by the truncation paragraph in the preliminaries.
+The conditional main theorem is exactly \cref{thm:polylog-process} with $\rho=\rho_c$. The only remaining assumption named in \cref{thm:main} is \cref{asm:cohort-or-leaf}. Expected bounds are converted to capped bounds by the truncation paragraph in the preliminaries.
 
 \section{The algorithm as one tree}
 
@@ -625,12 +684,57 @@ This is the mechanism that removes dependence on the number of recenterings.
 \paragraph{Integer materialization is isolated.}
 The remaining issue is not an exponent calculation; it is the cohort-or-leaf probability. Ordinary paths must either find the near point before its geometric child becomes posterior-heavy, or detector cohorts must activate that child using the same path budget. This is the only unresolved place where the algorithm can still lose more than a polylogarithm.
 
+\section{An exponent-improvement ladder}
+
+The proof program need not jump directly from the restart construction to the polylogarithmic target. A useful intermediate calculus is the following. Suppose the logarithm of the nonpolynomial overhead has the form
+\[
+   O_c\!\left(\eta^p L+\eta^{-q}L^\alpha\right),
+   \qquad L=\log n,
+\]
+where:
+\begin{itemize}
+   \item $L^\alpha$ is the loss of one score block;
+   \item $\eta^{-q}$ is the number of independently paid geometric phases;
+   \item $\eta^p L$ is the exponent cost of geometric slack.
+\end{itemize}
+Balancing the two terms gives
+\[
+   \eta=L^{-(1-\alpha)/(p+q)}
+\]
+and overhead exponent
+\[
+   \theta(p,q,\alpha)
+   =
+   \frac{q+p\alpha}{p+q},
+   \qquad
+   \exp(O_c(L^\theta)).
+\]
+
+\begin{table}[t]
+   \centering
+   \caption{Useful milestones for reducing the nonpolynomial overhead.}
+   \label{tab:ladder}
+   \begin{tabular}{@{}llll@{}}
+      \toprule
+      Milestone & New ingredient & Parameters & Exponent \\
+      \midrule
+      Restart & $k^{1/3}$ spherical loss & $(1,2,1/3)$ & $7/9$ \\
+      Score-only & polylog spherical decoder & $(1,2,0)$ & $2/3$ \\
+      One geometric gain & fewer phases or quadratic slack & $(1,1,0)$ or $(2,2,0)$ & $1/2$ \\
+      Two geometric gains & fewer phases and quadratic slack & $(2,1,0)$ & $1/3$ \\
+      Bellman cohorts & no independent phase payment & no $\eta^{-q}$ term & $\polylog$ \\
+      \bottomrule
+   \end{tabular}
+\end{table}
+
+This ladder is useful for stress testing. The continuation-mass spherical theorem already moves the restart architecture from exponent $7/9$ to roughly $2/3$. Any partial geometric result that either reduces the number of independently paid phases or improves the slack perturbation gives a next rung. The Bellman cohort mechanism is the endpoint: if cohort-or-leaf holds, recursive geometry is paid by the parent potential and the $\eta^{-q}$ term disappears rather than being optimized.
+
 \section{Proof obligations}
 
-The draft now has two explicit probabilistic obligations.
+The draft now has one explicit probabilistic obligation.
 
-\paragraph{One-sided spherical second moment.}
-The expected work of continuation-mass pruning is already proved in \cref{lem:continuation-work}, and \cref{lem:good-first-moment} proves an inverse-polynomial first moment for tame good near leaves. What remains is to prove \cref{asm:spherical-second-moment}: the LCA second moment for those tame good leaves should be only polynomial in $k$. The one-sided analytical upper barrier controls prolific early prefixes, while the algorithm itself enforces only continuation-mass pruning.
+\paragraph{Spherical stage.}
+The continuation-mass spherical decoder is proved in \cref{lem:continuation-work}, \cref{lem:good-first-moment}, \cref{lem:tame-second-moment}, and \cref{cor:spherical-survival}. The one-sided analytical upper barrier controls prolific early prefixes in the proof, while the algorithm itself enforces only continuation-mass pruning.
 
 \paragraph{Cohort-or-leaf.}
 \Cref{asm:cohort-or-leaf} should be tested against the hard cases: an isolated near point next to a massive far cluster, a near point on a cluster boundary, a tiny child that becomes heavy only late, and symmetric far shells. The proof should combine the posterior martingale, the one-sided continuation barrier, and concentration for detector votes.
@@ -719,7 +823,7 @@ Thus the radius improvement pays exactly for the posterior threshold, and disjoi
 
 \section{Bibliographic note}
 
-The one-sided spherical second-moment assumption is motivated by the Ahle--Knudsen manuscript supplied with this project, but it requires a different continuation argument than the two-sided tube proof there. The score-and-ball tree follows the geometric ideas of Andoni and Razenshteyn while replacing dense-cap restart accounting by posterior Bellman activation. A submission version should either prove the spherical second moment and cohort-or-leaf lemma or present the theorem explicitly as conditional.
+The one-sided spherical proof is motivated by the Ahle--Knudsen manuscript supplied with this project, but it uses continuation mass and an analytical upper barrier instead of the two-sided tube proof there. The score-and-ball tree follows the geometric ideas of Andoni and Razenshteyn while replacing dense-cap restart accounting by posterior Bellman activation. A submission version should either prove the cohort-or-leaf lemma or present the theorem explicitly as conditional.
 
 \begin{thebibliography}{9}
 
