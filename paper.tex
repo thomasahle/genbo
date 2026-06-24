@@ -54,7 +54,7 @@ for Optimal Data-Dependent Euclidean ANN}
       \qquad
       S(n,d)=dn+n^{1+\rho_c}\log^{O_c(1)}n.
    \]
-   The process has three parts. First, local spherical filtering uses a cumulative Gaussian score tree with continuation-mass pruning rather than levelwise hard thresholds. Second, geometric children are activated by an exact posterior stopping rule: a child of radius $\lambda R$ is entered when its posterior reaches $\tau=\lambda^2$. The resulting Bellman cancellation pays for recursion with no dependence on the number or balance of children. Third, tempered detector cohorts materialize this fractional activation while ordinary paths continue to search residual leaves. We prove the exact work and Bellman identities and isolate the remaining probabilistic task as a cohort-or-leaf lemma. Under that lemma and the one-sided spherical survival lemma, the structure has the polylogarithmic bounds above.
+   The process has three parts. First, local spherical filtering uses a cumulative Gaussian score tree with continuation-mass pruning rather than levelwise hard thresholds. Second, geometric children are activated by an exact posterior stopping rule: a child of radius $\lambda R$ is entered when its posterior reaches $\tau=\lambda^2$. The resulting Bellman cancellation pays for recursion with no dependence on the number or balance of children. Third, tempered detector cohorts materialize this fractional activation while ordinary paths continue to search residual leaves. We prove the exact work and Bellman identities, prove the spherical good-leaf first moment, and isolate the remaining probabilistic tasks as a spherical second-moment lemma and a cohort-or-leaf lemma. Under those lemmas, the structure has the polylogarithmic bounds above.
 \end{abstract}
 
 \section{Introduction}
@@ -87,7 +87,7 @@ The first point is a one-sided branching-random-walk problem. The second point h
 All logarithms are natural.
 
 \begin{theorem}[Conditional main theorem]\label{thm:main}
-   Fix $c>1$. Assume the continuation-mass spherical survival statement of \cref{asm:spherical-survival} and the cohort-or-leaf statement of \cref{asm:cohort-or-leaf}. Then there is a randomized data-dependent data structure for worst-case $(c,r)$-approximate nearest neighbor search in $\R^d$ with constant success probability, query time
+   Fix $c>1$. Assume the one-sided spherical second-moment statement of \cref{asm:spherical-second-moment} and the cohort-or-leaf statement of \cref{asm:cohort-or-leaf}. Then there is a randomized data-dependent data structure for worst-case $(c,r)$-approximate nearest neighbor search in $\R^d$ with constant success probability, query time
    \[
       Q(n,d)=d\,n^{\rho_c}\log^{O_c(1)}n,
    \]
@@ -249,11 +249,93 @@ Early scores may lie well below the final linear trajectory; the barrier tighten
    Summing over $m$ ordinary far points proves the far-candidate bound. Summing the one-point bound over stored data points proves the storage bound.
 \end{proof}
 
-\begin{assumption}[One-sided spherical survival]\label{asm:spherical-survival}
-   For every fixed $-1<b<a<1$, if a query $q$ has a data point $p$ with $\ip{p}{q}\ge a$, then the continuation-mass decoder produces a common accepting leaf for $(p,q)$ with probability at least $\log^{-O_{a,b}(1)}m$.
+\begin{definition}[Good near leaf]\label{def:good-near-leaf}
+   Fix a near pair $(p,q)$ with $\ip{p}{q}=a$. A leaf $v$ is good for $(p,q)$ if
+   \[
+      S_v(p),S_v(q)\in[kt,kt+1]
+   \]
+   and every prefix $u\preceq v$ satisfies the continuation-mass pruning rule for both $p$ and $q$.
+\end{definition}
+
+\begin{lemma}[Good-leaf first moment]\label{lem:good-first-moment}
+   For every fixed $-1<b<a<1$ and sufficiently large pruning constant $A$, if $Z$ is the number of good near leaves for a pair of correlation exactly $a$, then
+   \[
+      \E Z\ge k^{-O_{a,b}(1)}.
+   \]
+\end{lemma}
+
+\begin{proof}
+   Work at the critical correlation $a$, which is the least favorable near case. Exponentially tilt the two-dimensional Gaussian increment $(X,Y)$ so that both coordinates have mean $t$. Since
+   \[
+      \Sigma=
+      \begin{pmatrix}
+         1&a\\
+         a&1
+      \end{pmatrix},
+      \qquad
+      \theta=\frac{t}{1+a}(1,1),
+   \]
+   the tilted law has mean $\Sigma\theta=(t,t)$ and
+   \[
+      \frac12\theta^\top\Sigma\theta=\frac{t^2}{1+a}=\ell_B.
+   \]
+   Let $Q$ denote the tilted measure. On the endpoint event
+   \[
+      S_v(p),S_v(q)\in[kt,kt+1],
+   \]
+   the likelihood ratio satisfies
+   \[
+      B^k\frac{dP}{dQ}=\exp(O_{a,b}(1)).
+   \]
+   Therefore the expected number of good leaves under the original measure is, up to constant factors, the $Q$-probability that one tilted two-dimensional walk has endpoint in the unit square and stays above the two continuation barriers.
+
+   Under $Q$, after subtracting the linear drift $\ell t$, each coordinate is a centered Gaussian walk. The endpoint has covariance $k\Sigma$, so the probability that both centered endpoints lie in $[0,1]$ is $\Theta_{a,b}(1/k)$.
+
+   It remains to check that the pruning barriers do not cost more than a polynomial factor. Write $r=k-\ell$ and let
+   \[
+      d_r=\sqrt{2r(r\ell_B+A\log k)}-rt.
+   \]
+   A prefix at level $\ell$ is retained whenever the centered coordinate is at least $-d_r$, up to harmless constant tail corrections. Since $t^2=(1+a)\ell_B<2\ell_B$, there is a constant $c_{a,b}>0$ such that
+   \[
+      d_r\ge c_{a,b}r
+      \qquad\text{for } r\ge C_{a,b}\log k,
+   \]
+   and, for $1\le r\le C_{a,b}\log k$,
+   \[
+      d_r\ge c_{a,b}\sqrt{A r\log k}
+   \]
+   after increasing $A$. Conditioned on an endpoint in $[0,1]$, each coordinate is a Gaussian bridge whose variance at distance $r$ from the endpoint is $O(r)$. A union bound over $r$ therefore gives failure probability
+   \[
+      \sum_{r\ge C\log k}\exp(-\Omega_{a,b}(r))
+      +
+      \sum_{1\le r\le C\log k} k^{-\Omega_{a,b}(A)}
+      =
+      o(1)
+   \]
+   for $A$ large enough. Applying this to both coordinates proves that the bridge satisfies both continuation barriers with probability at least a positive constant conditional on the endpoint event. Hence $\E Z\ge k^{-O_{a,b}(1)}$.
+\end{proof}
+
+\begin{assumption}[One-sided spherical second moment]\label{asm:spherical-second-moment}
+   For every fixed $-1<b<a<1$, the good-leaf count $Z$ from \cref{lem:good-first-moment} satisfies
+   \[
+      \E Z^2\le k^{O_{a,b}(1)}.
+   \]
 \end{assumption}
 
-The expected-work part of the spherical primitive is therefore already polylogarithmic. The missing part is \cref{asm:spherical-survival}. The intended proof tilts the two correlated score walks so each has mean $t$ per step, uses a one-sided Gaussian bridge estimate to show that the continuation barrier is missed only with inverse-polynomial probability in $k$, and performs the lowest-common-ancestor second-moment calculation only for the scalar cumulative score. No algorithmic two-sided tube is imposed.
+\begin{corollary}[One-sided spherical survival]\label{cor:spherical-survival}
+   Under \cref{asm:spherical-second-moment}, if a query $q$ has a data point $p$ with $\ip{p}{q}\ge a$, then the continuation-mass decoder produces a common accepting leaf for $(p,q)$ with probability at least $\log^{-O_{a,b}(1)}m$.
+\end{corollary}
+
+\begin{proof}
+   By \cref{lem:good-first-moment} and \cref{asm:spherical-second-moment}, Paley--Zygmund gives
+   \[
+      \Prb[Z>0]\ge \frac{(\E Z)^2}{\E Z^2}
+      \ge k^{-O_{a,b}(1)}.
+   \]
+   Since $k=\Theta_{a,b}(\log m)$, this is the desired inverse-polylogarithmic survival probability. Correlation larger than $a$ can only improve the tilted endpoint exponent; the same constants cover a fixed compact neighborhood of the critical parameters after the usual slack adjustment.
+\end{proof}
+
+The expected-work and first-moment parts of the spherical primitive are therefore already polylogarithmic. The missing spherical part is \cref{asm:spherical-second-moment}: a lowest-common-ancestor second-moment calculation for good leaves using only a one-sided analytical barrier. No algorithmic two-sided tube is imposed.
 
 \section{The certified score-and-ball process}
 
@@ -441,7 +523,7 @@ When a query enters an activated child, the cumulative score prefix is retained.
 \end{assumption}
 
 \begin{theorem}[Polylogarithmic score-and-ball process]\label{thm:polylog-process}
-   Under \cref{asm:spherical-survival} and \cref{asm:cohort-or-leaf}, the cumulative score-and-ball process has expected query time
+   Under \cref{asm:spherical-second-moment} and \cref{asm:cohort-or-leaf}, the cumulative score-and-ball process has expected query time
    \[
       d\,n^{\rho_c}\log^{O_c(1)}n
    \]
@@ -452,7 +534,7 @@ When a query enters an activated child, the cumulative score prefix is retained.
 \end{theorem}
 
 \begin{proof}
-   The continuation-mass score tree gives the ideal spherical query and storage exponents with only polylogarithmic overhead by \cref{lem:continuation-work} and \cref{asm:spherical-survival}. The shell lemma preserves the critical Euclidean angular gap up to inverse-polylogarithmic slack, which is absorbed into the displayed logarithmic factors.
+   The continuation-mass score tree gives the ideal spherical query and storage exponents with only polylogarithmic overhead by \cref{lem:continuation-work} and \cref{cor:spherical-survival}. The shell lemma preserves the critical Euclidean angular gap up to inverse-polylogarithmic slack, which is absorbed into the displayed logarithmic factors.
 
    For every certified child, \cref{lem:first-hit} bounds the fractional query mass that can activate the child, and the choice $\tau_C=\lambda_C^2$ converts that activation cost into $\alpha_C F(m,R)$ by the Bellman cancellation. Summing over disjoint children is therefore bounded by the parent potential. The detector-vote rule is the integer version of this accounting: an activated child has already received its own recursive budget from parent detector votes. Space is controlled by disjointness and convexity of $x^{1+\rho}$.
 
@@ -528,8 +610,8 @@ The remaining issue is not an exponent calculation; it is the cohort-or-leaf pro
 
 The draft now has two explicit probabilistic obligations.
 
-\paragraph{One-sided spherical survival.}
-The expected work of continuation-mass pruning is already proved in \cref{lem:continuation-work}. What remains is to prove \cref{asm:spherical-survival}: a near pair should survive to a common accepting leaf with inverse-polylogarithmic probability. The intended proof uses a tilted Gaussian bridge and a one-sided barrier; it should avoid the two-sided confinement that creates a subpolynomial loss.
+\paragraph{One-sided spherical second moment.}
+The expected work of continuation-mass pruning is already proved in \cref{lem:continuation-work}, and \cref{lem:good-first-moment} proves an inverse-polynomial first moment for good near leaves. What remains is to prove \cref{asm:spherical-second-moment}: the LCA second moment for those good leaves should be only polynomial in $k$. The intended proof uses a one-sided analytical upper barrier to control prolific early prefixes, while the algorithm itself enforces only continuation-mass pruning.
 
 \paragraph{Cohort-or-leaf.}
 \Cref{asm:cohort-or-leaf} should be tested against the hard cases: an isolated near point next to a massive far cluster, a near point on a cluster boundary, a tiny child that becomes heavy only late, and symmetric far shells. The proof should combine the posterior martingale, the one-sided continuation barrier, and concentration for detector votes.
@@ -618,7 +700,7 @@ Thus the radius improvement pays exactly for the posterior threshold, and disjoi
 
 \section{Bibliographic note}
 
-The one-sided spherical survival assumption is motivated by the Ahle--Knudsen manuscript supplied with this project, but it requires a different continuation argument than the two-sided tube proof there. The score-and-ball tree follows the geometric ideas of Andoni and Razenshteyn while replacing dense-cap restart accounting by posterior Bellman activation. A submission version should either prove the cohort-or-leaf lemma or present the theorem explicitly as conditional.
+The one-sided spherical second-moment assumption is motivated by the Ahle--Knudsen manuscript supplied with this project, but it requires a different continuation argument than the two-sided tube proof there. The score-and-ball tree follows the geometric ideas of Andoni and Razenshteyn while replacing dense-cap restart accounting by posterior Bellman activation. A submission version should either prove the spherical second moment and cohort-or-leaf lemma or present the theorem explicitly as conditional.
 
 \begin{thebibliography}{9}
 

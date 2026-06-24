@@ -14,3 +14,4 @@
 - Replaced the old spherical primitive with continuation-mass pruning. The expected-work and far-candidate bounds are proved exactly; near-pair survival is now an explicit one-sided spherical survival assumption.
 - Replaced route-depth restart accounting with posterior first-hit and radius Bellman cancellation. The exact threshold is `tau=lambda^2`, which turns the recursive child charge into `alpha F(parent)`.
 - Added the cohort-or-leaf assumption as the central remaining coupling theorem between ordinary paths and detector cohorts.
+- Split the spherical survival gap into a proved good-leaf first moment and a remaining one-sided LCA second-moment assumption. The first moment uses the tilted measure, the endpoint unit square, and a Gaussian-bridge union bound for the continuation barrier.
