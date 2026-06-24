@@ -746,13 +746,18 @@ Fix one spherical stage on a shell in a ball $\Ball(o,R)$. Let $\eta>0$ and set
 \[
    \tau=\log^{-A_c} n.
 \]
-Run the continuation-mass spherical decoder and regard its accepting buckets as hard leaves for this stage only. At each leaf bucket $U$, repeatedly remove every cap slice of margin $2\eta$ that contains at least a $\tau$ fraction of the current bucket. A removed slice in direction $w$ is
+Run the continuation-mass spherical decoder and regard its accepting buckets as hard leaves for this stage only. At each leaf bucket $U$, repeatedly search for a heavy cap of margin $2\eta$, meaning a direction $w$ such that
 \[
-   C[U,w]=\left\{x\in U:\ip{(x-o)/R}{w}\ge 2\eta\right\}.
+   \left|\left\{x\in U:\ip{(x-o)/R}{w}\ge 2\eta\right\}\right|
+   \ge \tau |U|.
 \]
-It is stored as a certified child. Since every point in it has inner product at least $2\eta R$ with direction $w$,
+When such a cap is found, store an $\eta$-margin slice
 \[
-   C[U,w]\subseteq \Ball(o+\eta Rw,\,R\sqrt{1-\eta^2}),
+   D[U,v]=\left\{x\in U:\ip{(x-o)/R}{v}\ge \eta\right\}
+\]
+as a certified child. Since every point in it has inner product at least $\eta R$ with direction $v$,
+\[
+   D[U,v]\subseteq \Ball(o+\eta Rv,\,R\sqrt{1-\eta^2}),
 \]
 and the implementation certifies the actual child radius by computing the maximum distance to the proposed center. After no heavy $2\eta$-cap remains, the residual bucket is scanned. Every certified child starts a fresh spherical stage in its own coordinates.
 
@@ -770,6 +775,54 @@ and the implementation certifies the actual child radius by computing the maximu
       |U|\le \frac{1}{1-\tau}\,|U\setminus E_q|.
    \]
    Every point in $U\setminus E_q$ has correlation at most $2\eta$ with the query direction, so the spherical far-candidate bound controls its expected contribution. Since $(1-\tau)^{-1}=1+O(\tau)$, scanning all of $U$ has the same bound up to this factor.
+\end{proof}
+
+\begin{lemma}[Tuple cap finder]\label{lem:tuple-cap-finder}
+   Let $U$ be a finite set of unit vectors, let $0<\eta<1/10$, and suppose some $2\eta$-cap
+   \[
+      C=\{x\in U:\ip{x}{w}\ge2\eta\}
+   \]
+   has size at least $\tau |U|$. There is a randomized proposal procedure which, using
+   \[
+      \tau^{-O(\eta^{-2})}\log(1/\delta)
+   \]
+   tuple proposals, finds with probability at least $1-\delta$ a direction $v$ whose $\eta$-cap contains at least $\Omega(\eta\tau)|U|$ points.
+\end{lemma}
+
+\begin{proof}
+   Let $X$ be uniform on $C$ and let $m_C=\E X$. Since every point of $C$ has projection at least $2\eta$ on $w$,
+   \[
+      \|m_C\|\ge \ip{m_C}{w}\ge2\eta.
+   \]
+   Sample
+   \[
+      k=\lceil C_0\eta^{-2}\rceil
+   \]
+   points from $U$ with replacement. With probability at least $\tau^k$, all sampled points lie in $C$. Conditioned on this event, their empirical mean $\widehat m$ satisfies
+   \[
+      \E\|\widehat m-m_C\|^2\le \frac1k.
+   \]
+   Taking $C_0$ large and applying Markov's inequality gives
+   \[
+      \|\widehat m-m_C\|\le\eta/4
+   \]
+   with probability at least a fixed positive constant. Let $v=\widehat m/\|\widehat m\|$. On this event,
+   \[
+      \ip{m_C}{v}
+      \ge
+      \|\widehat m\|-\|\widehat m-m_C\|
+      \ge
+      \|m_C\|-2\|\widehat m-m_C\|
+      \ge
+      3\eta/2.
+   \]
+   Therefore, for $X$ uniform on $C$,
+   \[
+      \E\ip{X}{v}\ge3\eta/2.
+   \]
+   Since $\ip{X}{v}\le1$, at least an $\Omega(\eta)$ fraction of $C$ must satisfy $\ip{X}{v}\ge\eta$. Hence the $\eta$-cap in direction $v$ contains $\Omega(\eta\tau)|U|$ points.
+
+   A single random tuple is therefore successful with probability at least $c\tau^k$ for a constant $c>0$. Repeating $O(\tau^{-k}\log(1/\delta))$ times and verifying each proposed $\eta$-cap by scanning $U$ proves the lemma.
 \end{proof}
 
 \begin{lemma}[Leaf-conditioned slice budget]\label{lem:slice-budget}
@@ -797,14 +850,21 @@ and the implementation certifies the actual child radius by computing the maximu
    \]
 \end{proof}
 
-Since every peeled slice removes at least a $\tau$ fraction of the current bucket, a bucket of size at most $n$ produces only
+By \cref{lem:tuple-cap-finder}, every successful peeled slice removes an $\Omega(\eta\tau)$ fraction of the current bucket. A bucket of size at most $n$ therefore produces only
 \[
-   J=O(\tau^{-1}\log n)=\log^{O_c(1)}n
+   J=O((\eta\tau)^{-1}\log n)=\log^{O_c(1)}n
 \]
 sequential slices. Thus \cref{lem:slice-budget} costs only a polylogarithmic factor per restartable stage.
+The rejected tuple proposals from \cref{lem:tuple-cap-finder} are preprocessing-only and are not stored. If preprocessing time is tracked, their logarithmic overhead per bucket is
+\[
+   O(\eta^{-2}\log(1/\tau)+\log\log n)
+   =
+   O_c(\eta^{-2}\log\log n),
+\]
+which is below the final $2/3$ overhead after the choice of $\eta$ in \cref{prop:slice-two-thirds}.
 
 \begin{proposition}[Restartable slice milestone]\label{prop:slice-two-thirds}
-   Assume the one-stage slice procedure above can be implemented with polylogarithmic overhead in work, space, and inverse success probability, including the cap-finding and hard-channel tail bounds. Then for fixed $c>1$ there is a worst-case Euclidean ANN structure with
+   For fixed $c>1$, the restartable slice construction gives a worst-case Euclidean ANN structure with
    \[
       Q(n,d)
       =
@@ -825,6 +885,10 @@ sequential slices. Thus \cref{lem:slice-budget} costs only a polylogarithmic fac
 \end{proposition}
 
 \begin{proof}
+   First consider one restartable stage. The continuation-mass decoder supplies the hard accepting leaves and has expected path work, far-candidate occurrences, storage, and inverse near-pair success all bounded by the ideal spherical powers times $\log^{O_c(1)}n$, by \cref{lem:continuation-work} and \cref{cor:spherical-survival}. Amplifying the stage to failure probability $1/\log^{O_c(1)}n$ costs another polylogarithmic factor.
+
+   The final residual scan is controlled by \cref{lem:slice-residual}. Heavy cap discovery is handled by \cref{lem:tuple-cap-finder}; rejected tuple proposals affect preprocessing only, and accepted slices are verified before storage. By \cref{lem:slice-budget}, the recursive budgets of all slices peeled from a leaf cost only a further polylogarithmic factor. A query follows every certified child ball from its reached leaf that is compatible with the query, which adds at most the same polylogarithmic factor because each leaf has only $J=\log^{O_c(1)}n$ accepted slices. Thus one stage has polylogarithmic overhead in query work, space, and inverse success probability relative to the ideal radius-weighted power-law budget.
+
    Put
    \[
       L=\log n,
@@ -874,7 +938,7 @@ The draft now separates two proof tracks.
 The continuation-mass spherical decoder is proved in \cref{lem:continuation-work}, \cref{lem:good-first-moment}, \cref{lem:tame-second-moment}, and \cref{cor:spherical-survival}. The one-sided analytical upper barrier controls prolific early prefixes in the proof, while the algorithm itself enforces only continuation-mass pruning.
 
 \paragraph{Restartable \(2/3\) stage.}
-\Cref{prop:slice-two-thirds} reduces the $2/3$ rung to a one-stage slice theorem. The remaining audits are to turn continuation-mass accepting buckets into hard channels with high-probability bounds, prove or replace the RANSAC-style cap finder for every heavy $2\eta$-cap, and Poissonize the large slice cohorts so the polylogarithmic oversampling concentration is explicit.
+\Cref{prop:slice-two-thirds} proves the restartable $2/3$ rung at the current level of detail. The remaining audits for a polished version are to write the high-probability truncation constants for every stage explicitly and to align the bounded-diameter and ball-to-shell localization with the exact constants in the slice construction.
 
 \paragraph{Cohort-or-leaf.}
 \Cref{asm:cohort-or-leaf} is the route-level condition needed for the polylogarithmic endpoint. It should be tested against the hard cases: an isolated near point next to a massive far cluster, a near point on a cluster boundary, a tiny child that becomes heavy only late, and symmetric far shells. The proof must show a whole-lineage inverse-polylogarithmic event, not merely an inverse-polylogarithmic event at each level.
