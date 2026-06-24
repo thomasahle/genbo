@@ -2918,6 +2918,82 @@ The following assumption abstracts exactly that operation, while allowing either
    $2\varepsilon r^2$.
 \end{proof}
 
+\begin{lemma}[Smoothed Gibbs sampling suffices]\label{lem:smoothed-gibbs-suffices}
+   In the setting of \cref{lem:smoothed-max-score-margin}, define the Gibbs law
+   on the resident points by
+   \[
+      \mathsf G_Y(x)
+      =
+      \frac{\exp(A_Y(x))}
+           {\sum_{z\in S}\exp(A_Y(z))}.
+   \]
+   After increasing the constant $C_c$ in the lower bound on $t$, with
+   probability at least $1-m^{-2}$ over $Y$ the Gibbs mass of invalid points is
+   at most $m^{-2}$. Consequently, any sampler whose output law has total
+   variation distance at most $\varepsilon$ from $\mathsf G_Y$ returns a valid
+   $cr$-neighbor with probability at least $1-\varepsilon-m^{-2}$ on this
+   event.
+\end{lemma}
+
+\begin{proof}
+   On the event of \cref{lem:smoothed-max-score-margin}, every invalid point
+   $x$ satisfies
+   \[
+      \exp(A_Y(x))\le \exp(A_Y(p))\exp(-\delta_c t r^2).
+   \]
+   Hence the total invalid Gibbs weight is at most
+   \[
+      \frac{m\exp(A_Y(p))\exp(-\delta_c t r^2)}
+           {\exp(A_Y(p))}
+      =
+      m\exp(-\delta_c t r^2)
+      \le m^{-2}
+   \]
+   after increasing $C_c$ so that $\delta_c t r^2\ge3\log m$. The total
+   variation statement is immediate.
+\end{proof}
+
+\begin{assumption}[Smoothed Gaussian Gibbs sampler]\label{asm:smoothed-gibbs}
+   Fix $c>1$ and $\rho=\rho_c$. For every bounded-diameter localized node with
+   $m$ resident points, and for every query $q$, there is a data structure that
+   chooses a parameter
+   \[
+      C_c\log m/r^2\le t\le \log^{O_c(1)}m/r^2,
+   \]
+   samples $Y\sim N(tq,tI_d)$, and outputs a point from a distribution within
+   total variation distance at most $1/3$ from the Gibbs law $\mathsf G_Y$,
+   using query time
+   \[
+      d\,m^\rho\log^{O_c(1)}m
+   \]
+   and space
+   \[
+      m^{1+\rho}\log^{O_c(1)}m
+   \]
+   over all localized nodes.
+\end{assumption}
+
+\begin{proposition}[Conditional smoothed Gibbs endpoint]\label{prop:smoothed-gibbs-polylog}
+   Under \cref{asm:smoothed-gibbs}, worst-case Euclidean ANN has query time
+   \[
+      Q(n,d)=d\,n^{\rho_c}\log^{O_c(1)}n
+   \]
+   and space
+   \[
+      S(n,d)=dn+n^{1+\rho_c}\log^{O_c(1)}n.
+   \]
+\end{proposition}
+
+\begin{proof}
+   Apply the projected bounded-diameter localization of \cref{lem:localization}
+   and call the smoothed Gibbs sampler in each localized node a constant number
+   of times, verifying every returned point in the original metric. In a good
+   localized copy containing a true near pair, \cref{lem:smoothed-gibbs-suffices}
+   shows that one Gibbs sample is valid with probability at least
+   $2/3-o(1)$. The stated local query and space bounds then sum over the
+   polylogarithmic localization copies as before.
+\end{proof}
+
 \begin{assumption}[Smoothed additive score maximization]\label{asm:smoothed-score-max}
    Fix $c>1$ and $\rho=\rho_c$. For every bounded-diameter localized node with
    $m$ resident points, and for every query $q$, there is a data structure that
@@ -3236,7 +3312,7 @@ The continuation-mass spherical decoder is proved in \cref{lem:continuation-work
 
 The continuous likelihood-ball family now proves both analytic sides of the desired posterior decoder: \cref{thm:continuous-likelihood-balls} gives the guard-or-pure-child value, and \cref{lem:ideal-likelihood-scale-profile} gives the scale-normalized query and storage moments. \Cref{lem:likelihood-rank-prefix} further collapses the threshold continuum to rank gaps of a random score order. The cleanest structured target is therefore \cref{asm:multiscale-structured-likelihood}: implement this ideal rank-prefix measure as a query-decodable family of stored representatives. Conditional on that theorem, \cref{prop:multiscale-structured-polylog} gives the desired polylogarithmic ANN bounds in one posterior layer; if the activated prefix is pure for the query, its representative is already a valid answer.
 
-\Cref{lem:smoothed-max-score-margin} gives a still simpler non-channel target: a query-centered Gaussian score direction separates every invalid point from the true near point by an additive $\Theta_c(tr^2)$ score margin, with high probability. By \cref{lem:score-max-additive-nn}, this is exactly smoothed additive nearest-neighbor search for the perturbed center $Y/t$ with additive squared-distance error $\Theta_c(r^2)$. Such an oracle would bypass dyadic scales and representatives entirely, as recorded in \cref{asm:smoothed-score-max} and \cref{prop:smoothed-score-max-polylog}. This is a target, not an implemented theorem. The older finite restricted-channel compiler \cref{asm:finite-restricted-channel} and \cref{prop:finite-channel-polylog} remain as a coarse explicit-enumeration special case and as a useful diagnostic framework.
+\Cref{lem:smoothed-max-score-margin} gives a still simpler non-channel target: a query-centered Gaussian score direction separates every invalid point from the true near point by an additive $\Theta_c(tr^2)$ score margin, with high probability. The softest resulting primitive is \cref{asm:smoothed-gibbs}: sample from the Gaussian Gibbs law on data points. By \cref{lem:smoothed-gibbs-suffices}, this already returns a valid answer because invalid points have negligible Gibbs mass. A stronger implementation route is smoothed additive nearest-neighbor search for the perturbed center $Y/t$ with additive squared-distance error $\Theta_c(r^2)$, exactly equivalent to additive score maximization by \cref{lem:score-max-additive-nn}. Either oracle would bypass dyadic scales and representatives entirely, as recorded in \cref{prop:smoothed-gibbs-polylog} and \cref{prop:smoothed-score-max-polylog}. These are targets, not implemented theorems. The older finite restricted-channel compiler \cref{asm:finite-restricted-channel} and \cref{prop:finite-channel-polylog} remain as a coarse explicit-enumeration special case and as a useful diagnostic framework.
 
 \paragraph{Cohort-or-leaf.}
 \Cref{asm:cohort-or-leaf} is the original full-child route-level condition for the broader posterior-cohort endpoint, but \cref{lem:prefix-slice-accounting} shows that a prefix-conditioned formulation is cleaner. Work accounting for opened children is no longer the hard part: \cref{lem:vote-budget} pays opened recursive calls from realized detector votes. The preferred remaining target for that more general route is \cref{asm:prefix-slice-survival}: prove that one cumulative near-pair score path either reaches a cap-free residual scan or receives enough detector votes to follow prefix-conditioned certified slices to a resident scan. \Cref{lem:detector-inflation} and \cref{lem:off-spine-inflation} reduce the detector-shadowing part of this target to early activation prefixes with large enough continuation mass $H(v)$ and logarithmic spine-ratio sum $\sum H(u^+)/H(u)$; \cref{rem:linear-spine-ratio} explains why long score routes need an aggregate detector-mass argument instead. This should be tested against the hard cases: an isolated near point next to a massive far cluster, a near point on a cluster boundary, a tiny child that becomes heavy only late, and symmetric far shells. The proof must show a whole-lineage inverse-polylogarithmic event, not merely an inverse-polylogarithmic event at each level.
@@ -3253,7 +3329,7 @@ and space
 \]
 The exact pieces now aligned for the randomized cap-thinning route are: continuation-mass pruning gives optimal expected spherical work, adaptive continuation gives whole-lineage near survival, thinned cap splitting gives radius-potential contraction, and cap-free terminal scans are paid by low-correlation collisions.
 
-For the randomized cap-thinning route, the remaining task is the branching first-split work estimate in \cref{asm:mixed-continuation-operator}: prove that the thinned geometric child potentials contract over random cap-discovery frontiers without replacing the branching decoder by a normalized path law. This is a fully non-channel route; the smooth product terminal filter can be used after localization and no longer contributes an inverse-polylogarithmic table-recall penalty. The structured posterior route replaces the cap-frontier obstacle by \cref{asm:multiscale-structured-likelihood}: prove an output-sensitive reporter for pure likelihood rank prefixes, not a small explicitly enumerable channel. The smoothed score-max route replaces both by \cref{asm:smoothed-score-max}: prove an optimal-exponent smoothed additive nearest-neighbor primitive for query-centered Gaussian perturbations. The detector-vote cohort-or-leaf route is a separate possible generalization to arbitrary certified child hierarchies, where the remaining issue is near-lineage coupling between ordinary continuation paths and detector activations.
+For the randomized cap-thinning route, the remaining task is the branching first-split work estimate in \cref{asm:mixed-continuation-operator}: prove that the thinned geometric child potentials contract over random cap-discovery frontiers without replacing the branching decoder by a normalized path law. This is a fully non-channel route; the smooth product terminal filter can be used after localization and no longer contributes an inverse-polylogarithmic table-recall penalty. The structured posterior route replaces the cap-frontier obstacle by \cref{asm:multiscale-structured-likelihood}: prove an output-sensitive reporter for pure likelihood rank prefixes, not a small explicitly enumerable channel. The smoothed sampling route replaces both by \cref{asm:smoothed-gibbs}: prove an optimal-exponent sampler for Gaussian Gibbs weights under query-centered perturbations; smoothed additive nearest neighbor is a stronger sufficient primitive. The detector-vote cohort-or-leaf route is a separate possible generalization to arbitrary certified child hierarchies, where the remaining issue is near-lineage coupling between ordinary continuation paths and detector activations.
 
 \appendix
 
