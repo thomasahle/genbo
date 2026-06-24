@@ -3017,24 +3017,34 @@ There is an even more collapsed non-channel target. Taking the likelihood expone
    \]
 \end{proof}
 
-\begin{assumption}[Smoothed Gaussian mass-capture reporter]\label{asm:smoothed-gibbs}
+\begin{assumption}[Smoothed Gaussian guard-or-capture reporter]\label{asm:smoothed-gibbs}
    Fix $c>1$ and $\rho=\rho_c$. For every bounded-diameter localized node with
-   $m$ resident points, and for every query $q$, there is a data structure that
-   chooses a parameter
+   $m$ resident points, and for every query $q$, there is a data structure with
+   the following guarantee. Choose a parameter
    \[
       C_c\log m/r^2\le t\le \log^{O_c(1)}m/r^2,
    \]
-   samples $Y\sim N(tq,tI_d)$, and either reports failure or reports a
-   nonempty list $L_Y\subseteq S$. With probability at least
-   $\log^{-O_c(1)}m$ over its internal randomness, the returned list satisfies,
-   for
+   sample $Y\sim N(tq,tI_d)$, and either report failure or report a nonempty
+   list $L_Y\subseteq S$. For every near pair $(p,q)$ in the node, at least one
+   of the following alternatives holds.
+   \begin{itemize}
+      \item The resident guard density is inverse-polylogarithmic at the
+      $m^{-\rho}$ scale:
+      \[
+         \frac1m|\{x\in S:\|x-q\|\le cr\}|
+         \ge
+         m^{-\rho}\log^{-O_c(1)}m .
+      \]
+      \item With probability at least $\log^{-O_c(1)}m$ over $Y$ and the
+      reporter randomness, the returned list satisfies, for
    \[
       W_Y(A)=\sum_{x\in A}\exp(A_Y(x)),
    \]
-   one has
+      one has
    \[
       W_Y(L_Y)\ge \log^{-O_c(1)}m\,W_Y(S).
    \]
+   \end{itemize}
    One trial uses query time
    \[
       d\,m^\rho\log^{O_c(1)}m
@@ -3046,12 +3056,13 @@ There is an even more collapsed non-channel target. Taking the likelihood expone
    over all localized nodes.
 \end{assumption}
 
-The reporter need not certify the displayed mass inequality or estimate
-$W_Y(S)$. It only has to output the list; the final restricted Gibbs sample
-uses the explicitly computable weights on that list. The inverse-polylogarithmic
-success probability is amplified in the next proposition.
+The reporter need not certify which alternative holds, certify the displayed
+mass inequality, or estimate $W_Y(S)$. It only has to output the list when it
+does not fail; the final restricted Gibbs sample uses the explicitly computable
+weights on that list. The inverse-polylogarithmic success probabilities are
+amplified in the next proposition.
 
-\begin{proposition}[Conditional smoothed mass-capture endpoint]\label{prop:smoothed-gibbs-polylog}
+\begin{proposition}[Conditional smoothed guard-or-capture endpoint]\label{prop:smoothed-gibbs-polylog}
    Under \cref{asm:smoothed-gibbs}, worst-case Euclidean ANN has query time
    \[
       Q(n,d)=d\,n^{\rho_c}\log^{O_c(1)}n
@@ -3064,18 +3075,25 @@ success probability is amplified in the next proposition.
 
 \begin{proof}
    Apply the projected bounded-diameter localization of \cref{lem:localization}
-   and call the smoothed mass-capture reporter a polylogarithmic number of
-   times in each localized node. Whenever a trial returns a list $L_Y$, sample
-   one point from the weights $\exp(A_Y(x))$ restricted to $L_Y$, and verify it
-   in the original metric. On a mass-capturing trial,
-   \cref{lem:captured-gibbs-domination} makes this output law pointwise
-   dominated by a $\log^{O_c(1)}m$ multiple of $\mathsf G_Y$. In a good
-   localized copy containing a true near pair,
-   \cref{lem:smoothed-gibbs-suffices} therefore shows that such a trial returns
-   a valid point with probability $1-o(1)$. Since the trial is mass-capturing
+   and work in a good localized copy containing a true near pair. First sample
+   a uniform resident guard of size $m^\rho\log^{O_c(1)}m$ and verify every
+   sampled point in the original metric. If the guard-density alternative in
+   \cref{asm:smoothed-gibbs} holds, this finds a valid point with constant
+   probability after increasing the logarithmic constant.
+
+   Otherwise call the smoothed mass-capture reporter a polylogarithmic number
+   of times. Whenever a trial returns a list $L_Y$, sample one point from the
+   weights $\exp(A_Y(x))$ restricted to $L_Y$, and verify it in the original
+   metric. On a mass-capturing trial, \cref{lem:captured-gibbs-domination}
+   makes this output law pointwise dominated by a $\log^{O_c(1)}m$ multiple of
+   $\mathsf G_Y$. By \cref{lem:smoothed-gibbs-suffices}, such a trial returns a
+   valid point with probability $1-o(1)$. Since the trial is mass-capturing
    with inverse-polylogarithmic probability, polylogarithmic repetition gives
-   constant success probability. The stated local query and space bounds sum
-   over the polylogarithmic localization copies as before.
+   constant success probability.
+
+   The guard, reporter, and localization costs all fit
+   $d\,n^{\rho_c}\log^{O_c(1)}n$, and the assumed local space bounds sum over
+   the polylogarithmic localization copies as before.
 \end{proof}
 
 \begin{assumption}[Smoothed additive score maximization]\label{asm:smoothed-score-max}
