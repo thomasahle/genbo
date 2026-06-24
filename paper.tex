@@ -2273,6 +2273,130 @@ This certificate is the local form of the remaining problem. It is analogous in 
    for the displayed choice of $\delta$. Thus \cref{lem:thin-lineage} gives lineage-thinning probability at least $\log^{-O_c(1)}n$. The score depth is $K=O_c(L)$, so \cref{lem:adaptive-continuation} gives a common near score path with probability $K^{-O_c(1)}=\log^{-O_c(1)}n$. Polylogarithmic amplification and the truncation paragraph in the preliminaries give the query bound with constant success probability. The storage bound follows from the storage contraction in \cref{lem:thin-cap-contraction}, the stored-prefix part of \cref{lem:adaptive-continuation}, and bounded-diameter localization.
 \end{proof}
 
+\section{A finite-channel posterior route}
+
+\Cref{prop:randomized-polylog} keeps the cap geometry and asks for a branching first-split work estimate. There is another possible route: replace cap discovery by posterior-superlevel children of a stochastic score channel. This is closer to the LSH-forest negative-moment calculus and to the local surrogate-success viewpoint of Andoni and Beaglehole~\cite{AB22}. The advantage is that the recursion accounting becomes almost algebraic; the remaining difficulty is finite channel compilation.
+
+Let a node contain a set $S$ of $m$ points. A finite score channel assigns probabilities $K_x(j)$, $j\in[B]$, to every $x\in S$, with $\sum_jK_x(j)=1$. Put
+\[
+   \mu_j=\frac1m\sum_{x\in S}K_x(j),
+   \qquad
+   R_j(x)=\frac{K_x(j)}{\mu_j}.
+\]
+For a threshold $u$, the posterior-superlevel child is
+\[
+   C_{j,u}=\{x\in S:R_j(x)\ge u\},
+   \qquad
+   \Phi_j(u)=\frac{|C_{j,u}|}{m}.
+\]
+
+\begin{lemma}[Posterior superlevel compiler]\label{lem:posterior-superlevel-compiler}
+   Fix $0<\beta<\rho$ and put $s_\beta=1-\beta$. Store child $(j,u)$ with Poisson intensity
+   \[
+      \mu_j\,\beta u^{\beta-1}\Phi_j(u)^\rho\,du,
+   \]
+   and let query $q$ assign each stored copy weight $R_j(q)^{s_\beta}$ in the ideal fractional calculation. Equivalently, one may materialize active copies from a query-dependent Poisson intensity multiplied by this factor. For every data point $p$,
+   \[
+      \E\sum_{\substack{C\text{ active}\\p\in C}}
+      \left(\frac{|C|}{m}\right)^{-\rho}
+      =
+      \sum_jK_p(j)^\beta K_q(j)^{s_\beta}.
+   \]
+\end{lemma}
+
+\begin{proof}
+   The negative moment cancels the stored factor $\Phi_j(u)^\rho$:
+   \[
+   \begin{aligned}
+      \E\sum_{\substack{C\text{ active}\\p\in C}}
+      \left(\frac{|C|}{m}\right)^{-\rho}
+      &=
+      \sum_j\mu_jR_j(q)^{s_\beta}
+      \int_0^{R_j(p)}\beta u^{\beta-1}\,du\\
+      &=
+      \sum_j\mu_jR_j(p)^\beta R_j(q)^{s_\beta}\\
+      &=
+      \sum_jK_p(j)^\beta K_q(j)^{s_\beta},
+   \end{aligned}
+   \]
+   since $\beta+s_\beta=1$.
+\end{proof}
+
+For implementation one does not want a continuum of thresholds. Let $\xi\in(0,1)$ and let $C_j^\xi$ be the top $\lceil \xi m\rceil$ points by posterior ratio $R_j(x)$. If $r_{j,1}\ge\cdots\ge r_{j,m}$ are these ratios, put
+\[
+   \Delta_j=r_{j,1}^{\beta}-r_{j,\lceil\xi m\rceil+1}^{\beta}.
+\]
+Store $C_j^\xi$ with Poisson mean
+\[
+   \Lambda_j=\xi^\rho\mu_j^\beta\Delta_j
+\]
+and activate each copy with probability $K_q(j)^{s_\beta}$. Then the single top-$\xi$ child dominates the restricted part of the negative moment coming from all thresholds with $\Phi_j(u)\le\xi$. Moreover $\mu_j^\beta\Delta_j\le1$, so the expected number of active top-$\xi$ children in one channel group is at most
+\[
+   \xi^\rho\sum_jK_q(j)^{s_\beta}
+   \le
+   \xi^\rho B^\beta .
+\]
+Thus if $B\le\xi^{-1}\log^{O(1)}m$ and $\beta=O(1/\log m)$, one group has only $O_c(\xi^\rho)$ expected active children.
+
+\begin{assumption}[Finite restricted channel]\label{asm:finite-restricted-channel}
+   Fix $c>1$ and let
+   \[
+      \rho=\rho_c,
+      \qquad
+      \vartheta=\frac{\rho}{1+\rho}=\frac1{2c^2},
+      \qquad
+      \xi=m^{-\vartheta},
+      \qquad
+      \beta=\Theta_c(1/\log m).
+   \]
+   There is a query-decodable finite channel with
+   \[
+      B\le\xi^{-1}\log^{O_c(1)}m
+   \]
+   outcomes, evaluable on the node in $dB\log^{O_c(1)}m$ work, such that for every near pair $p,q$ in the node, either a uniformly sampled resident guard block of size $O(\xi^{-1}\log n)$ returns a valid $cr$-neighbor with constant probability, or the restricted top-$\xi$ posterior-superlevel negative moment for $p,q$ is at least $\log^{-O_c(1)}m$.
+\end{assumption}
+
+The continuous Gaussian likelihood-ball channel gives evidence for \cref{asm:finite-restricted-channel}: its level sets are Euclidean balls and the restricted negative moment is constant unless the resident guard already succeeds. What is not yet proved is the finite, balanced, query-decodable compilation with only $B\simeq\xi^{-1}$ outcomes.
+
+\begin{proposition}[Conditional finite-channel polylog endpoint]\label{prop:finite-channel-polylog}
+   Under \cref{asm:finite-restricted-channel}, the posterior-superlevel recursion gives worst-case Euclidean ANN bounds
+   \[
+      Q(n,d)=d\,n^{\rho_c}\log^{O_c(1)}n,
+      \qquad
+      S(n,d)=dn+n^{1+\rho_c}\log^{O_c(1)}n.
+   \]
+\end{proposition}
+
+\begin{proof}
+   At a node of size $m$, repeat the finite channel
+   \[
+      R=\xi^{-\rho}\log^{O_c(1)}m
+   \]
+   times. By \cref{asm:finite-restricted-channel} and the top-$\xi$ collapse, a true near point enters at least one active child with inverse-polylogarithmic probability, unless the resident guard already succeeds. The local channel-evaluation work is
+   \[
+      dRB\log^{O_c(1)}m
+      \le
+      d\,\xi^{-(1+\rho)}\log^{O_c(1)}m
+      =
+      d\,m^\rho\log^{O_c(1)}m,
+   \]
+   because $\vartheta(1+\rho)=\rho$.
+
+   The expected number of active recursive children over all repetitions is polylogarithmic, since one group contributes $O_c(\xi^\rho)$ active children. Every recursive child has size at most $\xi m=m^{1-\vartheta}$. Hence the query recurrence is
+   \[
+      Q(m)\le d\,m^\rho\log^{O_c(1)}m+\log^{O_c(1)}m\,Q(m^{1-\vartheta}),
+   \]
+   which solves to $d\,m^\rho\log^{O_c(1)}m$ over $O_c(\log\log m)$ macro levels.
+
+   For space, each stored child has size at most $\xi m$. The total stored-child $(1+\rho)$ power over all repeated channel groups is bounded by
+   \[
+      R\cdot B\cdot(\xi m)^{1+\rho}\log^{O_c(1)}m
+      \le
+      m^{1+\rho}\log^{O_c(1)}m,
+   \]
+   again using $RB=\xi^{-(1+\rho)}\log^{O_c(1)}m$. Summing over macro levels and adding the original data storage gives the displayed space bound. Polylogarithmic amplification and the standard truncation paragraph convert the inverse-polylogarithmic local success into constant success probability.
+\end{proof}
+
 \section{Audit trail and extensions}
 
 The main self-contained proof path is the restartable slice route of \cref{prop:slice-two-thirds}. The following notes explain which pieces are closed, which one-tree milestones are conditional, and which older formulations remain useful as comparisons or possible extensions.
@@ -2289,6 +2413,9 @@ The continuation-mass spherical decoder is proved in \cref{lem:continuation-work
 \paragraph{Randomized polylog stage.}
 \Cref{lem:adaptive-continuation} replaces the tube proof in the predictable-score setting, so near-pair survival is no longer the obstacle for the randomized one-tree endpoint. \Cref{asm:mixed-continuation-operator} is the remaining work-side target after \cref{lem:cap-free-scan-accounting}: it must prove thinned cap-split contraction over branching cap-discovery frontiers. Conditional on that operator, \cref{prop:randomized-polylog} shows that choosing $\eta\asymp(\log\log n)/\log n$ gives polylogarithmic query and space overhead.
 
+\paragraph{Finite-channel posterior route.}
+\Cref{lem:posterior-superlevel-compiler} records the negative-moment identity suggested by the latest notes. This route bypasses cap finding and recentering heuristics: posterior-superlevel sets of a score channel become the recursive children, and the macro arithmetic $\vartheta(1+\rho_c)=\rho_c$ gives the optimal balanced exponent. Conditional on the finite restricted-channel compiler \cref{asm:finite-restricted-channel}, \cref{prop:finite-channel-polylog} gives the same polylogarithmic endpoint. The continuous Gaussian likelihood-ball family proves the right geometric guard-or-small-child behavior, but the finite balanced query-decodable channel with $B\simeq m^{1/(2c^2)}$ outcomes is still unproved.
+
 \paragraph{Cohort-or-leaf.}
 \Cref{asm:cohort-or-leaf} is the original full-child route-level condition for the broader posterior-cohort endpoint, but \cref{lem:prefix-slice-accounting} shows that a prefix-conditioned formulation is cleaner. Work accounting for opened children is no longer the hard part: \cref{lem:vote-budget} pays opened recursive calls from realized detector votes. The preferred remaining target for that more general route is \cref{asm:prefix-slice-survival}: prove that one cumulative near-pair score path either reaches a cap-free residual scan or receives enough detector votes to follow prefix-conditioned certified slices to a resident scan. \Cref{lem:detector-inflation} and \cref{lem:off-spine-inflation} reduce the detector-shadowing part of this target to early activation prefixes with large enough continuation mass $H(v)$ and logarithmic spine-ratio sum $\sum H(u^+)/H(u)$; \cref{rem:linear-spine-ratio} explains why long score routes need an aggregate detector-mass argument instead. This should be tested against the hard cases: an isolated near point next to a massive far cluster, a near point on a cluster boundary, a tiny child that becomes heavy only late, and symmetric far shells. The proof must show a whole-lineage inverse-polylogarithmic event, not merely an inverse-polylogarithmic event at each level.
 
@@ -2304,7 +2431,7 @@ and space
 \]
 The exact pieces now aligned for the randomized cap-thinning route are: continuation-mass pruning gives optimal expected spherical work, adaptive continuation gives whole-lineage near survival, thinned cap splitting gives radius-potential contraction, and cap-free terminal scans are paid by low-correlation collisions.
 
-For the randomized cap-thinning route, the remaining task is the branching first-split work estimate in \cref{asm:mixed-continuation-operator}: prove that the thinned geometric child potentials contract over random cap-discovery frontiers without replacing the branching decoder by a normalized path law. The detector-vote cohort-or-leaf route is a separate possible generalization to arbitrary certified child hierarchies, where the remaining issue is near-lineage coupling between ordinary continuation paths and detector activations.
+For the randomized cap-thinning route, the remaining task is the branching first-split work estimate in \cref{asm:mixed-continuation-operator}: prove that the thinned geometric child potentials contract over random cap-discovery frontiers without replacing the branching decoder by a normalized path law. The finite-channel posterior route replaces that obstacle by \cref{asm:finite-restricted-channel}, a finite compilation problem for Gaussian-likelihood posterior children. The detector-vote cohort-or-leaf route is a separate possible generalization to arbitrary certified child hierarchies, where the remaining issue is near-lineage coupling between ordinary continuation paths and detector activations.
 
 \appendix
 
