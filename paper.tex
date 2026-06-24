@@ -2822,20 +2822,20 @@ The following assumption abstracts exactly that operation, while allowing either
       \qquad
       Y\sim N(tq,tI_d),
    \]
-   choose
+   choose any
    \[
-      t=C_c\frac{\log m}{r^2}
+      t\ge C_c\frac{\log m}{r^2}
    \]
    with $C_c$ sufficiently large. Then, with probability at least
    $1-m^{-2}$ over $Y$, every invalid point $x\in S$ with
    $\|x-q\|>cr$ satisfies
    \[
-      A_Y(x)\le A_Y(p)-\Delta_c\log m
+      A_Y(x)\le A_Y(p)-\delta_c t r^2
    \]
-   for a constant $\Delta_c>0$ depending only on $c$. Consequently, on this
+   for a constant $\delta_c>0$ depending only on $c$. Consequently, on this
    event, every point $\widehat x$ satisfying
    \[
-      A_Y(\widehat x)\ge\max_{z\in S}A_Y(z)-\frac12\Delta_c\log m
+      A_Y(\widehat x)\ge\max_{z\in S}A_Y(z)-\frac12\delta_c t r^2
    \]
    is a valid $cr$-neighbor of $q$.
 \end{lemma}
@@ -2866,13 +2866,13 @@ The following assumption abstracts exactly that operation, while allowing either
       \|x\|-\|p\|
       \ge(c-1)r .
    \]
-   Taking
+   Taking $\delta_c=(c^2-1)/4$ and
    \[
-      \Delta_c\log m=\frac14t(c^2-1)r^2
+      \delta_c t r^2=\frac14t(c^2-1)r^2
    \]
    and applying a Gaussian tail bound gives
    \[
-      \Pr\!\left[\ell_x\ge-\Delta_c\log m\right]
+      \Pr\!\left[\ell_x\ge-\delta_c t r^2\right]
       \le
       \exp(-\Omega_c(tr^2))
       \le
@@ -2882,19 +2882,22 @@ The following assumption abstracts exactly that operation, while allowing either
    score gap.
 
    On that event, every invalid point has score at most
-   $A_Y(p)-\Delta_c\log m$. Since $\max_{z\in S}A_Y(z)\ge A_Y(p)$, an additive
-   $\frac12\Delta_c\log m$ maximizer cannot be invalid.
+   $A_Y(p)-\delta_c t r^2$. Since $\max_{z\in S}A_Y(z)\ge A_Y(p)$, an additive
+   $\frac12\delta_c t r^2$ maximizer cannot be invalid.
 \end{proof}
 
 \begin{assumption}[Smoothed additive score maximization]\label{asm:smoothed-score-max}
    Fix $c>1$ and $\rho=\rho_c$. For every bounded-diameter localized node with
    $m$ resident points, and for every query $q$, there is a data structure that
-   samples $Y\sim N(tq,tI_d)$ with $t=C_c\log m/r^2$ and returns a point
-   $\widehat x\in S$ satisfying
+   chooses a parameter
+   \[
+      C_c\log m/r^2\le t\le \log^{O_c(1)}m/r^2,
+   \]
+   samples $Y\sim N(tq,tI_d)$, and returns a point $\widehat x\in S$ satisfying
    \[
       A_Y(\widehat x)
       \ge
-      \max_{z\in S}A_Y(z)-\Delta_c\log m/2
+      \max_{z\in S}A_Y(z)-\delta_c t r^2/2
    \]
    with probability at least $\log^{-O_c(1)}m$, using query time
    \[
@@ -2924,7 +2927,7 @@ The following assumption abstracts exactly that operation, while allowing either
    polylogarithmic number of times and verify every returned point in the
    original metric. For any true near pair in a good localized copy,
    \cref{lem:smoothed-max-score-margin} says that an additive
-   $\Delta_c\log m/2$ maximizer is valid with probability $1-m^{-2}$ over the
+   $\delta_c t r^2/2$ maximizer is valid with probability $1-m^{-2}$ over the
    sampled score direction. The oracle success probability is inverse
    polylogarithmic by assumption, so polylogarithmic amplification gives a
    valid answer with constant probability.
@@ -2951,6 +2954,30 @@ The following assumption abstracts exactly that operation, while allowing either
    optimal-exponent, output-sensitive implementation. Without such an
    implementation, \cref{asm:smoothed-score-max} should be viewed as a clean
    alternative target, not as a proof of the polylogarithmic endpoint.
+\end{remark}
+
+\begin{remark}[Why ordinary ANN does not implement the score-max target]\label{rem:score-max-ordinary-ann}
+   One can force the perturbed center $y=Y/t$ to be close to $q$ by taking
+   $t$ large. In dimension $D$, if
+   \[
+      t\ge C(D+\log m)/(a^2r^2),
+   \]
+   then $\|y-q\|\le ar$ with probability at least $1-m^{-3}$. On that event,
+   any true near point is within $(1+a)r$ of $y$, while every invalid point is
+   farther than $(c-a)r$ from $y$. Thus an ordinary
+   \[
+      \kappa(a)=\frac{c-a}{1+a}
+   \]
+   approximate-nearest-neighbor oracle for query center $y$ would return a
+   valid $cr$-neighbor after verification.
+
+   This observation is only a sanity check. Since
+   $\rho_{\kappa(a)}=\rho_c+O_c(a)$, keeping the exponent loss polylogarithmic
+   requires $a=O_c((\log\log m)/\log m)$. The resulting subproblem is then just
+   ANN at approximation $c-O_c(a)$ with essentially the same optimal exponent.
+   Hence a black-box ordinary ANN call would make the score-max route circular;
+   a proof of \cref{asm:smoothed-score-max} must exploit the smoothed
+   maximum-score structure itself.
 \end{remark}
 
 \begin{assumption}[Multiscale structured likelihood decoder]\label{asm:multiscale-structured-likelihood}
