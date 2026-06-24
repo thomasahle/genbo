@@ -2988,6 +2988,41 @@ There is an even more collapsed non-channel target. Taking the likelihood expone
    $A_Y(x)-\log E'_x$, and $-\log E'_x$ is standard Gumbel.
 \end{proof}
 
+\begin{lemma}[Captured Gibbs mass gives domination]\label{lem:captured-gibbs-domination}
+   Fix $Y$ and a distribution $\mathsf G_Y$ on $S$. Suppose a randomized
+   reporter outputs a nonempty set $L_Y\subseteq S$ and, for some
+   $\theta>0$, always satisfies
+   \[
+      \mathsf G_Y(L_Y)\ge\theta.
+   \]
+   If the final output is sampled from $\mathsf G_Y$ conditioned on $L_Y$,
+   then its law $Q_Y$ satisfies
+   \[
+      Q_Y(x)\le \theta^{-1}\mathsf G_Y(x)
+      \qquad\text{for every }x\in S.
+   \]
+\end{lemma}
+
+\begin{proof}
+   Averaging over the reporter randomness,
+   \[
+      Q_Y(x)
+      =
+      \E\left[
+         \mathbf 1_{\{x\in L_Y\}}
+         \frac{\mathsf G_Y(x)}{\mathsf G_Y(L_Y)}
+      \right]
+      \le
+      \theta^{-1}\mathsf G_Y(x).
+   \]
+\end{proof}
+
+Thus \cref{asm:smoothed-gibbs} follows from a concrete output-sensitive
+mass-capture primitive: find, in $d\,m^\rho\log^{O_c(1)}m$ query work, a
+candidate list carrying $\log^{-O_c(1)}m$ Gibbs mass, and sample from the
+Gaussian kernel weights restricted to that list. No estimate of the global
+partition function is needed.
+
 \begin{assumption}[Smoothed Gaussian kernel sampler]\label{asm:smoothed-gibbs}
    Fix $c>1$ and $\rho=\rho_c$. For every bounded-diameter localized node with
    $m$ resident points, and for every query $q$, there is a data structure that
