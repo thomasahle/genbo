@@ -1723,6 +1723,34 @@ load
    subroutines. Final candidates are verified in the original metric.
 \end{proof}
 
+\begin{lemma}[Certified cover with residual scan]\label{lem:cover-residual-scan}
+   In the setting of \cref{lem:certified-cover-compiler}, suppose the stored
+   filters cover only $P\setminus U_0$, where $U_0\subseteq P$ is a residual
+   block that every query scans directly.  If
+   \[
+      \sum_{i\in I(q)} |P_i|^\rho\Psi(R_i)\le L
+      \qquad\text{for every query }q,
+   \]
+   and $|U_0|\le L_0$, then the node is routing-correct and contributes query
+   work
+   \[
+      O((L+L_0)\polylog n)
+   \]
+   and storage
+   \[
+      O((S_0+|U_0|)\polylog n),
+   \]
+   where $S_0=\sum_i |P_i|^{1+\rho}\Psi(R_i)$.
+\end{lemma}
+
+\begin{proof}
+   Let $\|p-q\|\le r$.  If $p\in U_0$, the always-scanned residual block
+   verifies it directly.  Otherwise $p$ lies in some stored filter, and the
+   proof of \cref{lem:certified-cover-compiler} shows that the query activates
+   a child containing $p$.  The displayed work and storage bounds add the
+   residual scan and residual storage to the certified-cover accounting.
+\end{proof}
+
 This also gives a safe way to use an empirical cover such as $k$-means without
 claiming that Lloyd's objective proves anything. At a node, store an arbitrary
 certified cover together with a capped decoder. On query $q$, the decoder either
@@ -2488,6 +2516,93 @@ time can amplify small discovery probabilities or replace greedy assignment by
 exact integer programming over the candidate pool.  What remains for the
 polylogarithmic ANN theorem is an existence-and-certification statement for a
 small stored cover, not an efficient Lloyd-style training algorithm.
+
+\begin{assumption}[Weak offline score-cover condition]\label{asm:weak-offline-score-cover}
+   Fix $c>1$, $\rho=\rho_c$, and $\eta>0$.  In every bounded-diameter localized
+   node with $m$ resident points in a certified ball of radius $R$, either the
+   node is terminal, or expensive preprocessing can build the following
+   certified object with constant probability, amplified offline as in
+   \cref{lem:offline-amplification}.
+
+   There is a residual block $U_0$ and a query-decodable family of Lipschitz
+   score filters
+   \[
+      (P_i,o_i,R_i,\phi_i,\theta_i,L_i)_{i\in I}
+   \]
+   covering $P\setminus U_0$, with
+   \[
+      |U_0|\le F_4(m,R)\log^{O_c(1)}m,
+      \qquad
+      R_i\le R\sqrt{1-\eta^2}.
+   \]
+   The decoder lists every filter satisfying
+   $\phi_i(q)\ge\theta_i-L_i r$ in time
+   $dF_4(m,R)\log^{O_c(1)}m$ plus output cost.  Unless the resident guard
+   density at $q$ is at least $m^{-\rho}\log^{-O_c(1)}m$, the listed filters
+   satisfy
+   \[
+      \sum_{i:\phi_i(q)\ge\theta_i-L_i r}
+      |P_i|^\rho\Psi(R_i)
+      \le
+      (1-\kappa\eta^2)F_4(m,R)
+   \]
+   for a constant $\kappa=\kappa(c)>0$, and the stored filters satisfy
+   \[
+      \sum_i |P_i|^{1+\rho}\Psi(R_i)
+      \le
+      mF_4(m,R).
+   \]
+
+   Finally, the preprocessing routine may obtain this object by any amount of
+   offline computation.  In particular, it is enough that a residual sampler and
+   deterministic verifier satisfy the weak residual condition of
+   \cref{lem:weak-residual-cover} until the remaining residual has size at most
+   $F_4(m,R)\log^{O_c(1)}m$, and that the retained family passes the displayed
+   deterministic active-power and storage certificates.
+\end{assumption}
+
+\begin{proposition}[Weak offline score covers imply the polylog endpoint]
+   \label{prop:weak-offline-score-cover-polylog}
+   If \cref{asm:weak-offline-score-cover} holds uniformly for
+   \[
+      \eta=\Theta_c\!\left(\frac{\log\log n}{\log n}\right),
+   \]
+   and terminal nodes are handled by resident scans or by
+   \cref{thm:smooth-product-terminal}, then worst-case Euclidean ANN has
+   \[
+      Q(n,d)=d\,n^{\rho_c}\log^{O_c(1)}n,
+      \qquad
+      S(n,d)=dn+n^{1+\rho_c}\log^{O_c(1)}n .
+   \]
+\end{proposition}
+
+\begin{proof}
+   Offline amplification makes every constructed node satisfy the deterministic
+   certificate with sufficiently high probability; failed proposals are not
+   stored.  At query time, first sample the resident guard as in
+   \cref{prop:power-cover-polylog}.  If the guard-density alternative holds,
+   the guard succeeds with constant probability after increasing the logarithmic
+   factor.
+
+   Otherwise scan $U_0$ and recurse into all listed score filters.  Correctness
+   follows from \cref{lem:cover-residual-scan} and
+   \cref{lem:lipschitz-score-cover}: a near point is either in the scanned
+   residual, or lies in a filter whose Lipschitz slack makes the query list it.
+   The residual scan costs at most
+   $dF_4(m,R)\log^{O_c(1)}m$, and the listed recursive power contracts by
+   $(1-\kappa\eta^2)$.
+
+   The rest is the recurrence from \cref{prop:power-cover-polylog}.  Each
+   recursive score-cover child decreases radius by
+   $\sqrt{1-\eta^2}$, so there are only
+   $O_c(\eta^{-2}\log(R_0/r))=\log^{O_c(1)}n$ radius levels after
+   localization.  The per-level guard, decoder, and residual-scan costs are
+   $dF_4(m,R)\log^{O_c(1)}n$, while the active child sum contracts.  Summing the
+   resulting geometric recurrence gives
+   $dF_4(n,R_0)\log^{O_c(1)}n=d\,n^{\rho_c}\log^{O_c(1)}n$ query work.  The
+   storage certificate and the residual blocks add only the same polylogarithmic
+   level factor, giving $dn+n^{1+\rho_c}\log^{O_c(1)}n$ space.
+\end{proof}
 
 \subsection{Simplicity and implementation}
 
