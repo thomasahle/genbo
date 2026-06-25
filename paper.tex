@@ -2008,6 +2008,7 @@ that child and repeat until the sampled route-mass LP is feasible.
    Suppose the sampled feasibility problem has a solution $\pi$ satisfying
    \[
       \pi_C=0\quad(C\notin\mathcal A),\qquad
+      \sum_C\pi_C\le1,\qquad
       \sum_C\pi_CQ_C\le L,
    \]
    and
@@ -2023,31 +2024,39 @@ that child and repeat until the sampled route-mass LP is feasible.
          \left\lceil 8h_0^{-1}\log(4\max\{|N|,1\})\right\rceil
       \right\},
    \]
-   then there is a multiset \(M=(C_1,\ldots,C_K)\) of active children such that
+   then there is a multiset \(M=(Y_1,\ldots,Y_K)\) of records, each either an
+   active child or a no-op record \(\bot\), such that
    \[
-      \frac1K\sum_{t=1}^K Q_{C_t}\le4L
+      \frac1K\sum_{t:Y_t\ne\bot} Q_{Y_t}\le4L
    \]
    and, for every \(p\in N\),
    \[
-      \frac1K\sum_{t:p\in P_{C_t}}\sigma_{C_t}\ge\frac{h_0}{2}.
+      \frac1K\sum_{t:Y_t\ne\bot,\ p\in P_{Y_t}}\sigma_{Y_t}
+      \ge\frac{h_0}{2}.
    \]
    Consequently the real-valued sampler $\pi$ can be replaced, for this
    signature, by the uniform sampler on \(M\), losing only a constant factor in
-   expected child price and route mass.
+   expected child price and route mass; sampling \(\bot\) simply performs no
+   child invocation.
 \end{lemma}
 
 \begin{proof}
-   Draw \(C_1,\ldots,C_K\) independently from \(\pi\).  All sampled children
-   are active.  If \(L=0\), the average price is zero almost surely because the
-   prices are nonnegative.  Otherwise the expected average price is at most
-   \(L\), so Markov's inequality gives
+   Add a no-op record \(\bot\) with price \(Q_\bot=0\), success credit
+   \(\sigma_\bot=0\), and no resident points, and put
    \[
-      \Pr\left[\frac1K\sum_{t=1}^KQ_{C_t}>4L\right]\le\frac14 .
+      \pi_\bot=1-\sum_C\pi_C .
+   \]
+   Draw \(Y_1,\ldots,Y_K\) independently from this probability distribution on
+   \(\mathcal A\cup\{\bot\}\).  If \(L=0\), the average price is zero almost
+   surely because the prices are nonnegative.  Otherwise the expected average
+   price is at most \(L\), so Markov's inequality gives
+   \[
+      \Pr\left[\frac1K\sum_{t=1}^KQ_{Y_t}>4L\right]\le\frac14 .
    \]
 
    Fix \(p\in N\), and put
    \[
-      X_t=\sigma_{C_t}\mathbf 1\{p\in P_{C_t}\}\in[0,1],
+      X_t=\sigma_{Y_t}\mathbf 1\{Y_t\ne\bot,\ p\in P_{Y_t}\}\in[0,1],
       \qquad \mu_p=\E X_t\ge h_0 .
    \]
    We use the elementary one-sided bound
@@ -2086,6 +2095,66 @@ that child and repeat until the sampled route-mass LP is feasible.
    route mass equal to the displayed averages.
 \end{proof}
 
+\begin{lemma}[Activation-cohort sampled compiler]
+   \label{lem:activation-cohort-sampled-compiler}
+   Work in the setting of
+   \cref{lem:activation-sampled-route-verifier}, with target \(h_0>0\).
+   Suppose every realized activation pattern \(a\) has a feasible sampled LP
+   \(\mathsf S_a\) with active set \(A_a\), unresolved union \(N_a\), route
+   targets \(h_p=h_0\), and query-price budget \(L\).  For each such pattern
+   choose
+   \[
+      K_a\ge
+      \max\left\{
+         1,\,
+         \left\lceil 8h_0^{-1}\log(4\max\{|N_a|,1\})\right\rceil
+      \right\}.
+   \]
+   Then preprocessing can store, for every realized activation pattern \(a\),
+   a cohort \(M_a\) of \(K_a\) records, each either an active child
+   \(C\in A_a\) or a no-op record, such that the uniform sampler on \(M_a\)
+   has expected child price at most \(4L\) and gives every
+   \(p\in N_a\) route mass at least \(h_0/2\).
+
+   Consequently, if the query decoder computes \(a(q)\) and samples uniformly
+   from \(M_{a(q)}\) in work \(D(q)\), then \(B\) independent sampled trials
+   followed by verification fail on any unresolved near pair with probability
+   at most
+   \[
+      \exp(-Bh_0/2),
+   \]
+   and have expected query work
+   \[
+      O\bigl(B(D(q)+L)\bigr).
+   \]
+   The sampler metadata is
+   \[
+      \sum_{a}K_a
+   \]
+   child/no-op records plus the activation-pattern decoder.
+\end{lemma}
+
+\begin{proof}
+   For each realized activation pattern \(a\), take a feasible LP solution
+   \(\pi^a\) for \(\mathsf S_a\), and apply
+   \cref{lem:sampled-route-cohort} with active family \(A_a\), unresolved set
+   \(N_a\), and the same \(h_0,L\).  This gives a cohort \(M_a\) whose uniform
+   distribution is supported on active children and no-op records, has expected
+   child price at most \(4L\), and gives route mass at least \(h_0/2\) to every
+   point in \(N_a\).
+
+   Now fix \(q\in\Omega\), set \(a=a(q)\), and let
+   \(p\in E\setminus U_0\) satisfy \(\|p-q\|\le r\).  Then \(p\in N_a\) by the
+   definition of the activation-pattern near union.  A single sampled trial
+   from \(M_a\) therefore chooses a child containing \(p\) and succeeds inside
+   it with probability at least \(h_0/2\), with no-op records contributing
+   zero.  Independent trials fail with probability at most
+   \((1-h_0/2)^B\le e^{-Bh_0/2}\).  The expected child price in one trial is at
+   most \(4L\), so the expected work bound follows by linearity of expectation;
+   the constant \(4\) is absorbed in the \(O(\cdot)\) notation.  The metadata
+   bound is exactly one stored record per cohort entry.
+\end{proof}
+
 For ball, cap, affine-score, and Lipschitz-score filters with finitely many
 retained predicates, the active-child part of the signature is controlled by
 the same arrangement machinery as in \cref{lem:finite-activation-patterns}; the
@@ -2105,6 +2174,9 @@ signatures to the already-present activation decoder.
 materialization: for inverse-polylogarithmic \(h_0\), each feasible signature
 needs only a polylogarithmic cohort of child identifiers to implement its
 sampler, provided the signature itself is stored or decodable.
+\Cref{lem:activation-cohort-sampled-compiler} packages the activation-only
+case as a concrete retained object: one small cohort per activation pattern,
+with no real-valued sampler and no near-set coordinate at query time.
 
 \begin{lemma}[Certified cover with residual scan]\label{lem:cover-residual-scan}
    In the setting of \cref{lem:certified-cover-compiler}, suppose the stored
@@ -4583,6 +4655,10 @@ positive-probability seeded separator plus deterministic certification.
    can be implemented by a uniform cohort of
    \(\log^{O_c(1)}m\) child records whenever the target route mass is
    inverse-polylogarithmic; arbitrary real sampling vectors need not be stored.
+   In the activation-only case,
+   \cref{lem:activation-cohort-sampled-compiler} combines these two steps into
+   the retained object itself: one cohort per activation pattern, with no-op
+   records representing unused probability mass.
    By \cref{lem:guard-restricted-cover}, these active-power constraints need
    only range over the low-guard query domain; high-guard queries are handled by
    the resident sample.  By \cref{lem:finite-activation-patterns}, the
@@ -8223,6 +8299,9 @@ near-set coordinate at all.
 \Cref{lem:sampled-route-cohort} removes the next fractional artifact: once a
 signature LP is feasible, a polylogarithmic cohort of child identifiers
 implements its sampler with only constant-factor loss in price and route mass.
+\Cref{lem:activation-cohort-sampled-compiler} packages these two reductions
+into a directly stored activation-pattern sampler, with no-op records carrying
+the leftover subprobability mass.
 The guard refinement
 \cref{lem:low-guard-shadow} further removes points whose entire near-query
 neighborhood is already high-density: the finite dual now prices only the
