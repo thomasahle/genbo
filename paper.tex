@@ -2633,6 +2633,30 @@ index.
    storage.
 \end{proof}
 
+\begin{corollary}[Offline Pareto compression]\label{cor:offline-pareto-compression}
+   In the setting of \cref{lem:finite-pool-optimizer}, suppose the verifier
+   also reports the residual size, the active-power vector on the finite
+   query-pattern certificate, and the storage power of every accepted retained
+   family.  If at least one retained family is accepted, then unbounded
+   preprocessing can choose an accepted family minimizing any prescribed
+   function of these reported quantities.  In particular, for fixed residual
+   and active-power budgets it can choose a minimum-storage accepted cover, or
+   for fixed residual and storage budgets it can choose a cover minimizing the
+   worst certified active power.
+
+   The proposal pool, failed randomized attempts, rejected children, and the
+   search over retained subfamilies are not stored in the final data structure.
+   Only the chosen certified family contributes to index space and query time.
+\end{corollary}
+
+\begin{proof}
+   The set of possible retained families and residual blocks is finite.  Run
+   the deterministic verifier on every possibility, discard all rejected
+   possibilities, and optimize the prescribed objective over the remaining
+   finite set.  The final index contains only the selected retained family and
+   its decoder.
+\end{proof}
+
 By \cref{lem:guard-restricted-cover}, the finite verifier and the LPs below do
 not need to impose active-power constraints on high-guard queries.  For a fixed
 guard threshold $\gamma$, take $\mathcal Q$ to be a finite set of constraints
@@ -3139,6 +3163,12 @@ set is much larger, the same LP and dual are still useful as an offline
 certificate and separation diagnostic, but direct randomized materialization
 would not by itself preserve polylogarithmic overhead; one would then need an
 exact integral certificate or a sharper entropy-sensitive rounding theorem.
+By contrast, an exact integral search as in
+\cref{cor:offline-pareto-compression} pays no rounding factor at all.  Its
+pattern enumeration may be enormous, but that cost is purely preprocessing.
+Thus large pattern entropy is an obstacle only to proving an integral cover from
+a fractional LP with the rounding lemma above; it is not an index-size obstacle
+once an integral low-stabbing cover has been certified.
 
 \begin{lemma}[Linear score pattern entropy]\label{lem:linear-pattern-entropy}
    Let $\Omega\subseteq\R^k$, and let the activation predicates be
@@ -3245,8 +3275,11 @@ small stored cover, not an efficient Lloyd-style training algorithm.
    until the remaining residual has size at most
    $F_4(m,R)\log^{O_c(1)}m$, and that the retained family passes the displayed
    deterministic active-power and storage certificates.  Equivalently, by
-   \cref{lem:finite-pool-optimizer}, it is enough that a finite proposal pool
-   generated during preprocessing contains one cover passing these certificates.
+   \cref{lem:finite-pool-optimizer} and
+   \cref{cor:offline-pareto-compression}, it is enough that a finite proposal
+   pool generated during preprocessing contains one cover passing these
+   certificates; preprocessing may then choose the memory-minimal or
+   query-minimal accepted cover from that pool.
    By \cref{lem:guard-restricted-cover}, these active-power constraints need
    only range over the low-guard query domain; high-guard queries are handled by
    the resident sample.  By \cref{lem:finite-activation-patterns}, the
@@ -6831,7 +6864,14 @@ The more promising practical-theory interface is the score-cover variant:
 filters into deterministic certified covers with the same active-power
 accounting. Thus $k$-means is best viewed as an initializer or fallback for a
 recursive fixed-overlap angular score-filter tree, not as a worst-case theorem
-by itself.
+by itself.  Since preprocessing time is deliberately not a scarce resource,
+\cref{lem:finite-pool-optimizer} and
+\cref{cor:offline-pareto-compression} allow the build stage to enumerate,
+sample, or learn a huge proposal pool and then keep only the certified cover on
+the desired query-memory Pareto frontier.  The fractional LP and
+pattern-complete rounding remain useful proof devices, but their logarithmic
+rounding factor is not inherent to preprocessing: an exact integral certificate
+would pay no such index overhead.
 
 \paragraph{Structured posterior route.}
 \Cref{lem:posterior-superlevel-compiler} records the negative-moment identity suggested by the latest notes. \Cref{lem:explicit-enumeration-barrier} makes the coarse-child obstruction precise: the scale $\xi=m^{-1/(2c^2)}$ is the price of explicitly enumerating $B\simeq\xi^{-1}$ outcomes, not a geometric limit. \Cref{lem:oblivious-sparsification-barrier} adds the complementary warning that the moment bounds alone still permit $\Omega(\xi^{-1})$ disjoint possible witnesses, so direct random sparsification cannot replace structured decoding without an additional sensitivity theorem. \Cref{lem:scale-window-compiler} and \cref{lem:dyadic-structured-amplification} isolate the important arithmetic: if mass windows can be decoded output-sensitively, then $\xi^{-\rho}$ repetitions at each dyadic scale convert negative-moment value into constant hit probability, and summing all scales down to $1/m$ still fits the $m^\rho$ query budget. This scale-aware amplification is essential; a raw negative-moment diagnostic alone does not imply that the near point is actually listed with inverse-polylogarithmic probability.
