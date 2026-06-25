@@ -3517,6 +3517,90 @@ query time pays only for output-sensitive list decoding.
    statements are immediate.
 \end{proof}
 
+\begin{lemma}[Critical tilted-Gaussian sampled spectrum]
+   \label{lem:critical-tilted-gaussian-sampled-spectrum}
+   Fix \(c>1\), and put
+   \[
+      a_0=1-\frac1{c^2},
+      \qquad
+      \rho=\frac1{2c^2-1}.
+   \]
+   Let \(m\ge2\), \(L=\log m\), and choose a storage threshold \(T\) and query
+   tilt \(\beta\) by
+   \[
+      T^2=2(1-\rho)L,
+      \qquad
+      \beta=\frac{T}{a_0}.
+   \]
+   Consider the ideal continuous Gaussian filter family with base label
+   \(G\sim N(0,I_d)\), label intensity \(m\), and storage predicate
+   \[
+      A_G(x)=\mathbf 1\{\ip{G}{x}\ge T\}
+      \qquad(x\in\mathbb S^{d-1}).
+   \]
+   For a query \(q\), sample the filter label from the exponentially tilted
+   law \(G_q\sim N(\beta q,I_d)\).  Then the following spectrum bounds hold.
+   For every data point \(x\),
+   \[
+      m\,\Pr[\ip{G}{x}\ge T]\le m^\rho.
+      \tag{TG1}
+   \]
+   For every far pair with \(\ip{x}{q}\le0\),
+   \[
+      \Pr[\ip{G_q}{x}\ge T]\le m^{-(1-\rho)}.
+      \tag{TG2}
+   \]
+   For every near pair with \(\ip{p}{q}\ge a_0\),
+   \[
+      \Pr[\ip{G_q}{p}\ge T]\ge\frac12.
+      \tag{TG3}
+   \]
+   Thus the ideal sampled Gaussian spectrum has storage rate \(\rho\), sampled
+   far-separation rate \(1-\rho\), and constant near sampled mass at the
+   critical Euclidean normalization.
+\end{lemma}
+
+\begin{proof}
+   For a unit vector \(x\), \(\ip{G}{x}\sim N(0,1)\).  The elementary Gaussian
+   tail bound gives
+   \[
+      m\,\Pr[\ip{G}{x}\ge T]
+      \le m e^{-T^2/2}
+      =
+      m^\rho,
+   \]
+   proving \((TG1)\).
+
+   If \(\ip{x}{q}\le0\), then
+   \(\ip{G_q}{x}\sim N(\beta\ip{x}{q},1)\) has mean at most zero, so
+   \[
+      \Pr[\ip{G_q}{x}\ge T]\le e^{-T^2/2}=m^{-(1-\rho)},
+   \]
+   which is \((TG2)\).  If \(\ip{p}{q}\ge a_0\), then
+   \(\ip{G_q}{p}\sim N(\beta\ip{p}{q},1)\) has mean at least
+   \(\beta a_0=T\).  Therefore
+   \[
+      \Pr[\ip{G_q}{p}\ge T]\ge \Pr[N(T,1)\ge T]=\frac12,
+   \]
+   proving \((TG3)\).
+\end{proof}
+
+\begin{remark}[What the tilted-Gaussian spectrum supplies]
+   \label{rem:tilted-gaussian-spectrum}
+   \Cref{lem:critical-tilted-gaussian-sampled-spectrum} is not by itself a
+   finite index: a literal continuous filter family has no stored bucket for a
+   newly sampled \(G_q\).  Its role is to identify the exact spectrum that a
+   structured code, lattice, trellis, or product panel should emulate.  A
+   compact panel that realizes this Gaussian quadrature and supports sampling
+   from the query tilt would plug into
+   \cref{cor:gibbs-sampled-rate-bookkeeping}.  The calculation also explains
+   why sampling is potentially easier than reporting here: at the critical
+   normalization the query does not need to enumerate the
+   \(m^\rho\) active filters.  One tilted sample already lands in a near
+   filter with constant probability, while its expected far bucket size is
+   \(m^\rho\).
+\end{remark}
+
 \begin{remark}[Lattice Gaussian panels as sampled decoders]
    \label{rem:lattice-gaussian-panels}
    \Cref{prop:sampled-structured-panel} is the sampler analogue of the
@@ -12372,6 +12456,12 @@ checkable by a positive tilted-moment margin: under the query Gibbs law, the
 storage score of the near point must have a first exponential moment just above
 the storage threshold and a controlled second moment.  Thus the sampled
 lattice/code route is reduced to three block partition-function estimates.
+\Cref{lem:critical-tilted-gaussian-sampled-spectrum} computes the ideal
+continuous target at the critical Euclidean normalization: an intensity-\(m\)
+Gaussian filter family with query tilt \(N(\beta q,I)\) has storage rate
+\(\rho_c\), sampled far-separation rate \(1-\rho_c\), and constant near sampled
+mass.  A compact code or lattice sampler would be a finite quadrature for this
+calculation.
 \Cref{rem:outer-list-recovery-codebook} records the stronger alternative
 suggested by list-decoding codes and lattices: instead of decoding the full
 Cartesian product, retain a sparse outer code or lattice coset and use soft
