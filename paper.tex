@@ -2383,6 +2383,112 @@ convergence of Lloyd's objective; it is a statement that every tame node exposes
 enough residual weight on certifiable low-stabbing caps, or else the guard or
 baseline score process handles the query.
 
+\begin{lemma}[Weak residual-cover compiler]\label{lem:weak-residual-cover}
+   Let $P$ be finite with weights $a_x>0$, and let
+   $a(U)=\sum_{x\in U}a_x$.  Consider the following abstract residual-cover
+   procedure.  At round $t$, with uncovered set $U_t$, draw $T$ independent
+   samples from $U_t$ with probabilities $a_x/a(U_t)$, generate the
+   corresponding cap or score-filter proposals, and keep only the proposals
+   accepted by a deterministic verifier.  Accepted proposals may cover any
+   subsets of $U_t$, and covered points are removed before the next round.
+
+   Suppose that for some $\alpha,\varepsilon\in(0,1)$ the following weak
+   residual condition holds at every possible round: whenever
+   $a(U_t)>\varepsilon a(P)$, there is a set $A_t\subseteq U_t$ with
+   \[
+      a(A_t)\ge\alpha a(U_t)
+   \]
+   such that every sample $x\in A_t$ generates an accepted proposal covering
+   all of $A_t$.  If
+   \[
+      H\ge \alpha^{-1}\log\frac1\varepsilon,
+      \qquad
+      T\ge \alpha^{-1}\log\frac{H}{\delta},
+   \]
+   then after $H$ rounds the uncovered mass is at most
+   $\varepsilon a(P)$ with probability at least $1-\delta$.
+\end{lemma}
+
+\begin{proof}
+   Fix a round with $a(U_t)>\varepsilon a(P)$.  By the weak residual
+   condition, one draw lands in $A_t$ with probability at least $\alpha$.
+   Hence the probability that none of the $T$ samples lands in $A_t$ is at most
+   \[
+      (1-\alpha)^T\le e^{-\alpha T}\le\frac{\delta}{H}.
+   \]
+   On the complementary event, the verifier accepts a proposal covering all of
+   $A_t$, so
+   \[
+      a(U_{t+1})\le a(U_t)-a(A_t)\le(1-\alpha)a(U_t).
+   \]
+   A union bound over the $H$ rounds shows that, with probability at least
+   $1-\delta$, every nonterminal round decreases residual mass by this factor.
+   Therefore either the process has already reached
+   $a(U_t)\le\varepsilon a(P)$, or after $H$ successful rounds
+   \[
+      a(U_H)\le(1-\alpha)^H a(P)
+      \le e^{-\alpha H}a(P)
+      \le \varepsilon a(P).
+   \]
+\end{proof}
+
+Combining \cref{lem:residual-cap-seeding} with
+\cref{lem:weak-residual-cover} gives the precise analyzable replacement for
+Lloyd iterations.  If every residual with nonnegligible mass contains an
+$\alpha$-heavy low-diameter cap whose verified filter has acceptable radius,
+storage increment, and marginal active-power increment, then residual sampling
+constructs the local cover after
+\[
+   O\!\left(
+      \alpha^{-2}\log\frac1\varepsilon
+      \log\frac{\alpha^{-1}\log(1/\varepsilon)}{\delta}
+   \right)
+\]
+verified proposals.  Thus inverse-polylogarithmic weak cap mass gives only
+polylogarithmic preprocessing overhead.  The real geometric statement needed
+for \cref{asm:power-cover} is now sharper: prove this weak residual condition
+for the active-power verifier, not convergence of the Lloyd objective.
+
+The same viewpoint separates build time from the theorem's two scarce
+resources, index space and query time.  A proposal may be expensive to find and
+expensive to certify; if it is not stored, it contributes nothing to either
+resource.
+
+\begin{lemma}[Offline proposal amplification]\label{lem:offline-amplification}
+   Fix deterministic predicates $\mathcal P(L,S)$ certifying that a stored
+   cover is routing-correct, has active query power at most $L$ for every
+   query in the promised node, and has storage power at most $S$.  Suppose a
+   randomized preprocessing routine outputs such a certified cover with
+   probability at least $p$, and otherwise either rejects or outputs a cover
+   that fails the certificate and is discarded.  After $B$ independent offline
+   attempts, keeping the first certified cover succeeds with probability at
+   least
+   \[
+      1-(1-p)^B .
+   \]
+   Conditional on success, the query and storage bounds are exactly those of
+   the single retained certified cover; rejected proposals and failed attempts
+   do not affect the index.
+\end{lemma}
+
+\begin{proof}
+   The probability that all $B$ independent attempts fail to produce a certified
+   cover is at most $(1-p)^B$.  On the complementary event, the data structure
+   stores one cover satisfying $\mathcal P(L,S)$.  Query time and storage are
+   functions only of this retained cover and its certificate, not of the
+   discarded build-time proposals.
+\end{proof}
+
+Thus for modern regimes where preprocessing compute is relatively cheap, the
+right theoretical target is even cleaner: generate a very large candidate pool
+by residual sampling, all data directions, medoids, pair directions, or learned
+scores; solve the active-power assignment problem as accurately as desired; and
+store only a cover that passes the deterministic certificate.  Expensive build
+time can amplify small discovery probabilities or replace greedy assignment by
+exact integer programming over the candidate pool.  What remains for the
+polylogarithmic ANN theorem is an existence-and-certification statement for a
+small stored cover, not an efficient Lloyd-style training algorithm.
+
 \subsection{Simplicity and implementation}
 
 The filtering work remains level-synchronous. At one checkpoint, all active score paths can be advanced by a batched matrix multiplication, followed by continuation-mass pruning, cap-test lookup, randomized child thinning, and resident scans. Recentering updates stored coordinate offsets; it does not start a fresh score tree.
