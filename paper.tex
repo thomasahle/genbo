@@ -1859,6 +1859,48 @@ load
    scan or recursive call finds a valid answer.  The work bound is unchanged.
 \end{proof}
 
+\begin{lemma}[Middle-density singleton obstruction]
+   \label{lem:middle-density-singleton-obstruction}
+   Fix $\rho<1/2$ and any polylogarithmic factor $L(m)$.  There are
+   bounded-diameter nodes and low-guard queries for which retaining every
+   exposed point as a certified singleton child has active power polynomially
+   larger than $F_4(m,R)$.
+\end{lemma}
+
+\begin{proof}
+   Let
+   \[
+      s=\left\lfloor \frac{m^{1-\rho}}{2L(m)}\right\rfloor .
+   \]
+   Put $s$ data points in an arbitrarily small ball around a query point $q$,
+   and put the remaining points at distance greater than $cr$ from $q$ but
+   still inside a parent ball of radius $R=O_c(r)$.  Then
+   \[
+      g(q)=\frac1m|\{x:\|x-q\|\le cr\}|
+      \le \frac{m^{-\rho}}{2L(m)},
+   \]
+   so $q$ lies in the low-guard domain for threshold
+   $\gamma=m^{-\rho}/L(m)$.
+
+   A singleton child has certified radius $0$ and weight
+   $1^\rho\Psi(0)=1$.  If every exposed singleton within distance $r$ of $q$
+   is activated, the active power at $q$ is at least $s$.  Since
+   $R=O_c(r)$, $F_4(m,R)=\Theta_c(m^\rho)$.  Thus
+   \[
+      \frac{s}{F_4(m,R)}
+      \ge
+      m^{1-2\rho}\log^{-O_c(1)}m,
+   \]
+   which is polynomially large when $\rho<1/2$.
+\end{proof}
+
+Consequently, the low-guard refinement is not by itself a sparse range-reporting
+theorem.  Free preprocessing can enumerate singleton proposals and exact
+residual covers, but the retained index still needs a selective activation rule,
+a route-value allocation, or a posterior/rank-prefix reporter that avoids
+listing every valid point in the middle-density regime
+$m^\rho\ll |P\cap\Ball(q,cr)|\ll m^{1-\rho}$.
+
 This also gives a safe way to use an empirical cover such as $k$-means without
 claiming that Lloyd's objective proves anything. At a node, store an arbitrary
 certified cover together with a capped decoder. On query $q$, the decoder either
