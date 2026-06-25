@@ -2013,21 +2013,22 @@ chosen memberships $(x,i)$, define the covered near-pair weight
    value.
 \end{proof}
 
-This is a sharper objective than a centroid-distance margin rule: an extra
+This is a sharper diagnostic than a centroid-distance margin rule: an extra
 membership only receives credit for near pairs that are still missed by the
-current redundancy pattern. Dense interior points therefore stop consuming
-replication budget once their near pairs are already covered, while isolated
-boundary points can still be selected if they explain many remaining misses.
-\Cref{lem:cost-sensitive-near-pair-cover} is the finite-cost version: in one
-assignment phase, freeze or dyadically bucket the marginal power costs and add
-memberships by uncovered near-pair gain per unit power cost.
+current redundancy pattern.  For the recursive proof, however, a uniform
+top-$a$ overlap is often the cleaner default.  It gives an exact storage
+budget, regular memory layout, and a simple boundary-redundancy knob.  The
+greedy lemma is useful when reallocating a fixed candidate pool, but the
+quantity it optimizes should be read as an audit of uncovered near-pair
+coverage, not as a reason to trust Lloyd's objective.
 
-A practical ``power-cover Lloyd'' iteration would alternate this coverage or
-power-cost assignment step with a center update that reduces certified radii and
-inflated stabbing, approximately a one-center or quantile-radius objective, not
-the Euclidean mean alone. Its assignment score for adding point $x$ to filter
-$i$ is the marginal uncovered near-pair weight divided by the marginal storage
-and stabbing power
+If one nevertheless pursues an additive ball cover, the theory suggests a
+``power-cover Lloyd'' iteration that alternates this coverage or power-cost
+assignment step with a center update reducing certified radii and inflated
+stabbing.  The update is closer to a one-center or quantile-radius objective
+than to the Euclidean mean.  Its assignment score for adding point $x$ to
+filter $i$ is the marginal uncovered near-pair weight divided by the marginal
+storage and stabbing power
 \[
    \Delta_i(x)
    =
@@ -2037,12 +2038,14 @@ and stabbing power
    |P_i|^{1+\rho}\Psi(R_i),
 \]
 with analogous query-side power penalties when sampled queries already stab
-many filters. The radius term suggests a concrete way to beat plain $k$-means:
-peel or replicate points whose inclusion greatly expands a certified ball
-instead of allowing one outlier to enlarge the query region of an entire
-cluster. Proving an $n^\rho\polylog n$ worst-case power-stabbing cover would be
-another route to the final theorem; empirically, it is a plausible way to beat
-plain $k$-means while staying aligned with the score-and-ball potential.
+many filters.  The radius term explains what ordinary $k$-means misses: a point
+whose inclusion expands a certified ball should be peeled or replicated rather
+than allowed to enlarge the query region of an entire cluster.  But this
+additive-ball objective is not the preferred final target.  In concentrated
+high-dimensional nodes the inflated regions $B(o_i,R_i+r)$ may blanket almost
+all plausible queries, and then \cref{lem:balanced-fanout-obstruction} predicts
+non-contraction no matter how the memberships are reallocated.  The selective
+replacement is the score-filter formulation below.
 
 Concretely, one implementation target is the following certified-cover
 analogue of Lloyd iteration.
@@ -2074,14 +2077,16 @@ penalizes the two quantities that enter the recursive proof: the radius
 inflation caused by assignments and the number of expensive filters stabbed by
 a query. The capped query rule keeps the construction safe as a heuristic
 accelerator even before the uniform power-cover theorem is proved.
-\Cref{prop:power-cover-polylog} is the exact theorem this objective should try
-to instantiate. It avoids the branching score-frontier obstruction of
+\Cref{prop:power-cover-polylog} is the exact theorem an additive cover would
+have to instantiate. It avoids the branching score-frontier obstruction of
 \cref{asm:mixed-continuation-operator}; the missing content is instead a
 worst-case decodable cover theorem for the inflated-ball power-stabbing
 objective. \Cref{lem:balanced-fanout-obstruction} explains why this is not
 ordinary balanced $k$-means: a recursive proof cannot afford a query to stab
 several comparable children. It needs either very low stabbing, highly skewed
-almost-total splits, or randomized thinning as in \cref{lem:thin-cap-contraction}.
+almost-total splits, randomized thinning as in
+\cref{lem:thin-cap-contraction}, or a more selective activation rule than an
+inflated ball.
 
 The same point suggests a more selective replacement for $k$-means than another
 centroid objective.  The weakness of a certified ball cover is that correctness
@@ -2169,20 +2174,91 @@ whether a near query must activate the filter.
    displayed sums are exactly the active query and storage potentials.
 \end{proof}
 
-This lemma contains both certified ball covers and cap covers.  Taking
+\begin{lemma}[Shell-normalized cap cover]\label{lem:shell-normalized-cap-cover}
+   Fix a center $o$ and a lower shell radius $\sigma>0$.  For
+   $\|x-o\|\ge\sigma$, write
+   \[
+      \widehat x_o=\frac{x-o}{\|x-o\|}.
+   \]
+   Suppose each filter has a certified recursive ball $(P_i,o_i,R_i)$,
+   a unit direction $u_i$, and a threshold $\theta_i$, with
+   \[
+      P_i\subseteq \Ball(o_i,R_i)
+      \cap
+      \{x:\|x-o\|\ge\sigma,\ \langle u_i,\widehat x_o\rangle\ge\theta_i\},
+      \qquad
+      \bigcup_iP_i=P .
+   \]
+   For a query $q$ with $\|q-o\|\ge\sigma$, list every filter satisfying
+   \[
+      \langle u_i,\widehat q_o\rangle
+      \ge
+      \theta_i-\frac{2r}{\sigma}.
+   \]
+   If the listed filters obey
+   \[
+      \sum_{i:\langle u_i,\widehat q_o\rangle\ge\theta_i-2r/\sigma}
+      |P_i|^\rho\Psi(R_i)\le L,
+      \qquad
+      \sum_i |P_i|^{1+\rho}\Psi(R_i)\le S_0,
+   \]
+   then the cover compiler of \cref{lem:certified-cover-compiler} applies with
+   query work $O(L\polylog n)$ and storage $O(S_0\polylog n)$.
+\end{lemma}
+
+\begin{proof}
+   For points outside $\Ball(o,\sigma)$, the normalization map is
+   $2/\sigma$-Lipschitz:
+   \[
+      \left\|
+      \frac{x-o}{\|x-o\|}
+      -
+      \frac{q-o}{\|q-o\|}
+      \right\|
+      \le
+      \frac{2\|x-q\|}{\sigma}.
+   \]
+   Hence, if $p\in P_i$ and $\|p-q\|\le r$, then
+   \[
+      \langle u_i,\widehat q_o\rangle
+      \ge
+      \langle u_i,\widehat p_o\rangle-\frac{2r}{\sigma}
+      \ge
+      \theta_i-\frac{2r}{\sigma}.
+   \]
+   Thus the query lists a certified child containing the near point, and the
+   work and storage accounting is the same as in
+   \cref{lem:certified-cover-compiler}.
+\end{proof}
+
+These score-cover lemmas contain both certified ball covers and cap covers.  Taking
 $\phi_i(x)=-\|x-o_i\|$ and $\theta_i=-R_i$ gives the ordinary inflated-ball
 rule $\|q-o_i\|\le R_i+r$, which is the worst-case-safe interpretation of a
 $k$-means cell.  Taking $\phi_i(x)=\langle u_i,x\rangle$ gives
-\cref{lem:cap-slack-cover}.  The theory-native alternative to $k$-means is
-therefore to learn filters whose scores are much more selective than distance
-to a center, while retaining the same Lipschitz slack certificate.
+\cref{lem:cap-slack-cover}.  \Cref{lem:shell-normalized-cap-cover} gives the
+formal version of the empirical observation that, after local centering and
+shelling, Euclidean $k$-means behaves much like an angular quantizer: if the
+norms are nearly constant, nearest-center ranking differs from ranking by
+linear or normalized-cap scores only by lower-order radial terms.  Thus
+$k$-means can initialize the directions, but the certificate should be stated
+for overlapping cap or Lipschitz-score filters.
 
-Thus a theory-native practical alternative is a power-filter Lloyd iteration
-rather than ordinary Lloyd iteration.  Its simplest filters are spherical caps
-after local centering or whitening, but \cref{lem:lipschitz-score-cover} also
-allows learned or anisotropic Lipschitz scores.  The assignment step should add
-point--filter memberships by uncovered near-pair value divided by the marginal
-increase in
+The theory-native alternative to $k$-means is therefore not a different
+centroid objective alone.  It is a fixed-overlap score-filter tree: learn
+directions or Lipschitz scores whose active sets are selective, store each
+point in its top $a$ filters, and recurse only through filters passing the
+slack certificate.  Redundancy amplifies a good partition, but it cannot
+replace selectivity; the active-power cap is the proof-side test of whether the
+learned router is useful at a node.
+
+Thus a theory-native practical alternative is a cap-power or score-power
+iteration rather than ordinary Lloyd iteration.  Its simplest filters are
+spherical caps after local centering, shell normalization, or whitening, but
+\cref{lem:lipschitz-score-cover} also allows learned or anisotropic Lipschitz
+scores.  The default assignment is fixed top-$a$ membership by score, with the
+threshold $\theta_i$ set to the worst retained score or to a certified peeled
+quantile.  If additional adaptive memberships are allowed, they should be
+chosen by uncovered near-pair value divided by the marginal increase in
 \[
    |P_i|^{1+\rho}\Psi(R_i)
    \quad\text{and}\quad
@@ -2192,34 +2268,35 @@ increase in
 \]
 while the update step should move the score parameters and the certified ball
 $(o_i,R_i)$ to reduce query stabbing and child radius.  This objective can beat
-$k$-means on instances where directional or learned scores are selective but
-inflated balls are not: the query probes filters aligned with its score
+plain $k$-means on instances where directional or learned scores are selective
+but inflated balls are not: the query probes filters aligned with its score
 direction, instead of every cluster whose enclosing ball lies within additive
 distance $r$.
 
 A concrete version is the balanced cap-power filter.  In a localized node,
-first center, and optionally whiten, the data.  Choose directions
-$u_1,\ldots,u_K$ and offsets $\theta_i$ so that the retained caps
+first center, shell, and optionally whiten the data.  Choose directions
+$u_1,\ldots,u_K$ and offsets $\theta_i$ so that the retained normalized caps
 \[
-   P_i=\{x\in P:\langle u_i,x\rangle\ge\theta_i\}
+   P_i=\{x\in P:\langle u_i,\widehat x_o\rangle\ge\theta_i\}
 \]
 have controlled masses, then attach to each retained cap its certified
 recursive ball $(o_i,R_i)$.  A point may be stored in several caps; the
-membership rule is not nearest-center assignment but marginal uncovered
-near-pair value per marginal storage and stabbing power.  A query lists the
-caps with
+regular default is its top-$a$ caps, with optional greedy additions only when
+they buy uncovered near-pair value per marginal storage and stabbing power.
+A query lists the caps with
 \[
-   \langle u_i,q\rangle\ge\theta_i-r
+   \langle u_i,\widehat q_o\rangle\ge\theta_i-\frac{2r}{\sigma}
 \]
-or, in the more general Lipschitz case,
+where $\sigma$ is the lower shell radius, or, in the more general Lipschitz case,
 $\phi_i(q)\ge\theta_i-L_i r$.  The offsets play the balancing role that
 $k$-means cell sizes play in practice, while the cap scores supply the
 selectivity that inflated balls lose on concentrated high-dimensional data.
-Flat scoring against all $K$ filters can be replaced by a recursive or
-product-code decoder; the certificate above only concerns the filters that the
-decoder actually lists.  Thus ordinary $k$-means becomes an initializer or
-fallback, while the proof-aligned object is a balanced overlapping score cover
-whose measured quantity is active power, not squared reconstruction error.
+Flat scoring against all $K$ filters can be replaced by a recursive spherical
+tree or product-code decoder; the certificate above only concerns the filters
+that the decoder actually lists.  Thus ordinary $k$-means becomes an
+initializer or fallback, while the proof-aligned object is a balanced
+overlapping score cover whose measured quantity is active power, not squared
+reconstruction error.
 
 \subsection{Simplicity and implementation}
 
@@ -3767,6 +3844,78 @@ This certificate is the local form of the remaining problem. It is analogous in 
    \cref{cor:route-law-prefix-energy}, applied to the optimal root law.
 \end{proof}
 
+\begin{lemma}[Harmonic and saturated values differ only by depth]\label{lem:harmonic-saturated-comparison}
+   Fix a finite route trie with edge probabilities $\gamma_{u,w}\in[0,1]$.
+   Let $U$ be the saturated value from
+   \cref{lem:saturated-value-recursion}, let $W$ be the harmonic route value
+   from \cref{lem:optimal-prefix-energy-law}, and let $h(u)$ be the maximum
+   number of edges from $u$ to a descendant leaf. Then, for every node $u$,
+   \[
+      \frac{U(u)}{h(u)+1}\le W(u)\le U(u).
+   \]
+   Consequently, if every route has length at most $H$ and
+   $U(\varnothing)\ge p$, then the optimal prefix-energy route law has
+   \[
+      \mathcal E_2(\Lambda\|A)
+      \le
+      \frac{H+1}{p}.
+   \]
+   In particular, on polylogarithmic-depth route tries, the harmonic-value
+   target and the saturated min-cut target are equivalent up to a
+   polylogarithmic factor.
+\end{lemma}
+
+\begin{proof}
+   The upper bound is by induction. At leaves equality holds. At an internal
+   node, the induction hypothesis gives
+   \[
+      \sum_w\gamma_{u,w}W(w)
+      \le
+      \sum_w\gamma_{u,w}U(w).
+   \]
+   Since $x/(1+x)\le\min\{1,x\}$ for $x\ge0$,
+   \[
+      W(u)
+      =
+      \frac{\sum_w\gamma_{u,w}W(w)}
+           {1+\sum_w\gamma_{u,w}W(w)}
+      \le
+      \min\left\{1,\sum_w\gamma_{u,w}U(w)\right\}
+      =
+      U(u).
+   \]
+
+   For the lower bound, the leaf case is again equality. At an internal node,
+   put
+   \[
+      x=\sum_w\gamma_{u,w}U(w),
+      \qquad
+      h=h(u).
+   \]
+   Each child has $h(w)+1\le h$, so the induction hypothesis gives
+   \[
+      \sum_w\gamma_{u,w}W(w)
+      \ge
+      \frac{x}{h}.
+   \]
+   Therefore
+   \[
+      W(u)\ge \frac{x/h}{1+x/h}=\frac{x}{h+x}.
+   \]
+   If $x\le1$, then $U(u)=x$ and
+   \[
+      \frac{x}{h+x}\ge\frac{x}{h+1}=\frac{U(u)}{h(u)+1}.
+   \]
+   If $x\ge1$, then $U(u)=1$ and
+   \[
+      \frac{x}{h+x}\ge\frac1{h+1}=\frac{U(u)}{h(u)+1}.
+   \]
+
+   The energy statement follows because
+   $\mathcal E_2(\Lambda\|A)=1/W(\varnothing)$ for the optimal law from
+   \cref{lem:optimal-prefix-energy-law}.
+\end{proof}
+
 \begin{corollary}[Cutset value delivery]\label{cor:cutset-value-delivery}
    In the setting of \cref{cor:fractional-value-delivery}, suppose every
    route has length at most $H$ and every route cut $\mathcal C$ in the
@@ -4046,7 +4195,8 @@ This certificate is the local form of the remaining problem. It is analogous in 
    underfunded geometric opportunity is visible through the local sum
    $\sum_w\gamma_{u,w}W(w)$. Thus a fully explicit sufficient target is to
    prove inverse-polylogarithmic harmonic value at the root of the tame-route
-   trie.
+   trie. By \cref{lem:harmonic-saturated-comparison}, this is equivalent to
+   the saturated min-cut target up to the polylogarithmic route depth.
 \end{remark}
 
 \begin{remark}[The remaining aggregate value target]\label{rem:value-delivery-target}
@@ -4090,11 +4240,13 @@ This certificate is the local form of the remaining problem. It is analogous in 
    \cref{lem:saturated-value-mincut}, prove that the saturated value
    $U(\varnothing)$ of the tame-route trie is inverse-polylogarithmic, or that
    every route cut has inverse-polylogarithmic prefix-success mass. This is the
-   form used in \cref{asm:aggregate-value-delivery}. The stronger but more
-   constructive sufficient condition is the harmonic value
+   form used in \cref{asm:aggregate-value-delivery}. An equivalent
+   computable sufficient condition, up to the route-depth factor, is the
+   harmonic value
    $W(\varnothing)$ from \cref{lem:optimal-prefix-energy-law}: it directly
-   optimizes the prefix-energy route law and implies the saturated-value
-   condition by \cref{cor:route-law-prefix-energy}.
+   optimizes the prefix-energy route law and is within a factor
+   $H+1$ of the saturated value by
+   \cref{lem:harmonic-saturated-comparison}.
 \end{remark}
 
 \begin{assumption}[Saturated fractional value delivery]\label{asm:aggregate-value-delivery}
@@ -5524,14 +5676,22 @@ The continuation-mass spherical decoder is proved in \cref{lem:continuation-work
 \paragraph{Certified-cover route.}
 \Cref{lem:certified-cover-compiler} abstracts the empirical $k$-means
 multi-assignment mechanism as an overlapping certified filter cover. This gives
-a deterministic routing guarantee by triangle inequality, but a flat cover can
-be circular unless its children are genuinely smaller. The stronger
-\cref{asm:power-cover} is the theory-native replacement target: construct a
-query-decodable cover whose inflated-ball power stabbing contracts by
-$1-\Theta(\eta^2)$ and whose storage power does not grow. Conditional on that
-cover theorem, \cref{prop:power-cover-polylog} gives the desired
-polylogarithmic ANN bound. Thus $k$-means is best viewed as an initializer for a
-power-stabbing cover objective, not as a worst-case theorem by itself.
+a deterministic routing guarantee by triangle inequality, but a flat
+inflated-ball cover can be circular unless its children are genuinely smaller
+and can be useless on concentrated high-dimensional nodes where most inflated
+balls are stabbed. The stronger \cref{asm:power-cover} is the additive-cover
+target: construct a query-decodable cover whose inflated-ball power stabbing
+contracts by $1-\Theta(\eta^2)$ and whose storage power does not grow.
+Conditional on that cover theorem, \cref{prop:power-cover-polylog} gives the
+desired polylogarithmic ANN bound.
+
+The more promising practical-theory interface is the score-cover variant:
+\cref{lem:cap-slack-cover}, \cref{lem:lipschitz-score-cover}, and
+\cref{lem:shell-normalized-cap-cover} turn overlapping cap or Lipschitz-score
+filters into deterministic certified covers with the same active-power
+accounting. Thus $k$-means is best viewed as an initializer or fallback for a
+recursive fixed-overlap angular score-filter tree, not as a worst-case theorem
+by itself.
 
 \paragraph{Structured posterior route.}
 \Cref{lem:posterior-superlevel-compiler} records the negative-moment identity suggested by the latest notes. \Cref{lem:explicit-enumeration-barrier} makes the coarse-child obstruction precise: the scale $\xi=m^{-1/(2c^2)}$ is the price of explicitly enumerating $B\simeq\xi^{-1}$ outcomes, not a geometric limit. \Cref{lem:oblivious-sparsification-barrier} adds the complementary warning that the moment bounds alone still permit $\Omega(\xi^{-1})$ disjoint possible witnesses, so direct random sparsification cannot replace structured decoding without an additional sensitivity theorem. \Cref{lem:scale-window-compiler} and \cref{lem:dyadic-structured-amplification} isolate the important arithmetic: if mass windows can be decoded output-sensitively, then $\xi^{-\rho}$ repetitions at each dyadic scale convert negative-moment value into constant hit probability, and summing all scales down to $1/m$ still fits the $m^\rho$ query budget. This scale-aware amplification is essential; a raw negative-moment diagnostic alone does not imply that the near point is actually listed with inverse-polylogarithmic probability.
