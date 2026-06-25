@@ -2572,6 +2572,101 @@ resource.
    storage.
 \end{proof}
 
+\begin{lemma}[Finite-pool fractional dual]\label{lem:finite-pool-dual}
+   Fix a finite set $\mathcal Q$ of query constraints and a finite proposal pool
+   $\mathcal C$ of certified children.  A child $C\in\mathcal C$ consists of a
+   point set $P_C\subseteq P$, a certified radius $R_C$, and an activation rule
+   on $\mathcal Q$.  Write
+   \[
+      a_C(q)=\mathbf 1\{C\text{ is active at }q\},
+      \qquad
+      w_C=|P_C|^\rho\Psi(R_C),
+      \qquad
+      s_C=|P_C|^{1+\rho}\Psi(R_C).
+   \]
+   For budgets $L_q$, $S$, and $L_0$, consider the fractional cover value
+   \[
+   \begin{array}{ll}
+   \text{\rm maximize} & \displaystyle \sum_{x\in P} v_x \\[0.4em]
+   \text{\rm subject to}
+      & \displaystyle
+        v_x\le \sum_{C:x\in P_C} z_C
+        \qquad (x\in P),\\[0.8em]
+      & 0\le v_x\le1,\qquad z_C\ge0,\\[0.4em]
+      & \displaystyle
+        \sum_C a_C(q)w_Cz_C\le L_q
+        \qquad (q\in\mathcal Q),\\[0.8em]
+      & \displaystyle
+        \sum_C s_Cz_C\le S .
+   \end{array}
+   \tag{$\mathsf{P}_{\mathcal Q}$}
+   \]
+   If $\mathsf{P}_{\mathcal Q}$ has value $< |P|-L_0$, then there exist
+   point prices $\alpha_x\in[0,1]$, query prices $\lambda_q\ge0$, and a storage
+   price $\sigma\ge0$ such that
+   \[
+      \sum_{x\in P}\alpha_x
+      >
+      L_0+\sum_{q\in\mathcal Q}\lambda_qL_q+\sigma S,
+      \tag{D1}
+   \]
+   while every proposal satisfies
+   \[
+      \sum_{x\in P_C}\alpha_x
+      \le
+      \sigma s_C+
+      w_C\sum_{q\in\mathcal Q} \lambda_q a_C(q).
+      \tag{D2}
+   \]
+   Conversely, if such prices do not exist, then the fractional pool contains a
+   cover of value at least $|P|-L_0$ under the displayed query and storage
+   budgets.
+\end{lemma}
+
+\begin{proof}
+   The dual of $\mathsf{P}_{\mathcal Q}$ has variables $\alpha_x\ge0$ for the
+   constraints $v_x\le\sum_{C:x\in P_C}z_C$, variables $\mu_x\ge0$ for
+   $v_x\le1$, query variables $\lambda_q\ge0$, and storage variable
+   $\sigma\ge0$.  It is
+   \[
+   \begin{array}{ll}
+   \text{\rm minimize}
+      & \displaystyle
+        \sum_{x\in P}\mu_x
+        +\sum_{q\in\mathcal Q}\lambda_qL_q+\sigma S\\[0.8em]
+   \text{\rm subject to}
+      & \alpha_x+\mu_x\ge1
+        \qquad (x\in P),\\[0.4em]
+      & \displaystyle
+        \sum_{x\in P_C}\alpha_x
+        \le
+        \sigma s_C+
+        w_C\sum_{q\in\mathcal Q}\lambda_q a_C(q)
+        \qquad (C\in\mathcal C).
+   \end{array}
+   \]
+   Since the primal is feasible and bounded, strong duality applies.  In an
+   optimal dual solution we may assume $0\le\alpha_x\le1$ and
+   $\mu_x=1-\alpha_x$.  Therefore the dual objective is
+   \[
+      |P|-\sum_x\alpha_x+
+      \sum_{q\in\mathcal Q}\lambda_qL_q+\sigma S .
+   \]
+   Having primal value below $|P|-L_0$ is exactly the existence of a dual
+   feasible solution for which this objective is below $|P|-L_0$, which is
+   equivalent to \((D1)\).  The remaining dual constraints are precisely
+   \((D2)\).  The converse is the same duality implication read backward.
+\end{proof}
+
+The dual gives a concrete way to attack the remaining geometric problem.  A
+failure of the finite fractional cover produces a weighted residual set
+$\alpha$, a query-load distribution $\lambda$, and a storage price $\sigma$ such
+that every certified proposal has less $\alpha$-mass than its charged storage
+and query footprint.  Thus the desired local theorem can be phrased without any
+reference to Lloyd dynamics: for a rich enough proposal pool, rule out all
+price systems satisfying \((D1)\)--\((D2)\), then use the offline optimizer and
+deterministic verifier to retain only a low-stabbing cover.
+
 Thus for modern regimes where preprocessing compute is relatively cheap, the
 right theoretical target is even cleaner: generate a very large candidate pool
 by residual sampling, all data directions, medoids, pair directions, or learned
