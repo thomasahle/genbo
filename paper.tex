@@ -2510,6 +2510,12 @@ The same viewpoint separates build time from the theorem's two scarce
 resources, index space and query time.  A proposal may be expensive to find and
 expensive to certify; if it is not stored, it contributes nothing to either
 resource.
+In the offline cover route below, preprocessing time is therefore not a
+complexity parameter.  It may be superpolynomial in the local node size, may
+solve exact integer or fractional programs, and may try many randomized or
+learned proposal generators.  The stated ANN bounds count only the certified
+children, residual scans, and decoder operations that remain in the final
+index.
 
 \begin{lemma}[Offline proposal amplification]\label{lem:offline-amplification}
    Fix deterministic predicates $\mathcal P(L,S)$ certifying that a stored
@@ -2765,6 +2771,57 @@ not need this enumeration to be efficient: after the certificate is accepted,
 the query algorithm only evaluates its ordinary decoder and pays for the listed
 children.
 
+\begin{lemma}[Atom-safe subchild separation]\label{lem:atom-safe-subchild}
+   Fix finite query-pattern budgets $L_q>0$ and a storage budget $S>0$.  Let
+   $C$ be any certified child with point set $P_C$, radius $R_C$, and activation
+   vector $a_C(q)$ on the finite query set.  Write
+   \[
+      \Lambda_C=\sum_q\lambda_q a_C(q),
+      \qquad
+      \psi_C=\Psi(R_C).
+   \]
+   A subchild $D\subseteq P_C$ inherits the same radius and activation rule and
+   has weights
+   \[
+      w_D=|D|^\rho\psi_C,
+      \qquad
+      s_D=|D|^{1+\rho}\psi_C .
+   \]
+   It is atom-safe if
+   \[
+      a_C(q)w_D\le L_q\quad(q\in\mathcal Q),
+      \qquad
+      s_D\le S .
+   \]
+   For fixed dual prices $(\alpha,\lambda,\sigma)$, the maximum reduced gain
+   over all atom-safe subchildren of $C$ is obtained by sorting the points of
+   $P_C$ in decreasing order of $\alpha_x$ and trying the prefixes of all
+   atom-safe cardinalities.
+\end{lemma}
+
+\begin{proof}
+   Any $D\subseteq P_C$ remains certified because the ball and score
+   constraints are hereditary under taking subsets.  For a subchild of
+   cardinality $k$, the non-point part of the reduced gain is fixed:
+   \[
+      -\sigma k^{1+\rho}\psi_C
+      -
+      k^\rho\psi_C\Lambda_C .
+   \]
+   Thus, among all subchildren of size $k$, the one maximizing reduced gain is
+   exactly the set of the $k$ largest point prices $\alpha_x$ inside $P_C$.
+   The atom-safety constraints also depend only on $k$, $R_C$, and the activation
+   vector of $C$.  Trying all feasible cardinalities therefore finds the best
+   atom-safe subchild.
+\end{proof}
+
+Thus the bounded-atom hypothesis in
+\cref{lem:fractional-cover-materialization} is not a new geometric object.  It
+is a preprocessing normal form: replace a rich proposal universe by the finite
+universe of all atom-safe certified subchildren.  Under dual prices, separation
+against this expanded universe reduces to the same geometric proposal search,
+followed by the prefix test of \cref{lem:atom-safe-subchild}.
+
 \begin{lemma}[Fractional cover materialization]\label{lem:fractional-cover-materialization}
    In the finite program of \cref{lem:finite-pool-dual}, assume $L_q>0$ for all
    $q\in\mathcal Q$, $S>0$, and the following atom bounds:
@@ -2929,9 +2986,12 @@ small stored cover, not an efficient Lloyd-style training algorithm.
    certificate for any finite retained family is equivalently a finite set of
    activation-pattern constraints.  Hence it is also enough to find a fractional
    cover over the finite pool with logarithmically smaller budgets and bounded
-   atoms for those patterns: \cref{lem:fractional-cover-materialization}
-   converts it into a stored cover and residual block, losing only another
-   logarithmic factor.
+   atoms for those patterns.  The bounded-atom normal form can be enforced by
+   expanding the proposal universe to atom-safe subchildren as in
+   \cref{lem:atom-safe-subchild}; then
+   \cref{lem:fractional-cover-materialization} converts the fractional solution
+   into a stored cover and residual block, losing only another logarithmic
+   factor.
 \end{assumption}
 
 \begin{proposition}[Weak offline score covers imply the polylog endpoint]
