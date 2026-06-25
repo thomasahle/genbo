@@ -2822,6 +2822,76 @@ universe of all atom-safe certified subchildren.  Under dual prices, separation
 against this expanded universe reduces to the same geometric proposal search,
 followed by the prefix test of \cref{lem:atom-safe-subchild}.
 
+\begin{corollary}[Price-density subchild certificate]
+   \label{cor:price-density-subchild}
+   In the setting of \cref{lem:atom-safe-subchild}, write the point prices in
+   $P_C$ in nonincreasing order
+   \[
+      \alpha_1\ge\alpha_2\ge\cdots\ge\alpha_M,
+      \qquad M=|P_C|,
+   \]
+   and put $A_k=\sum_{j\le k}\alpha_j$.  If some atom-safe cardinality $k$
+   satisfies
+   \[
+      A_k>
+      \psi_C\bigl(\sigma k^{1+\rho}+\Lambda_C k^\rho\bigr),
+      \tag{PD}
+   \]
+   then the expanded atom-safe universe contains a positive-gain child.
+   Conversely, if no atom-safe subchild of $C$ has positive gain, then every
+   atom-safe cardinality $k$ satisfies
+   \[
+      \frac{A_k}{k}
+      \le
+      \psi_C\bigl(\sigma k^\rho+\Lambda_C k^{\rho-1}\bigr).
+      \tag{PD$^\ast$}
+   \]
+\end{corollary}
+
+\begin{proof}
+   By \cref{lem:atom-safe-subchild}, the best atom-safe subchild of size $k$ is
+   the set of the $k$ largest point prices.  Its reduced gain is
+   \[
+      A_k-\sigma\psi_C k^{1+\rho}-\Lambda_C\psi_C k^\rho .
+   \]
+   This is positive exactly when \((PD)\) holds.  Dividing the nonpositivity of
+   this expression by $k$ gives \((PD^\ast)\).
+\end{proof}
+
+\begin{lemma}[Averaged proposal separation]\label{lem:averaged-proposal-separation}
+   Fix any dual price system and any finite certified child universe
+   $\mathcal C_\star$.  Let $\Pi$ be a probability distribution on
+   $\mathcal C_\star$, and write
+   \[
+      \Lambda_C=\sum_q\lambda_qa_C(q)
+   \]
+   for the query-price load of $C$.  If
+   \[
+      \E_{C\sim\Pi}\left[
+         \sum_{x\in P_C}\alpha_x
+         -\sigma s_C
+         -w_C\Lambda_C
+      \right]>0,
+   \]
+   then some child in $\mathcal C_\star$ has positive reduced gain.
+\end{lemma}
+
+\begin{proof}
+   If every child had nonpositive reduced gain, every average of reduced gains
+   would be nonpositive.  The displayed strict positivity contradicts this.
+\end{proof}
+
+Thus a randomized build-time proposal mechanism can be used as a dual
+separator without analyzing its convergence as a stored algorithm.  Given dual
+prices, it is enough to produce a distribution over verified parent proposals
+whose best atom-safe price prefix has positive expected gain.  Unbounded
+preprocessing then samples or enumerates until it finds the positive-gain
+certificate, adds that column, and discards all failed attempts.  The remaining
+geometric theorem for cap or learned-score proposals can therefore be stated in
+the price-density form \((PD)\): every surplus dual price system must expose a
+certified radius-contracting proposal with enough high-price prefix mass to
+beat its storage price and active-pattern price.
+
 \begin{lemma}[Fractional cover materialization]\label{lem:fractional-cover-materialization}
    In the finite program of \cref{lem:finite-pool-dual}, assume $L_q>0$ for all
    $q\in\mathcal Q$, $S>0$, and the following atom bounds:
