@@ -1839,7 +1839,8 @@ terminal alternatives and zero for impure ones.
    Fix one query \(q\) and a finite rooted trie of route prefixes.  Each
    terminal route \(z\) has a certified output procedure with price \(Q_z\),
    a resident set \(P_z\subseteq P\), and a score \(S_q(z)\).  Each prefix
-   \(u\) has a computable upper certificate \(U_q(u)\) satisfying
+   \(u\) has a computable upper certificate \(U_q(u)\), with
+   \(U_q(z)=S_q(z)\) on terminal routes, satisfying
    \[
       S_q(z)\le U_q(u)
       \qquad
@@ -1877,18 +1878,149 @@ terminal alternatives and zero for impure ones.
    candidates are verified in the original metric.
 \end{proof}
 
+\begin{lemma}[Priority prefix-list decoder]
+   \label{lem:priority-prefix-list-decoder}
+   Work in the setting of \cref{lem:prefix-list-decoder}.  Assume the route
+   trie has finite out-degree and that the query can compute \(U_q(v)\) for
+   every child \(v\) of a visited prefix \(u\).  Run the following stack
+   decoder: keep a priority queue ordered by \(U_q\), initialized with the root
+   if \(U_q(\varnothing)\ge\Theta\).  Repeatedly pop the largest-\(U_q\) prefix;
+   discard it if \(U_q<\Theta\), invoke its output procedure if it is terminal,
+   and otherwise compute its children and insert exactly those with
+   \(U_q\ge\Theta\).
+
+   Let
+   \[
+      \mathcal L_\Theta(q)=\{u:U_q(u)\ge\Theta\}
+   \]
+   be the set of live prefixes, and let \(G_q(u)\) be the work needed to
+   generate and test the children of \(u\).  Then the decoder invokes every
+   terminal route \(z\) with \(S_q(z)\ge\Theta\), invokes no terminal route
+   outside \(\mathcal L_\Theta(q)\), and has query work
+   \[
+      O\!\left(
+         D(q)
+         +\sum_{u\in\mathcal L_\Theta(q)}(1+G_q(u))
+         +|\mathcal L_\Theta(q)|\log(2+|\mathcal L_\Theta(q)|)
+         +\sum_{z:\ S_q(z)\ge\Theta}Q_z
+      \right).
+   \]
+   In particular, for bounded score branching and output-sensitive geometric
+   child generation, the overhead beyond terminal invocations is
+   \(D(q)+|\mathcal L_\Theta(q)|\log^{O(1)}|\mathcal L_\Theta(q)|\).
+\end{lemma}
+
+\begin{proof}
+   If a terminal route \(z\) has \(S_q(z)\ge\Theta\), then every prefix
+   \(u\preceq z\) has \(U_q(u)\ge\Theta\), because \(U_q(u)\) upper-bounds all
+   terminal descendants.  Thus no prefix on the path to \(z\) is discarded, and
+   induction on depth shows that \(z\) is eventually inserted and popped.
+   Conversely, the algorithm inserts only prefixes with \(U_q\ge\Theta\), so
+   every popped prefix lies in \(\mathcal L_\Theta(q)\).  The generation cost
+   is therefore the displayed sum over live internal prefixes, and the priority
+   queue contributes a logarithmic factor per insertion and deletion.  Finally,
+   terminal prices are paid exactly for the terminal routes reached by the
+   decoder.
+\end{proof}
+
+\begin{lemma}[Exponential list-size certificate]
+   \label{lem:exponential-list-size}
+   Fix one query \(q\), a finite route trie, and upper certificates \(U_q(u)\).
+   Suppose there are nonnegative level weights \(M_\ell(q)\) and a parameter
+   \(\beta>0\) such that, for every level \(\ell\),
+   \[
+      \sum_{|u|=\ell}\exp(\beta U_q(u))\le M_\ell(q).
+   \]
+   Then for every threshold \(\Theta\),
+   \[
+      |\{u:U_q(u)\ge\Theta\}|
+      \le
+      e^{-\beta\Theta}\sum_\ell M_\ell(q).
+   \]
+   More generally, if every prefix \(u\) has a nonnegative generation weight
+   \(g(u)\) and
+   \[
+      \sum_{|u|=\ell}g(u)\exp(\beta U_q(u))\le M_\ell^g(q),
+   \]
+   then
+   \[
+      \sum_{u:U_q(u)\ge\Theta}g(u)
+      \le
+      e^{-\beta\Theta}\sum_\ell M_\ell^g(q).
+   \]
+\end{lemma}
+
+\begin{proof}
+   The first bound is Markov's inequality applied deterministically:
+   \[
+      \mathbf 1\{U_q(u)\ge\Theta\}
+      \le e^{-\beta\Theta}e^{\beta U_q(u)}.
+   \]
+   Sum this inequality over all prefixes and group by level.  The weighted
+   statement is identical after multiplying by \(g(u)\).
+\end{proof}
+
+\begin{corollary}[Prefix-list resource certificate]
+   \label{cor:prefix-list-resources}
+   Work in the setting of \cref{lem:priority-prefix-list-decoder}.  Let
+   \(g_q(u)\ge1+G_q(u)\) be a generation-cost weight.  Suppose that, for every
+   query \(q\) in the promised domain,
+   \[
+      \sum_u g_q(u)\exp(\beta U_q(u))
+      \le
+      e^{\beta\Theta}L_{\rm pref},
+      \qquad
+      \sum_{z:\ S_q(z)\ge\Theta}Q_z\le L_{\rm term}.
+   \]
+   Then the priority prefix-list decoder is routing-correct under the near-route
+   hypothesis of \cref{lem:prefix-list-decoder} and has query work
+   \[
+      O\!\left(
+         D(q)
+         +(L_{\rm pref}+1)\log(2+L_{\rm pref})
+         +L_{\rm term}
+      \right).
+   \]
+   Thus, at a local node with target price \(F_4(m,R)\), the deterministic
+   list-decoding route has only polylogarithmic overhead if
+   \[
+      D(q),L_{\rm pref},L_{\rm term}
+      \le F_4(m,R)\log^{O_c(1)}m .
+   \]
+\end{corollary}
+
+\begin{proof}
+   Apply the weighted form of \cref{lem:exponential-list-size} with the single
+   level sum replaced by the sum over all prefixes.  It gives
+   \[
+      \sum_{u:U_q(u)\ge\Theta}g_q(u)\le L_{\rm pref}.
+   \]
+   In particular, \(|\mathcal L_\Theta(q)|\le L_{\rm pref}\), since
+   \(g_q(u)\ge1\).  Substitute these two bounds into
+   \cref{lem:priority-prefix-list-decoder}.  Correctness is inherited from the
+   same near-route hypothesis.
+\end{proof}
+
 This is the literal list-decoding analogue of the score tree.  The retained
 tree defines an implicit Euclidean code or lattice of route leaves, the query is
 the received word, and the decoder must output a short list of plausible route
 leaves before final metric verification.  The sampled-route compiler above is a
-soft randomized version of this principle; \cref{lem:prefix-list-decoder} is
-the deterministic version.  The useful coding-theory lesson from lattice and
-code list decoding is therefore not a black-box decoder, but the separation of
-three tasks: prove a combinatorial list-size or route-cut bound, design an
-output-sensitive prefix enumerator for the structured tree, and use reliability
-or posterior scores to prune the list.  This mirrors Barnes--Wall lattice list
-decoding, successive-cancellation list decoding of polar codes, and
-soft-decision Reed--Solomon decoding~\cite{GP17,MP20,TV12,KV03}.
+soft randomized version of this principle; \cref{lem:prefix-list-decoder} and
+\cref{lem:priority-prefix-list-decoder} are deterministic versions.  The
+priority form is the direct analogue of lattice sphere enumeration: keep a
+stack of partial routes whose admissible remaining score can still reach the
+decoding threshold, and stop when the stack certificate drops below threshold.
+\Cref{lem:exponential-list-size} and \cref{cor:prefix-list-resources} give the
+corresponding proof target.  Instead of storing activation-pattern tables, prove
+a moment or potential bound on \(\sum g_q(u)\exp(\beta U_q(u))\) over prefixes;
+thresholding then gives a short list and a query-work bound automatically.  The
+useful coding-theory lesson from lattice and code list decoding is therefore
+not a black-box decoder, but the separation of three tasks: prove a
+combinatorial list-size or route-cut bound, design an output-sensitive prefix
+enumerator for the structured tree, and use reliability or posterior scores to
+prune the list.  This mirrors Barnes--Wall lattice list decoding, lattice sphere
+enumeration, successive-cancellation list decoding of polar codes, and
+soft-decision Reed--Solomon decoding~\cite{GP17,MP20,FP85,SE94,TV12,KV03}.
 
 \begin{lemma}[Finite sampled-cover dual]
    \label{lem:finite-sampled-cover-dual}
@@ -4795,6 +4927,15 @@ positive-probability seeded separator plus deterministic certification.
    exactly when the retained pattern decoder and cohort table fit within the
    local storage budget.  The preprocessing search for the LPs and cohorts may
    be arbitrarily expensive, but this retained metadata is not free.
+   A deterministic prefix-list decoder may replace the sampled route
+   certificate.  In that version, the retained score tree supplies admissible
+   upper scores \(U_q(u)\), a threshold \(\Theta\), and an output-sensitive
+   child generator satisfying \cref{cor:prefix-list-resources} with
+   \(L_{\rm pref},L_{\rm term}\le F_4(m,R)\log^{O_c(1)}m\); every low-guard
+   near pair not in the residual block must have some certified terminal route
+   above threshold.  This is the lattice-list-decoding formulation of the same
+   local problem: prove a small threshold list of plausible routes, then verify
+   candidates in the original metric.
    By \cref{lem:guard-restricted-cover}, these active-power constraints need
    only range over the low-guard query domain; high-guard queries are handled by
    the resident sample.  By \cref{lem:finite-activation-patterns}, the
@@ -8441,11 +8582,14 @@ the leftover subprobability mass.
 \Cref{cor:activation-cohort-resources} records the exact query-memory test:
 the LP/cohort search may be arbitrarily expensive at build time, but the
 retained cohort table and pattern decoder must fit the local storage budget.
-\Cref{lem:prefix-list-decoder} records the deterministic list-decoding
-alternative suggested by the lattice viewpoint: if the score tree admits an
-output-sensitive prefix enumerator and every query has only a short list of
-prefixes whose certified upper score can still reach the decoding threshold,
-then routing reduces to a list-size theorem followed by ordinary metric
+\Cref{lem:prefix-list-decoder}, \cref{lem:priority-prefix-list-decoder},
+\cref{lem:exponential-list-size}, and \cref{cor:prefix-list-resources} record
+the deterministic list-decoding
+alternative suggested by the lattice viewpoint: a stack decoder enumerates
+exactly the prefixes whose certified upper score can still reach the decoding
+threshold, and an exponential-moment certificate turns this into a short-list
+and query-work bound.  If the score tree admits such an output-sensitive prefix
+enumerator, routing reduces to a list-size theorem followed by ordinary metric
 verification.
 The guard refinement
 \cref{lem:low-guard-shadow} further removes points whose entire near-query
@@ -8599,6 +8743,18 @@ The one-sided spherical proof is motivated by the Ahle--Knudsen manuscript suppl
    Ethan Mook and Chris Peikert.
    \newblock Lattice (list) decoding near Minkowski's inequality.
    \newblock arXiv:2010.04809, 2020.
+
+   \bibitem{FP85}
+   Ulrich Fincke and Michael Pohst.
+   \newblock Improved methods for calculating vectors of short length in a
+   lattice, including a complexity analysis.
+   \newblock \emph{Mathematics of Computation}, 44(170):463--471, 1985.
+
+   \bibitem{SE94}
+   Claus-Peter Schnorr and Martin Euchner.
+   \newblock Lattice basis reduction: Improved practical algorithms and solving
+   subset sum problems.
+   \newblock \emph{Mathematical Programming}, 66:181--199, 1994.
 
    \bibitem{TV12}
    Ido Tal and Alexander Vardy.
