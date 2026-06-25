@@ -7914,6 +7914,121 @@ This certificate is the local form of the remaining problem. It is analogous in 
    expectation form of \cref{cor:allocation-defect-toll}.
 \end{proof}
 
+\begin{corollary}[Transition-aware water-filled certificate]
+   \label{cor:transition-waterfilled-allocation}
+   In the setting of \cref{cor:allocation-defect-toll}, fix a route law
+   \(\Lambda\).  For a required edge \(e=u\to w\), write
+   \[
+      \lambda_e=\Pr_\Lambda[w\mid u]
+   \]
+   when \(\Lambda(u)>0\), and put \(\lambda_e=0\) otherwise.  Let
+   \[
+      \ell_e=\Pr_{V\sim\Lambda}[e\preceq V],
+      \qquad
+      a_e=\frac{\Gamma_e}{(1-\kappa\eta^2)F_4(m,R)},
+      \qquad
+      b_e=\lambda_ea_e .
+   \]
+   For any allocation \(y\), define the transition-aware defect
+   \[
+      \mathcal D_{\rm tr}(y)
+      =
+      \sum_e\ell_e\log_+\frac{b_e}{y_e},
+   \]
+   with the same zero and infinity conventions as in
+   \cref{lem:waterfilled-allocation}.  If \(y\) is query-decodable and
+   \(\mathcal D_{\rm tr}(y)\le B\), then the saturated route value satisfies
+   \[
+      U(\varnothing)\ge \frac12e^{-2B}.
+   \]
+   In particular, applying \cref{lem:waterfilled-allocation} with occupation
+   weights \(\ell_e\) and transition-aware charges \(b_e\) gives the best such
+   bound; write the optimum as \(\mathcal D^*_{\rm tr}\).
+
+   Moreover, if \(H=\sum_e\ell_e\le H_0\), then
+   \[
+      \mathcal D^*_{\rm tr}
+      \le
+      \sum_{\substack{e:\ \ell_e>0\\ \lambda_ea_e>0}}
+      \ell_e\log_+\frac{H_0\lambda_ea_e}{\ell_e}.
+   \]
+   Since \(\ell_e=\Lambda(u)\lambda_e\) on every positive-\(\Lambda\) edge
+   \(e=u\to w\), this bound may be written as
+   \[
+      \sum_{\substack{e=u\to w:\ \ell_e>0\\ a_e>0}}
+      \ell_e\log_+\frac{H_0a_e}{\Lambda(u)}.
+   \]
+   Thus \(H_0=O_c(\log\log n)\) and the prefix-density condition
+   \[
+      H_0a_e\le C\Lambda(u)
+      \qquad(e=u\to w\text{ used by }\Lambda)
+   \]
+   give \(\mathcal D^*_{\rm tr}=O_c(\log\log n)\) for \(C=O_c(1)\).  If
+   \[
+      \sum_{\ell_e>0}\lambda_ea_e\le1,
+   \]
+   then \(\mathcal D^*_{\rm tr}=0\).
+\end{corollary}
+
+\begin{proof}
+   Fix any allocation \(y\) and use \(Y_e=F_4(m,R)y_e\) in
+   \cref{cor:allocation-defect-toll}.  The activation probability satisfies
+   \[
+      \gamma_e\ge\min\{1,y_e/a_e\},
+   \]
+   with the usual convention when \(a_e=0\).  If \(y_e\ge a_e\), then
+   \(\gamma_e=1\) and \(\lambda_e/\gamma_e\le1\).  If \(y_e<a_e\), then
+   \[
+      \frac{\lambda_e}{\gamma_e}
+      \le
+      \frac{\lambda_ea_e}{y_e}.
+   \]
+   If \(b_e=0\), the right-hand side is interpreted as zero and the inequality
+   is trivial because \(\lambda_e/\gamma_e\le1\).  Hence, in all cases,
+   \[
+      \log_+\frac{\lambda_e}{\gamma_e}
+      \le
+      \log_+\frac{\lambda_ea_e}{y_e}.
+   \]
+   Averaging over \(V\sim\Lambda\), the expected edge toll is at most
+   \[
+      \sum_e\ell_e\log_+\frac{b_e}{y_e}.
+   \]
+   Thus any allocation with transition-aware defect at most \(B\) has expected
+   edge toll at most \(B\), and the expectation form of
+   \cref{cor:typical-route-law-toll} gives the displayed route value.  The
+   optimality statement is exactly \cref{lem:waterfilled-allocation} applied to
+   the charges \(b_e\).
+
+   The raw logarithmic estimate is
+   \cref{lem:waterfilled-raw-moment-certificate} applied to the same
+   occupation weights and charges \(b_e\), using \(\tau=1/H_0\).  The
+   simplification follows from
+   \[
+      \ell_e=\Pr_\Lambda[u]\Pr_\Lambda[w\mid u]=\Lambda(u)\lambda_e .
+   \]
+   The prefix-density and zero-defect conclusions are immediate from the
+   displayed raw bound and the zero-defect case of
+   \cref{lem:waterfilled-allocation}.
+\end{proof}
+
+\begin{remark}[Relation to square-energy tolls]
+   The transition-aware profile is the allocation form of square-benign
+   branching.  If the query can afford \(y_e\ge\lambda_ea_e\) on every outgoing
+   required edge, then \(\gamma_e\ge\lambda_e\).  Consequently the domination
+   toll on that edge is zero and the local square multiplier satisfies
+   \[
+      \sum_{w}\frac{\lambda_{u,w}^2}{\gamma_{u,w}}
+      \le
+      \sum_w\lambda_{u,w}
+      \le1 .
+   \]
+   Water-filling is therefore the budget-constrained, extreme-pruning version
+   of the ideal square-nonexpansive profile.  The remaining loss measures only
+   how far the decodable activation budget is from the transition-proportional
+   charge \(\lambda_ea_e\), rather than from the full edge charge \(a_e\).
+\end{remark}
+
 \begin{lemma}[Finite convex-linear minimax]\label{lem:finite-convex-minimax}
    Let \(X\subset\R^d\) be compact and convex, and let
    \(\phi_i:X\to\R\), \(i\in I\), be finitely many continuous convex
@@ -8421,6 +8536,83 @@ This certificate is the local form of the remaining problem. It is analogous in 
    Hence \cref{lem:waterfilled-raw-moment-certificate} bounds the water-filled
    defect of this mixture by \(M/p\).  The mixtures in the first case have
    defect zero.  Apply \cref{lem:robust-waterfilled-minimax}.
+\end{proof}
+
+\begin{corollary}[Robust transition-envelope raw-log certificate]
+   \label{cor:robust-transition-envelope-raw-log}
+   Work with a finite family \(I\) of witness route laws on the same required
+   opportunity set.  Let \(\ell^i_e\) be the occupation profile of witness
+   \(i\), let \(\lambda^i_e\) be its transition probability on edge \(e\), and
+   let \(a_e\ge0\) be the normalized edge charges.  Suppose there is a
+   decodable envelope \(\bar\lambda_e\in[0,1]\) such that
+   \[
+      \lambda^i_e\le\bar\lambda_e
+      \qquad\text{whenever }\ell^i_e>0,
+   \]
+   and put \(\bar a_e=\bar\lambda_ea_e\).  Fix \(H_0\ge1\) and \(B\ge0\).
+   Suppose that for every mixture \(\alpha\in\Delta_I\), either
+   \[
+      \sum_{\ell^\alpha_e>0}\bar a_e\le1,
+   \]
+   or both
+   \[
+      \sum_e\ell^\alpha_e\le H_0
+   \]
+   and
+   \[
+      \sum_{\substack{e:\ \ell^\alpha_e>0\\ \bar a_e>0}}
+      \ell^\alpha_e
+      \log_+\frac{H_0\bar a_e}{\ell^\alpha_e}
+      \le B .
+   \]
+   Then for every \(\varepsilon>0\) there is one allocation \(y\), independent
+   of the witness profile, such that every witness has transition-aware defect
+   \[
+      \sum_e
+      \ell^i_e
+      \log_+\frac{\lambda^i_ea_e}{y_e}
+      \le B+\varepsilon .
+   \]
+   Consequently, if the resulting allocation is query-decodable, the same
+   allocation gives inverse-polylogarithmic route value for all witnesses
+   whenever \(B=O_c(\log\log n)\).
+
+   In the important special case where all witnesses share the same local
+   transition rule \(\lambda_e\), one may take
+   \(\bar\lambda_e=\lambda_e\).  For an edge \(e=u\to w\), the mixed
+   occupation is then
+   \[
+      \ell^\alpha_e=\Lambda^\alpha(u)\lambda_e,
+   \]
+   and the raw logarithmic density becomes
+   \[
+      \frac{H_0\bar a_e}{\ell^\alpha_e}
+      =
+      \frac{H_0a_e}{\Lambda^\alpha(u)}
+      \qquad(\lambda_e>0).
+   \]
+   Thus the robust target is prefix charge density, not child-edge occupation
+   density.
+\end{corollary}
+
+\begin{proof}
+   Since \(\lambda^i_e\le\bar\lambda_e\),
+   \[
+      \log_+\frac{\lambda^i_ea_e}{y_e}
+      \le
+      \log_+\frac{\bar a_e}{y_e}.
+   \]
+   Apply \cref{cor:robust-waterfilled-raw-log} with the common charges
+   \(\bar a_e\) to obtain one allocation \(y\) for which
+   \[
+      \sum_e\ell^i_e\log_+\frac{\bar a_e}{y_e}
+      \le B+\varepsilon
+      \qquad\text{for every }i.
+   \]
+   The previous display gives the transition-aware defect bound.  The route
+   value statement follows from \cref{cor:transition-waterfilled-allocation}
+   applied to each witness route law.  The shared-transition simplification is
+   just \(\ell^\alpha_e=\Lambda^\alpha(u)\lambda_e\).
 \end{proof}
 
 \begin{corollary}[Prefix-energy route-law certificate]\label{cor:route-law-prefix-energy}
@@ -10777,6 +10969,27 @@ canonical for any fixed route law: allocate \(y_e=\min\{a_e,t\ell_e\}\), where
 normalized recursive charge.  A polylogarithmic endpoint through this route now
 requires only a decodable representation of that water-filled allocation and an
 \(O_c(\log\log n)\) bound on its scalar defect.
+\Cref{cor:transition-waterfilled-allocation} sharpens this by keeping the
+route-law transition probability \(\lambda_e\) that the coarser defect bound
+discarded.  The exact edge toll is controlled by
+\(\log_+(\lambda_ea_e/y_e)\), so the water-filled charge should be
+\(\lambda_ea_e\), not \(a_e\).  In the raw-log certificate this cancels the
+child branch probability:
+for \(e=u\to w\),
+\[
+   \ell_e=\Lambda(u)\lambda_e
+   \quad\Longrightarrow\quad
+   \frac{H_0\lambda_ea_e}{\ell_e}=\frac{H_0a_e}{\Lambda(u)} .
+\]
+The concrete target is therefore bounded prefix charge density
+\(H_0a_e\le C\Lambda(u)\), rather than the stronger edge-density condition
+\(H_0a_e\le C\ell_e\).  This is also the bridge to the square-energy view:
+the ideal allocation \(y_e=\lambda_ea_e\) gives \(\gamma_e\ge\lambda_e\), so
+the local square multiplier is at most one; water-filling is the
+budget-constrained version of that square-benign profile.  The robust envelope
+form \cref{cor:robust-transition-envelope-raw-log} preserves this improvement
+whenever the witness route laws share, or admit a decodable upper envelope for,
+their local transition probabilities.
 \Cref{lem:finite-convex-minimax} and
 \cref{lem:robust-waterfilled-minimax} upgrade this from one route law to a
 finite witness family: a single query allocation is optimal exactly when tested
