@@ -3158,6 +3158,99 @@ query time pays only for output-sensitive list decoding.
    fixed implicit lattice whose decoder has the same moment certificates.
 \end{remark}
 
+\begin{proposition}[Sampled structured-panel compiler]
+   \label{prop:sampled-structured-panel}
+   Fix a terminal localized ANN subproblem of size \(m\), approximation \(c\),
+   and target exponent \(\rho=\rho_c\).  Let \(L_m=\log^{A_c}m\).  A random
+   sampled panel \(\mathcal P\) consists of a finite label set \(\mathcal L\),
+   data predicates \(A_g(x)\in\{0,1\}\), and, for every promised query \(q\),
+   a probability law \(\pi_q\) on \(\mathcal L\) from which the query can sample in
+   \(d\log^{O_c(1)}m\) time per trial.  Suppose that
+   \[
+      \E_{\mathcal P}\sum_{x\in P}\sum_{g\in\mathcal L}A_g(x)
+      \le m^{1+\rho}L_m ,
+      \tag{SP1}
+   \]
+   and, for every promised query \(q\),
+   \[
+      \E_{\mathcal P}
+      \sum_{\substack{x\in P\\ \|x-q\|>cr}}
+      \sum_{g\in\mathcal L}\pi_q(g)A_g(x)
+      \le m^\rho L_m .
+      \tag{SP2}
+   \]
+   Finally assume that every near pair \((p,q)\), \(\|p-q\|\le r\), satisfies
+   the one-sample hit condition
+   \[
+      \E_{\mathcal P}
+      \sum_{g\in\mathcal L}\pi_q(g)A_g(p)
+      \ge L_m^{-1}.
+      \tag{SP3}
+   \]
+   Then \(O(L_m)\) independent sampled panels give a terminal ANN data
+   structure with query work
+   \[
+      d\,m^\rho\log^{O_c(1)}m
+   \]
+   and space
+   \[
+      dm+m^{1+\rho}\log^{O_c(1)}m .
+   \]
+\end{proposition}
+
+\begin{proof}
+   Store \(B=\lceil C L_m\rceil\) independent panels.  In each panel, put
+   every point \(x\) in every bucket \(g\) with \(A_g(x)=1\).  The expected
+   stored point-bucket incidences are bounded by \(B m^{1+\rho}L_m\), which is
+   \(m^{1+\rho}\log^{O_c(1)}m\); the raw coordinates add \(dm\).
+
+   On query \(q\), draw one label \(g\sim\pi_q\) from each panel, scan the
+   corresponding bucket, and verify all reported points in the original metric.
+   By \((SP2)\), the expected number of invalid scanned points per panel is at
+   most \(m^\rho L_m\), and the sampling overhead is
+   \(d\log^{O_c(1)}m\).  Multiplying by \(B\) gives the displayed query bound
+   after increasing the polylogarithmic exponent.
+
+   If \(p\) is a true near neighbor of \(q\), the probability that one random
+   panel and one label sample hit a bucket containing \(p\) is at least
+   \(L_m^{-1}\) by \((SP3)\).  Hence all \(B\) independent trials miss \(p\)
+   with probability at most \((1-L_m^{-1})^B\le e^{-C}\).  Taking \(C\) large
+   gives constant success probability, and verification prevents false
+   positives.  The capped-expectation convention from the preliminaries gives
+   the stated capped resources after the usual constant-factor loss.
+\end{proof}
+
+\begin{remark}[Lattice Gaussian panels as sampled decoders]
+   \label{rem:lattice-gaussian-panels}
+   \Cref{prop:sampled-structured-panel} is the sampler analogue of the
+   threshold-reporter interface in
+   \cref{lem:soft-list-recovery-reporter}.  It matches the coding-theoretic
+   view even more literally: labels \(g\) may be codewords, lattice points,
+   coset representatives, or states of a finite trellis, and the query samples
+   a likely label instead of listing every active label.  A typical target is a
+   discrete Gaussian or Gibbs law
+   \[
+      \pi_q(g)\propto
+      \exp\!\left(-\tau\|Pq-g\|^2\right)
+   \]
+   on a structured code or lattice in the projected block.  Randomized nearest
+   plane and lattice Gaussian samplers~\cite{Kle00,GPV08,Pei10} are relevant
+   because they supply exactly this kind of law for decodable lattices; product
+   filters and lattice sieving already exploit the same idea at the level of
+   implicit filter families~\cite{BDGL16,GNR10}.
+
+   This avoids the black-box weakness of ordinary lattice CVP or ANN.  The
+   theorem does not ask the lattice decoder to return the nearest center, and
+   it does not require an additive Gumbel optimizer over the data points.  It
+   asks for the three directly checkable spectrum quantities \((SP1)\)--\((SP3)\):
+   stored redundancy, far sampled co-load, and near sampled mass.  In
+   particular, middle-density near sets are not an all-reporting obstruction:
+   many valid buckets improve the sampling mass in \((SP3)\) without forcing
+   the query to enumerate all of them.  This is the formal version of the
+   empirical lesson that redundancy is the useful part of \(k\)-means
+   multi-assignment, while Lloyd convergence itself is not a proof object.
+\end{remark}
+
 \begin{assumption}[Flat structured spherical-code decoder]
    \label{asm:flat-spherical-code-decoder}
    Fix a localized terminal spherical gap with \(m\) resident points.  There is
@@ -11962,6 +12055,12 @@ rates \(u_j,v_j,w_j,b_j\) with total query and storage rates at most \(\rho\),
 total far-separation rate at least \(1-\rho\), and total near-loss
 \(O_c(\log\log m)\).  This is the precise product-code analogue of the
 spherical exponent calculation.
+\Cref{prop:sampled-structured-panel} records the corresponding sampler
+alternative.  A structured code or lattice panel need not list all active
+labels if it can sample labels from a certified Gibbs or discrete-Gaussian law:
+stored redundancy, far sampled co-load, and near sampled mass are enough.  This
+is a cleaner theoretical version of the empirical multi-assignment lesson and
+a possible way around all-reporting overhead in middle-density regimes.
 \Cref{rem:outer-list-recovery-codebook} records the stronger alternative
 suggested by list-decoding codes and lattices: instead of decoding the full
 Cartesian product, retain a sparse outer code or lattice coset and use soft
@@ -12325,6 +12424,24 @@ The one-sided spherical proof is motivated by the Ahle--Knudsen manuscript suppl
    \newblock Lattice enumeration using extreme pruning.
    \newblock In \emph{Advances in Cryptology -- EUROCRYPT 2010}, LNCS 6110,
    pages 257--278. Springer, 2010.
+
+   \bibitem{Kle00}
+   Philip Klein.
+   \newblock Finding the closest lattice vector when it's unusually close.
+   \newblock In \emph{Proceedings of the 11th Annual ACM-SIAM Symposium on
+   Discrete Algorithms (SODA)}, pages 937--941, 2000.
+
+   \bibitem{GPV08}
+   Craig Gentry, Chris Peikert, and Vinod Vaikuntanathan.
+   \newblock Trapdoors for hard lattices and new cryptographic constructions.
+   \newblock In \emph{Proceedings of the 40th Annual ACM Symposium on Theory
+   of Computing (STOC)}, pages 197--206, 2008.
+
+   \bibitem{Pei10}
+   Chris Peikert.
+   \newblock An efficient and parallel Gaussian sampler for lattices.
+   \newblock In \emph{Advances in Cryptology -- CRYPTO 2010}, LNCS 6223,
+   pages 80--97. Springer, 2010.
 
    \bibitem{WR61}
    John M. Wozencraft and Barney Reiffen.
