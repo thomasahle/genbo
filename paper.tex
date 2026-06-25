@@ -3689,6 +3689,66 @@ query time pays only for output-sensitive list decoding.
    for every \(\tau\ge1-\rho\).  Thus \((NQ2)\) and \((NQ3)\) cannot both hold.
 \end{proof}
 
+\begin{corollary}[Weighted Gaussian quadrature panel verifier]
+   \label{cor:weighted-gaussian-quadrature-panel}
+   Fix a terminal spherical instance of size \(m\) at the critical parameters
+   of \cref{lem:critical-tilted-gaussian-sampled-spectrum}.  Let \(L_m\) be a
+   sufficiently large power of \(\log m\).  A retained weighted quadrature
+   panel consists of labels \(g\in\mathcal L\subset\mathbb R^d\), positive
+   weights \(w_g\), a storage threshold \(T\), and a query tilt \(\beta\).
+   Store \(x\) in bucket \(g\) when
+   \[
+      \ip{g}{x}\ge T.
+   \]
+   On query \(q\), sample one label from
+   \[
+      \pi_q(g)=
+      \frac{w_g e^{\beta\ip{g}{q}}}
+           {\sum_{h\in\mathcal L}w_h e^{\beta\ip{h}{q}}},
+      \tag{WQ0}
+   \]
+   assuming this sampling operation is supported in \(d\log^{O_c(1)}m\) time.
+
+   If the retained panel satisfies
+   \[
+      \sum_{x\in P}
+      |\{g\in\mathcal L:\ip{g}{x}\ge T\}|
+      \le m^{1+\rho}L_m,
+      \tag{WQ1}
+   \]
+   \[
+      \sum_{\substack{x\in P\\ \|x-q\|>cr}}
+      \sum_{\substack{g\in\mathcal L\\ \ip{g}{x}\ge T}}
+      \pi_q(g)
+      \le m^\rho L_m
+      \qquad\text{for every promised query }q,
+      \tag{WQ2}
+   \]
+   and
+   \[
+      \sum_{\substack{g\in\mathcal L\\ \ip{g}{p}\ge T}}
+      \pi_q(g)
+      \ge L_m^{-1}
+      \qquad
+      \text{whenever }\|p-q\|\le r,
+      \tag{WQ3}
+   \]
+   then \(O(L_m)\) independent retained panels give the terminal ANN bounds of
+   \cref{prop:sampled-structured-panel}.
+
+   The same statement holds for labels drawn from a structured code, lattice,
+   trellis, or product panel after replacing \(\ip{g}{x}\) by the certified
+   data score and \(\ip{g}{q}\) by the certified query score.
+\end{corollary}
+
+\begin{proof}
+   This is \cref{prop:sampled-structured-panel} with
+   \(A_g(x)=\mathbf 1\{\ip{g}{x}\ge T\}\) and the query sampling law
+   \((WQ0)\).  The storage, far sampled co-load, and near sampled mass
+   hypotheses are exactly \((SP1)\), \((SP2)\), and \((SP3)\).  The final
+   sentence is only a change of notation for the same sampled-panel compiler.
+\end{proof}
+
 \begin{remark}[Lattice Gaussian panels as sampled decoders]
    \label{rem:lattice-gaussian-panels}
    \Cref{prop:sampled-structured-panel} is the sampler analogue of the
@@ -12556,6 +12616,11 @@ concentration: the label entropy needed to stabilize the tilted partition
 function is polynomially larger than the entropy allowed by the storage and far
 load exponents.  The finite object must therefore exploit structure, not just
 more random labels.
+\Cref{cor:weighted-gaussian-quadrature-panel} records the exact positive
+finite certificate: a weighted retained label set only has to pass storage,
+sampled far-load, and near-mass checks under the tilted query sampler.  The
+weights may be chosen by arbitrary preprocessing; only retained buckets and the
+query sampler are charged.
 \Cref{rem:outer-list-recovery-codebook} records the stronger alternative
 suggested by list-decoding codes and lattices: instead of decoding the full
 Cartesian product, retain a sparse outer code or lattice coset and use soft
