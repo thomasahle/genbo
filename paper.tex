@@ -7187,6 +7187,110 @@ This certificate is the local form of the remaining problem. It is analogous in 
    budget.
 \end{proof}
 
+\begin{lemma}[Water-filled optimal activation allocation]
+   \label{lem:waterfilled-allocation}
+   Let \(E\) be a finite set of required opportunities for one query state.
+   A route law uses edge \(e\) with occupation weight
+   \(\ell_e\ge0\), and the edge has normalized charge \(a_e\ge0\).  For an
+   allocation \(y_e\ge0\) with \(\sum_e y_e\le1\), define the expected defect
+   \[
+      \mathcal D(y)
+      =
+      \sum_e \ell_e\log_+\frac{a_e}{y_e},
+   \]
+   with the conventions that terms with \(\ell_e=0\) or \(a_e=0\) contribute
+   \(0\), while \(\ell_e>0\), \(a_e>0\), \(y_e=0\) contributes \(+\infty\).
+   If
+   \[
+      \sum_{\ell_e>0}a_e\le1,
+   \]
+   then \(\inf_y\mathcal D(y)=0\).  Otherwise let \(t>0\) be chosen so that
+   \[
+      \sum_{\ell_e>0}\min\{a_e,t\ell_e\}=1 .
+   \]
+   Then the allocation
+   \[
+      y_e^*=
+      \begin{cases}
+         \min\{a_e,t\ell_e\},&\ell_e>0,\\
+         0,&\ell_e=0,
+      \end{cases}
+   \]
+   minimizes \(\mathcal D(y)\), and the minimum value is
+   \[
+      \mathcal D^*
+      =
+      \sum_e \ell_e\log_+\frac{a_e}{t\ell_e}.
+   \]
+   The same zero-term conventions apply in the last display.
+\end{lemma}
+
+\begin{proof}
+   Edges with \(\ell_e=0\) do not affect the objective and never need budget.
+   If the occupied charge sum is at most one, allocate \(y_e=a_e\) on occupied
+   edges and obtain zero defect.
+
+   Assume the occupied charge sum is larger than one.  The function
+   \(f_e(y)=\ell_e\log_+(a_e/y)\) is convex and nonincreasing on \(y>0\), with
+   derivative \(-\ell_e/y\) when \(0<y<a_e\) and derivative \(0\) when
+   \(y>a_e\).  Let \(\lambda=1/t\).  We claim that for every occupied edge and
+   every \(y\ge0\),
+   \[
+      f_e(y)\ge f_e(y_e^*)-\lambda(y-y_e^*) .
+   \]
+   If \(y_e^*<a_e\), then \(y_e^*=t\ell_e\) and the displayed inequality is
+   the tangent-line inequality for the convex function \(\ell_e\log(a_e/y)\).
+   If \(y_e^*=a_e\), then \(a_e\le t\ell_e\), so \(\lambda\le\ell_e/a_e\).
+   For \(y<a_e\),
+   \[
+      \ell_e\log\frac{a_e}{y}
+      \ge
+      \ell_e\left(1-\frac{y}{a_e}\right)
+      \ge
+      \lambda(a_e-y),
+   \]
+   while for \(y\ge a_e\) the right-hand side is nonpositive.  This proves the
+   claim in all cases.
+
+   Summing the claim over occupied edges and using
+   \(\sum_e y_e^*=1\) gives, for every feasible allocation \(y\),
+   \[
+      \mathcal D(y)
+      \ge
+      \mathcal D(y^*)-\lambda\left(\sum_e y_e-1\right)
+      \ge
+      \mathcal D(y^*) .
+   \]
+   Thus \(y^*\) is optimal, and substituting it into the objective gives the
+   displayed value.
+\end{proof}
+
+\begin{corollary}[Water-filled allocation defect certificate]
+   \label{cor:waterfilled-allocation-defect}
+   In the setting of \cref{cor:allocation-defect-toll}, fix a route law
+   \(\Lambda\) and let
+   \[
+      \ell_e=\Pr_{V\sim\Lambda}[e\preceq V],
+      \qquad
+      a_e=\frac{\Gamma_e}{(1-\kappa\eta^2)F_4(m,R)} .
+   \]
+   Let \(\mathcal D^*\) be the water-filled optimum from
+   \cref{lem:waterfilled-allocation}.  If the corresponding allocation is
+   query-decodable and \(\mathcal D^*\le B\), then the saturated route value
+   satisfies
+   \[
+      U(\varnothing)\ge \frac12e^{-2B}.
+   \]
+   In particular, \(B=O_c(\log\log n)\) gives inverse-polylogarithmic route
+   value.
+\end{corollary}
+
+\begin{proof}
+   Use the water-filled allocation \(Y_e=F_4(m,R)y_e^*\).  The expected
+   allocation defect under \(\Lambda\) is exactly \(\mathcal D^*\).  Apply the
+   expectation form of \cref{cor:allocation-defect-toll}.
+\end{proof}
+
 \begin{corollary}[Prefix-energy route-law certificate]\label{cor:route-law-prefix-energy}
    Let $\Lambda$ be a probability distribution on leaf routes and let $A(u)$
    be the activation prefix mass. Define the prefix $\chi^2$ energy
@@ -7840,6 +7944,13 @@ This certificate is the local form of the remaining problem. It is analogous in 
    This is the exact analogue of optimizing a sphere-decoder pruning profile:
    the build phase may search for the profile, but the query must decode the
    retained allocation and its total mass must be certified.
+   \Cref{lem:waterfilled-allocation} removes the last arbitrary choice in this
+   profile once a route law is fixed: the optimal allocation is the
+   water-filled vector \(y_e=\min\{a_e,t\ell_e\}\), where
+   \(\ell_e\) is the route-law occupation measure and \(a_e\) is the normalized
+   recursive charge.  Thus the near-side theorem can be phrased as bounding
+   one scalar water-filled defect, plus proving that this allocation is
+   query-decodable.
    \Cref{lem:cut-energy-route-law} is the sharpest form for a stopping-frontier
    proof: it is enough to show that, for every route cut $\mathcal C$,
    \[
@@ -9487,6 +9598,13 @@ needs a directly certified activation allocation \(Y\), and the toll becomes
 \(\log_+(\Gamma/Y)\).  Thus the remaining profile problem can be stated as a
 single decodable subprobability allocation over first opportunities, rather
 than as a multiplier of the canonical budget.
+\Cref{lem:waterfilled-allocation} and
+\cref{cor:waterfilled-allocation-defect} make the allocation normal form
+canonical for any fixed route law: allocate \(y_e=\min\{a_e,t\ell_e\}\), where
+\(\ell_e\) is the route-law occupation probability and \(a_e\) is the
+normalized recursive charge.  A polylogarithmic endpoint through this route now
+requires only a decodable representation of that water-filled allocation and an
+\(O_c(\log\log n)\) bound on its scalar defect.
 The guard refinement
 \cref{lem:low-guard-shadow} further removes points whose entire near-query
 neighborhood is already high-density: the finite dual now prices only the
