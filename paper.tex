@@ -3518,6 +3518,72 @@ This certificate is the local form of the remaining problem. It is analogous in 
    min-cut dual \cref{lem:saturated-value-mincut} gives the claim.
 \end{proof}
 
+\begin{lemma}[Frontier square-toll identity]\label{lem:frontier-square-toll}
+   Work in the setting of \cref{lem:cut-energy-route-law}, after deleting
+   zero-$\Lambda$ subtrees. For an edge $u\to w$, write
+   \[
+      \lambda_{u,w}=\Pr_\Lambda[w\mid u],
+      \qquad
+      \gamma_{u,w}=\frac{A(w)}{A(u)}
+   \]
+   whenever $\Lambda(u)>0$ and $A(u)>0$, and assume the displayed quantities
+   below are finite. Put
+   \[
+      \chi_\Lambda(u)=
+      \sum_{w\in\operatorname{ch}(u)}
+      \frac{\lambda_{u,w}^2}{\gamma_{u,w}}
+   \]
+   at every internal positive-$\Lambda$ node, and define the square-biased
+   transition law
+   \[
+      P_u(w)=
+      \frac{\lambda_{u,w}^2/\gamma_{u,w}}{\chi_\Lambda(u)} .
+   \]
+   Let $(U_0,U_1,\ldots)$ be the resulting spine from the root, and let
+   $\tau_{\mathcal C}$ be its first hitting time of a route cut
+   $\mathcal C$. Then
+   \[
+      \sum_{u\in\mathcal C}\frac{\Lambda(u)^2}{A(u)}
+      =
+      \E\left[
+         \prod_{i<\tau_{\mathcal C}}\chi_\Lambda(U_i)
+      \right].
+   \]
+   Consequently, if every route cut $\mathcal C$ satisfies
+   \[
+      \sum_{i<\tau_{\mathcal C}}\log_+\chi_\Lambda(U_i)\le B
+      \qquad
+      \text{on every square-biased spine realization,}
+   \]
+   then
+   \[
+      U(\varnothing)\ge e^{-B}.
+   \]
+\end{lemma}
+
+\begin{proof}
+   For a node $u\in\mathcal C$, multiply the transition identities along the
+   unique root-to-$u$ path:
+   \[
+      \Pr[U_{\tau_{\mathcal C}}=u]
+      =
+      \prod_{y\to z\preceq u}
+      \frac{\lambda_{y,z}^2/\gamma_{y,z}}{\chi_\Lambda(y)} .
+   \]
+   Therefore
+   \[
+      \Pr[U_{\tau_{\mathcal C}}=u]
+      \prod_{y\prec u}\chi_\Lambda(y)
+      =
+      \prod_{y\to z\preceq u}\frac{\lambda_{y,z}^2}{\gamma_{y,z}}
+      =
+      \frac{\Lambda(u)^2}{A(u)} .
+   \]
+   Summing over the cut proves the identity. If the positive square toll is at
+   most $B$ on every stopped spine, the cut energy is at most $e^B$ for every
+   route cut. Apply \cref{lem:cut-energy-route-law}.
+\end{proof}
+
 \begin{corollary}[Route-law toll certificate]\label{cor:route-law-toll}
    Let $\Lambda$ be a probability distribution on leaf routes. For an edge
    $u\to w$, write
@@ -4218,6 +4284,17 @@ This certificate is the local form of the remaining problem. It is analogous in 
       \le \log^{O_c(1)}n .
    \]
    This avoids paying for intermediate prefixes that are not used by the cut.
+   By \cref{lem:frontier-square-toll}, this cut energy is exactly a
+   square-biased spine expectation stopped at $\mathcal C$.  Therefore another
+   sufficient local target is: along the square-biased tame-route spine, every
+   adversarial route cut is hit after only $O_c(\log\log n)$ positive square
+   toll
+   \[
+      \sum\log_+\chi_\Lambda(u),
+      \qquad
+      \chi_\Lambda(u)=
+      \sum_w\frac{\lambda_{u,w}^2}{\gamma_{u,w}} .
+   \]
    The stronger but often easier all-prefix condition
    \cref{cor:route-law-prefix-energy} asks for
    $\sum_u\Lambda(u)^2/A(u)=\log^{O_c(1)}n$, which is exactly the kind of
@@ -4300,6 +4377,9 @@ This certificate is the local form of the remaining problem. It is analogous in 
    all prefixes.  This is the formulation most directly aligned with the
    branching continuation process: a cap-discovery frontier, a resident-scan
    frontier, or an adversarial route cut is exactly one antichain.
+   \Cref{lem:frontier-square-toll} rewrites this certificate as an optional
+   stopping estimate for the square-biased route spine, again without the
+   route-depth loss that appears in all-prefix energy.
 \end{remark}
 
 \begin{assumption}[Saturated fractional value delivery]\label{asm:aggregate-value-delivery}
@@ -5776,7 +5856,7 @@ For the randomized cap-thinning route, one remaining task is the branching first
    \le
    \log^{O_c(1)}n\,V(\varnothing)^2 .
 \]
-\Cref{lem:local-lca-energy} further reduces this to a local Bellman multiplier, and \cref{cor:square-nonexpansive-routes} shows that square-nonexpansive value branching costs only the polylogarithmic route depth. Equivalently, \cref{lem:energy-spine-toll} says that it is enough to prove only $O_c(\log\log n)$ positive square-energy toll along the energy-biased route spine. The capped-flow certificate \cref{lem:unit-capped-value-flow}, the Bellman recursion \cref{lem:saturated-value-recursion}, and the min-cut dual \cref{lem:saturated-value-mincut} give a still simpler sufficient formulation: prove that every route cut has inverse-polylogarithmic prefix-success mass. The equivalent dominated-law form in \cref{lem:dominated-route-law} says to construct a tilted law on tame routes whose prefix probabilities are dominated by activation prefix masses up to a polylogarithmic factor; by \cref{cor:typical-route-law-toll}, it is enough to prove only $O_c(\log\log n)$ expected positive domination toll under that route law and prune the bad tail. The cut-energy form \cref{lem:cut-energy-route-law} is closer to stopping-time proofs: it asks only for polylogarithmic $\sum_{u\in\mathcal C}\Lambda(u)^2/A(u)$ on each route cut $\mathcal C$. The stronger all-prefix bound in \cref{cor:route-law-prefix-energy} remains an LCA-compatible sufficient condition. Conditional on either aggregate value statement, \cref{prop:budget-thinned-polylog} gives the desired polylogarithmic ANN theorem. This is a fully non-channel route; the smooth product terminal filter can be used after localization and no longer contributes an inverse-polylogarithmic table-recall penalty. The structured posterior route replaces the cap-frontier obstacle by \cref{asm:multiscale-structured-likelihood}: prove an output-sensitive reporter for pure likelihood rank prefixes, not a small explicitly enumerable channel. The smoothed sampling route replaces both by \cref{asm:smoothed-gibbs} or \cref{asm:gumbel-mips}: prove either an optimal-exponent reporter that captures inverse-polylogarithmic Gaussian Gibbs mass, or a certified $O(\log\log n)$-additive Gumbel-MIPS primitive. Smoothed additive nearest neighbor is another stronger sufficient primitive. The detector-vote cohort-or-leaf route is a separate possible generalization to arbitrary certified child hierarchies, where the remaining issue is near-lineage coupling between ordinary continuation paths and detector activations.
+\Cref{lem:local-lca-energy} further reduces this to a local Bellman multiplier, and \cref{cor:square-nonexpansive-routes} shows that square-nonexpansive value branching costs only the polylogarithmic route depth. Equivalently, \cref{lem:energy-spine-toll} says that it is enough to prove only $O_c(\log\log n)$ positive square-energy toll along the energy-biased route spine. The capped-flow certificate \cref{lem:unit-capped-value-flow}, the Bellman recursion \cref{lem:saturated-value-recursion}, and the min-cut dual \cref{lem:saturated-value-mincut} give a still simpler sufficient formulation: prove that every route cut has inverse-polylogarithmic prefix-success mass. The equivalent dominated-law form in \cref{lem:dominated-route-law} says to construct a tilted law on tame routes whose prefix probabilities are dominated by activation prefix masses up to a polylogarithmic factor; by \cref{cor:typical-route-law-toll}, it is enough to prove only $O_c(\log\log n)$ expected positive domination toll under that route law and prune the bad tail. The cut-energy form \cref{lem:cut-energy-route-law} is closer to stopping-time proofs: it asks only for polylogarithmic $\sum_{u\in\mathcal C}\Lambda(u)^2/A(u)$ on each route cut $\mathcal C$. By \cref{lem:frontier-square-toll}, this is equivalent to bounding the positive square toll of the square-biased route spine up to each stopped frontier, with no all-prefix depth summation. The stronger all-prefix bound in \cref{cor:route-law-prefix-energy} remains an LCA-compatible sufficient condition. Conditional on either aggregate value statement, \cref{prop:budget-thinned-polylog} gives the desired polylogarithmic ANN theorem. This is a fully non-channel route; the smooth product terminal filter can be used after localization and no longer contributes an inverse-polylogarithmic table-recall penalty. The structured posterior route replaces the cap-frontier obstacle by \cref{asm:multiscale-structured-likelihood}: prove an output-sensitive reporter for pure likelihood rank prefixes, not a small explicitly enumerable channel. The smoothed sampling route replaces both by \cref{asm:smoothed-gibbs} or \cref{asm:gumbel-mips}: prove either an optimal-exponent reporter that captures inverse-polylogarithmic Gaussian Gibbs mass, or a certified $O(\log\log n)$-additive Gumbel-MIPS primitive. Smoothed additive nearest neighbor is another stronger sufficient primitive. The detector-vote cohort-or-leaf route is a separate possible generalization to arbitrary certified child hierarchies, where the remaining issue is near-lineage coupling between ordinary continuation paths and detector activations.
 
 \appendix
 
