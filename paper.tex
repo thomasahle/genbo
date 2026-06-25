@@ -1957,6 +1957,92 @@ that child and repeat until the sampled route-mass LP is feasible.
    success and work bounds.
 \end{proof}
 
+\begin{lemma}[Sampled-route cohort materialization]
+   \label{lem:sampled-route-cohort}
+   Fix one sampled-route signature with active child family
+   $\mathcal A\subseteq\mathcal C$, unresolved near set $N$, certified prices
+   $Q_C\ge0$, success credits $\sigma_C\in[0,1]$, and target \(h_0>0\).
+   Suppose the sampled feasibility problem has a solution $\pi$ satisfying
+   \[
+      \pi_C=0\quad(C\notin\mathcal A),\qquad
+      \sum_C\pi_CQ_C\le L,
+   \]
+   and
+   \[
+      \sum_{C:p\in P_C}\pi_C\sigma_C\ge h_0
+      \qquad(p\in N).
+   \]
+   If
+   \[
+      K\ge
+      \max\left\{
+         1,\,
+         \left\lceil 8h_0^{-1}\log(4\max\{|N|,1\})\right\rceil
+      \right\},
+   \]
+   then there is a multiset \(M=(C_1,\ldots,C_K)\) of active children such that
+   \[
+      \frac1K\sum_{t=1}^K Q_{C_t}\le4L
+   \]
+   and, for every \(p\in N\),
+   \[
+      \frac1K\sum_{t:p\in P_{C_t}}\sigma_{C_t}\ge\frac{h_0}{2}.
+   \]
+   Consequently the real-valued sampler $\pi$ can be replaced, for this
+   signature, by the uniform sampler on \(M\), losing only a constant factor in
+   expected child price and route mass.
+\end{lemma}
+
+\begin{proof}
+   Draw \(C_1,\ldots,C_K\) independently from \(\pi\).  All sampled children
+   are active.  If \(L=0\), the average price is zero almost surely because the
+   prices are nonnegative.  Otherwise the expected average price is at most
+   \(L\), so Markov's inequality gives
+   \[
+      \Pr\left[\frac1K\sum_{t=1}^KQ_{C_t}>4L\right]\le\frac14 .
+   \]
+
+   Fix \(p\in N\), and put
+   \[
+      X_t=\sigma_{C_t}\mathbf 1\{p\in P_{C_t}\}\in[0,1],
+      \qquad \mu_p=\E X_t\ge h_0 .
+   \]
+   We use the elementary one-sided bound
+   \[
+      \Pr\left[\sum_{t=1}^KX_t\le\frac{K\mu_p}{2}\right]
+      \le e^{-K\mu_p/8}.
+   \]
+   Indeed, for \(0\le X\le1\) and \(\lambda=1\),
+   convexity of \(e^{-\lambda x}\) on \([0,1]\) gives
+   \(e^{-X}\le1-(1-e^{-1})X\), hence
+   \[
+      \E e^{-\sum_tX_t}
+      \le
+      \exp\bigl(-K\mu_p(1-e^{-1})\bigr).
+   \]
+   Markov's inequality applied to \(e^{-\sum_tX_t}\) yields
+   \[
+      \Pr\left[\sum_tX_t\le\frac{K\mu_p}{2}\right]
+      \le
+      \exp\bigl(K\mu_p/2-K\mu_p(1-e^{-1})\bigr)
+      \le e^{-K\mu_p/8}.
+   \]
+   Since \(h_0\le\mu_p\), the event
+   \(\frac1K\sum_tX_t<h_0/2\) is contained in the displayed lower-tail event,
+   and therefore has probability at most \(e^{-Kh_0/8}\).
+
+   A union bound over \(p\in N\) shows that all route inequalities fail with
+   probability at most
+   \[
+      |N|e^{-Kh_0/8}\le\frac14
+   \]
+   when \(N\ne\emptyset\), and with probability zero when \(N=\emptyset\).
+   With positive probability, both the price bound and all route bounds hold.
+   Any sampled multiset realizing this event is the required cohort.  Sampling
+   uniformly from the cohort has expected price equal to its average price and
+   route mass equal to the displayed averages.
+\end{proof}
+
 For ball, cap, affine-score, and Lipschitz-score filters with finitely many
 retained predicates, the active-child part of the signature is controlled by
 the same arrangement machinery as in \cref{lem:finite-activation-patterns}; the
@@ -1965,6 +2051,10 @@ $p\in E\setminus U_0$.  The verifier is useful when this combined signature
 class is small enough to store or can be sampled from implicitly.  Otherwise it
 still serves as a finite offline certificate and dual diagnostic, but its table
 size must be charged to the retained index.
+\Cref{lem:sampled-route-cohort} gives the corresponding integer
+materialization: for inverse-polylogarithmic \(h_0\), each feasible signature
+needs only a polylogarithmic cohort of child identifiers to implement its
+sampler, provided the signature itself is stored or decodable.
 
 \begin{lemma}[Certified cover with residual scan]\label{lem:cover-residual-scan}
    In the setting of \cref{lem:certified-cover-compiler}, suppose the stored
@@ -4435,6 +4525,10 @@ positive-probability seeded separator plus deterministic certification.
    \Cref{lem:finite-sampled-route-verifier} gives the all-query version: it is
    enough to check these sampled LPs on the finite signatures consisting of the
    retained activation pattern together with the unresolved near-point set.
+   By \cref{lem:sampled-route-cohort}, a feasible sampled LP for a signature
+   can be implemented by a uniform cohort of
+   \(\log^{O_c(1)}m\) child records whenever the target route mass is
+   inverse-polylogarithmic; arbitrary real sampling vectors need not be stored.
    By \cref{lem:guard-restricted-cover}, these active-power constraints need
    only range over the low-guard query domain; high-guard queries are handled by
    the resident sample.  By \cref{lem:finite-activation-patterns}, the
@@ -8048,8 +8142,7 @@ candidate universe.  \Cref{cor:seed-saturate-certify} makes this the canonical
 offline build model: $k$-means++, spherical \(D^2\), dual-weighted, learned, or
 exhaustive seeds are saturated and certified first, and only the selected
 retained family is charged.  The closed-form $F_4$ charge is also only a
-sufficient
-price certificate: \cref{lem:priced-cover-compiler} and
+sufficient price certificate: \cref{lem:priced-cover-compiler} and
 \cref{cor:offline-recursive-pareto-pricing} allow the offline verifier to price
 each candidate child by its actual certified descendant Pareto cost.  This
 folds ordinary certified ball recursion, score-filter recursion, residual
@@ -8069,6 +8162,9 @@ its query price plus the normalization price.
 certificate by grouping queries according to their activation pattern and
 unresolved near set; the cost of storing or implicitly decoding those signatures
 is now explicit.
+\Cref{lem:sampled-route-cohort} removes the next fractional artifact: once a
+signature LP is feasible, a polylogarithmic cohort of child identifiers
+implements its sampler with only constant-factor loss in price and route mass.
 The guard refinement
 \cref{lem:low-guard-shadow} further removes points whose entire near-query
 neighborhood is already high-density: the finite dual now prices only the
