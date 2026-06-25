@@ -2750,6 +2750,79 @@ This certificate is the local form of the remaining problem. It is analogous in 
    routes that are not already exposed by cap-free residual scans.
 \end{remark}
 
+\begin{assumption}[Aggregate activated value delivery]\label{asm:aggregate-value-delivery}
+   Run the randomized one-tree construction with
+   \[
+      \eta=\Theta_c\!\left(\frac{\log\log n}{\log n}\right),
+      \qquad
+      \delta=\Theta_c(\eta^{2/\rho_c}),
+   \]
+   and use the canonical budget-thinned activation rule of
+   \cref{lem:budget-thinned-opportunities} at every geometric opportunity.
+   For every near pair $(p,q)$, after excluding routes on which a cap-free
+   residual scan already exposes $p$, there is a family
+   $\mathcal G(p,q)$ of tame candidate routes such that the activated
+   good-route count $Z_{\rm act}$ from
+   \cref{lem:activated-good-route-moments} satisfies
+   \[
+      \E Z_{\rm act}\ge \log^{-A_c}n,
+      \qquad
+      \E Z_{\rm act}^2\le \log^{A_c}n\,(\E Z_{\rm act})^2
+   \]
+   for a constant $A_c$ depending only on $c$. Each route in
+   $\mathcal G(p,q)$ either reaches a resident scan containing $p$ or follows
+   certified cap children containing $p$ until such a scan is reached.
+\end{assumption}
+
+\begin{proposition}[Conditional budget-thinned polylog endpoint]\label{prop:budget-thinned-polylog}
+   Under \cref{asm:aggregate-value-delivery}, the canonical budget-thinned
+   one-tree construction gives worst-case Euclidean ANN bounds
+   \[
+      Q(n,d)=d\,n^{\rho_c}\log^{O_c(1)}n,
+      \qquad
+      S(n,d)=dn+n^{1+\rho_c}\log^{O_c(1)}n .
+   \]
+\end{proposition}
+
+\begin{proof}
+   Work after bounded-diameter localization, so the initial radius ratio is
+   $R_0/r=\log^{O_c(1)}n$. The cap-free terminal scans are charged to
+   low-correlation accepting collisions by
+   \cref{lem:cap-free-scan-accounting}. For geometric opportunities,
+   \cref{lem:budget-thinned-opportunities}, applied with the canonical mixed
+   budget of \cref{lem:canonical-mixed-budget}, gives the expected activated
+   recursive work bound
+   \[
+      (1-\kappa\eta^2)F_4(m,R)
+   \]
+   at every state. Thus the query-work recurrence contracts by
+   $1-\Theta_c(\eta^2)$ per radius-decreasing generation, while local score
+   work, guards, and cap-free scans contribute only
+   $dF_4(m,R)\log^{O_c(1)}n$. Since every activated cap child decreases radius
+   by $1-\Theta_c(\eta^2)$, the number of generations is
+   \[
+      O_c\!\left(\eta^{-2}\log\frac{R_0}{r}\right)=\log^{O_c(1)}n.
+   \]
+   Summing the contracting recurrence gives
+   $dF_4(n,R_0)\log^{O_c(1)}n=d\,n^{\rho_c}\log^{O_c(1)}n$.
+
+   Storage is controlled by the deterministic storage part of
+   \cref{lem:thin-cap-contraction} and the stored-prefix bounds for the score
+   blocks, giving $dn+n^{1+\rho_c}\log^{O_c(1)}n$ after summing over the
+   polylogarithmic localization copies.
+
+   For success, \cref{asm:aggregate-value-delivery} and
+   \cref{lem:activated-good-route-moments} imply that with probability
+   $\log^{-O_c(1)}n$ there is an activated good route for the true near pair,
+   unless a cap-free residual scan has already exposed the near point. Along an
+   activated cap route, the ordinary geometric thinning probabilities telescope
+   by \cref{lem:thin-lineage}; with the displayed choice of $\delta$ and the
+   above generation bound, this costs only another $\log^{-O_c(1)}n$ factor.
+   Hence one copy succeeds with inverse-polylogarithmic probability.
+   Polylogarithmic independent copies, followed by standard truncation of the
+   expected work, give the capped constant-success bounds.
+\end{proof}
+
 \begin{remark}[Why normalized continuation budgets are too small]\label{rem:query-only-budget}
    The most obvious query-only budget,
    \[
@@ -4095,7 +4168,7 @@ The continuation-mass spherical decoder is proved in \cref{lem:continuation-work
 \Cref{prop:one-third} records the cube-root parameter choice from the one-tree notes. The direct tube calculation is kept only as intuition; the formal proposition uses \cref{lem:adaptive-continuation} for whole-lineage score survival and assumes only the cube-root geometric frontier inequality \cref{asm:mixed-operator}. Thus the central open issue is already the work-side first-hit accounting, not near-pair score survival.
 
 \paragraph{Randomized polylog stage.}
-\Cref{lem:adaptive-continuation} replaces the tube proof in the predictable-score setting, so near-pair survival is no longer the obstacle for the randomized one-tree endpoint. \Cref{asm:mixed-continuation-operator} is the direct remaining work-side target after \cref{lem:cap-free-scan-accounting}: it must prove thinned cap-split contraction over branching cap-discovery frontiers. Conditional on that operator, \cref{prop:randomized-polylog} shows that choosing $\eta\asymp(\log\log n)/\log n$ gives polylogarithmic query and space overhead. A sharper budget-thinned variant is partly proved: \cref{lem:canonical-mixed-budget} and \cref{lem:budget-thinned-opportunities} give the activated geometric work bound by optional stopping, while \cref{lem:canonical-budget-activation} and \cref{lem:activated-good-route-moments} reduce the remaining near-lineage issue to an aggregate value-delivery first/second moment in \cref{rem:value-delivery-target}.
+\Cref{lem:adaptive-continuation} replaces the tube proof in the predictable-score setting, so near-pair survival is no longer the obstacle for the randomized one-tree endpoint. \Cref{asm:mixed-continuation-operator} is the direct remaining work-side target after \cref{lem:cap-free-scan-accounting}: it must prove thinned cap-split contraction over branching cap-discovery frontiers. Conditional on that operator, \cref{prop:randomized-polylog} shows that choosing $\eta\asymp(\log\log n)/\log n$ gives polylogarithmic query and space overhead. The sharper budget-thinned variant proves the activated geometric work bound by optional stopping in \cref{lem:canonical-mixed-budget} and \cref{lem:budget-thinned-opportunities}. It now has its own conditional endpoint, \cref{prop:budget-thinned-polylog}: the only remaining assumption is the aggregate activated value-delivery moment statement in \cref{asm:aggregate-value-delivery}.
 
 \paragraph{Certified-cover route.}
 \Cref{lem:certified-cover-compiler} abstracts the empirical $k$-means
@@ -4131,7 +4204,7 @@ and space
 \]
 The exact pieces now aligned for the randomized cap-thinning route are: continuation-mass pruning gives optimal expected spherical work, adaptive continuation gives whole-lineage near survival, thinned cap splitting gives radius-potential contraction, and cap-free terminal scans are paid by low-correlation collisions.
 
-For the randomized cap-thinning route, one remaining task is the branching first-split work estimate in \cref{asm:mixed-continuation-operator}: prove that the thinned geometric child potentials contract over random cap-discovery frontiers without replacing the branching decoder by a normalized path law. The newer budget-thinned variant proves the expected work bound from a canonical prefix supermartingale, and leaves the sharper aggregate value-delivery target in \cref{rem:value-delivery-target}: prove first and second moments for the activated good-route count, rather than a product bound along one distinguished path. This is a fully non-channel route; the smooth product terminal filter can be used after localization and no longer contributes an inverse-polylogarithmic table-recall penalty. The structured posterior route replaces the cap-frontier obstacle by \cref{asm:multiscale-structured-likelihood}: prove an output-sensitive reporter for pure likelihood rank prefixes, not a small explicitly enumerable channel. The smoothed sampling route replaces both by \cref{asm:smoothed-gibbs} or \cref{asm:gumbel-mips}: prove either an optimal-exponent reporter that captures inverse-polylogarithmic Gaussian Gibbs mass, or a certified $O(\log\log n)$-additive Gumbel-MIPS primitive. Smoothed additive nearest neighbor is another stronger sufficient primitive. The detector-vote cohort-or-leaf route is a separate possible generalization to arbitrary certified child hierarchies, where the remaining issue is near-lineage coupling between ordinary continuation paths and detector activations.
+For the randomized cap-thinning route, one remaining task is the branching first-split work estimate in \cref{asm:mixed-continuation-operator}: prove that the thinned geometric child potentials contract over random cap-discovery frontiers without replacing the branching decoder by a normalized path law. The newer budget-thinned variant proves the expected work bound from a canonical prefix supermartingale and packages the remaining near-side issue as \cref{asm:aggregate-value-delivery}: prove first and second moments for the activated good-route count, rather than a product bound along one distinguished path. Conditional on that aggregate moment statement, \cref{prop:budget-thinned-polylog} gives the desired polylogarithmic ANN theorem. This is a fully non-channel route; the smooth product terminal filter can be used after localization and no longer contributes an inverse-polylogarithmic table-recall penalty. The structured posterior route replaces the cap-frontier obstacle by \cref{asm:multiscale-structured-likelihood}: prove an output-sensitive reporter for pure likelihood rank prefixes, not a small explicitly enumerable channel. The smoothed sampling route replaces both by \cref{asm:smoothed-gibbs} or \cref{asm:gumbel-mips}: prove either an optimal-exponent reporter that captures inverse-polylogarithmic Gaussian Gibbs mass, or a certified $O(\log\log n)$-additive Gumbel-MIPS primitive. Smoothed additive nearest neighbor is another stronger sufficient primitive. The detector-vote cohort-or-leaf route is a separate possible generalization to arbitrary certified child hierarchies, where the remaining issue is near-lineage coupling between ordinary continuation paths and detector activations.
 
 \appendix
 
