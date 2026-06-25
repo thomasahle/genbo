@@ -2667,6 +2667,60 @@ reference to Lloyd dynamics: for a rich enough proposal pool, rule out all
 price systems satisfying \((D1)\)--\((D2)\), then use the offline optimizer and
 deterministic verifier to retain only a low-stabbing cover.
 
+\begin{corollary}[Dual-price proposal separation]\label{cor:dual-price-separation}
+   Fix a finite universe $\mathcal C_\star$ of certified candidate children and
+   the same finite query constraint set $\mathcal Q$.  For prices
+   $(\alpha,\lambda,\sigma)$ define the reduced gain of a child $C$ by
+   \[
+      \operatorname{gain}_{\alpha,\lambda,\sigma}(C)
+      =
+      \sum_{x\in P_C}\alpha_x
+      -
+      \sigma s_C
+      -
+      w_C\sum_{q\in\mathcal Q}\lambda_q a_C(q).
+   \]
+   The full fractional program over $\mathcal C_\star$ has value at least
+   $|P|-L_0$ if and only if every price system with
+   \[
+      \sum_x\alpha_x
+      >
+      L_0+\sum_{q\in\mathcal Q}\lambda_qL_q+\sigma S,
+      \qquad
+      0\le\alpha_x\le1,\quad \lambda_q,\sigma\ge0,
+   \]
+   has some child $C\in\mathcal C_\star$ with
+   \[
+      \operatorname{gain}_{\alpha,\lambda,\sigma}(C)>0.
+   \]
+   Consequently, with unbounded preprocessing, a column-generation routine that
+   repeatedly solves the current finite-pool LP and adds any positive-gain child
+   from $\mathcal C_\star$ terminates with value at least $|P|-L_0$ whenever the
+   full universe satisfies this separation property.
+\end{corollary}
+
+\begin{proof}
+   Apply \cref{lem:finite-pool-dual} to the full pool
+   $\mathcal C_\star$.  Failure of value at least $|P|-L_0$ is exactly the
+   existence of prices satisfying the displayed surplus inequality and
+   \(\operatorname{gain}_{\alpha,\lambda,\sigma}(C)\le0\) for every
+   $C\in\mathcal C_\star$.  Negating this statement gives the equivalence.
+
+   For the algorithmic statement, $\mathcal C_\star$ is finite.  Each positive
+   reduced-gain child violates the current dual certificate, so adding it either
+   increases the current pool or the procedure has already reached the target
+   value.  The routine therefore terminates after at most $|\mathcal C_\star|$
+   additions, and the equivalence rules out termination below value
+   $|P|-L_0$ under the separation property.
+\end{proof}
+
+This is the proof-aligned analogue of $k$-means++ seeding.  Instead of sampling
+from squared-distance residuals, preprocessing may solve the current fractional
+cover, read the dual prices, and search the very large proposal universe for a
+positive-gain cap, medoid ball, pair-direction filter, or learned score.  The
+search may be arbitrarily expensive; the retained index still pays only for the
+children that survive the final deterministic certificate.
+
 Thus for modern regimes where preprocessing compute is relatively cheap, the
 right theoretical target is even cleaner: generate a very large candidate pool
 by residual sampling, all data directions, medoids, pair directions, or learned
