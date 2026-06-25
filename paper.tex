@@ -2314,6 +2314,133 @@ query time pays only for output-sensitive list decoding.
    statement is the displayed estimate with the local target budget substituted.
 \end{proof}
 
+\begin{proposition}[Product-panel spectrum compiler]
+   \label{prop:product-panel-spectrum-compiler}
+   Fix a terminal localized ANN subproblem of size \(m\), approximation \(c\),
+   and target exponent \(\rho=\rho_c\).  Let \(L_m=\log^{A_c}m\).  A random
+   product panel consists of a product code
+   \(\mathcal C=\prod_{j=1}^h\mathcal C_j\), data block scores
+   \(\psi_j(x,c_j)\), query block scores \(\phi_j(q,c_j)\), and thresholds
+   \(\theta_P,\theta_Q\).  Write
+   \[
+      S_P(x,c)=\sum_{j=1}^h\psi_j(x,c_j),
+      \qquad
+      S_Q(q,c)=\sum_{j=1}^h\phi_j(q,c_j),
+   \]
+   and store \(x\) in bucket \(c\) when \(S_P(x,c)\ge\theta_P\).  On query
+   \(q\), list buckets with \(S_Q(q,c)\ge\theta_Q\) using the product decoder
+   of \cref{lem:additive-product-panel-decoder}.  Suppose that, for every
+   promised query \(q\), the one-panel expected decoder work is
+   \[
+      \E_{\mathcal G}W_{\rm dec}(q;\mathcal G)
+      \le dL_m+m^\rho L_m,
+      \tag{PP1}
+   \]
+   where \(W_{\rm dec}\) is the work bound certified by
+   \cref{lem:additive-product-panel-decoder} with terminal prices \(Q_c=0\).
+   Suppose further that there are \(\alpha,\beta>0\) such that
+   \[
+      \E_{\mathcal G}
+      \sum_{x\in P}
+      e^{-\alpha\theta_P}
+      \prod_{j=1}^h
+      \sum_{a\in\mathcal C_j}e^{\alpha\psi_j(x,a)}
+      \le m^{1+\rho}L_m,
+      \tag{PP2}
+   \]
+   and, for every promised query \(q\),
+   \[
+      \E_{\mathcal G}
+      \sum_{\substack{x\in P\\ \|x-q\|>cr}}
+      e^{-\alpha\theta_P-\beta\theta_Q}
+      \prod_{j=1}^h
+      \sum_{a\in\mathcal C_j}
+      e^{\alpha\psi_j(x,a)+\beta\phi_j(q,a)}
+      \le m^\rho L_m .
+      \tag{PP3}
+   \]
+   Finally assume that every near pair \((p,q)\), \(\|p-q\|\le r\), satisfies
+   the one-panel hit condition
+   \[
+      \Pr_{\mathcal G}\!\left[
+         \exists c\in\mathcal C:
+         S_P(p,c)\ge\theta_P,\quad S_Q(q,c)\ge\theta_Q
+      \right]\ge L_m^{-1}.
+      \tag{PP4}
+   \]
+   Then \(O(L_m)\) independent product panels give a terminal ANN data
+   structure with query work
+   \[
+      d\,m^\rho\log^{O_c(1)}m
+   \]
+   and space
+   \[
+      dm+m^{1+\rho}\log^{O_c(1)}m .
+   \]
+\end{proposition}
+
+\begin{proof}
+   For one panel, the query decoder lists every bucket with
+   \(S_Q(q,c)\ge\theta_Q\) by \cref{lem:additive-product-panel-decoder}, and
+   \((PP1)\) gives the expected decoder work.
+
+   The storage bound follows from the elementary exponential majorant
+   \[
+      \mathbf 1\{S_P(x,c)\ge\theta_P\}
+      \le e^{\alpha(S_P(x,c)-\theta_P)} .
+   \]
+   Summing over \(c=(c_1,\ldots,c_h)\) factors the product:
+   \[
+      \sum_{c\in\mathcal C}e^{\alpha S_P(x,c)}
+      =
+      \prod_{j=1}^h\sum_{a\in\mathcal C_j}e^{\alpha\psi_j(x,a)}.
+   \]
+   Therefore \((PP2)\) upper-bounds the expected number of stored point-bucket
+   incidences in one panel by \(m^{1+\rho}L_m\).
+
+   Similarly, the number of invalid point-bucket incidences scanned by query
+   \(q\) is at most
+   \[
+      \sum_{\substack{x\in P\\ \|x-q\|>cr}}
+      \sum_{c\in\mathcal C}
+      \mathbf 1\{S_P(x,c)\ge\theta_P\}
+      \mathbf 1\{S_Q(q,c)\ge\theta_Q\}.
+   \]
+   Using
+   \[
+      \mathbf 1\{S_P(x,c)\ge\theta_P\}
+      \mathbf 1\{S_Q(q,c)\ge\theta_Q\}
+      \le
+      e^{\alpha(S_P(x,c)-\theta_P)+
+         \beta(S_Q(q,c)-\theta_Q)}
+   \]
+   and the product factorization
+   \[
+      \sum_{c\in\mathcal C}e^{\alpha S_P(x,c)+\beta S_Q(q,c)}
+      =
+      \prod_{j=1}^h
+      \sum_{a\in\mathcal C_j}
+      e^{\alpha\psi_j(x,a)+\beta\phi_j(q,a)}
+   \]
+   gives \((PP3)\), so the one-panel expected invalid scan work is
+   \(m^\rho L_m\).
+
+   Store \(B=\lceil C L_m\rceil\) independent panels.  If \(p\) is a true near
+   neighbor of \(q\), \((PP4)\) implies that all panels miss a common bucket
+   containing \(p\) with probability at most
+   \[
+      (1-L_m^{-1})^B\le e^{-C}.
+   \]
+   Taking \(C\) large gives constant success probability.  The expected decoder
+   work, invalid scan work, and storage are multiplied by \(B=\log^{O_c(1)}m\),
+   giving the displayed resources.  The query verifies every scanned point in
+   the original metric and stops after finding a \(cr\)-neighbor, so valid
+   candidates cannot cause false positives.  As in
+   \cref{prop:flat-spherical-code-terminal}, the capped-expectation convention
+   converts these expectations to capped query and space resources after a
+   constant-factor loss in success probability.
+\end{proof}
+
 \begin{assumption}[Flat structured spherical-code decoder]
    \label{asm:flat-spherical-code-decoder}
    Fix a localized terminal spherical gap with \(m\) resident points.  There is
@@ -9984,8 +10111,11 @@ makes the decoder side self-contained: once block threshold reporters and
 suffix upper scores are available, the live stack is controlled by the product
 partition certificate \(P_\beta\), and terminal scan work is controlled by
 \(T_\beta\).  The remaining geometric theorem for such panels is therefore
-only the random-like spectrum: storage load, far co-load, and near-pair decoded
-hit probability at the critical exponent.
+only the random-like spectrum.  \Cref{prop:product-panel-spectrum-compiler}
+states the exact certificates: one-panel decoder work \((PP1)\), storage
+moment \((PP2)\), far co-load moment \((PP3)\), and near-pair hit probability
+\((PP4)\).  The two load conditions are pure exponential-moment inequalities
+and factor block-by-block for product panels.
 \Cref{lem:budget-stable-prefix-list} and
 \cref{cor:canonical-budget-stable-decoder} take one step in that direction:
 the canonical mixed Bellman budget itself is an admissible list-decoding
