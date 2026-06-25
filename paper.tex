@@ -3053,6 +3053,86 @@ This certificate is the local form of the remaining problem. It is analogous in 
    final statement is Paley--Zygmund.
 \end{proof}
 
+\begin{lemma}[Local LCA-energy certificate]\label{lem:local-lca-energy}
+   Work in the route trie of \cref{lem:lca-value-flow}. For a child edge
+   $u\to w$, write $\gamma_{u,w}$ for its success probability, and let
+   $\operatorname{ch}(u)$ be the children of $u$. Suppose there is a
+   nonnegative function $M$ on trie nodes such that $M(v)\ge1$ at every leaf
+   and, at every internal node,
+   \[
+      V(u)^2+
+      \sum_{w\in\operatorname{ch}(u)}
+      \gamma_{u,w}M(w)V(w)^2
+      \le
+      M(u)V(u)^2 .
+   \]
+   Then
+   \[
+      \sum_{u\in\mathcal T}A(u)V(u)^2
+      \le
+      M(\varnothing)V(\varnothing)^2 .
+   \]
+\end{lemma}
+
+\begin{proof}
+   For a node $u$, let
+   \[
+      \mathcal E(u)=
+      \sum_{z\succeq u}
+      \left(\prod_{u\prec e\preceq z}\gamma_e\right)V(z)^2
+   \]
+   be the LCA energy of the subtree below $u$, normalized so that the prefix
+   weight at $u$ itself is one. We prove by backward induction that
+   $\mathcal E(u)\le M(u)V(u)^2$. At a leaf, $\mathcal E(u)=V(u)^2=1$ and this
+   follows from $M(u)\ge1$. At an internal node,
+   \[
+      \mathcal E(u)=
+      V(u)^2+
+      \sum_{w\in\operatorname{ch}(u)}
+      \gamma_{u,w}\mathcal E(w).
+   \]
+   Applying the induction hypothesis to the children and then the displayed
+   local inequality gives $\mathcal E(u)\le M(u)V(u)^2$. Taking $u$ to be the
+   root proves the claim.
+\end{proof}
+
+\begin{corollary}[Square-nonexpansive route tries]\label{cor:square-nonexpansive-routes}
+   In the setting of \cref{lem:lca-value-flow}, suppose every root-to-leaf route
+   has at most $H$ edges and every internal node satisfies
+   \[
+      \sum_{w\in\operatorname{ch}(u)}
+      \gamma_{u,w}V(w)^2
+      \le
+      V(u)^2 .
+   \]
+   Then
+   \[
+      \sum_{u\in\mathcal T}A(u)V(u)^2
+      \le
+      (H+1)V(\varnothing)^2 .
+   \]
+   Hence, if $H=\log^{O_c(1)}n$ and
+   $V(\varnothing)\ge\log^{-O_c(1)}n$, the fractional value-delivery layer
+   succeeds with inverse-polylogarithmic probability.
+\end{corollary}
+
+\begin{proof}
+   Let $h(u)$ be the maximum number of edges from $u$ to a descendant leaf and
+   set $M(u)=h(u)+1$. For a child $w$ of $u$, $M(w)\le h(u)$. Therefore
+   \[
+      V(u)^2+
+      \sum_w\gamma_{u,w}M(w)V(w)^2
+      \le
+      V(u)^2+h(u)\sum_w\gamma_{u,w}V(w)^2
+      \le
+      (h(u)+1)V(u)^2
+      =
+      M(u)V(u)^2 .
+   \]
+   Apply \cref{lem:local-lca-energy} and then
+   \cref{lem:lca-value-flow}.
+\end{proof}
+
 \begin{remark}[The concrete route-moment target]\label{rem:lca-value-target}
    \Cref{lem:lca-value-flow} is the route-level analogue of the spherical LCA
    calculation in \cref{lem:tame-second-moment}. It separates the remaining
@@ -3071,6 +3151,17 @@ This certificate is the local form of the remaining problem. It is analogous in 
    shared early opportunities are charged once through $A(u)$, and branching is
    charged only through the LCA energy, exactly as shared score prefixes are
    charged in the spherical second moment.
+
+   \Cref{lem:local-lca-energy} gives a local way to prove the same bound. The
+   cleanest sufficient condition is the square-nonexpansion in
+   \cref{cor:square-nonexpansive-routes}: ordinary score branching with
+   $\gamma_{u,w}=1$ automatically has this property because
+   $\sum_wV(w)^2\le(\sum_wV(w))^2$. Thus any remaining LCA-energy growth must
+   come from genuinely thinned geometric or fractional-budget opportunities.
+   The next theorem to prove is therefore local: either show that the actual
+   tame-route value split is square-nonexpansive after aggregating alternative
+   routes, or construct an explicit Bellman multiplier $M$ with
+   $M(\varnothing)=\log^{O_c(1)}n$.
 \end{remark}
 
 \begin{remark}[The remaining aggregate value target]\label{rem:value-delivery-target}
@@ -4572,7 +4663,7 @@ For the randomized cap-thinning route, one remaining task is the branching first
    \le
    \log^{O_c(1)}n\,V(\varnothing)^2 .
 \]
-Conditional on that aggregate moment statement, \cref{prop:budget-thinned-polylog} gives the desired polylogarithmic ANN theorem. This is a fully non-channel route; the smooth product terminal filter can be used after localization and no longer contributes an inverse-polylogarithmic table-recall penalty. The structured posterior route replaces the cap-frontier obstacle by \cref{asm:multiscale-structured-likelihood}: prove an output-sensitive reporter for pure likelihood rank prefixes, not a small explicitly enumerable channel. The smoothed sampling route replaces both by \cref{asm:smoothed-gibbs} or \cref{asm:gumbel-mips}: prove either an optimal-exponent reporter that captures inverse-polylogarithmic Gaussian Gibbs mass, or a certified $O(\log\log n)$-additive Gumbel-MIPS primitive. Smoothed additive nearest neighbor is another stronger sufficient primitive. The detector-vote cohort-or-leaf route is a separate possible generalization to arbitrary certified child hierarchies, where the remaining issue is near-lineage coupling between ordinary continuation paths and detector activations.
+\Cref{lem:local-lca-energy} further reduces this to a local Bellman multiplier, and \cref{cor:square-nonexpansive-routes} shows that square-nonexpansive value branching costs only the polylogarithmic route depth. Conditional on that aggregate moment statement, \cref{prop:budget-thinned-polylog} gives the desired polylogarithmic ANN theorem. This is a fully non-channel route; the smooth product terminal filter can be used after localization and no longer contributes an inverse-polylogarithmic table-recall penalty. The structured posterior route replaces the cap-frontier obstacle by \cref{asm:multiscale-structured-likelihood}: prove an output-sensitive reporter for pure likelihood rank prefixes, not a small explicitly enumerable channel. The smoothed sampling route replaces both by \cref{asm:smoothed-gibbs} or \cref{asm:gumbel-mips}: prove either an optimal-exponent reporter that captures inverse-polylogarithmic Gaussian Gibbs mass, or a certified $O(\log\log n)$-additive Gumbel-MIPS primitive. Smoothed additive nearest neighbor is another stronger sufficient primitive. The detector-vote cohort-or-leaf route is a separate possible generalization to arbitrary certified child hierarchies, where the remaining issue is near-lineage coupling between ordinary continuation paths and detector activations.
 
 \appendix
 
