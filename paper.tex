@@ -1806,6 +1806,48 @@ load
    unchanged.
 \end{proof}
 
+\begin{lemma}[Low-guard shadow compiler]\label{lem:low-guard-shadow}
+   Work in one node with resident set $P$, guard density $g$, and low-guard
+   domain $\Omega_{\rm low}=\{q:g(q)<\gamma\}$ as in
+   \cref{lem:guard-restricted-cover}.  Define the low-guard shadow of the
+   resident set
+   \[
+      E_\gamma
+      =
+      \{p\in P:\exists q\in\Omega_{\rm low}\text{ with }\|p-q\|\le r\}.
+   \]
+   Suppose the residual cover is required to route only low-guard near pairs:
+   for every $q\in\Omega_{\rm low}$ and every $p\in P$ with $\|p-q\|\le r$,
+   either $p\in U_0$ or some active stored filter contains $p$.  For
+   compiler-compatible ball or Lipschitz-score filters, it is enough to cover
+   the exposed set $E_\gamma\setminus U_0$, because the query slack then
+   activates every filter containing such a near point.  Assume that the
+   active-power certificate
+   \[
+      \sum_{i\in I(q)} |P_i|^\rho\Psi(R_i)\le L
+   \]
+   is imposed only for $q\in\Omega_{\rm low}$, and that
+   $|U_0|\le L_0$.  Then the same capped query procedure as in
+   \cref{lem:guard-restricted-cover} has work
+   \[
+      O((\gamma^{-1}+L+L_0)\polylog n)
+   \]
+   and finds a valid answer for every near pair with constant probability.
+\end{lemma}
+
+\begin{proof}
+   If $q\notin\Omega_{\rm low}$, the resident guard succeeds with probability
+   at least $3/4$, exactly as in \cref{lem:guard-restricted-cover}.  On this
+   event no recursive cover is used, so points outside $E_\gamma$ need not be
+   stored in any child.
+
+   If $q\in\Omega_{\rm low}$ and $\|p-q\|\le r$, then $p\in E_\gamma$ by
+   definition.  The low-guard routing condition says that $p$ is either in the
+   residual scan or in an active listed child.  The active-power certificate
+   prevents the capped decoder from aborting on such a query, so the residual
+   scan or recursive call finds a valid answer.  The work bound is unchanged.
+\end{proof}
+
 This also gives a safe way to use an empirical cover such as $k$-means without
 claiming that Lloyd's objective proves anything. At a node, store an arbitrary
 certified cover together with a capped decoder. On query $q$, the decoder either
@@ -2665,6 +2707,16 @@ activation-pattern set only over this domain.  High-guard queries are handled
 by the resident sample and receive no dual price.  This strictly narrows the
 remaining separation theorem: a bad dual certificate prices only low-guard
 queries, where no large set of already-valid resident answers is available.
+By \cref{lem:low-guard-shadow}, the point side can be narrowed as well.  Let
+\[
+   E_\gamma=\{p\in P:\exists q\in\Omega_{\rm low},\ \|p-q\|\le r\}.
+\]
+The finite cover program may cover only $E_\gamma$ up to the residual block,
+and the dual point prices $\alpha_x$ may be supported only on $E_\gamma$.
+Resident points outside this shadow are solved, whenever they matter, by the
+high-guard sample.  Thus the remaining separation theorem is a genuinely
+low-density statement: it must defeat dual prices on points that can be near a
+low-guard query, not on dense regions already certified by the guard.
 
 \begin{lemma}[Finite-pool fractional dual]\label{lem:finite-pool-dual}
    Fix a finite set $\mathcal Q$ of query constraints and a finite proposal pool
@@ -3238,12 +3290,20 @@ small stored cover, not an efficient Lloyd-style training algorithm.
    certified object with constant probability, amplified offline as in
    \cref{lem:offline-amplification}.
 
-   There is a residual block $U_0$ and a query-decodable family of Lipschitz
-   score filters
+   Let
+   \[
+      \gamma_m=m^{-\rho}\log^{-O_c(1)}m,
+      \qquad
+      \Omega_{\rm low}=\{q:g(q)<\gamma_m\},
+   \]
+   and let $E_{\gamma_m}$ be the low-guard shadow from
+   \cref{lem:low-guard-shadow}.  There is a residual block
+   $U_0\subseteq E_{\gamma_m}$ and a query-decodable family of Lipschitz score
+   filters
    \[
       (P_i,o_i,R_i,\phi_i,\theta_i,L_i)_{i\in I}
    \]
-   covering $P\setminus U_0$, with
+   covering $E_{\gamma_m}\setminus U_0$, with
    \[
       |U_0|\le F_4(m,R)\log^{O_c(1)}m,
       \qquad
@@ -3266,6 +3326,9 @@ small stored cover, not an efficient Lloyd-style training algorithm.
       \le
       mF_4(m,R).
    \]
+   The cover is low-guard routing-correct: if $q\in\Omega_{\rm low}$,
+   $\|p-q\|\le r$, and $p\in E_{\gamma_m}$, then $p\in U_0$ or $p$ lies in a
+   listed filter.
 
    Finally, the preprocessing routine may obtain this object by any amount of
    offline computation.  In particular, it is enough that either a residual
@@ -3319,9 +3382,10 @@ small stored cover, not an efficient Lloyd-style training algorithm.
    factor.
 
    Otherwise scan $U_0$ and recurse into all listed score filters.  Correctness
-   follows from \cref{lem:cover-residual-scan} and
-   \cref{lem:lipschitz-score-cover}: a near point is either in the scanned
-   residual, or lies in a filter whose Lipschitz slack makes the query list it.
+   follows from \cref{lem:low-guard-shadow} and
+   \cref{lem:lipschitz-score-cover}: on a low-guard query a near point lies in
+   the low-guard shadow and is either in the scanned residual, or lies in a
+   filter whose Lipschitz slack makes the query list it.
    The residual scan costs at most
    $dF_4(m,R)\log^{O_c(1)}m$, and the listed recursive power contracts by
    $(1-\kappa\eta^2)$.
@@ -6871,7 +6935,11 @@ sample, or learn a huge proposal pool and then keep only the certified cover on
 the desired query-memory Pareto frontier.  The fractional LP and
 pattern-complete rounding remain useful proof devices, but their logarithmic
 rounding factor is not inherent to preprocessing: an exact integral certificate
-would pay no such index overhead.
+would pay no such index overhead.  The guard refinement
+\cref{lem:low-guard-shadow} further removes points whose entire near-query
+neighborhood is already high-density: the finite dual now prices only the
+low-guard shadow, so the remaining score-cover theorem is about sparse exposed
+regions rather than dense clusters that resident sampling already solves.
 
 \paragraph{Structured posterior route.}
 \Cref{lem:posterior-superlevel-compiler} records the negative-moment identity suggested by the latest notes. \Cref{lem:explicit-enumeration-barrier} makes the coarse-child obstruction precise: the scale $\xi=m^{-1/(2c^2)}$ is the price of explicitly enumerating $B\simeq\xi^{-1}$ outcomes, not a geometric limit. \Cref{lem:oblivious-sparsification-barrier} adds the complementary warning that the moment bounds alone still permit $\Omega(\xi^{-1})$ disjoint possible witnesses, so direct random sparsification cannot replace structured decoding without an additional sensitivity theorem. \Cref{lem:scale-window-compiler} and \cref{lem:dyadic-structured-amplification} isolate the important arithmetic: if mass windows can be decoded output-sensitively, then $\xi^{-\rho}$ repetitions at each dyadic scale convert negative-moment value into constant hit probability, and summing all scales down to $1/m$ still fits the $m^\rho$ query budget. This scale-aware amplification is essential; a raw negative-moment diagnostic alone does not imply that the near point is actually listed with inverse-polylogarithmic probability.
