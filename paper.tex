@@ -1957,6 +1957,49 @@ that child and repeat until the sampled route-mass LP is feasible.
    success and work bounds.
 \end{proof}
 
+\begin{lemma}[Activation-pattern sampled-route verifier]
+   \label{lem:activation-sampled-route-verifier}
+   Work in the setting of \cref{lem:finite-sampled-route-verifier}, but group
+   queries only by their active-child pattern
+   \[
+      a(q)=(a_C(q))_{C\in\mathcal C}.
+   \]
+   Let \(\mathcal A_\Omega\) be any finite set of activation patterns
+   containing all patterns realized on \(\Omega\).  For
+   \(a\in\mathcal A_\Omega\), write
+   \[
+      \Omega_a=\{q\in\Omega:a(q)=a\},
+      \qquad
+      N_a=
+      \{p\in E\setminus U_0:\exists q\in\Omega_a,\ \|p-q\|\le r\}.
+   \]
+   Suppose that, for every realized activation pattern \(a\), the
+   sampled-cover feasibility problem \(\mathsf S_a\) is feasible with active
+   set \(A_a=\{C:a_C=1\}\), unresolved set \(N_a\), route targets
+   \(h_p=h_0\), and query-price budget \(L\).  Store one feasible sampler
+   \(\pi^a\) for each realized activation pattern, and suppose the query
+   decoder computes \(a(q)\) and samples from \(\pi^{a(q)}\) in work \(D(q)\).
+
+   Then the hypotheses of \cref{lem:sampled-priced-cover} hold uniformly over
+   \(\Omega\) with route mass at least \(h_0\) and expected sampled child price
+   at most \(L\).  In particular, the query-time signature need not include
+   the exact unresolved near set \(N(q)\).
+\end{lemma}
+
+\begin{proof}
+   Fix a query \(q\in\Omega\), put \(a=a(q)\), and let
+   \(p\in E\setminus U_0\) satisfy \(\|p-q\|\le r\).  By definition,
+   \(q\in\Omega_a\), hence \(p\in N_a\).  The stored vector \(\pi^a\) is
+   feasible for \(\mathsf S_a\), so it is supported on active children for
+   this same pattern, has expected child price at most \(L\), and satisfies
+   \[
+      \sum_{C:p\in P_C}\pi^a_C\sigma_C\ge h_0 .
+   \]
+   These are exactly the support, expected-price, and route-mass requirements
+   of \cref{lem:sampled-priced-cover}.  Applying that compiler gives the
+   claimed uniform guarantee.
+\end{proof}
+
 \begin{lemma}[Sampled-route cohort materialization]
    \label{lem:sampled-route-cohort}
    Fix one sampled-route signature with active child family
@@ -2051,6 +2094,13 @@ $p\in E\setminus U_0$.  The verifier is useful when this combined signature
 class is small enough to store or can be sampled from implicitly.  Otherwise it
 still serves as a finite offline certificate and dual diagnostic, but its table
 size must be charged to the retained index.
+\Cref{lem:activation-sampled-route-verifier} gives a stricter but cleaner
+alternative: certify, for each activation pattern, the union of all near points
+that can occur under that pattern.  Then query-time decoding never needs the
+exact near set or the ball-arrangement cell; it only needs the ordinary
+activation pattern.  This is useful when the larger pattern-level LP is
+feasible, because it moves the remaining metadata issue from near-set
+signatures to the already-present activation decoder.
 \Cref{lem:sampled-route-cohort} gives the corresponding integer
 materialization: for inverse-polylogarithmic \(h_0\), each feasible signature
 needs only a polylogarithmic cohort of child identifiers to implement its
@@ -4525,6 +4575,10 @@ positive-probability seeded separator plus deterministic certification.
    \Cref{lem:finite-sampled-route-verifier} gives the all-query version: it is
    enough to check these sampled LPs on the finite signatures consisting of the
    retained activation pattern together with the unresolved near-point set.
+   The stronger certificate of
+   \cref{lem:activation-sampled-route-verifier} avoids storing or decoding this
+   near-point coordinate: for each retained activation pattern it checks the
+   union of all unresolved near points compatible with that pattern.
    By \cref{lem:sampled-route-cohort}, a feasible sampled LP for a signature
    can be implemented by a uniform cohort of
    \(\log^{O_c(1)}m\) child records whenever the target route mass is
@@ -8162,6 +8216,10 @@ its query price plus the normalization price.
 certificate by grouping queries according to their activation pattern and
 unresolved near set; the cost of storing or implicitly decoding those signatures
 is now explicit.
+\Cref{lem:activation-sampled-route-verifier} gives the clean activation-only
+variant: if the route LP is feasible for every activation pattern against the
+union of all compatible near points, then the query decoder no longer needs the
+near-set coordinate at all.
 \Cref{lem:sampled-route-cohort} removes the next fractional artifact: once a
 signature LP is feasible, a polylogarithmic cohort of child identifiers
 implements its sampler with only constant-factor loss in price and route mass.
