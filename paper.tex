@@ -3749,6 +3749,82 @@ query time pays only for output-sensitive list decoding.
    sentence is only a change of notation for the same sampled-panel compiler.
 \end{proof}
 
+\begin{lemma}[Tilted weight feasibility is linear]
+   \label{lem:tilted-weight-linear-feasibility}
+   Fix a finite retained label set \(\mathcal L\) and storage predicate
+   \(A_g(x)\in\{0,1\}\).  Let \(\mathcal Q\) be a finite set of promised
+   queries and let \(\mathcal N\subseteq P\times\mathcal Q\) be a finite set
+   of near-pair witnesses.  For a label \(g\) and query \(q\), write
+   \[
+      R_q(g)=e^{\beta S_Q(q,g)},
+      \qquad
+      F_q(g)=\sum_{\substack{x\in P\\\|x-q\|>cr}}A_g(x),
+   \]
+   and fix targets \(B>0\), \(h>0\).  There are nonnegative weights
+   \((w_g)_{g\in\mathcal L}\), \(\sum_gw_g=1\), whose tilted query law
+   \[
+      \pi_q(g)=\frac{w_gR_q(g)}{\sum_{\ell\in\mathcal L}w_\ell R_q(\ell)}
+   \]
+   satisfies
+   \[
+      \sum_g\pi_q(g)F_q(g)\le B
+      \qquad(q\in\mathcal Q)
+      \tag{TW1}
+   \]
+   and
+   \[
+      \sum_g\pi_q(g)A_g(p)\ge h
+      \qquad((p,q)\in\mathcal N)
+      \tag{TW2}
+   \]
+   if and only if the same weights satisfy the homogeneous linear inequalities
+   \[
+      \sum_gw_gR_q(g)\bigl(F_q(g)-B\bigr)\le0
+      \qquad(q\in\mathcal Q),
+      \tag{TW3}
+   \]
+   and
+   \[
+      \sum_gw_gR_q(g)\bigl(h-A_g(p)\bigr)\le0
+      \qquad((p,q)\in\mathcal N).
+      \tag{TW4}
+   \]
+   Equivalently, the finite retained pool fails to admit such weights iff
+   there exist nonnegative dual prices
+   \(\lambda_q\) for \(q\in\mathcal Q\) and
+   \(\mu_{p,q}\) for \((p,q)\in\mathcal N\), not all zero, such that every
+   retained label \(g\in\mathcal L\) has strictly positive reduced obstruction
+   \[
+      \sum_{q\in\mathcal Q}
+      \lambda_qR_q(g)\bigl(F_q(g)-B\bigr)
+      +
+      \sum_{(p,q)\in\mathcal N}
+      \mu_{p,q}R_q(g)\bigl(h-A_g(p)\bigr)
+      >0.
+      \tag{TW5}
+   \]
+\end{lemma}
+
+\begin{proof}
+   For any \(q\), the denominator
+   \(\sum_gw_gR_q(g)\) is positive because the weights have total mass one and
+   \(R_q(g)>0\).  Multiplying \((TW1)\) by this denominator gives \((TW3)\),
+   and multiplying \((TW2)\) by the same denominator gives \((TW4)\).  This
+   proves the first equivalence.
+
+   Let \(a_g\in\mathbb R^{|\mathcal Q|+|\mathcal N|}\) be the column whose
+   coordinates are the left-hand coefficients in \((TW3)\) and \((TW4)\).  The
+   linear feasibility problem asks whether
+   \[
+      \operatorname{conv}\{a_g:g\in\mathcal L\}
+   \]
+   intersects the nonpositive orthant.  By the finite separating hyperplane
+   theorem, equivalently Farkas' lemma, this intersection is empty iff there is
+   a nonnegative separating vector, not identically zero, whose inner product
+   with every column \(a_g\) is strictly positive.  Writing the coordinates of
+   that separating vector as \(\lambda\) and \(\mu\) gives \((TW5)\).
+\end{proof}
+
 \begin{remark}[Lattice Gaussian panels as sampled decoders]
    \label{rem:lattice-gaussian-panels}
    \Cref{prop:sampled-structured-panel} is the sampler analogue of the
@@ -12621,6 +12697,12 @@ finite certificate: a weighted retained label set only has to pass storage,
 sampled far-load, and near-mass checks under the tilted query sampler.  The
 weights may be chosen by arbitrary preprocessing; only retained buckets and the
 query sampler are charged.
+\Cref{lem:tilted-weight-linear-feasibility} shows that, for a fixed retained
+pool, choosing those weights is just a linear feasibility problem after
+clearing the tilted partition functions.  Failure has a concrete dual
+certificate assigning prices to bad queries and near witnesses; a structured
+label family must provide a nonpositive-reduced-obstruction label for every
+such dual.
 \Cref{rem:outer-list-recovery-codebook} records the stronger alternative
 suggested by list-decoding codes and lattices: instead of decoding the full
 Cartesian product, retain a sparse outer code or lattice coset and use soft
