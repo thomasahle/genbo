@@ -2083,6 +2083,75 @@ ordinary balanced $k$-means: a recursive proof cannot afford a query to stab
 several comparable children. It needs either very low stabbing, highly skewed
 almost-total splits, or randomized thinning as in \cref{lem:thin-cap-contraction}.
 
+The same point suggests a more selective replacement for $k$-means than another
+centroid objective.  The weakness of a certified ball cover is that correctness
+forces the query to activate the whole inflated ball $B(o_i,R_i+r)$.  In a
+concentrated high-dimensional node these inflated balls can blanket nearly all
+plausible queries, so the active fanout is large even when the Voronoi
+partition is useful in practice.  A cap filter separates the two roles: a ball
+certifies the recursive radius, while a one-sided score inequality certifies
+whether a near query must activate the filter.
+
+\begin{lemma}[Cap-slack certified cover]\label{lem:cap-slack-cover}
+   Let each filter be specified by
+   \[
+      (P_i,o_i,R_i,u_i,\theta_i),
+      \qquad \|u_i\|=1,
+   \]
+   with
+   \[
+      P_i\subseteq \Ball(o_i,R_i)
+      \cap \{x:\langle u_i,x\rangle\ge \theta_i\},
+      \qquad \bigcup_iP_i=P .
+   \]
+   On query $q$, list every filter satisfying
+   \[
+      \langle u_i,q\rangle\ge \theta_i-r .
+   \]
+   If the listed filters obey
+   \[
+      \sum_{i:\langle u_i,q\rangle\ge\theta_i-r}
+      |P_i|^\rho\Psi(R_i)\le L,
+      \qquad
+      \sum_i |P_i|^{1+\rho}\Psi(R_i)\le S_0,
+   \]
+   then the cover compiler of \cref{lem:certified-cover-compiler} applies with
+   query work $O(L\polylog n)$ and storage $O(S_0\polylog n)$.
+\end{lemma}
+
+\begin{proof}
+   Let $\|p-q\|\le r$ and choose a filter $i$ with $p\in P_i$.  Since
+   $\|u_i\|=1$,
+   \[
+      \langle u_i,q\rangle
+      \ge
+      \langle u_i,p\rangle-\|p-q\|
+      \ge
+      \theta_i-r .
+   \]
+   Hence the query lists a child containing the near point.  The ball
+   certificate $P_i\subseteq\Ball(o_i,R_i)$ supplies the recursive radius
+   parameter, and the displayed sums are exactly the active query and storage
+   potentials.
+\end{proof}
+
+Thus a theory-native practical alternative is a power-filter Lloyd iteration
+rather than ordinary Lloyd iteration.  Its filters are spherical caps after
+local centering or whitening.  The assignment step should add point--cap
+memberships by uncovered near-pair value divided by the marginal increase in
+\[
+   |P_i|^{1+\rho}\Psi(R_i)
+   \quad\text{and}\quad
+   \sum_{\text{sampled }q:
+      \langle u_i,q\rangle\ge\theta_i-r}
+      |P_i|^\rho\Psi(R_i),
+\]
+while the update step should move $u_i,\theta_i,o_i$ to reduce cap-query
+stabbing and certified child radius.  This objective can beat $k$-means on
+instances where angular caps are selective but inflated balls are not: the
+query probes filters aligned with its score direction, instead of every
+cluster whose enclosing ball lies within additive distance $r$.
+
 \subsection{Simplicity and implementation}
 
 The filtering work remains level-synchronous. At one checkpoint, all active score paths can be advanced by a batched matrix multiplication, followed by continuation-mass pruning, cap-test lookup, randomized child thinning, and resident scans. Recentering updates stored coordinate offsets; it does not start a fresh score tree.
