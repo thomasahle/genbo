@@ -2417,6 +2417,44 @@ whether a near query must activate the filter.
    displayed sums are exactly the active query and storage potentials.
 \end{proof}
 
+\begin{lemma}[Threshold-tightened score filters]
+   \label{lem:threshold-tightening}
+   Let $(P_C,o_C,R_C,\phi,L,\theta)$ be a nonempty certified Lipschitz-score
+   filter:
+   \[
+      P_C\subseteq\Ball(o_C,R_C)\cap\{x:\phi(x)\ge\theta\}.
+   \]
+   Define
+   \[
+      \theta^\star=\min_{x\in P_C}\phi(x).
+   \]
+   Replacing $\theta$ by $\theta^\star$ preserves certification and all
+   near-pair routing guarantees for this child, keeps its storage weight
+   unchanged, and can only decrease its activation predicate:
+   \[
+      \mathbf 1\{\phi(q)\ge\theta^\star-Lr\}
+      \le
+      \mathbf 1\{\phi(q)\ge\theta-Lr\}.
+   \]
+   Consequently, for a fixed finite point set and a fixed score function
+   $\phi$, every nonempty retained score filter is dominated by one whose
+   threshold is one of the data scores $\{\phi(x):x\in P\}$.
+\end{lemma}
+
+\begin{proof}
+   Since every point of $P_C$ has score at least $\theta$, we have
+   $\theta^\star\ge\theta$, and the same point set remains certified.  If
+   $p\in P_C$ and $\|p-q\|\le r$, then Lipschitzness gives
+   \[
+      \phi(q)\ge\phi(p)-Lr\ge\theta^\star-Lr,
+   \]
+   so tightening the threshold does not lose the query that must route to this
+   child.  The point set and certified ball are unchanged, hence the storage
+   weight is unchanged.  Because $\theta^\star\ge\theta$, the displayed
+   activation inequality holds for every query.  The final claim follows by
+   applying the construction to each retained nonempty child.
+\end{proof}
+
 \begin{lemma}[Shell-normalized cap cover]\label{lem:shell-normalized-cap-cover}
    Fix a center $o$ and a lower shell radius $\sigma>0$.  For
    $\|x-o\|\ge\sigma$, write
@@ -2485,6 +2523,10 @@ norms are nearly constant, nearest-center ranking differs from ranking by
 linear or normalized-cap scores only by lower-order radial terms.  Thus
 $k$-means can initialize the directions, but the certificate should be stated
 for overlapping cap or Lipschitz-score filters.
+\Cref{lem:threshold-tightening} removes a nuisance continuum from this model:
+once a score function and retained point set are fixed, the best safe threshold
+is the minimum retained score, so a finite data set contributes only finitely
+many threshold choices per score.
 
 The theory-native alternative to $k$-means is therefore not a different
 centroid objective alone.  It is a fixed-overlap score-filter tree: learn
