@@ -8499,6 +8499,54 @@ This certificate is the local form of the remaining problem. It is analogous in 
    \(\sum_w\Phi(w)\le\Phi(u)\) because all terms are nonnegative.
 \end{proof}
 
+\begin{lemma}[Superharmonic potential route law]
+   \label{lem:superharmonic-potential-route-law}
+   Let \(\mathcal T\) be a finite rooted trie whose leaves are successful
+   routes.  Suppose \(\Phi(u)\ge0\) satisfies
+   \[
+      \sum_{w\in\operatorname{ch}(u)}\Phi(w)\le\Phi(u)
+      \qquad\text{for every internal node }u,
+   \]
+   and \(\Phi(\varnothing)\le1\).  Then there is a probability law
+   \(\Lambda\) on the leaves such that
+   \[
+      \Lambda(u)\ge\Phi(u)
+      \qquad\text{for every node }u.
+   \]
+   More generally, if \(b(u)\ge0\), \(b(u)\le\Phi(u)\), and
+   \(\Phi(\varnothing)\le C/H_0\), then there is a leaf law satisfying
+   \[
+      H_0b(u)\le C\Lambda(u)
+      \qquad\text{for every node }u.
+   \]
+\end{lemma}
+
+\begin{proof}
+   We prove the normalized statement.  Give the root mass
+   \(m(\varnothing)=1\).  Suppose an internal node \(u\) has already received
+   mass \(m(u)\ge\Phi(u)\).  Assign each child \(w\) a mandatory mass
+   \(\Phi(w)\).  The total mandatory child mass is at most \(\Phi(u)\le m(u)\),
+   so the leftover
+   \[
+      m(u)-\sum_{w\in\operatorname{ch}(u)}\Phi(w)
+   \]
+   is nonnegative and can be distributed arbitrarily among the children.  This
+   gives every child mass at least its \(\Phi(w)\), and the child masses sum to
+   \(m(u)\).  Recurse until leaves and put the resulting masses on the leaves.
+   The induced law satisfies \(\Lambda(u)=m(u)\ge\Phi(u)\) for every node.
+
+   For the scaled statement, apply the normalized construction to
+   \[
+      \widehat\Phi(u)=\frac{H_0}{C}\Phi(u).
+   \]
+   Then \(\widehat\Phi(\varnothing)\le1\), and the constructed law satisfies
+   \[
+      \Lambda(u)\ge\widehat\Phi(u)
+      \ge \frac{H_0}{C}b(u),
+   \]
+   which is the displayed inequality.
+\end{proof}
+
 \begin{corollary}[Antichain charge certificate for transition water-filling]
    \label{cor:antichain-transition-waterfill}
    Work in the setting of \cref{cor:transition-waterfilled-allocation}.  For
@@ -8634,8 +8682,20 @@ This certificate is the local form of the remaining problem. It is analogous in 
 \begin{proof}
    Apply \cref{lem:local-antichain-charge-potential} with
    \(b(u)=a_*(u)\).  This gives the required antichain charge bound
-   \(\sum_{u\in\mathcal C}a_*(u)\le C/H_0\).  The conclusion is then exactly
-   \cref{cor:existential-antichain-fano} with \(B=H_0\log C\).
+   \(\sum_{u\in\mathcal C}a_*(u)\le C/H_0\).
+
+   Equivalently, \cref{lem:superharmonic-potential-route-law} constructs a
+   leaf law \(\Lambda\) directly from the same potential, with
+   \[
+      H_0a_*(u)\le C\Lambda(u)
+      \qquad(u\in\mathcal T).
+   \]
+   Therefore every required edge \(e=u\to w\) satisfies
+   \(H_0a_e\le C\Lambda(u)\), and the transition-aware water-filled defect is
+   at most \(H_0\log C\) as in
+   \cref{cor:antichain-transition-waterfill}.  The Fano work and success
+   conclusion is \cref{cor:existential-antichain-fano} with
+   \(B=H_0\log C\).
 \end{proof}
 
 \begin{lemma}[Finite convex-linear minimax]\label{lem:finite-convex-minimax}
@@ -11641,10 +11701,14 @@ condition into a local proof obligation: find a nonnegative potential
 \(\sum_w\Phi(w)\le\Phi(u)\), and
 \(\Phi(\varnothing)\le C/H_0\).  The stronger drop form
 \(a_*(u)+\sum_w\Phi(w)\le\Phi(u)\) is enough and telescopes through every
-stopping frontier.  \Cref{cor:local-potential-antichain-fano} packages this
-with the Fano decoder, so the remaining geometric theorem can be attacked by
-local potential inequalities rather than by explicitly constructing the route
-law.
+stopping frontier.  \Cref{lem:superharmonic-potential-route-law} then turns
+the same potential into an explicit top-down leaf law whose prefix masses
+dominate \(H_0a_*(u)/C\).  Thus a decodable superharmonic potential supplies
+both the route law and the transition-aware water-filled allocation; no
+separate antichain-flow materialization is needed.  \Cref{cor:local-potential-antichain-fano}
+packages this with the Fano decoder, so the remaining geometric theorem can be
+attacked by local potential inequalities rather than by explicitly
+constructing the route law.
 \Cref{cor:existential-antichain-fano} composes this with the Fano decoder in
 the ANN-correct existential form: if the union of valid terminal routes has the
 same antichain charge bound and every such route has \(O_c(\log\log n)\) raw
