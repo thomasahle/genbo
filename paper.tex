@@ -2125,6 +2125,12 @@ enumerator for the structured tree, and use reliability or posterior scores to
 prune the list.  This mirrors Barnes--Wall lattice list decoding, lattice sphere
 enumeration, successive-cancellation list decoding of polar codes, and
 soft-decision Reed--Solomon decoding~\cite{GP17,MP20,FP85,SE94,TV12,KV03}.
+The additional lesson from pruned lattice enumeration is that the pruning
+profile should be an optimized certificate rather than a fixed level schedule:
+one can spend more search budget on prefixes that have high near-route
+reliability and prune elsewhere, as long as the resulting profile has certified
+expected work.  \Cref{lem:pruned-budget-thinning} records the corresponding
+self-contained budget rule for the score tree.
 
 \begin{lemma}[Finite sampled-cover dual]
    \label{lem:finite-sampled-cover-dual}
@@ -5949,6 +5955,66 @@ This certificate is the local form of the remaining problem. It is analogous in 
    Combining the two displays proves the claim.
 \end{proof}
 
+\begin{lemma}[Pruned budget-thinning profile]\label{lem:pruned-budget-thinning}
+   In the setting of \cref{lem:budget-thinned-opportunities}, let
+   \(r_q(u)\ge0\) be any predictable multiplier on first-opportunity prefixes.
+   Suppose the multiplier profile has the certified budget
+   \[
+      \E\sum_{u\in\mathcal A(q)}
+      r_q(u)\mathcal B_q(u)
+      \le F_4(m,R).
+   \]
+   Activate the geometric children at \(u\) with probability
+   \[
+      \pi_r(u)
+      =
+      \min\left\{
+         1,\,
+         \frac{(1-\kappa\eta^2)r_q(u)\mathcal B_q(u)}
+              {\Gamma(u)}
+      \right\},
+   \]
+   with the convention \(\pi_r(u)=1\) when \(\Gamma(u)=0\). Then
+   \[
+      \E\left[
+         \sum_{u\in\mathcal A(q)}
+         \mathbf 1_{\{\text{$u$ activates}\}}\Gamma(u)
+      \right]
+      \le
+      (1-\kappa\eta^2)F_4(m,R).
+   \]
+   Taking \(r_q\equiv1\) recovers \cref{lem:budget-thinned-opportunities}.
+\end{lemma}
+
+\begin{proof}
+   Condition on the realized first-opportunity frontier. For every
+   \(u\in\mathcal A(q)\),
+   \[
+      \E\!\left[
+         \mathbf 1_{\{\text{$u$ activates}\}}\Gamma(u)
+         \,\middle|\,\mathcal A(q),u
+      \right]
+      =
+      \pi_r(u)\Gamma(u)
+      \le
+      (1-\kappa\eta^2)r_q(u)\mathcal B_q(u).
+   \]
+   Summing and using the certified profile budget gives the result.
+\end{proof}
+
+\begin{remark}[Extreme-pruning interpretation]\label{rem:extreme-pruning-interpretation}
+   \Cref{lem:pruned-budget-thinning} is the score-tree analogue of extreme
+   pruning in lattice enumeration~\cite{GNR10}. The multiplier \(r_q(u)\) may
+   exceed \(1\) on prefixes that are reliable under the intended near-route law
+   and may be below \(1\) elsewhere; only the expected profile budget is charged.
+   Since preprocessing time is not a scarce resource in our model, an offline
+   build routine may search over finite multiplier profiles and retain a
+   certified one, provided the query can decode the profile and the retained
+   representation is charged to the index. The canonical budget-thinned rule is
+   therefore just the uniform feasible profile \(r_q\equiv1\), not a forced
+   algorithmic choice.
+\end{remark}
+
 \begin{lemma}[Canonical budget activation factor]\label{lem:canonical-budget-activation}
    Use the canonical mixed budget of \cref{lem:canonical-mixed-budget} inside
    one current geometric state. Thus the parent radius factor in the budget is
@@ -6688,6 +6754,48 @@ This certificate is the local form of the remaining problem. It is analogous in 
    bound from the expectation assumption.
 \end{proof}
 
+\begin{corollary}[Pruned budget-defect toll certificate]
+   \label{cor:pruned-budget-defect-toll}
+   Consider the setting of \cref{cor:canonical-budget-defect-toll}, but allow
+   each remaining required recentering edge \(e\) to use a certified pruning
+   multiplier \(r_e\ge0\).  Suppose its activation probability satisfies
+   \[
+      \gamma_e\ge
+      \min\left\{
+         1,\,
+         \frac{(1-\kappa\eta^2)r_e
+               \mathcal B_q^{\rm mix}(u(e))}
+              {\Gamma_e}
+      \right\},
+   \]
+   with the same \(\Gamma_e=0\) convention. Define the pruned canonical defect
+   by
+   \[
+      \Delta^{(r)}_e
+      =
+      \log_+
+      \frac{\Gamma_e}
+           {(1-\kappa\eta^2)r_e\mathcal B_q^{\rm mix}(u(e))},
+   \]
+   with ratio \(+\infty\) when \(\Gamma_e>0\) and the denominator is zero, and
+   ratio \(0\) when \(\Gamma_e=0\). Put \(\Delta^{(r)}_e=0\) on deterministic
+   score and budget-stable edges. If a route law \(\Lambda\) satisfies
+   \[
+      \Lambda\left\{v:\sum_{e\preceq v}\Delta^{(r)}_e\le B\right\}\ge h,
+   \]
+   then \(U(\varnothing)\ge he^{-B}\). If
+   \[
+      \E_\Lambda\sum_{e\preceq v}\Delta^{(r)}_e\le B,
+   \]
+   then \(U(\varnothing)\ge \frac12e^{-2B}\).
+\end{corollary}
+
+\begin{proof}
+   The proof of \cref{cor:canonical-budget-defect-toll} applies with
+   \(r_e\mathcal B_q^{\rm mix}(u(e))\) in place of
+   \(\mathcal B_q^{\rm mix}(u(e))\).
+\end{proof}
+
 \begin{corollary}[Prefix-energy route-law certificate]\label{cor:route-law-prefix-energy}
    Let $\Lambda$ be a probability distribution on leaf routes and let $A(u)$
    be the activation prefix mass. Define the prefix $\chi^2$ energy
@@ -7295,6 +7403,16 @@ This certificate is the local form of the remaining problem. It is analogous in 
    \]
    Thus a sufficient geometric theorem is to construct a tame route law whose
    expected cumulative canonical budget defect is \(O_c(\log\log n)\).
+   The pruned version \cref{cor:pruned-budget-defect-toll} allows an
+   additional multiplier profile \(r\), provided
+   \cref{lem:pruned-budget-thinning} certifies its expected work.  This is a
+   strictly more flexible target: prove a decodable profile with
+   \[
+      \E\sum_{u\in\mathcal A(q)}r_q(u)\mathcal B_q^{\rm mix}(u)
+      \le F_4(m,R)
+   \]
+   and only \(O_c(\log\log n)\) expected pruned defect along the tilted tame
+   route law.
    \Cref{lem:cut-energy-route-law} is the sharpest form for a stopping-frontier
    proof: it is enough to show that, for every route cut $\mathcal C$,
    \[
@@ -8913,6 +9031,11 @@ budget-unstable opportunities for the sampled value-delivery layer.
 \Cref{cor:canonical-budget-defect-toll} then rewrites the sampled layer's
 route-law toll as the cumulative log deficit
 \(\log_+(\Gamma/\mathcal B_q^{\rm mix})\) of those unstable opportunities.
+\Cref{lem:pruned-budget-thinning} and
+\cref{cor:pruned-budget-defect-toll} add the lattice extreme-pruning analogue:
+an offline-certified multiplier profile may reallocate activation probability
+toward reliable near-route prefixes, so the relevant toll becomes the pruned
+defect \(\log_+(\Gamma/(r\mathcal B_q^{\rm mix}))\).
 The guard refinement
 \cref{lem:low-guard-shadow} further removes points whose entire near-query
 neighborhood is already high-density: the finite dual now prices only the
@@ -9077,6 +9200,12 @@ The one-sided spherical proof is motivated by the Ahle--Knudsen manuscript suppl
    \newblock Lattice basis reduction: Improved practical algorithms and solving
    subset sum problems.
    \newblock \emph{Mathematical Programming}, 66:181--199, 1994.
+
+   \bibitem{GNR10}
+   Nicolas Gama, Phong Q. Nguyen, and Oded Regev.
+   \newblock Lattice enumeration using extreme pruning.
+   \newblock In \emph{Advances in Cryptology -- EUROCRYPT 2010}, LNCS 6110,
+   pages 257--278. Springer, 2010.
 
    \bibitem{TV12}
    Ido Tal and Alexander Vardy.
