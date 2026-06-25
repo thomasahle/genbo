@@ -7291,6 +7291,159 @@ This certificate is the local form of the remaining problem. It is analogous in 
    expectation form of \cref{cor:allocation-defect-toll}.
 \end{proof}
 
+\begin{lemma}[Finite convex-linear minimax]\label{lem:finite-convex-minimax}
+   Let \(X\subset\R^d\) be compact and convex, and let
+   \(\phi_i:X\to\R\), \(i\in I\), be finitely many continuous convex
+   functions. Then
+   \[
+      \min_{x\in X}\max_{i\in I}\phi_i(x)
+      =
+      \max_{\alpha\in\Delta_I}
+      \min_{x\in X}\sum_{i\in I}\alpha_i\phi_i(x),
+   \]
+   where \(\Delta_I=\{\alpha_i\ge0:\sum_i\alpha_i=1\}\).
+\end{lemma}
+
+\begin{proof}
+   The left-hand side is at least the right-hand side because, for every
+   \(x\) and every \(\alpha\in\Delta_I\),
+   \[
+      \max_i\phi_i(x)\ge\sum_i\alpha_i\phi_i(x).
+   \]
+
+   For the reverse inequality, put
+   \(m=\min_x\max_i\phi_i(x)\), and fix \(r<m\).  Let
+   \[
+      C=\{z\in\R^I:\exists x\in X\text{ with }z_i\ge\phi_i(x)\text{ for all }i\}
+   \].
+   The set \(C\) is convex because the \(\phi_i\) are convex, and it is closed
+   because \(X\) is compact and the \(\phi_i\) are continuous.  The point
+   \(r\mathbf 1\) is not in \(C\).  By the finite separating hyperplane
+   theorem, there are a nonzero vector \(\alpha\) and a scalar \(\beta\) such
+   that
+   \[
+      \inf_{z\in C}\alpha\cdot z
+      \ge \beta
+      >
+      \alpha\cdot(r\mathbf 1).
+   \]
+   Since \(C\) is closed upward in every coordinate, this inequality can hold
+   only when \(\alpha_i\ge0\) for every \(i\).  Normalize so that
+   \(\sum_i\alpha_i=1\).  Then \(\alpha\cdot(r\mathbf 1)=r\), and for every
+   \(x\in X\), \((\phi_i(x))_i\in C\), so
+   \[
+      \sum_i\alpha_i\phi_i(x)\ge r .
+   \]
+   Hence
+   \[
+      \max_{\alpha\in\Delta_I}\min_x\sum_i\alpha_i\phi_i(x)\ge r .
+   \]
+   Letting \(r\uparrow m\) proves the reverse inequality.
+\end{proof}
+
+\begin{lemma}[Robust water-filled allocation minimax]
+   \label{lem:robust-waterfilled-minimax}
+   Let \(I\) be a finite family of route-law occupation profiles
+   \(\ell^i=(\ell^i_e)_{e\in E}\) on a finite opportunity set \(E\), and let
+   \(a_e\ge0\) be normalized edge charges.  For an allocation \(y\), define
+   \[
+      \mathcal D_i(y)=
+      \sum_e\ell^i_e\log_+\frac{a_e}{y_e}
+   \]
+   with the same zero and infinity conventions as in
+   \cref{lem:waterfilled-allocation}.  For
+   \(\alpha\in\Delta_I\), put
+   \[
+      \ell^\alpha_e=\sum_i\alpha_i\ell^i_e,
+   \]
+   and let \(\mathcal D^*(\ell^\alpha)\) be the water-filled optimum from
+   \cref{lem:waterfilled-allocation} applied to the aggregate occupation
+   profile \(\ell^\alpha\).  Then
+   \[
+      \inf_{\sum_e y_e\le1,\ y_e\ge0}\max_{i\in I}\mathcal D_i(y)
+      =
+      \sup_{\alpha\in\Delta_I}\mathcal D^*(\ell^\alpha).
+   \]
+   Consequently, if every mixture \(\alpha\) has
+   \(\mathcal D^*(\ell^\alpha)\le B\), then for every \(\varepsilon>0\) there
+   is one allocation \(y\), independent of \(i\), such that
+   \[
+      \mathcal D_i(y)\le B+\varepsilon
+      \qquad\text{for all }i\in I.
+   \]
+\end{lemma}
+
+\begin{proof}
+   The lower bound is immediate: for every allocation \(y\) and every
+   \(\alpha\in\Delta_I\),
+   \[
+      \max_i\mathcal D_i(y)
+      \ge
+      \sum_i\alpha_i\mathcal D_i(y)
+      =
+      \sum_e\ell^\alpha_e\log_+\frac{a_e}{y_e}
+      \ge
+      \mathcal D^*(\ell^\alpha).
+   \]
+
+   For the upper bound, delete edges with \(a_e=0\) or
+   \(\max_i\ell^i_e=0\), since they never affect any defect.  If no edge
+   remains, the claim is trivial.  Put
+   \(L=\max_i\sum_e\ell^i_e\).  If
+   \(\sup_\alpha\mathcal D^*(\ell^\alpha)=+\infty\), there is nothing to
+   prove, so assume it is finite.  Fix \(\varepsilon>0\), and choose
+   \(\delta>0\) with \(|E|\delta<1/2\) and
+   \[
+      L\log\frac1{1-|E|\delta}\le\varepsilon .
+   \]
+   Let
+   \[
+      X_\delta=\{y:y_e\ge\delta\text{ for all }e,\ \sum_e y_e=1\}.
+   \]
+   On \(X_\delta\), the functions \(\mathcal D_i\) are continuous and convex,
+   so \cref{lem:finite-convex-minimax} gives
+   \[
+      \min_{y\in X_\delta}\max_i\mathcal D_i(y)
+      =
+      \max_{\alpha\in\Delta_I}
+      \min_{y\in X_\delta}
+      \sum_e\ell^\alpha_e\log_+\frac{a_e}{y_e}.
+   \]
+
+   Fix \(\alpha\).  Let \(y^*\) be a water-filled optimizer for
+   \(\ell^\alpha\) with total mass one; when the optimum value is zero and the
+   occupied charges use less than unit mass, spend the leftover mass
+   arbitrarily.  Let \(T=\{e:y^*_e<\delta\}\).  Raise every coordinate in
+   \(T\) to \(\delta\), and multiply the remaining coordinates of \(y^*\) by
+   the common factor
+   \[
+      c=\frac{1-|T|\delta}{1-\sum_{e\in T}y^*_e}.
+   \]
+   Since \(\sum_{e\in T}y^*_e<|T|\delta\), this factor lies in \((0,1]\), and
+   \(c\ge1-|E|\delta\).  The modified allocation lies in \(X_\delta\).  Raising
+   the coordinates in \(T\) cannot increase the defect; scaling the other
+   coordinates by \(c\) increases it by at most
+   \[
+      \left(\sum_e\ell^\alpha_e\right)
+      \log\frac1c
+      \le
+      L\log\frac1{1-|E|\delta}
+      \le\varepsilon .
+   \]
+   Thus its aggregate defect is at most
+   \(\mathcal D^*(\ell^\alpha)+\varepsilon\).
+   Therefore
+   \[
+      \min_{y\in X_\delta}\max_i\mathcal D_i(y)
+      \le
+      \sup_{\alpha\in\Delta_I}\mathcal D^*(\ell^\alpha)+\varepsilon .
+   \]
+   Since \(X_\delta\) is a subset of the full allocation simplex, the full
+   robust infimum is no larger.  Letting \(\varepsilon\downarrow0\) and using
+   the lower bound proves the equality.  The final statement is the same
+   argument with the chosen \(\varepsilon\).
+\end{proof}
+
 \begin{corollary}[Prefix-energy route-law certificate]\label{cor:route-law-prefix-energy}
    Let $\Lambda$ be a probability distribution on leaf routes and let $A(u)$
    be the activation prefix mass. Define the prefix $\chi^2$ energy
@@ -7951,6 +8104,11 @@ This certificate is the local form of the remaining problem. It is analogous in 
    recursive charge.  Thus the near-side theorem can be phrased as bounding
    one scalar water-filled defect, plus proving that this allocation is
    query-decodable.
+   \Cref{lem:robust-waterfilled-minimax} gives the corresponding all-witness
+   version: one query allocation works for a finite family of witness route
+   laws iff every mixture of their occupation measures has small water-filled
+   defect.  This is the allocation analogue of list-decoding a received word
+   against a whole candidate list rather than against one known codeword.
    \Cref{lem:cut-energy-route-law} is the sharpest form for a stopping-frontier
    proof: it is enough to show that, for every route cut $\mathcal C$,
    \[
@@ -9605,6 +9763,12 @@ canonical for any fixed route law: allocate \(y_e=\min\{a_e,t\ell_e\}\), where
 normalized recursive charge.  A polylogarithmic endpoint through this route now
 requires only a decodable representation of that water-filled allocation and an
 \(O_c(\log\log n)\) bound on its scalar defect.
+\Cref{lem:finite-convex-minimax} and
+\cref{lem:robust-waterfilled-minimax} upgrade this from one route law to a
+finite witness family: a single query allocation is optimal exactly when tested
+against mixtures of the witness occupation profiles, so the remaining near-set
+problem is a robust water-filled defect bound rather than a separate profile
+for each possible near point.
 The guard refinement
 \cref{lem:low-guard-shadow} further removes points whose entire near-query
 neighborhood is already high-density: the finite dual now prices only the
