@@ -1906,6 +1906,66 @@ normalization price.  If every surplus sampled dual certificate has such a
 positive-gain child in the candidate universe, unbounded preprocessing can add
 that child and repeat until the sampled route-mass LP is feasible.
 
+\begin{lemma}[Finite sampled-route verifier]
+   \label{lem:finite-sampled-route-verifier}
+   Fix a finite retained family of certified children $\mathcal C$, a target
+   set $E\subseteq P$, a residual block $U_0\subseteq E$, and a query domain
+   $\Omega$.  For $q\in\Omega$, define the unresolved near set
+   \[
+      N(q)=\{p\in E\setminus U_0:\|p-q\|\le r\},
+   \]
+   and the sampled-route signature
+   \[
+      \tau(q)=
+      \left(
+         (a_C(q))_{C\in\mathcal C},
+         (\mathbf 1\{p\in N(q)\})_{p\in E\setminus U_0}
+      \right).
+   \]
+   Let $\Sigma$ be any finite set of signatures containing
+   $\{\tau(q):q\in\Omega\}$.  For each $\tau\in\Sigma$, let
+   $A_\tau\subseteq\mathcal C$ be its active-child set and
+   $N_\tau\subseteq E\setminus U_0$ its unresolved near-point set.  Suppose
+   that, for every $\tau\in\Sigma$, the sampled-cover feasibility problem
+   \(\mathsf S_\tau\) from \cref{lem:finite-sampled-cover-dual} is feasible
+   with route targets $h_p=h_0$ for all $p\in N_\tau$ and query-price budget
+   $L$, using activation indicators $\mathbf 1\{C\in A_\tau\}$.
+
+   Store one feasible sampling vector $\pi^\tau$ for every realized signature,
+   and suppose the query decoder computes $\tau(q)$ and samples from
+   $\pi^{\tau(q)}$ in work $D(q)$.  Then the hypotheses of
+   \cref{lem:sampled-priced-cover} hold uniformly over $\Omega$: every near
+   pair with $q\in\Omega$, $p\in E\setminus U_0$, and $\|p-q\|\le r$ receives
+   route mass at least $h_0$, and the expected sampled child price is at most
+   $L$.  Hence $B$ independent sampled child invocations give failure
+   probability at most $\exp(-Bh_0)$ and expected work
+   $O(B(D(q)+L))$.
+\end{lemma}
+
+\begin{proof}
+   Fix $q\in\Omega$ and write $\tau=\tau(q)$.  By construction, the active
+   coordinates and unresolved near-point coordinates in $\tau$ agree with the
+   actual query.  The stored vector $\pi^\tau$ is feasible for
+   \(\mathsf S_\tau\), so it is supported only on active children,
+   has $\sum_C\pi^\tau_CQ_C\le L$, and for every
+   $p\in N(q)=N_\tau$ satisfies
+   \[
+      \sum_{C:p\in P_C}\pi^\tau_C\sigma_C\ge h_0 .
+   \]
+   These are exactly the support, expected-price, and route-mass hypotheses of
+   \cref{lem:sampled-priced-cover}.  Applying that lemma gives the stated
+   success and work bounds.
+\end{proof}
+
+For ball, cap, affine-score, and Lipschitz-score filters with finitely many
+retained predicates, the active-child part of the signature is controlled by
+the same arrangement machinery as in \cref{lem:finite-activation-patterns}; the
+near-set part adds the arrangement of the balls $\Ball(p,r)$ for
+$p\in E\setminus U_0$.  The verifier is useful when this combined signature
+class is small enough to store or can be sampled from implicitly.  Otherwise it
+still serves as a finite offline certificate and dual diagnostic, but its table
+size must be charged to the retained index.
+
 \begin{lemma}[Certified cover with residual scan]\label{lem:cover-residual-scan}
    In the setting of \cref{lem:certified-cover-compiler}, suppose the stored
    filters cover only $P\setminus U_0$, where $U_0\subseteq P$ is a residual
@@ -4298,6 +4358,9 @@ stabbing.
    \cref{lem:finite-sampled-cover-dual} turns this sampled route-mass condition
    into finite LP constraints, or equivalently into the absence of a
    route-demand dual price system satisfying \((SD1)\)--\((SD2)\).
+   \Cref{lem:finite-sampled-route-verifier} gives the all-query version: it is
+   enough to check these sampled LPs on the finite signatures consisting of the
+   retained activation pattern together with the unresolved near-point set.
    By \cref{lem:guard-restricted-cover}, these active-power constraints need
    only range over the low-guard query domain; high-guard queries are handled by
    the resident sample.  By \cref{lem:finite-activation-patterns}, the
@@ -7924,6 +7987,10 @@ sampling/value objects whenever listing them would violate active power.
 sampler: a bad query carries route-demand prices on unresolved near points, and
 the remaining theorem must find an active child whose priced success mass beats
 its query price plus the normalization price.
+\Cref{lem:finite-sampled-route-verifier} turns this into an all-query
+certificate by grouping queries according to their activation pattern and
+unresolved near set; the cost of storing or implicitly decoding those signatures
+is now explicit.
 The guard refinement
 \cref{lem:low-guard-shadow} further removes points whose entire near-query
 neighborhood is already high-density: the finite dual now prices only the
