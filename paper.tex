@@ -3601,6 +3601,94 @@ query time pays only for output-sensitive list decoding.
    \(m^\rho\).
 \end{remark}
 
+\begin{lemma}[Naive Gaussian-label quadrature barrier]
+   \label{lem:naive-gaussian-quadrature-barrier}
+   In the setting of
+   \cref{lem:critical-tilted-gaussian-sampled-spectrum}, let
+   \(M=m^\nu\) independent base labels \(G_1,\ldots,G_M\sim N(0,I_d)\) be used
+   as an ordinary Monte Carlo discretization of the query tilt.  More generally
+   take a threshold \(T^2=2\tau\log m\) and the near-critical tilt
+   \(\beta=T/a_0\).  For a fixed query \(q\), the Monte Carlo estimator of the
+   tilted partition function
+   \[
+      Z_q=\E e^{\beta\ip{G}{q}}=e^{\beta^2/2}
+   \]
+   is
+   \[
+      \widehat Z_q=\frac1M\sum_{i=1}^M e^{\beta\ip{G_i}{q}},
+   \]
+   and its relative variance is
+   \[
+      \frac{\operatorname{Var}\widehat Z_q}{Z_q^2}
+      =
+      \frac{e^{\beta^2}-1}{M}
+      =
+      m^{2\tau/a_0^2-\nu+o(1)}.
+      \tag{NQ1}
+   \]
+   Hence bounded-relative-variance Monte Carlo quadrature requires
+   \[
+      \nu\ge \frac{2\tau}{a_0^2}-o(1).
+      \tag{NQ2}
+   \]
+   On the other hand, the ANN storage and sampled far-load powers force
+   \[
+      \nu\le\tau+\rho+o(1),
+      \qquad
+      \tau\ge1-\rho-o(1).
+      \tag{NQ3}
+   \]
+   These three inequalities are incompatible for every fixed \(c>1\).
+   Consequently the ideal tilted-Gaussian sampler cannot be materialized by a
+   plain iid Gaussian label pool whose correctness is proved by ordinary
+   self-normalized Monte Carlo concentration; the finite construction must use
+   additional structure, such as a code, lattice, trellis, or deterministic
+   quadrature.
+\end{lemma}
+
+\begin{proof}
+   Since \(\ip{G}{q}\sim N(0,1)\),
+   \[
+      \E e^{\beta\ip{G}{q}}=e^{\beta^2/2},
+      \qquad
+      \E e^{2\beta\ip{G}{q}}=e^{2\beta^2}.
+   \]
+   Thus
+   \[
+      \frac{\operatorname{Var}\widehat Z_q}{Z_q^2}
+      =
+      \frac1M
+      \frac{e^{2\beta^2}-e^{\beta^2}}{e^{\beta^2}}
+      =
+      \frac{e^{\beta^2}-1}{M}.
+   \]
+   Since \(\beta^2=2\tau\log m/a_0^2\), this is \((NQ1)\), and \((NQ2)\)
+   follows.
+
+   The expected number of stored labels for one point is
+   \[
+      M\Pr[N(0,1)\ge T]=m^{\nu-\tau+o(1)},
+   \]
+   so keeping the per-point storage within \(m^{\rho+o(1)}\) gives
+   \(\nu\le\tau+\rho+o(1)\).  For a far point with correlation zero to the
+   query, the continuous tilted law leaves its score distributed as \(N(0,1)\).
+   Thus a sampled far bucket has probability \(m^{-\tau+o(1)}\), and summing
+   over \(m\) far points gives the target \(m^\rho\) only if
+   \(\tau\ge1-\rho-o(1)\).  This proves \((NQ3)\).
+
+   It remains to check incompatibility.  Write \(C=c^2>1\).  Then
+   \(a_0=(C-1)/C\) and \(\rho=1/(2C-1)\).  At the smallest possible
+   \(\tau=1-\rho\),
+   \[
+      \frac{2\tau}{a_0^2}-(\tau+\rho)
+      =
+      \frac{2C^2+3C-1}{(C-1)(2C-1)}
+      >0.
+   \]
+   The left-hand side is increasing in \(\tau\), so the gap remains positive
+   for every \(\tau\ge1-\rho\).  Thus \((NQ2)\) and \((NQ3)\) cannot both hold.
+\end{proof}
+
 \begin{remark}[Lattice Gaussian panels as sampled decoders]
    \label{rem:lattice-gaussian-panels}
    \Cref{prop:sampled-structured-panel} is the sampler analogue of the
@@ -12462,6 +12550,12 @@ Gaussian filter family with query tilt \(N(\beta q,I)\) has storage rate
 \(\rho_c\), sampled far-separation rate \(1-\rho_c\), and constant near sampled
 mass.  A compact code or lattice sampler would be a finite quadrature for this
 calculation.
+\Cref{lem:naive-gaussian-quadrature-barrier} explains why this quadrature
+cannot be an iid Gaussian label pool analyzed by ordinary importance-sampling
+concentration: the label entropy needed to stabilize the tilted partition
+function is polynomially larger than the entropy allowed by the storage and far
+load exponents.  The finite object must therefore exploit structure, not just
+more random labels.
 \Cref{rem:outer-list-recovery-codebook} records the stronger alternative
 suggested by list-decoding codes and lattices: instead of decoding the full
 Cartesian product, retain a sparse outer code or lattice coset and use soft
