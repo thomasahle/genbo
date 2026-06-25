@@ -1751,6 +1751,61 @@ load
    residual scan and residual storage to the certified-cover accounting.
 \end{proof}
 
+\begin{lemma}[Guard-restricted cover compiler]\label{lem:guard-restricted-cover}
+   Work in one node with resident set $P$, $|P|=m$, and define the resident
+   guard density
+   \[
+      g(q)=\frac1m\bigl|\{x\in P:\|x-q\|\le cr\}\bigr|.
+   \]
+   Fix a threshold $\gamma>0$.  Suppose a residual cover as in
+   \cref{lem:cover-residual-scan} is routing-correct for every near pair, but
+   its active-power certificate is required only on the low-guard domain
+   \[
+      \Omega_{\rm low}=\{q:g(q)<\gamma\}.
+   \]
+   Thus, for every $q\in\Omega_{\rm low}$,
+   \[
+      \sum_{i\in I(q)} |P_i|^\rho\Psi(R_i)\le L,
+      \qquad |U_0|\le L_0 .
+   \]
+   There is a capped query procedure with work
+   \[
+      O((\gamma^{-1}+L+L_0)\polylog n)
+   \]
+   and the same storage as the residual cover, such that every near pair is
+   found with constant probability.
+\end{lemma}
+
+\begin{proof}
+   First sample
+   \[
+      T=\left\lceil \gamma^{-1}\log 4\right\rceil
+   \]
+   resident points uniformly and verify them in the original metric.  If any
+   sampled point is within distance $cr$ of the query, return it.  If not, run
+   the cover decoder with a cap: enumerate active filters, but abort this query
+   copy before recursing if the accumulated active power would exceed $L$.
+   Always scan the residual block $U_0$ before recursing into the enumerated
+   filters.
+
+   If $q\notin\Omega_{\rm low}$, then $g(q)\ge\gamma$, so the guard misses all
+   valid points with probability at most
+   \[
+      (1-\gamma)^T\le e^{-\gamma T}\le\frac14 .
+   \]
+   Hence this high-guard query succeeds with probability at least $3/4$ before
+   any cover work is needed; if the guard misses, aborting is harmless for
+   constant-success ANN.
+
+   If $q\in\Omega_{\rm low}$ and $\|p-q\|\le r$, then the low-guard
+   active-power certificate implies that the capped decoder does not abort and
+   lists every active filter.  If $p\in U_0$, the residual scan finds it.
+   Otherwise, routing correctness puts $p$ in a listed child, and the recursive
+   or terminal subroutine finds a valid answer.  The work bound is the guard
+   sample size plus the capped active-power and residual costs.  Storage is
+   unchanged.
+\end{proof}
+
 This also gives a safe way to use an empirical cover such as $k$-means without
 claiming that Lloyd's objective proves anything. At a node, store an arbitrary
 certified cover together with a capped decoder. On query $q$, the decoder either
@@ -2578,6 +2633,15 @@ index.
    storage.
 \end{proof}
 
+By \cref{lem:guard-restricted-cover}, the finite verifier and the LPs below do
+not need to impose active-power constraints on high-guard queries.  For a fixed
+guard threshold $\gamma$, take $\mathcal Q$ to be a finite set of constraints
+from the low-guard domain $\Omega_{\rm low}=\{q:g(q)<\gamma\}$, or take the
+activation-pattern set only over this domain.  High-guard queries are handled
+by the resident sample and receive no dual price.  This strictly narrows the
+remaining separation theorem: a bad dual certificate prices only low-guard
+queries, where no large set of already-valid resident answers is available.
+
 \begin{lemma}[Finite-pool fractional dual]\label{lem:finite-pool-dual}
    Fix a finite set $\mathcal Q$ of query constraints and a finite proposal pool
    $\mathcal C$ of certified children.  A child $C\in\mathcal C$ consists of a
@@ -3183,14 +3247,16 @@ small stored cover, not an efficient Lloyd-style training algorithm.
    deterministic active-power and storage certificates.  Equivalently, by
    \cref{lem:finite-pool-optimizer}, it is enough that a finite proposal pool
    generated during preprocessing contains one cover passing these certificates.
-   By \cref{lem:finite-activation-patterns}, the all-query active-power
-   certificate for any finite retained family is equivalently a finite set of
-   activation-pattern constraints.  Equivalently, by
+   By \cref{lem:guard-restricted-cover}, these active-power constraints need
+   only range over the low-guard query domain; high-guard queries are handled by
+   the resident sample.  By \cref{lem:finite-activation-patterns}, the
+   low-guard active-power certificate for any finite retained family is
+   equivalently a finite set of activation-pattern constraints.  Equivalently, by
    \cref{lem:pattern-complete-cover}, it is enough to solve the fractional cover
-   over a polylog-entropy finite superset of the activation patterns of the full
-   finite proposal universe, with logarithmically smaller budgets and bounded
-   atoms.  The bounded-atom normal form can be enforced by expanding the
-   proposal universe to atom-safe subchildren as in
+   over a polylog-entropy finite superset of the low-guard activation patterns
+   of the full finite proposal universe, with logarithmically smaller budgets
+   and bounded atoms.  The bounded-atom normal form can be enforced by expanding
+   the proposal universe to atom-safe subchildren as in
    \cref{lem:atom-safe-subchild}; then the pattern-complete rounding converts
    the fractional solution into a stored cover and residual block, losing only
    another logarithmic factor.
