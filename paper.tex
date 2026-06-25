@@ -8149,6 +8149,72 @@ This certificate is the local form of the remaining problem. It is analogous in 
    The final sentence substitutes \(p=\Omega_c(1/\log\log n)\).
 \end{proof}
 
+\begin{lemma}[Water-level-free moment certificate]
+   \label{lem:waterfilled-raw-moment-certificate}
+   Work in the setting of \cref{lem:waterfilled-allocation}, and assume the
+   occupied charge sum is larger than one.  Let \(t\) be the water level from
+   \cref{lem:waterfilled-allocation}.  If \(\tau>0\) satisfies
+   \[
+      \sum_{\ell_e>0}\min\{a_e,\tau\ell_e\}\le1,
+   \]
+   then \(\tau\le t\), and for every \(p>0\),
+   \[
+      \mathcal D^*
+      \le
+      \frac1p
+      \sum_{\substack{e:\ \ell_e>0\\ a_e>0}}
+      \ell_e
+      \left(
+      \left(\frac{a_e}{\tau\ell_e}\right)^p-1
+      \right)_+ .
+   \]
+   In particular, if
+   \[
+      H=\sum_e\ell_e<\infty,
+   \]
+   then the choice \(\tau=1/H\) is feasible and gives
+   \[
+      \mathcal D^*
+      \le
+      \frac1p
+      \sum_{\substack{e:\ \ell_e>0\\ a_e>0}}
+      \ell_e
+      \left(
+      \left(\frac{H a_e}{\ell_e}\right)^p-1
+      \right)_+ .
+   \]
+\end{lemma}
+
+\begin{proof}
+   Put
+   \[
+      S(u)=\sum_{\ell_e>0}\min\{a_e,u\ell_e\}.
+   \]
+   The function \(S\) is nondecreasing and \(t\) is chosen so that
+   \(S(t)=1\).  Hence \(S(\tau)\le1\) implies \(\tau\le t\).  Therefore, for
+   every occupied edge,
+   \[
+      \frac{a_e}{t\ell_e}\le \frac{a_e}{\tau\ell_e}.
+   \]
+   Combining this monotonicity with
+   \[
+      \log_+x\le\frac{(x^p-1)_+}{p}
+   \]
+   and summing proves the first displayed bound.
+
+   Finally,
+   \[
+      S(1/H)
+      =
+      \sum_{\ell_e>0}\min\{a_e,\ell_e/H\}
+      \le
+      \sum_{\ell_e>0}\frac{\ell_e}{H}
+      =
+      1,
+   \]
+   so \(\tau=1/H\) is feasible, and substituting it proves the last bound.
+\end{proof}
+
 \begin{corollary}[Robust water-filled tail certificate]
    \label{cor:robust-waterfilled-tail}
    Work in the setting of \cref{lem:robust-waterfilled-minimax}.  Suppose that
@@ -8223,6 +8289,53 @@ This certificate is the local form of the remaining problem. It is analogous in 
    defect zero.  Apply \cref{lem:robust-waterfilled-minimax}.  The final
    sentence is the same substitution into \cref{cor:allocation-defect-toll} for
    each witness route law.
+\end{proof}
+
+\begin{corollary}[Robust raw-moment certificate]
+   \label{cor:robust-waterfilled-raw-moment}
+   Work in the setting of \cref{lem:robust-waterfilled-minimax}.  Fix
+   \(p>0\), \(H_0\ge1\), and \(M\ge0\).  Suppose that for every mixture
+   \(\alpha\in\Delta_I\), either
+   \[
+      \sum_{\ell^\alpha_e>0}a_e\le1,
+   \]
+   or both
+   \[
+      \sum_e\ell^\alpha_e\le H_0
+   \]
+   and
+   \[
+      \sum_{\substack{e:\ \ell^\alpha_e>0\\ a_e>0}}
+      \ell^\alpha_e
+      \left(
+      \left(\frac{H_0a_e}{\ell^\alpha_e}\right)^p-1
+      \right)_+
+      \le M .
+   \]
+   Then for every \(\varepsilon>0\) there is one allocation \(y\), independent
+   of the witness profile \(i\), with
+   \[
+      \mathcal D_i(y)\le \frac Mp+\varepsilon
+      \qquad\text{for all }i\in I.
+   \]
+   Thus, if route laws have polylogarithmic expected opportunity count and the
+   displayed raw moment has \(M/p=O_c(\log\log n)\), the robust allocation is
+   sufficient for inverse-polylogarithmic route value without explicitly
+   estimating any water level.
+\end{corollary}
+
+\begin{proof}
+   For a nontrivial mixture \(\alpha\), put
+   \(\tau=1/H_0\).  Since \(\sum_e\ell^\alpha_e\le H_0\),
+   \[
+      \sum_{\ell^\alpha_e>0}\min\{a_e,\tau\ell^\alpha_e\}
+      \le
+      \tau\sum_e\ell^\alpha_e
+      \le1.
+   \]
+   Hence \cref{lem:waterfilled-raw-moment-certificate} bounds the water-filled
+   defect of this mixture by \(M/p\).  The mixtures in the first case have
+   defect zero.  Apply \cref{lem:robust-waterfilled-minimax}.
 \end{proof}
 
 \begin{corollary}[Prefix-energy route-law certificate]\label{cor:route-law-prefix-energy}
@@ -10597,6 +10710,20 @@ it is enough to bound a small positive moment
 mixtures, with \(M/p=O_c(\log\log n)\).  Thus the remaining estimate can be
 attacked as a low-temperature energy bound for the charge/occupation ratios,
 rather than by proving every dyadic tail separately.
+\Cref{lem:waterfilled-raw-moment-certificate} and
+\cref{cor:robust-waterfilled-raw-moment} remove the implicit water level from
+that target: if every mixture has total occupation at most \(H_0\), then
+\(\tau=1/H_0\) is a valid lower bound on the water level, and it is enough to
+bound
+\[
+   \sum_e\ell^\alpha_e
+   \left(
+   \left(\frac{H_0a_e}{\ell^\alpha_e}\right)^p-1
+   \right)_+
+\]
+with \(M/p=O_c(\log\log n)\).  For \(H_0=\log^{O_c(1)}n\), taking
+\(p\asymp1/\log\log n\) keeps the depth normalization \(H_0^p\) constant, so
+the remaining theorem can be stated without solving for \(t_\alpha\).
 The guard refinement
 \cref{lem:low-guard-shadow} further removes points whose entire near-query
 neighborhood is already high-density: the finite dual now prices only the
