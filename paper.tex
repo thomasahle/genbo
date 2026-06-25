@@ -8796,6 +8796,74 @@ This certificate is the local form of the remaining problem. It is analogous in 
    minimality of \(\Phi^*\).
 \end{proof}
 
+\begin{corollary}[Finite accepted-route-trie compiler]
+   \label{cor:finite-accepted-route-trie-compiler}
+   Fix one query signature and one finite successful-route trie.  Let
+   \(L_m=\log^{A_c}m\).  For every terminal route \(z\), assume the terminal
+   procedure is certified to return a valid \(cr\)-neighbor for the current
+   ANN query whenever invoked.  Let \(A_q(z)\) be its raw reliability score,
+   \(Q_z\) its terminal price, and let \(\overline A_q(u)\) be a raw admissible
+   prefix upper certificate.  Let \(a_*(u)\) be the maximum outgoing normalized
+   charge at prefix \(u\), and let \(\Phi^*\) be the least superharmonic
+   majorant of \(a_*\).  Suppose the following checks all pass:
+   \[
+      \Phi^*(\varnothing)\le \frac{C}{H_0},
+      \tag{RT1}
+   \]
+   the top-down route law and transition-aware water-filled allocation induced
+   by \(\Phi^*\) are query-decodable, and children satisfying the resulting
+   Fano threshold can be generated output-sensitively;
+   \[
+      A_q(z)\ge\Theta+2H_0\log C
+      \qquad\text{for every terminal }z,
+      \tag{RT2}
+   \]
+   \[
+      \sum_u g_q(u)e^{\beta\overline A_q(u)}
+      \le
+      e^{\beta(\Theta+2H_0\log C)}F L_m,
+      \tag{RT3}
+   \]
+   and
+   \[
+      \sum_z Q_z e^{\beta A_q(z)}
+      \le
+      e^{\beta(\Theta+2H_0\log C)}F L_m.
+      \tag{RT4}
+   \]
+   Then the Fano-biased priority decoder at threshold \(\Theta\) lists a valid
+   terminal route and has query work
+   \[
+      e^{2\beta H_0\log C}F L_m
+   \]
+   up to the priority-queue logarithm.
+
+   Consequently, if \(\beta=O_c(1)\), \(H_0\log C=O_c(\log\log m)\), and
+   \(L_m=\log^{O_c(1)}m\), an accepted trie has only polylogarithmic overhead
+   over its local target \(F\).  If preprocessing searches a finite proposal
+   family of route tries and retains one passing \((RT1)\)--\((RT4)\), then
+   only the retained trie, its canonical potential, and its Fano reporter are
+   charged to the index; failed proposals are build-time artifacts.
+\end{corollary}
+
+\begin{proof}
+   The root check \((RT1)\) and decodability condition give the hypotheses of
+   \cref{cor:offline-superharmonic-route-verifier}.  With
+   \(B=H_0\log C\), the raw margin check \((RT2)\) and the moment checks
+   \((RT3)\)--\((RT4)\) are exactly the remaining hypotheses of
+   \cref{cor:existential-antichain-fano}.  Therefore the Fano decoder lists a
+   successful terminal route and has work
+   \[
+      e^{2\beta B}F L_m
+      =
+      e^{2\beta H_0\log C}F L_m
+   \]
+   up to the priority-queue logarithm.  The final preprocessing statement is
+   the finite search principle from \cref{lem:finite-pool-optimizer} and
+   \cref{cor:offline-pareto-compression}: the verifier is deterministic on
+   each finite candidate, and discarded candidates are not stored.
+\end{proof}
+
 \begin{lemma}[Finite convex-linear minimax]\label{lem:finite-convex-minimax}
    Let \(X\subset\R^d\) be compact and convex, and let
    \(\phi_i:X\to\R\), \(i\in I\), be finitely many continuous convex
@@ -11815,6 +11883,14 @@ acceptance test for any proposed successful-route trie.  Expensive
 preprocessing may search over route tries, score panels, and saturated covers,
 but the retained index only needs a decodable accepted trie, its canonical
 potential, and the corresponding Fano threshold reporter.
+\Cref{cor:finite-accepted-route-trie-compiler} is the resulting local
+algorithmic certificate.  A trie is accepted by four finite checks: the
+canonical superharmonic root bound, the raw reliability margin, the unpriced
+prefix exponential moment, and the terminal-price exponential moment.  Passing
+these checks with \(H_0\log C=O_c(\log\log m)\) gives the desired polylogarithmic
+overhead for that local state.  Thus the remaining geometric theorem is now
+not an allocation theorem or a route-law theorem; it is the construction of
+accepted route tries for all unresolved local ANN states.
 \Cref{cor:existential-antichain-fano} composes this with the Fano decoder in
 the ANN-correct existential form: if the union of valid terminal routes has the
 same antichain charge bound and every such route has \(O_c(\log\log n)\) raw
