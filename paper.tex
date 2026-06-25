@@ -3414,6 +3414,65 @@ This certificate is the local form of the remaining problem. It is analogous in 
    Apply \cref{lem:dominated-route-law} with $p=e^{-B}$.
 \end{proof}
 
+\begin{corollary}[Typical route-law toll certificate]\label{cor:typical-route-law-toll}
+   Let $\Lambda$ be a probability distribution on leaf routes, and define the
+   prefix domination height of a leaf $v$ by
+   \[
+      T_\Lambda(v)
+      =
+      \max_{u\preceq v}
+      \log_+\frac{\Lambda(u)}{A(u)},
+   \]
+   with $T_\Lambda(v)=+\infty$ if $v$ has a prefix $u$ with
+   $\Lambda(u)>0$ and $A(u)=0$. If
+   \[
+      \Lambda\{v:T_\Lambda(v)\le B\}\ge h,
+   \]
+   then
+   \[
+      U(\varnothing)\ge h e^{-B}.
+   \]
+   In particular, if for $\Lambda$-a.e. leaf $v$ the cumulative edge toll
+   \[
+      T_{\rm edge}(v)=
+      \sum_{u\to w\preceq v}
+      \log_+\frac{\lambda_{u,w}}{\gamma_{u,w}}
+   \]
+   has expectation at most $B$, then
+   \[
+      U(\varnothing)\ge \frac12 e^{-2B}.
+   \]
+\end{corollary}
+
+\begin{proof}
+   Let $E=\{v:T_\Lambda(v)\le B\}$ and condition $\Lambda$ on $E$. The
+   conditional law $\Lambda_E$ satisfies, for every trie node $u$,
+   \[
+      \Lambda_E(u)
+      =
+      \frac{\Lambda(E\cap\{v:v\succeq u\})}{\Lambda(E)}
+      \le
+      \frac{\Lambda(u)}{h}
+      \le
+      \frac{e^BA(u)}{h}.
+   \]
+   Applying \cref{lem:dominated-route-law} with
+   $p=he^{-B}$ proves the first claim.
+
+   For every prefix of $v$,
+   \[
+      \frac{\Lambda(u)}{A(u)}
+      =
+      \prod_{e\preceq u}\frac{\lambda_e}{\gamma_e}
+      \le
+      \exp(T_{\rm edge}(v)),
+   \]
+   so $T_\Lambda(v)\le T_{\rm edge}(v)$. Markov's inequality gives
+   $\Lambda\{T_{\rm edge}\le2B\}\ge1/2$ when $B>0$; if $B=0$ this event has
+   probability one. The first claim with $h=1/2$ and threshold $2B$ gives the
+   displayed bound.
+\end{proof}
+
 \begin{corollary}[Cutset value delivery]\label{cor:cutset-value-delivery}
    In the setting of \cref{cor:fractional-value-delivery}, suppose every
    route has length at most $H$ and every route cut $\mathcal C$ in the
@@ -3661,8 +3720,11 @@ This certificate is the local form of the remaining problem. It is analogous in 
    prefix $u$ is at most a polylogarithmic factor times the activation prefix
    mass $A(u)$. Equivalently, by \cref{cor:route-law-toll}, prove only
    $O_c(\log\log n)$ positive domination toll
-   $\log_+(\lambda_{u,w}/\gamma_{u,w})$ along the chosen route law. The natural
-   candidate is the tilted tame-good route law from
+   $\log_+(\lambda_{u,w}/\gamma_{u,w})$ along the chosen route law. The
+   typical-route version \cref{cor:typical-route-law-toll} is the form most
+   compatible with the adaptive-continuation proof: it is enough to prove
+   $O_c(\log\log n)$ expected positive toll and then discard the bad tail of
+   the route law. The natural candidate is the tilted tame-good route law from
    \cref{lem:adaptive-continuation}; in homogeneous balanced prefixes its
    prefix probabilities are smaller than the canonical activation factors, so
    positive toll can only come from atypical geometric opportunities.
@@ -5178,7 +5240,7 @@ For the randomized cap-thinning route, one remaining task is the branching first
    \le
    \log^{O_c(1)}n\,V(\varnothing)^2 .
 \]
-\Cref{lem:local-lca-energy} further reduces this to a local Bellman multiplier, and \cref{cor:square-nonexpansive-routes} shows that square-nonexpansive value branching costs only the polylogarithmic route depth. Equivalently, \cref{lem:energy-spine-toll} says that it is enough to prove only $O_c(\log\log n)$ positive square-energy toll along the energy-biased route spine. The capped-flow certificate \cref{lem:unit-capped-value-flow}, the Bellman recursion \cref{lem:saturated-value-recursion}, and the min-cut dual \cref{lem:saturated-value-mincut} give a still simpler sufficient formulation: prove that every route cut has inverse-polylogarithmic prefix-success mass. The equivalent dominated-law form in \cref{lem:dominated-route-law} says to construct a tilted law on tame routes whose prefix probabilities are dominated by activation prefix masses up to a polylogarithmic factor; by \cref{cor:route-law-toll}, this is the same as proving only logarithmic positive domination toll along that route law. Conditional on either aggregate value statement, \cref{prop:budget-thinned-polylog} gives the desired polylogarithmic ANN theorem. This is a fully non-channel route; the smooth product terminal filter can be used after localization and no longer contributes an inverse-polylogarithmic table-recall penalty. The structured posterior route replaces the cap-frontier obstacle by \cref{asm:multiscale-structured-likelihood}: prove an output-sensitive reporter for pure likelihood rank prefixes, not a small explicitly enumerable channel. The smoothed sampling route replaces both by \cref{asm:smoothed-gibbs} or \cref{asm:gumbel-mips}: prove either an optimal-exponent reporter that captures inverse-polylogarithmic Gaussian Gibbs mass, or a certified $O(\log\log n)$-additive Gumbel-MIPS primitive. Smoothed additive nearest neighbor is another stronger sufficient primitive. The detector-vote cohort-or-leaf route is a separate possible generalization to arbitrary certified child hierarchies, where the remaining issue is near-lineage coupling between ordinary continuation paths and detector activations.
+\Cref{lem:local-lca-energy} further reduces this to a local Bellman multiplier, and \cref{cor:square-nonexpansive-routes} shows that square-nonexpansive value branching costs only the polylogarithmic route depth. Equivalently, \cref{lem:energy-spine-toll} says that it is enough to prove only $O_c(\log\log n)$ positive square-energy toll along the energy-biased route spine. The capped-flow certificate \cref{lem:unit-capped-value-flow}, the Bellman recursion \cref{lem:saturated-value-recursion}, and the min-cut dual \cref{lem:saturated-value-mincut} give a still simpler sufficient formulation: prove that every route cut has inverse-polylogarithmic prefix-success mass. The equivalent dominated-law form in \cref{lem:dominated-route-law} says to construct a tilted law on tame routes whose prefix probabilities are dominated by activation prefix masses up to a polylogarithmic factor; by \cref{cor:typical-route-law-toll}, it is enough to prove only $O_c(\log\log n)$ expected positive domination toll under that route law and prune the bad tail. Conditional on either aggregate value statement, \cref{prop:budget-thinned-polylog} gives the desired polylogarithmic ANN theorem. This is a fully non-channel route; the smooth product terminal filter can be used after localization and no longer contributes an inverse-polylogarithmic table-recall penalty. The structured posterior route replaces the cap-frontier obstacle by \cref{asm:multiscale-structured-likelihood}: prove an output-sensitive reporter for pure likelihood rank prefixes, not a small explicitly enumerable channel. The smoothed sampling route replaces both by \cref{asm:smoothed-gibbs} or \cref{asm:gumbel-mips}: prove either an optimal-exponent reporter that captures inverse-polylogarithmic Gaussian Gibbs mass, or a certified $O(\log\log n)$-additive Gumbel-MIPS primitive. Smoothed additive nearest neighbor is another stronger sufficient primitive. The detector-vote cohort-or-leaf route is a separate possible generalization to arbitrary certified child hierarchies, where the remaining issue is near-lineage coupling between ordinary continuation paths and detector activations.
 
 \appendix
 
