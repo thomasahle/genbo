@@ -1831,6 +1831,81 @@ The deterministic priced compiler is the limiting case where every active child
 is queried, while terminal pure sampling is the case $\sigma_C=1$ for pure
 terminal alternatives and zero for impure ones.
 
+\begin{lemma}[Finite sampled-cover dual]
+   \label{lem:finite-sampled-cover-dual}
+   Fix one query state $q$, a finite retained family of certified children
+   $\mathcal C$, and a finite unresolved near-point set $N_q\subseteq P$.  For
+   each child $C$, let $a_C(q)\in\{0,1\}$ be its activation indicator, let
+   $Q_C\ge0$ be its certified query price, and let $\sigma_C\in[0,1]$ be its
+   certified success credit.  Given route-mass targets $h_p\ge0$ for
+   $p\in N_q$ and a query-price budget $L_q$, consider the sampled-cover
+   feasibility problem
+   \[
+   \begin{array}{ll}
+   \text{\rm find} & \pi_C\ge0\qquad(C\in\mathcal C)\\[0.3em]
+   \text{\rm subject to}
+      & \pi_C=0\qquad(a_C(q)=0),\\[0.4em]
+      & \displaystyle \sum_C\pi_C\le1,\\[0.8em]
+      & \displaystyle \sum_C\pi_CQ_C\le L_q,\\[0.8em]
+      & \displaystyle
+        \sum_{C:p\in P_C}\pi_C\sigma_C\ge h_p
+        \qquad(p\in N_q).
+   \end{array}
+   \tag{$\mathsf S_q$}
+   \]
+   If $\mathsf S_q$ is infeasible, then there are route-demand prices
+   $\beta_p\ge0$ $(p\in N_q)$, a query-work price $\lambda\ge0$, and a
+   normalization price $\mu\ge0$ such that
+   \[
+      \sum_{p\in N_q}\beta_ph_p>\lambda L_q+\mu,
+      \tag{SD1}
+   \]
+   while every active child has nonpositive sampled reduced gain,
+   \[
+      \sigma_C\sum_{p\in P_C\cap N_q}\beta_p
+      \le
+      \lambda Q_C+\mu
+      \qquad(C:a_C(q)=1).
+      \tag{SD2}
+   \]
+   Conversely, the existence of such prices certifies infeasibility of
+   $\mathsf S_q$.
+\end{lemma}
+
+\begin{proof}
+   The converse is immediate: if $\pi$ were feasible, then multiplying the
+   route constraints by $\beta_p$ and summing gives
+   \[
+      \sum_p\beta_ph_p
+      \le
+      \sum_C\pi_C\sigma_C\sum_{p\in P_C\cap N_q}\beta_p
+      \le
+      \lambda\sum_C\pi_CQ_C+\mu\sum_C\pi_C
+      \le
+      \lambda L_q+\mu,
+   \]
+   contradicting \((SD1)\).
+
+   For the forward implication, apply the finite-dimensional separating
+   hyperplane theorem, equivalently Farkas' lemma, to the polyhedron
+   $\mathsf S_q$.  Since all constraints are linear and the variables are
+   restricted to active children by setting inactive variables to zero,
+   infeasibility is exactly the existence of nonnegative multipliers for the
+   lower-bound route constraints and upper-bound budget constraints such that
+   the resulting linear combination has a strictly positive right-hand side
+   but a nonpositive coefficient on every active variable.  Written with
+   multipliers $(\beta,\lambda,\mu)$, those two conditions are precisely
+   \((SD1)\) and \((SD2)\).
+\end{proof}
+
+Thus a finite sampled decoder has the same column-generation interpretation as
+the all-listing cover, but with a different obstruction.  A bad query assigns
+prices to unresolved near points and asks for one active child whose certified
+success credit times its priced point mass beats its query price and the unit
+normalization price.  If every surplus sampled dual certificate has such a
+positive-gain child in the candidate universe, unbounded preprocessing can add
+that child and repeat until the sampled route-mass LP is feasible.
+
 \begin{lemma}[Certified cover with residual scan]\label{lem:cover-residual-scan}
    In the setting of \cref{lem:certified-cover-compiler}, suppose the stored
    filters cover only $P\setminus U_0$, where $U_0\subseteq P$ is a residual
@@ -4219,7 +4294,10 @@ stabbing.
    pair not in the residual block, the sampling distribution must put
    inverse-polylogarithmic success mass on retained children containing the near
    point, while its expected certified child price remains
-   $F_4(m,R)\log^{O_c(1)}m$.
+   $F_4(m,R)\log^{O_c(1)}m$.  For any finite low-guard query certificate,
+   \cref{lem:finite-sampled-cover-dual} turns this sampled route-mass condition
+   into finite LP constraints, or equivalently into the absence of a
+   route-demand dual price system satisfying \((SD1)\)--\((SD2)\).
    By \cref{lem:guard-restricted-cover}, these active-power constraints need
    only range over the low-guard query domain; high-guard queries are handled by
    the resident sample.  By \cref{lem:finite-activation-patterns}, the
@@ -7842,6 +7920,10 @@ query sampler, paying expected sampled child price and requiring only
 inverse-polylogarithmic route mass on children that contain the true near point.
 Thus middle-density singletons and posterior prefixes should be handled as
 sampling/value objects whenever listing them would violate active power.
+\Cref{lem:finite-sampled-cover-dual} gives the finite obstruction to such a
+sampler: a bad query carries route-demand prices on unresolved near points, and
+the remaining theorem must find an active child whose priced success mass beats
+its query price plus the normalization price.
 The guard refinement
 \cref{lem:low-guard-shadow} further removes points whose entire near-query
 neighborhood is already high-density: the finite dual now prices only the
