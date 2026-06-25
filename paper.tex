@@ -8404,6 +8404,60 @@ This certificate is the local form of the remaining problem. It is analogous in 
    \cref{cor:transition-waterfilled-allocation}.
 \end{proof}
 
+\begin{corollary}[Existential antichain Fano certificate]
+   \label{cor:existential-antichain-fano}
+   Fix one query state and a trie whose successful terminal routes all invoke
+   certified procedures returning a valid \(cr\)-neighbor for the current ANN
+   query.  Work with the normalized charges \(a_e\) and transition-aware
+   branch prices of \cref{cor:transition-waterfilled-allocation}.  Let
+   \(a_*(u)\) be the maximum outgoing normalized charge at prefix \(u\).  Suppose
+   every successful route has at most \(H_0\) required edges and every antichain
+   of required prefixes satisfies
+   \[
+      \sum_{u\in\mathcal C}a_*(u)\le \frac{C}{H_0}.
+   \]
+   Put \(B=H_0\log C\).  Let \(A_q(z)\) and \(\overline A_q(u)\) be raw
+   route reliabilities and raw admissible upper certificates.  Assume every
+   successful terminal route has raw margin
+   \[
+      A_q(z)\ge \Theta+2B,
+   \]
+   and assume the unpriced prefix and terminal exponential moments satisfy
+   \[
+      \sum_u g_q(u)e^{\beta\overline A_q(u)}
+      \le
+      e^{\beta(\Theta+2B)}F\log^{O_c(1)}m,
+   \]
+   and
+   \[
+      \sum_z Q_z e^{\beta A_q(z)}
+      \le
+      e^{\beta(\Theta+2B)}F\log^{O_c(1)}m.
+   \]
+   If the route law and transition-aware water-filled allocation supplied by
+   \cref{cor:antichain-transition-waterfill} are query-decodable, then the
+   Fano-biased priority decoder at threshold \(\Theta\) lists a valid terminal
+   route and has query work
+   \[
+      e^{2\beta B}F\log^{O_c(1)}m
+   \]
+   up to the priority-queue logarithm.  In particular,
+   \(B=O_c(\log\log m)\) and \(\beta=O_c(1)\) give only polylogarithmic
+   overhead over \(F\).
+\end{corollary}
+
+\begin{proof}
+   By \cref{cor:antichain-transition-waterfill}, there is a route law
+   \(\Lambda\) supported on successful leaves whose transition-aware
+   water-filled defect is at most \(B\).  Use this as a singleton witness in
+   \cref{cor:robust-fano-allocation-compiler}, with the Fano branch price
+   \(\log_+(\lambda_ea_e/y_e)\) coming from the decodable transition-aware
+   allocation.  The raw margin and moment assumptions are exactly the
+   hypotheses of that compiler.  Hence the listed successful routes have
+   \(\Lambda\)-mass at least \(1/2\), so at least one valid terminal route is
+   invoked, and the displayed work bound follows.
+\end{proof}
+
 \begin{lemma}[Finite convex-linear minimax]\label{lem:finite-convex-minimax}
    Let \(X\subset\R^d\) be compact and convex, and let
    \(\phi_i:X\to\R\), \(i\in I\), be finitely many continuous convex
@@ -11392,6 +11446,14 @@ min-cut and stopping-frontier certificates: instead of guessing a route law,
 one proves that no prefix-free frontier carries too much maximum local charge,
 then the law and the transition-aware water-filled allocation are forced by a
 finite flow argument.
+\Cref{cor:existential-antichain-fano} composes this with the Fano decoder in
+the ANN-correct existential form: if the union of valid terminal routes has the
+same antichain charge bound and every such route has \(O_c(\log\log n)\) raw
+reliability margin, then one deterministic biased stack decoder lists a valid
+route with polylogarithmic overhead.  The remaining geometric theorem can
+therefore be stated as an antichain charge bound plus a raw-margin/list-moment
+bound for the successful-route trie, rather than as a separate allocation,
+sampling, or cohort-materialization problem.
 \Cref{lem:finite-convex-minimax} and
 \cref{lem:robust-waterfilled-minimax} upgrade this from one route law to a
 finite witness family: a single query allocation is optimal exactly when tested
