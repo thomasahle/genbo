@@ -2298,6 +2298,34 @@ initializer or fallback, while the proof-aligned object is a balanced
 overlapping score cover whose measured quantity is active power, not squared
 reconstruction error.
 
+For training such a cover on sampled queries or sampled near pairs, the natural
+loss is therefore the empirical active-power loss
+\[
+   \mathcal L_{\rm act}
+   =
+   \operatorname*{Quantile}_{q\in\mathcal Q}
+   \sum_{i:\phi_i(q)\ge \theta_i-L_i r}
+   |P_i|^\rho\Psi(R_i),
+\]
+together with the storage penalty
+\[
+   \mathcal L_{\rm store}
+   =
+   \sum_i |P_i|^{1+\rho}\Psi(R_i)
+\]
+and a penalty for sampled near pairs that are not covered by an activated
+membership.  The quantile can be replaced by a maximum for a worst-query
+certificate, or by a high quantile for a practical router with a capped
+fallback.  A Lloyd-like implementation would alternate between balancing the
+offsets, assigning fixed top-$a$ memberships by score, adding any extra
+memberships by the greedy near-pair-cover rule of
+\cref{lem:cost-sensitive-near-pair-cover}, and updating the score parameters to
+decrease $\mathcal L_{\rm act}+\lambda\mathcal L_{\rm store}$ while recomputing
+the certified radii.  Plain $k$-means is the special case that uses the wrong
+surrogate loss, namely average squared reconstruction error; the score-power
+variant trains directly against the quantity that controls recursive query
+work.
+
 \subsection{Simplicity and implementation}
 
 The filtering work remains level-synchronous. At one checkpoint, all active score paths can be advanced by a batched matrix multiplication, followed by continuation-mass pruning, cap-test lookup, randomized child thinning, and resident scans. Recentering updates stored coordinate offsets; it does not start a fresh score tree.
