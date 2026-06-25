@@ -8029,6 +8029,111 @@ This certificate is the local form of the remaining problem. It is analogous in 
    charge \(\lambda_ea_e\), rather than from the full edge charge \(a_e\).
 \end{remark}
 
+\begin{lemma}[Antichain prefix-density flow]
+   \label{lem:antichain-prefix-density-flow}
+   Let \(\mathcal T\) be a finite rooted trie whose leaves are successful
+   routes, and let \(d(u)\ge0\) be a demand on trie nodes.  There is a
+   probability law \(\Lambda\) on the leaves such that
+   \[
+      \Lambda(u)\ge d(u)
+      \qquad\text{for every node }u,
+   \]
+   if and only if every antichain \(\mathcal C\) of trie nodes satisfies
+   \[
+      \sum_{u\in\mathcal C}d(u)\le1.
+   \]
+\end{lemma}
+
+\begin{proof}
+   Necessity is immediate: an antichain is prefix-free, so a leaf route passes
+   through at most one node of \(\mathcal C\), and hence
+   \[
+      \sum_{u\in\mathcal C}d(u)
+      \le
+      \sum_{u\in\mathcal C}\Lambda(u)
+      \le1.
+   \]
+
+   For sufficiency, define the required mass \(r(u)\) of a subtree recursively.
+   At a leaf put \(r(u)=d(u)\).  At an internal node put
+   \[
+      r(u)=
+      \max\left\{
+         d(u),\,
+         \sum_{w\in\operatorname{ch}(u)}r(w)
+      \right\}.
+   \]
+   By induction, \(r(u)\) is the largest total demand of an antichain contained
+   in the subtree rooted at \(u\): such an antichain either contains \(u\), or
+   is the disjoint union of antichains from the child subtrees.  Therefore the
+   hypothesis gives \(r(\varnothing)\le1\).
+
+   We now assign leaf mass recursively.  Give the root mass \(m(\varnothing)=1\).
+   Suppose a node \(u\) has mass \(m(u)\ge r(u)\).  If \(u\) is a leaf, put
+   this mass on that leaf.  If \(u\) is internal, first assign each child
+   \(w\) mass \(r(w)\).  The remaining mass
+   \(m(u)-\sum_wr(w)\ge0\) is distributed arbitrarily among the children.
+   Then every child receives mass at least its \(r(w)\), and the child masses
+   sum to \(m(u)\), so the recursion continues.  The induced probability law
+   on leaves has \(\Lambda(u)=m(u)\ge r(u)\ge d(u)\) at every node.
+\end{proof}
+
+\begin{corollary}[Antichain charge certificate for transition water-filling]
+   \label{cor:antichain-transition-waterfill}
+   Work in the setting of \cref{cor:transition-waterfilled-allocation}.  For
+   every internal trie node \(u\), let
+   \[
+      a_*(u)=\max_{e=u\to w}a_e
+   \]
+   over the required outgoing edges from \(u\), with \(a_*(u)=0\) when there is
+   no such edge.  Suppose every successful route has at most \(H_0\) required
+   edges, and suppose there is a constant \(C\ge1\) such that every antichain
+   \(\mathcal C\) of trie nodes satisfies
+   \[
+      \sum_{u\in\mathcal C}a_*(u)\le \frac{C}{H_0}.
+   \]
+   Then there is a route law \(\Lambda\) on successful leaves for which every
+   used required edge \(e=u\to w\) satisfies
+   \[
+      H_0a_e\le C\Lambda(u).
+   \]
+   Consequently the transition-aware water-filled defect of this route law is
+   at most
+   \[
+      H_0\log C.
+   \]
+   If the corresponding allocation is query-decodable and
+   \(H_0\log C=O_c(\log\log n)\), then the budget-thinned route value is
+   inverse-polylogarithmic.
+\end{corollary}
+
+\begin{proof}
+   Apply \cref{lem:antichain-prefix-density-flow} with demands
+   \[
+      d(u)=\frac{H_0a_*(u)}{C}.
+   \]
+   The antichain hypothesis is exactly the feasibility condition.  Hence there
+   is a leaf law \(\Lambda\) with \(\Lambda(u)\ge H_0a_*(u)/C\) for every
+   node.  Since \(a_e\le a_*(u)\) for every outgoing edge \(e=u\to w\), the
+   displayed prefix-density bound follows.
+
+   Under this route law,
+   \[
+      \sum_e\ell_e\le H_0,
+   \]
+   because every sampled route uses at most \(H_0\) required edges.  The raw
+   transition-aware bound in \cref{cor:transition-waterfilled-allocation}
+   therefore gives
+   \[
+      \mathcal D^*_{\rm tr}
+      \le
+      \sum_e\ell_e\log C
+      \le H_0\log C.
+   \]
+   The final statement is the route-value conclusion of
+   \cref{cor:transition-waterfilled-allocation}.
+\end{proof}
+
 \begin{lemma}[Finite convex-linear minimax]\label{lem:finite-convex-minimax}
    Let \(X\subset\R^d\) be compact and convex, and let
    \(\phi_i:X\to\R\), \(i\in I\), be finitely many continuous convex
@@ -10990,6 +11095,21 @@ budget-constrained version of that square-benign profile.  The robust envelope
 form \cref{cor:robust-transition-envelope-raw-log} preserves this improvement
 whenever the witness route laws share, or admit a decodable upper envelope for,
 their local transition probabilities.
+\Cref{lem:antichain-prefix-density-flow} removes another arbitrary choice: a
+route law with the required prefix densities exists exactly when the
+corresponding node demands have total mass at most one on every antichain.
+Applied with demand \(H_0a_*(u)/C\), where \(a_*(u)\) is the largest outgoing
+normalized charge at prefix \(u\), this gives
+\cref{cor:antichain-transition-waterfill}: it is enough to prove the cut-style
+charge bound
+\[
+   \sum_{u\in\mathcal C}a_*(u)\le C/H_0
+\]
+for every antichain of required prefixes.  This is closer to the existing
+min-cut and stopping-frontier certificates: instead of guessing a route law,
+one proves that no prefix-free frontier carries too much maximum local charge,
+then the law and the transition-aware water-filled allocation are forced by a
+finite flow argument.
 \Cref{lem:finite-convex-minimax} and
 \cref{lem:robust-waterfilled-minimax} upgrade this from one route law to a
 finite witness family: a single query allocation is optimal exactly when tested
