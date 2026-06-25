@@ -2574,6 +2574,136 @@ query time pays only for output-sensitive list decoding.
    factored estimates into \((PP1)\)--\((PP4)\).
 \end{proof}
 
+\begin{corollary}[Product-panel rate bookkeeping]
+   \label{cor:product-panel-rate-bookkeeping}
+   Work in the setting of \cref{lem:product-panel-tensorization}, and assume
+   the number of blocks satisfies \(h\le\log^{O_c(1)}m\).  For every query
+   \(q\), suppose there are deterministic block factors \(\mathfrak q_j(q)\)
+   such that, for every realization of block \(j\),
+   \[
+      e^{-\beta\theta_{Q,j}}Z_j^Q(q)\le\mathfrak q_j(q),
+      \qquad
+      e^{\beta(M_j(q)-\theta_{Q,j})}\le\mathfrak q_j(q),
+   \]
+   and
+   \[
+      (1+D_j(q))e^{\beta(M_j(q)-\theta_{Q,j})}
+      \le\mathfrak q_j(q).
+   \]
+   For data and far pairs put
+   \[
+      \mathfrak s_j(x)=
+      \E\!\left[e^{-\alpha\theta_{P,j}}Z_j^P(x)\right],
+      \qquad
+      \mathfrak f_j(x,q)=
+      \E\!\left[
+      e^{-\alpha\theta_{P,j}-\beta\theta_{Q,j}}
+      Z_j^{PQ}(x,q)
+      \right],
+   \]
+   and for near pairs put
+   \[
+      \mathfrak h_j(p,q)=\Pr[H_j(p,q)].
+   \]
+   If
+   \[
+      \prod_{j=1}^h\mathfrak q_j(q)
+      \le m^\rho\log^{O_c(1)}m
+      \qquad\text{for every promised query }q,
+      \tag{RB1}
+   \]
+   \[
+      \prod_{j=1}^h\mathfrak s_j(x)
+      \le m^\rho\log^{O_c(1)}m
+      \qquad\text{for every data point }x,
+      \tag{RB2}
+   \]
+   \[
+      \prod_{j=1}^h\mathfrak f_j(x,q)
+      \le m^{-(1-\rho)}\log^{O_c(1)}m
+      \qquad
+      \text{whenever }\|x-q\|>cr,
+      \tag{RB3}
+   \]
+   and
+   \[
+      \prod_{j=1}^h\mathfrak h_j(p,q)
+      \ge \log^{-O_c(1)}m
+      \qquad
+      \text{whenever }\|p-q\|\le r,
+      \tag{RB4}
+   \]
+   then the product panel satisfies the certificates \((PP1)\)--\((PP4)\) of
+   \cref{prop:product-panel-spectrum-compiler}, after increasing the
+   polylogarithmic exponent.
+
+   Equivalently, it is enough to prove one-block log-rate bounds
+   \[
+      \mathfrak q_j(q)\le m^{u_j},\qquad
+      \mathfrak s_j(x)\le m^{v_j},\qquad
+      \mathfrak f_j(x,q)\le m^{-w_j},\qquad
+      \mathfrak h_j(p,q)\ge e^{-b_j},
+   \]
+   with
+   \[
+      \sum_j u_j\le\rho+O_c\!\left(\frac{\log\log m}{\log m}\right),
+      \quad
+      \sum_j v_j\le\rho+O_c\!\left(\frac{\log\log m}{\log m}\right),
+   \]
+   \[
+      \sum_j w_j\ge1-\rho-O_c\!\left(\frac{\log\log m}{\log m}\right),
+      \quad
+      \sum_j b_j=O_c(\log\log m).
+   \]
+\end{corollary}
+
+\begin{proof}
+   By \((BT1)\) and the definition of the factors \(\mathfrak q_j\), every
+   prefix term in \(e^{-\beta\theta_Q}P_\beta(q)\) is at most
+   \(\prod_j\mathfrak q_j(q)\).  There are \(h+1=\log^{O_c(1)}m\) terms, so
+   \[
+      e^{-\beta\theta_Q}P_\beta(q)
+      \le
+      (h+1)\prod_j\mathfrak q_j(q)
+      \le m^\rho\log^{O_c(1)}m .
+   \]
+   The additive product-panel decoder with terminal prices \(Q_c=0\) therefore
+   has work
+   \[
+      O\!\left(
+      (m^\rho\log^{O_c(1)}m+1)\log(2+m^\rho\log^{O_c(1)}m)
+      \right)
+      =
+      m^\rho\log^{O_c(1)}m,
+   \]
+   plus the explicit \(d\log^{O_c(1)}m\) work needed to compute the block
+   query scores.  This is \((PP1)\).
+
+   For storage, independence and \((BT2)\) give, for each fixed \(x\),
+   \[
+      \E e^{-\alpha\theta_P}\prod_j Z_j^P(x)
+      =
+      \prod_j\mathfrak s_j(x)
+      \le m^\rho\log^{O_c(1)}m .
+   \]
+   Summing over the \(m\) data points gives \((PP2)\).  Similarly, for each far
+   pair \((x,q)\), independence and \((BT3)\) give
+   \[
+      \E e^{-\alpha\theta_P-\beta\theta_Q}\prod_j Z_j^{PQ}(x,q)
+      =
+      \prod_j\mathfrak f_j(x,q)
+      \le m^{-(1-\rho)}\log^{O_c(1)}m .
+   \]
+   Summing over at most \(m\) far points gives \((PP3)\).  Finally, \((BT4)\)
+   and \((RB4)\) give \((PP4)\).
+
+   The log-rate formulation is obtained by multiplying the displayed one-block
+   bounds and using
+   \[
+      m^{O_c((\log\log m)/\log m)}=\log^{O_c(1)}m .
+   \]
+\end{proof}
+
 \begin{assumption}[Flat structured spherical-code decoder]
    \label{asm:flat-spherical-code-decoder}
    Fix a localized terminal spherical gap with \(m\) resident points.  There is
@@ -10254,6 +10384,11 @@ after splitting the thresholds by block, the decoder partition, storage
 partition, far co-load partition, and a coordinatewise near-hit event all
 tensorize.  The remaining code/lattice theorem can therefore be attacked one
 block at a time, then multiplied.
+\Cref{cor:product-panel-rate-bookkeeping} is the exponent form: prove one-block
+rates \(u_j,v_j,w_j,b_j\) with total query and storage rates at most \(\rho\),
+total far-separation rate at least \(1-\rho\), and total near-loss
+\(O_c(\log\log m)\).  This is the precise product-code analogue of the
+spherical exponent calculation.
 \Cref{lem:budget-stable-prefix-list} and
 \cref{cor:canonical-budget-stable-decoder} take one step in that direction:
 the canonical mixed Bellman budget itself is an admissible list-decoding
