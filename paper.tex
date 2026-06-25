@@ -3535,21 +3535,16 @@ This certificate is the local form of the remaining problem. It is analogous in 
    good routes share early opportunities and split only after their lowest
    common ancestors.
 
-   Thus the preferred target is a first/second moment statement for the
-   fractional value variable $Z_{\rm val}$ in
-   \cref{cor:fractional-value-delivery}, preferably through the LCA value-flow
-   certificate of \cref{lem:lca-value-flow}, rather than for a fully
-   materialized child count. The first moment should sum the
-   $\beta_q$-weighted delivered value over all tame good routes, while the
-   second moment should charge two routes by the union of their required
+   One valid target is a first/second moment statement for the fractional value
+   variable $Z_{\rm val}$ in \cref{cor:fractional-value-delivery}, through the
+   LCA value-flow certificate of \cref{lem:lca-value-flow}. The first moment
+   sums the $\beta_q$-weighted delivered value over all tame good routes, while
+   the second moment charges two routes by the union of their required
    opportunity sets, exactly as the spherical proof charges two accepting
    leaves by their LCA. If that moment estimate holds with
    inverse-polylogarithmic first moment and polynomial-logarithmic
    second-moment ratio, then the budget-thinned route delivers value to the
-   near point with inverse-polylogarithmic probability. This is sharper than
-   \cref{asm:mixed-continuation-operator}: expected work is proved, and the
-   remaining task is only an aggregate fractional value-delivery estimate for
-   the near routes that are not already exposed by cap-free residual scans.
+   near point with inverse-polylogarithmic probability.
 
    \Cref{lem:unit-capped-value-flow} gives an even cleaner sufficient target.
    Instead of proving the LCA energy directly, prune the fractional route
@@ -3562,10 +3557,11 @@ This certificate is the local form of the remaining problem. It is analogous in 
    root value. Equivalently, by \cref{lem:saturated-value-recursion} and
    \cref{lem:saturated-value-mincut}, prove that the saturated value
    $U(\varnothing)$ of the tame-route trie is inverse-polylogarithmic, or that
-   every route cut has inverse-polylogarithmic prefix-success mass.
+   every route cut has inverse-polylogarithmic prefix-success mass. This is the
+   form used in \cref{asm:aggregate-value-delivery}.
 \end{remark}
 
-\begin{assumption}[Aggregate fractional value delivery]\label{asm:aggregate-value-delivery}
+\begin{assumption}[Saturated fractional value delivery]\label{asm:aggregate-value-delivery}
    Run the randomized one-tree construction with
    \[
       \eta=\Theta_c\!\left(\frac{\log\log n}{\log n}\right),
@@ -3579,12 +3575,14 @@ This certificate is the local form of the remaining problem. It is analogous in 
    $\mathcal G(p,q)$ of tame candidate routes and a fractional budget
    allocation whose total expected work is charged by
    \cref{lem:budget-thinned-opportunities} and
-   \cref{lem:fractional-value-budget}. The fractional value variable
-   $Z_{\rm val}$ from \cref{cor:fractional-value-delivery} satisfies
+   \cref{lem:fractional-value-budget}. The corresponding route trie has
+   polylogarithmic depth and edge success probabilities $\gamma_{u,w}$ for
+   these additional budget or fractional-delivery opportunities, excluding the
+   ordinary cap-edge thinning handled separately in
+   \cref{lem:thin-lineage}. Let $U$ be its saturated value, equivalently the
+   min-cut value from \cref{lem:saturated-value-mincut}. Then
    \[
-      \E Z_{\rm val}\ge \log^{-A_c}n,
-      \qquad
-      \E Z_{\rm val}^2\le \log^{A_c}n\,(\E Z_{\rm val})^2
+      U(\varnothing)\ge \log^{-A_c}n
    \]
    for a constant $A_c$ depending only on $c$. Each route in
    $\mathcal G(p,q)$ either reaches a resident scan containing $p$ or follows
@@ -3629,7 +3627,7 @@ This certificate is the local form of the remaining problem. It is analogous in 
    polylogarithmic localization copies.
 
    For success, \cref{asm:aggregate-value-delivery} and
-   \cref{cor:fractional-value-delivery} imply that with probability
+   \cref{cor:saturated-value-delivery} imply that with probability
    $\log^{-O_c(1)}n$ there is a successful delivered route for the true near pair,
    unless a cap-free residual scan has already exposed the near point. Along a
    successful delivered cap route, the ordinary geometric thinning probabilities telescope
@@ -5021,7 +5019,7 @@ and space
 \]
 The exact pieces now aligned for the randomized cap-thinning route are: continuation-mass pruning gives optimal expected spherical work, adaptive continuation gives whole-lineage near survival, thinned cap splitting gives radius-potential contraction, and cap-free terminal scans are paid by low-correlation collisions.
 
-For the randomized cap-thinning route, one remaining task is the branching first-split work estimate in \cref{asm:mixed-continuation-operator}: prove that the thinned geometric child potentials contract over random cap-discovery frontiers without replacing the branching decoder by a normalized path law. The newer budget-thinned variant proves the expected work bound from a canonical prefix supermartingale and packages the remaining near-side issue as \cref{asm:aggregate-value-delivery}: prove aggregate value delivery for the fractional variable $Z_{\rm val}$, rather than a product bound along one distinguished path. For laminar route tries, \cref{lem:lca-value-flow} turns the second-moment version into the concrete LCA target
+For the randomized cap-thinning route, one remaining task is the branching first-split work estimate in \cref{asm:mixed-continuation-operator}: prove that the thinned geometric child potentials contract over random cap-discovery frontiers without replacing the branching decoder by a normalized path law. The newer budget-thinned variant proves the expected work bound from a canonical prefix supermartingale and packages the remaining near-side issue as \cref{asm:aggregate-value-delivery}: prove that the saturated value, or equivalently every route-cut prefix mass, is inverse-polylogarithmic rather than tracking a product along one distinguished path. For laminar route tries, \cref{lem:lca-value-flow} turns the second-moment version into the concrete LCA target
 \[
    V(\varnothing)\ge\log^{-O_c(1)}n,
    \qquad
