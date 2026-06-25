@@ -2135,22 +2135,67 @@ whether a near query must activate the filter.
    potentials.
 \end{proof}
 
+\begin{lemma}[Lipschitz-score filter compiler]\label{lem:lipschitz-score-cover}
+   Let each filter be specified by a set $P_i$, a certified recursive ball
+   $(o_i,R_i)$, a score function $\phi_i:\R^d\to\R$ with Lipschitz constant
+   $L_i$, and a threshold $\theta_i$, with
+   \[
+      P_i\subseteq\Ball(o_i,R_i)\cap\{x:\phi_i(x)\ge\theta_i\},
+      \qquad
+      \bigcup_iP_i=P .
+   \]
+   On query $q$, list every filter satisfying
+   \[
+      \phi_i(q)\ge \theta_i-L_i r .
+   \]
+   If the listed filters obey
+   \[
+      \sum_{i:\phi_i(q)\ge\theta_i-L_i r}
+      |P_i|^\rho\Psi(R_i)\le L,
+      \qquad
+      \sum_i |P_i|^{1+\rho}\Psi(R_i)\le S_0,
+   \]
+   then the cover compiler of \cref{lem:certified-cover-compiler} applies with
+   query work $O(L\polylog n)$ and storage $O(S_0\polylog n)$.
+\end{lemma}
+
+\begin{proof}
+   Let $\|p-q\|\le r$ and choose a filter $i$ with $p\in P_i$.  Since
+   $\phi_i$ is $L_i$-Lipschitz,
+   \[
+      \phi_i(q)\ge\phi_i(p)-L_i\|p-q\|\ge\theta_i-L_i r .
+   \]
+   Thus the query lists a certified child containing the near point.  The
+   displayed sums are exactly the active query and storage potentials.
+\end{proof}
+
+This lemma contains both certified ball covers and cap covers.  Taking
+$\phi_i(x)=-\|x-o_i\|$ and $\theta_i=-R_i$ gives the ordinary inflated-ball
+rule $\|q-o_i\|\le R_i+r$, which is the worst-case-safe interpretation of a
+$k$-means cell.  Taking $\phi_i(x)=\langle u_i,x\rangle$ gives
+\cref{lem:cap-slack-cover}.  The theory-native alternative to $k$-means is
+therefore to learn filters whose scores are much more selective than distance
+to a center, while retaining the same Lipschitz slack certificate.
+
 Thus a theory-native practical alternative is a power-filter Lloyd iteration
-rather than ordinary Lloyd iteration.  Its filters are spherical caps after
-local centering or whitening.  The assignment step should add point--cap
-memberships by uncovered near-pair value divided by the marginal increase in
+rather than ordinary Lloyd iteration.  Its simplest filters are spherical caps
+after local centering or whitening, but \cref{lem:lipschitz-score-cover} also
+allows learned or anisotropic Lipschitz scores.  The assignment step should add
+point--filter memberships by uncovered near-pair value divided by the marginal
+increase in
 \[
    |P_i|^{1+\rho}\Psi(R_i)
    \quad\text{and}\quad
    \sum_{\text{sampled }q:
-      \langle u_i,q\rangle\ge\theta_i-r}
+      \phi_i(q)\ge\theta_i-L_i r}
       |P_i|^\rho\Psi(R_i),
 \]
-while the update step should move $u_i,\theta_i,o_i$ to reduce cap-query
-stabbing and certified child radius.  This objective can beat $k$-means on
-instances where angular caps are selective but inflated balls are not: the
-query probes filters aligned with its score direction, instead of every
-cluster whose enclosing ball lies within additive distance $r$.
+while the update step should move the score parameters and the certified ball
+$(o_i,R_i)$ to reduce query stabbing and child radius.  This objective can beat
+$k$-means on instances where directional or learned scores are selective but
+inflated balls are not: the query probes filters aligned with its score
+direction, instead of every cluster whose enclosing ball lies within additive
+distance $r$.
 
 \subsection{Simplicity and implementation}
 
