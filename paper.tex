@@ -3680,6 +3680,93 @@ This certificate is the local form of the remaining problem. It is analogous in 
    Apply \cref{lem:prefix-energy-spine-toll} with $B=0$.
 \end{proof}
 
+\begin{lemma}[Optimal prefix-energy route law]\label{lem:optimal-prefix-energy-law}
+   Fix a finite route trie with activation edge probabilities
+   $\gamma_{u,w}\in[0,1]$. For a node $u$, let
+   $\mathfrak E(u)$ be the infimum of the normalized prefix energy
+   \[
+      \sum_{z\succeq u}
+      \frac{\Lambda_u(z)^2}{A(z)/A(u)}
+   \]
+   over all probability laws $\Lambda_u$ on leaves below $u$, where
+   $A(z)/A(u)$ is the activation mass from $u$ to $z$. Then
+   \[
+      \mathfrak E(v)=1\quad\text{at leaves},
+   \]
+   and, at an internal node,
+   \[
+      \mathfrak E(u)
+      =
+      1+
+      \left(
+         \sum_{w\in\operatorname{ch}(u)}
+         \frac{\gamma_{u,w}}{\mathfrak E(w)}
+      \right)^{-1},
+   \]
+   with the convention that the inverse of zero is $+\infty$ and
+   $\gamma_{u,w}/\infty=0$. When the displayed denominator is positive, an
+   optimal law is obtained by using the transition probabilities
+   \[
+      \lambda_{u,w}
+      =
+      \frac{\gamma_{u,w}/\mathfrak E(w)}
+           {\sum_y\gamma_{u,y}/\mathfrak E(y)}
+   \]
+   and then recursing independently inside the selected child.
+
+   Equivalently, the harmonic route value
+   $W(u)=1/\mathfrak E(u)$ satisfies
+   \[
+      W(v)=1\quad\text{at leaves},
+      \qquad
+      W(u)=\frac{S(u)}{1+S(u)},
+      \qquad
+      S(u)=\sum_w\gamma_{u,w}W(w).
+   \]
+   If $W(\varnothing)\ge\log^{-O_c(1)}n$, then the saturated value satisfies
+   \[
+      U(\varnothing)\ge\log^{-O_c(1)}n .
+   \]
+\end{lemma}
+
+\begin{proof}
+   We prove the recursion by backward induction. At a leaf, the only route law
+   has energy one. At an internal node $u$, any law first chooses child $w$
+   with probability $\lambda_w$ and then uses a conditional law below $w$.
+   If a positive-$\lambda_w$ child has $\gamma_{u,w}=0$, the energy is
+   infinite, so such children may be ignored when minimizing finite energy.
+   For finite choices, the normalized energy decomposes as
+   \[
+      1+
+      \sum_w
+      \frac{\lambda_w^2}{\gamma_{u,w}}\,
+      \mathcal E_w,
+   \]
+   where $\mathcal E_w$ is the normalized energy of the conditional law below
+   $w$. By the induction hypothesis, the best choice has
+   $\mathcal E_w=\mathfrak E(w)$, so it remains to minimize
+   \[
+      \sum_w \lambda_w^2\frac{\mathfrak E(w)}{\gamma_{u,w}}
+      \qquad\text{subject to}\qquad
+      \sum_w\lambda_w=1,\quad \lambda_w\ge0 .
+   \]
+   Cauchy's inequality gives
+   \[
+      1
+      =
+      \left(\sum_w\lambda_w\right)^2
+      \le
+      \left(\sum_w\lambda_w^2
+      \frac{\mathfrak E(w)}{\gamma_{u,w}}\right)
+      \left(\sum_w\frac{\gamma_{u,w}}{\mathfrak E(w)}\right).
+   \]
+   Equality holds for
+   $\lambda_w\propto\gamma_{u,w}/\mathfrak E(w)$, which proves the displayed
+   recursion and the optimizer. Taking reciprocals gives the harmonic
+   $W$-recursion. The final implication follows from
+   \cref{cor:route-law-prefix-energy}, applied to the optimal root law.
+\end{proof}
+
 \begin{corollary}[Cutset value delivery]\label{cor:cutset-value-delivery}
    In the setting of \cref{cor:fractional-value-delivery}, suppose every
    route has length at most $H$ and every route cut $\mathcal C$ in the
@@ -3947,6 +4034,19 @@ This certificate is the local form of the remaining problem. It is analogous in 
    $\chi_\Lambda(u)\le1$ for every route law. Thus any prefix-energy growth is
    isolated to the budget-thinned or fractional-delivery opportunities where
    activation probabilities are genuinely smaller than the route-law split.
+   Finally, \cref{lem:optimal-prefix-energy-law} removes the need to guess the
+   route law: the optimal prefix-energy law is computed by the harmonic
+   Bellman recursion
+   \[
+      W(u)=
+      \frac{\sum_w\gamma_{u,w}W(w)}
+           {1+\sum_w\gamma_{u,w}W(w)}.
+   \]
+   A chain of unthinned score edges loses only the route depth, while an
+   underfunded geometric opportunity is visible through the local sum
+   $\sum_w\gamma_{u,w}W(w)$. Thus a fully explicit sufficient target is to
+   prove inverse-polylogarithmic harmonic value at the root of the tame-route
+   trie.
 \end{remark}
 
 \begin{remark}[The remaining aggregate value target]\label{rem:value-delivery-target}
@@ -3990,7 +4090,11 @@ This certificate is the local form of the remaining problem. It is analogous in 
    \cref{lem:saturated-value-mincut}, prove that the saturated value
    $U(\varnothing)$ of the tame-route trie is inverse-polylogarithmic, or that
    every route cut has inverse-polylogarithmic prefix-success mass. This is the
-   form used in \cref{asm:aggregate-value-delivery}.
+   form used in \cref{asm:aggregate-value-delivery}. The stronger but more
+   constructive sufficient condition is the harmonic value
+   $W(\varnothing)$ from \cref{lem:optimal-prefix-energy-law}: it directly
+   optimizes the prefix-energy route law and implies the saturated-value
+   condition by \cref{cor:route-law-prefix-energy}.
 \end{remark}
 
 \begin{assumption}[Saturated fractional value delivery]\label{asm:aggregate-value-delivery}
