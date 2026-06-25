@@ -2441,6 +2441,139 @@ query time pays only for output-sensitive list decoding.
    constant-factor loss in success probability.
 \end{proof}
 
+\begin{lemma}[Block tensorization for product panels]
+   \label{lem:product-panel-tensorization}
+   Work in the product-panel setting of
+   \cref{prop:product-panel-spectrum-compiler}.  Suppose the thresholds split
+   as
+   \[
+      \theta_P=\sum_{j=1}^h\theta_{P,j},
+      \qquad
+      \theta_Q=\sum_{j=1}^h\theta_{Q,j},
+   \]
+   and for each block choose a suffix bound
+   \(M_j(q)\ge\max_{a\in\mathcal C_j}\phi_j(q,a)\).  Use
+   \(R_{\ell+1}(q)=\sum_{j=\ell+1}^hM_j(q)\) in
+   \cref{lem:additive-product-panel-decoder}.  Define
+   \[
+      Z_j^Q(q)=\sum_{a\in\mathcal C_j}e^{\beta\phi_j(q,a)},
+      \qquad
+      Z_j^P(x)=\sum_{a\in\mathcal C_j}e^{\alpha\psi_j(x,a)},
+   \]
+   and
+   \[
+      Z_j^{PQ}(x,q)=
+      \sum_{a\in\mathcal C_j}
+      e^{\alpha\psi_j(x,a)+\beta\phi_j(q,a)} .
+   \]
+   Then the query-list partition certificate factors as
+   \[
+   \begin{aligned}
+      e^{-\beta\theta_Q}P_\beta(q)
+      &=
+      \sum_{\ell=0}^{h}
+      a_\ell(q)
+      \prod_{j\le\ell}
+      \left(e^{-\beta\theta_{Q,j}}Z_j^Q(q)\right)
+      \prod_{j>\ell}
+      e^{\beta(M_j(q)-\theta_{Q,j})}.
+   \end{aligned}
+   \tag{BT1}
+   \]
+   The storage and far-load exponential majorants factor as
+   \[
+      e^{-\alpha\theta_P}
+      \prod_{j=1}^hZ_j^P(x)
+      =
+      \prod_{j=1}^h
+      \left(e^{-\alpha\theta_{P,j}}Z_j^P(x)\right),
+      \tag{BT2}
+   \]
+   and
+   \[
+      e^{-\alpha\theta_P-\beta\theta_Q}
+      \prod_{j=1}^h Z_j^{PQ}(x,q)
+      =
+      \prod_{j=1}^h
+      \left(
+      e^{-\alpha\theta_{P,j}-\beta\theta_{Q,j}}
+      Z_j^{PQ}(x,q)
+      \right).
+      \tag{BT3}
+   \]
+   Consequently, if the block panels are sampled independently, expectations of
+   the products in \((BT2)\) and \((BT3)\) are products of one-block
+   expectations, and the same holds term-by-term in \((BT1)\), with the
+   \((\ell+1)\)-st factor read as
+   \[
+      \E\!\left[
+      a_\ell(q)e^{\beta(M_{\ell+1}(q)-\theta_{Q,\ell+1})}
+      \right]
+   \]
+   when \(\ell<h\).
+
+   Finally, for a near pair \((p,q)\), let
+   \[
+      H_j(p,q)=
+      \left\{
+      \exists a\in\mathcal C_j:
+      \psi_j(p,a)\ge\theta_{P,j},\
+      \phi_j(q,a)\ge\theta_{Q,j}
+      \right\}.
+   \]
+   If the block panels are independent, then
+   \[
+      \Pr\!\left[
+      \exists c\in\mathcal C:
+      S_P(p,c)\ge\theta_P,\ S_Q(q,c)\ge\theta_Q
+      \right]
+      \ge
+      \prod_{j=1}^h\Pr[H_j(p,q)].
+      \tag{BT4}
+   \]
+   Thus the global product-panel certificates \((PP1)\)--\((PP4)\) follow from
+   the corresponding blockwise bounds obtained by summing \((BT1)\)--\((BT3)\)
+   over prefixes, data points, and far pairs, together with
+   \(\prod_j\Pr[H_j(p,q)]\ge L_m^{-1}\) for every near pair.
+\end{lemma}
+
+\begin{proof}
+   The identity \((BT1)\) is obtained by substituting
+   \(R_{\ell+1}(q)=\sum_{j>\ell}M_j(q)\) and
+   \(\theta_Q=\sum_j\theta_{Q,j}\) into the definition of \(P_\beta\):
+   \[
+      e^{-\beta\theta_Q}
+      a_\ell e^{\beta R_{\ell+1}}\prod_{j\le\ell}Z_j^Q
+      =
+      a_\ell
+      \prod_{j\le\ell}
+      \left(e^{-\beta\theta_{Q,j}}Z_j^Q\right)
+      \prod_{j>\ell}
+      e^{\beta(M_j-\theta_{Q,j})}.
+   \]
+   Summing over \(\ell\) gives \((BT1)\).  The storage and far identities
+   \((BT2)\) and \((BT3)\) are the same calculation with
+   \(\theta_P=\sum_j\theta_{P,j}\) and the additive scores
+   \(S_P,S_Q\).
+
+   If the block panels are independent, every displayed product involves one
+   random object from each block.  Therefore its expectation factors across
+   blocks.  In \((BT1)\), the coefficient \(a_\ell\) is either \(1\) when
+   \(\ell=h\), or \(1+D_{\ell+1}(q)\) when \(\ell<h\); this depends on the
+   next block and is therefore grouped with the \((\ell+1)\)-st suffix factor.
+
+   On the event \(\bigcap_jH_j(p,q)\), choose one witnessing block symbol
+   \(a_j\) for each \(j\), and put \(c=(a_1,\ldots,a_h)\).  Then
+   \[
+      S_P(p,c)=\sum_j\psi_j(p,a_j)\ge\sum_j\theta_{P,j}=\theta_P,
+      \qquad
+      S_Q(q,c)=\sum_j\phi_j(q,a_j)\ge\sum_j\theta_{Q,j}=\theta_Q .
+   \]
+   Hence the global hit event contains \(\bigcap_jH_j(p,q)\).  Independence
+   gives \((BT4)\).  The final sentence is just the substitution of these
+   factored estimates into \((PP1)\)--\((PP4)\).
+\end{proof}
+
 \begin{assumption}[Flat structured spherical-code decoder]
    \label{asm:flat-spherical-code-decoder}
    Fix a localized terminal spherical gap with \(m\) resident points.  There is
@@ -10116,6 +10249,11 @@ states the exact certificates: one-panel decoder work \((PP1)\), storage
 moment \((PP2)\), far co-load moment \((PP3)\), and near-pair hit probability
 \((PP4)\).  The two load conditions are pure exponential-moment inequalities
 and factor block-by-block for product panels.
+\Cref{lem:product-panel-tensorization} records that reduction explicitly:
+after splitting the thresholds by block, the decoder partition, storage
+partition, far co-load partition, and a coordinatewise near-hit event all
+tensorize.  The remaining code/lattice theorem can therefore be attacked one
+block at a time, then multiplied.
 \Cref{lem:budget-stable-prefix-list} and
 \cref{cor:canonical-budget-stable-decoder} take one step in that direction:
 the canonical mixed Bellman budget itself is an admissible list-decoding
