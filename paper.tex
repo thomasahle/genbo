@@ -1726,6 +1726,42 @@ load
    independent guard samples give the stated capped bounds.
 \end{proof}
 
+\begin{lemma}[Balanced fanout obstruction]\label{lem:balanced-fanout-obstruction}
+   Consider one node with $m$ points and radius $R$. Suppose that, for some
+   query $q$, the active certified cover contains $K\ge2$ disjoint children
+   of equal size $m/K$, and each has radius at least
+   $R\sqrt{1-\eta^2}$ up to lower-order terms. Then its active recursive
+   power satisfies
+   \[
+      \sum_{i=1}^K |P_i|^\rho\Psi(R_i)
+      \ge
+      K^{1-\rho}\left(1-O(\eta^2)\right)F_4(m,R).
+   \]
+   In particular, for every fixed $\rho<1$ and sufficiently small $\eta$, such
+   a balanced active fanout violates the contraction required in
+   \cref{asm:power-cover}.
+\end{lemma}
+
+\begin{proof}
+   The equal-size assumption gives
+   \[
+      \sum_{i=1}^K |P_i|^\rho\Psi(R_i)
+      \ge
+      K\left(\frac mK\right)^\rho
+      \min_i\frac{\Psi(R_i)}{\Psi(R)}\Psi(R).
+   \]
+   Since $R_i\ge R\sqrt{1-\eta^2}$ and
+   $\Psi(R)=1+(R/r)^4$, we have
+   \[
+      \frac{\Psi(R_i)}{\Psi(R)}
+      \ge
+      1-O(\eta^2)
+   \]
+   uniformly for $R\ge r$. The displayed lower bound follows. Because
+   $K^{1-\rho}>1$ for $K\ge2$ and $\rho<1$, this is larger than
+   $(1-\kappa\eta^2)F_4(m,R)$ for all sufficiently small $\eta$.
+\end{proof}
+
 This lemma explains both why $k$-means works and why it is not the most
 theory-native objective. Lloyd's algorithm minimizes an average squared
 reconstruction error,
@@ -1761,7 +1797,10 @@ beat plain $k$-means while staying aligned with the score-and-ball potential.
 to instantiate. It avoids the branching score-frontier obstruction of
 \cref{asm:mixed-continuation-operator}; the missing content is instead a
 worst-case decodable cover theorem for the inflated-ball power-stabbing
-objective.
+objective. \Cref{lem:balanced-fanout-obstruction} explains why this is not
+ordinary balanced $k$-means: a recursive proof cannot afford a query to stab
+several comparable children. It needs either very low stabbing, highly skewed
+almost-total splits, or randomized thinning as in \cref{lem:thin-cap-contraction}.
 
 \subsection{Simplicity and implementation}
 
