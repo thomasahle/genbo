@@ -2471,6 +2471,77 @@ replacement for \(k\)-means routing and a self-contained proof object: the
 large filter family is implicit, build time may optimize or reject panels, and
 query time pays only for output-sensitive list decoding.
 
+\begin{lemma}[Fano-biased scores are lifted Euclidean decoding metrics]
+   \label{lem:fano-lifted-euclidean-decoding}
+   Let a product panel have Euclidean block symbols
+   \(\mathcal C_j\subseteq\mathbb R^{b_j}\), projected query blocks \(q_j\),
+   and nonnegative query-independent branch prices
+   \(\pi_j:\mathcal C_j\to\mathbb R_{\ge0}\).  Put
+   \[
+      \phi_j(q,c)=\ip{q_j}{c}-\frac12\|c\|^2,\qquad
+      S_q(c_1,\ldots,c_h)=\sum_{j=1}^h\phi_j(q,c_j),
+   \]
+   and \(\Pi(c_1,\ldots,c_h)=\sum_j\pi_j(c_j)\).  Define the lifted symbol
+   and lifted query block by
+   \[
+      \widehat c_j=(c_j,\sqrt{2\pi_j(c_j)})\in\mathbb R^{b_j+1},
+      \qquad
+      \widehat q_j=(q_j,0).
+   \]
+   Then every route \(c=(c_1,\ldots,c_h)\) satisfies the exact identity
+   \[
+      S_q(c)-\Pi(c)
+      =
+      \frac12\sum_{j=1}^h\|q_j\|^2
+      -
+      \frac12\sum_{j=1}^h\|\widehat q_j-\widehat c_j\|^2.
+      \tag{LD}
+   \]
+   Consequently, for every threshold \(\Theta\), listing all routes with
+   Fano-biased score \(S_q(c)-\Pi(c)\ge\Theta\) is exactly list decoding the
+   lifted product code
+   \[
+      \widehat{\mathcal C}
+      =
+      \prod_{j=1}^h
+      \{(c,\sqrt{2\pi_j(c)}):c\in\mathcal C_j\}
+   \]
+   around the received word \(\widehat q=(\widehat q_1,\ldots,\widehat q_h)\)
+   to squared radius \(\sum_j\|q_j\|^2-2\Theta\).  Moreover, sampling routes
+   with probability proportional to
+   \(\exp(\beta(S_q(c)-\Pi(c)))\) is the discrete Gaussian law on the same
+   lifted code with center \(\widehat q\) and inverse temperature \(\beta/2\),
+   up to the query-only normalizing factor
+   \(\exp((\beta/2)\sum_j\|q_j\|^2)\).
+\end{lemma}
+
+\begin{proof}
+   For each block,
+   \[
+      \frac12\|q_j\|^2-\frac12\|\widehat q_j-\widehat c_j\|^2
+      =
+      \frac12\|q_j\|^2
+      -
+      \frac12\left(\|q_j-c_j\|^2+2\pi_j(c_j)\right)
+      =
+      \ip{q_j}{c_j}-\frac12\|c_j\|^2-\pi_j(c_j).
+   \]
+   Summing over \(j\) gives \((LD)\).  The threshold and sampling statements
+   are immediate because the omitted factor depends only on the query.
+\end{proof}
+
+\Cref{lem:fano-lifted-euclidean-decoding} makes the lattice interpretation
+literal.  Continuation mass, rate penalties, and extreme-pruning prices are not
+decorations on top of nearest-center search; they are extra coordinates in the
+effective Euclidean decoding metric.  If the prices are fixed by the retained
+panel, the score tree has been replaced by an ordinary lifted code or lattice
+list decoder.  If the pruning profile is query-dependent, the same identity is
+still the correct stack metric, but the lifted metric is part of the query
+algorithm rather than a fixed retained lattice.  This is why a useful
+code/lattice alternative should support either threshold enumeration in the
+lifted metric or discrete-Gaussian sampling from it; a Lloyd or nearest-raw-center
+partition ignores the bias coordinates that certify the list size.
+
 \begin{lemma}[Additive product-panel decoder]
    \label{lem:additive-product-panel-decoder}
    Fix one query \(q\).  Let
