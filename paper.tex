@@ -8097,6 +8097,58 @@ This certificate is the local form of the remaining problem. It is analogous in 
    for the nonincreasing function \(L\).
 \end{proof}
 
+\begin{lemma}[Positive-moment certificate for water-filled defect]
+   \label{lem:waterfilled-moment-certificate}
+   Work in the setting of \cref{lem:waterfilled-layercake}.  For \(p>0\),
+   define
+   \[
+      M_p^+=\sum_e\ell_e(R_e^p-1)_+,
+      \qquad
+      \widetilde M_p=\sum_{e:\ R_e>1}\ell_eR_e^p .
+   \]
+   Then
+   \[
+      \mathcal D^*
+      \le \frac{M_p^+}{p},
+      \qquad
+      \mathcal D^*
+      \le \frac{\widetilde M_p}{pe}.
+   \]
+   Moreover, if the occupation tail satisfies \(L(s)\le C e^{-ps}\) for all
+   \(s\ge0\), then
+   \[
+      \mathcal D^*\le \frac Cp .
+   \]
+   Thus an \(O_c(1)\) bound on either positive moment at
+   \(p=\Omega_c(1/\log\log n)\) gives the
+   \(O_c(\log\log n)\) water-filled defect needed for inverse-polylogarithmic
+   route value.
+\end{lemma}
+
+\begin{proof}
+   For \(x\ge1\),
+   \[
+      \log x=\frac1p\log x^p\le \frac{x^p-1}{p}.
+   \]
+   Applying this to \(x=R_e\) and summing with weights \(\ell_e\) gives the
+   first bound.  Also, the function \(x\mapsto(\log x)/x^p\) on \(x\ge1\) is
+   maximized at \(x=e^{1/p}\), with maximum value \(1/(pe)\).  Hence
+   \[
+      \log_+R_e\le \frac{R_e^p}{pe}
+   \]
+   for every \(e\), and summing gives the second bound.
+
+   The tail statement is immediate from \cref{lem:waterfilled-layercake}:
+   \[
+      \mathcal D^*=\int_0^\infty L(s)\,ds
+      \le
+      C\int_0^\infty e^{-ps}\,ds
+      =
+      \frac Cp .
+   \]
+   The final sentence substitutes \(p=\Omega_c(1/\log\log n)\).
+\end{proof}
+
 \begin{corollary}[Robust water-filled tail certificate]
    \label{cor:robust-waterfilled-tail}
    Work in the setting of \cref{lem:robust-waterfilled-minimax}.  Suppose that
@@ -8131,6 +8183,46 @@ This certificate is the local form of the remaining problem. It is analogous in 
    By \cref{lem:waterfilled-layercake}, each mixture has water-filled defect at
    most \(B\), with defect zero in the first case.  Apply
    \cref{lem:robust-waterfilled-minimax}.
+\end{proof}
+
+\begin{corollary}[Robust water-filled moment certificate]
+   \label{cor:robust-waterfilled-moment}
+   Work in the setting of \cref{lem:robust-waterfilled-minimax}.  Fix
+   \(p>0\) and \(M\ge0\).  Suppose that for every mixture
+   \(\alpha\in\Delta_I\), either
+   \[
+      \sum_{\ell^\alpha_e>0}a_e\le1,
+   \]
+   or, for the water level \(t_\alpha\) solving
+   \[
+      \sum_{\ell^\alpha_e>0}\min\{a_e,t_\alpha\ell^\alpha_e\}=1,
+   \]
+   the positive moment
+   \[
+      M_{p,\alpha}^+
+      =
+      \sum_{\substack{e:\ \ell^\alpha_e>0\\ a_e>0}}
+      \ell^\alpha_e
+      \left(
+      \left(\frac{a_e}{t_\alpha\ell^\alpha_e}\right)^p-1
+      \right)_+
+   \]
+   is at most \(M\).  Then for every \(\varepsilon>0\) there
+   is one allocation \(y\), independent of the witness profile \(i\), with
+   \[
+      \mathcal D_i(y)\le \frac Mp+\varepsilon
+      \qquad\text{for all }i\in I.
+   \]
+   In particular, if \(M/p=O_c(\log\log n)\), then the robust allocation loses
+   only an inverse-polylogarithmic factor in route value.
+\end{corollary}
+
+\begin{proof}
+   By \cref{lem:waterfilled-moment-certificate}, every nontrivial mixture has
+   water-filled defect at most \(M/p\), and the mixtures in the first case have
+   defect zero.  Apply \cref{lem:robust-waterfilled-minimax}.  The final
+   sentence is the same substitution into \cref{cor:allocation-defect-toll} for
+   each witness route law.
 \end{proof}
 
 \begin{corollary}[Prefix-energy route-law certificate]\label{cor:route-law-prefix-energy}
@@ -10498,6 +10590,13 @@ for each possible near point.
 condition on high charge-to-occupation ratios above the water level.  The next
 geometric proof target is therefore a uniform summable tail estimate for those
 ratios over all finite mixtures of unresolved near-route laws.
+\Cref{lem:waterfilled-moment-certificate} and
+\cref{cor:robust-waterfilled-moment} give a more compact sufficient target:
+it is enough to bound a small positive moment
+\(\sum \ell^\alpha((a/(t_\alpha\ell^\alpha))^p-1)_+\) uniformly over
+mixtures, with \(M/p=O_c(\log\log n)\).  Thus the remaining estimate can be
+attacked as a low-temperature energy bound for the charge/occupation ratios,
+rather than by proving every dyadic tail separately.
 The guard refinement
 \cref{lem:low-guard-shadow} further removes points whose entire near-query
 neighborhood is already high-density: the finite dual now prices only the
