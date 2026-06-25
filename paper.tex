@@ -8157,7 +8157,15 @@ This certificate is the local form of the remaining problem. It is analogous in 
    \[
       \sum_{\ell_e>0}\min\{a_e,\tau\ell_e\}\le1,
    \]
-   then \(\tau\le t\), and for every \(p>0\),
+   then \(\tau\le t\), and
+   \[
+      \mathcal D^*
+      \le
+      \sum_{\substack{e:\ \ell_e>0\\ a_e>0}}
+      \ell_e
+      \log_+\frac{a_e}{\tau\ell_e},
+   \]
+   Consequently, for every \(p>0\),
    \[
       \mathcal D^*
       \le
@@ -8173,6 +8181,14 @@ This certificate is the local form of the remaining problem. It is analogous in 
       H=\sum_e\ell_e<\infty,
    \]
    then the choice \(\tau=1/H\) is feasible and gives
+   \[
+      \mathcal D^*
+      \le
+      \sum_{\substack{e:\ \ell_e>0\\ a_e>0}}
+      \ell_e
+      \log_+\frac{H a_e}{\ell_e},
+   \]
+   as well as
    \[
       \mathcal D^*
       \le
@@ -8196,11 +8212,12 @@ This certificate is the local form of the remaining problem. It is analogous in 
    \[
       \frac{a_e}{t\ell_e}\le \frac{a_e}{\tau\ell_e}.
    \]
-   Combining this monotonicity with
+   Summing the resulting logarithmic inequality gives the first displayed
+   bound. Combining it with
    \[
       \log_+x\le\frac{(x^p-1)_+}{p}
    \]
-   and summing proves the first displayed bound.
+   proves the moment bound.
 
    Finally,
    \[
@@ -8212,7 +8229,8 @@ This certificate is the local form of the remaining problem. It is analogous in 
       =
       1,
    \]
-   so \(\tau=1/H\) is feasible, and substituting it proves the last bound.
+   so \(\tau=1/H\) is feasible, and substituting it proves the last two
+   bounds.
 \end{proof}
 
 \begin{corollary}[Robust water-filled tail certificate]
@@ -8289,6 +8307,54 @@ This certificate is the local form of the remaining problem. It is analogous in 
    defect zero.  Apply \cref{lem:robust-waterfilled-minimax}.  The final
    sentence is the same substitution into \cref{cor:allocation-defect-toll} for
    each witness route law.
+\end{proof}
+
+\begin{corollary}[Robust raw-log certificate]
+   \label{cor:robust-waterfilled-raw-log}
+   Work in the setting of \cref{lem:robust-waterfilled-minimax}.  Fix
+   \(H_0\ge1\) and \(B\ge0\).  Suppose that for every mixture
+   \(\alpha\in\Delta_I\), either
+   \[
+      \sum_{\ell^\alpha_e>0}a_e\le1,
+   \]
+   or both
+   \[
+      \sum_e\ell^\alpha_e\le H_0
+   \]
+   and
+   \[
+      \sum_{\substack{e:\ \ell^\alpha_e>0\\ a_e>0}}
+      \ell^\alpha_e
+      \log_+\frac{H_0a_e}{\ell^\alpha_e}
+      \le B .
+   \]
+   Then for every \(\varepsilon>0\) there is one allocation \(y\), independent
+   of the witness profile \(i\), with
+   \[
+      \mathcal D_i(y)\le B+\varepsilon
+      \qquad\text{for all }i\in I.
+   \]
+   In particular, if \(H_0=O_c(\log\log n)\) and
+   \(H_0a_e\le C\ell^\alpha_e\) for every occupied edge of every nontrivial
+   mixture, with \(C=O_c(1)\), then the robust defect is
+   \(O_c(\log\log n)\).
+\end{corollary}
+
+\begin{proof}
+   For a nontrivial mixture \(\alpha\), put \(\tau=1/H_0\). Since
+   \(\sum_e\ell^\alpha_e\le H_0\),
+   \[
+      \sum_{\ell^\alpha_e>0}\min\{a_e,\tau\ell^\alpha_e\}
+      \le
+      \tau\sum_e\ell^\alpha_e
+      \le1.
+   \]
+   The raw logarithmic bound in
+   \cref{lem:waterfilled-raw-moment-certificate} therefore gives water-filled
+   defect at most \(B\).  The mixtures in the first case have defect zero, and
+   \cref{lem:robust-waterfilled-minimax} gives the common allocation.  Under
+   the bounded-density hypothesis the displayed logarithmic sum is at most
+   \(H_0\log C\), which is \(O_c(\log\log n)\).
 \end{proof}
 
 \begin{corollary}[Robust raw-moment certificate]
@@ -10714,16 +10780,25 @@ rather than by proving every dyadic tail separately.
 \cref{cor:robust-waterfilled-raw-moment} remove the implicit water level from
 that target: if every mixture has total occupation at most \(H_0\), then
 \(\tau=1/H_0\) is a valid lower bound on the water level, and it is enough to
-bound
+bound the raw logarithmic defect
+\[
+   \sum_e\ell^\alpha_e
+   \log_+\frac{H_0a_e}{\ell^\alpha_e},
+\]
+or more strongly the raw positive moment
 \[
    \sum_e\ell^\alpha_e
    \left(
    \left(\frac{H_0a_e}{\ell^\alpha_e}\right)^p-1
    \right)_+
 \]
-with \(M/p=O_c(\log\log n)\).  For \(H_0=\log^{O_c(1)}n\), taking
-\(p\asymp1/\log\log n\) keeps the depth normalization \(H_0^p\) constant, so
-the remaining theorem can be stated without solving for \(t_\alpha\).
+with \(M/p=O_c(\log\log n)\).  A particularly concrete sufficient condition
+is bounded charge density \(H_0a_e\le C\ell^\alpha_e\) on occupied unstable
+opportunities, together with \(H_0=O_c(\log\log n)\); then the defect is at
+most \(H_0\log C\).  For \(H_0=\log^{O_c(1)}n\), taking
+\(p\asymp1/\log\log n\) still keeps the moment normalization \(H_0^p\)
+constant, so the remaining theorem can be stated without solving for
+\(t_\alpha\).
 The guard refinement
 \cref{lem:low-guard-shadow} further removes points whose entire near-query
 neighborhood is already high-density: the finite dual now prices only the
