@@ -2159,13 +2159,49 @@ combinatorial list-size or route-cut bound, design an output-sensitive prefix
 enumerator for the structured tree, and use reliability or posterior scores to
 prune the list.  This mirrors Barnes--Wall lattice list decoding, lattice sphere
 enumeration, successive-cancellation list decoding of polar codes, and
-soft-decision Reed--Solomon decoding~\cite{GP17,MP20,FP85,SE94,TV12,KV03}.
+soft-decision Reed--Solomon decoding~\cite{GP17,MP20,FP85,SE94,GNR10,TV12,KV03}.
 The additional lesson from pruned lattice enumeration is that the pruning
 profile should be an optimized certificate rather than a fixed level schedule:
 one can spend more search budget on prefixes that have high near-route
 reliability and prune elsewhere, as long as the resulting profile has certified
 expected work.  \Cref{lem:pruned-budget-thinning} records the corresponding
 self-contained budget rule for the score tree.
+
+The closest existing template is the product-code locality-sensitive filtering
+construction of Becker, Ducas, Gama, and Laarhoven~\cite{BDGL16}.  They replace
+independent spherical-cap filters by an enormous structured product family and
+find the relevant filters by a decoding oracle based on lattice-enumeration
+ideas.  In our notation this suggests a concrete alternative to \(k\)-means or
+Lloyd routing.  After local centering and a logarithmic-dimensional projection,
+split the coordinates into blocks, choose a spherical or Construction-A code
+\(\mathcal C_j\) in each block, and let a route
+\(g=(c_1,\ldots,c_h)\in\prod_j\mathcal C_j\) have additive reliability score
+\[
+   S_g(x)=\sum_{j=1}^h \phi_j(x_j,c_j).
+\]
+The query decoder is then a stack decoder on partial codewords, using an
+admissible upper bound
+\[
+   U_q(c_1,\ldots,c_\ell)
+   =
+   \sum_{j\le\ell}\phi_j(q_j,c_j)
+   +R_{\ell+1:h}(q)
+\]
+for the best remaining suffix score, and a pruning profile supplied by
+\cref{lem:pruned-budget-thinning} or the water-filled allocation below.  This is
+literally a lattice decoder: the score tree is replaced by a product lattice or
+code, and query work is the size of the decoded prefix list.  The proof target
+is therefore not Lloyd convergence.  It is to prove, for such a structured
+panel, the same random-like cap spectrum and the prefix moment bound
+\[
+   \sum_u g_q(u)\exp(\beta U_q(u))
+   \le e^{\beta\Theta}m^\rho\log^{O_c(1)}m
+\]
+while ensuring that a near pair has an inverse-polylogarithmic decoded common
+route.  If this succeeds, the product panel would be both a practical
+replacement for \(k\)-means routing and a self-contained proof object: the
+large filter family is implicit, build time may optimize or reject panels, and
+query time pays only for output-sensitive list decoding.
 
 \begin{assumption}[Flat structured spherical-code decoder]
    \label{asm:flat-spherical-code-decoder}
@@ -9828,7 +9864,11 @@ panel whose cap list is output-sensitive, whose point and far-pair loads match
 the random Gaussian spectrum, and whose near-pair hit probability is
 inverse-polylogarithmic.  This is the theorem a Construction-A lattice,
 group-orbit spherical code, or concatenated soft list-recovery construction
-would have to prove.
+would have to prove.  The product-code filtering construction of
+Becker--Ducas--Gama--Laarhoven is the closest existing algorithmic template:
+it turns an enormous implicit filter family into a decoding problem, so the
+missing worst-case statement becomes a prefix-list moment bound and a near-route
+hit bound for a structured product panel.
 \Cref{lem:budget-stable-prefix-list} and
 \cref{cor:canonical-budget-stable-decoder} take one step in that direction:
 the canonical mixed Bellman budget itself is an admissible list-decoding
@@ -10008,6 +10048,13 @@ The one-sided spherical proof is motivated by the Ahle--Knudsen manuscript suppl
    Piotr Indyk and Rajeev Motwani.
    \newblock Approximate nearest neighbors: Towards removing the curse of dimensionality.
    \newblock In \emph{Proceedings of the 30th Annual ACM Symposium on Theory of Computing (STOC)}, pages 604--613, 1998.
+
+   \bibitem{BDGL16}
+   Anja Becker, L\'eo Ducas, Nicolas Gama, and Thijs Laarhoven.
+   \newblock New directions in nearest neighbor searching with applications to
+   lattice sieving.
+   \newblock In \emph{Proceedings of the 27th Annual ACM-SIAM Symposium on
+   Discrete Algorithms (SODA)}, pages 10--24, 2016.
 
    \bibitem{Laa20}
    Thijs Laarhoven.
