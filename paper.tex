@@ -3442,6 +3442,81 @@ query time pays only for output-sensitive list decoding.
    \(m^{O_c((\log\log m)/\log m)}=\log^{O_c(1)}m\).
 \end{proof}
 
+\begin{lemma}[Tilted moment lower bound for Gibbs near mass]
+   \label{lem:gibbs-near-moment-lower-bound}
+   Fix one block of a Gibbs sampled product panel, one query \(q\), and one
+   near point \(p\).  Let
+   \[
+      \Pi_q(a)=\frac{e^{\beta\phi(q,a)}}{Z^Q(q)}
+   \]
+   be the block query Gibbs law on the block labels, and let
+   \(\psi(p,a)\) be the block data storage score.  For \(\gamma>0\) put
+   \[
+      M_\gamma(p,q)
+      =
+      e^{-\gamma\theta_P}
+      \sum_a\Pi_q(a)e^{\gamma\psi(p,a)}
+      =
+      \frac{
+         e^{-\gamma\theta_P}
+         \sum_a e^{\gamma\psi(p,a)+\beta\phi(q,a)}
+      }{Z^Q(q)} .
+   \]
+   Then, for every realized block,
+   \[
+      \Pi_q\{\psi(p,a)\ge\theta_P\}
+      \ge
+      \frac{(M_\gamma(p,q)-1)_+^2}{M_{2\gamma}(p,q)}.
+      \tag{GM1}
+   \]
+   Consequently, in the notation of
+   \cref{cor:gibbs-sampled-rate-bookkeeping},
+   \[
+      \mathfrak h_j(p,q)
+      \ge
+      \E\left[
+      \frac{(M_{j,\gamma}(p,q)-1)_+^2}{M_{j,2\gamma}(p,q)}
+      \right],
+      \tag{GM2}
+   \]
+   where \(M_{j,\gamma}\) is the corresponding block quantity.  In
+   particular, the near-rate condition \((GR3)\) follows if the product over
+   blocks of the right-hand side of \((GM2)\) is at least
+   \(\log^{-O_c(1)}m\).  A simpler sufficient deterministic margin is
+   \[
+      M_{j,\gamma}(p,q)\ge 1+\delta_j,
+      \qquad
+      M_{j,2\gamma}(p,q)\le U_j
+   \]
+   on an event of probability \(1-\varepsilon_j\), which gives
+   \[
+      \mathfrak h_j(p,q)
+      \ge
+      (1-\varepsilon_j)\frac{\delta_j^2}{U_j}.
+   \]
+\end{lemma}
+
+\begin{proof}
+   Let \(Y=e^{\gamma(\psi(p,A)-\theta_P)}\), where
+   \(A\sim\Pi_q\).  Then \(\E Y=M_\gamma(p,q)\) and
+   \(\E Y^2=M_{2\gamma}(p,q)\).  Since
+   \[
+      \E(Y-1)_+\ge(\E Y-1)_+,
+   \]
+   and since \((Y-1)_+\le Y\mathbf 1_{\{Y\ge1\}}\), Cauchy's inequality gives
+   \[
+      (M_\gamma-1)_+^2
+      \le
+      \left(\E Y\mathbf 1_{\{Y\ge1\}}\right)^2
+      \le
+      \E Y^2\cdot \Pr[Y\ge1].
+   \]
+   The event \(Y\ge1\) is exactly
+   \(\{\psi(p,A)\ge\theta_P\}\), proving \((GM1)\).  Averaging \((GM1)\) over
+   the random block gives \((GM2)\).  The product and deterministic-margin
+   statements are immediate.
+\end{proof}
+
 \begin{remark}[Lattice Gaussian panels as sampled decoders]
    \label{rem:lattice-gaussian-panels}
    \Cref{prop:sampled-structured-panel} is the sampler analogue of the
@@ -12292,6 +12367,11 @@ same rate-bookkeeping shape as the reporting target but no active-list term.
 rates for storage, sampled far separation, and near Gibbs mass with total
 storage rate at most \(\rho\), total far-separation rate at least \(1-\rho\),
 and total near loss \(O_c(\log\log m)\).  No query-list rate appears.
+\Cref{lem:gibbs-near-moment-lower-bound} makes the near condition itself
+checkable by a positive tilted-moment margin: under the query Gibbs law, the
+storage score of the near point must have a first exponential moment just above
+the storage threshold and a controlled second moment.  Thus the sampled
+lattice/code route is reduced to three block partition-function estimates.
 \Cref{rem:outer-list-recovery-codebook} records the stronger alternative
 suggested by list-decoding codes and lattices: instead of decoding the full
 Cartesian product, retain a sparse outer code or lattice coset and use soft
