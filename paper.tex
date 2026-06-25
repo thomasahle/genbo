@@ -210,7 +210,10 @@ cover compiler.  Such preprocessing may enumerate huge proposal pools, solve
 exact integer programs, run repeated randomized or learned proposal generators,
 and discard every failed attempt.  The stated query and space bounds count only
 the certified children, residual blocks, decoder data, and point copies present
-in the final index.
+in the final index.  In particular, huge temporary LPs, pattern enumerations,
+and saturated candidate universes are free only if they are discarded after
+certification; any pattern table, cohort, routing metadata, or learned decoder
+used by the query is retained index space and must be charged explicitly.
 
 \subsection{Dimension and diameter localization}
 
@@ -1831,6 +1834,62 @@ The deterministic priced compiler is the limiting case where every active child
 is queried, while terminal pure sampling is the case $\sigma_C=1$ for pure
 terminal alternatives and zero for impure ones.
 
+\begin{lemma}[Prefix-list decoding compiler]
+   \label{lem:prefix-list-decoder}
+   Fix one query \(q\) and a finite rooted trie of route prefixes.  Each
+   terminal route \(z\) has a certified output procedure with price \(Q_z\),
+   a resident set \(P_z\subseteq P\), and a score \(S_q(z)\).  Each prefix
+   \(u\) has a computable upper certificate \(U_q(u)\) satisfying
+   \[
+      S_q(z)\le U_q(u)
+      \qquad
+      \text{for every terminal descendant }z\succeq u .
+   \]
+   Fix a threshold \(\Theta\).  Suppose the query decoder, when given any
+   prefix \(u\), can enumerate exactly the children \(v\) with
+   \(U_q(v)\ge\Theta\), and that the total decoder work is \(D(q)\) plus a
+   constant per enumerated prefix.  If
+   \[
+      L_\Theta(q)=|\{u:U_q(u)\ge\Theta\}|,
+   \]
+   then the deterministic list decoder that starts at the root, keeps only
+   prefixes with \(U_q\ge\Theta\), and invokes every terminal route it reaches,
+   visits at most \(L_\Theta(q)\) prefixes and has query work
+   \[
+      O\left(D(q)+L_\Theta(q)+\sum_{z:\ S_q(z)\ge\Theta}Q_z\right).
+   \]
+   Moreover, suppose that for every unresolved near pair \((p,q)\) there is a
+   terminal route \(z\) with \(p\in P_z\), \(S_q(z)\ge\Theta\), and whose
+   output procedure is certified to find a verified \(cr\)-neighbor whenever
+   invoked on \(q\).  Then this prefix-list decoder is routing-correct.
+\end{lemma}
+
+\begin{proof}
+   A terminal route with \(S_q(z)\ge\Theta\) has every prefix \(u\preceq z\)
+   satisfying \(U_q(u)\ge S_q(z)\ge\Theta\).  Therefore the child-enumeration
+   rule never prunes any prefix of such a terminal route, and the decoder
+   eventually reaches and invokes it.  Conversely, every prefix the decoder
+   keeps has \(U_q\ge\Theta\), so the number of kept prefixes is at most
+   \(L_\Theta(q)\).  The work bound follows from the assumed output-sensitive
+   prefix enumeration and from invoking the terminal procedures reached by the
+   decoder.  The final correctness statement is immediate from the existence
+   of a certified terminal route containing the true near point; all reported
+   candidates are verified in the original metric.
+\end{proof}
+
+This is the literal list-decoding analogue of the score tree.  The retained
+tree defines an implicit Euclidean code or lattice of route leaves, the query is
+the received word, and the decoder must output a short list of plausible route
+leaves before final metric verification.  The sampled-route compiler above is a
+soft randomized version of this principle; \cref{lem:prefix-list-decoder} is
+the deterministic version.  The useful coding-theory lesson from lattice and
+code list decoding is therefore not a black-box decoder, but the separation of
+three tasks: prove a combinatorial list-size or route-cut bound, design an
+output-sensitive prefix enumerator for the structured tree, and use reliability
+or posterior scores to prune the list.  This mirrors Barnes--Wall lattice list
+decoding, successive-cancellation list decoding of polar codes, and
+soft-decision Reed--Solomon decoding~\cite{GP17,MP20,TV12,KV03}.
+
 \begin{lemma}[Finite sampled-cover dual]
    \label{lem:finite-sampled-cover-dual}
    Fix one query state $q$, a finite retained family of certified children
@@ -2116,16 +2175,16 @@ that child and repeat until the sampled route-mass LP is feasible.
    has expected child price at most \(4L\) and gives every
    \(p\in N_a\) route mass at least \(h_0/2\).
 
-   Consequently, if the query decoder computes \(a(q)\) and samples uniformly
-   from \(M_{a(q)}\) in work \(D(q)\), then \(B\) independent sampled trials
-   followed by verification fail on any unresolved near pair with probability
-   at most
+   Consequently, if the query decoder computes \(a(q)\) and locates
+   \(M_{a(q)}\) in work \(D(q)\), then \(B\) independent uniform draws from
+   this cohort followed by verification fail on any unresolved near pair with
+   probability at most
    \[
       \exp(-Bh_0/2),
    \]
    and have expected query work
    \[
-      O\bigl(B(D(q)+L)\bigr).
+      O\bigl(D(q)+B(L+1)\bigr).
    \]
    The sampler metadata is
    \[
@@ -2150,9 +2209,76 @@ that child and repeat until the sampled route-mass LP is feasible.
    it with probability at least \(h_0/2\), with no-op records contributing
    zero.  Independent trials fail with probability at most
    \((1-h_0/2)^B\le e^{-Bh_0/2}\).  The expected child price in one trial is at
-   most \(4L\), so the expected work bound follows by linearity of expectation;
-   the constant \(4\) is absorbed in the \(O(\cdot)\) notation.  The metadata
-   bound is exactly one stored record per cohort entry.
+   most \(4L\).  The activation pattern and cohort address are computed once,
+   and each additional draw from the stored cohort costs constant work before
+   the selected child invocation.  Linearity of expectation gives
+   \(O(D(q)+B(L+1))\), with the constant \(4\) absorbed in the
+   \(O(\cdot)\) notation.  The metadata bound is exactly one stored record per
+   cohort entry.
+\end{proof}
+
+\begin{corollary}[Activation-cohort resource certificate]
+   \label{cor:activation-cohort-resources}
+   In the setting of \cref{lem:activation-cohort-sampled-compiler}, let
+   \(\mathcal A_\Omega\) be the set of realized activation patterns and let
+   \(M_{\rm dec}\) be the retained metadata used to decode the pattern and
+   address its cohort.  If \(N_a\subseteq P\) for every \(a\), then the cohorts
+   may be chosen so that their total number of stored records is
+   \[
+      M_{\rm coh}
+      =
+      \sum_{a\in\mathcal A_\Omega}K_a
+      \le
+      |\mathcal A_\Omega|
+      \left(1+8h_0^{-1}\log(4m)\right).
+   \]
+   For any \(0<\delta<1\), with
+   \[
+      B=\left\lceil 2h_0^{-1}\log(1/\delta)\right\rceil ,
+   \]
+   the retained activation-cohort sampler fails on any unresolved near pair
+   with probability at most \(\delta\), has expected query work
+   \[
+      O\!\left(D(q)+h_0^{-1}\log(1/\delta)(L+1)\right),
+   \]
+   and uses storage
+   \[
+      \sum_{C\in\mathcal C}S_C+M_{\rm dec}+M_{\rm coh}.
+   \]
+   Thus, in a local node with target price \(F_4(m,R)\), this route has only
+   polylogarithmic overhead whenever
+   \[
+      h_0^{-1}\le \log^{O_c(1)}m,\qquad
+      L\le F_4(m,R)\log^{O_c(1)}m,\qquad
+      D(q)\le F_4(m,R)\log^{O_c(1)}m,
+   \]
+   and
+   \[
+      \sum_CS_C+M_{\rm dec}
+      +|\mathcal A_\Omega|h_0^{-1}\log m
+      \le
+      mF_4(m,R)\log^{O_c(1)}m .
+   \]
+   The construction of the LP solutions, the enumeration of activation
+   patterns, and the search for good cohorts are preprocessing tasks and are
+   not charged to these retained resources.
+\end{corollary}
+
+\begin{proof}
+   Since \(N_a\subseteq P\), the definition of \(K_a\) in
+   \cref{lem:activation-cohort-sampled-compiler} gives
+   \(K_a\le1+8h_0^{-1}\log(4m)\) after increasing constants.  Summing over
+   realized patterns gives the metadata bound.  The failure and work bounds
+   are the bounds of \cref{lem:activation-cohort-sampled-compiler} with the
+   displayed value of \(B\), because
+   \[
+      \exp(-Bh_0/2)\le\delta .
+   \]
+   The storage expression counts each retained child subindex once, plus the
+   pattern decoder and the integer cohort records.  The final polylogarithmic
+   statement is the same set of inequalities with
+   \(h_0^{-1},L,D(q)\), and the cohort metadata bounded by the indicated
+   local budgets.
 \end{proof}
 
 For ball, cap, affine-score, and Lipschitz-score filters with finitely many
@@ -2177,6 +2303,10 @@ sampler, provided the signature itself is stored or decodable.
 \Cref{lem:activation-cohort-sampled-compiler} packages the activation-only
 case as a concrete retained object: one small cohort per activation pattern,
 with no real-valued sampler and no near-set coordinate at query time.
+\Cref{cor:activation-cohort-resources} spells out the remaining retained
+resource condition: inverse-polylogarithmic route mass makes each cohort small,
+so the only possible metadata bottleneck is the number and decodability of
+activation patterns, not the offline LP or cohort search.
 
 \begin{lemma}[Certified cover with residual scan]\label{lem:cover-residual-scan}
    In the setting of \cref{lem:certified-cover-compiler}, suppose the stored
@@ -4659,6 +4789,12 @@ positive-probability seeded separator plus deterministic certification.
    \cref{lem:activation-cohort-sampled-compiler} combines these two steps into
    the retained object itself: one cohort per activation pattern, with no-op
    records representing unused probability mass.
+   \Cref{cor:activation-cohort-resources} is the corresponding resource test:
+   for inverse-polylogarithmic route mass, expected child price, and decoder
+   work, the sampled route contributes only polylogarithmic query overhead
+   exactly when the retained pattern decoder and cohort table fit within the
+   local storage budget.  The preprocessing search for the LPs and cohorts may
+   be arbitrarily expensive, but this retained metadata is not free.
    By \cref{lem:guard-restricted-cover}, these active-power constraints need
    only range over the low-guard query domain; high-guard queries are handled by
    the resident sample.  By \cref{lem:finite-activation-patterns}, the
@@ -8302,6 +8438,15 @@ implements its sampler with only constant-factor loss in price and route mass.
 \Cref{lem:activation-cohort-sampled-compiler} packages these two reductions
 into a directly stored activation-pattern sampler, with no-op records carrying
 the leftover subprobability mass.
+\Cref{cor:activation-cohort-resources} records the exact query-memory test:
+the LP/cohort search may be arbitrarily expensive at build time, but the
+retained cohort table and pattern decoder must fit the local storage budget.
+\Cref{lem:prefix-list-decoder} records the deterministic list-decoding
+alternative suggested by the lattice viewpoint: if the score tree admits an
+output-sensitive prefix enumerator and every query has only a short list of
+prefixes whose certified upper score can still reach the decoding threshold,
+then routing reduces to a list-size theorem followed by ordinary metric
+verification.
 The guard refinement
 \cref{lem:low-guard-shadow} further removes points whose entire near-query
 neighborhood is already high-density: the finite dual now prices only the
@@ -8423,7 +8568,7 @@ Thus the radius improvement pays exactly for the posterior threshold, and disjoi
 
 The one-sided spherical proof is motivated by the Ahle--Knudsen manuscript supplied with this project, but it uses continuation mass and an analytical upper barrier instead of the two-sided tube proof there. The score-and-ball tree follows the geometric ideas of Andoni and Razenshteyn while replacing dense-cap restart accounting by randomized cap thinning inside one cumulative score process. The local Bellman-game viewpoint is inspired by the robust learned hashing framework of Andoni and Beaglehole. The posterior-cohort route is retained as a possible extension to more general certified child hierarchies.
 
-\begin{thebibliography}{9}
+\begin{thebibliography}{99}
 
    \bibitem{AKdraft}
    Thomas D. Ahle and Jakob B. T. Knudsen.
@@ -8444,6 +8589,26 @@ The one-sided spherical proof is motivated by the Ahle--Knudsen manuscript suppl
    Piotr Indyk and Rajeev Motwani.
    \newblock Approximate nearest neighbors: Towards removing the curse of dimensionality.
    \newblock In \emph{Proceedings of the 30th Annual ACM Symposium on Theory of Computing (STOC)}, pages 604--613, 1998.
+
+   \bibitem{GP17}
+   Elena Grigorescu and Chris Peikert.
+   \newblock List-decoding Barnes--Wall lattices.
+   \newblock \emph{Computational Complexity}, 26:365--392, 2017.
+
+   \bibitem{MP20}
+   Ethan Mook and Chris Peikert.
+   \newblock Lattice (list) decoding near Minkowski's inequality.
+   \newblock arXiv:2010.04809, 2020.
+
+   \bibitem{TV12}
+   Ido Tal and Alexander Vardy.
+   \newblock List decoding of polar codes.
+   \newblock \emph{IEEE Transactions on Information Theory}, 61(5):2213--2226, 2015.
+
+   \bibitem{KV03}
+   Ralf Koetter and Alexander Vardy.
+   \newblock Algebraic soft-decision decoding of Reed--Solomon codes.
+   \newblock \emph{IEEE Transactions on Information Theory}, 49(11):2809--2825, 2003.
 
 \end{thebibliography}
 
