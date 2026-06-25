@@ -3008,12 +3008,109 @@ query time pays only for output-sensitive list decoding.
    \cref{cor:product-panel-rate-bookkeeping}.
 \end{proof}
 
+\begin{lemma}[Hard list-recovery lift for soft scores]
+   \label{lem:hard-list-recovery-lift}
+   Let \(\mathcal C\subseteq\Sigma^h\) be a code and let a query \(q\)
+   assign bounded nonnegative symbol scores
+   \[
+      0\le\omega_i(q,a)\le M
+      \qquad(i\in[h],\ a\in\Sigma).
+   \]
+   For \(c\in\mathcal C\), put
+   \[
+      S_q(c)=\sum_{i=1}^h\omega_i(q,c_i).
+   \]
+   Fix a mesh \(\Delta>0\), let \(L=\lceil M/\Delta\rceil\), and define
+   threshold lists
+   \[
+      \Gamma_{i,\ell}(q)=
+      \{a\in\Sigma:\ \omega_i(q,a)\ge \ell\Delta\},
+      \qquad i\in[h],\ \ell\in[L].
+   \]
+   Suppose there is a certified list-recovery oracle for the repeated-coordinate
+   lift of \(\mathcal C\) which, for any integer \(A\), returns a superset of
+   \[
+      \left\{
+      c\in\mathcal C:\
+      \sum_{i=1}^h\sum_{\ell=1}^{L}
+      \mathbf 1\{c_i\in\Gamma_{i,\ell}(q)\}\ge A
+      \right\}
+   \]
+   and includes every codeword in this set, in work
+   \(D_{\rm LR}(q,A)+O(|\mathsf O|h)\), where \(\mathsf O\) is the returned
+   output list.  Then, for every score threshold \(\Theta\), running the oracle
+   with
+   \[
+      A=\max\left\{0,\left\lceil \frac{\Theta}{\Delta}-h\right\rceil\right\}
+   \]
+   and filtering the returned codewords by the exact score \(S_q(c)\ge\Theta\)
+   gives a certified threshold reporter for
+   \[
+      \{c\in\mathcal C:\ S_q(c)\ge\Theta\}.
+   \]
+   Its work is \(D_{\rm LR}(q,A)+O(|\mathsf O|h)\), plus the work needed to
+   build the lists \(\Gamma_{i,\ell}(q)\).
+\end{lemma}
+
+\begin{proof}
+   For a fixed coordinate with score \(w=\omega_i(q,c_i)\),
+   \[
+      \sum_{\ell=1}^{L}\mathbf 1\{w\ge \ell\Delta\}
+      =
+      \left\lfloor \frac{w}{\Delta}\right\rfloor
+      \ge
+      \frac{w}{\Delta}-1 .
+   \]
+   Summing over coordinates gives
+   \[
+      \sum_{i=1}^h\sum_{\ell=1}^{L}
+      \mathbf 1\{c_i\in\Gamma_{i,\ell}(q)\}
+      \ge
+      \frac{S_q(c)}{\Delta}-h .
+   \]
+   Hence every \(c\) with \(S_q(c)\ge\Theta\) is included by the oracle at the
+   displayed agreement threshold \(A\).  The final exact-score filter removes
+   any lower-score codewords from the oracle's superset output, so the reporter
+   is certified.
+\end{proof}
+
+\begin{remark}[Outer list recovery as the clean codebook target]
+   \label{rem:outer-list-recovery-codebook}
+   \Cref{lem:hard-list-recovery-lift} is the most useful transfer from
+   Reed--Solomon, expander-code, and polar-code list decoding to the present
+   data-structure problem.  The codebook need not be the full Cartesian product
+   \(\prod_j\mathcal C_j\).  It may be a sparse outer code
+   \(\mathcal C\subseteq\prod_j\Sigma_j\), a Construction-A or Construction-D
+   lattice coset, or a Barnes--Wall style recursive lattice family.  The query
+   supplies soft Euclidean reliabilities for the symbols, the lift converts
+   those reliabilities into ordinary list-recovery constraints at
+   \(h\lceil M/\Delta\rceil\) repeated positions, and the decoder returns a
+   short certified list of high-score global codewords before metric
+   verification.  Signed scores are handled by adding a query-dependent
+   constant to all symbols in a coordinate and shifting the final threshold.
+
+   This is a sharper alternative to \(k\)-means or Lloyd cells.  \(k\)-means++
+   or other expensive build-time procedures can still be used to propose
+   rotations, cosets, scalings, or inner score panels, but the retained index is
+   certified by a code/list-recovery theorem and by the spectrum inequalities
+   \((PP1)\)--\((PP4)\), not by convergence of the clustering heuristic.  When
+   \(M/\Delta=\log^{O_c(1)}m\), the repeated-coordinate lift costs only a
+   polylogarithmic factor.  Thus folded Reed--Solomon/list-recovery
+   constructions~\cite{GR08}, Koetter--Vardy soft decoding~\cite{KV03},
+   Barnes--Sloane lattice decoding via soft Reed--Solomon scores~\cite{MP20},
+   expander-code list recovery~\cite{ST25}, and polar-code multiprobing
+   \cite{TV12,TH23} all point to the same theorem object: a compact panel whose
+   soft-score threshold reporter is output-sensitive and whose retained buckets
+   have the random-like ANN spectrum.
+\end{remark}
+
 \begin{remark}[List decoding as learned routing without Lloyd analysis]
    \label{rem:list-decoding-routing}
    The useful transfer from list decoding is not a black-box decoding radius.
-   It is the interface in \cref{lem:soft-list-recovery-reporter}: a structured
-   code or lattice gives an implicit family of candidate centers together with
-   a certified output-sensitive enumerator for the centers relevant to a query.
+   It is the interface in \cref{lem:soft-list-recovery-reporter} and
+   \cref{lem:hard-list-recovery-lift}: a structured code or lattice gives an
+   implicit family of candidate centers together with a certified
+   output-sensitive enumerator for the centers relevant to a query.
    This is a cleaner theorem object than Lloyd or \(k\)-means routing.  Lloyd
    may find excellent empirical centers, but its iterations do not by
    themselves provide a worst-case list-size majorant for every query.  A
@@ -11362,8 +11459,11 @@ missing worst-case statement becomes a prefix-list moment bound and a near-route
 hit bound for a structured product panel.  \Cref{lem:soft-list-recovery-reporter}
 makes the coding-theoretic interface explicit: any certified soft list-recovery
 or lattice enumeration block is enough to supply the threshold reporters used
-by the product-panel decoder; the remaining work is spectrum and rate
-bookkeeping rather than Lloyd-style convergence analysis.
+by the product-panel decoder; \cref{lem:hard-list-recovery-lift} gives a
+self-contained reduction from bounded soft Euclidean scores to ordinary hard
+list-recovery constraints by repeating each coordinate across score levels.
+The remaining work is spectrum and rate bookkeeping rather than Lloyd-style
+convergence analysis.
 \Cref{lem:additive-product-panel-decoder}
 makes the decoder side self-contained: once block threshold reporters and
 suffix upper scores are available, the live stack is controlled by the product
@@ -11384,6 +11484,12 @@ rates \(u_j,v_j,w_j,b_j\) with total query and storage rates at most \(\rho\),
 total far-separation rate at least \(1-\rho\), and total near-loss
 \(O_c(\log\log m)\).  This is the precise product-code analogue of the
 spherical exponent calculation.
+\Cref{rem:outer-list-recovery-codebook} records the stronger alternative
+suggested by list-decoding codes and lattices: instead of decoding the full
+Cartesian product, retain a sparse outer code or lattice coset and use soft
+list recovery to enumerate high-score global codewords.  This can reduce the
+index description and query enumeration while keeping the same certification
+interface, provided the retained panel satisfies the random-like spectrum.
 \Cref{lem:budget-stable-prefix-list} and
 \cref{cor:canonical-budget-stable-decoder} take one step in that direction:
 the canonical mixed Bellman budget itself is an admissible list-decoding
@@ -11719,6 +11825,13 @@ The one-sided spherical proof is motivated by the Ahle--Knudsen manuscript suppl
    Ralf Koetter and Alexander Vardy.
    \newblock Algebraic soft-decision decoding of Reed--Solomon codes.
    \newblock \emph{IEEE Transactions on Information Theory}, 49(11):2809--2825, 2003.
+
+   \bibitem{GR08}
+   Venkatesan Guruswami and Atri Rudra.
+   \newblock Explicit codes achieving list decoding capacity: Error-correction
+   with optimal redundancy.
+   \newblock \emph{IEEE Transactions on Information Theory}, 54(1):135--150,
+   2008.
 
    \bibitem{ST25}
    Nikhil Srivastava and Madhur Tulsiani.
