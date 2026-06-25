@@ -3339,6 +3339,103 @@ exact integer programming over the candidate pool.  What remains for the
 polylogarithmic ANN theorem is an existence-and-certification statement for a
 small stored cover, not an efficient Lloyd-style training algorithm.
 
+\begin{lemma}[Shadow price-density compiler]\label{lem:shadow-price-density-compiler}
+   Work in one bounded-diameter node with resident set $P$, $|P|=m$, radius
+   $R$, guard threshold $\gamma$, low-guard domain $\Omega_{\rm low}$, and
+   exposed shadow $E=E_\gamma$.  Let $\mathcal C_0$ be a finite universe of
+   certified Lipschitz-score parent proposals.  Every parent $C\in\mathcal C_0$
+   has point set $P_C$, radius $R_C\le R\sqrt{1-\eta^2}$, activation predicate
+   $a_C(q)$ on $\Omega_{\rm low}$, and hereditary certification under taking
+   subsets.  Let $\widetilde{\mathcal A}$ be a finite superset of the
+   low-guard activation patterns of these parents.  When parent proposals are
+   expanded into atom-safe subchildren below, each parent coordinate is
+   duplicated for all its subchildren, and we use the same symbol
+   $\widetilde{\mathcal A}$ for the lifted pattern set.  Set
+   \[
+      B\ge
+      \max\{1,\log(4(|E|+1)),\log(8(|\widetilde{\mathcal A}|+1))\}.
+   \]
+   Fix budgets $L>0$, $S>0$, and $L_0\ge0$.
+
+   Suppose the following shadow separation property holds.  For every choice
+   of point prices $\alpha_x\in[0,1]$ supported on $E$, pattern prices
+   $\lambda_a\ge0$, and storage price $\sigma\ge0$ with surplus
+   \[
+      \sum_{x\in E}\alpha_x
+      >
+      L_0+L\sum_{a\in\widetilde{\mathcal A}}\lambda_a+\sigma S,
+      \tag{S1}
+   \]
+   there is a parent proposal $C\in\mathcal C_0$ and an atom-safe cardinality
+   $k$ for its exposed set $P_C\cap E$ such that, after sorting the exposed
+   points of $P_C\cap E$ by decreasing $\alpha_x$ and writing
+   $A_k$ for the prefix sum,
+   \[
+      A_k>
+      \Psi(R_C)
+      \left(
+         \sigma k^{1+\rho}
+         +
+         k^\rho
+         \sum_{a\in\widetilde{\mathcal A}}\lambda_a a_C
+      \right).
+      \tag{S2}
+   \]
+   Here atom-safe means that the exposed prefix of size $k$ has storage at most
+   $S$ and active weight at most $L$ on every pattern in
+   $\widetilde{\mathcal A}$.
+
+   Then unbounded preprocessing can build an integral retained family
+   $\mathcal R$ of exposed subchildren and a residual block $U_0\subseteq E$
+   such that
+   \[
+      |U_0|\le4(L_0+1),
+      \qquad
+      \sup_{q\in\Omega_{\rm low}}
+      \sum_{D\in\mathcal R}a_D(q)|P_D|^\rho\Psi(R_D)
+      \le3BL,
+   \]
+   and
+   \[
+      \sum_{D\in\mathcal R}|P_D|^{1+\rho}\Psi(R_D)\le3BS .
+   \]
+   The retained children cover $E\setminus U_0$, are certified, and all have
+   radius at most $R\sqrt{1-\eta^2}$.
+\end{lemma}
+
+\begin{proof}
+   Expand the proposal universe as follows.  For every parent
+   $C\in\mathcal C_0$, intersect it with $E$, and include every atom-safe
+   subset of $P_C\cap E$.  Since $P$ is finite, this expanded universe is
+   finite; for any fixed price vector the best atom-safe subchild of a parent
+   is the prefix identified by \cref{lem:atom-safe-subchild}.  Each exposed
+   subchild inherits the parent's activation predicate and radius certificate.
+
+   Lift $\widetilde{\mathcal A}$ to the expanded universe by duplicating each
+   parent coordinate for all exposed subchildren of that parent.  Run the
+   pattern-complete fractional cover program on this expanded exposed universe,
+   with the resident ground set in \cref{lem:pattern-complete-cover} replaced by
+   $E$, pattern set $\widetilde{\mathcal A}$, active budget $L$, storage budget
+   $S$, and residual budget $L_0$.  If its value were below $|E|-L_0$,
+   \cref{cor:shadow-finite-pool-dual}, applied with query constraints indexed by
+   the lifted patterns, would give prices satisfying \((S1)\) and having
+   nonpositive gain on every exposed atom-safe subchild.  But by the assumed
+   separation property, some parent has an atom-safe exposed prefix satisfying
+   \((S2)\), which is exactly positive reduced gain for that subchild.  This
+   contradiction proves that the fractional value is at least $|E|-L_0$.
+
+   Apply \cref{lem:pattern-complete-cover} to materialize the fractional exposed
+   cover.  The atom-safety hypotheses are part of the expanded universe, and
+   duplicated activation predicates do not change the pattern set.  The
+   materialized family covers all but $4(L_0+1)$ exposed points, has active
+   pattern load at most $3BL$, and has storage at most $3BS$.  Since every
+   actual low-guard query realizes a pattern in
+   $\widetilde{\mathcal A}$, the same active bound holds uniformly over
+   $\Omega_{\rm low}$.  Unbounded preprocessing may find the retained family by
+   exhaustive search or by column generation using the positive-gain prefix
+   oracle, and stores only the final certified family and residual block.
+\end{proof}
+
 \begin{assumption}[Weak offline score-cover condition]\label{asm:weak-offline-score-cover}
    Fix $c>1$, $\rho=\rho_c$, and $\eta>0$.  In every bounded-diameter localized
    node with $m$ resident points in a certified ball of radius $R$, either the
@@ -3414,7 +3511,12 @@ small stored cover, not an efficient Lloyd-style training algorithm.
    form can be enforced by expanding the proposal universe to atom-safe exposed
    subchildren as in \cref{lem:atom-safe-subchild}; then the pattern-complete
    rounding converts the fractional solution into a stored cover and residual
-   block, losing only another logarithmic factor.
+   block, losing only another logarithmic factor.  In the equivalent
+   price-density form of \cref{lem:shadow-price-density-compiler}, it is enough
+   to prove that every surplus dual price system supported on $E_{\gamma_m}$
+   exposes a certified parent proposal whose highest-price exposed prefix
+   satisfies \((S2)\), after the active and storage budgets have been divided by
+   the pattern-complete rounding factor.
 \end{assumption}
 
 \begin{proposition}[Weak offline score covers imply the polylog endpoint]
@@ -7002,6 +7104,12 @@ regions rather than dense clusters that resident sampling already solves.
 \Cref{cor:shadow-finite-pool-dual} makes this formal in the LP: proposals are
 intersected with the exposed shadow before their storage and active weights are
 computed, and point prices vanish outside that shadow.
+\Cref{lem:shadow-price-density-compiler} packages the exact remaining
+score-cover theorem: every surplus shadow dual must expose a certified parent
+proposal whose highest-price exposed prefix has positive reduced gain.  If this
+separation holds for a finite low-guard pattern universe, column generation and
+pattern-complete materialization produce the stored cover required by
+\cref{asm:weak-offline-score-cover}.
 
 \paragraph{Structured posterior route.}
 \Cref{lem:posterior-superlevel-compiler} records the negative-moment identity suggested by the latest notes. \Cref{lem:explicit-enumeration-barrier} makes the coarse-child obstruction precise: the scale $\xi=m^{-1/(2c^2)}$ is the price of explicitly enumerating $B\simeq\xi^{-1}$ outcomes, not a geometric limit. \Cref{lem:oblivious-sparsification-barrier} adds the complementary warning that the moment bounds alone still permit $\Omega(\xi^{-1})$ disjoint possible witnesses, so direct random sparsification cannot replace structured decoding without an additional sensitivity theorem. \Cref{lem:scale-window-compiler} and \cref{lem:dyadic-structured-amplification} isolate the important arithmetic: if mass windows can be decoded output-sensitively, then $\xi^{-\rho}$ repetitions at each dyadic scale convert negative-moment value into constant hit probability, and summing all scales down to $1/m$ still fits the $m^\rho$ query budget. This scale-aware amplification is essential; a raw negative-moment diagnostic alone does not imply that the near point is actually listed with inverse-polylogarithmic probability.
