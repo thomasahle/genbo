@@ -3338,6 +3338,110 @@ query time pays only for output-sensitive list decoding.
    is the product in \((GS5)\), which proves the last claim.
 \end{proof}
 
+\begin{corollary}[Gibbs sampled product-panel rate bookkeeping]
+   \label{cor:gibbs-sampled-rate-bookkeeping}
+   Work in the full-product setting of
+   \cref{cor:gibbs-sampled-product-panel}, and assume the number of blocks is
+   \(h\le\log^{O_c(1)}m\).  The query Gibbs sampler is the product sampler
+   obtained from the one-block laws proportional to
+   \(e^{\beta\phi_j(q,a)}\), and its sampling time is
+   \(d\log^{O_c(1)}m\).  For data points, far pairs, and near pairs define
+   \[
+      \mathfrak s_j(x)=
+      \E\!\left[e^{-\alpha\theta_{P,j}}Z_j^P(x)\right],
+   \]
+   \[
+      \mathfrak f_j(x,q)=
+      \E\!\left[
+         e^{-\alpha\theta_{P,j}}
+         \frac{Z_j^{PQ}(x,q)}{Z_j^Q(q)}
+      \right],
+   \]
+   and
+   \[
+      \mathfrak h_j(p,q)=
+      \E\!\left[
+      \frac{
+         \sum_{a\in\mathcal C_j:\,\psi_j(p,a)\ge\theta_{P,j}}
+         e^{\beta\phi_j(q,a)}
+      }{Z_j^Q(q)}
+      \right].
+   \]
+   If
+   \[
+      \prod_{j=1}^h\mathfrak s_j(x)
+      \le m^\rho\log^{O_c(1)}m
+      \qquad\text{for every data point }x,
+      \tag{GR1}
+   \]
+   \[
+      \prod_{j=1}^h\mathfrak f_j(x,q)
+      \le m^{-(1-\rho)}\log^{O_c(1)}m
+      \qquad
+      \text{whenever }\|x-q\|>cr,
+      \tag{GR2}
+   \]
+   and
+   \[
+      \prod_{j=1}^h\mathfrak h_j(p,q)
+      \ge \log^{-O_c(1)}m
+      \qquad
+      \text{whenever }\|p-q\|\le r,
+      \tag{GR3}
+   \]
+   then the Gibbs sampled product panel satisfies the terminal ANN bounds of
+   \cref{prop:sampled-structured-panel}.
+
+   Equivalently, it is enough to prove one-block log-rate bounds
+   \[
+      \mathfrak s_j(x)\le m^{v_j},\qquad
+      \mathfrak f_j(x,q)\le m^{-w_j},\qquad
+      \mathfrak h_j(p,q)\ge e^{-b_j},
+   \]
+   with
+   \[
+      \sum_jv_j\le\rho+O_c\!\left(\frac{\log\log m}{\log m}\right),
+      \qquad
+      \sum_jw_j\ge1-\rho-O_c\!\left(\frac{\log\log m}{\log m}\right),
+   \]
+   and
+   \[
+      \sum_jb_j=O_c(\log\log m).
+   \]
+\end{corollary}
+
+\begin{proof}
+   Since the product sampler chooses block symbols independently with
+   probabilities proportional to \(e^{\beta\phi_j(q,a)}\), its law on
+   \(\mathcal C\) is exactly the Gibbs law in
+   \cref{cor:gibbs-sampled-product-panel}.  For a fixed data point \(x\),
+   independence and \((GS4)\) give
+   \[
+      \E e^{-\alpha\theta_P}
+      \sum_{c\in\mathcal C}e^{\alpha S_P(x,c)}
+      =
+      \prod_j\mathfrak s_j(x).
+   \]
+   Summing over \(x\in P\) and applying \((GR1)\) gives \((GS1)\).  For a
+   fixed far pair \((x,q)\), the mixed/query partition ratio factors as
+   \[
+      \E\,
+      \frac{
+         e^{-\alpha\theta_P}
+         \sum_c e^{\alpha S_P(x,c)+\beta S_Q(q,c)}
+      }{Z_Q(q)}
+      =
+      \prod_j\mathfrak f_j(x,q).
+   \]
+   Summing over the at most \(m\) far points and using \((GR2)\) gives
+   \((GS2)\).  Finally, \((GR3)\) is exactly the sufficient product lower bound
+   \((GS5)\) for the near Gibbs mass condition \((GS3)\).  Hence
+   \cref{cor:gibbs-sampled-product-panel} applies.
+
+   The log-rate form is obtained by multiplying the one-block bounds and using
+   \(m^{O_c((\log\log m)/\log m)}=\log^{O_c(1)}m\).
+\end{proof}
+
 \begin{remark}[Lattice Gaussian panels as sampled decoders]
    \label{rem:lattice-gaussian-panels}
    \Cref{prop:sampled-structured-panel} is the sampler analogue of the
@@ -12184,6 +12288,10 @@ far sampled load is a ratio of mixed and query partition functions, while the
 near condition is Gibbs mass on labels that store the near point.  These
 quantities tensorize block-by-block, so the sampled lattice/code target has the
 same rate-bookkeeping shape as the reporting target but no active-list term.
+\Cref{cor:gibbs-sampled-rate-bookkeeping} is the exponent form: prove one-block
+rates for storage, sampled far separation, and near Gibbs mass with total
+storage rate at most \(\rho\), total far-separation rate at least \(1-\rho\),
+and total near loss \(O_c(\log\log m)\).  No query-list rate appears.
 \Cref{rem:outer-list-recovery-codebook} records the stronger alternative
 suggested by list-decoding codes and lattices: instead of decoding the full
 Cartesian product, retain a sparse outer code or lattice coset and use soft
