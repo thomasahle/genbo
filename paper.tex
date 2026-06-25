@@ -3186,6 +3186,51 @@ This certificate is the local form of the remaining problem. It is analogous in 
    Paley--Zygmund gives the displayed success lower bound.
 \end{proof}
 
+\begin{lemma}[Saturated value recursion]\label{lem:saturated-value-recursion}
+   Fix a finite route trie with edge success probabilities
+   $\gamma_{u,w}\in[0,1]$. Define the saturated suffix value $U$ by
+   \[
+      U(v)=1\quad\text{at leaves},
+      \qquad
+      U(u)=
+      \min\left\{1,\sum_{w\in\operatorname{ch}(u)}
+      \gamma_{u,w}U(w)\right\}
+   \]
+   at internal nodes. Then $U(\varnothing)$ is exactly the largest root value
+   achievable by fractional terminal weights satisfying the unit suffix
+   capacity condition of \cref{lem:unit-capped-value-flow}.
+\end{lemma}
+
+\begin{proof}
+   First, any unit-capped fractional terminal weights have value at most $U$ at
+   every node. This is immediate at leaves, since terminal weights are at most
+   one. If it holds for the children of $u$, then
+   \[
+      V(u)=\sum_w\gamma_{u,w}V(w)
+      \le
+      \sum_w\gamma_{u,w}U(w),
+   \]
+   while unit suffix capacity gives $V(u)\le1$. Hence $V(u)\le U(u)$.
+
+   Conversely, we prove by induction that for every node $u$ and every
+   $0\le t\le U(u)$, there are fractional terminal weights inside the subtree
+   of $u$ whose suffix value at $u$ is exactly $t$ and whose suffix value at
+   every descendant is at most one. At a leaf, set its terminal weight to $t$.
+   At an internal node, write
+   \[
+      S(u)=\sum_w\gamma_{u,w}U(w).
+   \]
+   Since $t\le U(u)\le S(u)$ unless $S(u)=0$, choose numbers
+   $0\le t_w\le U(w)$ with
+   \[
+      \sum_w\gamma_{u,w}t_w=t
+   \]
+   by a greedy allocation over the children. Apply the induction hypothesis in
+   each child subtree with target $t_w$. The resulting terminal weights have
+   value $t$ at $u$, and all descendant suffix values remain at most one.
+   Taking $u=\varnothing$ and $t=U(\varnothing)$ proves attainability.
+\end{proof}
+
 \begin{corollary}[Capped-flow value delivery]\label{cor:capped-flow-delivery}
    In the setting of \cref{cor:fractional-value-delivery}, suppose the
    candidate route trie admits fractional terminal weights $a_v\in[0,1]$ such
@@ -3205,6 +3250,23 @@ This certificate is the local form of the remaining problem. It is analogous in 
    succeed, so a valid route is reached. The work bound is unchanged from
    \cref{cor:fractional-value-delivery}, because fractional terminal pruning
    only discards successes and does not open additional opportunities.
+\end{proof}
+
+\begin{corollary}[Saturated value delivery]\label{cor:saturated-value-delivery}
+   In the setting of \cref{cor:fractional-value-delivery}, let $U$ be the
+   saturated value of the candidate route trie. If every route has length
+   $H=\log^{O_c(1)}n$ and
+   \[
+      U(\varnothing)\ge\log^{-A_c}n,
+   \]
+   then the fractional value-delivery layer reaches a valid route with
+   probability $\log^{-O_c(1)}n$.
+\end{corollary}
+
+\begin{proof}
+   By \cref{lem:saturated-value-recursion}, the saturated root value is
+   achieved by unit-capped fractional terminal weights. Apply
+   \cref{cor:capped-flow-delivery}.
 \end{proof}
 
 \begin{lemma}[Local LCA-energy certificate]\label{lem:local-lca-energy}
@@ -3386,7 +3448,12 @@ This certificate is the local form of the remaining problem. It is analogous in 
    \cref{lem:unit-capped-value-flow}. The last formulation removes the
    second-moment target entirely: the remaining statement becomes a max-flow
    lower bound saying that inverse-polylogarithmic root value survives after
-   imposing capacity $V(u)\le1$ at every prefix.
+   imposing capacity $V(u)\le1$ at every prefix. By
+   \cref{lem:saturated-value-recursion}, this is equivalently a lower bound on
+   the saturated Bellman value
+   \[
+      U(u)=\min\{1,\sum_w\gamma_{u,w}U(w)\}.
+   \]
 \end{remark}
 
 \begin{remark}[The remaining aggregate value target]\label{rem:value-delivery-target}
@@ -3431,7 +3498,9 @@ This certificate is the local form of the remaining problem. It is analogous in 
    automatically. This is the right way to state the integer-materialization
    problem: a tiny-probability mandatory edge may lead to many downstream
    routes, but it should contribute at most its own probability to the capped
-   root value.
+   root value. Equivalently, by \cref{lem:saturated-value-recursion}, prove
+   that the saturated value $U(\varnothing)$ of the tame-route trie is
+   inverse-polylogarithmic.
 \end{remark}
 
 \begin{assumption}[Aggregate fractional value delivery]\label{asm:aggregate-value-delivery}
@@ -4854,7 +4923,7 @@ The continuation-mass spherical decoder is proved in \cref{lem:continuation-work
 \Cref{prop:one-third} records the cube-root parameter choice from the one-tree notes. The direct tube calculation is kept only as intuition; the formal proposition uses \cref{lem:adaptive-continuation} for whole-lineage score survival and assumes only the cube-root geometric frontier inequality \cref{asm:mixed-operator}. Thus the central open issue is already the work-side first-hit accounting, not near-pair score survival.
 
 \paragraph{Randomized polylog stage.}
-\Cref{lem:adaptive-continuation} replaces the tube proof in the predictable-score setting, so near-pair survival is no longer the obstacle for the randomized one-tree endpoint. \Cref{asm:mixed-continuation-operator} is the direct remaining work-side target after \cref{lem:cap-free-scan-accounting}: it must prove thinned cap-split contraction over branching cap-discovery frontiers. Conditional on that operator, \cref{prop:randomized-polylog} shows that choosing $\eta\asymp(\log\log n)/\log n$ gives polylogarithmic query and space overhead. The sharper budget-thinned variant proves the activated geometric work bound by optional stopping in \cref{lem:canonical-mixed-budget} and \cref{lem:budget-thinned-opportunities}. It now has its own conditional endpoint, \cref{prop:budget-thinned-polylog}: the only remaining assumption is aggregate fractional value delivery. For laminar tame-route families, \cref{lem:lca-value-flow} reduces the second-moment version to the two quantities $V(\varnothing)$ and $\sum_uA(u)V(u)^2$, while \cref{lem:unit-capped-value-flow} gives a simpler sufficient target: after pruning to unit suffix capacity $V(u)\le1$, the root delivered value should remain inverse-polylogarithmic.
+\Cref{lem:adaptive-continuation} replaces the tube proof in the predictable-score setting, so near-pair survival is no longer the obstacle for the randomized one-tree endpoint. \Cref{asm:mixed-continuation-operator} is the direct remaining work-side target after \cref{lem:cap-free-scan-accounting}: it must prove thinned cap-split contraction over branching cap-discovery frontiers. Conditional on that operator, \cref{prop:randomized-polylog} shows that choosing $\eta\asymp(\log\log n)/\log n$ gives polylogarithmic query and space overhead. The sharper budget-thinned variant proves the activated geometric work bound by optional stopping in \cref{lem:canonical-mixed-budget} and \cref{lem:budget-thinned-opportunities}. It now has its own conditional endpoint, \cref{prop:budget-thinned-polylog}: the only remaining assumption is aggregate fractional value delivery. For laminar tame-route families, \cref{lem:lca-value-flow} reduces the second-moment version to the two quantities $V(\varnothing)$ and $\sum_uA(u)V(u)^2$, while \cref{lem:saturated-value-recursion} gives a simpler sufficient target: the saturated route value $U(\varnothing)$ should remain inverse-polylogarithmic.
 
 \paragraph{Certified-cover route.}
 \Cref{lem:certified-cover-compiler} abstracts the empirical $k$-means
@@ -4898,7 +4967,7 @@ For the randomized cap-thinning route, one remaining task is the branching first
    \le
    \log^{O_c(1)}n\,V(\varnothing)^2 .
 \]
-\Cref{lem:local-lca-energy} further reduces this to a local Bellman multiplier, and \cref{cor:square-nonexpansive-routes} shows that square-nonexpansive value branching costs only the polylogarithmic route depth. Equivalently, \cref{lem:energy-spine-toll} says that it is enough to prove only $O_c(\log\log n)$ positive square-energy toll along the energy-biased route spine. The capped-flow certificate \cref{lem:unit-capped-value-flow} gives a still simpler sufficient formulation: impose unit suffix capacity $V(u)\le1$ at every prefix and prove that the root delivered value remains inverse-polylogarithmic. Conditional on either aggregate value statement, \cref{prop:budget-thinned-polylog} gives the desired polylogarithmic ANN theorem. This is a fully non-channel route; the smooth product terminal filter can be used after localization and no longer contributes an inverse-polylogarithmic table-recall penalty. The structured posterior route replaces the cap-frontier obstacle by \cref{asm:multiscale-structured-likelihood}: prove an output-sensitive reporter for pure likelihood rank prefixes, not a small explicitly enumerable channel. The smoothed sampling route replaces both by \cref{asm:smoothed-gibbs} or \cref{asm:gumbel-mips}: prove either an optimal-exponent reporter that captures inverse-polylogarithmic Gaussian Gibbs mass, or a certified $O(\log\log n)$-additive Gumbel-MIPS primitive. Smoothed additive nearest neighbor is another stronger sufficient primitive. The detector-vote cohort-or-leaf route is a separate possible generalization to arbitrary certified child hierarchies, where the remaining issue is near-lineage coupling between ordinary continuation paths and detector activations.
+\Cref{lem:local-lca-energy} further reduces this to a local Bellman multiplier, and \cref{cor:square-nonexpansive-routes} shows that square-nonexpansive value branching costs only the polylogarithmic route depth. Equivalently, \cref{lem:energy-spine-toll} says that it is enough to prove only $O_c(\log\log n)$ positive square-energy toll along the energy-biased route spine. The capped-flow certificate \cref{lem:unit-capped-value-flow} and its Bellman recursion \cref{lem:saturated-value-recursion} give a still simpler sufficient formulation: prove that the saturated route value $U(\varnothing)$ remains inverse-polylogarithmic. Conditional on either aggregate value statement, \cref{prop:budget-thinned-polylog} gives the desired polylogarithmic ANN theorem. This is a fully non-channel route; the smooth product terminal filter can be used after localization and no longer contributes an inverse-polylogarithmic table-recall penalty. The structured posterior route replaces the cap-frontier obstacle by \cref{asm:multiscale-structured-likelihood}: prove an output-sensitive reporter for pure likelihood rank prefixes, not a small explicitly enumerable channel. The smoothed sampling route replaces both by \cref{asm:smoothed-gibbs} or \cref{asm:gumbel-mips}: prove either an optimal-exponent reporter that captures inverse-polylogarithmic Gaussian Gibbs mass, or a certified $O(\log\log n)$-additive Gumbel-MIPS primitive. Smoothed additive nearest neighbor is another stronger sufficient primitive. The detector-vote cohort-or-leaf route is a separate possible generalization to arbitrary certified child hierarchies, where the remaining issue is near-lineage coupling between ordinary continuation paths and detector activations.
 
 \appendix
 
