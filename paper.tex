@@ -1734,6 +1734,54 @@ load
    subroutines. Final candidates are verified in the original metric.
 \end{proof}
 
+\begin{lemma}[Priced certified cover compiler]
+   \label{lem:priced-cover-compiler}
+   Let $\mathcal C$ be a retained family of certified filters.  Each filter
+   $C\in\mathcal C$ has a point set $P_C\subseteq P$, an activation predicate
+   $a_C(q)\in\{0,1\}$, and certified child prices $Q_C,S_C\ge0$.  The
+   activation predicates are routing-safe:
+   \[
+      p\in P_C,\quad \|p-q\|\le r
+      \qquad\Longrightarrow\qquad
+      a_C(q)=1 .
+   \]
+   The price $Q_C$ certifies the worst-case query work of the retained
+   subindex stored for $P_C$, and $S_C$ certifies its storage.  Suppose
+   $\mathcal C$ covers $P$ and
+   \[
+      \sup_q\sum_{C\in\mathcal C}a_C(q)Q_C\le L,
+      \qquad
+      \sum_{C\in\mathcal C}S_C\le S .
+   \]
+   Then the node obtained by querying every active child is routing-correct and
+   has certified query work $O(L+D(q))$ and storage $O(S+M)$, where $D(q)$ is
+   the work needed to decode the active predicates and $M$ is the retained
+   metadata size.
+\end{lemma}
+
+\begin{proof}
+   Let $\|p-q\|\le r$ and choose a retained filter $C$ with $p\in P_C$.  By
+   routing-safety, $a_C(q)=1$, so the query invokes a certified subindex
+   containing the near point.  Verification in the original metric accepts any
+   valid candidate returned by that subindex.  The work after decoding is at
+   most the sum of the certified prices of active children, and the storage is
+   the sum of the retained child prices plus metadata.
+\end{proof}
+
+The closed-form power compiler above is the special case
+\[
+   Q_C=|P_C|^\rho\Psi(R_C)\polylog n,
+   \qquad
+   S_C=|P_C|^{1+\rho}\Psi(R_C)\polylog n .
+\]
+The priced form is often the better offline object.  A child that is terminal,
+pure, low-guard solved, or admits a stronger descendant certificate should be
+charged by that actual certified price, not by the pessimistic surrogate
+$F_4(|P_C|,R_C)$.  Thus the standard certified ball recursion, score-filter
+recursion, terminal sampling, and residual scans are all columns in the same
+priced cover verifier; $F_4$ is a convenient universal feasible price, not a
+black-box theorem.
+
 \begin{lemma}[Certified cover with residual scan]\label{lem:cover-residual-scan}
    In the setting of \cref{lem:certified-cover-compiler}, suppose the stored
    filters cover only $P\setminus U_0$, where $U_0\subseteq P$ is a residual
@@ -3133,6 +3181,39 @@ index.
    stored.
 \end{proof}
 
+\begin{corollary}[Offline recursive Pareto pricing]
+   \label{cor:offline-recursive-pareto-pricing}
+   Fix a finite proposal universe at a node.  For each proposed child $C$, let
+   $\mathcal P_C$ be a finite list of certified descendant indexes for $P_C$,
+   with price pairs $(Q_{C,\pi},S_{C,\pi})$ and decoders
+   $\pi\in\mathcal P_C$.  Form the expanded finite universe whose columns are
+   pairs $(C,\pi)$, inheriting the membership set and activation predicate of
+   $C$ but carrying the prices $(Q_{C,\pi},S_{C,\pi})$.
+
+   If some residual block and some retained subfamily of this expanded universe
+   pass the priced cover certificate of \cref{lem:priced-cover-compiler}, then
+   unbounded preprocessing can find such a retained subfamily and choose one on
+   any prescribed certified query-storage Pareto frontier.  Applying this
+   bottom-up over any finite acyclic recursive candidate universe computes the
+   exact retained-index Pareto frontier for that universe.
+\end{corollary}
+
+\begin{proof}
+   The expanded universe is finite.  A deterministic verifier checks residual
+   routing, the finite activation-pattern form of the priced query constraint
+   \[
+      \sup_q\sum_{(C,\pi)}a_C(q)Q_{C,\pi},
+   \]
+   and the storage constraint $\sum_{(C,\pi)}S_{C,\pi}$.  Exhaustive
+   preprocessing enumerates retained subfamilies and residual blocks, rejects
+   those that fail, and optimizes the requested objective over the accepted
+   finite set, exactly as in \cref{cor:offline-pareto-compression}.  For a
+   finite acyclic recursive universe, process nodes in reverse topological
+   order: terminal nodes provide their certified base price lists, and each
+   internal node is handled by the finite expansion above using already
+   computed child price lists.
+\end{proof}
+
 By \cref{lem:guard-restricted-cover}, the finite verifier and the LPs below do
 not need to impose active-power constraints on high-guard queries.  For a fixed
 guard threshold $\gamma$, take $\mathcal Q$ to be a finite set of constraints
@@ -3865,7 +3946,11 @@ and then into atom-safe exposed prefixes.  More explicitly,
 \cref{cor:offline-center-score-saturation} lets preprocessing saturate any
 finite seed family under all data thresholds, data radii, and retained
 memberships, run the deterministic certificates, and keep only the certified
-cover on the desired query-memory frontier.
+cover on the desired query-memory frontier.  Finally,
+\cref{cor:offline-recursive-pareto-pricing} lets this certification use the
+actual recursive Pareto prices of candidate children rather than the closed-form
+surrogate $|P_C|^\rho\Psi(R_C)$ whenever a better descendant certificate is
+available.
 
 \begin{lemma}[Shadow price-density compiler]\label{lem:shadow-price-density-compiler}
    Work in one bounded-diameter node with resident set $P$, $|P|=m$, radius
@@ -4068,7 +4153,11 @@ cover on the desired query-memory frontier.
    \cref{cor:offline-center-score-saturation} reduces this finite-pool
    requirement further: the build routine only has to generate a finite family
    of centers and scores whose data-threshold, data-radius closure contains an
-   accepted cover.
+   accepted cover.  The displayed $F_4$ weights are a sufficient universal
+   price certificate; by \cref{lem:priced-cover-compiler} and
+   \cref{cor:offline-recursive-pareto-pricing}, the verifier may instead charge
+   any child by its actual certified recursive query and storage prices, and
+   preprocessing may optimize over the resulting finite Pareto frontier.
    By \cref{lem:guard-restricted-cover}, these active-power constraints need
    only range over the low-guard query domain; high-guard queries are handled by
    the resident sample.  By \cref{lem:finite-activation-patterns}, the
@@ -7678,7 +7767,14 @@ would pay no such index overhead.  With
 parameters reduce to finite seed data: a proposed center-score family is closed
 under all data thresholds, data radii, and retained submemberships before
 certification, so the stored cover can be much smaller than the build-time
-candidate universe.  The guard refinement
+candidate universe.  The closed-form $F_4$ charge is also only a sufficient
+price certificate: \cref{lem:priced-cover-compiler} and
+\cref{cor:offline-recursive-pareto-pricing} allow the offline verifier to price
+each candidate child by its actual certified descendant Pareto cost.  This
+folds ordinary certified ball recursion, score-filter recursion, residual
+scans, and terminal samplers into the same priced cover process, and can only
+lower the retained query-memory frontier relative to the surrogate analysis.
+The guard refinement
 \cref{lem:low-guard-shadow} further removes points whose entire near-query
 neighborhood is already high-density: the finite dual now prices only the
 low-guard shadow, so the remaining score-cover theorem is about sparse exposed
