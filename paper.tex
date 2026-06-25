@@ -3402,6 +3402,66 @@ index.
    computed child price lists.
 \end{proof}
 
+\begin{corollary}[Seed--saturate--certify compiler]
+   \label{cor:seed-saturate-certify}
+   Fix one node and a finite seed space $\mathcal S$.  Each seed
+   $s\in\mathcal S$ generates a finite family of center-score templates
+   \(\mathcal H(s)\).  Let $\mathcal B$ be any finite search class of seed
+   multisets, and for $B\in\mathcal B$ write
+   \[
+      \mathcal H_B=\bigcup_{s\in B}\mathcal H(s).
+   \]
+   From $\mathcal H_B$, form the saturated finite universe obtained by closing
+   under all data thresholds and data radii as in
+   \cref{cor:offline-center-score-saturation}, optionally intersecting with a
+   low-guard shadow, expanding to retained submemberships or atom-safe exposed
+   prefixes, and attaching any finite certified descendant price lists as in
+   \cref{cor:offline-recursive-pareto-pricing}.  Suppose a deterministic
+   verifier accepts some residual block and retained subfamily from one of
+   these saturated universes, using either the priced all-listing certificate of
+   \cref{lem:priced-cover-compiler} or the sampled-route certificate of
+   \cref{lem:sampled-priced-cover} together with
+   \cref{lem:finite-sampled-route-verifier}.
+
+   Then unbounded preprocessing can find an accepted retained family and choose
+   one minimizing any prescribed certified query-storage objective reported by
+   the verifier.  The query work and index space are those of the chosen
+   retained family, its residual block, decoder metadata, and descendant
+   indexes only; seed families, saturated parent pools, rejected memberships,
+   failed sampled-route signatures, and nonselected descendant indexes are
+   preprocessing artifacts.
+
+   If instead a randomized seeding routine outputs an acceptable seed multiset
+   with positive probability and every unacceptable retained family is rejected
+   by the deterministic verifier, preprocessing may repeat the seeding routine
+   until certification and again stores only the first accepted retained family.
+\end{corollary}
+
+\begin{proof}
+   The set $\mathcal B$ is finite, and for each $B\in\mathcal B$ all closures
+   described in the statement are finite because the resident point set and the
+   supplied descendant price lists are finite.  For any fixed $B$,
+   \cref{cor:offline-center-score-saturation} reduces the continuous threshold
+   and radius choices to the saturated finite center-score universe, while
+   \cref{cor:offline-recursive-pareto-pricing} expands each child by its finite
+   certified descendant price options.  The finite-pool optimizer and Pareto
+   compression, \cref{lem:finite-pool-optimizer} and
+   \cref{cor:offline-pareto-compression}, may therefore enumerate all residual
+   blocks and retained subfamilies accepted by the deterministic verifier and
+   choose the best reported one.  In the sampled case,
+   \cref{lem:finite-sampled-route-verifier} is part of that deterministic
+   acceptance test, so the stored sampler satisfies the hypotheses of
+   \cref{lem:sampled-priced-cover}.  Since all rejected objects are discarded
+   before queries are answered, they do not contribute to the retained
+   resources.
+
+   For randomized seeding, apply the Las Vegas certification principle of
+   \cref{lem:las-vegas-offline}: repeated independent attempts eventually
+   produce an acceptable seed multiset almost surely whenever the success
+   probability is positive, and the final index contains only the first
+   accepted certified family.
+\end{proof}
+
 By \cref{lem:guard-restricted-cover}, the finite verifier and the LPs below do
 not need to impose active-power constraints on high-guard queries.  For a fixed
 guard threshold $\gamma$, take $\mathcal Q$ to be a finite set of constraints
@@ -4142,6 +4202,15 @@ available.  If the retained family is equipped with a query sampler rather than
 an all-listing decoder, \cref{lem:sampled-priced-cover} can certify it by
 expected sampled price and near-pair route mass instead of active-power
 stabbing.
+\Cref{cor:seed-saturate-certify} packages the intended build loop.  A
+$k$-means++ or spherical \(D^2\) run supplies only seed data; preprocessing then
+saturates those seeds under all data thresholds, radii, submemberships,
+recursive prices, and sampled-route certificates before choosing the retained
+index.  The same wrapper supports a more theory-aligned alternative: use the
+current cover dual prices, rather than squared-distance residuals, to sample
+seeds that are likely to expose positive-gain score filters.  Thus Lloyd
+updates are optional engineering refinements, while the theorem only needs a
+positive-probability seeded separator plus deterministic certification.
 
 \begin{lemma}[Shadow price-density compiler]\label{lem:shadow-price-density-compiler}
    Work in one bounded-diameter node with resident set $P$, $|P|=m$, radius
@@ -4344,7 +4413,12 @@ stabbing.
    \cref{cor:offline-center-score-saturation} reduces this finite-pool
    requirement further: the build routine only has to generate a finite family
    of centers and scores whose data-threshold, data-radius closure contains an
-   accepted cover.  The displayed $F_4$ weights are a sufficient universal
+   accepted cover.  Equivalently, \cref{cor:seed-saturate-certify} allows the
+   build routine to generate those centers and scores by $k$-means++,
+   spherical \(D^2\) seeding, dual-weighted seeding, learned proposal
+   generation, or exhaustive enumeration; the saturated universe is searched
+   during preprocessing and only the final certified retained family is stored.
+   The displayed $F_4$ weights are a sufficient universal
    price certificate; by \cref{lem:priced-cover-compiler} and
    \cref{cor:offline-recursive-pareto-pricing}, the verifier may instead charge
    any child by its actual certified recursive query and storage prices, and
@@ -7970,7 +8044,11 @@ would pay no such index overhead.  With
 parameters reduce to finite seed data: a proposed center-score family is closed
 under all data thresholds, data radii, and retained submemberships before
 certification, so the stored cover can be much smaller than the build-time
-candidate universe.  The closed-form $F_4$ charge is also only a sufficient
+candidate universe.  \Cref{cor:seed-saturate-certify} makes this the canonical
+offline build model: $k$-means++, spherical \(D^2\), dual-weighted, learned, or
+exhaustive seeds are saturated and certified first, and only the selected
+retained family is charged.  The closed-form $F_4$ charge is also only a
+sufficient
 price certificate: \cref{lem:priced-cover-compiler} and
 \cref{cor:offline-recursive-pareto-pricing} allow the offline verifier to price
 each candidate child by its actual certified descendant Pareto cost.  This
