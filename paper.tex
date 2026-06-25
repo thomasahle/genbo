@@ -1782,6 +1782,55 @@ recursion, terminal sampling, and residual scans are all columns in the same
 priced cover verifier; $F_4$ is a convenient universal feasible price, not a
 black-box theorem.
 
+\begin{lemma}[Sampled priced cover compiler]
+   \label{lem:sampled-priced-cover}
+   Let $\mathcal C$ be a retained family of certified filters as in
+   \cref{lem:priced-cover-compiler}, with certified child query prices $Q_C$
+   and storage prices $S_C$.  For every query $q$, suppose the decoder can
+   sample a child from a distribution $\pi_q$ supported on active children
+   $(\pi_q(C)>0\Rightarrow a_C(q)=1)$ in work $D(q)$, and suppose
+   \[
+      \sum_C\pi_q(C)Q_C\le L .
+   \]
+   Give each child a certified success credit $\sigma_C\in[0,1]$: if
+   $p\in P_C$ and $\|p-q\|\le r$, then one invocation of child $C$ returns a
+   verified $cr$-neighbor with probability at least $\sigma_C$.  Define the
+   route mass of a near pair by
+   \[
+      h_{p,q}
+      =
+      \sum_{C:p\in P_C}\pi_q(C)\sigma_C .
+   \]
+   If $h_{p,q}\ge h_0$ for every near pair not handled by an always-scanned
+   residual block, then $B$ independent sampled child invocations, followed by
+   verification in the original metric, fail with probability at most
+   $\exp(-Bh_0)$.  Their expected query work is
+   \[
+      O\bigl(B(D(q)+L)\bigr),
+   \]
+   and the retained storage is $\sum_CS_C$ plus metadata.
+\end{lemma}
+
+\begin{proof}
+   Fix a near pair $(p,q)$ not handled by the residual block.  A single trial
+   chooses an active child $C$ containing $p$ and succeeds inside that child
+   with probability at least $\sigma_C$.  Summing over the choices of $C$ gives
+   success probability at least $h_{p,q}\ge h_0$ for one trial.  Independent
+   trials therefore miss with probability at most $(1-h_0)^B\le e^{-Bh_0}$.
+   The expected child work in one trial is
+   $\sum_C\pi_q(C)Q_C\le L$, and sampling the child costs $D(q)$; linearity of
+   expectation gives the work bound.  Storage is independent of the number of
+   sampled trials.
+\end{proof}
+
+Thus active children need not always be listed.  If a query can sample from a
+distribution whose expected certified price is small and whose total mass on
+children containing the true near point is inverse-polylogarithmic, then
+polylogarithmically many trials replace an all-reporting active-power bound.
+The deterministic priced compiler is the limiting case where every active child
+is queried, while terminal pure sampling is the case $\sigma_C=1$ for pure
+terminal alternatives and zero for impure ones.
+
 \begin{lemma}[Certified cover with residual scan]\label{lem:cover-residual-scan}
    In the setting of \cref{lem:certified-cover-compiler}, suppose the stored
    filters cover only $P\setminus U_0$, where $U_0\subseteq P$ is a residual
@@ -2013,6 +2062,10 @@ value-delivery formulation below: a large number of parallel valid alternatives
 should contribute sampling mass, not active listing cost.  It is also the
 reason the structured posterior target asks for output-sensitive rank-prefix
 sampling/reporting rather than an explicit list of all near singletons.
+\Cref{lem:sampled-priced-cover} gives the corresponding recursive local
+compiler: the query may sample active children from a certified distribution
+and pay only the expected sampled child price, provided the true near point
+receives inverse-polylogarithmic route mass.
 
 This also gives a safe way to use an empirical cover such as $k$-means without
 claiming that Lloyd's objective proves anything. At a node, store an arbitrary
@@ -3950,7 +4003,10 @@ cover on the desired query-memory frontier.  Finally,
 \cref{cor:offline-recursive-pareto-pricing} lets this certification use the
 actual recursive Pareto prices of candidate children rather than the closed-form
 surrogate $|P_C|^\rho\Psi(R_C)$ whenever a better descendant certificate is
-available.
+available.  If the retained family is equipped with a query sampler rather than
+an all-listing decoder, \cref{lem:sampled-priced-cover} can certify it by
+expected sampled price and near-pair route mass instead of active-power
+stabbing.
 
 \begin{lemma}[Shadow price-density compiler]\label{lem:shadow-price-density-compiler}
    Work in one bounded-diameter node with resident set $P$, $|P|=m$, radius
@@ -4157,7 +4213,13 @@ available.
    price certificate; by \cref{lem:priced-cover-compiler} and
    \cref{cor:offline-recursive-pareto-pricing}, the verifier may instead charge
    any child by its actual certified recursive query and storage prices, and
-   preprocessing may optimize over the resulting finite Pareto frontier.
+   preprocessing may optimize over the resulting finite Pareto frontier.  A
+   sampled decoder may replace the active-power certificate by the route-mass
+   certificate of \cref{lem:sampled-priced-cover}: for every low-guard near
+   pair not in the residual block, the sampling distribution must put
+   inverse-polylogarithmic success mass on retained children containing the near
+   point, while its expected certified child price remains
+   $F_4(m,R)\log^{O_c(1)}m$.
    By \cref{lem:guard-restricted-cover}, these active-power constraints need
    only range over the low-guard query domain; high-guard queries are handled by
    the resident sample.  By \cref{lem:finite-activation-patterns}, the
@@ -7774,6 +7836,12 @@ each candidate child by its actual certified descendant Pareto cost.  This
 folds ordinary certified ball recursion, score-filter recursion, residual
 scans, and terminal samplers into the same priced cover process, and can only
 lower the retained query-memory frontier relative to the surrogate analysis.
+The all-reporting obstruction is also separated from the recursive compiler:
+\cref{lem:sampled-priced-cover} allows a retained family to be used through a
+query sampler, paying expected sampled child price and requiring only
+inverse-polylogarithmic route mass on children that contain the true near point.
+Thus middle-density singletons and posterior prefixes should be handled as
+sampling/value objects whenever listing them would violate active power.
 The guard refinement
 \cref{lem:low-guard-shadow} further removes points whose entire near-query
 neighborhood is already high-density: the finite dual now prices only the
