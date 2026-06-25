@@ -3006,6 +3006,57 @@ certificate and separation diagnostic, but direct randomized materialization
 would not by itself preserve polylogarithmic overhead; one would then need an
 exact integral certificate or a sharper entropy-sensitive rounding theorem.
 
+\begin{lemma}[Linear score pattern entropy]\label{lem:linear-pattern-entropy}
+   Let $\Omega\subseteq\R^k$, and let the activation predicates be
+   \[
+      a_i(q)=\mathbf 1\{\langle u_i,q\rangle\ge b_i\},
+      \qquad i=1,\ldots,N .
+   \]
+   Then the number of activation patterns
+   \[
+      \{(a_1(q),\ldots,a_N(q)):q\in\Omega\}
+   \]
+   is at most $N^{O(k)}$.  In particular,
+   \[
+      \log|\mathcal A|\le O(k\log(N+2)).
+   \]
+   The same bound holds if several certified children share the same
+   activation predicate; duplicated predicates do not increase the number of
+   realizable binary vectors except by duplicating coordinates.
+\end{lemma}
+
+\begin{proof}
+   The binary vector is constant on each relatively open face of the
+   arrangement of the $N$ hyperplanes
+   $\langle u_i,q\rangle=b_i$, with hyperplanes containing the face counted as
+   active because of the weak inequality.  Thus it is enough to bound the number
+   of faces of the arrangement.
+
+   We use the standard induction.  When the $N$th hyperplane is inserted, the
+   only new faces are obtained by cutting old faces that meet it.  Those cuts
+   are controlled by the arrangement induced by the first $N-1$ hyperplanes on
+   the new hyperplane, which has dimension at most $k-1$.  If $F(N,k)$ is the
+   maximum number of relatively open faces of an arrangement of $N$ hyperplanes
+   in $\R^k$, then
+   \[
+      F(N,k)\le F(N-1,k)+O(F(N-1,k-1)),
+      \qquad
+      F(N,0)=1,\quad F(0,k)=1 .
+   \]
+   Induction on $N+k$ gives $F(N,k)\le (CN)^k$ for a universal constant $C$.
+   Restricting to $\Omega$ can only decrease the number of realized patterns.
+   If predicates are duplicated, every duplicate coordinate is forced to equal
+   its original predicate, so no new choices are created.
+\end{proof}
+
+Thus cap, shell-normalized cap, and affine score filters have polylogarithmic
+pattern entropy after the standard projected localization, provided the number
+of distinct activation predicates is $m^{\log^{O_c(1)}m}$ or smaller and the
+projected dimension is $\log^{O_c(1)}m$.  The atom-safe subchildren used for
+materialization inherit their parent's activation predicate, so they do not
+increase this entropy.  Under these conditions \cref{lem:pattern-complete-cover}
+contributes only another polylogarithmic factor.
+
 Thus for modern regimes where preprocessing compute is relatively cheap, the
 right theoretical target is even cleaner: generate a very large candidate pool
 by residual sampling, all data directions, medoids, pair directions, or learned
