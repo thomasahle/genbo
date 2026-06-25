@@ -3318,6 +3318,102 @@ This certificate is the local form of the remaining problem. It is analogous in 
    Backward induction proves the claim.
 \end{proof}
 
+\begin{lemma}[Dominated route-law certificate]\label{lem:dominated-route-law}
+   Work in the setting of \cref{lem:saturated-value-recursion}, and write
+   $A(u)$ for the prefix-success mass from
+   \cref{lem:saturated-value-mincut}. For $p\in(0,1]$, the following are
+   equivalent.
+   \begin{enumerate}
+      \item The saturated value satisfies $U(\varnothing)\ge p$.
+      \item There is a probability distribution $\Lambda$ on the leaf routes
+      such that, for every trie node $u$,
+      \[
+         \Lambda(u):=\Lambda\{v\text{ leaf}:v\succeq u\}
+         \le \frac{A(u)}{p}.
+      \]
+   \end{enumerate}
+   Consequently, a cutset lower bound may be proved by constructing a route
+   law whose prefix probabilities are dominated by the corresponding
+   activation prefix probabilities up to the single global factor $p^{-1}$.
+\end{lemma}
+
+\begin{proof}
+   Suppose first that $U(\varnothing)\ge p$. By
+   \cref{lem:saturated-value-recursion}, choose unit-capped fractional
+   terminal weights $a_v$ with root value $p$. Define
+   \[
+      \Lambda(v)=\frac{a_vA(v)}{p}
+   \]
+   on leaves. These weights sum to one because the root value is
+   $\sum_v a_vA(v)=p$. For any node $u$,
+   \[
+      \Lambda(u)
+      =
+      \frac1p
+      \sum_{v\succeq u}a_vA(v)
+      =
+      \frac{A(u)V(u)}p
+      \le
+      \frac{A(u)}p,
+   \]
+   where $V(u)\le1$ is the unit suffix capacity.
+
+   Conversely, suppose such a law $\Lambda$ is given. For a leaf $v$, set
+   \[
+      a_v=\frac{p\,\Lambda(v)}{A(v)}
+   \]
+   when $A(v)>0$, and $a_v=0$ when $A(v)=0$. The leaf-prefix domination gives
+   $a_v\le1$. For a node $u$ with $A(u)>0$, the induced suffix value is
+   \[
+      V(u)
+      =
+      \sum_{v\succeq u}a_v\frac{A(v)}{A(u)}
+      =
+      \frac{p\,\Lambda(u)}{A(u)}
+      \le1.
+   \]
+   Nodes with $A(u)=0$ have zero contribution. Thus the terminal weights are
+   unit-capped and their root value is $p$. By
+   \cref{lem:saturated-value-recursion}, $U(\varnothing)\ge p$.
+\end{proof}
+
+\begin{corollary}[Route-law toll certificate]\label{cor:route-law-toll}
+   Let $\Lambda$ be a probability distribution on leaf routes. For an edge
+   $u\to w$, write
+   \[
+      \lambda_{u,w}=\Pr_{\Lambda}[w\mid u]
+      =
+      \frac{\Lambda(w)}{\Lambda(u)}
+   \]
+   when $\Lambda(u)>0$. Suppose every positive-$\Lambda$ root-to-leaf route
+   satisfies
+   \[
+      \sum_{u\to w\preceq v}
+      \log_+\frac{\lambda_{u,w}}{\gamma_{u,w}}
+      \le B,
+   \]
+   with the convention that the summand is $+\infty$ if
+   $\lambda_{u,w}>0$ and $\gamma_{u,w}=0$. Then
+   \[
+      U(\varnothing)\ge e^{-B}.
+   \]
+\end{corollary}
+
+\begin{proof}
+   Along any prefix $u$ of any positive-$\Lambda$ route, the displayed toll
+   bound gives
+   \[
+      \Lambda(u)
+      =
+      \prod_{e\preceq u}\lambda_e
+      \le
+      e^B\prod_{e\preceq u}\gamma_e
+      =
+      e^BA(u).
+   \]
+   Apply \cref{lem:dominated-route-law} with $p=e^{-B}$.
+\end{proof}
+
 \begin{corollary}[Cutset value delivery]\label{cor:cutset-value-delivery}
    In the setting of \cref{cor:fractional-value-delivery}, suppose every
    route has length at most $H$ and every route cut $\mathcal C$ in the
@@ -3560,6 +3656,16 @@ This certificate is the local form of the remaining problem. It is analogous in 
    By \cref{lem:saturated-value-mincut}, it is also equivalent to proving that
    every prefix cut through the tame-route trie has inverse-polylogarithmic
    prefix-success mass $\sum_{u\in\mathcal C}A(u)$.
+   \Cref{lem:dominated-route-law} gives the dual probabilistic form of the same
+   target: construct a law on tame routes whose chance of passing through any
+   prefix $u$ is at most a polylogarithmic factor times the activation prefix
+   mass $A(u)$. Equivalently, by \cref{cor:route-law-toll}, prove only
+   $O_c(\log\log n)$ positive domination toll
+   $\log_+(\lambda_{u,w}/\gamma_{u,w})$ along the chosen route law. The natural
+   candidate is the tilted tame-good route law from
+   \cref{lem:adaptive-continuation}; in homogeneous balanced prefixes its
+   prefix probabilities are smaller than the canonical activation factors, so
+   positive toll can only come from atypical geometric opportunities.
 \end{remark}
 
 \begin{remark}[The remaining aggregate value target]\label{rem:value-delivery-target}
@@ -5072,7 +5178,7 @@ For the randomized cap-thinning route, one remaining task is the branching first
    \le
    \log^{O_c(1)}n\,V(\varnothing)^2 .
 \]
-\Cref{lem:local-lca-energy} further reduces this to a local Bellman multiplier, and \cref{cor:square-nonexpansive-routes} shows that square-nonexpansive value branching costs only the polylogarithmic route depth. Equivalently, \cref{lem:energy-spine-toll} says that it is enough to prove only $O_c(\log\log n)$ positive square-energy toll along the energy-biased route spine. The capped-flow certificate \cref{lem:unit-capped-value-flow}, the Bellman recursion \cref{lem:saturated-value-recursion}, and the min-cut dual \cref{lem:saturated-value-mincut} give a still simpler sufficient formulation: prove that every route cut has inverse-polylogarithmic prefix-success mass. Conditional on either aggregate value statement, \cref{prop:budget-thinned-polylog} gives the desired polylogarithmic ANN theorem. This is a fully non-channel route; the smooth product terminal filter can be used after localization and no longer contributes an inverse-polylogarithmic table-recall penalty. The structured posterior route replaces the cap-frontier obstacle by \cref{asm:multiscale-structured-likelihood}: prove an output-sensitive reporter for pure likelihood rank prefixes, not a small explicitly enumerable channel. The smoothed sampling route replaces both by \cref{asm:smoothed-gibbs} or \cref{asm:gumbel-mips}: prove either an optimal-exponent reporter that captures inverse-polylogarithmic Gaussian Gibbs mass, or a certified $O(\log\log n)$-additive Gumbel-MIPS primitive. Smoothed additive nearest neighbor is another stronger sufficient primitive. The detector-vote cohort-or-leaf route is a separate possible generalization to arbitrary certified child hierarchies, where the remaining issue is near-lineage coupling between ordinary continuation paths and detector activations.
+\Cref{lem:local-lca-energy} further reduces this to a local Bellman multiplier, and \cref{cor:square-nonexpansive-routes} shows that square-nonexpansive value branching costs only the polylogarithmic route depth. Equivalently, \cref{lem:energy-spine-toll} says that it is enough to prove only $O_c(\log\log n)$ positive square-energy toll along the energy-biased route spine. The capped-flow certificate \cref{lem:unit-capped-value-flow}, the Bellman recursion \cref{lem:saturated-value-recursion}, and the min-cut dual \cref{lem:saturated-value-mincut} give a still simpler sufficient formulation: prove that every route cut has inverse-polylogarithmic prefix-success mass. The equivalent dominated-law form in \cref{lem:dominated-route-law} says to construct a tilted law on tame routes whose prefix probabilities are dominated by activation prefix masses up to a polylogarithmic factor; by \cref{cor:route-law-toll}, this is the same as proving only logarithmic positive domination toll along that route law. Conditional on either aggregate value statement, \cref{prop:budget-thinned-polylog} gives the desired polylogarithmic ANN theorem. This is a fully non-channel route; the smooth product terminal filter can be used after localization and no longer contributes an inverse-polylogarithmic table-recall penalty. The structured posterior route replaces the cap-frontier obstacle by \cref{asm:multiscale-structured-likelihood}: prove an output-sensitive reporter for pure likelihood rank prefixes, not a small explicitly enumerable channel. The smoothed sampling route replaces both by \cref{asm:smoothed-gibbs} or \cref{asm:gumbel-mips}: prove either an optimal-exponent reporter that captures inverse-polylogarithmic Gaussian Gibbs mass, or a certified $O(\log\log n)$-additive Gumbel-MIPS primitive. Smoothed additive nearest neighbor is another stronger sufficient primitive. The detector-vote cohort-or-leaf route is a separate possible generalization to arbitrary certified child hierarchies, where the remaining issue is near-lineage coupling between ordinary continuation paths and detector activations.
 
 \appendix
 
