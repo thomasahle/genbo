@@ -1901,6 +1901,42 @@ a route-value allocation, or a posterior/rank-prefix reporter that avoids
 listing every valid point in the middle-density regime
 $m^\rho\ll |P\cap\Ball(q,cr)|\ll m^{1-\rho}$.
 
+\begin{lemma}[Budgeted pure-alternative sampling]
+   \label{lem:budgeted-pure-alternative-sampling}
+   Fix one query $q$ in a node.  Let $A(q)$ be a finite candidate set that a
+   query sampler can draw from, and let $V(q)\subseteq A(q)$ be a set of pure
+   terminal alternatives: every element of $V(q)$ carries a representative
+   point within distance $cr$ of $q$.  If the sampler returns independent
+   uniform elements of $A(q)$, then after $B$ samples and verification the
+   failure probability is at most
+   \[
+      \left(1-\frac{|V(q)|}{|A(q)|}\right)^B
+      \le
+      \exp\!\left(-B\frac{|V(q)|}{|A(q)|}\right).
+   \]
+   In particular, if the sampler is supported on pure alternatives
+   $(A(q)=V(q))$, one sample succeeds whenever $V(q)\ne\emptyset$, independent
+   of $|V(q)|$.
+\end{lemma}
+
+\begin{proof}
+   A sampled alternative in $V(q)$ returns a representative within distance
+   $cr$ of $q$, and verification accepts it.  The samples are independent, so
+   the miss probability is exactly the probability that none of them falls in
+   $V(q)$, giving the displayed bound.
+\end{proof}
+
+Thus the obstruction in
+\cref{lem:middle-density-singleton-obstruction} is specifically an
+all-reporting obstruction.  Middle-density terminal alternatives are harmless
+if the query can sample from a pure active family, or from a candidate family
+whose pure fraction is inverse-polylogarithmic.  This is the terminal analogue
+of the saturated value-delivery formulation below: a large number of parallel
+valid alternatives should contribute success probability, not active listing
+cost.  It is also the reason the structured posterior target asks for
+output-sensitive rank-prefix sampling/reporting rather than an explicit list of
+all near singletons.
+
 This also gives a safe way to use an empirical cover such as $k$-means without
 claiming that Lloyd's objective proves anything. At a node, store an arbitrary
 certified cover together with a capped decoder. On query $q$, the decoder either
