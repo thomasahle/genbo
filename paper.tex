@@ -3936,6 +3936,67 @@ query time pays only for output-sensitive list decoding.
    calculation, with polylogarithmic rather than \(m^{o(1)}\) slack.
 \end{remark}
 
+\begin{corollary}[Small-signature Gaussian quadrature compiler]
+   \label{cor:small-signature-gaussian-quadrature}
+   Work in the setting of
+   \cref{lem:continuous-gaussian-finite-witness}.  Let
+   \(D=|\mathcal Q|+|\mathcal N|+1\), and suppose
+   \[
+      D\le m^\rho L_m
+   \]
+   for a polylogarithmic factor \(L_m\).  Then there is a retained weighted
+   Gaussian panel with at most \(D\) labels such that
+   \[
+      \sum_{x\in P}
+      |\{g:\ip{g}{x}\ge T\}|
+      \le m^{1+\rho}L_m,
+      \tag{SQ1}
+   \]
+   and, for every \(q\in\mathcal Q\),
+   \[
+      \sum_{\substack{x\in P\\ x\text{ invalid for }q}}
+      \sum_{\substack{g\\\ip{g}{x}\ge T}}\pi_q(g)
+      \le 2m^\rho,
+      \tag{SQ2}
+   \]
+   while every \((p,q)\in\mathcal N\) satisfies
+   \[
+      \sum_{\substack{g\\\ip{g}{p}\ge T}}\pi_q(g)
+      \ge\frac13 .
+      \tag{SQ3}
+   \]
+   The query can sample from \(\pi_q(g)\propto w_g e^{\beta\ip{g}{q}}\) by a
+   direct scan over the retained labels in \(O(d\,m^\rho L_m)\) arithmetic
+   operations.
+\end{corollary}
+
+\begin{proof}
+   Apply \cref{lem:continuous-gaussian-finite-witness} and keep the
+   \(s\le D\) labels supplied there, after discarding any zero-weight labels.
+   The far and near conditions are exactly \((CG1)\) and \((CG2)\).  For
+   storage, each retained label stores at most all \(m\) data points, so the
+   total number of point-label incidences is at most
+   \(ms\le mD\le m^{1+\rho}L_m\).  Finally, direct sampling computes all \(s\)
+   tilted weights \(w_g e^{\beta\ip{g}{q}}\), forms their prefix sums, and
+   draws one label; since \(s\le m^\rho L_m\), this is within the stated work.
+\end{proof}
+
+\begin{remark}[Signature entropy is the charged obstruction]
+   \label{rem:signature-entropy-obstruction}
+   \Cref{cor:small-signature-gaussian-quadrature} is deliberately finite.  It
+   shows that once the continuum of promised queries and near witnesses is
+   compressed to \(m^\rho\polylog m\) exact signatures, storage and sampling no
+   longer require a sophisticated lattice decoder: a direct retained weighted
+   panel already fits the terminal \(m^\rho\) budget.  For the full ANN problem
+   the signature family is not known to be this small.  A code, lattice,
+   trellis, or list-recovery construction should therefore be judged by the
+   entropy of the exact certificates it represents: if it exposes too many
+   query/witness signatures, then Caratheodory support alone blows up storage;
+   if it represents them compactly and samples without scanning more than
+   \(m^\rho\polylog m\) labels, the Gaussian quadrature part is already
+   certified.
+\end{remark}
+
 \begin{remark}[Lattice Gaussian panels as sampled decoders]
    \label{rem:lattice-gaussian-panels}
    \Cref{prop:sampled-structured-panel} is the sampler analogue of the
@@ -12819,6 +12880,11 @@ positive fact for the unrestricted Gaussian label universe: every finite test
 set has feasible tilted weights with strict slack.  Hence the missing theorem
 is not weight existence in the ideal spectrum, but a finite low-storage,
 query-decodable quadrature for that spectrum.
+\Cref{cor:small-signature-gaussian-quadrature} adds the useful boundary case:
+if the all-query constraints collapse to at most \(m^\rho\polylog m\) exact
+signatures, the Caratheodory support itself is small enough to store and to
+sample by a direct scan.  The remaining obstruction is therefore signature
+entropy and compact decoding, not the finite weighted Gaussian calculation.
 \Cref{rem:outer-list-recovery-codebook} records the stronger alternative
 suggested by list-decoding codes and lattices: instead of decoding the full
 Cartesian product, retain a sparse outer code or lattice coset and use soft
