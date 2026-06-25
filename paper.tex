@@ -3817,6 +3817,68 @@ query time pays only for output-sensitive list decoding.
    far sampled co-load, and near sampled mass.
 \end{remark}
 
+\begin{lemma}[Compressed aggregate sampler]
+   \label{lem:compressed-aggregate-sampler}
+   Let a finite acyclic directed graph have source \(s\), terminal states
+   \(\mathcal T\), and edges \(e=(u,v)\).  A label is a path from \(s\) to a
+   terminal \(t\), and each terminal has a bucket class \(b(t)\in\mathcal B\).
+   Suppose the tilted weight of a path factors as
+   \[
+      \prod_{e\in\pi}r_e(q),
+      \qquad r_e(q)>0.
+   \]
+   For a query \(q\), define suffix partition functions by the backward
+   recursion
+   \[
+      H_q(t)=1\quad(t\in\mathcal T),
+      \qquad
+      H_q(u)=\sum_{(u,v)}r_{(u,v)}(q)H_q(v)
+   \]
+   at nonterminal states.  Then a top-down walk that, at state \(u\), chooses
+   the edge \((u,v)\) with probability
+   \[
+      \frac{r_{(u,v)}(q)H_q(v)}{H_q(u)}
+   \]
+   outputs a terminal bucket \(b\) with probability proportional to the
+   aggregate tilted weight of all labels ending in that bucket:
+   \[
+      \Pr[b(t)=b]
+      =
+      \frac{
+         \sum_{\pi:s\leadsto t,\ b(t)=b}\prod_{e\in\pi}r_e(q)
+      }{
+         \sum_{\pi:s\leadsto t}\prod_{e\in\pi}r_e(q)
+      } .
+   \]
+   The preprocessing may attach to each bucket class \(b\) its stored point set
+   \(C_b\).  If the graph partition functions and the sampled path can be
+   computed in \(d\log^{O_c(1)}m\) time, and the induced bucket law satisfies
+   \((BQ1)\)--\((BQ3)\), then the terminal ANN bounds of
+   \cref{prop:sampled-structured-panel} follow.
+\end{lemma}
+
+\begin{proof}
+   For any state \(u\), the quantity \(H_q(u)\) is exactly the total tilted
+   weight of all suffix paths from \(u\) to a terminal.  Therefore the displayed
+   transition probabilities are normalized and sample a path with probability
+   equal to its tilted weight divided by \(H_q(s)\).  Summing over all sampled
+   paths whose terminal has bucket class \(b\) gives the displayed bucket
+   probability.  The final statement is precisely
+   \cref{cor:bucket-quotient-quadrature}.
+\end{proof}
+
+\begin{remark}[Trellis target for codes and lattices]
+   \label{rem:trellis-quotient-target}
+   \Cref{lem:compressed-aggregate-sampler} is the sampled analogue of the
+   Fano/list-decoding DAG certificates earlier in the paper.  A code or lattice
+   construction need not expose its labels as an explicit list.  It may expose
+   a compact state graph whose path weights are the query reliabilities, whose
+   terminals map to stored buckets, and whose dynamic program samples the
+   quotient bucket law.  The remaining theorem for such a trellis is then only
+   the spectrum certificate \((BQ1)\)--\((BQ3)\) plus the graph-size/query-time
+   bound for evaluating \(H_q\).
+\end{remark}
+
 \begin{lemma}[Tilted weight feasibility is linear]
    \label{lem:tilted-weight-linear-feasibility}
    Fix a finite retained label set \(\mathcal L\) and storage predicate
@@ -12978,6 +13040,10 @@ labels with the same stored point set may be quotient-merged, so storage
 depends on distinct buckets while the query samples their aggregate tilted
 weight.  This is the natural form for trellises, code cosets, lattice shells,
 and rank-prefix reporters.
+\Cref{lem:compressed-aggregate-sampler} gives the corresponding compact
+decoder interface: a path-weighted DAG samples the quotient bucket law by a
+backward partition-function recursion, so the charged object is graph size and
+bucket spectrum rather than raw label count.
 \Cref{lem:tilted-weight-linear-feasibility} shows that, for a fixed retained
 pool, choosing those weights is just a linear feasibility problem after
 clearing the tilted partition functions.  Failure has a concrete dual
