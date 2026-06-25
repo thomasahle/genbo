@@ -8499,6 +8499,69 @@ This certificate is the local form of the remaining problem. It is analogous in 
    \(\sum_w\Phi(w)\le\Phi(u)\) because all terms are nonnegative.
 \end{proof}
 
+\begin{lemma}[Least superharmonic majorant]
+   \label{lem:least-superharmonic-majorant}
+   Let \(\mathcal T\) be a finite rooted trie and let \(b(u)\ge0\) be a charge
+   on trie nodes.  Define \(\Phi^*\) by the backward recursion
+   \[
+      \Phi^*(u)=b(u)\quad\text{at leaves},
+   \]
+   and, at internal nodes,
+   \[
+      \Phi^*(u)=
+      \max\left\{
+         b(u),\,
+         \sum_{w\in\operatorname{ch}(u)}\Phi^*(w)
+      \right\}.
+   \]
+   Then \(\Phi^*\) is the pointwise least nonnegative potential satisfying
+   \[
+      b(u)\le\Phi(u),
+      \qquad
+      \sum_{w\in\operatorname{ch}(u)}\Phi(w)\le\Phi(u)
+   \]
+   at every node.  Moreover, for every node \(v\),
+   \[
+      \Phi^*(v)
+      =
+      \max_{\mathcal C\subseteq\mathcal T_v\ {\rm antichain}}
+      \sum_{u\in\mathcal C}b(u),
+   \]
+   where \(\mathcal T_v\) is the subtree rooted at \(v\).  Thus the existence
+   of a potential with \(\Phi(\varnothing)\le C/H_0\) is equivalent to the
+   single computable inequality
+   \[
+      \Phi^*(\varnothing)\le \frac{C}{H_0}.
+   \]
+\end{lemma}
+
+\begin{proof}
+   The recursion immediately gives \(b(u)\le\Phi^*(u)\) and
+   \(\sum_w\Phi^*(w)\le\Phi^*(u)\), so \(\Phi^*\) is feasible.  If \(\Phi\) is
+   any other feasible potential, then at leaves
+   \(\Phi(u)\ge b(u)=\Phi^*(u)\).  Inductively, at an internal node,
+   \[
+      \Phi(u)
+      \ge
+      b(u),
+      \qquad
+      \Phi(u)
+      \ge
+      \sum_w\Phi(w)
+      \ge
+      \sum_w\Phi^*(w),
+   \]
+   hence \(\Phi(u)\ge\Phi^*(u)\).  This proves pointwise minimality.
+
+   The antichain formula follows by the same backward induction.  In the
+   subtree of a leaf \(v\), the largest antichain charge is \(b(v)\).  At an
+   internal node \(v\), an antichain in \(\mathcal T_v\) either contains
+   \(v\), giving charge \(b(v)\), or is the disjoint union of antichains in the
+   child subtrees, giving maximum total charge
+   \(\sum_w\Phi^*(w)\) by induction.  Taking the maximum of these two cases is
+   exactly the displayed recursion.
+\end{proof}
+
 \begin{lemma}[Superharmonic potential route law]
    \label{lem:superharmonic-potential-route-law}
    Let \(\mathcal T\) be a finite rooted trie whose leaves are successful
@@ -8696,6 +8759,41 @@ This certificate is the local form of the remaining problem. It is analogous in 
    \cref{cor:antichain-transition-waterfill}.  The Fano work and success
    conclusion is \cref{cor:existential-antichain-fano} with
    \(B=H_0\log C\).
+\end{proof}
+
+\begin{corollary}[Offline superharmonic route verifier]
+   \label{cor:offline-superharmonic-route-verifier}
+   Work in the setting of \cref{cor:local-potential-antichain-fano}.  Suppose
+   preprocessing has produced a finite successful-route trie for one query
+   signature, with computable charges \(a_*(u)\), raw route reliabilities,
+   admissible prefix upper certificates, terminal prices, and child-generation
+   rules for the Fano decoder.  Let \(\Phi^*\) be the least superharmonic
+   majorant of the charges \(a_*(u)\), computed by
+   \cref{lem:least-superharmonic-majorant}.
+
+   If
+   \[
+      \Phi^*(\varnothing)\le \frac{C}{H_0},
+   \]
+   and the top-down route law and transition-aware water-filled allocation
+   induced by \(\Phi^*\) are query-decodable, then the conclusion of
+   \cref{cor:local-potential-antichain-fano} holds with this canonical
+   potential.  In particular, when \(H_0\log C=O_c(\log\log m)\), the accepted
+   signature has only polylogarithmic overhead over \(F\).
+
+   The verifier is complete for this certificate family: if any feasible
+   superharmonic potential has root at most \(C/H_0\), then the computed
+   \(\Phi^*\) also has root at most \(C/H_0\).
+\end{corollary}
+
+\begin{proof}
+   By \cref{lem:least-superharmonic-majorant}, \(\Phi^*\) is feasible for the
+   local-potential hypotheses and is pointwise no larger at the root than any
+   other feasible potential.  Therefore the displayed root test is exactly the
+   antichain-charge certificate for the trie.  Applying
+   \cref{cor:local-potential-antichain-fano} with \(\Phi=\Phi^*\) gives the
+   Fano work and success bound.  The completeness statement is the pointwise
+   minimality of \(\Phi^*\).
 \end{proof}
 
 \begin{lemma}[Finite convex-linear minimax]\label{lem:finite-convex-minimax}
@@ -11709,6 +11807,14 @@ separate antichain-flow materialization is needed.  \Cref{cor:local-potential-an
 packages this with the Fano decoder, so the remaining geometric theorem can be
 attacked by local potential inequalities rather than by explicitly
 constructing the route law.
+\Cref{lem:least-superharmonic-majorant} makes the certificate canonical: the
+least feasible \(\Phi^*\) is computed by a backward dynamic program and
+\(\Phi^*(\varnothing)\) is exactly the maximum antichain charge.  Hence
+\cref{cor:offline-superharmonic-route-verifier} gives a finite offline
+acceptance test for any proposed successful-route trie.  Expensive
+preprocessing may search over route tries, score panels, and saturated covers,
+but the retained index only needs a decodable accepted trie, its canonical
+potential, and the corresponding Fano threshold reporter.
 \Cref{cor:existential-antichain-fano} composes this with the Fano decoder in
 the ANN-correct existential form: if the union of valid terminal routes has the
 same antichain charge bound and every such route has \(O_c(\log\log n)\) raw
