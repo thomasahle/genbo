@@ -6002,6 +6002,55 @@ This certificate is the local form of the remaining problem. It is analogous in 
    Summing and using the certified profile budget gives the result.
 \end{proof}
 
+\begin{lemma}[Budget-allocation thinning normal form]
+   \label{lem:budget-allocation-thinning}
+   In the setting of \cref{lem:budget-thinned-opportunities}, let
+   \(\mathcal Y_q(u)\ge0\) be any predictable allocation on first-opportunity
+   prefixes. Suppose it has the certified budget
+   \[
+      \E\sum_{u\in\mathcal A(q)}\mathcal Y_q(u)
+      \le F_4(m,R).
+   \]
+   Activate the geometric children at \(u\) with probability
+   \[
+      \pi_Y(u)
+      =
+      \min\left\{
+         1,\,
+         \frac{(1-\kappa\eta^2)\mathcal Y_q(u)}
+              {\Gamma(u)}
+      \right\},
+   \]
+   with the convention \(\pi_Y(u)=1\) when \(\Gamma(u)=0\). Then
+   \[
+      \E\left[
+         \sum_{u\in\mathcal A(q)}
+         \mathbf 1_{\{\text{$u$ activates}\}}\Gamma(u)
+      \right]
+      \le
+      (1-\kappa\eta^2)F_4(m,R).
+   \]
+   The canonical rule is the special case
+   \(\mathcal Y_q(u)=\mathcal B_q(u)\), and the pruned multiplier rule is the
+   special case \(\mathcal Y_q(u)=r_q(u)\mathcal B_q(u)\).
+\end{lemma}
+
+\begin{proof}
+   Condition on the realized first-opportunity frontier. For every
+   \(u\in\mathcal A(q)\),
+   \[
+      \E\!\left[
+         \mathbf 1_{\{\text{$u$ activates}\}}\Gamma(u)
+         \,\middle|\,\mathcal A(q),u
+      \right]
+      =
+      \pi_Y(u)\Gamma(u)
+      \le
+      (1-\kappa\eta^2)\mathcal Y_q(u).
+   \]
+   Summing and using the certified allocation budget proves the claim.
+\end{proof}
+
 \begin{remark}[Extreme-pruning interpretation]\label{rem:extreme-pruning-interpretation}
    \Cref{lem:pruned-budget-thinning} is the score-tree analogue of extreme
    pruning in lattice enumeration~\cite{GNR10}. The multiplier \(r_q(u)\) may
@@ -6012,7 +6061,11 @@ This certificate is the local form of the remaining problem. It is analogous in 
    certified one, provided the query can decode the profile and the retained
    representation is charged to the index. The canonical budget-thinned rule is
    therefore just the uniform feasible profile \(r_q\equiv1\), not a forced
-   algorithmic choice.
+   algorithmic choice.  Equivalently, by
+   \cref{lem:budget-allocation-thinning}, the query may work directly with a
+   certified allocation \(\mathcal Y_q\) of its \(F_4(m,R)\) recursive budget.
+   This removes the canonical budget from the activation formula; the canonical
+   and pruned rules are merely two ways to parameterize the same allocation.
 \end{remark}
 
 \begin{lemma}[Canonical budget activation factor]\label{lem:canonical-budget-activation}
@@ -6796,6 +6849,47 @@ This certificate is the local form of the remaining problem. It is analogous in 
    \(\mathcal B_q^{\rm mix}(u(e))\).
 \end{proof}
 
+\begin{corollary}[Allocation-defect toll certificate]
+   \label{cor:allocation-defect-toll}
+   Consider a candidate near-route trie in which deterministic score edges and
+   budget-stable recentering edges have success probability \(1\). Every
+   remaining required recentering edge \(e\) has certified recursive charge
+   \(\Gamma_e\), receives a certified activation allocation \(Y_e\ge0\), and
+   is activated with probability \(\gamma_e\) satisfying
+   \[
+      \gamma_e\ge
+      \min\left\{
+         1,\,
+         \frac{(1-\kappa\eta^2)Y_e}{\Gamma_e}
+      \right\},
+   \]
+   with the convention that the displayed lower bound is \(1\) when
+   \(\Gamma_e=0\). Define the allocation defect by
+   \[
+      \Delta^{(Y)}_e
+      =
+      \log_+
+      \frac{\Gamma_e}{(1-\kappa\eta^2)Y_e},
+   \]
+   with ratio \(+\infty\) when \(\Gamma_e>0\) and \(Y_e=0\), and ratio \(0\)
+   when \(\Gamma_e=0\). Put \(\Delta^{(Y)}_e=0\) on deterministic score and
+   budget-stable edges. If a route law \(\Lambda\) satisfies
+   \[
+      \Lambda\left\{v:\sum_{e\preceq v}\Delta^{(Y)}_e\le B\right\}\ge h,
+   \]
+   then \(U(\varnothing)\ge he^{-B}\). If
+   \[
+      \E_\Lambda\sum_{e\preceq v}\Delta^{(Y)}_e\le B,
+   \]
+   then \(U(\varnothing)\ge \frac12e^{-2B}\).
+\end{corollary}
+
+\begin{proof}
+   This is \cref{cor:typical-route-law-toll} applied exactly as in
+   \cref{cor:canonical-budget-defect-toll}, with \(Y_e\) replacing the local
+   budget.
+\end{proof}
+
 \begin{corollary}[Prefix-energy route-law certificate]\label{cor:route-law-prefix-energy}
    Let $\Lambda$ be a probability distribution on leaf routes and let $A(u)$
    be the activation prefix mass. Define the prefix $\chi^2$ energy
@@ -7413,6 +7507,26 @@ This certificate is the local form of the remaining problem. It is analogous in 
    \]
    and only \(O_c(\log\log n)\) expected pruned defect along the tilted tame
    route law.
+   The allocation form \cref{lem:budget-allocation-thinning} and
+   \cref{cor:allocation-defect-toll} remove even this parameterization.  Write
+   a certified allocation as
+   \(Y_q(e)=F_4(m,R)y_q(e)\), where \(y_q\) is a subprobability distribution on
+   the first-opportunity edges decoded by the query.  A fully canonical
+   remaining theorem would be: for every query state, construct one decodable
+   \(y_q\), independent of which near point will witness the query, such that
+   for every unresolved near point \(p\) there is a tame route law with edge
+   occupation probabilities \(\ell^p_e\) satisfying
+   \[
+      \sum_e\ell^p_e
+      \log_+
+      \frac{\Gamma_e}
+           {(1-\kappa\eta^2)F_4(m,R)y_q(e)}
+      =
+      O_c(\log\log n).
+   \]
+   This is the exact analogue of optimizing a sphere-decoder pruning profile:
+   the build phase may search for the profile, but the query must decode the
+   retained allocation and its total mass must be certified.
    \Cref{lem:cut-energy-route-law} is the sharpest form for a stopping-frontier
    proof: it is enough to show that, for every route cut $\mathcal C$,
    \[
@@ -9036,6 +9150,12 @@ route-law toll as the cumulative log deficit
 an offline-certified multiplier profile may reallocate activation probability
 toward reliable near-route prefixes, so the relevant toll becomes the pruned
 defect \(\log_+(\Gamma/(r\mathcal B_q^{\rm mix}))\).
+\Cref{lem:budget-allocation-thinning} and
+\cref{cor:allocation-defect-toll} simplify this further: the algorithm only
+needs a directly certified activation allocation \(Y\), and the toll becomes
+\(\log_+(\Gamma/Y)\).  Thus the remaining profile problem can be stated as a
+single decodable subprobability allocation over first opportunities, rather
+than as a multiplier of the canonical budget.
 The guard refinement
 \cref{lem:low-guard-shadow} further removes points whose entire near-query
 neighborhood is already high-density: the finite dual now prices only the
