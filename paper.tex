@@ -1213,6 +1213,53 @@ for disjoint children. Polynomially many shells and bounded-diameter roots contr
    and convexity gives $\sum_Cm_C^{1+\rho}\le m^{1+\rho}$. The prefix-conditioned slice case is the storage part of \cref{lem:prefix-slice-accounting}.
 \end{proof}
 
+\begin{lemma}[Fractional value-budget compiler]\label{lem:fractional-value-budget}
+   Let a query state have certified candidate children $C\in\mathcal C$. For
+   each child, suppose there is a recursive randomized subroutine which, when
+   called on $C$, has expected work at most $W_C$ and, conditioned on the true
+   near point lying in $C$, succeeds with probability at least $\sigma_C$. Give
+   the children nonnegative budgets $b_C$ with
+   \[
+      \sum_{C\in\mathcal C} b_C\le B.
+   \]
+   Run the recursive subroutine on child $C$ independently with probability
+   \[
+      \theta_C=\min\left\{1,\frac{b_C}{W_C}\right\}.
+   \]
+   Then the expected recursive work is at most $B$, and if the true near point
+   lies in $C^\star$, the conditional success probability contributed by this
+   fractional layer is at least
+   \[
+      \theta_{C^\star}\sigma_{C^\star}
+      =
+      \min\left\{1,\frac{b_{C^\star}}{W_{C^\star}}\right\}
+      \sigma_{C^\star}.
+   \]
+   In particular, if $W_C=F(m_C,R_C)$ and
+   $\sigma_C\ge\log^{-A_c}n$, then $b_C$ units of budget buy value at least
+   \[
+      \min\{b_C,W_C\}\,F(m_C,R_C)^{-1}\log^{-A_c}n
+   \]
+   for that one unamplified call, while one full child call corresponds to
+   $b_C\simeq W_C$.
+\end{lemma}
+
+\begin{proof}
+   The expected work is
+   \[
+      \sum_C \theta_C W_C
+      =
+      \sum_C \min\{W_C,b_C\}
+      \le
+      \sum_C b_C
+      \le B.
+   \]
+   If the near point lies in $C^\star$, the child is called with probability
+   $\theta_{C^\star}$ and then succeeds with probability at least
+   $\sigma_{C^\star}$, independently of the call coin. The displayed value
+   bound is the specialization to $W_C=F(m_C,R_C)$.
+\end{proof}
+
 \begin{remark}[Cost and value surrogates]\label{rem:cost-value-surrogates}
    The threshold $T_C=\log^{A_c}n\,F(m_C,R_C)$ is the conservative all-or-nothing version of the same closed-form surrogate idea used by Andoni and Beaglehole~\cite{AB22}. They replace an intractable recursive success probability by a closed-form lower bound in the local min-max game. Here
    \[
@@ -1222,7 +1269,11 @@ for disjoint children. Polynomially many shells and bounded-diameter roots contr
    \]
    should be viewed as paired work and value surrogates: $W$ is the budget needed to make a child fully searchable, while $\sigma$ is the closed-form value of one unit of unamplified recursive success inside that child.
 
-   This suggests a cleaner integer-materialization target. Instead of opening $C$ only after it has received enough votes to pay for a full child search, let $b_C$ detector votes buy a $b_C/W(m_C,R_C)$ fraction of the child search. If the recursive continuation procedure is made splittable under independent thinning of its query branches, this uses expected work $b_C$ and gives conditional success value
+   \Cref{lem:fractional-value-budget} gives the corresponding fractional
+   compiler. Instead of opening $C$ only after it has received enough votes to
+   pay for a full child search, let $b_C$ detector votes buy a
+   $b_C/W(m_C,R_C)$ fraction of the child search. This uses expected work
+   $b_C$ and gives conditional success value
    \[
       \Omega\!\left(\frac{b_C}{W(m_C,R_C)}\right)\log^{-O_c(1)}n
       =
