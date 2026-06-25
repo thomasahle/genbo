@@ -2326,6 +2326,63 @@ surrogate loss, namely average squared reconstruction error; the score-power
 variant trains directly against the quantity that controls recursive query
 work.
 
+The easiest part of this program to make self-contained is the seeding step.
+Instead of running Lloyd updates, use a $k$-means++-style residual sampler to
+propose cap directions, and then certify every proposed cap by scanning the
+node.
+
+\begin{lemma}[Residual cap seeding]\label{lem:residual-cap-seeding}
+   Work in one shell around $o$ and write
+   $\widehat x_o=(x-o)/\|x-o\|$.  Let $a_x\ge0$ be arbitrary residual weights
+   on the current resident set, let $a(P)=\sum_{x\in P}a_x>0$, and sample
+   $T$ independent candidate directions by drawing $X_t\in P$ with probability
+   $a_x/a(P)$ and setting $u_t=\widehat X_{t,o}$.  Suppose a set
+   $A\subseteq P$ satisfies
+   \[
+      \sum_{x\in A}a_x\ge \alpha a(P)
+   \]
+   and has shell-normalized diameter at most $\eta$,
+   \[
+      \|\widehat x_o-\widehat y_o\|\le\eta
+      \qquad\text{for all }x,y\in A .
+   \]
+   Then, with probability at least $1-e^{-\alpha T}$, one sampled direction
+   $u_t$ satisfies
+   \[
+      A\subseteq
+      \left\{
+         y\in P:\langle u_t,\widehat y_o\rangle\ge1-\frac{\eta^2}{2}
+      \right\}.
+   \]
+\end{lemma}
+
+\begin{proof}
+   Each sample lands in $A$ with probability at least $\alpha$, so the
+   probability that no sample lands in $A$ is at most
+   $(1-\alpha)^T\le e^{-\alpha T}$.  If $X_t\in A$, then for every $y\in A$,
+   \[
+      \langle \widehat X_{t,o},\widehat y_o\rangle
+      =
+      1-\frac12\|\widehat X_{t,o}-\widehat y_o\|^2
+      \ge
+      1-\frac{\eta^2}{2},
+   \]
+   which is the displayed cap containment.
+\end{proof}
+
+Taking $a_x$ to be the squared distance from $\widehat x_o$ to the current
+candidate directions gives the spherical analogue of $k$-means++ seeding.
+Taking $a_x$ to be an uncovered near-pair or active-power residual gives the
+score-power version.  The lemma is deliberately weaker than a Lloyd guarantee:
+it only says that any cap carrying a noticeable fraction of the current
+residual weight is proposed after logarithmically many samples.  That is the
+property needed by the certified-cover route, because the proposed cap is
+subsequently verified and used only if its active-power certificate is good.
+The remaining worst-case theorem is therefore not a statement about the
+convergence of Lloyd's objective; it is a statement that every tame node exposes
+enough residual weight on certifiable low-stabbing caps, or else the guard or
+baseline score process handles the query.
+
 \subsection{Simplicity and implementation}
 
 The filtering work remains level-synchronous. At one checkpoint, all active score paths can be advanced by a batched matrix multiplication, followed by continuation-mass pruning, cap-test lookup, randomized child thinning, and resident scans. Recentering updates stored coordinate offsets; it does not start a fresh score tree.
