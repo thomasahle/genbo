@@ -3133,6 +3133,47 @@ not need this enumeration to be efficient: after the certificate is accepted,
 the query algorithm only evaluates its ordinary decoder and pays for the listed
 children.
 
+\begin{lemma}[Dominated child pruning]\label{lem:dominated-child-pruning}
+   Let $\mathcal R$ be a finite retained family of certified children over a
+   query domain $\Omega$.  Each child $C$ has a point set $P_C$, activation
+   predicate $a_C(q)\in\{0,1\}$, active weight
+   $w_C=|P_C|^\rho\Psi(R_C)$, and storage weight
+   $s_C=|P_C|^{1+\rho}\Psi(R_C)$.  Suppose two children $C,D\in\mathcal R$
+   satisfy
+   \[
+      P_C\subseteq P_D,
+      \qquad
+      a_C(q)\le a_D(q)\quad(q\in\Omega).
+   \]
+   Then deleting $C$ preserves every routing guarantee witnessed by
+   $\mathcal R$, and weakly decreases both the active-power certificate
+   \[
+      \sup_{q\in\Omega}\sum_{E\in\mathcal R}a_E(q)w_E
+   \]
+   and the storage-power certificate
+   \[
+      \sum_{E\in\mathcal R}s_E .
+   \]
+   Repeating this deletion process terminates with an antichain under the
+   domination order
+   \[
+      C\preceq D
+      \quad\Longleftrightarrow\quad
+      P_C\subseteq P_D\text{ and }a_C\le a_D\text{ on }\Omega .
+   \]
+\end{lemma}
+
+\begin{proof}
+   The active and storage sums only lose the nonnegative terms contributed by
+   $C$, so the two certificates cannot increase.  For routing, consider a near
+   pair whose previous witness was child $C$: the near point lies in $P_C$ and
+   the query satisfies $a_C(q)=1$.  Since $P_C\subseteq P_D$ and
+   $a_C(q)\le a_D(q)$, the same query also activates $D$, which contains the
+   same near point.  Thus $D$ replaces $C$ as a valid witness.  The family is
+   finite, so repeated deletions terminate, and termination means no dominated
+   pair remains.
+\end{proof}
+
 \begin{lemma}[Shared-predicate decoder accounting]
    \label{lem:shared-predicate-decoder}
    Consider a retained family of nonempty certified children
@@ -3225,6 +3266,9 @@ followed by the prefix test of \cref{lem:atom-safe-subchild}.
 query to rescore every retained subchild separately: subchildren inherit their
 parent activation predicate, and their record enumeration is paid by the same
 active-power sum.
+\Cref{lem:dominated-child-pruning} gives the complementary retained-cover
+normal form: along any nested chain of subchildren with inherited activation,
+only maximal retained members need to be stored.
 
 \begin{corollary}[Price-density subchild certificate]
    \label{cor:price-density-subchild}
