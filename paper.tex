@@ -2298,6 +2298,8 @@ different levels of abstraction.
       \quad\text{or, in the transition-aware form,}\quad
       \pi_q(e)=\log_+\frac{\lambda_ea_e}{y_e}.
    \]
+   The zero-charge and zero-allocation conventions are the same as in
+   \cref{lem:waterfilled-allocation}.
    Let \(A_q,\overline A_q\) be any raw route score and raw admissible upper
    score.  If the unpriced prefix moment satisfies
    \[
@@ -2339,6 +2341,97 @@ different levels of abstraction.
    The terminal-price estimate is identical.  The final sentence is the
    definition of the allocation and transition-aware defects, combined with
    \cref{lem:fano-biased-prefix-list}.
+\end{proof}
+
+\begin{corollary}[Robust water-filled Fano compiler]
+   \label{cor:robust-fano-allocation-compiler}
+   Fix one query state and a finite family of witness route laws
+   \(\{\Lambda_i\}_{i\in I}\) on the same route trie.  For each witness
+   \(i\), let \(\mathcal G_i\) be terminal routes whose output procedures are
+   valid for the corresponding unresolved near objective.  Suppose
+   \(\Lambda_i\) is supported on \(\mathcal G_i\), and suppose every route in
+   this support has raw reliability margin
+   \[
+      A_q(z)\ge\Theta+2B .
+   \]
+   Let a single decodable allocation \(y\) define nonnegative Fano branch
+   prices
+   \[
+      \pi_q(e)=\log_+\frac{a_e}{y_e}
+      \quad\text{or}\quad
+      \pi_q(e)=\log_+\frac{\bar\lambda_ea_e}{y_e}
+   \]
+   for a decodable transition envelope \(\bar\lambda_e\), with the usual
+   zero-charge conventions.  Assume this one allocation has expected price at
+   most \(B\) for every witness:
+   \[
+      \E_{V\sim\Lambda_i}\sum_{e\preceq V}\pi_q(e)\le B
+      \qquad(i\in I).
+   \]
+   Finally assume that the unpriced prefix and terminal moments satisfy
+   \[
+      \sum_u g_q(u)e^{\beta\overline A_q(u)}
+      \le
+      e^{\beta(\Theta+2B)}F\log^{O_c(1)}m,
+   \]
+   and
+   \[
+      \sum_z Q_z e^{\beta A_q(z)}
+      \le
+      e^{\beta(\Theta+2B)}F\log^{O_c(1)}m.
+   \]
+   Then the Fano-biased priority decoder at threshold \(\Theta\) has query work
+   \[
+      e^{2\beta B}F\log^{O_c(1)}m
+   \]
+   up to the priority-queue logarithm, and for every witness \(i\) the listed
+   valid routes have \(\Lambda_i\)-mass at least \(1/2\).  In particular, if
+   \(B=O_c(\log\log m)\) and \(\beta=O_c(1)\), the deterministic biased
+   decoder has only polylogarithmic overhead over \(F\).
+
+   The price hypothesis is supplied by
+   \cref{lem:robust-waterfilled-minimax} whenever the corresponding robust
+   water-filled defect is at most \(B\); equivalently it may be certified by
+   the robust tail, moment, raw-log, raw-moment, or transition-envelope
+   certificates developed later in this section.
+\end{corollary}
+
+\begin{proof}
+   The work estimate follows from
+   \cref{lem:fano-biased-prefix-list} and the fact that subtracting the
+   nonnegative branch price can only reduce the two displayed exponential
+   moments:
+   \[
+      L_{\rm Fano},T_{\rm Fano}
+      \le
+      e^{-\beta\Theta}
+      e^{\beta(\Theta+2B)}
+      F\log^{O_c(1)}m
+      =
+      e^{2\beta B}F\log^{O_c(1)}m.
+   \]
+
+   Fix a witness \(i\).  Markov's inequality and the expected-price hypothesis
+   give
+   \[
+      \Lambda_i\left\{
+         z:\sum_{e\preceq z}\pi_q(e)\le 2B
+      \right\}\ge\frac12.
+   \]
+   On this event, the raw margin assumption gives
+   \[
+      A_q(z)-\sum_{e\preceq z}\pi_q(e)\ge\Theta .
+   \]
+   Since \(\Lambda_i\) is supported on valid terminal routes, the Fano decoder
+   lists valid routes with \(\Lambda_i\)-mass at least \(1/2\).
+
+   The last sentence is just the minimax and certificate chain:
+   \cref{lem:robust-waterfilled-minimax} produces one allocation whose defect
+   is at most \(B\) against every witness occupation profile, and the
+   subsequent robust certificates are sufficient conditions for that minimax
+   defect bound.  In the transition-envelope case,
+   \(\bar\lambda_e\) upper-bounds the witness transition probabilities, so the
+   envelope branch price dominates each witness's transition-aware toll.
 \end{proof}
 
 The closest existing template is the product-code locality-sensitive filtering
@@ -11189,8 +11282,13 @@ verification.
 subtracting a nonnegative branch price from the reliability score preserves
 admissibility, can only shrink the exponential list-size moment, and turns an
 \(O_c(\log\log n)\) water-filled allocation defect into only a polylogarithmic
-threshold loss.  Thus a code or lattice replacement should expose Fano-biased
-threshold reporters, not just nearest-center reporters.
+threshold loss.  \Cref{cor:robust-fano-allocation-compiler} adds the
+multi-witness form: one robust water-filled allocation, tested against all
+finite witness mixtures, gives one Fano-biased stack decoder that lists a valid
+route for every witness as soon as the raw routes have the corresponding
+\(O_c(\log\log n)\) reliability margin.  Thus a code or lattice replacement
+should expose Fano-biased threshold reporters, not just nearest-center
+reporters.
 \Cref{lem:continuation-list-certificate} and
 \cref{cor:continuation-as-list-decoding} show that ordinary continuation-mass
 pruning is already the \(\beta=1\) case of this certificate; the unresolved
