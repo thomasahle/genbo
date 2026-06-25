@@ -2157,9 +2157,10 @@ decoding is therefore not a black-box decoder, but the separation of three
 tasks: prove a
 combinatorial list-size or route-cut bound, design an output-sensitive prefix
 enumerator for the structured tree, and use reliability or posterior scores to
-prune the list.  This mirrors Barnes--Wall lattice list decoding, lattice sphere
-enumeration, successive-cancellation list decoding of polar codes, and
-soft-decision Reed--Solomon decoding~\cite{GP17,MP20,FP85,SE94,GNR10,TV12,KV03}.
+prune the list.  This mirrors Barnes--Wall lattice list decoding,
+finite-trellis lattice sequential decoding, lattice sphere enumeration,
+successive-cancellation list decoding of polar codes, and soft-decision
+Reed--Solomon decoding~\cite{GP17,MP20,TVZ97,FP85,SE94,GNR10,TV12,KV03}.
 The additional lesson from pruned lattice enumeration is that the pruning
 profile should be an optimized certificate rather than a fixed level schedule:
 one can spend more search budget on prefixes that have high near-route
@@ -8799,13 +8800,14 @@ This certificate is the local form of the remaining problem. It is analogous in 
 \begin{corollary}[Finite accepted-route-trie compiler]
    \label{cor:finite-accepted-route-trie-compiler}
    Fix one query signature and one finite successful-route trie.  Let
-   \(L_m=\log^{A_c}m\).  For every terminal route \(z\), assume the terminal
-   procedure is certified to return a valid \(cr\)-neighbor for the current
-   ANN query whenever invoked.  Let \(A_q(z)\) be its raw reliability score,
-   \(Q_z\) its terminal price, and let \(\overline A_q(u)\) be a raw admissible
-   prefix upper certificate.  Let \(a_*(u)\) be the maximum outgoing normalized
-   charge at prefix \(u\), and let \(\Phi^*\) be the least superharmonic
-   majorant of \(a_*\).  Suppose the following checks all pass:
+   \(L_m=\log^{A_c}m\), and assume every terminal route has at most \(H_0\)
+   required edges.  For every terminal route \(z\), assume the terminal
+   procedure is certified to return a valid \(cr\)-neighbor for the current ANN
+   query whenever invoked.  Let \(A_q(z)\) be its raw reliability score, \(Q_z\)
+   its terminal price, and let \(\overline A_q(u)\) be a raw admissible prefix
+   upper certificate.  Let \(a_*(u)\) be the maximum outgoing normalized charge
+   at prefix \(u\), and let \(\Phi^*\) be the least superharmonic majorant of
+   \(a_*\).  Suppose the following checks all pass:
    \[
       \Phi^*(\varnothing)\le \frac{C}{H_0},
       \tag{RT1}
@@ -8862,6 +8864,71 @@ This certificate is the local form of the remaining problem. It is analogous in 
    the finite search principle from \cref{lem:finite-pool-optimizer} and
    \cref{cor:offline-pareto-compression}: the verifier is deterministic on
    each finite candidate, and discarded candidates are not stored.
+\end{proof}
+
+\begin{corollary}[Compressed route-DAG verifier]
+   \label{cor:compressed-route-dag-verifier}
+   In the setting of \cref{cor:finite-accepted-route-trie-compiler}, suppose
+   that the proposed successful routes are represented by a finite acyclic
+   directed graph rather than by an explicitly materialized trie.  The graph has
+   a source \(s\), terminal vertices, and a topological order.  A route is a
+   source-to-terminal path, every route has at most \(H_0\) required edges, and
+   a query prefix is a source-to-current-vertex path together with its
+   accumulated additive score and price.  Assume that the graph state contains
+   all information needed by the child generator and by the raw upper
+   certificate, or else that the displayed quantities below are valid upper
+   bounds over all prefixes reaching the state.
+
+   For every nonterminal state \(v\), let \(a_*(v)\) upper-bound the maximum
+   outgoing normalized charge of any required edge from any prefix ending at
+   \(v\).  Suppose there is a nonnegative state potential \(\Phi\) satisfying
+   \[
+      a_*(v)\le\Phi(v),
+      \qquad
+      \sum_{e=(v,w)}\Phi(w)\le\Phi(v),
+      \qquad
+      \Phi(s)\le \frac{C}{H_0}.
+      \tag{RD1}
+   \]
+   Suppose also that the path unfolding of the graph satisfies the raw margin,
+   prefix-moment, and terminal-moment checks \((RT2)\)--\((RT4)\), with prefix
+   sums over source-prefix paths and terminal sums over source-terminal paths,
+   and that the Fano child rule can enumerate the admissible outgoing edges of
+   a live compressed state output-sensitively.  Then the Fano-biased decoder on
+   the compressed graph lists a valid terminal route with query work
+   \[
+      e^{2\beta H_0\log C}F L_m
+   \]
+   up to the priority-queue logarithm.
+
+   Thus a code, trellis, product-code, or lattice decoder may be certified in
+   compressed form: the route trie used by the proof is the unfolding of the
+   decoder DAG, while the retained index stores only the graph state space, the
+   potential \(\Phi\), and the output-sensitive child reporters.
+\end{corollary}
+
+\begin{proof}
+   Unfold the acyclic graph into the tree of all source-prefix paths.  Give each
+   unfolded prefix \(u\) ending at graph state \(v\) the potential
+   \(\widehat\Phi(u)=\Phi(v)\).  The first two inequalities in \((RD1)\) imply
+   \[
+      a_*(u)\le\widehat\Phi(u),
+      \qquad
+      \sum_{u'\in\operatorname{ch}(u)}\widehat\Phi(u')
+      \le\widehat\Phi(u),
+   \]
+   because the children of \(u\) are exactly the outgoing graph edges from
+   \(v\), with multiplicity.  The root bound in \((RD1)\) is the root bound for
+   the unfolded trie.  Hence \(\widehat\Phi\) is a feasible superharmonic
+   potential on the unfolding, so the accepted-route-trie compiler applies to
+   that unfolded trie using the assumed pathwise checks \((RT2)\)--\((RT4)\).
+
+   The unfolding is only an analysis device.  The priority decoder never needs
+   to store it: a live prefix is represented by its compressed graph state and
+   accumulated additive quantities, and the assumed child reporter generates
+   exactly the outgoing edges whose Fano upper score remains above threshold.
+   Therefore the same list and work bound are achieved by the compressed
+   decoder.
 \end{proof}
 
 \begin{lemma}[Finite convex-linear minimax]\label{lem:finite-convex-minimax}
@@ -11891,6 +11958,14 @@ these checks with \(H_0\log C=O_c(\log\log m)\) gives the desired polylogarithmi
 overhead for that local state.  Thus the remaining geometric theorem is now
 not an allocation theorem or a route-law theorem; it is the construction of
 accepted route tries for all unresolved local ANN states.
+\Cref{cor:compressed-route-dag-verifier} is the code/lattice form of the same
+certificate.  A trellis, recursive code decoder, product-panel stack decoder,
+or lattice-enumeration DAG may be verified on its compact state graph as long
+as a state potential satisfies the same superharmonic inequalities; the
+explicit route trie is only the path unfolding used in the proof.  This is the
+right way to import list-decoding ideas: not as a black-box nearest-lattice
+oracle, but as a compact Fano-biased decoder whose state potential and path
+moments pass the accepted-route checks.
 \Cref{cor:existential-antichain-fano} composes this with the Fano decoder in
 the ANN-correct existential form: if the union of valid terminal routes has the
 same antichain charge bound and every such route has \(O_c(\log\log n)\) raw
@@ -12154,6 +12229,12 @@ The one-sided spherical proof is motivated by the Ahle--Knudsen manuscript suppl
    Frederick Jelinek.
    \newblock A fast sequential decoding algorithm using a stack.
    \newblock \emph{IBM Journal of Research and Development}, 13(6):675--685, 1969.
+
+   \bibitem{TVZ97}
+   Vahid Tarokh, Alexander Vardy, and Kenneth Zeger.
+   \newblock Sequential decoding of lattice codes.
+   \newblock In \emph{Proceedings of the IEEE International Symposium on
+   Information Theory (ISIT)}, page 497, 1997.
 
    \bibitem{TV12}
    Ido Tal and Alexander Vardy.
