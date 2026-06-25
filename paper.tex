@@ -2001,6 +2001,103 @@ terminal alternatives and zero for impure ones.
    same near-route hypothesis.
 \end{proof}
 
+\begin{lemma}[Continuation-mass list certificate]
+   \label{lem:continuation-list-certificate}
+   Fix a finite route trie for one query \(q\).  Let \(H_q(u)>0\) be any
+   positive prefix potential, let \(\mathsf{acc}(z)\in\{0,1\}\) mark terminal
+   routes whose certified output procedure should be invoked, and define the
+   terminal decoding score
+   \[
+      S_q(z)=
+      \begin{cases}
+         \displaystyle \min_{u\preceq z}\log H_q(u),
+            & \mathsf{acc}(z)=1,\\[0.6em]
+         -\infty,& \mathsf{acc}(z)=0 .
+      \end{cases}
+   \]
+   For an internal prefix put \(U_q(u)=\log H_q(u)\), and for a terminal route
+   put \(U_q(z)=S_q(z)\).  Let the threshold be \(\Theta=\log\tau\), where
+   \(0<\tau\le1\).  If \(g_q(u)\ge1+G_q(u)\), then
+   \[
+      \sum_u g_q(u)H_q(u)\le L_H,
+      \qquad
+      \sum_{z:\ S_q(z)\ge\log\tau}Q_z\le L_T
+   \]
+   implies that the priority prefix-list decoder has query work
+   \[
+      O\!\left(
+         D(q)
+         +(\tau^{-1}L_H+1)\log(2+\tau^{-1}L_H)
+         +L_T
+      \right).
+   \]
+   It invokes exactly the accepting terminal routes whose every prefix has
+   \(H_q(u)\ge\tau\).
+\end{lemma}
+
+\begin{proof}
+   For any terminal descendant \(z\succeq u\), the definition of \(S_q(z)\)
+   gives \(S_q(z)\le\log H_q(u)=U_q(u)\) when \(u\) is internal, and
+   \(U_q(z)=S_q(z)\) when \(u=z\).  Thus the hypotheses of
+   \cref{lem:prefix-list-decoder} hold.  With \(\beta=1\) and
+   \(\Theta=\log\tau\),
+   \[
+      \sum_u g_q(u)\exp(U_q(u))
+      \le
+      \sum_u g_q(u)H_q(u)
+      \le L_H ,
+   \]
+   so \cref{cor:prefix-list-resources} applies with
+   \(L_{\rm pref}=\tau^{-1}L_H\) and \(L_{\rm term}=L_T\).  Finally,
+   \(S_q(z)\ge\log\tau\) is exactly the conjunction of \(\mathsf{acc}(z)=1\)
+   and \(H_q(u)\ge\tau\) for every prefix \(u\preceq z\).
+\end{proof}
+
+\begin{corollary}[Continuation pruning as list decoding]
+   \label{cor:continuation-as-list-decoding}
+   In a budgeted continuation score block of depth \(k\), let
+   \[
+      H_q(u)=H_{|u|}(S_u(q))
+   \]
+   be the analytic continuation mass from \cref{lem:continuation-work}, mark a
+   terminal route accepting when its leaf score is at least \(kt\), and take
+   \(\tau=k^{-A}\).  The priority prefix-list decoder of
+   \cref{lem:continuation-list-certificate} invokes exactly the accepting leaves
+   that survive continuation-mass pruning.  For every fixed query,
+   \[
+      \E\sum_u H_q(u)
+      \le
+      k\,N^\rho\log^{O_{a,b}(1)}N,
+   \]
+   where \(N\) is the budget parameter of \cref{cor:budgeted-block}.  Hence the
+   expected prefix-list work of the score block is
+   \[
+      N^\rho\log^{O_{a,b}(1)}N .
+   \]
+   The same statement holds for the adaptive predictable score schedules of
+   \cref{lem:adaptive-continuation}, with \(H_q(u)\) equal to the exact
+   conditional continuation mass for the remaining schedule.
+\end{corollary}
+
+\begin{proof}
+   The first claim is just the definition of the terminal decoding score in
+   \cref{lem:continuation-list-certificate}: a leaf has score at least
+   \(\log\tau\) exactly when it accepts and every prefix has continuation mass
+   at least \(\tau\).
+
+   At a fixed level \(\ell\), summing \(H_\ell(S_u(q))\) over all prefixes
+   gives the conditional expected number of accepting descendant leaves from
+   that frontier.  Taking expectation over the realized score tree and using
+   the tower property gives the unconditional expected number of accepting
+   leaves in the block, which is \(N^\rho\log^{O_{a,b}(1)}N\) by
+   \cref{cor:budgeted-block}.  Summing over the \(k\) levels gives the displayed
+   bound.  Since \(\tau^{-1}=k^A=\log^{O_{a,b}(1)}N\), the work bound follows
+   from \cref{lem:continuation-list-certificate}.  The adaptive case is
+   identical because its continuation mass is the exact conditional expected
+   number of accepting descendants for the remaining predictable schedule, as
+   used in \cref{lem:adaptive-continuation}.
+\end{proof}
+
 This is the literal list-decoding analogue of the score tree.  The retained
 tree defines an implicit Euclidean code or lattice of route leaves, the query is
 the received word, and the decoder must output a short list of plausible route
@@ -2014,7 +2111,14 @@ decoding threshold, and stop when the stack certificate drops below threshold.
 corresponding proof target.  Instead of storing activation-pattern tables, prove
 a moment or potential bound on \(\sum g_q(u)\exp(\beta U_q(u))\) over prefixes;
 thresholding then gives a short list and a query-work bound automatically.  The
-useful coding-theory lesson from lattice and code list decoding is therefore
+\(\beta=1\) special case is not new machinery:
+\cref{lem:continuation-list-certificate} and
+\cref{cor:continuation-as-list-decoding} show that ordinary continuation-mass
+pruning is already a stack/list decoder whose certificate is
+\(\sum_u H_q(u)\).  The open deterministic route is to find similarly tight
+admissible prefix potentials after geometric recentering and budget-thinned
+child generation.  The useful coding-theory lesson from lattice and code list
+decoding is therefore
 not a black-box decoder, but the separation of three tasks: prove a
 combinatorial list-size or route-cut bound, design an output-sensitive prefix
 enumerator for the structured tree, and use reliability or posterior scores to
@@ -8591,6 +8695,11 @@ threshold, and an exponential-moment certificate turns this into a short-list
 and query-work bound.  If the score tree admits such an output-sensitive prefix
 enumerator, routing reduces to a list-size theorem followed by ordinary metric
 verification.
+\Cref{lem:continuation-list-certificate} and
+\cref{cor:continuation-as-list-decoding} show that ordinary continuation-mass
+pruning is already the \(\beta=1\) case of this certificate; the unresolved
+part is to construct an equally tight admissible prefix potential after
+geometric recentering and budget-thinned child generation.
 The guard refinement
 \cref{lem:low-guard-shadow} further removes points whose entire near-query
 neighborhood is already high-density: the finite dual now prices only the
