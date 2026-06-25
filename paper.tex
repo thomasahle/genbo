@@ -2765,6 +2765,26 @@ index.
    discarded build-time proposals.
 \end{proof}
 
+\begin{lemma}[Las Vegas offline certification]\label{lem:las-vegas-offline}
+   In the setting of \cref{lem:offline-amplification}, suppose the randomized
+   preprocessing routine outputs a certified cover with some probability
+   $p>0$, and every uncertified output is rejected by the deterministic
+   certificate.  If preprocessing time is not charged, the build stage may run
+   the routine until the first certified cover appears and then store only that
+   cover.  The retained query and storage bounds are exactly the certified
+   bounds of one accepted cover, independent of how small $p$ is.
+\end{lemma}
+
+\begin{proof}
+   The probability that no certified cover appears in the first $B$ independent
+   attempts is $(1-p)^B$, which tends to zero as $B\to\infty$.  Thus the
+   repeat-until-certified procedure terminates with probability one, and has
+   expected number of attempts $1/p$.  All attempts made before termination are
+   discarded preprocessing artifacts.  The final index contains only the first
+   accepted certified cover, so its query work and storage are exactly those
+   certified for that retained cover.
+\end{proof}
+
 \begin{lemma}[Finite-pool offline optimizer]\label{lem:finite-pool-optimizer}
    Fix a finite proposal pool of certified Lipschitz score filters
    \[
@@ -3608,8 +3628,9 @@ small stored cover, not an efficient Lloyd-style training algorithm.
    Fix $c>1$, $\rho=\rho_c$, and $\eta>0$.  In every bounded-diameter localized
    node with $m$ resident points in a certified ball of radius $R$, either the
    node is terminal, or expensive preprocessing can build the following
-   certified object with constant probability, amplified offline as in
-   \cref{lem:offline-amplification}.
+   certified object.  It is enough that a verifiable randomized build routine
+   finds it with any positive probability, since preprocessing can then repeat
+   until certification as in \cref{lem:las-vegas-offline}.
 
    Let
    \[
@@ -3703,8 +3724,8 @@ small stored cover, not an efficient Lloyd-style training algorithm.
 \end{proposition}
 
 \begin{proof}
-   Offline amplification makes every constructed node satisfy the deterministic
-   certificate with sufficiently high probability; failed proposals are not
+   Las Vegas offline certification makes every constructed node satisfy the
+   deterministic certificate; failed proposals are discarded before the index is
    stored.  At query time, first sample the resident guard as in
    \cref{prop:power-cover-polylog}.  If the guard-density alternative holds,
    the guard succeeds with constant probability after increasing the logarithmic
