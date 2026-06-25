@@ -3084,6 +3084,44 @@ not need this enumeration to be efficient: after the certificate is accepted,
 the query algorithm only evaluates its ordinary decoder and pays for the listed
 children.
 
+\begin{lemma}[Shared-predicate decoder accounting]
+   \label{lem:shared-predicate-decoder}
+   Consider a retained family of nonempty certified children
+   $\mathcal R$.  Partition it into parent groups $\mathcal G$ so that every
+   child $D\in\mathcal R_g$ has the same activation predicate $a_g(q)$ as its
+   parent group; write $a_D=a_g$ for $D\in\mathcal R_g$.  Suppose the query
+   evaluates the distinct parent predicates in work $E(q)$ and, for each active
+   group, enumerates the retained children in that group.  With
+   \[
+      w_D=|P_D|^\rho\Psi(R_D),
+      \qquad
+      s_D=|P_D|^{1+\rho}\Psi(R_D),
+   \]
+   the child-record enumeration at query $q$ is bounded by
+   \[
+      |\{D\in\mathcal R:a_D(q)=1\}|
+      \le
+      \sum_{D\in\mathcal R:a_D(q)=1} w_D,
+   \]
+   and the retained child metadata is bounded by
+   \[
+      |\mathcal R|\le \sum_{D\in\mathcal R}s_D .
+   \]
+   Hence the query overhead of atom-safe subchildren is
+   $O(E(q)+\sum_{D:a_D(q)=1}w_D)$, and their metadata is charged by the same
+   storage-power certificate as their point copies.
+\end{lemma}
+
+\begin{proof}
+   Every retained child is nonempty, so $|P_D|\ge1$.  The padded radius factor
+   satisfies $\Psi(R_D)=1+(R_D/r)^4\ge1$.  Therefore
+   $w_D\ge1$ and $s_D\ge1$ for every retained child.  Summing these unit lower
+   bounds over the active children gives the query-record inequality, and
+   summing over all retained children gives the metadata inequality.  The
+   decoder evaluates each distinct parent predicate once, then pays one record
+   per active retained child, so the displayed work bound follows.
+\end{proof}
+
 \begin{lemma}[Atom-safe subchild separation]\label{lem:atom-safe-subchild}
    Fix finite query-pattern budgets $L_q>0$ and a storage budget $S>0$.  Let
    $C$ be any certified child with point set $P_C$, radius $R_C$, and activation
@@ -3134,6 +3172,10 @@ is a preprocessing normal form: replace a rich proposal universe by the finite
 universe of all atom-safe certified subchildren.  Under dual prices, separation
 against this expanded universe reduces to the same geometric proposal search,
 followed by the prefix test of \cref{lem:atom-safe-subchild}.
+\Cref{lem:shared-predicate-decoder} shows that this expansion does not force a
+query to rescore every retained subchild separately: subchildren inherit their
+parent activation predicate, and their record enumeration is paid by the same
+active-power sum.
 
 \begin{corollary}[Price-density subchild certificate]
    \label{cor:price-density-subchild}
