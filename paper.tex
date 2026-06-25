@@ -6613,6 +6613,81 @@ This certificate is the local form of the remaining problem. It is analogous in 
    displayed bound.
 \end{proof}
 
+\begin{corollary}[Canonical budget-defect toll certificate]
+   \label{cor:canonical-budget-defect-toll}
+   Consider a candidate near-route trie in the canonical budget-thinned
+   process.  Deterministic score edges and budget-stable recentering edges have
+   success probability \(1\).  Every remaining required recentering edge \(e\)
+   is offered at some prefix \(u(e)\), has certified recursive charge
+   \(\Gamma_e\), and is activated with probability \(\gamma_e\) satisfying
+   \[
+      \gamma_e\ge
+      \min\left\{
+         1,\,
+         \frac{(1-\kappa\eta^2)
+               \mathcal B_q^{\rm mix}(u(e))}
+              {\Gamma_e}
+      \right\}.
+   \]
+   When \(\Gamma_e=0\), the displayed lower bound is interpreted as \(1\).
+   On remaining required recentering edges, define the canonical budget defect
+   by
+   \[
+      \Delta_e
+      =
+      \log_+
+      \frac{\Gamma_e}
+           {(1-\kappa\eta^2)\mathcal B_q^{\rm mix}(u(e))},
+   \]
+   with the convention that the ratio is \(+\infty\) when
+   \(\Gamma_e>0\) and \(\mathcal B_q^{\rm mix}(u(e))=0\), and is \(0\) when
+   \(\Gamma_e=0\).
+   Put \(\Delta_e=0\) on deterministic score and budget-stable edges.
+   Let \(\Lambda\) be any probability law on leaf routes, and for a route \(v\)
+   set
+   \[
+      \Delta(v)=\sum_{e\preceq v}\Delta_e .
+   \]
+   If
+   \[
+      \Lambda\{v:\Delta(v)\le B\}\ge h,
+   \]
+   then the saturated route value satisfies
+   \[
+      U(\varnothing)\ge h e^{-B}.
+   \]
+   In particular, if \(\E_\Lambda \Delta(v)\le B\), then
+   \[
+      U(\varnothing)\ge \frac12e^{-2B}.
+   \]
+\end{corollary}
+
+\begin{proof}
+   Let \(\lambda_e\) be the transition probability of the route law on edge
+   \(e\).  On deterministic score and budget-stable edges, \(\gamma_e=1\), so
+   \(\log_+(\lambda_e/\gamma_e)=0\) because \(\lambda_e\le1\).  On a
+   budget-thinned edge,
+   \[
+      \frac{\lambda_e}{\gamma_e}
+      \le
+      \frac1{\gamma_e}
+      \le
+      \max\left\{
+         1,\,
+         \frac{\Gamma_e}
+              {(1-\kappa\eta^2)\mathcal B_q^{\rm mix}(u(e))}
+      \right\},
+   \]
+   hence
+   \[
+      \log_+\frac{\lambda_e}{\gamma_e}\le\Delta_e .
+   \]
+   Thus the cumulative edge toll of \cref{cor:typical-route-law-toll} is at
+   most \(\Delta(v)\) for every route \(v\).  Applying that corollary gives the
+   high-probability statement.  Markov's inequality gives the final displayed
+   bound from the expectation assumption.
+\end{proof}
+
 \begin{corollary}[Prefix-energy route-law certificate]\label{cor:route-law-prefix-energy}
    Let $\Lambda$ be a probability distribution on leaf routes and let $A(u)$
    be the activation prefix mass. Define the prefix $\chi^2$ energy
@@ -7210,6 +7285,16 @@ This certificate is the local form of the remaining problem. It is analogous in 
    \cref{lem:adaptive-continuation}; in homogeneous balanced prefixes its
    prefix probabilities are smaller than the canonical activation factors, so
    positive toll can only come from atypical geometric opportunities.
+   \Cref{cor:canonical-budget-defect-toll} makes this target concrete for the
+   canonical budget-thinned process: budget-stable recentering edges have zero
+   toll, and every remaining edge pays only
+   \[
+      \log_+
+      \frac{\Gamma(u)}
+           {(1-\kappa\eta^2)\mathcal B_q^{\rm mix}(u)} .
+   \]
+   Thus a sufficient geometric theorem is to construct a tame route law whose
+   expected cumulative canonical budget defect is \(O_c(\log\log n)\).
    \Cref{lem:cut-energy-route-law} is the sharpest form for a stopping-frontier
    proof: it is enough to show that, for every route cut $\mathcal C$,
    \[
@@ -8825,6 +8910,9 @@ geometric recentering and budget-thinned child generation.
 the canonical mixed Bellman budget itself is an admissible list-decoding
 potential for budget-stable recentering opportunities, leaving only
 budget-unstable opportunities for the sampled value-delivery layer.
+\Cref{cor:canonical-budget-defect-toll} then rewrites the sampled layer's
+route-law toll as the cumulative log deficit
+\(\log_+(\Gamma/\mathcal B_q^{\rm mix})\) of those unstable opportunities.
 The guard refinement
 \cref{lem:low-guard-shadow} further removes points whose entire near-query
 neighborhood is already high-density: the finite dual now prices only the
