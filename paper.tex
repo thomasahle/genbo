@@ -2118,8 +2118,8 @@ pruning is already a stack/list decoder whose certificate is
 \(\sum_u H_q(u)\).  The open deterministic route is to find similarly tight
 admissible prefix potentials after geometric recentering and budget-thinned
 child generation.  The useful coding-theory lesson from lattice and code list
-decoding is therefore
-not a black-box decoder, but the separation of three tasks: prove a
+decoding is therefore not a black-box decoder, but the separation of three
+tasks: prove a
 combinatorial list-size or route-cut bound, design an output-sensitive prefix
 enumerator for the structured tree, and use reliability or posterior scores to
 prune the list.  This mirrors Barnes--Wall lattice list decoding, lattice sphere
@@ -5791,6 +5791,114 @@ This certificate is the local form of the remaining problem. It is analogous in 
    The budget gate enforces the local domination hypothesis in \cref{lem:bellman-frontier-certificate}. Applying that lemma to the live first-split frontier gives the claim.
 \end{proof}
 
+\begin{lemma}[Budget-stable prefix list]\label{lem:budget-stable-prefix-list}
+   Fix one continuation score block of depth \(K\) at a state with local target
+   \(F=F_4(m,R)\).  Let \(\mathcal B_q(u)\) be a predictable nonnegative
+   prefix budget satisfying
+   \[
+      \mathcal B_q(\varnothing)\le F,
+      \qquad
+      \E\!\left[\sum_{w\in\mathrm{ch}(u)}\mathcal B_q(w)\,\middle|\,u\right]
+      \le \mathcal B_q(u)
+   \]
+   for retained score children.  Let \(\mathcal T(q)\) be a predictable
+   prefix-free family of offered geometric opportunities, and let \(\Gamma(u)\)
+   be the certified recursive query-potential charge of opportunity \(u\).
+   Fix a threshold \(0<\tau\le1\).  Call \(u\in\mathcal T(q)\)
+   budget-stable if
+   \[
+      \mathcal B_q(v)\ge\tau \quad(v\preceq u),
+      \qquad
+      \Gamma(u)\le (1-\kappa\eta^2)\mathcal B_q(u).
+   \]
+
+   Run the priority prefix-list decoder with prefix potential
+   \(H_q(u)=\mathcal B_q(u)\), terminal opportunities marked accepting exactly
+   when they are budget-stable, and threshold \(\tau\).  Then it invokes every
+   budget-stable opportunity and no opportunity whose prefix budget ever drops
+   below \(\tau\).  If the total number of possible prefixes in the block is
+   \(M\), its expected prefix-enumeration work is
+   \[
+      O\!\left(\tau^{-1}KF\log(2+M)\right),
+   \]
+   and the expected recursive query-potential charge of invoked opportunities
+   is at most
+   \[
+      (1-\kappa\eta^2)F .
+   \]
+\end{lemma}
+
+\begin{proof}
+   Use \cref{lem:continuation-list-certificate} with \(H_q=\mathcal B_q\).
+   Its terminal score is the minimum log-budget along the route, so a terminal
+   opportunity is above threshold exactly when all prefixes have budget at
+   least \(\tau\).  The additional accepting predicate is the local budget gate
+   \(\Gamma(u)\le(1-\kappa\eta^2)\mathcal B_q(u)\), so the decoder invokes
+   precisely the budget-stable opportunities.
+
+   Let \(\mathcal U_\ell\) be the retained prefix frontier at level \(\ell\).
+   Iterating the supermartingale inequality gives
+   \[
+      \E\sum_{u\in\mathcal U_\ell}\mathcal B_q(u)\le F .
+   \]
+   Summing over \(K+1\) levels,
+   \[
+      \E\sum_u\mathcal B_q(u)\le (K+1)F .
+   \]
+   Since every visited prefix has \(\mathcal B_q(u)\ge\tau\), the expected
+   number of visited prefixes is at most \(\tau^{-1}(K+1)F\).  The priority
+   queue contributes at most \(\log(2+M)\) per visited prefix.
+
+   The invoked opportunities form a subfamily of the prefix-free set
+   \(\mathcal T(q)\).  Optional stopping for the same budget supermartingale
+   gives
+   \[
+      \E\sum_{u\in\mathcal T(q)}\mathcal B_q(u)\le F .
+   \]
+   On invoked opportunities,
+   \(\Gamma(u)\le(1-\kappa\eta^2)\mathcal B_q(u)\), hence
+   \[
+      \E\sum_{\text{invoked }u}\Gamma(u)
+      \le
+      (1-\kappa\eta^2)
+      \E\sum_{u\in\mathcal T(q)}\mathcal B_q(u)
+      \le
+      (1-\kappa\eta^2)F .
+   \]
+\end{proof}
+
+\begin{corollary}[Canonical budget-stable decoder]
+   \label{cor:canonical-budget-stable-decoder}
+   In one bounded-diameter localized score block, use the canonical mixed
+   budget \(\mathcal B_q^{\rm mix}\) of
+   \cref{lem:canonical-mixed-budget}.  With
+   \(\tau=\log^{-O_c(1)}n\), the budget-stable prefix-list decoder has expected
+   prefix work
+   \[
+      F_4(m,R)\log^{O_c(1)}n
+   \]
+   and expected invoked recursive query-potential charge at most
+   \[
+      (1-\kappa\eta^2)F_4(m,R).
+   \]
+   Thus all budget-stable recentering opportunities can be handled
+   deterministically inside the list-decoding view.  The only geometric
+   opportunities not covered by this deterministic compiler are those whose
+   route passes through a prefix with subthreshold canonical budget, or whose
+   local recursive charge exceeds the available budget; these are exactly the
+   opportunities handled by the budget-thinned/value-delivery layer.
+\end{corollary}
+
+\begin{proof}
+   By \cref{lem:canonical-mixed-budget}, the canonical mixed budget satisfies
+   the hypotheses of \cref{lem:budget-stable-prefix-list} with
+   \(F=F_4(m,R)\).  In bounded-diameter localized states, the score depth and
+   the logarithm of the finite prefix universe are both \(\log^{O_c(1)}n\).
+   Taking \(\tau^{-1}=\log^{O_c(1)}n\) gives the displayed prefix-work bound,
+   and the recursive charge bound is the one in
+   \cref{lem:budget-stable-prefix-list}.
+\end{proof}
+
 \begin{lemma}[Budget-thinned first opportunities]\label{lem:budget-thinned-opportunities}
    Fix any predictable nonnegative budget process $\mathcal B_q$ satisfying the first two hypotheses of \cref{lem:bellman-frontier-certificate}. At a retained prefix $u$, let $\Gamma(u)$ denote the weighted recursive potential of the geometric children that would be opened from $u$; for the almost-total cap split above,
    \[
@@ -5911,7 +6019,19 @@ This certificate is the local form of the remaining problem. It is analogous in 
 \end{proof}
 
 \begin{remark}[Work can be bought by thinning]\label{rem:budget-thinning}
-   \Cref{cor:budget-gated-splits} is deterministic: a split is live only when the local budget pays its whole charge. \Cref{lem:budget-thinned-opportunities} is the corresponding randomized rule. It converts any prefix-supermartingale budget, in particular the canonical mixed budget of \cref{lem:canonical-mixed-budget}, into an unconditional expected bound for the activated geometric work.
+   \Cref{cor:budget-gated-splits} is deterministic: a split is live only when
+   the local budget pays its whole charge.  \Cref{lem:budget-stable-prefix-list}
+   and \cref{cor:canonical-budget-stable-decoder} add the list-decoding
+   implementation: budget-stable split prefixes can be found by a stack
+   decoder whose admissible score is the canonical budget itself.  Thus the
+   deterministic part of the recentering process no longer needs activation
+   pattern tables or all-child reporting.
+
+   \Cref{lem:budget-thinned-opportunities} is the corresponding randomized
+   rule for the remaining budget-unstable opportunities. It converts any
+   prefix-supermartingale budget, in particular the canonical mixed budget of
+   \cref{lem:canonical-mixed-budget}, into an unconditional expected bound for
+   the activated geometric work.
 
    In a homogeneous balanced prefix at depth $\ell$, the canonical budget is smaller than the local recursive charge by about $B^{(1-\rho)\ell}$, so the activation probability is about $B^{-(1-\rho)\ell}$. This is exactly the missing factor in the naive sum over the $B^\ell$ query prefixes. Thus the balanced-prefix obstruction is no longer a work blow-up; it becomes a near-lineage question: prove that the tame-good near paths supplied by \cref{lem:adaptive-continuation} contain enough budget-thinned first opportunities that one complete radius-decreasing lineage survives with inverse-polylogarithmic probability.
 \end{remark}
@@ -8700,6 +8820,11 @@ verification.
 pruning is already the \(\beta=1\) case of this certificate; the unresolved
 part is to construct an equally tight admissible prefix potential after
 geometric recentering and budget-thinned child generation.
+\Cref{lem:budget-stable-prefix-list} and
+\cref{cor:canonical-budget-stable-decoder} take one step in that direction:
+the canonical mixed Bellman budget itself is an admissible list-decoding
+potential for budget-stable recentering opportunities, leaving only
+budget-unstable opportunities for the sampled value-delivery layer.
 The guard refinement
 \cref{lem:low-guard-shadow} further removes points whose entire near-query
 neighborhood is already high-density: the finite dual now prices only the
