@@ -2721,6 +2721,50 @@ positive-gain cap, medoid ball, pair-direction filter, or learned score.  The
 search may be arbitrarily expensive; the retained index still pays only for the
 children that survive the final deterministic certificate.
 
+\begin{lemma}[Finite activation-pattern verifier]\label{lem:finite-activation-patterns}
+   Fix a finite retained family of certified children $\mathcal C$ and a query
+   domain $\Omega$.  Each child $C$ has an activation predicate
+   $a_C(q)\in\{0,1\}$.  Let
+   \[
+      \mathcal A(\mathcal C)
+      =
+      \bigl\{
+         (a_C(q))_{C\in\mathcal C}:q\in\Omega
+      \bigr\}
+      \subseteq\{0,1\}^{\mathcal C}
+   \]
+   be the set of realizable activation patterns.  For any nonnegative child
+   weights $w_C$,
+   \[
+      \sup_{q\in\Omega}\sum_{C\in\mathcal C}a_C(q)w_C
+      =
+      \max_{a\in\mathcal A(\mathcal C)}
+      \sum_{C\in\mathcal C}a_Cw_C .
+   \]
+   Consequently an all-query active-power certificate for a finite retained
+   family is exactly a finite list of linear constraints, one for each
+   realizable activation pattern.  Since
+   $|\mathcal A(\mathcal C)|\le2^{|\mathcal C|}$, unbounded preprocessing may
+   verify the certificate by enumerating realizable patterns.  It is also safe
+   to enumerate any finite superset of the realizable patterns; this can only
+   make the certificate stricter.
+\end{lemma}
+
+\begin{proof}
+   The displayed equality is just grouping queries by their activation vector:
+   the summand depends on $q$ only through $(a_C(q))_{C\in\mathcal C}$.  The
+   remaining claims follow because the set of binary activation vectors of a
+   finite family is finite, and a finite superset of the realizable vectors
+   contains the maximum over the realizable ones.
+\end{proof}
+
+For the cap, shell-normalized cap, and ball predicates above, the activation
+sets are finite Boolean combinations of explicit inequalities.  Thus the
+pattern enumeration is a preprocessing certification problem.  The paper does
+not need this enumeration to be efficient: after the certificate is accepted,
+the query algorithm only evaluates its ordinary decoder and pays for the listed
+children.
+
 \begin{lemma}[Fractional cover materialization]\label{lem:fractional-cover-materialization}
    In the finite program of \cref{lem:finite-pool-dual}, assume $L_q>0$ for all
    $q\in\mathcal Q$, $S>0$, and the following atom bounds:
@@ -2881,11 +2925,13 @@ small stored cover, not an efficient Lloyd-style training algorithm.
    deterministic active-power and storage certificates.  Equivalently, by
    \cref{lem:finite-pool-optimizer}, it is enough that a finite proposal pool
    generated during preprocessing contains one cover passing these certificates.
-   If the verifier's all-query constraints have been reduced to a finite exact
-   set of decoder cells, it is also enough to find a fractional cover over that
-   finite pool with logarithmically smaller budgets and bounded atoms:
-   \cref{lem:fractional-cover-materialization} converts it into a stored cover
-   and residual block, losing only another logarithmic factor.
+   By \cref{lem:finite-activation-patterns}, the all-query active-power
+   certificate for any finite retained family is equivalently a finite set of
+   activation-pattern constraints.  Hence it is also enough to find a fractional
+   cover over the finite pool with logarithmically smaller budgets and bounded
+   atoms for those patterns: \cref{lem:fractional-cover-materialization}
+   converts it into a stored cover and residual block, losing only another
+   logarithmic factor.
 \end{assumption}
 
 \begin{proposition}[Weak offline score covers imply the polylog endpoint]
