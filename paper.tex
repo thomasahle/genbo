@@ -2203,6 +2203,117 @@ replacement for \(k\)-means routing and a self-contained proof object: the
 large filter family is implicit, build time may optimize or reject panels, and
 query time pays only for output-sensitive list decoding.
 
+\begin{lemma}[Additive product-panel decoder]
+   \label{lem:additive-product-panel-decoder}
+   Fix one query \(q\).  Let
+   \(\mathcal C=\mathcal C_1\times\cdots\times\mathcal C_h\) be a finite
+   product code.  A terminal route \(c=(c_1,\ldots,c_h)\) has query score
+   \[
+      S_q(c)=\sum_{j=1}^h\phi_j(q,c_j)
+   \]
+   and certified terminal price \(Q_c\ge0\).  For each suffix let
+   \(R_{\ell+1}(q)\), \(0\le\ell\le h\), satisfy \(R_{h+1}(q)=0\) and
+   \[
+      \sum_{j=\ell+1}^h\phi_j(q,c_j)\le R_{\ell+1}(q)
+      \qquad
+      \text{for every suffix }(c_{\ell+1},\ldots,c_h).
+   \]
+   For a prefix \(u=(c_1,\ldots,c_\ell)\), put
+   \[
+      U_q(u)=\sum_{j=1}^{\ell}\phi_j(q,c_j)+R_{\ell+1}(q).
+   \]
+   Suppose that block \(j\) has a threshold reporter which, for any threshold
+   \(\theta\), lists exactly the symbols
+   \[
+      \{c\in\mathcal C_j:\phi_j(q,c)\ge\theta\}
+   \]
+   in work \(D_j(q)\) plus a constant per listed symbol.  Run the priority
+   prefix-list decoder with threshold \(\Theta\), using the reporter at a live
+   prefix \(u=(c_1,\ldots,c_\ell)\) to generate precisely the children
+   satisfying
+   \[
+      \phi_{\ell+1}(q,c)\ge
+      \Theta-\sum_{j=1}^{\ell}\phi_j(q,c_j)-R_{\ell+2}(q).
+   \]
+   For \(\beta>0\), define
+   \[
+      Z_j(q)=\sum_{c\in\mathcal C_j}\exp(\beta\phi_j(q,c)),
+      \qquad
+      Z_{\le\ell}(q)=\prod_{j=1}^{\ell}Z_j(q),
+   \]
+   with \(Z_{\le0}(q)=1\), and
+   \[
+      P_\beta(q)=
+      \sum_{\ell=0}^{h}
+      a_\ell(q)\exp(\beta R_{\ell+1}(q))Z_{\le\ell}(q),
+   \]
+   where \(a_h(q)=1\) and
+   \(a_\ell(q)=1+D_{\ell+1}(q)\) for \(0\le\ell<h\).  Also put
+   \[
+      T_\beta(q)=
+      \sum_{c\in\mathcal C}Q_c\exp(\beta S_q(c)).
+   \]
+   Then the decoder visits every terminal \(c\) with \(S_q(c)\ge\Theta\), and
+   its query work is
+   \[
+      O\!\left(
+         (L_\beta(q)+1)\log(2+L_\beta(q))
+         +e^{-\beta\Theta}T_\beta(q)
+      \right),
+      \qquad
+      L_\beta(q)=e^{-\beta\Theta}P_\beta(q).
+   \]
+   Consequently the decoder has local target work
+   \(F_4(m,R)\log^{O_c(1)}m\) whenever
+   \[
+      P_\beta(q),T_\beta(q)
+      \le
+      e^{\beta\Theta}F_4(m,R)\log^{O_c(1)}m .
+   \]
+\end{lemma}
+
+\begin{proof}
+   The suffix condition makes \(U_q\) admissible: every terminal descendant
+   \(z\succeq u\) has \(S_q(z)\le U_q(u)\).  The displayed threshold for the
+   next symbol is exactly the inequality \(U_q(u,c)\ge\Theta\).  Thus the block
+   reporters implement the child-generation rule required by
+   \cref{lem:priority-prefix-list-decoder}.
+
+   At level \(\ell\),
+   \[
+      \sum_{|u|=\ell}\exp(\beta U_q(u))
+      =
+      \exp(\beta R_{\ell+1}(q))
+      \prod_{j=1}^{\ell}
+      \sum_{c\in\mathcal C_j}\exp(\beta\phi_j(q,c))
+      =
+      \exp(\beta R_{\ell+1}(q))Z_{\le\ell}(q).
+   \]
+   Multiplying by the level weight \(a_\ell(q)\), summing over levels, and
+   applying \cref{lem:exponential-list-size} gives
+   \[
+      \sum_{u:U_q(u)\ge\Theta}a_{|u|}(q)
+      \le e^{-\beta\Theta}P_\beta(q)=L_\beta(q).
+   \]
+   This bounds the base reporter work and the number of live prefixes.  The
+   constant per listed child is charged to the child prefix itself, except for
+   the root initialization, which is absorbed by the \(+1\).  The priority
+   queue contributes the logarithmic factor.
+
+   Finally,
+   \[
+      \sum_{c:S_q(c)\ge\Theta}Q_c
+      \le
+      e^{-\beta\Theta}
+      \sum_c Q_c\exp(\beta S_q(c))
+      =
+      e^{-\beta\Theta}T_\beta(q),
+   \]
+   so substituting the prefix and terminal bounds into
+   \cref{lem:priority-prefix-list-decoder} proves the work estimate.  The last
+   statement is the displayed estimate with the local target budget substituted.
+\end{proof}
+
 \begin{assumption}[Flat structured spherical-code decoder]
    \label{asm:flat-spherical-code-decoder}
    Fix a localized terminal spherical gap with \(m\) resident points.  There is
@@ -9868,7 +9979,13 @@ would have to prove.  The product-code filtering construction of
 Becker--Ducas--Gama--Laarhoven is the closest existing algorithmic template:
 it turns an enormous implicit filter family into a decoding problem, so the
 missing worst-case statement becomes a prefix-list moment bound and a near-route
-hit bound for a structured product panel.
+hit bound for a structured product panel.  \Cref{lem:additive-product-panel-decoder}
+makes the decoder side self-contained: once block threshold reporters and
+suffix upper scores are available, the live stack is controlled by the product
+partition certificate \(P_\beta\), and terminal scan work is controlled by
+\(T_\beta\).  The remaining geometric theorem for such panels is therefore
+only the random-like spectrum: storage load, far co-load, and near-pair decoded
+hit probability at the critical exponent.
 \Cref{lem:budget-stable-prefix-list} and
 \cref{cor:canonical-budget-stable-decoder} take one step in that direction:
 the canonical mixed Bellman budget itself is an admissible list-decoding
