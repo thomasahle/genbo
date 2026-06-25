@@ -2926,6 +2926,86 @@ followed by the prefix test of \cref{lem:atom-safe-subchild}.
    certificate passes, or by exhaustive search over the retained subfamilies.
 \end{proof}
 
+\begin{lemma}[Pattern-complete fractional cover]\label{lem:pattern-complete-cover}
+   Fix a finite universe $\mathcal C_\star$ of certified children and a query
+   domain $\Omega$.  Let
+   \[
+      \mathcal A_\star
+      =
+      \{(a_C(q))_{C\in\mathcal C_\star}:q\in\Omega\}
+      \subseteq\{0,1\}^{\mathcal C_\star}
+   \]
+   be the realizable activation patterns of the full proposal universe, or let
+   $\widetilde{\mathcal A}\supseteq\mathcal A_\star$ be any finite superset of
+   patterns.  Consider the fractional cover program of
+   \cref{lem:finite-pool-dual} with one query constraint for each
+   $a\in\widetilde{\mathcal A}$,
+   \[
+      \sum_{C\in\mathcal C_\star} a_C w_C z_C\le L,
+   \]
+   and with storage budget $S$ and residual budget $L_0$.  If this program has
+   value at least $|P|-L_0$ and the atom bounds
+   \[
+      a_Cw_C\le L\qquad(a\in\widetilde{\mathcal A},\,C\in\mathcal C_\star),
+      \qquad
+      s_C\le S
+   \]
+   hold, then an integral stored subfamily $\mathcal R\subseteq\mathcal C_\star$
+   and residual block $U_0$ exist with
+   \[
+      |U_0|\le4(L_0+1),
+      \qquad
+      \sup_{q\in\Omega}\sum_{C\in\mathcal R}a_C(q)w_C\le3BL,
+      \qquad
+      \sum_{C\in\mathcal R}s_C\le3BS,
+   \]
+   where
+   \[
+      B\ge
+      \max\{1,\log(4|P|),\log(8(|\widetilde{\mathcal A}|+1))\}.
+   \]
+   Conversely, if the fractional value is below $|P|-L_0$, then there are point
+   prices $\alpha_x\in[0,1]$, pattern prices $\lambda_a\ge0$, and a storage
+   price $\sigma\ge0$ such that
+   \[
+      \sum_x\alpha_x
+      >
+      L_0+L\sum_{a\in\widetilde{\mathcal A}}\lambda_a+\sigma S
+   \]
+   and every proposal has nonpositive pattern-priced gain,
+   \[
+      \sum_{x\in P_C}\alpha_x
+      \le
+      \sigma s_C
+      +
+      w_C\sum_{a\in\widetilde{\mathcal A}}\lambda_a a_C
+      \qquad(C\in\mathcal C_\star).
+   \]
+\end{lemma}
+
+\begin{proof}
+   Treat each activation pattern $a\in\widetilde{\mathcal A}$ as one query
+   constraint in \cref{lem:finite-pool-dual} and
+   \cref{lem:fractional-cover-materialization}.  The rounding lemma gives an
+   integral subfamily with residual, storage, and pattern-load bounds
+   simultaneously for every $a\in\widetilde{\mathcal A}$.  Since each actual
+   query $q\in\Omega$ realizes a pattern in
+   $\mathcal A_\star\subseteq\widetilde{\mathcal A}$, the same bound holds for
+   $\sup_q\sum_Ca_C(q)w_C$.  The displayed dual certificate is exactly
+   \cref{lem:finite-pool-dual} with the query index set replaced by
+   $\widetilde{\mathcal A}$ and all query budgets equal to $L$.
+\end{proof}
+
+The factor $B$ is an index-size and query-time inflation, not a preprocessing
+cost.  Thus this compiler feeds the polylogarithmic theorem only when the
+retained activation class has polylogarithmic pattern entropy, for example when
+after localization the relevant cap or score predicates have an arrangement
+bound with $\log|\widetilde{\mathcal A}|=\log^{O_c(1)}m$.  If the exact pattern
+set is much larger, the same LP and dual are still useful as an offline
+certificate and separation diagnostic, but direct randomized materialization
+would not by itself preserve polylogarithmic overhead; one would then need an
+exact integral certificate or a sharper entropy-sensitive rounding theorem.
+
 Thus for modern regimes where preprocessing compute is relatively cheap, the
 right theoretical target is even cleaner: generate a very large candidate pool
 by residual sampling, all data directions, medoids, pair directions, or learned
@@ -2984,14 +3064,15 @@ small stored cover, not an efficient Lloyd-style training algorithm.
    generated during preprocessing contains one cover passing these certificates.
    By \cref{lem:finite-activation-patterns}, the all-query active-power
    certificate for any finite retained family is equivalently a finite set of
-   activation-pattern constraints.  Hence it is also enough to find a fractional
-   cover over the finite pool with logarithmically smaller budgets and bounded
-   atoms for those patterns.  The bounded-atom normal form can be enforced by
-   expanding the proposal universe to atom-safe subchildren as in
-   \cref{lem:atom-safe-subchild}; then
-   \cref{lem:fractional-cover-materialization} converts the fractional solution
-   into a stored cover and residual block, losing only another logarithmic
-   factor.
+   activation-pattern constraints.  Equivalently, by
+   \cref{lem:pattern-complete-cover}, it is enough to solve the fractional cover
+   over a polylog-entropy finite superset of the activation patterns of the full
+   finite proposal universe, with logarithmically smaller budgets and bounded
+   atoms.  The bounded-atom normal form can be enforced by expanding the
+   proposal universe to atom-safe subchildren as in
+   \cref{lem:atom-safe-subchild}; then the pattern-complete rounding converts
+   the fractional solution into a stored cover and residual block, losing only
+   another logarithmic factor.
 \end{assumption}
 
 \begin{proposition}[Weak offline score covers imply the polylog endpoint]
