@@ -3749,6 +3749,74 @@ query time pays only for output-sensitive list decoding.
    sentence is only a change of notation for the same sampled-panel compiler.
 \end{proof}
 
+\begin{corollary}[Bucket-quotient weighted quadrature]
+   \label{cor:bucket-quotient-quadrature}
+   Fix the terminal setting of \cref{prop:sampled-structured-panel}.  Let
+   \(\mathcal L\) be any finite or compact label family with base weights
+   \(w_g\), data predicates \(A_g(x)\in\{0,1\}\), and positive query scores
+   \(R_q(g)\).  Partition the labels into bucket classes \(b\in\mathcal B\) by
+   the stored point set
+   \[
+      C_b=\{x\in P:A_g(x)=1\},
+      \qquad g\in b.
+   \]
+   For a query \(q\), define the aggregate tilted bucket weight
+   \[
+      W_q(b)=\sum_{g\in b}w_gR_q(g),
+      \qquad
+      \Pi_q(b)=\frac{W_q(b)}{\sum_{a\in\mathcal B}W_q(a)} .
+   \]
+   The same definition applies with integrals when a bucket class contains a
+   continuum of labels.  Suppose that the query can sample \(b\sim\Pi_q\) in
+   \(d\log^{O_c(1)}m\) time, and that
+   \[
+      \sum_{b\in\mathcal B}|C_b|\le m^{1+\rho}L_m,
+      \tag{BQ1}
+   \]
+   \[
+      \sum_{\substack{x\in P\\\|x-q\|>cr}}
+      \sum_{b:x\in C_b}\Pi_q(b)
+      \le m^\rho L_m
+      \qquad\text{for every promised query }q,
+      \tag{BQ2}
+   \]
+   and
+   \[
+      \sum_{b:p\in C_b}\Pi_q(b)
+      \ge L_m^{-1}
+      \qquad\text{whenever }\|p-q\|\le r.
+      \tag{BQ3}
+   \]
+   Then \(O(L_m)\) independent quotient panels give the terminal ANN bounds of
+   \cref{prop:sampled-structured-panel}.
+\end{corollary}
+
+\begin{proof}
+   Store one bucket \(C_b\) per bucket class \(b\).  Use the sampled-panel label
+   set \(\mathcal B\), predicate
+   \[
+      A_b(x)=\mathbf 1\{x\in C_b\},
+   \]
+   and query law \(\Pi_q\).  The three displayed assumptions are exactly
+   \((SP1)\), \((SP2)\), and \((SP3)\) for this quotient panel.  Therefore
+   \cref{prop:sampled-structured-panel} applies.
+\end{proof}
+
+\begin{remark}[What the quotient buys]
+   \label{rem:bucket-quotient}
+   \Cref{cor:bucket-quotient-quadrature} separates two entropies that were
+   conflated in \cref{cor:weighted-gaussian-quadrature-panel}.  A trellis,
+   code, lattice coset, or continuous Gaussian rule may have many internal
+   labels, but the index stores point copies only for distinct bucket sets.
+   Query time then depends on whether the decoder can compute or sample the
+   aggregate weights \(W_q(b)\) without enumerating all labels in the bucket
+   class.  Thus a structured decoder can win in either of two ways: by keeping
+   the number of distinct stored buckets small, or by representing many labels
+   with one bucket and sampling their total tilted mass directly.  The
+   remaining certification is still the same three quantities: bucket storage,
+   far sampled co-load, and near sampled mass.
+\end{remark}
+
 \begin{lemma}[Tilted weight feasibility is linear]
    \label{lem:tilted-weight-linear-feasibility}
    Fix a finite retained label set \(\mathcal L\) and storage predicate
@@ -12905,6 +12973,11 @@ finite certificate: a weighted retained label set only has to pass storage,
 sampled far-load, and near-mass checks under the tilted query sampler.  The
 weights may be chosen by arbitrary preprocessing; only retained buckets and the
 query sampler are charged.
+\Cref{cor:bucket-quotient-quadrature} removes a further artificial charge:
+labels with the same stored point set may be quotient-merged, so storage
+depends on distinct buckets while the query samples their aggregate tilted
+weight.  This is the natural form for trellises, code cosets, lattice shells,
+and rank-prefix reporters.
 \Cref{lem:tilted-weight-linear-feasibility} shows that, for a fixed retained
 pool, choosing those weights is just a linear feasibility problem after
 clearing the tilted partition functions.  Failure has a concrete dual
