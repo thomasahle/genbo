@@ -3086,6 +3086,53 @@ index.
    its decoder.
 \end{proof}
 
+\begin{corollary}[Offline center-score saturation]
+   \label{cor:offline-center-score-saturation}
+   Fix a node with resident set $P$ and a finite family of center-score
+   templates
+   \[
+      \mathcal H=\{(o_h,\phi_h,L_h):h\in H\}.
+   \]
+   Let $\mathcal F(\mathcal H)$ be the finite parent pool obtained by
+   \cref{lem:center-score-closure}: for every $h\in H$ and every pair
+   $y,z\in P$, include the data-radius, data-threshold parent
+   \[
+      P\cap\Ball(o_h,\|y-o_h\|)
+      \cap\{x:\phi_h(x)\ge\phi_h(z)\}
+   \]
+   with activation predicate
+   $\phi_h(q)\ge\phi_h(z)-L_hr$.  Suppose a deterministic verifier accepts
+   some residual block and some certified score-cover whose children use
+   templates from $\mathcal H$.
+
+   Then unbounded preprocessing can find an accepted cover using only parents
+   from $\mathcal F(\mathcal H)$ and arbitrary retained submemberships of these
+   parents, and can choose among all such accepted covers one minimizing any
+   prescribed function of the certified residual size, active-power vector, and
+   storage power.  If $\mathcal H$ is itself produced by a randomized or learned
+   build routine with positive probability of admitting an accepted cover, the
+   build stage may repeat the routine until the verifier accepts.  Query time
+   and index space are those of the final chosen cover only.
+\end{corollary}
+
+\begin{proof}
+   Apply \cref{lem:threshold-tightening} and \cref{lem:radius-tightening} to
+   every nonempty child of the accepted score-cover.  By
+   \cref{lem:center-score-closure}, each tightened child is a certified
+   subchild of some parent in $\mathcal F(\mathcal H)$ and inherits that
+   parent's activation predicate and certified radius.  Thus the accepted cover
+   can be represented as a residual block together with selected memberships
+   inside the finite parent pool $\mathcal F(\mathcal H)$.
+   \Cref{lem:finite-pool-optimizer} finds some accepted representation by
+   exhaustive preprocessing, and \cref{cor:offline-pareto-compression} chooses
+   an accepted representation on the desired certified query-memory frontier.
+   If the template family is generated randomly with positive success
+   probability, \cref{lem:las-vegas-offline} repeats generation until an
+   accepted family is found.  All unsuccessful template families, rejected
+   memberships, and nonselected parents are preprocessing artifacts and are not
+   stored.
+\end{proof}
+
 By \cref{lem:guard-restricted-cover}, the finite verifier and the LPs below do
 not need to impose active-power constraints on high-guard queries.  For a fixed
 guard threshold $\gamma$, take $\mathcal Q$ to be a finite set of constraints
@@ -3814,7 +3861,11 @@ small stored cover, not an efficient Lloyd-style training algorithm.
 \Cref{lem:center-score-closure} means this candidate pool may be specified at
 the template level: a seed proposes a score and center, while preprocessing
 expands it into the finite set of data-score, data-radius superlevel parents
-and then into atom-safe exposed prefixes.
+and then into atom-safe exposed prefixes.  More explicitly,
+\cref{cor:offline-center-score-saturation} lets preprocessing saturate any
+finite seed family under all data thresholds, data radii, and retained
+memberships, run the deterministic certificates, and keep only the certified
+cover on the desired query-memory frontier.
 
 \begin{lemma}[Shadow price-density compiler]\label{lem:shadow-price-density-compiler}
    Work in one bounded-diameter node with resident set $P$, $|P|=m$, radius
@@ -4013,7 +4064,11 @@ and then into atom-safe exposed prefixes.
    \cref{cor:offline-pareto-compression}, it is enough that a finite proposal
    pool generated during preprocessing contains one cover passing these
    certificates; preprocessing may then choose the memory-minimal or
-   query-minimal accepted cover from that pool.
+   query-minimal accepted cover from that pool.  In the center-score model,
+   \cref{cor:offline-center-score-saturation} reduces this finite-pool
+   requirement further: the build routine only has to generate a finite family
+   of centers and scores whose data-threshold, data-radius closure contains an
+   accepted cover.
    By \cref{lem:guard-restricted-cover}, these active-power constraints need
    only range over the low-guard query domain; high-guard queries are handled by
    the resident sample.  By \cref{lem:finite-activation-patterns}, the
@@ -7618,7 +7673,12 @@ sample, or learn a huge proposal pool and then keep only the certified cover on
 the desired query-memory Pareto frontier.  The fractional LP and
 pattern-complete rounding remain useful proof devices, but their logarithmic
 rounding factor is not inherent to preprocessing: an exact integral certificate
-would pay no such index overhead.  The guard refinement
+would pay no such index overhead.  With
+\cref{cor:offline-center-score-saturation}, even the continuous score-filter
+parameters reduce to finite seed data: a proposed center-score family is closed
+under all data thresholds, data radii, and retained submemberships before
+certification, so the stored cover can be much smaller than the build-time
+candidate universe.  The guard refinement
 \cref{lem:low-guard-shadow} further removes points whose entire near-query
 neighborhood is already high-density: the finite dual now prices only the
 low-guard shadow, so the remaining score-cover theorem is about sparse exposed
