@@ -723,6 +723,50 @@ The leaf set $[B]^k$ is implicit. For a query or data point, sort the $B$ scores
 
 The smooth product filter is not a replacement for \cref{lem:adaptive-continuation}: it has no long prefix process on which to hang many recentering decisions. Its role is terminal. Once a localization method produces a bounded spherical subproblem with the critical near/far angular gap, \cref{thm:smooth-product-terminal} gives constant one-table recall and removes the last inverse-polylogarithmic amplification loss.
 
+\begin{lemma}[Flat shells give the data-independent exponent]\label{lem:flat-shell-obstruction}
+   Consider the tempting one-layer reduction that takes a bounded-diameter ball,
+   decomposes it into radial shells around its center, and runs the smooth
+   spherical filter directly on every data-query shell pair. On equal shells of
+   radius $R$, the induced spherical correlations are
+   \[
+      a_R=1-\frac{r^2}{2R^2},
+      \qquad
+      b_R=1-\frac{c^2r^2}{2R^2}.
+   \]
+   Hence
+   \[
+      \rho(a_R,b_R)
+      =
+      \frac{2-c^2x}{c^2(2-x)},
+      \qquad
+      x=\frac{r^2}{2R^2},
+   \]
+   and in particular
+   \[
+      \rho(a_R,b_R)\to\frac1{c^2}
+      \quad\text{as } R/r\to\infty .
+   \]
+   Since $1/c^2>\rho_c=1/(2c^2-1)$ for every $c>1$, flat shelling a
+   polylogarithmic-radius localized ball would lose a fixed polynomial factor
+   in $n$. The optimal exponent occurs only near the critical normalization
+   where the far correlation is $b\simeq0$ and the near correlation is
+   $a\simeq1-1/c^2$.
+\end{lemma}
+
+\begin{proof}
+   For equal radii, the shell formulas give angular chord distances
+   $r^2/R^2$ and $c^2r^2/R^2$. Since
+   $\|u-v\|^2=2-2\ip{u}{v}$ on the unit sphere, the displayed correlations
+   follow. Put $x=r^2/(2R^2)$. Then
+   \[
+      1-a_R=x,\quad 1-b_R=c^2x,\quad
+      1+a_R=2-x,\quad 1+b_R=2-c^2x.
+   \]
+   Substituting into the balanced spherical exponent
+   $\rho(a,b)=(1-a)(1+b)/((1+a)(1-b))$ gives the displayed expression and
+   its limit. The inequality $1/c^2>1/(2c^2-1)$ is equivalent to $c^2>1$.
+\end{proof}
+
 \begin{lemma}[Continuation-sampled detector tokens]\label{lem:continuation-detector}
    In any continuation-mass score block, a detector token can be sampled as follows. At a retained prefix $u$, assign every retained child $v$ its one-point continuation mass $H(v)$ for the remaining schedule, choose one child with probability proportional to $H(v)$, and kill the token if the total retained child mass is zero. Then the resulting detector law is normalized: for every prefix-free family $\mathcal U$,
    \[
@@ -1628,6 +1672,21 @@ load
    subroutines. Final candidates are verified in the original metric.
 \end{proof}
 
+This also gives a safe way to use an empirical cover such as $k$-means without
+claiming that Lloyd's objective proves anything. At a node, store an arbitrary
+certified cover together with a capped decoder. On query $q$, the decoder either
+lists every active filter while certifying
+\[
+   \sum_{i\in I(q)} |P_i|^\rho\Psi(R_i)\le L,
+\]
+or aborts before spending more than the chosen cap. In the first case the query
+searches the listed filters and is correct by the compiler. In the second case
+the query ignores the cover and runs the baseline score-and-ball node. Thus a
+heuristic cover can only improve benign instances; the worst-case theorem is
+still carried by the baseline unless one proves a uniform power-stabbing bound.
+The open theoretical problem is therefore not to analyze Lloyd's algorithm
+directly, but to construct covers that pass this certificate recursively.
+
 \begin{assumption}[Decodable contracting power cover]\label{asm:power-cover}
    Fix $c>1$, $\rho=\rho_c$, and a parameter $\eta>0$. In every bounded-diameter
    localized node with $m$ resident points in a certified ball of radius $R$,
@@ -1846,9 +1905,21 @@ unit-cost version is the self-contained core.
 A practical ``power-cover Lloyd'' iteration would alternate this coverage or
 power-cost assignment step with a center update that reduces certified radii and
 inflated stabbing, approximately a one-center or quantile-radius objective, not
-the Euclidean mean alone. The radius term suggests a concrete way to beat plain
-$k$-means: peel or replicate points whose inclusion greatly expands a certified
-ball instead of allowing one outlier to enlarge the query region of an entire
+the Euclidean mean alone. Its assignment score for adding point $x$ to filter
+$i$ is the marginal uncovered near-pair weight divided by the marginal storage
+and stabbing power
+\[
+   \Delta_i(x)
+   =
+   (|P_i|+1)^{1+\rho}
+   \Psi\!\left(\max\{R_i,\|x-o_i\|\}\right)
+   -
+   |P_i|^{1+\rho}\Psi(R_i),
+\]
+with analogous query-side power penalties when sampled queries already stab
+many filters. The radius term suggests a concrete way to beat plain $k$-means:
+peel or replicate points whose inclusion greatly expands a certified ball
+instead of allowing one outlier to enlarge the query region of an entire
 cluster. Proving an $n^\rho\polylog n$ worst-case power-stabbing cover would be
 another route to the final theorem; empirically, it is a plausible way to beat
 plain $k$-means while staying aligned with the score-and-ball potential.
@@ -4159,7 +4230,7 @@ One should also separate the resident-guard regime from the genuine finite-chann
 The main self-contained proof path is the restartable slice route of \cref{prop:slice-two-thirds}. The following notes explain which pieces are closed, which one-tree milestones are conditional, and which older formulations remain useful as comparisons or possible extensions.
 
 \paragraph{Spherical stage.}
-The continuation-mass spherical decoder is proved in \cref{lem:continuation-work}, \cref{lem:good-first-moment}, \cref{lem:tame-second-moment}, and \cref{cor:spherical-survival}. The one-sided analytical upper barrier controls prolific early prefixes in the proof, while the algorithm itself enforces only continuation-mass pruning. Independently, \cref{thm:smooth-product-terminal} gives a constant-recall terminal spherical engine by smooth product filtering. The adaptive decoder is for carrying score through localization; the smooth product filter is for the final localized spherical search.
+The continuation-mass spherical decoder is proved in \cref{lem:continuation-work}, \cref{lem:good-first-moment}, \cref{lem:tame-second-moment}, and \cref{cor:spherical-survival}. The one-sided analytical upper barrier controls prolific early prefixes in the proof, while the algorithm itself enforces only continuation-mass pruning. Independently, \cref{thm:smooth-product-terminal} gives a constant-recall terminal spherical engine by smooth product filtering. The adaptive decoder is for carrying score through localization; the smooth product filter is for the final localized spherical search. \Cref{lem:flat-shell-obstruction} explains why this terminal filter cannot simply be applied to all radial shells of the bounded-diameter instance: without recentering to the critical normalization, the exponent becomes $1/c^2$ rather than $\rho_c$.
 
 \paragraph{Restartable \(2/3\) stage.}
 \Cref{prop:slice-two-thirds} proves the restartable $2/3$ rung and is the proof of \cref{thm:main}. It reaches a subpolynomial overhead using deliberate restarts and leaf-conditioned slices.
