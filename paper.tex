@@ -2804,14 +2804,61 @@ low-guard query, not on dense regions already certified by the guard.
    \((D2)\).  The converse is the same duality implication read backward.
 \end{proof}
 
+\begin{corollary}[Shadow finite-pool dual]\label{cor:shadow-finite-pool-dual}
+   Fix a target set $E\subseteq P$, a finite low-guard query constraint set
+   $\mathcal Q$, and a finite proposal pool whose children are hereditary under
+   taking subsets.  Replace every proposal $C$ by the exposed subchild with
+   point set $P_C\cap E$, discard empty subchildren, and compute its query and
+   storage weights using the exposed cardinality:
+   \[
+      w_{C,E}=|P_C\cap E|^\rho\Psi(R_C),
+      \qquad
+      s_{C,E}=|P_C\cap E|^{1+\rho}\Psi(R_C).
+   \]
+   Consider the fractional cover program that maximizes
+   $\sum_{x\in E}v_x$, covers only points of $E$, and uses the active and
+   storage weights $w_{C,E},s_{C,E}$.  If its value is below $|E|-L_0$, then
+   there are prices $\alpha_x\in[0,1]$ supported on $E$, query prices
+   $\lambda_q\ge0$, and a storage price $\sigma\ge0$ such that
+   \[
+      \sum_{x\in E}\alpha_x
+      >
+      L_0+\sum_{q\in\mathcal Q}\lambda_qL_q+\sigma S,
+   \]
+   while every proposal satisfies
+   \[
+      \sum_{x\in P_C\cap E}\alpha_x
+      \le
+      \sigma s_{C,E}
+      +
+      w_{C,E}\sum_{q\in\mathcal Q}\lambda_q a_C(q).
+   \]
+   Conversely, if no such supported price system exists, the exposed pool has a
+   fractional cover of $E$ with residual value at most $L_0$ under the displayed
+   budgets.
+\end{corollary}
+
+\begin{proof}
+   Apply \cref{lem:finite-pool-dual} with ground set $E$ and with the proposal
+   pool consisting of the exposed subchildren $P_C\cap E$.  Heredity guarantees
+   that each exposed subchild keeps the same radius and activation predicate
+   and is still certified.  The displayed inequalities are exactly the dual
+   certificate from \cref{lem:finite-pool-dual} after extending the point prices
+   by zero on $P\setminus E$.
+\end{proof}
+
 The dual gives a concrete way to attack the remaining geometric problem.  A
 failure of the finite fractional cover produces a weighted residual set
 $\alpha$, a query-load distribution $\lambda$, and a storage price $\sigma$ such
 that every certified proposal has less $\alpha$-mass than its charged storage
 and query footprint.  Thus the desired local theorem can be phrased without any
 reference to Lloyd dynamics: for a rich enough proposal pool, rule out all
-price systems satisfying \((D1)\)--\((D2)\), then use the offline optimizer and
-deterministic verifier to retain only a low-stabbing cover.
+price systems satisfying \((D1)\)--\((D2)\), or the shadow-supported version in
+\cref{cor:shadow-finite-pool-dual}, then use the offline optimizer and
+deterministic verifier to retain only a low-stabbing cover.  In the
+guard-restricted route the relevant target set is the low-guard shadow
+$E_\gamma$, so dense regions outside $E_\gamma$ never need to be bought by a
+dual witness or stored inside an exposed child.
 
 \begin{corollary}[Dual-price proposal separation]\label{cor:dual-price-separation}
    Fix a finite universe $\mathcal C_\star$ of certified candidate children and
@@ -2997,6 +3044,15 @@ followed by the prefix test of \cref{lem:atom-safe-subchild}.
    This is positive exactly when \((PD)\) holds.  Dividing the nonpositivity of
    this expression by $k$ gives \((PD^\ast)\).
 \end{proof}
+
+In the low-guard shadow program, \cref{cor:price-density-subchild} is applied to
+the exposed parent $P_C\cap E_\gamma$ and to prices supported on
+$E_\gamma$.  Unexposed points are discarded before the prefix test.  Thus a
+candidate parent proposal is useful exactly when some prefix of its exposed
+high-price points beats the storage and active-pattern charge after the
+cardinality, query weight, and storage weight have all been computed on that
+exposed prefix.  This prevents dense but guard-solved points from diluting the
+price density of a proposal.
 
 \begin{lemma}[Averaged proposal separation]\label{lem:averaged-proposal-separation}
    Fix any dual price system and any finite certified child universe
@@ -3347,15 +3403,18 @@ small stored cover, not an efficient Lloyd-style training algorithm.
    only range over the low-guard query domain; high-guard queries are handled by
    the resident sample.  By \cref{lem:finite-activation-patterns}, the
    low-guard active-power certificate for any finite retained family is
-   equivalently a finite set of activation-pattern constraints.  Equivalently, by
-   \cref{lem:pattern-complete-cover}, it is enough to solve the fractional cover
-   over a polylog-entropy finite superset of the low-guard activation patterns
-   of the full finite proposal universe, with logarithmically smaller budgets
-   and bounded atoms.  The bounded-atom normal form can be enforced by expanding
-   the proposal universe to atom-safe subchildren as in
-   \cref{lem:atom-safe-subchild}; then the pattern-complete rounding converts
-   the fractional solution into a stored cover and residual block, losing only
-   another logarithmic factor.
+   equivalently a finite set of activation-pattern constraints.  By
+   \cref{cor:shadow-finite-pool-dual}, the corresponding fractional cover
+   problem may use $E_{\gamma_m}$ as its ground set, intersect every proposal
+   with this shadow, and put dual point prices only on exposed points.
+   Equivalently, by \cref{lem:pattern-complete-cover}, it is enough to solve
+   the fractional cover over a polylog-entropy finite superset of the low-guard
+   activation patterns of the shadow-intersected finite proposal universe, with
+   logarithmically smaller budgets and bounded atoms.  The bounded-atom normal
+   form can be enforced by expanding the proposal universe to atom-safe exposed
+   subchildren as in \cref{lem:atom-safe-subchild}; then the pattern-complete
+   rounding converts the fractional solution into a stored cover and residual
+   block, losing only another logarithmic factor.
 \end{assumption}
 
 \begin{proposition}[Weak offline score covers imply the polylog endpoint]
@@ -6940,6 +6999,9 @@ would pay no such index overhead.  The guard refinement
 neighborhood is already high-density: the finite dual now prices only the
 low-guard shadow, so the remaining score-cover theorem is about sparse exposed
 regions rather than dense clusters that resident sampling already solves.
+\Cref{cor:shadow-finite-pool-dual} makes this formal in the LP: proposals are
+intersected with the exposed shadow before their storage and active weights are
+computed, and point prices vanish outside that shadow.
 
 \paragraph{Structured posterior route.}
 \Cref{lem:posterior-superlevel-compiler} records the negative-moment identity suggested by the latest notes. \Cref{lem:explicit-enumeration-barrier} makes the coarse-child obstruction precise: the scale $\xi=m^{-1/(2c^2)}$ is the price of explicitly enumerating $B\simeq\xi^{-1}$ outcomes, not a geometric limit. \Cref{lem:oblivious-sparsification-barrier} adds the complementary warning that the moment bounds alone still permit $\Omega(\xi^{-1})$ disjoint possible witnesses, so direct random sparsification cannot replace structured decoding without an additional sensitivity theorem. \Cref{lem:scale-window-compiler} and \cref{lem:dyadic-structured-amplification} isolate the important arithmetic: if mass windows can be decoded output-sensitively, then $\xi^{-\rho}$ repetitions at each dyadic scale convert negative-moment value into constant hit probability, and summing all scales down to $1/m$ still fits the $m^\rho$ query budget. This scale-aware amplification is essential; a raw negative-moment diagnostic alone does not imply that the near point is actually listed with inverse-polylogarithmic probability.
