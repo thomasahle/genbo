@@ -1926,16 +1926,45 @@ $m^\rho\ll |P\cap\Ball(q,cr)|\ll m^{1-\rho}$.
    $V(q)$, giving the displayed bound.
 \end{proof}
 
+\begin{lemma}[Weighted terminal-sampler compiler]
+   \label{lem:weighted-terminal-sampler}
+   Fix a query $q$ and a nonempty finite active family of terminal groups
+   $\mathcal G(q)$.  Each group $g$ has a nonempty finite candidate set
+   $A_g(q)$, a positive sampling weight $b_g$, and an $O(1)$-time sampler for
+   the uniform distribution on $A_g(q)$.  Let $V_g(q)\subseteq A_g(q)$ be the
+   pure alternatives in group $g$, meaning that every sampled element of
+   $V_g(q)$ carries a representative within distance $cr$ of $q$.  One
+   terminal trial chooses a group with probability proportional to $b_g$ and
+   then samples uniformly inside that group.  Put
+   \[
+      h(q)=
+      \frac{\sum_{g\in\mathcal G(q)}
+         b_g\,|V_g(q)|/|A_g(q)|}
+           {\sum_{g\in\mathcal G(q)}b_g}.
+   \]
+   Then $B$ independent terminal trials followed by verification fail with
+   probability at most $\exp(-Bh(q))$.  In particular, if
+   $h(q)\ge h_0$, then $O(h_0^{-1})$ trials give constant success probability,
+   independent of the total number of pure alternatives.
+\end{lemma}
+
+\begin{proof}
+   A single trial lands in a pure alternative with probability exactly $h(q)$.
+   Such a trial returns a representative within distance $cr$ of $q$, and
+   verification accepts it.  The trials are independent, so the miss
+   probability is $(1-h(q))^B\le e^{-Bh(q)}$.
+\end{proof}
+
 Thus the obstruction in
 \cref{lem:middle-density-singleton-obstruction} is specifically an
 all-reporting obstruction.  Middle-density terminal alternatives are harmless
 if the query can sample from a pure active family, or from a candidate family
-whose pure fraction is inverse-polylogarithmic.  This is the terminal analogue
-of the saturated value-delivery formulation below: a large number of parallel
-valid alternatives should contribute success probability, not active listing
-cost.  It is also the reason the structured posterior target asks for
-output-sensitive rank-prefix sampling/reporting rather than an explicit list of
-all near singletons.
+whose pure fraction is inverse-polylogarithmic.  The weighted form
+\cref{lem:weighted-terminal-sampler} is the terminal analogue of the saturated
+value-delivery formulation below: a large number of parallel valid alternatives
+should contribute sampling mass, not active listing cost.  It is also the
+reason the structured posterior target asks for output-sensitive rank-prefix
+sampling/reporting rather than an explicit list of all near singletons.
 
 This also gives a safe way to use an empirical cover such as $k$-means without
 claiming that Lloyd's objective proves anything. At a node, store an arbitrary
