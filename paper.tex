@@ -3825,6 +3825,117 @@ query time pays only for output-sensitive list decoding.
    that separating vector as \(\lambda\) and \(\mu\) gives \((TW5)\).
 \end{proof}
 
+\begin{lemma}[Continuous Gaussian weights have finite test witnesses]
+   \label{lem:continuous-gaussian-finite-witness}
+   Work in the critical spherical normalization of
+   \cref{lem:critical-tilted-gaussian-sampled-spectrum}.  Thus
+   \(a_0=1-1/c^2\), \(\rho=1/(2c^2-1)\),
+   \(T^2=2(1-\rho)\log m\), and \(\beta=T/a_0\).  Let
+   \(P\subset\mathbb S^{d-1}\) have \(|P|=m\).  Let
+   \(\mathcal Q\subset\mathbb S^{d-1}\) be a finite set of promised queries
+   such that every invalid point for \(q\) has \(\ip{x}{q}\le0\), and let
+   \(\mathcal N\subseteq P\times\mathcal Q\) be a finite set of near witnesses
+   with \(\ip{p}{q}\ge a_0\).  For a Gaussian label \(g\in\R^d\), put
+   \[
+      A_g(x)=\mathbf 1\{\ip{g}{x}\ge T\},
+      \qquad
+      R_q(g)=e^{\beta\ip{g}{q}},
+   \]
+   and
+   \[
+      F_q(g)=
+      \sum_{\substack{x\in P\\ x\text{ invalid for }q}}A_g(x).
+   \]
+   Then there are labels \(g_1,\ldots,g_s\in\R^d\) and nonnegative weights
+   \(w_1,\ldots,w_s\), with
+   \[
+      s\le |\mathcal Q|+|\mathcal N|+1,
+      \qquad
+      \sum_iw_i=1,
+   \]
+   such that the tilted laws
+   \[
+      \pi_q(i)=
+      \frac{w_iR_q(g_i)}{\sum_{\ell=1}^sw_\ell R_q(g_\ell)}
+   \]
+   satisfy
+   \[
+      \sum_i\pi_q(i)F_q(g_i)\le 2m^\rho
+      \qquad(q\in\mathcal Q),
+      \tag{CG1}
+   \]
+   and
+   \[
+      \sum_i\pi_q(i)A_{g_i}(p)\ge\frac13
+      \qquad((p,q)\in\mathcal N).
+      \tag{CG2}
+   \]
+\end{lemma}
+
+\begin{proof}
+   Let \(G\sim N(0,I_d)\), and let \(\gamma_q\) be the tilted law with density
+   proportional to \(R_q(g)\) with respect to the law of \(G\).  Equivalently,
+   \(G_q\sim N(\beta q,I_d)\).  By
+   \cref{lem:critical-tilted-gaussian-sampled-spectrum}, for every
+   \(q\in\mathcal Q\),
+   \[
+      \E_{\gamma_q}F_q(G)
+      \le
+      m\cdot m^{-(1-\rho)}
+      =
+      m^\rho,
+   \]
+   and, for every \((p,q)\in\mathcal N\),
+   \[
+      \E_{\gamma_q}A_G(p)\ge\frac12 .
+   \]
+   If \(Z_q=\E R_q(G)\), then the corresponding homogeneous coordinates from
+   \cref{lem:tilted-weight-linear-feasibility} have expectations
+   \[
+      \E R_q(G)\bigl(F_q(G)-2m^\rho\bigr)
+      =
+      Z_q\bigl(\E_{\gamma_q}F_q(G)-2m^\rho\bigr)
+      \le
+      -Z_qm^\rho,
+   \]
+   and
+   \[
+      \E R_q(G)\left(\frac13-A_G(p)\right)
+      =
+      Z_q\left(\frac13-\E_{\gamma_q}A_G(p)\right)
+      \le
+      -\frac{Z_q}{6}.
+   \]
+   All these finitely many random variables are integrable, because
+   \(F_q(G)\le m\) and \(R_q(G)\) is lognormal.  Therefore a sufficiently long
+   finite iid sample \(G_1,\ldots,G_N\) has, with positive probability, all
+   empirical averages of the displayed homogeneous coordinates nonpositive.
+   Fix such a sample.  Its empirical column average lies in the convex hull of
+   the sampled columns in
+   \(\R^{|\mathcal Q|+|\mathcal N|}\).  Caratheodory's theorem represents the
+   same average as a convex combination of at most
+   \(|\mathcal Q|+|\mathcal N|+1\) sampled columns.  Applying
+   \cref{lem:tilted-weight-linear-feasibility} to these labels and weights
+   gives \((CG1)\) and \((CG2)\).
+\end{proof}
+
+\begin{remark}[What the finite witness lemma does not solve]
+   \label{rem:continuous-witness-caveat}
+   \Cref{lem:continuous-gaussian-finite-witness} says that the ideal Gaussian
+   label universe has no tilted-weight dual obstruction on any finite test
+   set.  Equivalently, if a Farkas certificate of the form \((TW5)\) exists,
+   it is caused by restricting the labels to a proposed code, lattice, trellis,
+   or stored panel, not by the Gaussian spectrum itself.
+
+   This is only an offline separation statement.  It does not give the charged
+   ANN index: the number of finite tests may be enormous, the selected labels
+   need not have a compact decoder or sampler, and the unweighted bucket
+   incidences in \((WQ1)\) are not controlled for the full all-query problem.
+   Thus the remaining code/lattice theorem is precisely a low-storage,
+   query-decodable quadrature theorem for the continuous tilted Gaussian
+   calculation, with polylogarithmic rather than \(m^{o(1)}\) slack.
+\end{remark}
+
 \begin{remark}[Lattice Gaussian panels as sampled decoders]
    \label{rem:lattice-gaussian-panels}
    \Cref{prop:sampled-structured-panel} is the sampler analogue of the
@@ -12703,6 +12814,11 @@ clearing the tilted partition functions.  Failure has a concrete dual
 certificate assigning prices to bad queries and near witnesses; a structured
 label family must provide a nonpositive-reduced-obstruction label for every
 such dual.
+\Cref{lem:continuous-gaussian-finite-witness} checks the corresponding
+positive fact for the unrestricted Gaussian label universe: every finite test
+set has feasible tilted weights with strict slack.  Hence the missing theorem
+is not weight existence in the ideal spectrum, but a finite low-storage,
+query-decodable quadrature for that spectrum.
 \Cref{rem:outer-list-recovery-codebook} records the stronger alternative
 suggested by list-decoding codes and lattices: instead of decoding the full
 Cartesian product, retain a sparse outer code or lattice coset and use soft
