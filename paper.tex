@@ -2704,6 +2704,73 @@ query time pays only for output-sensitive list decoding.
    \]
 \end{proof}
 
+\begin{lemma}[Soft list-recovery blocks are threshold reporters]
+   \label{lem:soft-list-recovery-reporter}
+   Fix one product block \(j\).  Let
+   \(\mathcal C_j\subseteq\Sigma_j^{b_j}\) be a code, and suppose the query
+   score decomposes coordinatewise:
+   \[
+      \phi_j(q,c)=\sum_{i=1}^{b_j}\omega_{j,i}(q,c_i)
+      \qquad(c=(c_1,\ldots,c_{b_j})\in\mathcal C_j).
+   \]
+   Suppose there is a certified soft list-recovery decoder which, for every
+   query \(q\) and threshold \(\theta\), returns exactly
+   \[
+      \mathsf L_j(q,\theta)
+      =
+      \left\{
+      c\in\mathcal C_j:
+      \sum_{i=1}^{b_j}\omega_{j,i}(q,c_i)\ge\theta
+      \right\}
+   \]
+   in work \(D_j(q)+O(|\mathsf L_j(q,\theta)|)\).  Then block \(j\) supplies
+   the threshold reporter required by
+   \cref{lem:additive-product-panel-decoder}.  Consequently, any
+   code or lattice family with such certified soft reporters and with the
+   one-block rate bounds of \cref{cor:product-panel-rate-bookkeeping}
+   implements the product-panel terminal engine.
+\end{lemma}
+
+\begin{proof}
+   The threshold reporter in \cref{lem:additive-product-panel-decoder} is
+   precisely the map \((q,\theta)\mapsto\mathsf L_j(q,\theta)\).  Substituting
+   the certified work bound for \(D_j(q)\) gives the decoder work estimate.
+   The final statement is the composition with
+   \cref{lem:additive-product-panel-decoder},
+   \cref{prop:product-panel-spectrum-compiler}, and
+   \cref{cor:product-panel-rate-bookkeeping}.
+\end{proof}
+
+\begin{remark}[List decoding as learned routing without Lloyd analysis]
+   \label{rem:list-decoding-routing}
+   The useful transfer from list decoding is not a black-box decoding radius.
+   It is the interface in \cref{lem:soft-list-recovery-reporter}: a structured
+   code or lattice gives an implicit family of candidate centers together with
+   a certified output-sensitive enumerator for the centers relevant to a query.
+   This is a cleaner theorem object than Lloyd or \(k\)-means routing.  Lloyd
+   may find excellent empirical centers, but its iterations do not by
+   themselves provide a worst-case list-size majorant for every query.  A
+   code/lattice panel instead stores a compact seed, coset, syndrome, or
+   frozen-set description, and the query runs a list decoder whose stack size is
+   charged by the partition certificates \(P_\beta\) and \(T_\beta\).
+
+   Since preprocessing time is not charged in the model, the build routine may
+   search aggressively over random rotations, cosets, Construction-A moduli,
+   block scalings, frozen sets, evaluation points, and pruning profiles.  Only
+   the retained panel descriptions, bucket incidences, and query decoder are
+   charged.  The proof obligation remains exactly the rate bookkeeping above:
+   random-like point load, random-like far co-load, output-sensitive decoding,
+   and inverse-polylogarithmic near-pair hit probability.  Recent Euclidean
+   list-decoding work gives relevant building blocks and benchmarks for this
+   target: random spherical and Construction-A Euclidean codes give the list
+   size baseline~\cite{ZV21}, Reed--Solomon and related soft decoders give
+   coordinatewise Euclidean list-recovery mechanisms~\cite{KV03,MP20,PH26},
+   and polar-code nearest-neighbor search shows the practical value of using a
+   high-dimensional latent code plus list decoding for multiprobe
+   search~\cite{TV12,TH23}.  What is still missing here is the simultaneous
+   ANN spectrum theorem at the critical exponent, not the decoder interface.
+\end{remark}
+
 \begin{assumption}[Flat structured spherical-code decoder]
    \label{asm:flat-spherical-code-decoder}
    Fix a localized terminal spherical gap with \(m\) resident points.  There is
@@ -10369,7 +10436,12 @@ would have to prove.  The product-code filtering construction of
 Becker--Ducas--Gama--Laarhoven is the closest existing algorithmic template:
 it turns an enormous implicit filter family into a decoding problem, so the
 missing worst-case statement becomes a prefix-list moment bound and a near-route
-hit bound for a structured product panel.  \Cref{lem:additive-product-panel-decoder}
+hit bound for a structured product panel.  \Cref{lem:soft-list-recovery-reporter}
+makes the coding-theoretic interface explicit: any certified soft list-recovery
+or lattice enumeration block is enough to supply the threshold reporters used
+by the product-panel decoder; the remaining work is spectrum and rate
+bookkeeping rather than Lloyd-style convergence analysis.
+\Cref{lem:additive-product-panel-decoder}
 makes the decoder side self-contained: once block threshold reporters and
 suffix upper scores are available, the live stack is controlled by the product
 partition certificate \(P_\beta\), and terminal scan work is controlled by
@@ -10595,6 +10667,18 @@ The one-sided spherical proof is motivated by the Ahle--Knudsen manuscript suppl
    Ethan Mook and Chris Peikert.
    \newblock Lattice (list) decoding near Minkowski's inequality.
    \newblock arXiv:2010.04809, 2020.
+
+   \bibitem{ZV21}
+   Yihan Zhang and Shashank Vatedka.
+   \newblock List decoding random Euclidean codes and infinite constellations.
+   \newblock arXiv:1901.03790, 2021.
+
+   \bibitem{PH26}
+   Chris Peikert and Alexandra Veliche Hostetler.
+   \newblock List decoding Reed--Solomon codes in the Lee, Euclidean, and other
+   metrics.
+   \newblock In \emph{Proceedings of the 17th Innovations in Theoretical
+   Computer Science Conference (ITCS)}, LIPIcs 325:106:1--106:22, 2026.
 
    \bibitem{FP85}
    Ulrich Fincke and Michael Pohst.
