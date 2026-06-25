@@ -2536,6 +2536,42 @@ resource.
    discarded build-time proposals.
 \end{proof}
 
+\begin{lemma}[Finite-pool offline optimizer]\label{lem:finite-pool-optimizer}
+   Fix a finite proposal pool of certified Lipschitz score filters
+   \[
+      \mathcal F=\{(M_i,o_i,R_i,\phi_i,\theta_i,L_i):i\in I\},
+   \]
+   where
+   \[
+      M_i\subseteq
+      P\cap\Ball(o_i,R_i)\cap\{x:\phi_i(x)\ge\theta_i\}
+   \]
+   is the admissible membership set of filter $i$.  Also fix a deterministic
+   verifier which, given a residual block $U_0$ and selected memberships
+   $P_i\subseteq M_i$, accepts only if the selected filters cover
+   $P\setminus U_0$, the residual size bound holds, and the active query-power
+   and storage-power certificates required by \cref{asm:weak-offline-score-cover}
+   hold.
+
+   If some choice of $U_0$ and memberships from the pool is accepted by this
+   verifier, then unbounded preprocessing can find an accepted choice by
+   exhaustive search, or equivalently by an exact finite integer optimization
+   over the membership variables.  The query time and index space are those of
+   the accepted stored cover only; the size of $\mathcal F$ and the cost of the
+   search are preprocessing costs.
+\end{lemma}
+
+\begin{proof}
+   The pool is finite, and each point-filter membership is either selected or
+   not selected.  Therefore the number of possible residual blocks and selected
+   membership patterns is finite.  Exhaustive preprocessing enumerates them,
+   runs the deterministic verifier, and keeps the first accepted pattern.  If an
+   accepted pattern exists, the enumeration eventually finds one.  Once the
+   index is built, the discarded proposals and rejected membership patterns are
+   absent from the data structure, so they do not contribute to query work or
+   storage.
+\end{proof}
+
 Thus for modern regimes where preprocessing compute is relatively cheap, the
 right theoretical target is even cleaner: generate a very large candidate pool
 by residual sampling, all data directions, medoids, pair directions, or learned
@@ -2589,7 +2625,9 @@ small stored cover, not an efficient Lloyd-style training algorithm.
    together with a deterministic verifier satisfies the weak residual condition
    until the remaining residual has size at most
    $F_4(m,R)\log^{O_c(1)}m$, and that the retained family passes the displayed
-   deterministic active-power and storage certificates.
+   deterministic active-power and storage certificates.  Equivalently, by
+   \cref{lem:finite-pool-optimizer}, it is enough that a finite proposal pool
+   generated during preprocessing contains one cover passing these certificates.
 \end{assumption}
 
 \begin{proposition}[Weak offline score covers imply the polylog endpoint]
