@@ -1834,6 +1834,41 @@ The deterministic priced compiler is the limiting case where every active child
 is queried, while terminal pure sampling is the case $\sigma_C=1$ for pure
 terminal alternatives and zero for impure ones.
 
+\begin{lemma}[Existential sampled priced cover compiler]
+   \label{lem:existential-sampled-priced-cover}
+   Work in the setting of \cref{lem:sampled-priced-cover}, but fix a query
+   \(q\) and let \(N(q)\) be the unresolved near set after the always-scanned
+   residual block has been removed.  Suppose the sampled child distribution
+   satisfies the same support and expected-price conditions, and define the
+   near-set route mass
+   \[
+      h_q^{\exists}
+      =
+      \sum_{C:\ P_C\cap N(q)\ne\emptyset}\pi_q(C)\sigma_C .
+   \]
+   If \(N(q)\ne\emptyset\) and \(h_q^{\exists}\ge h_0\), then
+   \(B\) independent sampled child invocations, followed by verification in the
+   original metric, fail with probability at most \(\exp(-Bh_0)\).  Their
+   expected query work is \(O(B(D(q)+L))\).
+\end{lemma}
+
+\begin{proof}
+   In one trial, whenever the sampled child \(C\) has
+   \(P_C\cap N(q)\ne\emptyset\), choose any
+   \(p\in P_C\cap N(q)\).  By the definition of \(N(q)\), \(\|p-q\|\le r\);
+   by the child certificate, invoking \(C\) returns a verified
+   \(cr\)-neighbor with probability at least \(\sigma_C\).  Summing over these
+   useful children gives one-trial success probability at least
+   \(h_q^{\exists}\).  Independent trials and linearity of expectation give
+   the displayed bounds.
+\end{proof}
+
+The existential form is weaker than the per-witness route-mass condition in
+\cref{lem:sampled-priced-cover}.  When \(N(q)\) is a singleton the two coincide,
+but when several near points are present the sampler may spend all of its route
+mass on whichever witness is easiest to route.  This is the correct ANN
+objective; per-point route mass is only a sufficient robustness certificate.
+
 \begin{lemma}[Prefix-list decoding compiler]
    \label{lem:prefix-list-decoder}
    Fix one query \(q\) and a finite rooted trie of route prefixes.  Each
@@ -2207,6 +2242,64 @@ normalization price.  If every surplus sampled dual certificate has such a
 positive-gain child in the candidate universe, unbounded preprocessing can add
 that child and repeat until the sampled route-mass LP is feasible.
 
+\begin{lemma}[Finite existential sampled-cover dual]
+   \label{lem:finite-existential-sampled-cover-dual}
+   Fix one query state \(q\), a finite retained family of certified children
+   \(\mathcal C\), and a finite unresolved near set
+   \(N_q\subseteq P\). Assume \(N_q\ne\emptyset\).  Given a target \(h_0>0\)
+   and query-price budget \(L_q\), consider the feasibility problem
+   \[
+   \begin{array}{ll}
+   \text{\rm find} & \pi_C\ge0\qquad(C\in\mathcal C)\\[0.3em]
+   \text{\rm subject to}
+      & \pi_C=0\qquad(a_C(q)=0),\\[0.4em]
+      & \displaystyle \sum_C\pi_C\le1,\\[0.8em]
+      & \displaystyle \sum_C\pi_CQ_C\le L_q,\\[0.8em]
+      & \displaystyle
+        \sum_{C:\ P_C\cap N_q\ne\emptyset}\pi_C\sigma_C\ge h_0 .
+   \end{array}
+   \tag{$\mathsf E_q$}
+   \]
+   If \(\mathsf E_q\) is infeasible, then there are prices
+   \(\lambda,\mu\ge0\) such that
+   \[
+      h_0>\lambda L_q+\mu,
+      \tag{ED1}
+   \]
+   while every active child has nonpositive existential reduced gain,
+   \[
+      \sigma_C\mathbf 1\{P_C\cap N_q\ne\emptyset\}
+      \le
+      \lambda Q_C+\mu
+      \qquad(C:a_C(q)=1).
+      \tag{ED2}
+   \]
+   Conversely, such prices certify infeasibility of \(\mathsf E_q\).
+\end{lemma}
+
+\begin{proof}
+   The converse is immediate: multiplying the price and normalization
+   constraints by \(\lambda\) and \(\mu\), respectively, and using \((ED2)\)
+   gives, for any feasible \(\pi\),
+   \[
+      \sum_{C:\ P_C\cap N_q\ne\emptyset}\pi_C\sigma_C
+      \le
+      \lambda\sum_C\pi_CQ_C+\mu\sum_C\pi_C
+      \le
+      \lambda L_q+\mu
+      <
+      h_0,
+   \]
+   contradicting the route-mass constraint.
+
+   For the forward implication, apply the same Farkas separation as in
+   \cref{lem:finite-sampled-cover-dual}.  The infeasibility certificate has
+   nonnegative multipliers \((\beta,\lambda,\mu)\), where \(\beta\) prices the
+   single existential lower-bound constraint.  Since its right-hand side is
+   \(h_0>0\), any separating certificate has \(\beta>0\); divide by \(\beta\).
+   The resulting normalized inequalities are exactly \((ED1)\) and \((ED2)\).
+\end{proof}
+
 \begin{lemma}[Finite sampled-route verifier]
    \label{lem:finite-sampled-route-verifier}
    Fix a finite retained family of certified children $\mathcal C$, a target
@@ -2256,6 +2349,36 @@ that child and repeat until the sampled route-mass LP is feasible.
    These are exactly the support, expected-price, and route-mass hypotheses of
    \cref{lem:sampled-priced-cover}.  Applying that lemma gives the stated
    success and work bounds.
+\end{proof}
+
+\begin{lemma}[Finite existential sampled-route verifier]
+   \label{lem:finite-existential-sampled-route-verifier}
+   Work in the setting of \cref{lem:finite-sampled-route-verifier}, but for
+   each finite signature \(\tau\) with \(N_\tau\ne\emptyset\) require only the
+   existential feasibility problem \(\mathsf E_\tau\) from
+   \cref{lem:finite-existential-sampled-cover-dual}, with active set
+   \(A_\tau\), unresolved near set \(N_\tau\), target \(h_0\), and query-price
+   budget \(L\).  Store one feasible sampler \(\pi^\tau\) for every realized
+   nonempty signature, and suppose the query decoder computes \(\tau(q)\) and
+   samples from \(\pi^{\tau(q)}\) in work \(D(q)\).
+
+   Then every query with \(N(q)\ne\emptyset\) receives near-set route mass at
+   least \(h_0\).  Hence \(B\) independent sampled child invocations fail to
+   return any verified \(cr\)-neighbor with probability at most
+   \(\exp(-Bh_0)\), and have expected work \(O(B(D(q)+L))\).
+\end{lemma}
+
+\begin{proof}
+   Fix \(q\in\Omega\) with \(N(q)\ne\emptyset\), and put
+   \(\tau=\tau(q)\).  The signature records both the active-child pattern and
+   the exact unresolved near set, so \(N_\tau=N(q)\) and \(A_\tau\) is the
+   actual active set.  The stored sampler is feasible for
+   \(\mathsf E_\tau\), hence it is supported on active children, has expected
+   child price at most \(L\), and satisfies
+   \[
+      \sum_{C:\ P_C\cap N(q)\ne\emptyset}\pi^\tau_C\sigma_C\ge h_0 .
+   \]
+   Apply \cref{lem:existential-sampled-priced-cover}.
 \end{proof}
 
 \begin{lemma}[Activation-pattern sampled-route verifier]
@@ -5016,9 +5139,19 @@ positive-probability seeded separator plus deterministic certification.
    \cref{lem:finite-sampled-cover-dual} turns this sampled route-mass condition
    into finite LP constraints, or equivalently into the absence of a
    route-demand dual price system satisfying \((SD1)\)--\((SD2)\).
+   Since ANN only needs one valid near neighbor, the per-near-point route-mass
+   constraints may be replaced by the existential near-set certificate of
+   \cref{lem:existential-sampled-priced-cover}: for each query signature with
+   nonempty unresolved near set, the sampler only has to put
+   inverse-polylogarithmic mass on children that contain at least one of those
+   near points.  The finite obstruction is then the simpler dual
+   \((ED1)\)--\((ED2)\) of
+   \cref{lem:finite-existential-sampled-cover-dual}.
    \Cref{lem:finite-sampled-route-verifier} gives the all-query version: it is
    enough to check these sampled LPs on the finite signatures consisting of the
    retained activation pattern together with the unresolved near-point set.
+   \Cref{lem:finite-existential-sampled-route-verifier} is the corresponding
+   existential version on the same signatures.
    The stronger certificate of
    \cref{lem:activation-sampled-route-verifier} avoids storing or decoding this
    near-point coordinate: for each retained activation pattern it checks the
@@ -7524,6 +7657,22 @@ This certificate is the local form of the remaining problem. It is analogous in 
       =
       O_c(\log\log n).
    \]
+   This per-witness statement is stronger than the ANN guarantee requires.
+   The ANN-native version replaces the family of laws \(\{\ell^p\}\) by a
+   single law on successful routes whose terminal leaf may contain any point in
+   the unresolved near set \(N(q)\).  It is enough to prove
+   \[
+      \E_{V\sim\ell^{\exists}}
+      \sum_{e\preceq V}
+      \log_+
+      \frac{\Gamma_e}
+           {(1-\kappa\eta^2)F_4(m,R)y_q(e)}
+      =
+      O_c(\log\log n)
+   \]
+   along such an existential successful route law whenever \(N(q)\ne\emptyset\).
+   Singleton near sets still force the old per-witness behavior, but dense or
+   multi-witness queries may spend all route mass on the easiest valid neighbor.
    This is the exact analogue of optimizing a sphere-decoder pruning profile:
    the build phase may search for the profile, but the query must decode the
    retained allocation and its total mass must be certified.
@@ -9106,10 +9255,17 @@ sampling/value objects whenever listing them would violate active power.
 sampler: a bad query carries route-demand prices on unresolved near points, and
 the remaining theorem must find an active child whose priced success mass beats
 its query price plus the normalization price.
+\Cref{lem:existential-sampled-priced-cover} weakens the sufficient condition to
+the actual ANN objective: if the unresolved near set is nonempty, the sampler
+only needs inverse-polylogarithmic mass on children that contain at least one
+of those near points.  \Cref{lem:finite-existential-sampled-cover-dual} gives
+the corresponding one-constraint dual.
 \Cref{lem:finite-sampled-route-verifier} turns this into an all-query
 certificate by grouping queries according to their activation pattern and
 unresolved near set; the cost of storing or implicitly decoding those signatures
 is now explicit.
+\Cref{lem:finite-existential-sampled-route-verifier} gives the same signature
+certificate with existential near-set mass instead of per-witness mass.
 \Cref{lem:activation-sampled-route-verifier} gives the clean activation-only
 variant: if the route LP is feasible for every activation pattern against the
 union of all compatible near points, then the query decoder no longer needs the
