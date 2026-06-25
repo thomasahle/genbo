@@ -2381,6 +2381,76 @@ that child and repeat until the sampled route-mass LP is feasible.
    Apply \cref{lem:existential-sampled-priced-cover}.
 \end{proof}
 
+\begin{lemma}[Two-child existential sampler]\label{lem:two-child-existential-sampler}
+   Fix one finite signature with active child family
+   \(\mathcal A\subseteq\mathcal C\), nonempty unresolved near set \(N\),
+   certified prices \(Q_C\ge0\), success credits \(\sigma_C\in[0,1]\), and
+   target \(0<h_0\le1\).  Suppose the existential feasibility problem
+   \(\mathsf E\) is feasible:
+   \[
+      \pi_C=0\quad(C\notin\mathcal A),\qquad
+      \sum_C\pi_C\le1,\qquad
+      \sum_C\pi_CQ_C\le L,
+   \]
+   and
+   \[
+      \sum_{C:\ P_C\cap N\ne\emptyset}\pi_C\sigma_C\ge h_0 .
+   \]
+   Then there are two not-necessarily-distinct active useful children
+   \(C_1,C_2\), where \(P_{C_i}\cap N\ne\emptyset\), and weights
+   \(\theta_1,\theta_2\ge0\) with
+   \[
+      \theta_1+\theta_2\le1,\qquad
+      \theta_1Q_{C_1}+\theta_2Q_{C_2}\le L,
+   \]
+   and
+   \[
+      \theta_1\sigma_{C_1}+\theta_2\sigma_{C_2}\ge h_0 .
+   \]
+   Moreover, for
+   \[
+      K\ge\left\lceil 4h_0^{-1}\right\rceil ,
+   \]
+   there are integers \(k_1,k_2\ge0\) with \(k_1+k_2\le K\) such that the
+   uniform sampler on \(K\) records, consisting of \(k_i\) copies of \(C_i\)
+   and \(K-k_1-k_2\) no-op records, has expected child price at most \(L\) and
+   near-set route mass at least \(h_0/2\).
+\end{lemma}
+
+\begin{proof}
+   Delete all probability mass on non-useful children and move it to a no-op
+   record.  This cannot increase expected price and does not decrease the
+   existential route mass.  Now consider the linear program that maximizes
+   \[
+      \sum_{C:\ P_C\cap N\ne\emptyset}\pi_C\sigma_C
+   \]
+   over useful active children under
+   \(\sum_C\pi_C\le1\), \(\sum_C\pi_CQ_C\le L\), and \(\pi_C\ge0\).  It has a
+   feasible solution of value at least \(h_0\), so an optimal extreme point also
+   has value at least \(h_0\).  Since the LP has only the two nontrivial
+   resource inequalities, every basic feasible solution has at most two
+   positive variables.  These positive variables are the desired
+   \(C_1,C_2\), with weights \(\theta_1,\theta_2\); if the support has only
+   one child, duplicate it and put the second weight equal to zero.
+
+   For the integer sampler, set \(k_i=\lfloor K\theta_i\rfloor\).  Then
+   \(k_1+k_2\le K\), and rounding down only decreases expected price:
+   \[
+      \frac{k_1Q_{C_1}+k_2Q_{C_2}}{K}
+      \le
+      \theta_1Q_{C_1}+\theta_2Q_{C_2}
+      \le L .
+   \]
+   Since \(\sigma_{C_i}\le1\),
+   \[
+      \frac{k_1\sigma_{C_1}+k_2\sigma_{C_2}}{K}
+      \ge
+      \theta_1\sigma_{C_1}+\theta_2\sigma_{C_2}-\frac2K
+      \ge
+      h_0/2 .
+   \]
+\end{proof}
+
 \begin{lemma}[Activation-pattern sampled-route verifier]
    \label{lem:activation-sampled-route-verifier}
    Work in the setting of \cref{lem:finite-sampled-route-verifier}, but group
@@ -2665,6 +2735,13 @@ signatures to the already-present activation decoder.
 materialization: for inverse-polylogarithmic \(h_0\), each feasible signature
 needs only a polylogarithmic cohort of child identifiers to implement its
 sampler, provided the signature itself is stored or decodable.
+\Cref{lem:two-child-existential-sampler} is sharper for exact existential
+signatures: because there is only one route-mass constraint, the sampler can
+be supported on two useful children plus no-op records, and an integer
+materialization uses only \(O(h_0^{-1})\) records with no \(\log |N|\) factor.
+This applies only when the exact unresolved near-set signature is available;
+the activation-only verifier still needs the stronger per-witness union
+certificate above.
 \Cref{lem:activation-cohort-sampled-compiler} packages the activation-only
 case as a concrete retained object: one small cohort per activation pattern,
 with no real-valued sampler and no near-set coordinate at query time.
@@ -5152,6 +5229,10 @@ positive-probability seeded separator plus deterministic certification.
    retained activation pattern together with the unresolved near-point set.
    \Cref{lem:finite-existential-sampled-route-verifier} is the corresponding
    existential version on the same signatures.
+   By \cref{lem:two-child-existential-sampler}, each feasible exact
+   existential signature can be retained as two useful child identifiers plus
+   \(O(h_0^{-1})\) no-op/child cohort records, rather than as a full
+   real-valued LP solution.
    The stronger certificate of
    \cref{lem:activation-sampled-route-verifier} avoids storing or decoding this
    near-point coordinate: for each retained activation pattern it checks the
@@ -9266,6 +9347,9 @@ unresolved near set; the cost of storing or implicitly decoding those signatures
 is now explicit.
 \Cref{lem:finite-existential-sampled-route-verifier} gives the same signature
 certificate with existential near-set mass instead of per-witness mass.
+\Cref{lem:two-child-existential-sampler} then collapses each exact existential
+signature sampler to two useful children plus no-op mass; the \(\log |N|\)
+cohort factor is needed only for the stronger per-witness materialization.
 \Cref{lem:activation-sampled-route-verifier} gives the clean activation-only
 variant: if the route LP is feasible for every activation pattern against the
 union of all compatible near points, then the query decoder no longer needs the
