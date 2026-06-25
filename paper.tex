@@ -1628,6 +1628,104 @@ load
    subroutines. Final candidates are verified in the original metric.
 \end{proof}
 
+\begin{assumption}[Decodable contracting power cover]\label{asm:power-cover}
+   Fix $c>1$, $\rho=\rho_c$, and a parameter $\eta>0$. In every bounded-diameter
+   localized node with $m$ resident points in a certified ball of radius $R$,
+   either the node is terminal, or preprocessing constructs a query-decodable
+   certified cover $(P_i,o_i,R_i)_{i\in I}$ with the following properties.
+   \begin{itemize}
+      \item Cover and radius decrease:
+      \[
+         \bigcup_iP_i=P,
+         \qquad
+         R_i\le R\sqrt{1-\eta^2}.
+      \]
+      \item For every query $q$, the decoder lists every filter whose inflated
+      ball contains $q$,
+      \[
+         I(q)\supseteq\{i:\|q-o_i\|\le R_i+r\},
+      \]
+      in time
+      \[
+         d\,F_4(m,R)\log^{O_c(1)}m
+      \]
+      plus the listed-output cost.
+      \item Unless the resident guard density at $q$ is at least
+      $m^{-\rho}\log^{-O_c(1)}m$, the listed filters satisfy the power-stabbing
+      contraction
+      \[
+         \sum_{i\in I(q)} |P_i|^\rho\Psi(R_i)
+         \le
+         (1-\kappa\eta^2)F_4(m,R)
+      \]
+      for a constant $\kappa=\kappa(c)>0$.
+      \item The stored cover satisfies the storage bound
+      \[
+         \sum_i |P_i|^{1+\rho}\Psi(R_i)
+         \le
+         mF_4(m,R) .
+      \]
+   \end{itemize}
+\end{assumption}
+
+\begin{proposition}[Conditional power-cover endpoint]\label{prop:power-cover-polylog}
+   If \cref{asm:power-cover} holds uniformly for
+   \[
+      \eta=\Theta_c\!\left(\frac{\log\log n}{\log n}\right),
+   \]
+   and terminal nodes are handled by resident scans or by
+   \cref{thm:smooth-product-terminal}, then worst-case Euclidean ANN has
+   \[
+      Q(n,d)=d\,n^{\rho_c}\log^{O_c(1)}n,
+      \qquad
+      S(n,d)=dn+n^{1+\rho_c}\log^{O_c(1)}n .
+   \]
+\end{proposition}
+
+\begin{proof}
+   Work after the bounded-diameter localization, so $R_0/r=\log^{O_c(1)}n$.
+   At every reached node, first sample a resident guard of size
+   $m^\rho\log^{O_c(1)}m$ and verify its points. If the guard-density
+   alternative in \cref{asm:power-cover} holds, the guard succeeds with
+   constant probability after increasing the logarithmic constant.
+
+   Otherwise decode the active cover filters and recurse into all listed
+   children. If $\|p-q\|\le r$ and $p\in P_i$, then
+   $\|q-o_i\|\le r+R_i$, so the child containing $p$ is listed. Thus, on the
+   non-guard branch, routing is deterministic; no independent success loss is
+   paid at each geometric level.
+
+   Each recursive cover edge decreases radius by at least
+   $\sqrt{1-\eta^2}$, so a lineage has length
+   \[
+      H=O_c\!\left(\eta^{-2}\log\frac{R_0}{r}\right)
+      =
+      \log^{O_c(1)}n
+   \]
+   for the displayed choice of $\eta$. Let $T(m,R)$ be the expected query work
+   from a node, normalized by the local potential. The decoding, guard, and
+   terminal costs contribute $dF_4(m,R)\log^{O_c(1)}n$. The active-child
+   power-stabbing contraction gives
+   \[
+      \sum_{i\in I(q)}F_4(|P_i|,R_i)
+      \le
+      (1-\kappa\eta^2)F_4(m,R).
+   \]
+   Unrolling the recurrence over the radius levels therefore gives
+   \[
+      T(m,R)\le d\,\eta^{-2}F_4(m,R)\log^{O_c(1)}n
+      =
+      d\,F_4(m,R)\log^{O_c(1)}n .
+   \]
+   At the root, $F_4(n,R_0)=n^{\rho_c}\log^{O_c(1)}n$.
+
+   The storage recurrence uses the last bullet of \cref{asm:power-cover}. Since
+   every child radius decreases, summing over the $H=\log^{O_c(1)}n$ radius
+   levels and the polylogarithmic localization copies gives
+   $dn+n^{1+\rho_c}\log^{O_c(1)}n$. Standard truncation and a constant number of
+   independent guard samples give the stated capped bounds.
+\end{proof}
+
 This lemma explains both why $k$-means works and why it is not the most
 theory-native objective. Lloyd's algorithm minimizes an average squared
 reconstruction error,
@@ -1659,6 +1757,11 @@ stabbing/storage cost and update centers by certified radius reduction
 mean alone. Proving an $n^\rho\polylog n$ worst-case power-stabbing cover would
 be another route to the final theorem; empirically, it is a plausible way to
 beat plain $k$-means while staying aligned with the score-and-ball potential.
+\Cref{prop:power-cover-polylog} is the exact theorem this objective should try
+to instantiate. It avoids the branching score-frontier obstruction of
+\cref{asm:mixed-continuation-operator}; the missing content is instead a
+worst-case decodable cover theorem for the inflated-ball power-stabbing
+objective.
 
 \subsection{Simplicity and implementation}
 
@@ -3836,6 +3939,18 @@ The continuation-mass spherical decoder is proved in \cref{lem:continuation-work
 
 \paragraph{Randomized polylog stage.}
 \Cref{lem:adaptive-continuation} replaces the tube proof in the predictable-score setting, so near-pair survival is no longer the obstacle for the randomized one-tree endpoint. \Cref{asm:mixed-continuation-operator} is the direct remaining work-side target after \cref{lem:cap-free-scan-accounting}: it must prove thinned cap-split contraction over branching cap-discovery frontiers. Conditional on that operator, \cref{prop:randomized-polylog} shows that choosing $\eta\asymp(\log\log n)/\log n$ gives polylogarithmic query and space overhead. A sharper budget-thinned variant is partly proved: \cref{lem:canonical-mixed-budget} and \cref{lem:budget-thinned-opportunities} give the activated geometric work bound by optional stopping, while \cref{lem:canonical-budget-activation} reduces the remaining near-lineage issue to the value-delivery product in \cref{rem:value-delivery-target}.
+
+\paragraph{Certified-cover route.}
+\Cref{lem:certified-cover-compiler} abstracts the empirical $k$-means
+multi-assignment mechanism as an overlapping certified filter cover. This gives
+a deterministic routing guarantee by triangle inequality, but a flat cover can
+be circular unless its children are genuinely smaller. The stronger
+\cref{asm:power-cover} is the theory-native replacement target: construct a
+query-decodable cover whose inflated-ball power stabbing contracts by
+$1-\Theta(\eta^2)$ and whose storage power does not grow. Conditional on that
+cover theorem, \cref{prop:power-cover-polylog} gives the desired
+polylogarithmic ANN bound. Thus $k$-means is best viewed as an initializer for a
+power-stabbing cover objective, not as a worst-case theorem by itself.
 
 \paragraph{Structured posterior route.}
 \Cref{lem:posterior-superlevel-compiler} records the negative-moment identity suggested by the latest notes. \Cref{lem:explicit-enumeration-barrier} makes the coarse-child obstruction precise: the scale $\xi=m^{-1/(2c^2)}$ is the price of explicitly enumerating $B\simeq\xi^{-1}$ outcomes, not a geometric limit. \Cref{lem:oblivious-sparsification-barrier} adds the complementary warning that the moment bounds alone still permit $\Omega(\xi^{-1})$ disjoint possible witnesses, so direct random sparsification cannot replace structured decoding without an additional sensitivity theorem. \Cref{lem:scale-window-compiler} and \cref{lem:dyadic-structured-amplification} isolate the important arithmetic: if mass windows can be decoded output-sensitively, then $\xi^{-\rho}$ repetitions at each dyadic scale convert negative-moment value into constant hit probability, and summing all scales down to $1/m$ still fits the $m^\rho$ query budget. This scale-aware amplification is essential; a raw negative-moment diagnostic alone does not imply that the near point is actually listed with inverse-polylogarithmic probability.
