@@ -8931,6 +8931,103 @@ This certificate is the local form of the remaining problem. It is analogous in 
    decoder.
 \end{proof}
 
+\begin{lemma}[Moment-dominated superharmonic potential]
+   \label{lem:moment-dominated-superharmonic}
+   Let \(\mathcal T\) be a finite rooted trie.  Let \(b(u)\ge0\) be node
+   charges and let \(w(u)\ge0\) be prefix weights.  Suppose there is a constant
+   \(\zeta\ge0\) such that
+   \[
+      b(u)\le \zeta w(u)
+      \qquad(u\in\mathcal T).
+      \tag{MD1}
+   \]
+   Define the suffix weight
+   \[
+      W(u)=\sum_{v\succeq u}w(v).
+   \]
+   Then \(\Phi(u)=\zeta W(u)\) is a superharmonic majorant of \(b\):
+   \[
+      b(u)\le\Phi(u),
+      \qquad
+      \sum_{x\in\operatorname{ch}(u)}\Phi(x)\le\Phi(u).
+   \]
+   In particular, if \(\sum_uw(u)\le M\), then every antichain
+   \(\mathcal C\) satisfies
+   \[
+      \sum_{u\in\mathcal C}b(u)\le \zeta M .
+   \]
+\end{lemma}
+
+\begin{proof}
+   The first inequality follows from \(W(u)\ge w(u)\) and \((MD1)\).  Also
+   \[
+      \sum_{x\in\operatorname{ch}(u)}W(x)
+      =
+      W(u)-w(u)
+      \le W(u),
+   \]
+   and multiplying by \(\zeta\) gives the superharmonic inequality.  The
+   antichain statement is \cref{lem:local-antichain-charge-potential} applied
+   to \(\Phi\), with \(\Phi(\varnothing)=\zeta\sum_uw(u)\le\zeta M\).
+\end{proof}
+
+\begin{corollary}[Prefix-moment accepted-route compiler]
+   \label{cor:prefix-moment-accepted-route-compiler}
+   Work in the setting of
+   \cref{cor:finite-accepted-route-trie-compiler}.  Suppose the raw margin
+   \((RT2)\), prefix moment \((RT3)\), terminal moment \((RT4)\), and
+   Fano child-generation hypotheses hold.  In place of the separate
+   superharmonic root check \((RT1)\), assume that the suffix-weight potential
+   constructed below has a query-decodable top-down route law and
+   transition-aware water-filled allocation, and assume the pointwise
+   charge-density bound
+   \[
+      a_*(u)
+      \le
+      \frac{C}{H_0}\,
+      \frac{
+         g_q(u)e^{\beta\overline A_q(u)}
+      }{
+         e^{\beta(\Theta+2H_0\log C)}F L_m
+      }
+      \qquad(u\in\mathcal T).
+      \tag{MD2}
+   \]
+   Then the local-potential hypotheses hold automatically, and the Fano-biased
+   priority decoder lists a valid terminal route with query work
+   \[
+      e^{2\beta H_0\log C}F L_m
+   \]
+   up to the priority-queue logarithm.
+
+   Equivalently, a route trie is accepted if its local required charge is
+   dominated by the normalized Fano prefix-moment density, its raw reliable
+   terminals have margin \(2H_0\log C\), and its terminal prices satisfy
+   \((RT4)\).  The antichain route law and transition-aware water-filled
+   allocation are then supplied by the same prefix moment that bounds the stack
+   size.
+\end{corollary}
+
+\begin{proof}
+   Put
+   \[
+      w(u)=
+      \frac{
+         g_q(u)e^{\beta\overline A_q(u)}
+      }{
+         e^{\beta(\Theta+2H_0\log C)}F L_m
+      } .
+   \]
+   By \((RT3)\), \(\sum_uw(u)\le1\).  The density condition \((MD2)\) is
+   \(a_*(u)\le(C/H_0)w(u)\).  Applying
+   \cref{lem:moment-dominated-superharmonic} with
+   \(\zeta=C/H_0\) gives a superharmonic majorant with root at most \(C/H_0\).
+   The assumed decodability of this potential supplies the route law,
+   transition-aware allocation, and Fano child reporter.  Applying
+   \cref{cor:local-potential-antichain-fano} with this potential, and using
+   \((RT2)\)--\((RT4)\), gives the stated work bound.
+\end{proof}
+
 \begin{lemma}[Finite convex-linear minimax]\label{lem:finite-convex-minimax}
    Let \(X\subset\R^d\) be compact and convex, and let
    \(\phi_i:X\to\R\), \(i\in I\), be finitely many continuous convex
@@ -11966,6 +12063,15 @@ explicit route trie is only the path unfolding used in the proof.  This is the
 right way to import list-decoding ideas: not as a black-box nearest-lattice
 oracle, but as a compact Fano-biased decoder whose state potential and path
 moments pass the accepted-route checks.
+\Cref{lem:moment-dominated-superharmonic} and
+\cref{cor:prefix-moment-accepted-route-compiler} remove one remaining
+duplication in this certificate.  If the maximum outgoing recursive charge at
+each prefix is pointwise dominated by the normalized prefix weight already used
+in the Fano exponential-moment bound, then the antichain/superharmonic root
+test follows from that same moment bound.  Thus a future geometric
+construction does not need to prove an independent route-law theorem: it may
+instead prove a local charge-density inequality against the list-decoder
+prefix measure.
 \Cref{cor:existential-antichain-fano} composes this with the Fano decoder in
 the ANN-correct existential form: if the union of valid terminal routes has the
 same antichain charge bound and every such route has \(O_c(\log\log n)\) raw
