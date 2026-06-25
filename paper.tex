@@ -2167,6 +2167,89 @@ reliability and prune elsewhere, as long as the resulting profile has certified
 expected work.  \Cref{lem:pruned-budget-thinning} records the corresponding
 self-contained budget rule for the score tree.
 
+\begin{assumption}[Flat structured spherical-code decoder]
+   \label{asm:flat-spherical-code-decoder}
+   Fix a localized terminal spherical gap with \(m\) resident points.  There is
+   a distribution over finite structured code panels \(\mathcal G\).  Each
+   \(g\in\mathcal G\) has a data predicate \(A_g(x)\), a query predicate
+   \(B_g(q)\), and a bucket storing the points with \(A_g(x)=1\).  For every
+   realized panel, the query decoder lists exactly
+   \[
+      \mathsf L(q)=\{g\in\mathcal G:B_g(q)=1\}
+   \]
+   in work \(d\log^{O_c(1)}m+O(|\mathsf L(q)|)\).  For every data set and
+   every promised query, the panel distribution satisfies
+   \[
+      \E|\mathsf L(q)|\le m^\rho\log^{O_c(1)}m,
+      \qquad
+      \E\sum_{x\in P}\sum_{g\in\mathcal G}A_g(x)
+      \le m^{1+\rho}\log^{O_c(1)}m,
+   \]
+   and the far co-load bound
+   \[
+      \E\sum_{\substack{x\in P\\ \|x-q\|>cr}}
+      \sum_{g\in\mathcal G}A_g(x)B_g(q)
+      \le m^\rho\log^{O_c(1)}m .
+   \]
+   Finally, if \(p\) is a true near neighbor of \(q\), then one panel hits it
+   with inverse-polylogarithmic probability:
+   \[
+      \Pr_{\mathcal G}\!\left[
+         \exists g\in\mathcal G:\ A_g(p)B_g(q)=1
+      \right]\ge \log^{-O_c(1)}m .
+   \]
+\end{assumption}
+
+\begin{proposition}[Flat code decoder gives a terminal spherical engine]
+   \label{prop:flat-spherical-code-terminal}
+   Under \cref{asm:flat-spherical-code-decoder}, a terminal localized
+   spherical instance of size \(m\) has a data structure with query work
+   \[
+      d\,m^\rho\log^{O_c(1)}m
+   \]
+   and space
+   \[
+      dm+m^{1+\rho}\log^{O_c(1)}m .
+   \]
+\end{proposition}
+
+\begin{proof}
+   Store \(B=\log^{O_c(1)}m\) independent panels, where the exponent is large
+   enough that \(B\) independent near-hit trials succeed with constant
+   probability.  In each panel, put every data point \(x\) in every bucket
+   \(g\) with \(A_g(x)=1\).  The expected total bucket storage is
+   \(m^{1+\rho}\log^{O_c(1)}m\), plus the raw \(dm\) coordinates used for final
+   metric verification.
+
+   On query \(q\), decode \(\mathsf L(q)\) in every panel, scan all listed
+   buckets, and verify candidate distances in the original metric.  The
+   expected decoder work over all panels is
+   \(d\,m^\rho\log^{O_c(1)}m\), after increasing the polylogarithmic exponent
+   to absorb \(B\).  The far co-load bound gives the same expected order for
+   invalid candidates.  If \(p\) is a true near neighbor, the independent panels
+   miss every bucket containing \(p\) with probability at most
+   \((1-\log^{-O_c(1)}m)^B\), which is at most a fixed constant strictly below
+   one for the chosen \(B\).  The standard capped-expectation convention from the
+   preliminaries turns the expected work and storage bounds into the displayed
+   capped resources after another constant-factor loss in success probability.
+   Any reported point is verified, so the structure never returns a false
+   answer.
+\end{proof}
+
+The flat-code target is a possible replacement for the terminal score tree, not
+another proof of it.  A random Gaussian filter family has the desired spectrum
+but no compact decoder.  Existing structured-code work gives pieces of the
+right picture: spherical-code hashing analyzes angular nearest-neighbor
+partitions induced by polytopes, root lattices, and spherical codes, while
+polar-code nearest-neighbor search uses list decoding to multiprobe a
+high-dimensional binary LSH space~\cite{Laa20,TH23}.  The missing theorem for
+our purposes is the simultaneous combination of random-like cap spectrum,
+Euclidean soft scores, and output-sensitive list enumeration at the critical
+large-deviation scale.  Construction-A lattices, group-orbit spherical codes,
+or concatenated/list-recoverable codes are useful candidates precisely because
+they would turn the branching score tree into one decoding problem with the
+resource conditions stated in \cref{asm:flat-spherical-code-decoder}.
+
 \begin{lemma}[Finite sampled-cover dual]
    \label{lem:finite-sampled-cover-dual}
    Fix one query state $q$, a finite retained family of certified children
@@ -9377,6 +9460,14 @@ verification.
 pruning is already the \(\beta=1\) case of this certificate; the unresolved
 part is to construct an equally tight admissible prefix potential after
 geometric recentering and budget-thinned child generation.
+\Cref{asm:flat-spherical-code-decoder} and
+\cref{prop:flat-spherical-code-terminal} isolate the flatter code/lattice
+alternative: replace the terminal score tree by one structured spherical-code
+panel whose cap list is output-sensitive, whose point and far-pair loads match
+the random Gaussian spectrum, and whose near-pair hit probability is
+inverse-polylogarithmic.  This is the theorem a Construction-A lattice,
+group-orbit spherical code, or concatenated soft list-recovery construction
+would have to prove.
 \Cref{lem:budget-stable-prefix-list} and
 \cref{cor:canonical-budget-stable-decoder} take one step in that direction:
 the canonical mixed Bellman budget itself is an admissible list-decoding
@@ -9538,6 +9629,16 @@ The one-sided spherical proof is motivated by the Ahle--Knudsen manuscript suppl
    Piotr Indyk and Rajeev Motwani.
    \newblock Approximate nearest neighbors: Towards removing the curse of dimensionality.
    \newblock In \emph{Proceedings of the 30th Annual ACM Symposium on Theory of Computing (STOC)}, pages 604--613, 1998.
+
+   \bibitem{Laa20}
+   Thijs Laarhoven.
+   \newblock Polytopes, lattices, and spherical codes for the nearest neighbor problem.
+   \newblock In \emph{Proceedings of the 47th International Colloquium on Automata, Languages, and Programming (ICALP)}, LIPIcs 168:76:1--76:14, 2020.
+
+   \bibitem{TH23}
+   Noam Touitou and Nissim Halabi.
+   \newblock Approximate nearest neighbor search through modern error-correcting codes.
+   \newblock Amazon Science, 2023.
 
    \bibitem{GP17}
    Elena Grigorescu and Chris Peikert.
