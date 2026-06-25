@@ -2506,18 +2506,55 @@ node.
    which is the displayed cap containment.
 \end{proof}
 
+\begin{corollary}[Dual-weighted cap seeding]\label{cor:dual-weighted-cap-seeding}
+   Fix point prices $\alpha_x\in[0,1]$, pattern prices $\lambda_a\ge0$, and a
+   storage price $\sigma\ge0$, with $\sum_{x\in P}\alpha_x>0$.  Draw seed
+   directions from $P$ with probability proportional to $\alpha_x$, and suppose
+   a set $A\subseteq P$ has price mass
+   \[
+      \alpha(A):=\sum_{x\in A}\alpha_x
+      \ge \theta\sum_{x\in P}\alpha_x .
+   \]
+   Assume that every seed $x\in A$ generates an accepted certified parent
+   proposal $C_x$ containing $A$.  If, for each such proposal, $k=|A|$ is
+   atom-safe and
+   \[
+      \alpha(A)>
+      \Psi(R_{C_x})
+      \left(
+         \sigma k^{1+\rho}
+         +
+         k^\rho\sum_a\lambda_a a_{C_x}
+      \right),
+   \]
+   then $T$ independent dual-weighted samples find a positive-gain atom-safe
+   subchild with probability at least $1-e^{-\theta T}$.  Exhaustive
+   enumeration of all data directions finds one deterministically.
+\end{corollary}
+
+\begin{proof}
+   With probability at least $1-e^{-\theta T}$, one sampled seed lies in $A$.
+   For that accepted parent $C_x$, the top-$k$ prefix by point price has price
+   at least $\alpha(A)$ because $A\subseteq P_{C_x}$ and $|A|=k$.  The displayed
+   inequality is therefore exactly the positive-gain condition in
+   \cref{cor:price-density-subchild}.  Exhaustive enumeration includes every
+   seed in $A$, so it cannot miss the same certificate.
+\end{proof}
+
 Taking $a_x$ to be the squared distance from $\widehat x_o$ to the current
 candidate directions gives the spherical analogue of $k$-means++ seeding.
 Taking $a_x$ to be an uncovered near-pair or active-power residual gives the
-score-power version.  The lemma is deliberately weaker than a Lloyd guarantee:
-it only says that any cap carrying a noticeable fraction of the current
-residual weight is proposed after logarithmically many samples.  That is the
-property needed by the certified-cover route, because the proposed cap is
-subsequently verified and used only if its active-power certificate is good.
-The remaining worst-case theorem is therefore not a statement about the
-convergence of Lloyd's objective; it is a statement that every tame node exposes
-enough residual weight on certifiable low-stabbing caps, or else the guard or
-baseline score process handles the query.
+score-power version.  Taking $a_x$ from the current dual point prices gives the
+column-generation version in \cref{cor:dual-weighted-cap-seeding}.  These
+statements are deliberately weaker than a Lloyd guarantee: they only say that
+any cap carrying a noticeable fraction of the current residual or dual mass is
+proposed after logarithmically many samples.  That is the property needed by the
+certified-cover route, because the proposed cap is subsequently verified and
+used only if its active-power certificate is good.  The remaining worst-case
+theorem is therefore not a statement about the convergence of Lloyd's objective;
+it is a statement that every tame node exposes enough residual or dual price
+mass on certifiable low-stabbing caps, or else the guard or baseline score
+process handles the query.
 
 \begin{lemma}[Weak residual-cover compiler]\label{lem:weak-residual-cover}
    Let $P$ be finite with weights $a_x>0$, and let
