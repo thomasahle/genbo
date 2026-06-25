@@ -2043,6 +2043,37 @@ instead of allowing one outlier to enlarge the query region of an entire
 cluster. Proving an $n^\rho\polylog n$ worst-case power-stabbing cover would be
 another route to the final theorem; empirically, it is a plausible way to beat
 plain $k$-means while staying aligned with the score-and-ball potential.
+
+Concretely, one implementation target is the following certified-cover
+analogue of Lloyd iteration.
+\begin{enumerate}
+   \item Maintain a candidate family of balls $(o_i,R_i)$, initialized for
+   example by $k$-means, farthest-point centers, or cap/medoid proposals.
+   \item Given the current balls and a sampled near-pair set $\mathcal E$, add
+   point--filter memberships by density greedy, using marginal uncovered
+   near-pair weight divided by marginal power cost
+   \[
+      \Delta_i^{\rm store}(x)
+      +
+      \gamma\,\Delta_i^{\rm stab}(x),
+   \]
+   where $\Delta_i^{\rm store}$ is the storage increment above and
+   $\Delta_i^{\rm stab}$ is the corresponding increase in sampled inflated-ball
+   stabbing load.
+   \item Recompute each center by minimizing a certified radius or a high
+   quantile radius of its assigned points, with outliers allowed to peel into
+   singleton or overlapping filters rather than forcing the whole ball to
+   expand.
+   \item At query time, list the inflated balls containing $q$, but execute the
+   cover branch only when the listed power-stabbing sum is below the certified
+   cap; otherwise fall back to the baseline score-and-ball node.
+\end{enumerate}
+Unlike a centroid-margin rule, this objective gives no reward for replicating a
+point whose near pairs are already covered. Unlike ordinary $k$-means, it
+penalizes the two quantities that enter the recursive proof: the radius
+inflation caused by assignments and the number of expensive filters stabbed by
+a query. The capped query rule keeps the construction safe as a heuristic
+accelerator even before the uniform power-cover theorem is proved.
 \Cref{prop:power-cover-polylog} is the exact theorem this objective should try
 to instantiate. It avoids the branching score-frontier obstruction of
 \cref{asm:mixed-continuation-operator}; the missing content is instead a
