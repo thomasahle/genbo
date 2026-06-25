@@ -2721,6 +2721,110 @@ positive-gain cap, medoid ball, pair-direction filter, or learned score.  The
 search may be arbitrarily expensive; the retained index still pays only for the
 children that survive the final deterministic certificate.
 
+\begin{lemma}[Fractional cover materialization]\label{lem:fractional-cover-materialization}
+   In the finite program of \cref{lem:finite-pool-dual}, assume $L_q>0$ for all
+   $q\in\mathcal Q$, $S>0$, and the following atom bounds:
+   \[
+      a_C(q)w_C\le L_q \qquad(C\in\mathcal C,\ q\in\mathcal Q),
+      \qquad
+      s_C\le S \qquad(C\in\mathcal C).
+   \]
+   Suppose there is a feasible fractional solution $(z_C,v_x)$ of value at
+   least $|P|-L_0$.  Let
+   \[
+      B\ge
+      \max\left\{
+         1,\log(4|P|),\log(8(|\mathcal Q|+1))
+      \right\}.
+   \]
+   Then there exists an integral subfamily $\mathcal A\subseteq\mathcal C$ and a
+   residual set
+   \[
+      U_0=P\setminus\bigcup_{C\in\mathcal A}P_C
+   \]
+   such that
+   \[
+      |U_0|\le 4(L_0+1),
+   \]
+   and, simultaneously for every $q\in\mathcal Q$,
+   \[
+      \sum_{C\in\mathcal A}a_C(q)w_C\le 3B L_q,
+      \qquad
+      \sum_{C\in\mathcal A}s_C\le 3B S .
+   \]
+   Thus a finite fractional score cover can be stored as an ordinary certified
+   cover with only logarithmic budget inflation and a comparable residual scan.
+\end{lemma}
+
+\begin{proof}
+   Put
+   \[
+      y_x=\sum_{C:x\in P_C}z_C .
+   \]
+   Since $v_x\le1$ and $v_x\le y_x$, the value assumption implies
+   \[
+      \sum_{x\in P}\bigl(1-\min(1,y_x)\bigr)
+      \le
+      \sum_{x\in P}(1-v_x)
+      \le L_0 .
+   \]
+   Independently keep each child $C$ with probability
+   \[
+      p_C=\min(1,Bz_C).
+   \]
+   If no child containing $x$ has $p_C=1$, then
+   \[
+      \Pr[x\notin\cup_{C\in\mathcal A}P_C]
+      \le
+      \exp(-B y_x).
+   \]
+   If some containing child has $p_C=1$, the probability is zero.  Hence in all
+   cases
+   \[
+      \Pr[x\in U_0]
+      \le
+      1-\min(1,y_x)+e^{-B}.
+   \]
+   Indeed, for $y_x\ge1$ the exponential bound is at most $e^{-B}$, while for
+   $y_x\le1$ convexity gives
+   $e^{-B y_x}\le 1-y_x+y_xe^{-B}\le1-y_x+e^{-B}$.
+   Summing over $x$ and using $B\ge\log(4|P|)$ gives
+   \[
+      \E |U_0|\le L_0+\frac14 .
+   \]
+   By Markov's inequality,
+   \[
+      \Pr[|U_0|>4(L_0+1)]<\frac14 .
+   \]
+
+   For a fixed query $q$, define
+   \[
+      X_q=\sum_{C\in\mathcal A}a_C(q)w_C .
+   \]
+   The atom bound makes $X_q/L_q$ a sum of independent random variables in
+   $[0,1]$, and
+   \[
+      \E X_q\le
+      \sum_C a_C(q)w_C Bz_C
+      \le B L_q .
+   \]
+   The standard Chernoff bound for sums of independent $[0,1]$ variables gives
+   \[
+      \Pr[X_q>3B L_q]\le e^{-B}.
+   \]
+   The same argument applied to
+   $X_{\rm store}=\sum_{C\in\mathcal A}s_C$ gives
+   \[
+      \Pr[X_{\rm store}>3B S]\le e^{-B}.
+   \]
+   Since $B\ge\log(8(|\mathcal Q|+1))$, a union bound over all query constraints
+   and the storage constraint has failure probability at most $1/4$.  With
+   positive probability neither the residual event nor any budget event fails,
+   so an integral subfamily with the displayed guarantees exists.  Unbounded
+   preprocessing may find it by trying the random choices until the deterministic
+   certificate passes, or by exhaustive search over the retained subfamilies.
+\end{proof}
+
 Thus for modern regimes where preprocessing compute is relatively cheap, the
 right theoretical target is even cleaner: generate a very large candidate pool
 by residual sampling, all data directions, medoids, pair directions, or learned
@@ -2777,6 +2881,11 @@ small stored cover, not an efficient Lloyd-style training algorithm.
    deterministic active-power and storage certificates.  Equivalently, by
    \cref{lem:finite-pool-optimizer}, it is enough that a finite proposal pool
    generated during preprocessing contains one cover passing these certificates.
+   If the verifier's all-query constraints have been reduced to a finite exact
+   set of decoder cells, it is also enough to find a fractional cover over that
+   finite pool with logarithmically smaller budgets and bounded atoms:
+   \cref{lem:fractional-cover-materialization} converts it into a stored cover
+   and residual block, losing only another logarithmic factor.
 \end{assumption}
 
 \begin{proposition}[Weak offline score covers imply the polylog endpoint]
