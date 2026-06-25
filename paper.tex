@@ -2613,6 +2613,47 @@ node.
    which is the displayed cap containment.
 \end{proof}
 
+\begin{corollary}[Spherical \(D^2\) residual seeding]
+   \label{cor:spherical-d2-seeding}
+   Work in the same shell and let $U\subseteq P$ be the current uncovered
+   residual set.  Given existing candidate directions $V$, define
+   \[
+      \Delta_V(x)=
+      \begin{cases}
+         1, & V=\emptyset,\\
+         \min_{v\in V}\|\widehat x_o-v\|^2, & V\ne\emptyset,
+      \end{cases}
+   \]
+   and assume $\Delta_V(U)=\sum_{x\in U}\Delta_V(x)>0$.  Draw $T$ independent
+   seeds from $U$ with probability proportional to $\Delta_V(x)$.  If
+   $A\subseteq U$ satisfies
+   \[
+      \sum_{x\in A}\Delta_V(x)\ge\alpha\,\Delta_V(U)
+   \]
+   and has shell-normalized diameter at most $\eta$, then with probability at
+   least $1-e^{-\alpha T}$ one sampled direction $u_t$ satisfies
+   \[
+      A\subseteq
+      \left\{
+         y\in P:\langle u_t,\widehat y_o\rangle\ge1-\frac{\eta^2}{2}
+      \right\}.
+   \]
+   Moreover, after adding such a seed to $V$, the residual squared distance of
+   every $y\in A$ is at most $\eta^2$.
+\end{corollary}
+
+\begin{proof}
+   Apply \cref{lem:residual-cap-seeding} with residual weights
+   $a_x=\Delta_V(x)$ on $U$.  The final claim follows because, if the seed
+   lies in $A$, then every $y\in A$ has
+   \[
+      \min_{v\in V\cup\{u_t\}}\|\widehat y_o-v\|^2
+      \le
+      \|\widehat y_o-u_t\|^2
+      \le \eta^2 .
+   \]
+\end{proof}
+
 \begin{corollary}[Dual-weighted cap seeding]\label{cor:dual-weighted-cap-seeding}
    Fix point prices $\alpha_x\in[0,1]$, pattern prices $\lambda_a\ge0$, and a
    storage price $\sigma\ge0$, with $\sum_{x\in P}\alpha_x>0$.  Draw seed
@@ -2649,7 +2690,8 @@ node.
 \end{proof}
 
 Taking $a_x$ to be the squared distance from $\widehat x_o$ to the current
-candidate directions gives the spherical analogue of $k$-means++ seeding.
+candidate directions gives the spherical analogue of $k$-means++ seeding,
+spelled out in \cref{cor:spherical-d2-seeding}.
 Taking $a_x$ to be an uncovered near-pair or active-power residual gives the
 score-power version.  Taking $a_x$ from the current dual point prices gives the
 column-generation version in \cref{cor:dual-weighted-cap-seeding}.  These
