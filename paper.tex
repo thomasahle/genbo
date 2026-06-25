@@ -1893,14 +1893,83 @@ chosen memberships $(x,i)$, define the covered near-pair weight
    \ge(1-e^{-1})\operatorname{Cov}(O)$.
 \end{proof}
 
+\begin{lemma}[Cost-sensitive near-pair cover]\label{lem:cost-sensitive-near-pair-cover}
+   In the setting of \cref{lem:greedy-near-pair-cover}, assign every admissible
+   membership $e$ a fixed positive cost $c_e$, and write
+   $c(A)=\sum_{e\in A}c_e$. Let $O_B$ be the best membership set of cost at most
+   $B$, after discarding memberships with $c_e>B$. Run density greedy: at step
+   $t$, choose an unused membership maximizing
+   \[
+      \frac{\operatorname{Cov}(A_t\cup\{e\})-\operatorname{Cov}(A_t)}{c_e}
+   \]
+   among memberships of positive marginal gain. If the greedy procedure exhausts
+   all positive marginal gains before reaching cost $B$, then it is optimal for
+   budget $B$. Otherwise, if $A^+$ is the greedy set just after the first step
+   with $c(A^+)\ge B$, then
+   \[
+      \operatorname{Cov}(A^+)\ge (1-e^{-1})\operatorname{Cov}(O_B).
+   \]
+   Thus allowing one extra membership gives the same approximation as the
+   unit-cost greedy rule. Under the strict budget $B$, the better of the
+   pre-overflow greedy set and the best single affordable membership gives at
+   least
+   \[
+      \frac12(1-e^{-1})\operatorname{Cov}(O_B).
+   \]
+\end{lemma}
+
+\begin{proof}
+   Put $f=\operatorname{Cov}$. At a greedy set $A_t$, submodularity and
+   monotonicity give
+   \[
+      f(O_B)-f(A_t)
+      \le
+      f(A_t\cup O_B)-f(A_t)
+      \le
+      \sum_{e\in O_B}\bigl(f(A_t\cup\{e\})-f(A_t)\bigr).
+   \]
+   If the greedy procedure stops because no positive marginal gain remains,
+   then every superset has the same coverage value, so the current set is
+   optimal. Assume from now on that the first overflow step exists.
+
+   Since $c(O_B)\le B$, some membership in $O_B$ has marginal density at least
+   $(f(O_B)-f(A_t))/B$. The greedy membership $e_t$ has at least this density,
+   so, writing $a_t=c_{e_t}$,
+   \[
+      f(O_B)-f(A_{t+1})
+      \le
+      \left(1-\frac{a_t}{B}\right)(f(O_B)-f(A_t))
+      \le
+      e^{-a_t/B}(f(O_B)-f(A_t)).
+   \]
+   Iterating until the first overflow gives
+   \[
+      f(A^+)\ge
+      \left(1-\exp(-c(A^+)/B)\right)f(O_B)
+      \ge
+      (1-e^{-1})f(O_B).
+   \]
+
+   For the strict-budget statement, let $A$ be the pre-overflow set and let $e$
+   be the overflowing membership. The one-element set $\{e\}$ is affordable
+   because memberships of cost larger than $B$ may be discarded. By
+   submodularity, the marginal contribution of $e$ after $A$ is at most
+   $f(\{e\})$. Hence
+   \[
+      f(A^+)\le f(A)+f(\{e\}),
+   \]
+   so one of $A$ and $\{e\}$ achieves at least half of the one-extra-element
+   value.
+\end{proof}
+
 This is a sharper objective than a centroid-distance margin rule: an extra
 membership only receives credit for near pairs that are still missed by the
 current redundancy pattern. Dense interior points therefore stop consuming
 replication budget once their near pairs are already covered, while isolated
 boundary points can still be selected if they explain many remaining misses.
-The same greedy step can be run with marginal power cost
-$\Delta(|P_i|^{1+\rho}\Psi(R_i))$ or with dyadic cost buckets; the displayed
-unit-cost version is the self-contained core.
+\Cref{lem:cost-sensitive-near-pair-cover} is the finite-cost version: in one
+assignment phase, freeze or dyadically bucket the marginal power costs and add
+memberships by uncovered near-pair gain per unit power cost.
 
 A practical ``power-cover Lloyd'' iteration would alternate this coverage or
 power-cost assignment step with a center update that reduces certified radii and
