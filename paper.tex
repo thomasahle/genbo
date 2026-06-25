@@ -2189,6 +2189,158 @@ certificate used for budget thinning.  This explains why lattice extreme
 pruning and the transition-aware allocation normal form are the same object at
 different levels of abstraction.
 
+\begin{lemma}[Fano-biased prefix-list compiler]
+   \label{lem:fano-biased-prefix-list}
+   Fix one query \(q\) and a finite route trie.  Each terminal route \(z\) has
+   a raw reliability score \(A_q(z)\), terminal price \(Q_z\), resident set
+   \(P_z\), and certified output procedure.  Each prefix \(u\) has a computable
+   raw upper certificate \(\overline A_q(u)\), with
+   \[
+      A_q(z)\le \overline A_q(u)
+      \qquad(z\succeq u).
+   \]
+   Let every edge \(e\) have a nonnegative decodable branch price
+   \(\pi_q(e)\), and put
+   \[
+      \Pi_q(u)=\sum_{e\preceq u}\pi_q(e).
+   \]
+   Define the Fano-biased terminal and prefix scores by
+   \[
+      S_q(z)=A_q(z)-\Pi_q(z),
+      \qquad
+      U_q(u)=\overline A_q(u)-\Pi_q(u)
+   \]
+   on internal prefixes, and \(U_q(z)=S_q(z)\) on terminals.  Then \(U_q\) is
+   an admissible upper certificate for \(S_q\).
+
+   Suppose children with \(U_q\ge\Theta\) can be generated as in
+   \cref{lem:priority-prefix-list-decoder}.  For \(\beta>0\), define
+   \[
+      L_{\rm Fano}
+      =
+      e^{-\beta\Theta}
+      \sum_u g_q(u)
+      \exp\!\left(\beta(\overline A_q(u)-\Pi_q(u))\right),
+   \]
+   and
+   \[
+      T_{\rm Fano}
+      =
+      e^{-\beta\Theta}
+      \sum_z Q_z
+      \exp\!\left(\beta(A_q(z)-\Pi_q(z))\right).
+   \]
+   Then the priority decoder invokes every terminal with
+   \(A_q(z)-\Pi_q(z)\ge\Theta\), and its query work is
+   \[
+      O\!\left(
+         D(q)
+         +(L_{\rm Fano}+1)\log(2+L_{\rm Fano})
+         +T_{\rm Fano}
+      \right).
+   \]
+
+   Moreover, let \(\mathcal G\) be a set of terminal routes whose certified
+   output procedures are valid for the current unresolved near-pair objective.
+   If a route law \(\Lambda\) on \(\mathcal G\) satisfies
+   \[
+      \Lambda\{z:\ A_q(z)\ge\Theta+B\}\ge h
+      \quad\text{and}\quad
+      \E[\Pi_q(V)\mid A_q(V)\ge\Theta+B]\le B/2,
+   \]
+   then the Fano decoder lists a valid route whenever the conditional event has
+   positive probability; quantitatively,
+   \[
+      \Lambda\{z\in\mathcal G:\ A_q(z)-\Pi_q(z)\ge\Theta\}
+      \ge h/2 .
+   \]
+\end{lemma}
+
+\begin{proof}
+   If \(z\succeq u\), then \(\Pi_q(z)\ge\Pi_q(u)\) because the branch prices
+   are nonnegative.  Hence
+   \[
+      S_q(z)
+      =
+      A_q(z)-\Pi_q(z)
+      \le
+      \overline A_q(u)-\Pi_q(u)
+      =
+      U_q(u),
+   \]
+   so \(U_q\) is admissible.  The work bound is
+   \cref{cor:prefix-list-resources} applied to this \(U_q\), using the
+   exponential majorants
+   \[
+      \mathbf 1\{U_q(u)\ge\Theta\}
+      \le e^{-\beta\Theta}e^{\beta U_q(u)}
+   \]
+   for prefixes and the analogous terminal bound for
+   \(\sum_{z:S_q(z)\ge\Theta}Q_z\).
+
+   For the last claim, condition on
+   \(G_0=\{A_q(V)\ge\Theta+B\}\).  Markov's inequality gives
+   \[
+      \Pr[\Pi_q(V)>B\mid G_0]\le\frac12.
+   \]
+   Therefore \(G_0\cap\{\Pi_q(V)\le B\}\) has \(\Lambda\)-mass at least
+   \(h/2\).  Every route in this intersection satisfies
+   \(A_q(z)-\Pi_q(z)\ge\Theta\), so the decoder lists it.
+\end{proof}
+
+\begin{corollary}[Water-filled Fano bias]
+   \label{cor:waterfilled-fano-bias}
+   Consider a set of required route edges with normalized recursive charges
+   \(a_e\), a decodable allocation \(y_e\), and, optionally, a decodable
+   transition envelope \(\lambda_e\).  Use the Fano branch prices
+   \[
+      \pi_q(e)=\log_+\frac{a_e}{y_e}
+      \quad\text{or, in the transition-aware form,}\quad
+      \pi_q(e)=\log_+\frac{\lambda_ea_e}{y_e}.
+   \]
+   Let \(A_q,\overline A_q\) be any raw route score and raw admissible upper
+   score.  If the unpriced prefix moment satisfies
+   \[
+      \sum_u g_q(u)e^{\beta\overline A_q(u)}
+      \le e^{\beta\Theta_0}F\log^{O_c(1)}m,
+   \]
+   then the Fano-biased decoder run at threshold \(\Theta_0-B\) has prefix work
+   at most
+   \[
+      e^{\beta B}F\log^{O_c(1)}m
+   \]
+   up to the priority-queue logarithm.  The same statement holds for terminal
+   prices \(Q_z\) whenever the analogous unpriced terminal exponential moment is
+   bounded by \(e^{\beta\Theta_0}F\log^{O_c(1)}m\).
+
+   Consequently, a water-filled allocation defect \(B=O_c(\log\log m)\) costs
+   only a polylogarithmic factor in deterministic stack-decoding work.  In the
+   transition-aware case this is precisely the defect
+   \(\sum_e\ell_e\log_+(\lambda_ea_e/y_e)\) from
+   \cref{cor:transition-waterfilled-allocation}.
+\end{corollary}
+
+\begin{proof}
+   Since all branch prices are nonnegative,
+   \[
+      e^{\beta(\overline A_q(u)-\Pi_q(u))}
+      \le e^{\beta\overline A_q(u)}.
+   \]
+   Substituting \(\Theta=\Theta_0-B\) in
+   \cref{lem:fano-biased-prefix-list} gives
+   \[
+      L_{\rm Fano}
+      \le
+      e^{-\beta(\Theta_0-B)}
+      \sum_u g_q(u)e^{\beta\overline A_q(u)}
+      \le
+      e^{\beta B}F\log^{O_c(1)}m.
+   \]
+   The terminal-price estimate is identical.  The final sentence is the
+   definition of the allocation and transition-aware defects, combined with
+   \cref{lem:fano-biased-prefix-list}.
+\end{proof}
+
 The closest existing template is the product-code locality-sensitive filtering
 construction of Becker, Ducas, Gama, and Laarhoven~\cite{BDGL16}.  They replace
 independent spherical-cap filters by an enormous structured product family and
@@ -11032,6 +11184,13 @@ threshold, and an exponential-moment certificate turns this into a short-list
 and query-work bound.  If the score tree admits such an output-sensitive prefix
 enumerator, routing reduces to a list-size theorem followed by ordinary metric
 verification.
+\Cref{lem:fano-biased-prefix-list} and
+\cref{cor:waterfilled-fano-bias} make the sequential-decoding bias explicit:
+subtracting a nonnegative branch price from the reliability score preserves
+admissibility, can only shrink the exponential list-size moment, and turns an
+\(O_c(\log\log n)\) water-filled allocation defect into only a polylogarithmic
+threshold loss.  Thus a code or lattice replacement should expose Fano-biased
+threshold reporters, not just nearest-center reporters.
 \Cref{lem:continuation-list-certificate} and
 \cref{cor:continuation-as-list-decoding} show that ordinary continuation-mass
 pruning is already the \(\beta=1\) case of this certificate; the unresolved
