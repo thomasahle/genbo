@@ -3220,6 +3220,124 @@ query time pays only for output-sensitive list decoding.
    the stated capped resources after the usual constant-factor loss.
 \end{proof}
 
+\begin{corollary}[Gibbs sampled product-panel certificate]
+   \label{cor:gibbs-sampled-product-panel}
+   Fix the terminal setting of \cref{prop:sampled-structured-panel}.  A random
+   product panel has labels
+   \(\mathcal C=\prod_{j=1}^h\mathcal C_j\), data scores
+   \[
+      S_P(x,c)=\sum_{j=1}^h\psi_j(x,c_j),
+      \qquad
+      S_Q(q,c)=\sum_{j=1}^h\phi_j(q,c_j),
+   \]
+   and stores \(x\) in bucket \(c\) when \(S_P(x,c)\ge\theta_P\).  For a
+   promised query \(q\), the query samples one label from the Gibbs law
+   \[
+      \pi_q(c)=\frac{e^{\beta S_Q(q,c)}}{Z_Q(q)},
+      \qquad
+      Z_Q(q)=\sum_{a\in\mathcal C}e^{\beta S_Q(q,a)}.
+   \]
+   Assume this law can be sampled in \(d\log^{O_c(1)}m\) time.  Suppose that
+   for some \(\alpha,\beta>0\),
+   \[
+      \E
+      \sum_{x\in P}
+      e^{-\alpha\theta_P}
+      \sum_{c\in\mathcal C}e^{\alpha S_P(x,c)}
+      \le m^{1+\rho}L_m,
+      \tag{GS1}
+   \]
+   and, for every promised query \(q\),
+   \[
+      \E
+      \sum_{\substack{x\in P\\ \|x-q\|>cr}}
+      \frac{
+         e^{-\alpha\theta_P}
+         \sum_{c\in\mathcal C}
+         e^{\alpha S_P(x,c)+\beta S_Q(q,c)}
+      }{Z_Q(q)}
+      \le m^\rho L_m .
+      \tag{GS2}
+   \]
+   Finally assume that every near pair \((p,q)\), \(\|p-q\|\le r\), satisfies
+   \[
+      \E
+      \frac{
+         \sum_{c\in\mathcal C:\,S_P(p,c)\ge\theta_P}
+         e^{\beta S_Q(q,c)}
+      }{Z_Q(q)}
+      \ge L_m^{-1}.
+      \tag{GS3}
+   \]
+   Then \(O(L_m)\) independent Gibbs sampled product panels give the terminal
+   ANN bounds of \cref{prop:sampled-structured-panel}.
+
+   If the labels are a full product and
+   \(Z_j^Q(q),Z_j^P(x),Z_j^{PQ}(x,q)\) are as in
+   \cref{lem:product-panel-tensorization}, then
+   \[
+      Z_Q(q)=\prod_jZ_j^Q(q),
+      \qquad
+      \sum_{c\in\mathcal C}e^{\alpha S_P(x,c)}
+      =\prod_jZ_j^P(x),
+   \]
+   and
+   \[
+      \frac{
+         \sum_c e^{\alpha S_P(x,c)+\beta S_Q(q,c)}
+      }{Z_Q(q)}
+      =
+      \prod_j\frac{Z_j^{PQ}(x,q)}{Z_j^Q(q)}.
+      \tag{GS4}
+   \]
+   Thus \((GS1)\) and \((GS2)\) factor block-by-block.  If
+   \(\theta_P=\sum_j\theta_{P,j}\), then the near condition is implied by
+   \[
+      \prod_j
+      \E\left[
+      \frac{
+         \sum_{a\in\mathcal C_j:\,\psi_j(p,a)\ge\theta_{P,j}}
+         e^{\beta\phi_j(q,a)}
+      }{Z_j^Q(q)}
+      \right]
+      \ge L_m^{-1}
+      \tag{GS5}
+   \]
+   whenever the block panels are independent.
+\end{corollary}
+
+\begin{proof}
+   For a realized panel, set the sampled-panel label set to
+   \(\mathcal L=\mathcal C\), put
+   \(A_c(x)=\mathbf 1\{S_P(x,c)\ge\theta_P\}\), and use the displayed Gibbs
+   law \(\pi_q\).  The storage condition \((SP1)\) follows from
+   \[
+      A_c(x)\le e^{\alpha(S_P(x,c)-\theta_P)}
+   \]
+   and \((GS1)\).  For far sampled co-load,
+   \[
+   \begin{aligned}
+      \sum_c\pi_q(c)A_c(x)
+      &\le
+      \frac{
+         e^{-\alpha\theta_P}
+         \sum_c e^{\alpha S_P(x,c)+\beta S_Q(q,c)}
+      }{Z_Q(q)} ,
+   \end{aligned}
+   \]
+   so \((SP2)\) follows from \((GS2)\).  The near sampled mass condition
+   \((SP3)\) is exactly \((GS3)\).  Therefore
+   \cref{prop:sampled-structured-panel} applies.
+
+   The factor identities in \((GS4)\) follow by expanding the additive product
+   scores and summing independently over the coordinates \(c_j\).  Finally, on
+   the block event
+   \(\psi_j(p,c_j)\ge\theta_{P,j}\) for every \(j\), the full label satisfies
+   \(S_P(p,c)\ge\theta_P\).  Since the Gibbs law and the random panel factor
+   across independent blocks, the expected Gibbs mass of this sufficient event
+   is the product in \((GS5)\), which proves the last claim.
+\end{proof}
+
 \begin{remark}[Lattice Gaussian panels as sampled decoders]
    \label{rem:lattice-gaussian-panels}
    \Cref{prop:sampled-structured-panel} is the sampler analogue of the
@@ -12061,6 +12179,11 @@ labels if it can sample labels from a certified Gibbs or discrete-Gaussian law:
 stored redundancy, far sampled co-load, and near sampled mass are enough.  This
 is a cleaner theoretical version of the empirical multi-assignment lesson and
 a possible way around all-reporting overhead in middle-density regimes.
+\Cref{cor:gibbs-sampled-product-panel} makes the full-product case algebraic:
+far sampled load is a ratio of mixed and query partition functions, while the
+near condition is Gibbs mass on labels that store the near point.  These
+quantities tensorize block-by-block, so the sampled lattice/code target has the
+same rate-bookkeeping shape as the reporting target but no active-list term.
 \Cref{rem:outer-list-recovery-codebook} records the stronger alternative
 suggested by list-decoding codes and lattices: instead of decoding the full
 Cartesian product, retain a sparse outer code or lattice coset and use soft
