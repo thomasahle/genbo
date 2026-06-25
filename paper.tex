@@ -2197,6 +2197,30 @@ inflated balls are not: the query probes filters aligned with its score
 direction, instead of every cluster whose enclosing ball lies within additive
 distance $r$.
 
+A concrete version is the balanced cap-power filter.  In a localized node,
+first center, and optionally whiten, the data.  Choose directions
+$u_1,\ldots,u_K$ and offsets $\theta_i$ so that the retained caps
+\[
+   P_i=\{x\in P:\langle u_i,x\rangle\ge\theta_i\}
+\]
+have controlled masses, then attach to each retained cap its certified
+recursive ball $(o_i,R_i)$.  A point may be stored in several caps; the
+membership rule is not nearest-center assignment but marginal uncovered
+near-pair value per marginal storage and stabbing power.  A query lists the
+caps with
+\[
+   \langle u_i,q\rangle\ge\theta_i-r
+\]
+or, in the more general Lipschitz case,
+$\phi_i(q)\ge\theta_i-L_i r$.  The offsets play the balancing role that
+$k$-means cell sizes play in practice, while the cap scores supply the
+selectivity that inflated balls lose on concentrated high-dimensional data.
+Flat scoring against all $K$ filters can be replaced by a recursive or
+product-code decoder; the certificate above only concerns the filters that the
+decoder actually lists.  Thus ordinary $k$-means becomes an initializer or
+fallback, while the proof-aligned object is a balanced overlapping score cover
+whose measured quantity is active power, not squared reconstruction error.
+
 \subsection{Simplicity and implementation}
 
 The filtering work remains level-synchronous. At one checkpoint, all active score paths can be advanced by a batched matrix multiplication, followed by continuation-mass pruning, cap-test lookup, randomized child thinning, and resident scans. Recentering updates stored coordinate offsets; it does not start a fresh score tree.
@@ -3473,6 +3497,49 @@ This certificate is the local form of the remaining problem. It is analogous in 
    displayed bound.
 \end{proof}
 
+\begin{corollary}[Prefix-energy route-law certificate]\label{cor:route-law-prefix-energy}
+   Let $\Lambda$ be a probability distribution on leaf routes and let $A(u)$
+   be the activation prefix mass. Define the prefix $\chi^2$ energy
+   \[
+      \mathcal E_2(\Lambda\|A)
+      =
+      \sum_{u}
+      \frac{\Lambda(u)^2}{A(u)},
+   \]
+   with the convention that the summand is $+\infty$ if $\Lambda(u)>0$ and
+   $A(u)=0$. If
+   \[
+      \mathcal E_2(\Lambda\|A)\le M,
+   \]
+   then
+   \[
+      U(\varnothing)\ge \frac{1}{4M}.
+   \]
+\end{corollary}
+
+\begin{proof}
+   For a random leaf $V\sim\Lambda$, put
+   \[
+      X(V)=\sum_{u\preceq V}\frac{\Lambda(u)}{A(u)}.
+   \]
+   Then
+   \[
+      \E_\Lambda X(V)
+      =
+      \sum_u
+      \frac{\Lambda(u)}{A(u)}
+      \Pr_\Lambda[V\succeq u]
+      =
+      \sum_u\frac{\Lambda(u)^2}{A(u)}
+      \le M.
+   \]
+   By Markov's inequality, $\Lambda\{X\le2M\}\ge1/2$. On this event every
+   prefix of $V$ has $\Lambda(u)/A(u)\le2M$, so
+   $T_\Lambda(V)\le\log(2M)$. Applying
+   \cref{cor:typical-route-law-toll} with $h=1/2$ and
+   $B=\log(2M)$ proves the claim.
+\end{proof}
+
 \begin{corollary}[Cutset value delivery]\label{cor:cutset-value-delivery}
    In the setting of \cref{cor:fractional-value-delivery}, suppose every
    route has length at most $H$ and every route cut $\mathcal C$ in the
@@ -3728,6 +3795,10 @@ This certificate is the local form of the remaining problem. It is analogous in 
    \cref{lem:adaptive-continuation}; in homogeneous balanced prefixes its
    prefix probabilities are smaller than the canonical activation factors, so
    positive toll can only come from atypical geometric opportunities.
+   \Cref{cor:route-law-prefix-energy} is an even closer match to the existing
+   proof technology: it asks for a prefix $\chi^2$ energy bound
+   $\sum_u\Lambda(u)^2/A(u)=\log^{O_c(1)}n$, which is exactly the kind of
+   LCA-summed second-moment estimate proved for tame spherical leaves.
 \end{remark}
 
 \begin{remark}[The remaining aggregate value target]\label{rem:value-delivery-target}
@@ -5240,7 +5311,7 @@ For the randomized cap-thinning route, one remaining task is the branching first
    \le
    \log^{O_c(1)}n\,V(\varnothing)^2 .
 \]
-\Cref{lem:local-lca-energy} further reduces this to a local Bellman multiplier, and \cref{cor:square-nonexpansive-routes} shows that square-nonexpansive value branching costs only the polylogarithmic route depth. Equivalently, \cref{lem:energy-spine-toll} says that it is enough to prove only $O_c(\log\log n)$ positive square-energy toll along the energy-biased route spine. The capped-flow certificate \cref{lem:unit-capped-value-flow}, the Bellman recursion \cref{lem:saturated-value-recursion}, and the min-cut dual \cref{lem:saturated-value-mincut} give a still simpler sufficient formulation: prove that every route cut has inverse-polylogarithmic prefix-success mass. The equivalent dominated-law form in \cref{lem:dominated-route-law} says to construct a tilted law on tame routes whose prefix probabilities are dominated by activation prefix masses up to a polylogarithmic factor; by \cref{cor:typical-route-law-toll}, it is enough to prove only $O_c(\log\log n)$ expected positive domination toll under that route law and prune the bad tail. Conditional on either aggregate value statement, \cref{prop:budget-thinned-polylog} gives the desired polylogarithmic ANN theorem. This is a fully non-channel route; the smooth product terminal filter can be used after localization and no longer contributes an inverse-polylogarithmic table-recall penalty. The structured posterior route replaces the cap-frontier obstacle by \cref{asm:multiscale-structured-likelihood}: prove an output-sensitive reporter for pure likelihood rank prefixes, not a small explicitly enumerable channel. The smoothed sampling route replaces both by \cref{asm:smoothed-gibbs} or \cref{asm:gumbel-mips}: prove either an optimal-exponent reporter that captures inverse-polylogarithmic Gaussian Gibbs mass, or a certified $O(\log\log n)$-additive Gumbel-MIPS primitive. Smoothed additive nearest neighbor is another stronger sufficient primitive. The detector-vote cohort-or-leaf route is a separate possible generalization to arbitrary certified child hierarchies, where the remaining issue is near-lineage coupling between ordinary continuation paths and detector activations.
+\Cref{lem:local-lca-energy} further reduces this to a local Bellman multiplier, and \cref{cor:square-nonexpansive-routes} shows that square-nonexpansive value branching costs only the polylogarithmic route depth. Equivalently, \cref{lem:energy-spine-toll} says that it is enough to prove only $O_c(\log\log n)$ positive square-energy toll along the energy-biased route spine. The capped-flow certificate \cref{lem:unit-capped-value-flow}, the Bellman recursion \cref{lem:saturated-value-recursion}, and the min-cut dual \cref{lem:saturated-value-mincut} give a still simpler sufficient formulation: prove that every route cut has inverse-polylogarithmic prefix-success mass. The equivalent dominated-law form in \cref{lem:dominated-route-law} says to construct a tilted law on tame routes whose prefix probabilities are dominated by activation prefix masses up to a polylogarithmic factor; by \cref{cor:typical-route-law-toll}, it is enough to prove only $O_c(\log\log n)$ expected positive domination toll under that route law and prune the bad tail. By \cref{cor:route-law-prefix-energy}, an even more LCA-compatible target is a polylogarithmic prefix-energy bound $\sum_u\Lambda(u)^2/A(u)$ for the tilted route law. Conditional on either aggregate value statement, \cref{prop:budget-thinned-polylog} gives the desired polylogarithmic ANN theorem. This is a fully non-channel route; the smooth product terminal filter can be used after localization and no longer contributes an inverse-polylogarithmic table-recall penalty. The structured posterior route replaces the cap-frontier obstacle by \cref{asm:multiscale-structured-likelihood}: prove an output-sensitive reporter for pure likelihood rank prefixes, not a small explicitly enumerable channel. The smoothed sampling route replaces both by \cref{asm:smoothed-gibbs} or \cref{asm:gumbel-mips}: prove either an optimal-exponent reporter that captures inverse-polylogarithmic Gaussian Gibbs mass, or a certified $O(\log\log n)$-additive Gumbel-MIPS primitive. Smoothed additive nearest neighbor is another stronger sufficient primitive. The detector-vote cohort-or-leaf route is a separate possible generalization to arbitrary certified child hierarchies, where the remaining issue is near-lineage coupling between ordinary continuation paths and detector activations.
 
 \appendix
 
