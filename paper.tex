@@ -1786,13 +1786,72 @@ as
 subject to covering the data, or the analogous sampled-near-pair objective when
 only a bounded number of active filters is probed. Multi-assignment is then not
 an ad hoc repair but the intended filtering mechanism: spend overlap on points
-whose near-neighbor queries otherwise escape their closest cell. A practical
-``power-cover Lloyd'' step would assign a point to filters by marginal
-stabbing/storage cost and update centers by certified radius reduction
-(approximately a one-center or quantile-radius objective), not by the Euclidean
-mean alone. Proving an $n^\rho\polylog n$ worst-case power-stabbing cover would
-be another route to the final theorem; empirically, it is a plausible way to
-beat plain $k$-means while staying aligned with the score-and-ball potential.
+whose near-neighbor queries otherwise escape their closest cell.
+
+There is a particularly clean finite surrogate for the replication part. Fix a
+pool of candidate certified filters and a query rule $I(q)$, and let
+$\mathcal E$ be a multiset of sampled near pairs $(x,q)$. For a set $A$ of
+chosen memberships $(x,i)$, define the covered near-pair weight
+\[
+   \operatorname{Cov}(A)
+   =
+   \sum_{(x,q)\in\mathcal E} w_{x,q}\,
+   \mathbf 1\{\exists i\in I(q):(x,i)\in A\}.
+\]
+
+\begin{lemma}[Greedy near-pair cover]\label{lem:greedy-near-pair-cover}
+   With the candidate filters and query rule fixed, $\operatorname{Cov}$ is a
+   monotone submodular set function of the selected memberships. Consequently,
+   if every membership has unit storage cost, the greedy rule that repeatedly
+   adds the membership with largest marginal gain achieves at least a
+   $(1-e^{-1})$ fraction of the best coverage achievable with the same number
+   of memberships.
+\end{lemma}
+
+\begin{proof}
+   Monotonicity is immediate. For submodularity, compare two membership sets
+   $A\subseteq B$ and one additional membership $e=(x,i)$. The marginal gain of
+   adding $e$ is exactly the total weight of sampled pairs $(x,q)$ with
+   $i\in I(q)$ that are not already covered. Since $B$ covers every pair covered
+   by $A$, the uncovered set under $B$ is smaller, so the marginal gain under
+   $B$ is at most the marginal gain under $A$.
+
+   Let $O$ be an optimal set of $B_0$ memberships and let $A_t$ be the greedy
+   set after $t$ steps. By submodularity, the total marginal contribution of the
+   elements of $O$ relative to $A_t$ is at least
+   $\operatorname{Cov}(O)-\operatorname{Cov}(A_t)$. Hence some element of $O$
+   has marginal gain at least
+   $(\operatorname{Cov}(O)-\operatorname{Cov}(A_t))/B_0$, and the greedy step
+   gains at least as much. Thus
+   \[
+      \operatorname{Cov}(O)-\operatorname{Cov}(A_{t+1})
+      \le
+      \left(1-\frac1{B_0}\right)
+      \bigl(\operatorname{Cov}(O)-\operatorname{Cov}(A_t)\bigr).
+   \]
+   Iterating for $B_0$ steps gives
+   $\operatorname{Cov}(A_{B_0})\ge(1-(1-1/B_0)^{B_0})\operatorname{Cov}(O)
+   \ge(1-e^{-1})\operatorname{Cov}(O)$.
+\end{proof}
+
+This is a sharper objective than a centroid-distance margin rule: an extra
+membership only receives credit for near pairs that are still missed by the
+current redundancy pattern. Dense interior points therefore stop consuming
+replication budget once their near pairs are already covered, while isolated
+boundary points can still be selected if they explain many remaining misses.
+The same greedy step can be run with marginal power cost
+$\Delta(|P_i|^{1+\rho}\Psi(R_i))$ or with dyadic cost buckets; the displayed
+unit-cost version is the self-contained core.
+
+A practical ``power-cover Lloyd'' iteration would alternate this coverage or
+power-cost assignment step with a center update that reduces certified radii and
+inflated stabbing, approximately a one-center or quantile-radius objective, not
+the Euclidean mean alone. The radius term suggests a concrete way to beat plain
+$k$-means: peel or replicate points whose inclusion greatly expands a certified
+ball instead of allowing one outlier to enlarge the query region of an entire
+cluster. Proving an $n^\rho\polylog n$ worst-case power-stabbing cover would be
+another route to the final theorem; empirically, it is a plausible way to beat
+plain $k$-means while staying aligned with the score-and-ball potential.
 \Cref{prop:power-cover-polylog} is the exact theorem this objective should try
 to instantiate. It avoids the branching score-frontier obstruction of
 \cref{asm:mixed-continuation-operator}; the missing content is instead a
