@@ -8445,6 +8445,60 @@ This certificate is the local form of the remaining problem. It is analogous in 
    on leaves has \(\Lambda(u)=m(u)\ge r(u)\ge d(u)\) at every node.
 \end{proof}
 
+\begin{lemma}[Local potential certificate for antichain charge]
+   \label{lem:local-antichain-charge-potential}
+   Let \(\mathcal T\) be a finite rooted trie and let \(b(u)\ge0\) be a charge
+   on trie nodes.  Suppose there is a nonnegative potential \(\Phi(u)\) such
+   that, for every node \(u\),
+   \[
+      b(u)\le\Phi(u),
+      \qquad
+      \sum_{w\in\operatorname{ch}(u)}\Phi(w)\le\Phi(u).
+   \]
+   Then every antichain \(\mathcal C\) contained in the subtree rooted at \(v\)
+   satisfies
+   \[
+      \sum_{u\in\mathcal C} b(u)\le\Phi(v).
+   \]
+   In particular, if \(\Phi(\varnothing)\le C/H_0\), then
+   \[
+      \sum_{u\in\mathcal C}b(u)\le \frac{C}{H_0}
+   \]
+   for every antichain of \(\mathcal T\).
+
+   A useful stronger sufficient condition is the potential-drop inequality
+   \[
+      b(u)+\sum_{w\in\operatorname{ch}(u)}\Phi(w)\le\Phi(u)
+      \qquad(u\in\mathcal T),
+   \]
+   which implies the two displayed hypotheses.
+\end{lemma}
+
+\begin{proof}
+   We prove the subtree statement by induction from the leaves upward.  If
+   \(v\) is a leaf, every antichain in its subtree is either empty or
+   \(\{v\}\), so the claim follows from \(b(v)\le\Phi(v)\).
+
+   Let \(v\) be internal.  If an antichain \(\mathcal C\) in the subtree of
+   \(v\) contains \(v\), then it contains no strict descendant of \(v\), and
+   \[
+      \sum_{u\in\mathcal C}b(u)=b(v)\le\Phi(v).
+   \]
+   Otherwise \(\mathcal C\) is the disjoint union of its intersections with
+   the child subtrees.  By induction,
+   \[
+      \sum_{u\in\mathcal C}b(u)
+      \le
+      \sum_{w\in\operatorname{ch}(v)}\Phi(w)
+      \le
+      \Phi(v).
+   \]
+   This proves the claim for every subtree.  The root statement is the case
+   \(v=\varnothing\).  The potential-drop condition implies
+   \(b(u)\le\Phi(u)\) and
+   \(\sum_w\Phi(w)\le\Phi(u)\) because all terms are nonnegative.
+\end{proof}
+
 \begin{corollary}[Antichain charge certificate for transition water-filling]
    \label{cor:antichain-transition-waterfill}
    Work in the setting of \cref{cor:transition-waterfilled-allocation}.  For
@@ -8553,6 +8607,35 @@ This certificate is the local form of the remaining problem. It is analogous in 
    hypotheses of that compiler.  Hence the listed successful routes have
    \(\Lambda\)-mass at least \(1/2\), so at least one valid terminal route is
    invoked, and the displayed work bound follows.
+\end{proof}
+
+\begin{corollary}[Local-potential antichain Fano certificate]
+   \label{cor:local-potential-antichain-fano}
+   In the setting of \cref{cor:existential-antichain-fano}, suppose the
+   successful-route trie admits a nonnegative potential \(\Phi\) with
+   \[
+      a_*(u)\le\Phi(u),
+      \qquad
+      \sum_{w\in\operatorname{ch}(u)}\Phi(w)\le\Phi(u),
+      \qquad
+      \Phi(\varnothing)\le \frac{C}{H_0}.
+   \]
+   Then the antichain hypothesis of
+   \cref{cor:existential-antichain-fano} holds.  Consequently, under the same
+   raw-margin, prefix-moment, terminal-moment, and decodability hypotheses as
+   in that corollary, the Fano-biased priority decoder lists a valid terminal
+   route with query work
+   \[
+      e^{2\beta H_0\log C}F\log^{O_c(1)}m
+   \]
+   up to the priority-queue logarithm.
+\end{corollary}
+
+\begin{proof}
+   Apply \cref{lem:local-antichain-charge-potential} with
+   \(b(u)=a_*(u)\).  This gives the required antichain charge bound
+   \(\sum_{u\in\mathcal C}a_*(u)\le C/H_0\).  The conclusion is then exactly
+   \cref{cor:existential-antichain-fano} with \(B=H_0\log C\).
 \end{proof}
 
 \begin{lemma}[Finite convex-linear minimax]\label{lem:finite-convex-minimax}
@@ -11552,6 +11635,16 @@ min-cut and stopping-frontier certificates: instead of guessing a route law,
 one proves that no prefix-free frontier carries too much maximum local charge,
 then the law and the transition-aware water-filled allocation are forced by a
 finite flow argument.
+\Cref{lem:local-antichain-charge-potential} turns this global frontier
+condition into a local proof obligation: find a nonnegative potential
+\(\Phi\) with \(a_*(u)\le\Phi(u)\),
+\(\sum_w\Phi(w)\le\Phi(u)\), and
+\(\Phi(\varnothing)\le C/H_0\).  The stronger drop form
+\(a_*(u)+\sum_w\Phi(w)\le\Phi(u)\) is enough and telescopes through every
+stopping frontier.  \Cref{cor:local-potential-antichain-fano} packages this
+with the Fano decoder, so the remaining geometric theorem can be attacked by
+local potential inequalities rather than by explicitly constructing the route
+law.
 \Cref{cor:existential-antichain-fano} composes this with the Fano decoder in
 the ANN-correct existential form: if the union of valid terminal routes has the
 same antichain charge bound and every such route has \(O_c(\log\log n)\) raw
