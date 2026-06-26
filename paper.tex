@@ -13868,6 +13868,72 @@ law already has positive reduced gain.
    captured-mass equality along the segment follows linearly from \((BRS1)\).
 \end{proof}
 
+\begin{assumption}[One-potential captured-mass core separator]
+   \label{asm:one-potential-core-separator}
+   Work in the setting of \cref{lem:high-correlation-dense-slice-separator},
+   and assume the budgeted spherical family satisfies \((WS1)\).  Let
+   \(\mathcal U\) be a finite Pareto-priced core family.  For every nonnegative
+   pair potential \(\gamma\), put
+   \[
+      \mathsf M(\gamma)
+      =
+      \sum_{(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q},
+      \qquad
+      r_{p,q}=\Pr_{Z\sim\Pi}[p\in V_{Z,q}].
+      \tag{OPC1}
+   \]
+   The family \(\mathcal U\) is one-potential separating if, for every
+   \(\tau_q\ge0\), \(\sigma\ge0\), and nonnegative \(\gamma\) satisfying
+   \[
+      \mathsf M(\gamma)>
+      \pi_1\left(L\sum_q\tau_q+\sigma S\right),
+      \tag{OPC2}
+   \]
+   some \(U\in\mathcal U\) violates the core hinge envelope
+   \[
+      \sum_q\bigl(a_U^\gamma(q)-T_U\tau_q\bigr)_+
+      >
+      \sigma S_U .
+      \tag{OPC3}
+   \]
+\end{assumption}
+
+\begin{corollary}[One-potential separation implies local cover]
+   \label{cor:one-potential-local-cover}
+   Work in the setting of \cref{cor:residual-separator-local-cover}.  Enlarge
+   the finite filter universe by all threshold activations of a finite
+   Pareto-priced core family \(\mathcal U\), and assume that
+   \(\mathcal U\) is one-potential separating in the sense of
+   \cref{asm:one-potential-core-separator}.  Then the finite filter-cover LP
+   \((\mathsf{FC}_{\mathcal N})\) is feasible with query budget \(L\) and
+   storage budget \(S\).
+\end{corollary}
+
+\begin{proof}
+   Suppose the enlarged filter-cover LP were infeasible.  Apply
+   \cref{cor:two-potential-residual-normal-form} and
+   \cref{cor:balanced-residual-segment}, and take any interpolated potential
+   \(\gamma^\theta\) from \((BRS2)\).  By \((BRS1)\) and \((SCD0)\),
+   \[
+      \mathsf M(\gamma^\theta)=\mathsf A_{\rm hc}.
+   \]
+   Since \(r_{p,q}\ge\pi_1\) for every demanded pair by \((WS1)\) and
+   \(p\in H(q)\), while the residual dual has surplus \((TPR1)\),
+   \[
+      \mathsf A_{\rm hc}
+      =
+      \sum_{(p,q)}\alpha_{p,q}r_{p,q}
+      \ge
+      \pi_1A_\alpha
+      >
+      \pi_1\left(L\sum_q\tau_q+\sigma S\right).
+   \]
+   Thus \(\gamma^\theta\) satisfies \((OPC2)\).  The one-potential separator
+   gives a core \(U\) violating \((OPC3)\), but \((BRS3)\) says every core
+   satisfies the opposite inequality along the entire residual segment.  This
+   contradiction proves the finite cover LP feasible.
+\end{proof}
+
 \begin{assumption}[Compression-dual separator]
    \label{asm:compression-dual-separator}
    Work in the setting of \cref{cor:residual-separator-local-cover}.  Fix a
@@ -25681,7 +25747,12 @@ counterexample format: a surplus filter-cover potential \(\alpha\) and a
 compression potential \(\beta\) must simultaneously satisfy the same
 Pareto-core hinge envelopes.  By \cref{cor:balanced-residual-segment}, this
 counterexample can be normalized to a fixed captured-mass segment between
-\(\alpha\) and \(\beta\), all of which remains core-pseudo-random.  Because
+\(\alpha\) and \(\beta\), all of which remains core-pseudo-random.
+\Cref{asm:one-potential-core-separator} and
+\cref{cor:one-potential-local-cover} collapse the remaining dense theorem even
+further: it is enough to rule out a single nonnegative potential whose primitive
+high-correlation captured mass exceeds the local query/storage price while every
+Pareto core obeys its hinge envelope.  Because
 preprocessing time is deliberately not a scarce resource,
 \cref{lem:finite-pool-optimizer} and
 \cref{cor:offline-pareto-compression} allow the build stage to enumerate,
