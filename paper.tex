@@ -12821,6 +12821,87 @@ sorted by a dual query weighting, and the retained column is still an integral
 saturated prefix filter.  Fractional query weights remain useful only as a
 dual-analysis certificate for finding which threshold layer must exist.
 
+\begin{lemma}[Fractional threshold-container packing separator]
+   \label{lem:fractional-threshold-container-packing}
+   Fix a dyadic demand layer \(\mathcal N_j\).  Let \(\mathcal C\) be a finite
+   family of query-weighted certified container records.  A record
+   \(C\in\mathcal C\) consists of a container \(W_C\subseteq P\), a price factor
+   \(\psi_C>0\), an exponent \(0\le\rho_C\le1\), a finite atom-safe cardinality
+   set \(\mathcal K_C\), and query weights \(0\le y_q^C\le1\).  Put
+   \[
+      Q_t^C=\{q\in\mathcal Q:y_q^C\ge t\},
+      \qquad
+      L_C=\sum_q\tau_qy_q^C ,
+   \]
+   and assume that every \(h\in\mathcal K_C\) is atom-safe for every threshold
+   set \(Q_t^C\).  Define the weighted saturated support degree in \(W_C\) by
+   \[
+      d_C(p)=
+      \sum_{\substack{q\in\mathcal Q:\\
+         (p,q)\in\mathcal N_j,\ p\in V_{z,q}\text{ for some }z}}
+      y_q^C ,
+   \]
+   and let \(D_C(h)\) be the sum of the largest \(h\) values of \(d_C(p)\) over
+   \(p\in W_C\).  Finally set
+   \[
+      B_C(h)=\theta_jD_C(h),
+      \qquad
+      P_C(h)=\psi_C\bigl(L_Ch^{\rho_C}+\sigma h^{1+\rho_C}\bigr).
+   \]
+   Suppose the filter universe contains, for every \(C\), every
+   \(h\in\mathcal K_C\), and every distinct threshold set \(Q_t^C\), the
+   saturated top-degree \(h\)-prefix inside \(W_C,Q_t^C\) with prices
+   \[
+      T=\psi_Ch^{\rho_C},
+      \qquad
+      S=\psi_Ch^{1+\rho_C}.
+   \]
+   If there are nonnegative intensities \(\lambda_{C,h}\), not all zero, such
+   that
+   \[
+      \sum_{C\in\mathcal C}\sum_{h\in\mathcal K_C}
+      \lambda_{C,h}B_C(h)
+      >
+      \sum_{C\in\mathcal C}\sum_{h\in\mathcal K_C}
+      \lambda_{C,h}P_C(h),
+      \tag{FTCP1}
+   \]
+   then some retained threshold-prefix filter has positive reduced gain.
+   Conversely, if no such threshold-prefix filter has positive reduced gain,
+   then \((FTCP1)\) fails for every nonnegative intensity vector.
+\end{lemma}
+
+\begin{proof}
+   If \((FTCP1)\) holds, some term in the support of \(\lambda\) satisfies
+   \(B_C(h)>P_C(h)\).  Let \(U\) be the \(h\)-point top-degree set in \(W_C\) for
+   the weights \(d_C\).  The inequality \(B_C(h)>P_C(h)\) is exactly
+   \[
+      \theta_j\sum_{p\in U}d_C(p)
+      >
+      \psi_C\bigl(L_Ch^{\rho_C}+\sigma h^{1+\rho_C}\bigr).
+   \]
+   Applying \cref{lem:layer-cake-query-threshold-separator} with
+   \(W=W_C\), \(y=y^C\), \(\psi=\psi_C\), and \(\rho=\rho_C\) gives a threshold
+   \(t\) for which the saturated top-degree \(h\)-prefix inside
+   \(W_C,Q_t^C\) has positive reduced gain.  This prefix is one of the retained
+   filters by assumption.
+
+   Conversely, if no retained threshold-prefix filter has positive reduced
+   gain, then the same layer-cake lemma implies \(B_C(h)\le P_C(h)\) for every
+   \(C\) and \(h\in\mathcal K_C\).  Summing these inequalities with arbitrary
+   nonnegative coefficients rules out \((FTCP1)\).
+\end{proof}
+
+\Cref{lem:fractional-threshold-container-packing} is the fully fractional
+container-search form.  A separator no longer has to guess a query layer before
+it knows the dual prices; it may propose a container together with a fractional
+query weighting and a prefix scale.  The verifier then performs only the
+canonical layer-cake conversion and keeps one ordinary threshold query layer
+with a saturated top-degree update prefix.  Thus LP range-reporting,
+additive-quantization, list-decoding, or learned proposal routines may optimize
+a continuous reduced-cost surrogate during preprocessing, while the retained
+proof object remains an integral filter-cover column.
+
 \begin{assumption}[Layer quotient separator]
    \label{asm:layer-quotient-separator}
    Work in the setting of \cref{cor:residual-separator-local-cover}.  Suppose a
@@ -24521,10 +24602,14 @@ margins and test whether they pay storage.
 \Cref{lem:fractional-query-weight-degree-normal-form} rewrites the same target
 as a weighted top-\(k\) support-degree inequality over fractional query weights.
 \Cref{lem:layer-cake-query-threshold-separator} then pushes any violation back
-to one integral query-threshold layer.  Thus the current residual target is a
-priced bipartite degree separator inside certified geometric containers, with
-ordinary threshold query layers and top-degree update prefixes as the only
-retained dense columns.  By \cref{cor:layer-separation-local-cover} and
+to one integral query-threshold layer.
+\Cref{lem:fractional-threshold-container-packing} packages this as a conic
+container separator: preprocessing may search over fractional query-weighted
+container records, but every accepted column is still an ordinary threshold
+query layer and top-degree update prefix.  Thus the current residual target is
+a priced bipartite degree separator inside certified geometric containers, with
+fractional query weights used only to find threshold witnesses.  By
+\cref{cor:layer-separation-local-cover} and
 \cref{cor:hinge-container-separator-local-cover}, either concrete separator
 already implies local filter-cover feasibility.  Since
 preprocessing time is deliberately not a scarce resource,
