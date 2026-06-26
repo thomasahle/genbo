@@ -11583,6 +11583,57 @@ objective \((CQ1)\).  If the relevant dual prices lie in a polynomial window the
 \(J=O(\log n)\); if not, preprocessing may still enumerate more classes without
 changing the retained query or storage certificate.
 
+\begin{corollary}[Unweighted quotient coverage screen]
+   \label{cor:unweighted-quotient-coverage-screen}
+   Fix one dyadic class \(\mathcal N_j\) from
+   \cref{lem:dyadic-quotient-packing}.  For a quotient \(G\), define its
+   de-duplicated unweighted layer coverage by
+   \[
+      C_j(G)
+      =
+      \frac1{b_G}
+      \sum_{(z,q)\in\mathcal I_G}
+      \left|
+         \{p\in V_{z,q}:(p,q)\in\mathcal N_j\}
+      \right|
+      \tag{UQ1}
+   \]
+   and its dual price by
+   \[
+      P(G)=T_G\sum_q\tau_qa_G(q)+\sigma S_G.
+      \tag{UQ2}
+   \]
+   If
+   \[
+      \theta_j C_j(G)>P(G),
+      \tag{UQ3}
+   \]
+   then \(G\) has positive reduced gain.  Conversely, if a conic layer witness
+   satisfies \((DUQ6)\), then some quotient \(G\) in its support satisfies
+   \((UQ3)\).
+\end{corollary}
+
+\begin{proof}
+   Since every demand pair in \(\mathcal N_j\) has original price at least
+   \(\theta_j\), the true captured demand of \(G\) is at least
+   \(\theta_j C_j(G)\).  Thus \((UQ3)\) implies true captured demand greater than
+   \(P(G)\), which is positive reduced gain.
+
+   For the converse, write \((DUQ6)\) for the conic intensities as
+   \[
+      \sum_G\lambda_G\theta_j C_j(G)>
+      \sum_G\lambda_GP(G).
+   \]
+   If every \(G\) in the support had \(\theta_jC_j(G)\le P(G)\), the displayed
+   strict inequality would be impossible.  Hence some support quotient satisfies
+   \((UQ3)\).
+\end{proof}
+
+Thus after dyadic unweighting, quotient generation is an ordinary unweighted
+coverage problem with a priced threshold \(P(G)/\theta_j\).  A proposal routine
+may list quotients with large \(C_j(G)\), but every returned quotient is still
+checked against the exact weighted reduced-gain inequality before it is retained.
+
 \begin{corollary}[Quotient-packing local cover criterion]
    \label{cor:quotient-packing-local-cover}
    In the setting of \cref{cor:residual-separator-local-cover}, suppose that for
@@ -23195,7 +23246,9 @@ de-duplicated primitive demand exceeds its query/storage price.
 search over arbitrary nonnegative quotient intensities and verify the signed
 linear objective \((CQ1)\).  \Cref{lem:dyadic-quotient-packing} further reduces
 proposal generation to a single dyadic price layer, with only the stated
-build-time layer factor and exact weighted verification afterward.  Since
+build-time layer factor and exact weighted verification afterward.
+\Cref{cor:unweighted-quotient-coverage-screen} turns each such layer into a
+plain unweighted quotient-coverage threshold.  Since
 preprocessing time is deliberately not a scarce resource,
 \cref{lem:finite-pool-optimizer} and
 \cref{cor:offline-pareto-compression} allow the build stage to enumerate,
