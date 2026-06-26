@@ -18953,6 +18953,109 @@ inequality \((QP3)\).
    in \((ESN3)\).
 \end{proof}
 
+\begin{corollary}[Exact-signature moment separator]
+   \label{cor:exact-signature-moment-separator}
+   Work in the setting of \cref{cor:success-normalized-superlevel-law}.  For a
+   reported pair \((B,g)\), define the active signature layer
+   \[
+      \mathcal A(B,g)=
+      \{\sigma_0\in\Sigma^+:m_B(\sigma_0)\ge g\},
+      \tag{EMOM1}
+   \]
+   and its captured price and query-price load
+   \[
+      X(B,g)=\sum_{\sigma_0\in\mathcal A(B,g)}\beta_{\sigma_0},
+      \qquad
+      Y(B,g)=\sum_{\sigma_0\in\mathcal A(B,g)}\tau_{\sigma_0}.
+      \tag{EMOM2}
+   \]
+   Suppose that the reporter also supplies certified query and storage price
+   envelopes
+   \[
+      \widehat T(B,g)\ge T_B,\qquad
+      \widehat S(B,g)\ge S_B,\qquad
+      \widehat\varepsilon(B,g)\ge\varepsilon_B .
+      \tag{EMOM3}
+   \]
+   If every normalized price system satisfying \((ESNO1)\) admits a finite law
+   \(\nu\) over reported pairs such that
+   \[
+      \E_\nu
+      \left[
+         (1-e^{-g})
+         \bigl(X(B,g)-\widehat T(B,g)Y(B,g)\bigr)
+         -
+         \theta\widehat S(B,g)
+         -
+         \widehat\varepsilon(B,g)
+      \right]>0 ,
+      \tag{EMOM4}
+   \]
+   then \((\mathsf{ESFC}_\Sigma)\) is feasible.
+
+   In particular, suppose the reporter supplies a size or compressed-net
+   parameter \(K(B,g)\ge0\), an exponent \(0\le\rho\le1\), and a price factor
+   \(\psi(B,g)\ge0\) with
+   \[
+      T_B\le\psi(B,g)K(B,g)^\rho,\qquad
+      S_B\le\psi(B,g)K(B,g)^{1+\rho}.
+      \tag{EMOM5}
+   \]
+   Then it is enough to prove the Renyi moment inequality
+   \[
+      \E_\nu(1-e^{-g})X(B,g)
+      >
+      \E_\nu\!\left[
+         (1-e^{-g})\psi(B,g)K(B,g)^\rho Y(B,g)
+         +
+         \theta\psi(B,g)K(B,g)^{1+\rho}
+         +
+         \widehat\varepsilon(B,g)
+      \right].
+      \tag{EMOM6}
+   \]
+   This is the exact-signature version of the average list-size target:
+   captured signature mass is charged against the success-weighted recursive
+   query moment and the storage moment of the reported bucket or compressed
+   net.
+\end{corollary}
+
+\begin{proof}
+   For every reported pair,
+   \[
+      W_B(g)
+      =
+      \sum_{\sigma_0\in\mathcal A(B,g)}
+      \bigl(\beta_{\sigma_0}-T_B\tau_{\sigma_0}\bigr)_+
+      \ge
+      X(B,g)-T_BY(B,g)
+      \ge
+      X(B,g)-\widehat T(B,g)Y(B,g).
+      \tag{EMOM7}
+   \]
+   Therefore
+   \[
+      \underline W_{B,g}
+      =
+      X(B,g)-\widehat T(B,g)Y(B,g),
+      \qquad
+      \overline S_{B,g}=\widehat S(B,g),
+      \qquad
+      \overline\varepsilon_{B,g}=\widehat\varepsilon(B,g)
+   \]
+   are valid certificates in \((ERS2)\).  The positivity condition
+   \((EMOM4)\) is exactly positive expected certified surplus \((ERS5)\), so
+   \cref{cor:reported-superlevel-separator} gives feasibility.
+
+   The Renyi form is the special case
+   \[
+      \widehat T(B,g)=\psi(B,g)K(B,g)^\rho,\qquad
+      \widehat S(B,g)=\psi(B,g)K(B,g)^{1+\rho},
+   \]
+   using \((EMOM5)\).  Substituting these envelopes into \((EMOM4)\) gives
+   \((EMOM6)\).
+\end{proof}
+
 \Cref{lem:exact-near-set-filter-cover} is strictly weaker than
 \cref{lem:finite-signature-filter-cover} when the exact near set is part of the
 signature.  The all-pair LP covers every \(p\in N_{\sigma_0}\); the existential
@@ -19055,6 +19158,16 @@ small.  It asks that, averaged over the proposed bucket-level law, captured
 priced exact-near-set mass beats this success-normalized cost.  This is the
 finite LP form of the Renyi/list-size invariant used by the compressed-filter
 DAG route.
+\Cref{cor:exact-signature-moment-separator} makes the corresponding moment
+target explicit.  For a reported superlevel, separate the captured signature
+price \(X\) from the query-price load \(Y\); it is enough to prove that
+\[
+   \E(1-e^{-g})X
+\]
+beats the success-weighted recursive query moment plus the storage and overflow
+moments.  When a bucket is charged by a compressed size \(K\), the sufficient
+condition is exactly a Renyi form with \(K^\rho\) on query work and
+\(K^{1+\rho}\) on storage.
 
 \begin{proposition}[Conditional fractional filter-cover endpoint]
    \label{prop:fractional-filter-cover-polylog}
