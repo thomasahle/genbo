@@ -11262,6 +11262,87 @@ dense theorem is not a clustering theorem in Lloyd form; it is a geometric
 separator for quotients whose primitive demand is large compared with their
 query-price overlap, storage price, and duplicate-incidence factor \(b_G\).
 
+\begin{corollary}[Residual dense-cover obstruction certificate]
+   \label{cor:residual-dense-cover-obstruction}
+   Work in the setting of \cref{lem:weighted-spherical-reduced-gain} and
+   \cref{lem:high-correlation-dense-slice-separator}.
+   Assume the budget and surplus inequalities \((WS6)\)--\((WS7)\).  For every
+   primitive slice \(V_{z,q}\), suppose a prefix price model
+   \((\psi_{z,q},\rho_D)\) and atom budgets \(L_q,S_0\) are fixed as in
+   \cref{lem:dense-slice-prefix-separation}.  Let \(\mathcal G\) be any finite
+   family of certified dense quotients as in
+   \cref{lem:dense-slice-quotient-separation}.
+
+   If no spherical bucket, no whole high-correlation dense slice, no atom-safe
+   dense prefix, and no quotient \(G\in\mathcal G\) has positive reduced gain,
+   then the dual prices satisfy all of the following.
+   First,
+   \[
+      \mathsf D_H(\tau)>\frac{\pi_1}{2}A_\alpha .
+      \tag{RO1}
+   \]
+   Second,
+   \[
+      \E_{Z\sim\Pi}\sum_q
+      \bigl(\tau_qT_{Z,q}+\sigma S_{Z,q}\bigr)
+      \ge
+      \pi_1A_\alpha .
+      \tag{RO2}
+   \]
+   Third, for every primitive slice \(V_{z,q}\), if its points are sorted by
+   singleton-query prices as in \cref{lem:dense-slice-prefix-separation}, then
+   every atom-safe prefix cardinality \(k\) satisfies
+   \[
+      A_{z,q,k}
+      \le
+      \psi_{z,q}\bigl(\tau_qk^{\rho_D}+\sigma k^{1+\rho_D}\bigr),
+      \tag{RO3}
+   \]
+   where \(A_{z,q,k}\) denotes the sum of the top \(k\) singleton-query prices in
+   \(V_{z,q}\).  Consequently, every atom-safe price superlevel satisfies the
+   density envelope \((DP5)\).
+   Finally, every quotient \(G\in\mathcal G\) satisfies
+   \[
+      A_G\le T_G\sum_q\tau_qa_G(q)+\sigma S_G,
+      \tag{RO4}
+   \]
+   and therefore
+   \[
+      \frac1{b_G}\sum_{(z,q)\in\mathcal I_G}A_{z,q}
+      \le
+      T_G\sum_q\tau_qa_G(q)+\sigma S_G .
+      \tag{RO5}
+   \]
+\end{corollary}
+
+\begin{proof}
+   The first two inequalities are exactly
+   \cref{cor:spherical-dense-moment-obstruction}: no positive spherical bucket
+   gives \((RO1)\), and no positive whole dense slice gives \((RO2)\).
+
+   For a fixed primitive slice, no positive atom-safe dense prefix lets us apply
+   \cref{lem:dense-slice-prefix-separation}.  Its nonpositive-gain inequality is
+   precisely \((RO3)\), and the price-superlevel statement is the displayed
+   consequence \((DP5)\).
+
+   If a quotient \(G\) had
+   \[
+      A_G>T_G\sum_q\tau_qa_G(q)+\sigma S_G,
+   \]
+   then it would have positive reduced gain, contrary to the hypothesis.  This
+   proves \((RO4)\).  Combining \((RO4)\) with \((DQ5)\) from
+   \cref{lem:dense-slice-quotient-separation} gives \((RO5)\).
+\end{proof}
+
+\Cref{cor:residual-dense-cover-obstruction} is the finite certificate that
+replaces the informal dense-recursion picture.  To close the fractional-cover
+route it now suffices to prove that, for a sufficiently rich quotient universe,
+no dual price system can satisfy \((RO1)\)--\((RO5)\): the large spherical
+high-correlation co-load \((RO1)\) must either contain a high-price prefix
+violating \((RO3)\), or organize into a quotient violating \((RO5)\), or else be
+pseudo-random enough that the original spherical reduced-gain test was already
+positive.  This is the remaining weighted geometric theorem.
+
 \begin{lemma}[Finite-signature filter-cover compiler]
    \label{lem:finite-signature-filter-cover}
    Let $\Omega$ be a query domain for one resident node \(P\), and let
@@ -22830,7 +22911,11 @@ therefore any unresolved obstruction must have all price superlevels below the
 Renyi density envelope \((DP5)\).  \Cref{lem:dense-slice-quotient-separation}
 then gives the exact merge test: grouped singleton slices can be replaced by one
 certified dense quotient whenever their de-duplicated primitive demand beats the
-quotient query and storage prices.  Since
+quotient query and storage prices.  Finally,
+\cref{cor:residual-dense-cover-obstruction} packages the surviving dual
+certificate into the explicit inequalities \((RO1)\)--\((RO5)\).  The remaining
+geometric theorem is now exactly to rule out those inequalities for a rich enough
+quotient universe.  Since
 preprocessing time is deliberately not a scarce resource,
 \cref{lem:finite-pool-optimizer} and
 \cref{cor:offline-pareto-compression} allow the build stage to enumerate,
