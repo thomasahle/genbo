@@ -18163,6 +18163,191 @@ singleton slices by hand.
    reduces to the point-mass version by averaging.
 \end{proof}
 
+\begin{corollary}[All-size hard-list separation reduces to prefixes]
+   \label{cor:all-size-hard-list-prefix-separation}
+   Work in the setting of \cref{cor:finite-all-size-hard-list-separation}, and
+   fix a nonnegative price system \((\gamma,\tau,\sigma)\).  For a certified
+   container \(W\in\mathcal W_0\), an ordinary query layer
+   \(Q'\subseteq\mathcal Q\), and an integer \(1\le K\le |W|\), let
+   \(P_K(W,Q')\) be any \(K\)-point subset of \(W\) maximizing
+   \[
+      \sum_{p\in L}
+      \sum_{q\in Q':(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}
+      \qquad(|L|=K).
+   \]
+   Define the all-size prefix gain
+   \[
+   \begin{aligned}
+      \mathsf{APG}_{\gamma,\tau,\sigma}(W,Q',K)
+      &=
+      \sum_{p\in P_K(W,Q')}
+      \sum_{q\in Q':(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}  \\
+      &\quad
+      -b\,b_0^{\rho_W}\psi_WK^{\rho_W}\sum_{q\in Q'}\tau_q
+      -b\,\psi_W\sigma b_0^{1+\rho_W}K^{1+\rho_W}.
+   \end{aligned}
+      \tag{AHLP1}
+   \]
+   If some hard list \(H=(W_H,L_H)\) has positive all-size hard-list reduced
+   gain, then with \(K=|L_H|\) and
+   \[
+      Q^+(H)=
+      \{q\in\mathcal Q:
+        h_H(q)>b\,b_0^{\rho_H}\psi_HK^{\rho_H}\tau_q\},
+      \tag{AHLP2}
+   \]
+   the top-degree prefix \(P_K(W_H,Q^+(H))\) has positive all-size prefix gain.
+   Consequently its all-size hard-list reduced gain is also positive.
+
+   Hence, whenever the build-time universe is closed under this
+   query-layer top-\(K\) replacement, the finite all-size hard-list oracle of
+   \cref{cor:finite-all-size-hard-list-separation} may be replaced by a
+   separation search over triples \((W,Q',K)\) and the scalar test
+   \((AHLP1)\).
+\end{corollary}
+
+\begin{proof}
+   Let \(H=(W,L)\), put \(K=|L|\), \(\rho=\rho_W\), and \(\psi=\psi_W\).  By
+   definition,
+   \[
+      \mathsf{AHG}_{\gamma,\tau,\sigma}(H)
+      =
+      \sum_q\bigl(h_H(q)-b\,b_0^\rho\psi K^\rho\tau_q\bigr)_+
+      -
+      b\,\psi\sigma b_0^{1+\rho}K^{1+\rho}.
+   \]
+   The positive part is obtained by the query layer \(Q^+(H)\), so positive
+   all-size hard-list gain implies
+   \[
+      \sum_{p\in L}
+      \sum_{q\in Q^+(H):(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}
+      >
+      b\,b_0^\rho\psi K^\rho\sum_{q\in Q^+(H)}\tau_q
+      +
+      b\,\psi\sigma b_0^{1+\rho}K^{1+\rho}.
+      \tag{AHLP3}
+   \]
+   The prefix \(P_K(W,Q^+(H))\) maximizes the left side among all \(K\)-point
+   subsets of \(W\), so it also satisfies \((AHLP3)\).  This is precisely
+   \[
+      \mathsf{APG}_{\gamma,\tau,\sigma}(W,Q^+(H),K)>0 .
+   \]
+   If \(H'=(W,P_K(W,Q^+(H)))\), then
+   \[
+      \mathsf{AHG}_{\gamma,\tau,\sigma}(H')
+      \ge
+      \mathsf{APG}_{\gamma,\tau,\sigma}(W,Q^+(H),K),
+   \]
+   because the hard-list hinge is the maximum over all query layers and the
+   right side evaluates it only on \(Q^+(H)\).  This proves the replacement
+   claim and the oracle reduction.
+\end{proof}
+
+\begin{corollary}[All-size fractional query weights threshold to prefixes]
+   \label{cor:all-size-fractional-query-prefix-separation}
+   Work in the setting of \cref{cor:all-size-hard-list-prefix-separation}.  Fix
+   a certified container \(W\in\mathcal W_0\) and an integer
+   \(1\le K\le |W|\).  For \(0\le y_q\le1\), define
+   \[
+      d_y^\gamma(p)=
+      \sum_{q:(p,q)\in\mathcal N}y_q\gamma_{p,q}r_{p,q},
+   \]
+   and let \(D_{W,y}^\gamma(K)\) be the sum of the largest \(K\) values of
+   \(d_y^\gamma(p)\) over \(p\in W\).  If some fractional query weighting
+   satisfies
+   \[
+      D_{W,y}^\gamma(K)
+      >
+      b\,b_0^{\rho_W}\psi_WK^{\rho_W}\sum_q\tau_qy_q
+      +
+      b\,\psi_W\sigma b_0^{1+\rho_W}K^{1+\rho_W},
+      \tag{AFQP1}
+   \]
+   then there is an ordinary query layer \(Q'\subseteq\mathcal Q\) such that
+   the top-degree prefix \(P_K(W,Q')\) has positive all-size prefix gain
+   \((AHLP1)\).  Conversely, a positive all-size prefix-gain triple
+   \((W,Q',K)\) gives \((AFQP1)\) with \(y=\mathbf 1_{Q'}\).
+\end{corollary}
+
+\begin{proof}
+   Define
+   \[
+      F(y)=
+      D_{W,y}^\gamma(K)
+      -
+      b\,b_0^{\rho_W}\psi_WK^{\rho_W}\sum_q\tau_qy_q
+      -
+      b\,\psi_W\sigma b_0^{1+\rho_W}K^{1+\rho_W}.
+   \]
+   The function \(D_{W,y}^\gamma(K)\) is the maximum, over \(K\)-subsets
+   \(L\subseteq W\), of the linear form
+   \[
+      \sum_{p\in L}\sum_{q:(p,q)\in\mathcal N}y_q\gamma_{p,q}r_{p,q}.
+   \]
+   Hence \(F\) is convex on the cube \([0,1]^{\mathcal Q}\).  If \(F(y)>0\)
+   for some fractional \(y\), the maximum of \(F\) over the cube is positive
+   and is attained at an extreme point \(y'=\mathbf 1_{Q'}\).  At this extreme
+   point, \(D_{W,y'}^\gamma(K)\) is exactly the paid degree of
+   \(P_K(W,Q')\) on the Boolean query layer \(Q'\), so \(F(y')>0\) is
+   \((AHLP1)\).  The converse is the same identity with \(y=\mathbf 1_{Q'}\).
+\end{proof}
+
+\begin{corollary}[Finite all-size prefix separation oracle]
+   \label{cor:finite-all-size-prefix-separation}
+   Work in the setting of
+   \cref{cor:all-size-fractional-query-prefix-separation}.  Let
+   \(\mathcal P\) be a finite build-time pool of certified prefix templates.
+   A template \(C\in\mathcal P\) consists of a certified container
+   \(W_C\in\mathcal W_0\) and an available cardinality
+   \(1\le K_C\le |W_C|\).  For a price system \((\gamma,\tau,\sigma)\), define
+   the all-size prefix reduced-cost value
+   \[
+      \mathsf{APX}_{\gamma,\tau,\sigma}(C)
+      =
+      \max_{0\le y_q\le1}
+      \left[
+         D_{W_C,y}^\gamma(K_C)
+         -
+         b\,b_0^{\rho_C}\psi_CK_C^{\rho_C}\sum_q\tau_qy_q
+         -
+         b\,\psi_C\sigma b_0^{1+\rho_C}K_C^{1+\rho_C}
+      \right],
+      \tag{FAPS1}
+   \]
+   where \(\rho_C=\rho_{W_C}\) and \(\psi_C=\psi_{W_C}\).  Suppose the finite
+   hard-list universe contains, for every \(C\in\mathcal P\) and every Boolean
+   query layer \(Q'\subseteq\mathcal Q\), the top-degree prefix
+   \(P_{K_C}(W_C,Q')\).  If every nonnegative price system
+   \((\gamma,\tau,\sigma)\) satisfying \((APC1)\)--\((APC2)\) has
+   \[
+      \max_{C\in\mathcal P}\mathsf{APX}_{\gamma,\tau,\sigma}(C)>0,
+      \tag{FAPS2}
+   \]
+   then the finite prefix-template separator holds, and hence the same local
+   and global endpoints apply.
+
+   Equivalently,
+   \[
+      \mathsf{APX}_{\gamma,\tau,\sigma}(C)
+      =
+      \max_{Q'\subseteq\mathcal Q}
+      \mathsf{APG}_{\gamma,\tau,\sigma}(W_C,Q',K_C).
+      \tag{FAPS3}
+   \]
+\end{corollary}
+
+\begin{proof}
+   For fixed \(C\), \cref{cor:all-size-fractional-query-prefix-separation}
+   says exactly that the fractional maximum in \((FAPS1)\) is positive if and
+   only if some Boolean query layer \(Q'\) gives positive all-size prefix gain
+   for \(P_{K_C}(W_C,Q')\).  This proves \((FAPS3)\).  Under the closure
+   assumption, that prefix is an available hard list and has positive all-size
+   hard-list reduced gain by
+   \cref{cor:all-size-hard-list-prefix-separation}.  Therefore \((FAPS2)\)
+   implies the hypothesis of \cref{cor:finite-all-size-hard-list-separation},
+   and the finite prefix-template separator and endpoint conclusions follow.
+\end{proof}
+
 \Cref{cor:finite-all-size-soft-bucket-separation} is the cardinality-net
 version of the dense-overlap column generator.  A proposal family may contain
 arbitrarily overlapping soft dense regions, but a bucket is accepted only if
@@ -18170,9 +18355,12 @@ its canonical positive-margin query side pays for the dyadic query loss
 \(b_0^\rho\) and the dyadic storage loss \(b_0^{1+\rho}\).  By
 \cref{cor:all-size-soft-gain-hard-list}, even this soft certificate is not a
 new materialization requirement: any positive soft bucket contains a positive
-hard-list witness, and \cref{cor:finite-all-size-hard-list-separation} converts
-that witness into the same finite prefix-template separator used by the global
-polylog endpoint.
+hard-list witness.  \Cref{cor:all-size-hard-list-prefix-separation} then
+replaces the witness by a top-degree prefix for one Boolean query layer, and
+\cref{cor:finite-all-size-prefix-separation} is the resulting finite
+range-reporting objective: maximize \((FAPS1)\) over certified
+container/cardinality templates, retain only the verified Boolean prefix, and
+discard all failed proposals.
 
 \begin{corollary}[Joint query-list proposal separator]
    \label{cor:joint-query-list-proposal-separator}
