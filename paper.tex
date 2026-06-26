@@ -17412,6 +17412,68 @@ For a threshold $u$, the posterior-superlevel child is
    filtering by \(P(a)>\Gamma\) removes all false positives.
 \end{proof}
 
+\begin{corollary}[Ordinary list recovery realizes positive coverage]
+   \label{cor:ordinary-list-recovery-positive-coverage}
+   In the setting of \cref{cor:positive-coverage-screen}, suppose the positive
+   coverage tests have coordinate-membership form
+   \[
+      E_t(a)=\mathbf 1\{a_{i(t)}\in L_t\},
+      \qquad
+      a=(a_1,\ldots,a_h)\in\mathcal U\subseteq\prod_{i=1}^h\Sigma_i ,
+      \tag{LR1}
+   \]
+   where \(L_t\subseteq\Sigma_{i(t)}\).  For a finite test class
+   \(T\), form the repeated-coordinate projection
+   \[
+      \mathcal U_T
+      =
+      \{(a_{i(t)})_{t\in T}:a\in\mathcal U\}
+      \subseteq\prod_{t\in T}\Sigma_{i(t)} .
+      \tag{LR2}
+   \]
+   Assume a certified ordinary list-recovery oracle for this repeated
+   projection: on input lists \((L_t)_{t\in T}\) and threshold \(\Delta\), it
+   returns a finite superset of all original labels \(a\in\mathcal U\)
+   satisfying
+   \[
+      \sum_{t\in T}\mathbf 1\{a_{i(t)}\in L_t\}>\Delta .
+      \tag{LR3}
+   \]
+   The returned labels may be a quotient superset, provided all original labels
+   above threshold are expanded or otherwise scored exactly before rejection.
+
+   Then this oracle is the unweighted coverage lister required by
+   \cref{cor:dyadic-positive-list-recovery}.  Consequently, if the positive
+   tests in a reduced-cost separation instance have the form \((LR1)\), then
+   dyadic calls to ordinary list recovery on repeated-coordinate projections,
+   followed by exact weighted and signed filtering, give a complete
+   reduced-cost separator over \(\mathcal U\).
+
+   Thus recent list-recovery code families can be used without a special
+   weighted decoder: the real dual weights are handled by dyadic unweighting,
+   and the code oracle only has to solve ordinary agreement/list-recovery
+   instances on the repeated tests exposed by the current dual obstruction.
+\end{corollary}
+
+\begin{proof}
+   For a dyadic class \(T_j\), the unweighted positive coverage count in
+   \cref{cor:dyadic-positive-list-recovery} is exactly
+   \[
+      N_j(a)=\sum_{t\in T_j}E_t(a)
+      =
+      \sum_{t\in T_j}\mathbf 1\{a_{i(t)}\in L_t\}.
+   \]
+   Applying the list-recovery oracle to \(T=T_j\) and
+   \(\Delta=\Gamma/(2B\lambda_j)\) therefore returns a superset of every label
+   satisfying \((DU3)\).  The union over dyadic classes contains every label
+   with weighted positive coverage above \(\Gamma\) by
+   \cref{cor:dyadic-positive-list-recovery}.  Exact evaluation of the original
+   weighted positive coverage and then of the signed reduced-cost objective is
+   exactly the screening procedure of \cref{cor:positive-coverage-screen}, so
+   failure to find an accepted label certifies that no positive reduced-cost
+   label exists.
+\end{proof}
+
 \begin{corollary}[Unified soft-decoded rate-coverage compiler]
    \label{cor:unified-soft-decoded-rate-coverage}
    Let \(\mathcal U\subseteq\prod_{i=1}^h\Sigma_i\) be a finite quotient label
@@ -17443,7 +17505,9 @@ For a threshold $u$, the posterior-superlevel child is
    threshold-coverage interface of \cref{cor:threshold-event-reduced-cost}, or
    by the positive-coverage screen of
    \cref{cor:positive-coverage-screen}, by the dyadic unweighted
-   list-recovery screen of \cref{cor:dyadic-positive-list-recovery}, or by any
+   list-recovery screen of \cref{cor:dyadic-positive-list-recovery}, by the
+   ordinary list-recovery bridge of
+   \cref{cor:ordinary-list-recovery-positive-coverage}, or by any
    other exact offline optimization over the implicit quotient family.
    Its running time is a preprocessing cost, not a query resource.
 
@@ -17574,6 +17638,10 @@ For a threshold $u$, the posterior-superlevel child is
    coding literature: real dual weights can be grouped into dyadic classes, so
    the proposal routine only has to solve unweighted agreement/list-recovery
    instances and the exact verifier restores the original weighted objective.
+   \Cref{cor:ordinary-list-recovery-positive-coverage} is the last bridge to
+   standard list recovery: coordinate-membership tests are handled by ordinary
+   list recovery on the repeated-coordinate projection exposed by the current
+   dual obstruction.
    This is the transferable content of soft-decision Reed--Solomon decoding
    \cite{KV03}, high-rate expander and tensor-code list recovery
    \cite{HW15,HRW17,ST25}, Construction-A quotient decoding, and
@@ -19101,6 +19169,9 @@ negative tests only for exact reduced-cost filtering.
 \Cref{cor:dyadic-positive-list-recovery} reduces the weighted positive
 coverage lister to dyadic unweighted agreement/list-recovery calls plus exact
 filtering.
+\Cref{cor:ordinary-list-recovery-positive-coverage} then implements those
+unweighted calls by ordinary list recovery on repeated-coordinate projections
+whenever the reporter tests are coordinate memberships.
 \Cref{cor:unified-soft-decoded-rate-coverage} packages the desired retained
 object: the compact query decoder handles online reporter lists, an exact
 offline separator drives preprocessing, and the convex certificate charges
@@ -19403,6 +19474,9 @@ after a candidate label is returned.
 \Cref{cor:dyadic-positive-list-recovery} then converts arbitrary nonnegative
 dual weights into dyadic unweighted list-recovery calls, with the exact
 weighted reduced cost checked only at the filter step.
+\Cref{cor:ordinary-list-recovery-positive-coverage} identifies those calls
+with ordinary list recovery on repeated coordinates for code, trellis, or
+lattice-residue membership tests.
 \Cref{cor:unified-soft-decoded-rate-coverage} is the corresponding full panel
 contract: offline separation is a build-time concern, while online decoder
 output, candidate incidence load, and stored replication are charged as three
