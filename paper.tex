@@ -11990,6 +11990,65 @@ layer, and a cardinality \(k\); the best \(k\)-point update side is the
 degree-sorted prefix.  This is the quotient analogue of the dense-slice prefix
 lemma, but it applies after merging incidences from many slices.
 
+\begin{lemma}[Atomized prefix-density envelope]
+   \label{lem:atomized-prefix-density-envelope}
+   Work in the setting of \cref{lem:top-degree-atomized-prefix}.  Put
+   \[
+      D_k=\sum_{i\le k}d_{\mathcal A}(p_i),
+      \qquad
+      \mathsf T(Q')=\sum_{q\in Q'}\tau_q .
+   \]
+   Suppose that no atom-safe top-degree prefix has positive atomized gain, that
+   is, for every atom-safe \(k\),
+   \[
+      \frac{\theta_j}{b}D_k
+      \le
+      \psi\bigl(\mathsf T(Q')k^{\rho_D}
+      +\sigma k^{1+\rho_D}\bigr).
+      \tag{APE1}
+   \]
+   Then every atom-safe \(k\) satisfies the average-degree envelope
+   \[
+      \frac{D_k}{k}
+      \le
+      \frac{b\psi}{\theta_j}
+      \bigl(\mathsf T(Q')k^{\rho_D-1}
+      +\sigma k^{\rho_D}\bigr).
+      \tag{APE2}
+   \]
+   Consequently, for every degree level \(\delta>0\), if
+   \[
+      h_\delta=
+      |\{p\in W:d_{\mathcal A}(p)\ge\delta\}|
+   \]
+   is atom-safe and nonzero, then
+   \[
+      \delta
+      \le
+      \frac{b\psi}{\theta_j}
+      \bigl(\mathsf T(Q')h_\delta^{\rho_D-1}
+      +\sigma h_\delta^{\rho_D}\bigr).
+      \tag{APE3}
+   \]
+\end{lemma}
+
+\begin{proof}
+   Dividing \((APE1)\) by \(k\) gives \((APE2)\).  For the degree-level form,
+   let \(h=h_\delta\).  The top \(h\) points all have degree at least
+   \(\delta\), hence \(D_h\ge\delta h\).  If \((APE3)\) failed, then
+   \((APE2)\) would fail at \(k=h\), and the corresponding top-degree prefix
+   would have positive atomized gain by \cref{lem:top-degree-atomized-prefix}.
+   This contradiction proves \((APE3)\).
+\end{proof}
+
+\Cref{lem:atomized-prefix-density-envelope} is the residual form of the
+atomized separator.  After fixing a container and a query-margin layer, failure
+of every prefix does not leave an arbitrary obstruction: every degree superlevel
+must lie below the displayed Rényi envelope.  The remaining geometric theorem
+can therefore be phrased as a packing statement saying that the heavy dyadic
+demand layer and query-margin layer cannot satisfy all such envelopes in every
+certified container.
+
 \begin{assumption}[Layer quotient separator]
    \label{asm:layer-quotient-separator}
    Work in the setting of \cref{cor:residual-separator-local-cover}.  Suppose a
@@ -23670,7 +23729,10 @@ to use selected point-slice incidences rather than whole primitive slices, and
 container and query layer the best \(k\)-point update side is the degree-sorted
 prefix.  Thus the remaining geometric separator can be searched as a
 container/query-layer/cardinality problem followed by exact reduced-gain
-verification.  By \cref{cor:layer-separation-local-cover}, this concrete layer
+verification.  If all such prefixes fail,
+\cref{lem:atomized-prefix-density-envelope} gives the exact residual
+degree-superlevel envelope that every certified container must satisfy.  By
+\cref{cor:layer-separation-local-cover}, this concrete layer
 separator already implies local filter-cover feasibility.  Since
 preprocessing time is deliberately not a scarce resource,
 \cref{lem:finite-pool-optimizer} and
