@@ -14177,6 +14177,73 @@ fractional dense-overlap cover, and
 filters.  The hard geometric theorem is precisely to replace the primitive
 slice law by cheaper Pareto cores when \((PSH1)\) or \((PSH2)\) fails.
 
+\begin{lemma}[Excess slice-moment repair]
+   \label{lem:excess-slice-moment-repair}
+   Work in the setting of
+   \cref{lem:primitive-slice-law-hit-kernel-cover}.  Let
+   \(0\le\delta_{z,q}\le\Pi(z)\) be a fractional sublaw of primitive slices to
+   delete.  Suppose there is a nonnegative measure \(\mu\) on Boolean Pareto
+   core records \(R=(U_R,Q'_R,T_R,S_R)\) such that, for every demanded pair,
+   \[
+      \sum_R\mu_R b_R(p,q)
+      \ge
+      \sum_z\delta_{z,q}\mathbf 1\{p\in V_{z,q}\},
+      \tag{ESR1}
+   \]
+   and the repaired query and storage loads obey
+   \[
+      \E_ZT_{Z,q}
+      -
+      \sum_z\delta_{z,q}T_{z,q}
+      +
+      \sum_{R:q\in Q'_R}\mu_R T_R
+      \le
+      \pi_1L
+      \qquad(q\in\mathcal Q),
+      \tag{ESR2}
+   \]
+   \[
+      \E_Z\sum_qS_{Z,q}
+      -
+      \sum_{z,q}\delta_{z,q}S_{z,q}
+      +
+      \sum_R\mu_R S_R
+      \le
+      \pi_1S .
+      \tag{ESR3}
+   \]
+   Then \((\mathsf{HKC}_{\mathcal U})\) is feasible.
+\end{lemma}
+
+\begin{proof}
+   Keep the undeleted primitive-slice intensity
+   \[
+      \lambda^{\rm keep}_{z,q}=\Pi(z)-\delta_{z,q}
+   \]
+   on the singleton-query record \((V_{z,q},\{q\})\), and add the repairing
+   core measure \(\mu\).  For a demanded pair \((p,q)\), the resulting coverage
+   is at least
+   \[
+      \sum_z(\Pi(z)-\delta_{z,q})\mathbf 1\{p\in V_{z,q}\}
+      +
+      \sum_z\delta_{z,q}\mathbf 1\{p\in V_{z,q}\}
+      =
+      r_{p,q},
+   \]
+   where the inequality uses \((ESR1)\).  Thus the hit-kernel coverage
+   constraints hold.  The query load at \(q\) is exactly the left side of
+   \((ESR2)\), and the storage load is exactly the left side of \((ESR3)\).
+   Hence all constraints of \((\mathsf{HKC}_{\mathcal U})\) are feasible.
+\end{proof}
+
+This is the budget-repair form of dense merging.  The algorithm need not
+compress the whole spherical slice law.  It may retain every primitive slice
+whose recursive moment is already affordable and ask the dense proposal oracle
+only to replace a fractional overbudget sublaw.  The certificate is purely
+local: \((ESR1)\) says the replacement cores dominate the deleted hit kernel,
+while \((ESR2)\)--\((ESR3)\) say that the replacement saves enough query and
+storage price to fit the \(\pi_1\)-scaled budgets.
+
 \begin{assumption}[Compression-dual separator]
    \label{asm:compression-dual-separator}
    Work in the setting of \cref{cor:residual-separator-local-cover}.  Fix a
@@ -26012,7 +26079,11 @@ LSF filters.
 if the raw high-correlation primitive slice law has \(\pi_1\)-scaled query and
 storage moments, it is already a feasible hit-kernel cover.  The remaining
 compression theorem is therefore needed only to replace that raw slice law by
-cheaper Pareto cores when the primitive recursive moment is too large.  Because
+cheaper Pareto cores when the primitive recursive moment is too large.
+\Cref{lem:excess-slice-moment-repair} sharpens this once more: the separator
+only has to delete and repair a fractional overbudget sublaw of primitive
+slices, while the affordable part of the spherical slice law is kept unchanged.
+Because
 preprocessing time is deliberately not a scarce resource,
 \cref{lem:finite-pool-optimizer} and
 \cref{cor:offline-pareto-compression} allow the build stage to enumerate,
