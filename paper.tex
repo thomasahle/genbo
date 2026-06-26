@@ -18721,6 +18721,64 @@ inequality \((QP3)\).
    \(\theta\ge0\).  Thus \((ERP3)\) implies \((ERP1)\).
 \end{proof}
 
+\begin{corollary}[Multiplicative level-net separator]
+   \label{cor:multiplicative-level-net-separator}
+   Work in the setting of
+   \cref{cor:finite-exact-signature-superlevel-separator}.  For each
+   \(B\in\mathcal B\), let \(\mathcal G_B\subset(0,\infty)\) be a finite level
+   net, and let \(b\ge1\).  Assume \(\mathcal G_B\) is \(b\)-dense from below
+   for \(\mathcal T_B\): for every \(t\in\mathcal T_B\) there is
+   \(g\in\mathcal G_B\) with
+   \[
+      t/b\le g\le t .
+      \tag{EMN1}
+   \]
+   If every normalized price system satisfying \((ESNO1)\) admits
+   \(B\in\mathcal B\) and \(t\in\mathcal T_B\) such that
+   \[
+      (1-e^{-t})W_B(t)
+      >
+      b\bigl(\theta S_B+\varepsilon_B\bigr),
+      \tag{EMN2}
+   \]
+   then \((\mathsf{ESFC}_\Sigma)\) is feasible.
+
+   Equivalently, it is enough to search only the net levels: under \((EMN2)\)
+   some \(g\in\mathcal G_B\) satisfies
+   \[
+      (1-e^{-g})W_B(g)
+      >
+      \theta S_B+\varepsilon_B .
+      \tag{EMN3}
+   \]
+   In particular, the dyadic lower grid
+   \[
+      \mathcal G_B^{\rm dyad}
+      =
+      \{2^{\lfloor\log_2 t\rfloor}:t\in\mathcal T_B\}
+      \tag{EMN4}
+   \]
+   is \(2\)-dense from below, so it loses only a factor \(2\) in the surplus
+   test.
+\end{corollary}
+
+\begin{proof}
+   Let \(B,t\) satisfy \((EMN2)\), and choose \(g\in\mathcal G_B\) satisfying
+   \((EMN1)\).  Since \(g\le t\), monotonicity gives \(W_B(g)\ge W_B(t)\).  The
+   function \(x\mapsto1-e^{-x}\) is concave and vanishes at \(0\), hence
+   \[
+      1-e^{-g}
+      \ge
+      1-e^{-t/b}
+      \ge
+      \frac1b(1-e^{-t}).
+   \]
+   Combining the last two inequalities with \((EMN2)\) gives \((EMN3)\).  Then
+   \cref{cor:unit-mass-weak-type-residual} gives feasibility.  The dyadic
+   statement is the special case in which
+   \(2^{\lfloor\log_2 t\rfloor}\le t<2\cdot2^{\lfloor\log_2t\rfloor}\).
+\end{proof}
+
 \Cref{lem:exact-near-set-filter-cover} is strictly weaker than
 \cref{lem:finite-signature-filter-cover} when the exact near set is part of the
 signature.  The all-pair LP covers every \(p\in N_{\sigma_0}\); the existential
@@ -18800,6 +18858,11 @@ form.  A randomized \(k\)-means++, AQ, lattice-decoding, or range-reporting
 routine is useful only through positive expected certified surplus; after
 averaging, the retained certificate is still one deterministic bucket and one
 deterministic responsibility-mass level.
+\Cref{cor:multiplicative-level-net-separator} removes another materialization
+artifact: a geometric net over mass levels is enough, losing only its
+multiplicative density factor in surplus.  Dyadic mass thresholds therefore
+suffice up to a factor two, which is the form needed by output-sensitive
+range-reporting or list-decoding implementations.
 
 \begin{proposition}[Conditional fractional filter-cover endpoint]
    \label{prop:fractional-filter-cover-polylog}
