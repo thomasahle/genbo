@@ -4265,6 +4265,133 @@ partition ignores the bias coordinates that certify the list size.
    multi-assignment, while Lloyd convergence itself is not a proof object.
 \end{remark}
 
+\begin{lemma}[Construction-A theta quotient]
+   \label{lem:construction-a-theta-quotient}
+   Let \(p\ge2\), let \(\Sigma=\mathbb Z/p\mathbb Z\), and choose representatives
+   \(\iota(a)\in\{0,\ldots,p-1\}\) for \(a\in\Sigma\).  For a code
+   \(C\subseteq\Sigma^b\), put
+   \[
+      \Lambda(C,p)
+      =
+      \{\iota(c)+pz:\ c\in C,\ z\in\mathbb Z^b\}\subseteq\mathbb R^b .
+   \]
+   Fix a center \(y\in\mathbb R^b\) and inverse temperature \(\tau>0\).  For
+   \(a\in\Sigma\) define the one-coordinate theta weight
+   \[
+      \Theta_a(y_i)
+      =
+      \sum_{k\in\mathbb Z}
+      \exp\!\left(
+         -\frac{\tau}{2}(y_i-\iota(a)-pk)^2
+      \right),
+   \]
+   and for \(c\in C\) put
+   \[
+      \Omega_y(c)=\sum_{i=1}^b\log\Theta_{c_i}(y_i).
+   \]
+   Then the lattice discrete-Gaussian partition function factors through the
+   residue code:
+   \[
+      \sum_{\lambda\in\Lambda(C,p)}
+      \exp\!\left(-\frac{\tau}{2}\|y-\lambda\|^2\right)
+      =
+      \sum_{c\in C}\exp(\Omega_y(c)).
+      \tag{CA1}
+   \]
+   Moreover exact sampling from the left-hand law is obtained by first sampling
+   \(c\in C\) with probability proportional to \(\exp(\Omega_y(c))\), and then,
+   independently over coordinates, sampling \(K_i\in\mathbb Z\) with
+   \[
+      \Pr[K_i=k\mid c]
+      =
+      \frac{
+         \exp\!\left(
+            -\frac{\tau}{2}(y_i-\iota(c_i)-pk)^2
+         \right)}
+      {\Theta_{c_i}(y_i)}
+   \]
+   and outputting \(\lambda_i=\iota(c_i)+pK_i\).
+
+   The score form used in the product-panel certificates is the same identity:
+   for
+   \[
+      S_y(\lambda)=\ip{y}{\lambda}-\frac12\|\lambda\|^2,
+   \]
+   the law proportional to \(\exp(\beta S_y(\lambda))\) is the
+   \(\tau=\beta\) instance above, multiplied by the query-only factor
+   \(\exp(\beta\|y\|^2/2)\).  Finally, if
+   \[
+      M_a(y_i)=
+      \max_{k\in\mathbb Z}
+      \left\{-\frac{\tau}{2}(y_i-\iota(a)-pk)^2\right\},
+      \qquad
+      M_y(c)=\sum_iM_{c_i}(y_i),
+   \]
+   then every lattice point with
+   \(-\tau\|y-\lambda\|^2/2\ge\Theta\) has residue \(c=\lambda\bmod p\)
+   satisfying \(M_y(c)\ge\Theta\).
+\end{lemma}
+
+\begin{proof}
+   Expanding the lattice sum by residue class gives
+   \[
+   \begin{aligned}
+      \sum_{\lambda\in\Lambda(C,p)}
+      e^{-\tau\|y-\lambda\|^2/2}
+      &=
+      \sum_{c\in C}
+      \sum_{z\in\mathbb Z^b}
+      \prod_{i=1}^b
+      e^{-\tau(y_i-\iota(c_i)-pz_i)^2/2}  \\
+      &=
+      \sum_{c\in C}\prod_{i=1}^b\Theta_{c_i}(y_i)
+      =
+      \sum_{c\in C}e^{\Omega_y(c)} ,
+   \end{aligned}
+   \]
+   proving \((CA1)\).  The displayed conditional sampler is exactly the same
+   factorization normalized first over residues and then over the independent
+   integer coordinates.  The score identity follows from
+   \[
+      \beta S_y(\lambda)
+      =
+      \frac{\beta}{2}\|y\|^2
+      -
+      \frac{\beta}{2}\|y-\lambda\|^2 .
+   \]
+   For the threshold statement, each coordinate contribution of a lattice point
+   with residue \(c_i\) is at most \(M_{c_i}(y_i)\), so its total score is at
+   most \(M_y(c)\).
+\end{proof}
+
+\begin{remark}[Construction-A reduces lattice sampling to soft list recovery]
+   \label{rem:construction-a-soft-decoding}
+   \Cref{lem:construction-a-theta-quotient} is the most direct way to use
+   Construction-A or Construction-D ideas here.  A lattice decoder does not have
+   to search over all integer lifts first.  It can compute the theta
+   reliabilities \(\log\Theta_a(y_i)\), run a soft decoder or partition-function
+   recursion for the residue code \(C\), and then sample the one-dimensional
+   integer lifts independently.  For threshold reporting, the max-residue scores
+   \(M_a(y_i)\) give a certified soft list-recovery superset of residues that
+   could contain any close lattice point; a standard sphere decoder can then
+   enumerate the remaining integer lifts inside each reported residue.
+
+   This matches the list-decoding literature more closely than a black-box CVP
+   formulation.  Euclidean Reed--Solomon and Barnes--Sloane decoders use
+   Koetter--Vardy style soft information exactly in this sense, while random and
+   nested Construction-A list-decoding results describe the achievable list-size
+   spectrum for the residue/lattice ensemble~\cite{MP20,ZV21}.  Expander-based
+   list-recovery results are relevant as possible outer-code engines because
+   the residue problem is now an ordinary soft list-recovery or partition
+   problem on symbol reliabilities~\cite{ST25}.  The remaining ANN theorem is
+   still the same one: after choosing rotations, moduli, scalings, and bucket
+   thresholds, the retained Construction-A panel must satisfy the storage,
+   far sampled co-load, and near sampled-mass certificates of
+   \cref{cor:weighted-gaussian-quadrature-panel} or
+   \cref{cor:bucket-quotient-quadrature}.  The theta quotient only removes an
+   unnecessary lattice-search layer.
+\end{remark}
+
 \begin{assumption}[Flat structured spherical-code decoder]
    \label{asm:flat-spherical-code-decoder}
    Fix a localized terminal spherical gap with \(m\) resident points.  There is
@@ -13853,6 +13980,13 @@ concentration: the label entropy needed to stabilize the tilted partition
 function is polynomially larger than the entropy allowed by the storage and far
 load exponents.  The finite object must therefore exploit structure, not just
 more random labels.
+\Cref{lem:construction-a-theta-quotient} records the cleanest Construction-A
+interface: the discrete-Gaussian law on the lattice quotients exactly to a soft
+theta-reliability law on the residue code, and close-point threshold reporting
+reduces to a certified soft list-recovery superset of residues followed by
+ordinary integer-lift enumeration.  Thus a Construction-A panel should be
+analyzed through residue-code list recovery and tilted partition functions, not
+as a black-box nearest-lattice oracle.
 \Cref{cor:weighted-gaussian-quadrature-panel} records the exact positive
 finite certificate: a weighted retained label set only has to pass storage,
 sampled far-load, and near-mass checks under the tilted query sampler.  The
