@@ -12630,6 +12630,139 @@ This certificate is the local form of the remaining problem. It is analogous in 
    region depth is polylogarithmic.
 \end{proof}
 
+\begin{lemma}[Port-skeleton saturated comparison]
+   \label{lem:port-skeleton-saturated-comparison}
+   Let a finite route trie be decomposed into a rooted port skeleton tree
+   \(\mathcal S\) with root state \(s_0\).  Each skeleton state \(s\) has an
+   entrance trie node
+   \(r_s\).  If \(s\) is terminal, then \(r_s\) is a trie leaf.  If \(s\) is
+   nonterminal, it has a prefix-closed unit-success region
+   \(\mathcal R_s\) rooted at \(r_s\).  Every exit edge
+   \(e=(a_e,r_t)\in\partial^+\mathcal R_s\) points to the entrance of a child
+   skeleton state \(t\), has success probability \(\gamma_e\), and the child
+   subregions partition the route subtrees below the exits.  Put
+   \[
+      d_s=h_{\mathcal R_s}(r_s)+1
+   \]
+   for nonterminal \(s\), where \(h_{\mathcal R_s}\) is the internal
+   exit-tail depth from \cref{lem:ported-unit-region-contraction}.
+
+   Define the skeleton saturated value by
+   \[
+      U_{\rm sk}(s)=1
+      \quad\text{at terminal states},
+      \qquad
+      U_{\rm sk}(s)=
+      \min\left\{1,\sum_{e:s\to t}\gamma_eU_{\rm sk}(t)\right\}
+   \]
+   at nonterminal states.  Also define the skeleton depth denominator
+   \[
+      L(s)=1
+      \quad\text{at terminal states},
+      \qquad
+      L(s)=d_s+\max_{e:s\to t}L(t)
+   \]
+   at nonterminal states with at least one exit, and \(L(s)=\infty\) if a
+   nonterminal state has no exit to a leaf.  Then the original harmonic route
+   value \(W\) satisfies
+   \[
+      W(r_s)\ge\frac{U_{\rm sk}(s)}{L(s)}
+      \qquad(s\in\mathcal S).
+      \tag{PSC1}
+   \]
+   Consequently, if
+   \[
+      L(s_0)=\log^{O_c(1)}n,
+      \qquad
+      U_{\rm sk}(s_0)\ge\log^{-A_c}n,
+   \]
+   then the original route trie has inverse-polylogarithmic harmonic value at
+   its root.
+\end{lemma}
+
+\begin{proof}
+   First define the compressed harmonic lower bound \(Y\) on the skeleton by
+   \(Y(s)=1\) at terminal states and, at nonterminal states,
+   \[
+      Y(s)=\frac{T_s}{1+d_sT_s},
+      \qquad
+      T_s=\sum_{e:s\to t}\gamma_eY(t).
+      \tag{PSC2}
+   \]
+   We claim \(W(r_s)\ge Y(s)\) for every skeleton state.  This is immediate at
+   terminal states.  At a nonterminal state \(s\), the induction hypothesis
+   gives \(W(r_t)\ge Y(t)\) for every child \(t\).  Hence the port conductance
+   in \cref{lem:ported-unit-region-contraction} is at least \(T_s\).  Applying
+   that lemma to \(\mathcal R_s\) gives
+   \[
+      W(r_s)\ge\frac{T_s}{1+d_sT_s}=Y(s).
+   \]
+
+   It remains to compare \(Y\) with \(U_{\rm sk}\).  We prove
+   \(Y(s)\ge U_{\rm sk}(s)/L(s)\) by backward induction.  The terminal case is
+   equality.  If a nonterminal state has no exits to leaves, then
+   \(Y(s)=U_{\rm sk}(s)=0\), so the claim is trivial.  Otherwise let \(s\) be
+   nonterminal and put
+   \[
+      M_s=\max_{e:s\to t}L(t),
+      \qquad
+      x_s=\sum_{e:s\to t}\gamma_eU_{\rm sk}(t).
+   \]
+   By induction,
+   \[
+      T_s=\sum_{e:s\to t}\gamma_eY(t)
+      \ge
+      \frac{x_s}{M_s}.
+   \]
+   Since \(z/(1+d_sz)\) is increasing,
+   \[
+      Y(s)\ge
+      \frac{x_s/M_s}{1+d_sx_s/M_s}
+      =
+      \frac{x_s}{M_s+d_sx_s}.
+   \]
+   If \(x_s\le1\), this is at least \(x_s/(M_s+d_s)=U_{\rm sk}(s)/L(s)\).
+   If \(x_s\ge1\), then \(T_s\ge1/M_s\), and directly from \((PSC2)\),
+   \[
+      Y(s)\ge\frac{1/M_s}{1+d_s/M_s}
+      =
+      \frac1{M_s+d_s}
+      =
+      \frac{U_{\rm sk}(s)}{L(s)}.
+   \]
+   This proves \((PSC1)\).  The inverse-polylogarithmic consequence follows
+   immediately.
+\end{proof}
+
+\begin{corollary}[Skeleton cut conductance certificate]
+   \label{cor:skeleton-cut-conductance}
+   In the setting of \cref{lem:port-skeleton-saturated-comparison}, let
+   \(A_{\rm sk}\) be the skeleton prefix mass,
+   \(A_{\rm sk}(s_0)=1\) and
+   \(A_{\rm sk}(t)=A_{\rm sk}(s)\gamma_e\) for a skeleton edge \(e:s\to t\).
+   Suppose every skeleton route cut \(\mathcal C\) satisfies
+   \[
+      \sum_{s\in\mathcal C}A_{\rm sk}(s)\ge p .
+      \tag{SCC1}
+   \]
+   Then the original route trie has
+   \[
+      W(r_{s_0})
+      \ge
+      \frac{p}{L(s_0)}.
+   \]
+   In particular, a polylogarithmic skeleton depth denominator and an
+   inverse-polylogarithmic skeleton cut mass imply the aggregate value-delivery
+   hypothesis needed by the budget-thinned endpoint.
+\end{corollary}
+
+\begin{proof}
+   Apply \cref{lem:saturated-value-mincut} to the skeleton tree with edge
+   probabilities \(\gamma_e\).  The cut hypothesis \((SCC1)\) gives
+   \(U_{\rm sk}(s_0)\ge p\).  Now use
+   \cref{lem:port-skeleton-saturated-comparison}.
+\end{proof}
+
 \begin{corollary}[Cutset value delivery]\label{cor:cutset-value-delivery}
    In the setting of \cref{cor:fractional-value-delivery}, suppose every
    route has length at most $H$ and every route cut $\mathcal C$ in the
@@ -12855,6 +12988,10 @@ This certificate is the local form of the remaining problem. It is analogous in 
    \cref{lem:ported-unit-region-contraction} shows that an entire
    deterministic score region loses only its depth before handing the aggregate
    conductance \(\sum_{e=(a,b)}\gamma_eW(b)\) to the first nonunit ports.
+   \Cref{lem:port-skeleton-saturated-comparison} and
+   \cref{cor:skeleton-cut-conductance} push this through a whole compressed
+   skeleton: it is enough to prove inverse-polylogarithmic prefix mass on every
+   skeleton cut, paying only the total unit-region depth denominator.
    \Cref{lem:energy-spine-toll} makes this exact: the whole loss is the
    accumulated positive toll
    \[
@@ -18257,7 +18394,11 @@ conductance \(\sum_{e=(a,b)}\gamma_eW(b)\), plus the unit-region depth.  Thus
 score branching, deterministic residual edges, and budget-stable recenterings
 add only polylogarithmic harmonic resistance.  The remaining near-value theorem
 can be stated on the contracted skeleton of genuinely thinned geometric or
-fractional-delivery ports.
+fractional-delivery ports.  \Cref{lem:port-skeleton-saturated-comparison} and
+\cref{cor:skeleton-cut-conductance} give the exact skeleton-level sufficient
+condition: every cut of that port skeleton must carry inverse-polylogarithmic
+activation mass, and the only additional loss is the sum of contracted
+unit-region depths along a skeleton route.
 \Cref{cor:existential-antichain-fano} composes this with the Fano decoder in
 the ANN-correct existential form: if the union of valid terminal routes has the
 same antichain charge bound and every such route has \(O_c(\log\log n)\) raw
