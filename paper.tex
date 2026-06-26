@@ -14982,6 +14982,57 @@ law already has positive reduced gain.
    value.
 \end{proof}
 
+\begin{corollary}[Single-seed annular query layer]
+   \label{cor:single-seed-annular-query-layer}
+   Work in the setting of
+   \cref{cor:dyadic-annular-residual-witness}, and assume the primitive law has
+   finite support.  Let \(m=|P|\ge1\),
+   \[
+      K_m=1+\lceil\log_2 m\rceil,
+      \qquad
+      \mathcal D_m=\{2^\ell:0\le\ell\le\lceil\log_2 m\rceil\}.
+   \]
+   If the local LP is infeasible and the tail condition \((DAR1)\) holds, then
+   for the dyadic collision level \(\beta\) from
+   \cref{cor:dyadic-annular-residual-witness} there are a seed \(z\) and a
+   size level \(\Delta\in\mathcal D_m\) such that the Boolean query layer
+   \[
+      Q_{z,\beta,\Delta}
+      =
+      \{q:\chi_z(q)=1,\ |B_{z,\beta}(q)|\ge\Delta\}
+      \tag{SAQ1}
+   \]
+   satisfies
+   \[
+      \Delta\sum_{q\in Q_{z,\beta,\Delta}}\bar\tau_q
+      >
+      \frac{(1-\xi)\beta_0C_\eta\pi_1\kappa}{4JK_m}.
+      \tag{SAQ2}
+   \]
+\end{corollary}
+
+\begin{proof}
+   By \cref{lem:primitive-annular-superlevel-lift}, some seed \(z\) satisfies
+   \((PAS3)\).  Put
+   \[
+      h_q=\chi_z(q)|B_{z,\beta}(q)|.
+   \]
+   For every integer \(0\le h\le m\),
+   \[
+      h\le2\sum_{\Delta\in\mathcal D_m}\Delta\mathbf 1\{h\ge\Delta\}.
+   \]
+   Multiplying by \(\bar\tau_q\), summing over \(q\), and using \((PAS3)\)
+   gives
+   \[
+      2\sum_{\Delta\in\mathcal D_m}
+      \Delta\sum_{q:h_q\ge\Delta}\bar\tau_q
+      >
+      \frac{(1-\xi)\beta_0C_\eta\pi_1\kappa}{2J}.
+   \]
+   Since \(|\mathcal D_m|=K_m\), one level \(\Delta\) satisfies \((SAQ2)\).
+   The set \(\{q:h_q\ge\Delta\}\) is exactly \(Q_{z,\beta,\Delta}\).
+\end{proof}
+
 \begin{assumption}[Weighted annular-to-scalar reporter]
    \label{asm:weighted-annular-scalar-reporter}
    Work in the setting of \cref{cor:dyadic-annular-residual-witness}, and let
@@ -15041,6 +15092,29 @@ law already has positive reduced gain.
    superlevel panel demanded by \cref{asm:weighted-annular-scalar-reporter}.
    Hence the weighted annular-to-scalar reporter assumption holds, and
    \cref{cor:annular-reporter-local-cover} gives local feasibility.
+\end{proof}
+
+\begin{corollary}[Single-seed query-layer reporter suffices]
+   \label{cor:single-seed-query-layer-reporter-suffices}
+   Work under the hypotheses of \cref{cor:annular-reporter-local-cover}, and
+   assume the primitive law has finite support.  It is enough to prove the
+   primitive-panel reporter only for panels that contain a seed \(z\), dyadic
+   collision level \(\beta\), and size level \(\Delta\in\mathcal D_{|P|}\)
+   satisfying \((SAQ1)\)--\((SAQ2)\).  More explicitly, if every such
+   single-seed annular query layer yields the one-sided scalar reporter required
+   in \cref{asm:weighted-annular-scalar-reporter}, then the enlarged local
+   filter-cover LP is feasible.
+\end{corollary}
+
+\begin{proof}
+   Infeasibility plus \((DAR1)\) gives a layer
+   \(Q_{z,\beta,\Delta}\) satisfying \((SAQ1)\)--\((SAQ2)\) by
+   \cref{cor:single-seed-annular-query-layer}.  The assumed single-seed
+   query-layer reporter supplies the one-sided scalar panel required in
+   \cref{asm:weighted-annular-scalar-reporter} for this residual.  Thus every
+   residual produced by local infeasibility satisfies the weighted
+   annular-to-scalar reporter condition, and
+   \cref{cor:annular-reporter-local-cover} gives the local-cover conclusion.
 \end{proof}
 
 \begin{corollary}[Annular reporter closes the local cover]
@@ -15206,6 +15280,10 @@ remaining list-decoding or additive-quantization search can look for a concrete
 seed whose active bucket has large dual-priced annular co-load; by
 \cref{cor:primitive-annular-panel-reporter-suffices}, converting such a panel
 to the certified scalar reporter is already enough to close the local LP.
+\Cref{cor:single-seed-annular-query-layer} adds the last finite layer-cake
+normal form: with finite primitive support, a surviving residual has one seed,
+one collision level, and one dyadic size layer of queries carrying
+dual-priced annular co-load.  This is the smallest current reporter object.
 
 \begin{corollary}[Hit-kernel cover materialization]
    \label{cor:hit-kernel-cover-materialization}
@@ -36749,6 +36827,11 @@ same lower bound is witnessed as an average over concrete primitive buckets
 least one seed \(z\).  Thus the remaining proposal oracle may search a finite
 primitive annular panel and only has to turn that panel into the certified
 scalar reporter of \cref{cor:primitive-annular-panel-reporter-suffices}.
+\Cref{cor:single-seed-annular-query-layer} and
+\cref{cor:single-seed-query-layer-reporter-suffices} reduce this once more to a
+single seed, one annular collision threshold, and one dyadic query-size layer.
+This makes the next geometric theorem a finite list-recovery statement rather
+than an overlapping-cluster selection problem.
 \Cref{lem:primitive-hit-kernel-cover-equivalence} gives the matching primal
 form: the same theorem is equivalent to fractionally covering the primitive
 spherical hit kernel \(r_{p,q}\) by Pareto cores at \(\pi_1\)-scaled query and
