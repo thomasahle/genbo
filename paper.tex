@@ -24087,6 +24087,64 @@ itself spherical-pseudo-random enough to close the dichotomy.
    the displayed global bounds.
 \end{proof}
 
+\begin{corollary}[Low-guard scalar-reporter endpoint]
+   \label{cor:low-guard-scalar-reporter-polylog-endpoint}
+   In \cref{cor:certified-scalar-reporter-polylog-endpoint}, it is enough to
+   require the finite-signature system, primitive hit law, retained prefix pool,
+   and certified scalar reporters only on the low-guard query domain of
+   \cref{lem:guard-restricted-cover}.  More explicitly, at every resident node
+   \(P\), \(|P|=N\), choose a guard threshold \(\gamma_N\) with
+   \[
+      \gamma_N^{-1}\le N^{\rho_c}\log^{O_c(1)}n .
+      \tag{LGS1}
+   \]
+   Let
+   \[
+      \Omega_{\rm low}
+      =
+      \left\{q:
+      \frac1N|\{x\in P:\|x-q\|\le cr\}|<\gamma_N
+      \right\}.
+   \]
+   Suppose the hypotheses of
+   \cref{cor:certified-scalar-reporter-polylog-endpoint} hold for the finite
+   demand system induced only by \(\Omega_{\rm low}\), with the same budgets
+   \[
+      L=N^{\rho_c}\log^{O_c(1)}n,
+      \qquad
+      S=N^{1+\rho_c}\log^{O_c(1)}n .
+   \]
+   Then the same worst-case Euclidean ANN bounds hold:
+   \[
+      Q(n,d)=d\,n^{\rho_c}\log^{O_c(1)}n,
+      \qquad
+      S(n,d)=dn+n^{1+\rho_c}\log^{O_c(1)}n .
+   \]
+\end{corollary}
+
+\begin{proof}
+   At a node, first run the resident guard from
+   \cref{lem:guard-restricted-cover} with threshold \(\gamma_N\).  By
+   \((LGS1)\), its verification work is within the local
+   \(N^{\rho_c}\log^{O_c(1)}n\) query budget.  If the query is not in
+   \(\Omega_{\rm low}\), the guard returns a verified \(cr\)-neighbor with
+   constant probability, and this query copy may stop.
+
+   On \(\Omega_{\rm low}\), the scalar-reporter hypotheses give the local
+   finite filter-cover certificate by the proof of
+   \cref{cor:certified-scalar-reporter-polylog-endpoint}, applied to the
+   low-guard finite demand system.  Thus the capped low-guard decoder of
+   \cref{lem:guard-restricted-cover} routes every low-guard near pair with
+   local query cost \(N^{\rho_c}\log^{O_c(1)}n\) and storage
+   \(N^{1+\rho_c}\log^{O_c(1)}n\).
+
+   The recursive accounting is the same as in
+   \cref{prop:fractional-filter-cover-polylog}: low-guard recursive calls are
+   charged by their full descendant prices, while high-guard nodes terminate
+   that query copy by the resident sample.  Standard constant-probability
+   amplification gives the displayed bounds.
+\end{proof}
+
 \begin{lemma}[Finite activation-pattern verifier]\label{lem:finite-activation-patterns}
    Fix a finite retained family of certified children $\mathcal C$ and a query
    domain $\Omega$.  Each child $C$ has an activation predicate
