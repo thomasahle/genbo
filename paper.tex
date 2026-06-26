@@ -18348,6 +18348,94 @@ singleton slices by hand.
    and the finite prefix-template separator and endpoint conclusions follow.
 \end{proof}
 
+\begin{corollary}[All-size prefix residual envelope]
+   \label{cor:all-size-prefix-residual-envelope}
+   Work in the setting of \cref{cor:finite-all-size-prefix-separation}.  If the
+   finite prefix-template separator fails, then there is a nonnegative price
+   system \((\gamma,\tau,\sigma)\) satisfying \((APC1)\)--\((APC2)\) such that,
+   for every template \(C=(W_C,K_C)\in\mathcal P\) and every fractional query
+   weighting \(0\le y_q\le1\),
+   \[
+      D_{W_C,y}^\gamma(K_C)
+      \le
+      b\,\psi_C\left(
+         b_0^{\rho_C}K_C^{\rho_C}\sum_q\tau_qy_q
+         +
+         \sigma b_0^{1+\rho_C}K_C^{1+\rho_C}
+      \right).
+      \tag{APRE1}
+   \]
+   Equivalently, the same envelope holds for every Boolean query layer
+   \(Q'\subseteq\mathcal Q\):
+   \[
+      \sum_{p\in P_{K_C}(W_C,Q')}
+      \sum_{q\in Q':(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}
+      \le
+      b\,\psi_C\left(
+         b_0^{\rho_C}K_C^{\rho_C}\sum_{q\in Q'}\tau_q
+         +
+         \sigma b_0^{1+\rho_C}K_C^{1+\rho_C}
+      \right).
+      \tag{APRE2}
+   \]
+\end{corollary}
+
+\begin{proof}
+   If the conclusion failed, then every price system satisfying
+   \((APC1)\)--\((APC2)\) would have some template \(C\) and fractional query
+   weighting \(y\) violating \((APRE1)\), which is exactly
+   \(\mathsf{APX}_{\gamma,\tau,\sigma}(C)>0\).  Thus \((FAPS2)\) would hold,
+   and \cref{cor:finite-all-size-prefix-separation} would give the finite
+   prefix-template separator, a contradiction.  The Boolean form \((APRE2)\)
+   is the same statement with \(y=\mathbf 1_{Q'}\), using \((FAPS3)\).
+\end{proof}
+
+\begin{corollary}[Normalized all-size prefix obstruction]
+   \label{cor:normalized-all-size-prefix-obstruction}
+   Failure of the all-size prefix separator in
+   \cref{cor:finite-all-size-prefix-separation} implies the existence of a
+   nonnegative price system \((\gamma,\tau,\sigma)\) satisfying \((APC1)\) and
+   the normalization
+   \[
+      \sum_{(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}=1,
+      \qquad
+      L\sum_q\tau_q+\sigma S<\frac1{\pi_1},
+      \tag{NAPO1}
+   \]
+   such that every retained prefix template satisfies \((APRE1)\).
+   Conversely, any normalized witness satisfying \((NAPO1)\), \((APC1)\), and
+   \((APRE1)\) for every retained template can be rescaled to a surplus price
+   system satisfying \((APC1)\)--\((APC2)\) with no positive all-size prefix
+   column.
+
+   Thus the remaining geometric theorem may be stated scale-free: every unit
+   paid-mass dual obeying the query/storage budget in \((NAPO1)\) must expose
+   one certified container/cardinality template and one query weighting that
+   violates \((APRE1)\).
+\end{corollary}
+
+\begin{proof}
+   Let \((\gamma,\tau,\sigma)\) be the residual price system from
+   \cref{cor:all-size-prefix-residual-envelope}, and put
+   \[
+      M=\sum_{(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}.
+   \]
+   By \((APC2)\), \(M>0\).  Divide \(\gamma,\tau,\sigma\) by \(M\).  The
+   constraint \((APC1)\) is homogeneous, because both sides are linear in the
+   prices.  The envelope \((APRE1)\) is also homogeneous.  Finally \((APC2)\)
+   becomes
+   \[
+      1>\pi_1\left(L\sum_q\tau_q+\sigma S\right),
+   \]
+   which is \((NAPO1)\).
+
+   Conversely, multiplying a normalized witness by any positive scalar
+   preserves \((APC1)\) and \((APRE1)\), and the strict inequality in
+   \((NAPO1)\) becomes exactly \((APC2)\).  Since \((APRE1)\) is equivalent to
+   nonpositive \(\mathsf{APX}\) on every retained template, no positive
+   all-size prefix column exists for the rescaled price system.
+\end{proof}
+
 \Cref{cor:finite-all-size-soft-bucket-separation} is the cardinality-net
 version of the dense-overlap column generator.  A proposal family may contain
 arbitrarily overlapping soft dense regions, but a bucket is accepted only if
@@ -18360,7 +18448,11 @@ replaces the witness by a top-degree prefix for one Boolean query layer, and
 \cref{cor:finite-all-size-prefix-separation} is the resulting finite
 range-reporting objective: maximize \((FAPS1)\) over certified
 container/cardinality templates, retain only the verified Boolean prefix, and
-discard all failed proposals.
+discard all failed proposals.  If this objective fails,
+\cref{cor:normalized-all-size-prefix-obstruction} leaves a single normalized
+dual obstruction with unit paid mass and query/storage price below
+\(\pi_1^{-1}\); proving that no such obstruction can satisfy all envelopes
+\((APRE1)\) is now exactly the dense-overlap separator.
 
 \begin{corollary}[Joint query-list proposal separator]
    \label{cor:joint-query-list-proposal-separator}
