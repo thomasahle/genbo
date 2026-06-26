@@ -14206,6 +14206,102 @@ For a threshold $u$, the posterior-superlevel child is
    \cref{lem:implicit-reduced-gain-separation}.
 \end{proof}
 
+\begin{corollary}[Unified soft-decoded rate-coverage compiler]
+   \label{cor:unified-soft-decoded-rate-coverage}
+   Let \(\mathcal U\subseteq\prod_{i=1}^h\Sigma_i\) be a finite quotient label
+   family represented by a certified soft threshold decoder.  Assume the online
+   reporter has the coordinatewise form
+   \[
+      A_q(\omega)
+      =
+      \left\{
+      a\in\mathcal U:\
+      \kappa^{\rm rep}_{q,\omega}
+      +\sum_{i=1}^h\phi^{\rm rep}_{q,\omega,i}(a_i)>0
+      \right\},
+      \tag{US1}
+   \]
+   and that the decoder returns a certified superset
+   \(\widehat A_q(\omega)\supseteq A_q(\omega)\), from which \(A_q(\omega)\)
+   is obtained by exact filtering, in work
+   \[
+      D^{\rm rep}(q,\omega)+O(|\widehat A_q(\omega)|).
+      \tag{US2}
+   \]
+   Also assume that every restricted dual state arising during column
+   generation satisfies the coordinatewise reduced-cost form \((SL1)\), so the
+   same decoder implements the separator of
+   \cref{cor:soft-list-decoding-reduced-cost-separator}.
+
+   Suppose the finite rate-coverage system over \(S\times\mathcal U\) is
+   feasible with targets \((\tau_{p,q})\), \((\ell_q)\), and \(S_0\), and with
+   attained restricted dual minimizers whenever the restricted solve is
+   infeasible.  Then arbitrary preprocessing can find a feasible finite active
+   intensity certificate \(b\) using decoder calls rather than retaining an
+   explicit list of all labels: start from any finite active set, solve the
+   restricted convex problem, and, on infeasibility, run the soft reduced-cost
+   separator and add the returned positive pair.  The process terminates after at most
+   \[
+      |S|\,|\mathcal U/{\sim}|
+      \tag{US3}
+   \]
+   successful pair additions, where \(\sim\) is equality of reporter events.
+
+   The retained index consists only of the nonzero point-label intensities and
+   the compact decoder for \(\mathcal U\).  For a query \(q\), its expected
+   online work is bounded by
+   \[
+      \E_{\omega\sim\nu_q}D^{\rm rep}(q,\omega)
+      +
+      \E_{\omega\sim\nu_q}|\widehat A_q(\omega)|
+      +
+      \ell_q ,
+      \tag{US4}
+   \]
+   where the last term is the expected reported bucket-incidence scan.  Its
+   expected stored incidence count is \(S_0\).  In particular, if
+   \[
+      S_0\le m^{1+\rho}\log^{O_c(1)}m
+      \tag{US5}
+   \]
+   and the right side of \((US4)\) is
+   \(D\,m^\rho\log^{O_c(1)}m\) for every promised query, then the resulting
+   retained panel satisfies the implementation requirements of
+   \cref{asm:rate-coverage-panel}.
+\end{corollary}
+
+\begin{proof}
+   The online reporter is implemented by the threshold decoder through
+   \((US1)\)--\((US2)\), followed by exact filtering if the decoder returns a
+   certified superset.  During preprocessing, if a restricted convex solve is
+   infeasible, \cref{cor:soft-list-decoding-reduced-cost-separator} either
+   returns a positive reduced-cost pair or proves \((IG3)\) over
+   \(\mathcal U\).  The latter is impossible while the full finite system over
+   \(\mathcal U\) is feasible, by
+   \cref{lem:implicit-reduced-gain-separation}.  Thus every infeasible
+   restricted solve yields a valid new pair.  Since the quotient family has
+   only \(|\mathcal U/{\sim}|\) reporter classes, at most \((US3)\) distinct
+   point-label pairs can be added before either feasibility is reached or the
+   quotient is exhausted.  Exhaustion would contradict full feasibility by the
+   same implicit-separation lemma.
+
+   Once a feasible intensity vector \(b\) is found, the Poisson materialization
+   of \cref{cor:rate-coverage-intensity} stores expected total incidence
+   \(\sum_{x,a}b_{x,a}\le S_0\).  For a query outcome \(\omega\), the decoder
+   cost is the first two terms of \((US4)\).  The expected number of candidate
+   incidences scanned from exactly filtered reported nonempty buckets is
+   \[
+      \int
+      \sum_{x\in S}\sum_{a\in A_q(\omega)}b_{x,a}\,d\nu_q(\omega)
+      =
+      L_q(b)
+      \le \ell_q .
+   \]
+   The miss constraints are exactly the finite constraints \((FC1)\).  Hence
+   \((US5)\) and the displayed query-work bound give the storage and reporter
+   requirements in \cref{asm:rate-coverage-panel}.
+\end{proof}
+
 \begin{remark}[Offline certificate for facility search]
    \label{rem:rate-coverage-offline-certificate}
    \Cref{lem:finite-rate-coverage-convex} is the build-time certificate
@@ -14259,7 +14355,10 @@ For a threshold $u$, the posterior-superlevel child is
    Construction-A quotient decoding, and Barnes--Wall style lattice recursion:
    the decoder optimizes the dual-priced score, while the convex certificate
    verifies storage, query load, and tilted witness coverage before retaining
-   the bucket.
+   the bucket.  \Cref{cor:unified-soft-decoded-rate-coverage} composes the
+   pieces into the actual build contract: the same soft decoder may implement
+   online reporter enumeration and offline reduced-cost separation, while the
+   final retained intensities are accepted only by the rate-coverage verifier.
 \end{remark}
 
 \begin{assumption}[Compact rate-coverage panel]
@@ -15685,7 +15784,11 @@ over layer weights.  \Cref{cor:pointwise-reduced-cost-separation} identifies
 the exact completeness oracle as a point-label weighted coverage score.
 \Cref{cor:soft-list-decoding-reduced-cost-separator} then shows that any
 coordinatewise soft list decoder for that score is already an exact implicit
-separator after filtering.  The
+separator after filtering.
+\Cref{cor:unified-soft-decoded-rate-coverage} packages the desired retained
+object: one compact decoder handles both online reporter lists and offline
+separation, while the convex certificate charges empty decoder output,
+reported incidences, and storage separately.  The
 seeded search
 compiler \cref{lem:seeded-reduced-gain-search} isolates the useful
 code/lattice contribution: a proposal sampler or list decoder only has to
@@ -15937,6 +16040,9 @@ whose residual tilted coverage exceeds its query-load and storage price.
 standard soft-decoding interface when the score is coordinatewise additive:
 threshold-list codewords, lattice residues, or trellis paths by the dual-priced
 reliability score, then exactly filter the returned candidates.
+\Cref{cor:unified-soft-decoded-rate-coverage} is the corresponding full panel
+contract: online decoder output, candidate incidence load, and stored
+replication are charged as three separate resources.
 
 \Cref{lem:smoothed-max-score-margin} gives a still simpler non-channel target: a query-centered Gaussian score direction separates every invalid point from the true near point by an additive $\Theta_c(tr^2)$ score margin, with high probability. The softest resulting primitive is \cref{asm:smoothed-gibbs}: with inverse-polylogarithmic probability, report a list carrying inverse-polylogarithmic mass under the Gaussian Gibbs kernel on data points. Sampling from the kernel restricted to that list gives a pointwise dominated output law by \cref{lem:captured-gibbs-domination}, and \cref{lem:smoothed-gibbs-suffices} then returns a valid answer because invalid points have negligible Gibbs mass and cannot be oversampled too much. A more exact sampling route is certified additive Gumbel-MIPS: \cref{lem:gumbel-additive-domination} shows that an $O(\log\log m)$ additive optimizer for the Gumbel-perturbed scores gives precisely the required one-sided Gibbs domination, yielding \cref{prop:gumbel-mips-polylog}. A stronger but different implementation route is smoothed additive nearest-neighbor search for the perturbed center $Y/t$ with additive squared-distance error $\Theta_c(r^2)$, exactly equivalent to additive score maximization by \cref{lem:score-max-additive-nn}. These oracles would bypass dyadic scales and representatives entirely, as recorded in \cref{prop:smoothed-gibbs-polylog}, \cref{prop:gumbel-mips-polylog}, and \cref{prop:smoothed-score-max-polylog}. They are targets, not implemented theorems; \cref{rem:gumbel-mips-not-ann} explains why black-box multiplicative ANN does not supply the Gumbel primitive. The older finite restricted-channel compiler \cref{asm:finite-restricted-channel} and \cref{prop:finite-channel-polylog} remain as a coarse explicit-enumeration special case and as a useful diagnostic framework.
 
