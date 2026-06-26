@@ -19611,6 +19611,52 @@ inequality \((QP3)\).
    \(U_{\rm net}\) expanded from \((RCN3)\)--\((RCN4)\).
 \end{proof}
 
+\begin{corollary}[First-moment active-load query certificate]
+   \label{cor:first-moment-active-load-query}
+   Work in the setting of \cref{cor:bucket-net-ratio-form}, and assume
+   \(K_{z,b}\) is an integer child size, with the convention that records with
+   \(K_{z,b}=0\) have zero query and storage price.  If \(\Sigma^+=\emptyset\),
+   the cover is feasible.  Otherwise let \(a_*\) be as in \((BNR1)\).  Suppose
+   \(a_*>0\), and suppose the active first moments satisfy
+   \[
+      \E_z\sum_{b:\sigma_0\in\mathcal Q_{z,b}}
+      s_{z,b}\psi_{z,b}K_{z,b}
+      \le
+      a_*L_{\sigma_0}
+      \qquad(\sigma_0\in\Sigma),
+      \tag{FAL1}
+   \]
+   while the storage Renyi moment satisfies
+   \[
+      \E_z\sum_{b\in\mathcal B_z}
+      \psi_{z,b}K_{z,b}^{1+\rho_{z,b}}
+      \le
+      a_*S .
+      \tag{FAL2}
+   \]
+   Then \((\mathsf{ESFC}_\Sigma)\) is feasible.
+
+   In particular, if each compressed net is contained in an active raw bucket
+   of size \(M_{z,b}\), it is enough to replace \(K_{z,b}\) by \(M_{z,b}\) in
+   \((FAL1)\).  Thus the query half of the bucket-net ratio theorem is the
+   ordinary success-normalized active candidate-load estimate, with all false
+   active buckets included through \(\mathcal Q_{z,b}\).  The genuinely new
+   worst-case geometric content is the storage estimate \((FAL2)\), or a
+   sharper distinct-canonical-net version of it.
+\end{corollary}
+
+\begin{proof}
+   If \(\Sigma^+=\emptyset\), use the zero cover as in
+   \cref{cor:bucket-net-ratio-form}.  Otherwise \(a_*>0\).  For every nonzero
+   record, \(K_{z,b}\ge1\) and \(0\le\rho_{z,b}\le1\), hence
+   \(K_{z,b}^{\rho_{z,b}}\le K_{z,b}\).  Therefore \((FAL1)\) implies
+   \(L_{\rm net}(\sigma_0)\le a_*L_{\sigma_0}\) for every signature, while
+   \((FAL2)\) is exactly \(U_{\rm net}\le a_*S\).  The hit condition is the
+   definition of \(a_*\), so \cref{cor:bucket-net-ratio-form} applies.  If
+   \(K_{z,b}\le M_{z,b}\), the same argument uses
+   \(K_{z,b}^{\rho_{z,b}}\le K_{z,b}\le M_{z,b}\).
+\end{proof}
+
 \Cref{lem:exact-near-set-filter-cover} is strictly weaker than
 \cref{lem:finite-signature-filter-cover} when the exact near set is part of the
 signature.  The all-pair LP covers every \(p\in N_{\sigma_0}\); the existential
@@ -19764,6 +19810,10 @@ diagnostic form: after subtracting certification error, divide the query and
 storage Renyi moments by the minimum certified hit mass.  This is the exact
 ``bucket cost per success probability'' invariant; false active buckets remain
 charged through the query-active layer \(\mathcal Q_{z,b}\).
+\Cref{cor:first-moment-active-load-query} then removes the query-side Renyi
+burden: since every child exponent is at most one, a first-moment active-load
+bound already controls the query spectrum.  The storage spectrum is the real
+Renyi list-decoding target.
 
 \begin{proposition}[Conditional fractional filter-cover endpoint]
    \label{prop:fractional-filter-cover-polylog}
@@ -32254,8 +32304,10 @@ approximation ladder gives \(n^{\rho_c}\polylog n\) query time once each rung
 has a per-probe near-hit lower bound, a success-normalized query moment, and a
 shared-DAG storage moment.  The query moment is no longer a separate
 list-decoding problem: by \cref{lem:first-moment-query-compression}, the usual
-success-normalized expected bucket load implies it.  The storage side is the
-real geometric target.  \Cref{lem:occurrence-moments-dominate-dag},
+success-normalized expected bucket load implies it, and
+\cref{cor:first-moment-active-load-query} is the exact finite-profile version
+with false active buckets included in the active layer.  The storage side is
+the real geometric target.  \Cref{lem:occurrence-moments-dominate-dag},
 \cref{lem:packing-list-tuple-moment},
 \cref{lem:gaussian-cap-intersection-energy}, and
 \cref{cor:tuple-profile-renyi-certificate} give a sufficient occurrence
