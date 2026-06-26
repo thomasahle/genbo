@@ -14338,6 +14338,113 @@ law already has positive reduced gain.
    scale-fixed failure of \cref{asm:one-potential-core-separator}.
 \end{proof}
 
+\begin{corollary}[Guarded normalized residual segment]
+   \label{cor:guarded-normalized-residual-segment}
+   Work in the local-cover setting of
+   \cref{cor:one-potential-local-cover}, and assume the spherical bucket law
+   satisfies \((WS1)\)--\((WS3)\) and \((WS6)\).  Put
+   \[
+      a_q=\Pr_{Z\sim\Pi}[\chi_Z(q)=1].
+   \]
+   If the enlarged finite filter-cover LP is infeasible, then there are a
+   number \(\kappa\in[1,\pi_1^{-1}]\), nonnegative prices
+   \(\bar\tau_q,\bar\sigma\), and a segment of nonnegative pair potentials
+   \(\bar\gamma^\theta\), \(0\le\theta\le1\), such that, for every
+   \(\theta\),
+   \[
+      \mathsf M(\bar\gamma^\theta)=1,
+      \tag{GNR1}
+   \]
+   \[
+      L\sum_q\bar\tau_q+\bar\sigma S<\kappa,
+      \tag{GNR2}
+   \]
+   and every core \(U\in\mathcal U\) satisfies
+   \[
+      \sum_q\bigl(a_U^{\bar\gamma^\theta}(q)-T_U\bar\tau_q\bigr)_+
+      \le
+      \bar\sigma S_U .
+      \tag{GNR3}
+   \]
+   Moreover the same normalized residual has large activation-weighted
+   high-correlation guard mass:
+   \[
+      \sum_q\bar\tau_q a_q |H(q)|
+      >
+      \frac{\pi_1\kappa}{2}.
+      \tag{GNR4}
+   \]
+   Consequently, if all query constraints lie in a low-guard domain
+   \(\Omega_{\rm low}=\{q:|P\cap B(q,cr)|<\gamma_0|P|\}\) and
+   \(H(q)\subseteq P\cap B(q,cr)\) for every \(q\), then
+   \[
+      \gamma_0|P|\sum_q\bar\tau_q a_q
+      >
+      \frac{\pi_1\kappa}{2}.
+      \tag{GNR5}
+   \]
+   In particular no such residual exists when
+   \[
+      \gamma_0|P|\max_q a_q\le\frac{\pi_1L}{2}.
+      \tag{GNR6}
+   \]
+\end{corollary}
+
+\begin{proof}
+   Apply \cref{cor:two-potential-residual-normal-form} and
+   \cref{cor:balanced-residual-segment} to the infeasible enlarged LP.  Let
+   \[
+      M=\mathsf A_{\rm hc}
+      =
+      \sum_{(p,q)}\alpha_{p,q}r_{p,q},
+      \qquad
+      \kappa=\frac{A_\alpha}{M}.
+   \]
+   By \((WS1)\), \(r_{p,q}\ge\pi_1\) on demanded pairs, while
+   \(r_{p,q}\le1\) because it is a probability.  Hence
+   \[
+      \pi_1A_\alpha\le M\le A_\alpha,
+      \qquad
+      1\le\kappa\le\pi_1^{-1}.
+   \]
+   Define
+   \[
+      \bar\gamma^\theta=\gamma^\theta/M,
+      \qquad
+      \bar\tau=\tau/M,
+      \qquad
+      \bar\sigma=\sigma/M .
+   \]
+   The captured-mass equality in \cref{cor:balanced-residual-segment} gives
+   \((GNR1)\).  Dividing the surplus inequality
+   \(A_\alpha>L\sum_q\tau_q+\sigma S\) by \(M\) gives \((GNR2)\).  Dividing
+   \((BRS3)\) by \(M\) gives \((GNR3)\), using homogeneity of the positive
+   part.
+
+   Since the infeasible LP's dual has nonpositive reduced gain on every
+   spherical bucket, \cref{cor:dual-weighted-guard-spherical-reduced-gain}
+   implies the strict failure of \((DWG1)\):
+   \[
+      \sum_q\tau_q a_q|H(q)|>\frac{\pi_1}{2}A_\alpha .
+   \]
+   Dividing by \(M\) gives \((GNR4)\).
+
+   Under the low-guard containment hypotheses, \(|H(q)|<\gamma_0|P|\), so
+   \((GNR4)\) implies \((GNR5)\).  If \((GNR6)\) also held, then \((GNR2)\)
+   would give
+   \[
+      \gamma_0|P|\sum_q\bar\tau_qa_q
+      \le
+      \gamma_0|P|\max_q a_q\sum_q\bar\tau_q
+      <
+      \frac{\pi_1L}{2}\frac{\kappa}{L}
+      =
+      \frac{\pi_1\kappa}{2},
+   \]
+   contradicting \((GNR5)\).  Therefore no infeasible residual can exist under
+   \((GNR6)\).
+\end{proof}
+
 \begin{lemma}[Primitive hit-kernel cover equivalence]
    \label{lem:primitive-hit-kernel-cover-equivalence}
    Work in the setting of \cref{asm:one-potential-core-separator}.  For each
@@ -14418,6 +14525,12 @@ normalized obstruction of
 \cref{cor:normalized-one-potential-obstruction} or as the fully fractional
 hit-kernel cover \((\mathsf{HKC}_{\mathcal U})\); they are the same minimax
 statement.
+\Cref{cor:guarded-normalized-residual-segment} adds the low-guard spherical
+information to this normalized obstruction: a surviving residual must carry
+unit primitive captured mass, satisfy all core hinge envelopes, and still have
+activation-weighted high-correlation guard mass \(>\pi_1\kappa/2\).  Thus the
+remaining theorem can target this single normalized system rather than juggling
+separate spherical and dense dual certificates.
 
 \begin{corollary}[Hit-kernel cover materialization]
    \label{cor:hit-kernel-cover-materialization}
@@ -35901,6 +36014,11 @@ Pareto core obeys its hinge envelope.
 \Cref{cor:normalized-one-potential-obstruction} removes the last irrelevant
 scale: the obstruction is a unit captured-mass potential whose total
 query/storage price is below \(1/\pi_1\).
+\Cref{cor:guarded-normalized-residual-segment} adds the spherical guard
+information to that same normalized object: after spherical filters fail, the
+unit potential also carries activation-weighted high-correlation guard mass
+larger than \(\pi_1\kappa/2\).  This rules out the contained low-guard case and
+leaves only guard-leaking or guard-heavy residuals for the dense reporter.
 \Cref{lem:primitive-hit-kernel-cover-equivalence} gives the matching primal
 form: the same theorem is equivalent to fractionally covering the primitive
 spherical hit kernel \(r_{p,q}\) by Pareto cores at \(\pi_1\)-scaled query and
