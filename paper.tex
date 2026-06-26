@@ -11072,6 +11072,88 @@ priced once by \cref{lem:finite-signature-filter-cover}.
    \((SD2)\).
 \end{proof}
 
+\begin{lemma}[Dense-slice prefix separation]
+   \label{lem:dense-slice-prefix-separation}
+   Work in the setting of \cref{lem:high-correlation-dense-slice-separator}, and
+   fix query and storage budgets \(L_q>0\) and \(S_0>0\).  Suppose a slice
+   \(V_{z,q}\) is certified inside a radius-contracting child with closed-form
+   price factor \(\psi_{z,q}\) and exponent \(\rho_D\).  Order the points of
+   \(V_{z,q}\) by the singleton-query demand prices
+   \[
+      \beta_1\ge\beta_2\ge\cdots\ge\beta_M,
+      \qquad
+      \beta_i=\alpha_{p_i,q}\mathbf 1\{(p_i,q)\in\mathcal N\},
+   \]
+   and put \(A_k=\sum_{i\le k}\beta_i\).  For every cardinality \(k\) satisfying
+   the atom bounds
+   \[
+      \psi_{z,q}k^{\rho_D}\le L_q,
+      \qquad
+      \psi_{z,q}k^{1+\rho_D}\le S_0,
+      \tag{DP1}
+   \]
+   let \(D_{z,q,k}\) be the singleton-query dense child whose update side is the
+   first \(k\) points in this order and whose certified prices are
+   \[
+      T_{z,q,k}=\psi_{z,q}k^{\rho_D},
+      \qquad
+      S_{z,q,k}=\psi_{z,q}k^{1+\rho_D}.
+      \tag{DP2}
+   \]
+   If
+   \[
+      A_k>\psi_{z,q}\bigl(\tau_qk^{\rho_D}+\sigma k^{1+\rho_D}\bigr)
+      \tag{DP3}
+   \]
+   for some atom-safe \(k\), then \(D_{z,q,k}\) has positive reduced gain.
+   Conversely, if no atom-safe dense prefix of \(V_{z,q}\) has positive reduced
+   gain, then every atom-safe \(k\) satisfies
+   \[
+      \frac{A_k}{k}
+      \le
+      \psi_{z,q}\bigl(\tau_qk^{\rho_D-1}+\sigma k^{\rho_D}\bigr).
+      \tag{DP4}
+   \]
+   In particular, for every price level \(\theta>0\), if
+   \[
+      h_\theta=
+      \left|\{p\in V_{z,q}:(p,q)\in\mathcal N,\ \alpha_{p,q}\ge\theta\}\right|
+   \]
+   is atom-safe and nonzero, then
+   \[
+      \theta
+      \le
+      \psi_{z,q}\bigl(\tau_qh_\theta^{\rho_D-1}
+      +\sigma h_\theta^{\rho_D}\bigr).
+      \tag{DP5}
+   \]
+\end{lemma}
+
+\begin{proof}
+   The reduced gain of the prefix child \(D_{z,q,k}\) is exactly
+   \[
+      A_k-\tau_q\psi_{z,q}k^{\rho_D}
+      -\sigma\psi_{z,q}k^{1+\rho_D}.
+   \]
+   Thus \((DP3)\) is precisely positive reduced gain.  If no atom-safe prefix has
+   positive gain, the same displayed expression is nonpositive for every
+   atom-safe \(k\), and division by \(k\) gives \((DP4)\).
+
+   For the level-set form, let \(h=h_\theta\).  The first \(h\) points in the
+   sorted order all have price at least \(\theta\), so \(A_h\ge\theta h\).  If
+   \(\theta\) violated \((DP5)\), then \(A_h\) would violate \((DP4)\), giving a
+   positive-gain prefix.  This proves the contrapositive.
+\end{proof}
+
+Thus the dense side of the dichotomy can be made fully fractional at the level
+of price superlevels.  A remaining dual obstruction cannot merely hide a small
+expensive core inside a large high-correlation slice: such a core would appear as
+one of the prefixes in \cref{lem:dense-slice-prefix-separation}.  What remains is
+a diffuse obstruction in which every query-local high-price level set inside
+every high-correlation bucket lies below the Renyi density envelope \((DP5)\).
+This is the weighted pseudo-random condition that the next geometric step must
+combine with the spherical co-load lower bound \((SD1)\).
+
 \begin{lemma}[Finite-signature filter-cover compiler]
    \label{lem:finite-signature-filter-cover}
    Let $\Omega$ be a query domain for one resident node \(P\), and let
@@ -22633,7 +22715,11 @@ slice has positive reduced gain.  \Cref{cor:spherical-dense-moment-obstruction}
 shows that any remaining obstruction must have both large raw high-correlation
 co-load and large recursive dense-slice moment; the next geometric step is to
 rule out that simultaneous event or to quotient equivalent slices until the
-dense moment drops.  Since
+dense moment drops.  \Cref{lem:dense-slice-prefix-separation} sharpens the dense
+side further: after sorting dual demand prices inside each high-correlation
+slice, every profitable atom-safe subcolumn is witnessed by a prefix, and
+therefore any unresolved obstruction must have all price superlevels below the
+Renyi density envelope \((DP5)\).  Since
 preprocessing time is deliberately not a scarce resource,
 \cref{lem:finite-pool-optimizer} and
 \cref{cor:offline-pareto-compression} allow the build stage to enumerate,
