@@ -3543,6 +3543,118 @@ partition ignores the bias coordinates that certify the list size.
    \]
 \end{proof}
 
+\begin{corollary}[Additive-IVF product-panel certificate]
+   \label{cor:additive-ivf-product-panel}
+   Let \(E_1,\ldots,E_h\) be mutually orthogonal subspaces of the local
+   Euclidean space, let \(\Pi_j\) denote orthogonal projection to \(E_j\), and
+   let \(\mathcal C_j\subset E_j\) be finite pivot codebooks.  For
+   \(c=(c_1,\ldots,c_h)\in\prod_j\mathcal C_j\), write
+   \[
+      A(c)=\sum_{j=1}^h c_j
+   \]
+   for the additive pivot.  Define the block score
+   \[
+      \chi_j(y,c_j)=\ip{\Pi_jy}{c_j}-\frac12\|c_j\|^2 .
+   \]
+   Then
+   \[
+      \sum_{j=1}^h\chi_j(y,c_j)
+      =
+      \frac12\|\Pi_Ey\|^2
+      -
+      \frac12\|\Pi_Ey-A(c)\|^2,
+      \qquad
+      \Pi_E=\sum_j\Pi_j .
+      \tag{AIVF}
+   \]
+   Consequently the following additive-IVF scheme is an instance of
+   \cref{prop:product-panel-spectrum-compiler}: store \(x\) in tuple bucket
+   \(c\) when
+   \[
+      \sum_j\chi_j(x,c_j)\ge\theta_P,
+   \]
+   and, on query \(q\), probe exactly the tuple buckets with
+   \[
+      \sum_j\chi_j(q,c_j)\ge\theta_Q
+   \]
+   using the product decoder of \cref{lem:additive-product-panel-decoder}.
+   If the block factors of \cref{cor:product-panel-rate-bookkeeping}, with
+   \(\psi_j=\phi_j=\chi_j\), satisfy \((RB1)\)--\((RB4)\), then
+   \(O(\log^{O_c(1)}m)\) independent additive-IVF panels give terminal query
+   work
+   \[
+      d\,m^{\rho_c}\log^{O_c(1)}m
+   \]
+   and space
+   \[
+      dm+m^{1+\rho_c}\log^{O_c(1)}m .
+   \]
+
+   For \(h=2\), the buckets are exactly pairs \((i_0,i_1)\) of pivots.  More
+   generally, the retained family exposes \(\prod_j|\mathcal C_j|\) possible
+   cells while the query pays only the output-sensitive prefix-list bound
+   certified by \((RB1)\).
+\end{corollary}
+
+\begin{proof}
+   Orthogonality gives
+   \[
+      \|\Pi_Ey-A(c)\|^2
+      =
+      \sum_j\|\Pi_jy-c_j\|^2
+      =
+      \sum_j\|\Pi_jy\|^2
+      -2\sum_j\ip{\Pi_jy}{c_j}
+      +\sum_j\|c_j\|^2,
+   \]
+   which is \((AIVF)\).  On a fixed-norm localized shell, distance thresholding
+   around the additive pivot is therefore literally score thresholding.  In
+   general, the displayed score-threshold rules are the certified
+   multi-assignment version of additive IVF, with \((AIVF)\) recording their
+   relation to additive-pivot distance.  The storage rule, query-probe rule,
+   decoder work, storage moment, far co-load moment, and near-hit condition are
+   exactly the hypotheses of \cref{cor:product-panel-rate-bookkeeping} for the
+   block scores \(\chi_j\).  Applying
+   \cref{prop:product-panel-spectrum-compiler} gives the displayed resources.
+\end{proof}
+
+\begin{remark}[Nonorthogonal additive quantization]
+   \label{rem:nonorthogonal-additive-ivf}
+   Full additive vector quantization uses codebooks in the same ambient space.
+   In that case
+   \[
+      \ip{y}{A(c)}-\frac12\|A(c)\|^2
+      =
+      \sum_j\left(\ip{y}{c_j}-\frac12\|c_j\|^2\right)
+      -
+      \sum_{i<j}\ip{c_i}{c_j}.
+      \tag{AQ1}
+   \]
+   Thus the only obstruction to the clean product proof is the
+   query-independent interaction price
+   \(\Pi(c)=\sum_{i<j}\ip{c_i}{c_j}\).  If the codebooks are constructed so
+   that this price is \(O_c(\log\log m)\) on every tuple route that can be
+   reported, it can be absorbed into the thresholds and contributes only a
+   polylogarithmic slack to the product-panel rates.  Composite-quantization or
+   approximately orthogonal codebooks are one way to aim for this condition.
+
+   Without such a bound one should not pretend that \((AQ1)\) tensorizes.
+   Instead the interaction must be part of the decoder certificate.  For
+   \(h=2\), after choosing \(c_1\), the correct second-codebook score is
+   \[
+      \ip{y-c_1}{c_2}-\frac12\|c_2\|^2,
+   \]
+   so a certified reporter for the second pivot set may be run with shifted
+   query \(y-c_1\).  This remains analyzable by the general
+   Fano-biased/prefix-list framework, but the product rate identities
+   \((BT1)\)--\((BT3)\) must be replaced by the corresponding prefix-moment
+   bound for the priced pair decoder.  The useful theorem target for
+   nonorthogonal additive IVF is therefore a compact priced-pair reporter whose
+   prefix work, storage, far co-load, and near-hit spectrum pass the same
+   \((PP1)\)--\((PP4)\) verifier; Lloyd or additive-quantization distortion
+   alone is not the needed proof object.
+\end{remark}
+
 \begin{corollary}[Superset product-panel rate bookkeeping]
    \label{cor:superset-product-panel-rate-bookkeeping}
    Work in the setting of \cref{lem:product-panel-tensorization}, but use the
@@ -19976,6 +20088,14 @@ rates \(u_j,v_j,w_j,b_j\) with total query and storage rates at most \(\rho\),
 total far-separation rate at least \(1-\rho\), and total near-loss
 \(O_c(\log\log m)\).  This is the precise product-code analogue of the
 spherical exponent calculation.
+\Cref{cor:additive-ivf-product-panel} specializes the same certificate to
+additive IVF or inverted multi-index style routing: tuple buckets
+\((i_0,i_1,\ldots)\) are just product-panel labels, and orthogonal additive
+pivots make the Euclidean score exactly block-additive.  The nonorthogonal
+additive-quantization case is still useful, but by
+\cref{rem:nonorthogonal-additive-ivf} its cross term must be certified as a
+small or decodable interaction price rather than hidden inside a Lloyd-style
+distortion objective.
 \Cref{prop:sampled-structured-panel} records the corresponding sampler
 alternative.  A structured code or lattice panel need not list all active
 labels if it can sample labels from a certified Gibbs or discrete-Gaussian law:
