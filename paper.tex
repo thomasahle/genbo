@@ -11486,6 +11486,103 @@ their query/storage price, and accept the proposal only if the signed objective
 columns selected by the filter-cover LP; the conic intensities are a build-time
 certificate or search witness.
 
+\begin{lemma}[Dyadic unweighting for quotient packing]
+   \label{lem:dyadic-quotient-packing}
+   Work in the setting of \cref{cor:conic-quotient-packing}.  Fix nonnegative
+   quotient intensities \(\lambda_G\), not all zero, and define the expanded
+   de-duplicated incidence of a demand pair by
+   \[
+      M_\lambda(p,q)
+      =
+      \sum_G\frac{\lambda_G}{b_G}
+      \left|
+         \{z:(z,q)\in\mathcal I_G,\ p\in V_{z,q}\}
+      \right|.
+      \tag{DUQ1}
+   \]
+   Then the conic demand is
+   \[
+      \mathsf A_\lambda
+      =
+      \sum_{(p,q)\in\mathcal N}\alpha_{p,q}M_\lambda(p,q).
+      \tag{DUQ2}
+   \]
+   Let the positive demand prices be partitioned into dyadic classes
+   \(\mathcal N_1,\ldots,\mathcal N_J\), where
+   \[
+      \theta_j\le\alpha_{p,q}<2\theta_j
+      \qquad((p,q)\in\mathcal N_j),
+      \tag{DUQ3}
+   \]
+   and define the layer demand
+   \[
+      \mathsf A_{\lambda,j}
+      =
+      \theta_j\sum_{(p,q)\in\mathcal N_j}M_\lambda(p,q).
+      \tag{DUQ4}
+   \]
+   If
+   \[
+      \mathsf A_\lambda
+      >
+      2J
+      \sum_G\lambda_G
+      \left[
+         T_G\sum_q\tau_qa_G(q)+\sigma S_G
+      \right],
+      \tag{DUQ5}
+   \]
+   then some dyadic class \(j\) satisfies
+   \[
+      \mathsf A_{\lambda,j}
+      >
+      \sum_G\lambda_G
+      \left[
+         T_G\sum_q\tau_qa_G(q)+\sigma S_G
+      \right].
+      \tag{DUQ6}
+   \]
+   Consequently, the same quotient intensities expose a positive-gain quotient
+   even if the proposal routine only identified the unweighted incidences in the
+   single class \(\mathcal N_j\); exact verification against the original prices
+   then certifies \((CQ1)\).
+\end{lemma}
+
+\begin{proof}
+   The identity \((DUQ2)\) follows by expanding
+   \[
+      \sum_G\frac{\lambda_G}{b_G}
+      \sum_{(z,q)\in\mathcal I_G}A_{z,q}
+   \]
+   and collecting the coefficient of each demand pair.  By \((DUQ3)\),
+   \[
+      \mathsf A_\lambda
+      \le
+      2\sum_{j=1}^J\mathsf A_{\lambda,j}.
+   \]
+   If \((DUQ5)\) holds, then
+   \[
+      \sum_{j=1}^J\mathsf A_{\lambda,j}
+      >
+      J
+      \sum_G\lambda_G
+      \left[
+         T_G\sum_q\tau_qa_G(q)+\sigma S_G
+      \right].
+   \]
+   One layer must therefore satisfy \((DUQ6)\).  Since every pair in
+   \(\mathcal N_j\) has original price at least \(\theta_j\), the original conic
+   demand contributed by that layer is at least \(\mathsf A_{\lambda,j}\).  Thus
+   \((DUQ6)\) implies the strict conic inequality \((CQ1)\), and
+   \cref{cor:conic-quotient-packing} exposes a positive-gain quotient.
+\end{proof}
+
+The factor \(J\) is only a build-time search loss: after a candidate layer and
+quotient packing are proposed, the verifier evaluates the original weighted
+objective \((CQ1)\).  If the relevant dual prices lie in a polynomial window then
+\(J=O(\log n)\); if not, preprocessing may still enumerate more classes without
+changing the retained query or storage certificate.
+
 \begin{corollary}[Quotient-packing local cover criterion]
    \label{cor:quotient-packing-local-cover}
    In the setting of \cref{cor:residual-separator-local-cover}, suppose that for
@@ -23096,7 +23193,9 @@ against every residual dual, construct a distribution over quotients whose
 de-duplicated primitive demand exceeds its query/storage price.
 \Cref{cor:conic-quotient-packing} removes the normalization: preprocessing may
 search over arbitrary nonnegative quotient intensities and verify the signed
-linear objective \((CQ1)\).  Since
+linear objective \((CQ1)\).  \Cref{lem:dyadic-quotient-packing} further reduces
+proposal generation to a single dyadic price layer, with only the stated
+build-time layer factor and exact weighted verification afterward.  Since
 preprocessing time is deliberately not a scarce resource,
 \cref{lem:finite-pool-optimizer} and
 \cref{cor:offline-pareto-compression} allow the build stage to enumerate,
