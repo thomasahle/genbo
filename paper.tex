@@ -737,6 +737,99 @@ The leaf set $[B]^k$ is implicit. For a query or data point, sort the $B$ scores
 
 The smooth product filter is not a replacement for \cref{lem:adaptive-continuation}: it has no long prefix process on which to hang many recentering decisions. Its role is terminal. Once a localization method produces a bounded spherical subproblem with the critical near/far angular gap, \cref{thm:smooth-product-terminal} gives constant one-table recall and removes the last inverse-polylogarithmic amplification loss.
 
+\begin{corollary}[Random-position tensoring baseline]\label{cor:random-position-tensoring}
+   Fix \(c>1\), and put
+   \[
+      a_0=1-\frac1{c^2},
+      \qquad
+      \rho_c=\frac1{2c^2-1}.
+   \]
+   Let \(q\in\mathbb S^{D-1}\) be a terminal spherical query with a near point
+   \(p\) satisfying \(\ip{p}{q}\ge a_0\).  Suppose every invalid resident point
+   \(x\) satisfies
+   \[
+      \ip{x}{q}\le b_m,
+      \qquad
+      0\le b_m\le\frac{C_c}{\log m}.
+   \]
+   Then the constant-depth product construction, with
+   \(k=\lceil 2/(1-a_0)\rceil=O(c^2)\) tensor blocks, gives one-table constant
+   recall and expected query work, update work per point, and invalid
+   candidate work
+   \[
+      m^{\rho_c}\log^{O(c^2)}m .
+   \]
+   Its expected storage is
+   \[
+      m^{1+\rho_c}\log^{O(c^2)}m .
+   \]
+
+   In particular, the same conclusion holds with high probability in the
+   random-position model in which the invalid points are independent uniform
+   directions and \(D\ge C'_c\log^3 m\).
+\end{corollary}
+
+\begin{proof}
+   Apply \cref{thm:smooth-product-terminal} with \(a=a_0\) and \(b=b_m\).
+   The Gaussian tail estimates in its proof are uniform for
+   \(0\le b_m\le C_c/\log m\).  Since
+   \[
+      \rho(a_0,b_m)=\rho_c+O_c(b_m)
+      =
+      \rho_c+O_c\!\left(\frac1{\log m}\right),
+   \]
+   the factor \(m^{\rho(a_0,b_m)}\) is \(O_c(m^{\rho_c})\).  The polynomial
+   tail factors in the \(k\) tensor blocks contribute
+   \(\log^{O(k)}m=\log^{O(c^2)}m\).
+
+   For the final statement, a standard spherical cap bound gives
+   \[
+      \Prb[\ip{X}{q}>\varepsilon]\le \exp(-D\varepsilon^2/3)
+   \]
+   for a uniform direction \(X\), after adjusting the absolute constant.  With
+   \(\varepsilon=C_c/\log m\) and \(D\ge C'_c\log^3 m\), a union bound over the
+   \(m\) invalid points gives the displayed deterministic correlation
+   condition with probability at least \(1-m^{-2}\), after increasing \(C'_c\).
+\end{proof}
+
+\begin{remark}[What tensoring leaves open]\label{rem:tensoring-random-open}
+   \Cref{cor:random-position-tensoring} is the clean random-position baseline:
+   the tensor product itself supplies the storage, far-load, and near-hit
+   spectrum, so no posterior channel or finite-envelope construction is
+   needed.  The worst-case obstruction is different.  If a queried filter
+   bucket is large, the relevant quantity is not its raw size but its
+   recursive cost divided by the conditional probability that the same bucket
+   still contains the near point.
+
+   A possible worst-case extension is therefore a success-normalized
+   bucket-compression recursion.  For a split parameter \(1<\alpha<c\), replace
+   a filter bucket by an \((\alpha-1)r\)-net \(N_F\) and recurse on
+   approximation \(c/\alpha\).  Writing
+   \[
+      a_F(q,p)=\Prb[p\in U_F\mid q\in Q_F],
+      \qquad
+      \rho'=\rho_{c/\alpha},
+   \]
+   the query recurrence would follow from the average list-size inequality
+   \[
+      \E\!\left[
+         |N_F|^{\rho'}\mid q\in Q_F
+      \right]
+      \le
+      a_F(q,p)\,m^{\rho_c}\polylog m .
+   \]
+   Space would need the corresponding shared-DAG version for canonicalized
+   bucket nets, roughly
+   \[
+      \sum_A \operatorname{mult}(A)\,|A|^{1+\rho'}
+      \le
+      m^{1+\rho_c}\polylog m .
+   \]
+   These are Renyi average list-decoding statements for separated spherical
+   codes.  They hold in the random-position tensor calculation above, but they
+   are not yet proved for arbitrary dense tangent-cap configurations.
+\end{remark}
+
 \begin{lemma}[Flat shells give the data-independent exponent]\label{lem:flat-shell-obstruction}
    Consider the tempting one-layer reduction that takes a bounded-diameter ball,
    decomposes it into radial shells around its center, and runs the smooth
