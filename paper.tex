@@ -17679,6 +17679,163 @@ singleton slices by hand.
    \cref{cor:all-size-aggregate-list-moment-separator} applies.
 \end{proof}
 
+\begin{corollary}[All-size random-list proposal separator]
+   \label{cor:all-size-random-list-proposal}
+   Work in the setting of \cref{cor:cardinality-net-prefix-residual}.  Suppose
+   every nonnegative price system \((\gamma,\tau,\sigma)\) satisfying
+   \((APC1)\)--\((APC2)\) admits a container \(W\in\mathcal W_0\), fractional
+   query weights \(0\le y_q\le1\), and a random certified list
+   \(\mathcal L\subseteq W\).  Put
+   \[
+      A_y=\sum_q\tau_qy_q,\qquad
+      K=|\mathcal L|,\qquad
+      V(\mathcal L)=\sum_{p\in\mathcal L}d_y^\gamma(p),
+      \qquad
+      \rho=\rho_W,\quad \psi=\psi_W .
+   \]
+   If
+   \[
+      \E V(\mathcal L)
+      >
+      b\,\psi\left(
+         b_0^\rho A_y\,\E K^\rho
+         +
+         \sigma b_0^{1+\rho}\,\E K^{1+\rho}
+      \right),
+      \tag{ASRL1}
+   \]
+   then the finite prefix-template separator holds.  Consequently
+   \((\mathsf{HKC}_{\mathcal U})\) is feasible, and the local and global
+   endpoints of \cref{cor:finite-prefix-local-filter-cover} and
+   \cref{cor:finite-prefix-polylog-endpoint} apply.
+
+   In particular, it is enough to prove the slightly stronger but simpler
+   moment bound
+   \[
+      \E V(\mathcal L)
+      >
+      b\,\psi\left(
+         b_0^\rho A_y\,(\E K)^\rho
+         +
+         \sigma b_0^{1+\rho}\,\E K^{1+\rho}
+      \right).
+      \tag{ASRL2}
+   \]
+   If \(K\le H\) almost surely, it is enough that
+   \[
+      \E V(\mathcal L)
+      >
+      b\,\psi\left(
+         b_0^\rho A_y\,(\E K)^\rho
+         +
+         \sigma b_0^{1+\rho}H^\rho\,\E K
+      \right).
+      \tag{ASRL3}
+   \]
+\end{corollary}
+
+\begin{proof}
+   Suppose the finite prefix-template separator failed.  Let the residual price
+   system be the one from \cref{cor:finite-prefix-residual-envelope}.  For a
+   list outcome with \(K=0\), \(V(\mathcal L)=0\).  For an outcome with
+   \(K\ge1\), the top \(K\)-prefix in \(W\) has paid degree at least
+   \(V(\mathcal L)\), so \((CNR2)\) gives
+   \[
+      V(\mathcal L)
+      \le
+      b\,\psi\left(
+         b_0^\rho A_yK^\rho
+         +
+         \sigma b_0^{1+\rho}K^{1+\rho}
+      \right).
+   \]
+   Averaging contradicts \((ASRL1)\).  Hence no residual failure is possible,
+   proving the separator and endpoint conclusions.  Jensen gives
+   \(\E K^\rho\le(\E K)^\rho\), so \((ASRL2)\) implies \((ASRL1)\).  If
+   \(K\le H\), then \(K^{1+\rho}\le H^\rho K\), giving the capped form.
+\end{proof}
+
+\begin{corollary}[All-size marginal proposal separator]
+   \label{cor:all-size-marginal-proposal}
+   Work in the setting of \cref{cor:all-size-random-list-proposal}.  Suppose
+   every nonnegative price system \((\gamma,\tau,\sigma)\) satisfying
+   \((APC1)\)--\((APC2)\) admits a container \(W\in\mathcal W_0\), fractional
+   query weights \(0\le y_q\le1\), inclusion marginals \(0\le\pi_p\le1\) on
+   \(W\), and a realizable second-moment bound as below.  Put
+   \[
+      A_y=\sum_q\tau_qy_q,\qquad
+      \mu=\sum_{p\in W}\pi_p,
+      \qquad
+      V_\pi=\sum_{p\in W}\pi_p d_y^\gamma(p),
+      \qquad
+      \rho=\rho_W,\quad \psi=\psi_W .
+   \]
+   Suppose these marginals are realized by a random list
+   \(\mathcal L\subseteq W\) with
+   \[
+      \E|\mathcal L|^2\le M_2 .
+      \tag{ASMP1}
+   \]
+   If
+   \[
+      V_\pi
+      >
+      b\,\psi\left(
+         b_0^\rho A_y\mu^\rho
+         +
+         \sigma b_0^{1+\rho}\mu^{1-\rho}M_2^\rho
+      \right),
+      \tag{ASMP2}
+   \]
+   then the finite prefix-template separator holds, and hence the same local
+   and global endpoints apply.
+
+   In particular, for independent Bernoulli inclusion it is enough that
+   \[
+      V_\pi
+      >
+      b\,\psi\left(
+         b_0^\rho A_y\mu^\rho
+         +
+         \sigma b_0^{1+\rho}\mu^{1-\rho}(\mu+\mu^2)^\rho
+      \right).
+      \tag{ASMP3}
+   \]
+   On proposals with \(\mu\ge1\), the storage term in \((ASMP3)\) is at most
+   \(2b\,\psi\sigma b_0^{1+\rho}\mu^{1+\rho}\).
+\end{corollary}
+
+\begin{proof}
+   The random list has
+   \[
+      \E V(\mathcal L)=V_\pi,\qquad \E K=\mu .
+   \]
+   As before, Jensen gives \(\E K^\rho\le\mu^\rho\).  Log-convexity of
+   \(L_p\)-moments between powers \(1\) and \(2\) gives
+   \[
+      \E K^{1+\rho}
+      \le
+      (\E K)^{1-\rho}(\E K^2)^\rho
+      \le
+      \mu^{1-\rho}M_2^\rho .
+   \]
+   Hence \((ASMP2)\) implies \((ASRL1)\), and
+   \cref{cor:all-size-random-list-proposal} applies.  For independent
+   Bernoulli inclusion,
+   \[
+      \E K^2
+      =
+      \mu^2+\sum_{p\in W}\pi_p(1-\pi_p)
+      \le
+      \mu^2+\mu,
+   \]
+   giving \((ASMP3)\).  If \(\mu\ge1\), then
+   \[
+      \mu^{1-\rho}(\mu+\mu^2)^\rho
+      \le 2^\rho\mu^{1+\rho}\le2\mu^{1+\rho}.
+   \]
+\end{proof}
+
 \begin{corollary}[Joint query-list proposal separator]
    \label{cor:joint-query-list-proposal-separator}
    Work in the setting of \cref{cor:boolean-query-layer-list-proposal-separator}.
