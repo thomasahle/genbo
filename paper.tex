@@ -19464,21 +19464,22 @@ inequality \((QP3)\).
    Work in the setting of \cref{cor:decoded-bucket-panel-profile}.  Let a seed
    \(z\sim\nu\) produce a finite multiset of recursive bucket records
    \(\mathcal B_z\).  A record \(b\in\mathcal B_z\) comes with an active
-   signature set \(\mathcal A_{z,b}\subseteq\Sigma^+\), a certified hit weight
-   \(0\le s_{z,b}\le1\), a compressed child size \(K_{z,b}\), a child exponent
-   \(0\le\rho_{z,b}\le1\), a price factor \(\psi_{z,b}\), and an error
+   query-signature set \(\mathcal Q_{z,b}\subseteq\Sigma\), a captured
+   exact-signature set \(\mathcal H_{z,b}\subseteq\Sigma^+\), a certified hit
+   weight \(0\le s_{z,b}\le1\), a compressed child size \(K_{z,b}\), a child
+   exponent \(0\le\rho_{z,b}\le1\), a price factor \(\psi_{z,b}\), and an error
    certificate \(\varepsilon_{z,b}\).  Interpret this as the profile
    \[
       H_{z,b}(\sigma_0)
       =
-      s_{z,b}\mathbf 1\{\sigma_0\in\mathcal A_{z,b}\},
+      s_{z,b}\mathbf 1\{\sigma_0\in\mathcal H_{z,b}\},
       \tag{RCN1}
    \]
    \[
       L_{z,b}(\sigma_0)
       =
       s_{z,b}\psi_{z,b}K_{z,b}^{\rho_{z,b}}
-      \mathbf 1\{\sigma_0\in\mathcal A_{z,b}\},
+      \mathbf 1\{\sigma_0\in\mathcal Q_{z,b}\},
       \qquad
       U_{z,b}=\psi_{z,b}K_{z,b}^{1+\rho_{z,b}},
       \qquad
@@ -19520,13 +19521,17 @@ inequality \((QP3)\).
    then \((\mathsf{ESFC}_\Sigma)\) is feasible.
 
    Thus a bucket \(b\) may have a large compressed child, but its query charge
-   is multiplied by its certified hit weight \(s_{z,b}\).  In the bucket-net
-   recursion, \(K_{z,b}\) is the size of the canonical separated net retained
-   for that bucket, \(\rho_{z,b}\) is the exponent of the smaller-radius child,
-   and \(\psi_{z,b}\) is the already certified polylogarithmic child overhead.
-   The local query invariant is exactly the success-normalized moment bound
-   \(s_{z,b}K_{z,b}^{\rho_{z,b}}\), while the global space invariant is the
-   Renyi list-size moment \(K_{z,b}^{1+\rho_{z,b}}\).
+   is multiplied by its certified hit weight \(s_{z,b}\) only after all
+   query-active signatures in \(\mathcal Q_{z,b}\) have been charged.  In the
+   bucket-net recursion, \(K_{z,b}\) is the size of the canonical separated net
+   retained for that bucket, \(\rho_{z,b}\) is the exponent of the
+   smaller-radius child, and \(\psi_{z,b}\) is the already certified
+   polylogarithmic child overhead.  The local query invariant is exactly the
+   success-normalized moment bound \(s_{z,b}K_{z,b}^{\rho_{z,b}}\) on the
+   active query layer, while the global space invariant is the Renyi list-size
+   moment \(K_{z,b}^{1+\rho_{z,b}}\).  False active buckets are not free: they
+   belong to \(\mathcal Q_{z,b}\) and contribute to \(L_{\rm net}\), even when
+   they do not belong to the captured layer \(\mathcal H_{z,b}\).
 \end{corollary}
 
 \begin{proof}
@@ -19538,6 +19543,72 @@ inequality \((QP3)\).
    \((RCN5)\)--\((RCN6)\) are therefore \((DBP3)\)--\((DBP4)\), so
    \cref{cor:decoded-bucket-panel-profile} gives feasibility of
    \((\mathsf{ESFC}_\Sigma)\).
+\end{proof}
+
+\begin{corollary}[Success-normalized bucket-net ratio form]
+   \label{cor:bucket-net-ratio-form}
+   Work in the setting of \cref{cor:recursive-compressed-net-panel}.  If
+   \(\Sigma^+=\emptyset\), then \((\mathsf{ESFC}_\Sigma)\) is feasible by the
+   zero solution.  Otherwise put
+   \[
+      a_*=\inf_{\sigma_0\in\Sigma^+}
+      \bigl(H_{\rm net}(\sigma_0)-E_{\rm net}\bigr).
+      \tag{BNR1}
+   \]
+   If \(a_*>0\) and
+   \[
+      \sup_{\sigma_0\in\Sigma}
+      \frac{L_{\rm net}(\sigma_0)}{a_*L_{\sigma_0}}\le1,
+      \qquad
+      \frac{U_{\rm net}}{a_*S}\le1,
+      \tag{BNR2}
+   \]
+   with the convention that a zero denominator requires the corresponding
+   numerator to be zero, then \((\mathsf{ESFC}_\Sigma)\) is feasible.
+
+   Equivalently, a decoded recursive panel may be checked by the three
+   observable quantities
+   \[
+      \text{hit mass }H_{\rm net}-E_{\rm net},\qquad
+      \text{query Renyi moment }L_{\rm net},\qquad
+      \text{storage Renyi moment }U_{\rm net}.
+   \]
+   The required theorem is a uniform ratio bound: query and storage moments per
+   certified hit mass fit the local budgets.  In a spherical bucket-net
+   construction this is precisely the pair of average list-decoding estimates
+   \[
+      \frac{
+      \E\sum_{b:\sigma_0\in\mathcal Q_{z,b}}
+      s_{z,b}\psi_{z,b}K_{z,b}^{\rho_{z,b}}
+      }{
+      \inf_{\sigma\in\Sigma^+}(H_{\rm net}(\sigma)-E_{\rm net})
+      }
+      \le L_{\sigma_0},
+      \tag{BNR3}
+   \]
+   and
+   \[
+      \frac{
+      \E\sum_{b\in\mathcal B_z}
+      \psi_{z,b}K_{z,b}^{1+\rho_{z,b}}
+      }{
+      \inf_{\sigma\in\Sigma^+}(H_{\rm net}(\sigma)-E_{\rm net})
+      }
+      \le S .
+      \tag{BNR4}
+   \]
+\end{corollary}
+
+\begin{proof}
+   If \(\Sigma^+=\emptyset\), the zero vector \(\lambda=0\) satisfies all
+   coverage constraints of \((\mathsf{ESFC}_\Sigma)\), and the query/storage
+   constraints are immediate.  Hence assume \(\Sigma^+\ne\emptyset\).
+   Set \(a=a_*\).  By \((BNR1)\),
+   \(H_{\rm net}(\sigma_0)\ge a+E_{\rm net}\) for every nonempty signature.
+   The two inequalities in \((BNR2)\) are exactly \((RCN6)\).  Hence
+   \cref{cor:recursive-compressed-net-panel} applies.  The displayed
+   \((BNR3)\)--\((BNR4)\) are just \((BNR2)\) with \(L_{\rm net}\) and
+   \(U_{\rm net}\) expanded from \((RCN3)\)--\((RCN4)\).
 \end{proof}
 
 \Cref{lem:exact-near-set-filter-cover} is strictly weaker than
@@ -19688,6 +19759,11 @@ price is \(K^{1+\rho_{\rm child}}\).  Thus the remaining geometric statement is
 an average Renyi list-decoding theorem for compressed bucket nets: prove
 \((RCN5)\)--\((RCN6)\) for the decoded panel, and the dense recursion is already
 success-normalized.
+\Cref{cor:bucket-net-ratio-form} is the same condition in the most useful
+diagnostic form: after subtracting certification error, divide the query and
+storage Renyi moments by the minimum certified hit mass.  This is the exact
+``bucket cost per success probability'' invariant; false active buckets remain
+charged through the query-active layer \(\mathcal Q_{z,b}\).
 
 \begin{proposition}[Conditional fractional filter-cover endpoint]
    \label{prop:fractional-filter-cover-polylog}
