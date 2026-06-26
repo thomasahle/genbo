@@ -17020,6 +17020,83 @@ singleton slices by hand.
    with positive canonical query-free gain.
 \end{proof}
 
+\begin{corollary}[Hard-list separation reduces to top-degree prefixes]
+   \label{cor:hard-list-prefix-separation}
+   Work in the setting of \cref{cor:finite-hard-list-separation}, and fix a
+   nonnegative price system \((\gamma,\tau,\sigma)\).  For a certified
+   container \(W\), an ordinary query layer \(Q'\subseteq\mathcal Q\), and an
+   integer \(K\le |W|\), let \(P_K(W,Q')\) be any \(K\)-point subset of \(W\)
+   maximizing the query-layer paid degree
+   \[
+      \sum_{p\in L}
+      \sum_{q\in Q':(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}
+      \qquad(|L|=K).
+   \]
+   Define its prefix gain by
+   \[
+   \begin{aligned}
+      \mathsf{PG}_{\gamma,\tau,\sigma}(W,Q',K)
+      &=
+      \sum_{p\in P_K(W,Q')}
+      \sum_{q\in Q':(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}  \\
+      &\quad
+      -b\,\psi_WK^{\rho_W}\sum_{q\in Q'}\tau_q
+      -b\,\psi_W\sigma K^{1+\rho_W}.
+   \end{aligned}
+      \tag{HLP1}
+   \]
+   If some hard list \(H=(W_H,L_H)\) has positive hard-list reduced gain, then
+   with \(K=|L_H|\) and
+   \[
+      Q^+(H)=
+      \{q\in\mathcal Q:h_H(q)>b\,\psi_HK^{\rho_H}\tau_q\},
+      \tag{HLP2}
+   \]
+   the top-degree prefix \(P_K(W_H,Q^+(H))\) has positive prefix gain.
+   Consequently its hard-list reduced gain is also positive.
+
+   Hence, whenever the build-time universe is closed under this
+   query-layer top-\(K\) replacement, the finite hard-list oracle of
+   \cref{cor:finite-hard-list-separation} may be replaced by a separation
+   search over triples \((W,Q',K)\) and the scalar test \((HLP1)\).
+\end{corollary}
+
+\begin{proof}
+   Let \(H=(W,L)\), put \(K=|L|\), \(\rho=\rho_W\), and \(\psi=\psi_W\).  By
+   definition,
+   \[
+      \mathsf{HG}_{\gamma,\tau,\sigma}(H)
+      =
+      \sum_q\bigl(h_H(q)-b\,\psi K^\rho\tau_q\bigr)_+
+      -
+      b\,\psi\sigma K^{1+\rho}.
+   \]
+   The positive part is obtained by the query layer \(Q^+(H)\), so
+   \[
+      \sum_{p\in L}
+      \sum_{q\in Q^+(H):(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}
+      >
+      b\,\psi K^\rho\sum_{q\in Q^+(H)}\tau_q
+      +
+      b\,\psi\sigma K^{1+\rho}.
+      \tag{HLP3}
+   \]
+   The set \(P_K(W,Q^+(H))\) maximizes the left side among all \(K\)-point
+   subsets of \(W\), so it also satisfies \((HLP3)\).  This is precisely
+   \[
+      \mathsf{PG}_{\gamma,\tau,\sigma}(W,Q^+(H),K)>0 .
+   \]
+   Finally,
+   \[
+      \mathsf{HG}_{\gamma,\tau,\sigma}(P_K(W,Q^+(H)))
+      \ge
+      \mathsf{PG}_{\gamma,\tau,\sigma}(W,Q^+(H),K),
+   \]
+   because the hard-list hinge is the maximum over all query layers and the
+   right side evaluates it only on \(Q^+(H)\).  This proves the replacement
+   claim and the oracle reduction.
+\end{proof}
+
 \begin{corollary}[Joint query-list proposal separator]
    \label{cor:joint-query-list-proposal-separator}
    Work in the setting of \cref{cor:boolean-query-layer-list-proposal-separator}.
@@ -17107,6 +17184,12 @@ unbounded preprocessing, search any finite family of certified
 container/list pairs using the scalar hinge score \((FHL1)\).  Positive lists
 are verified and converted to ordinary Boolean columns; soft buckets are only a
 proposal language for finding such lists.
+\Cref{cor:hard-list-prefix-separation} removes the last arbitrary-list feature
+from this oracle: after the dual prices are fixed, a positive list can be
+replaced by the top \(K\) points in the same container for one Boolean query
+layer.  Thus LP range reporting, list decoding, or additive-code reporters only
+need to find high paid-degree prefixes for priced query layers, followed by the
+same exact reduced-gain verifier.
 
 \begin{assumption}[Balanced aggregate list-size separator]
    \label{asm:balanced-aggregate-list-size-separator}
@@ -17632,6 +17715,10 @@ only buckets whose verifier exposes a positive Boolean prefix are retained.
 positive soft bucket already contains a positive hard-list certificate in the
 same container, so the final separator may be stated purely over certified
 container/list pairs with the canonical positive-margin query side.
+\Cref{cor:hard-list-prefix-separation} then replaces arbitrary lists by
+top-degree prefixes for ordinary query layers, which is the form naturally
+served by range-reporting, tensor/list-decoding, and additive-code proposal
+oracles.
 Conversely,
 \cref{cor:paid-prefix-residual-envelope} says that a failed dense separator has
 only one possible form: a paid residual whose every certified container obeys
