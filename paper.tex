@@ -830,6 +830,136 @@ The smooth product filter is not a replacement for \cref{lem:adaptive-continuati
    are not yet proved for arbitrary dense tangent-cap configurations.
 \end{remark}
 
+\begin{proposition}[Success-normalized compressed-bucket compiler]
+   \label{prop:success-normalized-bucket-dag}
+   Fix a finite approximation ladder
+   \[
+      c=c_0>c_1>\cdots>c_h=1,
+      \qquad
+      \alpha_j=\frac{c_j}{c_{j+1}}>1,
+   \]
+   and put
+   \[
+      \rho_j=\frac1{2c_j^2-1}\quad(j<h),
+      \qquad
+      \rho_h=1 .
+   \]
+   Let \(L(m)=\log^{A_c}(m+2)\).  Suppose that, for every rung \(j<h\), every
+   local \((c_j,r_j)\)-ANN subproblem \(P\) of size \(m\) has a randomized
+   compressed-filter step with the following properties.
+
+   First, each sampled filter \(F\) has an update bucket \(B_F\subseteq P\) and
+   stores a maximal \((\alpha_j-1)r_j\)-separated net
+   \(N_F\subseteq B_F\).  Nets are canonicalized into classes \(A\), so all
+   filter occurrences with the same retained net point to the same recursive
+   child.  The retained filter metadata and occurrence pointers have space at
+   most \(m^{1+\rho_j}L(m)\).
+
+   Second, for every promised query \(q\) and near witness \(p\in P\) with
+   \(\|p-q\|\le r_j\), one probe samples a filter occurrence from a law
+   \(\mu_q\) in \(dL(m)\) expected nonrecursive work.  If
+   \[
+      a_j(q,p)=\Pr_{F\sim\mu_q}[p\in B_F],
+   \]
+   then
+   \[
+      a_j(q,p)^{-1}\le m^{\rho_j}L(m),
+      \tag{CB0}
+   \]
+   and the success-normalized query moment satisfies
+   \[
+      \E_{F\sim\mu_q}|N_F|^{\rho_{j+1}}
+      \le
+      a_j(q,p)\,m^{\rho_j}L(m).
+      \tag{CB1}
+   \]
+
+   Third, if \(\operatorname{mult}(A)\) is the number of retained filter
+   occurrences whose canonical net is \(A\), then
+   \[
+      \sum_A \operatorname{mult}(A)\bigl(1+|A|^{1+\rho_{j+1}}\bigr)
+      \le
+      m^{1+\rho_j}L(m).
+      \tag{CB2}
+   \]
+
+   Then the recursive compressed-filter DAG gives, at rung \(j\), constant
+   success probability with expected query work
+   \[
+      d\,m^{\rho_j}\log^{O_c(1)}(m+2)
+   \]
+   and expected space
+   \[
+      dm+m^{1+\rho_j}\log^{O_c(1)}(m+2).
+   \]
+   In particular, at the original rung \(j=0\) this is the desired
+   \(m^{\rho_c}\polylog m\) query and \(m^{1+\rho_c}\polylog m\) space bound.
+\end{proposition}
+
+\begin{proof}
+   We prove the claim by backward induction on \(j\).  At \(j=h\) the
+   approximation factor is \(1\), and a brute-force scan of the resident set
+   costs \(dm\), succeeds deterministically whenever a point within \(r_h\)
+   exists, and uses no index space beyond the coordinates.  This is exactly the
+   displayed bound because \(\rho_h=1\).
+
+   Assume the claim is known at rung \(j+1\).  Build the retained filter
+   metadata for \(P\).  For every canonical net \(A\), build one recursive
+   child for the \((c_{j+1},r_{j+1})\)-ANN problem on \(A\), where
+   \(r_{j+1}=\alpha_jr_j\).  By the induction hypothesis and \((CB2)\), the
+   total recursive space is at most
+   \[
+      d\sum_A |A|
+      +
+      \log^{O_c(1)}(m+2)
+      \sum_A |A|^{1+\rho_{j+1}}
+      \le
+      dm+m^{1+\rho_j}\log^{O_c(1)}(m+2),
+   \]
+   after absorbing the retained metadata and using \(\operatorname{mult}(A)\ge
+   1\) for every retained class.  Thus the space bound holds.
+
+   On query \(q\), repeat independent probes until a verified \(c_jr_j\)-near
+   neighbor is found, and cap the resulting expected algorithm as in the
+   preliminaries.  Consider a true near witness \(p\).  If a sampled filter
+   \(F\) contains \(p\), then maximality of \(N_F\) gives a net point
+   \(t\in N_F\) with
+   \[
+      \|t-p\|\le(\alpha_j-1)r_j,
+      \qquad
+      \|t-q\|\le\alpha_jr_j=r_{j+1}.
+   \]
+   Therefore the child on \(N_F\) is a valid \((c_{j+1},r_{j+1})\)-ANN
+   instance, and a successful child answer is within
+   \[
+      c_{j+1}r_{j+1}=c_jr_j
+   \]
+   of \(q\), so verification accepts it.
+
+   One probe succeeds with probability at least a fixed constant times
+   \(a_j(q,p)\), by the induction hypothesis for the child.  Its expected child
+   work is, again by induction,
+   \[
+      d\,\E_{F\sim\mu_q}|N_F|^{\rho_{j+1}}\log^{O_c(1)}(m+2),
+   \]
+   where \(m\) bounds all child sizes.  Adding the probe-generation work and
+   dividing by the success probability gives expected query work
+   \[
+      \frac{dL(m)}{a_j(q,p)}
+      +
+      d\,\frac{
+         \E_{F\sim\mu_q}|N_F|^{\rho_{j+1}}
+      }{a_j(q,p)}
+      \log^{O_c(1)}(m+2).
+   \]
+   The first term is at most
+   \(d\,m^{\rho_j}\log^{O_c(1)}(m+2)\) by \((CB0)\), and the ratio in the
+   second term is at most \(m^{\rho_j}L(m)\) by \((CB1)\).  This proves the
+   desired expected query bound.  The standard truncation paragraph converts
+   the expected geometric repetition into a capped constant-success query
+   procedure.
+\end{proof}
+
 \begin{lemma}[Flat shells give the data-independent exponent]\label{lem:flat-shell-obstruction}
    Consider the tempting one-layer reduction that takes a bounded-diameter ball,
    decomposes it into radial shells around its center, and runs the smooth
