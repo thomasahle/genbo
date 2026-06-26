@@ -19583,6 +19583,71 @@ inequality \((QP3)\).
    \((DBP1)\)--\((DBP2)\) gives the stated spectrum criterion.
 \end{proof}
 
+\begin{corollary}[Local-error decoded bucket-panel profile]
+   \label{cor:local-error-decoded-bucket-panel-profile}
+   Work in the setting of
+   \cref{cor:local-error-observable-profile-cover}.  Let a finite build-time
+   seed law \(s\sim\nu\) produce a finite multiset of decoded bucket records
+   \(\mathcal B_s\).  Each record \(b\in\mathcal B_s\) is certified as a
+   local-error observable profile
+   \[
+      \Pi_{s,b}=(H_{s,b},L_{s,b},U_{s,b},E_{s,b}(\cdot)),
+   \]
+   with \(0\le E_{s,b}(\sigma_0)\le H_{s,b}(\sigma_0)\).  Define
+   \[
+      H_{\rm loc}(\sigma_0)
+      =
+      \E_s\sum_{b\in\mathcal B_s}H_{s,b}(\sigma_0),
+      \qquad
+      L_{\rm loc}(\sigma_0)
+      =
+      \E_s\sum_{b\in\mathcal B_s}L_{s,b}(\sigma_0),
+      \tag{LDBP1}
+   \]
+   and
+   \[
+      E_{\rm loc}(\sigma_0)
+      =
+      \E_s\sum_{b\in\mathcal B_s}E_{s,b}(\sigma_0),
+      \qquad
+      U_{\rm loc}=\E_s\sum_{b\in\mathcal B_s}U_{s,b}.
+      \tag{LDBP2}
+   \]
+   If there is \(a>0\) such that
+   \[
+      H_{\rm loc}(\sigma_0)-E_{\rm loc}(\sigma_0)\ge a
+      \qquad(\sigma_0\in\Sigma^+),
+      \tag{LDBP3}
+   \]
+   and
+   \[
+      L_{\rm loc}(\sigma_0)\le aL_{\sigma_0}
+      \qquad(\sigma_0\in\Sigma),
+      \qquad
+      U_{\rm loc}\le aS,
+      \tag{LDBP4}
+   \]
+   then \((\mathsf{ESFC}_\Sigma)\) is feasible.
+
+   Thus a decoded panel need not pay one global overflow or certification error
+   against every exact signature.  It may certify the signatures on which each
+   bucket record can fail, and the profile cover subtracts only that local
+   error vector.
+\end{corollary}
+
+\begin{proof}
+   Group identical local-error profiles and define
+   \[
+      \omega_\Pi=
+      \E_s\bigl|\{b\in\mathcal B_s:\Pi_{s,b}=\Pi\}\bigr|.
+   \]
+   The aggregate quantities in the final part of
+   \cref{cor:local-error-observable-profile-cover} are exactly
+   \(H_{\rm loc},E_{\rm loc},L_{\rm loc},U_{\rm loc}\).  Conditions
+   \((LDBP3)\)--\((LDBP4)\) are therefore \((LEPC2)\)--\((LEPC3)\), and
+   \cref{cor:local-error-observable-profile-cover} gives feasibility.
+\end{proof}
+
 \begin{corollary}[Recursive compressed-net panel criterion]
    \label{cor:recursive-compressed-net-panel}
    Work in the setting of \cref{cor:decoded-bucket-panel-profile}.  Let a seed
@@ -19735,6 +19800,75 @@ inequality \((QP3)\).
    \(U_{\rm net}\) expanded from \((RCN3)\)--\((RCN4)\).
 \end{proof}
 
+\begin{corollary}[Local-error recursive bucket-net ratio form]
+   \label{cor:local-error-bucket-net-ratio}
+   Work in the setting of \cref{cor:recursive-compressed-net-panel}, but replace
+   each scalar record error \(\varepsilon_{z,b}\) by a certified local error
+   vector \(\varepsilon_{z,b}(\sigma_0)\) satisfying
+   \[
+      0\le \varepsilon_{z,b}(\sigma_0)
+      \le
+      s_{z,b}\mathbf 1\{\sigma_0\in\mathcal H_{z,b}\}
+      \qquad(\sigma_0\in\Sigma^+).
+      \tag{LBNR0}
+   \]
+   Define \(H_{\rm net},L_{\rm net},U_{\rm net}\) as in
+   \((RCN3)\)--\((RCN4)\), omitting the scalar \(E_{\rm net}\), and put
+   \[
+      E_{\rm net}(\sigma_0)
+      =
+      \E_z\sum_{b\in\mathcal B_z}\varepsilon_{z,b}(\sigma_0).
+      \tag{LBNR1}
+   \]
+   If \(\Sigma^+=\emptyset\), then \((\mathsf{ESFC}_\Sigma)\) is feasible.
+   Otherwise let
+   \[
+      a_{\rm loc}
+      =
+      \inf_{\sigma_0\in\Sigma^+}
+      \bigl(H_{\rm net}(\sigma_0)-E_{\rm net}(\sigma_0)\bigr).
+      \tag{LBNR2}
+   \]
+   If \(a_{\rm loc}>0\) and
+   \[
+      \sup_{\sigma_0\in\Sigma}
+      \frac{L_{\rm net}(\sigma_0)}{a_{\rm loc}L_{\sigma_0}}\le1,
+      \qquad
+      \frac{U_{\rm net}}{a_{\rm loc}S}\le1,
+      \tag{LBNR3}
+   \]
+   with the same zero-denominator convention as in \((BNR2)\), then
+   \((\mathsf{ESFC}_\Sigma)\) is feasible.
+
+   This is the strictly sharper bucket-net invariant: the denominator is the
+   minimum useful hit mass
+   \(H_{\rm net}(\sigma_0)-E_{\rm net}(\sigma_0)\), where the error term is
+   local to the signature.  The scalar-error ratio
+   \(\inf_{\sigma}(H_{\rm net}(\sigma)-E_{\rm net})\) is recovered by taking
+   \(\varepsilon_{z,b}(\sigma_0)=\varepsilon_{z,b}\) after truncation for every
+   captured signature.
+\end{corollary}
+
+\begin{proof}
+   If \(\Sigma^+=\emptyset\), use the zero cover.  Otherwise set
+   \(a=a_{\rm loc}\).  Each record is a local-error profile with
+   \[
+      H_{z,b}(\sigma_0)=s_{z,b}\mathbf 1\{\sigma_0\in\mathcal H_{z,b}\},
+   \]
+   \[
+      L_{z,b}(\sigma_0)=
+      s_{z,b}\psi_{z,b}K_{z,b}^{\rho_{z,b}}
+      \mathbf 1\{\sigma_0\in\mathcal Q_{z,b}\},
+      \qquad
+      U_{z,b}=\psi_{z,b}K_{z,b}^{1+\rho_{z,b}},
+   \]
+   and error vector \(E_{z,b}=\varepsilon_{z,b}\).  The aggregates of
+   \cref{cor:local-error-decoded-bucket-panel-profile} are exactly
+   \(H_{\rm net},E_{\rm net},L_{\rm net},U_{\rm net}\).  The definition
+   \((LBNR2)\) gives \((LDBP3)\), and \((LBNR3)\) gives \((LDBP4)\).  Hence
+   \cref{cor:local-error-decoded-bucket-panel-profile} applies.
+\end{proof}
+
 \begin{corollary}[First-moment active-load query certificate]
    \label{cor:first-moment-active-load-query}
    Work in the setting of \cref{cor:bucket-net-ratio-form}, and assume
@@ -19779,6 +19913,47 @@ inequality \((QP3)\).
    definition of \(a_*\), so \cref{cor:bucket-net-ratio-form} applies.  If
    \(K_{z,b}\le M_{z,b}\), the same argument uses
    \(K_{z,b}^{\rho_{z,b}}\le K_{z,b}\le M_{z,b}\).
+\end{proof}
+
+\begin{corollary}[Local-error first-moment active-load certificate]
+   \label{cor:local-error-first-moment-active-load}
+   Work in the setting of \cref{cor:local-error-bucket-net-ratio}, and assume
+   \(K_{z,b}\) is an integer child size, with zero-size records interpreted as
+   no-op records of zero query and storage price.  If \(\Sigma^+=\emptyset\),
+   the cover is feasible.  Otherwise let \(a_{\rm loc}\) be as in \((LBNR2)\).
+   Suppose \(a_{\rm loc}>0\), and suppose the active first moments satisfy
+   \[
+      \E_z\sum_{b:\sigma_0\in\mathcal Q_{z,b}}
+      s_{z,b}\psi_{z,b}K_{z,b}
+      \le
+      a_{\rm loc}L_{\sigma_0}
+      \qquad(\sigma_0\in\Sigma),
+      \tag{LFAL1}
+   \]
+   while the storage Renyi moment satisfies
+   \[
+      \E_z\sum_{b\in\mathcal B_z}
+      \psi_{z,b}K_{z,b}^{1+\rho_{z,b}}
+      \le
+      a_{\rm loc}S .
+      \tag{LFAL2}
+   \]
+   Then \((\mathsf{ESFC}_\Sigma)\) is feasible.
+
+   Thus localizing the error vector does not reintroduce a query-side Renyi
+   burden.  Since \(K^\rho\le K\), the query condition remains the ordinary
+   success-normalized active-load estimate; the useful hit mass in the
+   denominator is simply the sharper local-error quantity \(a_{\rm loc}\).
+\end{corollary}
+
+\begin{proof}
+   If \(\Sigma^+=\emptyset\), use the zero cover.  Otherwise \(a_{\rm loc}>0\).
+   For every nonzero record, \(K_{z,b}\ge1\) and \(0\le\rho_{z,b}\le1\), so
+   \(K_{z,b}^{\rho_{z,b}}\le K_{z,b}\).  Hence \((LFAL1)\) implies
+   \(L_{\rm net}(\sigma_0)\le a_{\rm loc}L_{\sigma_0}\) for every signature,
+   and \((LFAL2)\) is \(U_{\rm net}\le a_{\rm loc}S\).  The useful-hit condition
+   is the definition of \(a_{\rm loc}\).  Apply
+   \cref{cor:local-error-bucket-net-ratio}.
 \end{proof}
 
 \begin{corollary}[Shared-canonical panel storage certificate]
@@ -20255,6 +20430,9 @@ certification error subtracted uniformly from every signature's hit mass.
 error vector: overflow or certification loss is charged only to the exact
 signatures it can affect, rather than being subtracted as a scalar tax from
 every signature in the node.
+\Cref{cor:local-error-decoded-bucket-panel-profile} propagates that sharpening
+to decoded panels: the averaged hit spectrum only has to dominate the averaged
+local error on the same exact signature.
 \Cref{cor:single-panel-success-normalized-profile} records the simplest
 success-normalized sufficient condition: a panel with hit probability \(a\) may
 spend \(a\) times the local query and storage budgets, so large buckets are
@@ -20280,10 +20458,16 @@ diagnostic form: after subtracting certification error, divide the query and
 storage Renyi moments by the minimum certified hit mass.  This is the exact
 ``bucket cost per success probability'' invariant; false active buckets remain
 charged through the query-active layer \(\mathcal Q_{z,b}\).
+\Cref{cor:local-error-bucket-net-ratio} is the sharper ratio form: the
+denominator is the minimum of
+\(H_{\rm net}(\sigma)-E_{\rm net}(\sigma)\), not the minimum of
+\(H_{\rm net}(\sigma)\) after a global scalar error toll.
 \Cref{cor:first-moment-active-load-query} then removes the query-side Renyi
 burden: since every child exponent is at most one, a first-moment active-load
 bound already controls the query spectrum.  The storage spectrum is the real
 Renyi list-decoding target.
+\Cref{cor:local-error-first-moment-active-load} gives the same reduction with
+the local-error denominator.
 \Cref{cor:shared-canonical-panel-storage} and
 \cref{cor:distinct-canonical-bucket-net} make that target the one paid by the
 actual index: child storage is summed over distinct canonical child identifiers
@@ -20432,6 +20616,38 @@ covers for robust all-witness certificates.
    column, and its price is the full descendant cost.  Hence many overlapping
    decoded buckets do not multiply over recursive levels; their total active
    contribution has already been bounded by \((DBP4)\) inside the local LP.
+\end{proof}
+
+\begin{corollary}[Local-error decoded-panel endpoint]
+   \label{cor:local-error-decoded-panel-polylog-endpoint}
+   In \cref{cor:decoded-panel-polylog-endpoint}, the scalar decoded-panel
+   hypothesis \((DBP3)\)--\((DBP4)\) may be replaced at every node by the
+   local-error decoded-panel inequalities \((LDBP3)\)--\((LDBP4)\).  It is also
+   enough, in the recursive compressed-net setting, to verify the local-error
+   bucket-net ratio \((LBNR2)\)--\((LBNR3)\), or the first-moment sufficient
+   conditions \((LFAL1)\)--\((LFAL2)\).
+
+   Under any of these local-error replacements, worst-case Euclidean ANN still
+   has
+   \[
+      Q(n,d)=d\,n^{\rho_c}\log^{O_c(1)}n,
+      \qquad
+      S(n,d)=dn+n^{1+\rho_c}\log^{O_c(1)}n .
+   \]
+\end{corollary}
+
+\begin{proof}
+   At each resident node,
+   \cref{cor:local-error-decoded-bucket-panel-profile} converts
+   \((LDBP3)\)--\((LDBP4)\) into feasibility of
+   \((\mathsf{ESFC}_\Sigma)\).  The recursive bucket-net ratio version follows
+   from \cref{cor:local-error-bucket-net-ratio}, and the first-moment version
+   follows from \cref{cor:local-error-first-moment-active-load}.  Once the
+   existential signature LP is feasible at each node, the exact-near-set version
+   of \cref{prop:fractional-filter-cover-polylog} gives the same endpoint
+   accounting as in \cref{cor:decoded-panel-polylog-endpoint}.  Localizing the
+   error changes only the local feasibility certificate, not the recursive query
+   or storage induction.
 \end{proof}
 
 The role of \cref{asm:weighted-dense-spherical-dichotomy} is now precise.  It is
