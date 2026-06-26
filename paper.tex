@@ -13552,6 +13552,92 @@ For a threshold $u$, the posterior-superlevel child is
    which gives \((CG4)\).
 \end{proof}
 
+\begin{lemma}[Finite rate-coverage column generation]
+   \label{lem:finite-rate-coverage-column-generation}
+   Fix a finite candidate label family \(\mathcal B\) and a reporter
+   \(A_q(\omega)\subseteq\mathcal B\).  Let
+   \(E\subseteq S\times\mathcal B\) be an active set of point-label variables,
+   and consider the restricted version of \((FC1)\)--\((FC3)\) in which
+   \(b_{x,a}\) is allowed to be nonzero only for \((x,a)\in E\).  Suppose this
+   restricted system is infeasible and has a dual certificate
+   \((\lambda,\theta,\gamma)\) as in \((FC4)\).  Assume the corresponding
+   restricted Lagrangian infimum is attained at \(b^E\).
+
+   For any candidate pair \((x,a)\in S\times\mathcal B\), define
+   \[
+      c_a=\gamma+\sum_q\theta_q\Pr_{\nu_q}[a\in A_q(\omega)]
+      \tag{GC0}
+   \]
+   and
+   \[
+      G_x^E(a)
+      =
+      \sum_{q:\,(x,q)\in\mathcal N}
+      \lambda_{x,q}
+      \int
+      r_{x,q}(\omega)\mathbf 1\{a\in A_q(\omega)\}
+      \exp\!\left(
+         -\sum_{a'\in A_q(\omega)}b^E_{x,a'}
+      \right)d\nu_q(\omega),
+      \tag{GC1}
+   \]
+   with \(b^E_{x,a'}=0\) outside \(E\).  If
+   \[
+      G_x^E(a)\le c_a
+      \qquad\text{for every inactive }(x,a)\notin E,
+      \tag{GC2}
+   \]
+   then the same dual certificate proves infeasibility of the full convex system
+   over all variables \(S\times\mathcal B\).
+
+   Consequently, if the full candidate system over \(\mathcal B\) is feasible,
+   then every infeasible restricted solve with an attained dual minimizer has an
+   inactive pair \((x,a)\notin E\) with
+   \[
+      G_x^E(a)>c_a .
+      \tag{GC3}
+   \]
+   Adding such a pair is a valid column-generation step.  Since
+   \(S\times\mathcal B\) is finite, exhaustive column generation reaches a
+   feasible restricted certificate whenever the full finite candidate family is
+   feasible.
+\end{lemma}
+
+\begin{proof}
+   Let \(\mathcal L_E\) be the dual Lagrangian in \((FC4)\), restricted to the
+   active variables.  Since \(b^E\) attains its infimum on the nonnegative active
+   orthant, the directional derivative in every active coordinate is
+   nonnegative when the coordinate is zero and is zero when the coordinate is
+   positive.  In the notation above, this is
+   \[
+      G_x^E(a)\le c_a,\qquad
+      b^E_{x,a}\bigl(c_a-G_x^E(a)\bigr)=0
+      \qquad((x,a)\in E).
+      \tag{GC4}
+   \]
+   These are the KKT conditions for the convex differentiable Lagrangian on the
+   active orthant.
+
+   If \((GC2)\) also holds for inactive variables, then \(b^E\), extended by
+   zero outside \(E\), satisfies the KKT conditions for the full nonnegative
+   orthant \(S\times\mathcal B\).  Convexity therefore makes it a global
+   minimizer of the full Lagrangian.  The restricted dual certificate has
+   \[
+      \mathcal L_E(b^E)>
+      \sum_{(p,q)}\lambda_{p,q}\tau_{p,q}
+      +\sum_q\theta_q\ell_q+\gamma S_0 ,
+   \]
+   and the full Lagrangian has the same value at the zero-extended \(b^E\).
+   Hence the full infimum is also larger than the weighted target, so
+   \((FC4)\) holds for the full system.  This proves full infeasibility.
+
+   The contrapositive gives \((GC3)\) whenever the full candidate system is
+   feasible.  Adding a positive-gain inactive pair strictly enlarges \(E\).
+   There are only \(|S|\,|\mathcal B|\) pairs, so exhaustive repetition either
+   reaches a feasible restricted system or exhausts all pairs.  The latter would
+   contradict feasibility of the full system by the first part.
+\end{proof}
+
 \begin{remark}[Offline certificate for facility search]
    \label{rem:rate-coverage-offline-certificate}
    \Cref{lem:finite-rate-coverage-convex} is the build-time certificate
@@ -13566,8 +13652,12 @@ For a threshold $u$, the posterior-superlevel child is
    buckets.  \Cref{lem:rate-coverage-column-gain} gives the actual score to
    optimize: a proposed label is valuable for point \(x\) when its residual
    tilted witness coverage \(G_x(a)\) exceeds its dual query-load and storage
-   price.  Thus the theorem target is no longer Lloyd convergence; it is the
-   absence of a positive dual obstruction for a compact decodable label family.
+   price.  \Cref{lem:finite-rate-coverage-column-generation} turns this into an
+   exact finite build algorithm: if a finite candidate family is feasible, then
+   every infeasible restricted solve reveals such a positive-gain pair until a
+   feasible active certificate is found.  Thus the theorem target is no longer
+   Lloyd convergence; it is the absence of a positive dual obstruction for a
+   compact decodable label family.
 \end{remark}
 
 \begin{assumption}[Compact rate-coverage panel]
@@ -14979,8 +15069,12 @@ when their reported union has small scan load and high tilted witness capture.
 \Cref{lem:poisson-rate-coverage} turns this into the scalar rate-coverage
 certificate \((RC1)\)--\((RC3)\), and
 \cref{lem:finite-rate-coverage-convex} gives the offline convex verifier and
-dual obstruction for a proposed finite panel.  \Cref{prop:rate-coverage-polylog}
-records the resulting posterior endpoint.
+dual obstruction for a proposed finite panel.  The reduced-cost and
+column-generation lemmas,
+\cref{lem:rate-coverage-column-gain} and
+\cref{lem:finite-rate-coverage-column-generation},
+make expensive build-time search exact for any finite candidate label family.
+\Cref{prop:rate-coverage-polylog} records the resulting posterior endpoint.
 \Cref{cor:weighted-gaussian-quadrature-panel} records the exact positive
 finite certificate: a weighted retained label set only has to pass storage,
 sampled far-load, and near-mass checks under the tilted query sampler.  The
