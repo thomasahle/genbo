@@ -11634,6 +11634,54 @@ coverage problem with a priced threshold \(P(G)/\theta_j\).  A proposal routine
 may list quotients with large \(C_j(G)\), but every returned quotient is still
 checked against the exact weighted reduced-gain inequality before it is retained.
 
+\begin{assumption}[Layer quotient separator]
+   \label{asm:layer-quotient-separator}
+   Work in the setting of \cref{cor:residual-separator-local-cover}.  Suppose a
+   surplus dual price system \((\alpha,\tau,\sigma)\) satisfies \((RS1)\) and
+   has nonpositive reduced gain on the spherical buckets, whole
+   high-correlation dense slices, and atom-safe dense prefixes.  Partition the
+   positive demand prices \(\alpha_{p,q}\) into dyadic classes
+   \(\mathcal N_j\) as in \cref{lem:dyadic-quotient-packing}.
+
+   The quotient family \(\mathcal G\) is layer separating if, for every such
+   residual dual, there is a dyadic class \(j\) and a quotient
+   \(G\in\mathcal G\) such that
+   \[
+      \theta_j C_j(G)>P(G),
+      \tag{LQS1}
+   \]
+   with \(C_j(G)\) and \(P(G)\) defined in
+   \cref{cor:unweighted-quotient-coverage-screen}.
+\end{assumption}
+
+\begin{corollary}[Layer separation implies local cover]
+   \label{cor:layer-separation-local-cover}
+   In the setting of \cref{cor:residual-separator-local-cover}, if the quotient
+   family is layer separating in the sense of
+   \cref{asm:layer-quotient-separator}, then the finite filter-cover LP
+   \((\mathsf{FC}_{\mathcal N})\) is feasible with query budget \(L\) and
+   storage budget \(S\).
+\end{corollary}
+
+\begin{proof}
+   Suppose the LP were infeasible.  By \cref{lem:finite-filter-cover-dual} there
+   is a surplus dual system with nonpositive reduced gain on every column in the
+   finite universe.  In particular, the spherical buckets, whole dense slices,
+   and atom-safe prefixes do not have positive gain.  The layer separator
+   therefore returns \(j\) and \(G\) satisfying \((LQS1)\).  By
+   \cref{cor:unweighted-quotient-coverage-screen}, this quotient has positive
+   reduced gain, contradicting the dual certificate.  Hence the LP is feasible.
+\end{proof}
+
+\Cref{asm:layer-quotient-separator} is the most concrete form of the remaining
+fractional dense-overlap theorem.  It asks only for an unweighted coverage
+separator on one dyadic price layer, while the final acceptance test remains the
+original weighted reduced-gain inequality.  Thus \(k\)-means++, additive vector
+quantization, cap nets, range-reporting violator search, or lattice/list
+decoders are all proposal mechanisms for the same certificate; none is assumed
+correct until it produces a quotient satisfying \((LQS1)\) and hence the exact
+dual inequality.
+
 \begin{corollary}[Quotient-packing local cover criterion]
    \label{cor:quotient-packing-local-cover}
    In the setting of \cref{cor:residual-separator-local-cover}, suppose that for
@@ -23248,7 +23296,12 @@ linear objective \((CQ1)\).  \Cref{lem:dyadic-quotient-packing} further reduces
 proposal generation to a single dyadic price layer, with only the stated
 build-time layer factor and exact weighted verification afterward.
 \Cref{cor:unweighted-quotient-coverage-screen} turns each such layer into a
-plain unweighted quotient-coverage threshold.  Since
+plain unweighted quotient-coverage threshold.  The named target is now
+\cref{asm:layer-quotient-separator}: after spherical filters, whole slices, and
+slice prefixes fail, one dyadic price layer must contain a quotient whose
+de-duplicated unweighted coverage beats its query/storage price.  By
+\cref{cor:layer-separation-local-cover}, this concrete layer separator already
+implies local filter-cover feasibility.  Since
 preprocessing time is deliberately not a scarce resource,
 \cref{lem:finite-pool-optimizer} and
 \cref{cor:offline-pareto-compression} allow the build stage to enumerate,
