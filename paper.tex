@@ -12910,6 +12910,238 @@ For a threshold $u$, the posterior-superlevel child is
    at most one.
 \end{proof}
 
+\begin{corollary}[Query-centered nearest-cell reweighting]
+   \label{cor:query-centered-cell-reweighting}
+   Suppose the localized node lies in dimension \(D\).  Let
+   \[
+      H\ge\max\{D,\log m,2\},\qquad
+      \alpha=\kappa/H,\qquad
+      t=C H/r^2 ,
+      \tag{QC0}
+   \]
+   where \(\kappa=\kappa(c)>0\) is sufficiently small and
+   \(C=C(c)>0\) is sufficiently large.  Then the total-mass and valid-mass
+   conclusions \((AL3)\)--\((AL4)\) of
+   \cref{lem:scale-amplified-alpha-leader} remain true for the max-tilted law
+   \((AL2)\) with these parameters.
+
+   Let \(Z\sim N(q,I_D/t)\), and let
+   \[
+      N_S(Z)=\operatorname{NN}_S(Z)
+   \]
+   be the exact nearest resident point with the fixed tie-breaking.  Define
+   \[
+      R_q(Z)
+      =
+      \exp\!\left(
+         \frac{\alpha t}{2}
+         \bigl(\|Z-q\|^2-\|Z-N_S(Z)\|^2\bigr)
+      \right).
+      \tag{QC1}
+   \]
+   For every \(A\subseteq S\),
+   \[
+      \sum_{x\in A}\widetilde\Lambda_q(x)
+      =
+      \E_{Z\sim N(q,I_D/t)}
+      \left[
+         \mathbf 1_{\{N_S(Z)\in A\}}R_q(Z)
+      \right].
+      \tag{QC2}
+   \]
+   Moreover, for every \(L\ge0\),
+   \[
+      \E\left[
+         R_q(Z)\mathbf 1_{\{\log R_q(Z)>L\}}
+      \right]
+      \le
+      e^{2\kappa}e^{-L}.
+      \tag{QC3}
+   \]
+\end{corollary}
+
+\begin{proof}
+   Reinspect the proofs of \cref{thm:continuous-likelihood-balls} and
+   \cref{lem:scale-amplified-alpha-leader}.  They use
+   \(\alpha t r^2=\Theta_c(1)\), \(t r^2\ge C_c\log m\), and
+   \(m^\alpha=O_c(1)\).  The parameter choice \((QC0)\) has all three
+   properties: \(\alpha t r^2=\kappa C\),
+   \(t r^2\ge C\log m\), and \(m^\alpha\le e^\kappa\).  Taking \(C\) large
+   enough for the Gaussian separation tail and \(\kappa\) small enough for the
+   affinity constants therefore gives \((AL3)\)--\((AL4)\) with adjusted
+   constants.
+
+   To prove \((QC2)\), use \((VC2)\) and compare the Gaussian law
+   \(N(q+\alpha(x-q),I_D/t)\) with \(N(q,I_D/t)\).  For
+   \(u=x-q\), the density ratio at \(Z\) is
+   \[
+      \exp\!\left(
+         \alpha t\langle Z-q,u\rangle
+         -\frac{\alpha^2t}{2}\|u\|^2
+      \right).
+   \]
+   Multiplying by the affinity factor
+   \(\exp(-\alpha(1-\alpha)t\|u\|^2/2)\) from \((VC2)\) gives
+   \[
+      \exp\!\left(
+         \alpha t\langle Z-q,u\rangle
+         -\frac{\alpha t}{2}\|u\|^2
+      \right)
+      =
+      \exp\!\left(
+         \frac{\alpha t}{2}
+         (\|Z-q\|^2-\|Z-x\|^2)
+      \right).
+   \]
+   On the event \(N_S(Z)=x\), this is exactly \(R_q(Z)\).  Summing over
+   \(x\in A\) proves \((QC2)\).
+
+   Finally,
+   \[
+      \log R_q(Z)
+      \le
+      \frac{\alpha t}{2}\|Z-q\|^2
+      =
+      \frac{\alpha}{2}\chi_D^2 ,
+   \]
+   where \(\chi_D^2\) denotes a chi-square random variable with \(D\) degrees
+   of freedom.  Since
+   \[
+      R_q(Z)\mathbf 1_{\{\log R_q(Z)>L\}}
+      \le e^{-L}R_q(Z)^2 ,
+   \]
+   we get
+   \[
+   \begin{aligned}
+      \E\left[R_q(Z)\mathbf 1_{\{\log R_q(Z)>L\}}\right]
+      &\le
+      e^{-L}
+      \E\exp\!\left(\alpha\chi_D^2\right)\\
+      &=
+      e^{-L}(1-2\alpha)^{-D/2}
+      \le
+      e^{2\kappa}e^{-L},
+   \end{aligned}
+   \]
+   after decreasing \(\kappa\) so that \(\alpha\le1/4\), and using
+   \(\alpha D\le\kappa\).
+\end{proof}
+
+\begin{corollary}[Truncated nearest-cell sampler compiler]
+   \label{cor:truncated-nearest-cell-compiler}
+   Work in the setting and with the dimension-aware parameters of
+   \cref{cor:query-centered-cell-reweighting}.  Suppose a retained query
+   primitive can return \(N_S(Z)\) exactly for any query point \(Z\), with
+   query work \(T_{\rm cell}(m)\) and retained space \(S_{\rm cell}(m)\).
+   Let \(B=\log^{A_c}m\), with \(A_c\) large enough.  One trial of the
+   following rejection procedure costs \(T_{\rm cell}(m)+O(D)\):
+   sample \(Z\sim N(q,I_D/t)\), compute \(x=N_S(Z)\), put
+   \[
+      \Delta(Z)=
+      \frac{\alpha t}{2}
+      \bigl(\|Z-q\|^2-\|Z-x\|^2\bigr),
+   \]
+   and accept \(x\) with probability \(e^{\Delta(Z)}/B\) if
+   \(\Delta(Z)\le\log B\), rejecting otherwise.
+
+   If a near pair exists in the localized node, then
+   \(O_c(B)\) independent trials, followed by ordinary metric verification of
+   accepted points, return a valid \(cr\)-neighbor with constant probability.
+   The query work is
+   \[
+      O_c\!\left(B(T_{\rm cell}(m)+D)\right)
+   \]
+   and the retained space is \(S_{\rm cell}(m)+dm\).
+\end{corollary}
+
+\begin{proof}
+   By \((QC2)\), the untruncated acceptance numerator over any set
+   \(A\subseteq S\) is exactly \(\sum_{x\in A}\widetilde\Lambda_q(x)\).  The
+   truncation discards only the mass where \(\log R_q(Z)>\log B\).  By
+   \((QC3)\), the total discarded mass is at most \(e^{2\kappa}/B\).  Taking
+   \(A_c\) large makes this less than half of the valid mass lower bound
+   \(c_c\) in \((AL4)\).  Thus one trial accepts a valid point with probability
+   at least
+   \[
+      \frac{c_c/2}{B}.
+   \]
+   Repeating \(O_c(B)\) times gives constant probability of at least one
+   accepted valid point.  Every accepted point is verified in the original
+   metric, so invalid accepted points do not cause false positives.  The work
+   and space bounds are immediate.
+\end{proof}
+
+\begin{assumption}[Smoothed structured nearest-cell decoder]
+   \label{asm:smoothed-nearest-cell}
+   Fix \(c>1\) and \(\rho=\rho_c\).  For every bounded-diameter localized node
+   with \(m\) resident points in projected dimension \(D\), there is a retained
+   structured decoder of space
+   \[
+      m^{1+\rho}\log^{O_c(1)}m
+   \]
+   that, for every query point \(Z\in\mathbb R^D\), returns the exact nearest
+   resident point \(N_S(Z)\) with the fixed tie-breaking in projected query
+   time
+   \[
+      D\,m^\rho\log^{O_c(1)}m .
+   \]
+\end{assumption}
+
+\begin{remark}[Nearest cell means structured decoding]
+   \label{rem:nearest-cell-structured-decoding}
+   \Cref{asm:smoothed-nearest-cell} is a normal form for the remaining
+   posterior data-structure problem, not a consequence of ordinary exact or
+   approximate nearest-neighbor search on an arbitrary resident set.  In an
+   unstructured point set, exact Voronoi-cell decoding is precisely the hard
+   exact nearest-neighbor problem, and a multiplicative ANN oracle is too weak
+   for the pointwise domination needed by the rejection compiler.  The intended
+   source of the primitive is a retained code, lattice, trellis, or quotient
+   panel whose cells have a compact decoder.
+
+   The list-decoding analogy is therefore literal.  The Gaussian perturbation
+   \(Z\sim N(q,I_D/t)\) is the received word, the resident Voronoi cells are
+   the decoded codeword regions, and \cref{cor:truncated-nearest-cell-compiler}
+   only adds a scalar Fano-style reweighting.  Product-code filters in the
+   sense of Becker--Ducas--Gama--Laarhoven, Barnes--Wall or Barnes--Sloane
+   recursive decoders, Construction-A theta quotients, and soft list-recovery
+   blocks are useful only insofar as they give this compact exact-cell or
+   aggregate-cell sampler with the same storage and query certificates.  A
+   Lloyd or \(k\)-means partition may be an excellent build-time proposal for
+   such cells, but the proof object must be the certified decoder and its
+   cell-spectrum bounds.
+\end{remark}
+
+\begin{proposition}[Conditional nearest-cell posterior endpoint]
+   \label{prop:nearest-cell-polylog}
+   Under \cref{asm:smoothed-nearest-cell}, worst-case Euclidean ANN has query
+   time
+   \[
+      Q(n,d)=d\,n^{\rho_c}\log^{O_c(1)}n
+   \]
+   and space
+   \[
+      S(n,d)=dn+n^{1+\rho_c}\log^{O_c(1)}n .
+   \]
+\end{proposition}
+
+\begin{proof}
+   Apply the projected bounded-diameter localization of
+   \cref{lem:localization}.  In a good localized copy containing a true near
+   pair, choose the dimension-aware parameters \((QC0)\) and run
+   \cref{cor:truncated-nearest-cell-compiler}.  The rejection cap
+   \(B=\log^{A_c}m\) contributes only a polylogarithmic factor, so the local
+   query work is
+   \[
+      D\,m^\rho\log^{O_c(1)}m .
+   \]
+   The ambient projection and final metric verification are absorbed in the
+   displayed \(d\,n^{\rho_c}\log^{O_c(1)}n\) global bound.  The compiler
+   returns a valid point with constant probability in the good copy.  The
+   retained nearest-cell structures and the raw coordinates fit the displayed
+   local space bound, and summing over the polylogarithmic localized copies
+   gives the global query and space bounds.
+\end{proof}
+
 \begin{remark}[What the Voronoi form changes]
    \label{rem:alpha-leader-voronoi-capture}
    \Cref{lem:alpha-leader-voronoi-capture} removes the opaque maximum from the
@@ -12929,9 +13161,17 @@ For a threshold $u$, the posterior-superlevel child is
    \cref{lem:smoothed-max-score-margin} would already solve the query.  The
    max-tilted law instead asks for the exact-nearest-cell distribution under
    the slightly output-dependent center \(s_\alpha q+\alpha x\), with the
-   distance penalty in \((VC2)\).  This is a more structured sampling problem
-   than arbitrary Gumbel-MIPS over the resident points, and a more precise
-   target for code, lattice, trellis, or Voronoi-cell quadrature constructions.
+   distance penalty in \((VC2)\).  \Cref{cor:query-centered-cell-reweighting}
+   removes even that output-dependent center by size-biasing the exact nearest
+   neighbor of a query-centered Gaussian perturbation.  With the
+   dimension-aware schedule \(\alpha=\Theta(1/H)\),
+   \(H\ge\max\{D,\log m\}\), the size-biasing weight has only
+   inverse-polynomial-in-\(\log m\) tail after a polylogarithmic cap.  Hence
+   \cref{cor:truncated-nearest-cell-compiler} reduces the posterior sampler to
+   repeated exact nearest-cell queries plus a scalar rejection step.  This is a
+   more structured sampling problem than arbitrary Gumbel-MIPS over the
+   resident points, and a more precise target for code, lattice, trellis, or
+   Voronoi-cell quadrature constructions.
 \end{remark}
 
 \begin{assumption}[Compact max-tilted leader sampler]
@@ -12945,9 +13185,10 @@ For a threshold $u$, the posterior-superlevel child is
       \frac{\widetilde\Lambda_q(x)}
            {\sum_z\widetilde\Lambda_q(z)}
    \]
-   from \((AL2)\), with
-   \(\alpha=\Theta_c(1/\log m)\) and \(t=\Theta_c(\log m/r^2)\).  For every
-   promised query \(q\), one sample can be produced in
+   from \((AL2)\), either with the logarithmic parameters of
+   \cref{lem:scale-amplified-alpha-leader} or with the dimension-aware
+   parameters \((QC0)\).  For every promised query \(q\), one sample can be
+   produced in
    \(d\,m^\rho\log^{O_c(1)}m\) time.
 \end{assumption}
 
@@ -12967,8 +13208,10 @@ For a threshold $u$, the posterior-superlevel child is
 \begin{proof}
    Work after bounded-diameter localization in a copy containing a true near
    pair.  Draw one point from the max-tilted leader sampler and verify it in
-   the original metric.  By \((AL3)\) and \((AL4)\), the normalized sampler
-   returns a valid \(cr\)-neighbor with probability at least \(c_c/C_c\).
+   the original metric.  By \((AL3)\) and \((AL4)\), or by
+   \cref{cor:query-centered-cell-reweighting} for the dimension-aware schedule,
+   the normalized sampler returns a valid \(cr\)-neighbor with probability at
+   least \(c_c/C_c\).
    Repeating a constant number of times gives constant success probability.
    The local query and space bounds are exactly those assumed, and summing
    over the standard localized copies gives the displayed global bounds.
@@ -14088,6 +14331,17 @@ reduces to a certified soft list-recovery superset of residues followed by
 ordinary integer-lift enumeration.  Thus a Construction-A panel should be
 analyzed through residue-code list recovery and tilted partition functions, not
 as a black-box nearest-lattice oracle.
+\Cref{cor:query-centered-cell-reweighting} gives the posterior analogue of
+this decoding normal form.  After the scale-amplified leader law has collapsed
+to one max-tilted measure, choosing
+\(\alpha=\Theta_c(1/H)\) with \(H\ge\max\{D,\log m\}\) rewrites that measure as
+the exact nearest resident cell of a query-centered Gaussian perturbation,
+size-biased by a scalar weight whose tail is killed by a polylogarithmic cap.
+\Cref{cor:truncated-nearest-cell-compiler} then turns any compact structured
+nearest-cell decoder into the max-tilted posterior sampler with only a
+polylogarithmic rejection overhead.  \Cref{rem:nearest-cell-structured-decoding}
+is the important caveat: this is not a black-box exact-NN assumption, but a
+code/lattice/trellis decoder target for smoothed Voronoi or quotient cells.
 \Cref{cor:weighted-gaussian-quadrature-panel} records the exact positive
 finite certificate: a weighted retained label set only has to pass storage,
 sampled far-load, and near-mass checks under the tilted query sampler.  The
