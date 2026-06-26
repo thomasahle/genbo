@@ -15495,6 +15495,117 @@ singleton slices by hand.
    \((\mathsf{HKC}_{\mathcal U})\) is feasible.
 \end{proof}
 
+\begin{lemma}[Cardinality-net weak-type separator]
+   \label{lem:cardinality-net-weak-type-superlevel}
+   Work in the setting of \cref{asm:paid-atomized-prefix-separator}, and fix a
+   nonnegative price system \((\gamma,\tau,\sigma)\) satisfying
+   \((APC1)\)--\((APC2)\).  Fix a container \(W\in\mathcal W\) with
+   \(0<\rho_W<1\), and suppose its available cardinalities are
+   \(b\)-dense from below: for every integer \(1\le h\le |W|\), some
+   \(k\in\mathcal K_W\) satisfies
+   \[
+      h/b\le k\le h .
+      \tag{CNW0}
+   \]
+   Let \(0\le y_q\le1\), let
+   \[
+      h=|\{p\in W:d_y^\gamma(p)\ge\delta\}|
+   \]
+   be nonzero, and put
+   \[
+      A_y=\sum_q\tau_qy_q,\qquad
+      \rho=\rho_W,\qquad
+      \psi=\psi_W,\qquad
+      \widehat A_y=b^{1-\rho}A_y .
+   \]
+   If
+   \[
+      \delta>
+      \psi\left(\widehat A_yh^{\rho-1}+\sigma h^\rho\right),
+      \tag{CNW1}
+   \]
+   then an available paid prefix has positive repair reduced gain.
+   Consequently the same conclusion holds in any of the following three cases:
+   if \(\sigma=0\) and
+   \[
+      h>
+      \left(\frac{\psi\widehat A_y}{\delta}\right)^{1/(1-\rho)};
+      \tag{CNW2}
+   \]
+   if \(\sigma>0\) and
+   \[
+      h>
+      \left(\frac{2\psi\widehat A_y}{\delta}\right)^{1/(1-\rho)}
+      \quad\text{and}\quad
+      h<
+      \left(\frac{\delta}{2\psi\sigma}\right)^{1/\rho};
+      \tag{CNW3}
+   \]
+   or if \(\widehat A_y>0\), \(\sigma>0\), and for some \(a\ge1\),
+   \[
+      a^{-1}\frac{(1-\rho)\widehat A_y}{\rho\sigma}
+      \le h\le
+      a\frac{(1-\rho)\widehat A_y}{\rho\sigma},
+      \qquad
+      \delta>
+      a\,C_\rho\,\psi\widehat A_y^\rho\sigma^{1-\rho},
+      \tag{CNW4}
+   \]
+   where \(C_\rho=\rho^{-\rho}(1-\rho)^{-(1-\rho)}\).
+\end{lemma}
+
+\begin{proof}
+   Choose \(k\in\mathcal K_W\) satisfying \((CNW0)\).  The top \(k\) points in
+   \(W\) by paid degree all have degree at least \(\delta\), so
+   \(D_{W,y}^\gamma(k)\ge\delta k\).  Since \(k\le h\) and \(k\ge h/b\),
+   \[
+      A_yk^{\rho-1}+\sigma k^\rho
+      \le
+      b^{1-\rho}A_yh^{\rho-1}+\sigma h^\rho
+      =
+      \widehat A_yh^{\rho-1}+\sigma h^\rho .
+   \]
+   Hence \((CNW1)\) gives
+   \[
+      D_{W,y}^\gamma(k)>
+      \psi\left(A_yk^\rho+\sigma k^{1+\rho}\right).
+   \]
+   By \cref{lem:weighted-atomized-prefix-normal-form}, some integral query set
+   exposes a top-\(k\) paid prefix with positive repair reduced gain; this
+   prefix is available by \cref{asm:paid-atomized-prefix-separator}.
+
+   The implication from \((CNW2)\) is just \((CNW1)\) with \(\sigma=0\).
+   Under \((CNW3)\), both summands on the right of \((CNW1)\) are strictly less
+   than \(\delta/(2\psi)\), so \((CNW1)\) holds.  For \((CNW4)\), minimize
+   \(\widehat A_yh^{\rho-1}+\sigma h^\rho\) over \(h>0\).  The stationary
+   point is \((1-\rho)\widehat A_y/(\rho\sigma)\), and the minimum is
+   \(C_\rho\widehat A_y^\rho\sigma^{1-\rho}\).  Within a factor \(a\) of this
+   stationary point, the same calculation as in
+   \cref{lem:paid-prefix-weak-type} bounds the value by
+   \(aC_\rho\widehat A_y^\rho\sigma^{1-\rho}\), so \((CNW4)\) implies
+   \((CNW1)\).
+\end{proof}
+
+\begin{corollary}[Cardinality-net separator implies the hit-kernel cover]
+   \label{cor:cardinality-net-prefix-hit-kernel-cover}
+   Work in the setting of \cref{asm:paid-atomized-prefix-separator}, and assume
+   every container has exponent \(0<\rho_W<1\) and \(b\)-dense available
+   cardinalities in the sense of \((CNW0)\).  Suppose that every nonnegative
+   price system \((\gamma,\tau,\sigma)\) satisfying \((APC1)\)--\((APC2)\)
+   admits a certified container, fractional query weighting, and degree
+   superlevel satisfying one of \((CNW1)\), \((CNW2)\), \((CNW3)\), or
+   \((CNW4)\).  Then \((\mathsf{HKC}_{\mathcal U})\) is feasible.
+\end{corollary}
+
+\begin{proof}
+   If the hit-kernel cover were infeasible, the proof of
+   \cref{cor:weak-type-prefix-hit-kernel-cover} gives a price system with
+   nonpositive repair reduced gain on every available Boolean core record.  The
+   cardinality-net separator hypothesis and
+   \cref{lem:cardinality-net-weak-type-superlevel} expose an available paid
+   prefix with positive repair reduced gain, a contradiction.
+\end{proof}
+
 \Cref{lem:paid-prefix-weak-type} gives a direct separator screen.  If, for some
 certified container and fractional query weighting, a paid-degree superlevel has
 cardinality strictly above the query-priced bound \((PWT2)\) and strictly below
@@ -15513,6 +15624,12 @@ the spherical high-correlation co-load.
 geometric separator only has to return one certified superlevel in the
 forbidden middle regime, after which the finite cover duality supplies the
 positive column and the hit-kernel cover.
+\Cref{lem:cardinality-net-weak-type-superlevel} removes the exact-cardinality
+artifact from this target.  If the available prefix sizes form a constant-net,
+for example the powers of two, then a list-decoding or range-reporting
+separator may return an arbitrary heavy superlevel with only the displayed
+constant slack; the verifier rounds its cardinality down to an available prefix
+and the final retained column is still an ordinary paid prefix.
 
 \Cref{cor:paid-compression-hit-kernel-cover} is the fractional dense-filter
 cover in its paid form.  The separator does not choose disjoint dense clusters.
