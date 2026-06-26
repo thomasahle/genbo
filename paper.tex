@@ -12281,6 +12281,88 @@ query-margin layer, then run the exact reduced-gain verifier on any returned
 prefix.  The dyadic loss is therefore a proposal-generation slack, not a charge
 that has to remain in the final retained index.
 
+\begin{corollary}[Saturated pair-support envelope test]
+   \label{cor:saturated-pair-support-envelope}
+   Fix a certified container \(W\subseteq P\), a query set
+   \(Q'\subseteq\mathcal Q\), a price factor \(\psi>0\), and an exponent
+   \(0\le\rho_D\le1\).  Let \(\mathcal A^\star(W,Q')\), \(d^\star\), and
+   \(U_k^\star\) be the saturated duplicate-free atom family, degrees, and
+   prefixes from \cref{lem:pair-support-saturation-atomized}.  Put
+   \[
+      D_k^\star=\sum_{p\in U_k^\star}d^\star(p),
+      \qquad
+      \mathsf T(Q')=\sum_{q\in Q'}\tau_q .
+   \]
+   If an atom-safe \(k\) satisfies
+   \[
+      \theta_jD_k^\star
+      >
+      \psi\bigl(\mathsf T(Q')k^{\rho_D}
+      +\sigma k^{1+\rho_D}\bigr),
+      \tag{SPE1}
+   \]
+   then the saturated prefix \((U_k^\star,Q')\) has positive reduced gain.
+   Therefore, if no saturated atom-safe prefix inside \(W,Q'\) has positive
+   reduced gain, every atom-safe \(k\) satisfies
+   \[
+      \frac{D_k^\star}{k}
+      \le
+      \frac{\psi}{\theta_j}
+      \bigl(\mathsf T(Q')k^{\rho_D-1}
+      +\sigma k^{\rho_D}\bigr),
+      \tag{SPE2}
+   \]
+   and every atom-safe degree superlevel
+   \[
+      h_\delta^\star=|\{p\in W:d^\star(p)\ge\delta\}|
+   \]
+   that is nonzero satisfies
+   \[
+      \delta
+      \le
+      \frac{\psi}{\theta_j}
+      \bigl(\mathsf T(Q')(h_\delta^\star)^{\rho_D-1}
+      +\sigma (h_\delta^\star)^{\rho_D}\bigr).
+      \tag{SPE3}
+   \]
+   If the atom-safe cardinalities are downward closed and only dyadic
+   cardinalities are searched, then absence of positive dyadic saturated
+   prefixes implies the same two envelopes with the right-hand sides multiplied
+   by \(2\).
+\end{corollary}
+
+\begin{proof}
+   The family \(\mathcal A^\star(W,Q')\) is duplicate-free, so applying
+   \cref{lem:atomized-quotient-reduced-gain} to the prefix \(U_k^\star\), with
+   \(a_G=\mathbf 1_{Q'}\), \(T_G=\psi k^{\rho_D}\), and
+   \(S_G=\psi k^{1+\rho_D}\), shows that \((SPE1)\) gives positive reduced gain.
+
+   If no saturated atom-safe prefix has positive reduced gain, the contrapositive
+   gives
+   \[
+      \theta_jD_k^\star
+      \le
+      \psi\bigl(\mathsf T(Q')k^{\rho_D}
+      +\sigma k^{1+\rho_D}\bigr)
+   \]
+   for every atom-safe \(k\).  Dividing by \(k\) gives \((SPE2)\).  For the
+   superlevel form, take \(h=h_\delta^\star\).  The top \(h\) saturated-degree
+   points all have degree at least \(\delta\), hence \(D_h^\star\ge\delta h\).
+   Combining this with \((SPE2)\) gives \((SPE3)\).
+
+   The dyadic statement is exactly \cref{lem:dyadic-atomized-prefix-screen}
+   applied to the saturated family with duplicate factor \(b=1\).
+\end{proof}
+
+\Cref{cor:saturated-pair-support-envelope} is the current residual target in its
+most concrete form.  After fixing a dyadic demand layer and a dyadic
+query-margin layer, the build-time separator only has to find a certified
+container \(W\) whose saturated pair-support degree sequence violates
+\((SPE2)\) or \((SPE3)\) at some atom-safe scale.  If every certified container
+obeys these envelopes, the unresolved obstruction is no longer a branching or
+quotient-accounting issue; it is a pure geometric packing statement about
+saturated pair-support degrees.
+
 \begin{assumption}[Layer quotient separator]
    \label{asm:layer-quotient-separator}
    Work in the setting of \cref{cor:residual-separator-local-cover}.  Suppose a
@@ -23967,8 +24049,9 @@ the best \(k\)-point update side is the degree-sorted prefix.  Thus the
 remaining geometric separator can be searched as a
 container/query-layer/cardinality problem followed by exact reduced-gain
 verification.  If all such prefixes fail,
-\cref{lem:atomized-prefix-density-envelope} gives the exact residual
-degree-superlevel envelope that every certified container must satisfy, and
+\cref{cor:saturated-pair-support-envelope} gives the exact residual
+saturated degree-superlevel envelope that every certified container must satisfy,
+and
 \cref{lem:dyadic-atomized-prefix-screen} shows that constant-slack proposal
 search only needs dyadic prefix cardinalities before exact verification.  By
 \cref{cor:layer-separation-local-cover}, this concrete layer
