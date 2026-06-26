@@ -17147,6 +17147,63 @@ singleton slices by hand.
    \((HLP1)\).  The converse is the same identity with \(y=\mathbf 1_{Q'}\).
 \end{proof}
 
+\begin{corollary}[Finite prefix separation oracle]
+   \label{cor:finite-prefix-separation}
+   Work in the setting of \cref{cor:fractional-query-prefix-separation}.  Let
+   \(\mathcal P\) be a finite build-time pool of certified prefix templates.
+   A template \(C\in\mathcal P\) consists of a certified container
+   \(W_C\in\mathcal W\) and an available cardinality \(1\le K_C\le |W_C|\).
+   For a price system \((\gamma,\tau,\sigma)\), define the prefix reduced-cost
+   value
+   \[
+      \mathsf{PX}_{\gamma,\tau,\sigma}(C)
+      =
+      \max_{0\le y_q\le1}
+      \left[
+         D_{W_C,y}^\gamma(K_C)
+         -
+         b\,\psi_CK_C^{\rho_C}\sum_q\tau_qy_q
+         -
+         b\,\psi_C\sigma K_C^{1+\rho_C}
+      \right],
+      \tag{FPS1}
+   \]
+   where \(\rho_C=\rho_{W_C}\) and \(\psi_C=\psi_{W_C}\).  Suppose the finite
+   hard-list universe contains, for every \(C\in\mathcal P\) and every Boolean
+   query layer \(Q'\subseteq\mathcal Q\), the top-degree prefix
+   \(P_{K_C}(W_C,Q')\).  If every nonnegative price system
+   \((\gamma,\tau,\sigma)\) satisfying \((APC1)\)--\((APC2)\) has
+   \[
+      \max_{C\in\mathcal P}\mathsf{PX}_{\gamma,\tau,\sigma}(C)>0,
+      \tag{FPS2}
+   \]
+   then \((\mathsf{HKC}_{\mathcal U})\) is feasible.
+
+   Equivalently, \((FPS1)\) may be maximized over Boolean query layers:
+   \[
+      \mathsf{PX}_{\gamma,\tau,\sigma}(C)
+      =
+      \max_{Q'\subseteq\mathcal Q}
+      \mathsf{PG}_{\gamma,\tau,\sigma}(W_C,Q',K_C).
+      \tag{FPS3}
+   \]
+   Thus preprocessing may use fractional query weights, cutting planes,
+   range-reporting, or list-decoding to find a positive template, but the
+   retained column is the ordinary Boolean prefix returned by the maximizer in
+   \((FPS3)\).
+\end{corollary}
+
+\begin{proof}
+   For fixed \(C\), \cref{cor:fractional-query-prefix-separation} says exactly
+   that the fractional maximum in \((FPS1)\) is positive if and only if some
+   Boolean query layer \(Q'\) gives positive prefix gain for
+   \(P_{K_C}(W_C,Q')\).  This proves \((FPS3)\).  Under the closure assumption,
+   that prefix is an available hard list and has positive hard-list reduced
+   gain by \cref{cor:hard-list-prefix-separation}.  Therefore \((FPS2)\)
+   implies the hypothesis of \cref{cor:finite-hard-list-separation}, and the
+   primitive hit-kernel cover follows.
+\end{proof}
+
 \begin{corollary}[Joint query-list proposal separator]
    \label{cor:joint-query-list-proposal-separator}
    Work in the setting of \cref{cor:boolean-query-layer-list-proposal-separator}.
@@ -17243,6 +17300,10 @@ same exact reduced-gain verifier.
 \Cref{cor:fractional-query-prefix-separation} keeps fractional query weights
 available as an analysis tool: any positive fractional weighting thresholds to
 one Boolean query layer before the retained column is formed.
+\Cref{cor:finite-prefix-separation} is the resulting exact finite oracle.  For
+each certified container and retained cardinality, maximize the scalar
+top-\(K\) reduced-cost objective \((FPS1)\); positivity is equivalent to an
+ordinary Boolean prefix filter with positive gain.
 
 \begin{assumption}[Balanced aggregate list-size separator]
    \label{asm:balanced-aggregate-list-size-separator}
@@ -17776,6 +17837,10 @@ oracles.
 relaxation: fractional query prices may be used in the dual analysis, but a
 positive fractional prefix certificate always thresholds to one Boolean query
 layer before the filter is retained.
+\Cref{cor:finite-prefix-separation} packages this as a finite oracle over
+container/cardinality templates: positivity of the top-\(K\) reduced-cost
+objective \((FPS1)\) is exactly the remaining dense column-generation
+certificate.
 Conversely,
 \cref{cor:paid-prefix-residual-envelope} says that a failed dense separator has
 only one possible form: a paid residual whose every certified container obeys
