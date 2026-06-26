@@ -10577,6 +10577,246 @@ positive-gain cap, medoid ball, pair-direction filter, or learned score.  The
 search may be arbitrarily expensive; the retained index still pays only for the
 children that survive the final deterministic certificate.
 
+\begin{lemma}[Finite fractional filter-cover dual]
+   \label{lem:finite-filter-cover-dual}
+   Fix a finite query constraint set $\mathcal Q$, a finite demand set
+   \[
+      \mathcal N\subseteq P\times\mathcal Q,
+   \]
+   and a finite universe $\mathcal F$ of priced filters.  A filter
+   $A\in\mathcal F$ has an update side $U_A\subseteq P$, an activation predicate
+   $a_A:\mathcal Q\to\{0,1\}$, a certified query price $T_A\ge0$, and a
+   certified storage price $S_A\ge0$.  Write
+   \[
+      c_A(p,q)=\mathbf 1\{p\in U_A\}a_A(q).
+   \]
+   For budgets $L_q$ and $S$, consider the fractional filter-cover feasibility
+   program
+   \[
+   \begin{array}{ll}
+   \text{\rm find} & \lambda_A\ge0 \qquad(A\in\mathcal F)\\[0.4em]
+   \text{\rm subject to}
+      & \displaystyle
+        \sum_{A\in\mathcal F}c_A(p,q)\lambda_A\ge1
+        \qquad ((p,q)\in\mathcal N),\\[0.8em]
+      & \displaystyle
+        \sum_{A\in\mathcal F}a_A(q)T_A\lambda_A\le L_q
+        \qquad(q\in\mathcal Q),\\[0.8em]
+      & \displaystyle
+        \sum_{A\in\mathcal F}S_A\lambda_A\le S .
+   \end{array}
+   \tag{$\mathsf{FC}_{\mathcal N}$}
+   \]
+   This program is infeasible if and only if there are demand prices
+   $\alpha_{p,q}\ge0$, query prices $\tau_q\ge0$, and a storage price
+   $\sigma\ge0$ such that
+   \[
+      \sum_{(p,q)\in\mathcal N}\alpha_{p,q}
+      >
+      \sum_{q\in\mathcal Q}\tau_qL_q+\sigma S,
+      \tag{FC-D1}
+   \]
+   while every filter satisfies
+   \[
+      \sum_{(p,q)\in\mathcal N}\alpha_{p,q}c_A(p,q)
+      \le
+      S_A\sigma+T_A\sum_{q\in\mathcal Q}\tau_qa_A(q).
+      \tag{FC-D2}
+   \]
+\end{lemma}
+
+\begin{proof}
+   This is Farkas' lemma applied to the finite system.  Write the coverage
+   inequalities as
+   \[
+      -\sum_A c_A(p,q)\lambda_A\le -1
+      \qquad ((p,q)\in\mathcal N),
+   \]
+   keep the query and storage inequalities in their displayed directions, and
+   keep $\lambda_A\ge0$.  A nonnegative multiplier system
+   $(\alpha,\tau,\sigma)$ certifies infeasibility exactly when its weighted
+   left-hand side is nonnegative on every variable $\lambda_A$ but its weighted
+   right-hand side is negative.  Nonnegativity of the $\lambda_A$ coefficient is
+   precisely
+   \[
+      -\sum_{(p,q)\in\mathcal N}\alpha_{p,q}c_A(p,q)
+      +T_A\sum_q\tau_qa_A(q)+\sigma S_A\ge0,
+   \]
+   which is \((FC\text{-}D2)\).  Negativity of the right-hand side is
+   \[
+      -\sum_{(p,q)\in\mathcal N}\alpha_{p,q}
+      +\sum_q\tau_qL_q+\sigma S<0,
+   \]
+   which is \((FC\text{-}D1)\).  The converse is the same Farkas certificate read
+   backward.
+\end{proof}
+
+\begin{corollary}[Filter-cover column generation]
+   \label{cor:filter-cover-column-generation}
+   For prices $(\alpha,\tau,\sigma)$ define the reduced gain of a filter by
+   \[
+      \operatorname{gain}_{\alpha,\tau,\sigma}(A)
+      =
+      \sum_{(p,q)\in\mathcal N}\alpha_{p,q}c_A(p,q)
+      -
+      S_A\sigma
+      -
+      T_A\sum_{q\in\mathcal Q}\tau_qa_A(q).
+   \]
+   The full filter-cover program over a finite universe $\mathcal F_\star$ is
+   feasible if and only if every price system satisfying \((FC\text{-}D1)\) has
+   some filter $A\in\mathcal F_\star$ with positive reduced gain.  Consequently,
+   with unbounded preprocessing, a column-generation routine that repeatedly
+   solves the current restricted program and adds any positive-gain filter from
+   $\mathcal F_\star$ terminates with a feasible cover whenever the full universe
+   is feasible.
+\end{corollary}
+
+\begin{proof}
+   By \cref{lem:finite-filter-cover-dual}, infeasibility of the full program is
+   exactly the existence of a surplus price system satisfying
+   \(\operatorname{gain}_{\alpha,\tau,\sigma}(A)\le0\) for every
+   $A\in\mathcal F_\star$.  Negating this statement gives the first claim.
+   Since $\mathcal F_\star$ is finite, each positive-gain column either enlarges
+   the restricted pool or the current pool is already feasible; thus exhaustive
+   column generation terminates after at most $|\mathcal F_\star|$ additions.
+\end{proof}
+
+\begin{lemma}[Poisson materialization for filter covers]
+   \label{lem:poisson-filter-cover-materialization}
+   In the setting of \cref{lem:finite-filter-cover-dual}, assume $L_q>0$ for
+   every $q\in\mathcal Q$, $S>0$, and the atom bounds
+   \[
+      a_A(q)T_A\le L_q\qquad(A\in\mathcal F,\ q\in\mathcal Q),
+      \qquad
+      S_A\le S\qquad(A\in\mathcal F).
+   \]
+   If $\lambda$ is feasible for \((\mathsf{FC}_{\mathcal N})\) and
+   \[
+      B\ge
+      \max\left\{
+         1,\log(4|\mathcal N|),\log(8(|\mathcal Q|+1))
+      \right\},
+   \]
+   then there is an integral retained multiset of filters $\mathcal R$ such that
+   every demand is covered,
+   \[
+      \sum_{A\in\mathcal R}c_A(p,q)\ge1
+      \qquad((p,q)\in\mathcal N),
+   \]
+   and simultaneously
+   \[
+      \sum_{A\in\mathcal R}a_A(q)T_A\le3BL_q
+      \qquad(q\in\mathcal Q),
+      \qquad
+      \sum_{A\in\mathcal R}S_A\le3BS .
+   \]
+   Thus a finite fractional near-pair filter cover materializes as an ordinary
+   LSF-style retained family with only logarithmic budget inflation.  If each
+   retained filter invokes a certified child structure of price $(T_A,S_A)$, then
+   querying all active retained filters solves every demand in $\mathcal N$.
+\end{lemma}
+
+\begin{proof}
+   Independently draw multiplicities
+   \[
+      M_A\sim{\rm Pois}(B\lambda_A),
+   \]
+   and keep $M_A$ copies of filter $A$.  For a demand $d=(p,q)$, feasibility gives
+   \(\Lambda_d=\sum_Ac_A(p,q)\lambda_A\ge1\), so
+   \[
+      \Pr[d\text{ is uncovered}]
+      =
+      \Pr\left[\sum_Ac_A(p,q)M_A=0\right]
+      =
+      e^{-B\Lambda_d}
+      \le e^{-B}.
+   \]
+   A union bound and the choice of $B$ make the probability of any uncovered
+   demand at most $1/4$.
+
+   Fix a query constraint $q$.  Put
+   \[
+      X_q=\sum_A M_A\,\frac{a_A(q)T_A}{L_q}.
+   \]
+   The atom bound gives weights in $[0,1]$, and feasibility gives
+   $\E X_q\le B$.  For $\theta=\log 2$, the elementary convexity bound
+   \(e^{\theta w}-1\le w\) for \(0\le w\le1\) gives
+   \[
+      \E e^{\theta X_q}
+      =
+      \exp\left(
+         \sum_A B\lambda_A
+         \left(e^{\theta a_A(q)T_A/L_q}-1\right)
+      \right)
+      \le e^B .
+   \]
+   Hence
+   \[
+      \Pr[X_q>3B]\le e^{B-3B\log2}\le e^{-B}.
+   \]
+   The same argument for
+   \(X_{\rm store}=\sum_A M_AS_A/S\) gives
+   \[
+      \Pr[X_{\rm store}>3B]\le e^{-B}.
+   \]
+   A union bound over all query constraints and the storage constraint has
+   failure probability at most $1/4$.  With positive probability no coverage,
+   query, or storage event fails.  For such an outcome, the retained multiset has
+   the displayed properties.  The final routing statement is immediate: for each
+   demand $(p,q)$, some retained active filter contains $p$ on its update side,
+   so the certified child queried through that filter contains the true near
+   point, and final metric verification accepts any valid answer.
+\end{proof}
+
+The LP above is the fully fractional version of dense overlap.  A dense ball,
+cap, facility bucket, additive-quantization bucket, or ordinary spherical LSF
+bucket is just a column \(A=(U_A,a_A,T_A,S_A)\).  A hard recursive decomposition
+asks how many dense children a query may enter.  The fractional filter cover asks
+only for the cost-weighted local load
+\[
+   \sum_A a_A(q)T_A\lambda_A .
+\]
+Large overlap is harmless when this quantity is small.  If no cheap overlapping
+cover exists, the dual prices in \cref{lem:finite-filter-cover-dual} identify the
+exact obstruction: demand mass on near pairs, query-local load prices, and a
+storage price.  Dense merging is therefore a reduced-gain separation problem,
+not a greedy clustering rule.
+
+\begin{assumption}[Weighted dense/spherical filter dichotomy]
+   \label{asm:weighted-dense-spherical-dichotomy}
+   At every recursive node with resident set \(P\), \(|P|=N\), and current
+   exponent \(\rho(R)\), let the filter universe contain both:
+   \begin{itemize}
+      \item radius-contracting dense filters \(D=(U_D,a_D)\), priced by their
+      certified descendant costs \(T_D,S_D\);
+      \item large-range spherical filters, priced by their terminal scan or
+      child costs.
+   \end{itemize}
+   For every finite low-guard near-pair demand set
+   \(\mathcal N\subseteq P\times\mathcal Q\), and for budgets
+   \[
+      L_q=N^{\rho(R)}\log^{O_c(1)}n,
+      \qquad
+      S=N^{1+\rho(R)}\log^{O_c(1)}n,
+   \]
+   every surplus dual price system \((\alpha,\tau,\sigma)\) of
+   \cref{lem:finite-filter-cover-dual} exposes a positive-gain column from this
+   unified universe.  Equivalently, either the dense recursive filters
+   fractionally cover the priced demands within the local budgets, or the dual
+   residual is pseudo-random enough that a large-range spherical filter has
+   positive reduced gain.
+\end{assumption}
+
+This is the clean dense-versus-pseudo-random proof target.  It is strictly
+stronger than finding a good \(k\)-means++ distribution and weaker than proving a
+hard disjoint dense decomposition: preprocessing may search any proposal family,
+but the retained index is accepted only through the finite LP, the reduced-gain
+separator, and the materialization certificate above.  Conditional on
+\cref{asm:weighted-dense-spherical-dichotomy} and the inductive child prices, the
+dense filters, spherical filters, residual scans, and terminal samplers are all
+handled by one filter-cover process rather than by separate branching rules.
+
 \begin{lemma}[Finite activation-pattern verifier]\label{lem:finite-activation-patterns}
    Fix a finite retained family of certified children $\mathcal C$ and a query
    domain $\Omega$.  Each child $C$ has an activation predicate
@@ -21942,7 +22182,20 @@ The more promising practical-theory interface is the score-cover variant:
 filters into deterministic certified covers with the same active-power
 accounting. Thus $k$-means is best viewed as an initializer or fallback for a
 recursive fixed-overlap angular score-filter tree, not as a worst-case theorem
-by itself.  Since preprocessing time is deliberately not a scarce resource,
+by itself.  The sharper form is the near-pair fractional filter cover of
+\cref{lem:finite-filter-cover-dual}: dense regions and spherical filters are
+columns \(A=(U_A,a_A,T_A,S_A)\), coverage is imposed directly on demands
+\((p,q)\), and overlap is charged only through the query-local sum
+\(\sum_Aa_A(q)T_A\lambda_A\).  \Cref{cor:filter-cover-column-generation} turns a
+failed cover into demand, query-load, and storage prices, so the dense merge
+operation becomes a positive reduced-gain separation problem rather than a
+greedy clustering rule.  \Cref{lem:poisson-filter-cover-materialization} then
+rounds any finite feasible cover with only a logarithmic factor in the number of
+certified signatures.  The remaining geometric theorem is
+\cref{asm:weighted-dense-spherical-dichotomy}: every surplus dual obstruction
+must either buy a radius-contracting dense filter or be pseudo-random enough for
+a large-range spherical filter.  Since preprocessing time is deliberately not a
+scarce resource,
 \cref{lem:finite-pool-optimizer} and
 \cref{cor:offline-pareto-compression} allow the build stage to enumerate,
 sample, or learn a huge proposal pool and then keep only the certified cover on
