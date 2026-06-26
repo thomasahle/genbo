@@ -20419,6 +20419,85 @@ inequality \((QP3)\).
    \(K_i^{k_i}\) witnesses.
 \end{proof}
 
+\begin{lemma}[Multiplicity-discounted tuple witnesses]
+   \label{lem:multiplicity-discounted-tuple-witness}
+   Work in the setting of
+   \cref{lem:tuple-witness-distinct-child-tail}, and suppose the decoded panel
+   contains occurrence records \(b\in\mathcal B_z\) pointing to the same
+   canonical child identifiers \(\kappa_{z,b}\).  For a distinct child
+   \(\kappa\in\kappa_z(\mathcal B_z)\), let
+   \[
+      m_z(\kappa)
+      =
+      \left|\{b\in\mathcal B_z:\kappa_{z,b}=\kappa\}\right|
+      \tag{MDT0}
+   \]
+   be its occurrence multiplicity.  For
+   \(\mathbf x\in\mathcal T_{k_i}(P,\delta)\), define the
+   multiplicity-discounted tuple incidence
+   \[
+      \widetilde M_z(i,\mathbf x)
+      =
+      \sum_{\substack{b\in\mathcal B_z:\\
+         2^i\le u_{z,\kappa_{z,b}}<2^{i+1}\\
+         x_j\in A_{z,\kappa_{z,b}}\ \forall j}}
+      \frac1{m_z(\kappa_{z,b})}.
+      \tag{MDT1}
+   \]
+   Then
+   \[
+      C_z(i)
+      \le
+      \frac1{R_i}
+      \sum_{\mathbf x\in\mathcal T_{k_i}(P,\delta)}
+      \widetilde M_z(i,\mathbf x).
+      \tag{MDT2}
+   \]
+
+   In particular, if every distinct child \(\kappa\) in class \(i\) has
+   occurrence multiplicity at least \(M_i\ge1\), and
+   \[
+      M_z^{\rm occ}(i,\mathbf x)
+      =
+      \left|
+      \{b\in\mathcal B_z:
+      2^i\le u_{z,\kappa_{z,b}}<2^{i+1},\
+      x_j\in A_{z,\kappa_{z,b}}\ \forall j\}
+      \right|,
+      \tag{MDT3}
+   \]
+   then
+   \[
+      C_z(i)
+      \le
+      \frac1{R_iM_i}
+      \sum_{\mathbf x\in\mathcal T_{k_i}(P,\delta)}
+      M_z^{\rm occ}(i,\mathbf x).
+      \tag{MDT4}
+   \]
+\end{lemma}
+
+\begin{proof}
+   For a fixed tuple \(\mathbf x\), group the sum in \((MDT1)\) by canonical
+   child identifier.  Each child \(\kappa\) contributes either zero, if not all
+   entries of \(\mathbf x\) lie in \(A_{z,\kappa}\), or
+   \(m_z(\kappa)\cdot m_z(\kappa)^{-1}=1\), if
+   all entries of \(\mathbf x\) lie in \(A_{z,\kappa}\).  Hence
+   \[
+      \widetilde M_z(i,\mathbf x)
+      =
+      M_z(i,\mathbf x),
+   \]
+   where \(M_z(i,\mathbf x)\) is the distinct-child tuple incidence in
+   \((TWT2)\).  Therefore \((MDT2)\) is exactly \((TWT3)\).
+
+   If every child in the dyadic class has multiplicity at least \(M_i\), then
+   each occurrence term satisfies
+   \(m_z(\kappa_{z,b})^{-1}\le M_i^{-1}\).  Thus
+   \(\widetilde M_z(i,\mathbf x)\le M_i^{-1}M_z^{\rm occ}(i,\mathbf x)\), and
+   substituting this into \((MDT2)\) gives \((MDT4)\).
+\end{proof}
+
 \begin{corollary}[Tuple-profile distinct-storage certificate]
    \label{cor:tuple-profile-distinct-storage}
    Work in the setting of
@@ -20521,6 +20600,64 @@ inequality \((QP3)\).
    \cref{cor:local-error-dyadic-distinct-storage-bucket-net} gives
    feasibility.  The profile form \((LTST3)\) is just summation over the profile
    partition.
+\end{proof}
+
+\begin{corollary}[Multiplicity-discounted distinct-storage certificate]
+   \label{cor:multiplicity-discounted-distinct-storage}
+   Work in either of the following two settings:
+   the scalar distinct-storage setting of
+   \cref{cor:dyadic-distinct-storage-bucket-net}, with
+   \(a=a_*\) and active first-moment condition \((DCB2)\), or the local-error
+   setting of
+   \cref{cor:local-error-dyadic-distinct-storage-bucket-net}, with
+   \(a=a_{\rm loc}\) and active first-moment condition \((LDCB2)\).  In both
+   cases use the multiplicity-discounted tuple incidences
+   \(\widetilde M_z(i,\mathbf x)\) from
+   \cref{lem:multiplicity-discounted-tuple-witness}.  Suppose that for every
+   price class \(i\) there are certified envelopes
+   \(\widetilde J_i(\mathbf x)\ge0\) such that
+   \[
+      \E_z\widetilde M_z(i,\mathbf x)
+      \le
+      \widetilde J_i(\mathbf x)
+      \qquad
+      (\mathbf x\in\mathcal T_{k_i}(P,\delta)).
+      \tag{MDS1}
+   \]
+   If \(\Sigma^+=\emptyset\), the cover is feasible.  Otherwise suppose
+   \(a>0\), the corresponding active first-moment condition holds, and
+   \[
+      \E_z\Gamma_z+
+      2\sum_i2^iR_i^{-1}
+      \sum_{\mathbf x\in\mathcal T_{k_i}(P,\delta)}
+      \widetilde J_i(\mathbf x)
+      \le
+      aS .
+      \tag{MDS2}
+   \]
+   Then \((\mathsf{ESFC}_\Sigma)\) is feasible.
+
+   Thus an occurrence-based list-decoding or range-reporting analysis may be
+   used after quotienting by canonical child identity: each occurrence is
+   weighted by the reciprocal of the number of occurrences that induce the same
+   stored child.  In regimes where many caps, residues, or decoder transcripts
+   collapse to one net, this is the quantity that matches shared-DAG storage.
+\end{corollary}
+
+\begin{proof}
+   Taking expectations in \((MDT2)\) and using \((MDS1)\) gives
+   \[
+      \E_zC_z(i)
+      \le
+      R_i^{-1}
+      \sum_{\mathbf x\in\mathcal T_{k_i}(P,\delta)}
+      \widetilde J_i(\mathbf x).
+   \]
+   Hence \((MDS2)\) implies the dyadic distinct-child tail bound \((DDS1)\) in
+   the scalar setting, and \((LDDS1)\) in the local-error setting.  The
+   corresponding conclusion follows from
+   \cref{cor:dyadic-distinct-storage-bucket-net} or
+   \cref{cor:local-error-dyadic-distinct-storage-bucket-net}, respectively.
 \end{proof}
 
 \Cref{lem:exact-near-set-filter-cover} is strictly weaker than
@@ -20713,6 +20850,11 @@ distinct canonical bucket nets is small enough.
 entropy-energy normal form: each large canonical child supplies many separated
 tuple witnesses, so it is enough to bound the expected canonical-child
 incidence of every tuple profile.
+\Cref{lem:multiplicity-discounted-tuple-witness} and
+\cref{cor:multiplicity-discounted-distinct-storage} are the quotient-aware
+version: if many decoded records induce the same stored child, each occurrence
+is weighted by the reciprocal of that child's multiplicity before tuple
+incidence is charged.
 
 \begin{proposition}[Conditional fractional filter-cover endpoint]
    \label{prop:fractional-filter-cover-polylog}
@@ -33354,6 +33496,12 @@ incidence: a large separated child contains many ordered witness tuples, so the
 storage proof can be stated as an entropy-energy bound on how often a tuple
 profile can appear in distinct canonical children.  The storage side is
 therefore a distinct-net geometric target.
+\Cref{lem:multiplicity-discounted-tuple-witness} adds the quotient
+normalization needed for occurrence-style analyses: if many decoded records
+induce the same canonical child, each record contributes only the reciprocal of
+that child's multiplicity to the tuple incidence.  Thus a list-decoding or
+range-reporting proof may bound multiplicity-discounted occurrence energy,
+which is exactly the shared-DAG storage quantity.
 \Cref{lem:occurrence-moments-dominate-dag},
 \cref{lem:packing-list-tuple-moment},
 \cref{lem:gaussian-cap-intersection-energy}, and
