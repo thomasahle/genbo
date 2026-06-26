@@ -13212,6 +13212,117 @@ For a threshold $u$, the posterior-superlevel child is
    and \((FB1)\) is exactly the tilted witness-loss condition \((WL2)\).
 \end{proof}
 
+\begin{lemma}[Poisson multi-assignment rate coverage]
+   \label{lem:poisson-rate-coverage}
+   Work in the setting of \cref{lem:smoothed-witness-list-compiler}.  Let
+   \(\mathcal A\) be a finite label universe.  For every point \(x\in S\), let
+   \(\mu_x\) be a probability distribution on \(\mathcal A\), and let
+   \(a_x\ge0\) be its replication budget.  During preprocessing, draw a
+   Poisson number \(N_x\) of labels with mean \(a_x\), independently over
+   points, and place \(x\) into each sampled label bucket.  A query reporter,
+   on input \((q,Z)\), returns a set of labels
+   \(\mathcal A(q,Z)\subseteq\mathcal A\), and the candidate list is the union
+   of the reported buckets.
+
+   For a label set \(B\subseteq\mathcal A\), write
+   \[
+      \mu_x(B)=\sum_{a\in B}\mu_x(a).
+   \]
+   Conditional on \(\mathcal A(q,Z)=B\), the probability over preprocessing
+   that a fixed point \(p\) is absent from the reported bucket union is exactly
+   \[
+      \exp(-a_p\mu_p(B)).
+      \tag{RC0}
+   \]
+   Consequently, if for every near pair \(p,q\),
+   \[
+      \E_{Z\sim N(q,I_D/t)}
+      \left[
+         R_{p,q}(Z)
+         \exp(-a_p\mu_p(\mathcal A(q,Z)))
+      \right]
+      \le a_c/4 ,
+      \tag{RC1}
+   \]
+   then the randomized bucket structure satisfies the tilted witness-loss
+   condition \((WL2)\) in expectation over preprocessing.  If in addition, for
+   every query \(q\),
+   \[
+      \E_{Z\sim N(q,I_D/t)}
+      \sum_{x\in S}a_x\mu_x(\mathcal A(q,Z))
+      \le
+      m^\rho\log^{O_c(1)}m ,
+      \tag{RC2}
+   \]
+   then the expected reported incidence count per trial is
+   \(m^\rho\log^{O_c(1)}m\).  The expected stored incidence count is
+   \[
+      \sum_{x\in S}a_x .
+      \tag{RC3}
+   \]
+\end{lemma}
+
+\begin{proof}
+   Poisson thinning gives \((RC0)\): among the \(N_p\) independent labels drawn
+   for \(p\), the number landing in \(B\) is Poisson with mean
+   \(a_p\mu_p(B)\).  Thus no copy of \(p\) appears in a reported bucket with
+   probability \(\exp(-a_p\mu_p(B))\).
+
+   Multiplying this conditional miss probability by the tilted weight
+   \(R_{p,q}(Z)\) and averaging over \(Z\) gives \((RC1)\), which is exactly the
+   expectation form of \((WL2)\).  For the load, a point \(x\) contributes to
+   the reported incidence count with expected multiplicity
+   \(a_x\mu_x(\mathcal A(q,Z))\) conditional on \(Z\).  Summing over points and
+   averaging gives \((RC2)\).  Finally, the expected total number of stored
+   incidences is the sum of the Poisson means, proving \((RC3)\).
+\end{proof}
+
+\begin{assumption}[Compact rate-coverage panel]
+   \label{asm:rate-coverage-panel}
+   Fix \(c>1\) and \(\rho=\rho_c\).  For every bounded-diameter localized node
+   with \(m\) resident points in projected dimension \(D\), preprocessing can
+   construct a label reporter, point distributions \((\mu_x)_{x\in S}\), and
+   replication budgets \((a_x)_{x\in S}\) satisfying \((RC1)\)--\((RC2)\), with
+   \[
+      \sum_{x\in S}a_x
+      \le
+      m^{1+\rho}\log^{O_c(1)}m .
+      \tag{RC4}
+   \]
+   The reporter computes \(\mathcal A(q,Z)\) in expected time
+   \(D\,m^\rho\log^{O_c(1)}m\), including duplicate removal up to the reported
+   incidence bound.
+\end{assumption}
+
+\begin{proposition}[Conditional rate-coverage posterior endpoint]
+   \label{prop:rate-coverage-polylog}
+   Under \cref{asm:rate-coverage-panel}, worst-case Euclidean ANN has query
+   time
+   \[
+      Q(n,d)=d\,n^{\rho_c}\log^{O_c(1)}n
+   \]
+   and space
+   \[
+      S(n,d)=dn+n^{1+\rho_c}\log^{O_c(1)}n .
+   \]
+\end{proposition}
+
+\begin{proof}
+   In each localized node, materialize the Poisson buckets from
+   \cref{lem:poisson-rate-coverage}.  The expected stored incidences are within
+   the local space budget by \((RC4)\); the usual truncation-and-rebuild
+   convention turns this into capped space at a constant-factor loss.  For a
+   promised query and any fixed near witness \(p\), \((RC1)\) gives the
+   tilted witness-loss condition in expectation over preprocessing.  Repeating
+   the proof of \cref{lem:smoothed-witness-list-compiler} with preprocessing
+   included in the outer expectation gives one-trial success
+   \(\Omega_c(1/\log^{A_c}m)\).  The expected scan and reporting work per trial
+   is \(D\,m^\rho\log^{O_c(1)}m\) by \((RC2)\) and the reporter guarantee.
+   Polylogarithmically many independent query trials give constant success.
+   Summing over the localized copies and verifying all returned candidates in
+   the original metric gives the displayed global bounds.
+\end{proof}
+
 \begin{remark}[What \(k\)-means++ would have to prove]
    \label{rem:kmeanspp-facility-target}
    \Cref{cor:facility-bucket-witness} is the k-means-friendly version of the
@@ -13224,6 +13335,16 @@ For a threshold $u$, the posterior-superlevel child is
    \(I_D/t\), the reported facilities must contain \(p\) with constant
    weighted mass, while far and irrelevant buckets must not inflate the scan
    beyond \(m^\rho\polylog m\).
+
+   \Cref{lem:poisson-rate-coverage} makes this quantitative.  Assigning point
+   \(p\) to \(a_p\) independent labels from a distribution \(\mu_p\), while the
+   query probes labels \(B=\mathcal A(q,Z)\), misses \(p\) with probability
+   \(\exp(-a_p\mu_p(B))\).  Thus the right redundancy rule is a water-filling
+   problem over the scalar coverages \(\mu_p(\mathcal A(q,Z))\) under the
+   tilted witness law.  Fixed top-\(k\) multi-assignment, adaptive boundary
+   replication, and \(k\)-means++ seeding are all proposal mechanisms for the
+   same certificate: small tilted miss \((RC1)\), small reported load \((RC2)\),
+   and total storage \((RC4)\).
 
    This also suggests a cleaner practical alternative to plain Lloyd cells:
    use expensive preprocessing to search over many soft or multi-assignment
@@ -13612,7 +13733,11 @@ algorithmic target further: \cref{lem:smoothed-witness-list-compiler} does not
 need exact max-tilted sampling or exact Voronoi-cell decoding.  It only needs a
 short list that contains the hidden near witness with constant mass under the
 tilted Gaussian law \((WL0)\), after which scalar rejection and metric
-verification finish the query.  The hidden-label assumption
+verification finish the query.  \Cref{lem:poisson-rate-coverage} gives the
+corresponding redundancy certificate: multi-assign each point to labels with
+budget \(a_x\), probe a query-dependent label set, and pay only the closed-form
+tilted miss \(\exp(-a_p\mu_p(B))\) plus the reported incidence load.  The
+hidden-label assumption
 \cref{asm:normalized-likelihood-leader-sampler} remains a more general
 implementation normal form for code, lattice, product-panel, or trellis
 samplers that expose a partition function \(W_{q,\xi}\) and sample a tilted
@@ -14558,6 +14683,9 @@ not identify the exact nearest cell of the perturbation, only list the true near
 witness with constant tilted mass.  \Cref{cor:facility-bucket-witness} is the
 corresponding facility or \(k\)-means++-style form: retained buckets are useful
 when their reported union has small scan load and high tilted witness capture.
+\Cref{lem:poisson-rate-coverage} turns this into the scalar rate-coverage
+certificate \((RC1)\)--\((RC3)\), and
+\cref{prop:rate-coverage-polylog} records the resulting posterior endpoint.
 \Cref{cor:weighted-gaussian-quadrature-panel} records the exact positive
 finite certificate: a weighted retained label set only has to pass storage,
 sampled far-load, and near-mass checks under the tilted query sampler.  The
@@ -14775,7 +14903,7 @@ pattern-complete materialization produce the stored cover required by
 \paragraph{Structured posterior route.}
 \Cref{lem:posterior-superlevel-compiler} records the negative-moment identity suggested by the latest notes. \Cref{lem:explicit-enumeration-barrier} makes the coarse-child obstruction precise: the scale $\xi=m^{-1/(2c^2)}$ is the price of explicitly enumerating $B\simeq\xi^{-1}$ outcomes, not a geometric limit. \Cref{lem:oblivious-sparsification-barrier} adds the complementary warning that the moment bounds alone still permit $\Omega(\xi^{-1})$ disjoint possible witnesses, so direct random sparsification cannot replace structured decoding without an additional sensitivity theorem. \Cref{lem:scale-window-compiler} and \cref{lem:dyadic-structured-amplification} isolate the important arithmetic: if mass windows can be decoded output-sensitively, then $\xi^{-\rho}$ repetitions at each dyadic scale convert negative-moment value into constant hit probability, and summing all scales down to $1/m$ still fits the $m^\rho$ query budget. This scale-aware amplification is essential; a raw negative-moment diagnostic alone does not imply that the near point is actually listed with inverse-polylogarithmic probability.
 
-The continuous likelihood-ball family now proves both analytic sides of the desired posterior decoder: \cref{thm:continuous-likelihood-balls} gives the guard-or-pure-child value, and \cref{lem:ideal-likelihood-scale-profile} gives the scale-normalized query and storage moments. \Cref{lem:likelihood-rank-prefix} further collapses the threshold continuum to rank gaps of a random score order. \Cref{cor:likelihood-prefix-leader} removes another artificial materialization cost: for ANN, every pure prefix may report the same score leader, so the decoder can aggregate prefix mass by leader buckets instead of storing one representative per prefix. \Cref{lem:dyadic-leader-quotient} records the full amplification in this hidden-label form and contributes no per-prefix storage term, and \cref{cor:likelihood-leader-intensity} identifies the exact quotient law as the rank-gap weighted measure over score leaders. \Cref{lem:ideal-likelihood-leader-law} further proves that this quotient law has constant total intensity per scale and constant scale-weighted valid intensity under guard failure. \Cref{lem:poissonized-normalized-leader-sampler} removes the remaining all-listing requirement from a sampled implementation: computing the total intensity and sampling from the normalized tilted law gives the exact Poisson leader process. Finally, \cref{lem:scale-amplified-alpha-leader} shows that the dyadic repetitions cancel the rank powers, collapsing the whole amplified posterior to the max-tilted leader law \((AL2)\), with constant total mass and constant valid mass for every near pair. The clean measure target is therefore \cref{asm:alpha-leader-sampler}; conditional on it, \cref{prop:alpha-leader-polylog} gives the desired polylogarithmic ANN bounds. \Cref{lem:alpha-leader-voronoi-capture} gives an equivalent geometric normal form for that same target: the max-tilted intensity of \(x\) is a Gaussian Voronoi-cell capture probability for the interpolated center \((1-\alpha)q+\alpha x\), multiplied by the explicit distance tilt \(\exp(-\alpha(1-\alpha)t\|x-q\|^2/2)\). \Cref{cor:query-centered-cell-reweighting} and \cref{cor:truncated-nearest-cell-compiler} then reduce max-tilted sampling to query-centered nearest-cell decoding plus scalar rejection. The weakest current algorithmic posterior target is \cref{asm:smoothed-witness-list}: list the true near witness with constant tilted Gaussian mass and scan the verified list. Conditional on it, \cref{prop:witness-list-polylog} gives the same polylogarithmic ANN bound. The facility form \cref{cor:facility-bucket-witness} is the version most directly connected to \(k\)-means++ or other build-time bucket proposals. The scale-resolved sampler \cref{asm:ideal-likelihood-leader-law-sampler}, the hidden-label sampler \cref{asm:normalized-likelihood-leader-sampler}, the structured nearest-cell decoder \cref{asm:smoothed-nearest-cell}, and the older all-listing \cref{asm:multiscale-structured-likelihood} remain stronger sufficient implementation forms.
+The continuous likelihood-ball family now proves both analytic sides of the desired posterior decoder: \cref{thm:continuous-likelihood-balls} gives the guard-or-pure-child value, and \cref{lem:ideal-likelihood-scale-profile} gives the scale-normalized query and storage moments. \Cref{lem:likelihood-rank-prefix} further collapses the threshold continuum to rank gaps of a random score order. \Cref{cor:likelihood-prefix-leader} removes another artificial materialization cost: for ANN, every pure prefix may report the same score leader, so the decoder can aggregate prefix mass by leader buckets instead of storing one representative per prefix. \Cref{lem:dyadic-leader-quotient} records the full amplification in this hidden-label form and contributes no per-prefix storage term, and \cref{cor:likelihood-leader-intensity} identifies the exact quotient law as the rank-gap weighted measure over score leaders. \Cref{lem:ideal-likelihood-leader-law} further proves that this quotient law has constant total intensity per scale and constant scale-weighted valid intensity under guard failure. \Cref{lem:poissonized-normalized-leader-sampler} removes the remaining all-listing requirement from a sampled implementation: computing the total intensity and sampling from the normalized tilted law gives the exact Poisson leader process. Finally, \cref{lem:scale-amplified-alpha-leader} shows that the dyadic repetitions cancel the rank powers, collapsing the whole amplified posterior to the max-tilted leader law \((AL2)\), with constant total mass and constant valid mass for every near pair. The clean measure target is therefore \cref{asm:alpha-leader-sampler}; conditional on it, \cref{prop:alpha-leader-polylog} gives the desired polylogarithmic ANN bounds. \Cref{lem:alpha-leader-voronoi-capture} gives an equivalent geometric normal form for that same target: the max-tilted intensity of \(x\) is a Gaussian Voronoi-cell capture probability for the interpolated center \((1-\alpha)q+\alpha x\), multiplied by the explicit distance tilt \(\exp(-\alpha(1-\alpha)t\|x-q\|^2/2)\). \Cref{cor:query-centered-cell-reweighting} and \cref{cor:truncated-nearest-cell-compiler} then reduce max-tilted sampling to query-centered nearest-cell decoding plus scalar rejection. The weakest current algorithmic posterior target is \cref{asm:smoothed-witness-list}: list the true near witness with constant tilted Gaussian mass and scan the verified list. Conditional on it, \cref{prop:witness-list-polylog} gives the same polylogarithmic ANN bound. The facility form \cref{cor:facility-bucket-witness} is the version most directly connected to \(k\)-means++ or other build-time bucket proposals. \Cref{lem:poisson-rate-coverage} and \cref{asm:rate-coverage-panel} sharpen this further into the redundancy theorem object: point budgets \(a_x\), assignment laws \(\mu_x\), query label sets, the tilted miss bound \((RC1)\), and the scan-load bound \((RC2)\). Conditional on that finite rate-coverage panel, \cref{prop:rate-coverage-polylog} gives the same endpoint. The scale-resolved sampler \cref{asm:ideal-likelihood-leader-law-sampler}, the hidden-label sampler \cref{asm:normalized-likelihood-leader-sampler}, the structured nearest-cell decoder \cref{asm:smoothed-nearest-cell}, and the older all-listing \cref{asm:multiscale-structured-likelihood} remain stronger sufficient implementation forms.
 
 \Cref{lem:smoothed-max-score-margin} gives a still simpler non-channel target: a query-centered Gaussian score direction separates every invalid point from the true near point by an additive $\Theta_c(tr^2)$ score margin, with high probability. The softest resulting primitive is \cref{asm:smoothed-gibbs}: with inverse-polylogarithmic probability, report a list carrying inverse-polylogarithmic mass under the Gaussian Gibbs kernel on data points. Sampling from the kernel restricted to that list gives a pointwise dominated output law by \cref{lem:captured-gibbs-domination}, and \cref{lem:smoothed-gibbs-suffices} then returns a valid answer because invalid points have negligible Gibbs mass and cannot be oversampled too much. A more exact sampling route is certified additive Gumbel-MIPS: \cref{lem:gumbel-additive-domination} shows that an $O(\log\log m)$ additive optimizer for the Gumbel-perturbed scores gives precisely the required one-sided Gibbs domination, yielding \cref{prop:gumbel-mips-polylog}. A stronger but different implementation route is smoothed additive nearest-neighbor search for the perturbed center $Y/t$ with additive squared-distance error $\Theta_c(r^2)$, exactly equivalent to additive score maximization by \cref{lem:score-max-additive-nn}. These oracles would bypass dyadic scales and representatives entirely, as recorded in \cref{prop:smoothed-gibbs-polylog}, \cref{prop:gumbel-mips-polylog}, and \cref{prop:smoothed-score-max-polylog}. They are targets, not implemented theorems; \cref{rem:gumbel-mips-not-ann} explains why black-box multiplicative ANN does not supply the Gumbel primitive. The older finite restricted-channel compiler \cref{asm:finite-restricted-channel} and \cref{prop:finite-channel-polylog} remain as a coarse explicit-enumeration special case and as a useful diagnostic framework.
 
@@ -14802,7 +14930,7 @@ For the randomized cap-thinning route, one remaining task is the branching first
    \le
    \log^{O_c(1)}n\,V(\varnothing)^2 .
 \]
-\Cref{lem:local-lca-energy} further reduces this to a local Bellman multiplier, and \cref{cor:square-nonexpansive-routes} shows that square-nonexpansive value branching costs only the polylogarithmic route depth. Equivalently, \cref{lem:energy-spine-toll} says that it is enough to prove only $O_c(\log\log n)$ positive square-energy toll along the energy-biased route spine. The capped-flow certificate \cref{lem:unit-capped-value-flow}, the Bellman recursion \cref{lem:saturated-value-recursion}, and the min-cut dual \cref{lem:saturated-value-mincut} give a still simpler sufficient formulation: prove that every route cut has inverse-polylogarithmic prefix-success mass. The equivalent dominated-law form in \cref{lem:dominated-route-law} says to construct a tilted law on tame routes whose prefix probabilities are dominated by activation prefix masses up to a polylogarithmic factor; by \cref{cor:typical-route-law-toll}, it is enough to prove only $O_c(\log\log n)$ expected positive domination toll under that route law and prune the bad tail. The cut-energy form \cref{lem:cut-energy-route-law} is closer to stopping-time proofs: it asks only for polylogarithmic $\sum_{u\in\mathcal C}\Lambda(u)^2/A(u)$ on each route cut $\mathcal C$. By \cref{lem:frontier-square-toll}, this is equivalent to bounding the positive square toll of the square-biased route spine up to each stopped frontier, with no all-prefix depth summation. The stronger all-prefix bound in \cref{cor:route-law-prefix-energy} remains an LCA-compatible sufficient condition. Conditional on either aggregate value statement, \cref{prop:budget-thinned-polylog} gives the desired polylogarithmic ANN theorem. This is a fully non-channel route; the smooth product terminal filter can be used after localization and no longer contributes an inverse-polylogarithmic table-recall penalty. The structured posterior route replaces the cap-frontier obstacle by the tilted witness-list target \cref{asm:smoothed-witness-list}: prove a compact reporter whose verified candidate list contains the true near point with constant mass under the query-centered tilted Gaussian law. The stronger max-tilted sampler \cref{asm:alpha-leader-sampler} and nearest-cell decoder \cref{asm:smoothed-nearest-cell} remain clean implementation normal forms, but the facility-bucket compiler \cref{cor:facility-bucket-witness} shows that k-means++-style or lattice/code buckets only need witness capture and scan-load certificates. The smoothed sampling route replaces both by \cref{asm:smoothed-gibbs} or \cref{asm:gumbel-mips}: prove either an optimal-exponent reporter that captures inverse-polylogarithmic Gaussian Gibbs mass, or a certified $O(\log\log n)$-additive Gumbel-MIPS primitive. Smoothed additive nearest neighbor is another stronger sufficient primitive. The detector-vote cohort-or-leaf route is a separate possible generalization to arbitrary certified child hierarchies, where the remaining issue is near-lineage coupling between ordinary continuation paths and detector activations.
+\Cref{lem:local-lca-energy} further reduces this to a local Bellman multiplier, and \cref{cor:square-nonexpansive-routes} shows that square-nonexpansive value branching costs only the polylogarithmic route depth. Equivalently, \cref{lem:energy-spine-toll} says that it is enough to prove only $O_c(\log\log n)$ positive square-energy toll along the energy-biased route spine. The capped-flow certificate \cref{lem:unit-capped-value-flow}, the Bellman recursion \cref{lem:saturated-value-recursion}, and the min-cut dual \cref{lem:saturated-value-mincut} give a still simpler sufficient formulation: prove that every route cut has inverse-polylogarithmic prefix-success mass. The equivalent dominated-law form in \cref{lem:dominated-route-law} says to construct a tilted law on tame routes whose prefix probabilities are dominated by activation prefix masses up to a polylogarithmic factor; by \cref{cor:typical-route-law-toll}, it is enough to prove only $O_c(\log\log n)$ expected positive domination toll under that route law and prune the bad tail. The cut-energy form \cref{lem:cut-energy-route-law} is closer to stopping-time proofs: it asks only for polylogarithmic $\sum_{u\in\mathcal C}\Lambda(u)^2/A(u)$ on each route cut $\mathcal C$. By \cref{lem:frontier-square-toll}, this is equivalent to bounding the positive square toll of the square-biased route spine up to each stopped frontier, with no all-prefix depth summation. The stronger all-prefix bound in \cref{cor:route-law-prefix-energy} remains an LCA-compatible sufficient condition. Conditional on either aggregate value statement, \cref{prop:budget-thinned-polylog} gives the desired polylogarithmic ANN theorem. This is a fully non-channel route; the smooth product terminal filter can be used after localization and no longer contributes an inverse-polylogarithmic table-recall penalty. The structured posterior route replaces the cap-frontier obstacle by the tilted witness-list target \cref{asm:smoothed-witness-list}: prove a compact reporter whose verified candidate list contains the true near point with constant mass under the query-centered tilted Gaussian law. The rate-coverage panel \cref{asm:rate-coverage-panel} is the most concrete facility version of this target: a multi-assignment scheme is certified by the closed-form miss term \(\exp(-a_p\mu_p(B))\), the reported-load bound, and the total replication budget. The stronger max-tilted sampler \cref{asm:alpha-leader-sampler} and nearest-cell decoder \cref{asm:smoothed-nearest-cell} remain clean implementation normal forms, but k-means++-style or lattice/code buckets only need the rate-coverage certificates. The smoothed sampling route replaces both by \cref{asm:smoothed-gibbs} or \cref{asm:gumbel-mips}: prove either an optimal-exponent reporter that captures inverse-polylogarithmic Gaussian Gibbs mass, or a certified $O(\log\log n)$-additive Gumbel-MIPS primitive. Smoothed additive nearest neighbor is another stronger sufficient primitive. The detector-vote cohort-or-leaf route is a separate possible generalization to arbitrary certified child hierarchies, where the remaining issue is near-lineage coupling between ordinary continuation paths and detector activations.
 
 \appendix
 
