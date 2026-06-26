@@ -3146,11 +3146,97 @@ partition ignores the bias coordinates that certify the list size.
    is certified.
 \end{proof}
 
+\begin{lemma}[Reliability-erasure sweep reporter]
+   \label{lem:reliability-erasure-sweep}
+   Let \(\mathcal C\subseteq\Sigma^h\) have Hamming distance \(\Delta\), and
+   suppose an errors-and-erasures decoder returns the unique codeword \(c\)
+   whenever the received word \(y\in(\Sigma\cup\{?\})^h\) satisfies
+   \[
+      2e(c,y)+s(y)<\Delta,
+   \]
+   where \(e(c,y)\) is the number of unerased disagreements and \(s(y)\) is
+   the number of erasures.  For a query \(q\), let
+   \(a_i=a_i(q)\in\Sigma\) be a hard symbol and
+   \(\gamma_i=\gamma_i(q)\in[0,1]\) be a confidence for coordinate \(i\).
+   For every threshold
+   \[
+      \theta\in\{0,1\}\cup\{\gamma_i:i\in[h]\},
+   \]
+   form the erasure word \(y^\theta\) by setting
+   \(y^\theta_i=a_i\) when \(\gamma_i\ge\theta\), and
+   \(y^\theta_i=?\) otherwise.  Run the errors-and-erasures decoder on all
+   distinct erasure words \(y^\theta\), and output the distinct decoded
+   codewords.
+
+   Then the reporter makes at most \(h+2\) decoder calls, outputs at most
+   \(h+2\) distinct codewords, and includes every codeword
+   \(c\in\mathcal C\) with weighted agreement margin
+   \[
+      \sum_{i:c_i=a_i}\gamma_i
+      -
+      \sum_{i:c_i\ne a_i}\gamma_i
+      >
+      h-\Delta .
+      \tag{GMD}
+   \]
+   Consequently this sweep is an output-sensitive threshold reporter with a
+   decoder transcript set of size \(O(h)\).
+\end{lemma}
+
+\begin{proof}
+   Fix \(c\in\mathcal C\) satisfying \((GMD)\), and draw
+   \(\theta\) uniformly from \([0,1]\).  If \(c_i=a_i\), the coordinate
+   contributes one erasure exactly when \(\theta>\gamma_i\), so its expected
+   contribution to \(2e+s\) is \(1-\gamma_i\).  If \(c_i\ne a_i\), the
+   coordinate contributes two when kept and one when erased, so its expected
+   contribution is \(1+\gamma_i\).  Therefore
+   \[
+      \E_\theta[2e(c,y^\theta)+s(y^\theta)]
+      =
+      h
+      -
+      \sum_{i:c_i=a_i}\gamma_i
+      +
+      \sum_{i:c_i\ne a_i}\gamma_i
+      <\Delta .
+   \]
+   Some threshold \(\theta\in[0,1]\) has
+   \(2e(c,y^\theta)+s(y^\theta)<\Delta\).  The erasure pattern changes only
+   when \(\theta\) crosses one of the values \(\gamma_i\), so the finite sweep
+   contains a threshold with the same pattern.  The decoder returns \(c\) on
+   that pattern.  There are at most \(h+2\) thresholds and hence at most that
+   many decoder calls and distinct decoded words.
+\end{proof}
+
+\begin{remark}[GMD and Chase as compressed list decoders]
+   \label{rem:gmd-chase-compressed-decoder}
+   \Cref{lem:reliability-erasure-sweep} is the self-contained form of the
+   generalized minimum-distance idea of Forney and of its Euclidean-code and
+   lattice extensions by Forney--Vardy~\cite{For66,FV96}.  It is weaker than a
+   full soft list-recovery oracle, because each coordinate contributes one hard
+   symbol and one confidence, but it has a much smaller transcript space than
+   the repeated-coordinate lift of \cref{lem:hard-list-recovery-lift}: the
+   query tries only \(O(h)\) erasure patterns.  This is exactly the kind of
+   decoder DAG charged by
+   \cref{cor:output-sensitive-decoder-dag-rate-coverage}.
+
+   Chase decoding enlarges the same template by branching over a few
+   low-confidence coordinates or low-confidence symbols before running the
+   outer decoder~\cite{Cha72}.  In the present language, those trials are just
+   additional terminal outputs of a compact decoder DAG.  The useful
+   theoretical target is therefore not Lloyd-style cell convergence, but a
+   reliability map for which the true near route satisfies \((GMD)\), or its
+   small-list Chase analogue, while the retained outputs pass the same
+   rate-coverage scan and storage certificates as the other panels.
+\end{remark}
+
 \begin{remark}[Outer list recovery as the clean codebook target]
    \label{rem:outer-list-recovery-codebook}
-   \Cref{lem:hard-list-recovery-lift} is the most useful transfer from
-   Reed--Solomon, expander-code, and polar-code list decoding to the present
-   data-structure problem.  The codebook need not be the full Cartesian product
+   \Cref{lem:hard-list-recovery-lift} and
+   \cref{lem:reliability-erasure-sweep} are the most useful transfers from
+   Reed--Solomon, expander-code, polar-code, and Euclidean-code list decoding
+   to the present data-structure problem.  The codebook need not be the full
+   Cartesian product
    \(\prod_j\mathcal C_j\).  It may be a sparse outer code
    \(\mathcal C\subseteq\prod_j\Sigma_j\), a Construction-A or Construction-D
    lattice coset, or a Barnes--Wall style recursive lattice family.  The query
@@ -3158,7 +3244,9 @@ partition ignores the bias coordinates that certify the list size.
    those reliabilities into ordinary list-recovery constraints at
    \(h\lceil M/\Delta\rceil\) repeated positions, and the decoder returns a
    short certified list of high-score global codewords before metric
-   verification.  Signed scores are handled by adding a query-dependent
+   verification.  When one symbol per coordinate is dominant, the
+   reliability-erasure sweep gives the cheaper \(O(h)\)-transcript GMD
+   surrogate instead.  Signed scores are handled by adding a query-dependent
    constant to all symbols in a coordinate and shifting the final threshold.
 
    This is a sharper alternative to \(k\)-means or Lloyd cells.  \(k\)-means++
@@ -16458,8 +16546,11 @@ or lattice enumeration block is enough to supply the threshold reporters used
 by the product-panel decoder; \cref{lem:hard-list-recovery-lift} gives a
 self-contained reduction from bounded soft Euclidean scores to ordinary hard
 list-recovery constraints by repeating each coordinate across score levels.
-The remaining work is spectrum and rate bookkeeping rather than Lloyd-style
-convergence analysis.
+\Cref{lem:reliability-erasure-sweep} gives the cheaper GMD special case:
+one hard symbol and one confidence per coordinate produce only \(O(h)\)
+erasure transcripts, and the weighted-agreement inequality \((GMD)\) is enough
+to guarantee that the near route is decoded.  The remaining work is spectrum
+and rate bookkeeping rather than Lloyd-style convergence analysis.
 \Cref{lem:additive-product-panel-decoder}
 makes the decoder side self-contained: once block threshold reporters and
 suffix upper scores are available, the live stack is controlled by the product
@@ -16629,6 +16720,11 @@ Cartesian product, retain a sparse outer code or lattice coset and use soft
 list recovery to enumerate high-score global codewords.  This can reduce the
 index description and query enumeration while keeping the same certification
 interface, provided the retained panel satisfies the random-like spectrum.
+\Cref{lem:reliability-erasure-sweep} isolates the lowest-overhead version of
+that idea: a GMD-style sweep gives a compact \(O(h)\)-transcript reporter when
+the useful route has enough confidence-weighted hard agreement, while
+Chase-style low-confidence branching gives the corresponding small-list
+extension.
 \Cref{lem:budget-stable-prefix-list} and
 \cref{cor:canonical-budget-stable-decoder} take one step in that direction:
 the canonical mixed Bellman budget itself is an admissible list-decoding
@@ -17046,6 +17142,26 @@ The one-sided spherical proof is motivated by the Ahle--Knudsen manuscript suppl
    \newblock An efficient and parallel Gaussian sampler for lattices.
    \newblock In \emph{Advances in Cryptology -- CRYPTO 2010}, LNCS 6223,
    pages 80--97. Springer, 2010.
+
+   \bibitem{For66}
+   G. David Forney, Jr.
+   \newblock Generalized minimum distance decoding.
+   \newblock \emph{IEEE Transactions on Information Theory}, 12(2):125--131,
+   1966.
+
+   \bibitem{FV96}
+   G. David Forney, Jr. and Alexander Vardy.
+   \newblock Generalized minimum-distance decoding of Euclidean-space codes and
+   lattices.
+   \newblock \emph{IEEE Transactions on Information Theory}, 42(6):1992--2026,
+   1996.
+
+   \bibitem{Cha72}
+   David Chase.
+   \newblock A class of algorithms for decoding block codes with channel
+   measurement information.
+   \newblock \emph{IEEE Transactions on Information Theory}, 18(1):170--182,
+   1972.
 
    \bibitem{WR61}
    John M. Wozencraft and Barney Reiffen.
