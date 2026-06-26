@@ -4174,6 +4174,110 @@ partition ignores the bias coordinates that certify the list size.
    resources.
 \end{proof}
 
+\begin{proposition}[Finite retained scored-label certificate]
+   \label{prop:finite-retained-scored-label}
+   Fix one terminal localized ANN subproblem \(P\) of size \(m\), and let
+   \(\mathcal Q\) be the promised query domain.  Let
+   \(\sigma:\mathcal Q\to\Sigma\) be a finite signature map, and for each
+   \(\sigma_0\in\Sigma\) let \(N_{\sigma_0}\subseteq P\) contain every
+   possible near witness for queries of that signature:
+   \[
+      \{p\in P:\exists q\in\mathcal Q,\ \sigma(q)=\sigma_0,\ \|p-q\|\le r\}
+      \subseteq N_{\sigma_0}.
+      \tag{FSL0}
+   \]
+   Suppose preprocessing has retained a finite batch of scored-label panels
+   \(t\in\mathcal T\).  Panel \(t\) has a finite label set
+   \(\mathcal L_t\), a certified query reporter
+   \(R_t(q)\subseteq\mathcal L_t\), and a storage predicate
+   \[
+      U_t(x,\ell)\in\{0,1\}
+      \qquad(x\in P,\ \ell\in\mathcal L_t).
+   \]
+   Assume preprocessing certifies finite envelopes \(D_{\sigma_0,t}\),
+   \(C_{\sigma_0,t,x}\), and \(H_{\sigma_0,t,p}\in\{0,1\}\) such that, for
+   every query \(q\) with signature \(\sigma_0\),
+   \[
+      \operatorname{work}(R_t(q))\le D_{\sigma_0,t},
+      \tag{FSL1}
+   \]
+   \[
+      \mathbf 1_{\{\|x-q\|>cr\}}
+      \sum_{\ell\in R_t(q)}U_t(x,\ell)
+      \le C_{\sigma_0,t,x}
+      \qquad(x\in P),
+      \tag{FSL2}
+   \]
+   and, whenever \(H_{\sigma_0,t,p}=1\) and
+   \(q\) has signature \(\sigma_0\) with \(\|p-q\|\le r\), there exists a
+   reported stored label:
+   \[
+      \exists \ell\in R_t(q)\quad U_t(p,\ell)=1.
+      \tag{FSL3}
+   \]
+   Assume also the global storage envelope
+   \[
+      \sum_{t\in\mathcal T}\sum_{x\in P}\sum_{\ell\in\mathcal L_t}
+      U_t(x,\ell)
+      \le m^{1+\rho_c}\log^{O_c(1)}m.
+      \tag{FSL4}
+   \]
+   If, for every signature \(\sigma_0\),
+   \[
+      \sum_{t\in\mathcal T}D_{\sigma_0,t}
+      \le d\log^{O_c(1)}m+m^{\rho_c}\log^{O_c(1)}m,
+      \tag{FSL5}
+   \]
+   \[
+      \sum_{t\in\mathcal T}\sum_{x\in P}C_{\sigma_0,t,x}
+      \le m^{\rho_c}\log^{O_c(1)}m,
+      \tag{FSL6}
+   \]
+   and
+   \[
+      \sum_{t\in\mathcal T}H_{\sigma_0,t,p}\ge1
+      \qquad(p\in N_{\sigma_0}),
+      \tag{FSL7}
+   \]
+   then the retained batch is a deterministic terminal ANN structure with
+   query work
+   \[
+      d\,m^{\rho_c}\log^{O_c(1)}m
+   \]
+   and space
+   \[
+      dm+m^{1+\rho_c}\log^{O_c(1)}m .
+   \]
+\end{proposition}
+
+\begin{proof}
+   On query \(q\), run the reporters \(R_t(q)\), expose the reported label
+   buckets in any fixed order, verify each exposed point in the original
+   metric, and stop at the first verified \(cr\)-neighbor.  The reporter work
+   is bounded by \((FSL5)\), and \((FSL4)\) is exactly the retained
+   point-label storage.
+
+   Fix \(q\) with signature \(\sigma_0\).  Before the stopping time every
+   rejected candidate is far, so the number of rejected point-label incidences
+   is at most
+   \[
+      \sum_{t\in\mathcal T}
+      \sum_{\substack{x\in P\\ \|x-q\|>cr}}
+      \sum_{\ell\in R_t(q)}U_t(x,\ell),
+   \]
+   which is at most the left side of \((FSL6)\) by \((FSL2)\).  The final
+   accepted candidate contributes at most one extra metric verification.
+   Thus the candidate-verification work is
+   \(d\,m^{\rho_c}\log^{O_c(1)}m\), up to the harmless final valid check.
+
+   If \(q\) has a near witness \(p\), then \(p\in N_{\sigma_0}\) by
+   \((FSL0)\).  By \((FSL7)\), choose \(t\) with
+   \(H_{\sigma_0,t,p}=1\).  Then \((FSL3)\) says that \(p\) is stored in a
+   reported label.  Therefore the query either has already accepted another
+   \(cr\)-neighbor or eventually scans \(p\) and accepts.  The structure is
+   deterministic on the promised query domain.
+\end{proof}
+
 \begin{remark}[Build-time search versus retained proof]
    \label{rem:priced-pair-retained-proof}
    \Cref{prop:finite-retained-priced-pair} is the Las Vegas build-time form of
@@ -4186,7 +4290,10 @@ partition ignores the bias coordinates that certify the list size.
    hard part is now explicit: construct compact signatures whose envelopes
    certify \((FRP2)\) and \((FRP3)\) without a metric net of superpolynomial
    size.  For finite workloads or finite decoder transcripts, the certificate
-   is directly checkable.
+   is directly checkable.  \Cref{prop:finite-retained-scored-label} is the same
+   retained proof after forgetting the internal representation of a label, so
+   pair buckets, prefix tuples, codewords, trellis terminals, and lattice
+   residues can share the same final verifier.
 \end{remark}
 
 \begin{lemma}[Finite priced-pair LP dual]
@@ -4416,6 +4523,97 @@ partition ignores the bias coordinates that certify the list size.
    displayed terminal ANN resources.
 \end{proof}
 
+\begin{corollary}[Fractional scored-label terminal compiler]
+   \label{cor:fractional-scored-label-terminal}
+   Work in the setting of \cref{prop:finite-retained-scored-label}, but start
+   from a finite proposal universe \(\mathcal U\) of certified scored-label
+   panels.  For \(t\in\mathcal U\), define
+   \[
+      F_{\sigma,t}=\sum_{x\in P}C_{\sigma,t,x},
+      \qquad
+      S_t=\sum_{x\in P}\sum_{\ell\in\mathcal L_t}U_t(x,\ell).
+   \]
+   Let \(L_m=\log^{A_c}m\).  Suppose there are nonnegative weights \(z_t\)
+   satisfying
+   \[
+      \sum_tz_tD_{\sigma,t}\le L_D,
+      \qquad
+      \sum_tz_tF_{\sigma,t}\le L_F
+      \qquad(\sigma\in\Sigma),
+      \tag{FSLP1}
+   \]
+   \[
+      \sum_tz_tS_t\le L_S,
+      \qquad
+      \sum_tz_tH_{\sigma,t,p}\ge h
+      \qquad(\sigma\in\Sigma,\ p\in N_\sigma),
+      \tag{FSLP2}
+   \]
+   with
+   \[
+      h\ge L_m^{-1},
+      \qquad
+      L_D\le dL_m+m^{\rho_c}L_m,
+      \qquad
+      L_F\le m^{\rho_c}L_m,
+      \qquad
+      L_S\le m^{1+\rho_c}L_m.
+      \tag{FSLP3}
+   \]
+   Assume the atom bounds
+   \[
+      D_{\sigma,t}\le L_D,\qquad
+      F_{\sigma,t}\le L_F,\qquad
+      S_t\le L_S
+      \qquad(\sigma\in\Sigma,\ t\in\mathcal U),
+      \tag{FSLP4}
+   \]
+   and the finite constraint entropy bound
+   \[
+      \log\left(4+8|\Sigma|+4\sum_\sigma|N_\sigma|\right)
+      \le L_m.
+      \tag{FSLP5}
+   \]
+   Then uncharged preprocessing can retain an integral scored-label index with
+   terminal query work
+   \[
+      d\,m^{\rho_c}\log^{O_c(1)}m
+   \]
+   and space
+   \[
+      dm+m^{1+\rho_c}\log^{O_c(1)}m .
+   \]
+\end{corollary}
+
+\begin{proof}
+   If necessary, replace \(h\) by \(\min\{h,1\}\); the hypotheses remain true
+   and \(h^{-1}\) only changes by a constant factor.
+   The proof of \cref{lem:fractional-priced-pair-materialization} uses only
+   the four nonnegative column quantities \(D_{\sigma,t}\), \(F_{\sigma,t}\),
+   \(S_t\), and \(H_{\sigma,t,p}\).  It does not use the fact that a label is
+   a pair.  Applying the same independent rounding with probabilities
+   \[
+      p_t=\min\{1,Bz_t/h\},
+      \qquad
+      B\ge\max\left\{1,\log\left(4+8|\Sigma|+4\sum_\sigma|N_\sigma|\right)\right\},
+   \]
+   gives, with positive probability, an integral retained family satisfying
+   \[
+      \sum_tD_{\sigma,t}\le6Bh^{-1}L_D,\qquad
+      \sum_tF_{\sigma,t}\le6Bh^{-1}L_F,
+   \]
+   \[
+      \sum_tS_t\le6Bh^{-1}L_S,
+      \qquad
+      \sum_tH_{\sigma,t,p}\ge1 .
+   \]
+   By \((FSLP3)\)--\((FSLP5)\), these are precisely
+   \((FSL4)\)--\((FSL7)\) after increasing the polylogarithmic exponent.
+   Applying \cref{prop:finite-retained-scored-label} gives the displayed
+   resources.  Preprocessing may repeat the rounding until the deterministic
+   certificate passes.
+\end{proof}
+
 \begin{remark}[What this asks of \(k\)-means++ or AQ proposals]
    \label{rem:kmeans-pair-panel-dual}
    \Cref{lem:finite-priced-pair-lp-dual} is the theory-facing replacement for
@@ -4428,7 +4626,10 @@ partition ignores the bias coordinates that certify the list size.
    \(k\)-means++, residual \(D^2\) sampling, additive quantization training,
    learned pivots, or list-decoding proposals can all be used as separators,
    but the charged theorem is the fractional LP plus the retained integral
-   certificate of \cref{cor:fractional-priced-pair-terminal}.
+   certificate of \cref{cor:fractional-priced-pair-terminal}.  The scored-label
+   form \cref{cor:fractional-scored-label-terminal} shows that this conclusion
+   is not tied to pair labels; any compact reporter with the same four column
+   quantities can be certified and materialized in the same way.
 \end{remark}
 
 \begin{corollary}[Superset product-panel rate bookkeeping]
@@ -20892,6 +21093,11 @@ but the proof trusts only the accepted finite envelopes for reporter work,
 stored incidences, far scanned incidences, and near-witness coverage.  This is
 the clean way to analyze practical additive IVF: the heuristic proposes a
 compact family, and the retained certificate is the theorem object.
+\Cref{prop:finite-retained-scored-label} and
+\cref{cor:fractional-scored-label-terminal} remove the last pair-specific
+language from this retained proof: once a panel supplies finite labels,
+reported-label work, stored incidences, far scanned incidences, and
+near-witness coverage, the same deterministic verifier applies.
 \Cref{lem:finite-priced-pair-lp-dual},
 \cref{lem:fractional-priced-pair-materialization}, and
 \cref{cor:fractional-priced-pair-terminal} add the finite build-time bridge:
