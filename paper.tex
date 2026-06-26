@@ -12363,6 +12363,127 @@ obeys these envelopes, the unresolved obstruction is no longer a branching or
 quotient-accounting issue; it is a pure geometric packing statement about
 saturated pair-support degrees.
 
+\begin{lemma}[Saturated container-packing separator]
+   \label{lem:saturated-container-packing-separator}
+   Fix a dyadic demand layer \(\mathcal N_j\).  Let \(\mathcal C\) be a finite
+   family of certified container records.  A record
+   \(C\in\mathcal C\) consists of a container \(W_C\subseteq P\), a query layer
+   \(Q_C\subseteq\mathcal Q\), a price factor \(\psi_C>0\), an exponent
+   \(0\le\rho_C\le1\), and a finite atom-safe cardinality set
+   \(\mathcal K_C\).  For each \(C\), form the saturated pair-support relation
+   \(\mathcal A^\star(W_C,Q_C)\) from
+   \cref{lem:pair-support-saturation-atomized}; let
+   \(D_{C,k}^\star\) be the total saturated degree of its top \(k\) points.
+   Put
+   \[
+      \mathsf T_C=\sum_{q\in Q_C}\tau_q,
+      \qquad
+      B_C(k)=\theta_jD_{C,k}^\star,
+   \]
+   and
+   \[
+      P_C(k)
+      =
+      \psi_C\bigl(\mathsf T_Ck^{\rho_C}
+      +\sigma k^{1+\rho_C}\bigr).
+   \]
+   Suppose the filter universe contains, for every \(C\) and every
+   \(k\in\mathcal K_C\), the saturated prefix filter
+   \[
+      (U_{C,k}^\star,Q_C)
+   \]
+   with prices
+   \[
+      T_{C,k}=\psi_Ck^{\rho_C},
+      \qquad
+      S_{C,k}=\psi_Ck^{1+\rho_C}.
+   \]
+   If there are nonnegative intensities \(\lambda_{C,k}\), not all zero, such
+   that
+   \[
+      \sum_{C\in\mathcal C}\sum_{k\in\mathcal K_C}
+      \lambda_{C,k} B_C(k)
+      >
+      \sum_{C\in\mathcal C}\sum_{k\in\mathcal K_C}
+      \lambda_{C,k} P_C(k),
+      \tag{SCP1}
+   \]
+   then some saturated prefix filter has positive reduced gain.  Conversely, if
+   no saturated prefix filter has positive reduced gain, then \((SCP1)\) fails
+   for every nonnegative intensity vector.
+
+   If, for every \(C\), the atom-safe cardinalities are downward closed, then a
+   factor-two conic violation
+   \[
+      \sum_{C,k}\lambda_{C,k} B_C(k)
+      >
+      2\sum_{C,k}\lambda_{C,k} P_C(k)
+      \tag{SCP2}
+   \]
+   already implies that a dyadic atom-safe prefix in one of the containers has
+   positive reduced gain.
+\end{lemma}
+
+\begin{proof}
+   For a fixed pair \((C,k)\), \cref{cor:saturated-pair-support-envelope} says
+   exactly that \(B_C(k)>P_C(k)\) implies positive reduced gain of the prefix
+   \((U_{C,k}^\star,Q_C)\).  If \((SCP1)\) holds, some term in the support must
+   have \(B_C(k)>P_C(k)\); otherwise the two sums would satisfy the opposite
+   inequality.  This gives the first claim.  The converse is the same argument
+   read backward: if no prefix has positive gain, then
+   \(B_C(k)\le P_C(k)\) for every prefix, and summing with nonnegative
+   coefficients rules out \((SCP1)\).
+
+   For the dyadic statement, \((SCP2)\) implies that some support term has
+   \(B_C(k)>2P_C(k)\).  Under downward closure,
+   \cref{cor:saturated-pair-support-envelope} and
+   \cref{lem:dyadic-atomized-prefix-screen} imply that this constant-slack
+   violation exposes a positive-gain dyadic prefix in the same container.
+\end{proof}
+
+\begin{corollary}[Saturated container packing implies local cover]
+   \label{cor:saturated-container-packing-local-cover}
+   Work in the setting of \cref{cor:residual-separator-local-cover}.  Enlarge
+   the finite filter universe by the following closure.  For each subset
+   \(\mathcal L\subseteq\mathcal N\) that may appear as a dyadic demand layer,
+   include a finite family \(\mathcal C(\mathcal L)\) of certified container
+   records as in \cref{lem:saturated-container-packing-separator}, formed with
+   \(\mathcal N_j=\mathcal L\), and include all their atom-safe saturated prefix
+   filters with the displayed certified prices.  This closure is finite because
+   \(\mathcal N\) is finite.
+
+   Suppose that every surplus dual price system \((\alpha,\tau,\sigma)\)
+   satisfying \((RS1)\) and having nonpositive reduced gain on the spherical
+   buckets, whole high-correlation dense slices, and atom-safe primitive dense
+   prefixes has the following property: after dyadically partitioning its
+   positive demand prices, some layer \(\mathcal L\) admits nonnegative
+   intensities on \(\mathcal C(\mathcal L)\) satisfying \((SCP1)\).  Then the
+   finite filter-cover LP \((\mathsf{FC}_{\mathcal N})\) is feasible with query
+   budget \(L\) and storage budget \(S\).
+\end{corollary}
+
+\begin{proof}
+   If the finite filter-cover LP were infeasible, then
+   \cref{lem:finite-filter-cover-dual} would give a surplus dual price system
+   with nonpositive reduced gain on every column of the enlarged universe.  In
+   particular, it has nonpositive gain on the spherical buckets, whole dense
+   slices, and primitive dense prefixes, so the hypothesis supplies a dyadic
+   layer and a saturated container-packing witness satisfying \((SCP1)\).
+   \Cref{lem:saturated-container-packing-separator} then exposes a saturated
+   prefix filter with positive reduced gain.  This filter is a column of the
+   enlarged universe, contradicting the dual certificate.
+\end{proof}
+
+\Cref{lem:saturated-container-packing-separator} is the fully fractional form of
+the dense-container search.  The proof no longer asks preprocessing to commit to
+a clever disjoint or greedy set of dense clusters.  It may instead construct any
+conic certificate over containers, query layers, and prefix sizes whose
+total saturated pair-support benefit exceeds its recursive query and storage
+price.  A \(k\)-means++, additive-quantization, range-reporting, or
+list-recovery routine is useful only as a separator for this positive reduced
+cost condition; the retained index still keeps just the verified prefix filters
+accepted by the finite cover LP.
+
 \begin{assumption}[Layer quotient separator]
    \label{asm:layer-quotient-separator}
    Work in the setting of \cref{cor:residual-separator-local-cover}.  Suppose a
