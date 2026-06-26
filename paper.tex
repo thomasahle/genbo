@@ -3691,6 +3691,148 @@ partition ignores the bias coordinates that certify the list size.
    non-top symbols on those sets.
 \end{proof}
 
+\begin{lemma}[Minimum-entropy information-set reporter]
+   \label{lem:min-entropy-information-set}
+   Let \(\mathcal C\le\mathbb F^h\) be a \(k\)-dimensional linear code with
+   generator matrix \(G\in\mathbb F^{k\times h}\).  For an information set
+   \(I\subseteq[h]\), \(|I|=k\), write \(G_I\) for the \(k\times k\) submatrix
+   of columns in \(I\), and assume \(G_I\) is nonsingular.  Then
+   \(D_I=\mathbb F^I\), and the certified extension map is
+   \[
+      E_I(b)=bG_I^{-1}G .
+   \]
+
+   Fix \(\beta>0\), query scores \(\omega_i(q,a)\), and threshold \(\Theta\).
+   Put
+   \[
+      m_i(q)=\max_{a\in\mathbb F}\omega_i(q,a),
+      \qquad
+      \lambda_i(q)=
+      \log\sum_{a\in\mathbb F}
+      \exp\bigl(\beta(\omega_i(q,a)-m_i(q))\bigr),
+   \]
+   and
+   \[
+      \Delta(q,\Theta)=\sum_{i=1}^hm_i(q)-\Theta .
+   \]
+   Let
+   \[
+      \Lambda_*(q)=
+      \min_{\substack{I\subseteq[h]\\ |I|=k,\ \operatorname{rank}G_I=k}}
+      \sum_{i\in I}\lambda_i(q).
+   \]
+   Choose an information set \(I_*(q)\) attaining this minimum and run the
+   information-set reporter of
+   \cref{lem:information-set-threshold-reporter} with \(I=I_*(q)\).  It is a
+   certified threshold reporter for
+   \[
+      \{c\in\mathcal C:S_q(c)\ge\Theta\},
+   \]
+   and its information-word list size satisfies
+   \[
+      N_{I_*}(q,\Theta)
+      \le
+      \exp\bigl(\beta\Delta(q,\Theta)+\Lambda_*(q)\bigr).
+      \tag{ME1}
+   \]
+
+   The minimizing information set is found by the usual greedy basis rule:
+   sort the coordinates by nondecreasing \(\lambda_i(q)\), scan them in that
+   order, and keep a coordinate exactly when its column of \(G\) increases the
+   rank of the kept columns.  If \(h\), \(|\mathbb F|\), and the linear-algebra
+   work are polylogarithmic in the local subproblem size \(m\), then the
+   reporter has polylogarithmic query overhead whenever
+   \[
+      \beta\Delta(q,\Theta)+\Lambda_*(q)=O(\log\log m).
+      \tag{ME2}
+   \]
+
+   Two useful upper bounds on \(\Lambda_*(q)\) are immediate.  If
+   \(\mathcal C\) is MDS, then \(\Lambda_*(q)\) is the sum of the \(k\)
+   smallest values among \(\lambda_1(q),\ldots,\lambda_h(q)\).  More generally,
+   for any distribution \(\nu\) on information sets,
+   \[
+      \Lambda_*(q)
+      \le
+      \sum_{i=1}^h \pi_i\lambda_i(q),
+      \qquad
+      \pi_i=\Pr_{I\sim\nu}[i\in I].
+      \tag{ME3}
+   \]
+   In particular, a coordinate-transitive family with a uniform information-set
+   distribution satisfies
+   \[
+      \Lambda_*(q)\le\frac{k}{h}\sum_{i=1}^h\lambda_i(q).
+      \tag{ME4}
+   \]
+\end{lemma}
+
+\begin{proof}
+   Since \(G_I\) is nonsingular, every information word \(b\in\mathbb F^I\)
+   determines the unique message \(u=bG_I^{-1}\), hence the unique codeword
+   \(uG=E_I(b)\).  Thus the information-set reporter applies.
+
+   For any information set \(I\), the exponential bound \((IS1)\) becomes
+   \[
+   \begin{aligned}
+      N_I(q,\Theta)
+      &\le
+      \exp\!\left(
+         -\beta\Theta+\beta\sum_{i\notin I}m_i(q)
+      \right)
+      \prod_{i\in I}
+      \sum_{a\in\mathbb F}\exp(\beta\omega_i(q,a))\\
+      &=
+      \exp\!\left(
+         \beta\sum_{i=1}^hm_i(q)-\beta\Theta
+         +
+         \sum_{i\in I}\lambda_i(q)
+      \right).
+   \end{aligned}
+   \]
+   Minimizing over information sets gives \((ME1)\).  The polylogarithmic
+   claim follows by substituting \((ME2)\) into this bound and adding the
+   stated coordinate sorting, symbol sorting, rank-test, extension, and exact
+   scoring costs.
+
+   It remains to justify the greedy minimization.  The columns of \(G\) form a
+   rank-\(k\) linear matroid, whose bases are exactly the information sets.
+   Let \(B\) be the greedy basis and \(O\) any minimum-weight basis.  Order the
+   elements of \(B\) as they are chosen, \(b_1,\ldots,b_k\).  By induction,
+   after the first \(r-1\) greedy choices there exists a minimum-weight basis
+   \(O_{r-1}\) containing \(b_1,\ldots,b_{r-1}\).  At step \(r\), if
+   \(b_r\in O_{r-1}\), take \(O_r=O_{r-1}\).  Otherwise, because
+   \(O_{r-1}\) is a basis, \(b_r\) has a linear representation in the columns
+   of \(O_{r-1}\).  Since \(b_r\) is independent of
+   \(\{b_1,\ldots,b_{r-1}\}\), there is a column
+   \(o\in O_{r-1}\setminus\{b_1,\ldots,b_{r-1}\}\) that appears with nonzero
+   coefficient in this representation.  Replacing that column by \(b_r\)
+   preserves the span, so
+   \[
+      O_r=O_{r-1}-\{o\}+\{b_r\}
+   \]
+   is still a basis.  Also \(o\) is not in the span of
+   \(\{b_1,\ldots,b_{r-1}\}\), otherwise \(O_{r-1}\) would be dependent.  Thus
+   \(o\) was feasible for the greedy scan at step \(r\), so the sorted greedy
+   rule gives
+   \(\lambda_{b_r}(q)\le\lambda_o(q)\).  Hence \(O_r\) is no heavier than
+   \(O_{r-1}\), and it is also minimum-weight.  After \(k\) steps the greedy
+   basis itself is minimum-weight.
+
+   If \(\mathcal C\) is MDS, every \(k\)-subset is an information set, so the
+   minimum is the sum of the \(k\) smallest weights.  For a distribution
+   \(\nu\) on information sets,
+   \[
+      \Lambda_*(q)
+      \le
+      \E_{I\sim\nu}\sum_{i\in I}\lambda_i(q)
+      =
+      \sum_i\Pr[i\in I]\lambda_i(q),
+   \]
+   proving \((ME3)\).  The transitive specialization has
+   \(\pi_i=k/h\) for every coordinate, giving \((ME4)\).
+\end{proof}
+
 \begin{remark}[GMD and Chase as compressed list decoders]
    \label{rem:gmd-chase-compressed-decoder}
    \Cref{lem:reliability-erasure-sweep} is the self-contained form of the
@@ -3728,6 +3870,14 @@ partition ignores the bias coordinates that certify the list size.
    charts, rotations, or quotient bases, while the retained query algorithm pays
    only for the short discrepancy list certified by
    \cref{cor:ordered-statistics-information-set}.
+   \Cref{lem:min-entropy-information-set} makes this search objective exact:
+   for a linear block, the right chart is the minimum-weight information set
+   with coordinate weights equal to the local soft entropy
+   \(\lambda_i(q)\).  For MDS or Reed--Solomon style blocks this is just the
+   \(k\) most reliable coordinates, while for a general retained linear block
+   it is a greedy minimum-basis computation.  The remaining geometric spectrum
+   theorem can therefore ask for the scalar entropy margin \((ME2)\), instead
+   of a full soft list-recovery oracle.
 \end{remark}
 
 \begin{remark}[Outer list recovery as the clean codebook target]
@@ -17071,6 +17221,13 @@ basis, and exact-filters the resulting candidates.  This can be strictly
 cheaper than Chase-GMD when a reliable information set exists, because the
 online branch count is the ordered-statistics discrepancy list rather than the
 full ambiguity product.
+\Cref{lem:min-entropy-information-set} identifies the best chart for a linear
+block: assign each coordinate its soft local entropy
+\(\lambda_i=\log\sum_a\exp(\beta(\omega_i(a)-m_i))\), then choose a
+minimum-weight information set.  For MDS blocks this is just the \(k\) smallest
+coordinate entropies; for general linear blocks it is a greedy minimum-basis
+computation.  Thus the decoder overhead target reduces to the scalar margin
+\(\beta(\sum_im_i-\Theta)+\Lambda_*=O_c(\log\log m)\).
 The remaining work is spectrum and rate bookkeeping rather than Lloyd-style
 convergence analysis.
 \Cref{lem:additive-product-panel-decoder}
