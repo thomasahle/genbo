@@ -17836,6 +17836,135 @@ singleton slices by hand.
    \]
 \end{proof}
 
+\begin{corollary}[Query-free all-size list proposal separator]
+   \label{cor:query-free-all-size-list-proposal}
+   Work in the setting of \cref{cor:all-size-random-list-proposal}.  It is
+   enough to prove the following query-free proposal statement.  For every
+   nonnegative price system \((\gamma,\tau,\sigma)\) satisfying
+   \((APC1)\)--\((APC2)\), there is a finite seed law \(s\sim\nu\) such that
+   seed \(s\) chooses a certified container \(W_s\in\mathcal W_0\) and a
+   certified list \(L_s\subseteq W_s\).  Put
+   \[
+      K_s=|L_s|,
+      \qquad
+      \rho_s=\rho_{W_s},
+      \qquad
+      \psi_s=\psi_{W_s},
+   \]
+   and
+   \[
+      h_s(q)=
+      \sum_{p\in L_s:(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}.
+      \tag{QASL1}
+   \]
+   If
+   \[
+      \E_s
+      \sum_{q\in\mathcal Q}
+      \bigl(h_s(q)-b\,b_0^{\rho_s}\psi_sK_s^{\rho_s}\tau_q\bigr)_+
+      >
+      b\,\E_s\!\left[
+         \psi_s\sigma b_0^{1+\rho_s}K_s^{1+\rho_s}
+      \right],
+      \tag{QASL2}
+   \]
+   then the finite prefix-template separator holds.  Consequently
+   \((\mathsf{HKC}_{\mathcal U})\) is feasible, and the local and global
+   endpoints of \cref{cor:finite-prefix-local-filter-cover} and
+   \cref{cor:finite-prefix-polylog-endpoint} apply.
+\end{corollary}
+
+\begin{proof}
+   Inequality \((QASL2)\) implies that some deterministic seed \(s\) satisfies
+   the same strict inequality.  Let
+   \[
+      Q_s^+
+      =
+      \{q:h_s(q)>b\,b_0^{\rho_s}\psi_sK_s^{\rho_s}\tau_q\}.
+      \tag{QASL3}
+   \]
+   For the integral query weights \(y=\mathbf 1_{Q_s^+}\),
+   \[
+      V(L_s)=\sum_{q\in Q_s^+}h_s(q),
+      \qquad
+      A_y=\sum_{q\in Q_s^+}\tau_q .
+   \]
+   The positive-margin inequality is exactly the deterministic instance of
+   \((ASRL1)\) for the point-mass random list \(L_s\).  Hence
+   the hypothesis of \cref{cor:all-size-random-list-proposal} holds for the
+   given price system.  Since the argument applies to every price system
+   satisfying \((APC1)\)--\((APC2)\), that corollary gives the finite
+   prefix-template separator and the endpoint conclusions.
+\end{proof}
+
+\begin{corollary}[Query-free all-size marginal proposal separator]
+   \label{cor:query-free-all-size-marginal-proposal}
+   Work in the setting of \cref{cor:all-size-marginal-proposal}.  It is enough
+   to prove the following soft query-free proposal statement.  For every
+   nonnegative price system \((\gamma,\tau,\sigma)\) satisfying
+   \((APC1)\)--\((APC2)\), there is a finite seed law \(s\sim\nu\) such that
+   seed \(s\) chooses a certified container \(W_s\in\mathcal W_0\), inclusion
+   marginals \(0\le\pi_{s,p}\le1\) on \(W_s\), and a realizable second-moment
+   bound \(M_{2,s}\).  Put
+   \[
+      \mu_s=\sum_{p\in W_s}\pi_{s,p},
+      \qquad
+      \rho_s=\rho_{W_s},
+      \qquad
+      \psi_s=\psi_{W_s},
+   \]
+   and
+   \[
+      h_s(q)=
+      \sum_{p\in W_s:(p,q)\in\mathcal N}
+         \pi_{s,p}\gamma_{p,q}r_{p,q}.
+      \tag{QASM1}
+   \]
+   If
+   \[
+      \E_s
+      \sum_{q\in\mathcal Q}
+      \bigl(h_s(q)-b\,b_0^{\rho_s}\psi_s\mu_s^{\rho_s}\tau_q\bigr)_+
+      >
+      b\,\E_s\!\left[
+         \psi_s\sigma b_0^{1+\rho_s}
+         \mu_s^{1-\rho_s}M_{2,s}^{\rho_s}
+      \right],
+      \tag{QASM2}
+   \]
+   then the finite prefix-template separator holds, and hence the same local
+   and global endpoints apply.
+
+   In particular, independent Bernoulli realization gives the sufficient
+   condition obtained from \((QASM2)\) by replacing \(M_{2,s}\) with
+   \(\mu_s+\mu_s^2\).
+\end{corollary}
+
+\begin{proof}
+   Inequality \((QASM2)\) implies that some deterministic seed \(s\) satisfies
+   the same strict inequality.  Let
+   \[
+      Q_s^+
+      =
+      \{q:h_s(q)>b\,b_0^{\rho_s}\psi_s\mu_s^{\rho_s}\tau_q\}.
+      \tag{QASM3}
+   \]
+   For \(y=\mathbf 1_{Q_s^+}\),
+   \[
+      V_\pi
+      =
+      \sum_{q\in Q_s^+}h_s(q),
+      \qquad
+      A_y=\sum_{q\in Q_s^+}\tau_q .
+   \]
+   The deterministic positive-margin inequality is exactly \((ASMP2)\) for
+   this integral query layer.  Thus the hypothesis of
+   \cref{cor:all-size-marginal-proposal} holds for the given price system.
+   Since the argument applies to every price system satisfying
+   \((APC1)\)--\((APC2)\), that corollary gives the finite prefix-template
+   separator.  The Bernoulli statement is the special case \((ASMP3)\).
+\end{proof}
+
 \begin{corollary}[Joint query-list proposal separator]
    \label{cor:joint-query-list-proposal-separator}
    Work in the setting of \cref{cor:boolean-query-layer-list-proposal-separator}.
