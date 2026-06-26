@@ -4553,6 +4553,139 @@ partition ignores the bias coordinates that certify the list size.
    \(B e^{\beta\Delta}=\log^{O_c(1)}m\).
 \end{proof}
 
+\begin{lemma}[Responsibility-thinned quotient reporting]
+   \label{lem:responsibility-thinned-quotient}
+   Work in the setting of \cref{lem:stable-quotient-sampled-spectrum}.  For
+   \(A_\ell=\{a:\lambda(a)=\ell\}\), define the hidden loaded mass and the
+   conditional responsibility of point \(x\) inside quotient class \(\ell\) by
+   \[
+      h_{q,x,\ell}
+      =
+      \sum_{a\in A_\ell}\pi_q(a)U_x(a),
+      \qquad
+      r_{q,x,\ell}
+      =
+      \begin{cases}
+      h_{q,x,\ell}/\Pi_q(\ell), & \Pi_q(\ell)>0,\\
+      0, & \Pi_q(\ell)=0 .
+      \end{cases}
+   \]
+   Suppose that, after sampling \(\ell\sim\Pi_q\), the query uses an
+   output-sensitive subbucket reporter.  Let
+   \(\theta_{q,x,\ell}\in[0,1]\) be the conditional probability that this
+   reporter emits \(x\).  If, for some \(K\ge1\),
+   \[
+      r_{q,x,\ell}
+      \le
+      \theta_{q,x,\ell}
+      \le
+      \min\{1,K r_{q,x,\ell}\}
+      \tag{RTQ0}
+   \]
+   for every query/load pair under consideration, then every promised query
+   satisfies
+   \[
+      \sum_{\substack{x\in P\\ \|x-q\|>cr}}
+      \sum_{\ell\in\Lambda}\Pi_q(\ell)\theta_{q,x,\ell}
+      \le
+      K
+      \sum_{\substack{x\in P\\ \|x-q\|>cr}}
+      \sum_{a\in\mathcal T}\pi_q(a)U_x(a),
+      \tag{RTQ1}
+   \]
+   while every near pair \((p,q)\) satisfies
+   \[
+      \sum_{\ell\in\Lambda}\Pi_q(\ell)\theta_{q,p,\ell}
+      \ge
+      \sum_{a\in\mathcal T}\pi_q(a)U_p(a).
+      \tag{RTQ2}
+   \]
+   Thus responsibility thinning preserves the sampled near spectrum and
+   inflates the sampled far spectrum by at most \(K\), without requiring the
+   whole quotient class to be score-stable.
+\end{lemma}
+
+\begin{proof}
+   Since \(\Pi_q(\ell)r_{q,x,\ell}=h_{q,x,\ell}\), the upper inequality in
+   \((RTQ0)\) gives
+   \[
+      \Pi_q(\ell)\theta_{q,x,\ell}
+      \le
+      K h_{q,x,\ell}
+      =
+      K\sum_{a\in A_\ell}\pi_q(a)U_x(a).
+   \]
+   Summing over far \(x\) and over \(\ell\) proves \((RTQ1)\).  Similarly, the
+   lower inequality in \((RTQ0)\) gives
+   \[
+      \sum_\ell\Pi_q(\ell)\theta_{q,p,\ell}
+      \ge
+      \sum_\ell h_{q,p,\ell}
+      =
+      \sum_{a\in\mathcal T}\pi_q(a)U_p(a),
+   \]
+   which is \((RTQ2)\).
+\end{proof}
+
+\begin{corollary}[Responsibility-thinned sampled additive-IVF quotient]
+   \label{cor:responsibility-thinned-sampled-aq}
+   Fix the terminal setting of \cref{cor:finite-state-sampled-aq}, but replace
+   full scanning of \(C_\ell\) by responsibility-thinned subbucket reporters as
+   in \cref{lem:responsibility-thinned-quotient}.  Suppose their retained
+   metadata and the unquotiented tuple incidences satisfy
+   \[
+      \E\sum_{x\in P}\sum_{a\in\mathcal T}U_x(a)
+      \le m^{1+\rho}L_m,
+      \tag{RTA1}
+   \]
+   their expected auxiliary reporter work after \(\ell\sim\Pi_q\) is at most
+   \(dL_m+m^\rho L_m\) for every promised query, and their output
+   probabilities satisfy \((RTQ0)\) with \(K\le\log^{O_c(1)}m\).  If
+   \[
+      \E
+      \sum_{\substack{x\in P\\ \|x-q\|>cr}}
+      \sum_{a\in\mathcal T}\pi_q(a)U_x(a)
+      \le m^\rho L_m
+      \tag{RTA2}
+   \]
+   for every promised query \(q\), and
+   \[
+      \E\sum_{a\in\mathcal T}\pi_q(a)U_p(a)
+      \ge L_m^{-1}
+      \tag{RTA3}
+   \]
+   for every near pair \((p,q)\), then \(O(L_m)\) independent panels give the
+   same terminal ANN bounds as \cref{cor:finite-state-sampled-aq}, after
+   increasing the polylogarithmic exponent.
+\end{corollary}
+
+\begin{proof}
+   By \cref{lem:responsibility-thinned-quotient}, \((RTA2)\) bounds the
+   expected invalid emitted candidates by \(m^\rho\log^{O_c(1)}m\), while
+   \((RTA3)\) gives inverse-polylogarithmic probability that one panel emits
+   the true near point.  The auxiliary reporter work has the same bound by
+   hypothesis, and \((RTA1)\) bounds retained incidences and metadata.  Repeating
+   \(O(L_m)\) independent panels, verifying every emitted candidate in the
+   original metric, and using the standard capped-expectation truncation gives
+   the displayed terminal resources.
+\end{proof}
+
+\begin{remark}[Ordinary quotient scanning is the stable special case]
+   \label{rem:ordinary-quotient-scanning-stability}
+   Full scanning of the merged bucket \(C_\ell\) corresponds to
+   \[
+      \theta_{q,x,\ell}=\mathbf 1_{\{x\in C_\ell\}}.
+   \]
+   The lower inequality in \((RTQ0)\) is then automatic, because
+   \(r_{q,x,\ell}>0\) implies \(x\in C_\ell\).  The upper inequality in
+   \((RTQ0)\) is exactly the stability condition \((SQS0)\), after multiplying
+   by the global partition function.  Thus
+   \cref{lem:stable-quotient-sampled-spectrum} analyzes ordinary IVF-style
+   union scanning, while \cref{lem:responsibility-thinned-quotient} gives the
+   lower-overhead target: report only the points carrying hidden Gibbs
+   responsibility inside the sampled quotient class.
+\end{remark}
+
 \begin{proposition}[Gibbs sampled additive-IVF spectrum compiler]
    \label{prop:gibbs-sampled-additive-ivf-compiler}
    Fix a terminal localized ANN subproblem of size \(m\), approximation \(c\),
@@ -22020,8 +22153,13 @@ labels, so the charged index stores distinct buckets rather than all internal
 tuples.  \Cref{lem:stable-quotient-sampled-spectrum} gives the corresponding
 loss test: quotienting is harmless up to a polylogarithmic factor whenever each
 merged class has polylogarithmic size and only \(O(\log\log m)\) Gibbs log-score
-spread at query time.  This is the additive-vector-quantization analogue of the
-discrete Gaussian code/lattice route.
+spread at query time.  \Cref{lem:responsibility-thinned-quotient} gives the
+softer alternative: large or heterogeneous quotient classes are also safe if
+the retained decoder reports points with probability proportional to their
+hidden Gibbs responsibility inside the sampled class.  Ordinary IVF union
+scanning is exactly the stable special case.  This is the
+additive-vector-quantization analogue of the discrete Gaussian code/lattice
+route.
 \Cref{prop:finite-retained-priced-pair} gives the corresponding retained-index
 certificate.  Build time may use \(k\)-means++, random centroids, additive
 quantization, list-decoding proposals, or column generation to produce panels,
