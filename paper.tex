@@ -14756,6 +14756,38 @@ law already has positive reduced gain.
    \((RAC6)\).
 \end{proof}
 
+\begin{corollary}[Far active-load spherical fallback]
+   \label{cor:far-active-load-spherical-fallback}
+   Work in the setting and under the hypotheses of
+   \cref{cor:relative-annular-active-collision-residual}.  Suppose in addition
+   that every query has budget-compatible far active load:
+   \[
+      F_q^{\rm far}
+      :=
+      \sum_{\substack{x\in P\\ \|x-q\|>cr}}c_q(x)
+      \le
+      \beta\left(\frac12-\eta\right)\pi_1L
+      \qquad(q\in\mathcal Q).
+      \tag{FAL1}
+   \]
+   Then the enlarged local filter-cover LP is feasible.
+\end{corollary}
+
+\begin{proof}
+   If the LP were infeasible, then
+   \cref{cor:relative-annular-active-collision-residual} would produce a guarded
+   normalized residual satisfying \((RAC6)\).  On the other hand, \((FAL1)\) and
+   the normalized price bound \((GNR2)\) give
+   \[
+      \sum_q\bar\tau_qF_q^{\rm far}
+      \le
+      \beta\left(\frac12-\eta\right)\pi_1L\sum_q\bar\tau_q
+      <
+      \beta\left(\frac12-\eta\right)\pi_1\kappa ,
+   \]
+   since \(\bar\sigma S\ge0\).  This contradicts \((RAC6)\).
+\end{proof}
+
 \begin{lemma}[Primitive hit-kernel cover equivalence]
    \label{lem:primitive-hit-kernel-cover-equivalence}
    Work in the setting of \cref{asm:one-potential-core-separator}.  For each
@@ -14861,6 +14893,11 @@ activation-normalized version.  Thresholding by the conditional load
 \(\pi_2=\beta\max_q a_q\), but the resulting active-collision obstruction loses
 only the chosen relative threshold \(\beta\).  This is the more useful target
 when the activation budget permits constant \(\beta\).
+\Cref{cor:far-active-load-spherical-fallback} records the direct
+pseudo-random close: if the whole far active load of each query is already below
+the \(\pi_1L\) budget scale, then no annular residual can survive.  Thus the
+remaining dense/list-decoding theorem only has to handle failures of this
+aggregate load bound, not failures of pointwise far collision.
 
 \begin{corollary}[Hit-kernel cover materialization]
    \label{cor:hit-kernel-cover-materialization}
@@ -36373,6 +36410,12 @@ When \(\beta\max_q a_q|P|\lesssim\pi_1L\), local infeasibility forces the
 active-collision lower bound with factor \(\beta\), rather than the absolute
 far threshold \(\pi_2\).  This makes the remaining branch a conditional-load
 or list-decoding problem instead of an absolute rare-collision problem.
+\Cref{cor:far-active-load-spherical-fallback} gives the corresponding
+pseudo-random endpoint: a uniform bound
+\(\sum_{\|x-q\|>cr}c_q(x)\lesssim\beta\pi_1L\) for every query already rules out
+the residual.  The unresolved geometric work is therefore to prove this
+aggregate far-load bound for the retained spherical/list-decoding primitive, or
+to turn any violation into a positive dense filter-cover column.
 \Cref{lem:primitive-hit-kernel-cover-equivalence} gives the matching primal
 form: the same theorem is equivalent to fractionally covering the primitive
 spherical hit kernel \(r_{p,q}\) by Pareto cores at \(\pi_1\)-scaled query and
