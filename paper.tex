@@ -16864,6 +16864,162 @@ singleton slices by hand.
    \(\mu^\star\) is integral, the same lemma makes \(\pi'\) a hard list.
 \end{proof}
 
+\begin{corollary}[Positive soft gain rounds to a hard list]
+   \label{cor:positive-soft-gain-hard-list}
+   Work in the setting of \cref{cor:finite-soft-bucket-separation}, and fix one
+   container \(W\).  Suppose some marginals \(\pi\in[0,1]^W\), with
+   \(\mu=\sum_p\pi_p\), have positive independent-soft reduced gain:
+   \[
+      \sum_q
+      \bigl(h_\pi(q)-b\,\psi_W\mu^{\rho_W}\tau_q\bigr)_+
+      >
+      b\,\psi_W\sigma\,\mu^{1-\rho_W}(\mu+\mu^2)^{\rho_W}.
+      \tag{PSH1}
+   \]
+   Then there is an ordinary hard list \(L\subseteq W\) such that, with
+   \(K=|L|\),
+   \[
+      \sum_q
+      \left(
+         \sum_{p\in L:(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}
+         -b\,\psi_WK^{\rho_W}\tau_q
+      \right)_+
+      >
+      b\,\psi_W\sigma K^{1+\rho_W}.
+      \tag{PSH2}
+   \]
+   Consequently the deterministic query-free list verifier exposes a positive
+   available paid prefix inside \(W\).
+\end{corollary}
+
+\begin{proof}
+   By \cref{lem:fixed-mass-soft-buckets-near-hard}, after replacing \(\pi\) by
+   a no-worse vector of the same mass, we may assume
+   \[
+      \pi=\mathbf 1_{L_0}+\theta\mathbf 1_x,
+      \qquad
+      0\le\theta<1,
+      \qquad
+      x\notin L_0,
+   \]
+   with the evident degenerate interpretation when \(\theta=0\).  Let the
+   random hard list \(\mathcal L\) be \(L_0\cup\{x\}\) with probability
+   \(\theta\) and \(L_0\) otherwise, and put \(K=|\mathcal L|\).  Then
+   \[
+      \E K=\mu,
+      \qquad
+      \E K^2=\mu^2+\theta(1-\theta)\le\mu^2+\mu.
+      \tag{PSH3}
+   \]
+
+   For each \(q\), set
+   \[
+      X_q=
+      \sum_{p\in\mathcal L:(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}
+      -b\,\psi_WK^{\rho_W}\tau_q .
+   \]
+   Since \(0<\rho_W<1\), Jensen gives
+   \(\E K^{\rho_W}\le\mu^{\rho_W}\).  Hence
+   \[
+      \E X_q
+      \ge
+      h_\pi(q)-b\,\psi_W\mu^{\rho_W}\tau_q .
+   \]
+   Convexity of \(x_+\) gives
+   \[
+      \E(X_q)_+
+      \ge
+      (\E X_q)_+
+      \ge
+      \bigl(h_\pi(q)-b\,\psi_W\mu^{\rho_W}\tau_q\bigr)_+ .
+      \tag{PSH4}
+   \]
+   Summing over \(q\), and using \((PSH1)\), gives
+   \[
+      \E\sum_q(X_q)_+
+      >
+      b\,\psi_W\sigma\,\mu^{1-\rho_W}(\mu+\mu^2)^{\rho_W}.
+      \tag{PSH5}
+   \]
+   Log-convexity of \(L_p\)-moments between powers \(1\) and \(2\), together
+   with \((PSH3)\), gives
+   \[
+      \E K^{1+\rho_W}
+      \le
+      (\E K)^{1-\rho_W}(\E K^2)^{\rho_W}
+      \le
+      \mu^{1-\rho_W}(\mu+\mu^2)^{\rho_W}.
+      \tag{PSH6}
+   \]
+   Therefore the two-point hard-list law satisfies
+   \[
+      \E\sum_q(X_q)_+
+      >
+      b\,\psi_W\sigma\,\E K^{1+\rho_W}.
+   \]
+   Some outcome \(L\) of the law must satisfy \((PSH2)\).  Applying
+   \cref{lem:canonical-query-side-list-verifier} to this hard list gives the
+   final positive available prefix.
+\end{proof}
+
+\begin{corollary}[Finite hard-list separation oracle]
+   \label{cor:finite-hard-list-separation}
+   Work in the setting of \cref{cor:query-free-list-proposal-separator}.  Let
+   \(\mathcal H\) be a finite build-time pool of certified hard lists.  An
+   element \(H\in\mathcal H\) consists of a certified container
+   \(W_H\in\mathcal W\) and a list \(L_H\subseteq W_H\).  Put
+   \[
+      K_H=|L_H|,
+      \qquad
+      \rho_H=\rho_{W_H},
+      \qquad
+      \psi_H=\psi_{W_H},
+   \]
+   and, for a price system \((\gamma,\tau,\sigma)\),
+   \[
+      h_H(q)=
+      \sum_{p\in L_H:(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}.
+   \]
+   Define the hard-list reduced gain
+   \[
+      \mathsf{HG}_{\gamma,\tau,\sigma}(H)
+      =
+      \sum_{q\in\mathcal Q}
+      \bigl(h_H(q)-b\,\psi_HK_H^{\rho_H}\tau_q\bigr)_+
+      -
+      b\,\psi_H\sigma K_H^{1+\rho_H}.
+      \tag{FHL1}
+   \]
+   If every nonnegative price system \((\gamma,\tau,\sigma)\) satisfying
+   \((APC1)\)--\((APC2)\) has
+   \[
+      \max_{H\in\mathcal H}\mathsf{HG}_{\gamma,\tau,\sigma}(H)>0,
+      \tag{FHL2}
+   \]
+   then \((\mathsf{HKC}_{\mathcal U})\) is feasible.  More generally, it is
+   enough that every such price system admit a finite law on \(\mathcal H\)
+   with positive expected \(\mathsf{HG}\).
+
+   In particular, in the setting of
+   \cref{cor:finite-soft-bucket-separation}, a positive soft-bucket certificate
+   over a container \(W\) implies a positive hard-list certificate over the same
+   container.  Thus an oracle over all hard lists in the generated containers is
+   at least as strong as the corresponding soft-bucket oracle.
+\end{corollary}
+
+\begin{proof}
+   If \(H\) has positive hard-list reduced gain, the point-mass seed law on
+   \((W_H,L_H)\) satisfies \((QFL2)\).  Hence
+   \cref{cor:query-free-list-proposal-separator} gives the primitive
+   hit-kernel cover.  If a law on \(\mathcal H\) has positive expected
+   \(\mathsf{HG}\), then some list in its finite support has positive
+   \(\mathsf{HG}\), reducing to the point-mass case.
+
+   The final claim is exactly \cref{cor:positive-soft-gain-hard-list}: positive
+   independent-soft reduced gain in a container rounds to an ordinary hard list
+   with positive canonical query-free gain.
+\end{proof}
+
 \begin{corollary}[Joint query-list proposal separator]
    \label{cor:joint-query-list-proposal-separator}
    Work in the setting of \cref{cor:boolean-query-layer-list-proposal-separator}.
@@ -16941,6 +17097,16 @@ once the total mass of a soft bucket is fixed, the best responsibility vector is
 hard except possibly for one point.  Soft buckets are therefore a convenient
 proposal and averaging language; the exact verifier can always be driven toward
 ordinary lists or one-point fractional perturbations.
+\Cref{cor:positive-soft-gain-hard-list} goes one step further: any positive
+soft reduced-gain certificate already contains a positive ordinary hard-list
+certificate after rounding the single fractional point.  Thus soft AQ or
+facility responsibilities help find promising regions, but the proof need only
+retain hard lists and their canonical query layers.
+\Cref{cor:finite-hard-list-separation} is the resulting clean oracle: with
+unbounded preprocessing, search any finite family of certified
+container/list pairs using the scalar hinge score \((FHL1)\).  Positive lists
+are verified and converted to ordinary Boolean columns; soft buckets are only a
+proposal language for finding such lists.
 
 \begin{assumption}[Balanced aggregate list-size separator]
    \label{asm:balanced-aggregate-list-size-separator}
@@ -17461,6 +17627,11 @@ checkable bound \(\mu+\mu^2\).
 \Cref{cor:finite-soft-bucket-separation} then says that unbounded preprocessing
 may search any finite soft-bucket universe by exact reduced-gain maximization;
 only buckets whose verifier exposes a positive Boolean prefix are retained.
+\Cref{cor:positive-soft-gain-hard-list} and
+\cref{cor:finite-hard-list-separation} simplify this endpoint further: every
+positive soft bucket already contains a positive hard-list certificate in the
+same container, so the final separator may be stated purely over certified
+container/list pairs with the canonical positive-margin query side.
 Conversely,
 \cref{cor:paid-prefix-residual-envelope} says that a failed dense separator has
 only one possible form: a paid residual whose every certified container obeys
