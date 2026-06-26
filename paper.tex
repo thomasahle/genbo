@@ -4381,6 +4381,127 @@ partition ignores the bias coordinates that certify the list size.
    \((PPLP2)\).
 \end{proof}
 
+\begin{lemma}[Finite scored-label LP dual]
+   \label{lem:finite-scored-label-lp-dual}
+   Work in the setting of \cref{prop:finite-retained-scored-label}, but start
+   from a finite proposal universe \(\mathcal U\) of certified scored-label
+   panels.  For \(t\in\mathcal U\), define
+   \[
+      F_{\sigma,t}=\sum_{x\in P}C_{\sigma,t,x},
+      \qquad
+      S_t=\sum_{x\in P}\sum_{\ell\in\mathcal L_t}U_t(x,\ell).
+   \]
+   Fix budgets \(L_D,L_F,L_S>0\) and a coverage target \(h>0\).  Consider the
+   fractional scored-label feasibility problem
+   \[
+   \begin{array}{ll}
+   \text{\rm find} & z_t\ge0\qquad(t\in\mathcal U)\\[0.3em]
+   \text{\rm subject to}
+      & \displaystyle \sum_tz_tD_{\sigma,t}\le L_D
+        \qquad(\sigma\in\Sigma),\\[0.8em]
+      & \displaystyle \sum_tz_tF_{\sigma,t}\le L_F
+        \qquad(\sigma\in\Sigma),\\[0.8em]
+      & \displaystyle \sum_tz_tS_t\le L_S,\\[0.8em]
+      & \displaystyle \sum_tz_tH_{\sigma,t,p}\ge h
+        \qquad(\sigma\in\Sigma,\ p\in N_\sigma).
+   \end{array}
+   \tag{\(\mathsf{FSLP}\)}
+   \]
+   This program is infeasible if and only if there are nonnegative prices
+   \[
+      \lambda_\sigma,\ \phi_\sigma,\ \psi,\ \mu_{\sigma,p}
+   \]
+   with strict surplus
+   \[
+      h\sum_{\sigma}\sum_{p\in N_\sigma}\mu_{\sigma,p}
+      >
+      L_D\sum_\sigma\lambda_\sigma
+      +
+      L_F\sum_\sigma\phi_\sigma
+      +
+      L_S\psi,
+      \tag{FSLD1}
+   \]
+   such that every proposed scored-label panel has nonpositive reduced gain,
+   \[
+      \sum_\sigma\sum_{p\in N_\sigma}
+      \mu_{\sigma,p}H_{\sigma,t,p}
+      \le
+      \sum_\sigma\lambda_\sigma D_{\sigma,t}
+      +
+      \sum_\sigma\phi_\sigma F_{\sigma,t}
+      +
+      \psi S_t
+      \qquad(t\in\mathcal U).
+      \tag{FSLD2}
+   \]
+\end{lemma}
+
+\begin{proof}
+   The proof is the same Farkas separation as
+   \cref{lem:finite-priced-pair-lp-dual}.  If \(z\) is feasible and
+   \((FSLD2)\) holds for every \(t\), multiplying by \(z_t\) and summing gives
+   the opposite of the strict surplus \((FSLD1)\).
+
+   Conversely, if \(\mathsf{FSLP}\) is infeasible, separate its finite
+   constraint polyhedron from the nonnegative orthant.  Upper-bound constraints
+   contribute the nonnegative prices \(\lambda,\phi,\psi\), and lower-bound
+   witness constraints contribute the nonnegative prices \(\mu\).  The
+   separated right-hand side is the strict surplus \((FSLD1)\), while the
+   nonpositive coefficient of each variable \(z_t\) is exactly \((FSLD2)\).
+\end{proof}
+
+\begin{corollary}[Scored-label column generation]
+   \label{cor:scored-label-column-generation}
+   Work with the finite proposal universe and budgets of
+   \cref{lem:finite-scored-label-lp-dual}.  Assume that the full program
+   \(\mathsf{FSLP}\) is feasible, and that preprocessing has an exact
+   reduced-gain separator for \(\mathcal U\): given nonnegative prices
+   \(\lambda,\phi,\psi,\mu\), it either returns a panel \(t\in\mathcal U\)
+   with
+   \[
+      \sum_\sigma\sum_{p\in N_\sigma}\mu_{\sigma,p}H_{\sigma,t,p}
+      >
+      \sum_\sigma\lambda_\sigma D_{\sigma,t}
+      +
+      \sum_\sigma\phi_\sigma F_{\sigma,t}
+      +
+      \psi S_t
+      \tag{FSLG}
+   \]
+   or certifies that none exists.  Then uncharged preprocessing can find
+   feasible weights supported on at most
+   \[
+      2|\Sigma|+1+\sum_\sigma|N_\sigma|
+   \]
+   scored-label panels.  Consequently, under the atom, entropy, and
+   polylogarithmic budget hypotheses of
+   \cref{cor:fractional-scored-label-terminal}, exact column generation plus
+   materialization produces the terminal retained index of that corollary.
+\end{corollary}
+
+\begin{proof}
+   Start from any finite restricted pool \(\mathcal V\subseteq\mathcal U\).
+   If the restricted version of \(\mathsf{FSLP}\) over \(\mathcal V\) is
+   feasible, minimize \(\sum_{t\in\mathcal V}z_t\) over the restricted
+   feasible region.  The optimum is attained inside the compact sublevel set
+   cut out by any feasible solution.  Choose an optimal basic feasible solution
+   after adding slack variables.  There are
+   \(2|\Sigma|+1+\sum_\sigma|N_\sigma|\) nontrivial constraints, so the
+   support of the panel variables can be bounded by that number.
+
+   If the restricted program is infeasible, apply
+   \cref{lem:finite-scored-label-lp-dual} to \(\mathcal V\).  The resulting
+   prices have strict surplus and nonpositive reduced gain on every panel in
+   \(\mathcal V\).  Since the full program over \(\mathcal U\) is feasible,
+   the same prices cannot have nonpositive reduced gain on all of
+   \(\mathcal U\).  The exact separator therefore returns a positive-gain
+   panel, and it is not already in \(\mathcal V\).  Add it and repeat.  The
+   universe is finite, so the process terminates at a feasible restricted
+   program, and the support reduction above gives the claimed bound.  The last
+   sentence is \cref{cor:fractional-scored-label-terminal}.
+\end{proof}
+
 \begin{lemma}[Fractional priced-pair materialization]
    \label{lem:fractional-priced-pair-materialization}
    Suppose \(\mathsf{PPLP}\) is feasible with \(0<h\le1\), and suppose every
@@ -4616,20 +4737,19 @@ partition ignores the bias coordinates that certify the list size.
 
 \begin{remark}[What this asks of \(k\)-means++ or AQ proposals]
    \label{rem:kmeans-pair-panel-dual}
-   \Cref{lem:finite-priced-pair-lp-dual} is the theory-facing replacement for
+   \Cref{lem:finite-scored-label-lp-dual} is the theory-facing replacement for
    a Lloyd or distortion objective.  If the current proposal pool is not
    fractionally sufficient, the dual prices assign value to uncovered
    signature--witness pairs and prices to reporter work, far scans, and stored
    incidences.  A build-time generator is useful exactly when, against every
-   surplus dual price system, it has positive probability of proposing a
-   priced-pair panel whose near-witness gain exceeds those three costs.  Thus
-   \(k\)-means++, residual \(D^2\) sampling, additive quantization training,
-   learned pivots, or list-decoding proposals can all be used as separators,
-   but the charged theorem is the fractional LP plus the retained integral
-   certificate of \cref{cor:fractional-priced-pair-terminal}.  The scored-label
-   form \cref{cor:fractional-scored-label-terminal} shows that this conclusion
-   is not tied to pair labels; any compact reporter with the same four column
-   quantities can be certified and materialized in the same way.
+   surplus dual price system, it proposes a panel whose near-witness gain
+   exceeds those three costs.  Thus \(k\)-means++, residual \(D^2\) sampling,
+   additive quantization training, learned pivots, or list-decoding proposals
+   can all be used as separators in
+   \cref{cor:scored-label-column-generation}.  The charged theorem is then the
+   fractional LP plus the retained integral certificate of
+   \cref{cor:fractional-scored-label-terminal}; no part of the argument is
+   tied to pair labels.
 \end{remark}
 
 \begin{corollary}[Superset product-panel rate bookkeeping]
@@ -21093,14 +21213,18 @@ but the proof trusts only the accepted finite envelopes for reporter work,
 stored incidences, far scanned incidences, and near-witness coverage.  This is
 the clean way to analyze practical additive IVF: the heuristic proposes a
 compact family, and the retained certificate is the theorem object.
-\Cref{prop:finite-retained-scored-label} and
+\Cref{prop:finite-retained-scored-label},
+\cref{lem:finite-scored-label-lp-dual},
+\cref{cor:scored-label-column-generation}, and
 \cref{cor:fractional-scored-label-terminal} remove the last pair-specific
 language from this retained proof: once a panel supplies finite labels,
 reported-label work, stored incidences, far scanned incidences, and
-near-witness coverage, the same deterministic verifier applies.
+near-witness coverage, the same deterministic verifier, fractional LP, dual
+obstruction, and exact separator apply.
 \Cref{lem:finite-priced-pair-lp-dual},
 \cref{lem:fractional-priced-pair-materialization}, and
-\cref{cor:fractional-priced-pair-terminal} add the finite build-time bridge:
+\cref{cor:fractional-priced-pair-terminal} are the priced-pair specialization
+of this finite build-time bridge:
 if the pair panels satisfy a fractional signature LP with inverse-polylogarithmic
 coverage and polylogarithmic constraint entropy, randomized materialization
 gives one deterministic retained pair index.  The dual prices identify the
