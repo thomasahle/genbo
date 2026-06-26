@@ -10063,6 +10063,84 @@ This certificate is the local form of the remaining problem. It is analogous in 
    defect and to provide a compact reporter for these posterior superlevels.
 \end{remark}
 
+\begin{corollary}[Affinity-cut posterior handoff]
+   \label{cor:affinity-cut-posterior-handoff}
+   Fix a near pair \(p,q\) and a port skeleton in the setting of
+   \cref{lem:port-skeleton-saturated-comparison}.  For every nonunit skeleton
+   edge \(e:s\to t\), suppose the exit port lies at a score prefix \(u_e\)
+   containing \(p\), and the child entered by the near route is obtained from a
+   certified posterior-superlevel cover as in
+   \cref{cor:certified-threshold-handoff}, with charge slack
+   \(\Xi_e\ge1\).  Assume that the edge is activated by the canonical
+   budget-thinning rule.  Put
+   \[
+      \omega_e
+      =
+      \min\left\{
+         1,\,
+         \frac{(1-\kappa\eta^2)H_p(u_e)^\rho Q_q(u_e)^s}
+              {\Xi_e H_0}
+      \right\}.
+      \tag{ACH0}
+   \]
+   For deterministic unit-success skeleton passages set \(\omega_e=1\).
+   Let \(A_{\rm aff}\) be the resulting affinity prefix mass on the skeleton:
+   \(A_{\rm aff}(s_0)=1\), and
+   \(A_{\rm aff}(t)=A_{\rm aff}(s)\omega_e\) on each skeleton edge
+   \(e:s\to t\).  If every skeleton route cut \(\mathcal C\) satisfies
+   \[
+      \sum_{s\in\mathcal C}A_{\rm aff}(s)\ge p_0,
+      \tag{ACH1}
+   \]
+   then the original harmonic route value satisfies
+   \[
+      W(r_{s_0})\ge\frac{p_0}{L(s_0)}.
+      \tag{ACH2}
+   \]
+   In particular, after posterior-superlevel decoding, the remaining
+   near-value target can be stated without a pathwise sum of pair-affinity
+   defects: it is enough that the port skeleton have inverse-polylogarithmic
+   cut mass under the local affinity weights
+   \(H_p(u)^\rho Q_q(u)^s/H_0\), up to the decoder slack \(\Xi_e\).
+\end{corollary}
+
+\begin{proof}
+   Let \(A_e\) be the reported posterior-superlevel child on edge \(e\) that
+   contains \(p\).  The proof of
+   \cref{cor:certified-threshold-handoff} gives
+   \[
+      F_4(|A_e|,R_{A_e})
+      \le
+      \Xi_e F_4(|P[u_e]|,R_{u_e})
+      \left(\frac{\overline H(u_e)}{H_p(u_e)}\right)^\rho .
+   \]
+   By the definition of the canonical mixed budget,
+   \[
+      \mathcal B_q^{\rm mix}(u_e)
+      =
+      F_4(|P[u_e]|,R_{u_e})
+      \frac{\overline H(u_e)^\rho Q_q(u_e)^s}{H_0}.
+   \]
+   Therefore the canonical activation probability on this edge is at least
+   \[
+      \min\left\{
+         1,\,
+         \frac{(1-\kappa\eta^2)\mathcal B_q^{\rm mix}(u_e)}
+              {F_4(|A_e|,R_{A_e})}
+      \right\}
+      \ge
+      \omega_e .
+   \]
+   Unit-success passages have activation probability \(1=\omega_e\).  Hence
+   the true skeleton prefix mass \(A_{\rm sk}\) dominates \(A_{\rm aff}\) at
+   every skeleton state.  The cut hypothesis \((ACH1)\) therefore implies
+   \[
+      \sum_{s\in\mathcal C}A_{\rm sk}(s)\ge p_0
+   \]
+   for every skeleton cut.  Applying
+   \cref{cor:skeleton-cut-conductance} proves \((ACH2)\).
+\end{proof}
+
 \begin{corollary}[Surprise-defect route-law certificate]
    \label{cor:surprise-defect-route-law}
    Consider a candidate near-route trie in the canonical budget-thinned
@@ -10173,6 +10251,12 @@ This certificate is the local form of the remaining problem. It is analogous in 
    decoder can expose the resident posterior superlevel containing the near
    witness, the smaller child size cancels the resident-surprise factor
    algebraically and the edge pays only the pair-score affinity defect.
+   \Cref{cor:affinity-cut-posterior-handoff} gives the corresponding min-cut
+   version: the edge activation probability is lower-bounded by the local
+   affinity weight \(H_p(u)^\rho Q_q(u)^s/H_0\), divided only by the
+   decoder's charge slack.  Thus the port-skeleton value proof can target
+   affinity mass on every cut, rather than a cumulative log-affinity loss on a
+   single route.
 \end{remark}
 
 \begin{lemma}[Activated good-route moments]\label{lem:activated-good-route-moments}
@@ -13379,8 +13463,15 @@ This certificate is the local form of the remaining problem. It is analogous in 
    handoff: a decoded resident posterior superlevel child has size smaller by
    \(e^{-L}\), and that power-size saving cancels the resident-surprise factor
    \(e^{\rho L}\) in the canonical defect.
-   Thus a sufficient geometric theorem is to construct a tame route law whose
-   expected cumulative canonical budget defect is \(O_c(\log\log n)\).
+   The stronger cut form
+   \cref{cor:affinity-cut-posterior-handoff} removes the need to sum the
+   remaining pair-affinity defect along one route: after the posterior
+   handoff, it is enough that every cut of the port skeleton have
+   inverse-polylogarithmic mass under the local weights
+   \(H_p(u)^\rho Q_q(u)^s/H_0\), up to the structured-decoder slack.
+   Thus one sufficient geometric theorem is to prove this affinity cut mass;
+   another is to construct a tame route law whose expected cumulative
+   canonical budget defect is \(O_c(\log\log n)\).
    The pruned version \cref{cor:pruned-budget-defect-toll} allows an
    additional multiplier profile \(r\), provided
    \cref{lem:pruned-budget-thinning} certifies its expected work.  This is a
