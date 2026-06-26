@@ -17531,6 +17531,154 @@ singleton slices by hand.
    \cref{cor:finite-prefix-polylog-endpoint}.
 \end{proof}
 
+\begin{corollary}[All-size aggregate list-moment residual]
+   \label{cor:all-size-aggregate-list-moment-residual}
+   Work in the setting of \cref{cor:all-size-prefix-weak-type-residual}.  If
+   the finite prefix-template separator fails, then the residual price system
+   from \cref{cor:finite-prefix-residual-envelope} satisfies the following
+   averaged envelope.  Fix \(W\in\mathcal W_0\), fractional query weights
+   \(0\le y_q\le1\), and a finite nonnegative level weighting
+   \((\lambda_i,\delta_i)_i\).  Put
+   \[
+      h_i=|\{p\in W:d_y^\gamma(p)\ge\delta_i\}|,
+      \qquad
+      M_0=\sum_i\lambda_i,
+      \qquad
+      M_1=\sum_i\lambda_i h_i,
+   \]
+   \[
+      M_{1+\rho}=\sum_i\lambda_i h_i^{1+\rho},
+      \qquad
+      B=\sum_i\lambda_i\delta_i h_i,
+      \qquad
+      A_y=\sum_q\tau_qy_q,
+      \qquad
+      \rho=\rho_W,\quad \psi=\psi_W .
+   \]
+   Then
+   \[
+      B
+      \le
+      b\,\psi\left(
+         b_0^\rho A_yM_0^{1-\rho}M_1^\rho
+         +
+         \sigma b_0^{1+\rho}M_{1+\rho}
+      \right).
+      \tag{ASLM1}
+   \]
+   If the supported levels have \(h_i\le H\), then
+   \[
+      B
+      \le
+      b\,\psi\left(
+         b_0^\rho A_yM_0^{1-\rho}M_1^\rho
+         +
+         \sigma b_0^{1+\rho}H^\rho M_1
+      \right).
+      \tag{ASLM2}
+   \]
+\end{corollary}
+
+\begin{proof}
+   If \(M_0=0\), then \(B=M_1=M_{1+\rho}=0\), and the claim is trivial.
+   Assume \(M_0>0\).  For every level with \(h_i>0\), multiplying \((ASW1)\) by
+   \(h_i\) gives
+   \[
+      \delta_i h_i
+      \le
+      b\,\psi\left(
+         b_0^\rho A_yh_i^\rho
+         +
+         \sigma b_0^{1+\rho}h_i^{1+\rho}
+      \right).
+      \tag{ASLM3}
+   \]
+   The same inequality is trivial when \(h_i=0\).  Multiplying by
+   \(\lambda_i\) and summing gives
+   \[
+      B
+      \le
+      b\,\psi\left(
+         b_0^\rho A_y\sum_i\lambda_i h_i^\rho
+         +
+         \sigma b_0^{1+\rho}M_{1+\rho}
+      \right).
+   \]
+   By concavity of \(x^\rho\),
+   \[
+      \sum_i\lambda_i h_i^\rho
+      \le
+      M_0^{1-\rho}M_1^\rho .
+   \]
+   This proves \((ASLM1)\).  If \(h_i\le H\) on the support, then
+   \(M_{1+\rho}\le H^\rho M_1\), giving \((ASLM2)\).
+\end{proof}
+
+\begin{corollary}[All-size aggregate list-moment separator]
+   \label{cor:all-size-aggregate-list-moment-separator}
+   Work in the setting of \cref{cor:all-size-weak-type-prefix-separator}.  It
+   is enough to prove the following averaged geometric statement.  Every
+   nonnegative price system \((\gamma,\tau,\sigma)\) satisfying
+   \((APC1)\)--\((APC2)\) admits a container \(W\in\mathcal W_0\), fractional
+   query weights \(0\le y_q\le1\), and a finite nonnegative level weighting
+   whose quantities \(B,M_0,M_1,M_{1+\rho}\) violate \((ASLM1)\).  It is also
+   enough to violate the capped form \((ASLM2)\) for a certified cap \(H\) with
+   \(h_i\le H\) on the supported levels.
+
+   Under this averaged separator, the finite prefix-template separator holds.
+   Consequently \((\mathsf{HKC}_{\mathcal U})\) is feasible, and the local and
+   global endpoints of \cref{cor:finite-prefix-local-filter-cover} and
+   \cref{cor:finite-prefix-polylog-endpoint} apply.
+\end{corollary}
+
+\begin{proof}
+   If the finite prefix-template separator failed, then
+   \cref{cor:all-size-aggregate-list-moment-residual} would apply to the
+   residual price system, ruling out both the uncapped and capped violations.
+   Therefore no residual failure is possible.  Feasibility and the endpoint
+   conclusions follow from \cref{cor:finite-prefix-separation},
+   \cref{cor:finite-prefix-local-filter-cover}, and
+   \cref{cor:finite-prefix-polylog-endpoint}.
+\end{proof}
+
+\begin{corollary}[All-size average list-size panel criterion]
+   \label{cor:all-size-average-list-size-panel}
+   In \cref{cor:all-size-aggregate-list-moment-separator}, a probability law
+   \(\nu\) on finitely many levels is sufficient if, with
+   \(H_\delta=|\{p\in W:d_y^\gamma(p)\ge\delta\}|\),
+   \[
+      \E_{\delta\sim\nu}\delta H_\delta
+      >
+      b\,\psi\left(
+         b_0^\rho A_y\bigl(\E_{\delta\sim\nu}H_\delta\bigr)^\rho
+         +
+         \sigma b_0^{1+\rho}\E_{\delta\sim\nu}H_\delta^{1+\rho}
+      \right).
+      \tag{ASAP1}
+   \]
+   In a capped-list form, it is enough that \(H_\delta\le H\) on the support of
+   \(\nu\) and
+   \[
+      \E_{\delta\sim\nu}\delta H_\delta
+      >
+      b\,\psi\left(
+         b_0^\rho A_y\bigl(\E_{\delta\sim\nu}H_\delta\bigr)^\rho
+         +
+         \sigma b_0^{1+\rho}H^\rho\E_{\delta\sim\nu}H_\delta
+      \right).
+      \tag{ASAP2}
+   \]
+\end{corollary}
+
+\begin{proof}
+   Use the finite level panel with weights \(\lambda_\delta=\nu(\delta)\).  Then
+   \(M_0=1\), \(M_1=\E H_\delta\),
+   \(M_{1+\rho}=\E H_\delta^{1+\rho}\), and
+   \(B=\E \delta H_\delta\).  The displayed inequalities are exactly violations
+   of \((ASLM1)\) and \((ASLM2)\), respectively, so
+   \cref{cor:all-size-aggregate-list-moment-separator} applies.
+\end{proof}
+
 \begin{corollary}[Joint query-list proposal separator]
    \label{cor:joint-query-list-proposal-separator}
    Work in the setting of \cref{cor:boolean-query-layer-list-proposal-separator}.
