@@ -14051,6 +14051,71 @@ normalized obstruction of
 hit-kernel cover \((\mathsf{HKC}_{\mathcal U})\); they are the same minimax
 statement.
 
+\begin{corollary}[Hit-kernel cover materialization]
+   \label{cor:hit-kernel-cover-materialization}
+   Work in the setting of
+   \cref{lem:primitive-hit-kernel-cover-equivalence}, and assume
+   \(r_{p,q}\ge\pi_1\) for every demanded pair.  Suppose
+   \((\mathsf{HKC}_{\mathcal U})\) is feasible and that every Boolean core
+   record obeys the atom bounds
+   \[
+      T_R\le L,\qquad S_R\le S .
+      \tag{HKM1}
+   \]
+   If
+   \[
+      B\ge
+      \max\left\{
+         1,\log(4|\mathcal N|),\log(8(|\mathcal Q|+1))
+      \right\},
+      \tag{HKM2}
+   \]
+   then preprocessing can retain an integral multiset of Boolean core records
+   \(\mathcal R\) such that every demanded pair is covered,
+   \[
+      \sum_{R\in\mathcal R}b_R(p,q)\ge1
+      \qquad((p,q)\in\mathcal N),
+      \tag{HKM3}
+   \]
+   while every query has active descendant price at most \(3BL\), and total
+   storage is at most \(3BS\):
+   \[
+      \sum_{R\in\mathcal R:q\in Q'_R}T_R\le3BL
+      \qquad(q\in\mathcal Q),
+      \qquad
+      \sum_{R\in\mathcal R}S_R\le3BS .
+      \tag{HKM4}
+   \]
+\end{corollary}
+
+\begin{proof}
+   Let \(\lambda\) be feasible for \((\mathsf{HKC}_{\mathcal U})\), and put
+   \[
+      \widehat\lambda_R=\lambda_R/\pi_1 .
+   \]
+   Since \(r_{p,q}\ge\pi_1\),
+   \[
+      \sum_R\widehat\lambda_Rb_R(p,q)
+      \ge
+      r_{p,q}/\pi_1
+      \ge1
+      \qquad((p,q)\in\mathcal N).
+   \]
+   The query and storage constraints of
+   \((\mathsf{HKC}_{\mathcal U})\) scale to
+   \[
+      \sum_{R:q\in Q'_R}\widehat\lambda_R T_R\le L,
+      \qquad
+      \sum_R\widehat\lambda_R S_R\le S .
+   \]
+   Thus \(\widehat\lambda\) is feasible for the ordinary filter-cover LP
+   \((\mathsf{FC}_{\mathcal N})\) over the Boolean core records with uniform
+   query budget \(L\) and storage budget \(S\).  Applying
+   \cref{lem:poisson-filter-cover-materialization} with the atom bounds
+   \((HKM1)\) gives the retained multiset and the displayed \(3B\)-inflated
+   query and storage guarantees.
+\end{proof}
+
 \begin{assumption}[Compression-dual separator]
    \label{asm:compression-dual-separator}
    Work in the setting of \cref{cor:residual-separator-local-cover}.  Fix a
@@ -25878,7 +25943,10 @@ form: the same theorem is equivalent to fractionally covering the primitive
 spherical hit kernel \(r_{p,q}\) by Pareto cores at \(\pi_1\)-scaled query and
 storage budgets.  Since \(r_{p,q}\ge\pi_1\) on every demanded pair, such a
 hit-kernel cover scales directly to an ordinary near-pair cover with budgets
-\((L,S)\).  Because
+\((L,S)\), and
+\cref{cor:hit-kernel-cover-materialization} rounds it into retained Boolean
+core records with only the same logarithmic materialization loss as ordinary
+LSF filters.  Because
 preprocessing time is deliberately not a scarce resource,
 \cref{lem:finite-pool-optimizer} and
 \cref{cor:offline-pareto-compression} allow the build stage to enumerate,
