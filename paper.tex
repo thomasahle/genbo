@@ -12049,6 +12049,75 @@ can therefore be phrased as a packing statement saying that the heavy dyadic
 demand layer and query-margin layer cannot satisfy all such envelopes in every
 certified container.
 
+\begin{lemma}[Dyadic cardinality screen for atomized prefixes]
+   \label{lem:dyadic-atomized-prefix-screen}
+   Work in the setting of \cref{lem:atomized-prefix-density-envelope}, and
+   assume the atom-safe cardinalities are downward closed: if \(k\) is
+   atom-safe, then every \(1\le h\le k\) is atom-safe.  Let
+   \[
+      \mathcal K_2=\{2^\ell:0\le\ell\le \lfloor\log_2M\rfloor\}.
+   \]
+   If some atom-safe \(k\) satisfies the constant-slack prefix inequality
+   \[
+      \frac{\theta_j}{b}D_k
+      >
+      2\psi\bigl(\mathsf T(Q')k^{\rho_D}
+      +\sigma k^{1+\rho_D}\bigr),
+      \tag{DAP1}
+   \]
+   then some dyadic atom-safe \(h\in\mathcal K_2\) satisfies
+   \[
+      \frac{\theta_j}{b}D_h
+      >
+      \psi\bigl(\mathsf T(Q')h^{\rho_D}
+      +\sigma h^{1+\rho_D}\bigr).
+      \tag{DAP2}
+   \]
+   Consequently, if no dyadic atom-safe prefix has positive atomized gain, then
+   every atom-safe \(k\) satisfies
+   \[
+      \frac{\theta_j}{b}D_k
+      \le
+      2\psi\bigl(\mathsf T(Q')k^{\rho_D}
+      +\sigma k^{1+\rho_D}\bigr),
+      \tag{DAP3}
+   \]
+   and the average-degree and degree-superlevel envelopes
+   \((APE2)\)--\((APE3)\) hold with their right-hand sides multiplied by \(2\).
+\end{lemma}
+
+\begin{proof}
+   Let \(h=2^{\lfloor\log_2k\rfloor}\).  Then \(h\le k<2h\), and \(h\) is
+   atom-safe by downward closure.  Since the degrees are sorted in nonincreasing
+   order,
+   \[
+      \frac{D_h}{h}\ge \frac{D_k}{k},
+   \]
+   so \(D_h\ge (h/k)D_k>D_k/2\).  If \((DAP1)\) holds, then
+   \[
+      \frac{\theta_j}{b}D_h
+      >
+      \psi\bigl(\mathsf T(Q')k^{\rho_D}
+      +\sigma k^{1+\rho_D}\bigr)
+      \ge
+      \psi\bigl(\mathsf T(Q')h^{\rho_D}
+      +\sigma h^{1+\rho_D}\bigr),
+   \]
+   because \(0\le\rho_D\le1\) and \(h\le k\).  This is \((DAP2)\).
+
+   The contrapositive gives \((DAP3)\).  Dividing \((DAP3)\) by \(k\) gives the
+   factor-\(2\) version of \((APE2)\), and the same level-set argument as in
+   \cref{lem:atomized-prefix-density-envelope} gives the factor-\(2\) version
+   of \((APE3)\).
+\end{proof}
+
+\Cref{lem:dyadic-atomized-prefix-screen} makes the cardinality part of the
+separator logarithmic whenever the proposed atomized core has constant slack.
+The build stage may search powers of two in each certified container and
+query-margin layer, then run the exact reduced-gain verifier on any returned
+prefix.  The dyadic loss is therefore a proposal-generation slack, not a charge
+that has to remain in the final retained index.
+
 \begin{assumption}[Layer quotient separator]
    \label{asm:layer-quotient-separator}
    Work in the setting of \cref{cor:residual-separator-local-cover}.  Suppose a
@@ -23731,7 +23800,9 @@ prefix.  Thus the remaining geometric separator can be searched as a
 container/query-layer/cardinality problem followed by exact reduced-gain
 verification.  If all such prefixes fail,
 \cref{lem:atomized-prefix-density-envelope} gives the exact residual
-degree-superlevel envelope that every certified container must satisfy.  By
+degree-superlevel envelope that every certified container must satisfy, and
+\cref{lem:dyadic-atomized-prefix-screen} shows that constant-slack proposal
+search only needs dyadic prefix cardinalities before exact verification.  By
 \cref{cor:layer-separation-local-cover}, this concrete layer
 separator already implies local filter-cover feasibility.  Since
 preprocessing time is deliberately not a scarce resource,
