@@ -10848,6 +10848,62 @@ children that survive the final deterministic certificate.
    valid witness.
 \end{proof}
 
+\begin{lemma}[Proposal-law filter separator]
+   \label{lem:proposal-law-filter-separator}
+   Work in the setting of \cref{lem:finite-filter-cover-dual}, and let
+   \(\mathcal F_\star\) be the full finite filter universe.  Suppose that for
+   every surplus price system \((\alpha,\tau,\sigma)\) satisfying
+   \((FC\text{-}D1)\) there is a probability law \(\nu\) supported on
+   \(\mathcal F_\star\) such that
+   \[
+      \E_{A\sim\nu}
+      \sum_{(p,q)\in\mathcal N}\alpha_{p,q}c_A(p,q)
+      >
+      \E_{A\sim\nu}
+      \left(
+         S_A\sigma+
+         T_A\sum_{q\in\mathcal Q}\tau_qa_A(q)
+      \right).
+      \tag{PLS1}
+   \]
+   Then the full filter-cover LP over \(\mathcal F_\star\) is feasible.  If the
+   atom bounds of \cref{lem:poisson-filter-cover-materialization} hold for the
+   resulting feasible solution, the cover materializes with the same logarithmic
+   query and storage inflation.
+
+   Equivalently, it is enough for the proposal law to certify the marginal
+   inequality
+   \[
+      \sum_{(p,q)\in\mathcal N}
+         \alpha_{p,q}\Pr_{A\sim\nu}[p\in U_A,\ a_A(q)=1]
+      >
+      \sum_{q\in\mathcal Q}\tau_q
+         \E_{A\sim\nu}[T_Aa_A(q)]
+      +\sigma\E_{A\sim\nu}S_A .
+      \tag{PLS2}
+   \]
+   In particular, if a finite seed law \(s\sim\nu\) generates filters \(A_s\)
+   and satisfies \((PLS1)\), then some deterministic seed \(s\) generates a
+   positive reduced-gain filter.
+\end{lemma}
+
+\begin{proof}
+   The expectation in \((PLS1)\) is exactly
+   \[
+      \E_{A\sim\nu}\operatorname{gain}_{\alpha,\tau,\sigma}(A),
+   \]
+   with reduced gain as in \cref{cor:filter-cover-column-generation}.  If it is
+   positive, at least one filter in the support of \(\nu\) has positive reduced
+   gain.  Therefore every surplus dual price system exposes a positive-gain
+   column, and \cref{cor:filter-cover-column-generation} implies feasibility of
+   the full filter-cover LP.  The materialization claim is
+   \cref{lem:poisson-filter-cover-materialization}.
+
+   Expanding the two expectations in \((PLS1)\) gives \((PLS2)\).  For a finite
+   seed law, if every seed had nonpositive reduced gain, then the average
+   reduced gain would be nonpositive, contradicting \((PLS1)\).
+\end{proof}
+
 The LP above is the fully fractional version of dense overlap.  A dense ball,
 cap, facility bucket, additive-quantization bucket, list-decoder output, or
 ordinary spherical LSF bucket is just a column \(A=(U_A,a_A,T_A,S_A)\).  A hard
@@ -10861,6 +10917,12 @@ cover exists, the dual prices in \cref{lem:finite-filter-cover-dual} identify th
 exact obstruction: demand mass on near pairs, query-local load prices, and a
 storage price.  Dense merging is therefore a reduced-gain separation problem,
 not a greedy clustering rule.
+\Cref{lem:proposal-law-filter-separator} is the corresponding build-time
+interface: a randomized geometric routine is useful exactly when its induced
+incidence marginals have positive expected reduced gain against the current
+dual.  The routine itself is not stored; preprocessing enumerates or repeats it
+until the deterministic verifier finds one positive-gain column, then the final
+fractional LP and rounding charge only retained columns.
 
 \begin{assumption}[Weighted dense/spherical filter dichotomy]
    \label{asm:weighted-dense-spherical-dichotomy}
