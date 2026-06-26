@@ -14558,6 +14558,72 @@ law already has positive reduced gain.
    Subtracting the inside bound proves \((GLD2)\).
 \end{proof}
 
+\begin{corollary}[Thresholded annular collision residual]
+   \label{cor:thresholded-annular-collision-residual}
+   Work in the setting of
+   \cref{cor:guarded-normalized-residual-segment}.  For the spherical bucket
+   law define the point-query collision profile
+   \[
+      c_q(x)=\Pr_{Z\sim\Pi}[x\in U_Z,\ \chi_Z(q)=1],
+      \qquad
+      a_q=\Pr_{Z\sim\Pi}[\chi_Z(q)=1].
+   \]
+   Fix a far threshold \(\pi_2>0\), and suppose every demanded pair satisfies
+   \(\|p-q\|\le r\).  For each query put
+   \[
+      A_{\pi_2}(q)
+      =
+      \{x\in P:\|x-q\|>cr,\ c_q(x)>\pi_2\},
+      \tag{TAC1}
+   \]
+   and choose the high-correlation set
+   \[
+      H_{\pi_2}(q)=\bigl(P\cap B(q,cr)\bigr)\cup A_{\pi_2}(q).
+      \tag{TAC2}
+   \]
+   Assume the near-hit and update bounds \((WS1)\), \((WS3)\), and the budget
+   inequalities
+   \[
+      \pi_2|P|\le\frac{\pi_1L}{4},
+      \qquad
+      \pi_u|P|\le\frac{\pi_1S}{4}.
+      \tag{TAC3}
+   \]
+   Also assume all query constraints lie in
+   \[
+      \Omega_{\rm low}=\{q:|P\cap B(q,cr)|<\gamma_0|P|\},
+   \]
+   and that, for some \(0\le\eta<1/2\),
+   \[
+      \gamma_0|P|\max_q a_q\le\eta\,\pi_1L .
+      \tag{TAC4}
+   \]
+   If the enlarged local filter-cover LP is infeasible, then the guarded
+   normalized residual produced using \(H_{\pi_2}\) satisfies
+   \[
+      \sum_q\bar\tau_q a_q |A_{\pi_2}(q)|
+      >
+      \left(\frac12-\eta\right)\pi_1\kappa .
+      \tag{TAC5}
+   \]
+\end{corollary}
+
+\begin{proof}
+   The choice \(H_{\pi_2}\) contains every demanded near point because
+   \(\|p-q\|\le r<cr\).  If \(x\notin H_{\pi_2}(q)\), then either
+   \(x\notin P\cap B(q,cr)\) and \(x\notin A_{\pi_2}(q)\), or \(x\notin P\).
+   For resident points this gives \(c_q(x)\le\pi_2\), which is exactly
+   \((WS2)\) for the high-correlation set \(H_{\pi_2}\).  Together with
+   \((WS1)\), \((WS3)\), and \((TAC3)\), the hypotheses of
+   \cref{cor:guarded-normalized-residual-segment} hold for this choice of
+   \(H\).  Moreover
+   \[
+      H_{\pi_2}(q)\setminus B(q,cr)=A_{\pi_2}(q).
+   \]
+   Applying \cref{cor:guard-leakage-residual-dichotomy} with
+   \((TAC4)\) gives \((TAC5)\).
+\end{proof}
+
 \begin{lemma}[Primitive hit-kernel cover equivalence]
    \label{lem:primitive-hit-kernel-cover-equivalence}
    Work in the setting of \cref{asm:one-potential-core-separator}.  For each
@@ -14649,6 +14715,11 @@ under the budget-compatible low-guard choice, the part of \(H(q)\) inside the
 resident \(cr\)-guard ball is too small to carry the required mass, so any
 surviving residual must put constant normalized weight on the annular leakage
 \(H(q)\setminus B(q,cr)\).
+\Cref{cor:thresholded-annular-collision-residual} makes the leakage canonical:
+take \(H(q)\) to be the resident guard ball plus exactly those annular points
+whose primitive spherical collision is above the far threshold \(\pi_2\).  A
+surviving residual must then charge many such threshold violators in the
+activation-weighted sense.
 
 \begin{corollary}[Hit-kernel cover materialization]
    \label{cor:hit-kernel-cover-materialization}
@@ -36146,6 +36217,10 @@ pseudo-random case: if the primitive spherical law already has its far
 collision bound outside the true \(cr\)-guard ball, then low-guard local cover
 feasibility follows with no dense reporter.  Thus the dense theorem only has to
 explain failures of this direct guard-ball far bound.
+\Cref{cor:thresholded-annular-collision-residual} turns those failures into a
+canonical residual: after thresholding the annulus by the primitive collision
+profile \(c_q(x)\), any surviving dual must place constant normalized
+activation-weighted mass on the threshold violators.
 \Cref{lem:primitive-hit-kernel-cover-equivalence} gives the matching primal
 form: the same theorem is equivalent to fractionally covering the primitive
 spherical hit kernel \(r_{p,q}\) by Pareto cores at \(\pi_1\)-scaled query and
