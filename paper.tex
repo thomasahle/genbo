@@ -16139,6 +16139,64 @@ singleton slices by hand.
    \(K^{1+\rho}\le H^\rho K\), giving the capped form.
 \end{proof}
 
+\begin{lemma}[Query-layer form of random list proposals]
+   \label{lem:query-layer-random-list-proposal}
+   Work in the setting of \cref{lem:random-list-proposal-criterion}.  For
+   \(t\in(0,1]\), put
+   \[
+      Q_t(y)=\{q\in\mathcal Q:y_q\ge t\},
+      \qquad
+      A_t=\sum_{q\in Q_t(y)}\tau_q,
+   \]
+   and, for a random list \(\mathcal L\), define its paid value on this
+   integral query layer by
+   \[
+      V_t(\mathcal L)
+      =
+      \sum_{p\in\mathcal L}
+      \sum_{q\in Q_t(y):(p,q)\in\mathcal N}
+      \gamma_{p,q}r_{p,q}.
+      \tag{QLP1}
+   \]
+   If \((RLP1)\) holds for the fractional query weights \(y\), then there is
+   a threshold \(t\in(0,1]\) such that the same random list satisfies the
+   integral-query inequality
+   \[
+      \E V_t(\mathcal L)
+      >
+      b\,\psi\left(
+         A_t\,\E K^\rho+\sigma\,\E K^{1+\rho}
+      \right).
+      \tag{QLP2}
+   \]
+   Hence an available paid prefix has positive repair reduced gain and is
+   witnessed by an ordinary query layer \(Q_t(y)\).
+\end{lemma}
+
+\begin{proof}
+   Layer-cake in the query weights gives, for every list outcome,
+   \[
+      V(\mathcal L)
+      =
+      \int_0^1 V_t(\mathcal L)\,dt,
+      \qquad
+      A_y=\int_0^1 A_t\,dt .
+   \]
+   Since \(K=|\mathcal L|\) is independent of \(t\), \((RLP1)\) becomes
+   \[
+      \int_0^1
+      \left[
+         \E V_t(\mathcal L)-b\,\psi A_t\,\E K^\rho
+      \right]dt
+      >
+      b\,\psi\sigma\,\E K^{1+\rho}.
+   \]
+   Therefore some threshold \(t\) makes the integrand larger than the right
+   hand side, which is exactly \((QLP2)\).  Applying
+   \cref{lem:random-list-proposal-criterion} with the integral query weights
+   \(\mathbf 1_{Q_t(y)}\) gives the final statement.
+\end{proof}
+
 \begin{corollary}[Seeded list proposal criterion]
    \label{cor:seeded-list-proposal-criterion}
    Work in the setting of \cref{lem:random-list-proposal-criterion}.  Let
@@ -16377,6 +16435,9 @@ available top-degree prefix with positive reduced gain.  Thus \(k\)-means++,
 facility search, AQ buckets, LP range reporting, or list/lattice decoders only
 need to generate high value-per-moment lists; they do not need to align their
 raw output with the final retained prefix.
+\Cref{lem:query-layer-random-list-proposal} removes the remaining fractional
+query-weight artifact from this interface: any successful fractional-query list
+certificate has an ordinary threshold query layer with the same surplus.
 \Cref{cor:seeded-list-proposal-criterion} and
 \cref{cor:marginal-list-proposal-criterion} are the two forms most useful for
 implementation and for geometry.  A seeded decoder only has to prove an average
