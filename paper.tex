@@ -9910,6 +9910,159 @@ This certificate is the local form of the remaining problem. It is analogous in 
    \(a=(1-\kappa\eta^2)^{-1}\ge1\) proves \((CD2)\).
 \end{proof}
 
+\begin{lemma}[Posterior superlevel cancels resident surprise]
+   \label{lem:posterior-superlevel-cancels-surprise}
+   Work in the setting and notation of
+   \cref{lem:canonical-defect-splitting}, and assume \(D(u)>0\).  For
+   \(L\ge0\), define the resident posterior superlevel set
+   \[
+      C_L(u)
+      =
+      \{x\in P[u]:H_x(u)\ge e^L\overline H(u)\}.
+      \tag{PSU0}
+   \]
+   Then
+   \[
+      |C_L(u)|\le e^{-L}|P[u]|.
+      \tag{PSU1}
+   \]
+   Suppose that a retained decoder can open \(C_L(u)\) as a certified child
+   inside the same ball, or a smaller certified ball, with recursive charge
+   \[
+      \Gamma_L(u)\le F_4(|C_L(u)|,R_u).
+      \tag{PSU2}
+   \]
+   If the near witness \(p\) lies in \(C_L(u)\), then the canonical
+   budget-thinning defect of this posterior-refined child satisfies
+   \[
+      \log_+
+      \frac{\Gamma_L(u)}
+           {(1-\kappa\eta^2)\mathcal B_q^{\rm mix}(u)}
+      \le
+      \log\frac1{1-\kappa\eta^2}
+      +
+      \mathfrak a_{p,q}(u).
+      \tag{PSU3}
+   \]
+   Thus replacing an unstable whole-bucket recentering edge by the appropriate
+   posterior superlevel child removes the resident-surprise term from
+   \cref{lem:canonical-defect-splitting}; the price is the need to decode that
+   superlevel child output-sensitively.
+\end{lemma}
+
+\begin{proof}
+   By definition of \(\overline H(u)=D(u)/|P[u]|\),
+   \[
+      |C_L(u)|e^L\overline H(u)
+      \le
+      \sum_{x\in C_L(u)}H_x(u)
+      \le
+      D(u)
+      =
+      |P[u]|\overline H(u).
+   \]
+   Since \(D(u)>0\), also \(\overline H(u)>0\), and \((PSU1)\) follows.
+   The monotonicity of \(F_4(m,R)=m^\rho\Psi(R)\) in \(m\) gives
+   \[
+      \Gamma_L(u)
+      \le
+      e^{-\rho L}F_4(|P[u]|,R_u).
+   \]
+   Dividing by the canonical budget
+   \[
+      \mathcal B_q^{\rm mix}(u)
+      =
+      F_4(|P[u]|,R_u)
+      \frac{\overline H(u)^\rho Q_q(u)^s}{H_0}
+   \]
+   yields
+   \[
+      \frac{\Gamma_L(u)}
+           {(1-\kappa\eta^2)\mathcal B_q^{\rm mix}(u)}
+      \le
+      \frac{H_0}
+           {(1-\kappa\eta^2)(e^L\overline H(u))^\rho Q_q(u)^s}.
+   \]
+   If \(p\in C_L(u)\), then \(H_p(u)\ge e^L\overline H(u)\).  Therefore the
+   right side is at most
+   \[
+      \frac{H_0}
+           {(1-\kappa\eta^2)H_p(u)^\rho Q_q(u)^s}.
+   \]
+   Taking \(\log_+\) proves \((PSU3)\).
+\end{proof}
+
+\begin{corollary}[Certified threshold handoff]
+   \label{cor:certified-threshold-handoff}
+   Work in the setting of
+   \cref{lem:posterior-superlevel-cancels-surprise}.  Suppose that, for a
+   threshold \(L\), a retained reporter lists a certified cover
+   \(\mathcal C_L(u)\) of \(C_L(u)\).  Each \(A\in\mathcal C_L(u)\) is opened as
+   a child inside the same ball, or inside a smaller certified ball, and the
+   cover has charge slack \(\Xi\ge1\):
+   \[
+      \sum_{A\in\mathcal C_L(u)} F_4(|A|,R_A)
+      \le
+      \Xi\,F_4(|C_L(u)|,R_u),
+      \tag{CTH0}
+   \]
+   where \(R_A\le R_u\) is the radius certificate of \(A\).  If the near
+   witness \(p\) lies in some reported child \(A_p\), then that child has defect
+   \[
+      \log_+
+      \frac{F_4(|A_p|,R_{A_p})}
+           {(1-\kappa\eta^2)\mathcal B_q^{\rm mix}(u)}
+      \le
+      \log\Xi
+      +
+      \log\frac1{1-\kappa\eta^2}
+      +
+      \mathfrak a_{p,q}(u).
+      \tag{CTH1}
+   \]
+   Hence any output-sensitive soft list decoder whose threshold cover has
+   polylogarithmic charge slack converts resident surprise into only an
+   \(O(\log\log m)\) toll.
+\end{corollary}
+
+\begin{proof}
+   Since \(p\in A_p\),
+   \[
+      F_4(|A_p|,R_{A_p})
+      \le
+      \sum_{A\in\mathcal C_L(u)}F_4(|A|,R_A)
+      \le
+      \Xi F_4(|C_L(u)|,R_u).
+   \]
+   Apply the proof of
+   \cref{lem:posterior-superlevel-cancels-surprise}, with the extra factor
+   \(\Xi\), and take \(\log_+\).
+\end{proof}
+
+\begin{remark}[What the lattice decoder must decode]
+   \label{rem:posterior-superlevel-list-decoder-target}
+   \Cref{cor:certified-threshold-handoff} is the local form of the
+   code/lattice interpretation.  The score tree is a generic way to enumerate
+   the superlevels of the resident posterior \(H_x(u)\).  A structured
+   replacement should decode the same set
+   \(C_L(u)=\{x:H_x(u)\ge e^L\overline H(u)\}\), not a nearest raw centroid.
+   If \(\log H_x(u)\) factors into block reliabilities, this is exactly a
+   soft-threshold list-recovery problem.  If the factors are Euclidean block
+   scores, it is a Euclidean list-decoding problem after the usual lifting by
+   branch prices.  Construction-A/D quotients, Barnes--Wall or Barnes--Sloane
+   recursions, polar list decoders, trellises, GMD/Chase sweeps, and ordered
+   statistics decoders are therefore useful only through a certified reporter
+   satisfying \((CTH0)\), followed by exact metric filtering.
+
+   This also explains how the standard certified ball recursion is absorbed
+   into the same branching-score process.  A dense ball is opened because its
+   posterior score is high relative to the resident average; the smaller
+   resident count of that posterior superlevel pays for the recursive
+   \(m^\rho\) charge.  The remaining proof obligation is not to control
+   resident surprise again, but to prove a small cumulative pair-affinity
+   defect and to provide a compact reporter for these posterior superlevels.
+\end{remark}
+
 \begin{corollary}[Surprise-defect route-law certificate]
    \label{cor:surprise-defect-route-law}
    Consider a candidate near-route trie in the canonical budget-thinned
@@ -10016,6 +10169,10 @@ This certificate is the local form of the remaining problem. It is analogous in 
    buckets or list-decoded facility proposals should help: they need only cover
    the exposed high-posterior prefixes, while low-surprise prefixes are already
    paid for by the canonical budget.
+   \Cref{lem:posterior-superlevel-cancels-surprise} makes this precise: if a
+   decoder can expose the resident posterior superlevel containing the near
+   witness, the smaller child size cancels the resident-surprise factor
+   algebraically and the edge pays only the pair-score affinity defect.
 \end{remark}
 
 \begin{lemma}[Activated good-route moments]\label{lem:activated-good-route-moments}
@@ -13218,7 +13375,10 @@ This certificate is the local form of the remaining problem. It is analogous in 
    along a tame route law.  Low-surprise prefixes are paid for by the canonical
    budget; high-surprise prefixes are precisely the exposed posterior prefixes
    that should be handled by structured rate-coverage or list-decoded facility
-   buckets.
+   buckets.  \Cref{lem:posterior-superlevel-cancels-surprise} formalizes this
+   handoff: a decoded resident posterior superlevel child has size smaller by
+   \(e^{-L}\), and that power-size saving cancels the resident-surprise factor
+   \(e^{\rho L}\) in the canonical defect.
    Thus a sufficient geometric theorem is to construct a tame route law whose
    expected cumulative canonical budget defect is \(O_c(\log\log n)\).
    The pruned version \cref{cor:pruned-budget-defect-toll} allows an
