@@ -18605,6 +18605,65 @@ inequality \((QP3)\).
    \cref{cor:saturated-mass-exact-signature-screen}.
 \end{proof}
 
+\begin{corollary}[Finite exact-signature superlevel separator]
+   \label{cor:finite-exact-signature-superlevel-separator}
+   Work in the setting of
+   \cref{cor:unit-mass-weak-type-residual}, and assume the bucket family
+   \(\mathcal B\) is finite.  For \(B\in\mathcal B\), define the finite level
+   set
+   \[
+      \mathcal T_B=
+      \{m_B(\sigma_0):\sigma_0\in\Sigma^+,\ m_B(\sigma_0)>0\}.
+      \tag{EFS1}
+   \]
+   Suppose that every normalized price system satisfying \((ESNO1)\) admits a
+   bucket \(B\in\mathcal B\) and a level \(t\in\mathcal T_B\) such that
+   \[
+      (1-e^{-t})
+      \sum_{\substack{\sigma_0\in\Sigma^+\\ m_B(\sigma_0)\ge t}}
+      \bigl(\beta_{\sigma_0}-T_B\tau_{\sigma_0}\bigr)_+
+      >
+      \theta S_B+\varepsilon_B .
+      \tag{EFS2}
+   \]
+   Then \((\mathsf{ESFC}_\Sigma)\) is feasible.
+
+   Conversely, if the saturated-mass screen fails, then there is a normalized
+   witness satisfying \((ESNO1)\) for which every \(B\in\mathcal B\) and every
+   \(t\in\mathcal T_B\) satisfy the reverse weak-type inequality
+   \[
+      (1-e^{-t})
+      \sum_{\substack{\sigma_0\in\Sigma^+\\ m_B(\sigma_0)\ge t}}
+      \bigl(\beta_{\sigma_0}-T_B\tau_{\sigma_0}\bigr)_+
+      \le
+      \theta S_B+\varepsilon_B .
+      \tag{EFS3}
+   \]
+   Thus the remaining soft-bucket theorem is exactly a finite weighted
+   superlevel-search problem over the pairs \((B,t)\) with
+   \(t\in\mathcal T_B\).
+\end{corollary}
+
+\begin{proof}
+   The sufficient direction is exactly \((EWT4)\), restricted to the finite
+   level sets \(\mathcal T_B\), followed by
+   \cref{cor:unit-mass-weak-type-residual}.
+
+   For the converse, \cref{cor:unit-mass-weak-type-residual} gives a normalized
+   witness satisfying \((EWT2)\) for every real level \(t>0\).  In particular it
+   holds for every \(t\in\mathcal T_B\), which is \((EFS3)\).
+
+   Finally, no levels outside \(\mathcal T_B\) are needed for the separator.  If
+   a real \(t>0\) satisfies \(W_B(t)>0\), let
+   \[
+      t^+=\min\{u\in\mathcal T_B:u\ge t\}.
+   \]
+   Then the set of signatures with \(m_B(\sigma_0)\ge t^+\) is the same as the
+   set with \(m_B(\sigma_0)\ge t\), while \(1-e^{-t^+}\ge1-e^{-t}\).  Hence any
+   real-level violation is also witnessed at \(t^+\in\mathcal T_B\).  If
+   \(W_B(t)=0\), there is no violation.
+\end{proof}
+
 \Cref{lem:exact-near-set-filter-cover} is strictly weaker than
 \cref{lem:finite-signature-filter-cover} when the exact near set is part of the
 signature.  The all-pair LP covers every \(p\in N_{\sigma_0}\); the existential
@@ -18673,6 +18732,12 @@ shape of the remaining obstruction.
 in the residual, the total priced signature mass of each bucket is at most one,
 so a separator only has to find one responsibility-mass superlevel whose priced
 weight beats recursive storage plus the certified overflow tail.
+\Cref{cor:finite-exact-signature-superlevel-separator} makes this a finite
+oracle: for each bucket, it is enough to inspect levels equal to actual
+responsibility masses on exact near-set signatures.  Thus a \(k\)-means++,
+additive-quantization, range-reporting, or list-decoding proposal only has to
+solve a finite weighted superlevel search and then pass the deterministic
+inequality \((EFS2)\).
 
 \begin{proposition}[Conditional fractional filter-cover endpoint]
    \label{prop:fractional-filter-cover-polylog}
