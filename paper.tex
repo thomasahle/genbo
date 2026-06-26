@@ -18779,6 +18779,113 @@ inequality \((QP3)\).
    \(2^{\lfloor\log_2 t\rfloor}\le t<2\cdot2^{\lfloor\log_2t\rfloor}\).
 \end{proof}
 
+\begin{corollary}[Output-sensitive reported superlevel separator]
+   \label{cor:reported-superlevel-separator}
+   Work in the setting of
+   \cref{cor:multiplicative-level-net-separator}.  For a normalized price
+   system satisfying \((ESNO1)\), put
+   \[
+      \Delta(B,g)
+      =
+      (1-e^{-g})W_B(g)-\theta S_B-\varepsilon_B,
+      \qquad
+      B\in\mathcal B,\ g\in\mathcal G_B .
+      \tag{ERS1}
+   \]
+   Suppose a finite reporter, given the price system, outputs a set
+   \(\mathcal R\subseteq\{(B,g):B\in\mathcal B,\ g\in\mathcal G_B\}\).
+   For every reported pair it also outputs certificates
+   \[
+      \underline W_{B,g}\le W_B(g),\qquad
+      \overline S_{B,g}\ge S_B,\qquad
+      \overline\varepsilon_{B,g}\ge\varepsilon_B ,
+      \tag{ERS2}
+   \]
+   and define the certified surplus
+   \[
+      \widehat\Delta(B,g)
+      =
+      (1-e^{-g})\underline W_{B,g}
+      -\theta\overline S_{B,g}
+      -\overline\varepsilon_{B,g}.
+      \tag{ERS3}
+   \]
+   We use the convention that the maximum over an empty reported panel is
+   \(-\infty\).  If every normalized price system satisfying \((ESNO1)\) has a
+   reported pair
+   with
+   \[
+      \max_{(B,g)\in\mathcal R}\widehat\Delta(B,g)>0 ,
+      \tag{ERS4}
+   \]
+   then \((\mathsf{ESFC}_\Sigma)\) is feasible.
+
+   The same conclusion holds for a randomized reporter if
+   \[
+      \E_s\max_{(B,g)\in\mathcal R_s}\widehat\Delta_s(B,g)>0 .
+      \tag{ERS5}
+   \]
+   More generally, let
+   \[
+      \Delta_{\mathcal G}^*
+      =
+      \max_{\substack{B\in\mathcal B\\ g\in\mathcal G_B}}\Delta(B,g).
+   \]
+   If, for some \(\xi>\delta\ge0\), every normalized price system has
+   \(\Delta_{\mathcal G}^*\ge\xi\), and the reporter always returns certified
+   values satisfying
+   \[
+      \max_{(B,g)\in\mathcal R}\widehat\Delta(B,g)
+      \ge
+      \Delta_{\mathcal G}^*-\delta ,
+      \tag{ERS6}
+   \]
+   then \((\mathsf{ESFC}_\Sigma)\) is feasible.
+
+   In particular, if the nets are \(b\)-dense from below and every normalized
+   price system has some \(B\in\mathcal B\) and exact level
+   \(t\in\mathcal T_B\) with
+   \[
+      (1-e^{-t})W_B(t)
+      >
+      b\bigl(\theta S_B+\varepsilon_B\bigr)+\xi ,
+      \tag{ERS7}
+   \]
+   then the net optimum satisfies
+   \(\Delta_{\mathcal G}^*\ge\xi/b\).  Thus any reporter with additive
+   certified loss \(<\xi/b\) is sufficient.
+
+   If the reporter outputs at most \(M\) pairs and evaluates the certificates in
+   work \(C_{\rm rep}\), the separation search costs \(C_{\rm rep}+O(M)\).  This
+   is only preprocessing work: the retained filter-cover LP keeps the single
+   positive-surplus column, not the reporter transcript.
+\end{corollary}
+
+\begin{proof}
+   The certificates imply
+   \(\widehat\Delta(B,g)\le\Delta(B,g)\) for every reported pair, because
+   \(\theta\ge0\).  Hence \((ERS4)\) exposes a deterministic pair satisfying
+   \((EMN3)\), and \cref{cor:multiplicative-level-net-separator} gives
+   feasibility.  If the reporter is randomized and \((ERS5)\) holds, some seed
+   has positive realized maximum certified surplus, reducing to the deterministic
+   case.
+
+   The approximate version is immediate from \((ERS6)\): if
+   \(\Delta_{\mathcal G}^*\ge\xi>\delta\), then the reported certified maximum
+   is positive.  Finally, under \((ERS7)\), choose
+   \(g\in\mathcal G_B\) with \(t/b\le g\le t\).  As in the proof of
+   \cref{cor:multiplicative-level-net-separator},
+   \[
+      (1-e^{-g})W_B(g)
+      \ge
+      \frac1b(1-e^{-t})W_B(t)
+      >
+      \theta S_B+\varepsilon_B+\xi/b .
+   \]
+   Thus \(\Delta_{\mathcal G}^*\ge\xi/b\).  The work statement is just the
+   finite scan of the reported panel after the certificates have been computed.
+\end{proof}
+
 \Cref{lem:exact-near-set-filter-cover} is strictly weaker than
 \cref{lem:finite-signature-filter-cover} when the exact near set is part of the
 signature.  The all-pair LP covers every \(p\in N_{\sigma_0}\); the existential
@@ -18863,6 +18970,13 @@ artifact: a geometric net over mass levels is enough, losing only its
 multiplicative density factor in surplus.  Dyadic mass thresholds therefore
 suffice up to a factor two, which is the form needed by output-sensitive
 range-reporting or list-decoding implementations.
+\Cref{cor:reported-superlevel-separator} is the matching implementation
+interface: a decoder or range reporter may output only a small panel of
+candidate bucket-level pairs, possibly with certified lower and upper envelopes.
+If the best reported certified surplus is positive, or if an approximate
+reporter loses less than the available margin, the finite separator already
+accepts one deterministic column.  The reporter work is build-time separation
+work; it is not retained as recursive query overhead.
 
 \begin{proposition}[Conditional fractional filter-cover endpoint]
    \label{prop:fractional-filter-cover-polylog}
