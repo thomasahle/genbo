@@ -874,8 +874,10 @@ The smooth product filter is not a replacement for \cref{lem:adaptive-continuati
       \tag{CB1}
    \]
 
-   Third, if \(\operatorname{mult}(A)\) is the number of retained filter
-   occurrences whose canonical net is \(A\), then
+   Third, the coordinates of the original resident points are stored once
+   globally; recursive children store only point identifiers, filter metadata,
+   and their own incidence structures.  If \(\operatorname{mult}(A)\) is the
+   number of retained filter occurrences whose canonical net is \(A\), then
    \[
       \sum_A \operatorname{mult}(A)\bigl(1+|A|^{1+\rho_{j+1}}\bigr)
       \le
@@ -904,20 +906,23 @@ The smooth product filter is not a replacement for \cref{lem:adaptive-continuati
    displayed bound because \(\rho_h=1\).
 
    Assume the claim is known at rung \(j+1\).  Build the retained filter
-   metadata for \(P\).  For every canonical net \(A\), build one recursive
-   child for the \((c_{j+1},r_{j+1})\)-ANN problem on \(A\), where
-   \(r_{j+1}=\alpha_jr_j\).  By the induction hypothesis and \((CB2)\), the
-   total recursive space is at most
+   metadata for \(P\), using references to the one global coordinate array.
+   For every canonical net \(A\), build one recursive child for the
+   \((c_{j+1},r_{j+1})\)-ANN problem on \(A\), where
+   \(r_{j+1}=\alpha_jr_j\).  We apply the induction hypothesis to the
+   non-coordinate part of the child indices; the coordinate term is not
+   duplicated because every child point is an original resident point addressed
+   by identifier.  By \((CB2)\), the total recursive non-coordinate space is at
+   most
    \[
-      d\sum_A |A|
-      +
       \log^{O_c(1)}(m+2)
       \sum_A |A|^{1+\rho_{j+1}}
       \le
-      dm+m^{1+\rho_j}\log^{O_c(1)}(m+2),
+      m^{1+\rho_j}\log^{O_c(1)}(m+2),
    \]
    after absorbing the retained metadata and using \(\operatorname{mult}(A)\ge
-   1\) for every retained class.  Thus the space bound holds.
+   1\) for every retained class.  Adding the single global coordinate array
+   gives \(dm+m^{1+\rho_j}\log^{O_c(1)}(m+2)\).  Thus the space bound holds.
 
    On query \(q\), repeat independent probes until a verified \(c_jr_j\)-near
    neighbor is found, and cap the resulting expected algorithm as in the
