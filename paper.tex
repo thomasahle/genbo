@@ -14214,6 +14214,111 @@ For a threshold $u$, the posterior-superlevel child is
    Multiplying by $T_\xi$ and summing $\xi^{-(1+\rho)}$ over dyadic scales gives the stated $m^{1+\rho}h^{-1}\log^{O_c(1)}m$ bound.
 \end{proof}
 
+\begin{corollary}[Dyadic amplification boosts outgoing affinity]
+   \label{cor:dyadic-affinity-boost}
+   Work in the setting of \cref{lem:dyadic-structured-amplification}, but fix
+   a target \(0<\varepsilon<1/2\).  For each scale \(\xi\), let
+   \[
+      V_\xi
+      =
+      \sum_{\substack{C\text{ at scale }\xi\\p\in C}}
+      \lambda_q(C)\mu(C)^{-\rho},
+      \qquad
+      h=\sum_\xi V_\xi>0,
+      \tag{DAB0}
+   \]
+   and let
+   \[
+      \Lambda_\xi
+      =
+      \sum_{\substack{C\text{ at scale }\xi\\p\in C}}\lambda_q(C)
+      \tag{DAB1}
+   \]
+   be the one-group intensity of useful children at that scale.  Repeat scale
+   \(\xi\)
+   \[
+      T_\xi
+      =
+      \left\lceil
+         C_\rho\,\xi^{-\rho}h^{-1}\log\frac1\varepsilon
+      \right\rceil
+      \tag{DAB2}
+   \]
+   times, with \(C_\rho\) a sufficiently large constant.  For each repetition
+   create one analysis port whose success event is that the decoded output
+   contains at least one useful child at that scale; give that port weight
+   \[
+      \omega_{\xi,j}=1-\exp(-\Lambda_\xi).
+      \tag{DAB3}
+   \]
+   Then the total outgoing useful affinity
+   \[
+      \Omega=\sum_\xi\sum_{j=1}^{T_\xi}\omega_{\xi,j}
+      \tag{DAB4}
+   \]
+   satisfies
+   \[
+      \Omega\ge1-\varepsilon .
+      \tag{DAB5}
+   \]
+   The query, active-output, and storage bounds of
+   \cref{lem:dyadic-structured-amplification} are multiplied by only
+   \(O_\rho(\log(1/\varepsilon))\).
+
+   Consequently, in the affinity-proportional skeleton of
+   \cref{cor:affinity-proportional-route-law}, this local port list contributes
+   square toll at most
+   \[
+      \log_+\frac1\Omega
+      \le 2\varepsilon .
+      \tag{DAB6}
+   \]
+   If every skeleton route uses at most \(H\) such boosted ports, choosing
+   \(\varepsilon=(H+1)^{-2}\) makes the total boosted-port toll \(O(1)\), while
+   increasing the local structured-decoding work by only \(O(\log H)\).
+\end{corollary}
+
+\begin{proof}
+   The scale condition \(\mu(C)\ge\xi/2\) gives
+   \[
+      V_\xi
+      =
+      \sum_{C\ni p}\lambda_q(C)\mu(C)^{-\rho}
+      \le
+      2^\rho\xi^{-\rho}\Lambda_\xi,
+   \]
+   hence
+   \[
+      \Lambda_\xi\ge2^{-\rho}\xi^\rho V_\xi .
+      \tag{DAB7}
+   \]
+   The useful outputs in all repeated scale groups form an independent
+   Poisson superposition of total intensity
+   \[
+      \sum_\xi T_\xi\Lambda_\xi
+      \ge
+      C_\rho2^{-\rho}\log\frac1\varepsilon
+      \frac{\sum_\xi V_\xi}{h}
+      =
+      C_\rho2^{-\rho}\log\frac1\varepsilon .
+   \]
+   Taking \(C_\rho\ge2^\rho\) makes the probability that at least one useful
+   child is decoded at least \(1-\varepsilon\).
+
+   This same probability is the probability of the union of the analysis port
+   success events.  By the union bound it is at most the sum of their
+   probabilities, which is exactly \(\Omega\).  This proves \((DAB5)\).
+   Multiplying the repetitions in \cref{lem:dyadic-structured-amplification}
+   by the extra factor \(O_\rho(\log(1/\varepsilon))\) gives the resource
+   statement.  Finally, for \(\varepsilon<1/2\),
+   \[
+      \log\frac1{1-\varepsilon}\le2\varepsilon,
+   \]
+   and \((DAB6)\) follows from \((DAB5)\).  The last sentence sums this bound
+   over at most \(H\) boosted ports and substitutes
+   \(\varepsilon=(H+1)^{-2}\).
+\end{proof}
+
 \begin{theorem}[Continuous likelihood-ball geometry]\label{thm:continuous-likelihood-balls}
    Let a node contain $S\subset\R^d$, $|S|=m$, and let $\gamma_t$ denote $N(0,tI_d)$. For $Y\sim\gamma_t$ define
    \[
@@ -17769,7 +17874,7 @@ samplers that expose a partition function \(W_{q,\xi}\) and sample a tilted
 path before quotienting to its leader, exactly as in
 \cref{lem:compressed-aggregate-sampler}.
 
-Choose $\eta_m=m^{-\rho}\log^{A_c}m$. A uniform guard of size $m^\rho\log^{O_c(1)}m$ handles the case where at least $\eta_m m/2$ points are already valid answers. Otherwise \cref{thm:continuous-likelihood-balls} supplies constant pure negative-moment value below mass $\eta_m$, and \cref{lem:ideal-likelihood-scale-profile} shows that the same ideal continuum already has the scale-normalized query and storage moments needed by \cref{lem:dyadic-structured-amplification}. \Cref{lem:ideal-likelihood-leader-law} packages these facts in the quotient language: each scale has only constant total leader intensity, and the scale-weighted valid-leader intensity is constant under guard failure. The value need not sit at the top scale $\eta_m$; it may be concentrated near singleton children. This is why the amplification lemma runs all dyadic scales down to $1/m$. The geometric cost of doing so is still only $m^\rho\log^{O_c(1)}m$.
+Choose $\eta_m=m^{-\rho}\log^{A_c}m$. A uniform guard of size $m^\rho\log^{O_c(1)}m$ handles the case where at least $\eta_m m/2$ points are already valid answers. Otherwise \cref{thm:continuous-likelihood-balls} supplies constant pure negative-moment value below mass $\eta_m$, and \cref{lem:ideal-likelihood-scale-profile} shows that the same ideal continuum already has the scale-normalized query and storage moments needed by \cref{lem:dyadic-structured-amplification}. \Cref{lem:ideal-likelihood-leader-law} packages these facts in the quotient language: each scale has only constant total leader intensity, and the scale-weighted valid-leader intensity is constant under guard failure. The value need not sit at the top scale $\eta_m$; it may be concentrated near singleton children. This is why the amplification lemma runs all dyadic scales down to $1/m$. The geometric cost of doing so is still only $m^\rho\log^{O_c(1)}m$. \Cref{cor:dyadic-affinity-boost} shows that a further logarithmic repetition factor can make the local outgoing-affinity deficit arbitrarily small, so a constant local posterior hit probability is not multiplied along a long port skeleton.
 
 Thus the remaining posterior problem is no longer geometric. By \cref{lem:likelihood-rank-prefix}, it is also not inherently a finite-channel quantization problem: after the Gaussian score \(Y\) is fixed, the threshold continuum collapses to score-prefix rank gaps. By \cref{cor:likelihood-prefix-leader}, even those prefixes do not need separate materialized representatives for ANN; a pure prefix certifies that the score leader for the same \(Y\) is already valid. \Cref{lem:dyadic-leader-quotient} gives the corresponding compiler, and \cref{cor:likelihood-leader-intensity} identifies the exact quotient law: sample or report data points from the aggregate score-leader intensities \((LI)\), where the rank-prefix gaps appear only as weights. By \cref{lem:poissonized-normalized-leader-sampler}, an implementation does not have to list active hidden labels either; it is enough to compute the scale partition function and sample from the normalized rank-gap law. After applying the scale repetitions analytically, \cref{lem:scale-amplified-alpha-leader} collapses these normalized laws to one max-tilted leader sampler. Uniformly choosing a representative from the whole node would lose a factor equal to the prefix mass, but the rank-prefix sensitivity is now encoded in the max tilt \(M_Y^\alpha\), not in stored posterior buckets.
 
@@ -19060,7 +19165,7 @@ pattern-complete materialization produce the stored cover required by
 \cref{asm:weak-offline-score-cover}.
 
 \paragraph{Structured posterior route.}
-\Cref{lem:posterior-superlevel-compiler} records the negative-moment identity suggested by the latest notes. \Cref{lem:explicit-enumeration-barrier} makes the coarse-child obstruction precise: the scale $\xi=m^{-1/(2c^2)}$ is the price of explicitly enumerating $B\simeq\xi^{-1}$ outcomes, not a geometric limit. \Cref{lem:oblivious-sparsification-barrier} adds the complementary warning that the moment bounds alone still permit $\Omega(\xi^{-1})$ disjoint possible witnesses, so direct random sparsification cannot replace structured decoding without an additional sensitivity theorem. \Cref{lem:scale-window-compiler} and \cref{lem:dyadic-structured-amplification} isolate the important arithmetic: if mass windows can be decoded output-sensitively, then $\xi^{-\rho}$ repetitions at each dyadic scale convert negative-moment value into constant hit probability, and summing all scales down to $1/m$ still fits the $m^\rho$ query budget. This scale-aware amplification is essential; a raw negative-moment diagnostic alone does not imply that the near point is actually listed with inverse-polylogarithmic probability.
+\Cref{lem:posterior-superlevel-compiler} records the negative-moment identity suggested by the latest notes. \Cref{lem:explicit-enumeration-barrier} makes the coarse-child obstruction precise: the scale $\xi=m^{-1/(2c^2)}$ is the price of explicitly enumerating $B\simeq\xi^{-1}$ outcomes, not a geometric limit. \Cref{lem:oblivious-sparsification-barrier} adds the complementary warning that the moment bounds alone still permit $\Omega(\xi^{-1})$ disjoint possible witnesses, so direct random sparsification cannot replace structured decoding without an additional sensitivity theorem. \Cref{lem:scale-window-compiler} and \cref{lem:dyadic-structured-amplification} isolate the important arithmetic: if mass windows can be decoded output-sensitively, then $\xi^{-\rho}$ repetitions at each dyadic scale convert negative-moment value into constant hit probability, and summing all scales down to $1/m$ still fits the $m^\rho$ query budget. This scale-aware amplification is essential; a raw negative-moment diagnostic alone does not imply that the near point is actually listed with inverse-polylogarithmic probability. \Cref{cor:dyadic-affinity-boost} adds the skeleton-value refinement: multiplying the local repetitions by \(O(\log H)\) makes the outgoing-affinity deficit \(O(H^{-2})\), so the affinity-proportional toll is summable over a polylogarithmic-depth port skeleton rather than paid as a per-level recall loss.
 
 The continuous likelihood-ball family now proves both analytic sides of the desired posterior decoder: \cref{thm:continuous-likelihood-balls} gives the guard-or-pure-child value, and \cref{lem:ideal-likelihood-scale-profile} gives the scale-normalized query and storage moments. \Cref{lem:likelihood-rank-prefix} further collapses the threshold continuum to rank gaps of a random score order. \Cref{cor:likelihood-prefix-leader} removes another artificial materialization cost: for ANN, every pure prefix may report the same score leader, so the decoder can aggregate prefix mass by leader buckets instead of storing one representative per prefix. \Cref{lem:dyadic-leader-quotient} records the full amplification in this hidden-label form and contributes no per-prefix storage term, and \cref{cor:likelihood-leader-intensity} identifies the exact quotient law as the rank-gap weighted measure over score leaders. \Cref{lem:ideal-likelihood-leader-law} further proves that this quotient law has constant total intensity per scale and constant scale-weighted valid intensity under guard failure. \Cref{lem:poissonized-normalized-leader-sampler} removes the remaining all-listing requirement from a sampled implementation: computing the total intensity and sampling from the normalized tilted law gives the exact Poisson leader process. Finally, \cref{lem:scale-amplified-alpha-leader} shows that the dyadic repetitions cancel the rank powers, collapsing the whole amplified posterior to the max-tilted leader law \((AL2)\), with constant total mass and constant valid mass for every near pair. The clean measure target is therefore \cref{asm:alpha-leader-sampler}; conditional on it, \cref{prop:alpha-leader-polylog} gives the desired polylogarithmic ANN bounds. \Cref{lem:alpha-leader-voronoi-capture} gives an equivalent geometric normal form for that same target: the max-tilted intensity of \(x\) is a Gaussian Voronoi-cell capture probability for the interpolated center \((1-\alpha)q+\alpha x\), multiplied by the explicit distance tilt \(\exp(-\alpha(1-\alpha)t\|x-q\|^2/2)\). \Cref{cor:query-centered-cell-reweighting} and \cref{cor:truncated-nearest-cell-compiler} then reduce max-tilted sampling to query-centered nearest-cell decoding plus scalar rejection. The weakest current algorithmic posterior target is \cref{asm:smoothed-witness-list}: list the true near witness with constant tilted mass and scan the verified list. Conditional on it, \cref{prop:witness-list-polylog} gives the same polylogarithmic ANN bound. The facility form \cref{cor:facility-bucket-witness} is the version most directly connected to \(k\)-means++ or other build-time bucket proposals. \Cref{lem:poisson-rate-coverage}, \cref{lem:finite-signature-rate-coverage}, \cref{cor:finite-transcript-rate-coverage}, \cref{cor:compressed-decoder-dag-rate-coverage}, \cref{cor:output-sensitive-decoder-dag-rate-coverage}, \cref{lem:scalar-redundancy-waterfill}, and \cref{asm:rate-coverage-panel} sharpen this further into the redundancy theorem object: point-label intensities, query label sets, finite coefficient envelopes, transcript-level and state-DAG decoder work, responsibility-weighted enumerator coverage, the marginal replication water level, the tilted miss bound, and the scan-load bound. \Cref{lem:finite-rate-coverage-convex} gives the finite convex feasibility test and dual obstruction for proposed panels. Conditional on that finite rate-coverage panel, \cref{prop:rate-coverage-polylog} gives the same endpoint. The scale-resolved sampler \cref{asm:ideal-likelihood-leader-law-sampler}, the hidden-label sampler \cref{asm:normalized-likelihood-leader-sampler}, the structured nearest-cell decoder \cref{asm:smoothed-nearest-cell}, and the older all-listing \cref{asm:multiscale-structured-likelihood} remain stronger sufficient implementation forms.
 
