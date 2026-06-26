@@ -11384,6 +11384,101 @@ proved at each radius scale, \cref{lem:finite-signature-filter-cover} and
 \cref{prop:fractional-filter-cover-polylog} supply the data structure with no
 additional branching argument.
 
+\begin{lemma}[Quotient-packing reduced-gain criterion]
+   \label{lem:quotient-packing-reduced-gain}
+   Work in the setting of \cref{lem:dense-slice-quotient-separation}.  For a
+   probability law \(\Gamma\) on the quotient family \(\mathcal G\), define the
+   de-duplicated primitive demand and quotient price
+   \[
+      \mathsf A_\Gamma
+      =
+      \E_{G\sim\Gamma}
+      \frac1{b_G}\sum_{(z,q)\in\mathcal I_G}A_{z,q},
+      \tag{QP1}
+   \]
+   and
+   \[
+      \mathsf P_\Gamma
+      =
+      \E_{G\sim\Gamma}
+      \left[
+         T_G\sum_q\tau_qa_G(q)+\sigma S_G
+      \right].
+      \tag{QP2}
+   \]
+   If
+   \[
+      \mathsf A_\Gamma>\mathsf P_\Gamma,
+      \tag{QP3}
+   \]
+   then some quotient \(G\in\mathcal G\) has positive reduced gain.  Conversely,
+   if no quotient in \(\mathcal G\) has positive reduced gain, then
+   \[
+      \mathsf A_\Gamma\le \mathsf P_\Gamma
+      \tag{QP4}
+   \]
+   for every probability law \(\Gamma\) on \(\mathcal G\).
+
+   In particular, put
+   \[
+      \mathsf A_\Pi=\E_{Z\sim\Pi}\sum_qA_{Z,q}.
+      \tag{QP5}
+   \]
+   If \(\mathsf A_\Pi>0\), then any quotient law satisfying, for some
+   \(\gamma>0\) and \(\varepsilon>0\),
+   \[
+      \mathsf A_\Gamma\ge \gamma\mathsf A_\Pi,
+      \qquad
+      \mathsf P_\Gamma\le (1-\varepsilon)\gamma\mathsf A_\Pi
+      \tag{QP6}
+   \]
+   exposes a positive-gain quotient.
+\end{lemma}
+
+\begin{proof}
+   The condition \((QP3)\) is exactly the strict inequality \((DQ6)\) in
+   \cref{lem:dense-slice-quotient-separation}.  Hence a positive-gain quotient
+   exists.  If no quotient has positive gain, the contrapositive gives
+   \((QP4)\) for every law \(\Gamma\).  Finally, \((QP6)\) implies
+   \[
+      \mathsf A_\Gamma-\mathsf P_\Gamma
+      \ge
+      \varepsilon\gamma\mathsf A_\Pi.
+   \]
+   The right-hand side is positive because \(\mathsf A_\Pi>0\).  Thus
+   \((QP3)\) holds.
+\end{proof}
+
+\begin{corollary}[Quotient-packing local cover criterion]
+   \label{cor:quotient-packing-local-cover}
+   In the setting of \cref{cor:residual-separator-local-cover}, suppose that for
+   every surplus dual price system \((\alpha,\tau,\sigma)\) satisfying \((RS1)\),
+   at least one of the following holds:
+   a spherical bucket has positive reduced gain; a whole high-correlation dense
+   slice has positive reduced gain; an atom-safe dense prefix has positive
+   reduced gain; or there is a quotient-packing law \(\Gamma\) on \(\mathcal G\)
+   satisfying \((QP3)\).  Then the finite filter-cover LP is feasible with query
+   budget \(L\) and storage budget \(S\).
+\end{corollary}
+
+\begin{proof}
+   If the LP were infeasible, \cref{lem:finite-filter-cover-dual} would give a
+   surplus dual price system with nonpositive reduced gain on every column in the
+   finite universe.  The first three alternatives are then impossible because the
+   universe contains the spherical buckets, whole dense slices, and atom-safe
+   dense prefixes.  The last alternative is impossible by
+   \cref{lem:quotient-packing-reduced-gain}, since \((QP3)\) would expose a
+   positive-gain quotient column.  This contradicts the assumed alternative for
+   every surplus dual.
+\end{proof}
+
+Thus the remaining geometric task can be stated in an algorithmic column-generation
+form: against every residual dual, construct a quotient-packing law \(\Gamma\)
+with \(\mathsf A_\Gamma>\mathsf P_\Gamma\).  Expensive preprocessing may search
+for this law by clustering, cap nets, additive quantization, or learned seeds,
+but the retained proof object is only the verified quotient family and the
+inequality \((QP3)\).
+
 \begin{lemma}[Finite-signature filter-cover compiler]
    \label{lem:finite-signature-filter-cover}
    Let $\Omega$ be a query domain for one resident node \(P\), and let
@@ -22957,7 +23052,11 @@ quotient query and storage prices.  Finally,
 certificate into the explicit inequalities \((RO1)\)--\((RO5)\).  The remaining
 geometric theorem is now exactly to rule out those inequalities for a rich enough
 quotient universe; by \cref{cor:residual-separator-local-cover}, that residual
-separator is already sufficient for local filter-cover feasibility.  Since
+separator is already sufficient for local filter-cover feasibility.
+\Cref{lem:quotient-packing-reduced-gain} and
+\cref{cor:quotient-packing-local-cover} give the operational form of this task:
+against every residual dual, construct a distribution over quotients whose
+de-duplicated primitive demand exceeds its query/storage price.  Since
 preprocessing time is deliberately not a scarce resource,
 \cref{lem:finite-pool-optimizer} and
 \cref{cor:offline-pareto-compression} allow the build stage to enumerate,
