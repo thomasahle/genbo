@@ -14635,6 +14635,73 @@ is backed by exposed near-pair value and no proposed Pareto core has positive
 reduced gain.  The geometric separator only has to show that such a paid
 overbudget sublaw contains a compressing core.
 
+\begin{corollary}[Singleton-saturated paid law]
+   \label{cor:singleton-saturated-paid-law}
+   In the setting of \cref{lem:paid-primitive-sublaw-normal-form}, suppose that
+   \(\mathcal R\) contains every nonempty primitive singleton record
+   \(R_{z,q}=(V_{z,q},\{q\})\) with prices \(T_{z,q},S_{z,q}\).  If a price
+   system \((\gamma,\tau,\sigma)\) satisfies \((JDR1)\) for all records in
+   \(\mathcal R\), then
+   \[
+      A_{z,q}^{\gamma}\le P_{z,q}^{\tau,\sigma}
+      \qquad(z,q),
+      \tag{SSP1}
+   \]
+   and the paid sublaw from \cref{lem:paid-primitive-sublaw-normal-form}
+   satisfies
+   \[
+      \sum_{z,q}\omega_{z,q}P_{z,q}^{\tau,\sigma}
+      =
+      \sum_{z,q}\Pi(z)A_{z,q}^{\gamma}
+      =
+      \sum_{(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}.
+      \tag{SSP2}
+   \]
+   Consequently, under singleton saturation, any surplus primitive-hit dual
+   \[
+      \sum_{(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}
+      >
+      \pi_1\left(L\sum_q\tau_q+\sigma S\right)
+      \tag{SSP3}
+   \]
+   produces an overbudget paid primitive sublaw unless some non-singleton
+   repair record has positive reduced gain.
+\end{corollary}
+
+\begin{proof}
+   Apply \((JDR1)\) to the singleton record \(R_{z,q}\).  Its left side is
+   \(A_{z,q}^{\gamma}\), and its right side is
+   \(P_{z,q}^{\tau,\sigma}\), proving \((SSP1)\).  Hence
+   \[
+      \min\{P_{z,q}^{\tau,\sigma},A_{z,q}^{\gamma}\}
+      =
+      A_{z,q}^{\gamma}.
+   \]
+   Combining this with \((PPS2)\) gives the first equality in \((SSP2)\).  For
+   the second equality, expand \(A_{z,q}^{\gamma}\) and exchange sums:
+   \[
+      \sum_{z,q}\Pi(z)A_{z,q}^{\gamma}
+      =
+      \sum_{(p,q)\in\mathcal N}
+      \gamma_{p,q}
+      \sum_z\Pi(z)\mathbf 1\{p\in V_{z,q}\}
+      =
+      \sum_{(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}.
+   \]
+   If \((SSP3)\) holds and no non-singleton record has positive reduced gain,
+   then \((JDR1)\) holds for all records in the saturated family, so
+   \((SSP2)\) makes the paid sublaw overbudget.
+\end{proof}
+
+\Cref{cor:singleton-saturated-paid-law} explains why primitive slices should
+remain in the build-time proposal universe even when they are too expensive to
+store as the final cover.  They normalize the dual: after they fail to have
+positive gain, the obstruction is no longer an arbitrary cap of the raw moment
+but the value-proportional paid law
+\(\omega_{z,q}=\Pi(z)A_{z,q}^{\gamma}/P_{z,q}^{\tau,\sigma}\) on slices with
+positive price.  The only useful remaining columns are compressions of that
+paid law into cheaper Pareto cores.
+
 \begin{assumption}[Compression-dual separator]
    \label{asm:compression-dual-separator}
    Work in the setting of \cref{cor:residual-separator-local-cover}.  Fix a
@@ -26492,6 +26559,10 @@ near-pair value pays their recursive price can contribute to the remaining
 obstruction.  \Cref{lem:paid-primitive-sublaw-normal-form} turns this into a
 canonical paid sublaw \(\omega\), so the geometric task is to compress paid
 overbudget primitive mass rather than all primitive mass.
+\Cref{cor:singleton-saturated-paid-law} shows that, once primitive singleton
+records are included as build-time columns, this paid law is simply
+value-proportional and has total price equal to the primitive captured mass
+\(\sum\gamma r\).
 Because
 preprocessing time is deliberately not a scarce resource,
 \cref{lem:finite-pool-optimizer} and
