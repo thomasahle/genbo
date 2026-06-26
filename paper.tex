@@ -3312,6 +3312,143 @@ partition ignores the bias coordinates that certify the list size.
    call and duplicate removal.
 \end{proof}
 
+\begin{lemma}[Chase--GMD reporter]
+   \label{lem:chase-gmd-reporter}
+   Let \(\mathcal C\subseteq\Sigma^h\) have Hamming distance \(\Delta\) and a
+   certified errors-and-erasures decoder as in
+   \cref{lem:reliability-erasure-sweep}.  Fix hard symbols \(a_i\in\Sigma\)
+   and confidences \(\gamma_i\in[0,1]\).  Let \(T\subseteq[h]\) be a branch
+   set, and for each \(i\in T\) let \(L_i\subseteq\Sigma\) be a candidate
+   symbol list.  For every branch
+   \(b=(b_i)_{i\in T}\in\prod_{i\in T}L_i\), set
+   \[
+      a^b_i=
+      \begin{cases}
+         b_i, & i\in T,\\
+         a_i, & i\notin T,
+      \end{cases}
+      \qquad
+      \gamma^b_i=
+      \begin{cases}
+         1, & i\in T,\\
+         \gamma_i, & i\notin T.
+      \end{cases}
+   \]
+   Run the reliability-erasure sweep of
+   \cref{lem:reliability-erasure-sweep} for every pair
+   \((a^b,\gamma^b)\), and output the distinct decoded codewords.
+
+   This reporter makes at most
+   \[
+      (h+2)\prod_{i\in T}|L_i|
+   \]
+   errors-and-erasures decoder calls and outputs at most that many distinct
+   codewords.  It includes every \(c\in\mathcal C\) such that
+   \(c_i\in L_i\) for all \(i\in T\) and
+   \[
+      |T|
+      +
+      \sum_{\substack{i\notin T\\ c_i=a_i}}\gamma_i
+      -
+      \sum_{\substack{i\notin T\\ c_i\ne a_i}}\gamma_i
+      >
+      h-\Delta .
+      \tag{CH1}
+   \]
+\end{lemma}
+
+\begin{proof}
+   For a codeword \(c\) satisfying the displayed hypotheses, choose the branch
+   \(b_i=c_i\) on \(T\).  With respect to \((a^b,\gamma^b)\), every coordinate
+   in \(T\) is a correct hard decision with confidence \(1\).  Thus the GMD
+   weighted agreement margin for this branch is exactly the left-hand side of
+   \((CH1)\), so \cref{lem:reliability-erasure-sweep} outputs \(c\).  The
+   number of calls is the number of branches times the \(h+2\) erasure
+   thresholds per branch, and each call returns at most one codeword.
+\end{proof}
+
+\begin{corollary}[Chase--GMD soft-score block certificate]
+   \label{cor:chase-gmd-block-certificate}
+   Work in the setting of \cref{lem:chase-gmd-reporter}, and let a query assign
+   coordinate scores \(\omega_i(a)\).  For \(i\notin T\), choose
+   \(a_i\in\operatorname*{arg\,max}_{a\in\Sigma}\omega_i(a)\),
+   \(\gamma_i\in[0,1]\), and a scale \(\kappa>0\) such that
+   \[
+      \omega_i(a_i)-\omega_i(a)\ge\kappa\gamma_i
+      \qquad(i\notin T,\ a\ne a_i).
+      \tag{CH2}
+   \]
+   For a branch \(b\in\prod_{i\in T}L_i\), put
+   \[
+      M_b(q)=
+      \sum_{i\in T}\omega_i(b_i)
+      +
+      \sum_{i\notin T}\omega_i(a_i),
+      \qquad
+      \Gamma_T(q)=\sum_{i\notin T}\gamma_i,
+   \]
+   and \(S_q(c)=\sum_i\omega_i(c_i)\).  Then the Chase--GMD reporter includes
+   every codeword \(c\) with \(c_i\in L_i\) for \(i\in T\) and
+   \[
+      S_q(c)>
+      M_{c_T}(q)
+      -
+      \frac{\kappa}{2}\bigl(\Gamma_T(q)+|T|-h+\Delta\bigr).
+      \tag{CH3}
+   \]
+   Consequently, if a requested threshold \(\Theta(q)\) satisfies
+   \[
+      \Theta(q)\ge
+      \max_{b\in\prod_{i\in T}L_i}M_b(q)
+      -
+      \frac{\kappa}{2}\bigl(\Gamma_T(q)+|T|-h+\Delta\bigr),
+      \tag{CH4}
+   \]
+   then the Chase--GMD reporter followed by exact filtering
+   \(S_q(c)\ge\Theta(q)\) returns every codeword of score at least
+   \(\Theta(q)\) whose symbols on \(T\) lie in the candidate lists.  If
+   \(L_i=\Sigma\) for all \(i\in T\), it is a certified threshold reporter for
+   the whole code.  Its query-side transcript count is
+   \[
+      O\!\left(h\prod_{i\in T}|L_i|\right).
+   \]
+\end{corollary}
+
+\begin{proof}
+   Fix \(c\) with \(c_i\in L_i\) on \(T\), and let
+   \(I(c)=\{i\notin T:c_i\ne a_i\}\).  By \((CH2)\),
+   \[
+      M_{c_T}(q)-S_q(c)
+      =
+      \sum_{i\in I(c)}
+      \bigl(\omega_i(a_i)-\omega_i(c_i)\bigr)
+      \ge
+      \kappa\sum_{i\in I(c)}\gamma_i .
+   \]
+   If \((CH3)\) holds, then
+   \[
+      \sum_{i\in I(c)}\gamma_i
+      <
+      \frac{\Gamma_T(q)+|T|-h+\Delta}{2}.
+   \]
+   Hence
+   \[
+      |T|
+      +
+      \sum_{\substack{i\notin T\\ c_i=a_i}}\gamma_i
+      -
+      \sum_{\substack{i\notin T\\ c_i\ne a_i}}\gamma_i
+      =
+      |T|+\Gamma_T(q)-2\sum_{i\in I(c)}\gamma_i
+      >
+      h-\Delta .
+   \]
+   \Cref{lem:chase-gmd-reporter} therefore includes \(c\).  If \((CH4)\)
+   holds, then every codeword with \(S_q(c)\ge\Theta(q)\) and \(c_T\in\prod_iL_i\)
+   satisfies \((CH3)\), and exact filtering removes lower-score outputs.  The
+   transcript count is the call bound in \cref{lem:chase-gmd-reporter}.
+\end{proof}
+
 \begin{remark}[GMD and Chase as compressed list decoders]
    \label{rem:gmd-chase-compressed-decoder}
    \Cref{lem:reliability-erasure-sweep} is the self-contained form of the
@@ -3327,12 +3464,14 @@ partition ignores the bias coordinates that certify the list size.
    Chase decoding enlarges the same template by branching over a few
    low-confidence coordinates or low-confidence symbols before running the
    outer decoder~\cite{Cha72}.  In the present language, those trials are just
-   additional terminal outputs of a compact decoder DAG.  The useful
-   theoretical target is therefore not Lloyd-style cell convergence, but a
-   reliability map for which the true near route satisfies the soft top-gap
-   inequality \((GMS2)\), or its small-list Chase analogue, while the retained
-   outputs pass the same rate-coverage scan and storage certificates as the
-   other panels.
+   additional branches of a compact decoder DAG, as formalized in
+   \cref{lem:chase-gmd-reporter} and
+   \cref{cor:chase-gmd-block-certificate}.  The useful theoretical target is
+   therefore not Lloyd-style cell convergence, but a reliability map for which
+   the true near route satisfies the soft top-gap inequality \((GMS2)\), or the
+   Chase margin \((CH4)\) after branching over a polylogarithmic ambiguity set,
+   while the retained outputs pass the same rate-coverage scan and storage
+   certificates as the other panels.
 \end{remark}
 
 \begin{remark}[Outer list recovery as the clean codebook target]
@@ -16660,6 +16799,11 @@ certificate: top-symbol gaps define the confidences, and any codeword above
 the resulting score threshold is included by the same \(O(h)\)-call sweep.
 \Cref{cor:gmd-block-certificate} packages the usable block condition for
 finite-signature and decoder-DAG rate-coverage certificates.
+\Cref{lem:chase-gmd-reporter} and
+\cref{cor:chase-gmd-block-certificate} add the polylogarithmic ambiguity
+version: branch over a few low-confidence coordinates, promote the guessed
+symbols to confidence \(1\), and then use the same GMD sweep.  The branch
+product is charged explicitly as decoder work.
 The remaining work is spectrum and rate bookkeeping rather than Lloyd-style
 convergence analysis.
 \Cref{lem:additive-product-panel-decoder}
@@ -16840,6 +16984,10 @@ the corresponding small-list extension.
 \Cref{cor:gmd-block-certificate} is the resulting retained-block certificate:
 high-margin signatures can use ordinary errors-and-erasures decoding instead
 of a full soft list-recovery oracle.
+\Cref{cor:chase-gmd-block-certificate} extends this to signatures with a
+polylogarithmic ambiguity list: a few unreliable coordinates may be guessed
+explicitly, and the remaining coordinates only need the stronger top-gap
+margin outside that guessed set.
 \Cref{lem:budget-stable-prefix-list} and
 \cref{cor:canonical-budget-stable-decoder} take one step in that direction:
 the canonical mixed Bellman budget itself is an admissible list-decoding
