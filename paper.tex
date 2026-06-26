@@ -4432,6 +4432,127 @@ partition ignores the bias coordinates that certify the list size.
    per-trial sampling time.
 \end{proof}
 
+\begin{lemma}[Stable quotienting preserves sampled spectra]
+   \label{lem:stable-quotient-sampled-spectrum}
+   Work with a tuple family \(\mathcal T\), tuple storage predicates
+   \(U_x(a)\in\{0,1\}\), a quotient map
+   \(\lambda:\mathcal T\to\Lambda\), and quotient buckets
+   \[
+      C_\ell=\{x\in P:\exists a\in\mathcal T,\ \lambda(a)=\ell,\ U_x(a)=1\}.
+   \]
+   For a query \(q\), let
+   \[
+      \pi_q(a)=\frac{e^{\beta S_q(a)}}{\sum_b e^{\beta S_q(b)}},
+      \qquad
+      \Pi_q(\ell)=\sum_{a:\lambda(a)=\ell}\pi_q(a).
+   \]
+   Suppose the quotient satisfies the following \(K\)-stability certificate for
+   the query/load pairs under consideration: for every such \(q,x,\ell\),
+   \[
+      \mathbf 1_{\{x\in C_\ell\}}
+      \sum_{a:\lambda(a)=\ell}e^{\beta S_q(a)}
+      \le
+      K\sum_{\substack{a:\lambda(a)=\ell}}U_x(a)e^{\beta S_q(a)}.
+      \tag{SQS0}
+   \]
+   Then, pointwise in the realized panel,
+   \[
+      \sum_{\ell\in\Lambda}|C_\ell|
+      \le
+      \sum_{x\in P}\sum_{a\in\mathcal T}U_x(a),
+      \tag{SQS1}
+   \]
+   and every promised query \(q\) satisfies
+   \[
+      \sum_{\substack{x\in P\\ \|x-q\|>cr}}
+      \sum_{\ell:\,x\in C_\ell}\Pi_q(\ell)
+      \le
+      K
+      \sum_{\substack{x\in P\\ \|x-q\|>cr}}
+      \sum_{a\in\mathcal T}\pi_q(a)U_x(a).
+      \tag{SQS2}
+   \]
+   Finally, for every near pair \((p,q)\),
+   \[
+      \sum_{\ell:\,p\in C_\ell}\Pi_q(\ell)
+      \ge
+      \sum_{a\in\mathcal T}\pi_q(a)U_p(a).
+      \tag{SQS3}
+   \]
+   Consequently, if this sufficient certificate holds with
+   \(K\le\log^{O_c(1)}m\) and the unquotiented tuple panel has
+   the sampled storage, far-load, and near-mass bounds of
+   \cref{prop:sampled-structured-panel} with predicates \(U_x(a)\), then the
+   quotient buckets satisfy \((FSA1)\)--\((FSA3)\) after increasing the
+   polylogarithmic exponent.
+\end{lemma}
+
+\begin{proof}
+   The storage inequality follows because
+   \[
+      \mathbf 1_{\{x\in C_\ell\}}
+      \le
+      \sum_{a:\lambda(a)=\ell}U_x(a),
+   \]
+   and summing over \(x,\ell\) gives \((SQS1)\).
+
+   For far load, divide \((SQS0)\) by the global partition function
+   \(\sum_b e^{\beta S_q(b)}\).  This gives, for each \(x,\ell\),
+   \[
+      \mathbf 1_{\{x\in C_\ell\}}\Pi_q(\ell)
+      \le
+      K\sum_{a:\lambda(a)=\ell}\pi_q(a)U_x(a).
+   \]
+   Summing over far \(x\) and over \(\ell\) proves \((SQS2)\).
+
+   If \(U_p(a)=1\), then \(p\in C_{\lambda(a)}\).  Therefore
+   \[
+      \sum_{\ell:\,p\in C_\ell}\Pi_q(\ell)
+      =
+      \sum_a\pi_q(a)\mathbf 1_{\{p\in C_{\lambda(a)}\}}
+      \ge
+      \sum_a\pi_q(a)U_p(a),
+   \]
+   proving \((SQS3)\).  Taking expectations over the random panel and applying
+   the unquotiented sampled-panel bounds gives the final statement.
+\end{proof}
+
+\begin{corollary}[Score-spread sufficient condition for quotient stability]
+   \label{cor:score-spread-quotient-stability}
+   In the setting of \cref{lem:stable-quotient-sampled-spectrum}, fix a query
+   \(q\), a point \(x\), and a quotient class
+   \(A_\ell=\{a:\lambda(a)=\ell\}\).  If either \(x\notin C_\ell\), or
+   \[
+      |A_\ell|\le B
+      \quad\text{and}\quad
+      \max_{a,b\in A_\ell}|S_q(a)-S_q(b)|\le\Delta,
+      \tag{SSQ0}
+   \]
+   then \((SQS0)\) holds for this \(q,x,\ell\) with
+   \[
+      K=B e^{\beta\Delta}.
+      \tag{SSQ1}
+   \]
+   Hence quotient classes of polylogarithmic size and query-score spread
+   satisfying \(\beta\Delta=O_c(\log\log m)\) preserve the sampled spectra up
+   to a polylogarithmic factor.
+\end{corollary}
+
+\begin{proof}
+   If \(x\notin C_\ell\), the left side of \((SQS0)\) is zero.  Otherwise
+   choose \(a_*\in A_\ell\) with \(U_x(a_*)=1\).  Under \((SSQ0)\),
+   \[
+      \sum_{a\in A_\ell}e^{\beta S_q(a)}
+      \le
+      B e^{\beta\Delta}e^{\beta S_q(a_*)}
+      \le
+      B e^{\beta\Delta}
+      \sum_{a\in A_\ell}U_x(a)e^{\beta S_q(a)}.
+   \]
+   This is \((SQS0)\).  The final sentence is the condition
+   \(B e^{\beta\Delta}=\log^{O_c(1)}m\).
+\end{proof}
+
 \begin{proposition}[Gibbs sampled additive-IVF spectrum compiler]
    \label{prop:gibbs-sampled-additive-ivf-compiler}
    Fix a terminal localized ANN subproblem of size \(m\), approximation \(c\),
@@ -21896,8 +22017,11 @@ mass.  \Cref{lem:gibbs-aq-state-quotient} and
 \cref{cor:finite-state-sampled-aq} sharpen the implementation target further:
 a compact state graph may sample aggregate Gibbs mass for quotient bucket
 labels, so the charged index stores distinct buckets rather than all internal
-tuples.  This is the additive-vector-quantization analogue of the discrete
-Gaussian code/lattice route.
+tuples.  \Cref{lem:stable-quotient-sampled-spectrum} gives the corresponding
+loss test: quotienting is harmless up to a polylogarithmic factor whenever each
+merged class has polylogarithmic size and only \(O(\log\log m)\) Gibbs log-score
+spread at query time.  This is the additive-vector-quantization analogue of the
+discrete Gaussian code/lattice route.
 \Cref{prop:finite-retained-priced-pair} gives the corresponding retained-index
 certificate.  Build time may use \(k\)-means++, random centroids, additive
 quantization, list-decoding proposals, or column generation to produce panels,
