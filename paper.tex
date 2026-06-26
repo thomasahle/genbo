@@ -16416,6 +16416,74 @@ singleton slices by hand.
    cover is feasible.
 \end{proof}
 
+\begin{corollary}[Boolean query-layer list-proposal separator]
+   \label{cor:boolean-query-layer-list-proposal-separator}
+   Work in the setting of \cref{cor:list-proposal-hit-kernel-cover}.  The
+   hypothesis of that corollary is equivalent to the following Boolean-query
+   form.  Every nonnegative price system \((\gamma,\tau,\sigma)\) satisfying
+   \((APC1)\)--\((APC2)\) admits a certified container \(W\), an ordinary query
+   layer \(Q'\subseteq\mathcal Q\), and, writing
+   \[
+      A_{Q'}=\sum_{q\in Q'}\tau_q,
+      \qquad
+      \rho=\rho_W,\qquad
+      \psi=\psi_W,
+   \]
+   one of the following certificates:
+   \begin{itemize}
+      \item a random list \(\mathcal L\subseteq W\), with \(K=|\mathcal L|\),
+      such that
+      \[
+         \E\sum_{p\in\mathcal L}
+         \sum_{q\in Q':(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}
+         >
+         b\,\psi\left(
+            A_{Q'}\,\E K^\rho+\sigma\,\E K^{1+\rho}
+         \right);
+         \tag{BQL1}
+      \]
+      \item a finite seed law \(s\sim\nu\), with certified lists
+      \(L_s\subseteq W\) and \(K_s=|L_s|\), such that
+      \[
+         \E_s
+         \sum_{p\in L_s}
+         \sum_{q\in Q':(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}
+         >
+         b\,\psi\left(
+            A_{Q'}\,\E_sK_s^\rho+\sigma\,\E_sK_s^{1+\rho}
+         \right);
+         \tag{BQL2}
+      \]
+      \item inclusion marginals \(0\le\pi_p\le1\) and a second-moment bound
+      \(M_2\), with \(\mu=\sum_{p\in W}\pi_p\), such that
+      \[
+         \sum_{p\in W}\pi_p
+         \sum_{q\in Q':(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}
+         >
+         b\,\psi\left(
+            A_{Q'}\mu^\rho+\sigma\,\mu^{1-\rho}M_2^\rho
+         \right).
+         \tag{BQL3}
+      \]
+   \end{itemize}
+   Consequently the Boolean-query form also implies
+   \((\mathsf{HKC}_{\mathcal U})\) is feasible.
+\end{corollary}
+
+\begin{proof}
+   The Boolean-query form implies the hypothesis of
+   \cref{cor:list-proposal-hit-kernel-cover} by taking
+   \(y=\mathbf 1_{Q'}\).  Conversely, suppose the hypothesis of
+   \cref{cor:list-proposal-hit-kernel-cover} holds with fractional query weights
+   \(y\).  In the random-list case,
+   \cref{lem:query-layer-random-list-proposal} gives a threshold
+   \(Q'=Q_t(y)\) satisfying \((BQL1)\).  In the seeded and marginal cases,
+   \cref{cor:query-layer-seeded-marginal-proposals} gives a threshold
+   \(Q'=Q_t(y)\) satisfying \((BQL2)\) or \((BQL3)\), respectively.  Thus the two
+   separator hypotheses are equivalent.  Feasibility of the hit-kernel cover is
+   then \cref{cor:list-proposal-hit-kernel-cover}.
+\end{proof}
+
 \begin{assumption}[Balanced aggregate list-size separator]
    \label{asm:balanced-aggregate-list-size-separator}
    Work in the setting of \cref{asm:paid-atomized-prefix-separator}, and assume
@@ -16900,7 +16968,9 @@ the query/storage list moments for every such surplus dual.  By
 \cref{lem:query-layer-random-list-proposal} and
 \cref{cor:query-layer-seeded-marginal-proposals}, any such successful
 fractional-query certificate has an ordinary threshold query layer with the
-same surplus.  Conversely,
+same surplus.  Equivalently,
+\cref{cor:boolean-query-layer-list-proposal-separator} states the remaining
+list-proposal theorem directly in Boolean-query form.  Conversely,
 \cref{cor:paid-prefix-residual-envelope} says that a failed dense separator has
 only one possible form: a paid residual whose every certified container obeys
 the weighted degree envelopes \((PPRE1)\)--\((PPRE2)\).  Thus the remaining
