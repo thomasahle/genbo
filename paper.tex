@@ -14702,6 +14702,96 @@ but the value-proportional paid law
 positive price.  The only useful remaining columns are compressions of that
 paid law into cheaper Pareto cores.
 
+\begin{lemma}[Paid quotient reduced-gain criterion]
+   \label{lem:paid-quotient-reduced-gain}
+   Work with prices \((\gamma,\tau,\sigma)\) and primitive slices \(V_{z,q}\).
+   Let \(R=(U_R,Q'_R,T_R,S_R)\) be a Boolean Pareto core record, and suppose it
+   is assigned a finite set of primitive records
+   \[
+      \mathcal I_R\subseteq\mathcal Z\times\mathcal Q
+   \]
+   such that, for every \((z,q)\in\mathcal I_R\),
+   \[
+      V_{z,q}\subseteq U_R,\qquad q\in Q'_R .
+      \tag{PQR1}
+   \]
+   Define its probability-weighted paid primitive value by
+   \[
+      \mathsf V_R^{\gamma}
+      =
+      \sum_{(z,q)\in\mathcal I_R}\Pi(z)A_{z,q}^{\gamma}.
+      \tag{PQR2}
+   \]
+   Then
+   \[
+      \mathsf V_R^{\gamma}
+      \le
+      \sum_{(p,q)\in\mathcal N}\gamma_{p,q}b_R(p,q).
+      \tag{PQR3}
+   \]
+   Consequently, if
+   \[
+      \mathsf V_R^{\gamma}
+      >
+      T_R\sum_{q\in Q'_R}\tau_q+\sigma S_R,
+      \tag{PQR4}
+   \]
+   then \(R\) has positive repair reduced gain.  More generally, if a
+   nonnegative finite intensity vector \(\lambda_R\) over such records satisfies
+   \[
+      \sum_R\lambda_R\mathsf V_R^{\gamma}
+      >
+      \sum_R\lambda_R
+      \left(
+         T_R\sum_{q\in Q'_R}\tau_q+\sigma S_R
+      \right),
+      \tag{PQR5}
+   \]
+   then at least one record in its support has positive repair reduced gain.
+\end{lemma}
+
+\begin{proof}
+   Expanding \((PQR2)\) gives
+   \[
+      \mathsf V_R^{\gamma}
+      =
+      \sum_{(p,q)\in\mathcal N}
+      \gamma_{p,q}
+      \sum_{\substack{z:(z,q)\in\mathcal I_R\\ p\in V_{z,q}}}\Pi(z).
+   \]
+   By \((PQR1)\), every primitive incidence counted in the inner sum satisfies
+   \(p\in U_R\) and \(q\in Q'_R\).  Also
+   \[
+      \sum_{\substack{z:(z,q)\in\mathcal I_R\\ p\in V_{z,q}}}\Pi(z)
+      \le
+      \sum_z\Pi(z)
+      =
+      1 .
+   \]
+   Thus each demand pair contributes at most
+   \(\gamma_{p,q}\mathbf 1\{p\in U_R\}\mathbf 1\{q\in Q'_R\}\), which is exactly
+   \((PQR3)\).  If \((PQR4)\) holds, \((PQR3)\) implies
+   \[
+      \sum_{p,q}\gamma_{p,q}b_R(p,q)
+      -
+      T_R\sum_{q\in Q'_R}\tau_q
+      -
+      \sigma S_R
+      >0,
+   \]
+   the positive repair reduced gain \((FRD4)\).  Finally, if every record in
+   the support of \(\lambda\) had nonpositive reduced gain, then \((PQR3)\)
+   would make the left side of \((PQR5)\) no larger than the right side.  Hence
+   \((PQR5)\) exposes at least one positive-gain record.
+\end{proof}
+
+\Cref{lem:paid-quotient-reduced-gain} is the paid-law analogue of
+\cref{lem:dense-slice-quotient-separation}, but the probability weight
+\(\Pi(z)\) removes the duplicate-incidence factor.  The remaining dense
+separator may therefore search for cores that capture a large amount of
+probability-weighted paid primitive value, rather than de-duplicating raw
+singleton slices by hand.
+
 \begin{assumption}[Compression-dual separator]
    \label{asm:compression-dual-separator}
    Work in the setting of \cref{cor:residual-separator-local-cover}.  Fix a
@@ -26562,7 +26652,10 @@ overbudget primitive mass rather than all primitive mass.
 \Cref{cor:singleton-saturated-paid-law} shows that, once primitive singleton
 records are included as build-time columns, this paid law is simply
 value-proportional and has total price equal to the primitive captured mass
-\(\sum\gamma r\).
+\(\sum\gamma r\).  \Cref{lem:paid-quotient-reduced-gain} then gives the
+corresponding compression test: a core with probability-weighted paid primitive
+value larger than its query/storage price has positive reduced gain, with no
+duplicate-slice loss.
 Because
 preprocessing time is deliberately not a scarce resource,
 \cref{lem:finite-pool-optimizer} and
