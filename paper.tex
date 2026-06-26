@@ -15117,6 +15117,125 @@ law already has positive reduced gain.
    \cref{cor:annular-reporter-local-cover} gives the local-cover conclusion.
 \end{proof}
 
+\begin{definition}[Annular scalar-reporter record]
+   \label{def:annular-scalar-reporter-record}
+   Fix a guarded normalized residual
+   \((\bar\tau,\bar\sigma,\bar\gamma^\theta,\kappa)\).  An annular
+   scalar-reporter record is a tuple
+   \[
+      R=(\theta_R,W_R,\nu_R,X^R,K^R)
+   \]
+   where \(0\le\theta_R\le1\), \(W_R\) is a retained container, \(\nu_R\) is a
+   finite probability law on positive scalar levels, and \(X^R_\delta,K^R_\delta\)
+   are one-sided certificates for the scalar degree
+   \[
+      d_R(p)=
+      \sum_{q:(p,q)\in\mathcal N}
+      \bar\gamma^{\theta_R}_{p,q}r_{p,q}.
+   \]
+   The constants in the surplus test below are the scalar-prefix constants used
+   in \cref{cor:certified-scalar-superlevel-reporter}.
+   Thus, writing
+   \[
+      H^R_\delta=
+      |\{p\in W_R:d_R(p)\ge\delta\}|,
+   \]
+   the record must certify
+   \[
+      0\le X^R_\delta\le\delta H^R_\delta,
+      \qquad
+      H^R_\delta\le K^R_\delta
+      \tag{ARR0}
+   \]
+   for every reported level.  Its certified surplus is
+   \[
+   \begin{aligned}
+      \Phi(R)
+      &=
+      \E_{\nu_R}X^R_\delta\\
+      &\quad-
+      \frac{b\,\psi_{W_R}}{\pi_1}
+      \left(
+         \frac{(\chi\beta b_0)^{\rho_{W_R}}
+               (\E_{\nu_R}K^R_\delta)^{\rho_{W_R}}}{L}
+         +
+         \frac{(\chi\beta b_0)^{1+\rho_{W_R}}
+               \E_{\nu_R}(K^R_\delta)^{1+\rho_{W_R}}}{S}
+      \right).
+   \end{aligned}
+      \tag{ARR1}
+   \]
+   If the record also certifies a cap \(K^R_\delta\le H_R\) on the support of
+   \(\nu_R\), its capped surplus is
+   \[
+   \begin{aligned}
+      \Phi_{\rm cap}(R)
+      &=
+      \E_{\nu_R}X^R_\delta\\
+      &\quad-
+      \frac{b\,\psi_{W_R}}{\pi_1}
+      \left(
+         \frac{(\chi\beta b_0)^{\rho_{W_R}}
+               (\E_{\nu_R}K^R_\delta)^{\rho_{W_R}}}{L}
+         +
+         \frac{(\chi\beta b_0)^{1+\rho_{W_R}}
+               H_R^{\rho_{W_R}}\E_{\nu_R}K^R_\delta}{S}
+      \right).
+   \end{aligned}
+      \tag{ARR2}
+   \]
+\end{definition}
+
+\begin{corollary}[Single-seed reporter proposal criterion]
+   \label{cor:single-seed-reporter-proposal-criterion}
+   Work under the hypotheses of
+   \cref{cor:single-seed-query-layer-reporter-suffices}.  Fix any guarded
+   normalized residual and any single-seed annular query layer
+   \(Q_{z,\beta,\Delta}\) satisfying \((SAQ1)\)--\((SAQ2)\).  Suppose a finite
+   proposal law over annular scalar-reporter records, possibly depending on
+   this layer, satisfies
+   \[
+      \E_R\Phi(R)>0
+      \tag{SSP1}
+   \]
+   or satisfies the capped analogue
+   \[
+      \E_R\Phi_{\rm cap}(R)>0 .
+      \tag{SSP2}
+   \]
+   Then this single-seed layer yields the one-sided scalar reporter required in
+   \cref{asm:weighted-annular-scalar-reporter}.  Consequently, if every
+   single-seed annular query layer produced by
+   \cref{cor:single-seed-annular-query-layer} admits such a finite proposal
+   law, then the enlarged local filter-cover LP is feasible.
+\end{corollary}
+
+\begin{proof}
+   If \((SSP1)\) holds, some record \(R\) has \(\Phi(R)>0\).  In particular
+   \(\E_{\nu_R}X^R_\delta>0\), because the price terms in \((ARR1)\) are
+   nonnegative.  The certificates \((ARR0)\) are exactly \((CSR0)\) for the
+   residual potential \(\bar\gamma^{\theta_R}\), the retained container
+   \(W_R\), and the level law \(\nu_R\).  The inequality \(\Phi(R)>0\) is
+   strictly stronger than \((CSR1)\).  Hence this record is a valid scalar
+   reporter for the fixed single-seed layer.  The capped case is identical,
+   using \((ARR2)\) to get \((CSR2)\).
+
+   If every layer satisfying \((SAQ1)\)--\((SAQ2)\) has such a proposal law,
+   then every layer supplied by
+   \cref{cor:single-seed-annular-query-layer} yields the reporter demanded in
+   \cref{cor:single-seed-query-layer-reporter-suffices}.  That corollary gives
+   local feasibility of the enlarged filter-cover LP.
+\end{proof}
+
+The criterion above is the fully fractional dense-overlap interface at the
+current annular endpoint.  A \(k\)-means++ panel, additive-quantization panel,
+lattice list-decoder, or range-reporting routine is useful only through a
+finite law over certified records with positive expected surplus
+\((SSP1)\) or \((SSP2)\).  The annular far points remain proposal evidence; they
+are not themselves cover columns.  The retained object is the deterministic
+record exposed by averaging, which is then verified against the scalar
+near-pair degree and charged by the ordinary filter-cover LP.
+
 \begin{corollary}[Annular reporter closes the local cover]
    \label{cor:annular-reporter-local-cover}
    Work under the hypotheses of
@@ -36830,8 +36949,15 @@ scalar reporter of \cref{cor:primitive-annular-panel-reporter-suffices}.
 \Cref{cor:single-seed-annular-query-layer} and
 \cref{cor:single-seed-query-layer-reporter-suffices} reduce this once more to a
 single seed, one annular collision threshold, and one dyadic query-size layer.
-This makes the next geometric theorem a finite list-recovery statement rather
-than an overlapping-cluster selection problem.
+\Cref{def:annular-scalar-reporter-record} and
+\cref{cor:single-seed-reporter-proposal-criterion} put the remaining build-time
+interface in column-generation form: a randomized \(k\)-means++,
+additive-quantization, lattice/list-decoding, or range-reporting panel only has
+to produce certified scalar reporter records with positive expected surplus.
+Averaging exposes one deterministic retained record, so the annular far points
+serve only as proposal evidence and never become cover columns themselves.  This
+makes the next geometric theorem a finite list-recovery statement rather than an
+overlapping-cluster selection problem.
 \Cref{lem:primitive-hit-kernel-cover-equivalence} gives the matching primal
 form: the same theorem is equivalent to fractionally covering the primitive
 spherical hit kernel \(r_{p,q}\) by Pareto cores at \(\pi_1\)-scaled query and
