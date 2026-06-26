@@ -11343,6 +11343,47 @@ violating \((RO3)\), or organize into a quotient violating \((RO5)\), or else be
 pseudo-random enough that the original spherical reduced-gain test was already
 positive.  This is the remaining weighted geometric theorem.
 
+\begin{corollary}[Residual separator implies local filter-cover feasibility]
+   \label{cor:residual-separator-local-cover}
+   Fix a finite local demand instance with uniform query budget \(L\) and storage
+   budget \(S\).  Assume the spherical bucket law satisfies \((WS1)\)--\((WS6)\),
+   every demanded pair satisfies \(p\in H(q)\), and the finite filter universe
+   contains the following columns with the displayed certified prices:
+   spherical buckets from \(\mathcal Z\), whole high-correlation dense slices,
+   all atom-safe dense prefixes from
+   \cref{lem:dense-slice-prefix-separation}, and all quotients from a finite
+   quotient family \(\mathcal G\).
+
+   Suppose that no nonnegative dual price system with surplus
+   \[
+      A_\alpha>L\sum_q\tau_q+\sigma S
+      \tag{RS1}
+   \]
+   can satisfy the residual inequalities \((RO1)\)--\((RO5)\) for this quotient
+   family.  Then the finite filter-cover LP
+   \((\mathsf{FC}_{\mathcal N})\) over the displayed universe is feasible with
+   query budget \(L\) and storage budget \(S\).
+\end{corollary}
+
+\begin{proof}
+   Suppose the LP were infeasible.  By \cref{lem:finite-filter-cover-dual}, there
+   is a nonnegative dual price system satisfying \((RS1)\) and having
+   nonpositive reduced gain on every column in the finite universe.  Since the
+   universe contains the spherical buckets, whole dense slices, atom-safe dense
+   prefixes, and the quotient family \(\mathcal G\), the hypotheses of
+   \cref{cor:residual-dense-cover-obstruction} apply.  Therefore the same price
+   system satisfies \((RO1)\)--\((RO5)\), contradicting the assumed residual
+   separator property.  Hence the LP is feasible.
+\end{proof}
+
+Consequently, the weighted dense/spherical dichotomy in
+\cref{asm:weighted-dense-spherical-dichotomy} can be replaced by the more
+concrete residual separator theorem: build a finite quotient universe for which
+the explicit residual system \((RO1)\)--\((RO5)\) has no solution.  Once that is
+proved at each radius scale, \cref{lem:finite-signature-filter-cover} and
+\cref{prop:fractional-filter-cover-polylog} supply the data structure with no
+additional branching argument.
+
 \begin{lemma}[Finite-signature filter-cover compiler]
    \label{lem:finite-signature-filter-cover}
    Let $\Omega$ be a query domain for one resident node \(P\), and let
@@ -22915,7 +22956,8 @@ quotient query and storage prices.  Finally,
 \cref{cor:residual-dense-cover-obstruction} packages the surviving dual
 certificate into the explicit inequalities \((RO1)\)--\((RO5)\).  The remaining
 geometric theorem is now exactly to rule out those inequalities for a rich enough
-quotient universe.  Since
+quotient universe; by \cref{cor:residual-separator-local-cover}, that residual
+separator is already sufficient for local filter-cover feasibility.  Since
 preprocessing time is deliberately not a scarce resource,
 \cref{lem:finite-pool-optimizer} and
 \cref{cor:offline-pareto-compression} allow the build stage to enumerate,
