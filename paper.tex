@@ -3862,6 +3862,129 @@ partition ignores the bias coordinates that certify the list size.
    storage, far co-load, and near-hit tests as the product-panel route.
 \end{remark}
 
+\begin{proposition}[Finite retained priced-pair certificate]
+   \label{prop:finite-retained-priced-pair}
+   Fix one terminal localized ANN subproblem \(P\) of size \(m\), and let
+   \(\mathcal Q\) be the promised query domain.  Let
+   \(\Sigma\) be a finite signature set with map
+   \(\sigma:\mathcal Q\to\Sigma\).  For each signature \(\sigma_0\), let
+   \(N_{\sigma_0}\subseteq P\) contain every possible near witness for queries
+   of that signature:
+   \[
+      \{p\in P:\exists q\in\mathcal Q,\ \sigma(q)=\sigma_0,\ \|p-q\|\le r\}
+      \subseteq N_{\sigma_0}.
+      \tag{FRP0}
+   \]
+   Suppose preprocessing has retained a finite batch of priced-pair panels
+   \(t\in\mathcal T\).  Panel \(t\) has codebooks
+   \(\mathcal A_t,\mathcal B_t\), thresholds
+   \(\theta_{P,t},\theta_{Q,t}\), pair score \(S_y^t(a,b)\) as in
+   \((PAIR)\), and a certified query reporter \(R_t(q)\subseteq
+   \mathcal A_t\times\mathcal B_t\) which outputs every pair satisfying
+   \(S_q^t(a,b)\ge\theta_{Q,t}\).  Write
+   \[
+      U_t(x,a,b)=\mathbf 1\{S_x^t(a,b)\ge\theta_{P,t}\}.
+   \]
+   Assume preprocessing certifies finite envelopes \(D_{\sigma_0,t}\),
+   \(C_{\sigma_0,t,x}\), and \(H_{\sigma_0,t,p}\in\{0,1\}\) such that, for
+   every query \(q\) with signature \(\sigma_0\),
+   \[
+      \operatorname{work}(R_t(q))\le D_{\sigma_0,t},
+      \tag{FRP1}
+   \]
+   \[
+      \mathbf 1_{\{\|x-q\|>cr\}}
+      \sum_{(a,b)\in R_t(q)}U_t(x,a,b)
+      \le C_{\sigma_0,t,x}
+      \qquad(x\in P),
+      \tag{FRP2}
+   \]
+   and, whenever \(H_{\sigma_0,t,p}=1\) and
+   \(q\) has signature \(\sigma_0\) with \(\|p-q\|\le r\), there exists a
+   reported stored pair:
+   \[
+      \exists(a,b)\in R_t(q)\quad U_t(p,a,b)=1.
+      \tag{FRP3}
+   \]
+   Assume also that the retained batch satisfies the global storage envelope
+   \[
+      \sum_{t\in\mathcal T}\sum_{x\in P}
+      \sum_{(a,b)\in\mathcal A_t\times\mathcal B_t}U_t(x,a,b)
+      \le m^{1+\rho_c}\log^{O_c(1)}m,
+      \tag{FRP5}
+   \]
+   If, for every signature \(\sigma_0\),
+   \[
+      \sum_{t\in\mathcal T}D_{\sigma_0,t}
+      \le d\log^{O_c(1)}m+m^{\rho_c}\log^{O_c(1)}m,
+      \tag{FRP4}
+   \]
+   \[
+      \sum_{t\in\mathcal T}\sum_{x\in P}C_{\sigma_0,t,x}
+      \le m^{\rho_c}\log^{O_c(1)}m,
+      \tag{FRP6}
+   \]
+   and
+   \[
+      \sum_{t\in\mathcal T}H_{\sigma_0,t,p}\ge1
+      \qquad(p\in N_{\sigma_0}),
+      \tag{FRP7}
+   \]
+   then the retained batch is a deterministic terminal ANN structure with
+   query work
+   \[
+      d\,m^{\rho_c}\log^{O_c(1)}m
+   \]
+   and space
+   \[
+      dm+m^{1+\rho_c}\log^{O_c(1)}m .
+   \]
+\end{proposition}
+
+\begin{proof}
+   On query \(q\), run the reporters \(R_t(q)\), expose the reported pair
+   buckets in any fixed order, verify each exposed point in the original
+   metric, and stop at the first verified \(cr\)-neighbor.  The reporter work
+   is bounded by \((FRP4)\).  The retained point-bucket incidences are exactly
+   the left side of \((FRP5)\), giving the stated storage.
+
+   Fix a query \(q\) of signature \(\sigma_0\).  The number of scanned far
+   point incidences is at most
+   \[
+      \sum_{t\in\mathcal T}
+      \sum_{\substack{x\in P\\ \|x-q\|>cr}}
+      \sum_{(a,b)\in R_t(q)}U_t(x,a,b),
+   \]
+   which is at most the left side of \((FRP6)\) by \((FRP2)\).  Before the
+   stopping time every rejected candidate is far, and the stopping candidate
+   contributes at most one additional metric verification.  Hence the
+   candidate-verification work is \(d\,m^{\rho_c}\log^{O_c(1)}m\), up to the
+   harmless final valid check.
+
+   If \(q\) has a near witness \(p\), then \(p\in N_{\sigma_0}\) by
+   \((FRP0)\).  By \((FRP7)\), choose \(t\) with
+   \(H_{\sigma_0,t,p}=1\).  Then \((FRP3)\) says that \(p\) is stored in a pair
+   reported by \(R_t(q)\).  Therefore either the query has already accepted
+   another \(cr\)-neighbor, or it eventually scans \(p\) and accepts.  Thus the
+   structure is deterministic on the promised query domain, with the displayed
+   resources.
+\end{proof}
+
+\begin{remark}[Build-time search versus retained proof]
+   \label{rem:priced-pair-retained-proof}
+   \Cref{prop:finite-retained-priced-pair} is the Las Vegas build-time form of
+   the additive-IVF idea.  Preprocessing may generate candidate codebooks by
+   \(k\)-means++, random centroids, additive quantization, column generation,
+   or a list-decoding proposal routine.  None of those heuristics is trusted by
+   the proof.  The retained index is accepted only after the finite reporter
+   work, stored-incidence, far-load, and near-coverage envelopes
+   \((FRP1)\)--\((FRP7)\) have been checked.  For a continuous query domain the
+   hard part is now explicit: construct compact signatures whose envelopes
+   certify \((FRP2)\) and \((FRP3)\) without a metric net of superpolynomial
+   size.  For finite workloads or finite decoder transcripts, the certificate
+   is directly checkable.
+\end{remark}
+
 \begin{corollary}[Superset product-panel rate bookkeeping]
    \label{cor:superset-product-panel-rate-bookkeeping}
    Work in the setting of \cref{lem:product-panel-tensorization}, but use the
@@ -20309,6 +20432,13 @@ nonorthogonal codebooks: after a first pivot \(a\) is chosen, the second
 codebook is decoded against the shifted query \(q-a\), and the endpoint follows
 from the pair reporter work, pair storage spectrum, pair far co-load spectrum,
 and pair near-hit probability.
+\Cref{prop:finite-retained-priced-pair} gives the corresponding retained-index
+certificate.  Build time may use \(k\)-means++, random centroids, additive
+quantization, list-decoding proposals, or column generation to produce panels,
+but the proof trusts only the accepted finite envelopes for reporter work,
+stored incidences, far scanned incidences, and near-witness coverage.  This is
+the clean way to analyze practical additive IVF: the heuristic proposes a
+compact family, and the retained certificate is the theorem object.
 \Cref{prop:sampled-structured-panel} records the corresponding sampler
 alternative.  A structured code or lattice panel need not list all active
 labels if it can sample labels from a certified Gibbs or discrete-Gaussian law:
