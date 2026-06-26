@@ -15907,6 +15907,92 @@ singleton slices by hand.
    \cref{def:success-normalized-aggregate-list-panel}.
 \end{proof}
 
+\begin{lemma}[Random list proposal criterion]
+   \label{lem:random-list-proposal-criterion}
+   Work in the setting of \cref{asm:paid-atomized-prefix-separator}.  Fix a
+   price system \((\gamma,\tau,\sigma)\), a certified container
+   \(W\in\mathcal W\), and fractional query weights \(0\le y_q\le1\).  Put
+   \[
+      A_y=\sum_q\tau_qy_q,\qquad
+      \rho=\rho_W,\qquad
+      \psi=\psi_W,
+   \]
+   and let \(d_y^\gamma(p)\) be the paid degree from \((WAP1)\).  Assume
+   \(0<\rho<1\), and assume the available cardinalities of \(W\) are
+   \(b\)-dense from below in the sense of \((CNW0)\).
+
+   Let \(\mathcal L\) be any random subset of \(W\), chosen by an arbitrary
+   build-time proposal law, and write
+   \[
+      K=|\mathcal L|,
+      \qquad
+      V(\mathcal L)=\sum_{p\in\mathcal L}d_y^\gamma(p).
+   \]
+   If
+   \[
+      \E V(\mathcal L)
+      >
+      b\,\psi\left(
+         A_y\,\E K^\rho
+         +
+         \sigma\,\E K^{1+\rho}
+      \right),
+      \tag{RLP1}
+   \]
+   then an available paid prefix has positive repair reduced gain.  In
+   particular, it is enough that
+   \[
+      \E V(\mathcal L)
+      >
+      b\,\psi\left(
+         A_y\,(\E K)^\rho
+         +
+         \sigma\,\E K^{1+\rho}
+      \right),
+      \tag{RLP2}
+   \]
+   and, if \(K\le H\) almost surely, it is enough that
+   \[
+      \E V(\mathcal L)
+      >
+      b\,\psi\left(
+         A_y\,(\E K)^\rho
+         +
+         \sigma H^\rho\,\E K
+      \right).
+      \tag{RLP3}
+   \]
+\end{lemma}
+
+\begin{proof}
+   Suppose no available paid prefix has positive repair reduced gain.  Then
+   \((PPRE1)\) holds for every available cardinality.  For an outcome with
+   \(K=0\), also \(V(\mathcal L)=0\).  For an outcome with \(K\ge1\), choose
+   \(k\in\mathcal K_W\) with \(K/b\le k\le K\).  Let
+   \(D_y^\gamma(h)\) denote the top-\(h\) paid-degree sum in \(W\).  Since the
+   best \(K\)-point prefix has value at least that of \(\mathcal L\),
+   \(D_y^\gamma(K)\ge V(\mathcal L)\).  The degrees are nonnegative and sorted in
+   the top-prefix order, so the first \(k\) entries capture at least a \(k/K\)
+   fraction of the first \(K\) entries:
+   \[
+      D_y^\gamma(k)\ge \frac{k}{K}D_y^\gamma(K)
+      \ge \frac1b V(\mathcal L).
+   \]
+   Applying \((PPRE1)\) at the available cardinality \(k\), and using
+   \(k\le K\), gives
+   \[
+      \frac1b V(\mathcal L)
+      \le
+      \psi\left(A_yK^\rho+\sigma K^{1+\rho}\right).
+   \]
+   Averaging contradicts \((RLP1)\).  Hence some available paid prefix has
+   positive repair reduced gain.
+
+   The implication from \((RLP2)\) follows from Jensen's inequality
+   \(\E K^\rho\le(\E K)^\rho\).  If \(K\le H\), then
+   \(K^{1+\rho}\le H^\rho K\), giving the capped form.
+\end{proof}
+
 \begin{assumption}[Balanced aggregate list-size separator]
    \label{asm:balanced-aggregate-list-size-separator}
    Work in the setting of \cref{asm:paid-atomized-prefix-separator}, and assume
@@ -15999,6 +16085,14 @@ proof only has to show
 or the capped analogue.  This is the exact average Renyi list-size statement
 suggested by the compressed-bucket route; large lists are allowed if their
 \((1+\rho)\)-moment is paid by the captured hit mass.
+\Cref{lem:random-list-proposal-criterion} removes the remaining threshold-list
+artifact.  A build-time routine may output any random list \(\mathcal L\) inside
+a certified container.  If its expected paid value beats the same query and
+storage moments of \(K=|\mathcal L|\), the exact verifier replaces it by an
+available top-degree prefix with positive reduced gain.  Thus \(k\)-means++,
+facility search, AQ buckets, LP range reporting, or list/lattice decoders only
+need to generate high value-per-moment lists; they do not need to align their
+raw output with the final retained prefix.
 \Cref{cor:aggregate-list-moment-residual-envelope} is the matching obstruction:
 if the hit-kernel cover fails, every finite list-size panel obeys \((ALR1)\).
 Thus a proof of the polylog endpoint can now target a single averaged
