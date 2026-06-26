@@ -3655,6 +3655,157 @@ partition ignores the bias coordinates that certify the list size.
    alone is not the needed proof object.
 \end{remark}
 
+\begin{proposition}[Rectangular interaction-cover additive-IVF compiler]
+   \label{prop:rectangular-interaction-cover-aq}
+   Fix a terminal localized ANN subproblem of size \(m\), approximation \(c\),
+   and exponent \(\rho=\rho_c\).  Let \(L_m=\log^{A_c}m\).  A random
+   nonorthogonal additive-IVF panel consists of finite ambient codebooks
+   \(\mathcal C_1,\ldots,\mathcal C_h\), tuple score
+   \[
+      S_y(c_1,\ldots,c_h)
+      =
+      \ip{y}{\sum_jc_j}
+      -\frac12\left\|\sum_jc_j\right\|^2,
+   \]
+   and thresholds \(\theta_P,\theta_Q\).  Write
+   \[
+      \chi_j(y,a)=\ip{y}{a}-\frac12\|a\|^2,
+      \qquad
+      \Pi(c)=\sum_{i<j}\ip{c_i}{c_j},
+   \]
+   so that \(S_y(c)=\sum_j\chi_j(y,c_j)-\Pi(c)\).  Suppose preprocessing also
+   supplies a finite product-rectangle cover \(\mathcal B\) of the tuple
+   universe.  Each \(B\in\mathcal B\) has the form
+   \[
+      B=\mathcal C_{B,1}\times\cdots\times\mathcal C_{B,h},
+      \qquad \mathcal C_{B,j}\subseteq\mathcal C_j,
+   \]
+   and a certified lower interaction price
+   \[
+      \underline\Pi_B\le \Pi(c)\qquad(c\in B).
+      \tag{RIC0}
+   \]
+
+   On query \(q\), for every rectangle \(B\), run the product decoder of
+   \cref{lem:additive-product-panel-decoder} on the raw additive score
+   \(\sum_j\chi_j(q,c_j)\) over \(B\) with threshold
+   \(\theta_Q+\underline\Pi_B\), then exact-filter the emitted tuples by the
+   true score \(S_q(c)\ge\theta_Q\).  Store a data point \(x\) in tuple bucket
+   \(c\) when \(S_x(c)\ge\theta_P\).  Assume the one-panel expected reporter
+   work of this rectangle decoder is
+   \[
+      \E W_{\rm rect}(q)\le dL_m+m^\rho L_m
+      \qquad(q\in\mathcal Q).
+      \tag{RIC1}
+   \]
+   Suppose further that there are \(\alpha,\beta>0\) such that
+   \[
+      \E
+      \sum_{x\in P}\sum_{B\in\mathcal B}
+      e^{-\alpha(\theta_P+\underline\Pi_B)}
+      \prod_{j=1}^h
+      \sum_{a\in\mathcal C_{B,j}}e^{\alpha\chi_j(x,a)}
+      \le m^{1+\rho}L_m,
+      \tag{RIC2}
+   \]
+   and, for every promised query \(q\),
+   \[
+      \E
+      \sum_{\substack{x\in P\\ \|x-q\|>cr}}
+      \sum_{B\in\mathcal B}
+      e^{-\alpha(\theta_P+\underline\Pi_B)
+        -\beta(\theta_Q+\underline\Pi_B)}
+      \prod_{j=1}^h
+      \sum_{a\in\mathcal C_{B,j}}
+      e^{\alpha\chi_j(x,a)+\beta\chi_j(q,a)}
+      \le m^\rho L_m .
+      \tag{RIC3}
+   \]
+   Finally assume every near pair \((p,q)\), \(\|p-q\|\le r\), satisfies
+   \[
+      \Pr\!\left[
+      \exists c\in\mathcal C_1\times\cdots\times\mathcal C_h:
+      S_p(c)\ge\theta_P,\quad S_q(c)\ge\theta_Q
+      \right]\ge L_m^{-1}.
+      \tag{RIC4}
+   \]
+   Then \(O(L_m)\) independent rectangular interaction-cover panels give
+   terminal query work
+   \[
+      d\,m^\rho\log^{O_c(1)}m
+   \]
+   and space
+   \[
+      dm+m^{1+\rho}\log^{O_c(1)}m ,
+   \]
+   with rectangle and decoder metadata charged to the displayed polylogarithmic
+   factors.
+\end{proposition}
+
+\begin{proof}
+   Completeness of the query reporter follows from \((RIC0)\).  If
+   \(S_q(c)\ge\theta_Q\) and \(c\in B\), then
+   \[
+      \sum_j\chi_j(q,c_j)=S_q(c)+\Pi(c)
+      \ge \theta_Q+\underline\Pi_B,
+   \]
+   so the product decoder for \(B\) emits \(c\), and exact filtering keeps it.
+   Thus the reporter lists every query-active tuple.  Its work is bounded by
+   \((RIC1)\).
+
+   The storage bound is charged to a rectangle cover.  If \(S_x(c)\ge
+   \theta_P\) and \(c\in B\), then
+   \[
+      \sum_j\chi_j(x,c_j)\ge\theta_P+\underline\Pi_B.
+   \]
+   Since every tuple belongs to at least one rectangle, the number of stored
+   point-tuple incidences is at most the rectangle-overcounted sum of these raw
+   threshold events.  Applying
+   \[
+      \mathbf 1\!\left\{\sum_j\chi_j(x,c_j)\ge
+      \theta_P+\underline\Pi_B\right\}
+      \le
+      e^{-\alpha(\theta_P+\underline\Pi_B)}
+      \prod_j e^{\alpha\chi_j(x,c_j)}
+   \]
+   and summing over the product rectangle gives exactly the left side of
+   \((RIC2)\).
+
+   The same overcount bounds far scanned incidences.  If a far point \(x\) is
+   stored in tuple \(c\) and query \(q\) reports \(c\), then for every rectangle
+   \(B\ni c\) both raw inequalities
+   \[
+      \sum_j\chi_j(x,c_j)\ge\theta_P+\underline\Pi_B,
+      \qquad
+      \sum_j\chi_j(q,c_j)\ge\theta_Q+\underline\Pi_B
+   \]
+   hold.  The two exponential majorants with exponents \(\alpha,\beta\), summed
+   over \(B\) and factored over its coordinates, give \((RIC3)\).
+
+   On the near event in \((RIC4)\), choose a witnessing tuple \(c\) and any
+   rectangle \(B\ni c\).  The previous completeness argument makes \(c\)
+   reported by the query, while the storage rule stores \(p\) in that bucket.
+   Therefore one panel succeeds with probability at least \(L_m^{-1}\).
+   Repeating \(O(L_m)\) independent panels, verifying all emitted candidates in
+   the original metric, and truncating the expected bounds as usual gives the
+   displayed terminal resources.
+\end{proof}
+
+\begin{remark}[How to use the interaction-cover certificate]
+   \label{rem:interaction-cover-certificate}
+   \Cref{prop:rectangular-interaction-cover-aq} is the precise product-style
+   version of the additive-quantization idea.  It is useful when preprocessing
+   can cover the relevant tuple space by \(\log^{O_c(1)}m\) product rectangles
+   on which the interaction price \(\Pi(c)\) has certified width
+   \(O_c(\log\log m)\).  Then replacing \(\Pi(c)\) by the lower endpoint
+   \(\underline\Pi_B\) loses only a polylogarithmic factor in the exponential
+   query, storage, and far-load moments, while exact filtering preserves the
+   true additive-vector-quantization buckets.  If such a low-entropy
+   rectangular cover is unavailable, the prefix reporter of
+   \cref{lem:priced-prefix-additive-ivf-reporter} and the generic scored-label
+   certificate remain the appropriate theorem objects.
+\end{remark}
+
 \begin{lemma}[Two-stage priced-pair additive-IVF reporter]
    \label{lem:priced-pair-additive-ivf-reporter}
    Let \(\mathcal A,\mathcal B\subseteq\mathbb R^d\) be two finite pivot
@@ -21193,6 +21344,12 @@ additive-quantization case is still useful, but by
 \cref{rem:nonorthogonal-additive-ivf} its cross term must be certified as a
 small or decodable interaction price rather than hidden inside a Lloyd-style
 distortion objective.
+\Cref{prop:rectangular-interaction-cover-aq} gives the low-overhead special
+case: if preprocessing covers the tuple space by few product rectangles with
+certified lower bounds on the interaction price, ordinary product decoders can
+list raw-score supersets and exact-filter them back to the true
+additive-quantization buckets.  This is the route to exploit practical
+low-entropy interaction structure without paying the full prefix-decoder cost.
 \Cref{lem:priced-pair-additive-ivf-reporter} and
 \cref{prop:priced-pair-additive-ivf-compiler} make this exact for two
 nonorthogonal codebooks: after a first pivot \(a\) is chosen, the second
