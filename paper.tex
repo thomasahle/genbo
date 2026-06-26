@@ -16484,6 +16484,46 @@ singleton slices by hand.
    then \cref{cor:list-proposal-hit-kernel-cover}.
 \end{proof}
 
+\begin{lemma}[Deterministic query-list verifier]
+   \label{lem:deterministic-query-list-verifier}
+   Work in the setting of \cref{lem:random-list-proposal-criterion}.  Let
+   \(Q'\subseteq\mathcal Q\) be an ordinary query layer, and put
+   \[
+      A_{Q'}=\sum_{q\in Q'}\tau_q .
+   \]
+   For a proposed certified list \(L\subseteq W\), let \(K=|L|\) and
+   \[
+      V_{Q'}(L)=
+      \sum_{p\in L}
+      \sum_{q\in Q':(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}.
+      \tag{DQL1}
+   \]
+   If
+   \[
+      V_{Q'}(L)
+      >
+      b\,\psi\left(A_{Q'}K^\rho+\sigma K^{1+\rho}\right),
+      \tag{DQL2}
+   \]
+   then an available paid prefix of \(W\), sorted by the ordinary query-layer
+   degree
+   \[
+      p\mapsto
+      \sum_{q\in Q':(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q},
+   \]
+   has positive repair reduced gain.
+\end{lemma}
+
+\begin{proof}
+   Apply \cref{lem:random-list-proposal-criterion} with fractional query weights
+   \(y=\mathbf 1_{Q'}\) and with the degenerate random list law supported on
+   \(L\).  Then \(\E K^\rho=K^\rho\), \(\E K^{1+\rho}=K^{1+\rho}\), and
+   \(\E V(\mathcal L)=V_{Q'}(L)\), so \((DQL2)\) is \((RLP1)\).  The proof of
+   \cref{lem:random-list-proposal-criterion} rounds \(K\) down to an available
+   cardinality and replaces \(L\) by the corresponding top-degree prefix, which
+   is the claimed positive-gain Boolean core.
+\end{proof}
+
 \begin{corollary}[Joint query-list proposal separator]
    \label{cor:joint-query-list-proposal-separator}
    Work in the setting of \cref{cor:boolean-query-layer-list-proposal-separator}.
@@ -16530,20 +16570,20 @@ singleton slices by hand.
       b\,\psi_s\left(A_sK_s^{\rho_s}+\sigma K_s^{1+\rho_s}\right).
       \tag{JQL3}
    \]
-   Apply \cref{cor:boolean-query-layer-list-proposal-separator} with the single
-   container \(W_s\), query layer \(Q_s\), and the degenerate seed law supported on
-   the one list \(L_s\).  Since the degenerate law has
-   \(\E K^{\rho_s}=K_s^{\rho_s}\) and
-   \(\E K^{1+\rho_s}=K_s^{1+\rho_s}\), inequality \((JQL3)\) is exactly the
-   seeded Boolean-query certificate \((BQL2)\).  The Boolean-query separator then
-   gives the primitive hit-kernel cover.
+   By \cref{lem:deterministic-query-list-verifier}, this seed exposes an
+   available paid prefix with positive repair reduced gain.  Thus every surplus
+   price system satisfying \((APC1)\)--\((APC2)\) has a positive Boolean column,
+   and \cref{cor:atomized-paid-core-hit-kernel-cover} gives the primitive
+   hit-kernel cover.
 \end{proof}
 
 \Cref{cor:joint-query-list-proposal-separator} is the current most compact
 build-time target.  A proposal routine may choose the container, the query-side
 activation, and the update list jointly; the retained proof object is only one
 deterministic seed whose paid near-pair value exceeds its recursive query and
-storage list moments.  Thus \(k\)-means++ seeding, additive-quantization buckets,
+storage list moments.  \Cref{lem:deterministic-query-list-verifier} then replaces
+the proposed list by the available top-degree prefix and checks the exact reduced
+gain.  Thus \(k\)-means++ seeding, additive-quantization buckets,
 LP/range-reporting violator search, and tensor or lattice list decoders can all
 be analyzed as laws over triples \((W_s,Q_s,L_s)\), while the final verifier still
 keeps an ordinary Boolean filter column.
