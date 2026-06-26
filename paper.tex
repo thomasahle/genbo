@@ -13464,6 +13464,94 @@ For a threshold $u$, the posterior-superlevel child is
    \((FC6)\).
 \end{proof}
 
+\begin{lemma}[Reduced-cost rule for adding one rate label]
+   \label{lem:rate-coverage-column-gain}
+   Work in the setting of \cref{lem:finite-rate-coverage-convex}.  Fix
+   nonnegative dual multipliers \(\lambda,\theta,\gamma\), and fix current
+   intensities \(b\) on a retained label universe \(\mathcal A\).  A proposed
+   new label \(a_*\) is specified, for each query \(q\), by the event
+   \[
+      h_q(\omega)=\mathbf 1\{a_*\in A_q^+(\omega)\}\in\{0,1\},
+   \]
+   where \(A_q^+(\omega)\) is the reporter after adding \(a_*\).  Define its
+   dual load-storage price
+   \[
+      c_*=
+      \gamma+\sum_q\theta_q\int h_q(\omega)\,d\nu_q(\omega),
+      \tag{CG0}
+   \]
+   and, for a point \(x\), its residual tilted witness value
+   \[
+      G_x(a_*)
+      =
+      \sum_{q:\,(x,q)\in\mathcal N}
+      \lambda_{x,q}
+      \int
+      r_{x,q}(\omega)h_q(\omega)
+      \exp\!\left(
+         -\sum_{a\in A_q(\omega)}b_{x,a}
+      \right)d\nu_q(\omega).
+      \tag{CG1}
+   \]
+   If \(x\) is assigned intensity \(s\ge0\) to this new label, with all other
+   intensities fixed, then the dual Lagrangian changes by
+   \[
+      \Delta_{x,a_*}(s)
+      =
+      G_x(a_*)\bigl(e^{-s}-1\bigr)+c_*s .
+      \tag{CG2}
+   \]
+   Consequently the best one-column update has the closed form
+   \[
+      \inf_{s\ge0}\Delta_{x,a_*}(s)
+      =
+      \begin{cases}
+      0, & G_x(a_*)\le c_*,\\[2mm]
+      c_*-G_x(a_*)+c_*\log\!\bigl(G_x(a_*)/c_*\bigr),
+         & G_x(a_*)>c_*>0,\\[2mm]
+      -G_x(a_*), & c_*=0,
+      \end{cases}
+      \tag{CG3}
+   \]
+   where the middle case is achieved by
+   \(s=\log(G_x(a_*)/c_*)\).  In particular, a label with
+   \(G_x(a_*)>c_*\) is a rigorous improving column for the dual obstruction,
+   while any obstruction that remains valid after adding a whole candidate label
+   class must satisfy
+   \[
+      G_x(a)\le
+      \gamma+\sum_q\theta_q\Pr_{\nu_q}[a\in A_q(\omega)]
+      \tag{CG4}
+   \]
+   for every candidate label \(a\) and every data point \(x\).
+\end{lemma}
+
+\begin{proof}
+   Only witness constraints with first coordinate \(x\) depend on the new
+   intensity \(s\).  On the event \(h_q(\omega)=1\), the miss exponential for
+   witness \((x,q)\) is multiplied by \(e^{-s}\); on the complement it is
+   unchanged.  Therefore the total change in the weighted miss terms is
+   \[
+      (e^{-s}-1)
+      \sum_{q:\,(x,q)\in\mathcal N}
+      \lambda_{x,q}
+      \int r_{x,q}(\omega)h_q(\omega)
+      e^{-\sum_{a\in A_q(\omega)}b_{x,a}}\,d\nu_q(\omega),
+   \]
+   which is the first term of \((CG2)\).  The load and storage terms add
+   \(c_*s\) by \((CG0)\).
+
+   The one-variable function
+   \(G(e^{-s}-1)+cs\) is convex.  If \(G\le c\), its derivative at \(0\) is
+   nonnegative, so \(s=0\) is optimal.  If \(G>c>0\), the derivative vanishes at
+   \(s=\log(G/c)\), giving the middle line of \((CG3)\).  If \(c=0\), the
+   infimum is obtained as \(s\to\infty\) and equals \(-G\).  Thus
+   \(G_x(a_*)>c_*\) gives a strictly negative reduced-cost update.  Conversely,
+   if a nonnegative dual vector is a valid obstruction after a candidate label
+   has been added, no such single-coordinate update can reduce its Lagrangian,
+   which gives \((CG4)\).
+\end{proof}
+
 \begin{remark}[Offline certificate for facility search]
    \label{rem:rate-coverage-offline-certificate}
    \Cref{lem:finite-rate-coverage-convex} is the build-time certificate
@@ -13475,7 +13563,10 @@ For a threshold $u$, the posterior-superlevel child is
    whose tilted miss is expensive, queries whose reported load is expensive,
    and a global storage price.  These prices can drive column generation over
    new centers, \(k\)-means++ seeds, product-code labels, or lattice quotient
-   buckets.  Thus the theorem target is no longer Lloyd convergence; it is the
+   buckets.  \Cref{lem:rate-coverage-column-gain} gives the actual score to
+   optimize: a proposed label is valuable for point \(x\) when its residual
+   tilted witness coverage \(G_x(a)\) exceeds its dual query-load and storage
+   price.  Thus the theorem target is no longer Lloyd convergence; it is the
    absence of a positive dual obstruction for a compact decodable label family.
 \end{remark}
 
