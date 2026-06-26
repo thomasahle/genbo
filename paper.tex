@@ -16693,6 +16693,53 @@ singleton slices by hand.
    hit-kernel cover.
 \end{proof}
 
+\begin{corollary}[Independent soft proposal separator]
+   \label{cor:independent-soft-proposal-separator}
+   In \cref{cor:query-free-marginal-proposal-separator}, it is enough that the
+   seed law output only \(W_s\) and marginals \(0\le\pi_{s,p}\le1\), with
+   \[
+      \mu_s=\sum_{p\in W_s}\pi_{s,p},
+      \qquad
+      h_s(q)=
+      \sum_{p\in W_s:(p,q)\in\mathcal N}
+         \pi_{s,p}\gamma_{p,q}r_{p,q},
+   \]
+   and that
+   \[
+      \E_s
+      \sum_{q\in\mathcal Q}
+      \bigl(h_s(q)-b\,\psi_s\mu_s^{\rho_s}\tau_q\bigr)_+
+      >
+      b\,\E_s\!\left[
+         \psi_s\sigma\,\mu_s^{1-\rho_s}(\mu_s+\mu_s^2)^{\rho_s}
+      \right].
+      \tag{ISP1}
+   \]
+   Then \((\mathsf{HKC}_{\mathcal U})\) is feasible.  In particular, on seeds
+   with \(\mu_s\ge1\), the storage term in \((ISP1)\) is at most
+   \(2\psi_s\sigma\mu_s^{1+\rho_s}\).
+\end{corollary}
+
+\begin{proof}
+   Realize each soft bucket by independent Bernoulli inclusion with probabilities
+   \(\pi_{s,p}\).  Its list size \(K_s\) has
+   \[
+      \E[K_s^2]
+      =
+      \mu_s^2+\sum_{p\in W_s}\pi_{s,p}(1-\pi_{s,p})
+      \le \mu_s^2+\mu_s .
+   \]
+   Thus \((ISP1)\) is \((QFM2)\) with
+   \(M_{2,s}=\mu_s+\mu_s^2\), and
+   \cref{cor:query-free-marginal-proposal-separator} applies.  If
+   \(\mu_s\ge1\), then
+   \[
+      \mu_s^{1-\rho_s}(\mu_s+\mu_s^2)^{\rho_s}
+      \le 2^{\rho_s}\mu_s^{1+\rho_s}
+      \le 2\mu_s^{1+\rho_s}.
+   \]
+\end{proof}
+
 \begin{corollary}[Joint query-list proposal separator]
    \label{cor:joint-query-list-proposal-separator}
    Work in the setting of \cref{cor:boolean-query-layer-list-proposal-separator}.
@@ -16749,8 +16796,11 @@ singleton slices by hand.
 \Cref{cor:query-free-marginal-proposal-separator} is the current most compact
 build-time target.  A proposal routine chooses only the container and a soft
 update measure, plus a second-moment bound for a list realizing those
-marginals.  The query side is the canonical positive-margin layer.  Hard lists
-are the special case \(\pi=\mathbf 1_L\) and \(M_2=|L|^2\), covered by
+marginals.  The query side is the canonical positive-margin layer.
+\Cref{cor:independent-soft-proposal-separator} gives the most direct checklist:
+for independent thinning, a soft bucket of expected size \(\mu\ge1\) pays query
+price \(\psi\mu^\rho\) and storage price \(O(\psi\sigma\mu^{1+\rho})\).  Hard
+lists are the special case \(\pi=\mathbf 1_L\) and \(M_2=|L|^2\), covered by
 \cref{cor:query-free-list-proposal-separator}; the deterministic verifier then
 replaces the proposed list by the available top-degree prefix before checking
 exact reduced gain.  Thus \(k\)-means++ seeding, additive-quantization
@@ -16882,6 +16932,10 @@ is still the exact top-degree Boolean prefix.  This is the fractional analogue
 of dense-overlap column generation: preprocessing may search over soft
 facilities, additive-quantization codes, or list-decoder panels, but the LP pays
 only for the verified column it keeps.
+\Cref{cor:independent-soft-proposal-separator} is the simplest operational
+version: independent thinning turns a responsibility vector of mass \(\mu\) into
+a valid proposal with second moment at most \(\mu+\mu^2\), hence with the usual
+\(\mu^{1+\rho}\) storage charge once \(\mu\ge1\).
 \Cref{cor:aggregate-list-moment-residual-envelope} is the matching obstruction:
 if the hit-kernel cover fails, every finite list-size panel obeys \((ALR1)\).
 Thus a proof of the polylog endpoint can now target a single averaged
@@ -17261,7 +17315,10 @@ positive-margin query layer.  More generally,
 \cref{cor:query-free-marginal-proposal-separator} allows the seed to output only
 soft update marginals and a second-moment certificate; this is the fractional
 form suited to overlapping dense filters, additive vector quantization, and
-responsibility-weighted facility proposals.  Conversely,
+responsibility-weighted facility proposals.
+\Cref{cor:independent-soft-proposal-separator} makes the default realization
+explicit by independent thinning, replacing the second-moment certificate by the
+checkable bound \(\mu+\mu^2\).  Conversely,
 \cref{cor:paid-prefix-residual-envelope} says that a failed dense separator has
 only one possible form: a paid residual whose every certified container obeys
 the weighted degree envelopes \((PPRE1)\)--\((PPRE2)\).  Thus the remaining
