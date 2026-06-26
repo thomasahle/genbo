@@ -16740,6 +16740,59 @@ singleton slices by hand.
    \]
 \end{proof}
 
+\begin{corollary}[Finite soft-bucket separation oracle]
+   \label{cor:finite-soft-bucket-separation}
+   Work in the setting of \cref{cor:independent-soft-proposal-separator}.  Let
+   \(\mathcal B\) be a finite build-time pool of soft buckets.  A bucket
+   \(B\in\mathcal B\) consists of a certified container \(W_B\in\mathcal W\) and
+   marginals \(0\le\pi_{B,p}\le1\) on \(W_B\).  Put
+   \[
+      \mu_B=\sum_{p\in W_B}\pi_{B,p},
+      \qquad
+      \rho_B=\rho_{W_B},
+      \qquad
+      \psi_B=\psi_{W_B},
+   \]
+   and, for a price system \((\gamma,\tau,\sigma)\),
+   \[
+      h_B(q)=
+      \sum_{p\in W_B:(p,q)\in\mathcal N}
+         \pi_{B,p}\gamma_{p,q}r_{p,q}.
+   \]
+   Define the independent-soft reduced gain
+   \[
+      \mathsf{SG}_{\gamma,\tau,\sigma}(B)
+      =
+      \sum_{q\in\mathcal Q}
+      \bigl(h_B(q)-b\,\psi_B\mu_B^{\rho_B}\tau_q\bigr)_+
+      -
+      b\,\psi_B\sigma\,\mu_B^{1-\rho_B}(\mu_B+\mu_B^2)^{\rho_B}.
+      \tag{FSB1}
+   \]
+   If every nonnegative price system \((\gamma,\tau,\sigma)\) satisfying
+   \((APC1)\)--\((APC2)\) has
+   \[
+      \max_{B\in\mathcal B}\mathsf{SG}_{\gamma,\tau,\sigma}(B)>0,
+      \tag{FSB2}
+   \]
+   then \((\mathsf{HKC}_{\mathcal U})\) is feasible.  More generally, it is
+   enough that for every such price system preprocessing can produce a finite
+   law on \(\mathcal B\) with positive expected \(\mathsf{SG}\).
+\end{corollary}
+
+\begin{proof}
+   If \((FSB2)\) holds for a price system, take the seed law in
+   \cref{cor:independent-soft-proposal-separator} to be the point mass on a
+   maximizing bucket \(B\).  Inequality \((ISP1)\) is exactly
+   \(\mathsf{SG}_{\gamma,\tau,\sigma}(B)>0\).  Since this applies to every
+   surplus price system satisfying \((APC1)\)--\((APC2)\), the independent-soft
+   separator gives the hit-kernel cover.
+
+   The law version is the same averaging argument: if
+   \(\E_{B\sim\nu}\mathsf{SG}_{\gamma,\tau,\sigma}(B)>0\), then some bucket in
+   the support has positive soft gain, reducing to the point-mass case.
+\end{proof}
+
 \begin{corollary}[Joint query-list proposal separator]
    \label{cor:joint-query-list-proposal-separator}
    Work in the setting of \cref{cor:boolean-query-layer-list-proposal-separator}.
@@ -16807,6 +16860,11 @@ exact reduced gain.  Thus \(k\)-means++ seeding, additive-quantization
 responsibilities, LP/range-reporting violator search, and tensor or lattice
 list decoders can all be analyzed as laws over container/marginal pairs, while
 the final verifier still keeps an ordinary Boolean filter column.
+\Cref{cor:finite-soft-bucket-separation} is the corresponding build-time
+oracle: after generating any finite pool of such soft buckets, preprocessing
+only has to maximize the explicit scalar score \((FSB1)\) against the current
+dual.  Failed buckets are discarded; query time and space charge only the
+verified Boolean columns obtained from positive-gain buckets.
 
 \begin{assumption}[Balanced aggregate list-size separator]
    \label{asm:balanced-aggregate-list-size-separator}
@@ -16936,6 +16994,11 @@ only for the verified column it keeps.
 version: independent thinning turns a responsibility vector of mass \(\mu\) into
 a valid proposal with second moment at most \(\mu+\mu^2\), hence with the usual
 \(\mu^{1+\rho}\) storage charge once \(\mu\ge1\).
+\Cref{cor:finite-soft-bucket-separation} turns this into an exact finite
+column-generation oracle: for any generated pool of soft buckets, the only
+build-time optimization objective is the scalar reduced gain \((FSB1)\), and
+positive gain is both necessary and sufficient for that pool to defeat the
+current surplus dual.
 \Cref{cor:aggregate-list-moment-residual-envelope} is the matching obstruction:
 if the hit-kernel cover fails, every finite list-size panel obeys \((ALR1)\).
 Thus a proof of the polylog endpoint can now target a single averaged
@@ -17318,7 +17381,11 @@ form suited to overlapping dense filters, additive vector quantization, and
 responsibility-weighted facility proposals.
 \Cref{cor:independent-soft-proposal-separator} makes the default realization
 explicit by independent thinning, replacing the second-moment certificate by the
-checkable bound \(\mu+\mu^2\).  Conversely,
+checkable bound \(\mu+\mu^2\).
+\Cref{cor:finite-soft-bucket-separation} then says that unbounded preprocessing
+may search any finite soft-bucket universe by exact reduced-gain maximization;
+only buckets whose verifier exposes a positive Boolean prefix are retained.
+Conversely,
 \cref{cor:paid-prefix-residual-envelope} says that a failed dense separator has
 only one possible form: a paid residual whose every certified container obeys
 the weighted degree envelopes \((PPRE1)\)--\((PPRE2)\).  Thus the remaining
