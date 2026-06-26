@@ -14116,6 +14116,67 @@ statement.
    query and storage guarantees.
 \end{proof}
 
+\begin{lemma}[Primitive slice law as a hit-kernel cover]
+   \label{lem:primitive-slice-law-hit-kernel-cover}
+   Work in the setting of \cref{lem:high-correlation-dense-slice-separator}.
+   Suppose the Pareto core family contains every nonempty primitive slice
+   \(V_{z,q}\) as a core with certified prices \(T_{z,q},S_{z,q}\), and includes
+   the singleton-query Boolean record \((V_{z,q},\{q\})\).  Empty slices
+   contribute zero price.  If
+   \[
+      \E_{Z\sim\Pi}T_{Z,q}\le\pi_1L
+      \qquad(q\in\mathcal Q),
+      \tag{PSH1}
+   \]
+   and
+   \[
+      \E_{Z\sim\Pi}\sum_{q\in\mathcal Q}S_{Z,q}\le\pi_1S,
+      \tag{PSH2}
+   \]
+   then \((\mathsf{HKC}_{\mathcal U})\) is feasible.
+\end{lemma}
+
+\begin{proof}
+   For each \(z\in\mathcal Z\) and \(q\in\mathcal Q\), assign intensity
+   \[
+      \lambda_{z,q}=\Pi(z)
+   \]
+   to the record \((V_{z,q},\{q\})\), omitting empty slices.  For a demanded pair
+   \((p,q)\),
+   \[
+      \sum_z\lambda_{z,q}\mathbf 1\{p\in V_{z,q}\}
+      =
+      \Pr_{Z\sim\Pi}[p\in V_{Z,q}]
+      =
+      r_{p,q},
+   \]
+   so the hit-kernel coverage constraints hold with equality.  For query \(q\),
+   the active query price is
+   \[
+      \sum_z\Pi(z)T_{z,q}
+      =
+      \E_ZT_{Z,q}
+      \le\pi_1L
+   \]
+   by \((PSH1)\), and total storage is
+   \[
+      \sum_q\sum_z\Pi(z)S_{z,q}
+      =
+      \E_Z\sum_qS_{Z,q}
+      \le\pi_1S
+   \]
+   by \((PSH2)\).  These are exactly the constraints of
+   \((\mathsf{HKC}_{\mathcal U})\).
+\end{proof}
+
+Thus quotienting and core compression are needed only when the raw primitive
+slice law has too much recursive moment.  In the favorable case
+\((PSH1)\)--\((PSH2)\), the spherical bucket law itself already supplies the
+fractional dense-overlap cover, and
+\cref{cor:hit-kernel-cover-materialization} turns it into retained dense
+filters.  The hard geometric theorem is precisely to replace the primitive
+slice law by cheaper Pareto cores when \((PSH1)\) or \((PSH2)\) fails.
+
 \begin{assumption}[Compression-dual separator]
    \label{asm:compression-dual-separator}
    Work in the setting of \cref{cor:residual-separator-local-cover}.  Fix a
@@ -25946,7 +26007,12 @@ hit-kernel cover scales directly to an ordinary near-pair cover with budgets
 \((L,S)\), and
 \cref{cor:hit-kernel-cover-materialization} rounds it into retained Boolean
 core records with only the same logarithmic materialization loss as ordinary
-LSF filters.  Because
+LSF filters.
+\Cref{lem:primitive-slice-law-hit-kernel-cover} identifies the baseline case:
+if the raw high-correlation primitive slice law has \(\pi_1\)-scaled query and
+storage moments, it is already a feasible hit-kernel cover.  The remaining
+compression theorem is therefore needed only to replace that raw slice law by
+cheaper Pareto cores when the primitive recursive moment is too large.  Because
 preprocessing time is deliberately not a scarce resource,
 \cref{lem:finite-pool-optimizer} and
 \cref{cor:offline-pareto-compression} allow the build stage to enumerate,
