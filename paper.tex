@@ -17443,6 +17443,34 @@ For a threshold $u$, the posterior-superlevel child is
    \cref{lem:implicit-reduced-gain-separation}.
 \end{proof}
 
+\begin{remark}[LP range reporting as an offline separator]
+   \label{rem:lp-range-reporting-separator}
+   The reduced-cost separator above has the same logical shape as the
+   fixed-dimensional linear-programming query literature.  In the
+   Matousek--Chan--Ramos line of work, one optimizes over a small candidate
+   basis and then uses halfspace range reporting to expose constraints violated
+   by the candidate; Chan's LP-with-violations algorithms similarly organize
+   the search by low-level violators rather than by scanning all
+   constraints~\cite{Cha96LP,Ram00LP,Cha04Viol}.
+
+   This is not an online ANN primitive for the present problem.  Those data
+   structures are strongest in constant geometric dimension, while our
+   terminal dimension is logarithmic or polylogarithmic, and the ANN exponent
+   target is controlled by storage/far-load/near-mass spectrum rather than by
+   ordinary halfspace query time.  The useful transfer is instead
+   \emph{offline}: if an implicit label family has a low-dimensional
+   parameterization and the reporter events \(h_{q,a}\) are halfspace or
+   constant-complexity semialgebraic conditions in \(a\), then
+   \((PW4)\) is exactly a weighted range-reporting or range-maximization
+   objective.  Expensive preprocessing may therefore build a violator reporter
+   that either returns a point-label pair with positive reduced cost or
+   certifies that no such low-dimensional label exists.  Exact verification by
+   \cref{cor:pointwise-reduced-cost-separation} keeps the retained ANN index
+   self-contained: failed or approximate range-reporting proposals are simply
+   discarded, while accepted labels still have to pass the same finite convex
+   certificate.
+\end{remark}
+
 \begin{lemma}[Finite rate-coverage column generation]
    \label{lem:finite-rate-coverage-column-generation}
    Fix a finite candidate label family \(\mathcal B\) and a reporter
@@ -20181,6 +20209,23 @@ The one-sided spherical proof is motivated by the Ahle--Knudsen manuscript suppl
    Alexandr Andoni and Ilya Razenshteyn.
    \newblock Optimal data-dependent hashing for approximate near neighbors.
    \newblock In \emph{Proceedings of the 47th Annual ACM Symposium on Theory of Computing (STOC)}, pages 793--801, 2015.
+
+   \bibitem{Cha96LP}
+   Timothy M. Chan.
+   \newblock Fixed-dimensional linear programming queries made easy.
+   \newblock In \emph{Proceedings of the 12th Annual ACM Symposium on
+   Computational Geometry (SoCG)}, pages 284--290, 1996.
+
+   \bibitem{Ram00LP}
+   Edgar A. Ramos.
+   \newblock Linear programming queries revisited.
+   \newblock In \emph{Proceedings of the 16th Annual ACM Symposium on
+   Computational Geometry (SoCG)}, pages 176--181, 2000.
+
+   \bibitem{Cha04Viol}
+   Timothy M. Chan.
+   \newblock Low-dimensional linear programming with violations.
+   \newblock \emph{SIAM Journal on Computing}, 34(4):879--893, 2005.
 
    \bibitem{AB22}
    Alexandr Andoni and Daniel Beaglehole.
