@@ -15412,6 +15412,89 @@ singleton slices by hand.
    Combining this estimate with \((PWT5)\) proves \((PWT4)\).
 \end{proof}
 
+\begin{lemma}[Forbidden weak-type superlevel exposes a prefix]
+   \label{lem:forbidden-weak-type-superlevel}
+   Work in the setting of \cref{asm:paid-atomized-prefix-separator}, and fix a
+   nonnegative price system \((\gamma,\tau,\sigma)\) satisfying
+   \((APC1)\)--\((APC2)\).  Suppose there are a certified container
+   \(W\in\mathcal W\), fractional query weights \(0\le y_q\le1\), and a level
+   \(\delta>0\) such that
+   \[
+      h=h_{W,\delta}(y)=|\{p\in W:d_y^\gamma(p)\ge\delta\}|
+   \]
+   is nonzero and belongs to \(\mathcal K_W\).  Put
+   \[
+      A_y=\sum_q\tau_qy_q,
+      \qquad
+      \rho=\rho_W,
+      \qquad
+      \psi=\psi_W .
+   \]
+   Assume \(0<\rho<1\).  If \(\sigma=0\) and
+   \[
+      h>
+      \left(\frac{\psi A_y}{\delta}\right)^{1/(1-\rho)},
+      \tag{FWS1}
+   \]
+   then an available paid prefix has positive repair reduced gain.
+   If \(\sigma>0\) and
+   \[
+      h>
+      \left(\frac{2\psi A_y}{\delta}\right)^{1/(1-\rho)}
+      \quad\text{and}\quad
+      h<
+      \left(\frac{\delta}{2\psi\sigma}\right)^{1/\rho},
+      \tag{FWS2}
+   \]
+   then an available paid prefix has positive repair reduced gain.
+   Finally, if \(A_y>0\), \(\sigma>0\), and for some \(a\ge1\),
+   \[
+      a^{-1}\frac{(1-\rho)A_y}{\rho\sigma}
+      \le h\le
+      a\frac{(1-\rho)A_y}{\rho\sigma},
+      \qquad
+      \delta>
+      a\,C_\rho\,\psi A_y^\rho\sigma^{1-\rho},
+      \tag{FWS3}
+   \]
+   where \(C_\rho=\rho^{-\rho}(1-\rho)^{-(1-\rho)}\), then an available paid
+   prefix has positive repair reduced gain.
+\end{lemma}
+
+\begin{proof}
+   Suppose, toward a contradiction, that no available paid prefix has positive
+   repair reduced gain.  Then
+   \cref{cor:paid-prefix-residual-envelope} applies to
+   \((\gamma,\tau,\sigma)\), and hence
+   \cref{lem:paid-prefix-weak-type} applies inside \(W\) at the level
+   \(\delta\).  If \(\sigma=0\), \((PWT1)\) contradicts \((FWS1)\).  If
+   \(\sigma>0\), the two alternatives \((PWT2)\)--\((PWT3)\) contradict
+   \((FWS2)\).  In the balanced case, \((PWT4)\) contradicts \((FWS3)\).
+   Therefore some available paid prefix has positive repair reduced gain.
+\end{proof}
+
+\begin{corollary}[Weak-type separator implies the hit-kernel cover]
+   \label{cor:weak-type-prefix-hit-kernel-cover}
+   Work in the setting of \cref{asm:paid-atomized-prefix-separator}, and assume
+   every container has exponent \(0<\rho_W<1\).  Suppose that every nonnegative
+   price system \((\gamma,\tau,\sigma)\) satisfying \((APC1)\)--\((APC2)\)
+   admits a certified container, fractional query weighting, and available
+   superlevel satisfying one of \((FWS1)\), \((FWS2)\), or \((FWS3)\).  Then
+   \((\mathsf{HKC}_{\mathcal U})\) is feasible.
+\end{corollary}
+
+\begin{proof}
+   Suppose \((\mathsf{HKC}_{\mathcal U})\) were infeasible.  As in the proof of
+   \cref{cor:atomized-paid-core-hit-kernel-cover}, there is a nonnegative price
+   system satisfying \((APC1)\)--\((APC2)\) and having nonpositive repair
+   reduced gain on every available Boolean core record.  By the weak-type
+   separator hypothesis and
+   \cref{lem:forbidden-weak-type-superlevel}, the same price system exposes an
+   available paid prefix with positive repair reduced gain.  This prefix is one
+   of the available Boolean core records, a contradiction.  Hence
+   \((\mathsf{HKC}_{\mathcal U})\) is feasible.
+\end{proof}
+
 \Cref{lem:paid-prefix-weak-type} gives a direct separator screen.  If, for some
 certified container and fractional query weighting, a paid-degree superlevel has
 cardinality strictly above the query-priced bound \((PWT2)\) and strictly below
@@ -15425,6 +15508,11 @@ beat the single density threshold
 up to the constant \(C_\rho\).  This is the local geometric quantity that a
 ball, cap, range-reporting, or list-decoding separator should try to force from
 the spherical high-correlation co-load.
+\Cref{lem:forbidden-weak-type-superlevel} and
+\cref{cor:weak-type-prefix-hit-kernel-cover} make this operational: a proposed
+geometric separator only has to return one certified superlevel in the
+forbidden middle regime, after which the finite cover duality supplies the
+positive column and the hit-kernel cover.
 
 \Cref{cor:paid-compression-hit-kernel-cover} is the fractional dense-filter
 cover in its paid form.  The separator does not choose disjoint dense clusters.
@@ -15466,6 +15554,9 @@ that the spherical residual or the next geometric separator must rule out.
 \Cref{lem:paid-prefix-weak-type} converts that counterexample into an explicit
 level-set dichotomy: residual paid mass is either query-price small, storage
 massive, or below the balanced density \(C_\rho\psi A_y^\rho\sigma^{1-\rho}\).
+\Cref{cor:weak-type-prefix-hit-kernel-cover} is the corresponding acceptance
+criterion: any geometric, range-reporting, or list-decoding routine that always
+finds a forbidden weak-type superlevel proves the primitive hit-kernel cover.
 
 \begin{assumption}[Compression-dual separator]
    \label{asm:compression-dual-separator}
@@ -27380,6 +27471,10 @@ paid-degree superlevels must be either query-price small or storage-price
 massive, and at the query/storage balance scale their density is bounded by
 \(C_\rho\psi A_y^\rho\sigma^{1-\rho}\).  This is the current concrete geometric
 obstruction to eliminate.
+\Cref{lem:forbidden-weak-type-superlevel} and
+\cref{cor:weak-type-prefix-hit-kernel-cover} give the exact positive test for
+eliminating it: finding a certified superlevel in the forbidden middle regime is
+already enough to expose a paid prefix and hence the primitive hit-kernel cover.
 Because
 preprocessing time is deliberately not a scarce resource,
 \cref{lem:finite-pool-optimizer} and
