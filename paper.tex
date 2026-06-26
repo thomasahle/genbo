@@ -4328,6 +4328,110 @@ partition ignores the bias coordinates that certify the list size.
    This is \((GPS2)\).
 \end{proof}
 
+\begin{lemma}[Finite-state quotient sampler for additive IVF]
+   \label{lem:gibbs-aq-state-quotient}
+   Let
+   \[
+      \mathcal T=\mathcal C_1\times\cdots\times\mathcal C_h
+   \]
+   be a nonorthogonal additive-IVF tuple family with score
+   \[
+      S_q(a)=\ip{q}{\sum_ja_j}
+      -\frac12\left\|\sum_ja_j\right\|^2 .
+   \]
+   Let \(\lambda:\mathcal T\to\Lambda\) map tuples to retained bucket labels.
+   Suppose that, for every query \(q\), a finite acyclic state graph with
+   source \(s\), terminals \(\mathcal T_{\rm out}\), terminal-label map
+   \(\lambda_{\rm out}:\mathcal T_{\rm out}\to\Lambda\), and positive edge
+   weights \(r_e(q)\) satisfies the exact aggregate identity
+   \[
+      \sum_{\substack{t\in\mathcal T_{\rm out}\\ \lambda_{\rm out}(t)=\ell}}
+      \sum_{\pi:s\leadsto t}\prod_{e\in\pi}r_e(q)
+      =
+      \sum_{\substack{a\in\mathcal T\\ \lambda(a)=\ell}}
+      e^{\beta S_q(a)}
+      \qquad(\ell\in\Lambda).
+      \tag{AQS1}
+   \]
+   Then the backward-partition sampler on this graph outputs label
+   \(\ell\) with probability
+   \[
+      \Pi_q(\ell)=
+      \frac{\sum_{a:\lambda(a)=\ell}e^{\beta S_q(a)}}
+           {\sum_{a\in\mathcal T}e^{\beta S_q(a)}}.
+      \tag{AQS2}
+   \]
+   Its arithmetic work is linear in the number of evaluated graph edges and
+   states.
+\end{lemma}
+
+\begin{proof}
+   Define suffix partition functions by
+   \[
+      H_q(t)=1\quad(t\in\mathcal T_{\rm out}),
+      \qquad
+      H_q(u)=\sum_{(u,v)}r_{(u,v)}(q)H_q(v)
+   \]
+   at nonterminal states.  The top-down transition rule
+   \[
+      (u,v)\text{ is chosen with probability }
+      \frac{r_{(u,v)}(q)H_q(v)}{H_q(u)}
+   \]
+   samples a terminal \(t\) with probability proportional to the aggregate
+   weight of all paths from \(s\) to \(t\).  Summing over terminals with label
+   \(\ell\) and using \((AQS1)\) gives \((AQS2)\).  The dynamic program
+   evaluates each retained edge and state once.
+\end{proof}
+
+\begin{corollary}[Finite-state sampled additive-IVF quotient]
+   \label{cor:finite-state-sampled-aq}
+   Fix a terminal localized ANN subproblem of size \(m\), approximation \(c\),
+   and exponent \(\rho=\rho_c\).  Let \(L_m=\log^{A_c}m\).  A random
+   finite-state sampled additive-IVF panel consists of finite ambient codebooks,
+   tuple score \(S_q(a)\) as in \cref{lem:gibbs-aq-state-quotient}, a
+   tuple-to-label map \(\lambda:\mathcal T\to\Lambda\), stored bucket sets
+   \(C_\ell\subseteq P\), and an exact state-quotient sampler satisfying
+   \((AQS1)\) whose query work is \(d\log^{O_c(1)}m\).  Put \(\Pi_q\) for the
+   induced law \((AQS2)\).  If
+   \[
+      \E\sum_{\ell\in\Lambda}|C_\ell|
+      \le m^{1+\rho}L_m,
+      \tag{FSA1}
+   \]
+   and, for every promised query \(q\),
+   \[
+      \E
+      \sum_{\substack{x\in P\\ \|x-q\|>cr}}
+      \sum_{\ell:\,x\in C_\ell}\Pi_q(\ell)
+      \le m^\rho L_m,
+      \tag{FSA2}
+   \]
+   while every near pair \((p,q)\), \(\|p-q\|\le r\), satisfies
+   \[
+      \E
+      \sum_{\ell:\,p\in C_\ell}\Pi_q(\ell)
+      \ge L_m^{-1},
+      \tag{FSA3}
+   \]
+   then \(O(L_m)\) independent finite-state sampled additive-IVF panels give
+   terminal query work
+   \[
+      d\,m^\rho\log^{O_c(1)}m
+   \]
+   and space
+   \[
+      dm+m^{1+\rho}\log^{O_c(1)}m .
+   \]
+\end{corollary}
+
+\begin{proof}
+   Apply \cref{prop:sampled-structured-panel} with label set \(\Lambda\),
+   predicates \(A_\ell(x)=\mathbf 1\{x\in C_\ell\}\), and query law \(\Pi_q\).
+   The three hypotheses \((FSA1)\)--\((FSA3)\) are exactly
+   \((SP1)\)--\((SP3)\), and the state-quotient sampler supplies the required
+   per-trial sampling time.
+\end{proof}
+
 \begin{proposition}[Gibbs sampled additive-IVF spectrum compiler]
    \label{prop:gibbs-sampled-additive-ivf-compiler}
    Fix a terminal localized ANN subproblem of size \(m\), approximation \(c\),
@@ -4351,9 +4455,10 @@ partition ignores the bias coordinates that certify the list size.
    In this proposition, every unqualified sum over \(a\) ranges over
    \(\mathcal C_1\times\cdots\times\mathcal C_h\).
    Assume the sampler is exact and runs in \(d\log^{O_c(1)}m\) time per trial;
-   \cref{lem:gibbs-prefix-additive-ivf-sampler} gives one sufficient
+   \cref{lem:gibbs-prefix-additive-ivf-sampler} is the singleton-label
    implementation when the suffix partition functions can be evaluated
-   compactly.
+   compactly, while \cref{lem:gibbs-aq-state-quotient} is the corresponding
+   bucket-quotient implementation.
 
    Suppose that, for some \(\alpha,\beta>0\),
    \[
@@ -4428,12 +4533,16 @@ partition ignores the bias coordinates that certify the list size.
    The sampled route is different: \cref{lem:gibbs-prefix-additive-ivf-sampler}
    uses the true residual partition functions, so the interaction term is
    handled exactly rather than lower-bounded and exact-filtered afterward.
-   The remaining theorem is correspondingly sharper and more spectral: build
-   codebooks, a trellis, or a lattice quotient whose suffix partition functions
-   are compactly samplable and whose true tuple score satisfies
-   \((GSA1)\)--\((GSA3)\).  Lloyd or AQ distortion can be a proposal heuristic
-   for those panels, but the proof object is the sampled spectrum and exact
-   partition sampler.
+   The finite-state form in \cref{lem:gibbs-aq-state-quotient} also separates
+   tuple entropy from retained-bucket entropy: many tuples may contribute to
+   one stored bucket label if the state graph can sample their aggregate tilted
+   mass directly.  The remaining theorem is correspondingly sharper and more
+   spectral: build codebooks, a trellis, or a lattice quotient whose suffix
+   partition functions are compactly samplable and whose retained buckets
+   satisfy either the tuple spectrum \((GSA1)\)--\((GSA3)\) or the quotient
+   certificate \((FSA1)\)--\((FSA3)\).  Lloyd or AQ distortion can be a
+   proposal heuristic for those panels, but the proof object is the sampled
+   spectrum and exact partition sampler.
 \end{remark}
 
 \begin{proposition}[Priced-pair additive-IVF spectrum compiler]
@@ -21783,7 +21892,11 @@ inside the partition recursion rather than by a rectangular lower bound or an
 all-listing prefix search.  Conditional on compact partition evaluation,
 \cref{prop:gibbs-sampled-additive-ivf-compiler} reduces sampled AQ to three
 spectral tests: stored tuple incidences, far sampled co-load, and near Gibbs
-mass.  This is the additive-vector-quantization analogue of the discrete
+mass.  \Cref{lem:gibbs-aq-state-quotient} and
+\cref{cor:finite-state-sampled-aq} sharpen the implementation target further:
+a compact state graph may sample aggregate Gibbs mass for quotient bucket
+labels, so the charged index stores distinct buckets rather than all internal
+tuples.  This is the additive-vector-quantization analogue of the discrete
 Gaussian code/lattice route.
 \Cref{prop:finite-retained-priced-pair} gives the corresponding retained-index
 certificate.  Build time may use \(k\)-means++, random centroids, additive
