@@ -3131,6 +3131,103 @@ partition ignores the bias coordinates that certify the list size.
    \]
 \end{proof}
 
+\begin{corollary}[Superset product-panel rate bookkeeping]
+   \label{cor:superset-product-panel-rate-bookkeeping}
+   Work in the setting of \cref{lem:product-panel-tensorization}, but use the
+   superset block reporters of \cref{lem:superset-product-panel-decoder}.  Thus
+   block \(j\)'s candidate work satisfies \((SR1)\) with functions
+   \(A_j(q)\) and \(B_j(q)\).  For every query \(q\), suppose there are
+   deterministic block factors \(\widehat{\mathfrak q}_j(q)\) such that, for
+   every realization of block \(j\),
+   \[
+      e^{-\beta\theta_{Q,j}}Z_j^Q(q)
+      \le\widehat{\mathfrak q}_j(q),
+      \qquad
+      e^{\beta(M_j(q)-\theta_{Q,j})}
+      \le\widehat{\mathfrak q}_j(q),
+      \tag{SRB1}
+   \]
+   \[
+      A_j(q)e^{\beta(M_j(q)-\theta_{Q,j})}
+      \le\widehat{\mathfrak q}_j(q),
+      \qquad
+      B_j(q)e^{-\beta\theta_{Q,j}}
+      \le\widehat{\mathfrak q}_j(q).
+      \tag{SRB2}
+   \]
+   If
+   \[
+      \prod_{j=1}^h\widehat{\mathfrak q}_j(q)
+      \le m^\rho\log^{O_c(1)}m
+      \qquad\text{for every promised query }q,
+      \tag{SRB3}
+   \]
+   then the superset product decoder has one-panel query work
+   \(m^\rho\log^{O_c(1)}m\), up to the explicit block score-evaluation
+   preprocessing already included in \(A_j,B_j\).
+
+   In particular, for the OSD block reporter of
+   \cref{cor:osd-superset-block-reporter}, where
+   \(B_j(q)=\exp(\beta M_j(q)+\Lambda_j(q))\), it is enough to choose
+   \(\widehat{\mathfrak q}_j(q)\) satisfying
+   \[
+      e^{-\beta\theta_{Q,j}}Z_j^Q(q)
+      \le\widehat{\mathfrak q}_j(q),
+      \qquad
+      \bigl(1+A_j(q)+e^{\Lambda_j(q)}\bigr)
+      e^{\beta(M_j(q)-\theta_{Q,j})}
+      \le\widehat{\mathfrak q}_j(q).
+      \tag{SRB4}
+   \]
+   Thus the OSD query-rate penalty is exactly the entropy multiplier
+   \(e^{\Lambda_j(q)}\) at the decoded block, plus the chart-construction term
+   \(A_j(q)\).
+\end{corollary}
+
+\begin{proof}
+   We bound \(e^{-\beta\theta_Q}\widehat P_\beta(q)\).  The first sum in
+   \(\widehat P_\beta\) is the live-prefix sum from \((BT1)\) with coefficient
+   \(1\), so every term is bounded by
+   \(\prod_j\widehat{\mathfrak q}_j(q)\) using \((SRB1)\).
+
+   For the fixed reporter-work term at level \(\ell\), let \(r=\ell+1\).
+   After multiplying by \(e^{-\beta\theta_Q}\), the term factors as
+   \[
+      A_r(q)
+      \prod_{j<r}\left(e^{-\beta\theta_{Q,j}}Z_j^Q(q)\right)
+      e^{\beta(M_r(q)-\theta_{Q,r})}
+      \prod_{j>r}e^{\beta(M_j(q)-\theta_{Q,j})}.
+   \]
+   This is at most \(\prod_j\widehat{\mathfrak q}_j(q)\) by \((SRB1)\) and
+   the first inequality in \((SRB2)\).
+
+   For the threshold-dependent candidate term at level \(\ell\), again put
+   \(r=\ell+1\).  Multiplication by \(e^{-\beta\theta_Q}\) gives
+   \[
+      B_r(q)e^{-\beta\theta_{Q,r}}
+      \prod_{j<r}\left(e^{-\beta\theta_{Q,j}}Z_j^Q(q)\right)
+      \prod_{j>r}e^{\beta(M_j(q)-\theta_{Q,j})},
+   \]
+   which is also at most the product of the
+   \(\widehat{\mathfrak q}_j(q)\)'s.  There are \(2h+1=\log^{O_c(1)}m\) sums,
+   so \((SRB3)\) gives
+   \[
+      e^{-\beta\theta_Q}\widehat P_\beta(q)
+      \le m^\rho\log^{O_c(1)}m .
+   \]
+   Substituting this into \cref{lem:superset-product-panel-decoder}, with
+   terminal prices \(Q_c=0\), proves the query-work claim.
+
+   For an OSD block,
+   \[
+      B_j(q)e^{-\beta\theta_{Q,j}}
+      =
+      e^{\Lambda_j(q)}e^{\beta(M_j(q)-\theta_{Q,j})}.
+   \]
+   Combining this with the live-prefix and fixed-work requirements gives
+   \((SRB4)\).
+\end{proof}
+
 \begin{lemma}[Soft list-recovery blocks are threshold reporters]
    \label{lem:soft-list-recovery-reporter}
    Fix one product block \(j\).  Let
@@ -4039,6 +4136,10 @@ partition ignores the bias coordinates that certify the list size.
    to the product-panel accounting: false OSD candidates are not hidden in the
    output-sensitive scan term, but are charged by an explicit
    \(e^{\Lambda_j(q)}\) multiplier in the prefix moment.
+   \Cref{cor:superset-product-panel-rate-bookkeeping} is the rate form of the
+   same statement: the query exponent only has to absorb
+   \((1+A_j(q)+e^{\Lambda_j(q)})
+   e^{\beta(M_j(q)-\theta_{Q,j})}\) block-by-block.
 \end{remark}
 
 \begin{remark}[Outer list recovery as the clean codebook target]
@@ -17394,6 +17495,12 @@ enumerators often produce a certified superset before exact filtering.
 \Cref{cor:osd-superset-block-reporter} gives the resulting product-panel query
 certificate: an OSD block contributes the ordinary prefix moment multiplied by
 only \(e^{\Lambda_j(q)}\) at the block being decoded.
+\Cref{cor:superset-product-panel-rate-bookkeeping} packages this as a
+blockwise rate test: the OSD query factor is
+\((1+A_j+e^{\Lambda_j})e^{\beta(M_j-\theta_{Q,j})}\), together with the usual
+partition factor \(e^{-\beta\theta_{Q,j}}Z_j^Q\).  Thus the remaining product
+panel theorem can state query overhead, storage, far load, and near hit as four
+ordinary multiplicative block-rate inequalities.
 The remaining work is spectrum and rate bookkeeping rather than Lloyd-style
 convergence analysis.
 \Cref{lem:additive-product-panel-decoder}
