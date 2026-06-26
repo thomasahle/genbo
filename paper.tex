@@ -11252,6 +11252,57 @@ handled by one filter-cover process rather than by separate branching rules.
    where the last strict inequality is \((WS7)\).  Thus \((LGC2)\) holds.
 \end{proof}
 
+\begin{corollary}[Contained high-correlation local cover]
+   \label{cor:contained-high-correlation-local-cover}
+   Work in a finite local filter-cover instance with resident set \(P\),
+   \(|P|=m\), query constraints \(\mathcal Q\), near-pair demands
+   \(\mathcal N\), query budget \(L\), and storage budget \(S\).  Suppose the
+   retained filter universe contains the spherical buckets \(z\in\mathcal Z\)
+   from \cref{lem:weighted-spherical-reduced-gain}, with
+   \(T_z=S_z=|U_z|\).  Assume \((WS1)\)--\((WS3)\) and \((WS6)\).  Let
+   \(a_q=\Pr_{Z\sim\Pi}[\chi_Z(q)=1]\).  For a guard threshold \(\gamma_0\),
+   assume every priced query constraint is low-guard and every
+   high-correlation set is contained in the resident guard ball:
+   \[
+      q\in\Omega_{\rm low},
+      \qquad
+      H(q)\subseteq P\cap B(q,cr)
+      \qquad(q\in\mathcal Q),
+      \tag{CHC1}
+   \]
+   where
+   \[
+      \Omega_{\rm low}
+      =
+      \{q:|P\cap B(q,cr)|<\gamma_0m\}.
+   \]
+   If
+   \[
+      \gamma_0m\max_q a_q\le\frac{\pi_1L}{2},
+      \tag{CHC2}
+   \]
+   then the finite filter-cover LP over any universe containing these spherical
+   buckets is feasible with query budget \(L\) and storage budget \(S\).
+\end{corollary}
+
+\begin{proof}
+   Suppose the LP were infeasible.  By
+   \cref{lem:finite-filter-cover-dual}, there is a nonnegative dual price
+   system \((\alpha,\tau,\sigma)\) with surplus
+   \[
+      A_\alpha>L\sum_q\tau_q+\sigma S
+   \]
+   and nonpositive reduced gain on every retained filter column.  In
+   particular, every spherical bucket \(z\in\mathcal Z\) has nonpositive reduced
+   gain in the sense of \cref{lem:weighted-spherical-reduced-gain}.  Conditions
+   \((WS6)\) and the displayed surplus are exactly the hypotheses
+   \((WS6)\)--\((WS7)\), while \((CHC1)\)--\((CHC2)\) imply \((LGC1)\) and
+   \((LGC3)\).  Therefore
+   \cref{cor:low-guard-contained-spherical-reduced-gain} gives a spherical
+   bucket with positive reduced gain, contradicting the dual certificate.
+   Hence the finite filter-cover LP is feasible.
+\end{proof}
+
 For the smooth product or Gaussian cap family, \(\pi_1\) is the near collision
 probability, \(\pi_2\) is the ordinary far co-load probability, and \(\pi_u\) is
 the update probability.  The usual exponent calculation is precisely
@@ -11269,6 +11320,9 @@ but the query-price weighted activation mass
 high-correlation set is contained in the resident \(cr\)-guard ball,
 \cref{cor:low-guard-contained-spherical-reduced-gain} shows that the resident
 guard removes this obstruction on the low-guard domain.
+\Cref{cor:contained-high-correlation-local-cover} packages this as a local LP
+certificate: in the contained-cap regime, no dense scalar reporter is needed at
+all, because the spherical buckets themselves separate every surplus dual.
 
 \begin{lemma}[High-correlation dense-slice separator]
    \label{lem:high-correlation-dense-slice-separator}
@@ -20106,10 +20160,13 @@ query-price weighted active guard mass matters.  In particular, by
 \cref{cor:low-guard-contained-spherical-reduced-gain}, if the high-correlation
 sets are contained in the resident \(cr\)-guard balls, then low-guard queries
 can obstruct spherical reduced gain only through activation-weighted guard mass
-that exceeds the surplus dual demand.  The remaining scalar reporter theorem is
-therefore about high-correlation mass that is not eliminated by the resident
-guard in this dual-weighted sense and not concentrated in any retained
-smaller-radius container.
+that exceeds the surplus dual demand.  In the budget-compatible contained case,
+\cref{cor:contained-high-correlation-local-cover} gives the local finite cover
+directly from spherical buckets.  The remaining scalar reporter theorem is
+therefore about high-correlation mass that either leaks outside the resident
+guard containment used by this corollary, or survives the guard in the
+dual-weighted sense, and is not concentrated in any retained smaller-radius
+container.
 
 \Cref{cor:finite-all-size-soft-bucket-separation} is the cardinality-net
 version of the dense-overlap column generator.  A proposal family may contain
@@ -35705,7 +35762,10 @@ also priced rather than worst-case: by
 must have large activation-weighted guard mass, and
 \cref{cor:low-guard-contained-spherical-reduced-gain} removes it on the
 low-guard domain whenever the high-correlation caps are contained in the
-resident \(cr\)-guard balls.  The remaining dense theorem is therefore narrower:
+resident \(cr\)-guard balls.  In the corresponding budget-compatible regime,
+\cref{cor:contained-high-correlation-local-cover} proves the local filter-cover
+LP feasible using spherical buckets alone.  The remaining dense theorem is
+therefore narrower:
 \cref{lem:high-correlation-dense-slice-separator} intersects
 those buckets with the high-correlation cap around the priced query, producing
 certified radius-contracting singleton-signature dense slices.  If the
