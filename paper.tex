@@ -11634,6 +11634,146 @@ coverage problem with a priced threshold \(P(G)/\theta_j\).  A proposal routine
 may list quotients with large \(C_j(G)\), but every returned quotient is still
 checked against the exact weighted reduced-gain inequality before it is retained.
 
+\begin{lemma}[Captured-demand dyadic layer]
+   \label{lem:captured-demand-dyadic-layer}
+   Work in the setting of \cref{lem:high-correlation-dense-slice-separator}.
+   Assume every demanded pair satisfies \(p\in H(q)\), and let
+   \(\mathcal N_1,\ldots,\mathcal N_J\) be dyadic classes of the positive demand
+   prices as in \cref{lem:dyadic-quotient-packing}.  Define the unweighted
+   captured layer mass
+   \[
+      B_j
+      =
+      \theta_j\,
+      \E_{Z\sim\Pi}
+      \sum_q
+      \left|
+         \{p\in V_{Z,q}:(p,q)\in\mathcal N_j\}
+      \right|.
+      \tag{CDL1}
+   \]
+   Then
+   \[
+      \sum_{j=1}^JB_j
+      \ge
+      \frac12
+      \E_{Z\sim\Pi}\sum_qA_{Z,q}
+      \ge
+      \frac{\pi_1}{2}A_\alpha .
+      \tag{CDL2}
+   \]
+   Consequently some dyadic layer satisfies
+   \[
+      B_j\ge \frac{\pi_1}{2J}A_\alpha .
+      \tag{CDL3}
+   \]
+\end{lemma}
+
+\begin{proof}
+   By the dyadic definition, every pair in \(\mathcal N_j\) has
+   \(\alpha_{p,q}<2\theta_j\).  Therefore
+   \[
+      \E_Z\sum_qA_{Z,q}
+      \le
+      2\sum_{j=1}^JB_j,
+   \]
+   which gives the first inequality in \((CDL2)\).  For the second, expand the
+   captured demand:
+   \[
+      \E_Z\sum_qA_{Z,q}
+      =
+      \sum_{(p,q)\in\mathcal N}
+      \alpha_{p,q}\Pr_Z[p\in U_Z\cap H(q)].
+   \]
+   Since every demand has \(p\in H(q)\), the probability on the right is at
+   least \(\Pr_Z[p\in U_Z,\chi_Z(q)=1]\), which is at least \(\pi_1\) by
+   \((WS1)\).  This proves \((CDL2)\).  The pigeonhole principle gives
+   \((CDL3)\).
+\end{proof}
+
+\Cref{lem:captured-demand-dyadic-layer} identifies the layer that a quotient
+separator should try to compress.  The loss \(J\) belongs to build-time layer
+search and to proof bookkeeping; after a quotient is proposed, the retained
+certificate still checks the original weighted reduced gain.
+
+\begin{lemma}[Hinge form of query-side quotient activation]
+   \label{lem:hinge-quotient-activation}
+   Fix a dyadic layer \(\mathcal N_j\) and a quotient \(G\) as in
+   \cref{cor:unweighted-quotient-coverage-screen}.  Define its query-local
+   de-duplicated layer coverage by
+   \[
+      C_j(G;q)
+      =
+      \frac1{b_G}
+      \sum_{\substack{z:(z,q)\in\mathcal I_G}}
+      \left|
+         \{p\in V_{z,q}:(p,q)\in\mathcal N_j\}
+      \right|.
+      \tag{HQ1}
+   \]
+   Thus \(C_j(G)=\sum_qC_j(G;q)\).  Suppose the quotient universe is closed under
+   activation restriction: for every subset \(Q'\subseteq\{q:a_G(q)=1\}\), it
+   contains the restricted quotient \(G|Q'\) with the same update side and
+   certified prices \(T_G,S_G\), activation only on \(Q'\), and assigned
+   primitive slices \(\{(z,q)\in\mathcal I_G:q\in Q'\}\).
+
+   If \(G\) satisfies the layer screen
+   \[
+      \theta_jC_j(G)>T_G\sum_q\tau_qa_G(q)+\sigma S_G,
+      \tag{HQ2}
+   \]
+   then the positive-margin restriction
+   \[
+      Q^+(G)=
+      \{q:a_G(q)=1,\ \theta_jC_j(G;q)>T_G\tau_q\}
+   \]
+   also satisfies the layer screen.  Equivalently, under activation-restriction
+   closure, a positive layer quotient exists if and only if some quotient core
+   satisfies the hinge inequality
+   \[
+      \sum_q
+      \bigl(\theta_jC_j(G;q)-T_G\tau_q\bigr)_+
+      >
+      \sigma S_G .
+      \tag{HQ3}
+   \]
+\end{lemma}
+
+\begin{proof}
+   Put
+   \[
+      d_q=\theta_jC_j(G;q)-T_G\tau_q
+   \]
+   for active queries and \(d_q=0\) otherwise.  The layer surplus of \(G\) is
+   \[
+      \sum_qd_q-\sigma S_G.
+   \]
+   If this is positive, then \(\sum_q(d_q)_+>\sigma S_G\), so \(Q^+(G)\) is
+   nonempty.  The restricted quotient has the same storage price, no larger
+   query-price term, and duplicate factor at most \(b_G\).  Therefore its true
+   de-duplicated coverage is at least the sum of the old \(C_j(G;q)\) over
+   \(Q^+(G)\).  Its layer surplus is at least
+   \[
+      \sum_q(d_q)_+-\sigma S_G>0,
+   \]
+   proving the first claim.
+
+   If a quotient satisfies \((HQ3)\), then restricting it to the positive-margin
+   queries gives a quotient satisfying \((HQ2)\), hence a positive layer
+   quotient by \cref{cor:unweighted-quotient-coverage-screen}.  Conversely, any
+   quotient satisfying \((HQ2)\) has \(\sum_q(d_q)_+>\sigma S_G\), which is
+   \((HQ3)\).
+\end{proof}
+
+\Cref{lem:hinge-quotient-activation} removes another artificial choice from the
+dense side.  A proposal routine may search only for an update-side quotient core
+and its primitive incidences.  The query side is then determined by the dual
+prices: activate exactly those queries whose layer coverage beats their local
+query charge, and test whether the remaining positive margins pay the one-time
+storage price.  This is the fractional analogue of merging many dense children:
+overlap at a query is not forbidden, it is bought only when its local margin is
+positive.
+
 \begin{assumption}[Layer quotient separator]
    \label{asm:layer-quotient-separator}
    Work in the setting of \cref{cor:residual-separator-local-cover}.  Suppose a
@@ -23299,9 +23439,14 @@ build-time layer factor and exact weighted verification afterward.
 plain unweighted quotient-coverage threshold.  The named target is now
 \cref{asm:layer-quotient-separator}: after spherical filters, whole slices, and
 slice prefixes fail, one dyadic price layer must contain a quotient whose
-de-duplicated unweighted coverage beats its query/storage price.  By
-\cref{cor:layer-separation-local-cover}, this concrete layer separator already
-implies local filter-cover feasibility.  Since
+de-duplicated unweighted coverage beats its query/storage price.
+\Cref{lem:captured-demand-dyadic-layer} shows that such a layer can be chosen
+from the layers carrying a \(1/O(J)\) fraction of the captured near-pair demand.
+\Cref{lem:hinge-quotient-activation} makes the query side canonical: for a
+proposed quotient core, keep exactly the query signatures with positive
+coverage-minus-load margin and ask whether those margins pay the one-time
+storage price.  By \cref{cor:layer-separation-local-cover}, this concrete layer
+separator already implies local filter-cover feasibility.  Since
 preprocessing time is deliberately not a scarce resource,
 \cref{lem:finite-pool-optimizer} and
 \cref{cor:offline-pareto-compression} allow the build stage to enumerate,
