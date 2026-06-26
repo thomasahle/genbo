@@ -16305,6 +16305,87 @@ singleton slices by hand.
    giving \((MIL3)\).
 \end{proof}
 
+\begin{corollary}[Query-layer seeded and marginal proposals]
+   \label{cor:query-layer-seeded-marginal-proposals}
+   Work in the setting of \cref{lem:random-list-proposal-criterion}, and fix
+   fractional query weights \(0\le y_q\le1\).  For
+   \(t\in(0,1]\), let \(Q_t(y)\) and \(A_t\) be as in
+   \cref{lem:query-layer-random-list-proposal}.
+
+   First, in the seeded setting of
+   \cref{cor:seeded-list-proposal-criterion}, define
+   \[
+      V_{s,t}
+      =
+      \sum_{p\in L_s}
+      \sum_{q\in Q_t(y):(p,q)\in\mathcal N}
+      \gamma_{p,q}r_{p,q}.
+      \tag{QSM1}
+   \]
+   If \((SLP1)\) holds for the fractional weights \(y\), then there is a
+   threshold \(t\in(0,1]\) such that
+   \[
+      \E_sV_{s,t}
+      >
+      b\,\psi\left(
+         A_t\,\E_sK_s^\rho+\sigma\,\E_sK_s^{1+\rho}
+      \right).
+      \tag{QSM2}
+   \]
+   Hence some deterministic seed \(s\) and the ordinary query layer \(Q_t(y)\)
+   expose an available paid prefix with positive repair reduced gain.
+
+   Second, in the marginal-incidence setting of
+   \cref{cor:marginal-list-proposal-criterion}, define
+   \[
+      V_{\pi,t}
+      =
+      \sum_{p\in W}\pi_p
+      \sum_{q\in Q_t(y):(p,q)\in\mathcal N}
+      \gamma_{p,q}r_{p,q}.
+      \tag{QSM3}
+   \]
+   If \((MIL2)\) holds for the fractional weights \(y\), then there is a
+   threshold \(t\in(0,1]\) such that
+   \[
+      V_{\pi,t}
+      >
+      b\,\psi\left(
+         A_t\mu^\rho+\sigma\,\mu^{1-\rho}M_2^\rho
+      \right).
+      \tag{QSM4}
+   \]
+   Hence the marginal proposal on the ordinary query layer \(Q_t(y)\) exposes
+   an available paid prefix with positive repair reduced gain.
+\end{corollary}
+
+\begin{proof}
+   The seeded law \(s\mapsto L_s\) is a random list law, so
+   \cref{lem:query-layer-random-list-proposal} applied to \((SLP1)\) gives
+   \((QSM2)\).  Applying \cref{cor:seeded-list-proposal-criterion} with the
+   integral query weights \(\mathbf 1_{Q_t(y)}\) gives the deterministic seed
+   and positive prefix.
+
+   For the marginal statement, layer-cake gives
+   \[
+      V_\pi=\int_0^1V_{\pi,t}\,dt,
+      \qquad
+      A_y=\int_0^1A_t\,dt .
+   \]
+   If \((MIL2)\) holds, then
+   \[
+      \int_0^1
+      \left[
+         V_{\pi,t}-b\,\psi A_t\mu^\rho
+      \right]dt
+      >
+      b\,\psi\sigma\,\mu^{1-\rho}M_2^\rho .
+   \]
+   Some threshold \(t\) therefore satisfies \((QSM4)\).  Applying
+   \cref{cor:marginal-list-proposal-criterion} with integral query weights
+   \(\mathbf 1_{Q_t(y)}\) gives the positive prefix.
+\end{proof}
+
 \begin{corollary}[List-proposal separation implies the hit-kernel cover]
    \label{cor:list-proposal-hit-kernel-cover}
    Work in the setting of \cref{asm:paid-atomized-prefix-separator}, and assume
@@ -16443,9 +16524,14 @@ certificate has an ordinary threshold query layer with the same surplus.
 implementation and for geometry.  A seeded decoder only has to prove an average
 value-per-moment inequality over its seed law; one good seed then exists and is
 verified exactly.  A soft or randomized decoder can instead certify only the
-inclusion marginals and a second moment of the emitted list.  This turns the
-remaining separator into a concrete moment problem for geometric neighborhoods,
-facility cells, additive-code buckets, or list-decoding output sets.
+inclusion marginals and a second moment of the emitted list.
+\Cref{cor:query-layer-seeded-marginal-proposals} combines these two reductions:
+seeded and marginal certificates may also be materialized on an ordinary
+threshold query layer.  Thus fractional query weights are only an analysis
+device; the retained filters are still Boolean query-side activations.  This
+turns the remaining separator into a concrete moment problem for geometric
+neighborhoods, facility cells, additive-code buckets, or list-decoding output
+sets.
 \Cref{cor:aggregate-list-moment-residual-envelope} is the matching obstruction:
 if the hit-kernel cover fails, every finite list-size panel obeys \((ALR1)\).
 Thus a proof of the polylog endpoint can now target a single averaged
@@ -16810,7 +16896,11 @@ the geometric separator violates a container-prefix envelope for every surplus
 paid dual.  Equivalently, by
 \cref{cor:list-proposal-hit-kernel-cover}, it is enough to produce a random
 list, seeded list, or marginal-incidence list whose expected paid value beats
-the query/storage list moments for every such surplus dual.  Conversely,
+the query/storage list moments for every such surplus dual.  By
+\cref{lem:query-layer-random-list-proposal} and
+\cref{cor:query-layer-seeded-marginal-proposals}, any such successful
+fractional-query certificate has an ordinary threshold query layer with the
+same surplus.  Conversely,
 \cref{cor:paid-prefix-residual-envelope} says that a failed dense separator has
 only one possible form: a paid residual whose every certified container obeys
 the weighted degree envelopes \((PPRE1)\)--\((PPRE2)\).  Thus the remaining
