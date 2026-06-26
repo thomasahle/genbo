@@ -16622,6 +16622,77 @@ singleton slices by hand.
    cover.
 \end{proof}
 
+\begin{corollary}[Query-free marginal proposal separator]
+   \label{cor:query-free-marginal-proposal-separator}
+   Work in the setting of \cref{cor:boolean-query-layer-list-proposal-separator}.
+   It is enough to prove the following soft, query-free proposal statement.  For
+   every nonnegative price system \((\gamma,\tau,\sigma)\) satisfying
+   \((APC1)\)--\((APC2)\), there is a finite seed law \(s\sim\nu\) such that seed
+   \(s\) chooses a certified container \(W_s\in\mathcal W\), inclusion marginals
+   \(0\le \pi_{s,p}\le1\) on \(W_s\), and a realizable second-moment bound
+   \(M_{2,s}\).  Write
+   \[
+      \mu_s=\sum_{p\in W_s}\pi_{s,p},
+      \qquad
+      \rho_s=\rho_{W_s},
+      \qquad
+      \psi_s=\psi_{W_s},
+   \]
+   and
+   \[
+      h_s(q)=
+      \sum_{p\in W_s:(p,q)\in\mathcal N}
+         \pi_{s,p}\gamma_{p,q}r_{p,q}.
+      \tag{QFM1}
+   \]
+   Assume
+   \[
+      \E_s
+      \sum_{q\in\mathcal Q}
+      \bigl(h_s(q)-b\,\psi_s\mu_s^{\rho_s}\tau_q\bigr)_+
+      >
+      b\,\E_s\!\left[
+         \psi_s\sigma\,\mu_s^{1-\rho_s}M_{2,s}^{\rho_s}
+      \right].
+      \tag{QFM2}
+   \]
+   Then \((\mathsf{HKC}_{\mathcal U})\) is feasible.
+\end{corollary}
+
+\begin{proof}
+   Inequality \((QFM2)\) implies that some deterministic seed \(s\) satisfies
+   \[
+      \sum_q
+      \bigl(h_s(q)-b\,\psi_s\mu_s^{\rho_s}\tau_q\bigr)_+
+      >
+      b\,\psi_s\sigma\,\mu_s^{1-\rho_s}M_{2,s}^{\rho_s}.
+      \tag{QFM3}
+   \]
+   Let
+   \[
+      Q_s^+=
+      \{q\in\mathcal Q:h_s(q)>b\,\psi_s\mu_s^{\rho_s}\tau_q\}.
+      \tag{QFM4}
+   \]
+   Then \((QFM3)\) is exactly
+   \[
+      \sum_{p\in W_s}\pi_{s,p}
+      \sum_{q\in Q_s^+:(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}
+      >
+      b\,\psi_s\left(
+         \mu_s^{\rho_s}\sum_{q\in Q_s^+}\tau_q
+         +\sigma\,\mu_s^{1-\rho_s}M_{2,s}^{\rho_s}
+      \right).
+      \tag{QFM5}
+   \]
+   This is the Boolean-query marginal certificate \((BQL3)\) for the ordinary
+   query layer \(Q_s^+\).  Since the argument applies to every surplus price
+   system satisfying \((APC1)\)--\((APC2)\), the Boolean-query separator
+   hypothesis holds in its marginal form.  Hence
+   \cref{cor:boolean-query-layer-list-proposal-separator} gives the primitive
+   hit-kernel cover.
+\end{proof}
+
 \begin{corollary}[Joint query-list proposal separator]
    \label{cor:joint-query-list-proposal-separator}
    Work in the setting of \cref{cor:boolean-query-layer-list-proposal-separator}.
@@ -16675,15 +16746,17 @@ singleton slices by hand.
    hit-kernel cover.
 \end{proof}
 
-\Cref{cor:query-free-list-proposal-separator} is the current most compact
-build-time target.  A proposal routine chooses only the container and the update
-list.  The query side is then the canonical positive-margin layer
-\(Q^+(L)\), and \cref{lem:deterministic-query-list-verifier} replaces the
-proposed list by the available top-degree prefix before checking exact reduced
-gain.  Thus \(k\)-means++ seeding, additive-quantization buckets,
-LP/range-reporting violator search, and tensor or lattice list decoders can all
-be analyzed as laws over pairs \((W_s,L_s)\), while the final verifier still
-keeps an ordinary Boolean filter column.
+\Cref{cor:query-free-marginal-proposal-separator} is the current most compact
+build-time target.  A proposal routine chooses only the container and a soft
+update measure, plus a second-moment bound for a list realizing those
+marginals.  The query side is the canonical positive-margin layer.  Hard lists
+are the special case \(\pi=\mathbf 1_L\) and \(M_2=|L|^2\), covered by
+\cref{cor:query-free-list-proposal-separator}; the deterministic verifier then
+replaces the proposed list by the available top-degree prefix before checking
+exact reduced gain.  Thus \(k\)-means++ seeding, additive-quantization
+responsibilities, LP/range-reporting violator search, and tensor or lattice
+list decoders can all be analyzed as laws over container/marginal pairs, while
+the final verifier still keeps an ordinary Boolean filter column.
 
 \begin{assumption}[Balanced aggregate list-size separator]
    \label{asm:balanced-aggregate-list-size-separator}
@@ -16801,6 +16874,14 @@ device; the retained filters are still Boolean query-side activations.  This
 turns the remaining separator into a concrete moment problem for geometric
 neighborhoods, facility cells, additive-code buckets, or list-decoding output
 sets.
+\Cref{cor:query-free-marginal-proposal-separator} removes the query side from
+the proposal mechanism as well.  A soft bucket only has to specify update
+marginals and a realizable second moment; the canonical positive-margin query
+layer is chosen after the dual prices are known, and the final retained object
+is still the exact top-degree Boolean prefix.  This is the fractional analogue
+of dense-overlap column generation: preprocessing may search over soft
+facilities, additive-quantization codes, or list-decoder panels, but the LP pays
+only for the verified column it keeps.
 \Cref{cor:aggregate-list-moment-residual-envelope} is the matching obstruction:
 if the hit-kernel cover fails, every finite list-size panel obeys \((ALR1)\).
 Thus a proof of the polylog endpoint can now target a single averaged
@@ -17176,7 +17257,11 @@ list-proposal theorem directly in Boolean-query form, and
 and list be proposed jointly by an arbitrary seed law.
 \Cref{cor:query-free-list-proposal-separator} removes the query-side proposal as
 well: a law over container/list pairs is enough, because the verifier takes the
-positive-margin query layer.  Conversely,
+positive-margin query layer.  More generally,
+\cref{cor:query-free-marginal-proposal-separator} allows the seed to output only
+soft update marginals and a second-moment certificate; this is the fractional
+form suited to overlapping dense filters, additive vector quantization, and
+responsibility-weighted facility proposals.  Conversely,
 \cref{cor:paid-prefix-residual-envelope} says that a failed dense separator has
 only one possible form: a paid residual whose every certified container obeys
 the weighted degree envelopes \((PPRE1)\)--\((PPRE2)\).  Thus the remaining
