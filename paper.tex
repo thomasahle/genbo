@@ -19343,6 +19343,118 @@ inequality \((QP3)\).
    last display becomes \((ORPC1)\).
 \end{proof}
 
+\begin{corollary}[Local-error observable profile-cover LP]
+   \label{cor:local-error-observable-profile-cover}
+   Work in the setting of
+   \cref{cor:observable-renyi-profile-separator}.  Let \(\mathcal P\) be a
+   finite family of certified local-error profiles
+   \[
+      \Pi=(H_\Pi,L_\Pi,U_\Pi,E_\Pi(\cdot)),
+   \]
+   where \(H_\Pi(\sigma_0)\) is a certified lower hit vector,
+   \(L_\Pi(\sigma_0)\) is a certified upper query-load vector,
+   \(U_\Pi\) is a certified upper storage moment, and
+   \(E_\Pi(\sigma_0)\) is a certified upper error contribution for the
+   individual exact signature \(\sigma_0\), truncated so that
+   \(0\le E_\Pi(\sigma_0)\le H_\Pi(\sigma_0)\).  Assume the discounted hit vector
+   \[
+      \widetilde H_\Pi(\sigma_0)
+      =
+      H_\Pi(\sigma_0)-E_\Pi(\sigma_0)
+      \tag{LEPC0}
+   \]
+   is a certified lower useful-hit vector.  Consider the local-error profile
+   cover
+   \[
+   \begin{array}{ll}
+   \text{\rm find} & \lambda_\Pi\ge0\\[0.4em]
+   \text{\rm subject to}
+      & \displaystyle
+        \sum_{\Pi\in\mathcal P}\lambda_\Pi
+        \widetilde H_\Pi(\sigma_0)\ge1
+        \qquad(\sigma_0\in\Sigma^+),\\[0.9em]
+      & \displaystyle
+        \sum_{\Pi\in\mathcal P}\lambda_\Pi L_\Pi(\sigma_0)
+        \le L_{\sigma_0}
+        \qquad(\sigma_0\in\Sigma),\\[0.9em]
+      & \displaystyle
+        \sum_{\Pi\in\mathcal P}\lambda_\Pi U_\Pi\le S .
+   \end{array}
+   \tag{\(\mathsf{LORPC}_\Sigma\)}
+   \]
+   If \((\mathsf{LORPC}_\Sigma)\) is feasible, then
+   \((\mathsf{ESFC}_\Sigma)\) is feasible.
+
+   Conversely, if \((\mathsf{LORPC}_\Sigma)\) is infeasible, then there is a
+   normalized price system satisfying \((ESNO1)\) such that every certified
+   local-error profile obeys
+   \[
+      \sum_{\sigma_0\in\Sigma^+}\beta_{\sigma_0}H_\Pi(\sigma_0)
+      \le
+      \sum_{\sigma_0\in\Sigma}\tau_{\sigma_0}L_\Pi(\sigma_0)
+      +\theta U_\Pi
+      +\sum_{\sigma_0\in\Sigma^+}\beta_{\sigma_0}E_\Pi(\sigma_0).
+      \tag{LEPC1}
+   \]
+
+   In particular, if finitely supported weights \(\omega_\Pi\) have aggregate
+   quantities
+   \[
+      H(\sigma_0)=\sum_\Pi\omega_\Pi H_\Pi(\sigma_0),\quad
+      E(\sigma_0)=\sum_\Pi\omega_\Pi E_\Pi(\sigma_0),\quad
+      L(\sigma_0)=\sum_\Pi\omega_\Pi L_\Pi(\sigma_0),\quad
+      U=\sum_\Pi\omega_\Pi U_\Pi ,
+   \]
+   and there is \(a>0\) such that
+   \[
+      H(\sigma_0)-E(\sigma_0)\ge a
+      \qquad(\sigma_0\in\Sigma^+),
+      \tag{LEPC2}
+   \]
+   \[
+      L(\sigma_0)\le aL_{\sigma_0}
+      \qquad(\sigma_0\in\Sigma),
+      \qquad
+      U\le aS,
+      \tag{LEPC3}
+   \]
+   then \((\mathsf{ESFC}_\Sigma)\) is feasible.
+\end{corollary}
+
+\begin{proof}
+   For the first claim, apply
+   \cref{cor:observable-renyi-profile-cover} to the ordinary certified profiles
+   \[
+      \widetilde\Pi=(\widetilde H_\Pi,L_\Pi,U_\Pi,0).
+   \]
+   The LP \((\mathsf{ORPC}_\Sigma)\) for these profiles is exactly
+   \((\mathsf{LORPC}_\Sigma)\), so feasibility implies
+   \((\mathsf{ESFC}_\Sigma)\).
+
+   The converse is Farkas' lemma applied to
+   \((\mathsf{LORPC}_\Sigma)\), followed by the same normalization as in the
+   proof of \cref{cor:observable-renyi-profile-cover}.  Infeasibility gives
+   nonnegative multipliers \(\beta,\tau,\theta\) with
+   \[
+      \sum_{\sigma_0\in\Sigma^+}\beta_{\sigma_0}
+      >
+      \sum_{\sigma_0\in\Sigma}\tau_{\sigma_0}L_{\sigma_0}+\theta S
+   \]
+   and, for every \(\Pi\),
+   \[
+      \sum_{\sigma_0\in\Sigma^+}
+      \beta_{\sigma_0}\bigl(H_\Pi(\sigma_0)-E_\Pi(\sigma_0)\bigr)
+      \le
+      \sum_{\sigma_0\in\Sigma}\tau_{\sigma_0}L_\Pi(\sigma_0)+\theta U_\Pi .
+   \]
+   Dividing by \(M=\sum_{\sigma_0\in\Sigma^+}\beta_{\sigma_0}>0\) gives
+   \((ESNO1)\), and rearranging gives \((LEPC1)\).
+
+   For the aggregate certificate, set \(\lambda_\Pi=\omega_\Pi/a\).  Conditions
+   \((LEPC2)\)--\((LEPC3)\) are precisely the three constraints of
+   \((\mathsf{LORPC}_\Sigma)\) for this \(\lambda\), so the first claim applies.
+\end{proof}
+
 \begin{corollary}[Single-panel success-normalized profile certificate]
    \label{cor:single-panel-success-normalized-profile}
    In the setting of \cref{cor:observable-renyi-profile-cover}, suppose
@@ -20139,6 +20251,10 @@ residual that the spherical/list-decoding analysis must contradict.
 \Cref{cor:observable-renyi-profile-cover} turns the same condition back into a
 primal fractional cover of exact signatures by observable profiles, with
 certification error subtracted uniformly from every signature's hit mass.
+\Cref{cor:local-error-observable-profile-cover} sharpens this by allowing an
+error vector: overflow or certification loss is charged only to the exact
+signatures it can affect, rather than being subtracted as a scalar tax from
+every signature in the node.
 \Cref{cor:single-panel-success-normalized-profile} records the simplest
 success-normalized sufficient condition: a panel with hit probability \(a\) may
 spend \(a\) times the local query and storage budgets, so large buckets are
