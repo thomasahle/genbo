@@ -17025,8 +17025,8 @@ singleton slices by hand.
    Work in the setting of \cref{cor:finite-hard-list-separation}, and fix a
    nonnegative price system \((\gamma,\tau,\sigma)\).  For a certified
    container \(W\), an ordinary query layer \(Q'\subseteq\mathcal Q\), and an
-   integer \(K\le |W|\), let \(P_K(W,Q')\) be any \(K\)-point subset of \(W\)
-   maximizing the query-layer paid degree
+   integer \(1\le K\le |W|\), let \(P_K(W,Q')\) be any \(K\)-point subset of
+   \(W\) maximizing the query-layer paid degree
    \[
       \sum_{p\in L}
       \sum_{q\in Q':(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}
@@ -17086,15 +17086,65 @@ singleton slices by hand.
    \[
       \mathsf{PG}_{\gamma,\tau,\sigma}(W,Q^+(H),K)>0 .
    \]
-   Finally,
+   Finally, let \(H'=(W,P_K(W,Q^+(H)))\).  Then
    \[
-      \mathsf{HG}_{\gamma,\tau,\sigma}(P_K(W,Q^+(H)))
+      \mathsf{HG}_{\gamma,\tau,\sigma}(H')
       \ge
       \mathsf{PG}_{\gamma,\tau,\sigma}(W,Q^+(H),K),
    \]
    because the hard-list hinge is the maximum over all query layers and the
    right side evaluates it only on \(Q^+(H)\).  This proves the replacement
    claim and the oracle reduction.
+\end{proof}
+
+\begin{corollary}[Fractional query weights threshold to prefix certificates]
+   \label{cor:fractional-query-prefix-separation}
+   Work in the setting of \cref{cor:hard-list-prefix-separation}.  Fix a
+   certified container \(W\) and an integer \(1\le K\le |W|\).  For
+   \(0\le y_q\le1\), define
+   \[
+      d_y^\gamma(p)
+      =
+      \sum_{q:(p,q)\in\mathcal N}y_q\gamma_{p,q}r_{p,q},
+   \]
+   and let \(D_{W,y}^\gamma(K)\) be the sum of the largest \(K\) values of
+   \(d_y^\gamma(p)\) over \(p\in W\).  If some fractional query weighting
+   satisfies
+   \[
+      D_{W,y}^\gamma(K)
+      >
+      b\,\psi_WK^{\rho_W}\sum_q\tau_qy_q
+      +
+      b\,\psi_W\sigma K^{1+\rho_W},
+      \tag{FQP1}
+   \]
+   then there is an ordinary query layer \(Q'\subseteq\mathcal Q\) such that
+   the top-degree prefix \(P_K(W,Q')\) has positive prefix gain
+   \((HLP1)\).  Conversely, a positive prefix-gain triple \((W,Q',K)\) gives
+   \((FQP1)\) with \(y=\mathbf 1_{Q'}\).
+\end{corollary}
+
+\begin{proof}
+   Define
+   \[
+      F(y)=
+      D_{W,y}^\gamma(K)
+      -
+      b\,\psi_WK^{\rho_W}\sum_q\tau_qy_q
+      -
+      b\,\psi_W\sigma K^{1+\rho_W}.
+   \]
+   The function \(D_{W,y}^\gamma(K)\) is the maximum, over \(K\)-subsets
+   \(L\subseteq W\), of the linear form
+   \[
+      \sum_{p\in L}\sum_{q:(p,q)\in\mathcal N}y_q\gamma_{p,q}r_{p,q}.
+   \]
+   Hence \(F\) is convex on the cube \([0,1]^{\mathcal Q}\).  If \(F(y)>0\)
+   for some fractional \(y\), then the maximum of \(F\) over the cube is
+   positive and is attained at an extreme point \(y'=\mathbf 1_{Q'}\).  For
+   this extreme point, \(D_{W,y'}^\gamma(K)\) is exactly the paid degree of
+   \(P_K(W,Q')\) on the Boolean query layer \(Q'\), so \(F(y')>0\) is
+   \((HLP1)\).  The converse is the same identity with \(y=\mathbf 1_{Q'}\).
 \end{proof}
 
 \begin{corollary}[Joint query-list proposal separator]
@@ -17190,6 +17240,9 @@ replaced by the top \(K\) points in the same container for one Boolean query
 layer.  Thus LP range reporting, list decoding, or additive-code reporters only
 need to find high paid-degree prefixes for priced query layers, followed by the
 same exact reduced-gain verifier.
+\Cref{cor:fractional-query-prefix-separation} keeps fractional query weights
+available as an analysis tool: any positive fractional weighting thresholds to
+one Boolean query layer before the retained column is formed.
 
 \begin{assumption}[Balanced aggregate list-size separator]
    \label{asm:balanced-aggregate-list-size-separator}
@@ -17719,6 +17772,10 @@ container/list pairs with the canonical positive-margin query side.
 top-degree prefixes for ordinary query layers, which is the form naturally
 served by range-reporting, tensor/list-decoding, and additive-code proposal
 oracles.
+\Cref{cor:fractional-query-prefix-separation} adds the matching convex
+relaxation: fractional query prices may be used in the dual analysis, but a
+positive fractional prefix certificate always thresholds to one Boolean query
+layer before the filter is retained.
 Conversely,
 \cref{cor:paid-prefix-residual-envelope} says that a failed dense separator has
 only one possible form: a paid residual whose every certified container obeys
