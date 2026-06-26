@@ -3272,6 +3272,46 @@ partition ignores the bias coordinates that certify the list size.
    removes any lower-score decoder outputs.
 \end{proof}
 
+\begin{corollary}[GMD block certificate]
+   \label{cor:gmd-block-certificate}
+   Let \(\mathcal C\subseteq\Sigma^h\) have Hamming distance \(\Delta\) and a
+   certified errors-and-erasures decoder.  For a query \(q\), let
+   \(S_q(c)=\sum_i\omega_i(q,c_i)\), choose hard symbols \(a_i(q)\),
+   confidences \(\gamma_i(q)\in[0,1]\), and a scale \(\kappa(q)>0\) satisfying
+   \((GMS1)\), and define \(M(q)\) and \(\Gamma(q)\) as in
+   \cref{lem:soft-score-gmd-margin}.  If a requested threshold \(\Theta(q)\)
+   satisfies
+   \[
+      \Theta(q)\ge
+      M(q)-\frac{\kappa(q)}2\bigl(\Gamma(q)-h+\Delta\bigr),
+   \]
+   then the GMD erasure sweep followed by exact filtering \(S_q(c)\ge\Theta(q)\)
+   returns exactly
+   \[
+      \{c\in\mathcal C:S_q(c)\ge\Theta(q)\}
+   \]
+   using at most \(h+2\) errors-and-erasures decoder calls and at most \(h+2\)
+   reported codewords.  Equivalently, the query-side sweep has only \(O(h)\)
+   erasure-threshold transcripts before the compact outer decoder output; in
+   the output-sensitive decoder-DAG certificate, scan work is charged only to
+   the distinct decoded codewords actually reported.
+
+   Therefore, in the finite-signature or decoder-DAG rate-coverage
+   certificates, a retained block only has to certify the top-gap inequality
+   above on each query signature; no repeated-coordinate list-recovery oracle
+   is needed in such high-margin signatures.
+\end{corollary}
+
+\begin{proof}
+   The inclusion of every codeword with \(S_q(c)\ge\Theta(q)\) is exactly
+   \cref{lem:soft-score-gmd-margin}.  The final exact filter guarantees that
+   no lower-score codeword is output.  The decoder-call and output bounds are
+   those of \cref{lem:reliability-erasure-sweep}.  The transcript statement is
+   the same sweep viewed as a compact decoder: one branch for each distinct
+   erasure threshold, followed by the certified errors-and-erasures decoder
+   call and duplicate removal.
+\end{proof}
+
 \begin{remark}[GMD and Chase as compressed list decoders]
    \label{rem:gmd-chase-compressed-decoder}
    \Cref{lem:reliability-erasure-sweep} is the self-contained form of the
@@ -16618,6 +16658,8 @@ to guarantee that the near route is decoded.
 \Cref{lem:soft-score-gmd-margin} turns this into an ordinary soft-score
 certificate: top-symbol gaps define the confidences, and any codeword above
 the resulting score threshold is included by the same \(O(h)\)-call sweep.
+\Cref{cor:gmd-block-certificate} packages the usable block condition for
+finite-signature and decoder-DAG rate-coverage certificates.
 The remaining work is spectrum and rate bookkeeping rather than Lloyd-style
 convergence analysis.
 \Cref{lem:additive-product-panel-decoder}
@@ -16795,6 +16837,9 @@ the useful route has enough confidence-weighted hard agreement.
 \Cref{lem:soft-score-gmd-margin} reduces that agreement condition to a
 top-gap soft-score margin, while Chase-style low-confidence branching gives
 the corresponding small-list extension.
+\Cref{cor:gmd-block-certificate} is the resulting retained-block certificate:
+high-margin signatures can use ordinary errors-and-erasures decoding instead
+of a full soft list-recovery oracle.
 \Cref{lem:budget-stable-prefix-list} and
 \cref{cor:canonical-budget-stable-decoder} take one step in that direction:
 the canonical mixed Bellman budget itself is an admissible list-decoding
