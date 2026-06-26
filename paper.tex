@@ -18636,6 +18636,325 @@ singleton slices by hand.
    \cref{cor:finite-prefix-polylog-endpoint}.
 \end{proof}
 
+\begin{corollary}[Normalized aggregate list-moment obstruction]
+   \label{cor:normalized-cardinality-net-aggregate-list-moment-obstruction}
+   Work in the setting of
+   \cref{cor:normalized-cardinality-net-weak-type-obstruction}, and assume
+   \(0<\rho_W<1\).  Fix the retained container \(W\) and fractional query
+   weights \(y\), choose a finite nonnegative level weighting
+   \((\lambda_i,\delta_i)_i\), and put
+   \[
+      h_i=|\{p\in W:d_y^\gamma(p)\ge\delta_i\}|,
+      \qquad
+      M_0=\sum_i\lambda_i,
+      \qquad
+      M_1=\sum_i\lambda_i h_i,
+   \]
+   \[
+      M_{1+\rho}=\sum_i\lambda_i h_i^{1+\rho},
+      \qquad
+      B=\sum_i\lambda_i\delta_i h_i,
+      \qquad
+      A_y=\sum_q\tau_qy_q,
+      \qquad
+      \rho=\rho_W,\quad \psi=\psi_W .
+   \]
+   Then
+   \[
+      B
+      \le
+      b\,\psi\left(
+         \beta^\rho b_0^\rho A_yM_0^{1-\rho}M_1^\rho
+         +
+         \beta^{1+\rho}\sigma b_0^{1+\rho}M_{1+\rho}
+      \right).
+      \tag{NCAM1}
+   \]
+   If \(L,S>0\) and \(M_1>0\), then
+   \[
+      B
+      <
+      \frac{b\,\psi}{\pi_1}
+      \left(
+         \frac{\beta^\rho b_0^\rho M_0^{1-\rho}M_1^\rho}{L}
+         +
+         \frac{\beta^{1+\rho}b_0^{1+\rho}M_{1+\rho}}{S}
+      \right).
+      \tag{NCAM2}
+   \]
+   If the supported levels have \(h_i\le H\), the second term in both
+   envelopes may be replaced by the corresponding capped term
+   \(H^\rho M_1\).
+\end{corollary}
+
+\begin{proof}
+   If \(M_0=0\), then \(B=M_1=M_{1+\rho}=0\), and \((NCAM1)\) is trivial.
+   Assume \(M_0>0\).  For every level with \(h_i>0\), multiplying \((NCW1)\)
+   by \(h_i\) gives
+   \[
+      \delta_i h_i
+      \le
+      b\,\psi\left(
+         \beta^\rho b_0^\rho A_yh_i^\rho
+         +
+         \beta^{1+\rho}\sigma b_0^{1+\rho}h_i^{1+\rho}
+      \right).
+      \tag{NCAM3}
+   \]
+   The same inequality is trivial when \(h_i=0\).  Multiplying by
+   \(\lambda_i\), summing, and using concavity of \(x^\rho\) gives
+   \[
+      \sum_i\lambda_i h_i^\rho
+      \le
+      M_0^{1-\rho}M_1^\rho,
+   \]
+   which proves \((NCAM1)\).  If \(M_1>0\), then the normalized budget
+   \((NAPO1)\) gives \(A_y<(\pi_1L)^{-1}\) and
+   \(\sigma<(\pi_1S)^{-1}\), and substituting these strict bounds gives
+   \((NCAM2)\).  The capped variant follows from
+   \(M_{1+\rho}\le H^\rho M_1\).
+\end{proof}
+
+\begin{corollary}[Normalized aggregate list-moment separator]
+   \label{cor:normalized-cardinality-net-aggregate-list-moment-separator}
+   In the setting of
+   \cref{cor:normalized-cardinality-net-weak-type-separator}, assume
+   \(0<\rho_W<1\) for every retained container.  It is enough to prove the
+   following averaged geometric statement.  Every nonnegative price system
+   satisfying \((APC1)\), \((NAPO1)\), and
+   \[
+      \sum_{(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}=1
+   \]
+   admits a retained container \(W\), fractional query weights
+   \(0\le y_q\le1\), and a finite nonnegative level weighting with \(M_1>0\)
+   such that
+   \[
+      B
+      \ge
+      \frac{b\,\psi_W}{\pi_1}
+      \left(
+         \frac{\beta^{\rho_W}b_0^{\rho_W}M_0^{1-\rho_W}M_1^{\rho_W}}{L}
+         +
+         \frac{\beta^{1+\rho_W}b_0^{1+\rho_W}M_{1+\rho_W}}{S}
+      \right).
+      \tag{NCAMS1}
+   \]
+   It is also enough to prove the same violation with the storage term replaced
+   by \( \beta^{1+\rho_W}b_0^{1+\rho_W}H^{\rho_W}M_1/S\) for a certified cap
+   \(H\) with \(h_i\le H\) on the supported levels.
+
+   Under this averaged separator, the finite prefix-template separator holds,
+   and hence the local and global endpoints of
+   \cref{cor:finite-prefix-local-filter-cover} and
+   \cref{cor:finite-prefix-polylog-endpoint} apply.
+\end{corollary}
+
+\begin{proof}
+   If the finite prefix-template separator failed, then
+   \cref{cor:normalized-all-size-prefix-obstruction} would give a normalized
+   obstruction.  The averaged witness in \((NCAMS1)\) contradicts the strict
+   normalized aggregate envelope \((NCAM2)\) from
+   \cref{cor:normalized-cardinality-net-aggregate-list-moment-obstruction};
+   the capped version uses the capped envelope in the same corollary.  Hence no
+   normalized obstruction exists, so the finite prefix-template separator must
+   hold.  The endpoint conclusions follow from
+   \cref{cor:finite-prefix-local-filter-cover} and
+   \cref{cor:finite-prefix-polylog-endpoint}.
+\end{proof}
+
+\begin{corollary}[Normalized average list-size panel criterion]
+   \label{cor:normalized-cardinality-net-average-list-size-panel}
+   In \cref{cor:normalized-cardinality-net-aggregate-list-moment-separator}, a
+   probability law \(\nu\) on finitely many levels is sufficient if, with
+   \(H_\delta=|\{p\in W:d_y^\gamma(p)\ge\delta\}|\) and
+   \(\E_{\delta\sim\nu}H_\delta>0\), writing
+   \(\rho=\rho_W\) and \(\psi=\psi_W\),
+   \[
+      \E_{\delta\sim\nu}\delta H_\delta
+      \ge
+      \frac{b\,\psi}{\pi_1}
+      \left(
+         \frac{\beta^\rho b_0^\rho
+               \bigl(\E_{\delta\sim\nu}H_\delta\bigr)^\rho}{L}
+         +
+         \frac{\beta^{1+\rho}b_0^{1+\rho}
+               \E_{\delta\sim\nu}H_\delta^{1+\rho}}{S}
+      \right).
+      \tag{NCAP1}
+   \]
+   In a capped-list form, it is enough that \(H_\delta\le H\) on the support of
+   \(\nu\) and
+   \[
+      \E_{\delta\sim\nu}\delta H_\delta
+      \ge
+      \frac{b\,\psi}{\pi_1}
+      \left(
+         \frac{\beta^\rho b_0^\rho
+               \bigl(\E_{\delta\sim\nu}H_\delta\bigr)^\rho}{L}
+         +
+         \frac{\beta^{1+\rho}b_0^{1+\rho}
+               H^\rho\E_{\delta\sim\nu}H_\delta}{S}
+      \right).
+      \tag{NCAP2}
+   \]
+\end{corollary}
+
+\begin{proof}
+   Use the finite level panel with weights \(\lambda_\delta=\nu(\delta)\).  Then
+   \(M_0=1\), \(M_1=\E H_\delta\),
+   \(M_{1+\rho}=\E H_\delta^{1+\rho}\), and
+   \(B=\E \delta H_\delta\).  The displayed inequalities are exactly the
+   normalized aggregate violations in
+   \cref{cor:normalized-cardinality-net-aggregate-list-moment-separator}.
+\end{proof}
+
+\begin{corollary}[Normalized random-list proposal separator]
+   \label{cor:normalized-cardinality-net-random-list-proposal}
+   In the setting of
+   \cref{cor:normalized-cardinality-net-aggregate-list-moment-separator}, it is
+   enough to prove the following proposal statement.  Every nonnegative price
+   system satisfying \((APC1)\), \((NAPO1)\), and
+   \[
+      \sum_{(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}=1
+   \]
+   admits a retained container \(W\), fractional query weights
+   \(0\le y_q\le1\), and a random certified list \(\mathcal L\subseteq W\).
+   Put
+   \[
+      K=|\mathcal L|,
+      \qquad
+      V(\mathcal L)=\sum_{p\in\mathcal L}d_y^\gamma(p),
+      \qquad
+      \rho=\rho_W,\quad \psi=\psi_W .
+   \]
+   If \(\E K>0\) and
+   \[
+      \E V(\mathcal L)
+      \ge
+      \frac{b\,\psi}{\pi_1}
+      \left(
+         \frac{\beta^\rho b_0^\rho\E K^\rho}{L}
+         +
+         \frac{\beta^{1+\rho}b_0^{1+\rho}\E K^{1+\rho}}{S}
+      \right),
+      \tag{NCRL1}
+   \]
+   then the finite prefix-template separator holds, and hence the same local
+   and global endpoints apply.  It is sufficient to replace \(\E K^\rho\) by
+   \((\E K)^\rho\).  If \(K\le H\) almost surely, it is sufficient that
+   \[
+      \E V(\mathcal L)
+      \ge
+      \frac{b\,\psi}{\pi_1}
+      \left(
+         \frac{\beta^\rho b_0^\rho(\E K)^\rho}{L}
+         +
+         \frac{\beta^{1+\rho}b_0^{1+\rho}H^\rho\E K}{S}
+      \right).
+      \tag{NCRL2}
+   \]
+\end{corollary}
+
+\begin{proof}
+   Suppose the finite prefix-template separator failed, and let
+   \((\gamma,\tau,\sigma)\) be the normalized obstruction from
+   \cref{cor:normalized-all-size-prefix-obstruction}.  Put
+   \(A_y=\sum_q\tau_qy_q\).  For a nonempty list outcome, choose a retained
+   cardinality \(K'\) for \(W\) with
+   \(K\le K'\le\beta K\).  The top \(K'\)-prefix has paid degree at least
+   \(V(\mathcal L)\), so \((APRE1)\) gives
+   \[
+      V(\mathcal L)
+      \le
+      b\,\psi\left(
+         \beta^\rho b_0^\rho A_yK^\rho
+         +
+         \beta^{1+\rho}\sigma b_0^{1+\rho}K^{1+\rho}
+      \right).
+   \]
+   The same inequality is trivial when \(K=0\).  Averaging and substituting the
+   strict normalized budget bounds contradict \((NCRL1)\), because
+   \(\E K>0\).  Jensen gives \(\E K^\rho\le(\E K)^\rho\), and
+   \(K^{1+\rho}\le H^\rho K\) gives the capped form.
+\end{proof}
+
+\begin{corollary}[Normalized marginal proposal separator]
+   \label{cor:normalized-cardinality-net-marginal-proposal}
+   Work in the setting of
+   \cref{cor:normalized-cardinality-net-random-list-proposal}.  It is enough to
+   find, for every normalized price system, a retained container \(W\),
+   fractional query weights \(0\le y_q\le1\), inclusion marginals
+   \(0\le\pi_p\le1\), and a realizable second-moment bound.  Put
+   \[
+      \mu=\sum_{p\in W}\pi_p,
+      \qquad
+      V_\pi=\sum_{p\in W}\pi_p d_y^\gamma(p),
+      \qquad
+      \rho=\rho_W,\quad \psi=\psi_W .
+   \]
+   Suppose the marginals are realized by a random list \(\mathcal L\subseteq W\)
+   with
+   \[
+      \E|\mathcal L|^2\le M_2 .
+      \tag{NCMP1}
+   \]
+   If \(\mu>0\) and
+   \[
+      V_\pi
+      \ge
+      \frac{b\,\psi}{\pi_1}
+      \left(
+         \frac{\beta^\rho b_0^\rho\mu^\rho}{L}
+         +
+         \frac{\beta^{1+\rho}b_0^{1+\rho}\mu^{1-\rho}M_2^\rho}{S}
+      \right),
+      \tag{NCMP2}
+   \]
+   then the finite prefix-template separator holds, and hence the same local
+   and global endpoints apply.
+
+   For independent Bernoulli inclusion, it is enough that
+   \[
+      V_\pi
+      \ge
+      \frac{b\,\psi}{\pi_1}
+      \left(
+         \frac{\beta^\rho b_0^\rho\mu^\rho}{L}
+         +
+         \frac{\beta^{1+\rho}b_0^{1+\rho}\mu^{1-\rho}
+               (\mu+\mu^2)^\rho}{S}
+      \right).
+      \tag{NCMP3}
+   \]
+\end{corollary}
+
+\begin{proof}
+   The realizing random list has
+   \[
+      \E V(\mathcal L)=V_\pi,\qquad \E K=\mu .
+   \]
+   Jensen gives \(\E K^\rho\le\mu^\rho\).  Log-convexity of \(L_p\)-moments
+   between powers \(1\) and \(2\) gives
+   \[
+      \E K^{1+\rho}
+      \le
+      (\E K)^{1-\rho}(\E K^2)^\rho
+      \le
+      \mu^{1-\rho}M_2^\rho .
+   \]
+   Hence \((NCMP2)\) implies \((NCRL1)\), so
+   \cref{cor:normalized-cardinality-net-random-list-proposal} applies.  For
+   independent Bernoulli inclusion,
+   \[
+      \E K^2
+      =
+      \mu^2+\sum_{p\in W}\pi_p(1-\pi_p)
+      \le
+      \mu^2+\mu,
+   \]
+   giving \((NCMP3)\).
+\end{proof}
+
 \Cref{cor:finite-all-size-soft-bucket-separation} is the cardinality-net
 version of the dense-overlap column generator.  A proposal family may contain
 arbitrarily overlapping soft dense regions, but a bucket is accepted only if
@@ -18661,7 +18980,16 @@ range-reporting target.  The cardinality-net form in
 \cref{cor:normalized-cardinality-net-weak-type-separator}
 removes the exact-cardinality artifact, so a dyadic or output-sensitive
 range-reporting routine only needs to find an arbitrary retained superlevel
-above the scale-free cap \((NCWS1)\).
+above the scale-free cap \((NCWS1)\).  The normalized aggregate and proposal
+forms in
+\cref{cor:normalized-cardinality-net-aggregate-list-moment-obstruction},
+\cref{cor:normalized-cardinality-net-aggregate-list-moment-separator},
+\cref{cor:normalized-cardinality-net-random-list-proposal}, and
+\cref{cor:normalized-cardinality-net-marginal-proposal}
+turn this into the build-time-heavy interface: a range-reporting,
+list-decoding, AQ, or randomized clustering proposal only has to beat the
+absolute \(K^\rho\) query and \(K^{1+\rho}\) storage moments under the
+normalized dual prices.
 
 \begin{corollary}[Joint query-list proposal separator]
    \label{cor:joint-query-list-proposal-separator}
