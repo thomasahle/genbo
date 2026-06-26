@@ -17724,15 +17724,20 @@ inequality \((QP3)\).
       \{p\in P:\|p-q\|\le r\}=N_{\sigma_0}.
       \tag{EN1}
    \]
-   For each nonempty \(N_{\sigma_0}\), let preprocessing choose one witness
-   \(w_{\sigma_0}\in N_{\sigma_0}\).  Assume the weaker existential signature LP
+   Write \(\Sigma^+=\{\sigma_0\in\Sigma:N_{\sigma_0}\ne\emptyset\}\) and
+   \[
+      e_A(\sigma_0)
+      =
+      a_A(\sigma_0)\mathbf 1\{U_A\cap N_{\sigma_0}\ne\emptyset\}.
+   \]
+   Assume the weaker existential signature LP
    \[
    \begin{array}{ll}
    \text{\rm find} & \lambda_A\ge0\\[0.4em]
    \text{\rm subject to}
       & \displaystyle
-        \sum_{A:w_{\sigma_0}\in U_A}a_A(\sigma_0)\lambda_A\ge1
-        \qquad(\sigma_0\in\Sigma,\ N_{\sigma_0}\ne\emptyset),\\[0.8em]
+        \sum_Ae_A(\sigma_0)\lambda_A\ge1
+        \qquad(\sigma_0\in\Sigma^+),\\[0.8em]
       & \displaystyle
         \sum_Aa_A(\sigma_0)T_A\lambda_A\le L_{\sigma_0}
         \qquad(\sigma_0\in\Sigma),\\[0.8em]
@@ -17743,7 +17748,7 @@ inequality \((QP3)\).
    \]
    is feasible, and that the atom bounds \((FS2)\) hold.  Put
    \[
-      M_\Sigma^{\exists}=|\{\sigma_0\in\Sigma:N_{\sigma_0}\ne\emptyset\}|,
+      M_\Sigma^{\exists}=|\Sigma^+|,
       \qquad
       B\ge
       \max\left\{
@@ -17758,36 +17763,99 @@ inequality \((QP3)\).
 \end{lemma}
 
 \begin{proof}
-   Apply \cref{lem:poisson-filter-cover-materialization} with query constraint
-   set \(\Sigma\) and demand set
+   Use the same Poisson rounding as in
+   \cref{lem:poisson-filter-cover-materialization}.  Independently draw
+   \(M_A\sim{\rm Pois}(B\lambda_A)\) and retain \(M_A\) copies of \(A\).  For
+   a nonempty signature \(\sigma_0\in\Sigma^+\), feasibility gives
+   \(\Lambda_{\sigma_0}=\sum_Ae_A(\sigma_0)\lambda_A\ge1\), hence
    \[
-      \mathcal E_\Sigma
+      \Pr[\sigma_0\text{ is not existentially covered}]
       =
-      \{(w_{\sigma_0},\sigma_0):\sigma_0\in\Sigma,\ N_{\sigma_0}\ne\emptyset\}.
+      \Pr\left[\sum_Ae_A(\sigma_0)M_A=0\right]
+      =
+      e^{-B\Lambda_{\sigma_0}}
+      \le e^{-B}.
    \]
-   The coverage coefficient is again
-   \(c_A(w_{\sigma_0},\sigma_0)=
-   \mathbf 1\{w_{\sigma_0}\in U_A\}a_A(\sigma_0)\), so the displayed LP is
-   exactly the finite filter-cover LP on \(\mathcal E_\Sigma\).  The
-   materialization lemma gives the same \(3B\)-inflated signature loads and
-   storage.
+   The choice of \(B\) makes the probability that some nonempty signature is
+   uncovered at most \(1/4\).
+
+   For each signature with \(L_{\sigma_0}>0\), put
+   \[
+      X_{\sigma_0}=
+      \sum_A M_A\,\frac{a_A(\sigma_0)T_A}{L_{\sigma_0}}.
+   \]
+   The atom bound in \((FS2)\) gives weights in \([0,1]\), and LP feasibility
+   gives \(\E X_{\sigma_0}\le B\).  The Chernoff argument in
+   \cref{lem:poisson-filter-cover-materialization} therefore gives
+   \(\Pr[X_{\sigma_0}>3B]\le e^{-B}\).  If \(L_{\sigma_0}=0\), then \((FS2)\)
+   forces \(a_A(\sigma_0)T_A=0\) for every \(A\), so the signature-load bound is
+   deterministic.  The same bound holds for total storage after normalizing by
+   \(S\); if \(S=0\), then \((FS2)\) forces every \(S_A=0\).  A union bound over
+   all signatures and the storage constraint has failure probability at most
+   \(1/4\).  With positive probability all existential coverage, signature-load,
+   and storage events hold, so fix such an outcome.
 
    Now take an actual query \(q\) with \(\sigma(q)=\sigma_0\) and
-   \(N_{\sigma_0}\ne\emptyset\).  By \((EN1)\), the selected witness
-   \(w_{\sigma_0}\) satisfies \(\|w_{\sigma_0}-q\|\le r\).  The retained cover
-   contains an active filter \(A\) with \(w_{\sigma_0}\in U_A\) and
-   \(a_A(\sigma_0)=1\); by \((EN1)\), \(a_A(q)=1\).  Querying that child is
-   therefore enough for ANN after final metric verification.  The cost and
+   \(N_{\sigma_0}\ne\emptyset\).  Existential coverage gives a retained filter
+   \(A\) with \(a_A(\sigma_0)=1\) and \(U_A\cap N_{\sigma_0}\ne\emptyset\).
+   By \((EN1)\), \(a_A(q)=1\), and every point of \(N_{\sigma_0}\) is within
+   distance \(r\) of \(q\).  Thus the active child contains at least one valid
+   ANN witness, which final metric verification can accept.  The cost and
    storage bounds are the materialized signature bounds.
+\end{proof}
+
+\begin{lemma}[Exact-near-set signature dual]
+   \label{lem:exact-near-set-signature-dual}
+   In the setting of \cref{lem:exact-near-set-filter-cover}, the LP
+   \((\mathsf{ESFC}_\Sigma)\) is infeasible if and only if there are signature
+   demand prices \(\beta_{\sigma_0}\ge0\) for \(\sigma_0\in\Sigma^+\), query
+   prices \(\tau_{\sigma_0}\ge0\) for \(\sigma_0\in\Sigma\), and a storage price
+   \(\theta\ge0\) such that
+   \[
+      \sum_{\sigma_0\in\Sigma^+}\beta_{\sigma_0}
+      >
+      \sum_{\sigma_0\in\Sigma}\tau_{\sigma_0}L_{\sigma_0}
+      +\theta S,
+      \tag{EN-D1}
+   \]
+   while every filter satisfies
+   \[
+      \sum_{\sigma_0\in\Sigma^+}
+      \beta_{\sigma_0}
+      a_A(\sigma_0)\mathbf 1\{U_A\cap N_{\sigma_0}\ne\emptyset\}
+      \le
+      \theta S_A
+      +
+      T_A\sum_{\sigma_0\in\Sigma}\tau_{\sigma_0}a_A(\sigma_0).
+      \tag{EN-D2}
+   \]
+\end{lemma}
+
+\begin{proof}
+   Apply Farkas' lemma exactly as in
+   \cref{lem:finite-filter-cover-dual}, using one lower-bound coverage
+   constraint for each nonempty exact signature and the coefficient
+   \(e_A(\sigma_0)\) above.  The nonnegative multipliers of these coverage
+   constraints are \(\beta_{\sigma_0}\), the query-budget multipliers are
+   \(\tau_{\sigma_0}\), and the storage-budget multiplier is \(\theta\).
+   Nonnegativity of the coefficient of every variable \(\lambda_A\) is
+   \((EN\text{-}D2)\), and strict negativity of the combined right-hand side is
+   \((EN\text{-}D1)\).  The converse is the same certificate read backward.
 \end{proof}
 
 \Cref{lem:exact-near-set-filter-cover} is strictly weaker than
 \cref{lem:finite-signature-filter-cover} when the exact near set is part of the
 signature.  The all-pair LP covers every \(p\in N_{\sigma_0}\); the existential
-LP covers only one chosen witness \(w_{\sigma_0}\), which is all ANN needs.
+LP covers only the event \(U_A\cap N_{\sigma_0}\ne\emptyset\), which is all ANN
+needs.
 This does not make exact near-set signatures free, but it separates the two
 issues: pairwise robustness is no longer baked into the dense-overlap LP, and
 any remaining cost of exact signatures is explicit metadata or decoder entropy.
+\Cref{lem:exact-near-set-signature-dual} is the corresponding separation
+statement: a failed existential signature cover prices signatures, not all near
+pairs, and a proposed dense or spherical filter is accepted precisely when its
+active update side intersects enough priced exact near sets per unit recursive
+query and storage cost.
 
 \begin{proposition}[Conditional fractional filter-cover endpoint]
    \label{prop:fractional-filter-cover-polylog}
