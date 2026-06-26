@@ -3655,6 +3655,213 @@ partition ignores the bias coordinates that certify the list size.
    alone is not the needed proof object.
 \end{remark}
 
+\begin{lemma}[Two-stage priced-pair additive-IVF reporter]
+   \label{lem:priced-pair-additive-ivf-reporter}
+   Let \(\mathcal A,\mathcal B\subseteq\mathbb R^d\) be two finite pivot
+   codebooks.  Put
+   \[
+      \chi(y,a)=\ip{y}{a}-\frac12\|a\|^2,
+      \qquad
+      \zeta(z,b)=\ip{z}{b}-\frac12\|b\|^2 .
+   \]
+   For a pair \((a,b)\), define the full additive-quantization query score
+   \[
+      S_q(a,b)
+      =
+      \ip{q}{a+b}-\frac12\|a+b\|^2
+      =
+      \chi(q,a)+\zeta(q-a,b).
+      \tag{PAIR}
+   \]
+   Let \(M(z)\ge\max_{b\in\mathcal B}\zeta(z,b)\).  Suppose there is a
+   certified first-stage reporter which, for every \(q,\Theta\), lists all
+   pivots \(a\in\mathcal A\) satisfying
+   \[
+      \chi(q,a)+M(q-a)\ge\Theta
+      \tag{PPR0}
+   \]
+   in work \(D_0(q,\Theta)\) plus a constant per listed pivot.  Suppose also
+   that the second codebook has a certified threshold reporter which, for every
+   shifted query \(z\) and threshold \(\theta\), lists all
+   \(b\in\mathcal B\) satisfying
+   \[
+      \zeta(z,b)\ge\theta
+   \]
+   in work \(D_1(z,\theta)\) plus a constant per listed pivot.
+
+   The two-stage reporter first lists all first-stage pivots satisfying
+   \((PPR0)\).  For each such \(a\), it runs the second reporter on
+   \(z=q-a\) with threshold \(\Theta-\chi(q,a)\), and outputs the exact pairs
+   that pass \(S_q(a,b)\ge\Theta\).  Then it outputs every pair whose
+   additive-quantization score is at least \(\Theta\).
+
+   Moreover, for every \(\beta>0\), its work is at most a logarithmic priority
+   factor times
+   \[
+      D_0(q,\Theta)+1
+      +
+      e^{-\beta\Theta}P_\beta^{\rm pair}(q,\Theta),
+      \tag{PPR1}
+   \]
+   where
+   \[
+   \begin{aligned}
+      P_\beta^{\rm pair}(q,\Theta)
+      &=
+      \sum_{a\in\mathcal A}
+      e^{\beta(\chi(q,a)+M(q-a))}
+      \\
+      &\quad+
+      \sum_{a\in\mathcal A}
+      D_1(q-a,\Theta-\chi(q,a))
+      e^{\beta(\chi(q,a)+M(q-a))}
+      \\
+      &\quad+
+      \sum_{a\in\mathcal A}
+      e^{\beta\chi(q,a)}
+      \sum_{b\in\mathcal B}e^{\beta\zeta(q-a,b)} .
+   \end{aligned}
+   \tag{PPR2}
+   \]
+\end{lemma}
+
+\begin{proof}
+   If \(S_q(a,b)\ge\Theta\), then
+   \[
+      \chi(q,a)+M(q-a)
+      \ge
+      \chi(q,a)+\zeta(q-a,b)
+      =
+      S_q(a,b)
+      \ge\Theta,
+   \]
+   so the first-stage reporter lists \(a\).  The second-stage threshold is
+   exactly
+   \[
+      \zeta(q-a,b)\ge\Theta-\chi(q,a),
+   \]
+   hence it lists \(b\), and exact score filtering outputs the pair.
+
+   The number of live first-stage pivots is bounded by the exponential
+   majorant
+   \[
+      \sum_{a:\chi(q,a)+M(q-a)\ge\Theta}1
+      \le
+      e^{-\beta\Theta}
+      \sum_a e^{\beta(\chi(q,a)+M(q-a))}.
+   \]
+   The fixed second-stage reporter costs are paid once for every live
+   first-stage pivot, so the same majorant with the factor
+   \(D_1(q-a,\Theta-\chi(q,a))\) gives the second sum in \((PPR2)\).  Finally,
+   for each live \(a\), the number of reported second pivots is at most
+   \[
+      e^{-\beta(\Theta-\chi(q,a))}
+      \sum_b e^{\beta\zeta(q-a,b)}.
+   \]
+   Summing over all \(a\) gives the third sum.  The stated work bound follows
+   after adding the first-stage reporter cost and the standard priority-queue
+   logarithm.
+\end{proof}
+
+\begin{proposition}[Priced-pair additive-IVF spectrum compiler]
+   \label{prop:priced-pair-additive-ivf-compiler}
+   Fix a terminal localized ANN subproblem of size \(m\), approximation \(c\),
+   and exponent \(\rho=\rho_c\).  Let \(L_m=\log^{A_c}m\).  A random
+   priced-pair additive-IVF panel consists of two codebooks
+   \(\mathcal A,\mathcal B\), the score \(S_y(a,b)\) from \((PAIR)\), and
+   thresholds \(\theta_P,\theta_Q\).  Store \(x\) in tuple bucket \((a,b)\)
+   when \(S_x(a,b)\ge\theta_P\), and on query \(q\) report all tuple buckets
+   with \(S_q(a,b)\ge\theta_Q\) using a certified reporter such as
+   \cref{lem:priced-pair-additive-ivf-reporter}.
+
+   Suppose that, for every promised query \(q\), the one-panel expected
+   reporter work is
+   \[
+      \E W_{\rm pair}(q)\le dL_m+m^\rho L_m .
+      \tag{PAQ1}
+   \]
+   Suppose further that there are \(\alpha,\beta>0\) such that
+   \[
+      \E
+      \sum_{x\in P}
+      e^{-\alpha\theta_P}
+      \sum_{a\in\mathcal A}\sum_{b\in\mathcal B}
+      e^{\alpha S_x(a,b)}
+      \le
+      m^{1+\rho}L_m,
+      \tag{PAQ2}
+   \]
+   and, for every promised query \(q\),
+   \[
+      \E
+      \sum_{\substack{x\in P\\ \|x-q\|>cr}}
+      e^{-\alpha\theta_P-\beta\theta_Q}
+      \sum_{a\in\mathcal A}\sum_{b\in\mathcal B}
+      e^{\alpha S_x(a,b)+\beta S_q(a,b)}
+      \le
+      m^\rho L_m .
+      \tag{PAQ3}
+   \]
+   Finally assume every near pair \((p,q)\), \(\|p-q\|\le r\), satisfies
+   \[
+      \Pr\!\left[
+      \exists(a,b):
+      S_p(a,b)\ge\theta_P,\quad S_q(a,b)\ge\theta_Q
+      \right]
+      \ge L_m^{-1}.
+      \tag{PAQ4}
+   \]
+   Then \(O(L_m)\) independent priced-pair additive-IVF panels give terminal
+   query work
+   \[
+      d\,m^\rho\log^{O_c(1)}m
+   \]
+   and space
+   \[
+      dm+m^{1+\rho}\log^{O_c(1)}m .
+   \]
+\end{proposition}
+
+\begin{proof}
+   The query reporter lists every bucket with \(S_q(a,b)\ge\theta_Q\), so
+   \((PAQ1)\) gives the expected one-panel decoding work.  The expected number
+   of stored point-bucket incidences is at most the left side of \((PAQ2)\),
+   by the exponential majorant
+   \[
+      \mathbf 1\{S_x(a,b)\ge\theta_P\}
+      \le e^{\alpha(S_x(a,b)-\theta_P)} .
+   \]
+   Similarly, the expected number of far point-bucket incidences scanned by a
+   query \(q\) is at most the left side of \((PAQ3)\), using
+   \[
+      \mathbf 1\{S_x(a,b)\ge\theta_P\}
+      \mathbf 1\{S_q(a,b)\ge\theta_Q\}
+      \le
+      e^{\alpha(S_x(a,b)-\theta_P)+\beta(S_q(a,b)-\theta_Q)} .
+   \]
+   Store \(B=\lceil C L_m\rceil\) independent panels.  By \((PAQ4)\), every
+   true near pair misses all common tuple buckets with probability at most
+   \((1-L_m^{-1})^B\le e^{-C}\).  Taking \(C\) large gives constant success.
+   Multiplying the one-panel query, scan, and storage bounds by
+   \(B=\log^{O_c(1)}m\), and verifying candidates in the original metric,
+   proves the claimed terminal resources.
+\end{proof}
+
+\begin{remark}[What the priced-pair certificate buys]
+   \label{rem:priced-pair-certificate-buys}
+   \Cref{prop:priced-pair-additive-ivf-compiler} is the exact nonorthogonal
+   analogue of \cref{cor:additive-ivf-product-panel}.  It does not assume that
+   additive quantization minimizes distortion, nor that Lloyd iterations
+   converge to useful cells.  The theorem object is instead the four
+   verifiable spectra \((PAQ1)\)--\((PAQ4)\).  The two-stage reporter in
+   \cref{lem:priced-pair-additive-ivf-reporter} shows how the interaction term
+   \(\ip{a}{b}\) is decoded: after choosing \(a\), the second codebook sees the
+   shifted query \(q-a\).  Thus a full additive-vector-quantizer index can be
+   analyzed if preprocessing constructs codebooks for which the pair reporter
+   has small partition work and the retained pair buckets pass the same
+   storage, far co-load, and near-hit tests as the product-panel route.
+\end{remark}
+
 \begin{corollary}[Superset product-panel rate bookkeeping]
    \label{cor:superset-product-panel-rate-bookkeeping}
    Work in the setting of \cref{lem:product-panel-tensorization}, but use the
@@ -20096,6 +20303,12 @@ additive-quantization case is still useful, but by
 \cref{rem:nonorthogonal-additive-ivf} its cross term must be certified as a
 small or decodable interaction price rather than hidden inside a Lloyd-style
 distortion objective.
+\Cref{lem:priced-pair-additive-ivf-reporter} and
+\cref{prop:priced-pair-additive-ivf-compiler} make this exact for two
+nonorthogonal codebooks: after a first pivot \(a\) is chosen, the second
+codebook is decoded against the shifted query \(q-a\), and the endpoint follows
+from the pair reporter work, pair storage spectrum, pair far co-load spectrum,
+and pair near-hit probability.
 \Cref{prop:sampled-structured-panel} records the corresponding sampler
 alternative.  A structured code or lattice panel need not list all active
 labels if it can sample labels from a certified Gibbs or discrete-Gaussian law:
