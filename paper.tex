@@ -15606,6 +15606,102 @@ singleton slices by hand.
    prefix with positive repair reduced gain, a contradiction.
 \end{proof}
 
+\begin{lemma}[Layer-cake weak-type separator]
+   \label{lem:layer-cake-weak-type-separator}
+   Work in the setting of \cref{lem:cardinality-net-weak-type-superlevel}.
+   Keep the same fixed container, query weighting, exponent, price factor, and
+   price totals
+   \[
+      W,\qquad y,\qquad \rho,\qquad \psi,\qquad
+      A_y,\qquad \widehat A_y,\qquad \sigma .
+   \]
+   For \(\delta>0\), put
+   \[
+      h_\delta=|\{p\in W:d_y^\gamma(p)\ge\delta\}|
+   \]
+   and define the signed level surplus
+   \[
+      \mathcal E(\delta)
+      =
+      \delta h_\delta
+      -
+      \psi\left(\widehat A_yh_\delta^\rho+\sigma h_\delta^{1+\rho}\right),
+      \tag{LCW1}
+   \]
+   with the convention that the right hand side is \(0\) when \(h_\delta=0\).
+   If a finite nonnegative level weighting \((\lambda_i,\delta_i)_i\) satisfies
+   \[
+      \sum_i\lambda_i\mathcal E(\delta_i)>0,
+      \tag{LCW2}
+   \]
+   then an available paid prefix has positive repair reduced gain.
+
+   More generally, if \(0<u<v\), \(s>0\), and
+   \[
+      \int_u^v
+      \delta^{s-1}\mathcal E(\delta)\,d\delta>0,
+      \tag{LCW3}
+   \]
+   then an available paid prefix has positive repair reduced gain.  The
+   positive term in \((LCW3)\) is the truncated paid-degree moment
+   \[
+      \int_u^v\delta^s h_\delta\,d\delta
+      =
+      \frac1{s+1}
+      \sum_{p\in W}
+      \left(\min\{d_y^\gamma(p),v\}^{s+1}-u^{s+1}\right)_+ .
+      \tag{LCW4}
+   \]
+\end{lemma}
+
+\begin{proof}
+   If \(h_\delta>0\) and \(\mathcal E(\delta)>0\), then
+   \[
+      \delta>
+      \psi\left(\widehat A_yh_\delta^{\rho-1}
+      +\sigma h_\delta^\rho\right),
+   \]
+   so \cref{lem:cardinality-net-weak-type-superlevel} exposes a positive
+   available paid prefix.  Thus, if no available paid prefix has positive
+   repair reduced gain, every level has \(\mathcal E(\delta)\le0\).  This rules
+   out both \((LCW2)\) and \((LCW3)\).  Their contrapositives prove the two
+   separator statements.
+
+   Finally,
+   \[
+      h_\delta=\sum_{p\in W}\mathbf 1\{d_y^\gamma(p)\ge\delta\},
+   \]
+   so exchanging the finite sum with the integral gives
+   \[
+      \int_u^v\delta^s h_\delta\,d\delta
+      =
+      \sum_{p\in W}\int_u^v
+      \delta^s\mathbf 1\{d_y^\gamma(p)\ge\delta\}\,d\delta,
+   \]
+   which is exactly \((LCW4)\).
+\end{proof}
+
+\begin{corollary}[Layer-cake separator implies the hit-kernel cover]
+   \label{cor:layer-cake-prefix-hit-kernel-cover}
+   Work in the setting of \cref{asm:paid-atomized-prefix-separator}, and assume
+   every container has exponent \(0<\rho_W<1\) and \(b\)-dense available
+   cardinalities in the sense of \((CNW0)\).  Suppose that every nonnegative
+   price system \((\gamma,\tau,\sigma)\) satisfying \((APC1)\)--\((APC2)\)
+   admits a certified container and fractional query weighting for which either
+   a finite level weighting satisfies \((LCW2)\), or a truncated layer-cake
+   moment satisfies \((LCW3)\).  Then \((\mathsf{HKC}_{\mathcal U})\) is
+   feasible.
+\end{corollary}
+
+\begin{proof}
+   If the hit-kernel cover were infeasible, the proof of
+   \cref{cor:weak-type-prefix-hit-kernel-cover} gives a price system with
+   nonpositive repair reduced gain on every available Boolean core record.  The
+   layer-cake separator hypothesis and
+   \cref{lem:layer-cake-weak-type-separator} expose an available paid prefix
+   with positive repair reduced gain, a contradiction.
+\end{proof}
+
 \Cref{lem:paid-prefix-weak-type} gives a direct separator screen.  If, for some
 certified container and fractional query weighting, a paid-degree superlevel has
 cardinality strictly above the query-priced bound \((PWT2)\) and strictly below
@@ -15630,6 +15726,11 @@ for example the powers of two, then a list-decoding or range-reporting
 separator may return an arbitrary heavy superlevel with only the displayed
 constant slack; the verifier rounds its cardinality down to an available prefix
 and the final retained column is still an ordinary paid prefix.
+\Cref{lem:layer-cake-weak-type-separator} gives the averaged version needed for
+list-size arguments: it is enough to prove that a weighted collection of levels,
+or a truncated Lorentz moment of the paid-degree sequence, has positive surplus
+over the recursive query/storage envelope.  A positive average cannot hide; one
+level is already a forbidden weak-type superlevel after cardinality rounding.
 
 \Cref{cor:paid-compression-hit-kernel-cover} is the fractional dense-filter
 cover in its paid form.  The separator does not choose disjoint dense clusters.
