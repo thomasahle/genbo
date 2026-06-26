@@ -15076,6 +15076,143 @@ singleton slices by hand.
    contradiction.  Hence the primitive hit-kernel cover is feasible.
 \end{proof}
 
+\begin{lemma}[Weighted atomized-prefix normal form]
+   \label{lem:weighted-atomized-prefix-normal-form}
+   Work with the atomized paid weights
+   \[
+      w_{p,q}^\gamma=\gamma_{p,q}r_{p,q}.
+   \]
+   Fix a certified container \(W\subseteq P\), a price factor \(\psi>0\), an
+   exponent \(0\le\rho\le1\), and a cardinality \(k\le |W|\).  For a fractional
+   query weighting \(0\le y_q\le1\), define the paid weighted degree
+   \[
+      d_y^\gamma(p)
+      =
+      \sum_{q:(p,q)\in\mathcal N}y_qw_{p,q}^\gamma,
+      \tag{WAP1}
+   \]
+   and let \(D_y^\gamma(k)\) be the sum of the largest \(k\) values of
+   \(d_y^\gamma(p)\) over \(p\in W\).  Put
+   \[
+      T(k)=\psi k^\rho,\qquad S(k)=\psi k^{1+\rho}.
+   \]
+   Then
+   \[
+   \begin{aligned}
+      &\max_{\substack{U\subseteq W\\ |U|=k}}
+      \left[
+         \sum_q
+         \left(
+            \sum_{p\in U:(p,q)\in\mathcal N}w_{p,q}^\gamma
+            -
+            T(k)\tau_q
+         \right)_+
+         -
+         \sigma S(k)
+      \right]
+      \\
+      &\qquad =
+      \max_{0\le y\le1}
+      \left[
+         D_y^\gamma(k)
+         -
+         T(k)\sum_q\tau_qy_q
+         -
+         \sigma S(k)
+      \right].
+   \end{aligned}
+      \tag{WAP2}
+   \]
+   Consequently, if the left side of \((WAP2)\) is positive, it is witnessed by
+   an integral query set \(Q'\subseteq\mathcal Q\).  The top-\(k\) prefix of
+   \(W\) sorted by
+   \[
+      d_{Q'}^\gamma(p)=
+      \sum_{q\in Q':(p,q)\in\mathcal N}w_{p,q}^\gamma
+   \]
+   then satisfies \((APH4)\) with query side \(Q'\) and prices \(T(k),S(k)\),
+   hence has positive repair reduced gain.
+\end{lemma}
+
+\begin{proof}
+   For a fixed \(U\), use \((x)_+=\max_{0\le y\le1}yx\) independently for every
+   query:
+   \[
+      \sum_q
+      \left(
+         \sum_{p\in U}w_{p,q}^\gamma
+         -
+         T(k)\tau_q
+      \right)_+
+      =
+      \max_{0\le y\le1}
+      \left[
+         \sum_{p\in U}d_y^\gamma(p)
+         -
+         T(k)\sum_q\tau_qy_q
+      \right].
+   \]
+   The sets are finite, so the maxima over \(U\) and \(y\) commute.  For fixed
+   \(y\), the maximizing \(k\)-point set is the top-\(k\) paid-degree prefix,
+   whose value is \(D_y^\gamma(k)\).  This proves \((WAP2)\).
+
+   The function
+   \[
+      y\mapsto
+      D_y^\gamma(k)-T(k)\sum_q\tau_qy_q-\sigma S(k)
+   \]
+   is convex, since \(D_y^\gamma(k)\) is a maximum of finitely many linear
+   functions.  A convex function on the cube \([0,1]^{\mathcal Q}\) has a
+   maximizer at an extreme point, so any positive maximum is witnessed by an
+   integral vector \(y=\mathbf 1_{Q'}\).  For that \(Q'\), the top-\(k\) prefix
+   satisfies \((APH4)\), and \cref{lem:atomized-paid-core-hinge} gives positive
+   repair reduced gain.
+\end{proof}
+
+\begin{corollary}[Weighted atomized-prefix envelope]
+   \label{cor:weighted-atomized-prefix-envelope}
+   Work in the setting of \cref{lem:weighted-atomized-prefix-normal-form}, and
+   assume that every \(k\)-point paid-degree prefix in \(W\) is an available
+   Boolean core with prices \(T(k)=\psi k^\rho\) and
+   \(S(k)=\psi k^{1+\rho}\).  If no such prefix has positive repair reduced
+   gain, then for every fractional query weighting \(0\le y\le1\) and every
+   available cardinality \(k\),
+   \[
+      D_y^\gamma(k)
+      \le
+      \psi\left(k^\rho\sum_q\tau_qy_q+\sigma k^{1+\rho}\right).
+      \tag{WAE1}
+   \]
+   Consequently, if
+   \[
+      h_\delta(y)=|\{p\in W:d_y^\gamma(p)\ge\delta\}|
+   \]
+   is an available cardinality and is nonzero, then
+   \[
+      \delta
+      \le
+      \psi\left(
+         \left(\sum_q\tau_qy_q\right)h_\delta(y)^{\rho-1}
+         +
+         \sigma h_\delta(y)^\rho
+      \right).
+      \tag{WAE2}
+   \]
+\end{corollary}
+
+\begin{proof}
+   If \((WAE1)\) failed for some \(y,k\), then the right side of \((WAP2)\)
+   would be positive.  By
+   \cref{lem:weighted-atomized-prefix-normal-form}, an integral query set and
+   the corresponding top-\(k\) paid-degree prefix would have positive repair
+   reduced gain, contradicting the hypothesis.
+
+   For the degree-superlevel form, put \(h=h_\delta(y)\).  The top \(h\) points
+   have paid degree at least \(\delta\), so \(D_y^\gamma(h)\ge\delta h\).
+   Applying \((WAE1)\) at cardinality \(h\) and dividing by \(h\) gives
+   \((WAE2)\).
+\end{proof}
+
 \Cref{cor:paid-compression-hit-kernel-cover} is the fractional dense-filter
 cover in its paid form.  The separator does not choose disjoint dense clusters.
 It only has to prove that any overbudget value-proportional primitive law can be
@@ -15101,6 +15238,12 @@ the support term becomes the hit-kernel-weighted quantity
 The remaining dense theorem can therefore be stated without choosing primitive
 slice assignments at all: every surplus singleton-saturated paid dual must
 contain a radius-contracting core whose atomized support violates \((APH4)\).
+\Cref{lem:weighted-atomized-prefix-normal-form} pushes this to the prefix level:
+inside a certified container, every fractional query weighting induces paid
+degrees \(d_y^\gamma(p)\), and the best \(k\)-point core is simply the top-\(k\)
+prefix.  Thus failure of all paid prefixes is equivalent to the explicit
+degree envelope \((WAE1)\)--\((WAE2)\), which is the concrete residual packing
+condition left for geometry.
 
 \begin{assumption}[Compression-dual separator]
    \label{asm:compression-dual-separator}
@@ -26980,6 +27123,11 @@ restriction: it is enough for a core to capture hit-kernel-weighted paid atom
 mass
 \(\bar h_U^\gamma(q)=\sum_{p\in U}\gamma_{p,q}r_{p,q}\), and a violation of
 \((APH4)\) already forces the primitive hit-kernel cover.
+\Cref{lem:weighted-atomized-prefix-normal-form} and
+\cref{cor:weighted-atomized-prefix-envelope} give the prefix residual form of
+this target: inside a certified container, sort points by paid degree under an
+arbitrary fractional query weighting; if every prefix fails, the degree
+superlevels satisfy the explicit envelope \((WAE2)\).
 Because
 preprocessing time is deliberately not a scarce resource,
 \cref{lem:finite-pool-optimizer} and
