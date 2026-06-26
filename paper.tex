@@ -12902,6 +12902,160 @@ additive-quantization, list-decoding, or learned proposal routines may optimize
 a continuous reduced-cost surrogate during preprocessing, while the retained
 proof object remains an integral filter-cover column.
 
+\begin{corollary}[Fractional threshold-container packing implies local cover]
+   \label{cor:fractional-threshold-container-local-cover}
+   Work in the setting of \cref{cor:residual-separator-local-cover}.  Enlarge
+   the finite filter universe as follows.  For each subset
+   \(\mathcal L\subseteq\mathcal N\) that may appear as a dyadic demand layer,
+   include a finite family \(\mathcal C_{\rm th}(\mathcal L)\) of
+   query-weighted certified container records as in
+   \cref{lem:fractional-threshold-container-packing}, formed with
+   \(\mathcal N_j=\mathcal L\), and include all of their atom-safe threshold
+   prefix filters with the displayed certified prices.
+
+   Suppose that every surplus dual price system \((\alpha,\tau,\sigma)\)
+   satisfying \((RS1)\) and having nonpositive reduced gain on the spherical
+   buckets, whole high-correlation dense slices, and atom-safe primitive dense
+   prefixes has the following property: after dyadically partitioning its
+   positive demand prices, some layer \(\mathcal L\) admits nonnegative
+   intensities on \(\mathcal C_{\rm th}(\mathcal L)\) satisfying \((FTCP1)\).
+   Then the finite filter-cover LP \((\mathsf{FC}_{\mathcal N})\) is feasible
+   with query budget \(L\) and storage budget \(S\).
+\end{corollary}
+
+\begin{proof}
+   If the LP were infeasible, \cref{lem:finite-filter-cover-dual} would give a
+   surplus dual price system with nonpositive reduced gain on every column of
+   the enlarged universe.  The hypothesis supplies a dyadic layer and a
+   fractional threshold-container packing witness satisfying \((FTCP1)\).
+   By \cref{lem:fractional-threshold-container-packing}, some threshold-prefix
+   filter in the enlarged universe has positive reduced gain, contradicting the
+   dual certificate.  Therefore the LP is feasible.
+\end{proof}
+
+\Cref{cor:fractional-threshold-container-local-cover} is the exact replacement
+for a hard dense branching theorem.  The build stage may search for fractional
+query-weighted container packings, but the final contradiction always produces
+one ordinary filter-cover column.  Therefore proving a geometric separator in
+this fractional language is already enough for the recursive polylog accounting
+of \cref{prop:fractional-filter-cover-polylog}.
+
+\begin{lemma}[A posteriori pricing of threshold prefixes]
+   \label{lem:threshold-prefix-pareto-pricing}
+   Work in the setting of
+   \cref{lem:fractional-threshold-container-packing}.  Suppose that whenever a
+   threshold-prefix filter \(A=(U,Q')\) is produced from a record \(C\) and
+   cardinality \(h=|U|\), the offline verifier may replace the search price
+   factor \(\psi_C\) by any certified descendant price pair
+   \[
+      \widehat T_A\le \psi_Ch^{\rho_C},
+      \qquad
+      \widehat S_A\le \psi_Ch^{1+\rho_C}.
+      \tag{TPP1}
+   \]
+   Then every positive threshold-prefix filter exposed by
+   \cref{lem:fractional-threshold-container-packing} remains positive after
+   this replacement.  In particular, if \(U\) is certified inside a smaller
+   ball, or if an already-built child index gives a better Pareto price than the
+   closed-form surrogate, the retained filter-cover LP may charge
+   \((\widehat T_A,\widehat S_A)\) instead of
+   \((\psi_Ch^{\rho_C},\psi_Ch^{1+\rho_C})\).
+\end{lemma}
+
+\begin{proof}
+   Let \(A=(U,Q')\) be the threshold-prefix filter found by
+   \cref{lem:fractional-threshold-container-packing}.  Its positive reduced gain
+   with the search prices is
+   \[
+      \sum_{(p,q)\in\mathcal N}\alpha_{p,q}\mathbf 1\{p\in U,\ q\in Q'\}
+      -
+      \psi_Ch^{\rho_C}\sum_{q\in Q'}\tau_q
+      -
+      \sigma\psi_Ch^{1+\rho_C}
+      >0 .
+   \]
+   Replacing the query and storage prices by \(\widehat T_A,\widehat S_A\)
+   changes only the two negative terms, and \((TPP1)\) can only decrease them.
+   The reduced gain therefore stays positive.  The final statement is just the
+   priced-cover convention of \cref{lem:priced-cover-compiler} and
+   \cref{cor:offline-recursive-pareto-pricing}: any certified descendant
+   query-storage pair may be used as the retained column price.
+\end{proof}
+
+\Cref{lem:threshold-prefix-pareto-pricing} is important for overhead.  The
+fractional separator may use a simple closed-form cost such as
+\(|U|^\rho\Psi(R)\) to find a violation, but the retained index is charged by
+the best certified price of the actual prefix that layer-cake exposes.  Thus the
+standard certified ball recursion, dense score filters, residual scans, and
+terminal smooth product filters remain parts of one Pareto-priced cover rather
+than separate algorithmic cases.
+
+\begin{lemma}[Pareto-priced dense-core layer-cake]
+   \label{lem:pareto-dense-core-layercake}
+   Fix a dyadic demand layer \(\mathcal N_j\), query weights \(0\le y_q\le1\),
+   and a set \(U\subseteq P\).  Define
+   \[
+      d_y(p)=
+      \sum_{\substack{q\in\mathcal Q:\\
+         (p,q)\in\mathcal N_j,\ p\in V_{z,q}\text{ for some }z}}
+      y_q ,
+      \qquad
+      L_y=\sum_q\tau_qy_q ,
+   \]
+   and, for \(t\in(0,1]\),
+   \[
+      Q_t(y)=\{q:y_q\ge t\},
+      \qquad
+      E_t(U)=|\{(p,q):p\in U,\ q\in Q_t(y),\
+      (p,q)\in\mathcal N_j,\ p\in V_{z,q}\text{ for some }z\}|.
+   \]
+   Suppose \(U\) has certified descendant prices \(T_U,S_U\), and the filter
+   universe contains the threshold filters \((U,Q_t(y))\), for all distinct
+   threshold sets, with those prices.  If
+   \[
+      \theta_j\sum_{p\in U}d_y(p)>T_UL_y+\sigma S_U,
+      \tag{PDL1}
+   \]
+   then some threshold filter \((U,Q_t(y))\) has positive reduced gain.
+\end{lemma}
+
+\begin{proof}
+   The layer-cake identities give
+   \[
+      \sum_{p\in U}d_y(p)=\int_0^1E_t(U)\,dt,
+      \qquad
+      L_y=\int_0^1\sum_{q\in Q_t(y)}\tau_q\,dt .
+   \]
+   Hence \((PDL1)\) implies
+   \[
+      \int_0^1
+      \left[
+         \theta_jE_t(U)-T_U\sum_{q\in Q_t(y)}\tau_q
+      \right]dt
+      >
+      \sigma S_U .
+   \]
+   For some threshold \(t\),
+   \[
+      \theta_jE_t(U)
+      >
+      T_U\sum_{q\in Q_t(y)}\tau_q+\sigma S_U .
+   \]
+   Every incidence counted by \(E_t(U)\) is a demand pair in the dyadic layer,
+   and therefore has original demand price at least \(\theta_j\).  Thus the
+   true demand captured by the filter \((U,Q_t(y))\) is at least
+   \(\theta_jE_t(U)\), while its query and storage charges are exactly the two
+   terms on the right.  Its reduced gain is positive.
+\end{proof}
+
+\Cref{lem:pareto-dense-core-layercake} is the smallest dense-overlap target.
+The geometric theorem may search directly for a set \(U\) of small certified
+radius or low descendant Pareto price; it only has to beat the weighted support
+objective in \((PDL1)\).  The query side is then forced by thresholding the dual
+query weights.  This is the fractional analogue of ordinary dense ball
+recursion: choose a smaller certified child because its near-pair support value
+justifies its true recursive query and storage price.
+
 \begin{assumption}[Layer quotient separator]
    \label{asm:layer-quotient-separator}
    Work in the setting of \cref{cor:residual-separator-local-cover}.  Suppose a
@@ -24606,12 +24760,20 @@ to one integral query-threshold layer.
 \Cref{lem:fractional-threshold-container-packing} packages this as a conic
 container separator: preprocessing may search over fractional query-weighted
 container records, but every accepted column is still an ordinary threshold
-query layer and top-degree update prefix.  Thus the current residual target is
-a priced bipartite degree separator inside certified geometric containers, with
-fractional query weights used only to find threshold witnesses.  By
-\cref{cor:layer-separation-local-cover} and
-\cref{cor:hinge-container-separator-local-cover}, either concrete separator
-already implies local filter-cover feasibility.  Since
+query layer and top-degree update prefix.
+\Cref{cor:fractional-threshold-container-local-cover} makes this directly
+sufficient for finite local cover feasibility, and
+\cref{lem:threshold-prefix-pareto-pricing} charges each exposed prefix by its
+actual descendant Pareto price.
+\Cref{lem:pareto-dense-core-layercake} is the most compact version: a smaller
+certified child \(U\) is useful exactly when its fractional query-weighted
+support beats its true query and storage prices.  Thus the current residual
+target is a priced bipartite dense-core separator, with fractional query weights
+used only to find integral threshold witnesses.  By
+\cref{cor:layer-separation-local-cover},
+\cref{cor:hinge-container-separator-local-cover}, and
+\cref{cor:fractional-threshold-container-local-cover}, any one of the concrete
+separators already implies local filter-cover feasibility.  Since
 preprocessing time is deliberately not a scarce resource,
 \cref{lem:finite-pool-optimizer} and
 \cref{cor:offline-pareto-compression} allow the build stage to enumerate,
