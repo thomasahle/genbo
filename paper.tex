@@ -19459,6 +19459,87 @@ inequality \((QP3)\).
    \((DBP1)\)--\((DBP2)\) gives the stated spectrum criterion.
 \end{proof}
 
+\begin{corollary}[Recursive compressed-net panel criterion]
+   \label{cor:recursive-compressed-net-panel}
+   Work in the setting of \cref{cor:decoded-bucket-panel-profile}.  Let a seed
+   \(z\sim\nu\) produce a finite multiset of recursive bucket records
+   \(\mathcal B_z\).  A record \(b\in\mathcal B_z\) comes with an active
+   signature set \(\mathcal A_{z,b}\subseteq\Sigma^+\), a certified hit weight
+   \(0\le s_{z,b}\le1\), a compressed child size \(K_{z,b}\), a child exponent
+   \(0\le\rho_{z,b}\le1\), a price factor \(\psi_{z,b}\), and an error
+   certificate \(\varepsilon_{z,b}\).  Interpret this as the profile
+   \[
+      H_{z,b}(\sigma_0)
+      =
+      s_{z,b}\mathbf 1\{\sigma_0\in\mathcal A_{z,b}\},
+      \tag{RCN1}
+   \]
+   \[
+      L_{z,b}(\sigma_0)
+      =
+      s_{z,b}\psi_{z,b}K_{z,b}^{\rho_{z,b}}
+      \mathbf 1\{\sigma_0\in\mathcal A_{z,b}\},
+      \qquad
+      U_{z,b}=\psi_{z,b}K_{z,b}^{1+\rho_{z,b}},
+      \qquad
+      E_{z,b}=\varepsilon_{z,b}.
+      \tag{RCN2}
+   \]
+   Define the aggregate spectra
+   \[
+      H_{\rm net}(\sigma_0)
+      =
+      \E_z\sum_{b\in\mathcal B_z}H_{z,b}(\sigma_0),
+      \qquad
+      L_{\rm net}(\sigma_0)
+      =
+      \E_z\sum_{b\in\mathcal B_z}L_{z,b}(\sigma_0),
+      \tag{RCN3}
+   \]
+   and
+   \[
+      U_{\rm net}=\E_z\sum_{b\in\mathcal B_z}U_{z,b},
+      \qquad
+      E_{\rm net}=\E_z\sum_{b\in\mathcal B_z}E_{z,b}.
+      \tag{RCN4}
+   \]
+   If there is \(a>0\) such that
+   \[
+      H_{\rm net}(\sigma_0)\ge a+E_{\rm net}
+      \qquad(\sigma_0\in\Sigma^+),
+      \tag{RCN5}
+   \]
+   and
+   \[
+      L_{\rm net}(\sigma_0)\le aL_{\sigma_0}
+      \qquad(\sigma_0\in\Sigma),
+      \qquad
+      U_{\rm net}\le aS,
+      \tag{RCN6}
+   \]
+   then \((\mathsf{ESFC}_\Sigma)\) is feasible.
+
+   Thus a bucket \(b\) may have a large compressed child, but its query charge
+   is multiplied by its certified hit weight \(s_{z,b}\).  In the bucket-net
+   recursion, \(K_{z,b}\) is the size of the canonical separated net retained
+   for that bucket, \(\rho_{z,b}\) is the exponent of the smaller-radius child,
+   and \(\psi_{z,b}\) is the already certified polylogarithmic child overhead.
+   The local query invariant is exactly the success-normalized moment bound
+   \(s_{z,b}K_{z,b}^{\rho_{z,b}}\), while the global space invariant is the
+   Renyi list-size moment \(K_{z,b}^{1+\rho_{z,b}}\).
+\end{corollary}
+
+\begin{proof}
+   The profiles in \((RCN1)\)--\((RCN2)\) are certified observable profiles of
+   the kind allowed in \cref{cor:decoded-bucket-panel-profile}; the exponent and
+   price factor are part of the record's child-price certificate.  With these
+   profiles, the panel aggregates \((DBP1)\)--\((DBP2)\) are precisely
+   \(H_{\rm net},L_{\rm net},U_{\rm net},E_{\rm net}\).  Conditions
+   \((RCN5)\)--\((RCN6)\) are therefore \((DBP3)\)--\((DBP4)\), so
+   \cref{cor:decoded-bucket-panel-profile} gives feasibility of
+   \((\mathsf{ESFC}_\Sigma)\).
+\end{proof}
+
 \Cref{lem:exact-near-set-filter-cover} is strictly weaker than
 \cref{lem:finite-signature-filter-cover} when the exact near set is part of the
 signature.  The all-pair LP covers every \(p\in N_{\sigma_0}\); the existential
@@ -19600,6 +19681,13 @@ large-range spherical filters, product-code tensor panels, additive
 quantization cells, and range-reporting/list-decoding outputs should be proved:
 show the three averaged spectrum inequalities \((DBP3)\)--\((DBP4)\), and the
 finite exact-signature compiler handles the fractional overlap.
+\Cref{cor:recursive-compressed-net-panel} specializes this to the recursive
+bucket-net picture.  A record's query price is its certified success weight
+times the smaller-child Renyi cost \(K^{\rho_{\rm child}}\), while its storage
+price is \(K^{1+\rho_{\rm child}}\).  Thus the remaining geometric statement is
+an average Renyi list-decoding theorem for compressed bucket nets: prove
+\((RCN5)\)--\((RCN6)\) for the decoded panel, and the dense recursion is already
+success-normalized.
 
 \begin{proposition}[Conditional fractional filter-cover endpoint]
    \label{prop:fractional-filter-cover-polylog}
