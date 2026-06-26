@@ -3265,6 +3265,53 @@ partition ignores the bias coordinates that certify the list size.
    \cref{cor:product-panel-rate-bookkeeping}.
 \end{proof}
 
+\begin{corollary}[Euclidean list decoders are soft-score reporters]
+   \label{cor:euclidean-list-decoder-reporter}
+   Let a block code \(\mathcal C\subseteq\Sigma^h\) have symbol embeddings
+   \(a\mapsto v_i(a)\in\mathbb R^{d_i}\).  For a query block
+   \(y=(y_1,\ldots,y_h)\), define the Euclidean score
+   \[
+      S_y(c)
+      =
+      \sum_{i=1}^h
+      \left(\ip{y_i}{v_i(c_i)}-\frac12\|v_i(c_i)\|^2\right).
+   \]
+   Suppose a certified Euclidean list decoder for the embedded code
+   \(V(c)=(v_1(c_1),\ldots,v_h(c_h))\) returns, for every radius \(R\), every
+   codeword satisfying
+   \[
+      \sum_{i=1}^h\|y_i-v_i(c_i)\|^2\le R^2
+   \]
+   in work \(D_{\rm Euc}(y,R)+O(|L(y,R)|)\).  Then, for every threshold
+   \(\theta\), calling this decoder with
+   \[
+      R^2=\sum_{i=1}^h\|y_i\|^2-2\theta
+   \]
+   gives a certified threshold reporter for
+   \[
+      \{c\in\mathcal C:\ S_y(c)\ge\theta\}.
+   \]
+   Consequently, Euclidean Reed--Solomon, Barnes--Sloane, Construction-A, or
+   lattice quotient decoders can be used directly as block reporters whenever
+   their list-size and work certificates match the product-panel rates.  No
+   repeated-coordinate discretization is needed for scores of this form.
+\end{corollary}
+
+\begin{proof}
+   For every codeword \(c\),
+   \[
+      S_y(c)
+      =
+      \frac12\sum_{i=1}^h\|y_i\|^2
+      -
+      \frac12\sum_{i=1}^h\|y_i-v_i(c_i)\|^2 .
+   \]
+   Thus \(S_y(c)\ge\theta\) is exactly the displayed Euclidean-radius
+   condition with \(R^2=\sum_i\|y_i\|^2-2\theta\).  The work statement is the
+   assumed certified decoder work, and the composition with the product-panel
+   framework is the same as in \cref{lem:soft-list-recovery-reporter}.
+\end{proof}
+
 \begin{lemma}[Hard list-recovery lift for soft scores]
    \label{lem:hard-list-recovery-lift}
    Let \(\mathcal C\subseteq\Sigma^h\) be a code and let a query \(q\)
@@ -4144,7 +4191,8 @@ partition ignores the bias coordinates that certify the list size.
 
 \begin{remark}[Outer list recovery as the clean codebook target]
    \label{rem:outer-list-recovery-codebook}
-   \Cref{lem:hard-list-recovery-lift} and
+   \Cref{cor:euclidean-list-decoder-reporter},
+   \cref{lem:hard-list-recovery-lift}, and
    \cref{lem:reliability-erasure-sweep} are the most useful transfers from
    Reed--Solomon, expander-code, polar-code, and Euclidean-code list decoding
    to the present data-structure problem.  The codebook need not be the full
@@ -4152,11 +4200,14 @@ partition ignores the bias coordinates that certify the list size.
    \(\prod_j\mathcal C_j\).  It may be a sparse outer code
    \(\mathcal C\subseteq\prod_j\Sigma_j\), a Construction-A or Construction-D
    lattice coset, or a Barnes--Wall style recursive lattice family.  The query
-   supplies soft Euclidean reliabilities for the symbols, the lift converts
-   those reliabilities into ordinary list-recovery constraints at
-   \(h\lceil M/\Delta\rceil\) repeated positions, and the decoder returns a
-   short certified list of high-score global codewords before metric
-   verification.  When one symbol per coordinate is dominant, the
+   supplies soft Euclidean reliabilities for the symbols.  If those
+   reliabilities are actual embedded Euclidean scores, then
+   \cref{cor:euclidean-list-decoder-reporter} turns any Euclidean-metric list
+   decoder into the threshold reporter directly.  For more general bounded
+   scores, the lift converts reliabilities into ordinary list-recovery
+   constraints at \(h\lceil M/\Delta\rceil\) repeated positions, and the
+   decoder returns a short certified list of high-score global codewords before
+   metric verification.  When one symbol per coordinate is dominant, the
    reliability-erasure sweep gives the cheaper \(O(h)\)-transcript GMD
    surrogate instead.  Signed scores are handled by adding a query-dependent
    constant to all symbols in a coordinate and shifting the final threshold.
@@ -4167,7 +4218,8 @@ partition ignores the bias coordinates that certify the list size.
    certified by a code/list-recovery theorem and by the spectrum inequalities
    \((PP1)\)--\((PP4)\), not by convergence of the clustering heuristic.  When
    \(M/\Delta=\log^{O_c(1)}m\), the repeated-coordinate lift costs only a
-   polylogarithmic factor.  Thus folded Reed--Solomon/list-recovery
+   polylogarithmic factor; direct Euclidean decoding removes even this
+   discretization overhead when it applies.  Thus folded Reed--Solomon/list-recovery
    constructions~\cite{GR08}, Koetter--Vardy soft decoding~\cite{KV03},
    Barnes--Sloane lattice decoding via soft Reed--Solomon scores~\cite{MP20},
    expander-code list recovery~\cite{ST25}, and polar-code multiprobing
@@ -4180,9 +4232,12 @@ partition ignores the bias coordinates that certify the list size.
    \label{rem:list-decoding-routing}
    The useful transfer from list decoding is not a black-box decoding radius.
    It is the interface in \cref{lem:soft-list-recovery-reporter} and
-   \cref{lem:hard-list-recovery-lift}: a structured code or lattice gives an
+   \cref{cor:euclidean-list-decoder-reporter}: a structured code or lattice gives an
    implicit family of candidate centers together with a certified
    output-sensitive enumerator for the centers relevant to a query.
+   \Cref{lem:hard-list-recovery-lift} is the fallback that reduces arbitrary
+   bounded soft scores to ordinary list recovery with only polylogarithmic mesh
+   loss.
    This is a cleaner theorem object than Lloyd or \(k\)-means routing.  Lloyd
    may find excellent empirical centers, but its iterations do not by
    themselves provide a worst-case list-size majorant for every query.  A
@@ -17455,9 +17510,12 @@ missing worst-case statement becomes a prefix-list moment bound and a near-route
 hit bound for a structured product panel.  \Cref{lem:soft-list-recovery-reporter}
 makes the coding-theoretic interface explicit: any certified soft list-recovery
 or lattice enumeration block is enough to supply the threshold reporters used
-by the product-panel decoder; \cref{lem:hard-list-recovery-lift} gives a
-self-contained reduction from bounded soft Euclidean scores to ordinary hard
-list-recovery constraints by repeating each coordinate across score levels.
+by the product-panel decoder.  \Cref{cor:euclidean-list-decoder-reporter}
+records the direct Euclidean-metric case, where a code or lattice list decoder
+already reports the needed soft-score superlevel set.  For non-Euclidean
+bounded scores, \cref{lem:hard-list-recovery-lift} gives a self-contained
+reduction to ordinary hard list-recovery constraints by repeating each
+coordinate across score levels.
 \Cref{lem:reliability-erasure-sweep} gives the cheaper GMD special case:
 one hard symbol and one confidence per coordinate produce only \(O(h)\)
 erasure transcripts, and the weighted-agreement inequality \((GMD)\) is enough
@@ -17668,10 +17726,13 @@ signatures must therefore be reliability or decoder states, not uniform
 spherical cells.
 \Cref{rem:outer-list-recovery-codebook} records the stronger alternative
 suggested by list-decoding codes and lattices: instead of decoding the full
-Cartesian product, retain a sparse outer code or lattice coset and use soft
-list recovery to enumerate high-score global codewords.  This can reduce the
-index description and query enumeration while keeping the same certification
-interface, provided the retained panel satisfies the random-like spectrum.
+Cartesian product, retain a sparse outer code or lattice coset and use a
+certified decoder to enumerate high-score global codewords.  Direct
+Euclidean-metric decoding avoids the repeated-coordinate lift when the score is
+an embedded squared distance; otherwise the lift remains a polylogarithmic
+fallback for bounded scores.  This can reduce the index description and query
+enumeration while keeping the same certification interface, provided the
+retained panel satisfies the random-like spectrum.
 \Cref{lem:reliability-erasure-sweep} isolates the lowest-overhead version of
 that idea: a GMD-style sweep gives a compact \(O(h)\)-transcript reporter when
 the useful route has enough confidence-weighted hard agreement.
