@@ -15318,6 +15318,114 @@ singleton slices by hand.
    this container-indexed notation.
 \end{proof}
 
+\begin{lemma}[Weak-type form of the paid prefix envelope]
+   \label{lem:paid-prefix-weak-type}
+   Work in the residual setting of
+   \cref{cor:paid-prefix-residual-envelope}.  Fix a container \(W\), a
+   fractional query weighting \(0\le y\le1\), and write
+   \[
+      A_y=\sum_q\tau_qy_q,\qquad \rho=\rho_W,\qquad \psi=\psi_W.
+   \]
+   Assume \(0<\rho<1\).  Let
+   \[
+      h_\delta=h_{W,\delta}(y)
+      =
+      |\{p\in W:d_y^\gamma(p)\ge\delta\}|
+   \]
+   be nonzero and available, and let \(\delta>0\).  If \(\sigma=0\), then
+   \[
+      h_\delta
+      \le
+      \left(\frac{\psi A_y}{\delta}\right)^{1/(1-\rho)}.
+      \tag{PWT1}
+   \]
+   If \(\sigma>0\), then at least one of the two alternatives holds:
+   \[
+      h_\delta
+      \le
+      \left(\frac{2\psi A_y}{\delta}\right)^{1/(1-\rho)}
+      \tag{PWT2}
+   \]
+   or
+   \[
+      h_\delta
+      \ge
+      \left(\frac{\delta}{2\psi\sigma}\right)^{1/\rho}.
+      \tag{PWT3}
+   \]
+   Moreover, if \(A_y>0\), \(\sigma>0\), and
+   \[
+      k_\star=\frac{(1-\rho)A_y}{\rho\sigma},
+   \]
+   then for every \(a\ge1\), every available nonzero superlevel with
+   \(a^{-1}k_\star\le h_\delta\le ak_\star\) satisfies
+   \[
+      \delta
+      \le
+      a\,C_\rho\,\psi A_y^\rho\sigma^{1-\rho},
+      \qquad
+      C_\rho=\rho^{-\rho}(1-\rho)^{-(1-\rho)}.
+      \tag{PWT4}
+   \]
+\end{lemma}
+
+\begin{proof}
+   The superlevel envelope \((PPRE2)\) gives
+   \[
+      \delta
+      \le
+      \psi\left(A_yh_\delta^{\rho-1}+\sigma h_\delta^\rho\right).
+      \tag{PWT5}
+   \]
+   When \(\sigma=0\), rearranging \((PWT5)\) gives \((PWT1)\).
+
+   Now assume \(\sigma>0\).  Since the two summands on the right of
+   \((PWT5)\) are nonnegative, at least one is at least \(\delta/2\).  The
+   query-price case
+   \[
+      \psi A_yh_\delta^{\rho-1}\ge\delta/2
+   \]
+   is exactly \((PWT2)\), while the storage-price case
+   \[
+      \psi\sigma h_\delta^\rho\ge\delta/2
+   \]
+   is exactly \((PWT3)\).
+
+   For the balanced-scale statement, minimize
+   \(A_yh^{\rho-1}+\sigma h^\rho\) over \(h>0\).  The stationary point is
+   \(k_\star=(1-\rho)A_y/(\rho\sigma)\), and
+   \[
+      A_yk_\star^{\rho-1}+\sigma k_\star^\rho
+      =
+      C_\rho A_y^\rho\sigma^{1-\rho}.
+   \]
+   If \(h_\delta=\lambda k_\star\) with \(\lambda\in[a^{-1},a]\), then
+   \[
+      A_yh_\delta^{\rho-1}+\sigma h_\delta^\rho
+      =
+      \lambda^{\rho-1}A_yk_\star^{\rho-1}
+      +
+      \lambda^\rho\sigma k_\star^\rho
+      \le
+      a\left(A_yk_\star^{\rho-1}+\sigma k_\star^\rho\right).
+   \]
+   Combining this estimate with \((PWT5)\) proves \((PWT4)\).
+\end{proof}
+
+\Cref{lem:paid-prefix-weak-type} gives a direct separator screen.  If, for some
+certified container and fractional query weighting, a paid-degree superlevel has
+cardinality strictly above the query-priced bound \((PWT2)\) and strictly below
+the storage-priced bound \((PWT3)\), then the residual envelope is impossible,
+so \cref{lem:weighted-atomized-prefix-normal-form} exposes a positive-gain paid
+prefix.  In the balanced range \(h_\delta\asymp A_y/\sigma\), it is enough to
+beat the single density threshold
+\[
+   \psi A_y^\rho\sigma^{1-\rho}
+\]
+up to the constant \(C_\rho\).  This is the local geometric quantity that a
+ball, cap, range-reporting, or list-decoding separator should try to force from
+the spherical high-correlation co-load.
+
 \Cref{cor:paid-compression-hit-kernel-cover} is the fractional dense-filter
 cover in its paid form.  The separator does not choose disjoint dense clusters.
 It only has to prove that any overbudget value-proportional primitive law can be
@@ -15355,6 +15463,9 @@ criterion: every surplus paid dual only has to violate one certified
 container-prefix envelope.  If it does not, then
 \cref{cor:paid-prefix-residual-envelope} gives the exact counterexample format
 that the spherical residual or the next geometric separator must rule out.
+\Cref{lem:paid-prefix-weak-type} converts that counterexample into an explicit
+level-set dichotomy: residual paid mass is either query-price small, storage
+massive, or below the balanced density \(C_\rho\psi A_y^\rho\sigma^{1-\rho}\).
 
 \begin{assumption}[Compression-dual separator]
    \label{asm:compression-dual-separator}
@@ -27264,6 +27375,11 @@ superlevels satisfy the explicit envelope \((WAE2)\).
 proof target: a successful separator is exactly a violation of one such
 container-prefix envelope, and an unsuccessful separator leaves a paid residual
 whose every certified container obeys \((PPRE1)\)--\((PPRE2)\).
+\Cref{lem:paid-prefix-weak-type} rewrites this residual in weak-type form: high
+paid-degree superlevels must be either query-price small or storage-price
+massive, and at the query/storage balance scale their density is bounded by
+\(C_\rho\psi A_y^\rho\sigma^{1-\rho}\).  This is the current concrete geometric
+obstruction to eliminate.
 Because
 preprocessing time is deliberately not a scarce resource,
 \cref{lem:finite-pool-optimizer} and
