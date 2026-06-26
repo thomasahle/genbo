@@ -14917,6 +14917,71 @@ law already has positive reduced gain.
    \((1-\xi)\beta_0C_\eta\pi_1\kappa\), which gives \((DAR2)\).
 \end{proof}
 
+\begin{lemma}[Primitive lift of annular superlevels]
+   \label{lem:primitive-annular-superlevel-lift}
+   Work in the setting of \cref{lem:weighted-dyadic-annular-load}, and write
+   \[
+      c_q(x)=\Pr_{Z\sim\Pi}[x\in U_Z,\ \chi_Z(q)=1],
+      \qquad
+      a_q=\Pr_{Z\sim\Pi}[\chi_Z(q)=1].
+   \]
+   For \(\beta\in\mathcal B_J\), set
+   \[
+      B_{z,\beta}(q)=U_z\cap A_\beta(q),
+      \qquad
+      A_\beta(q)=\{x\in P:\|x-q\|>cr,\ c_q(x)>\beta a_q\}.
+   \]
+   Then every nonnegative query weighting \(\omega_q\) satisfies
+   \[
+   \begin{aligned}
+      \E_{Z\sim\Pi}\sum_q\omega_q\chi_Z(q)|B_{Z,\beta}(q)|
+      &=
+      \sum_q\omega_q\sum_{x\in A_\beta(q)}c_q(x)\\
+      &>
+      \beta\sum_q\omega_qa_q|A_\beta(q)|.
+   \end{aligned}
+      \tag{PAS1}
+   \]
+   Consequently, in the setting of
+   \cref{cor:dyadic-annular-residual-witness}, the dyadic level supplied by
+   \((DAR2)\) also satisfies
+   \[
+      \E_{Z\sim\Pi}\sum_q\bar\tau_q\chi_Z(q)|B_{Z,\beta}(q)|
+      >
+      \frac{(1-\xi)\beta_0C_\eta\pi_1\kappa}{2J}.
+      \tag{PAS2}
+   \]
+   If the primitive law has finite support, then some seed \(z\) in that support
+   has
+   \[
+      \sum_q\bar\tau_q\chi_z(q)|B_{z,\beta}(q)|
+      >
+      \frac{(1-\xi)\beta_0C_\eta\pi_1\kappa}{2J}.
+      \tag{PAS3}
+   \]
+\end{lemma}
+
+\begin{proof}
+   Expand the expectation and exchange the finite sums:
+   \[
+   \begin{aligned}
+      \E_Z\sum_q\omega_q\chi_Z(q)|B_{Z,\beta}(q)|
+      &=
+      \sum_q\omega_q
+      \sum_{x\in A_\beta(q)}
+      \Pr_Z[x\in U_Z,\ \chi_Z(q)=1]\\
+      &=
+      \sum_q\omega_q\sum_{x\in A_\beta(q)}c_q(x).
+   \end{aligned}
+   \]
+   For every \(x\in A_\beta(q)\), the defining inequality gives
+   \(c_q(x)>\beta a_q\).  This proves \((PAS1)\).  Combining \((PAS1)\) with
+   \((DAR2)\), using \(\omega=\bar\tau\), gives \((PAS2)\).  The finite-support
+   statement is averaging: if every seed had value at most the right side of
+   \((PAS3)\), then the expectation in \((PAS2)\) would also be at most that
+   value.
+\end{proof}
+
 \begin{assumption}[Weighted annular-to-scalar reporter]
    \label{asm:weighted-annular-scalar-reporter}
    Work in the setting of \cref{cor:dyadic-annular-residual-witness}, and let
@@ -14948,6 +15013,35 @@ law already has positive reduced gain.
    satisfy \((CSR0)\) and either \((CSR1)\) or its capped form \((CSR2)\), with
    query and storage prices \((\bar\tau,\bar\sigma)\).
 \end{assumption}
+
+\begin{corollary}[Primitive annular panel reporter suffices]
+   \label{cor:primitive-annular-panel-reporter-suffices}
+   In the setting of \cref{asm:weighted-annular-scalar-reporter}, it is enough
+   to prove the following primitive-panel reporter statement.  Whenever a
+   guarded normalized residual satisfies \((GNR1)\)--\((GNR3)\) and, for some
+   \(\beta\in\mathcal B_J\), with \(B_{z,\beta}(q)\) as in
+   \cref{lem:primitive-annular-superlevel-lift},
+   \[
+      \E_{Z\sim\Pi}\sum_q\bar\tau_q\chi_Z(q)|B_{Z,\beta}(q)|
+      >
+      \frac{(1-\xi)\beta_0C_\eta\pi_1\kappa}{2J},
+      \tag{PAPR1}
+   \]
+   the primitive annular panel \(B_{z,\beta}(q)\) yields the one-sided scalar
+   reporter required in
+   \cref{asm:weighted-annular-scalar-reporter}.  Under this primitive-panel
+   reporter statement, the local-cover conclusion of
+   \cref{cor:annular-reporter-local-cover} follows.
+\end{corollary}
+
+\begin{proof}
+   If a guarded normalized residual satisfies \((ASR1)\), then
+   \cref{lem:primitive-annular-superlevel-lift} gives \((PAPR1)\).  The assumed
+   primitive-panel reporter therefore supplies the same certified scalar
+   superlevel panel demanded by \cref{asm:weighted-annular-scalar-reporter}.
+   Hence the weighted annular-to-scalar reporter assumption holds, and
+   \cref{cor:annular-reporter-local-cover} gives local feasibility.
+\end{proof}
 
 \begin{corollary}[Annular reporter closes the local cover]
    \label{cor:annular-reporter-local-cover}
@@ -15106,6 +15200,12 @@ annular sets \(A_\beta(q)\) are far false-positive witnesses, not cover columns
 by themselves.  They close the LP only after a reporter converts their
 dual-weighted abundance into one-sided scalar certificates for an actual
 near-pair prefix/core.
+\Cref{lem:primitive-annular-superlevel-lift} moves this target from query-level
+superlevel sets to the primitive bucket panel \(B_{z,\beta}(q)\).  Thus the
+remaining list-decoding or additive-quantization search can look for a concrete
+seed whose active bucket has large dual-priced annular co-load; by
+\cref{cor:primitive-annular-panel-reporter-suffices}, converting such a panel
+to the certified scalar reporter is already enough to close the local LP.
 
 \begin{corollary}[Hit-kernel cover materialization]
    \label{cor:hit-kernel-cover-materialization}
@@ -36643,6 +36743,12 @@ superlevel certificates for the real near-pair degree measure
 \(d^{\bar\gamma^\theta}\).  This is the current sharp theorem target for
 range reporting, list decoding, additive quantization, or any other build-time
 proposal oracle.
+\Cref{lem:primitive-annular-superlevel-lift} sharpens the target further: the
+same lower bound is witnessed as an average over concrete primitive buckets
+\(B_{z,\beta}(q)=U_z\cap A_\beta(q)\), and for finite primitive support by at
+least one seed \(z\).  Thus the remaining proposal oracle may search a finite
+primitive annular panel and only has to turn that panel into the certified
+scalar reporter of \cref{cor:primitive-annular-panel-reporter-suffices}.
 \Cref{lem:primitive-hit-kernel-cover-equivalence} gives the matching primal
 form: the same theorem is equivalent to fractionally covering the primitive
 spherical hit kernel \(r_{p,q}\) by Pareto cores at \(\pi_1\)-scaled query and
