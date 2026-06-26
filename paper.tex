@@ -14835,6 +14835,88 @@ law already has positive reduced gain.
    than itself.  Hence at least one level satisfies \((DRL2)\).
 \end{proof}
 
+\begin{lemma}[Weighted dyadic annular load]
+   \label{lem:weighted-dyadic-annular-load}
+   In the setting of \cref{lem:dyadic-relative-load-superlevel}, let
+   \(\omega_q\ge0\) be arbitrary query weights, and put
+   \[
+      M_{\rm far}(\omega)
+      =
+      \sum_q\omega_q
+      \sum_{\substack{x\in P\\ \|x-q\|>cr}}c_q(x).
+   \]
+   Then
+   \[
+      M_{\rm far}(\omega)
+      \le
+      2^{-J}|P|\sum_q\omega_qa_q
+      +
+      2\sum_{\beta\in\mathcal B_J}
+      \beta\sum_q\omega_qa_q|A_\beta(q)|.
+      \tag{WDL1}
+   \]
+   Consequently, if
+   \[
+      M_{\rm far}(\omega)>2^{-J}|P|\sum_q\omega_qa_q,
+   \]
+   then some \(\beta\in\mathcal B_J\) satisfies
+   \[
+      \beta\sum_q\omega_qa_q|A_\beta(q)|
+      \ge
+      \frac{
+         M_{\rm far}(\omega)-2^{-J}|P|\sum_q\omega_qa_q
+      }{2J}.
+      \tag{WDL2}
+   \]
+\end{lemma}
+
+\begin{proof}
+   Multiply \((DRL1)\) by \(\omega_q\) and sum over \(q\).  This proves
+   \((WDL1)\).  If every dyadic level were strictly smaller than the right side
+   of \((WDL2)\), then \((WDL1)\) would contradict the assumed strict lower
+   bound on \(M_{\rm far}(\omega)\).
+\end{proof}
+
+\begin{corollary}[Dyadic annular residual witness]
+   \label{cor:dyadic-annular-residual-witness}
+   Work in the setting of
+   \cref{cor:relative-annular-active-collision-residual}, but denote its
+   relative threshold by \(\beta_0\).  Let
+   \(C_\eta=\frac12-\eta\), and let \(J\ge1\).  Suppose the enlarged local
+   filter-cover LP is infeasible, and let
+   \((\bar\tau,\bar\sigma,\bar\gamma^\theta,\kappa)\) be the guarded normalized
+   residual produced by that corollary.  If, for some \(0\le\xi<1\),
+   \[
+      2^{-J}a_*|P|\le \xi\,\beta_0 C_\eta\pi_1L,
+      \tag{DAR1}
+   \]
+   then some dyadic level \(\beta\in\mathcal B_J\) satisfies
+   \[
+      \beta\sum_q\bar\tau_q a_q |A_\beta(q)|
+      >
+      \frac{(1-\xi)\beta_0 C_\eta\pi_1\kappa}{2J}.
+      \tag{DAR2}
+   \]
+\end{corollary}
+
+\begin{proof}
+   Apply \cref{lem:weighted-dyadic-annular-load} with
+   \(\omega_q=\bar\tau_q\).  The far-load term is strictly larger than
+   \(\beta_0C_\eta\pi_1\kappa\) by \((RAC6)\).  The tail term is bounded using
+   \((GNR2)\):
+   \[
+      2^{-J}|P|\sum_q\bar\tau_qa_q
+      \le
+      2^{-J}a_*|P|\sum_q\bar\tau_q
+      <
+      2^{-J}a_*|P|\,\frac{\kappa}{L}
+      \le
+      \xi\,\beta_0C_\eta\pi_1\kappa .
+   \]
+   Therefore the numerator in \((WDL2)\) is strictly larger than
+   \((1-\xi)\beta_0C_\eta\pi_1\kappa\), which gives \((DAR2)\).
+\end{proof}
+
 \begin{lemma}[Primitive hit-kernel cover equivalence]
    \label{lem:primitive-hit-kernel-cover-equivalence}
    Work in the setting of \cref{asm:one-potential-core-separator}.  For each
@@ -14949,6 +15031,14 @@ aggregate load bound, not failures of pointwise far collision.
 discarding a \(2^{-J}\) tail, some dyadic relative threshold captures the far
 load up to an \(O(J)\) loss.  Taking \(J=\lceil\log_2|P|\rceil\) turns the
 overflow branch into an \(O(\log |P|)\)-level reporter problem.
+\Cref{lem:weighted-dyadic-annular-load} and
+\cref{cor:dyadic-annular-residual-witness} give the dual-weighted form actually
+needed by the LP: if a guarded residual survives the aggregate spherical
+fallback, then after a negligible tail there is a dyadic annular conditional
+collision superlevel with large \(\bar\tau_q a_q\)-weighted size.  The remaining
+geometric theorem may therefore search a finite panel of such annular
+superlevels and either prove their total load impossible or convert one of them
+into a paid scalar-reporter column.
 
 \begin{corollary}[Hit-kernel cover materialization]
    \label{cor:hit-kernel-cover-materialization}
@@ -36472,6 +36562,13 @@ finite search over relative thresholds: any far-load overflow yields a dyadic
 annular superlevel \(A_\beta(q)\) with \(\beta a_q|A_\beta(q)|\) large up to a
 logarithmic factor.  This is the concrete range-reporting/list-decoding object
 that should replace ad hoc dense clustering in the next geometric lemma.
+\Cref{lem:weighted-dyadic-annular-load} and
+\cref{cor:dyadic-annular-residual-witness} sharpen this to the actual dual
+measure: a surviving infeasible node yields one dyadic level with large
+\(\beta\sum_q\bar\tau_q a_q|A_\beta(q)|\), after only logarithmic and tail
+losses.  Thus the next separator theorem can be stated as a weighted annular
+superlevel reporter: either these conditional-collision superlevels have small
+dual load, or one reported superlevel induces a positive paid prefix/core.
 \Cref{lem:primitive-hit-kernel-cover-equivalence} gives the matching primal
 form: the same theorem is equivalent to fractionally covering the primitive
 spherical hit kernel \(r_{p,q}\) by Pareto cores at \(\pi_1\)-scaled query and
