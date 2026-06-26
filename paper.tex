@@ -5334,6 +5334,124 @@ partition ignores the bias coordinates that certify the list size.
    \(O(d\,m^\rho L_m)\) arithmetic bound.
 \end{proof}
 
+\begin{proposition}[Finite-envelope Gaussian quadrature builder]
+   \label{prop:finite-envelope-gaussian-quadrature}
+   Work in the critical spherical normalization of
+   \cref{lem:critical-tilted-gaussian-sampled-spectrum}.  Let
+   \(\mathcal Q\) be a possibly continuous promised query domain, let
+   \(\sigma:\mathcal Q\to\Sigma\) be a finite signature map, and for each
+   \(\sigma_0\in\Sigma\) let \(N_{\sigma_0}\subseteq P\) contain every data
+   point that can be a near witness for a query of that signature.  For a
+   Gaussian label \(g\), put
+   \[
+      A_g(x)=\mathbf 1\{\ip{g}{x}\ge T\},
+      \qquad
+      R_q(g)=e^{\beta\ip{g}{q}},
+   \]
+   and let
+   \[
+      F_q(g)=
+      \sum_{\substack{x\in P\\ \|x-q\|>cr}}A_g(x)
+   \]
+   be the invalid bucket load of \(g\) for \(q\).  Fix targets \(B>0\) and
+   \(h>0\).  Suppose preprocessing certifies integrable signed envelope
+   functions \(C_{\sigma_0}(g)\) and \(D_{\sigma_0,p}(g)\) such that, for all
+   labels \(g\),
+   \[
+      C_{\sigma_0}(g)
+      \ge
+      R_q(g)\bigl(F_q(g)-B\bigr)
+      \qquad(\sigma(q)=\sigma_0),
+      \tag{FE1}
+   \]
+   and
+   \[
+      D_{\sigma_0,p}(g)
+      \ge
+      R_q(g)\bigl(h-A_g(p)\bigr)
+      \qquad
+      (\sigma(q)=\sigma_0,\ \|p-q\|\le r),
+      \tag{FE2}
+   \]
+   while the base Gaussian law \(G\sim N(0,I_d)\) has strict slack
+   \[
+      \E C_{\sigma_0}(G)<0,
+      \qquad
+      \E D_{\sigma_0,p}(G)<0.
+      \tag{FE3}
+   \]
+   Let
+   \[
+      D_0=|\Sigma|+\sum_{\sigma_0\in\Sigma}|N_{\sigma_0}|+1 .
+   \]
+   Then uncharged Las Vegas preprocessing can find a retained weighted
+   Gaussian panel with at most \(D_0\) labels such that, for every promised
+   query \(q\),
+   \[
+      \sum_{\substack{x\in P\\ \|x-q\|>cr}}
+      \sum_{\substack{g\\ A_g(x)=1}}\pi_q(g)
+      \le B ,
+      \tag{FE4}
+   \]
+   and every near pair \(p,q\) satisfies
+   \[
+      \sum_{g:\ A_g(p)=1}\pi_q(g)\ge h ,
+      \tag{FE5}
+   \]
+   where \(\pi_q(g)\propto w_gR_q(g)\) is the retained tilted sampling law.
+   The stored incidences are at most \(mD_0\), and direct sampling costs
+   \(O(dD_0)\) arithmetic operations.  In particular, if
+   \(D_0\le m^\rho\log^{O_c(1)}m\), \(B\le m^\rho\log^{O_c(1)}m\), and
+   \(h\ge\log^{-O_c(1)}m\), then this retained panel satisfies the sampled
+   terminal ANN requirements of \cref{prop:sampled-structured-panel}.
+\end{proposition}
+
+\begin{proof}
+   For a finite sampled batch \(G_1,\ldots,G_N\), solve the linear feasibility
+   problem
+   \[
+      \sum_iw_i C_{\sigma_0}(G_i)\le0,
+      \qquad
+      \sum_iw_iD_{\sigma_0,p}(G_i)\le0,
+      \qquad
+      w_i\ge0,\quad \sum_iw_i=1 .
+      \tag{FE6}
+   \]
+   Since all envelope functions are integrable and have strictly negative
+   expectations, the empirical averages of all coordinates in \((FE6)\) are
+   simultaneously negative with positive probability for all sufficiently
+   large \(N\).  Thus a round-robin Las Vegas schedule over increasing batch
+   sizes eventually finds a feasible batch with probability one.
+
+   Replace any feasible solution by a basic feasible solution.  There are
+   \(|\Sigma|+\sum_{\sigma_0}|N_{\sigma_0}|\) inequality constraints in
+   \((FE6)\), so a basic feasible solution has support size at most \(D_0\).
+   Retain only those positive-weight labels.
+
+   Fix a promised query \(q\) with signature \(\sigma_0\).  From \((FE1)\) and
+   \((FE6)\),
+   \[
+      \sum_gw_gR_q(g)\bigl(F_q(g)-B\bigr)
+      \le
+      \sum_gw_gC_{\sigma_0}(g)
+      \le0 .
+   \]
+   Dividing by \(\sum_gw_gR_q(g)>0\) gives \((FE4)\).  If
+   \(\|p-q\|\le r\), then \(p\in N_{\sigma_0}\), and \((FE2)\)--\((FE6)\)
+   similarly give
+   \[
+      \sum_gw_gR_q(g)\bigl(h-A_g(p)\bigr)\le0 .
+   \]
+   Dividing by the same tilted partition function proves \((FE5)\).
+
+   The storage bound is trivial because each retained label stores at most all
+   \(m\) points.  Direct sampling scans the retained labels, evaluates
+   \(w_gR_q(g)\), and samples from the resulting prefix sums.  The final
+   sampled-panel statement is exactly
+   \cref{prop:sampled-structured-panel} with the displayed storage, sampled
+   far-load, and near-mass bounds.
+\end{proof}
+
 \begin{remark}[Signature entropy is the charged obstruction]
    \label{rem:signature-entropy-obstruction}
    \Cref{cor:small-signature-gaussian-quadrature} is deliberately finite.  It
@@ -19580,6 +19698,10 @@ sample by a direct scan.
 \Cref{prop:las-vegas-small-signature-gaussian} makes this boundary case
 algorithmic under the uncharged preprocessing model: repeated Gaussian batches
 and the finite tilted-weight LP eventually find the retained support.  The
+\Cref{prop:finite-envelope-gaussian-quadrature} variant removes the need for
+exact query representatives: finite signed upper envelopes for the homogeneous
+tilted-weight coefficients are enough, provided their Gaussian means have
+strict slack.  The
 remaining obstruction is therefore signature entropy and compact decoding, not
 the finite weighted Gaussian calculation.
 \Cref{rem:metric-net-signature-barrier} rules out the most naive source of
