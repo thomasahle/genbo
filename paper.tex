@@ -10070,9 +10070,15 @@ This certificate is the local form of the remaining problem. It is analogous in 
    edge \(e:s\to t\), suppose the exit port lies at a score prefix \(u_e\)
    containing \(p\), and the child entered by the near route is obtained from a
    certified posterior-superlevel cover as in
-   \cref{cor:certified-threshold-handoff}, with charge slack
-   \(\Xi_e\ge1\).  Assume that the edge is activated by the canonical
-   budget-thinning rule.  Put
+   \cref{cor:certified-threshold-handoff}.  Let \(\Gamma_e\) be the charge of
+   the activated object containing this child, either the child itself or the
+   whole reported cover, and assume the cover has charge slack \(\Xi_e\ge1\):
+   \[
+      \Gamma_e\le \Xi_eF_4(|C_L(u_e)|,R_{u_e})
+      \tag{ACH0}
+   \]
+   for a threshold \(L\) with \(p\in C_L(u_e)\).  Assume that this object is
+   activated by the canonical budget-thinning rule.  Put
    \[
       \omega_e
       =
@@ -10081,7 +10087,7 @@ This certificate is the local form of the remaining problem. It is analogous in 
          \frac{(1-\kappa\eta^2)H_p(u_e)^\rho Q_q(u_e)^s}
               {\Xi_e H_0}
       \right\}.
-      \tag{ACH0}
+      \tag{ACH1}
    \]
    For deterministic unit-success skeleton passages set \(\omega_e=1\).
    Let \(A_{\rm aff}\) be the resulting affinity prefix mass on the skeleton:
@@ -10090,12 +10096,12 @@ This certificate is the local form of the remaining problem. It is analogous in 
    \(e:s\to t\).  If every skeleton route cut \(\mathcal C\) satisfies
    \[
       \sum_{s\in\mathcal C}A_{\rm aff}(s)\ge p_0,
-      \tag{ACH1}
+      \tag{ACH2}
    \]
    then the original harmonic route value satisfies
    \[
       W(r_{s_0})\ge\frac{p_0}{L(s_0)}.
-      \tag{ACH2}
+      \tag{ACH3}
    \]
    In particular, after posterior-superlevel decoding, the remaining
    near-value target can be stated without a pathwise sum of pair-affinity
@@ -10105,15 +10111,16 @@ This certificate is the local form of the remaining problem. It is analogous in 
 \end{corollary}
 
 \begin{proof}
-   Let \(A_e\) be the reported posterior-superlevel child on edge \(e\) that
-   contains \(p\).  The proof of
-   \cref{cor:certified-threshold-handoff} gives
+   Since \(p\in C_L(u_e)\), the proof of
+   \cref{lem:posterior-superlevel-cancels-surprise} gives
    \[
-      F_4(|A_e|,R_{A_e})
+      F_4(|C_L(u_e)|,R_{u_e})
       \le
-      \Xi_e F_4(|P[u_e]|,R_{u_e})
+      F_4(|P[u_e]|,R_{u_e})
       \left(\frac{\overline H(u_e)}{H_p(u_e)}\right)^\rho .
    \]
+   Combining this with \((ACH0)\) gives the same bound for \(\Gamma_e\), with
+   the additional factor \(\Xi_e\).
    By the definition of the canonical mixed budget,
    \[
       \mathcal B_q^{\rm mix}(u_e)
@@ -10126,19 +10133,82 @@ This certificate is the local form of the remaining problem. It is analogous in 
       \min\left\{
          1,\,
          \frac{(1-\kappa\eta^2)\mathcal B_q^{\rm mix}(u_e)}
-              {F_4(|A_e|,R_{A_e})}
+              {\Gamma_e}
       \right\}
       \ge
       \omega_e .
    \]
    Unit-success passages have activation probability \(1=\omega_e\).  Hence
    the true skeleton prefix mass \(A_{\rm sk}\) dominates \(A_{\rm aff}\) at
-   every skeleton state.  The cut hypothesis \((ACH1)\) therefore implies
+   every skeleton state.  The cut hypothesis \((ACH2)\) therefore implies
    \[
       \sum_{s\in\mathcal C}A_{\rm sk}(s)\ge p_0
    \]
    for every skeleton cut.  Applying
-   \cref{cor:skeleton-cut-conductance} proves \((ACH2)\).
+   \cref{cor:skeleton-cut-conductance} proves \((ACH3)\).
+\end{proof}
+
+\begin{corollary}[Affinity cut-energy certificate]
+   \label{cor:affinity-cut-energy}
+   Work in the setting of \cref{cor:affinity-cut-posterior-handoff}.  Let
+   \(\Lambda\) be a probability law on the good terminal port-skeleton routes,
+   and write \(\Lambda(s)\) for the probability that the sampled route passes
+   through skeleton state \(s\).  If every skeleton route cut \(\mathcal C\)
+   satisfies
+   \[
+      \sum_{s\in\mathcal C}
+      \frac{\Lambda(s)^2}{A_{\rm aff}(s)}
+      \le M ,
+      \tag{ACE0}
+   \]
+   with the usual convention that a positive numerator over zero is infinite,
+   then
+   \[
+      W(r_{s_0})\ge\frac{1}{M\,L(s_0)}.
+      \tag{ACE1}
+   \]
+
+   Equivalently, delete zero-\(\Lambda\) subtrees and write
+   \(\lambda_e=\Pr_\Lambda[t\mid s]\) for \(e:s\to t\).  At positive
+   \(\Lambda\) states define the affinity square toll
+   \[
+      \chi_{\rm aff}(s)
+      =
+      \sum_{e:s\to t}\frac{\lambda_e^2}{\omega_e}.
+      \tag{ACE2}
+   \]
+   If the square-biased spine generated with transition probabilities
+   proportional to \(\lambda_e^2/\omega_e\) satisfies, up to every skeleton
+   route cut,
+   \[
+      \sum\log_+\chi_{\rm aff}(s)\le B ,
+      \tag{ACE3}
+   \]
+   on every stopped spine realization, then
+   \[
+      W(r_{s_0})\ge \frac{e^{-B}}{L(s_0)} .
+      \tag{ACE4}
+   \]
+\end{corollary}
+
+\begin{proof}
+   Since \(\Lambda\) crosses every skeleton cut exactly once,
+   Cauchy's inequality and \((ACE0)\) give
+   \[
+      1
+      =
+      \left(\sum_{s\in\mathcal C}\Lambda(s)\right)^2
+      \le
+      \left(\sum_{s\in\mathcal C}A_{\rm aff}(s)\right)
+      \left(\sum_{s\in\mathcal C}
+      \frac{\Lambda(s)^2}{A_{\rm aff}(s)}\right).
+   \]
+   Hence every cut has \(A_{\rm aff}\)-mass at least \(1/M\), and
+   \cref{cor:affinity-cut-posterior-handoff} proves \((ACE1)\).
+
+   The spine identity is exactly \cref{lem:frontier-square-toll} applied to
+   the skeleton tree with edge probabilities \(\omega_e\).  The toll bound
+   \((ACE3)\) implies \((ACE0)\) with \(M=e^B\), giving \((ACE4)\).
 \end{proof}
 
 \begin{corollary}[Surprise-defect route-law certificate]
@@ -10256,7 +10326,10 @@ This certificate is the local form of the remaining problem. It is analogous in 
    affinity weight \(H_p(u)^\rho Q_q(u)^s/H_0\), divided only by the
    decoder's charge slack.  Thus the port-skeleton value proof can target
    affinity mass on every cut, rather than a cumulative log-affinity loss on a
-   single route.
+   single route.  \Cref{cor:affinity-cut-energy} gives the stopped
+   second-moment version of the same target: it is enough to construct a law
+   on good port routes whose \(\chi^2\) energy against these affinity weights
+   is polylogarithmic on every skeleton cut.
 \end{remark}
 
 \begin{lemma}[Activated good-route moments]\label{lem:activated-good-route-moments}
@@ -13469,6 +13542,15 @@ This certificate is the local form of the remaining problem. It is analogous in 
    handoff, it is enough that every cut of the port skeleton have
    inverse-polylogarithmic mass under the local weights
    \(H_p(u)^\rho Q_q(u)^s/H_0\), up to the structured-decoder slack.
+   By \cref{cor:affinity-cut-energy}, the matching second-moment formulation
+   is to bound
+   \[
+      \sum_{s\in\mathcal C}
+      \frac{\Lambda(s)^2}{A_{\rm aff}(s)}
+   \]
+   on every stopped skeleton cut, or equivalently to bound the stopped
+   square-spine toll
+   \(\sum\log_+\chi_{\rm aff}\).
    Thus one sufficient geometric theorem is to prove this affinity cut mass;
    another is to construct a tame route law whose expected cumulative
    canonical budget defect is \(O_c(\log\log n)\).
