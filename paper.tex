@@ -11774,6 +11774,77 @@ storage price.  This is the fractional analogue of merging many dense children:
 overlap at a query is not forbidden, it is bought only when its local margin is
 positive.
 
+\begin{lemma}[Dyadic query-margin layer]
+   \label{lem:dyadic-query-margin-layer}
+   Work in the setting of \cref{lem:hinge-quotient-activation}.  For a quotient
+   core \(G\), write its positive query margins as
+   \[
+      d_q(G)=
+      \bigl(\theta_jC_j(G;q)-T_G\tau_q\bigr)_+ .
+   \]
+   Partition the positive margins into dyadic classes
+   \(\mathcal Q_1,\ldots,\mathcal Q_K\), where
+   \[
+      \Delta_\ell\le d_q(G)<2\Delta_\ell
+      \qquad(q\in\mathcal Q_\ell).
+      \tag{DQM1}
+   \]
+   If
+   \[
+      \sum_qd_q(G)>2K\,\sigma S_G,
+      \tag{DQM2}
+   \]
+   then some margin class \(\mathcal Q_\ell\) satisfies
+   \[
+      \Delta_\ell|\mathcal Q_\ell|>\sigma S_G
+      \tag{DQM3}
+   \]
+   and hence
+   \[
+      \sum_{q\in\mathcal Q_\ell}
+      \bigl(\theta_jC_j(G;q)-T_G\tau_q\bigr)
+      >
+      \sigma S_G .
+      \tag{DQM4}
+   \]
+   Consequently, under activation-restriction closure, the quotient restricted
+   to this single dyadic query-margin layer has positive reduced gain.
+\end{lemma}
+
+\begin{proof}
+   If every class had
+   \[
+      \Delta_\ell|\mathcal Q_\ell|\le\sigma S_G,
+   \]
+   then by the upper half of \((DQM1)\),
+   \[
+      \sum_qd_q(G)
+      <
+      2\sum_{\ell=1}^K\Delta_\ell|\mathcal Q_\ell|
+      \le
+      2K\sigma S_G,
+   \]
+   contradicting \((DQM2)\).  Thus some class satisfies \((DQM3)\).  On that
+   class all margins are at least \(\Delta_\ell\), so
+   \[
+      \sum_{q\in\mathcal Q_\ell}d_q(G)
+      \ge
+      \Delta_\ell|\mathcal Q_\ell|
+      >
+      \sigma S_G,
+   \]
+   which is \((DQM4)\).  Restricting the quotient activation to
+   \(\mathcal Q_\ell\) gives
+   layer surplus greater than the storage price, and
+   \cref{lem:hinge-quotient-activation} then gives positive reduced gain.
+\end{proof}
+
+\Cref{lem:dyadic-query-margin-layer} is a build-time simplification.  If a core
+has hinge surplus with logarithmic slack, preprocessing may search one
+uniform-margin query layer at a time.  The exact verifier still tests the
+original weighted reduced gain, so the dyadic query-margin loss is proof/search
+bookkeeping rather than a stored-index overhead.
+
 \begin{assumption}[Layer quotient separator]
    \label{asm:layer-quotient-separator}
    Work in the setting of \cref{cor:residual-separator-local-cover}.  Suppose a
@@ -23445,7 +23516,10 @@ from the layers carrying a \(1/O(J)\) fraction of the captured near-pair demand.
 \Cref{lem:hinge-quotient-activation} makes the query side canonical: for a
 proposed quotient core, keep exactly the query signatures with positive
 coverage-minus-load margin and ask whether those margins pay the one-time
-storage price.  By \cref{cor:layer-separation-local-cover}, this concrete layer
+storage price.  With logarithmic slack,
+\cref{lem:dyadic-query-margin-layer} further reduces this to one uniform
+query-margin class, matching the same unweighted search model as the demand
+layer.  By \cref{cor:layer-separation-local-cover}, this concrete layer
 separator already implies local filter-cover feasibility.  Since
 preprocessing time is deliberately not a scarce resource,
 \cref{lem:finite-pool-optimizer} and
