@@ -16524,6 +16524,104 @@ singleton slices by hand.
    is the claimed positive-gain Boolean core.
 \end{proof}
 
+\begin{lemma}[Canonical query side for a proposed list]
+   \label{lem:canonical-query-side-list-verifier}
+   Work in the setting of \cref{lem:deterministic-query-list-verifier}.  For a
+   proposed certified list \(L\subseteq W\), put \(K=|L|\) and
+   \[
+      h_L(q)=
+      \sum_{p\in L:(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}.
+      \tag{CQL1}
+   \]
+   Define the canonical positive-margin query layer
+   \[
+      Q^+(L)=
+      \{q\in\mathcal Q:h_L(q)>b\,\psi K^\rho\tau_q\}.
+      \tag{CQL2}
+   \]
+   If
+   \[
+      \sum_{q\in\mathcal Q}
+      \bigl(h_L(q)-b\,\psi K^\rho\tau_q\bigr)_+
+      >
+      b\,\psi\sigma K^{1+\rho},
+      \tag{CQL3}
+   \]
+   then \(Q^+(L)\) and \(L\) satisfy \((DQL2)\).  Consequently an available
+   paid prefix of \(W\) has positive repair reduced gain.
+\end{lemma}
+
+\begin{proof}
+   For a fixed list \(L\) and cardinality \(K\), the surplus in \((DQL2)\) before
+   paying storage is
+   \[
+      \sum_{q\in Q'}
+      \left(h_L(q)-b\,\psi K^\rho\tau_q\right).
+   \]
+   This is maximized over Boolean query layers by taking exactly the positive
+   coordinates, namely \(Q'=Q^+(L)\), and the maximum is the left side of
+   \((CQL3)\).  If \((CQL3)\) holds, then the positive-margin query layer
+   satisfies
+   \[
+      V_{Q^+(L)}(L)
+      >
+      b\,\psi\left(A_{Q^+(L)}K^\rho+\sigma K^{1+\rho}\right),
+   \]
+   which is \((DQL2)\).  The final conclusion is
+   \cref{lem:deterministic-query-list-verifier}.
+\end{proof}
+
+\begin{corollary}[Query-free list proposal separator]
+   \label{cor:query-free-list-proposal-separator}
+   Work in the setting of \cref{cor:boolean-query-layer-list-proposal-separator}.
+   It is enough to prove the following query-free proposal statement.  For every
+   nonnegative price system \((\gamma,\tau,\sigma)\) satisfying
+   \((APC1)\)--\((APC2)\), there is a finite seed law \(s\sim\nu\) such that seed
+   \(s\) chooses a certified container \(W_s\in\mathcal W\) and a certified list
+   \(L_s\subseteq W_s\).  Writing
+   \[
+      K_s=|L_s|,
+      \qquad
+      \rho_s=\rho_{W_s},
+      \qquad
+      \psi_s=\psi_{W_s},
+   \]
+   and
+   \[
+      h_s(q)=
+      \sum_{p\in L_s:(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q},
+      \tag{QFL1}
+   \]
+   assume
+   \[
+      \E_s
+      \sum_{q\in\mathcal Q}
+      \bigl(h_s(q)-b\,\psi_sK_s^{\rho_s}\tau_q\bigr)_+
+      >
+      b\,\E_s\!\left[\psi_s\sigma K_s^{1+\rho_s}\right].
+      \tag{QFL2}
+   \]
+   Then \((\mathsf{HKC}_{\mathcal U})\) is feasible.
+\end{corollary}
+
+\begin{proof}
+   Inequality \((QFL2)\) implies that some deterministic seed \(s\) satisfies
+   \[
+      \sum_q
+      \bigl(h_s(q)-b\,\psi_sK_s^{\rho_s}\tau_q\bigr)_+
+      >
+      b\,\psi_s\sigma K_s^{1+\rho_s}.
+      \tag{QFL3}
+   \]
+   Applying \cref{lem:canonical-query-side-list-verifier} inside \(W_s\) to the
+   list \(L_s\) exposes an available paid prefix with positive repair reduced
+   gain.  As in the proof of
+   \cref{cor:joint-query-list-proposal-separator}, this gives a positive Boolean
+   column for every surplus price system satisfying \((APC1)\)--\((APC2)\), so
+   \cref{cor:atomized-paid-core-hit-kernel-cover} yields the primitive hit-kernel
+   cover.
+\end{proof}
+
 \begin{corollary}[Joint query-list proposal separator]
    \label{cor:joint-query-list-proposal-separator}
    Work in the setting of \cref{cor:boolean-query-layer-list-proposal-separator}.
@@ -16577,15 +16675,14 @@ singleton slices by hand.
    hit-kernel cover.
 \end{proof}
 
-\Cref{cor:joint-query-list-proposal-separator} is the current most compact
-build-time target.  A proposal routine may choose the container, the query-side
-activation, and the update list jointly; the retained proof object is only one
-deterministic seed whose paid near-pair value exceeds its recursive query and
-storage list moments.  \Cref{lem:deterministic-query-list-verifier} then replaces
-the proposed list by the available top-degree prefix and checks the exact reduced
+\Cref{cor:query-free-list-proposal-separator} is the current most compact
+build-time target.  A proposal routine chooses only the container and the update
+list.  The query side is then the canonical positive-margin layer
+\(Q^+(L)\), and \cref{lem:deterministic-query-list-verifier} replaces the
+proposed list by the available top-degree prefix before checking exact reduced
 gain.  Thus \(k\)-means++ seeding, additive-quantization buckets,
 LP/range-reporting violator search, and tensor or lattice list decoders can all
-be analyzed as laws over triples \((W_s,Q_s,L_s)\), while the final verifier still
+be analyzed as laws over pairs \((W_s,L_s)\), while the final verifier still
 keeps an ordinary Boolean filter column.
 
 \begin{assumption}[Balanced aggregate list-size separator]
@@ -17076,7 +17173,10 @@ same surplus.  Equivalently,
 \cref{cor:boolean-query-layer-list-proposal-separator} states the remaining
 list-proposal theorem directly in Boolean-query form, and
 \cref{cor:joint-query-list-proposal-separator} lets the container, query layer,
-and list be proposed jointly by an arbitrary seed law.  Conversely,
+and list be proposed jointly by an arbitrary seed law.
+\Cref{cor:query-free-list-proposal-separator} removes the query-side proposal as
+well: a law over container/list pairs is enough, because the verifier takes the
+positive-margin query layer.  Conversely,
 \cref{cor:paid-prefix-residual-envelope} says that a failed dense separator has
 only one possible form: a paid residual whose every certified container obeys
 the weighted degree envelopes \((PPRE1)\)--\((PPRE2)\).  Thus the remaining
