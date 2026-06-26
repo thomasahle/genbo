@@ -12292,6 +12292,42 @@ This certificate is the local form of the remaining problem. It is analogous in 
    \cref{cor:route-law-prefix-energy}, applied to the optimal root law.
 \end{proof}
 
+\begin{lemma}[Harmonic resistance normal form]
+   \label{lem:harmonic-resistance-normal-form}
+   In the setting of \cref{lem:optimal-prefix-energy-law}, put
+   \[
+      R(u)=\frac1{W(u)}
+   \]
+   with the convention \(1/0=\infty\), and define the child conductance
+   \[
+      C(u)=\sum_{w\in\operatorname{ch}(u)}\frac{\gamma_{u,w}}{R(w)} .
+   \]
+   Then leaves have \(R(u)=1\), while internal nodes satisfy
+   \[
+      R(u)=1+\frac1{C(u)}
+      \tag{RN1}
+   \]
+   with \(1/0=\infty\).  Thus child conductances add in parallel, and a
+   one-child edge of positive success probability \(\gamma\) has the series rule
+   \[
+      R(u)=1+\frac{R(w)}{\gamma}.
+      \tag{RN2}
+   \]
+   If \(\gamma=0\), the one-child resistance is infinite unless the child is
+   unused.
+   More generally, if children \(w_i\) have downstream resistances \(R_i\),
+   then the entire child layer is equivalent, for the parent recursion, to one
+   conductance \(\sum_i\gamma_i/R_i\).
+\end{lemma}
+
+\begin{proof}
+   The harmonic recursion in \cref{lem:optimal-prefix-energy-law} is
+   \(W(u)=S(u)/(1+S(u))\), where
+   \(S(u)=\sum_w\gamma_{u,w}W(w)\).  Since \(W(w)=1/R(w)\), the quantity
+   \(S(u)\) is exactly \(C(u)\).  Taking reciprocals gives \((RN1)\), and
+   \((RN2)\) is the special case with one child.
+\end{proof}
+
 \begin{lemma}[Harmonic and saturated values differ only by depth]\label{lem:harmonic-saturated-comparison}
    Fix a finite route trie with edge probabilities $\gamma_{u,w}\in[0,1]$.
    Let $U$ be the saturated value from
@@ -12481,6 +12517,117 @@ This certificate is the local form of the remaining problem. It is analogous in 
    \(h_{\mathcal F}(r)\).  The final statement is just the definition of the
    contracted skeleton: all nontrivial edge probabilities are attached to the
    thinned or fractional-delivery frontier edges.
+\end{proof}
+
+\begin{lemma}[Ported unit-region contraction]
+   \label{lem:ported-unit-region-contraction}
+   Let \(W\) be the harmonic route value on a finite route trie.  Let
+   \(\mathcal R\) be a prefix-closed region with entrance \(r\).  Every edge
+   whose tail and head both lie in \(\mathcal R\) has success probability
+   \(1\).  Let \(\partial^+\mathcal R\) be the set of exit edges
+   \(e=(a,b)\) with \(a\in\mathcal R\) and \(b\notin\mathcal R\), and let
+   \(\gamma_e\) be the success probability of \(e\).  For \(u\in\mathcal R\),
+   write \(\partial^+_u\mathcal R\) for the exit edges whose tail is
+   reachable from \(u\) by internal edges of \(\mathcal R\), and put
+   \[
+      T_{\mathcal R}(u)
+      =
+      \sum_{e=(a,b)\in\partial^+_u\mathcal R}
+      \gamma_e W(b).
+   \]
+   Let \(h_{\mathcal R}(u)\) be the maximum number of internal edges from
+   \(u\) to the tail of an exit in \(\partial^+_u\mathcal R\), with the
+   convention that the claim is trivial when \(\partial^+_u\mathcal R\) is
+   empty.  Then
+   \[
+      W(u)
+      \ge
+      \frac{T_{\mathcal R}(u)}
+           {1+(h_{\mathcal R}(u)+1)T_{\mathcal R}(u)}
+      \qquad(u\in\mathcal R).
+      \tag{PU1}
+   \]
+   Equivalently, when \(T_{\mathcal R}(u)>0\),
+   \[
+      \frac1{W(u)}
+      \le
+      \frac1{T_{\mathcal R}(u)}+h_{\mathcal R}(u)+1.
+      \tag{PU2}
+   \]
+   Hence a whole deterministic score block followed by many thinned exits
+   loses only its internal depth plus one unit of resistance, and the exits
+   combine by the single conductance
+   \(\sum_{e=(a,b)}\gamma_eW(b)\).
+\end{lemma}
+
+\begin{proof}
+   We prove \((PU1)\) by backward induction on \(h_{\mathcal R}(u)\).  If
+   \(\partial^+_u\mathcal R\) is empty, then \(T_{\mathcal R}(u)=0\) and there
+   is nothing to prove.  Suppose first that \(h_{\mathcal R}(u)=0\).  Then
+   every relevant exit edge leaves directly from \(u\).  In the harmonic
+   recursion
+   \[
+      W(u)=\frac{S}{1+S},
+   \]
+   the sum \(S\) contains the exit contribution \(T_{\mathcal R}(u)\), and all
+   other child contributions are nonnegative.  Thus
+   \(W(u)\ge T_{\mathcal R}(u)/(1+T_{\mathcal R}(u))\), which is \((PU1)\).
+
+   Now let \(h=h_{\mathcal R}(u)>0\).  Let \(P\) be the total conductance of
+   exits leaving directly from \(u\), and let \(T_w=T_{\mathcal R}(w)\) for
+   the internal children \(w\in\mathcal R\) of \(u\).  Then
+   \(T_{\mathcal R}(u)=P+\sum_wT_w\).  For every child with \(T_w>0\), the
+   induction hypothesis and \(h_{\mathcal R}(w)+1\le h\) give
+   \[
+      W(w)\ge\frac{T_w}{1+hT_w}.
+   \]
+   Therefore
+   \[
+      S\ge
+      P+\sum_w\frac{T_w}{1+hT_w}.
+   \]
+   The function \(f_h(t)=t/(1+ht)\) is subadditive in the form
+   \[
+      f_h(x)+f_h(y)\ge f_h(x+y)
+      \qquad(x,y\ge0),
+   \]
+   and \(P\ge f_h(P)\).  Iterating the two inequalities gives
+   \[
+      S\ge \frac{T_{\mathcal R}(u)}
+                 {1+hT_{\mathcal R}(u)} .
+   \]
+   Monotonicity of \(x/(1+x)\) then yields
+   \[
+      W(u)\ge
+      \frac{T_{\mathcal R}(u)/(1+hT_{\mathcal R}(u))}
+           {1+T_{\mathcal R}(u)/(1+hT_{\mathcal R}(u))}
+      =
+      \frac{T_{\mathcal R}(u)}
+           {1+(h+1)T_{\mathcal R}(u)} .
+   \]
+   This proves \((PU1)\), and \((PU2)\) is the reciprocal form.
+\end{proof}
+
+\begin{corollary}[Ported skeleton certificate]
+   \label{cor:ported-skeleton-certificate}
+   In a budget-thinned route trie, contract a maximal unit-success region
+   \(\mathcal R\) but leave the first thinned or fractional-delivery edges as
+   exit ports.  If its depth is \(\log^{O_c(1)}n\) and
+   \[
+      \sum_{e=(a,b)\in\partial^+\mathcal R}\gamma_eW(b)
+      \ge\log^{-A_c}n ,
+   \]
+   then the harmonic value at the entrance of the region is
+   \(\log^{-O_c(1)}n\).  Thus the near-value proof may work entirely on the
+   skeleton of nonunit ports: deterministic score branching merely routes
+   conductance to the ports, while the ports themselves are the only places
+   where activation probability can create nontrivial resistance.
+\end{corollary}
+
+\begin{proof}
+   Apply \cref{lem:ported-unit-region-contraction} at the entrance \(r\).  The
+   displayed lower bound is \(T_{\mathcal R}(r)\ge\log^{-A_c}n\), and the
+   region depth is polylogarithmic.
 \end{proof}
 
 \begin{corollary}[Cutset value delivery]\label{cor:cutset-value-delivery}
@@ -12702,6 +12849,12 @@ This certificate is the local form of the remaining problem. It is analogous in 
    $\gamma_{u,w}=1$ automatically has this property because
    $\sum_wV(w)^2\le(\sum_wV(w))^2$. Thus any remaining LCA-energy growth must
    come from genuinely thinned geometric or fractional-budget opportunities.
+   The harmonic version is even more explicit:
+   \cref{lem:harmonic-resistance-normal-form} says that child values combine as
+   parallel conductances, while
+   \cref{lem:ported-unit-region-contraction} shows that an entire
+   deterministic score region loses only its depth before handing the aggregate
+   conductance \(\sum_{e=(a,b)}\gamma_eW(b)\) to the first nonunit ports.
    \Cref{lem:energy-spine-toll} makes this exact: the whole loss is the
    accumulated positive toll
    \[
@@ -18087,7 +18240,9 @@ moment bound.  Thus a future geometric construction does not need to prove an
 independent route-law theorem: it may instead prove a suffix charge-density
 inequality against the list-decoder prefix measure.  Same-prefix domination is
 only a convenient stronger sufficient condition.
-\Cref{lem:unit-success-skeleton-contraction} removes the ordinary score-only
+\Cref{lem:harmonic-resistance-normal-form} writes the optimal route law as an
+ordinary series/parallel resistance calculation.  In particular,
+\cref{lem:unit-success-skeleton-contraction} removes the ordinary score-only
 part from the harmonic target: a deterministic unit-success region with exit
 frontier \(\mathcal F\) satisfies
 \[
@@ -18096,10 +18251,13 @@ frontier \(\mathcal F\) satisfies
    \frac1{\sum_{z\in\mathcal F}W(z)}
    +h_{\mathcal F}(r).
 \]
-Thus score branching, deterministic residual edges, and budget-stable
-recenterings add only polylogarithmic harmonic resistance.  The remaining
-near-value theorem can be stated on the contracted skeleton of genuinely
-thinned geometric or fractional-delivery opportunities.
+\Cref{lem:ported-unit-region-contraction} gives the sharper ported form: the
+first thinned or fractional-delivery exits contribute only through the single
+conductance \(\sum_{e=(a,b)}\gamma_eW(b)\), plus the unit-region depth.  Thus
+score branching, deterministic residual edges, and budget-stable recenterings
+add only polylogarithmic harmonic resistance.  The remaining near-value theorem
+can be stated on the contracted skeleton of genuinely thinned geometric or
+fractional-delivery ports.
 \Cref{cor:existential-antichain-fano} composes this with the Fano decoder in
 the ANN-correct existential form: if the union of valid terminal routes has the
 same antichain charge bound and every such route has \(O_c(\log\log n)\) raw
