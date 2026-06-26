@@ -12474,9 +12474,167 @@ For a threshold $u$, the posterior-superlevel child is
    \(\ell(Y)\in P_i(Y)\subseteq\Ball(q,cr)\), so the reported leader is valid.
 \end{proof}
 
+\begin{lemma}[Poissonizing a normalized leader sampler]
+   \label{lem:poissonized-normalized-leader-sampler}
+   Let \(\mathcal A\) be a finite or countable hidden label family.  Each
+   label \(a\) has a leader \(\ell(a)\in S\) and a query intensity
+   \(\lambda_q(a)\ge0\).  Put
+   \[
+      W_q=\sum_{a\in\mathcal A}\lambda_q(a)<\infty .
+   \]
+   Suppose a query routine can compute \(W_q\) and, when \(W_q>0\), sample
+   \(a\) from the normalized law
+   \[
+      \nu_q(a)=\lambda_q(a)/W_q .
+   \]
+   The following procedure reports exactly the same leader set as independent
+   Poisson clocks of means \(\lambda_q(a)\), after quotienting labels by their
+   leader:
+   draw \(N\sim\operatorname{Poisson}(W_q)\), draw
+   \(a_1,\ldots,a_N\) independently from \(\nu_q\), and report the distinct
+   leaders among \(\ell(a_1),\ldots,\ell(a_N)\).
+
+   In particular, if one normalized sample costs \(D_q\) arithmetic operations
+   and computing \(W_q\) costs \(D_q^0\), the expected work is
+   \(D_q^0+W_qD_q+O(W_q)\) plus candidate verification, and the expected number
+   of reported leaders is at most \(W_q\).  The same statement holds for a
+   measurable label space by replacing the sums by the corresponding finite
+   intensity measure.
+\end{lemma}
+
+\begin{proof}
+   Conditioned on \(N\), the sampled labels are iid from \(\nu_q\).  By the
+   Poisson splitting identity, the number of times a fixed label \(a\) appears
+   is an independent Poisson random variable with mean
+   \(W_q\nu_q(a)=\lambda_q(a)\), and the counts for disjoint label classes are
+   independent.  Thus the sampled multiset has the same law as the independent
+   label clocks.  Applying \cref{lem:poisson-leader-superposition} gives the
+   quotient leader law.  The work and output estimates follow from
+   \(\E N=W_q\) and from the fact that quotienting can only reduce the number
+   of outputs.
+\end{proof}
+
+\begin{assumption}[Multiscale normalized likelihood leader sampler]
+   \label{asm:normalized-likelihood-leader-sampler}
+   Fix \(c>1\) and \(\rho=\rho_c\).  For every bounded-diameter localized node
+   with \(m\) resident points there is a retained multiscale leader sampler of
+   space \(m^{1+\rho}\log^{O_c(1)}m\).  It uses the dyadic scales
+   \[
+      \xi\in[1/m,\eta_m],
+      \qquad
+      \eta_m=m^{-\rho}\log^{A_c}m,
+   \]
+   and at scale \(\xi\) has an implicit hidden label family
+   \(\mathcal A_\xi\).  Each hidden label \(a\in\mathcal A_\xi\) has an
+   analysis set \(C_a\subseteq S\), mass
+   \(\mu_a=|C_a|/m\in[\xi/2,\xi]\), a leader
+   \(\ell(a)\in C_a\), and a query intensity \(\lambda_q(a)\).
+
+   For every promised query \(q\) and scale \(\xi\), the retained query
+   routine can compute
+   \[
+      W_{q,\xi}=\sum_{a\in\mathcal A_\xi}\lambda_q(a)
+   \]
+   and sample a hidden label from
+   \(\lambda_q(a)/W_{q,\xi}\), returning its leader, in
+   \(d\log^{O_c(1)}m\) time per sample.  The total one-group intensity is
+   bounded by
+   \[
+      W_{q,\xi}\le\log^{O_c(1)}m .
+      \tag{NLS1}
+   \]
+   Finally, for every near pair \((p,q)\) in the node, either a uniform
+   resident guard of size \(m^\rho\log^{O_c(1)}m\) finds a valid
+   \(cr\)-neighbor with constant probability, or the pure multiscale value is
+   inverse-polylogarithmic:
+   \[
+      \sum_{\xi\le\eta_m}
+      \sum_{\substack{a\in\mathcal A_\xi\\
+                      p\in C_a,\ C_a\subseteq\Ball(q,cr)}}
+      \lambda_q(a)\mu_a^{-\rho}
+      \ge
+      \log^{-O_c(1)}m .
+      \tag{NLS2}
+   \]
+\end{assumption}
+
+\begin{proposition}[Conditional normalized leader-sampler endpoint]
+   \label{prop:normalized-leader-sampler-polylog}
+   Under \cref{asm:normalized-likelihood-leader-sampler}, worst-case Euclidean
+   ANN has query time
+   \[
+      Q(n,d)=d\,n^{\rho_c}\log^{O_c(1)}n
+   \]
+   and space
+   \[
+      S(n,d)=dn+n^{1+\rho_c}\log^{O_c(1)}n .
+   \]
+\end{proposition}
+
+\begin{proof}
+   Work after the projected bounded-diameter localization of
+   \cref{lem:localization}.  At a localized node of size \(m\), first try the
+   resident guard.  If it does not find a valid point, set
+   \(h=\log^{-O_c(1)}m\) to be the lower bound in \((NLS2)\).  For every
+   dyadic scale \(\xi\le\eta_m\), perform
+   \[
+      T_\xi=\left\lceil2^{\rho+1}\xi^{-\rho}h^{-1}\right\rceil
+   \]
+   independent Poissonized leader-sampler groups.  In one group, use
+   \cref{lem:poissonized-normalized-leader-sampler}: draw
+   \(N\sim\operatorname{Poisson}(W_{q,\xi})\), draw \(N\) hidden labels from
+   the normalized law supplied by the assumption, report their distinct
+   leaders, and verify every reported point in the original metric.
+
+   The success proof is the same scale-aware calculation as in
+   \cref{lem:dyadic-leader-quotient}.  Let \(V_\xi\) be the contribution of
+   scale \(\xi\) to the pure value in \((NLS2)\), and let \(\Lambda_\xi\) be
+   the one-group intensity of pure labels at that scale.  Since
+   \(\mu_a\ge\xi/2\),
+   \[
+      \Lambda_\xi\ge2^{-\rho}\xi^\rho V_\xi .
+   \]
+   Across all repetitions, the total number of activated pure labels is
+   Poisson with mean at least
+   \[
+      \sum_\xi T_\xi\Lambda_\xi
+      \ge
+      2h^{-1}\sum_\xi V_\xi
+      \ge2 .
+   \]
+   Hence some pure label is activated with probability at least \(1-e^{-2}\).
+   Its leader lies in \(C_a\subseteq\Ball(q,cr)\), so verification succeeds.
+
+   For work, \((NLS1)\) and
+   \cref{lem:poissonized-normalized-leader-sampler} give expected
+   \(d\log^{O_c(1)}m\) cost per group.  Therefore
+   \[
+      \sum_{\xi\le\eta_m}T_\xi\,d\log^{O_c(1)}m
+      \le
+      d\,m^\rho\log^{O_c(1)}m .
+   \]
+   The expected number of verified candidates satisfies the same bound.  The
+   local retained space is the sampler space from the assumption plus the raw
+   coordinates, and the standard localization accounting gives the displayed
+   global space and query bounds.
+\end{proof}
+
+\Cref{asm:normalized-likelihood-leader-sampler} is the sampler form of
+\cref{cor:likelihood-leader-intensity}.  The ideal likelihood process supplies
+the hidden labels \((Y,i)\) and the pure value through
+\cref{thm:continuous-likelihood-balls},
+\cref{lem:ideal-likelihood-scale-profile}, and
+\cref{lem:likelihood-rank-prefix}; after quotienting, only the normalized
+rank-gap-weighted leader law has to be implemented.  A code, lattice, product
+panel, or trellis can satisfy the assumption by computing the partition
+function \(W_{q,\xi}\) and sampling from the tilted path law, exactly as in
+\cref{lem:compressed-aggregate-sampler}.  Thus the remaining data-structure
+theorem is a compact normalized leader sampler, not an all-listing prefix
+decoder and not a stored hierarchy of posterior children.
+
 Choose $\eta_m=m^{-\rho}\log^{A_c}m$. A uniform guard of size $m^\rho\log^{O_c(1)}m$ handles the case where at least $\eta_m m/2$ points are already valid answers. Otherwise \cref{thm:continuous-likelihood-balls} supplies constant pure negative-moment value below mass $\eta_m$, and \cref{lem:ideal-likelihood-scale-profile} shows that the same ideal continuum already has the scale-normalized query and storage moments needed by \cref{lem:dyadic-structured-amplification}. The value need not sit at the top scale $\eta_m$; it may be concentrated near singleton children. This is why the amplification lemma runs all dyadic scales down to $1/m$. The geometric cost of doing so is still only $m^\rho\log^{O_c(1)}m$.
 
-Thus the remaining posterior problem is no longer geometric. By \cref{lem:likelihood-rank-prefix}, it is also not inherently a finite-channel quantization problem: after the Gaussian score $Y$ is fixed, the threshold continuum collapses to score-prefix rank gaps. By \cref{cor:likelihood-prefix-leader}, even those prefixes do not need separate materialized representatives for ANN; a pure prefix certifies that the score leader for the same $Y$ is already valid. \Cref{lem:dyadic-leader-quotient} gives the corresponding compiler, and \cref{cor:likelihood-leader-intensity} identifies the exact quotient law: sample or report data points from the aggregate score-leader intensities \((LI)\), where the rank-prefix gaps appear only as weights. The missing operation is therefore a structured leader-intensity reporter, not a prefix-bucket decoder. Uniformly choosing a representative from the whole node would lose a factor equal to the prefix mass, so the sampler still has to be output-sensitive to the rank-prefix measure. But the charged object is now closer to smoothed maximum-score reporting than to storing an explicit hierarchy of prefix buckets.
+Thus the remaining posterior problem is no longer geometric. By \cref{lem:likelihood-rank-prefix}, it is also not inherently a finite-channel quantization problem: after the Gaussian score \(Y\) is fixed, the threshold continuum collapses to score-prefix rank gaps. By \cref{cor:likelihood-prefix-leader}, even those prefixes do not need separate materialized representatives for ANN; a pure prefix certifies that the score leader for the same \(Y\) is already valid. \Cref{lem:dyadic-leader-quotient} gives the corresponding compiler, and \cref{cor:likelihood-leader-intensity} identifies the exact quotient law: sample or report data points from the aggregate score-leader intensities \((LI)\), where the rank-prefix gaps appear only as weights. By \cref{lem:poissonized-normalized-leader-sampler}, an implementation does not have to list active hidden labels either; it is enough to compute the scale partition function and sample from the normalized rank-gap law. Uniformly choosing a representative from the whole node would lose a factor equal to the prefix mass, so the sampler still has to be sensitive to the rank-prefix measure. But the charged object is now a compact leader-intensity sampler, not a stored hierarchy of posterior buckets.
 
 There is an even more collapsed non-channel target. Taking the likelihood exponent to the $\alpha=0$ endpoint turns the posterior child family into one smoothed score order. Then it is enough to draw a point from the high-score part of that order; no threshold continuum, dyadic scale, or stored representative is needed.
 
@@ -12979,10 +13137,11 @@ amplified in the next proposition.
    pointwise domination required by \cref{lem:gumbel-additive-domination}.
 \end{remark}
 
-The rank-prefix posterior target itself is captured by the following
-assumption, which allows either an implicit channel, a signature tree, a
-multiprobe score index, or a direct sampled-prefix reporter as the
-implementation.
+A stronger all-listing sufficient form of the same posterior target is captured
+by the following assumption.  It is useful as a baseline because it allows an
+implicit channel, a signature tree, a multiprobe score index, or a direct
+sampled-prefix reporter, but \cref{asm:normalized-likelihood-leader-sampler}
+is the lighter sampler target.
 
 \begin{assumption}[Multiscale structured likelihood decoder]\label{asm:multiscale-structured-likelihood}
    Fix $c>1$ and $\rho=\rho_c$. For every bounded-diameter localized node with $m$ resident points there is a structured, output-sensitive posterior decoder over dyadic mass scales
@@ -13606,7 +13765,7 @@ pattern-complete materialization produce the stored cover required by
 \paragraph{Structured posterior route.}
 \Cref{lem:posterior-superlevel-compiler} records the negative-moment identity suggested by the latest notes. \Cref{lem:explicit-enumeration-barrier} makes the coarse-child obstruction precise: the scale $\xi=m^{-1/(2c^2)}$ is the price of explicitly enumerating $B\simeq\xi^{-1}$ outcomes, not a geometric limit. \Cref{lem:oblivious-sparsification-barrier} adds the complementary warning that the moment bounds alone still permit $\Omega(\xi^{-1})$ disjoint possible witnesses, so direct random sparsification cannot replace structured decoding without an additional sensitivity theorem. \Cref{lem:scale-window-compiler} and \cref{lem:dyadic-structured-amplification} isolate the important arithmetic: if mass windows can be decoded output-sensitively, then $\xi^{-\rho}$ repetitions at each dyadic scale convert negative-moment value into constant hit probability, and summing all scales down to $1/m$ still fits the $m^\rho$ query budget. This scale-aware amplification is essential; a raw negative-moment diagnostic alone does not imply that the near point is actually listed with inverse-polylogarithmic probability.
 
-The continuous likelihood-ball family now proves both analytic sides of the desired posterior decoder: \cref{thm:continuous-likelihood-balls} gives the guard-or-pure-child value, and \cref{lem:ideal-likelihood-scale-profile} gives the scale-normalized query and storage moments. \Cref{lem:likelihood-rank-prefix} further collapses the threshold continuum to rank gaps of a random score order. \Cref{cor:likelihood-prefix-leader} removes another artificial materialization cost: for ANN, every pure prefix may report the same score leader, so the decoder can aggregate prefix mass by leader buckets instead of storing one representative per prefix. \Cref{lem:dyadic-leader-quotient} records the full amplification in this hidden-label form and contributes no per-prefix storage term, and \cref{cor:likelihood-leader-intensity} identifies the exact quotient law as the rank-gap weighted measure over score leaders. The cleanest structured target is therefore \cref{asm:multiscale-structured-likelihood}, interpreted in this leader-intensity form: implement the ideal rank-prefix measure as a query-decodable sampler or reporter over score leaders. Conditional on that theorem, \cref{prop:multiscale-structured-polylog} gives the desired polylogarithmic ANN bounds in one posterior layer; if the activated prefix is pure for the query, its leader is already a valid answer.
+The continuous likelihood-ball family now proves both analytic sides of the desired posterior decoder: \cref{thm:continuous-likelihood-balls} gives the guard-or-pure-child value, and \cref{lem:ideal-likelihood-scale-profile} gives the scale-normalized query and storage moments. \Cref{lem:likelihood-rank-prefix} further collapses the threshold continuum to rank gaps of a random score order. \Cref{cor:likelihood-prefix-leader} removes another artificial materialization cost: for ANN, every pure prefix may report the same score leader, so the decoder can aggregate prefix mass by leader buckets instead of storing one representative per prefix. \Cref{lem:dyadic-leader-quotient} records the full amplification in this hidden-label form and contributes no per-prefix storage term, and \cref{cor:likelihood-leader-intensity} identifies the exact quotient law as the rank-gap weighted measure over score leaders. \Cref{lem:poissonized-normalized-leader-sampler} removes the remaining all-listing requirement from a sampled implementation: computing the total intensity and sampling from the normalized tilted law gives the exact Poisson leader process. The cleanest structured target is therefore \cref{asm:normalized-likelihood-leader-sampler}: implement the ideal rank-prefix measure as a compact normalized sampler over score leaders. Conditional on that theorem, \cref{prop:normalized-leader-sampler-polylog} gives the desired polylogarithmic ANN bounds in one posterior layer. The older \cref{asm:multiscale-structured-likelihood} and \cref{prop:multiscale-structured-polylog} remain a stronger all-listing sufficient condition.
 
 \Cref{lem:smoothed-max-score-margin} gives a still simpler non-channel target: a query-centered Gaussian score direction separates every invalid point from the true near point by an additive $\Theta_c(tr^2)$ score margin, with high probability. The softest resulting primitive is \cref{asm:smoothed-gibbs}: with inverse-polylogarithmic probability, report a list carrying inverse-polylogarithmic mass under the Gaussian Gibbs kernel on data points. Sampling from the kernel restricted to that list gives a pointwise dominated output law by \cref{lem:captured-gibbs-domination}, and \cref{lem:smoothed-gibbs-suffices} then returns a valid answer because invalid points have negligible Gibbs mass and cannot be oversampled too much. A more exact sampling route is certified additive Gumbel-MIPS: \cref{lem:gumbel-additive-domination} shows that an $O(\log\log m)$ additive optimizer for the Gumbel-perturbed scores gives precisely the required one-sided Gibbs domination, yielding \cref{prop:gumbel-mips-polylog}. A stronger but different implementation route is smoothed additive nearest-neighbor search for the perturbed center $Y/t$ with additive squared-distance error $\Theta_c(r^2)$, exactly equivalent to additive score maximization by \cref{lem:score-max-additive-nn}. These oracles would bypass dyadic scales and representatives entirely, as recorded in \cref{prop:smoothed-gibbs-polylog}, \cref{prop:gumbel-mips-polylog}, and \cref{prop:smoothed-score-max-polylog}. They are targets, not implemented theorems; \cref{rem:gumbel-mips-not-ann} explains why black-box multiplicative ANN does not supply the Gumbel primitive. The older finite restricted-channel compiler \cref{asm:finite-restricted-channel} and \cref{prop:finite-channel-polylog} remain as a coarse explicit-enumeration special case and as a useful diagnostic framework.
 
