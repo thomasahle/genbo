@@ -14917,6 +14917,67 @@ law already has positive reduced gain.
    \((1-\xi)\beta_0C_\eta\pi_1\kappa\), which gives \((DAR2)\).
 \end{proof}
 
+\begin{assumption}[Weighted annular-to-scalar reporter]
+   \label{asm:weighted-annular-scalar-reporter}
+   Work in the setting of \cref{cor:dyadic-annular-residual-witness}, and let
+   the retained scalar prefix pool be the one used in
+   \cref{cor:certified-scalar-superlevel-reporter}.  Fix the residual threshold
+   \(\beta_0\), the dyadic depth \(J\), the tail parameter \(\xi\), and
+   \(C_\eta=\frac12-\eta\).  The primitive law and retained pool are
+   annular-reporting complete if the following implication holds.
+
+   Whenever a guarded normalized residual
+   \((\bar\tau,\bar\sigma,\bar\gamma^\theta,\kappa)\) satisfies
+   \((GNR1)\)--\((GNR3)\) and, for some \(\beta\in\mathcal B_J\),
+   \[
+      \beta\sum_q\bar\tau_q a_q |A_\beta(q)|
+      >
+      \frac{(1-\xi)\beta_0 C_\eta\pi_1\kappa}{2J},
+      \tag{ASR1}
+   \]
+   there are a parameter \(\theta\in[0,1]\), a retained container \(W\), and a
+   finite law \(\nu\) on scalar total-degree levels such that the one-sided
+   certificates \(X_\delta,K_\delta\) of
+   \cref{cor:certified-scalar-superlevel-reporter}, computed for the scalar
+   degree
+   \[
+      d^{\bar\gamma^\theta}(p)
+      =
+      \sum_{q:(p,q)\in\mathcal N}\bar\gamma^\theta_{p,q}r_{p,q},
+   \]
+   satisfy \((CSR0)\) and either \((CSR1)\) or its capped form \((CSR2)\), with
+   query and storage prices \((\bar\tau,\bar\sigma)\).
+\end{assumption}
+
+\begin{corollary}[Annular reporter closes the local cover]
+   \label{cor:annular-reporter-local-cover}
+   Work under the hypotheses of
+   \cref{cor:relative-annular-active-collision-residual}, using relative
+   threshold \(\beta_0\).  Choose \(J\ge1\) and \(0\le\xi<1\) so that
+   \((DAR1)\) holds, and suppose the retained scalar prefix pool has the closure
+   required in \cref{cor:certified-scalar-superlevel-reporter}.  If
+   \cref{asm:weighted-annular-scalar-reporter} holds for every guarded
+   normalized residual produced by local infeasibility, then the enlarged local
+   filter-cover LP is feasible.
+\end{corollary}
+
+\begin{proof}
+   Suppose the enlarged local filter-cover LP were infeasible.  Then
+   \cref{cor:dyadic-annular-residual-witness} produces a guarded normalized
+   residual and a dyadic level \(\beta\in\mathcal B_J\) satisfying \((ASR1)\).
+   By \cref{asm:weighted-annular-scalar-reporter}, this residual has a certified
+   scalar reporter for some point on the normalized segment
+   \(\bar\gamma^\theta\).
+
+   The proof of \cref{cor:certified-scalar-superlevel-reporter} turns the
+   reported one-sided quantities into a valid scalar average superlevel panel,
+   hence into a positive reduced-gain retained prefix/core for the same price
+   system.  This contradicts \((GNR3)\), which says that every retained core has
+   nonpositive hinge gain for every \(\theta\) on the segment.  Therefore the
+   assumed infeasible residual cannot exist, and the local filter-cover LP is
+   feasible.
+\end{proof}
+
 \begin{lemma}[Primitive hit-kernel cover equivalence]
    \label{lem:primitive-hit-kernel-cover-equivalence}
    Work in the setting of \cref{asm:one-potential-core-separator}.  For each
@@ -15039,6 +15100,12 @@ collision superlevel with large \(\bar\tau_q a_q\)-weighted size.  The remaining
 geometric theorem may therefore search a finite panel of such annular
 superlevels and either prove their total load impossible or convert one of them
 into a paid scalar-reporter column.
+\Cref{asm:weighted-annular-scalar-reporter} and
+\cref{cor:annular-reporter-local-cover} isolate exactly this conversion.  The
+annular sets \(A_\beta(q)\) are far false-positive witnesses, not cover columns
+by themselves.  They close the LP only after a reporter converts their
+dual-weighted abundance into one-sided scalar certificates for an actual
+near-pair prefix/core.
 
 \begin{corollary}[Hit-kernel cover materialization]
    \label{cor:hit-kernel-cover-materialization}
@@ -36569,6 +36636,13 @@ measure: a surviving infeasible node yields one dyadic level with large
 losses.  Thus the next separator theorem can be stated as a weighted annular
 superlevel reporter: either these conditional-collision superlevels have small
 dual load, or one reported superlevel induces a positive paid prefix/core.
+\Cref{asm:weighted-annular-scalar-reporter} and
+\cref{cor:annular-reporter-local-cover} make this a formal reduction: large
+annular false-positive load is useful only if it produces one-sided scalar
+superlevel certificates for the real near-pair degree measure
+\(d^{\bar\gamma^\theta}\).  This is the current sharp theorem target for
+range reporting, list decoding, additive quantization, or any other build-time
+proposal oracle.
 \Cref{lem:primitive-hit-kernel-cover-equivalence} gives the matching primal
 form: the same theorem is equivalent to fractionally covering the primitive
 spherical hit kernel \(r_{p,q}\) by Pareto cores at \(\pi_1\)-scaled query and
