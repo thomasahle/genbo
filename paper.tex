@@ -16484,6 +16484,70 @@ singleton slices by hand.
    then \cref{cor:list-proposal-hit-kernel-cover}.
 \end{proof}
 
+\begin{corollary}[Joint query-list proposal separator]
+   \label{cor:joint-query-list-proposal-separator}
+   Work in the setting of \cref{cor:boolean-query-layer-list-proposal-separator}.
+   It is enough to prove the following joint proposal statement.  For every
+   nonnegative price system \((\gamma,\tau,\sigma)\) satisfying
+   \((APC1)\)--\((APC2)\), there is a finite seed law \(s\sim\nu\) such that seed
+   \(s\) chooses a certified container \(W_s\in\mathcal W\), an ordinary query
+   layer \(Q_s\subseteq\mathcal Q\), and a certified list \(L_s\subseteq W_s\).
+   Writing
+   \[
+      K_s=|L_s|,
+      \qquad
+      A_s=\sum_{q\in Q_s}\tau_q,
+      \qquad
+      \rho_s=\rho_{W_s},
+      \qquad
+      \psi_s=\psi_{W_s},
+   \]
+   and
+   \[
+      V_s=
+      \sum_{p\in L_s}
+      \sum_{q\in Q_s:(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q},
+      \tag{JQL1}
+   \]
+   assume
+   \[
+      \E_s V_s
+      >
+      b\,\E_s\!\left[
+         \psi_s\left(
+            A_sK_s^{\rho_s}+\sigma K_s^{1+\rho_s}
+         \right)
+      \right].
+      \tag{JQL2}
+   \]
+   Then \((\mathsf{HKC}_{\mathcal U})\) is feasible.
+\end{corollary}
+
+\begin{proof}
+   If \((JQL2)\) holds, then some deterministic seed \(s\) satisfies
+   \[
+      V_s>
+      b\,\psi_s\left(A_sK_s^{\rho_s}+\sigma K_s^{1+\rho_s}\right).
+      \tag{JQL3}
+   \]
+   Apply \cref{cor:boolean-query-layer-list-proposal-separator} with the single
+   container \(W_s\), query layer \(Q_s\), and the degenerate seed law supported on
+   the one list \(L_s\).  Since the degenerate law has
+   \(\E K^{\rho_s}=K_s^{\rho_s}\) and
+   \(\E K^{1+\rho_s}=K_s^{1+\rho_s}\), inequality \((JQL3)\) is exactly the
+   seeded Boolean-query certificate \((BQL2)\).  The Boolean-query separator then
+   gives the primitive hit-kernel cover.
+\end{proof}
+
+\Cref{cor:joint-query-list-proposal-separator} is the current most compact
+build-time target.  A proposal routine may choose the container, the query-side
+activation, and the update list jointly; the retained proof object is only one
+deterministic seed whose paid near-pair value exceeds its recursive query and
+storage list moments.  Thus \(k\)-means++ seeding, additive-quantization buckets,
+LP/range-reporting violator search, and tensor or lattice list decoders can all
+be analyzed as laws over triples \((W_s,Q_s,L_s)\), while the final verifier still
+keeps an ordinary Boolean filter column.
+
 \begin{assumption}[Balanced aggregate list-size separator]
    \label{asm:balanced-aggregate-list-size-separator}
    Work in the setting of \cref{asm:paid-atomized-prefix-separator}, and assume
@@ -16970,7 +17034,9 @@ the query/storage list moments for every such surplus dual.  By
 fractional-query certificate has an ordinary threshold query layer with the
 same surplus.  Equivalently,
 \cref{cor:boolean-query-layer-list-proposal-separator} states the remaining
-list-proposal theorem directly in Boolean-query form.  Conversely,
+list-proposal theorem directly in Boolean-query form, and
+\cref{cor:joint-query-list-proposal-separator} lets the container, query layer,
+and list be proposed jointly by an arbitrary seed law.  Conversely,
 \cref{cor:paid-prefix-residual-envelope} says that a failed dense separator has
 only one possible form: a paid residual whose every certified container obeys
 the weighted degree envelopes \((PPRE1)\)--\((PPRE2)\).  Thus the remaining
