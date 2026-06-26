@@ -3449,6 +3449,248 @@ partition ignores the bias coordinates that certify the list size.
    transcript count is the call bound in \cref{lem:chase-gmd-reporter}.
 \end{proof}
 
+\begin{corollary}[Top-list Chase completeness]
+   \label{cor:top-list-chase-completeness}
+   Work in the setting of
+   \cref{cor:chase-gmd-block-certificate}.  Assume that every list
+   \(L_i\), \(i\in T\), contains a maximizer of \(\omega_i\), and define
+   \[
+      M_*(q)=
+      \sum_{i\in T}\max_{a\in\Sigma}\omega_i(a)
+      +
+      \sum_{i\notin T}\omega_i(a_i).
+   \]
+   Let
+   \[
+      \delta_{\rm list}(q)
+      =
+      \min_{i\in T}
+      \left(
+         \max_{a\in\Sigma}\omega_i(a)
+         -
+         \max_{a\notin L_i}\omega_i(a)
+      \right),
+   \]
+   with the convention that the inner maximum is \(-\infty\) when
+   \(L_i=\Sigma\), and that \(\delta_{\rm list}(q)=+\infty\) when
+   \(T=\emptyset\).  If
+   \[
+      \Theta(q)>M_*(q)-\delta_{\rm list}(q)
+      \tag{TL1}
+   \]
+   and
+   \[
+      \Theta(q)\ge
+      M_*(q)
+      -
+      \frac{\kappa}{2}\bigl(\Gamma_T(q)+|T|-h+\Delta\bigr),
+      \tag{TL2}
+   \]
+   then the Chase--GMD reporter followed by exact filtering
+   \(S_q(c)\ge\Theta(q)\) is a certified threshold reporter for the entire
+   code:
+   \[
+      \{c\in\mathcal C:S_q(c)\ge\Theta(q)\}.
+   \]
+   Its transcript count is \(O(h\prod_{i\in T}|L_i|)\).
+\end{corollary}
+
+\begin{proof}
+   Because each \(L_i\) contains a maximizer of \(\omega_i\), the quantity
+   \(\max_{b\in\prod_{i\in T}L_i}M_b(q)\) in \((CH4)\) is exactly \(M_*(q)\).
+   Thus \((TL2)\) is the Chase margin condition \((CH4)\).
+
+   It remains only to show that every codeword with score at least
+   \(\Theta(q)\) has its \(T\)-coordinates in the lists.  If \(c_j\notin L_j\)
+   for some \(j\in T\), then
+   \[
+      S_q(c)
+      \le
+      M_*(q)
+      -
+      \left(
+         \max_{a\in\Sigma}\omega_j(a)
+         -
+         \max_{a\notin L_j}\omega_j(a)
+      \right)
+      \le M_*(q)-\delta_{\rm list}(q)
+      <\Theta(q).
+   \]
+   Hence every codeword with \(S_q(c)\ge\Theta(q)\) satisfies
+   \(c_i\in L_i\) for all \(i\in T\).  Applying
+   \cref{cor:chase-gmd-block-certificate} and then exact filtering proves the
+   claim.
+\end{proof}
+
+\begin{lemma}[Information-set threshold reporter]
+   \label{lem:information-set-threshold-reporter}
+   Let \(\mathcal C\subseteq\Sigma^h\) be a code and let
+   \(I\subseteq[h]\).  Write
+   \(D_I=\{c_I:c\in\mathcal C\}\), and assume that the projection
+   \(c\mapsto c_I\) is injective on \(\mathcal C\).  Let
+   \(E_I:D_I\to\mathcal C\) be its certified inverse.  For query scores
+   \(\omega_i(q,a)\), define
+   \[
+      S_q(c)=\sum_{i=1}^h\omega_i(q,c_i),
+      \qquad
+      m_i(q)=\max_{a\in\Sigma}\omega_i(q,a),
+   \]
+   and for \(b\in D_I\)
+   \[
+      U_I(q,b)
+      =
+      \sum_{i\in I}\omega_i(q,b_i)
+      +
+      \sum_{i\notin I}m_i(q).
+   \]
+   Suppose a query routine returns a set \(\mathsf B_I(q,\Theta)\subseteq D_I\)
+   containing every \(b\in D_I\) with \(U_I(q,b)\ge\Theta\).  Then extending
+   all \(b\in\mathsf B_I(q,\Theta)\) by \(E_I\) and filtering by
+   \(S_q(c)\ge\Theta\) returns exactly
+   \[
+      \{c\in\mathcal C:S_q(c)\ge\Theta\}.
+   \]
+
+   In particular, when \(D_I=\Sigma^I\), the standard best-first product
+   enumerator over the sorted coordinate symbol lists supplies such a routine.
+   If
+   \[
+      N_I(q,\Theta)=
+      \left|
+      \left\{
+      b\in\Sigma^I:
+      \sum_{i\in I}\omega_i(q,b_i)
+      \ge
+      \Theta-\sum_{i\notin I}m_i(q)
+      \right\}
+      \right|,
+   \]
+   then its work is
+   \[
+      O\!\left(
+      |I||\Sigma|\log|\Sigma|
+      +
+      N_I(q,\Theta)\log(2+N_I(q,\Theta))
+      \right)
+   \]
+   plus the cost of extending and scoring the listed words.  For every
+   \(\beta>0\),
+   \[
+      N_I(q,\Theta)
+      \le
+      \exp\!\left(
+         -\beta\Theta
+         +
+         \beta\sum_{i\notin I}m_i(q)
+      \right)
+      \prod_{i\in I}
+      \sum_{a\in\Sigma}\exp(\beta\omega_i(q,a)).
+      \tag{IS1}
+   \]
+\end{lemma}
+
+\begin{proof}
+   Let \(c\in\mathcal C\) satisfy \(S_q(c)\ge\Theta\), and put
+   \(b=c_I\).  Since each coordinate outside \(I\) is bounded above by
+   \(m_i(q)\),
+   \[
+      U_I(q,b)
+      \ge
+      \sum_{i\in I}\omega_i(q,c_i)
+      +
+      \sum_{i\notin I}\omega_i(q,c_i)
+      =
+      S_q(c)
+      \ge\Theta .
+   \]
+   Hence \(b\) is listed and \(E_I(b)=c\) is tested.  The exact score filter
+   removes every extended word below threshold, proving exactness.
+
+   For the product case, sort the symbols in each coordinate by decreasing
+   score and use a heap on rank vectors, starting from the all-top vector and
+   inserting each unvisited neighbor obtained by increasing one rank.  The heap
+   always pops the largest remaining information-set score, so stopping below
+   the displayed threshold lists exactly the \(N_I(q,\Theta)\) tuples.  The
+   stated work is the sorting and heap cost.  Finally,
+   \[
+      \mathbf 1\left\{
+      \sum_{i\in I}\omega_i(q,b_i)
+      \ge
+      \Theta-\sum_{i\notin I}m_i(q)
+      \right\}
+      \le
+      \exp\!\left(
+         \beta\sum_{i\in I}\omega_i(q,b_i)
+         -
+         \beta\Theta
+         +
+         \beta\sum_{i\notin I}m_i(q)
+      \right),
+   \]
+   and summing over \(b\in\Sigma^I\) gives \((IS1)\).
+\end{proof}
+
+\begin{corollary}[Ordered-statistics information-set certificate]
+   \label{cor:ordered-statistics-information-set}
+   Work in the product information-set case of
+   \cref{lem:information-set-threshold-reporter}.  For \(i\in I\), choose
+   \(a_i(q)\in\operatorname*{arg\,max}_{a\in\Sigma}\omega_i(q,a)\), and put
+   \[
+      D_I(q,b)=
+      \sum_{i\in I}
+      \bigl(m_i(q)-\omega_i(q,b_i)\bigr),
+      \qquad
+      \Delta_I(q,\Theta)=
+      \sum_{i=1}^h m_i(q)-\Theta .
+   \]
+   Enumerating all \(b\in\Sigma^I\) with
+   \(D_I(q,b)\le\Delta_I(q,\Theta)\), extending by \(E_I\), and exact filtering
+   is a certified threshold reporter for \(\mathcal C\).
+
+   Moreover, let
+   \[
+      \delta_i(q)=
+      \min_{a\ne a_i(q)}
+      \bigl(m_i(q)-\omega_i(q,a)\bigr),
+      \qquad i\in I,
+   \]
+   with \(\delta_i(q)=+\infty\) if \(|\Sigma|=1\), and let
+   \(\delta_{(1)}(q)\le\cdots\le\delta_{(|I|)}(q)\) be these gaps in
+   nondecreasing order.  The order-\(s\) ordered-statistics enumeration of all
+   information words differing from \(a_I(q)\) in at most \(s\) positions is
+   complete whenever
+   \[
+      \Delta_I(q,\Theta)
+      <
+      \sum_{\ell=1}^{s+1}\delta_{(\ell)}(q),
+      \tag{IS2}
+   \]
+   with the right-hand side interpreted as \(+\infty\) when \(s=|I|\).  Its
+   number of candidate information words is at most
+   \[
+      \sum_{\ell=0}^s \binom{|I|}{\ell}(|\Sigma|-1)^\ell .
+   \]
+\end{corollary}
+
+\begin{proof}
+   Since
+   \[
+      U_I(q,b)
+      =
+      \sum_{i=1}^h m_i(q)-D_I(q,b),
+   \]
+   the condition \(D_I(q,b)\le\Delta_I(q,\Theta)\) is exactly
+   \(U_I(q,b)\ge\Theta\).  The first claim is therefore
+   \cref{lem:information-set-threshold-reporter}.
+
+   If \(b\) differs from \(a_I(q)\) in at least \(s+1\) positions, then
+   \(D_I(q,b)\) is at least the sum of the \(s+1\) smallest coordinate gaps.
+   Under \((IS2)\), no such \(b\) can satisfy the required discrepancy bound.
+   Hence order-\(s\) enumeration contains every threshold-relevant information
+   word, and the displayed count is the number of possible support sets and
+   non-top symbols on those sets.
+\end{proof}
+
 \begin{remark}[GMD and Chase as compressed list decoders]
    \label{rem:gmd-chase-compressed-decoder}
    \Cref{lem:reliability-erasure-sweep} is the self-contained form of the
@@ -3471,7 +3713,21 @@ partition ignores the bias coordinates that certify the list size.
    the true near route satisfies the soft top-gap inequality \((GMS2)\), or the
    Chase margin \((CH4)\) after branching over a polylogarithmic ambiguity set,
    while the retained outputs pass the same rate-coverage scan and storage
-   certificates as the other panels.
+   certificates as the other panels.  \Cref{cor:top-list-chase-completeness}
+   makes the usual practical restriction to top lists self-contained: symbols
+   outside the lists are harmless whenever their score deficit already puts the
+   codeword below the reporting threshold.
+
+   \Cref{lem:information-set-threshold-reporter} gives the ordered-statistics
+   alternative inspired by Prange information sets and the Fossorier--Lin OSD
+   decoder~\cite{Pra62,FL95}.  Instead of asking an outer decoder to correct
+   low-confidence coordinates, one chooses a reliable information set, lists
+   only high-score information words, extends them through the systematic chart,
+   and filters by the exact Euclidean score.  This is often a better match for
+   expensive preprocessing: the build stage may search for good systematic
+   charts, rotations, or quotient bases, while the retained query algorithm pays
+   only for the short discrepancy list certified by
+   \cref{cor:ordered-statistics-information-set}.
 \end{remark}
 
 \begin{remark}[Outer list recovery as the clean codebook target]
@@ -16804,6 +17060,17 @@ finite-signature and decoder-DAG rate-coverage certificates.
 version: branch over a few low-confidence coordinates, promote the guessed
 symbols to confidence \(1\), and then use the same GMD sweep.  The branch
 product is charged explicitly as decoder work.
+\Cref{cor:top-list-chase-completeness} removes the need to branch over the
+full alphabet: top lists are complete whenever omitted symbols have enough
+score deficit to fall below the reporting threshold.
+\Cref{lem:information-set-threshold-reporter} and
+\cref{cor:ordered-statistics-information-set} record the complementary OSD
+normal form from code and lattice decoding.  A retained systematic chart lists
+only high-score information words, extends them through the code or quotient
+basis, and exact-filters the resulting candidates.  This can be strictly
+cheaper than Chase-GMD when a reliable information set exists, because the
+online branch count is the ordered-statistics discrepancy list rather than the
+full ambiguity product.
 The remaining work is spectrum and rate bookkeeping rather than Lloyd-style
 convergence analysis.
 \Cref{lem:additive-product-panel-decoder}
@@ -17425,6 +17692,18 @@ The one-sided spherical proof is motivated by the Ahle--Knudsen manuscript suppl
    measurement information.
    \newblock \emph{IEEE Transactions on Information Theory}, 18(1):170--182,
    1972.
+
+   \bibitem{Pra62}
+   Eugene Prange.
+   \newblock The use of information sets in decoding cyclic codes.
+   \newblock \emph{IRE Transactions on Information Theory}, 8(5):5--9, 1962.
+
+   \bibitem{FL95}
+   Marc P. C. Fossorier and Shu Lin.
+   \newblock Soft-decision decoding of linear block codes based on ordered
+   statistics.
+   \newblock \emph{IEEE Transactions on Information Theory}, 41(5):1379--1396,
+   1995.
 
    \bibitem{WR61}
    John M. Wozencraft and Barney Reiffen.
