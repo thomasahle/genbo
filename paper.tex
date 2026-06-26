@@ -14788,6 +14788,53 @@ law already has positive reduced gain.
    since \(\bar\sigma S\ge0\).  This contradicts \((RAC6)\).
 \end{proof}
 
+\begin{lemma}[Dyadic relative-load superlevel]
+   \label{lem:dyadic-relative-load-superlevel}
+   Fix a query \(q\), and use the notation of
+   \cref{cor:relative-annular-active-collision-residual}.  For an integer
+   \(J\ge1\), let
+   \[
+      \mathcal B_J=\{2^{-j}:1\le j\le J\},
+   \]
+   and, for \(\beta\in\mathcal B_J\), put
+   \[
+      A_\beta(q)=
+      \{x\in P:\|x-q\|>cr,\ c_q(x)>\beta a_q\}.
+   \]
+   Then
+   \[
+      F_q^{\rm far}
+      :=
+      \sum_{\substack{x\in P\\ \|x-q\|>cr}}c_q(x)
+      \le
+      a_q|P|2^{-J}
+      +
+      2\sum_{\beta\in\mathcal B_J}\beta a_q |A_\beta(q)|.
+      \tag{DRL1}
+   \]
+   Consequently, if \(F_q^{\rm far}>a_q|P|2^{-J}\), then some
+   \(\beta\in\mathcal B_J\) satisfies
+   \[
+      \beta a_q |A_\beta(q)|
+      \ge
+      \frac{F_q^{\rm far}-a_q|P|2^{-J}}{2J}.
+      \tag{DRL2}
+   \]
+\end{lemma}
+
+\begin{proof}
+   If \(a_q=0\), then \(c_q(x)\le a_q=0\) for every \(x\), so the claim is
+   trivial.  Otherwise put \(s_x=c_q(x)/a_q\in[0,1]\) for far points
+   \(\|x-q\|>cr\).  For every \(s\in[0,1]\),
+   \[
+      s\le 2^{-J}+2\sum_{j=1}^J2^{-j}\mathbf 1\{s>2^{-j}\}.
+   \]
+   Summing this inequality over far points and multiplying by \(a_q\) gives
+   \((DRL1)\).  If every dyadic level were strictly smaller than the right side
+   of \((DRL2)\), then \((DRL1)\) would make \(F_q^{\rm far}\) strictly smaller
+   than itself.  Hence at least one level satisfies \((DRL2)\).
+\end{proof}
+
 \begin{lemma}[Primitive hit-kernel cover equivalence]
    \label{lem:primitive-hit-kernel-cover-equivalence}
    Work in the setting of \cref{asm:one-potential-core-separator}.  For each
@@ -14898,6 +14945,10 @@ pseudo-random close: if the whole far active load of each query is already below
 the \(\pi_1L\) budget scale, then no annular residual can survive.  Thus the
 remaining dense/list-decoding theorem only has to handle failures of this
 aggregate load bound, not failures of pointwise far collision.
+\Cref{lem:dyadic-relative-load-superlevel} makes such a failure finite: after
+discarding a \(2^{-J}\) tail, some dyadic relative threshold captures the far
+load up to an \(O(J)\) loss.  Taking \(J=\lceil\log_2|P|\rceil\) turns the
+overflow branch into an \(O(\log |P|)\)-level reporter problem.
 
 \begin{corollary}[Hit-kernel cover materialization]
    \label{cor:hit-kernel-cover-materialization}
@@ -36416,6 +36467,11 @@ pseudo-random endpoint: a uniform bound
 the residual.  The unresolved geometric work is therefore to prove this
 aggregate far-load bound for the retained spherical/list-decoding primitive, or
 to turn any violation into a positive dense filter-cover column.
+\Cref{lem:dyadic-relative-load-superlevel} reduces the latter alternative to a
+finite search over relative thresholds: any far-load overflow yields a dyadic
+annular superlevel \(A_\beta(q)\) with \(\beta a_q|A_\beta(q)|\) large up to a
+logarithmic factor.  This is the concrete range-reporting/list-decoding object
+that should replace ad hoc dense clustering in the next geometric lemma.
 \Cref{lem:primitive-hit-kernel-cover-equivalence} gives the matching primal
 form: the same theorem is equivalent to fractionally covering the primitive
 spherical hit kernel \(r_{p,q}\) by Pareto cores at \(\pi_1\)-scaled query and
