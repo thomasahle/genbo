@@ -17843,6 +17843,147 @@ inequality \((QP3)\).
    \((EN\text{-}D1)\).  The converse is the same certificate read backward.
 \end{proof}
 
+\begin{corollary}[Exact-signature column generation]
+   \label{cor:exact-signature-column-generation}
+   Work in the setting of \cref{lem:exact-near-set-signature-dual}.  For a
+   price system \((\beta,\tau,\theta)\), define the exact-signature reduced
+   gain of a filter \(A\in\mathcal F\) by
+   \[
+      \mathsf{EG}_{\beta,\tau,\theta}(A)
+      =
+      \sum_{\sigma_0\in\Sigma^+}
+      \beta_{\sigma_0}a_A(\sigma_0)
+      \mathbf 1\{U_A\cap N_{\sigma_0}\ne\emptyset\}
+      -
+      T_A\sum_{\sigma_0\in\Sigma}\tau_{\sigma_0}a_A(\sigma_0)
+      -
+      \theta S_A .
+      \tag{ESC1}
+   \]
+   The existential signature LP \((\mathsf{ESFC}_\Sigma)\) is feasible if and
+   only if every nonnegative price system satisfying \((EN\text{-}D1)\) has
+   some filter \(A\in\mathcal F\) with
+   \[
+      \mathsf{EG}_{\beta,\tau,\theta}(A)>0 .
+      \tag{ESC2}
+   \]
+   Consequently, over any finite full universe \(\mathcal F_\star\), unbounded
+   preprocessing may solve a restricted LP, read its exact-signature dual, add
+   any filter with positive \(\mathsf{EG}\), and terminate with a feasible
+   existential cover whenever the full universe satisfies \((ESC2)\).
+\end{corollary}
+
+\begin{proof}
+   By \cref{lem:exact-near-set-signature-dual}, infeasibility is exactly the
+   existence of a surplus price system satisfying \((EN\text{-}D1)\) and
+   \(\mathsf{EG}_{\beta,\tau,\theta}(A)\le0\) for every filter \(A\).  Negating
+   this statement gives the equivalence.  The column-generation statement is the
+   same finite-pool argument as in \cref{cor:filter-cover-column-generation}:
+   each positive-gain column invalidates the current dual certificate, and a
+   finite universe can be exhausted only after feasibility has been reached.
+\end{proof}
+
+\begin{lemma}[Exact-signature coverage-list oracle]
+   \label{lem:exact-signature-coverage-list-oracle}
+   Work in the setting of \cref{cor:exact-signature-column-generation}.  Let
+   \(\mathcal C\) be a finite build-time family of certified list templates.  A
+   template \(C\in\mathcal C\) consists of a container \(W_C\subseteq P\), a
+   cardinality \(1\le K_C\le |W_C|\), and certified prices \(T_C,S_C\).  Assume
+   the filter universe contains, for every \(C\), every \(K_C\)-point list
+   \(L\subseteq W_C\), and every query-signature layer
+   \(Q'\subseteq\Sigma\), the filter
+   \[
+      A(C,L,Q')=(L,Q'),
+      \qquad
+      U_A=L,
+      \qquad
+      a_A(\sigma_0)=\mathbf 1\{\sigma_0\in Q'\},
+      \qquad
+      T_A=T_C,\quad S_A=S_C .
+      \tag{ECL0}
+   \]
+   For a price system \((\beta,\tau,\theta)\), define the positive signature
+   weight at template \(C\) by
+   \[
+      w_C(\sigma_0)=
+      \bigl(\beta_{\sigma_0}-T_C\tau_{\sigma_0}\bigr)_+
+      \qquad(\sigma_0\in\Sigma^+),
+      \tag{ECL1}
+   \]
+   and the exact-signature max-coverage value
+   \[
+      \mathsf{EC}_{\beta,\tau,\theta}(C)
+      =
+      \max_{\substack{L\subseteq W_C\\ |L|=K_C}}
+      \sum_{\substack{\sigma_0\in\Sigma^+\\ L\cap N_{\sigma_0}\ne\emptyset}}
+      w_C(\sigma_0)
+      -
+      \theta S_C .
+      \tag{ECL2}
+   \]
+   If every nonnegative price system satisfying \((EN\text{-}D1)\) has
+   \[
+      \max_{C\in\mathcal C}\mathsf{EC}_{\beta,\tau,\theta}(C)>0,
+      \tag{ECL3}
+   \]
+   then the existential signature LP \((\mathsf{ESFC}_\Sigma)\) is feasible.
+\end{lemma}
+
+\begin{proof}
+   Fix a surplus price system and choose \(C\) and \(L\subseteq W_C\) attaining
+   positive value in \((ECL2)\).  Let
+   \[
+      Q^+(C,L)=
+      \left\{
+         \sigma_0\in\Sigma^+:
+         L\cap N_{\sigma_0}\ne\emptyset,
+         \beta_{\sigma_0}>T_C\tau_{\sigma_0}
+      \right\}.
+      \tag{ECL4}
+   \]
+   For \(A=A(C,L,Q^+(C,L))\), the exact-signature gain is
+   \[
+      \mathsf{EG}_{\beta,\tau,\theta}(A)
+      =
+      \sum_{\sigma_0\in Q^+(C,L)}
+      \left(\beta_{\sigma_0}-T_C\tau_{\sigma_0}\right)
+      -
+      \theta S_C
+      =
+      \mathsf{EC}_{\beta,\tau,\theta}(C)>0 .
+   \]
+   Thus every surplus exact-signature dual has a positive-gain filter, and
+   \cref{cor:exact-signature-column-generation} gives feasibility.
+\end{proof}
+
+\begin{corollary}[Seeded exact-signature list proposal]
+   \label{cor:seeded-exact-signature-list-proposal}
+   In the setting of \cref{lem:exact-signature-coverage-list-oracle}, it is
+   enough to prove the following averaged proposal statement.  For every
+   nonnegative price system satisfying \((EN\text{-}D1)\), there is a finite
+   seed law \(s\sim\nu\) such that seed \(s\) chooses a template \(C_s\in
+   \mathcal C\) and a list \(L_s\subseteq W_{C_s}\), \(|L_s|=K_{C_s}\), with
+   \[
+      \E_s
+      \left[
+         \sum_{\substack{\sigma_0\in\Sigma^+\\
+                         L_s\cap N_{\sigma_0}\ne\emptyset}}
+         \bigl(\beta_{\sigma_0}-T_{C_s}\tau_{\sigma_0}\bigr)_+
+         -
+         \theta S_{C_s}
+      \right]
+      >0 .
+      \tag{ESL1}
+   \]
+   Then \((\mathsf{ESFC}_\Sigma)\) is feasible.
+\end{corollary}
+
+\begin{proof}
+   If the expectation in \((ESL1)\) is positive, some deterministic seed has
+   positive bracketed value.  Its template therefore has positive
+   \(\mathsf{EC}\), and \cref{lem:exact-signature-coverage-list-oracle} applies.
+\end{proof}
+
 \Cref{lem:exact-near-set-filter-cover} is strictly weaker than
 \cref{lem:finite-signature-filter-cover} when the exact near set is part of the
 signature.  The all-pair LP covers every \(p\in N_{\sigma_0}\); the existential
@@ -17856,6 +17997,14 @@ statement: a failed existential signature cover prices signatures, not all near
 pairs, and a proposed dense or spherical filter is accepted precisely when its
 active update side intersects enough priced exact near sets per unit recursive
 query and storage cost.
+\Cref{lem:exact-signature-coverage-list-oracle} makes the corresponding dense
+proposal target explicit.  In an exact-signature node, a list is scored by
+weighted max coverage of the exact near sets \(N_{\sigma_0}\), not by additive
+pair degree.  Thus \(k\)-means++, additive-quantization cells, range-reporting
+violator search, and lattice/list-decoding panels can be used as seeded
+proposal laws only through the checkable inequality \((ESL1)\); the retained
+column is still the deterministic list and positive-margin signature layer
+verified by \((ECL2)\)--\((ECL4)\).
 
 \begin{proposition}[Conditional fractional filter-cover endpoint]
    \label{prop:fractional-filter-cover-polylog}
