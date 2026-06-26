@@ -14663,6 +14663,99 @@ law already has positive reduced gain.
    produces a normalized residual satisfying \((AAC1)\).
 \end{proof}
 
+\begin{corollary}[Activation-relative annular collision residual]
+   \label{cor:relative-annular-active-collision-residual}
+   Work in the setting of
+   \cref{cor:guarded-normalized-residual-segment}.  For the spherical bucket law
+   define
+   \[
+      c_q(x)=\Pr_{Z\sim\Pi}[x\in U_Z,\ \chi_Z(q)=1],
+      \qquad
+      a_q=\Pr_{Z\sim\Pi}[\chi_Z(q)=1],
+      \qquad
+      a_*=\max_q a_q .
+   \]
+   Fix \(0<\beta\le1\), and suppose every demanded pair satisfies
+   \(\|p-q\|\le r\).  For each query put
+   \[
+      A_\beta(q)
+      =
+      \{x\in P:\|x-q\|>cr,\ c_q(x)>\beta a_q\},
+      \tag{RAC1}
+   \]
+   and
+   \[
+      H_\beta(q)=\bigl(P\cap B(q,cr)\bigr)\cup A_\beta(q).
+      \tag{RAC2}
+   \]
+   Assume the near-hit and update bounds \((WS1)\), \((WS3)\), and the budget
+   inequalities
+   \[
+      \beta a_*|P|\le\frac{\pi_1L}{4},
+      \qquad
+      \pi_u|P|\le\frac{\pi_1S}{4}.
+      \tag{RAC3}
+   \]
+   Also assume all query constraints lie in
+   \[
+      \Omega_{\rm low}=\{q:|P\cap B(q,cr)|<\gamma_0|P|\},
+   \]
+   and that, for some \(0\le\eta<1/2\),
+   \[
+      \gamma_0|P|a_*\le\eta\,\pi_1L .
+      \tag{RAC4}
+   \]
+   If the enlarged local filter-cover LP is infeasible, then the guarded
+   normalized residual produced using \(H_\beta\) satisfies
+   \[
+      \sum_q\bar\tau_q a_q |A_\beta(q)|
+      >
+      \left(\frac12-\eta\right)\pi_1\kappa ,
+      \tag{RAC5}
+   \]
+   and therefore
+   \[
+      \sum_q\bar\tau_q
+      \sum_{\substack{x\in P\\ \|x-q\|>cr}}
+      c_q(x)
+      >
+      \beta\left(\frac12-\eta\right)\pi_1\kappa .
+      \tag{RAC6}
+   \]
+   Consequently, a proof that every normalized residual satisfying the core
+   hinge envelopes has the opposite upper bound on the left side of \((RAC6)\)
+   rules out local infeasibility in this activation-relative branch.
+\end{corollary}
+
+\begin{proof}
+   The set \(H_\beta(q)\) contains every demanded near point because
+   \(\|p-q\|\le r<cr\).  If \(x\in P\setminus H_\beta(q)\), then
+   \(x\notin P\cap B(q,cr)\), so \(\|x-q\|>cr\), and also
+   \(x\notin A_\beta(q)\).  Thus every resident point outside \(H_\beta(q)\)
+   satisfies
+   \[
+      c_q(x)\le \beta a_q\le \beta a_* .
+   \]
+   Hence \((WS2)\) holds for this \(H_\beta\) with far parameter
+   \(\pi_2=\beta a_*\), and \((RAC3)\) gives the spherical budget condition
+   \((WS6)\).  Applying
+   \cref{cor:guarded-normalized-residual-segment} and then
+   \cref{cor:guard-leakage-residual-dichotomy} with \((RAC4)\) yields
+   \((RAC5)\), since
+   \(H_\beta(q)\setminus B(q,cr)=A_\beta(q)\).
+
+   For \(x\in A_\beta(q)\), \(c_q(x)>\beta a_q\).  Therefore
+   \[
+      \sum_{\|x-q\|>cr}c_q(x)
+      \ge
+      \sum_{x\in A_\beta(q)}c_q(x)
+      >
+      \beta a_q|A_\beta(q)|.
+   \]
+   Multiplying by \(\bar\tau_q\), summing over \(q\), and using \((RAC5)\) gives
+   \((RAC6)\).
+\end{proof}
+
 \begin{lemma}[Primitive hit-kernel cover equivalence]
    \label{lem:primitive-hit-kernel-cover-equivalence}
    Work in the setting of \cref{asm:one-potential-core-separator}.  For each
@@ -14762,6 +14855,12 @@ activation-weighted sense.
 \Cref{cor:annular-active-collision-residual} converts this to the scalar
 quantity that a spherical or range-reporting argument can try to upper-bound:
 the \(\bar\tau\)-weighted active collision mass with far annular points.
+\Cref{cor:relative-annular-active-collision-residual} gives the sharper
+activation-normalized version.  Thresholding by the conditional load
+\(c_q(x)/a_q\) still satisfies the spherical far-budget condition with
+\(\pi_2=\beta\max_q a_q\), but the resulting active-collision obstruction loses
+only the chosen relative threshold \(\beta\).  This is the more useful target
+when the activation budget permits constant \(\beta\).
 
 \begin{corollary}[Hit-kernel cover materialization]
    \label{cor:hit-kernel-cover-materialization}
@@ -36268,6 +36367,12 @@ quantity: local infeasibility forces a lower bound on the weighted far active
 collision load \(\sum_q\bar\tau_q\sum_{\|x-q\|>cr}c_q(x)\).  Proving the
 matching upper bound under the core hinge envelopes would close this
 pseudo-random branch.
+\Cref{cor:relative-annular-active-collision-residual} strengthens the same
+reduction by thresholding \(c_q(x)\) relative to the query activation \(a_q\).
+When \(\beta\max_q a_q|P|\lesssim\pi_1L\), local infeasibility forces the
+active-collision lower bound with factor \(\beta\), rather than the absolute
+far threshold \(\pi_2\).  This makes the remaining branch a conditional-load
+or list-decoding problem instead of an absolute rare-collision problem.
 \Cref{lem:primitive-hit-kernel-cover-equivalence} gives the matching primal
 form: the same theorem is equivalent to fractionally covering the primitive
 spherical hit kernel \(r_{p,q}\) by Pareto cores at \(\pi_1\)-scaled query and
