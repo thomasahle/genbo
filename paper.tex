@@ -15213,6 +15213,111 @@ singleton slices by hand.
    \((WAE2)\).
 \end{proof}
 
+\begin{assumption}[Paid atomized-prefix separator]
+   \label{asm:paid-atomized-prefix-separator}
+   Work in the setting of
+   \cref{cor:atomized-paid-core-hit-kernel-cover}.  Let
+   \(\mathcal W\) be a finite family of certified containers.  Each
+   \(W\in\mathcal W\) comes with a price factor \(\psi_W>0\), an exponent
+   \(0\le\rho_W\le1\), and a finite set of available cardinalities
+   \(\mathcal K_W\subseteq\{1,\ldots,|W|\}\).  For \(k\in\mathcal K_W\), write
+   \[
+      T_W(k)=\psi_Wk^{\rho_W},
+      \qquad
+      S_W(k)=\psi_Wk^{1+\rho_W}.
+   \]
+   The required build-time closure is the following: for every price system
+   considered below and every integral query set \(Q'\subseteq\mathcal Q\), the
+   top-\(k\) prefix of \(W\) sorted by
+   \[
+      p\mapsto
+      \sum_{q\in Q':(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}
+   \]
+   is an available Boolean Pareto core with prices \(T_W(k),S_W(k)\).  This
+   closure is finite; in the worst case preprocessing may include all
+   \(k\)-subsets of each \(W\), while the prefix rule only identifies the
+   subset used by the separator proof.
+
+   The container family is paid atomized-prefix separating if, for every
+   nonnegative price system \((\gamma,\tau,\sigma)\) satisfying
+   \((APC1)\)--\((APC2)\), there are \(W\in\mathcal W\),
+   \(k\in\mathcal K_W\), and fractional query weights \(0\le y_q\le1\) such
+   that, with \(D_{W,y}^\gamma(k)\) denoting the top-\(k\) paid-degree sum
+   inside \(W\),
+   \[
+      D_{W,y}^\gamma(k)
+      >
+      \psi_W\left(
+         k^{\rho_W}\sum_q\tau_qy_q+\sigma k^{1+\rho_W}
+      \right).
+      \tag{PAPS1}
+   \]
+\end{assumption}
+
+\begin{corollary}[Paid prefixes imply the hit-kernel cover]
+   \label{cor:paid-prefix-hit-kernel-cover}
+   In the setting of \cref{asm:paid-atomized-prefix-separator}, if
+   \(\mathcal W\) is paid atomized-prefix separating, then
+   \((\mathsf{HKC}_{\mathcal U})\) is feasible.
+\end{corollary}
+
+\begin{proof}
+   By \cref{cor:atomized-paid-core-hit-kernel-cover}, it is enough to show that
+   every price system satisfying \((APC1)\)--\((APC2)\) admits an available core
+   satisfying \((APH4)\).  Apply
+   \cref{asm:paid-atomized-prefix-separator} to such a price system.  The
+   strict inequality \((PAPS1)\) makes the right side of \((WAP2)\) positive
+   for the fixed container \(W\), cardinality \(k\), price factor \(\psi_W\),
+   and exponent \(\rho_W\).  Hence
+   \cref{lem:weighted-atomized-prefix-normal-form} gives an integral query set
+   \(Q'\) whose top-\(k\) paid prefix satisfies \((APH4)\) with prices
+   \(T_W(k),S_W(k)\).  This prefix is an available Pareto core by the closure
+   built into \cref{asm:paid-atomized-prefix-separator}, so the hypothesis of
+   \cref{cor:atomized-paid-core-hit-kernel-cover} holds.
+\end{proof}
+
+\begin{corollary}[Paid prefix residual envelope]
+   \label{cor:paid-prefix-residual-envelope}
+   Work in the setting of \cref{asm:paid-atomized-prefix-separator}.  Let
+   \((\gamma,\tau,\sigma)\) be a residual price system satisfying
+   \((APC1)\)--\((APC2)\) and having nonpositive repair reduced gain on every
+   available paid prefix from \(\mathcal W\).  Then for every
+   \(W\in\mathcal W\), every \(k\in\mathcal K_W\), and every fractional query
+   weighting \(0\le y\le1\),
+   \[
+      D_{W,y}^\gamma(k)
+      \le
+      \psi_W\left(
+         k^{\rho_W}\sum_q\tau_qy_q+\sigma k^{1+\rho_W}
+      \right).
+      \tag{PPRE1}
+   \]
+   Consequently, if
+   \[
+      h_{W,\delta}(y)=|\{p\in W:d_y^\gamma(p)\ge\delta\}|
+   \]
+   lies in \(\mathcal K_W\) and is nonzero, then
+   \[
+      \delta
+      \le
+      \psi_W\left(
+         \left(\sum_q\tau_qy_q\right)h_{W,\delta}(y)^{\rho_W-1}
+         +
+         \sigma h_{W,\delta}(y)^{\rho_W}
+      \right).
+      \tag{PPRE2}
+   \]
+\end{corollary}
+
+\begin{proof}
+   Apply \cref{cor:weighted-atomized-prefix-envelope} separately inside each
+   certified container \(W\), with \(\psi=\psi_W\), \(\rho=\rho_W\), and the
+   available cardinalities \(\mathcal K_W\).  The hypothesis that no paid prefix
+   has positive repair reduced gain is exactly the hypothesis of that
+   corollary.  The two displayed inequalities are \((WAE1)\) and \((WAE2)\) in
+   this container-indexed notation.
+\end{proof}
+
 \Cref{cor:paid-compression-hit-kernel-cover} is the fractional dense-filter
 cover in its paid form.  The separator does not choose disjoint dense clusters.
 It only has to prove that any overbudget value-proportional primitive law can be
@@ -15244,6 +15349,12 @@ degrees \(d_y^\gamma(p)\), and the best \(k\)-point core is simply the top-\(k\)
 prefix.  Thus failure of all paid prefixes is equivalent to the explicit
 degree envelope \((WAE1)\)--\((WAE2)\), which is the concrete residual packing
 condition left for geometry.
+\Cref{asm:paid-atomized-prefix-separator} and
+\cref{cor:paid-prefix-hit-kernel-cover} make this a complete dense-side
+criterion: every surplus paid dual only has to violate one certified
+container-prefix envelope.  If it does not, then
+\cref{cor:paid-prefix-residual-envelope} gives the exact counterexample format
+that the spherical residual or the next geometric separator must rule out.
 
 \begin{assumption}[Compression-dual separator]
    \label{asm:compression-dual-separator}
@@ -27128,6 +27239,12 @@ mass
 this target: inside a certified container, sort points by paid degree under an
 arbitrary fractional query weighting; if every prefix fails, the degree
 superlevels satisfy the explicit envelope \((WAE2)\).
+\Cref{asm:paid-atomized-prefix-separator},
+\cref{cor:paid-prefix-hit-kernel-cover}, and
+\cref{cor:paid-prefix-residual-envelope} package this as the current dense-side
+proof target: a successful separator is exactly a violation of one such
+container-prefix envelope, and an unsuccessful separator leaves a paid residual
+whose every certified container obeys \((PPRE1)\)--\((PPRE2)\).
 Because
 preprocessing time is deliberately not a scarce resource,
 \cref{lem:finite-pool-optimizer} and
