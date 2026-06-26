@@ -12364,6 +12364,125 @@ This certificate is the local form of the remaining problem. It is analogous in 
    \cref{lem:optimal-prefix-energy-law}.
 \end{proof}
 
+\begin{lemma}[Unit-success skeleton contraction]
+   \label{lem:unit-success-skeleton-contraction}
+   Let \(W\) be the harmonic route value from
+   \cref{lem:optimal-prefix-energy-law} on a finite route trie.  Fix a node
+   \(r\) and a route cut \(\mathcal F\) in the subtree below \(r\).  Assume
+   every edge on every path from \(r\) to \(\mathcal F\), not including edges
+   below \(\mathcal F\), has success probability \(1\).  For a node
+   \(u\preceq z\) with \(z\in\mathcal F\), let
+   \[
+      T_{\mathcal F}(u)
+      =
+      \sum_{\substack{z\in\mathcal F\\ z\succeq u}} W(z)
+   \]
+   and let \(h_{\mathcal F}(u)\) be the maximum number of edges from \(u\) to
+   a descendant in \(\mathcal F\).  Then
+   \[
+      W(u)
+      \ge
+      \frac{T_{\mathcal F}(u)}
+           {1+h_{\mathcal F}(u)T_{\mathcal F}(u)}
+      \qquad
+      (u\preceq\mathcal F).
+      \tag{USC1}
+   \]
+   Equivalently, when \(T_{\mathcal F}(u)>0\),
+   \[
+      \frac1{W(u)}
+      \le
+      \frac1{T_{\mathcal F}(u)}+h_{\mathcal F}(u).
+      \tag{USC2}
+   \]
+   In particular, if \(h_{\mathcal F}(r)\le H\), then
+   \[
+      W(r)\ge \frac{\min\{T_{\mathcal F}(r),1\}}{H+1}.
+      \tag{USC3}
+   \]
+   Thus a maximal block of ordinary score-only or otherwise deterministic
+   unit-success branching contributes only its depth as harmonic resistance
+   before the first genuinely thinned skeleton frontier.
+\end{lemma}
+
+\begin{proof}
+   We prove \((USC1)\) by backward induction on \(h_{\mathcal F}(u)\).  If
+   \(u\in\mathcal F\), then \(h_{\mathcal F}(u)=0\) and
+   \(T_{\mathcal F}(u)=W(u)\).
+
+   Let \(u\notin\mathcal F\), put \(h=h_{\mathcal F}(u)\), and write
+   \(T_w=T_{\mathcal F}(w)\) for the children \(w\) of \(u\).  By the unit
+   success hypothesis, the harmonic recursion at \(u\) is
+   \[
+      W(u)=\frac{S}{1+S},
+      \qquad
+      S=\sum_w W(w).
+   \]
+   Every child with \(T_w>0\) has \(h_{\mathcal F}(w)\le h-1\), so the
+   induction hypothesis gives
+   \[
+      W(w)\ge \frac{T_w}{1+(h-1)T_w}.
+   \]
+   The function \(f_a(t)=t/(1+at)\), \(a\ge0\), is subadditive in the form
+   \[
+      \sum_i f_a(t_i)\ge f_a\!\left(\sum_i t_i\right)
+      \qquad(t_i\ge0),
+   \]
+   because the two-term difference is
+   \[
+      f_a(x)+f_a(y)-f_a(x+y)
+      =
+      \frac{axy(2+a(x+y))}
+           {(1+ax)(1+ay)(1+a(x+y))}
+      \ge0,
+   \]
+   and the general case follows by induction.  Hence,
+   with \(T=T_{\mathcal F}(u)=\sum_wT_w\),
+   \[
+      S\ge \frac{T}{1+(h-1)T}.
+   \]
+   Since \(x\mapsto x/(1+x)\) is increasing,
+   \[
+      W(u)\ge
+      \frac{T/(1+(h-1)T)}
+           {1+T/(1+(h-1)T)}
+      =
+      \frac{T}{1+hT}.
+   \]
+   This proves \((USC1)\).  The reciprocal form \((USC2)\) is the same
+   inequality rearranged.  Finally, if \(T_{\mathcal F}(r)\le1\), then
+   \((USC1)\) gives \(W(r)\ge T_{\mathcal F}(r)/(H+1)\); if
+   \(T_{\mathcal F}(r)\ge1\), it gives \(W(r)\ge1/(H+1)\).
+\end{proof}
+
+\begin{corollary}[Harmonic skeleton certificate]
+   \label{cor:harmonic-skeleton-certificate}
+   In a budget-thinned route trie, contract every maximal region whose edges
+   all have success probability \(1\) until the first frontier containing a
+   thinned geometric opportunity, a fractional-delivery opportunity, or a
+   terminal route.  At the entrance \(r\) of any contracted region with exit
+   frontier \(\mathcal F\), it is enough that
+   \[
+      \sum_{z\in\mathcal F} W(z)\ge \log^{-A_c}n ;
+   \]
+   if the region depth is \(\log^{O_c(1)}n\), then
+   \(W(r)\ge\log^{-O_c(1)}n\).  Therefore ordinary score branching,
+   deterministic residual routing, and budget-stable deterministic recentering
+   do not create a polynomial near-value loss.  A skeleton proof only needs to
+   lower-bound the downstream harmonic mass presented to these unit-success
+   regions; the nontrivial value loss is isolated to genuinely thinned
+   opportunities.
+\end{corollary}
+
+\begin{proof}
+   Apply \cref{lem:unit-success-skeleton-contraction} to the contracted region.
+   The displayed lower bound is exactly \((USC3)\) with
+   \(T_{\mathcal F}(r)\ge\log^{-A_c}n\) and polylogarithmic
+   \(h_{\mathcal F}(r)\).  The final statement is just the definition of the
+   contracted skeleton: all nontrivial edge probabilities are attached to the
+   thinned or fractional-delivery frontier edges.
+\end{proof}
+
 \begin{corollary}[Cutset value delivery]\label{cor:cutset-value-delivery}
    In the setting of \cref{cor:fractional-value-delivery}, suppose every
    route has length at most $H$ and every route cut $\mathcal C$ in the
@@ -12732,8 +12851,10 @@ This certificate is the local form of the remaining problem. It is analogous in 
       \frac{\sum_w\gamma_{u,w}W(w)}
            {1+\sum_w\gamma_{u,w}W(w)}.
    \]
-   A chain of unthinned score edges loses only the route depth, while an
-   underfunded geometric opportunity is visible through the local sum
+   \Cref{lem:unit-success-skeleton-contraction} makes the harmless part
+   precise: a whole score-only unit-success region contributes only its depth
+   as harmonic resistance.  An underfunded geometric opportunity, by contrast,
+   is visible through the local sum
    $\sum_w\gamma_{u,w}W(w)$. Thus a fully explicit sufficient target is to
    prove inverse-polylogarithmic harmonic value at the root of the tame-route
    trie. By \cref{lem:harmonic-saturated-comparison}, this is equivalent to
@@ -17966,6 +18087,19 @@ moment bound.  Thus a future geometric construction does not need to prove an
 independent route-law theorem: it may instead prove a suffix charge-density
 inequality against the list-decoder prefix measure.  Same-prefix domination is
 only a convenient stronger sufficient condition.
+\Cref{lem:unit-success-skeleton-contraction} removes the ordinary score-only
+part from the harmonic target: a deterministic unit-success region with exit
+frontier \(\mathcal F\) satisfies
+\[
+   \frac1{W(r)}
+   \le
+   \frac1{\sum_{z\in\mathcal F}W(z)}
+   +h_{\mathcal F}(r).
+\]
+Thus score branching, deterministic residual edges, and budget-stable
+recenterings add only polylogarithmic harmonic resistance.  The remaining
+near-value theorem can be stated on the contracted skeleton of genuinely
+thinned geometric or fractional-delivery opportunities.
 \Cref{cor:existential-antichain-fano} composes this with the Fano decoder in
 the ANN-correct existential form: if the union of valid terminal routes has the
 same antichain charge bound and every such route has \(O_c(\log\log n)\) raw
@@ -18096,7 +18230,7 @@ For the randomized cap-thinning route, one remaining task is the branching first
    \le
    \log^{O_c(1)}n\,V(\varnothing)^2 .
 \]
-\Cref{lem:local-lca-energy} further reduces this to a local Bellman multiplier, and \cref{cor:square-nonexpansive-routes} shows that square-nonexpansive value branching costs only the polylogarithmic route depth. Equivalently, \cref{lem:energy-spine-toll} says that it is enough to prove only $O_c(\log\log n)$ positive square-energy toll along the energy-biased route spine. The capped-flow certificate \cref{lem:unit-capped-value-flow}, the Bellman recursion \cref{lem:saturated-value-recursion}, and the min-cut dual \cref{lem:saturated-value-mincut} give a still simpler sufficient formulation: prove that every route cut has inverse-polylogarithmic prefix-success mass. The equivalent dominated-law form in \cref{lem:dominated-route-law} says to construct a tilted law on tame routes whose prefix probabilities are dominated by activation prefix masses up to a polylogarithmic factor; by \cref{cor:typical-route-law-toll}, it is enough to prove only $O_c(\log\log n)$ expected positive domination toll under that route law and prune the bad tail. The cut-energy form \cref{lem:cut-energy-route-law} is closer to stopping-time proofs: it asks only for polylogarithmic $\sum_{u\in\mathcal C}\Lambda(u)^2/A(u)$ on each route cut $\mathcal C$. By \cref{lem:frontier-square-toll}, this is equivalent to bounding the positive square toll of the square-biased route spine up to each stopped frontier, with no all-prefix depth summation. The stronger all-prefix bound in \cref{cor:route-law-prefix-energy} remains an LCA-compatible sufficient condition. Conditional on either aggregate value statement, \cref{prop:budget-thinned-polylog} gives the desired polylogarithmic ANN theorem. This is a fully non-channel route; the smooth product terminal filter can be used after localization and no longer contributes an inverse-polylogarithmic table-recall penalty. The structured posterior route replaces the cap-frontier obstacle by the tilted witness-list target \cref{asm:smoothed-witness-list}: prove a compact reporter whose verified candidate list contains the true near point with constant mass under the query-centered tilted Gaussian law. The rate-coverage panel \cref{asm:rate-coverage-panel} is the most concrete facility version of this target: a multi-assignment scheme is certified by the closed-form miss term \(\exp(-a_p\mu_p(B))\), the reported-load bound, and the total replication budget. The stronger max-tilted sampler \cref{asm:alpha-leader-sampler} and nearest-cell decoder \cref{asm:smoothed-nearest-cell} remain clean implementation normal forms, but k-means++-style or lattice/code buckets only need the rate-coverage certificates. The smoothed sampling route replaces both by \cref{asm:smoothed-gibbs} or \cref{asm:gumbel-mips}: prove either an optimal-exponent reporter that captures inverse-polylogarithmic Gaussian Gibbs mass, or a certified $O(\log\log n)$-additive Gumbel-MIPS primitive. Smoothed additive nearest neighbor is another stronger sufficient primitive. The detector-vote cohort-or-leaf route is a separate possible generalization to arbitrary certified child hierarchies, where the remaining issue is near-lineage coupling between ordinary continuation paths and detector activations.
+\Cref{lem:local-lca-energy} further reduces this to a local Bellman multiplier, and \cref{cor:square-nonexpansive-routes} shows that square-nonexpansive value branching costs only the polylogarithmic route depth. Equivalently, \cref{lem:energy-spine-toll} says that it is enough to prove only $O_c(\log\log n)$ positive square-energy toll along the energy-biased route spine. The capped-flow certificate \cref{lem:unit-capped-value-flow}, the Bellman recursion \cref{lem:saturated-value-recursion}, and the min-cut dual \cref{lem:saturated-value-mincut} give a still simpler sufficient formulation: prove that every route cut has inverse-polylogarithmic prefix-success mass. The equivalent dominated-law form in \cref{lem:dominated-route-law} says to construct a tilted law on tame routes whose prefix probabilities are dominated by activation prefix masses up to a polylogarithmic factor; by \cref{cor:typical-route-law-toll}, it is enough to prove only $O_c(\log\log n)$ expected positive domination toll under that route law and prune the bad tail. The cut-energy form \cref{lem:cut-energy-route-law} is closer to stopping-time proofs: it asks only for polylogarithmic $\sum_{u\in\mathcal C}\Lambda(u)^2/A(u)$ on each route cut $\mathcal C$. By \cref{lem:frontier-square-toll}, this is equivalent to bounding the positive square toll of the square-biased route spine up to each stopped frontier, with no all-prefix depth summation. The stronger all-prefix bound in \cref{cor:route-law-prefix-energy} remains an LCA-compatible sufficient condition. \Cref{lem:unit-success-skeleton-contraction} contracts ordinary score-only regions into additive harmonic resistance, so the remaining value theorem can be stated on the skeleton of genuinely thinned opportunities. Conditional on either aggregate value statement, \cref{prop:budget-thinned-polylog} gives the desired polylogarithmic ANN theorem. This is a fully non-channel route; the smooth product terminal filter can be used after localization and no longer contributes an inverse-polylogarithmic table-recall penalty. The structured posterior route replaces the cap-frontier obstacle by the tilted witness-list target \cref{asm:smoothed-witness-list}: prove a compact reporter whose verified candidate list contains the true near point with constant mass under the query-centered tilted Gaussian law. The rate-coverage panel \cref{asm:rate-coverage-panel} is the most concrete facility version of this target: a multi-assignment scheme is certified by the closed-form miss term \(\exp(-a_p\mu_p(B))\), the reported-load bound, and the total replication budget. The stronger max-tilted sampler \cref{asm:alpha-leader-sampler} and nearest-cell decoder \cref{asm:smoothed-nearest-cell} remain clean implementation normal forms, but k-means++-style or lattice/code buckets only need the rate-coverage certificates. The smoothed sampling route replaces both by \cref{asm:smoothed-gibbs} or \cref{asm:gumbel-mips}: prove either an optimal-exponent reporter that captures inverse-polylogarithmic Gaussian Gibbs mass, or a certified $O(\log\log n)$-additive Gumbel-MIPS primitive. Smoothed additive nearest neighbor is another stronger sufficient primitive. The detector-vote cohort-or-leaf route is a separate possible generalization to arbitrary certified child hierarchies, where the remaining issue is near-lineage coupling between ordinary continuation paths and detector activations.
 
 \appendix
 
