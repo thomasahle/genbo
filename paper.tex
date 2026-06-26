@@ -1057,6 +1057,130 @@ The smooth product filter is not a replacement for \cref{lem:adaptive-continuati
    absorbing \(L(m)\) into the polylogarithmic factor.
 \end{proof}
 
+\begin{lemma}[Positive-correlation occurrence-moment obstruction]
+   \label{lem:positive-correlation-occurrence-obstruction}
+   Fix \(0<\varepsilon<\min\{\beta,1-\beta\}\), \(0<r\le1\), and
+   \(\rho\ge0\).  For arbitrarily large \(m\), in dimension
+   \(D=O_{\beta,\varepsilon}(\log m)\) there is a set
+   \(P=\{x_1,\ldots,x_m\}\subset\mathbb S^{D-1}\) such that
+   \[
+      \beta-\varepsilon
+      \le \ip{x_i}{x_j}\le
+      \beta+\varepsilon
+      \qquad(i\ne j).
+      \tag{PC0}
+   \]
+   Put
+   \[
+      \delta=\sqrt{2(1-\beta-\varepsilon)},
+      \qquad
+      T=\sqrt{2\log m},
+   \]
+   and let \(\mathcal F\) consist of
+   \(M=\lfloor m^{1+\rho}\rfloor\) independent Gaussian cap occurrences
+   \[
+      U_G=\{x:\ip{G}{x}\ge T\},
+      \qquad G\sim N(0,I_D).
+   \]
+   Since \(P\) is already \(\delta\)-separated, the canonical net in each
+   occurrence is \(N_G=P\cap U_G\).  Then
+   \[
+      \E\sum_{F\in\mathcal F}|N_F|^2
+      \ge
+      m^{1+\rho+2-\frac{2}{1+\beta-\varepsilon}}
+      \log^{-O_{\beta,\varepsilon}(1)}m.
+      \tag{PC1}
+   \]
+   Thus the first/second occurrence co-load certificate in
+   \cref{lem:occurrence-moments-dominate-dag} is polynomially too strong as
+   soon as \(\beta>\varepsilon\).
+
+   Moreover, if
+   \[
+      \beta-\varepsilon>\frac{1-r}{1+r},
+      \tag{PC2}
+   \]
+   then the occurrence-weighted \((1+r)\)-moment itself satisfies
+   \[
+      \E\sum_{F\in\mathcal F}|N_F|^{1+r}
+      \ge
+      m^{1+\rho+\Omega_{\beta,\varepsilon,r}(1)} .
+      \tag{PC3}
+   \]
+   Hence an occurrence-weighted list-size theorem cannot be the final
+   worst-case storage proof in positive-correlation tangent caps; the
+   distinct-net quotient in \((CB2)\), or an equivalent dense-cap sharing
+   mechanism, is essential.
+\end{lemma}
+
+\begin{proof}
+   We first construct \(P\).  Let \(e_0\) be a fixed unit vector and choose
+   \(y_1,\ldots,y_m\) independently on the unit sphere in \(e_0^\perp\).  For
+   \(D\ge C_{\beta,\varepsilon}\log m\), the standard spherical cap bound and
+   a union bound give, with positive probability,
+   \[
+      |\ip{y_i}{y_j}|\le \frac{\varepsilon}{1-\beta}
+      \qquad(i\ne j).
+   \]
+   Set
+   \[
+      x_i=\sqrt{\beta}\,e_0+\sqrt{1-\beta}\,y_i .
+   \]
+   Then
+   \[
+      \ip{x_i}{x_j}
+      =
+      \beta+(1-\beta)\ip{y_i}{y_j},
+   \]
+   and \((PC0)\) follows.  The upper bound in \((PC0)\) gives
+   \(\|x_i-x_j\|\ge\delta\), so the whole set \(P\cap U_G\) is a valid
+   \(\delta\)-separated net in its bucket.
+
+   It remains to lower-bound the co-load of one correlated pair.  Let
+   \((X,Y)\) be a centered bivariate normal pair with correlation
+   \(\theta\in[\beta-\varepsilon,\beta+\varepsilon]\).  On the rectangle
+   \([T,T+1/T]^2\), its density is at least
+   \[
+      C_{\beta,\varepsilon}
+      \exp\!\left(-\frac{(T+1/T)^2}{1+\theta}\right).
+   \]
+   Therefore
+   \[
+      \Pr[X\ge T,\ Y\ge T]
+      \ge
+      T^{-2}C_{\beta,\varepsilon}
+      \exp\!\left(-\frac{(T+1/T)^2}{1+\theta}\right)
+      \ge
+      m^{-\frac{2}{1+\beta-\varepsilon}}
+      \log^{-O_{\beta,\varepsilon}(1)}m .
+      \tag{PC4}
+   \]
+   For one occurrence,
+   \[
+      \E |N_G|^2
+      \ge
+      \sum_{i\ne j}\Pr[x_i,x_j\in U_G]
+      \ge
+      m^{2-\frac{2}{1+\beta-\varepsilon}}
+      \log^{-O_{\beta,\varepsilon}(1)}m .
+   \]
+   Multiplying by \(M\) proves \((PC1)\).
+
+   Since \(|N_G|\le m\),
+   \[
+      |N_G|^{1+r}\ge m^{-(1-r)}|N_G|^2 .
+   \]
+   Combining this with the previous lower bound gives
+   \[
+      \E\sum_{F\in\mathcal F}|N_F|^{1+r}
+      \ge
+      m^{1+\rho+1+r-\frac{2}{1+\beta-\varepsilon}}
+      \log^{-O_{\beta,\varepsilon}(1)}m .
+   \]
+   The exponent exceeds \(1+\rho\) exactly under \((PC2)\), proving
+   \((PC3)\).
+\end{proof}
+
 \begin{lemma}[Packing-list moments by separated tuples]
    \label{lem:packing-list-tuple-moment}
    Let \(P\subset\mathbb S^{D-1}\), let \(\delta>0\), and let
@@ -1228,8 +1352,8 @@ The smooth product filter is not a replacement for \cref{lem:adaptive-continuati
    \]
    By \cref{lem:first-moment-query-compression}, the query side needs only the
    success-normalized first moment of the queried bucket or net, relative to
-   the near hit probability \(a_j(q,p)\).  The space side uses
-   \(r=1+\rho_{j+1}\le2\) under the stored-filter law and can be controlled by
+   the near hit probability \(a_j(q,p)\).  The space side uses the exponent
+   \(1+\rho_{j+1}\le2\) under the stored-filter law and can be controlled by
    the first and second tuple profile sums.  Those tuple sums bound the
    occurrence-weighted moment
    \(\sum_F |N_F|^{1+\rho_{j+1}}\), which remains a sufficient condition for
@@ -1237,6 +1361,14 @@ The smooth product filter is not a replacement for \cref{lem:adaptive-continuati
    shared-DAG requirement is weaker: it charges only
    \(\sum_A|A|^{1+\rho_{j+1}}\) over distinct canonical nets, while occurrence
    multiplicities are charged separately as retained filter metadata.
+   \Cref{lem:positive-correlation-occurrence-obstruction} shows why this
+   distinction is not cosmetic.  In a positive-correlation tangent cap, the
+   occurrence co-load and even the occurrence \((1+r)\)-moment can be
+   polynomially too large, although many cap occurrences may induce the same
+   or nearly the same compressed net.  Thus the final worst-case storage proof
+   must use distinct-net quotienting, dense-cap sharing, or an equivalent
+   canonicalization argument; a pure occurrence-moment proof would target a
+   false statement.
 \end{remark}
 
 \begin{lemma}[Flat shells give the data-independent exponent]\label{lem:flat-shell-obstruction}
@@ -21944,7 +22076,9 @@ cap-intersection energy.  The actual shared-DAG theorem is weaker still,
 because it charges each distinct canonical bucket net once and charges
 occurrence multiplicity only as metadata.  Thus the remaining theorem for this
 route is a distinct-net entropy-energy inequality for separated spherical
-buckets, with occurrence co-load as a clean sufficient certificate.
+buckets.  \Cref{lem:positive-correlation-occurrence-obstruction} shows that
+occurrence co-load is only a sufficient certificate and is false as a final
+worst-case target in positive-correlation tangent caps.
 
 For the randomized cap-thinning route, one remaining task is the branching first-split work estimate in \cref{asm:mixed-continuation-operator}: prove that the thinned geometric child potentials contract over random cap-discovery frontiers without replacing the branching decoder by a normalized path law. The newer budget-thinned variant proves the expected work bound from a canonical prefix supermartingale and packages the remaining near-side issue as \cref{asm:aggregate-value-delivery}: prove that the saturated value, or equivalently every route-cut prefix mass, is inverse-polylogarithmic rather than tracking a product along one distinguished path. For laminar route tries, \cref{lem:lca-value-flow} turns the second-moment version into the concrete LCA target
 \[
