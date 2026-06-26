@@ -13602,6 +13602,132 @@ For a threshold $u$, the posterior-superlevel child is
    minimized Lagrangian change.
 \end{proof}
 
+\begin{lemma}[Variational form of reduced-gain separation]
+   \label{lem:reduced-gain-variational-separation}
+   Work in the setting of \cref{lem:finite-rate-coverage-convex}, with a
+   current finite active set \(E\), nonnegative dual multipliers
+   \((\lambda,\theta,\gamma)\), and current active intensities \(b^E\).  A
+   proposed label \(a\) is represented by measurable reporter events
+   \(h_{q,a}(\omega)=\mathbf 1\{a\in A_q^+(\omega)\}\).  Define its dual price
+   \[
+      c_a=\gamma+\sum_q\theta_q\int h_{q,a}(\omega)\,d\nu_q(\omega).
+   \]
+   For each witness \((x,q)\), define the residual tilted density
+   \[
+      W^E_{x,q}(\omega)
+      =
+      \lambda_{x,q}r_{x,q}(\omega)
+      \exp\!\left(
+         -\sum_{a'\in A_q(\omega)}b^E_{x,a'}
+      \right),
+      \tag{VG0}
+   \]
+   with the convention that \(W^E_{x,q}=0\) when \((x,q)\notin\mathcal N\).
+   Put
+   \[
+      G_x^E(a)=
+      \sum_q\int W^E_{x,q}(\omega)h_{q,a}(\omega)d\nu_q(\omega),
+   \]
+   and
+   \[
+      \operatorname{Gain}_E(a)=\sum_x\Phi_{c_a}(G_x^E(a)).
+   \]
+   For an intensity profile \(s=(s_x)_{x\in S}\in\mathbb R_{\ge0}^S\), put
+   \[
+      \|s\|_1=\sum_xs_x
+   \]
+   and define the signed coverage surplus of a candidate label \(a\) by
+   \[
+   \begin{aligned}
+      \Psi_E(a;s)
+      &=
+      \sum_q
+      \int
+      h_{q,a}(\omega)
+      \left[
+         \sum_x(1-e^{-s_x})W^E_{x,q}(\omega)
+         -\theta_q\|s\|_1
+      \right]d\nu_q(\omega)  \\
+      &\qquad -\gamma\|s\|_1 ,
+   \end{aligned}
+      \tag{VG1}
+   \]
+   Then
+   \[
+      \operatorname{Gain}_E(a)
+      =
+      \sup_{s\in\mathbb R_{\ge0}^S}\Psi_E(a;s).
+      \tag{VG2}
+   \]
+   Consequently, \(a\) has positive reduced gain if and only if there is an
+   intensity profile \(s\) for which the signed weighted coverage problem
+   \[
+      \Psi_E(a;s)>0
+      \tag{VG3}
+   \]
+   succeeds.
+
+   In particular, an implicit label family \(\mathcal U\) has no positive-gain
+   label exactly when
+   \[
+      \sup_{a\in\mathcal U}\Psi_E(a;s)\le0
+      \qquad\text{for every }s\in\mathbb R_{\ge0}^S .
+      \tag{VG4}
+   \]
+   Thus a separator for signed weighted coverage objectives of the form
+   \((VG1)\), together with any exact outer maximization over \(s\), implements
+   the reduced-gain separator of
+   \cref{lem:implicit-reduced-gain-separation}.  Approximate separation is also
+   sound in the one-sided sense: any returned label with verified
+   \(\Psi_E(a;s)>0\) is an improving column, while a no-positive certificate
+   must certify \((VG4)\).
+\end{lemma}
+
+\begin{proof}
+   For \(c,G\ge0\), the reduced-gain function satisfies
+   \[
+      \Phi_c(G)=\sup_{s\ge0}\{G(1-e^{-s})-cs\}.
+      \tag{VG5}
+   \]
+   Indeed, if \(G\le c\), the derivative \(Ge^{-s}-c\) is nonpositive at
+   \(s=0\) and stays nonpositive, so the optimum is \(0\).  If \(G>c>0\), the
+   optimum is at \(s=\log(G/c)\) and has value
+   \(G-c-c\log(G/c)\).  If \(c=0\), the supremum is \(G\), approached as
+   \(s\to\infty\).
+
+   Applying \((VG5)\) independently for each point gives
+   \[
+      \operatorname{Gain}_E(a)
+      =
+      \sup_{s_x\ge0}
+      \sum_x
+      \left[
+         G_x^E(a)(1-e^{-s_x})-c_a s_x
+      \right].
+      \tag{VG6}
+   \]
+   Substitute
+   \[
+      G_x^E(a)=
+      \sum_q\int W^E_{x,q}(\omega)h_{q,a}(\omega)d\nu_q(\omega)
+   \]
+   and
+   \[
+      c_a=\gamma+\sum_q\theta_q\int h_{q,a}(\omega)d\nu_q(\omega).
+   \]
+   Rearranging the finite sums and integrals in \((VG6)\) gives exactly
+   \((VG1)\), proving \((VG2)\).
+
+   The positive-gain equivalence follows immediately from \((VG2)\).  Taking
+   the supremum over \(a\in\mathcal U\) gives \((VG4)\).  Finally, when a
+   candidate label and profile satisfy \((VG3)\), equation \((VG2)\) implies
+   \(\operatorname{Gain}_E(a)>0\), so the verified label is an improving column
+   by \cref{cor:whole-bucket-reduced-gain}.  Conversely, a no-positive answer
+   is valid only if it proves the universal inequality \((VG4)\), which is
+   precisely the no-gain hypothesis used by
+   \cref{lem:implicit-reduced-gain-separation}.
+\end{proof}
+
 \begin{lemma}[Finite rate-coverage column generation]
    \label{lem:finite-rate-coverage-column-generation}
    Fix a finite candidate label family \(\mathcal B\) and a reporter
@@ -13884,6 +14010,10 @@ For a threshold $u$, the posterior-superlevel child is
    positive-gain pair until a feasible active certificate is found.  Thus the
    theorem target is no longer Lloyd convergence; it is the absence of a
    positive dual obstruction for a compact decodable label family.
+   \Cref{lem:reduced-gain-variational-separation} rewrites that obstruction as
+   a signed weighted coverage objective after choosing candidate intensities,
+   so a code, lattice, trellis, or facility generator can search with its native
+   weighted reporter and then verify the exact nonlinear gain.
    \Cref{lem:seeded-reduced-gain-search} is the build-time version of the same
    statement.  A \(k\)-means++ sampler, repulsive facility search, product-code
    threshold reporter, Construction-A residue decoder, or lattice
@@ -15312,7 +15442,10 @@ dual obstruction for a proposed finite panel.  The reduced-cost,
 whole-bucket-gain, and column-generation lemmas,
 \cref{lem:rate-coverage-column-gain}, \cref{cor:whole-bucket-reduced-gain}, and
 \cref{lem:finite-rate-coverage-column-generation}, make expensive build-time
-search exact for any finite candidate label family.  The seeded search
+search exact for any finite candidate label family.
+\Cref{lem:reduced-gain-variational-separation} turns the nonlinear
+whole-bucket objective into a signed weighted coverage problem over label
+events, parameterized by candidate intensities.  The seeded search
 compiler \cref{lem:seeded-reduced-gain-search} isolates the useful
 code/lattice contribution: a proposal sampler or list decoder only has to
 expose a positive reduced-gain label against each surviving dual obstruction;
@@ -15549,7 +15682,10 @@ same exact convex verifier.  \Cref{lem:implicit-reduced-gain-separation}
 turns this into a true separation-oracle statement for implicit quotient
 families: if a code, lattice, trellis, or facility universe cannot expose
 positive gain, the dual obstruction rules out every finite-support panel from
-that universe.
+that universe.  \Cref{lem:reduced-gain-variational-separation} gives the
+search form of the oracle: after choosing tentative point intensities, the
+label generator only solves a signed weighted coverage problem, and exact
+verification converts any positive surplus into a valid column.
 
 \Cref{lem:smoothed-max-score-margin} gives a still simpler non-channel target: a query-centered Gaussian score direction separates every invalid point from the true near point by an additive $\Theta_c(tr^2)$ score margin, with high probability. The softest resulting primitive is \cref{asm:smoothed-gibbs}: with inverse-polylogarithmic probability, report a list carrying inverse-polylogarithmic mass under the Gaussian Gibbs kernel on data points. Sampling from the kernel restricted to that list gives a pointwise dominated output law by \cref{lem:captured-gibbs-domination}, and \cref{lem:smoothed-gibbs-suffices} then returns a valid answer because invalid points have negligible Gibbs mass and cannot be oversampled too much. A more exact sampling route is certified additive Gumbel-MIPS: \cref{lem:gumbel-additive-domination} shows that an $O(\log\log m)$ additive optimizer for the Gumbel-perturbed scores gives precisely the required one-sided Gibbs domination, yielding \cref{prop:gumbel-mips-polylog}. A stronger but different implementation route is smoothed additive nearest-neighbor search for the perturbed center $Y/t$ with additive squared-distance error $\Theta_c(r^2)$, exactly equivalent to additive score maximization by \cref{lem:score-max-additive-nn}. These oracles would bypass dyadic scales and representatives entirely, as recorded in \cref{prop:smoothed-gibbs-polylog}, \cref{prop:gumbel-mips-polylog}, and \cref{prop:smoothed-score-max-polylog}. They are targets, not implemented theorems; \cref{rem:gumbel-mips-not-ann} explains why black-box multiplicative ANN does not supply the Gumbel primitive. The older finite restricted-channel compiler \cref{asm:finite-restricted-channel} and \cref{prop:finite-channel-polylog} remain as a coarse explicit-enumeration special case and as a useful diagnostic framework.
 
