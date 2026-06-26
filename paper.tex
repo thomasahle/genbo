@@ -13516,6 +13516,103 @@ analysis.
    dual certificate.  Thus the cover LP is feasible.
 \end{proof}
 
+\begin{lemma}[Slice-to-core domination certificate]
+   \label{lem:slice-to-core-domination}
+   Work in the setting of \cref{lem:high-correlation-dense-slice-separator}, and
+   let \(\mathcal U\) be a finite Pareto-priced core family.  Define the average
+   primitive high-correlation captured demand
+   \[
+      \mathsf A_{\rm hc}
+      =
+      \E_{Z\sim\Pi}\sum_{q\in\mathcal Q}A_{Z,q}
+      =
+      \sum_{(p,q)\in\mathcal N}
+      \alpha_{p,q}\Pr_{Z\sim\Pi}[p\in V_{Z,q}].
+      \tag{SCD0}
+   \]
+   Suppose there is a finite nonnegative measure \(\Lambda\) on records
+   \[
+      (U,y),
+      \qquad
+      (U,T_U,S_U)\in\mathcal U,
+      \qquad
+      0\le y\le1,
+   \]
+   satisfying the pairwise domination inequalities
+   \[
+      \sum_{(U,y)}\Lambda_{U,y}y_q
+      \mathbf 1\{p\in U,\ p\in V_{z,q}\text{ for some }z\}
+      \ge
+      \Pr_{Z\sim\Pi}[p\in V_{Z,q}]
+      \qquad((p,q)\in\mathcal N),
+      \tag{SCD1}
+   \]
+   and the strict price inequality
+   \[
+      \sum_{(U,y)}\Lambda_{U,y}
+      \left[
+         T_U\sum_q\tau_qy_q+\sigma S_U
+      \right]
+      <
+      \mathsf A_{\rm hc}.
+      \tag{SCD2}
+   \]
+   Then some threshold activation of a core in \(\mathcal U\) has positive
+   reduced gain.
+\end{lemma}
+
+\begin{proof}
+   Using the definition of \(a_U(q)\) from
+   \cref{lem:weighted-pareto-core-hinge-separator}, the demand side of the
+   weighted core law is
+   \[
+      \sum_{(U,y)}\Lambda_{U,y}\sum_qy_qa_U(q)
+      =
+      \sum_{(p,q)\in\mathcal N}
+      \alpha_{p,q}
+      \sum_{(U,y)}\Lambda_{U,y}y_q
+      \mathbf 1\{p\in U,\ p\in V_{z,q}\text{ for some }z\}.
+   \]
+   By \((SCD1)\), this is at least \(\mathsf A_{\rm hc}\).  Subtracting the
+   price side and using \((SCD2)\) gives \((WCL1)\).  The conclusion follows
+   from \cref{cor:weighted-pareto-core-law-separator}.
+\end{proof}
+
+\begin{corollary}[Dominating slice compression implies local cover]
+   \label{cor:slice-core-compression-local-cover}
+   Work in the setting of \cref{cor:residual-separator-local-cover}.  Enlarge
+   the finite filter universe by threshold activations of a finite Pareto-priced
+   core family \(\mathcal U_{\rm sc}\).  Suppose that every surplus dual price
+   system \((\alpha,\tau,\sigma)\) satisfying \((RS1)\) and having nonpositive
+   reduced gain on the spherical buckets, whole high-correlation dense slices,
+   and atom-safe primitive dense prefixes admits a measure \(\Lambda\) on
+   \(\mathcal U_{\rm sc}\) satisfying \((SCD1)\)--\((SCD2)\).  Then the finite
+   filter-cover LP \((\mathsf{FC}_{\mathcal N})\) is feasible with query budget
+   \(L\) and storage budget \(S\).
+\end{corollary}
+
+\begin{proof}
+   If the cover LP were infeasible, \cref{lem:finite-filter-cover-dual} would
+   give a surplus dual certificate with nonpositive reduced gain on every
+   retained column.  The assumed slice-to-core domination certificate and
+   \cref{lem:slice-to-core-domination} then expose a positive-gain threshold
+   activation from the enlarged universe, a contradiction.
+\end{proof}
+
+The domination certificate is the precise compression version of dense merging.
+If the records \((U,y)\) are the singleton slices
+\((V_{z,q},\mathbf 1_{\{q\}})\) with intensity \(\Pi(z)\) for every query \(q\),
+then \((SCD1)\) is equality and \((SCD2)\) is exactly the sharp average
+dense-slice test \((DS2)\); the displayed condition \((DS3)\) is its
+\((WS1)\)-based lower-bound sufficient form.  A nontrivial quotient, cap net,
+facility bucket, additive quantization cell, or list-decoded region is useful
+only when it preserves the same pair-incidence profile while reducing the
+Pareto price in \((SCD2)\).
+Thus the remaining geometric theorem can be stated without algorithmic
+branching language: every residual spherical obstruction must admit a
+radius-contracting core domination of the primitive high-correlation slice law
+whose price is below its captured dual mass.
+
 The exact weighted form is stronger than the dyadic core screen above.  The
 dyadic objective \(\theta_jc_U(q)\) lower-bounds \(a_U(q)\) on one price layer
 and is useful when the proposal generator wants an unweighted counting problem.
@@ -25263,7 +25360,12 @@ already implies local filter-cover feasibility.
 \Cref{cor:weighted-pareto-core-law-local-cover} gives the same local-cover
 conclusion for an exact weighted core law, a successful separator can now be
 verified without dyadic demand unweighting whenever it can optimize the original
-dual prices.  Because
+dual prices.  \Cref{lem:slice-to-core-domination} supplies the direct bridge
+from the spherical obstruction to that core law: dominate the primitive
+high-correlation slice incidence profile by certified Pareto cores and pay less
+than the captured dual mass.  This recovers the raw dense-slice test as the
+singleton-core case and identifies the remaining geometric theorem as a
+price-reducing compression or quotienting statement.  Because
 preprocessing time is deliberately not a scarce resource,
 \cref{lem:finite-pool-optimizer} and
 \cref{cor:offline-pareto-compression} allow the build stage to enumerate,
