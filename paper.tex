@@ -13127,6 +13127,131 @@ that has to be contradicted using the spherical high-correlation co-load, or
 accepted as the condition under which the spherical reduced-gain test already
 wins.
 
+\begin{lemma}[Pareto core hinge normal form]
+   \label{lem:pareto-core-hinge-normal-form}
+   Fix a dyadic demand layer \(\mathcal N_j\) and a certified core
+   \((U,T_U,S_U)\).  Define its saturated layer support at a query by
+   \[
+      c_U(q)
+      =
+      |\{p\in U:(p,q)\in\mathcal N_j,\
+      p\in V_{z,q}\text{ for some }z\}|.
+   \]
+   Then
+   \[
+      \max_{0\le y\le1}
+      \left[
+         \theta_j\sum_{p\in U}d_y(p)-T_U\sum_q\tau_qy_q-\sigma S_U
+      \right]
+      =
+      \sum_q(\theta_jc_U(q)-T_U\tau_q)_+-\sigma S_U .
+      \tag{PCH1}
+   \]
+   Consequently, the following are equivalent.
+   First, the core violates the residual envelope \((PDCE1)\) for some
+   fractional query weighting.  Second,
+   \[
+      \sum_q(\theta_jc_U(q)-T_U\tau_q)_+>\sigma S_U .
+      \tag{PCH2}
+   \]
+   Third, the positive-margin query set
+   \[
+      Q^+(U)=\{q:\theta_jc_U(q)>T_U\tau_q\}
+   \]
+   makes the threshold filter \((U,Q^+(U))\) have positive reduced gain.
+\end{lemma}
+
+\begin{proof}
+   Since
+   \[
+      \sum_{p\in U}d_y(p)=\sum_qy_qc_U(q),
+   \]
+   the expression inside the maximum is
+   \[
+      \sum_qy_q(\theta_jc_U(q)-T_U\tau_q)-\sigma S_U .
+   \]
+   Maximizing independently over \(0\le y_q\le1\) gives \((PCH1)\).
+   Thus some fractional weighting violates \((PDCE1)\) if and only if
+   \((PCH2)\) holds.
+
+   For \(Q^+(U)\), the captured demand in the dyadic layer is at least
+   \[
+      \theta_j\sum_{q\in Q^+(U)}c_U(q).
+   \]
+   Therefore the reduced gain of \((U,Q^+(U))\) is at least
+   \[
+      \sum_{q\in Q^+(U)}(\theta_jc_U(q)-T_U\tau_q)-\sigma S_U
+      =
+      \sum_q(\theta_jc_U(q)-T_U\tau_q)_+-\sigma S_U .
+   \]
+   Hence \((PCH2)\) implies positive reduced gain.  Conversely, if some query
+   set \(Q'\) gives positive reduced gain, then the same lower-bound expression
+   over \(Q'\) is positive after discarding nonpositive margins, so
+   \((PCH2)\) holds.
+\end{proof}
+
+\begin{corollary}[Dyadic Pareto-core margin screen]
+   \label{cor:dyadic-pareto-core-margin-screen}
+   Work in the setting of \cref{lem:pareto-core-hinge-normal-form}.  Partition
+   the positive margins
+   \[
+      d_q(U)=(\theta_jc_U(q)-T_U\tau_q)_+
+   \]
+   into dyadic classes \(\mathcal Q_1,\ldots,\mathcal Q_K\), where
+   \[
+      \Delta_\ell\le d_q(U)<2\Delta_\ell
+      \qquad(q\in\mathcal Q_\ell).
+   \]
+   If
+   \[
+      \sum_qd_q(U)>2K\,\sigma S_U,
+      \tag{PCM1}
+   \]
+   then some margin class \(\mathcal Q_\ell\) makes the restricted filter
+   \((U,\mathcal Q_\ell)\) have positive reduced gain.  Conversely, if no
+   dyadic margin class of \(U\) has positive reduced gain, then
+   \[
+      \sum_qd_q(U)\le2K\,\sigma S_U .
+      \tag{PCM2}
+   \]
+\end{corollary}
+
+\begin{proof}
+   If every class satisfied
+   \[
+      \Delta_\ell|\mathcal Q_\ell|\le\sigma S_U,
+   \]
+   then
+   \[
+      \sum_qd_q(U)
+      <
+      2\sum_{\ell=1}^K\Delta_\ell|\mathcal Q_\ell|
+      \le
+      2K\sigma S_U,
+   \]
+   contradicting \((PCM1)\).  Hence some class has
+   \(\Delta_\ell|\mathcal Q_\ell|>\sigma S_U\).  On this class,
+   \[
+      \sum_{q\in\mathcal Q_\ell}
+      (\theta_jc_U(q)-T_U\tau_q)
+      \ge
+      \Delta_\ell|\mathcal Q_\ell|
+      >
+      \sigma S_U .
+   \]
+   The reduced gain of \((U,\mathcal Q_\ell)\) is positive by the same dyadic
+   layer lower bound used in \cref{lem:pareto-core-hinge-normal-form}.  The
+   converse is the contrapositive.
+\end{proof}
+
+\Cref{lem:pareto-core-hinge-normal-form} removes fractional query weights from
+the verification of a proposed core.  The only remaining choices are the
+update-side certified core and, up to the logarithmic search slack in
+\cref{cor:dyadic-pareto-core-margin-screen}, one ordinary query-margin layer.
+Thus the geometric separator can focus on producing a smaller-radius or cheaper
+Pareto core with large positive support-minus-load margin; the query side is
+canonical.
+
 \begin{assumption}[Layer quotient separator]
    \label{asm:layer-quotient-separator}
    Work in the setting of \cref{cor:residual-separator-local-cover}.  Suppose a
@@ -24843,6 +24968,10 @@ target is a priced bipartite dense-core separator, with fractional query weights
 used only to find integral threshold witnesses.
 \Cref{cor:pareto-dense-core-envelope} makes the failure condition explicit:
 every certified core must obey the weighted support envelope \((PDCE1)\).
+\Cref{lem:pareto-core-hinge-normal-form} converts this envelope to the canonical
+positive-margin query side of a proposed core, and
+\cref{cor:dyadic-pareto-core-margin-screen} shows that logarithmically many
+margin layers suffice for proposal search before exact verification.
 By
 \cref{cor:layer-separation-local-cover},
 \cref{cor:hinge-container-separator-local-cover}, and
