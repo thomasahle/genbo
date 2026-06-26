@@ -16793,6 +16793,77 @@ singleton slices by hand.
    the support has positive soft gain, reducing to the point-mass case.
 \end{proof}
 
+\begin{lemma}[Fixed-mass soft buckets are near-hard]
+   \label{lem:fixed-mass-soft-buckets-near-hard}
+   Fix a certified container \(W\in\mathcal W\), a price system
+   \((\gamma,\tau,\sigma)\), and a mass \(0\le\mu\le |W|\).  Let
+   \[
+      \Delta_W(\mu)=
+      \{\pi\in[0,1]^W:\sum_{p\in W}\pi_p=\mu\}.
+   \]
+   For \(\pi\in\Delta_W(\mu)\), put
+   \[
+      h_\pi(q)=
+      \sum_{p\in W:(p,q)\in\mathcal N}
+         \pi_p\gamma_{p,q}r_{p,q},
+   \]
+   and define the fixed-mass soft score
+   \[
+      \Phi_\mu(\pi)
+      =
+      \sum_{q\in\mathcal Q}
+      \bigl(h_\pi(q)-b\,\psi_W\mu^{\rho_W}\tau_q\bigr)_+ .
+      \tag{FMS1}
+   \]
+   Then \(\Phi_\mu\) is maximized over \(\Delta_W(\mu)\) by a vector with at
+   most one fractional coordinate.  In particular, if \(\mu\) is an integer,
+   the maximum is attained by a hard list \(L\subseteq W\) of size \(\mu\).
+\end{lemma}
+
+\begin{proof}
+   For fixed \(\mu\), every \(h_\pi(q)\) is linear in \(\pi\), and
+   \(x\mapsto x_+\) is convex.  Therefore \(\Phi_\mu\) is convex on the compact
+   polytope \(\Delta_W(\mu)\), so it has a maximizer at an extreme point of that
+   polytope.
+
+   It remains only to identify the extreme points.  If two coordinates
+   \(p_1,p_2\) are strictly between \(0\) and \(1\), then for sufficiently small
+   \(\varepsilon>0\) both vectors obtained by adding \(\varepsilon\) to
+   \(\pi_{p_1}\) and subtracting it from \(\pi_{p_2}\), or vice versa, remain in
+   \(\Delta_W(\mu)\).  Their average is \(\pi\), so \(\pi\) is not extreme.
+   Thus every extreme point has at most one fractional coordinate.  If
+   \(\mu\) is an integer, the sum of the integral coordinates already differs
+   from \(\mu\) by an integer, so the possible fractional coordinate must in
+   fact be \(0\) or \(1\).  The maximizer is then an indicator vector
+   \(\mathbf 1_L\) with \(|L|=\mu\).
+\end{proof}
+
+\begin{corollary}[Soft gain has a near-hard maximizer]
+   \label{cor:soft-gain-near-hard-maximizer}
+   In the setting of \cref{cor:finite-soft-bucket-separation}, fix a container
+   \(W\) and optimize \(\mathsf{SG}_{\gamma,\tau,\sigma}\) over all marginals
+   on \(W\).  A maximizer exists whose support is a hard list plus at most one
+   fractional point.  If the maximizing mass is integral, the maximizer is a
+   hard list.
+\end{corollary}
+
+\begin{proof}
+   Let \(\pi^\star\) be any global maximizer over the compact cube
+   \([0,1]^W\), and put \(\mu^\star=\sum_p\pi^\star_p\).  The full soft gain at
+   fixed mass \(\mu^\star\) is the fixed-mass score
+   \(\Phi_{\mu^\star}(\pi)\) minus the term
+   \[
+      b\,\psi_W\sigma\,(\mu^\star)^{1-\rho_W}
+      (\mu^\star+(\mu^\star)^2)^{\rho_W},
+   \]
+   which depends only on the mass.  By
+   \cref{lem:fixed-mass-soft-buckets-near-hard}, there is a near-hard
+   \(\pi'\in\Delta_W(\mu^\star)\) with
+   \(\Phi_{\mu^\star}(\pi')\ge\Phi_{\mu^\star}(\pi^\star)\).  Since the storage
+   term is unchanged, \(\pi'\) is also a global soft-gain maximizer.  If
+   \(\mu^\star\) is integral, the same lemma makes \(\pi'\) a hard list.
+\end{proof}
+
 \begin{corollary}[Joint query-list proposal separator]
    \label{cor:joint-query-list-proposal-separator}
    Work in the setting of \cref{cor:boolean-query-layer-list-proposal-separator}.
@@ -16865,6 +16936,11 @@ oracle: after generating any finite pool of such soft buckets, preprocessing
 only has to maximize the explicit scalar score \((FSB1)\) against the current
 dual.  Failed buckets are discarded; query time and space charge only the
 verified Boolean columns obtained from positive-gain buckets.
+\Cref{lem:fixed-mass-soft-buckets-near-hard} adds an important simplification:
+once the total mass of a soft bucket is fixed, the best responsibility vector is
+hard except possibly for one point.  Soft buckets are therefore a convenient
+proposal and averaging language; the exact verifier can always be driven toward
+ordinary lists or one-point fractional perturbations.
 
 \begin{assumption}[Balanced aggregate list-size separator]
    \label{asm:balanced-aggregate-list-size-separator}
