@@ -19803,6 +19803,86 @@ inequality \((QP3)\).
    \cref{cor:shared-canonical-panel-storage} gives feasibility.
 \end{proof}
 
+\begin{lemma}[Dyadic tail certificate for distinct child storage]
+   \label{lem:dyadic-tail-distinct-child-storage}
+   Work with one seed \(z\) in the setting of
+   \cref{cor:distinct-canonical-bucket-net}, and write the certified storage
+   price of a distinct canonical child as
+   \[
+      u_{z,\kappa}=
+      \psi_{z,\kappa}K_{z,\kappa}^{1+\rho_{z,\kappa}} .
+   \]
+   For \(i\in\mathbb Z\), let
+   \[
+      C_z(i)=
+      \left|\{\kappa\in\kappa_z(\mathcal B_z):
+      2^i\le u_{z,\kappa}<2^{i+1}\}\right|.
+      \tag{DTS1}
+   \]
+   Then
+   \[
+      \sum_{\kappa\in\kappa_z(\mathcal B_z)}u_{z,\kappa}
+      \le
+      2\sum_{i\in\mathbb Z}2^iC_z(i),
+      \tag{DTS2}
+   \]
+   with only finitely many nonzero terms.  Equivalently, for the tail counts
+   \[
+      N_z(t)=
+      \left|\{\kappa\in\kappa_z(\mathcal B_z):u_{z,\kappa}\ge t\}\right|,
+      \tag{DTS3}
+   \]
+   one has the exact layer-cake identity
+   \[
+      \sum_{\kappa\in\kappa_z(\mathcal B_z)}u_{z,\kappa}
+      =
+      \int_0^\infty N_z(t)\,dt .
+      \tag{DTS4}
+   \]
+\end{lemma}
+
+\begin{proof}
+   The dyadic classes in \((DTS1)\) partition the positive-price children.  A
+   child in class \(i\) has price less than \(2^{i+1}\), so summing over classes
+   gives \((DTS2)\).  Zero-price children contribute neither side.
+
+   For the layer-cake form, use
+   \[
+      u_{z,\kappa}=\int_0^\infty \mathbf 1\{t\le u_{z,\kappa}\}\,dt
+   \]
+   for each finite child price and interchange the finite sum and the integral.
+\end{proof}
+
+\begin{corollary}[Dyadic distinct-storage bucket-net certificate]
+   \label{cor:dyadic-distinct-storage-bucket-net}
+   Work in the setting of \cref{cor:distinct-canonical-bucket-net}.  For each
+   seed \(z\), define \(u_{z,\kappa}\) and \(C_z(i)\) as in
+   \cref{lem:dyadic-tail-distinct-child-storage}.  If \(\Sigma^+=\emptyset\),
+   the cover is feasible.  Otherwise let \(a_*\) be as in \((BNR1)\).  Suppose
+   \(a_*>0\), the active first moments satisfy \((DCB2)\), and the dyadic
+   distinct-child tail bound
+   \[
+      \E_z\Gamma_z+
+      2\E_z\sum_{i\in\mathbb Z}2^iC_z(i)
+      \le
+      a_*S
+      \tag{DDS1}
+   \]
+   holds.  Then \((\mathsf{ESFC}_\Sigma)\) is feasible.
+
+   Thus the remaining storage geometry may be stated as a large-child counting
+   theorem: at each recursive price scale \(2^i\), bound the number of distinct
+   canonical bucket nets with price in that dyadic class.  This is strictly the
+   shared-DAG quantity; repeated decoded occurrences of the same canonical net
+   do not increase \(C_z(i)\).
+\end{corollary}
+
+\begin{proof}
+   By \cref{lem:dyadic-tail-distinct-child-storage}, the left side of
+   \((DCB1)\) is at most the left side of \((DDS1)\).  Hence \((DDS1)\) implies
+   \((DCB3)\), and \cref{cor:distinct-canonical-bucket-net} applies.
+\end{proof}
+
 \Cref{lem:exact-near-set-filter-cover} is strictly weaker than
 \cref{lem:finite-signature-filter-cover} when the exact near set is part of the
 signature.  The all-pair LP covers every \(p\in N_{\sigma_0}\); the existential
@@ -19965,6 +20045,10 @@ Renyi list-decoding target.
 actual index: child storage is summed over distinct canonical child identifiers
 inside a decoded panel, while occurrence multiplicity remains only as query load
 and explicit metadata.
+\Cref{lem:dyadic-tail-distinct-child-storage} and
+\cref{cor:dyadic-distinct-storage-bucket-net} turn the same target into dyadic
+large-child counting: prove, at each recursive price scale, that the number of
+distinct canonical bucket nets is small enough.
 
 \begin{proposition}[Conditional fractional filter-cover endpoint]
    \label{prop:fractional-filter-cover-polylog}
@@ -32461,7 +32545,10 @@ with false active buckets included in the active layer.
 \Cref{cor:distinct-canonical-bucket-net} further sharpens the storage target:
 the recursive child index is charged once per distinct canonical bucket net, not
 once per decoded occurrence, with only occurrence pointers left in the metadata
-budget.  The storage side is therefore a distinct-net geometric target.
+budget.  \Cref{cor:dyadic-distinct-storage-bucket-net} rewrites that target as a
+dyadic large-child counting problem: for every recursive price scale, bound the
+number of distinct canonical bucket nets whose shared child index has that
+price.  The storage side is therefore a distinct-net geometric target.
 \Cref{lem:occurrence-moments-dominate-dag},
 \cref{lem:packing-list-tuple-moment},
 \cref{lem:gaussian-cap-intersection-energy}, and
