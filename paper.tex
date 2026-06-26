@@ -2653,6 +2653,94 @@ partition ignores the bias coordinates that certify the list size.
    statement is the displayed estimate with the local target budget substituted.
 \end{proof}
 
+\begin{lemma}[Superset product-panel decoder]
+   \label{lem:superset-product-panel-decoder}
+   Work in the setting of \cref{lem:additive-product-panel-decoder}, but
+   replace the exact block reporters by certified superset reporters.  Thus,
+   for every block \(j\) and threshold \(\theta\), the reporter returns a
+   finite candidate set \(\widehat L_j(q,\theta)\subseteq\mathcal C_j\)
+   containing every \(c\in\mathcal C_j\) with
+   \(\phi_j(q,c)\ge\theta\).  The algorithm evaluates \(\phi_j(q,c)\) on every
+   returned candidate and pushes only the children satisfying the exact
+   threshold.  Suppose the reporter work at threshold \(\theta\), including
+   candidate generation and these exact block-score evaluations, is at most
+   \[
+      A_j(q)+B_j(q)e^{-\beta\theta},
+      \tag{SR1}
+   \]
+   where \(A_j(q),B_j(q)\ge0\).  Define \(Z_j(q)\), \(Z_{\le\ell}(q)\), and
+   \(T_\beta(q)\) as in \cref{lem:additive-product-panel-decoder}, and put
+   \[
+      \widehat P_\beta(q)
+      =
+      \sum_{\ell=0}^{h}
+      e^{\beta R_{\ell+1}(q)}Z_{\le\ell}(q)
+      +
+      \sum_{\ell=0}^{h-1}
+      A_{\ell+1}(q)e^{\beta R_{\ell+1}(q)}Z_{\le\ell}(q)
+   \]
+   \[
+      \hspace{2.2cm}
+      +
+      \sum_{\ell=0}^{h-1}
+      B_{\ell+1}(q)e^{\beta R_{\ell+2}(q)}Z_{\le\ell}(q).
+   \]
+   Then the superset priority decoder visits every terminal
+   \(c\) with \(S_q(c)\ge\Theta\), and its query work is
+   \[
+      O\!\left(
+         (\widehat L_\beta(q)+1)\log(2+\widehat L_\beta(q))
+         +
+         e^{-\beta\Theta}T_\beta(q)
+      \right),
+      \qquad
+      \widehat L_\beta(q)=e^{-\beta\Theta}\widehat P_\beta(q).
+   \]
+\end{lemma}
+
+\begin{proof}
+   Correctness is unchanged from
+   \cref{lem:additive-product-panel-decoder}.  If a terminal descendant of a
+   live prefix can still reach threshold, then its next block symbol satisfies
+   the displayed child threshold and is therefore included in the superset
+   candidate list.  Since the algorithm evaluates the exact block score before
+   pushing a child, the priority queue contains exactly the same live children
+   as the exact-reporter decoder, possibly after doing extra candidate work.
+
+   The number of live prefixes is bounded as before:
+   \[
+      \sum_{|u|=\ell,\ U_q(u)\ge\Theta}1
+      \le
+      e^{-\beta\Theta}
+      e^{\beta R_{\ell+1}(q)}Z_{\le\ell}(q).
+   \]
+   The fixed part \(A_{\ell+1}(q)\) of the block reporter is paid once for
+   every live prefix at level \(\ell\), giving the second sum in
+   \(\widehat P_\beta\).
+
+   For the threshold-dependent part, a live prefix
+   \(u=(c_1,\ldots,c_\ell)\) invokes block \(\ell+1\) at threshold
+   \[
+      \theta(u)=
+      \Theta-\sum_{i=1}^{\ell}\phi_i(q,c_i)-R_{\ell+2}(q).
+   \]
+   By \((SR1)\), its extra candidate work is at most
+   \[
+      B_{\ell+1}(q)
+      e^{-\beta\Theta}
+      \exp\!\left(\beta\sum_{i=1}^{\ell}\phi_i(q,c_i)\right)
+      e^{\beta R_{\ell+2}(q)}.
+   \]
+   Summing this over all live prefixes and then upper-bounding by the sum over
+   all prefixes of length \(\ell\) gives
+   \[
+      e^{-\beta\Theta}
+      B_{\ell+1}(q)e^{\beta R_{\ell+2}(q)}Z_{\le\ell}(q),
+   \]
+   which is the third sum.  The priority-queue and terminal-price terms are
+   bounded exactly as in \cref{lem:additive-product-panel-decoder}.
+\end{proof}
+
 \begin{proposition}[Product-panel spectrum compiler]
    \label{prop:product-panel-spectrum-compiler}
    Fix a terminal localized ANN subproblem of size \(m\), approximation \(c\),
@@ -3833,6 +3921,74 @@ partition ignores the bias coordinates that certify the list size.
    \(\pi_i=k/h\) for every coordinate, giving \((ME4)\).
 \end{proof}
 
+\begin{corollary}[OSD blocks are superset reporters]
+   \label{cor:osd-superset-block-reporter}
+   Let a block code \(\mathcal C\le\mathbb F^h\) and coordinate scores
+   \(\omega_i(q,a)\) be as in \cref{lem:min-entropy-information-set}, and
+   write
+   \[
+      S_q(c)=\sum_{i=1}^h\omega_i(q,c_i),
+      \qquad
+      M(q)=\sum_{i=1}^h\max_{a\in\mathbb F}\omega_i(q,a).
+   \]
+   For a fixed \(\beta>0\), choose the minimum-entropy information set
+   \(I_*(q)\) and let \(\Lambda_*(q)\) be as in
+   \cref{lem:min-entropy-information-set}.  For every threshold \(\theta\),
+   enumerate all information words \(b\in\mathbb F^{I_*(q)}\) satisfying
+   \[
+      U_{I_*}(q,b)\ge\theta,
+   \]
+   extend them to codewords, and exact-filter by \(S_q(c)\ge\theta\).
+   This is a certified threshold reporter for
+   \(\{c\in\mathcal C:S_q(c)\ge\theta\}\).  Before exact filtering, the number
+   of candidate extensions is at most
+   \[
+      \exp\bigl(\beta(M(q)-\theta)+\Lambda_*(q)\bigr).
+      \tag{OSD1}
+   \]
+   Hence the block supplies the superset reporter required by
+   \cref{lem:superset-product-panel-decoder} with
+   \[
+      B(q)=\exp\bigl(\beta M(q)+\Lambda_*(q)\bigr),
+      \tag{OSD2}
+   \]
+   and \(A(q)\) equal to the polylogarithmic chart-construction, sorting, and
+   heap-initialization cost.
+
+   In a product panel whose block upper bounds split as
+   \(R_{\ell+1}(q)=\sum_{j>\ell}M_j(q)\), the OSD candidate term for block
+   \(j=\ell+1\) in \(\widehat P_\beta(q)\) is exactly
+   \[
+      \exp(\Lambda_j(q))\,e^{\beta R_{\ell+1}(q)}Z_{\le\ell}(q).
+      \tag{OSD3}
+   \]
+   Therefore the query-list certificate for an OSD product panel is the usual
+   product-panel prefix moment, with the extra multiplier
+   \(\exp(\Lambda_j(q))\) only at the block being decoded.
+\end{corollary}
+
+\begin{proof}
+   The first claim is \cref{lem:min-entropy-information-set} applied with
+   \(\Theta=\theta\).  The candidate count bound \((OSD1)\) is \((ME1)\) with
+   \(\Delta(q,\theta)=M(q)-\theta\).  Thus the threshold-dependent part of the
+   reporter work is bounded by \(B(q)e^{-\beta\theta}\), proving \((OSD2)\).
+   The remaining operations do not depend on \(\theta\) except through the heap
+   enumeration already charged by the candidate count, so they are absorbed
+   into \(A(q)\).
+
+   For the product-panel identity, substitute
+   \(B_j(q)=\exp(\beta M_j(q)+\Lambda_j(q))\) into the third sum of
+   \cref{lem:superset-product-panel-decoder}:
+   \[
+      B_{\ell+1}(q)e^{\beta R_{\ell+2}(q)}Z_{\le\ell}(q)
+      =
+      e^{\Lambda_{\ell+1}(q)}
+      e^{\beta(M_{\ell+1}(q)+R_{\ell+2}(q))}
+      Z_{\le\ell}(q).
+   \]
+   Since \(M_{\ell+1}(q)+R_{\ell+2}(q)=R_{\ell+1}(q)\), this is \((OSD3)\).
+\end{proof}
+
 \begin{remark}[GMD and Chase as compressed list decoders]
    \label{rem:gmd-chase-compressed-decoder}
    \Cref{lem:reliability-erasure-sweep} is the self-contained form of the
@@ -3878,6 +4034,11 @@ partition ignores the bias coordinates that certify the list size.
    it is a greedy minimum-basis computation.  The remaining geometric spectrum
    theorem can therefore ask for the scalar entropy margin \((ME2)\), instead
    of a full soft list-recovery oracle.
+   \Cref{lem:superset-product-panel-decoder} and
+   \cref{cor:osd-superset-block-reporter} then connect this scalar margin back
+   to the product-panel accounting: false OSD candidates are not hidden in the
+   output-sensitive scan term, but are charged by an explicit
+   \(e^{\Lambda_j(q)}\) multiplier in the prefix moment.
 \end{remark}
 
 \begin{remark}[Outer list recovery as the clean codebook target]
@@ -17228,6 +17389,11 @@ minimum-weight information set.  For MDS blocks this is just the \(k\) smallest
 coordinate entropies; for general linear blocks it is a greedy minimum-basis
 computation.  Thus the decoder overhead target reduces to the scalar margin
 \(\beta(\sum_im_i-\Theta)+\Lambda_*=O_c(\log\log m)\).
+\Cref{lem:superset-product-panel-decoder} handles the fact that OSD and lattice
+enumerators often produce a certified superset before exact filtering.
+\Cref{cor:osd-superset-block-reporter} gives the resulting product-panel query
+certificate: an OSD block contributes the ordinary prefix moment multiplied by
+only \(e^{\Lambda_j(q)}\) at the block being decoded.
 The remaining work is spectrum and rate bookkeeping rather than Lloyd-style
 convergence analysis.
 \Cref{lem:additive-product-panel-decoder}
