@@ -15993,6 +15993,114 @@ singleton slices by hand.
    \(K^{1+\rho}\le H^\rho K\), giving the capped form.
 \end{proof}
 
+\begin{corollary}[Seeded list proposal criterion]
+   \label{cor:seeded-list-proposal-criterion}
+   Work in the setting of \cref{lem:random-list-proposal-criterion}.  Let
+   \(s\sim\nu\) be a finite seed law, and let each seed determine a certified
+   list \(L_s\subseteq W\).  Put
+   \[
+      K_s=|L_s|,
+      \qquad
+      V_s=\sum_{p\in L_s}d_y^\gamma(p).
+   \]
+   If
+   \[
+      \E_{s\sim\nu} V_s
+      >
+      b\,\psi\left(
+         A_y\,\E_{s\sim\nu}K_s^\rho
+         +
+         \sigma\,\E_{s\sim\nu}K_s^{1+\rho}
+      \right),
+      \tag{SLP1}
+   \]
+   then some available paid prefix has positive repair reduced gain.  Equivalently,
+   a deterministic seed already satisfies
+   \[
+      V_s>
+      b\,\psi\left(A_yK_s^\rho+\sigma K_s^{1+\rho}\right).
+      \tag{SLP2}
+   \]
+\end{corollary}
+
+\begin{proof}
+   Applying \cref{lem:random-list-proposal-criterion} to the random list
+   \(L_s\) gives the first conclusion.  If \((SLP2)\) failed for every seed, then
+   averaging the non-strict reverse inequality over \(s\) would contradict
+   \((SLP1)\).
+\end{proof}
+
+\begin{corollary}[Marginal-incidence list proposal criterion]
+   \label{cor:marginal-list-proposal-criterion}
+   Work in the setting of \cref{lem:random-list-proposal-criterion}.  Let
+   \(0\le \pi_p\le1\) be inclusion marginals on \(W\), and put
+   \[
+      \mu=\sum_{p\in W}\pi_p,
+      \qquad
+      V_\pi=\sum_{p\in W}\pi_p d_y^\gamma(p).
+   \]
+   Suppose one can sample a random list \(\mathcal L\subseteq W\) with these
+   marginals and second moment
+   \[
+      \E|\mathcal L|^2\le M_2 .
+      \tag{MIL1}
+   \]
+   If
+   \[
+      V_\pi
+      >
+      b\,\psi\left(
+         A_y\mu^\rho
+         +
+         \sigma\,\mu^{1-\rho}M_2^\rho
+      \right),
+      \tag{MIL2}
+   \]
+   then an available paid prefix has positive repair reduced gain.
+
+   In particular, if \(\mathcal L\) is obtained by independent Bernoulli
+   inclusion with probabilities \(\pi_p\), it is enough that
+   \[
+      V_\pi
+      >
+      b\,\psi\left(
+         A_y\mu^\rho
+         +
+         \sigma\,\mu^{1-\rho}(\mu+\mu^2)^\rho
+      \right).
+      \tag{MIL3}
+   \]
+\end{corollary}
+
+\begin{proof}
+   The random list has
+   \[
+      \E V(\mathcal L)=V_\pi,
+      \qquad
+      \E K=\mu .
+   \]
+   Since \(0<\rho<1\), Jensen gives \(\E K^\rho\le\mu^\rho\).  Log-convexity of
+   \(L_p\)-moments between powers \(1\) and \(2\) gives
+   \[
+      \E K^{1+\rho}
+      \le
+      (\E K)^{1-\rho}(\E K^2)^\rho
+      \le
+      \mu^{1-\rho}M_2^\rho .
+   \]
+   Thus \((MIL2)\) implies \((RLP1)\), and
+   \cref{lem:random-list-proposal-criterion} applies.  For independent Bernoulli
+   inclusion,
+   \[
+      \E K^2
+      =
+      \mu^2+\sum_{p\in W}\pi_p(1-\pi_p)
+      \le
+      \mu^2+\mu,
+   \]
+   giving \((MIL3)\).
+\end{proof}
+
 \begin{assumption}[Balanced aggregate list-size separator]
    \label{asm:balanced-aggregate-list-size-separator}
    Work in the setting of \cref{asm:paid-atomized-prefix-separator}, and assume
@@ -16093,6 +16201,14 @@ available top-degree prefix with positive reduced gain.  Thus \(k\)-means++,
 facility search, AQ buckets, LP range reporting, or list/lattice decoders only
 need to generate high value-per-moment lists; they do not need to align their
 raw output with the final retained prefix.
+\Cref{cor:seeded-list-proposal-criterion} and
+\cref{cor:marginal-list-proposal-criterion} are the two forms most useful for
+implementation and for geometry.  A seeded decoder only has to prove an average
+value-per-moment inequality over its seed law; one good seed then exists and is
+verified exactly.  A soft or randomized decoder can instead certify only the
+inclusion marginals and a second moment of the emitted list.  This turns the
+remaining separator into a concrete moment problem for geometric neighborhoods,
+facility cells, additive-code buckets, or list-decoding output sets.
 \Cref{cor:aggregate-list-moment-residual-envelope} is the matching obstruction:
 if the hit-kernel cover fails, every finite list-size panel obeys \((ALR1)\).
 Thus a proof of the polylog endpoint can now target a single averaged
