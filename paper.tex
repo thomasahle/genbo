@@ -19767,6 +19767,82 @@ singleton slices by hand.
    reverse bound \((OCS2)\) for every retained \(W\) and every nonempty level.
 \end{proof}
 
+\begin{corollary}[Diffuse scalar residual from small containers]
+   \label{cor:diffuse-scalar-residual}
+   Work in the setting of \cref{cor:scalar-normalized-prefix-residual}.  Suppose
+   the scalar geometric statement \((ANP1)\) fails, and let
+   \((\gamma,\tau,\sigma)\) be the normalized residual from
+   \cref{cor:scalar-normalized-prefix-residual}.  Put
+   \[
+      d^\gamma(p)=
+      \sum_{q:(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q},
+      \qquad
+      C_W=
+      \frac{b\,\psi_W}{\pi_1}.
+   \]
+   Then every retained container \(W\) and every \(1\le K\le |W|\) satisfy
+   \[
+      \sum_{p\in P_K^{\rm tot}(W)}d^\gamma(p)
+      <
+      C_W
+      \left(
+         \frac{(\chi\beta b_0)^{\rho_W}K^{\rho_W}}{L}
+         +
+         \frac{(\chi\beta b_0)^{1+\rho_W}K^{1+\rho_W}}{S}
+      \right),
+      \tag{DSR1}
+   \]
+   where \(P_K^{\rm tot}(W)\) is the top-\(K\) total-degree prefix in \(W\).
+   In particular, the total paid mass inside \(W\) is bounded by the right-hand
+   side of \((DSR1)\) with \(K=|W|\).
+
+   If the retained family contains every singleton \(\{p\}\), with
+   \(C_{\{p\}}\le C_1\) and exponents \(0\le\rho_{\{p\}}\le1\), then
+   \[
+      d^\gamma(p)
+      <
+      C_1\left(
+         \frac{1}{L}+\frac{\chi\beta b_0}{S}
+      \right)
+      \max\{1,\chi\beta b_0\}
+      \qquad(p\in P).
+      \tag{DSR2}
+   \]
+   Consequently, since the normalized paid mass is one,
+   \[
+      |\{p:d^\gamma(p)>0\}|
+      >
+      \frac{1}{
+      C_1\left(
+         L^{-1}+(\chi\beta b_0)S^{-1}
+      \right)\max\{1,\chi\beta b_0\}} .
+      \tag{DSR3}
+   \]
+   Thus a residual that defeats all retained one-level dense superlevels must
+   spread its paid mass over many resident points and, more generally, cannot
+   put more than the Renyi mass in \((DSR1)\) inside any retained smaller-radius
+   container.
+\end{corollary}
+
+\begin{proof}
+   The first statement is exactly \((SNP1)\) after substituting the notation
+   \(C_W=b\psi_W/\pi_1\).  Taking \(K=|W|\) gives the total-mass bound for \(W\).
+
+   For a singleton \(W=\{p\}\), use \(K=1\) in \((DSR1)\).  Since
+   \(0\le\rho_{\{p\}}\le1\), both
+   \((\chi\beta b_0)^{\rho_{\{p\}}}\) and
+   \((\chi\beta b_0)^{1+\rho_{\{p\}}}\) are bounded by
+   \(\max\{1,\chi\beta b_0\}\) and
+   \((\chi\beta b_0)\max\{1,\chi\beta b_0\}\), respectively.  This gives
+   \((DSR2)\).  Finally,
+   \[
+      1=\sum_{p\in P}d^\gamma(p)
+      \le
+      |\{p:d^\gamma(p)>0\}|\max_p d^\gamma(p),
+   \]
+   and \((DSR3)\) follows from \((DSR2)\).
+\end{proof}
+
 \begin{corollary}[Scalar dense-overlap separator gives a local cover]
    \label{cor:scalar-dense-overlap-local-cover}
    Work in the local setting of
@@ -19813,6 +19889,11 @@ range-reporting interface: the reporter may be approximate, but it must provide
 one-sided certificates.  Lower hit certificates protect coverage, upper size
 certificates protect recursive query and storage moments, and the final
 retained column is still the exact top-degree prefix verified by the finite LP.
+\Cref{cor:diffuse-scalar-residual} records the complementary pseudo-randomness
+forced by failure: if singleton containers are retained, no point can carry
+more than \(O(1/L+1/S)\) paid mass, and every retained smaller-radius container
+has only the Renyi amount of paid mass allowed by \((DSR1)\).  This is the
+diffuse residual that a spherical fallback or tensor reporter must exploit.
 
 \Cref{cor:finite-all-size-soft-bucket-separation} is the cardinality-net
 version of the dense-overlap column generator.  A proposal family may contain
