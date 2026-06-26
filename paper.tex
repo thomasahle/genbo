@@ -3763,6 +3763,115 @@ partition ignores the bias coordinates that certify the list size.
    logarithm.
 \end{proof}
 
+\begin{lemma}[Priced-prefix additive-IVF reporter]
+   \label{lem:priced-prefix-additive-ivf-reporter}
+   Let \(\mathcal C_1,\ldots,\mathcal C_h\subset\mathbb R^d\) be finite
+   codebooks in the same ambient space.  For a prefix
+   \(u=(c_1,\ldots,c_j)\), write
+   \[
+      A(u)=\sum_{i=1}^j c_i,
+      \qquad
+      s_y(u)=\ip{y}{A(u)}-\frac12\|A(u)\|^2,
+   \]
+   with \(A(\varnothing)=0\) and \(s_y(\varnothing)=0\).  For a suffix
+   \(v=(c_j,\ldots,c_h)\), define the suffix score
+   \[
+      S_z^{j:h}(v)=\ip{z}{A(v)}-\frac12\|A(v)\|^2 .
+   \]
+   Also set \(S_z^{h+1:h}(\varnothing)=0\).
+   Then every complete tuple \(c=(c_1,\ldots,c_h)\) satisfies the exact
+   shifted-prefix identity
+   \[
+      S_y^{1:h}(c)
+      =
+      s_y(c_1,\ldots,c_j)
+      +
+      S_{y-A(c_1,\ldots,c_j)}^{j+1:h}(c_{j+1},\ldots,c_h)
+      \tag{PFX0}
+   \]
+   for all \(0\le j\le h\).  Equivalently, the incremental score of adding
+   \(c_{j+1}\) after prefix \(u\) is
+   \[
+      s_y(uc_{j+1})-s_y(u)
+      =
+      \ip{y-A(u)}{c_{j+1}}-\frac12\|c_{j+1}\|^2 .
+      \tag{PFX1}
+   \]
+
+   Suppose preprocessing supplies admissible suffix upper bounds
+   \(M_j(z)\), \(1\le j\le h+1\), with \(M_{h+1}\equiv0\), such that
+   \[
+      M_j(z)\ge
+      \max_{v\in\mathcal C_j\times\cdots\times\mathcal C_h}
+      S_z^{j:h}(v).
+      \tag{PFX2}
+   \]
+   For a prefix \(u\) of length \(j\), put
+   \[
+      U_q(u)=s_q(u)+M_{j+1}(q-A(u)).
+      \tag{PFX3}
+   \]
+   Assume that, for every live prefix \(u\) of length \(j-1\), a certified
+   one-step reporter lists all \(c\in\mathcal C_j\) satisfying
+   \[
+      U_q(uc)\ge\Theta
+      \tag{PFX4}
+   \]
+   in work \(D_j(q,u,\Theta)\) plus a constant per listed child.
+
+   The stack decoder that starts from \(\varnothing\), expands exactly prefixes
+   with \(U_q(u)\ge\Theta\), and exact-filters terminal tuples outputs every
+   tuple \(c\in\mathcal C_1\times\cdots\times\mathcal C_h\) with
+   \(S_q^{1:h}(c)\ge\Theta\).  Moreover, for every \(\beta>0\), its work is at
+   most
+   \[
+      1+
+      e^{-\beta\Theta}
+      \sum_{j=0}^{h-1}
+      \sum_{u\in\mathcal C_1\times\cdots\times\mathcal C_j}
+      D_{j+1}(q,u,\Theta)e^{\beta U_q(u)}
+      +
+      e^{-\beta\Theta}
+      \sum_{j=1}^h
+      \sum_{u\in\mathcal C_1\times\cdots\times\mathcal C_j}
+      e^{\beta U_q(u)} .
+      \tag{PFX5}
+   \]
+\end{lemma}
+
+\begin{proof}
+   The identity \((PFX1)\) follows from
+   \[
+      \|A(u)+c\|^2=\|A(u)\|^2+2\ip{A(u)}{c}+\|c\|^2.
+   \]
+   Summing these increments gives \((PFX0)\).  If a complete tuple \(c\)
+   satisfies \(S_q^{1:h}(c)\ge\Theta\), then for every prefix \(u\) of \(c\),
+   \((PFX0)\) and the admissibility of \(M\) give
+   \[
+      U_q(u)\ge S_q^{1:h}(c)\ge\Theta .
+   \]
+   Thus every prefix of \(c\) is live, so the stack decoder eventually reaches
+   \(c\).  At depth \(h\), \(M_{h+1}=0\), hence \(U_q(c)=S_q^{1:h}(c)\), and
+   exact filtering outputs \(c\).
+
+   Let \(L_j=\{u\in\mathcal C_1\times\cdots\times\mathcal C_j:U_q(u)\ge
+   \Theta\}\).  The fixed reporter cost is
+   \[
+      \sum_{j=0}^{h-1}\sum_{u\in L_j}D_{j+1}(q,u,\Theta),
+   \]
+   and the number of listed child prefixes is at most
+   \[
+      \sum_{j=1}^h |L_j|.
+   \]
+   For any nonnegative \(a(u)\),
+   \[
+      \sum_{u\in L_j}a(u)
+      \le
+      e^{-\beta\Theta}\sum_u a(u)e^{\beta U_q(u)}.
+   \]
+   Applying this with \(a=D_{j+1}\) and with \(a\equiv1\) proves \((PFX5)\).
+\end{proof}
+
 \begin{proposition}[Priced-pair additive-IVF spectrum compiler]
    \label{prop:priced-pair-additive-ivf-compiler}
    Fix a terminal localized ANN subproblem of size \(m\), approximation \(c\),
@@ -3847,6 +3956,96 @@ partition ignores the bias coordinates that certify the list size.
    proves the claimed terminal resources.
 \end{proof}
 
+\begin{proposition}[Priced-prefix additive-IVF spectrum compiler]
+   \label{prop:priced-prefix-additive-ivf-compiler}
+   Fix a terminal localized ANN subproblem of size \(m\), approximation \(c\),
+   and exponent \(\rho=\rho_c\).  Let \(L_m=\log^{A_c}m\).  A random
+   priced-prefix additive-IVF panel consists of finite codebooks
+   \(\mathcal C_1,\ldots,\mathcal C_h\), the tuple score
+   \[
+      S_y(c_1,\ldots,c_h)
+      =
+      \ip{y}{\sum_jc_j}-\frac12\left\|\sum_jc_j\right\|^2,
+      \tag{PFX6}
+   \]
+   thresholds \(\theta_P,\theta_Q\), and a certified query reporter, for
+   example the reporter of
+   \cref{lem:priced-prefix-additive-ivf-reporter}, which outputs every tuple
+   satisfying \(S_q(c_1,\ldots,c_h)\ge\theta_Q\).  Store \(x\) in tuple bucket
+   \(c=(c_1,\ldots,c_h)\) when \(S_x(c)\ge\theta_P\).
+
+   Suppose that, for every promised query \(q\), the one-panel expected
+   reporter work is
+   \[
+      \E W_{\rm prefix}(q)\le dL_m+m^\rho L_m .
+      \tag{PFX7}
+   \]
+   Suppose further that there are \(\alpha,\beta>0\) such that
+   \[
+      \E
+      \sum_{x\in P}
+      e^{-\alpha\theta_P}
+      \sum_{c\in\mathcal C_1\times\cdots\times\mathcal C_h}
+      e^{\alpha S_x(c)}
+      \le
+      m^{1+\rho}L_m,
+      \tag{PFX8}
+   \]
+   and, for every promised query \(q\),
+   \[
+      \E
+      \sum_{\substack{x\in P\\ \|x-q\|>cr}}
+      e^{-\alpha\theta_P-\beta\theta_Q}
+      \sum_{c\in\mathcal C_1\times\cdots\times\mathcal C_h}
+      e^{\alpha S_x(c)+\beta S_q(c)}
+      \le
+      m^\rho L_m .
+      \tag{PFX9}
+   \]
+   Finally assume every near pair \((p,q)\), \(\|p-q\|\le r\), satisfies
+   \[
+      \Pr\!\left[
+      \exists c\in\mathcal C_1\times\cdots\times\mathcal C_h:
+      S_p(c)\ge\theta_P,\quad S_q(c)\ge\theta_Q
+      \right]
+      \ge L_m^{-1}.
+      \tag{PFX10}
+   \]
+   Then \(O(L_m)\) independent priced-prefix additive-IVF panels give terminal
+   query work
+   \[
+      d\,m^\rho\log^{O_c(1)}m
+   \]
+   and space
+   \[
+      dm+m^{1+\rho}\log^{O_c(1)}m .
+   \]
+\end{proposition}
+
+\begin{proof}
+   The proof is the same as for
+   \cref{prop:priced-pair-additive-ivf-compiler}, with the pair label
+   \((a,b)\) replaced by the tuple label
+   \(c\in\mathcal C_1\times\cdots\times\mathcal C_h\).  The reporter lists
+   every query-active tuple, giving \((PFX7)\).  The storage and far scanned
+   incidences are bounded by the exponential majorants
+   \[
+      \mathbf 1\{S_x(c)\ge\theta_P\}
+      \le e^{\alpha(S_x(c)-\theta_P)}
+   \]
+   and
+   \[
+      \mathbf 1\{S_x(c)\ge\theta_P\}
+      \mathbf 1\{S_q(c)\ge\theta_Q\}
+      \le
+      e^{\alpha(S_x(c)-\theta_P)+\beta(S_q(c)-\theta_Q)} ,
+   \]
+   which give \((PFX8)\) and \((PFX9)\).  Repeating \(O(L_m)\) independent
+   panels amplifies the near hit in \((PFX10)\) to constant success
+   probability.  Candidate verification in the original metric removes false
+   positives, and the expected bounds are truncated as usual.
+\end{proof}
+
 \begin{remark}[What the priced-pair certificate buys]
    \label{rem:priced-pair-certificate-buys}
    \Cref{prop:priced-pair-additive-ivf-compiler} is the exact nonorthogonal
@@ -3860,6 +4059,11 @@ partition ignores the bias coordinates that certify the list size.
    analyzed if preprocessing constructs codebooks for which the pair reporter
    has small partition work and the retained pair buckets pass the same
    storage, far co-load, and near-hit tests as the product-panel route.
+   \Cref{lem:priced-prefix-additive-ivf-reporter} and
+   \cref{prop:priced-prefix-additive-ivf-compiler} remove the two-codebook
+   restriction: after each selected codeword, the next codebook sees the
+   residual query \(q-\sum_i c_i\), and admissible suffix scores certify the
+   output-sensitive prefix list.
 \end{remark}
 
 \begin{proposition}[Finite retained priced-pair certificate]
@@ -20674,6 +20878,13 @@ nonorthogonal codebooks: after a first pivot \(a\) is chosen, the second
 codebook is decoded against the shifted query \(q-a\), and the endpoint follows
 from the pair reporter work, pair storage spectrum, pair far co-load spectrum,
 and pair near-hit probability.
+\Cref{lem:priced-prefix-additive-ivf-reporter} and
+\cref{prop:priced-prefix-additive-ivf-compiler} extend this to any finite
+additive-codebook stack: each chosen codeword is charged as a query shift, and
+admissible suffix scores turn the full tuple search into an output-sensitive
+prefix list.  Thus multi-codebook AQ is not a separate theorem object; it is
+the same reporter-work, storage-spectrum, far-load-spectrum, and near-hit
+certificate over a larger tuple label space.
 \Cref{prop:finite-retained-priced-pair} gives the corresponding retained-index
 certificate.  Build time may use \(k\)-means++, random centroids, additive
 quantization, list-decoding proposals, or column generation to produce panels,
