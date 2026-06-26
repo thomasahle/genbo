@@ -3208,6 +3208,70 @@ partition ignores the bias coordinates that certify the list size.
    many decoder calls and distinct decoded words.
 \end{proof}
 
+\begin{lemma}[Soft-score margin compiler for GMD]
+   \label{lem:soft-score-gmd-margin}
+   Let \(\mathcal C\subseteq\Sigma^h\) have Hamming distance \(\Delta\), and
+   let a query assign coordinate scores \(\omega_i(a)\).  Choose a hard symbol
+   \(a_i\in\operatorname*{arg\,max}_{a\in\Sigma}\omega_i(a)\), numbers
+   \(\gamma_i\in[0,1]\), and a scale \(\kappa>0\) such that
+   \[
+      \omega_i(a_i)-\omega_i(a)\ge\kappa\gamma_i
+      \qquad(a\ne a_i).
+      \tag{GMS1}
+   \]
+   Put
+   \[
+      M(q)=\sum_{i=1}^h\omega_i(a_i),
+      \qquad
+      \Gamma(q)=\sum_{i=1}^h\gamma_i,
+   \]
+   and \(S_q(c)=\sum_i\omega_i(c_i)\).  Then the
+   reliability-erasure sweep of
+   \cref{lem:reliability-erasure-sweep} includes every codeword satisfying
+   \[
+      S_q(c)>
+      M(q)-\frac{\kappa}{2}\bigl(\Gamma(q)-h+\Delta\bigr).
+      \tag{GMS2}
+   \]
+   Consequently, for any soft threshold \(\Theta\) with
+   \[
+      \Theta\ge
+      M(q)-\frac{\kappa}{2}\bigl(\Gamma(q)-h+\Delta\bigr),
+      \tag{GMS3}
+   \]
+   the GMD sweep followed by exact filtering \(S_q(c)\ge\Theta\) is a
+   certified threshold reporter for all codewords of score at least
+   \(\Theta\), using at most \(h+2\) errors-and-erasures decoder calls.
+\end{lemma}
+
+\begin{proof}
+   For a codeword \(c\), let \(I(c)=\{i:c_i\ne a_i\}\).  By \((GMS1)\),
+   \[
+      M(q)-S_q(c)
+      =
+      \sum_{i\in I(c)}
+      \bigl(\omega_i(a_i)-\omega_i(c_i)\bigr)
+      \ge
+      \kappa\sum_{i\in I(c)}\gamma_i .
+   \]
+   If \((GMS2)\) holds, then
+   \[
+      \sum_{i\in I(c)}\gamma_i
+      <
+      \frac{\Gamma(q)-h+\Delta}{2}.
+   \]
+   Since
+   \[
+      \sum_{i:c_i=a_i}\gamma_i-\sum_{i:c_i\ne a_i}\gamma_i
+      =
+      \Gamma(q)-2\sum_{i\in I(c)}\gamma_i,
+   \]
+   condition \((GMD)\) follows.  The inclusion is therefore
+   \cref{lem:reliability-erasure-sweep}.  If \((GMS3)\) holds, every codeword
+   with \(S_q(c)\ge\Theta\) satisfies \((GMS2)\), and the final exact filter
+   removes any lower-score decoder outputs.
+\end{proof}
+
 \begin{remark}[GMD and Chase as compressed list decoders]
    \label{rem:gmd-chase-compressed-decoder}
    \Cref{lem:reliability-erasure-sweep} is the self-contained form of the
@@ -3225,9 +3289,10 @@ partition ignores the bias coordinates that certify the list size.
    outer decoder~\cite{Cha72}.  In the present language, those trials are just
    additional terminal outputs of a compact decoder DAG.  The useful
    theoretical target is therefore not Lloyd-style cell convergence, but a
-   reliability map for which the true near route satisfies \((GMD)\), or its
-   small-list Chase analogue, while the retained outputs pass the same
-   rate-coverage scan and storage certificates as the other panels.
+   reliability map for which the true near route satisfies the soft top-gap
+   inequality \((GMS2)\), or its small-list Chase analogue, while the retained
+   outputs pass the same rate-coverage scan and storage certificates as the
+   other panels.
 \end{remark}
 
 \begin{remark}[Outer list recovery as the clean codebook target]
@@ -16549,8 +16614,12 @@ list-recovery constraints by repeating each coordinate across score levels.
 \Cref{lem:reliability-erasure-sweep} gives the cheaper GMD special case:
 one hard symbol and one confidence per coordinate produce only \(O(h)\)
 erasure transcripts, and the weighted-agreement inequality \((GMD)\) is enough
-to guarantee that the near route is decoded.  The remaining work is spectrum
-and rate bookkeeping rather than Lloyd-style convergence analysis.
+to guarantee that the near route is decoded.
+\Cref{lem:soft-score-gmd-margin} turns this into an ordinary soft-score
+certificate: top-symbol gaps define the confidences, and any codeword above
+the resulting score threshold is included by the same \(O(h)\)-call sweep.
+The remaining work is spectrum and rate bookkeeping rather than Lloyd-style
+convergence analysis.
 \Cref{lem:additive-product-panel-decoder}
 makes the decoder side self-contained: once block threshold reporters and
 suffix upper scores are available, the live stack is controlled by the product
@@ -16722,9 +16791,10 @@ index description and query enumeration while keeping the same certification
 interface, provided the retained panel satisfies the random-like spectrum.
 \Cref{lem:reliability-erasure-sweep} isolates the lowest-overhead version of
 that idea: a GMD-style sweep gives a compact \(O(h)\)-transcript reporter when
-the useful route has enough confidence-weighted hard agreement, while
-Chase-style low-confidence branching gives the corresponding small-list
-extension.
+the useful route has enough confidence-weighted hard agreement.
+\Cref{lem:soft-score-gmd-margin} reduces that agreement condition to a
+top-gap soft-score margin, while Chase-style low-confidence branching gives
+the corresponding small-list extension.
 \Cref{lem:budget-stable-prefix-list} and
 \cref{cor:canonical-budget-stable-decoder} take one step in that direction:
 the canonical mixed Bellman budget itself is an admissible list-decoding
