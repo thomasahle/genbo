@@ -10769,11 +10769,90 @@ children that survive the final deterministic certificate.
    point, and final metric verification accepts any valid answer.
 \end{proof}
 
+\begin{definition}[Fractional dense-filter cover]
+   \label{def:fractional-dense-filter-cover}
+   Work at one resident node with query domain \(\Omega\), resident set
+   \(P\), finite query constraints \(\mathcal Q\subseteq\Omega\), and finite
+   near-pair demands \(\mathcal N\subseteq P\times\mathcal Q\).  A dense child
+   filter is an asymmetric pair
+   \[
+      D=(U_D,Q_D)
+   \]
+   together with certified prices \(T_D,S_D\), where \(U_D\subseteq P\) is the
+   stored side and \(Q_D\subseteq\Omega\) is the query side.  Its correctness
+   certificate is
+   \[
+      p\in U_D,\quad \|p-q\|\le r
+      \quad\Longrightarrow\quad
+      q\in Q_D .
+      \tag{DFC0}
+   \]
+   If \(U_D\) lies in a smaller certified ball of radius \(R_D\), the intended
+   inductive prices are
+   \[
+      T_D=|U_D|^{\rho(R_D)}\log^{O_c(1)}n,
+      \qquad
+      S_D=|U_D|^{1+\rho(R_D)}\log^{O_c(1)}n,
+      \tag{DFC1}
+   \]
+   or any sharper certified descendant prices.  A nonnegative intensity vector
+   \((\lambda_D)\) is an \((L,S)\)-fractional dense-filter cover of
+   \(\mathcal N\) if
+   \[
+      \sum_{D:\ p\in U_D,\ q\in Q_D}\lambda_D\ge1
+      \qquad ((p,q)\in\mathcal N),
+      \tag{DFC2}
+   \]
+   \[
+      \sum_{D:\ q\in Q_D}\lambda_DT_D\le L_q
+      \qquad(q\in\mathcal Q),
+      \tag{DFC3}
+   \]
+   and
+   \[
+      \sum_D\lambda_DS_D\le S .
+      \tag{DFC4}
+   \]
+\end{definition}
+
+\begin{corollary}[Dense recursion is a filter cover]
+   \label{cor:dense-recursion-filter-cover}
+   A fractional dense-filter cover in the sense of
+   \cref{def:fractional-dense-filter-cover} is exactly the finite
+   filter-cover LP \((\mathsf{FC}_{\mathcal N})\) restricted to the columns
+   \[
+      A_D=(U_D,a_D,T_D,S_D),
+      \qquad
+      a_D(q)=\mathbf 1\{q\in Q_D\}.
+   \]
+   Consequently any feasible dense cover can be Poisson-materialized, under the
+   atom bounds of \cref{lem:poisson-filter-cover-materialization}, into an
+   ordinary retained overlapping family whose query cost is
+   \(O(\log(|\mathcal N|+|\mathcal Q|+2))\,L_q\) and whose storage is
+   \(O(\log(|\mathcal N|+|\mathcal Q|+2))\,S\).  Dense overlap therefore never
+   creates a separate branching factor; it is already charged by \((DFC3)\).
+\end{corollary}
+
+\begin{proof}
+   For the displayed column \(A_D\), the coefficient in
+   \((\mathsf{FC}_{\mathcal N})\) is
+   \[
+      c_{A_D}(p,q)=\mathbf 1\{p\in U_D\}\mathbf 1\{q\in Q_D\}.
+   \]
+   Thus the coverage, query, and storage constraints of
+   \((\mathsf{FC}_{\mathcal N})\) are precisely \((DFC2)\), \((DFC3)\), and
+   \((DFC4)\).  Materialization is then
+   \cref{lem:poisson-filter-cover-materialization}.  Finally, \((DFC0)\) says
+   that whenever the true near point lies in a retained dense child, the query
+   side activates that child, so the inductive child certificate is routed to a
+   valid witness.
+\end{proof}
+
 The LP above is the fully fractional version of dense overlap.  A dense ball,
-cap, facility bucket, additive-quantization bucket, or ordinary spherical LSF
-bucket is just a column \(A=(U_A,a_A,T_A,S_A)\).  A hard recursive decomposition
-asks how many dense children a query may enter.  The fractional filter cover asks
-only for the cost-weighted local load
+cap, facility bucket, additive-quantization bucket, list-decoder output, or
+ordinary spherical LSF bucket is just a column \(A=(U_A,a_A,T_A,S_A)\).  A hard
+recursive decomposition asks how many dense children a query may enter.  The
+fractional filter cover asks only for the cost-weighted local load
 \[
    \sum_A a_A(q)T_A\lambda_A .
 \]
