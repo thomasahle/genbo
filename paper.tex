@@ -5289,6 +5289,51 @@ partition ignores the bias coordinates that certify the list size.
    draws one label; since \(s\le m^\rho L_m\), this is within the stated work.
 \end{proof}
 
+\begin{proposition}[Las Vegas small-signature Gaussian builder]
+   \label{prop:las-vegas-small-signature-gaussian}
+   In the setting of
+   \cref{cor:small-signature-gaussian-quadrature}, the retained weighted
+   Gaussian panel can be found by an uncharged Las Vegas preprocessing
+   procedure using only Gaussian sampling and finite linear feasibility solves.
+   More explicitly, for a finite candidate batch
+   \(G_1,\ldots,G_N\sim N(0,I_d)\), solve the linear system
+   \((TW3)\)--\((TW4)\) of
+   \cref{lem:tilted-weight-linear-feasibility} on this batch with targets
+   \(B=2m^\rho\) and \(h=1/3\).  Whenever the system is feasible, replace the
+   feasible weight vector by a basic feasible solution and retain only its
+   positive-weight labels.  The returned support has size at most
+   \(D=|\mathcal Q|+|\mathcal N|+1\) and satisfies \((SQ1)\)--\((SQ3)\).
+
+   A concrete Las Vegas schedule is to run rounds \(R=1,2,\ldots\); in round
+   \(R\), independently sample and test one batch of each size
+   \(1,\ldots,R\).  This procedure halts with probability one, and after it
+   halts the query sampler is the direct \(O(d\,m^\rho L_m)\)-time sampler of
+   \cref{cor:small-signature-gaussian-quadrature}.
+\end{proposition}
+
+\begin{proof}
+   By \cref{lem:continuous-gaussian-finite-witness}, there is some finite
+   Gaussian batch size \(N_0\) for which the sampled columns have positive
+   probability of containing a feasible convex combination for the homogeneous
+   inequalities \((TW3)\)--\((TW4)\) with \(B=2m^\rho\) and \(h=1/3\).  The
+   finite LP above detects exactly this event by
+   \cref{lem:tilted-weight-linear-feasibility}.  In the round-robin schedule,
+   the size-\(N_0\) experiment is repeated independently once in every round
+   \(R\ge N_0\), so a feasible batch is eventually found with probability one.
+
+   For a feasible batch, the feasible region is a polytope in the simplex cut
+   out by \(|\mathcal Q|+|\mathcal N|\) homogeneous linear inequalities.  A
+   basic feasible point has support size at most
+   \(|\mathcal Q|+|\mathcal N|+1=D\).  Applying
+   \cref{lem:tilted-weight-linear-feasibility} to this basic solution gives
+   the tilted far-load and near-mass inequalities \((SQ2)\) and \((SQ3)\).
+   Since at most \(D\) labels are retained and \(D\le m^\rho L_m\), the
+   storage bound \((SQ1)\) follows exactly as in
+   \cref{cor:small-signature-gaussian-quadrature}.  The direct sampler scans
+   these retained labels and is therefore within the same
+   \(O(d\,m^\rho L_m)\) arithmetic bound.
+\end{proof}
+
 \begin{remark}[Signature entropy is the charged obstruction]
    \label{rem:signature-entropy-obstruction}
    \Cref{cor:small-signature-gaussian-quadrature} is deliberately finite.  It
@@ -19531,8 +19576,12 @@ query-decodable quadrature for that spectrum.
 \Cref{cor:small-signature-gaussian-quadrature} adds the useful boundary case:
 if the all-query constraints collapse to at most \(m^\rho\polylog m\) exact
 signatures, the Caratheodory support itself is small enough to store and to
-sample by a direct scan.  The remaining obstruction is therefore signature
-entropy and compact decoding, not the finite weighted Gaussian calculation.
+sample by a direct scan.
+\Cref{prop:las-vegas-small-signature-gaussian} makes this boundary case
+algorithmic under the uncharged preprocessing model: repeated Gaussian batches
+and the finite tilted-weight LP eventually find the retained support.  The
+remaining obstruction is therefore signature entropy and compact decoding, not
+the finite weighted Gaussian calculation.
 \Cref{rem:metric-net-signature-barrier} rules out the most naive source of
 such signatures: a metric net fine enough to preserve the critical tilted near
 mass has size \(m^{\Theta(\log\log m)}\) in logarithmic dimension.  The
