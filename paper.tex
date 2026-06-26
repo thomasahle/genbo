@@ -19370,6 +19370,95 @@ inequality \((QP3)\).
    \(\lambda\).  Apply \cref{cor:observable-renyi-profile-cover}.
 \end{proof}
 
+\begin{corollary}[Decoded bucket-panel profile certificate]
+   \label{cor:decoded-bucket-panel-profile}
+   Work in the setting of \cref{cor:observable-renyi-profile-cover}.  Let a
+   finite build-time seed law \(s\sim\nu\) produce a finite multiset of decoded
+   bucket records \(\mathcal B_s\).  Each record \(b\in\mathcal B_s\) is
+   certified as an observable profile
+   \[
+      \Pi_{s,b}=(H_{s,b},L_{s,b},U_{s,b},E_{s,b})\in\mathcal P .
+   \]
+   Define the panel aggregates
+   \[
+      H_{\rm pan}(\sigma_0)
+      =
+      \E_s\sum_{b\in\mathcal B_s}H_{s,b}(\sigma_0),
+      \qquad
+      L_{\rm pan}(\sigma_0)
+      =
+      \E_s\sum_{b\in\mathcal B_s}L_{s,b}(\sigma_0),
+      \tag{DBP1}
+   \]
+   and
+   \[
+      U_{\rm pan}=\E_s\sum_{b\in\mathcal B_s}U_{s,b},
+      \qquad
+      E_{\rm pan}=\E_s\sum_{b\in\mathcal B_s}E_{s,b}.
+      \tag{DBP2}
+   \]
+   If there is \(a>0\) such that
+   \[
+      H_{\rm pan}(\sigma_0)\ge a+E_{\rm pan}
+      \qquad(\sigma_0\in\Sigma^+),
+      \tag{DBP3}
+   \]
+   and
+   \[
+      L_{\rm pan}(\sigma_0)\le aL_{\sigma_0}
+      \qquad(\sigma_0\in\Sigma),
+      \qquad
+      U_{\rm pan}\le aS,
+      \tag{DBP4}
+   \]
+   then \((\mathsf{ESFC}_\Sigma)\) is feasible.
+
+   In the superlevel form of \cref{cor:exact-signature-moment-separator}, a
+   record \(b=(B,g)\) with compressed size \(K_b\), price factor \(\psi_b\), and
+   overflow certificate \(\varepsilon_b\) has the concrete profile
+   \[
+      H_b(\sigma_0)
+      =
+      (1-e^{-g})\mathbf 1\{m_B(\sigma_0)\ge g\},
+      \tag{DBP5}
+   \]
+   \[
+      L_b(\sigma_0)
+      =
+      (1-e^{-g})\psi_bK_b^\rho
+      \mathbf 1\{m_B(\sigma_0)\ge g\},
+      \qquad
+      U_b=\psi_bK_b^{1+\rho},
+      \qquad
+      E_b=\varepsilon_b .
+      \tag{DBP6}
+   \]
+   Therefore a decoded spherical, tensor, AQ, or list-decoding panel is
+   sufficient whenever its averaged superlevel hit spectrum dominates
+   \(a+E_{\rm pan}\), while its success-weighted Renyi query spectrum and
+   storage spectrum are at most \(a\) times the local budgets.  The panel may
+   contain many overlapping buckets; overlap is charged only through the
+   aggregate \(L_{\rm pan}\) and \(U_{\rm pan}\).
+\end{corollary}
+
+\begin{proof}
+   Group identical certified profiles and define
+   \[
+      \omega_\Pi=
+      \E_s\bigl|\{b\in\mathcal B_s:\Pi_{s,b}=\Pi\}\bigr|.
+   \]
+   The aggregate quantities in
+   \cref{cor:single-panel-success-normalized-profile} are exactly
+   \(H_{\rm pan},L_{\rm pan},U_{\rm pan},E_{\rm pan}\).  Conditions
+   \((DBP3)\)--\((DBP4)\) are therefore \((OSN1)\)--\((OSN2)\), and
+   \cref{cor:single-panel-success-normalized-profile} gives feasibility.
+
+   The superlevel formulas \((DBP5)\)--\((DBP6)\) are the profile components
+   \((ORP1)\)--\((ORP3)\) for the point-mass law on \((B,g)\), with the Renyi
+   envelopes from \((EMOM5)\).  Substituting these record profiles into
+   \((DBP1)\)--\((DBP2)\) gives the stated spectrum criterion.
+\end{proof}
+
 \Cref{lem:exact-near-set-filter-cover} is strictly weaker than
 \cref{lem:finite-signature-filter-cover} when the exact near set is part of the
 signature.  The all-pair LP covers every \(p\in N_{\sigma_0}\); the existential
@@ -19503,6 +19592,14 @@ success-normalized sufficient condition: a panel with hit probability \(a\) may
 spend \(a\) times the local query and storage budgets, so large buckets are
 acceptable precisely when their certified exact-near-set hit probability grows
 with their recursive cost.
+\Cref{cor:decoded-bucket-panel-profile} is the corresponding implementation
+interface.  A decoder may output a whole panel of overlapping bucket records;
+their hit contributions, success-weighted recursive query moments, storage
+moments, and overflow certificates are simply added.  This is the form in which
+large-range spherical filters, product-code tensor panels, additive
+quantization cells, and range-reporting/list-decoding outputs should be proved:
+show the three averaged spectrum inequalities \((DBP3)\)--\((DBP4)\), and the
+finite exact-signature compiler handles the fractional overlap.
 
 \begin{proposition}[Conditional fractional filter-cover endpoint]
    \label{prop:fractional-filter-cover-polylog}
