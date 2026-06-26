@@ -12738,6 +12738,89 @@ probability or price distribution on query signatures can concentrate too much
 support on a \(k\)-point core inside the container unless the recursive query
 price or storage price pays for it.
 
+\begin{lemma}[Layer-cake query-threshold separator]
+   \label{lem:layer-cake-query-threshold-separator}
+   Work in the setting of
+   \cref{lem:fractional-query-weight-degree-normal-form}.  Fix
+   \(0\le y_q\le1\) and, for \(t\in(0,1]\), put
+   \[
+      Q_t(y)=\{q\in\mathcal Q:y_q\ge t\}.
+   \]
+   For \(U\subseteq W\), define
+   \[
+      E_t(U)
+      =
+      |\{(p,q):p\in U,\ q\in Q_t(y),\
+      (p,q)\in\mathcal N_j,\ p\in V_{z,q}\text{ for some }z\}|.
+   \]
+   Let \(\tau(Q_t)=\sum_{q\in Q_t(y)}\tau_q\) and
+   \(L_y=\sum_q\tau_qy_q\).  Fix \(h\) and assume \(h\) is atom-safe for every
+   threshold set \(Q_t(y)\).  If some \(h\)-point set \(U\subseteq W\) satisfies
+   \[
+      \theta_j\sum_{p\in U}d_y(p)
+      >
+      \psi\bigl(L_yh^\rho+\sigma h^{1+\rho}\bigr),
+      \tag{LCQ1}
+   \]
+   then there is a threshold \(t\in(0,1]\) such that the saturated top-degree
+   \(h\)-prefix inside \(W,Q_t(y)\) has positive reduced gain with prices
+   \[
+      T=\psi h^\rho,\qquad S=\psi h^{1+\rho}.
+   \]
+   Consequently, if no threshold query set \(Q_t(y)\) exposes a positive
+   saturated \(h\)-prefix, then every \(h\)-point set \(U\subseteq W\) satisfies
+   the reverse inequality in \((LCQ1)\).  In particular,
+   \[
+      \theta_jD_y(h)
+      \le
+      \psi\bigl(L_yh^\rho+\sigma h^{1+\rho}\bigr).
+      \tag{LCQ2}
+   \]
+\end{lemma}
+
+\begin{proof}
+   The layer-cake identities give
+   \[
+      \sum_{p\in U}d_y(p)=\int_0^1E_t(U)\,dt,
+      \qquad
+      L_y=\int_0^1\tau(Q_t)\,dt .
+   \]
+   Thus \((LCQ1)\) is equivalent to
+   \[
+      \int_0^1
+      \left[
+         \theta_jE_t(U)-\psi h^\rho\tau(Q_t)
+      \right]dt
+      >
+      \psi\sigma h^{1+\rho}.
+   \]
+   Since the interval has length one, some threshold \(t\) satisfies
+   \[
+      \theta_jE_t(U)-\psi h^\rho\tau(Q_t)
+      >
+      \psi\sigma h^{1+\rho}.
+   \]
+   For this \(t\), the saturated top-degree \(h\)-prefix inside \(W,Q_t(y)\)
+   has at least \(E_t(U)\) feasible pair-support incidences.  Therefore
+   \[
+      \theta_jD_t^\star(h)
+      >
+      \psi\bigl(\tau(Q_t)h^\rho+\sigma h^{1+\rho}\bigr),
+   \]
+   where \(D_t^\star(h)\) is the saturated prefix degree for \(Q_t(y)\).  By
+   \cref{cor:saturated-pair-support-envelope}, this prefix has positive reduced
+   gain.  The converse statement is the contrapositive, and taking \(U\) to be
+   the top \(h\) points for the weighted degrees \(d_y\) gives \((LCQ2)\).
+\end{proof}
+
+\Cref{lem:layer-cake-query-threshold-separator} removes the last fractional
+artifact from the query side when threshold sets are allowed: every violation of
+the weighted degree envelope is witnessed by an ordinary query layer
+\(Q_t(y)\).  Thus a geometric separator may work with finite threshold layers
+sorted by a dual query weighting, and the retained column is still an integral
+saturated prefix filter.  Fractional query weights remain useful only as a
+dual-analysis certificate for finding which threshold layer must exist.
+
 \begin{assumption}[Layer quotient separator]
    \label{asm:layer-quotient-separator}
    Work in the setting of \cref{cor:residual-separator-local-cover}.  Suppose a
@@ -24437,8 +24520,11 @@ canonical for a proposed update core: keep the positive support-minus-load
 margins and test whether they pay storage.
 \Cref{lem:fractional-query-weight-degree-normal-form} rewrites the same target
 as a weighted top-\(k\) support-degree inequality over fractional query weights.
-Thus the current residual target is a priced bipartite degree separator inside
-certified geometric containers.  By \cref{cor:layer-separation-local-cover} and
+\Cref{lem:layer-cake-query-threshold-separator} then pushes any violation back
+to one integral query-threshold layer.  Thus the current residual target is a
+priced bipartite degree separator inside certified geometric containers, with
+ordinary threshold query layers and top-degree update prefixes as the only
+retained dense columns.  By \cref{cor:layer-separation-local-cover} and
 \cref{cor:hinge-container-separator-local-cover}, either concrete separator
 already implies local filter-cover feasibility.  Since
 preprocessing time is deliberately not a scarce resource,
