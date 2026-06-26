@@ -960,6 +960,184 @@ The smooth product filter is not a replacement for \cref{lem:adaptive-continuati
    procedure.
 \end{proof}
 
+\begin{lemma}[Packing-list moments by separated tuples]
+   \label{lem:packing-list-tuple-moment}
+   Let \(P\subset\mathbb S^{D-1}\), let \(\delta>0\), and let
+   \(\{U_z:z\in\mathcal Z\}\) be any family of update regions.  For a label
+   \(z\), define the bucket packing number
+   \[
+      L_\delta(z)=
+      \max\{|Y|:\ Y\subseteq P\cap U_z,\ \|x-y\|\ge\delta
+      \text{ for all distinct }x,y\in Y\}.
+   \]
+   For an integer \(k\ge1\), let \(\mathcal T_k(P,\delta)\) be the set of
+   ordered \(k\)-tuples \((x_1,\ldots,x_k)\in P^k\) whose distinct entries are
+   pairwise \(\delta\)-separated.  Then every probability law \(\nu\) on
+   labels satisfies
+   \[
+      \E_{Z\sim\nu} L_\delta(Z)^k
+      \le
+      \sum_{(x_1,\ldots,x_k)\in\mathcal T_k(P,\delta)}
+      \Pr_{Z\sim\nu}[x_i\in U_Z\text{ for every }i].
+      \tag{TM1}
+   \]
+   Consequently, for \(0\le r\le1\),
+   \[
+      \E L_\delta(Z)^r
+      \le
+      \left(
+      \sum_{x\in P}\Pr[x\in U_Z]
+      \right)^r,
+      \tag{TM2}
+   \]
+   while for \(1\le r\le2\),
+   \[
+      \E L_\delta(Z)^r
+      \le
+      A_1^{\,2-r}A_2^{\,r-1},
+      \tag{TM3}
+   \]
+   where
+   \[
+      A_1=\sum_{x\in P}\Pr[x\in U_Z],
+      \qquad
+      A_2=
+      \sum_{(x,y)\in\mathcal T_2(P,\delta)}
+      \Pr[x,y\in U_Z].
+   \]
+\end{lemma}
+
+\begin{proof}
+   For each label \(z\), choose one maximum \(\delta\)-separated subset
+   \(Y_z\subseteq P\cap U_z\).  Every ordered \(k\)-tuple from \(Y_z\), with
+   repetitions allowed, belongs to \(\mathcal T_k(P,\delta)\) and all its
+   entries lie in \(U_z\).  Hence
+   pointwise
+   \[
+      L_\delta(z)^k
+      \le
+      \sum_{(x_1,\ldots,x_k)\in\mathcal T_k(P,\delta)}
+      \mathbf 1\{x_i\in U_z\text{ for every }i\}.
+   \]
+   Integrating over \(z\) gives \((TM1)\).
+
+   The case \(0\le r\le1\) follows from Jensen's inequality applied to the
+   concave function \(u^r\), together with \((TM1)\) for \(k=1\).  For
+   \(1\le r\le2\), log-convexity of \(L_p\)-moments gives
+   \[
+      \E L_\delta^r
+      \le
+      (\E L_\delta)^{2-r}(\E L_\delta^2)^{r-1}.
+   \]
+   Applying \((TM1)\) with \(k=1\) and \(k=2\) gives \((TM3)\).
+\end{proof}
+
+\begin{lemma}[Gaussian cap-intersection energy]
+   \label{lem:gaussian-cap-intersection-energy}
+   Let \(G\sim N(\mu,I_D)\), let \(x_1,\ldots,x_k\in\mathbb S^{D-1}\), and
+   write \(K=(\ip{x_i}{x_j})_{i,j\le k}\).  For the Gaussian cap
+   \(U_G=\{x:\ip{G}{x}\ge T\}\), put
+   \[
+      b_i=T-\ip{\mu}{x_i},
+      \qquad
+      \mathcal I(K,b)=
+      \sup_{\lambda\in\mathbb R_{\ge0}^k}
+      \left\{
+         \sum_i\lambda_i b_i
+         -
+         \frac12\lambda^\top K\lambda
+      \right\}.
+      \tag{GE1}
+   \]
+   Then
+   \[
+      \Pr[x_i\in U_G\text{ for every }i]
+      \le
+      e^{-\mathcal I(K,b)}.
+      \tag{GE2}
+   \]
+\end{lemma}
+
+\begin{proof}
+   For every \(\lambda\ge0\),
+   \[
+      \Pr[\ip{G}{x_i}\ge T\ \forall i]
+      \le
+      \exp\!\left(
+         -\sum_i\lambda_i b_i
+      \right)
+      \E\exp\!\left(\sum_i\lambda_i\ip{G-\mu}{x_i}\right).
+   \]
+   The centered Gaussian moment-generating function is
+   \[
+      \E\exp\!\left(\sum_i\lambda_i\ip{G-\mu}{x_i}\right)
+      =
+      \exp\!\left(\frac12\lambda^\top K\lambda\right).
+   \]
+   Taking the infimum over \(\lambda\ge0\), equivalently the exponential of
+   minus the supremum in \((GE1)\), proves \((GE2)\).
+\end{proof}
+
+\begin{corollary}[Finite tuple-profile Renyi certificate]
+   \label{cor:tuple-profile-renyi-certificate}
+   In the setting of \cref{lem:packing-list-tuple-moment}, suppose the labels
+   are Gaussian caps \(U_G=\{x:\ip{G}{x}\ge T\}\) with
+   \(G\sim N(\mu,I_D)\).  For \(k=1,2\), partition
+   \(\mathcal T_k(P,\delta)\) into finitely many profile classes \(\Pi_k\).
+   If each profile \(\pi\in\Pi_k\) has size \(M_\pi\), and every tuple in that
+   profile has Gaussian energy at least \(I_\pi\) in the sense of
+   \cref{lem:gaussian-cap-intersection-energy}, then
+   \[
+      \E L_\delta(G)^k
+      \le
+      \sum_{\pi\in\Pi_k}M_\pi e^{-I_\pi}.
+      \tag{TP1}
+   \]
+   Hence, for \(1\le r\le2\),
+   \[
+      \E L_\delta(G)^r
+      \le
+      \left(\sum_{\pi\in\Pi_1}M_\pi e^{-I_\pi}\right)^{2-r}
+      \left(\sum_{\pi\in\Pi_2}M_\pi e^{-I_\pi}\right)^{r-1}.
+      \tag{TP2}
+   \]
+   For \(0\le r\le1\), the first parenthesis alone gives
+   \[
+      \E L_\delta(G)^r
+      \le
+      \left(\sum_{\pi\in\Pi_1}M_\pi e^{-I_\pi}\right)^r.
+      \tag{TP3}
+   \]
+\end{corollary}
+
+\begin{proof}
+   Apply \cref{lem:gaussian-cap-intersection-energy} to every tuple in
+   \((TM1)\), then sum by profile class.  This gives \((TP1)\).  The
+   fractional bounds are exactly \((TM2)\) and \((TM3)\).
+\end{proof}
+
+\begin{remark}[The Renyi target is entropy minus energy]
+   \label{rem:renyi-entropy-energy-target}
+   \Cref{cor:tuple-profile-renyi-certificate} is the promised self-contained
+   form of the notes10 list-decoding target.  The combinatorial term
+   \(\log M_\pi\) is the spherical packing entropy of separated tuples in a
+   bucket, while \(I_\pi\) is the Gaussian cap-intersection energy.  Proving
+   \((CB1)\) and \((CB2)\) for a tensorized spherical filter family therefore
+   reduces to checking that every relevant tuple profile has
+   \[
+      \text{packing entropy}-\text{cap energy}
+      \le
+      \text{recursive Renyi budget}+O_c(\log\log m).
+   \]
+   The query side uses \(r=\rho_{j+1}\le1\) under the query-biased Gaussian
+   law and is therefore a first-moment profile estimate relative to the near
+   hit probability \(a_j(q,p)\).  The space side uses
+   \(r=1+\rho_{j+1}\le2\) under the stored-filter law and is controlled by the
+   first and second tuple profile sums.  Canonical quotienting of equal bucket
+   nets can only reduce the retained space relative to the occurrence sum
+   bounded by these tuple moments.
+\end{remark}
+
 \begin{lemma}[Flat shells give the data-independent exponent]\label{lem:flat-shell-obstruction}
    Consider the tempting one-layer reduction that takes a bounded-diameter ball,
    decomposes it into radial shells around its center, and runs the smooth
@@ -20237,6 +20415,18 @@ and space
    dn+n^{1+1/(2c^2-1)}\log^{O_c(1)}n.
 \]
 The exact pieces now aligned for the randomized cap-thinning route are: continuation-mass pruning gives optimal expected spherical work, adaptive continuation gives whole-lineage near survival, thinned cap splitting gives radius-potential contraction, and cap-free terminal scans are paid by low-correlation collisions.
+
+The compressed-bucket route from \cref{prop:success-normalized-bucket-dag} is
+now separated just as cleanly.  The recursion accounting is finished: a finite
+approximation ladder gives \(n^{\rho_c}\polylog n\) query time once each rung
+has a per-probe near-hit lower bound, a success-normalized query moment, and a
+shared-DAG storage moment.  \Cref{lem:packing-list-tuple-moment},
+\cref{lem:gaussian-cap-intersection-energy}, and
+\cref{cor:tuple-profile-renyi-certificate} turn those two moments into an
+explicit tuple-profile calculation: count separated tuples in a bucket and
+subtract their Gaussian cap-intersection energy.  Thus the remaining theorem
+for this route is an entropy-energy inequality for separated spherical tuples,
+together with canonical quotienting of repeated bucket nets.
 
 For the randomized cap-thinning route, one remaining task is the branching first-split work estimate in \cref{asm:mixed-continuation-operator}: prove that the thinned geometric child potentials contract over random cap-discovery frontiers without replacing the branching decoder by a normalized path law. The newer budget-thinned variant proves the expected work bound from a canonical prefix supermartingale and packages the remaining near-side issue as \cref{asm:aggregate-value-delivery}: prove that the saturated value, or equivalently every route-cut prefix mass, is inverse-polylogarithmic rather than tracking a product along one distinguished path. For laminar route tries, \cref{lem:lca-value-flow} turns the second-moment version into the concrete LCA target
 \[
