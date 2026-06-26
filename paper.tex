@@ -11845,6 +11845,151 @@ uniform-margin query layer at a time.  The exact verifier still tests the
 original weighted reduced gain, so the dyadic query-margin loss is proof/search
 bookkeeping rather than a stored-index overhead.
 
+\begin{lemma}[Atomized quotient reduced-gain test]
+   \label{lem:atomized-quotient-reduced-gain}
+   Work in the setting of \cref{cor:unweighted-quotient-coverage-screen}.  Let
+   \(G\) be a certified quotient filter with update side \(U_G\), activation
+   predicate \(a_G\), and prices \(T_G,S_G\).  Instead of assigning whole
+   primitive slices to \(G\), assign a finite set of primitive atoms
+   \[
+      \mathcal A_G
+      \subseteq
+      \{(z,q,p): (p,q)\in\mathcal N,\ p\in V_{z,q}\cap U_G,\ a_G(q)=1\}.
+   \]
+   Put
+   \[
+      b_G^{\rm at}
+      =
+      \max\left\{
+         1,\;
+         \max_{(p,q)\in\mathcal N}
+         |\{z:(z,q,p)\in\mathcal A_G\}|
+      \right\},
+      \tag{AQ1}
+   \]
+   and, for a dyadic demand layer \(\mathcal N_j\),
+   \[
+      C_j^{\rm at}(G;q)
+      =
+      \frac1{b_G^{\rm at}}
+      |\{(z,q,p)\in\mathcal A_G:(p,q)\in\mathcal N_j\}|.
+      \tag{AQ2}
+   \]
+   If
+   \[
+      \theta_j\sum_qC_j^{\rm at}(G;q)
+      >
+      T_G\sum_q\tau_qa_G(q)+\sigma S_G,
+      \tag{AQ3}
+   \]
+   then \(G\) has positive reduced gain in the original filter-cover dual.
+\end{lemma}
+
+\begin{proof}
+   The true demand captured by \(G\) is
+   \[
+      A_G=
+      \sum_{(p,q)\in\mathcal N}
+      \alpha_{p,q}\mathbf 1\{p\in U_G\}a_G(q).
+   \]
+   Expanding the atomized layer count and using \((AQ1)\),
+   \[
+      \sum_qC_j^{\rm at}(G;q)
+      \le
+      \sum_{(p,q)\in\mathcal N_j}
+      \mathbf 1\{p\in U_G\}a_G(q).
+   \]
+   Every pair in \(\mathcal N_j\) has \(\alpha_{p,q}\ge\theta_j\), hence
+   \[
+      A_G\ge
+      \theta_j\sum_qC_j^{\rm at}(G;q).
+   \]
+   Combining this with \((AQ3)\) gives
+   \[
+      A_G>
+      T_G\sum_q\tau_qa_G(q)+\sigma S_G,
+   \]
+   which is exactly positive reduced gain.
+\end{proof}
+
+\Cref{lem:atomized-quotient-reduced-gain} lets the quotient separator merge
+selected incidences, not only whole primitive slices.  This is useful for dense
+cores whose profitable part is a common prefix, superlevel, or decoded list
+inside many high-correlation slices.  The retained child is still the ordinary
+filter \(G=(U_G,a_G,T_G,S_G)\); the atom set is only a certificate proving that
+its true captured demand exceeds its query and storage price.
+
+\begin{lemma}[Top-degree update prefix for atomized cores]
+   \label{lem:top-degree-atomized-prefix}
+   Fix a certified container \(W\subseteq P\), a query set
+   \(Q'\subseteq\mathcal Q\), a duplicate parameter \(b\ge1\), a price factor
+   \(\psi>0\), and an exponent \(0\le\rho_D\le1\).  Let
+   \[
+      \mathcal A\subseteq
+      \{(z,q,p):p\in W,\ q\in Q',\ p\in V_{z,q},\ (p,q)\in\mathcal N_j\}
+   \]
+   be a finite atom family, and define the point degree
+   \[
+      d_{\mathcal A}(p)=|\{(z,q,p)\in\mathcal A\}|.
+   \]
+   Assume \(b\) upper-bounds duplicate incidence:
+   \[
+      \max_{(p,q)\in\mathcal N_j}
+      |\{z:(z,q,p)\in\mathcal A\}|
+      \le b .
+      \tag{TDA0}
+   \]
+   Order \(W=\{p_1,\ldots,p_M\}\) so that
+   \[
+      d_{\mathcal A}(p_1)\ge d_{\mathcal A}(p_2)\ge\cdots\ge d_{\mathcal A}(p_M).
+   \]
+   For \(k\le M\), let \(U_k=\{p_1,\ldots,p_k\}\), and price every
+   \(k\)-point child inside \(W\) by
+   \[
+      T(k)=\psi k^{\rho_D},
+      \qquad
+      S(k)=\psi k^{1+\rho_D}.
+      \tag{TDA1}
+   \]
+   If some \(U\subseteq W\) with \(|U|=k\) satisfies
+   \[
+      \frac{\theta_j}{b}
+      |\{(z,q,p)\in\mathcal A:p\in U\}|
+      >
+      T(k)\sum_{q\in Q'}\tau_q+\sigma S(k),
+      \tag{TDA2}
+   \]
+   then the top-degree prefix \(U_k\) satisfies the same strict inequality.
+   Consequently, if the quotient universe contains the certified prefixes
+   \((U_k,Q')\) for all atom-safe \(k\), any positive atomized quotient inside
+   this fixed container and query layer is witnessed by one of those prefixes.
+\end{lemma}
+
+\begin{proof}
+   Among all \(k\)-subsets of \(W\), the prefix \(U_k\) maximizes
+   \[
+      \sum_{p\in U}d_{\mathcal A}(p)
+      =
+      |\{(z,q,p)\in\mathcal A:p\in U\}|.
+   \]
+   The right-hand side of \((TDA2)\) depends only on \(k\), not on the identity
+   of the selected points.  Therefore if some \(k\)-set satisfies \((TDA2)\),
+   the top-degree \(k\)-set also satisfies it.
+
+   For the final statement, take \(\mathcal A_G\) to be the atoms of
+   \(\mathcal A\) whose point lies in \(U_k\), set \(a_G=\mathbf 1_{Q'}\), and
+   use \(b_G^{\rm at}\le b\).  The strict inequality for \(U_k\) implies
+   \((AQ3)\), so \cref{lem:atomized-quotient-reduced-gain} gives positive
+   reduced gain.
+\end{proof}
+
+\Cref{lem:top-degree-atomized-prefix} removes the update-side combinatorial
+choice inside a fixed geometric container and query layer.  The offline
+separator only has to choose the container, the atom family, the query-margin
+layer, and a cardinality \(k\); the best \(k\)-point update side is the
+degree-sorted prefix.  This is the quotient analogue of the dense-slice prefix
+lemma, but it applies after merging incidences from many slices.
+
 \begin{assumption}[Layer quotient separator]
    \label{asm:layer-quotient-separator}
    Work in the setting of \cref{cor:residual-separator-local-cover}.  Suppose a
@@ -23519,7 +23664,13 @@ coverage-minus-load margin and ask whether those margins pay the one-time
 storage price.  With logarithmic slack,
 \cref{lem:dyadic-query-margin-layer} further reduces this to one uniform
 query-margin class, matching the same unweighted search model as the demand
-layer.  By \cref{cor:layer-separation-local-cover}, this concrete layer
+layer.  \Cref{lem:atomized-quotient-reduced-gain} allows the quotient certificate
+to use selected point-slice incidences rather than whole primitive slices, and
+\cref{lem:top-degree-atomized-prefix} shows that within a fixed certified
+container and query layer the best \(k\)-point update side is the degree-sorted
+prefix.  Thus the remaining geometric separator can be searched as a
+container/query-layer/cardinality problem followed by exact reduced-gain
+verification.  By \cref{cor:layer-separation-local-cover}, this concrete layer
 separator already implies local filter-cover feasibility.  Since
 preprocessing time is deliberately not a scarce resource,
 \cref{lem:finite-pool-optimizer} and
