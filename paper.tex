@@ -17965,6 +17965,215 @@ singleton slices by hand.
    separator.  The Bernoulli statement is the special case \((ASMP3)\).
 \end{proof}
 
+\begin{corollary}[Finite all-size soft-bucket separation oracle]
+   \label{cor:finite-all-size-soft-bucket-separation}
+   Work in the setting of \cref{cor:query-free-all-size-marginal-proposal}.
+   Let \(\mathcal B\) be a finite build-time pool of soft buckets.  A bucket
+   \(B\in\mathcal B\) consists of a certified container
+   \(W_B\in\mathcal W_0\), inclusion marginals \(0\le\pi_{B,p}\le1\) on
+   \(W_B\), and a realizable second-moment bound \(M_{2,B}\).  Put
+   \[
+      \mu_B=\sum_{p\in W_B}\pi_{B,p},
+      \qquad
+      \rho_B=\rho_{W_B},
+      \qquad
+      \psi_B=\psi_{W_B},
+   \]
+   and, for a price system \((\gamma,\tau,\sigma)\),
+   \[
+      h_B(q)=
+      \sum_{p\in W_B:(p,q)\in\mathcal N}
+         \pi_{B,p}\gamma_{p,q}r_{p,q}.
+   \]
+   Define the all-size soft reduced gain
+   \[
+      \mathsf{ASG}_{\gamma,\tau,\sigma}(B)
+      =
+      \sum_{q\in\mathcal Q}
+      \bigl(
+         h_B(q)-b\,b_0^{\rho_B}\psi_B\mu_B^{\rho_B}\tau_q
+      \bigr)_+
+      -
+      b\,\psi_B\sigma b_0^{1+\rho_B}
+      \mu_B^{1-\rho_B}M_{2,B}^{\rho_B}.
+      \tag{FASB1}
+   \]
+   If every nonnegative price system \((\gamma,\tau,\sigma)\) satisfying
+   \((APC1)\)--\((APC2)\) has
+   \[
+      \max_{B\in\mathcal B}\mathsf{ASG}_{\gamma,\tau,\sigma}(B)>0,
+      \tag{FASB2}
+   \]
+   then the finite prefix-template separator holds.  Consequently
+   \((\mathsf{HKC}_{\mathcal U})\) is feasible, and the local and global
+   endpoints of \cref{cor:finite-prefix-local-filter-cover} and
+   \cref{cor:finite-prefix-polylog-endpoint} apply.
+
+   More generally, it is enough that every such price system admit a finite
+   law on \(\mathcal B\) with positive expected \(\mathsf{ASG}\).  For
+   independent Bernoulli realization one may use
+   \(M_{2,B}=\mu_B+\mu_B^2\); if \(\mu_B\ge1\), the storage term in
+   \((FASB1)\) is at most
+   \[
+      2b\,\psi_B\sigma b_0^{1+\rho_B}\mu_B^{1+\rho_B}.
+   \]
+\end{corollary}
+
+\begin{proof}
+   If \((FASB2)\) holds for a price system, take the seed law in
+   \cref{cor:query-free-all-size-marginal-proposal} to be the point mass on a
+   maximizing bucket \(B\).  Inequality \((QASM2)\) is exactly
+   \(\mathsf{ASG}_{\gamma,\tau,\sigma}(B)>0\).  Since this applies to every
+   price system satisfying \((APC1)\)--\((APC2)\), the query-free all-size
+   marginal proposal separator gives the finite prefix-template separator and
+   the endpoint conclusions.
+
+   The finite-law version is the same averaging argument.  Positive expected
+   \(\mathsf{ASG}\) implies that some bucket in the support has positive
+   all-size soft gain.  The Bernoulli claim is the special case \((ASMP3)\).
+   If \(\mu_B\ge1\), then
+   \[
+      \mu_B^{1-\rho_B}(\mu_B+\mu_B^2)^{\rho_B}
+      \le 2^{\rho_B}\mu_B^{1+\rho_B}
+      \le2\mu_B^{1+\rho_B},
+   \]
+   giving the displayed storage simplification.
+\end{proof}
+
+\begin{corollary}[All-size soft gain materializes as a hard list]
+   \label{cor:all-size-soft-gain-hard-list}
+   Work in the setting of \cref{cor:finite-all-size-soft-bucket-separation}.
+   Fix one soft bucket \(B\), and suppose its marginals are realized by a
+   random list \(\mathcal L\subseteq W_B\) with
+   \(\E|\mathcal L|^2\le M_{2,B}\).  If
+   \[
+      \mathsf{ASG}_{\gamma,\tau,\sigma}(B)>0,
+      \tag{ASH1}
+   \]
+   then some hard list \(L\subseteq W_B\), with \(K=|L|\), satisfies
+   \[
+      \sum_{q\in\mathcal Q}
+      \left(
+         \sum_{p\in L:(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}
+         -b\,b_0^{\rho_B}\psi_BK^{\rho_B}\tau_q
+      \right)_+
+      >
+      b\,\psi_B\sigma b_0^{1+\rho_B}K^{1+\rho_B}.
+      \tag{ASH2}
+   \]
+   Thus positive soft gain is only a proposal certificate: a positive ordinary
+   hard-list all-size certificate already exists inside the same container.
+\end{corollary}
+
+\begin{proof}
+   Put \(K=|\mathcal L|\) and, for each query \(q\),
+   \[
+      X_q=
+      \sum_{p\in\mathcal L:(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}
+      -b\,b_0^{\rho_B}\psi_BK^{\rho_B}\tau_q .
+   \]
+   Since \(0<\rho_B<1\), Jensen gives
+   \(\E K^{\rho_B}\le\mu_B^{\rho_B}\).  Therefore
+   \[
+      \E X_q
+      \ge
+      h_B(q)-b\,b_0^{\rho_B}\psi_B\mu_B^{\rho_B}\tau_q .
+   \]
+   By convexity of \(x\mapsto x_+\),
+   \[
+      \E(X_q)_+
+      \ge
+      \bigl(
+         h_B(q)-b\,b_0^{\rho_B}\psi_B\mu_B^{\rho_B}\tau_q
+      \bigr)_+ .
+      \tag{ASH3}
+   \]
+   Summing \((ASH3)\) and using \((ASH1)\) yields
+   \[
+      \E\sum_q(X_q)_+
+      >
+      b\,\psi_B\sigma b_0^{1+\rho_B}
+      \mu_B^{1-\rho_B}M_{2,B}^{\rho_B}.
+      \tag{ASH4}
+   \]
+   Log-convexity of \(L_p\)-moments between powers \(1\) and \(2\) gives
+   \[
+      \E K^{1+\rho_B}
+      \le
+      (\E K)^{1-\rho_B}(\E K^2)^{\rho_B}
+      \le
+      \mu_B^{1-\rho_B}M_{2,B}^{\rho_B}.
+      \tag{ASH5}
+   \]
+   Combining \((ASH4)\) and \((ASH5)\),
+   \[
+      \E\left[
+         \sum_q(X_q)_+
+         -
+         b\,\psi_B\sigma b_0^{1+\rho_B}K^{1+\rho_B}
+      \right]>0 .
+   \]
+   Hence at least one outcome \(L\) of \(\mathcal L\) satisfies \((ASH2)\).
+\end{proof}
+
+\begin{corollary}[Finite all-size hard-list separation oracle]
+   \label{cor:finite-all-size-hard-list-separation}
+   Work in the setting of \cref{cor:query-free-all-size-list-proposal}.  Let
+   \(\mathcal H\) be a finite build-time pool of certified hard lists.  An
+   element \(H\in\mathcal H\) consists of a certified container
+   \(W_H\in\mathcal W_0\) and a list \(L_H\subseteq W_H\).  Put
+   \[
+      K_H=|L_H|,
+      \qquad
+      \rho_H=\rho_{W_H},
+      \qquad
+      \psi_H=\psi_{W_H},
+   \]
+   and
+   \[
+      h_H(q)=
+      \sum_{p\in L_H:(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}.
+   \]
+   Define the all-size hard-list reduced gain
+   \[
+      \mathsf{AHG}_{\gamma,\tau,\sigma}(H)
+      =
+      \sum_{q\in\mathcal Q}
+      \bigl(h_H(q)-b\,b_0^{\rho_H}\psi_HK_H^{\rho_H}\tau_q\bigr)_+
+      -
+      b\,\psi_H\sigma b_0^{1+\rho_H}K_H^{1+\rho_H}.
+      \tag{FAHL1}
+   \]
+   If every nonnegative price system \((\gamma,\tau,\sigma)\) satisfying
+   \((APC1)\)--\((APC2)\) has
+   \[
+      \max_{H\in\mathcal H}\mathsf{AHG}_{\gamma,\tau,\sigma}(H)>0,
+      \tag{FAHL2}
+   \]
+   then the finite prefix-template separator holds, and hence the same local
+   and global endpoints apply.  A finite law on \(\mathcal H\) with positive
+   expected \(\mathsf{AHG}\) is again sufficient.
+\end{corollary}
+
+\begin{proof}
+   If \(H\) has positive all-size hard-list reduced gain, the point-mass seed
+   law on \((W_H,L_H)\) satisfies \((QASL2)\).  Thus
+   \cref{cor:query-free-all-size-list-proposal} gives the finite
+   prefix-template separator and the endpoint conclusions.  The law version
+   reduces to the point-mass version by averaging.
+\end{proof}
+
+\Cref{cor:finite-all-size-soft-bucket-separation} is the cardinality-net
+version of the dense-overlap column generator.  A proposal family may contain
+arbitrarily overlapping soft dense regions, but a bucket is accepted only if
+its canonical positive-margin query side pays for the dyadic query loss
+\(b_0^\rho\) and the dyadic storage loss \(b_0^{1+\rho}\).  By
+\cref{cor:all-size-soft-gain-hard-list}, even this soft certificate is not a
+new materialization requirement: any positive soft bucket contains a positive
+hard-list witness, and \cref{cor:finite-all-size-hard-list-separation} converts
+that witness into the same finite prefix-template separator used by the global
+polylog endpoint.
+
 \begin{corollary}[Joint query-list proposal separator]
    \label{cor:joint-query-list-proposal-separator}
    Work in the setting of \cref{cor:boolean-query-layer-list-proposal-separator}.
