@@ -19657,6 +19657,152 @@ inequality \((QP3)\).
    \(K_{z,b}^{\rho_{z,b}}\le K_{z,b}\le M_{z,b}\).
 \end{proof}
 
+\begin{corollary}[Shared-canonical panel storage certificate]
+   \label{cor:shared-canonical-panel-storage}
+   Work in the setting of \cref{cor:observable-renyi-profile-cover}.  Let a
+   finite seed \(z\sim\nu\) produce a finite decoded panel
+   \(\mathcal B_z\).  Each record \(b\in\mathcal B_z\) has certified hit,
+   query-load, and error components
+   \(H_{z,b}(\sigma_0)\), \(L_{z,b}(\sigma_0)\), and \(E_{z,b}\).  Records also
+   point to canonical child identifiers
+   \[
+      \kappa_{z,b}\in\mathcal C_z ,
+   \]
+   where every child \(\kappa\in\mathcal C_z\) has a certified storage price
+   \(U_{z,\kappa}\).  Let \(\Gamma_z\ge0\) be any additional metadata price for
+   the panel records and pointers, and define
+   \[
+      H_{\rm can}(\sigma_0)
+      =
+      \E_z\sum_{b\in\mathcal B_z}H_{z,b}(\sigma_0),
+      \qquad
+      L_{\rm can}(\sigma_0)
+      =
+      \E_z\sum_{b\in\mathcal B_z}L_{z,b}(\sigma_0),
+      \tag{SCS1}
+   \]
+   \[
+      E_{\rm can}
+      =
+      \E_z\sum_{b\in\mathcal B_z}E_{z,b},
+      \qquad
+      U_{\rm can}
+      =
+      \E_z\left[
+         \Gamma_z+
+         \sum_{\kappa\in\kappa_z(\mathcal B_z)}U_{z,\kappa}
+      \right],
+      \tag{SCS2}
+   \]
+   where \(\kappa_z(\mathcal B_z)=\{\kappa_{z,b}:b\in\mathcal B_z\}\).
+   Suppose these seedwise aggregate panels are certified observable profiles:
+   retaining one seed panel stores each canonical child once, pays the record
+   metadata \(\Gamma_z\), and has hit/query/error profile bounded by the sums in
+   \((SCS1)\)--\((SCS2)\).  If there is \(a>0\) such that
+   \[
+      H_{\rm can}(\sigma_0)\ge a+E_{\rm can}
+      \qquad(\sigma_0\in\Sigma^+),
+      \tag{SCS3}
+   \]
+   and
+   \[
+      L_{\rm can}(\sigma_0)\le aL_{\sigma_0}
+      \qquad(\sigma_0\in\Sigma),
+      \qquad
+      U_{\rm can}\le aS,
+      \tag{SCS4}
+   \]
+   then \((\mathsf{ESFC}_\Sigma)\) is feasible.
+
+   Thus child storage is charged to distinct canonical identifiers inside the
+   retained panel, while occurrence multiplicity remains visible only through
+   query load, hit/error accounting, and the explicit metadata term
+   \(\Gamma_z\).
+\end{corollary}
+
+\begin{proof}
+   For each seed \(z\), let
+   \(\Pi_z=(H_z,L_z,U_z^{\rm prof},E_z^{\rm prof})\) be the certified
+   aggregate observable profile with
+   \[
+      H_z=\sum_{b\in\mathcal B_z}H_{z,b},\qquad
+      L_z=\sum_{b\in\mathcal B_z}L_{z,b},\qquad
+      E_z^{\rm prof}=\sum_{b\in\mathcal B_z}E_{z,b},
+   \]
+   and
+   \[
+      U_z^{\rm prof}=
+      \Gamma_z+
+      \sum_{\kappa\in\kappa_z(\mathcal B_z)}U_{z,\kappa}.
+   \]
+   Use the probabilities of the finite seed law as the weights
+   \(\omega_{\Pi_z}\) in
+   \cref{cor:single-panel-success-normalized-profile}, grouping identical
+   aggregate profiles if desired.  The aggregate quantities in that corollary
+   are precisely \(H_{\rm can},L_{\rm can},U_{\rm can},E_{\rm can}\).  Hence
+   \((SCS3)\)--\((SCS4)\) imply feasibility.
+\end{proof}
+
+\begin{corollary}[Distinct-canonical bucket-net certificate]
+   \label{cor:distinct-canonical-bucket-net}
+   Work in the setting of \cref{cor:bucket-net-ratio-form}.  In addition to the
+   record data of \cref{cor:recursive-compressed-net-panel}, suppose every
+   record \(b\in\mathcal B_z\) points to a canonical child identifier
+   \(\kappa_{z,b}\).  The child identifier \(\kappa\) has integer size
+   \(K_{z,\kappa}\), exponent \(0\le\rho_{z,\kappa}\le1\), and price factor
+   \(\psi_{z,\kappa}\), and record \(b\) uses the corresponding values
+   \(K_{z,b}=K_{z,\kappa_{z,b}}\),
+   \(\rho_{z,b}=\rho_{z,\kappa_{z,b}}\), and
+   \(\psi_{z,b}=\psi_{z,\kappa_{z,b}}\).  Let \(\Gamma_z\ge0\) bound all
+   nonrecursive panel metadata and occurrence-pointer storage, and put
+   \[
+      U_{\rm can}
+      =
+      \E_z\left[
+         \Gamma_z+
+         \sum_{\kappa\in\kappa_z(\mathcal B_z)}
+         \psi_{z,\kappa}K_{z,\kappa}^{1+\rho_{z,\kappa}}
+      \right].
+      \tag{DCB1}
+   \]
+   If \(\Sigma^+=\emptyset\), the cover is feasible.  Otherwise let \(a_*\) be
+   as in \((BNR1)\).  Suppose \(a_*>0\), the active first moments satisfy
+   \[
+      \E_z\sum_{b:\sigma_0\in\mathcal Q_{z,b}}
+      s_{z,b}\psi_{z,b}K_{z,b}
+      \le
+      a_*L_{\sigma_0}
+      \qquad(\sigma_0\in\Sigma),
+      \tag{DCB2}
+   \]
+   and the distinct-canonical storage satisfies
+   \[
+      U_{\rm can}\le a_*S .
+      \tag{DCB3}
+   \]
+   Then \((\mathsf{ESFC}_\Sigma)\) is feasible.
+
+   In particular, the storage theorem needed for a bucket-net/list-decoding
+   implementation is not the occurrence moment
+   \(\E_z\sum_b\psi_{z,b}K_{z,b}^{1+\rho_{z,b}}\).  It is the distinct
+   canonical child bound \((DCB1)\), plus the explicit metadata budget
+   \(\E_z\Gamma_z\).  Multiple decoded records may point to the same recursive
+   child at no additional child-index storage cost.
+\end{corollary}
+
+\begin{proof}
+   If \(\Sigma^+=\emptyset\), use the zero cover.  Otherwise \(a_*>0\).
+   For each record, \(K_{z,b}^{\rho_{z,b}}\le K_{z,b}\), with zero-price
+   records interpreted as in
+   \cref{cor:first-moment-active-load-query}.  Hence \((DCB2)\) implies the
+   query inequality \(L_{\rm net}(\sigma_0)\le a_*L_{\sigma_0}\).  The hit
+   inequality is the definition of \(a_*\), and \((DCB3)\) is the shared
+   storage inequality \((SCS4)\) for the aggregate panel profile whose record
+   hit/query/error components are \((RCN1)\)--\((RCN2)\) and whose child storage
+   is charged by \((DCB1)\).  Applying
+   \cref{cor:shared-canonical-panel-storage} gives feasibility.
+\end{proof}
+
 \Cref{lem:exact-near-set-filter-cover} is strictly weaker than
 \cref{lem:finite-signature-filter-cover} when the exact near set is part of the
 signature.  The all-pair LP covers every \(p\in N_{\sigma_0}\); the existential
@@ -19814,6 +19960,11 @@ charged through the query-active layer \(\mathcal Q_{z,b}\).
 burden: since every child exponent is at most one, a first-moment active-load
 bound already controls the query spectrum.  The storage spectrum is the real
 Renyi list-decoding target.
+\Cref{cor:shared-canonical-panel-storage} and
+\cref{cor:distinct-canonical-bucket-net} make that target the one paid by the
+actual index: child storage is summed over distinct canonical child identifiers
+inside a decoded panel, while occurrence multiplicity remains only as query load
+and explicit metadata.
 
 \begin{proposition}[Conditional fractional filter-cover endpoint]
    \label{prop:fractional-filter-cover-polylog}
@@ -32306,8 +32457,12 @@ shared-DAG storage moment.  The query moment is no longer a separate
 list-decoding problem: by \cref{lem:first-moment-query-compression}, the usual
 success-normalized expected bucket load implies it, and
 \cref{cor:first-moment-active-load-query} is the exact finite-profile version
-with false active buckets included in the active layer.  The storage side is
-the real geometric target.  \Cref{lem:occurrence-moments-dominate-dag},
+with false active buckets included in the active layer.
+\Cref{cor:distinct-canonical-bucket-net} further sharpens the storage target:
+the recursive child index is charged once per distinct canonical bucket net, not
+once per decoded occurrence, with only occurrence pointers left in the metadata
+budget.  The storage side is therefore a distinct-net geometric target.
+\Cref{lem:occurrence-moments-dominate-dag},
 \cref{lem:packing-list-tuple-moment},
 \cref{lem:gaussian-cap-intersection-energy}, and
 \cref{cor:tuple-profile-renyi-certificate} give a sufficient occurrence
