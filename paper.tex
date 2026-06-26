@@ -16060,6 +16060,151 @@ For a threshold $u$, the posterior-superlevel child is
    fresh Poisson realizations until one passes.
 \end{proof}
 
+\begin{corollary}[Finite-signature retained bucket certificate]
+   \label{cor:finite-signature-retained-buckets}
+   Work in the setting of \cref{lem:finite-signature-rate-coverage}.  Put
+   \[
+      \mathcal I=
+      \{(\sigma_0,p):\sigma_0\in\Sigma,\ p\in N_{\sigma_0}\},
+      \qquad
+      \mathcal J=\Sigma .
+   \]
+   For \(a\in\Lambda\), define the load-envelope coefficients
+   \[
+      C_{\sigma_0,a}
+      =
+      \sum_{B\subseteq\Lambda:\ a\in B}V_{\sigma_0,B},
+      \qquad
+      C_V=\max\{1,\max_{\sigma_0,a}C_{\sigma_0,a}\}.
+      \tag{FRC0}
+   \]
+   Suppose the fractional intensities \(b_{x,a}\) satisfy the strengthened
+   finite miss inequalities
+   \[
+      \sum_{B\subseteq\Lambda}
+      U_{p,\sigma_0,B}\exp(-b_p(B))
+      \le \frac{\tau}{8e}
+      \qquad((\sigma_0,p)\in\mathcal I),
+      \tag{FRC1}
+   \]
+   and the finite load inequalities
+   \[
+      \sum_{B\subseteq\Lambda}
+      V_{\sigma_0,B}\sum_{x\in S}b_x(B)
+      \le \ell
+      \qquad(\sigma_0\in\Sigma).
+      \tag{FRC2}
+   \]
+   Let
+   \[
+      S_0=\sum_{x,a}b_{x,a},
+      \qquad
+      U_*=\max_{(\sigma_0,p)\in\mathcal I}
+      \sum_{B\subseteq\Lambda}U_{p,\sigma_0,B},
+   \]
+   with \(U_*=0\) if \(\mathcal I=\emptyset\), and choose
+   \[
+      K\ge1,\qquad
+      K\ge
+      \left\lceil
+      \log\frac{64|\mathcal I|U_*}{\tau}
+      \right\rceil
+      \quad\text{when }\mathcal I\ne\emptyset .
+      \tag{FRC3}
+   \]
+   Then preprocessing can find a fixed retained bucket structure
+   \(N_{x,a}\in\mathbb Z_{\ge0}\) such that, for every promised near pair
+   \(p,q\),
+   \[
+      \E_\omega\!\left[
+         R_{p,q}(\omega)
+         \mathbf 1\{p\text{ has no retained copy in }B(q,\omega)\}
+      \right]
+      \le \tau/4 ,
+      \tag{FRC4}
+   \]
+   and, for every query \(q\) with signature \(\sigma_0\),
+   \[
+      \E_\omega
+      \sum_{x\in S}\sum_{a\in B(q,\omega)}N_{x,a}
+      \le
+      (e-1)K\ell+C_V\log(8\max\{1,|\Sigma|\}).
+      \tag{FRC5}
+   \]
+   The total retained incidence count satisfies
+   \[
+      \sum_{x,a}N_{x,a}\le(e-1)KS_0+\log8 .
+      \tag{FRC6}
+   \]
+
+   In particular, if the finite signature certificate has polynomially many
+   constraints, \(U_*/\tau\le m^{O(1)}\), and the additive envelope term
+   \(C_V\log(8\max\{1,|\Sigma|\})\) is within the intended load budget, then
+   the conversion from fractional intensities to a fixed retained bucket index
+   costs only a logarithmic factor in storage and reported incidence load.
+\end{corollary}
+
+\begin{proof}
+   Apply \cref{lem:finite-poisson-rate-coverage-realization} with miss
+   constraints \(i=(\sigma_0,p)\) and coefficients
+   \(U_{i,B}=U_{p,\sigma_0,B}\).  For a load constraint \(\sigma_0\), use the
+   normalized coefficients
+   \[
+      c_{\sigma_0,x,a}=C_{\sigma_0,a}/C_V\in[0,1].
+   \]
+   By \((FRC2)\),
+   \[
+      \sum_{x,a}c_{\sigma_0,x,a}b_{x,a}
+      =
+      C_V^{-1}
+      \sum_{B\subseteq\Lambda}
+      V_{\sigma_0,B}\sum_xb_x(B)
+      \le \ell/C_V .
+   \]
+   The realization lemma therefore gives one checkable Poisson realization
+   satisfying \((FR6)\), \((FR7)\), and \((FR8)\).
+
+   Fix a promised near pair \((p,q)\), let \(\sigma_0=\sigma(q)\), and
+   decompose by \(B(q,\omega)\).  The event that \(p\) has no retained copy in
+   \(B\) is exactly
+   \[
+      \left\{\sum_{a\in B}N_{p,a}=0\right\}.
+   \]
+   Therefore \((FS2)\) and \((FR6)\) give
+   \[
+   \begin{aligned}
+      &\E_\omega\!\left[
+         R_{p,q}(\omega)
+         \mathbf 1\{p\text{ has no retained copy in }B(q,\omega)\}
+      \right] \\
+      &\qquad\le
+      \sum_{B\subseteq\Lambda}
+      U_{p,\sigma_0,B}
+      \mathbf 1\!\left\{\sum_{a\in B}N_{p,a}=0\right\}
+      \le\tau/4 .
+   \end{aligned}
+   \]
+   This proves \((FRC4)\).
+
+   For load, \((FS3)\) gives
+   \[
+   \begin{aligned}
+      \E_\omega
+      \sum_{x}\sum_{a\in B(q,\omega)}N_{x,a}
+      &\le
+      \sum_{B\subseteq\Lambda}
+      V_{\sigma_0,B}\sum_x\sum_{a\in B}N_{x,a}\\
+      &=
+      \sum_{x,a}C_{\sigma_0,a}N_{x,a}
+      =
+      C_V L_{\sigma_0}(N).
+   \end{aligned}
+   \]
+   Multiplying the normalized-load bound \((FR7)\) by \(C_V\) gives
+   \((FRC5)\), and \((FRC6)\) is \((FR8)\).  Since the displayed inequalities
+   are finite, preprocessing can sample and check realizations until one passes.
+\end{proof}
+
 \begin{corollary}[Finite decoder-transcript rate-coverage envelope]
    \label{cor:finite-transcript-rate-coverage}
    In the setting of \cref{lem:finite-signature-rate-coverage}, suppose the
@@ -17868,6 +18013,9 @@ For a threshold $u$, the posterior-superlevel child is
    load coefficients.  \Cref{lem:finite-poisson-rate-coverage-realization}
    then fixes one retained Poisson bucket realization with only logarithmic
    slack whenever the finite certificate has constant miss slack.
+   \Cref{cor:finite-signature-retained-buckets} applies this directly to the
+   signature envelopes, producing one retained bucket index that satisfies the
+   all-query tilted-miss and scan-load certificates.
    \Cref{cor:finite-transcript-rate-coverage} is the
    list-decoding form of the same certificate: finite decoder transcripts or
    lattice quotient states replace enumeration of all label subsets and charge
@@ -19284,6 +19432,9 @@ envelopes.
 randomized-preprocessing layer for finite certificates: after a logarithmic
 replication factor, one checkable Poisson bucket realization satisfies all
 finite miss, load, and storage constraints simultaneously.
+\Cref{cor:finite-signature-retained-buckets} packages the result in the
+original query language, so the retained index itself satisfies the tilted
+witness-loss and reported-incidence bounds for every finite signature.
 \Cref{cor:finite-transcript-rate-coverage} charges compact
 decoder transcripts and their reporter work directly.
 \Cref{cor:compressed-decoder-dag-rate-coverage} compresses those transcripts to
@@ -19591,7 +19742,7 @@ pattern-complete materialization produce the stored cover required by
 \paragraph{Structured posterior route.}
 \Cref{lem:posterior-superlevel-compiler} records the negative-moment identity suggested by the latest notes. \Cref{lem:explicit-enumeration-barrier} makes the coarse-child obstruction precise: the scale $\xi=m^{-1/(2c^2)}$ is the price of explicitly enumerating $B\simeq\xi^{-1}$ outcomes, not a geometric limit. \Cref{lem:oblivious-sparsification-barrier} adds the complementary warning that the moment bounds alone still permit $\Omega(\xi^{-1})$ disjoint possible witnesses, so direct random sparsification cannot replace structured decoding without an additional sensitivity theorem. \Cref{lem:scale-window-compiler} and \cref{lem:dyadic-structured-amplification} isolate the important arithmetic: if mass windows can be decoded output-sensitively, then $\xi^{-\rho}$ repetitions at each dyadic scale convert negative-moment value into constant hit probability, and summing all scales down to $1/m$ still fits the $m^\rho$ query budget. This scale-aware amplification is essential; a raw negative-moment diagnostic alone does not imply that the near point is actually listed with inverse-polylogarithmic probability. \Cref{cor:dyadic-affinity-boost} adds the skeleton-value refinement: multiplying the local repetitions by \(O(\log H)\) makes the outgoing-affinity deficit \(O(H^{-2})\), so the affinity-proportional toll is summable over a polylogarithmic-depth port skeleton rather than paid as a per-level recall loss.
 
-The continuous likelihood-ball family now proves both analytic sides of the desired posterior decoder: \cref{thm:continuous-likelihood-balls} gives the guard-or-pure-child value, and \cref{lem:ideal-likelihood-scale-profile} gives the scale-normalized query and storage moments. \Cref{lem:likelihood-rank-prefix} further collapses the threshold continuum to rank gaps of a random score order. \Cref{cor:likelihood-prefix-leader} removes another artificial materialization cost: for ANN, every pure prefix may report the same score leader, so the decoder can aggregate prefix mass by leader buckets instead of storing one representative per prefix. \Cref{lem:dyadic-leader-quotient} records the full amplification in this hidden-label form and contributes no per-prefix storage term. \Cref{cor:dyadic-leader-affinity-boost} adds the skeleton-value refinement for the quotient itself: after the \(O(\log H)\)-boosted repetitions, the actual merged leader ports have total useful outgoing affinity \(1-O(H^{-2})\). \Cref{cor:boosted-leader-skeleton-toll} then composes this with affinity-proportional routing: quotienting prefixes by leader gives only constant total square toll over a depth-\(H\) port skeleton, not a hidden per-level recall loss. \Cref{cor:likelihood-leader-intensity} identifies the exact quotient law as the rank-gap weighted measure over score leaders. \Cref{lem:ideal-likelihood-leader-law} further proves that this quotient law has constant total intensity per scale and constant scale-weighted valid intensity under guard failure. \Cref{lem:poissonized-normalized-leader-sampler} removes the remaining all-listing requirement from a sampled implementation: computing the total intensity and sampling from the normalized tilted law gives the exact Poisson leader process. Finally, \cref{lem:scale-amplified-alpha-leader} shows that the dyadic repetitions cancel the rank powers, collapsing the whole amplified posterior to the max-tilted leader law \((AL2)\), with constant total mass and constant valid mass for every near pair. The clean measure target is therefore \cref{asm:alpha-leader-sampler}; conditional on it, \cref{prop:alpha-leader-polylog} gives the desired polylogarithmic ANN bounds. \Cref{lem:alpha-leader-voronoi-capture} gives an equivalent geometric normal form for that same target: the max-tilted intensity of \(x\) is a Gaussian Voronoi-cell capture probability for the interpolated center \((1-\alpha)q+\alpha x\), multiplied by the explicit distance tilt \(\exp(-\alpha(1-\alpha)t\|x-q\|^2/2)\). \Cref{cor:query-centered-cell-reweighting} and \cref{cor:truncated-nearest-cell-compiler} then reduce max-tilted sampling to query-centered nearest-cell decoding plus scalar rejection. The weakest current algorithmic posterior target is \cref{asm:smoothed-witness-list}: list the true near witness with constant tilted mass and scan the verified list. Conditional on it, \cref{prop:witness-list-polylog} gives the same polylogarithmic ANN bound. The facility form \cref{cor:facility-bucket-witness} is the version most directly connected to \(k\)-means++ or other build-time bucket proposals. \Cref{lem:poisson-rate-coverage}, \cref{lem:finite-signature-rate-coverage}, \cref{lem:finite-poisson-rate-coverage-realization}, \cref{cor:finite-transcript-rate-coverage}, \cref{cor:compressed-decoder-dag-rate-coverage}, \cref{cor:output-sensitive-decoder-dag-rate-coverage}, \cref{lem:scalar-redundancy-waterfill}, and \cref{asm:rate-coverage-panel} sharpen this further into the redundancy theorem object: point-label intensities, query label sets, finite coefficient envelopes, one fixed retained Poisson realization, transcript-level and state-DAG decoder work, responsibility-weighted enumerator coverage, the marginal replication water level, the tilted miss bound, and the scan-load bound. \Cref{lem:finite-rate-coverage-convex} gives the finite convex feasibility test and dual obstruction for proposed panels. Conditional on that finite rate-coverage panel, \cref{prop:rate-coverage-polylog} gives the same endpoint. The scale-resolved sampler \cref{asm:ideal-likelihood-leader-law-sampler}, the hidden-label sampler \cref{asm:normalized-likelihood-leader-sampler}, the structured nearest-cell decoder \cref{asm:smoothed-nearest-cell}, and the older all-listing \cref{asm:multiscale-structured-likelihood} remain stronger sufficient implementation forms.
+The continuous likelihood-ball family now proves both analytic sides of the desired posterior decoder: \cref{thm:continuous-likelihood-balls} gives the guard-or-pure-child value, and \cref{lem:ideal-likelihood-scale-profile} gives the scale-normalized query and storage moments. \Cref{lem:likelihood-rank-prefix} further collapses the threshold continuum to rank gaps of a random score order. \Cref{cor:likelihood-prefix-leader} removes another artificial materialization cost: for ANN, every pure prefix may report the same score leader, so the decoder can aggregate prefix mass by leader buckets instead of storing one representative per prefix. \Cref{lem:dyadic-leader-quotient} records the full amplification in this hidden-label form and contributes no per-prefix storage term. \Cref{cor:dyadic-leader-affinity-boost} adds the skeleton-value refinement for the quotient itself: after the \(O(\log H)\)-boosted repetitions, the actual merged leader ports have total useful outgoing affinity \(1-O(H^{-2})\). \Cref{cor:boosted-leader-skeleton-toll} then composes this with affinity-proportional routing: quotienting prefixes by leader gives only constant total square toll over a depth-\(H\) port skeleton, not a hidden per-level recall loss. \Cref{cor:likelihood-leader-intensity} identifies the exact quotient law as the rank-gap weighted measure over score leaders. \Cref{lem:ideal-likelihood-leader-law} further proves that this quotient law has constant total intensity per scale and constant scale-weighted valid intensity under guard failure. \Cref{lem:poissonized-normalized-leader-sampler} removes the remaining all-listing requirement from a sampled implementation: computing the total intensity and sampling from the normalized tilted law gives the exact Poisson leader process. Finally, \cref{lem:scale-amplified-alpha-leader} shows that the dyadic repetitions cancel the rank powers, collapsing the whole amplified posterior to the max-tilted leader law \((AL2)\), with constant total mass and constant valid mass for every near pair. The clean measure target is therefore \cref{asm:alpha-leader-sampler}; conditional on it, \cref{prop:alpha-leader-polylog} gives the desired polylogarithmic ANN bounds. \Cref{lem:alpha-leader-voronoi-capture} gives an equivalent geometric normal form for that same target: the max-tilted intensity of \(x\) is a Gaussian Voronoi-cell capture probability for the interpolated center \((1-\alpha)q+\alpha x\), multiplied by the explicit distance tilt \(\exp(-\alpha(1-\alpha)t\|x-q\|^2/2)\). \Cref{cor:query-centered-cell-reweighting} and \cref{cor:truncated-nearest-cell-compiler} then reduce max-tilted sampling to query-centered nearest-cell decoding plus scalar rejection. The weakest current algorithmic posterior target is \cref{asm:smoothed-witness-list}: list the true near witness with constant tilted mass and scan the verified list. Conditional on it, \cref{prop:witness-list-polylog} gives the same polylogarithmic ANN bound. The facility form \cref{cor:facility-bucket-witness} is the version most directly connected to \(k\)-means++ or other build-time bucket proposals. \Cref{lem:poisson-rate-coverage}, \cref{lem:finite-signature-rate-coverage}, \cref{lem:finite-poisson-rate-coverage-realization}, \cref{cor:finite-signature-retained-buckets}, \cref{cor:finite-transcript-rate-coverage}, \cref{cor:compressed-decoder-dag-rate-coverage}, \cref{cor:output-sensitive-decoder-dag-rate-coverage}, \cref{lem:scalar-redundancy-waterfill}, and \cref{asm:rate-coverage-panel} sharpen this further into the redundancy theorem object: point-label intensities, query label sets, finite coefficient envelopes, one fixed retained Poisson realization, transcript-level and state-DAG decoder work, responsibility-weighted enumerator coverage, the marginal replication water level, the tilted miss bound, and the scan-load bound. \Cref{lem:finite-rate-coverage-convex} gives the finite convex feasibility test and dual obstruction for proposed panels. Conditional on that finite rate-coverage panel, \cref{prop:rate-coverage-polylog} gives the same endpoint. The scale-resolved sampler \cref{asm:ideal-likelihood-leader-law-sampler}, the hidden-label sampler \cref{asm:normalized-likelihood-leader-sampler}, the structured nearest-cell decoder \cref{asm:smoothed-nearest-cell}, and the older all-listing \cref{asm:multiscale-structured-likelihood} remain stronger sufficient implementation forms.
 
 \Cref{lem:seeded-reduced-gain-search} is the build-time bridge from this
 finite certificate to list-decoding and lattice-decoding proposals: the
