@@ -18886,6 +18886,73 @@ inequality \((QP3)\).
    finite scan of the reported panel after the certificates have been computed.
 \end{proof}
 
+\begin{corollary}[Success-normalized superlevel law]
+   \label{cor:success-normalized-superlevel-law}
+   Work in the setting of \cref{cor:reported-superlevel-separator}.  For a
+   reported pair \((B,g)\), write
+   \[
+      s_g=1-e^{-g},
+      \qquad
+      \kappa(B,g)=
+      \frac{\theta\overline S_{B,g}+\overline\varepsilon_{B,g}}{s_g}.
+      \tag{ESN1}
+   \]
+   Thus \(\kappa(B,g)\) is the certified query/storage price per unit
+   superlevel hit probability.  If every normalized price system satisfying
+   \((ESNO1)\) admits a finite law \(\nu\) over reported pairs for which
+   \[
+      \E_{(B,g)\sim\nu}
+      s_g\bigl(\underline W_{B,g}-\kappa(B,g)\bigr)>0,
+      \tag{ESN2}
+   \]
+   then \((\mathsf{ESFC}_\Sigma)\) is feasible.  Equivalently, putting
+   \[
+      \mathsf H(\nu)=
+      \E_\nu s_g\underline W_{B,g},
+      \qquad
+      \mathsf C(\nu)=
+      \E_\nu\bigl(\theta\overline S_{B,g}
+                  +\overline\varepsilon_{B,g}\bigr),
+      \tag{ESN3}
+   \]
+   it is enough to prove
+   \[
+      \mathsf H(\nu)>\mathsf C(\nu).
+      \tag{ESN4}
+   \]
+   In homogeneous form, any law with \(\mathsf H(\nu)>0\) and
+   \[
+      \frac{\mathsf C(\nu)}{\mathsf H(\nu)}<1
+      \tag{ESN5}
+   \]
+   supplies a separator.
+
+   Consequently, the remaining exact-signature soft-bucket theorem may be
+   stated as a success-normalized moment problem: produce bucket-level
+   proposals whose recursive query/storage price per certified exact-near-set
+   hit mass is less than the priced mass they capture.  Large reported buckets
+   are harmless when their certified hit probability \(s_g\) is proportionally
+   large.
+\end{corollary}
+
+\begin{proof}
+   Since \(g>0\), \(s_g>0\), and
+   \[
+      s_g\bigl(\underline W_{B,g}-\kappa(B,g)\bigr)
+      =
+      (1-e^{-g})\underline W_{B,g}
+      -\theta\overline S_{B,g}
+      -\overline\varepsilon_{B,g}
+      =
+      \widehat\Delta(B,g).
+   \]
+   Thus \((ESN2)\) is exactly positive expected certified surplus for the law
+   \(\nu\).  Some pair in the finite support has positive certified surplus,
+   and \cref{cor:reported-superlevel-separator} applies.  The equivalence with
+   \((ESN4)\) and the ratio form \((ESN5)\) is immediate from the definitions
+   in \((ESN3)\).
+\end{proof}
+
 \Cref{lem:exact-near-set-filter-cover} is strictly weaker than
 \cref{lem:finite-signature-filter-cover} when the exact near set is part of the
 signature.  The all-pair LP covers every \(p\in N_{\sigma_0}\); the existential
@@ -18977,6 +19044,17 @@ If the best reported certified surplus is positive, or if an approximate
 reporter loses less than the available margin, the finite separator already
 accepts one deterministic column.  The reporter work is build-time separation
 work; it is not retained as recursive query overhead.
+\Cref{cor:success-normalized-superlevel-law} rewrites the same test in the
+compressed-bucket language: the relevant price is
+\[
+   \frac{\theta S_B+\varepsilon_B}{1-e^{-g}},
+\]
+the recursive query/storage cost per certified hit probability of the
+superlevel.  Thus the exact-signature separator does not ask every bucket to be
+small.  It asks that, averaged over the proposed bucket-level law, captured
+priced exact-near-set mass beats this success-normalized cost.  This is the
+finite LP form of the Renyi/list-size invariant used by the compressed-filter
+DAG route.
 
 \begin{proposition}[Conditional fractional filter-cover endpoint]
    \label{prop:fractional-filter-cover-polylog}
