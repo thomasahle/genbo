@@ -10817,6 +10817,146 @@ separator, and the materialization certificate above.  Conditional on
 dense filters, spherical filters, residual scans, and terminal samplers are all
 handled by one filter-cover process rather than by separate branching rules.
 
+\begin{lemma}[Weighted spherical reduced-gain test]
+   \label{lem:weighted-spherical-reduced-gain}
+   Work in a finite spherical terminal node with resident set \(P\), \(|P|=m\),
+   finite query set \(\mathcal Q\), and finite near-pair demand set
+   \(\mathcal N\subseteq P\times\mathcal Q\).  Let \(\mathcal Z\) be a finite
+   family of bucket filters.  For \(z\in\mathcal Z\), write \(U_z\subseteq P\)
+   for its update bucket and \(\chi_z(q)\in\{0,1\}\) for its query activation;
+   the terminal query and storage prices are both
+   \[
+      T_z=S_z=|U_z|.
+   \]
+   Let \(\Pi\) be a probability law on \(\mathcal Z\).  Fix high-correlation
+   sets \(H(q)\subseteq P\).  Suppose there are numbers
+   \(\pi_1,\pi_2,\pi_u>0\) such that
+   \[
+      \Pr_{Z\sim\Pi}[p\in U_Z,\ \chi_Z(q)=1]\ge\pi_1
+      \qquad((p,q)\in\mathcal N),
+      \tag{WS1}
+   \]
+   \[
+      \Pr_{Z\sim\Pi}[x\in U_Z,\ \chi_Z(q)=1]\le\pi_2
+      \qquad(q\in\mathcal Q,\ x\notin H(q)),
+      \tag{WS2}
+   \]
+   and
+   \[
+      \Pr_{Z\sim\Pi}[x\in U_Z]\le\pi_u
+      \qquad(x\in P).
+      \tag{WS3}
+   \]
+   For dual prices \(\alpha_{p,q}\ge0\), \(\tau_q\ge0\), and \(\sigma\ge0\), put
+   \[
+      A_\alpha=\sum_{(p,q)\in\mathcal N}\alpha_{p,q},
+      \qquad
+      T_\tau=\sum_{q\in\mathcal Q}\tau_q,
+   \]
+   and define the high-correlation co-load
+   \[
+      \mathsf D_H(\tau)
+      =
+      \E_{Z\sim\Pi}
+      \sum_{q\in\mathcal Q}\tau_q\chi_Z(q)|U_Z\cap H(q)|.
+      \tag{WS4}
+   \]
+   Then
+   \[
+   \E_{Z\sim\Pi}
+   \operatorname{gain}_{\alpha,\tau,\sigma}(Z)
+   \ge
+   \pi_1A_\alpha-\pi_2mT_\tau-\mathsf D_H(\tau)-\pi_um\sigma,
+   \tag{WS5}
+   \]
+   where
+   \[
+      \operatorname{gain}_{\alpha,\tau,\sigma}(z)
+      =
+      \sum_{(p,q)\in\mathcal N}\alpha_{p,q}\mathbf 1\{p\in U_z\}\chi_z(q)
+      -
+      |U_z|\sum_q\tau_q\chi_z(q)
+      -
+      \sigma |U_z|.
+   \]
+   Consequently, if budgets \(L,S\) satisfy
+   \[
+      \pi_2m\le\frac{\pi_1L}{4},
+      \qquad
+      \pi_um\le\frac{\pi_1S}{4},
+      \tag{WS6}
+   \]
+   and the dual prices have surplus
+   \[
+      A_\alpha>L T_\tau+\sigma S,
+      \tag{WS7}
+   \]
+   then either some spherical bucket \(z\in\mathcal Z\) has positive reduced
+   gain, or
+   \[
+      \mathsf D_H(\tau)>\frac{\pi_1}{2}A_\alpha .
+      \tag{WS8}
+   \]
+\end{lemma}
+
+\begin{proof}
+   Average the reduced gain over \(Z\sim\Pi\).  The useful demand term is bounded
+   from below by \((WS1)\):
+   \[
+      \E\sum_{(p,q)\in\mathcal N}
+      \alpha_{p,q}\mathbf 1\{p\in U_Z\}\chi_Z(q)
+      \ge \pi_1A_\alpha .
+   \]
+   For the query-price term, split the bucket into \(H(q)\) and its complement:
+   \[
+      \E\sum_q\tau_q\chi_Z(q)|U_Z|
+      =
+      \mathsf D_H(\tau)
+      +
+      \sum_q\tau_q
+      \sum_{x\notin H(q)}
+      \Pr[x\in U_Z,\ \chi_Z(q)=1].
+   \]
+   By \((WS2)\), the second summand is at most
+   \[
+      \pi_2\sum_q\tau_q|P\setminus H(q)|
+      \le \pi_2mT_\tau .
+   \]
+   Finally, \((WS3)\) gives
+   \[
+      \E |U_Z|=\sum_{x\in P}\Pr[x\in U_Z]\le \pi_um.
+   \]
+   Combining the three estimates proves \((WS5)\).
+
+   Under \((WS6)\) and \((WS7)\),
+   \[
+      \pi_2mT_\tau+\pi_um\sigma
+      \le
+      \frac{\pi_1}{4}(LT_\tau+S\sigma)
+      <
+      \frac{\pi_1}{4}A_\alpha .
+   \]
+   If also \(\mathsf D_H(\tau)\le\pi_1A_\alpha/2\), then \((WS5)\) gives
+   \[
+      \E_{Z\sim\Pi}\operatorname{gain}_{\alpha,\tau,\sigma}(Z)
+      >
+      \frac{\pi_1}{4}A_\alpha\ge0.
+   \]
+   Hence at least one bucket has positive reduced gain.  The contrapositive is
+   exactly \((WS8)\).
+\end{proof}
+
+For the smooth product or Gaussian cap family, \(\pi_1\) is the near collision
+probability, \(\pi_2\) is the ordinary far co-load probability, and \(\pi_u\) is
+the update probability.  The usual exponent calculation is precisely
+\(\pi_2m/\pi_1\le m^{\rho_c}\log^{O_c(1)}m\) and
+\(\pi_um/\pi_1\le m^{1+\rho_c}\log^{O_c(1)}m\) after the standard logical
+scaling.  Thus \cref{lem:weighted-spherical-reduced-gain} proves the spherical
+half of the desired primal-dual dichotomy: a surplus dual obstruction that is
+not defeated by ordinary spherical filters must put large price on
+high-correlation bucket mass.  The dense-filter theorem only has to convert that
+weighted high-correlation co-load into positive-gain radius-contracting columns.
+
 \begin{lemma}[Finite-signature filter-cover compiler]
    \label{lem:finite-signature-filter-cover}
    Let $\Omega$ be a query domain for one resident node \(P\), and let
@@ -22365,7 +22505,13 @@ all-query version: signatures record the active-filter pattern and a superset of
 possible near witnesses, so a finite LP certifies every continuous near pair.
 \Cref{prop:fractional-filter-cover-polylog} closes the recursive accounting
 conditional on such certificates: child prices are full descendant prices, hence
-dense overlap is charged locally and does not multiply over levels.  Since
+dense overlap is charged locally and does not multiply over levels.
+\Cref{lem:weighted-spherical-reduced-gain} proves the spherical half of the
+dual dichotomy in the exact reduced-gain language: if ordinary spherical buckets
+do not violate a surplus dual certificate, then the dual must carry large
+query-priced mass on high-correlation buckets.  The remaining dense theorem is
+therefore narrower: turn that weighted high-correlation co-load into a
+positive-gain radius-contracting filter.  Since
 preprocessing time is deliberately not a scarce resource,
 \cref{lem:finite-pool-optimizer} and
 \cref{cor:offline-pareto-compression} allow the build stage to enumerate,
