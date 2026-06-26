@@ -12484,6 +12484,155 @@ list-recovery routine is useful only as a separator for this positive reduced
 cost condition; the retained index still keeps just the verified prefix filters
 accepted by the finite cover LP.
 
+\begin{lemma}[Saturated query-hinge normal form]
+   \label{lem:saturated-query-hinge-normal-form}
+   Fix a dyadic demand layer \(\mathcal N_j\), a certified container
+   \(W\subseteq P\), an update set \(U\subseteq W\) of size \(k\), a price
+   factor \(\psi>0\), and an exponent \(0\le\rho\le1\).  For each query
+   \(q\in\mathcal Q\), define the saturated query degree of \(U\) by
+   \[
+      c_U(q)
+      =
+      |\{p\in U:(p,q)\in\mathcal N_j
+      \text{ and }p\in V_{z,q}\text{ for some }z\in\mathcal Z\}|.
+   \]
+   Put
+   \[
+      T_U=\psi k^\rho,\qquad S_U=\psi k^{1+\rho},
+   \]
+   and
+   \[
+      d_q(U)=\bigl(\theta_jc_U(q)-T_U\tau_q\bigr)_+ .
+   \]
+   If
+   \[
+      \sum_{q\in\mathcal Q}d_q(U)>\sigma S_U,
+      \tag{SQH1}
+   \]
+   and \(k\) is atom-safe for the query set
+   \[
+      Q^+(U)=\{q:\theta_jc_U(q)>T_U\tau_q\},
+   \]
+   then the saturated top-degree \(k\)-prefix inside \(W,Q^+(U)\) has positive
+   reduced gain.
+
+   Conversely, if no atom-safe saturated \(k\)-prefix inside \(W,Q'\) has
+   positive reduced gain for any \(Q'\subseteq\mathcal Q\), then every
+   \(k\)-set \(U\subseteq W\) for which \(Q^+(U)\) is atom-safe satisfies
+   \[
+      \sum_qd_q(U)\le\sigma S_U .
+      \tag{SQH2}
+   \]
+
+   Finally, partition the positive margins \(d_q(U)\) into dyadic classes
+   \(\mathcal Q_1,\ldots,\mathcal Q_K\), where
+   \[
+      \Delta_\ell\le d_q(U)<2\Delta_\ell
+      \qquad(q\in\mathcal Q_\ell).
+   \]
+   If
+   \[
+      \sum_qd_q(U)>2K\,\sigma S_U,
+      \tag{SQH3}
+   \]
+   then some dyadic margin class \(\mathcal Q_\ell\) has the property that the
+   saturated top-degree \(k\)-prefix inside \(W,\mathcal Q_\ell\) has positive
+   reduced gain, provided \(k\) is atom-safe for that layer.
+\end{lemma}
+
+\begin{proof}
+   For each pair \((p,q)\) counted by \(c_U(q)\), choose one witness
+   \(z^\star(p,q)\) with \(p\in V_{z^\star(p,q),q}\).  This gives a
+   duplicate-free atom family inside \(W,Q^+(U)\).  By the definition of
+   \(Q^+(U)\),
+   \[
+      \theta_j\sum_{q\in Q^+(U)}c_U(q)
+      -
+      T_U\sum_{q\in Q^+(U)}\tau_q
+      =
+      \sum_qd_q(U).
+   \]
+   Thus \((SQH1)\) implies
+   \[
+      \theta_j
+      |\{(z^\star(p,q),q,p):p\in U,\ q\in Q^+(U)\}|
+      >
+      T_U\sum_{q\in Q^+(U)}\tau_q+\sigma S_U .
+   \]
+   Apply \cref{lem:pair-support-saturation-atomized} with
+   \(Q'=Q^+(U)\): the saturated top-degree \(k\)-prefix has at least this many
+   feasible pair-support atoms.  Then
+   \cref{lem:atomized-quotient-reduced-gain} gives positive reduced gain with
+   prices \(T_U,S_U\).
+
+   The converse is the contrapositive of the first claim.
+
+   For the dyadic statement, if every margin class satisfied
+   \(\Delta_\ell|\mathcal Q_\ell|\le\sigma S_U\), then
+   \[
+      \sum_qd_q(U)
+      <
+      2\sum_{\ell=1}^K\Delta_\ell|\mathcal Q_\ell|
+      \le
+      2K\,\sigma S_U,
+   \]
+   contradicting \((SQH3)\).  Hence some class has
+   \(\Delta_\ell|\mathcal Q_\ell|>\sigma S_U\), and on this class
+   \[
+      \sum_{q\in\mathcal Q_\ell}
+      \bigl(\theta_jc_U(q)-T_U\tau_q\bigr)
+      \ge
+      \Delta_\ell|\mathcal Q_\ell|
+      >
+      \sigma S_U .
+   \]
+   Repeating the first part with \(Q'=\mathcal Q_\ell\) gives a positive-gain
+   saturated prefix for that layer.
+\end{proof}
+
+\begin{corollary}[Hinge container separator implies local cover]
+   \label{cor:hinge-container-separator-local-cover}
+   Work in the setting of \cref{cor:residual-separator-local-cover}.  Enlarge
+   the finite filter universe so that, for every finite dyadic demand layer
+   \(\mathcal L\subseteq\mathcal N\), every certified container \(W\) in a
+   finite container family, every query set \(Q'\subseteq\mathcal Q\), and every
+   atom-safe cardinality \(k\), it contains the saturated top-degree
+   \(k\)-prefix filter inside \(W,Q'\) with the certified prices
+   \(T=\psi_Wk^{\rho_W}\) and \(S=\psi_Wk^{1+\rho_W}\).
+
+   Suppose that every surplus dual price system \((\alpha,\tau,\sigma)\)
+   satisfying \((RS1)\) and having nonpositive reduced gain on the spherical
+   buckets, whole high-correlation dense slices, and atom-safe primitive dense
+   prefixes has the following property: after dyadically partitioning its
+   positive demand prices, some layer \(\mathcal L\), certified container
+   \(W\), and update set \(U\subseteq W\) satisfy \((SQH1)\) with the price
+   parameters of \(W\), and the induced positive query layer \(Q^+(U)\) is
+   atom-safe for \(k=|U|\).  Then the finite filter-cover LP
+   \((\mathsf{FC}_{\mathcal N})\) is feasible with query budget \(L\) and
+   storage budget \(S\).
+\end{corollary}
+
+\begin{proof}
+   If the LP were infeasible, \cref{lem:finite-filter-cover-dual} would give a
+   surplus dual certificate with nonpositive reduced gain on every column of the
+   enlarged universe.  The hypothesis supplies a dyadic layer, container, and
+   update set satisfying \((SQH1)\).  By
+   \cref{lem:saturated-query-hinge-normal-form}, some saturated top-degree
+   prefix filter in the enlarged universe has positive reduced gain, a
+   contradiction.
+\end{proof}
+
+\Cref{lem:saturated-query-hinge-normal-form} removes the query-side choice from
+the saturated container target.  For a proposed update core \(U\), the best query
+activation is not a clustering decision: keep exactly those query signatures for
+which the layer support count \(\theta_jc_U(q)\) exceeds the local query charge
+\(T_U\tau_q\), and ask whether the positive margins pay storage.  Thus the
+remaining geometric statement may be phrased as a priced bipartite
+support-density problem between data points and query signatures.  The
+build-time separator can search arbitrary containers and update cores, but every
+accepted object still reduces to a saturated prefix column verified by the
+finite filter-cover dual.
+
 \begin{assumption}[Layer quotient separator]
    \label{asm:layer-quotient-separator}
    Work in the setting of \cref{cor:residual-separator-local-cover}.  Suppose a
@@ -24174,9 +24323,17 @@ verification.  If all such prefixes fail,
 saturated degree-superlevel envelope that every certified container must satisfy,
 and
 \cref{lem:dyadic-atomized-prefix-screen} shows that constant-slack proposal
-search only needs dyadic prefix cardinalities before exact verification.  By
-\cref{cor:layer-separation-local-cover}, this concrete layer
-separator already implies local filter-cover feasibility.  Since
+search only needs dyadic prefix cardinalities before exact verification.
+\Cref{lem:saturated-container-packing-separator} makes even the container search
+conic: any fractional packing of container/query-layer/prefix records whose
+saturated support benefit beats price exposes a single positive reduced-gain
+prefix.  \Cref{lem:saturated-query-hinge-normal-form} then makes the query side
+canonical for a proposed update core: keep the positive support-minus-load
+margins and test whether they pay storage.  Thus the current residual target is
+a priced bipartite support-density separator inside certified geometric
+containers.  By \cref{cor:layer-separation-local-cover} and
+\cref{cor:hinge-container-separator-local-cover}, either concrete separator
+already implies local filter-cover feasibility.  Since
 preprocessing time is deliberately not a scarce resource,
 \cref{lem:finite-pool-optimizer} and
 \cref{cor:offline-pareto-compression} allow the build stage to enumerate,
