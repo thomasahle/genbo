@@ -17217,6 +17217,113 @@ singleton slices by hand.
    primitive hit-kernel cover follows.
 \end{proof}
 
+\begin{corollary}[Cardinality-net prefix reduction]
+   \label{cor:cardinality-net-prefix-reduction}
+   Work in the setting of \cref{cor:finite-prefix-separation}.  Let
+   \(\mathcal W_0\) be a finite family of certified containers, and suppose the
+   prefix-template pool contains, for each \(W\in\mathcal W_0\), templates
+   \((W,k)\) whose cardinalities \(\mathcal K_W\) are \(b_0\)-dense from below:
+   for every \(1\le K\le |W|\), some \(k\in\mathcal K_W\) satisfies
+   \[
+      K/b_0\le k\le K .
+      \tag{CNP1}
+   \]
+   Suppose that every nonnegative price system
+   \((\gamma,\tau,\sigma)\) satisfying \((APC1)\)--\((APC2)\) admits
+   \(W\in\mathcal W_0\), an integer \(1\le K\le |W|\), and fractional query
+   weights \(0\le y_q\le1\) such that
+   \[
+      D_{W,y}^{\gamma}(K)
+      >
+      b\,b_0\,\psi_W\left(
+         K^{\rho_W}\sum_q\tau_qy_q+\sigma K^{1+\rho_W}
+      \right).
+      \tag{CNP2}
+   \]
+   Then the finite prefix-template separator of
+   \cref{cor:finite-prefix-separation} holds, and hence
+   \((\mathsf{HKC}_{\mathcal U})\) is feasible.
+
+   In particular, dyadic cardinalities give \(b_0=2\).  Thus the geometric
+   separator may search arbitrary prefix sizes analytically, while the retained
+   finite template pool keeps only logarithmically many cardinalities per
+   container at a constant-factor slack loss.
+\end{corollary}
+
+\begin{proof}
+   Fix a price system and a witness \(W,K,y\) satisfying \((CNP2)\).  Choose
+   \(k\in\mathcal K_W\) satisfying \((CNP1)\).  Let
+   \(a_1\ge a_2\ge\cdots\) be the sorted paid degrees
+   \(d_y^\gamma(p)\) inside \(W\).  Since the \(a_i\) are nonnegative,
+   \[
+      D_{W,y}^\gamma(k)=\sum_{i\le k}a_i
+      \ge
+      \frac{k}{K}\sum_{i\le K}a_i
+      \ge
+      \frac1{b_0}D_{W,y}^\gamma(K).
+      \tag{CNP3}
+   \]
+   Combining \((CNP2)\) and \((CNP3)\) gives
+   \[
+      D_{W,y}^{\gamma}(k)
+      >
+      b\,\psi_W\left(
+         K^{\rho_W}\sum_q\tau_qy_q+\sigma K^{1+\rho_W}
+      \right).
+   \]
+   Since \(k\le K\) and \(0\le\rho_W\le1\), the right side is at least
+   \[
+      b\,\psi_W\left(
+         k^{\rho_W}\sum_q\tau_qy_q+\sigma k^{1+\rho_W}
+      \right).
+   \]
+   Therefore the template \(C=(W,k)\) has
+   \(\mathsf{PX}_{\gamma,\tau,\sigma}(C)>0\).  This verifies \((FPS2)\), and
+   \cref{cor:finite-prefix-separation} gives the hit-kernel cover.  The dyadic
+   statement follows because powers of two are \(2\)-dense from below.
+\end{proof}
+
+\begin{corollary}[Finite prefix residual envelope]
+   \label{cor:finite-prefix-residual-envelope}
+   Work in the setting of \cref{cor:finite-prefix-separation}.  If the finite
+   prefix-template separator fails, then there is a nonnegative price system
+   \((\gamma,\tau,\sigma)\) satisfying \((APC1)\)--\((APC2)\) such that, for
+   every template \(C=(W_C,K_C)\in\mathcal P\) and every fractional query
+   weighting \(0\le y_q\le1\),
+   \[
+      D_{W_C,y}^\gamma(K_C)
+      \le
+      b\,\psi_C\left(
+         K_C^{\rho_C}\sum_q\tau_qy_q+\sigma K_C^{1+\rho_C}
+      \right).
+      \tag{FPRE1}
+   \]
+   Equivalently, the same envelope holds for every Boolean query layer
+   \(Q'\subseteq\mathcal Q\):
+   \[
+      \sum_{p\in P_{K_C}(W_C,Q')}
+      \sum_{q\in Q':(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}
+      \le
+      b\,\psi_C\left(
+         K_C^{\rho_C}\sum_{q\in Q'}\tau_q+\sigma K_C^{1+\rho_C}
+      \right).
+      \tag{FPRE2}
+   \]
+   Thus the remaining geometric theorem may be stated as ruling out a paid
+   residual price system satisfying these top-degree prefix envelopes for the
+   retained container/cardinality templates.
+\end{corollary}
+
+\begin{proof}
+   Failure of the finite prefix-template separator means that some nonnegative
+   price system satisfying \((APC1)\)--\((APC2)\) has
+   \(\mathsf{PX}_{\gamma,\tau,\sigma}(C)\le0\) for every
+   \(C\in\mathcal P\).  Expanding the definition \((FPS1)\) gives
+   \((FPRE1)\) for every fractional query weighting.  The Boolean form
+   \((FPRE2)\) is the same statement with \(y=\mathbf 1_{Q'}\), using the
+   identity \((FPS3)\).
+\end{proof}
+
 \begin{corollary}[Joint query-list proposal separator]
    \label{cor:joint-query-list-proposal-separator}
    Work in the setting of \cref{cor:boolean-query-layer-list-proposal-separator}.
