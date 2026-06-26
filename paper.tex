@@ -13371,6 +13371,127 @@ nonpositive value, the inequalities \((FPC1)\)--\((FPC2)\) are the explicit
 weighted pseudo-randomness certificate that must be fed back into the spherical
 analysis.
 
+\begin{lemma}[Weighted Pareto-core hinge separator]
+   \label{lem:weighted-pareto-core-hinge-separator}
+   Work with the original finite demand set \(\mathcal N\) and dual demand
+   prices \(\alpha_{p,q}\), without first dyadically unweighting them.  For a
+   certified core \((U,T_U,S_U)\), define its exact priced support at query \(q\)
+   by
+   \[
+      a_U(q)
+      =
+      \sum_{\substack{p\in U:\\
+         (p,q)\in\mathcal N,\,
+         p\in V_{z,q}\text{ for some }z}}
+      \alpha_{p,q}.
+   \]
+   Then
+   \[
+      \max_{0\le y\le1}
+      \left[
+         \sum_qy_qa_U(q)
+         -
+         T_U\sum_q\tau_qy_q
+         -
+         \sigma S_U
+      \right]
+      =
+      \sum_q(a_U(q)-T_U\tau_q)_+-\sigma S_U .
+      \tag{WPC1}
+   \]
+   Consequently, if
+   \[
+      \sum_q(a_U(q)-T_U\tau_q)_+>\sigma S_U,
+      \tag{WPC2}
+   \]
+   then the positive-margin activation
+   \[
+      Q_\alpha^+(U)=\{q:a_U(q)>T_U\tau_q\}
+   \]
+   makes the filter \((U,Q_\alpha^+(U))\) have positive reduced gain.  Conversely,
+   if no threshold activation of \(U\) has positive reduced gain, then
+   \((WPC2)\) fails.
+\end{lemma}
+
+\begin{proof}
+   The expression inside the maximum is
+   \[
+      \sum_qy_q(a_U(q)-T_U\tau_q)-\sigma S_U .
+   \]
+   Since the coordinates \(y_q\in[0,1]\) are independent, the maximum is attained
+   by taking \(y_q=1\) exactly on the positive margins.  This gives \((WPC1)\).
+
+   The reduced gain of \((U,Q_\alpha^+(U))\) is exactly
+   \[
+      \sum_{q\in Q_\alpha^+(U)}a_U(q)
+      -
+      T_U\sum_{q\in Q_\alpha^+(U)}\tau_q
+      -
+      \sigma S_U
+      =
+      \sum_q(a_U(q)-T_U\tau_q)_+-\sigma S_U,
+   \]
+   so \((WPC2)\) gives positive gain.  Conversely, for any query set \(Q'\), the
+   reduced gain of \((U,Q')\) is bounded above by the same positive-part sum
+   minus \(\sigma S_U\), because discarding nonpositive margins can only improve
+   the value.  Hence a positive-gain activation would imply \((WPC2)\).
+\end{proof}
+
+\begin{corollary}[Weighted Pareto-core law separator]
+   \label{cor:weighted-pareto-core-law-separator}
+   Let \(\mathcal U\) be a finite family of certified cores, and let \(\Lambda\)
+   be any finite nonnegative measure on records \((U,y)\), where
+   \(U\in\mathcal U\) and \(0\le y_q\le1\).  If
+   \[
+      \sum_{(U,y)}\Lambda_{U,y}
+      \left[
+         \sum_qy_qa_U(q)
+         -
+         T_U\sum_q\tau_qy_q
+         -
+         \sigma S_U
+      \right]
+      >
+      0,
+      \tag{WCL1}
+   \]
+   then some threshold activation of a core in \(\mathcal U\) has positive
+   reduced gain.  Equivalently, if no such activation has positive gain, then
+   every nonnegative vector \(\lambda_U\) satisfies
+   \[
+      \sum_{U\in\mathcal U}\lambda_U
+      \left[
+         \sum_q(a_U(q)-T_U\tau_q)_+
+         -
+         \sigma S_U
+      \right]
+      \le0 .
+      \tag{WCL2}
+   \]
+\end{corollary}
+
+\begin{proof}
+   If \((WCL1)\) holds, one record in the support of \(\Lambda\) has a positive
+   bracketed value.  For that core, the maximum in \((WPC1)\) is positive, so
+   \cref{lem:weighted-pareto-core-hinge-separator} gives a positive-gain
+   activation.
+
+   If no activation has positive gain, then each core has nonpositive optimized
+   hinge by \cref{lem:weighted-pareto-core-hinge-separator}; summing those
+   inequalities with coefficients \(\lambda_U\) gives \((WCL2)\).  Conversely,
+   if \((WCL2)\) fails for some \(\lambda\), then the same lemma exposes a
+   positive-gain activation from one core in the support.
+\end{proof}
+
+The exact weighted form is stronger than the dyadic core screen above.  The
+dyadic objective \(\theta_jc_U(q)\) lower-bounds \(a_U(q)\) on one price layer
+and is useful when the proposal generator wants an unweighted counting problem.
+But the filter-cover proof itself does not need to pay that dyadic loss: an
+offline separator with access to the dual prices can optimize \((WPC2)\)
+directly, and the retained column is still the same ordinary query activation
+\((U,Q_\alpha^+(U))\).  Thus demand-layering is a build-time simplification, not
+an inherent overhead in the fractional dense-cover theorem.
+
 \begin{assumption}[Layer quotient separator]
    \label{asm:layer-quotient-separator}
    Work in the setting of \cref{cor:residual-separator-local-cover}.  Suppose a
@@ -25097,6 +25218,10 @@ fractional query weights with positive reduced-cost value exposes one ordinary
 positive-gain threshold activation.  Equivalently, the dense proposal oracle is
 the hinge objective \((FPC2)\), and failure of every such packing is the precise
 weighted pseudo-randomness condition left for the spherical residual analysis.
+\Cref{lem:weighted-pareto-core-hinge-separator} sharpens this once more by using
+the original dual weights \(\alpha_{p,q}\) directly.  The exact core oracle is
+now \((WPC2)\); dyadic demand layers are only an unweighted build-time screen,
+not a theorem-level source of overhead.
 By
 \cref{cor:layer-separation-local-cover},
 \cref{cor:hinge-container-separator-local-cover}, and
