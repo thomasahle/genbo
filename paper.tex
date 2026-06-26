@@ -19227,6 +19227,149 @@ inequality \((QP3)\).
    \((EMRE3)\) rewritten with the profile notation.
 \end{proof}
 
+\begin{corollary}[Observable Renyi profile-cover LP]
+   \label{cor:observable-renyi-profile-cover}
+   Work in the setting of
+   \cref{cor:observable-renyi-profile-separator}.  Let \(\mathcal P\) be a
+   finite family of certified observable profiles
+   \[
+      \Pi=(H_\Pi,L_\Pi,U_\Pi,E_\Pi),
+   \]
+   meaning that \(H_\Pi(\sigma_0)\) is a certified lower hit vector,
+   \(L_\Pi(\sigma_0)\) is a certified upper query-load vector, and
+   \(U_\Pi,E_\Pi\) are certified upper storage and error moments as in
+   \((ORPS2)\).  Consider the error-discounted profile-cover LP
+   \[
+   \begin{array}{ll}
+   \text{\rm find} & \lambda_\Pi\ge0\\[0.4em]
+   \text{\rm subject to}
+      & \displaystyle
+        \sum_{\Pi\in\mathcal P}\lambda_\Pi
+        \bigl(H_\Pi(\sigma_0)-E_\Pi\bigr)\ge1
+        \qquad(\sigma_0\in\Sigma^+),\\[0.9em]
+      & \displaystyle
+        \sum_{\Pi\in\mathcal P}\lambda_\Pi L_\Pi(\sigma_0)
+        \le L_{\sigma_0}
+        \qquad(\sigma_0\in\Sigma),\\[0.9em]
+      & \displaystyle
+        \sum_{\Pi\in\mathcal P}\lambda_\Pi U_\Pi\le S .
+   \end{array}
+   \tag{\(\mathsf{ORPC}_\Sigma\)}
+   \]
+   If \((\mathsf{ORPC}_\Sigma)\) is feasible, then
+   \((\mathsf{ESFC}_\Sigma)\) is feasible.
+
+   Conversely, if \((\mathsf{ORPC}_\Sigma)\) is infeasible, then there is a
+   normalized price system satisfying \((ESNO1)\) such that every certified
+   profile \(\Pi\in\mathcal P\) obeys
+   \[
+      \sum_{\sigma_0\in\Sigma^+}\beta_{\sigma_0}H_\Pi(\sigma_0)
+      \le
+      \sum_{\sigma_0\in\Sigma}\tau_{\sigma_0}L_\Pi(\sigma_0)
+      +\theta U_\Pi+E_\Pi .
+      \tag{ORPC1}
+   \]
+   Thus the observable residual is exactly failure of a fractional
+   error-discounted cover by panel profiles.  Dense buckets, spherical buckets,
+   additive-quantization panels, and list-decoder outputs are all columns of
+   the same profile LP once their hit, query, storage, and error moments are
+   certified.
+\end{corollary}
+
+\begin{proof}
+   Suppose first that \((\mathsf{ORPC}_\Sigma)\) has a feasible solution
+   \(\lambda\), and fix any normalized price system satisfying \((ESNO1)\).
+   Using \(\sum_{\sigma_0\in\Sigma^+}\beta_{\sigma_0}=1\),
+   \[
+   \begin{aligned}
+      &\sum_{\Pi\in\mathcal P}\lambda_\Pi
+      \left[
+         \sum_{\sigma_0\in\Sigma^+}\beta_{\sigma_0}H_\Pi(\sigma_0)
+         -
+         \sum_{\sigma_0\in\Sigma}\tau_{\sigma_0}L_\Pi(\sigma_0)
+         -
+         \theta U_\Pi-E_\Pi
+      \right]  \\
+      &\qquad =
+      \sum_{\sigma_0\in\Sigma^+}\beta_{\sigma_0}
+      \sum_{\Pi}\lambda_\Pi\bigl(H_\Pi(\sigma_0)-E_\Pi\bigr)
+      -
+      \sum_{\sigma_0\in\Sigma}\tau_{\sigma_0}
+      \sum_{\Pi}\lambda_\Pi L_\Pi(\sigma_0)
+      -
+      \theta\sum_{\Pi}\lambda_\Pi U_\Pi  \\
+      &\qquad \ge
+      1-\sum_{\sigma_0\in\Sigma}\tau_{\sigma_0}L_{\sigma_0}-\theta S
+      >0 .
+   \end{aligned}
+   \]
+   Therefore some profile in \(\mathcal P\) has positive certified margin
+   \((ORPS3)\).  By
+   \cref{cor:observable-renyi-profile-separator}, this gives
+   \((\mathsf{ESFC}_\Sigma)\).
+
+   For the converse, apply Farkas' lemma to
+   \((\mathsf{ORPC}_\Sigma)\).  Infeasibility gives multipliers
+   \(\beta_{\sigma_0}\ge0\), \(\tau_{\sigma_0}\ge0\), and \(\theta\ge0\) such
+   that
+   \[
+      \sum_{\sigma_0\in\Sigma^+}\beta_{\sigma_0}
+      >
+      \sum_{\sigma_0\in\Sigma}\tau_{\sigma_0}L_{\sigma_0}+\theta S,
+   \]
+   while every profile satisfies
+   \[
+      \sum_{\sigma_0\in\Sigma^+}
+      \beta_{\sigma_0}\bigl(H_\Pi(\sigma_0)-E_\Pi\bigr)
+      \le
+      \sum_{\sigma_0\in\Sigma}\tau_{\sigma_0}L_\Pi(\sigma_0)
+      +\theta U_\Pi .
+   \]
+   The strict inequality forces
+   \(M=\sum_{\sigma_0\in\Sigma^+}\beta_{\sigma_0}>0\).  Dividing all prices by
+   \(M\) gives \((ESNO1)\), and since the normalized \(\beta\)-mass is one, the
+   last display becomes \((ORPC1)\).
+\end{proof}
+
+\begin{corollary}[Single-panel success-normalized profile certificate]
+   \label{cor:single-panel-success-normalized-profile}
+   In the setting of \cref{cor:observable-renyi-profile-cover}, suppose
+   there are nonnegative weights \(\omega_\Pi\), finitely supported on
+   \(\mathcal P\), with aggregate quantities
+   \[
+      H(\sigma_0)=\sum_{\Pi}\omega_\Pi H_\Pi(\sigma_0),\quad
+      L(\sigma_0)=\sum_{\Pi}\omega_\Pi L_\Pi(\sigma_0),\quad
+      U=\sum_{\Pi}\omega_\Pi U_\Pi,\quad
+      E=\sum_{\Pi}\omega_\Pi E_\Pi .
+   \]
+   If there is \(a>0\) such that
+   \[
+      H(\sigma_0)\ge a+E\qquad(\sigma_0\in\Sigma^+),
+      \tag{OSN1}
+   \]
+   \[
+      L(\sigma_0)\le aL_{\sigma_0}\qquad(\sigma_0\in\Sigma),
+      \qquad
+      U\le aS,
+      \tag{OSN2}
+   \]
+   then \((\mathsf{ESFC}_\Sigma)\) is feasible.
+
+   In particular, a single randomized spherical, tensor, AQ, or list-decoding
+   panel with uniform exact-signature hit probability at least \(a+E\), Renyi
+   query-load at most \(aL_{\sigma_0}\) for every query signature, and storage
+   moment at most \(aS\), already supplies the local fractional dense-filter
+   cover.  This is the profile form of the success-normalized invariant:
+   recursive query and storage costs are charged after division by the
+   certified hit probability \(a\), not by raw bucket size.
+\end{corollary}
+
+\begin{proof}
+   Set \(\lambda_\Pi=\omega_\Pi/a\).  Conditions \((OSN1)\)--\((OSN2)\) are
+   exactly the three constraints of \((\mathsf{ORPC}_\Sigma)\) for this
+   \(\lambda\).  Apply \cref{cor:observable-renyi-profile-cover}.
+\end{proof}
+
 \Cref{lem:exact-near-set-filter-cover} is strictly weaker than
 \cref{lem:finite-signature-filter-cover} when the exact near set is part of the
 signature.  The all-pair LP covers every \(p\in N_{\sigma_0}\); the existential
@@ -19352,6 +19495,14 @@ vector, and storage/error moments.  If those observable quantities beat the
 current dual prices, the deterministic verifier extracts one ordinary filter
 column; if no such panel exists, \((ORPS4)\) is the exact pseudo-random
 residual that the spherical/list-decoding analysis must contradict.
+\Cref{cor:observable-renyi-profile-cover} turns the same condition back into a
+primal fractional cover of exact signatures by observable profiles, with
+certification error subtracted uniformly from every signature's hit mass.
+\Cref{cor:single-panel-success-normalized-profile} records the simplest
+success-normalized sufficient condition: a panel with hit probability \(a\) may
+spend \(a\) times the local query and storage budgets, so large buckets are
+acceptable precisely when their certified exact-near-set hit probability grows
+with their recursive cost.
 
 \begin{proposition}[Conditional fractional filter-cover endpoint]
    \label{prop:fractional-filter-cover-polylog}
