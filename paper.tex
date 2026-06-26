@@ -15817,6 +15817,75 @@ singleton slices by hand.
    \cref{cor:aggregate-list-moment-residual-envelope}, a contradiction.
 \end{proof}
 
+\begin{definition}[Success-normalized aggregate list panel]
+   \label{def:success-normalized-aggregate-list-panel}
+   Work in the setting of
+   \cref{lem:aggregate-list-moment-weak-type-separator}.  For a finite
+   nonnegative level panel \(\Lambda=(\lambda_i,\delta_i)_i\), with
+   \(B,M_0,M_1,M_{1+\rho}\) defined there, write
+   \[
+      \mathsf{Hit}(\Lambda)=B,
+      \qquad
+      \mathsf{Qry}(\Lambda)
+      =
+      \psi\,\widehat A_yM_0^{1-\rho}M_1^\rho,
+      \qquad
+      \mathsf{Store}(\Lambda)
+      =
+      \psi\,\sigma M_{1+\rho}.
+      \tag{SNAL1}
+   \]
+   If the supported levels satisfy \(h_i\le H\), also write
+   \[
+      \mathsf{Store}_H(\Lambda)=\psi\,\sigma H^\rho M_1 .
+      \tag{SNAL2}
+   \]
+   The panel is \(\varepsilon\)-balanced if \(\mathsf{Hit}(\Lambda)>0\) and
+   \[
+      \mathsf{Qry}(\Lambda)+\mathsf{Store}(\Lambda)
+      \le
+      (1-\varepsilon)\mathsf{Hit}(\Lambda).
+      \tag{SNAL3}
+   \]
+   In the capped-list form, replace \(\mathsf{Store}\) by
+   \(\mathsf{Store}_H\).  Equivalently, after normalizing
+   \(\mathsf{Hit}(\Lambda)=1\), the success-normalized query and storage list
+   costs sum to at most \(1-\varepsilon\).
+\end{definition}
+
+\begin{assumption}[Balanced aggregate list-size separator]
+   \label{asm:balanced-aggregate-list-size-separator}
+   Work in the setting of \cref{asm:paid-atomized-prefix-separator}, and assume
+   every container has exponent \(0<\rho_W<1\) and \(b\)-dense available
+   cardinalities in the sense of \((CNW0)\).  There is a constant
+   \(\varepsilon>0\) such that every nonnegative price system
+   \((\gamma,\tau,\sigma)\) satisfying \((APC1)\)--\((APC2)\) admits a certified
+   container \(W\), fractional query weighting \(0\le y_q\le1\), and a finite
+   nonnegative level panel that is \(\varepsilon\)-balanced in the sense of
+   \cref{def:success-normalized-aggregate-list-panel}.  It is also sufficient to
+   produce the capped-list version, with some certified cap \(H\) for the
+   supported level cardinalities.
+\end{assumption}
+
+\begin{corollary}[Balanced list-size separation implies the hit-kernel cover]
+   \label{cor:balanced-list-size-hit-kernel-cover}
+   In the setting of \cref{asm:balanced-aggregate-list-size-separator}, if the
+   balanced aggregate list-size separator holds, then
+   \((\mathsf{HKC}_{\mathcal U})\) is feasible.
+\end{corollary}
+
+\begin{proof}
+   An \(\varepsilon\)-balanced panel violates \((ALR1)\), because
+   \[
+      \mathsf{Hit}(\Lambda)
+      >
+      \mathsf{Qry}(\Lambda)+\mathsf{Store}(\Lambda).
+   \]
+   In the capped-list case it violates the capped inequality in
+   \cref{cor:aggregate-list-moment-prefix-hit-kernel-cover}.  That corollary
+   therefore gives the primitive hit-kernel cover.
+\end{proof}
+
 \Cref{lem:paid-prefix-weak-type} gives a direct separator screen.  If, for some
 certified container and fractional query weighting, a paid-degree superlevel has
 cardinality strictly above the query-priced bound \((PWT2)\) and strictly below
@@ -15852,6 +15921,15 @@ through the concave power \(M_0^{1-\rho}M_1^\rho\); the storage side is the
 \((1+\rho)\)-moment \(M_{1+\rho}\), or the cruder cap \(H^\rho M_1\).  Thus a
 spherical or lattice list-decoding theorem can aim to lower-bound the captured
 paid mass \(B\) while upper-bounding only these average list-size quantities.
+\Cref{def:success-normalized-aggregate-list-panel} makes this the same
+success-normalized potential as in the compressed-bucket picture: the useful
+quantity is not raw list size, but list query/storage cost divided by captured
+hit mass.  \Cref{asm:balanced-aggregate-list-size-separator} is therefore the
+plug-in theorem target for tensorized spherical filters, range-reporting
+violator search, lattice decoders, or any other proposal mechanism.  A proposed
+geometric proof only has to output one balanced aggregate panel; the LP
+materialization then turns that averaged certificate into ordinary retained
+filters.
 \Cref{cor:aggregate-list-moment-residual-envelope} is the matching obstruction:
 if the hit-kernel cover fails, every finite list-size panel obeys \((ALR1)\).
 Thus a proof of the polylog endpoint can now target a single averaged
