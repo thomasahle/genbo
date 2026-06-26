@@ -18955,6 +18955,168 @@ singleton slices by hand.
    giving \((NCMP3)\).
 \end{proof}
 
+\begin{corollary}[Query-free normalized list proposal separator]
+   \label{cor:query-free-normalized-list-proposal}
+   Work in the setting of
+   \cref{cor:normalized-cardinality-net-random-list-proposal}.  It is enough to
+   prove the following query-free proposal statement.  Every nonnegative price
+   system satisfying \((APC1)\), \((NAPO1)\), and
+   \[
+      \sum_{(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}=1
+   \]
+   admits a retained container \(W\) and a random certified list
+   \(\mathcal L\subseteq W\).  Put
+   \[
+      K=|\mathcal L|,
+      \qquad
+      \widehat V(\mathcal L)=
+      \sum_{p\in\mathcal L}
+      \sum_{q:(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q},
+      \qquad
+      \rho=\rho_W,\quad \psi=\psi_W .
+   \]
+   If \(\E K>0\) and
+   \[
+      \E\widehat V(\mathcal L)
+      \ge
+      \frac{b\,\psi}{\pi_1}
+      \left(
+         \frac{\beta^\rho b_0^\rho\E K^\rho}{L}
+         +
+         \frac{\beta^{1+\rho}b_0^{1+\rho}\E K^{1+\rho}}{S}
+      \right),
+      \tag{QNRL1}
+   \]
+   then the finite prefix-template separator holds, and hence the same local
+   and global endpoints apply.  It is sufficient to replace \(\E K^\rho\) by
+   \((\E K)^\rho\).  If \(K\le H\) almost surely, it is enough to replace the
+   storage moment by \(H^\rho\E K\).
+\end{corollary}
+
+\begin{proof}
+   Apply \cref{cor:normalized-cardinality-net-random-list-proposal} with the
+   fractional query weights \(y_q=1\) for every \(q\).  Then
+   \(d_y^\gamma(p)=\sum_{q:(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}\), so
+   \(V(\mathcal L)=\widehat V(\mathcal L)\).  The displayed sufficient
+   conditions are exactly \((NCRL1)\) and its two simpler variants.
+\end{proof}
+
+\begin{corollary}[Query-free normalized marginal proposal separator]
+   \label{cor:query-free-normalized-marginal-proposal}
+   Work in the setting of
+   \cref{cor:normalized-cardinality-net-marginal-proposal}.  It is enough to
+   prove the following soft query-free proposal statement.  Every nonnegative
+   price system satisfying \((APC1)\), \((NAPO1)\), and
+   \[
+      \sum_{(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}=1
+   \]
+   admits a retained container \(W\), inclusion marginals \(0\le\pi_p\le1\) on
+   \(W\), and a realizable second-moment bound \(M_2\).  Put
+   \[
+      \mu=\sum_{p\in W}\pi_p,
+      \qquad
+      \widehat V_\pi=
+      \sum_{p\in W}\pi_p
+      \sum_{q:(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q},
+      \qquad
+      \rho=\rho_W,\quad \psi=\psi_W .
+   \]
+   If \(\mu>0\) and
+   \[
+      \widehat V_\pi
+      \ge
+      \frac{b\,\psi}{\pi_1}
+      \left(
+         \frac{\beta^\rho b_0^\rho\mu^\rho}{L}
+         +
+         \frac{\beta^{1+\rho}b_0^{1+\rho}\mu^{1-\rho}M_2^\rho}{S}
+      \right),
+      \tag{QNMP1}
+   \]
+   then the finite prefix-template separator holds, and hence the same local
+   and global endpoints apply.  For independent Bernoulli inclusion, one may
+   replace \(M_2\) by \(\mu+\mu^2\).
+\end{corollary}
+
+\begin{proof}
+   Apply \cref{cor:normalized-cardinality-net-marginal-proposal} with
+   \(y_q=1\) for every query.  Then \(V_\pi=\widehat V_\pi\), and
+   \((QNMP1)\) is exactly \((NCMP2)\).  The Bernoulli statement is the
+   corresponding specialization \((NCMP3)\).
+\end{proof}
+
+\begin{corollary}[Finite normalized soft-bucket oracle]
+   \label{cor:finite-normalized-soft-bucket-oracle}
+   Work in the setting of
+   \cref{cor:query-free-normalized-marginal-proposal}.  Let \(\mathcal B\) be a
+   finite build-time pool of soft buckets.  A bucket \(B\in\mathcal B\)
+   consists of a retained container \(W_B\), inclusion marginals
+   \(0\le\pi_{B,p}\le1\) on \(W_B\), and a realizable second-moment bound
+   \(M_{2,B}\).  Put
+   \[
+      \mu_B=\sum_{p\in W_B}\pi_{B,p},
+      \qquad
+      \rho_B=\rho_{W_B},
+      \qquad
+      \psi_B=\psi_{W_B},
+   \]
+   and, for a normalized price system,
+   \[
+      \widehat V_B=
+      \sum_{p\in W_B}\pi_{B,p}
+      \sum_{q:(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}.
+   \]
+   Define the normalized soft-bucket gain
+   \[
+      \mathsf{NSG}_{\gamma}(B)
+      =
+      \widehat V_B
+      -
+      \frac{b\,\psi_B}{\pi_1}
+      \left(
+         \frac{\beta^{\rho_B}b_0^{\rho_B}\mu_B^{\rho_B}}{L}
+         +
+         \frac{\beta^{1+\rho_B}b_0^{1+\rho_B}
+               \mu_B^{1-\rho_B}M_{2,B}^{\rho_B}}{S}
+      \right).
+      \tag{FNSB1}
+   \]
+   If every nonnegative price system satisfying \((APC1)\), \((NAPO1)\), and
+   \[
+      \sum_{(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}=1
+   \]
+   has
+   \[
+      \max_{B\in\mathcal B:\,\mu_B>0}\mathsf{NSG}_{\gamma}(B)\ge0,
+      \tag{FNSB2}
+   \]
+   then the finite prefix-template separator holds, and hence the same local
+   and global endpoints apply.
+
+   More generally, it is enough that every normalized price system admit a
+   finite law on \(\mathcal B\) with positive expected mass
+   \(\E\mu_B>0\) and nonnegative expected \(\mathsf{NSG}_{\gamma}\).  For
+   independent Bernoulli realization one may use
+   \(M_{2,B}=\mu_B+\mu_B^2\).
+\end{corollary}
+
+\begin{proof}
+   If \((FNSB2)\) holds for a normalized price system, take the proposal in
+   \cref{cor:query-free-normalized-marginal-proposal} to be the maximizing
+   bucket.  Inequality \((QNMP1)\) is exactly
+   \(\mathsf{NSG}_{\gamma}(B)\ge0\), and \(\mu_B>0\) is part of the maximum.
+   Since this applies to every normalized price system, the query-free
+   normalized marginal proposal separator gives the finite prefix-template
+   separator and the endpoint conclusions.
+
+   For the finite-law version, nonnegative expected gain and positive expected
+   mass imply that at least one bucket in the support has \(\mu_B>0\) and
+   nonnegative gain; otherwise the expectation would be negative on the
+   positive-mass part and zero on the zero-mass part.  The deterministic
+   argument applies to that bucket.  The Bernoulli claim is the special case of
+   \((QNMP1)\) with \(M_{2,B}=\mu_B+\mu_B^2\).
+\end{proof}
+
 \Cref{cor:finite-all-size-soft-bucket-separation} is the cardinality-net
 version of the dense-overlap column generator.  A proposal family may contain
 arbitrarily overlapping soft dense regions, but a bucket is accepted only if
@@ -18989,7 +19151,13 @@ forms in
 turn this into the build-time-heavy interface: a range-reporting,
 list-decoding, AQ, or randomized clustering proposal only has to beat the
 absolute \(K^\rho\) query and \(K^{1+\rho}\) storage moments under the
-normalized dual prices.
+normalized dual prices.  The query-free normalized forms in
+\cref{cor:query-free-normalized-list-proposal},
+\cref{cor:query-free-normalized-marginal-proposal}, and
+\cref{cor:finite-normalized-soft-bucket-oracle}
+are the finite column-generation target: after normalization, a proposed
+bucket may simply be scored by its total captured paid near-pair mass minus the
+absolute recursive query and storage moments.
 
 \begin{corollary}[Joint query-list proposal separator]
    \label{cor:joint-query-list-proposal-separator}
