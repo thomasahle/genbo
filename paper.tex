@@ -13699,6 +13699,115 @@ dual weighted pseudo-randomness condition that remains to be contradicted by
 geometry, by enriching \(\mathcal R\), or by showing that the spherical bucket
 law already has positive reduced gain.
 
+\begin{lemma}[Compression-dual hinge normal form]
+   \label{lem:compression-dual-hinge-normal-form}
+   Work in the setting of \cref{lem:slice-core-compression-dual}.  Let
+   \(\mathcal U\) be a finite family of Pareto-priced cores
+   \((U,T_U,S_U)\).  For \(U\in\mathcal U\) and a nonnegative pair potential
+   \(\beta\), define the primitive-visible support at query \(q\) by
+   \[
+      a_U^\beta(q)
+      =
+      \sum_{(p,q)\in\mathcal N}
+      \beta_{p,q}\mathbf 1\{p\in U,\ p\in V_{z,q}\text{ for some }z\}.
+      \tag{CDH1}
+   \]
+   Let \(\mathcal R_{\rm bool}(\mathcal U)\) contain, for every
+   \(U\in\mathcal U\) and every query subset \(Q'\subseteq\mathcal Q\), the
+   record
+   \[
+      R=(U,\mathbf 1_{Q'},T_U,S_U).
+   \]
+   Then \(\beta\) satisfies all dual constraints \((SCD\text{-}D)\) for
+   \(\mathcal R_{\rm bool}(\mathcal U)\) if and only if every
+   \(U\in\mathcal U\) satisfies the hinge envelope
+   \[
+      \sum_{q\in\mathcal Q}\bigl(a_U^\beta(q)-T_U\tau_q\bigr)_+
+      \le
+      \sigma S_U .
+      \tag{CDH2}
+   \]
+   Equivalently, any violation of \((CDH2)\) is witnessed by the single Boolean
+   record whose query side is
+   \[
+      Q_\beta^+(U)=\{q:a_U^\beta(q)>T_U\tau_q\}.
+      \tag{CDH3}
+   \]
+\end{lemma}
+
+\begin{proof}
+   For the Boolean record \(R=(U,\mathbf 1_{Q'},T_U,S_U)\), the dual constraint
+   is
+   \[
+      \sum_{q\in Q'}a_U^\beta(q)
+      \le
+      T_U\sum_{q\in Q'}\tau_q+\sigma S_U .
+   \]
+   Thus all Boolean constraints for a fixed \(U\) hold if and only if
+   \[
+      \max_{Q'\subseteq\mathcal Q}
+      \sum_{q\in Q'}\bigl(a_U^\beta(q)-T_U\tau_q\bigr)
+      \le
+      \sigma S_U .
+   \]
+   The maximum is attained by taking exactly the positive-margin coordinates,
+   giving \((CDH2)\) and the witness set \((CDH3)\).
+\end{proof}
+
+\begin{corollary}[Two-potential residual normal form]
+   \label{cor:two-potential-residual-normal-form}
+   Work in the setting of \cref{cor:residual-separator-local-cover}.  Enlarge
+   the finite filter universe by all threshold activations of a finite
+   Pareto-priced core family \(\mathcal U\), and form the Boolean
+   query-record family \(\mathcal R_{\rm bool}(\mathcal U)\) above.
+
+   If the finite filter-cover LP over this enlarged universe is infeasible, then
+   there exist nonnegative prices \((\alpha,\tau,\sigma)\) and a nonnegative
+   pair potential \(\beta\) such that:
+   \[
+      A_\alpha>L\sum_q\tau_q+\sigma S,
+      \tag{TPR1}
+   \]
+   every spherical bucket, whole high-correlation dense slice, atom-safe
+   primitive dense prefix, and threshold activation of a core in \(\mathcal U\)
+   has nonpositive \(\alpha\)-reduced gain;
+   \[
+      \sum_{(p,q)\in\mathcal N}\beta_{p,q}r_{p,q}
+      \ge
+      \mathsf A_{\rm hc};
+      \tag{TPR2}
+   \]
+   and every \(U\in\mathcal U\) satisfies the \(\beta\)-hinge envelope
+   \[
+      \sum_q\bigl(a_U^\beta(q)-T_U\tau_q\bigr)_+
+      \le
+      \sigma S_U .
+      \tag{TPR3}
+   \]
+   Consequently, ruling out all tuples
+   \((\alpha,\tau,\sigma,\beta)\) satisfying \((TPR1)\)--\((TPR3)\) proves the
+   finite local filter-cover LP feasible.
+\end{corollary}
+
+\begin{proof}
+   If the enlarged cover LP is infeasible, \cref{lem:finite-filter-cover-dual}
+   gives a surplus dual system \((\alpha,\tau,\sigma)\) satisfying \((TPR1)\)
+   and having nonpositive reduced gain on every retained column, including the
+   listed spherical, primitive dense, and core-threshold columns.  If a
+   slice-to-core domination certificate supported on
+   \(\mathcal R_{\rm bool}(\mathcal U)\) had price
+   \(<\mathsf A_{\rm hc}\), then \cref{lem:slice-to-core-domination} would
+   expose a positive-gain threshold activation of a core in \(\mathcal U\),
+   contradicting the dual certificate.  Hence alternative \textup{(i)} of
+   \cref{lem:slice-core-compression-dual} is impossible, so alternative
+   \textup{(ii)} gives a feasible compression dual \(\beta\) satisfying
+   \((TPR2)\).  Applying
+   \cref{lem:compression-dual-hinge-normal-form} to the Boolean record family
+   gives \((TPR3)\).
+
+   The final statement is the contrapositive of the first statement.
+\end{proof}
+
 \begin{assumption}[Compression-dual separator]
    \label{asm:compression-dual-separator}
    Work in the setting of \cref{cor:residual-separator-local-cover}.  Fix a
@@ -25505,7 +25614,12 @@ incidence no larger than its Pareto price.
 \Cref{asm:compression-dual-separator} and
 \cref{cor:compression-dual-local-cover} package this as the current sharp proof
 target: no residual filter-cover dual should coexist with such a compression
-dual for a sufficiently rich core-record family.  Because
+dual for a sufficiently rich core-record family.
+\Cref{lem:compression-dual-hinge-normal-form} optimizes out the record query
+weights, and \cref{cor:two-potential-residual-normal-form} gives the exact
+counterexample format: a surplus filter-cover potential \(\alpha\) and a
+compression potential \(\beta\) must simultaneously satisfy the same
+Pareto-core hinge envelopes.  Because
 preprocessing time is deliberately not a scarce resource,
 \cref{lem:finite-pool-optimizer} and
 \cref{cor:offline-pareto-compression} allow the build stage to enumerate,
