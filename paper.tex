@@ -13613,6 +13613,92 @@ branching language: every residual spherical obstruction must admit a
 radius-contracting core domination of the primitive high-correlation slice law
 whose price is below its captured dual mass.
 
+\begin{lemma}[Dual obstruction to slice-to-core compression]
+   \label{lem:slice-core-compression-dual}
+   Work in the setting of \cref{lem:slice-to-core-domination}, and fix a finite
+   family \(\mathcal R\) of query-weighted core records
+   \[
+      R=(U_R,y^R,T_R,S_R),
+      \qquad 0\le y^R\le1.
+   \]
+   Put
+   \[
+      r_{p,q}=\Pr_{Z\sim\Pi}[p\in V_{Z,q}],
+   \]
+   \[
+      b_R(p,q)=
+      y_q^R\mathbf 1\{p\in U_R,\ p\in V_{z,q}\text{ for some }z\},
+   \]
+   and
+   \[
+      P_R=T_R\sum_q\tau_qy_q^R+\sigma S_R .
+   \]
+   Consider the finite compression LP
+   \[
+      \min_{\lambda_R\ge0}
+      \sum_{R\in\mathcal R}\lambda_RP_R
+      \qquad\text{subject to}\qquad
+      \sum_{R\in\mathcal R}\lambda_Rb_R(p,q)\ge r_{p,q}
+      \quad((p,q)\in\mathcal N).
+      \tag{SCD-LP}
+   \]
+   Its dual is
+   \[
+      \max_{\beta_{p,q}\ge0}
+      \sum_{(p,q)\in\mathcal N}\beta_{p,q}r_{p,q}
+      \qquad\text{subject to}\qquad
+      \sum_{(p,q)\in\mathcal N}\beta_{p,q}b_R(p,q)\le P_R
+      \quad(R\in\mathcal R).
+      \tag{SCD-D}
+   \]
+   Therefore exactly one of the following two alternatives holds:
+   \begin{enumerate}[label=\textup{(\roman*)}]
+      \item there is a slice-to-core domination certificate supported on
+      \(\mathcal R\) with price \(<\mathsf A_{\rm hc}\), and hence a positive
+      reduced-gain core activation;
+      \item there is a nonnegative pair potential \(\beta\) satisfying all dual
+      constraints in \((SCD-D)\) and
+      \[
+         \sum_{(p,q)\in\mathcal N}\beta_{p,q}r_{p,q}
+         \ge
+         \mathsf A_{\rm hc}.
+         \tag{SCDD1}
+      \]
+   \end{enumerate}
+\end{lemma}
+
+\begin{proof}
+   The displayed primal and dual are a finite covering LP pair.  Weak duality is
+   immediate:
+   \[
+      \sum_{p,q}\beta_{p,q}r_{p,q}
+      \le
+      \sum_{p,q}\beta_{p,q}\sum_R\lambda_Rb_R(p,q)
+      =
+      \sum_R\lambda_R\sum_{p,q}\beta_{p,q}b_R(p,q)
+      \le
+      \sum_R\lambda_RP_R .
+   \]
+   Finite-dimensional LP duality, equivalently the Farkas separation argument of
+   \cref{lem:finite-filter-cover-dual} applied to these inequalities, gives
+   equality of the primal and dual optima whenever the primal is feasible.  If
+   the primal is infeasible, the same Farkas alternative gives a nonnegative
+   dual ray with positive \(r\)-objective and nonpositive \(b_R\)-incidence for
+   every \(R\); after scaling it satisfies \((SCDD1)\).  Thus, if the primal has
+   value \(<\mathsf A_{\rm hc}\), its optimizer is the desired domination
+   certificate and \cref{lem:slice-to-core-domination} gives a positive
+   reduced-gain core activation.  In all other cases, a feasible dual obstruction
+   satisfies \((SCDD1)\).
+\end{proof}
+
+Thus failure of slice-to-core compression has an exact residual meaning.  There
+is a new pair potential \(\beta\), supported on the same primitive
+high-correlation slice profile \(r_{p,q}\), such that every retained core record
+has \(\beta\)-incidence at most its Pareto query/storage price.  This is the
+dual weighted pseudo-randomness condition that remains to be contradicted by
+geometry, by enriching \(\mathcal R\), or by showing that the spherical bucket
+law already has positive reduced gain.
+
 The exact weighted form is stronger than the dyadic core screen above.  The
 dyadic objective \(\theta_jc_U(q)\) lower-bounds \(a_U(q)\) on one price layer
 and is useful when the proposal generator wants an unweighted counting problem.
@@ -25365,7 +25451,10 @@ from the spherical obstruction to that core law: dominate the primitive
 high-correlation slice incidence profile by certified Pareto cores and pay less
 than the captured dual mass.  This recovers the raw dense-slice test as the
 singleton-core case and identifies the remaining geometric theorem as a
-price-reducing compression or quotienting statement.  Because
+price-reducing compression or quotienting statement.
+\Cref{lem:slice-core-compression-dual} gives the exact dual obstruction when
+such compression fails: a pair potential under which every proposed core has
+incidence no larger than its Pareto price.  Because
 preprocessing time is deliberately not a scarce resource,
 \cref{lem:finite-pool-optimizer} and
 \cref{cor:offline-pareto-compression} allow the build stage to enumerate,
