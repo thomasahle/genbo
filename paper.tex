@@ -19117,6 +19117,221 @@ singleton slices by hand.
    \((QNMP1)\) with \(M_{2,B}=\mu_B+\mu_B^2\).
 \end{proof}
 
+\begin{corollary}[Normalized soft gain materializes as a hard list]
+   \label{cor:normalized-soft-gain-hard-list}
+   Work in the setting of \cref{cor:finite-normalized-soft-bucket-oracle}.  Let
+   \(B\) be one soft bucket with \(\mu_B>0\), and suppose its marginals are
+   realized by a random list \(\mathcal L\subseteq W_B\) with
+   \(\E|\mathcal L|^2\le M_{2,B}\).  For a hard list \(H\subseteq W_B\), put
+   \[
+      K_H=|H|,
+      \qquad
+      \widehat V(H)=
+      \sum_{p\in H}
+      \sum_{q:(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q},
+   \]
+   and define its normalized hard-list gain by
+   \[
+      \mathsf{NHG}_{\gamma}(W_B,H)
+      =
+      \widehat V(H)
+      -
+      \frac{b\,\psi_B}{\pi_1}
+      \left(
+         \frac{\beta^{\rho_B}b_0^{\rho_B}K_H^{\rho_B}}{L}
+         +
+         \frac{\beta^{1+\rho_B}b_0^{1+\rho_B}K_H^{1+\rho_B}}{S}
+      \right).
+      \tag{NSH1}
+   \]
+   If \(\mathsf{NSG}_{\gamma}(B)\ge0\), then some realization
+   \(H\subseteq W_B\) has \(K_H>0\) and
+   \[
+      \mathsf{NHG}_{\gamma}(W_B,H)\ge0 .
+      \tag{NSH2}
+   \]
+   Thus the soft normalized oracle is only a proposal certificate: any
+   successful soft bucket contains a successful ordinary hard list inside the
+   same container.
+\end{corollary}
+
+\begin{proof}
+   Let \(K=|\mathcal L|\).  Since \(0<\rho_B<1\),
+   \[
+      \E K^{\rho_B}\le \mu_B^{\rho_B},
+      \qquad
+      \E K^{1+\rho_B}
+      \le
+      (\E K)^{1-\rho_B}(\E K^2)^{\rho_B}
+      \le
+      \mu_B^{1-\rho_B}M_{2,B}^{\rho_B}.
+   \]
+   Also \(\E\widehat V(\mathcal L)=\widehat V_B\).  Therefore
+   \[
+      \E\,\mathsf{NHG}_{\gamma}(W_B,\mathcal L)
+      \ge
+      \mathsf{NSG}_{\gamma}(B)\ge0 .
+   \]
+   Since \(\mu_B>0\), the event \(K>0\) has positive probability.  The gain of
+   the empty list is \(0\), so the expectation can be nonnegative only if some
+   positive-size outcome has nonnegative hard-list gain.
+\end{proof}
+
+\begin{corollary}[Finite normalized hard-list oracle]
+   \label{cor:finite-normalized-hard-list-oracle}
+   Work in the setting of
+   \cref{cor:query-free-normalized-list-proposal}.  Let \(\mathcal H\) be a
+   finite build-time pool of certified hard lists.  An element
+   \(H\in\mathcal H\) consists of a retained container \(W_H\) and a list
+   \(L_H\subseteq W_H\).  Put
+   \[
+      K_H=|L_H|,
+      \qquad
+      \rho_H=\rho_{W_H},
+      \qquad
+      \psi_H=\psi_{W_H},
+   \]
+   and
+   \[
+      \widehat V_H=
+      \sum_{p\in L_H}
+      \sum_{q:(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}.
+   \]
+   Define
+   \[
+      \mathsf{NHG}_{\gamma}(H)
+      =
+      \widehat V_H
+      -
+      \frac{b\,\psi_H}{\pi_1}
+      \left(
+         \frac{\beta^{\rho_H}b_0^{\rho_H}K_H^{\rho_H}}{L}
+         +
+         \frac{\beta^{1+\rho_H}b_0^{1+\rho_H}K_H^{1+\rho_H}}{S}
+      \right).
+      \tag{FNH1}
+   \]
+   If every nonnegative price system satisfying \((APC1)\), \((NAPO1)\), and
+   \[
+      \sum_{(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}=1
+   \]
+   has
+   \[
+      \max_{H\in\mathcal H:\,K_H>0}\mathsf{NHG}_{\gamma}(H)\ge0,
+      \tag{FNH2}
+   \]
+   then the finite prefix-template separator holds, and hence the same local
+   and global endpoints apply.  A finite law on \(\mathcal H\) with positive
+   expected size and nonnegative expected \(\mathsf{NHG}_{\gamma}\) is again
+   sufficient.
+\end{corollary}
+
+\begin{proof}
+   If \(H\) has nonnegative normalized hard-list gain and \(K_H>0\), the
+   point-mass list proposal satisfies \((QNRL1)\).  Thus
+   \cref{cor:query-free-normalized-list-proposal} gives the finite
+   prefix-template separator and the endpoint conclusions.  The law version
+   reduces to a deterministic positive-size hard list by the same averaging
+   argument used in \cref{cor:finite-normalized-soft-bucket-oracle}.
+\end{proof}
+
+\begin{corollary}[Normalized hard-list separation reduces to prefixes]
+   \label{cor:normalized-hard-list-prefix-reduction}
+   Work in the setting of \cref{cor:finite-normalized-hard-list-oracle}, and
+   fix a normalized price system.  For a retained container \(W\) and an
+   integer \(1\le K\le |W|\), let \(P_K^{\rm tot}(W)\) be any \(K\)-point
+   subset of \(W\) maximizing the total paid degree
+   \[
+      \sum_{p\in A}
+      \sum_{q:(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}
+      \qquad(|A|=K).
+   \]
+   Put
+   \[
+      D_W^\gamma(K)=
+      \sum_{p\in P_K^{\rm tot}(W)}
+      \sum_{q:(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q},
+   \]
+   and define the normalized prefix gain
+   \[
+      \mathsf{NPG}_{\gamma}(W,K)
+      =
+      D_W^\gamma(K)
+      -
+      \frac{b\,\psi_W}{\pi_1}
+      \left(
+         \frac{\beta^{\rho_W}b_0^{\rho_W}K^{\rho_W}}{L}
+         +
+         \frac{\beta^{1+\rho_W}b_0^{1+\rho_W}K^{1+\rho_W}}{S}
+      \right).
+      \tag{NHP1}
+   \]
+   If a hard list \(H=(W_H,L_H)\) has \(K_H>0\) and
+   \(\mathsf{NHG}_{\gamma}(H)\ge0\), then the total-degree prefix
+   \(P_{K_H}^{\rm tot}(W_H)\) has
+   \[
+      \mathsf{NPG}_{\gamma}(W_H,K_H)\ge0 .
+      \tag{NHP2}
+   \]
+   Consequently, whenever the build-time universe is closed under this
+   total-degree top-\(K\) replacement, the finite normalized hard-list oracle
+   may be replaced by a separation search over retained
+   container/cardinality pairs and the scalar test \((NHP1)\).
+\end{corollary}
+
+\begin{proof}
+   The prefix \(P_{K_H}^{\rm tot}(W_H)\) maximizes the captured paid mass among
+   all \(K_H\)-subsets of \(W_H\), while the normalized recursive cost depends
+   only on \(W_H\) and \(K_H\).  Replacing \(L_H\) by that prefix can only
+   increase \(\mathsf{NHG}_{\gamma}\).  This proves \((NHP2)\), and the oracle
+   reduction follows from \cref{cor:finite-normalized-hard-list-oracle}.
+\end{proof}
+
+\begin{corollary}[Finite normalized prefix oracle]
+   \label{cor:finite-normalized-prefix-oracle}
+   Work in the setting of
+   \cref{cor:normalized-hard-list-prefix-reduction}.  Let \(\mathcal P\) be a
+   finite build-time pool of retained prefix templates.  A template
+   \(C\in\mathcal P\) consists of a retained container \(W_C\) and an available
+   cardinality \(1\le K_C\le |W_C|\).  Define
+   \[
+      \mathsf{NPX}_{\gamma}(C)
+      =
+      D_{W_C}^\gamma(K_C)
+      -
+      \frac{b\,\psi_C}{\pi_1}
+      \left(
+         \frac{\beta^{\rho_C}b_0^{\rho_C}K_C^{\rho_C}}{L}
+         +
+         \frac{\beta^{1+\rho_C}b_0^{1+\rho_C}K_C^{1+\rho_C}}{S}
+      \right),
+      \tag{FNP1}
+   \]
+   where \(\rho_C=\rho_{W_C}\) and \(\psi_C=\psi_{W_C}\).  Suppose the
+   hard-list universe can materialize, for every \(C\in\mathcal P\), the
+   total-degree prefix \(P_{K_C}^{\rm tot}(W_C)\) for the current price system.
+   If every nonnegative price system satisfying \((APC1)\), \((NAPO1)\), and
+   \[
+      \sum_{(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}=1
+   \]
+   has
+   \[
+      \max_{C\in\mathcal P}\mathsf{NPX}_{\gamma}(C)\ge0,
+      \tag{FNP2}
+   \]
+   then the finite prefix-template separator holds, and hence the same local
+   and global endpoints apply.
+\end{corollary}
+
+\begin{proof}
+   If \(C\) has nonnegative normalized prefix gain, materialize the
+   total-degree prefix \(P_{K_C}^{\rm tot}(W_C)\).  By
+   \cref{cor:normalized-hard-list-prefix-reduction}, this is a nonnegative
+   normalized hard-list column, and
+   \cref{cor:finite-normalized-hard-list-oracle} gives the finite
+   prefix-template separator and the endpoint conclusions.
+\end{proof}
+
 \Cref{cor:finite-all-size-soft-bucket-separation} is the cardinality-net
 version of the dense-overlap column generator.  A proposal family may contain
 arbitrarily overlapping soft dense regions, but a bucket is accepted only if
@@ -19157,7 +19372,12 @@ normalized dual prices.  The query-free normalized forms in
 \cref{cor:finite-normalized-soft-bucket-oracle}
 are the finite column-generation target: after normalization, a proposed
 bucket may simply be scored by its total captured paid near-pair mass minus the
-absolute recursive query and storage moments.
+absolute recursive query and storage moments.  Finally,
+\cref{cor:normalized-soft-gain-hard-list},
+\cref{cor:normalized-hard-list-prefix-reduction}, and
+\cref{cor:finite-normalized-prefix-oracle}
+collapse the normalized oracle to a scalar total-degree prefix search over
+retained container/cardinality templates.
 
 \begin{corollary}[Joint query-list proposal separator]
    \label{cor:joint-query-list-proposal-separator}
