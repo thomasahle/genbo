@@ -3985,6 +3985,248 @@ partition ignores the bias coordinates that certify the list size.
    is directly checkable.
 \end{remark}
 
+\begin{lemma}[Finite priced-pair LP dual]
+   \label{lem:finite-priced-pair-lp-dual}
+   Work in the setting of \cref{prop:finite-retained-priced-pair}, but replace
+   the retained batch by a finite proposal universe \(\mathcal U\) of
+   certified priced-pair panels.  For \(t\in\mathcal U\), let
+   \(D_{\sigma,t}\), \(C_{\sigma,t,x}\), and \(H_{\sigma,t,p}\) be certified
+   envelopes of the form \((FRP1)\)--\((FRP3)\), and define
+   \[
+      F_{\sigma,t}=\sum_{x\in P}C_{\sigma,t,x},
+      \qquad
+      S_t=
+      \sum_{x\in P}
+      \sum_{(a,b)\in\mathcal A_t\times\mathcal B_t}U_t(x,a,b).
+   \]
+   Fix budgets \(L_D,L_F,L_S>0\) and a coverage target \(h>0\).  Consider the
+   fractional pair-panel feasibility problem
+   \[
+   \begin{array}{ll}
+   \text{\rm find} & z_t\ge0\qquad(t\in\mathcal U)\\[0.3em]
+   \text{\rm subject to}
+      & \displaystyle \sum_tz_tD_{\sigma,t}\le L_D
+        \qquad(\sigma\in\Sigma),\\[0.8em]
+      & \displaystyle \sum_tz_tF_{\sigma,t}\le L_F
+        \qquad(\sigma\in\Sigma),\\[0.8em]
+      & \displaystyle \sum_tz_tS_t\le L_S,\\[0.8em]
+      & \displaystyle \sum_tz_tH_{\sigma,t,p}\ge h
+        \qquad(\sigma\in\Sigma,\ p\in N_\sigma).
+   \end{array}
+   \tag{\(\mathsf{PPLP}\)}
+   \]
+   This program is infeasible if and only if there are nonnegative prices
+   \[
+      \lambda_\sigma,\ \phi_\sigma,\ \psi,\ \mu_{\sigma,p}
+   \]
+   with strict surplus
+   \[
+      h\sum_{\sigma}\sum_{p\in N_\sigma}\mu_{\sigma,p}
+      >
+      L_D\sum_\sigma\lambda_\sigma
+      +
+      L_F\sum_\sigma\phi_\sigma
+      +
+      L_S\psi,
+      \tag{PPLP1}
+   \]
+   such that every proposed panel has nonpositive reduced gain,
+   \[
+      \sum_\sigma\sum_{p\in N_\sigma}
+      \mu_{\sigma,p}H_{\sigma,t,p}
+      \le
+      \sum_\sigma\lambda_\sigma D_{\sigma,t}
+      +
+      \sum_\sigma\phi_\sigma F_{\sigma,t}
+      +
+      \psi S_t
+      \qquad(t\in\mathcal U).
+      \tag{PPLP2}
+   \]
+\end{lemma}
+
+\begin{proof}
+   The converse is immediate.  If \(z\) were feasible, multiplying
+   \((PPLP2)\) by \(z_t\), summing over \(t\), and using the constraints of
+   \(\mathsf{PPLP}\) would give
+   \[
+      h\sum_{\sigma,p}\mu_{\sigma,p}
+      \le
+      L_D\sum_\sigma\lambda_\sigma
+      +
+      L_F\sum_\sigma\phi_\sigma
+      +
+      L_S\psi,
+   \]
+   contradicting \((PPLP1)\).
+
+   For the forward implication, apply the finite-dimensional separating
+   hyperplane theorem, equivalently Farkas' lemma, to the polyhedron
+   \(\mathsf{PPLP}\).  The upper-bound constraints contribute the nonnegative
+   multipliers \(\lambda,\phi,\psi\), and the lower-bound coverage constraints
+   contribute the nonnegative multipliers \(\mu\).  Separating infeasibility
+   gives a strict positive right-hand-side surplus and a nonpositive
+   coefficient on every variable \(z_t\), which are exactly \((PPLP1)\) and
+   \((PPLP2)\).
+\end{proof}
+
+\begin{lemma}[Fractional priced-pair materialization]
+   \label{lem:fractional-priced-pair-materialization}
+   Suppose \(\mathsf{PPLP}\) is feasible with \(0<h\le1\), and suppose every
+   proposed panel satisfies the atom bounds
+   \[
+      D_{\sigma,t}\le L_D,\qquad
+      F_{\sigma,t}\le L_F,\qquad
+      S_t\le L_S
+      \qquad(\sigma\in\Sigma,\ t\in\mathcal U).
+      \tag{PPM0}
+   \]
+   Put
+   \[
+      M=1+2|\Sigma|+\sum_{\sigma\in\Sigma}|N_\sigma|
+   \]
+   and let
+   \[
+      B\ge \max\{1,\log(4M)\}.
+   \]
+   Then there is an integral retained subfamily
+   \(\mathcal T\subseteq\mathcal U\) such that, for every signature
+   \(\sigma\),
+   \[
+      \sum_{t\in\mathcal T}D_{\sigma,t}
+      \le 6Bh^{-1}L_D,
+      \tag{PPM1}
+   \]
+   \[
+      \sum_{t\in\mathcal T}F_{\sigma,t}
+      \le 6Bh^{-1}L_F,
+      \tag{PPM2}
+   \]
+   and
+   \[
+      \sum_{t\in\mathcal T}H_{\sigma,t,p}\ge1
+      \qquad(p\in N_\sigma),
+      \tag{PPM3}
+   \]
+   while the global storage incidence satisfies
+   \[
+      \sum_{t\in\mathcal T}S_t\le6Bh^{-1}L_S.
+      \tag{PPM4}
+   \]
+\end{lemma}
+
+\begin{proof}
+   Let \(z\) be a feasible fractional solution.  Independently retain each
+   panel \(t\) with probability
+   \[
+      p_t=\min\{1,Bz_t/h\}.
+   \]
+   Fix \(\sigma\) and \(p\in N_\sigma\).  If some panel with
+   \(H_{\sigma,t,p}=1\) has \(p_t=1\), then \(p\) is certainly covered.
+   Otherwise,
+   \[
+      \Pr\left[\sum_{t\in\mathcal T}H_{\sigma,t,p}=0\right]
+      \le
+      \exp\left(-\sum_t p_tH_{\sigma,t,p}\right)
+      \le
+      \exp\left(-Bh^{-1}\sum_tz_tH_{\sigma,t,p}\right)
+      \le e^{-B}.
+      \tag{PPM5}
+   \]
+
+   For a fixed signature \(\sigma\), the normalized reporter load
+   \[
+      X_\sigma=L_D^{-1}\sum_{t\in\mathcal T}D_{\sigma,t}
+   \]
+   is a sum of independent \([0,1]\)-valued random variables by \((PPM0)\),
+   and
+   \[
+      \E X_\sigma
+      \le
+      Bh^{-1}L_D^{-1}\sum_tz_tD_{\sigma,t}
+      \le Bh^{-1}.
+   \]
+   The elementary Chernoff bound
+   \[
+      \Pr[X_\sigma>6Bh^{-1}]\le e^{-Bh^{-1}}\le e^{-B}
+   \]
+   gives \((PPM1)\) except with probability at most \(e^{-B}\).  The same
+   argument applied to \(L_F^{-1}\sum_{t\in\mathcal T}F_{\sigma,t}\) and to
+   \(L_S^{-1}\sum_{t\in\mathcal T}S_t\) gives \((PPM2)\) and \((PPM4)\) with
+   the same failure probability.
+
+   There are at most \(M\) events to check: all witness-cover events, all
+   reporter-work events, all far-load events, and the one storage event.  Since
+   \(B\ge\log(4M)\), the union bound shows that all desired inequalities hold
+   simultaneously with positive probability.  Hence such a retained subfamily
+   exists.  Uncharged preprocessing may find it by repeated randomized
+   materialization followed by the deterministic checks \((PPM1)\)--\((PPM4)\),
+   or by exhaustive search over subfamilies.
+\end{proof}
+
+\begin{corollary}[Fractional priced-pair terminal compiler]
+   \label{cor:fractional-priced-pair-terminal}
+   Let \(L_m=\log^{A_c}m\).  Suppose the finite proposal universe in
+   \cref{lem:finite-priced-pair-lp-dual} admits a fractional solution with
+   \[
+      h\ge L_m^{-1},
+      \qquad
+      L_D\le dL_m+m^{\rho_c}L_m,
+      \qquad
+      L_F\le m^{\rho_c}L_m,
+      \qquad
+      L_S\le m^{1+\rho_c}L_m,
+   \]
+   and suppose the atom bounds \((PPM0)\) hold.  If the finite constraint
+   entropy satisfies
+   \[
+      \log\left(4+8|\Sigma|+4\sum_\sigma|N_\sigma|\right)
+      \le L_m,
+   \]
+   then uncharged preprocessing can retain a priced-pair additive-IVF index
+   with terminal query work
+   \[
+      d\,m^{\rho_c}\log^{O_c(1)}m
+   \]
+   and space
+   \[
+      dm+m^{1+\rho_c}\log^{O_c(1)}m .
+   \]
+\end{corollary}
+
+\begin{proof}
+   Apply \cref{lem:fractional-priced-pair-materialization}.  Since
+   \(Bh^{-1}\le\log^{O_c(1)}m\), the rounded family satisfies
+   \[
+      \sum_tD_{\sigma,t}
+      \le d\log^{O_c(1)}m+m^{\rho_c}\log^{O_c(1)}m,
+   \]
+   \[
+      \sum_tF_{\sigma,t}\le m^{\rho_c}\log^{O_c(1)}m,
+      \qquad
+      \sum_tS_t\le m^{1+\rho_c}\log^{O_c(1)}m,
+   \]
+   and covers every possible near witness.  These are exactly
+   \((FRP4)\), \((FRP6)\), \((FRP5)\), and \((FRP7)\) for
+   \cref{prop:finite-retained-priced-pair}.  That proposition gives the
+   displayed terminal ANN resources.
+\end{proof}
+
+\begin{remark}[What this asks of \(k\)-means++ or AQ proposals]
+   \label{rem:kmeans-pair-panel-dual}
+   \Cref{lem:finite-priced-pair-lp-dual} is the theory-facing replacement for
+   a Lloyd or distortion objective.  If the current proposal pool is not
+   fractionally sufficient, the dual prices assign value to uncovered
+   signature--witness pairs and prices to reporter work, far scans, and stored
+   incidences.  A build-time generator is useful exactly when, against every
+   surplus dual price system, it has positive probability of proposing a
+   priced-pair panel whose near-witness gain exceeds those three costs.  Thus
+   \(k\)-means++, residual \(D^2\) sampling, additive quantization training,
+   learned pivots, or list-decoding proposals can all be used as separators,
+   but the charged theorem is the fractional LP plus the retained integral
+   certificate of \cref{cor:fractional-priced-pair-terminal}.
+\end{remark}
+
 \begin{corollary}[Superset product-panel rate bookkeeping]
    \label{cor:superset-product-panel-rate-bookkeeping}
    Work in the setting of \cref{lem:product-panel-tensorization}, but use the
@@ -20439,6 +20681,14 @@ but the proof trusts only the accepted finite envelopes for reporter work,
 stored incidences, far scanned incidences, and near-witness coverage.  This is
 the clean way to analyze practical additive IVF: the heuristic proposes a
 compact family, and the retained certificate is the theorem object.
+\Cref{lem:finite-priced-pair-lp-dual},
+\cref{lem:fractional-priced-pair-materialization}, and
+\cref{cor:fractional-priced-pair-terminal} add the finite build-time bridge:
+if the pair panels satisfy a fractional signature LP with inverse-polylogarithmic
+coverage and polylogarithmic constraint entropy, randomized materialization
+gives one deterministic retained pair index.  The dual prices identify the
+right replacement for Lloyd distortion: propose panels with positive reduced
+gain against witness-value prices and work/storage/load prices.
 \Cref{prop:sampled-structured-panel} records the corresponding sampler
 alternative.  A structured code or lattice panel need not list all active
 labels if it can sample labels from a certified Gibbs or discrete-Gaussian law:
