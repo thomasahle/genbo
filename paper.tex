@@ -11449,6 +11449,43 @@ additional branching argument.
    \((QP3)\) holds.
 \end{proof}
 
+\begin{corollary}[Conic quotient-packing normal form]
+   \label{cor:conic-quotient-packing}
+   In the setting of \cref{lem:quotient-packing-reduced-gain}, let
+   \(\lambda_G\ge0\) be any finitely supported quotient intensities, not all zero.
+   If
+   \[
+      \sum_G\lambda_G
+      \frac1{b_G}\sum_{(z,q)\in\mathcal I_G}A_{z,q}
+      >
+      \sum_G\lambda_G
+      \left[
+         T_G\sum_q\tau_qa_G(q)+\sigma S_G
+      \right],
+      \tag{CQ1}
+   \]
+   then some quotient \(G\) has positive reduced gain.  Conversely, if no
+   quotient has positive reduced gain, then \((CQ1)\) fails for every
+   nonnegative intensity vector \(\lambda\).
+\end{corollary}
+
+\begin{proof}
+   Normalize the intensities by
+   \[
+      \Gamma(G)=\lambda_G/\sum_{G'}\lambda_{G'} .
+   \]
+   After division by \(\sum_G\lambda_G\), \((CQ1)\) becomes \((QP3)\), so
+   \cref{lem:quotient-packing-reduced-gain} gives a positive-gain quotient.  The
+   converse is the contrapositive of the same argument.
+\end{proof}
+
+Thus quotient generation is a conic separation problem: assign nonnegative mass
+to proposed quotient columns, compute their de-duplicated primitive demand and
+their query/storage price, and accept the proposal only if the signed objective
+\((CQ1)\) is positive.  The final retained structure still pays only for the
+columns selected by the filter-cover LP; the conic intensities are a build-time
+certificate or search witness.
+
 \begin{corollary}[Quotient-packing local cover criterion]
    \label{cor:quotient-packing-local-cover}
    In the setting of \cref{cor:residual-separator-local-cover}, suppose that for
@@ -23056,7 +23093,10 @@ separator is already sufficient for local filter-cover feasibility.
 \Cref{lem:quotient-packing-reduced-gain} and
 \cref{cor:quotient-packing-local-cover} give the operational form of this task:
 against every residual dual, construct a distribution over quotients whose
-de-duplicated primitive demand exceeds its query/storage price.  Since
+de-duplicated primitive demand exceeds its query/storage price.
+\Cref{cor:conic-quotient-packing} removes the normalization: preprocessing may
+search over arbitrary nonnegative quotient intensities and verify the signed
+linear objective \((CQ1)\).  Since
 preprocessing time is deliberately not a scarce resource,
 \cref{lem:finite-pool-optimizer} and
 \cref{cor:offline-pareto-compression} allow the build stage to enumerate,
