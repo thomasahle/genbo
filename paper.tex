@@ -10957,6 +10957,121 @@ not defeated by ordinary spherical filters must put large price on
 high-correlation bucket mass.  The dense-filter theorem only has to convert that
 weighted high-correlation co-load into positive-gain radius-contracting columns.
 
+\begin{lemma}[High-correlation dense-slice separator]
+   \label{lem:high-correlation-dense-slice-separator}
+   Work in the setting of \cref{lem:weighted-spherical-reduced-gain}.  Assume
+   every demanded pair satisfies \(p\in H(q)\).  For each base bucket
+   \(z\in\mathcal Z\) and query \(q\in\mathcal Q\), put
+   \[
+      V_{z,q}=U_z\cap H(q),
+      \qquad
+      A_{z,q}=\sum_{\substack{p:(p,q)\in\mathcal N\\ p\in V_{z,q}}}
+      \alpha_{p,q}.
+   \]
+   Suppose the dense candidate universe contains every nonempty singleton-query
+   slice \(D_{z,q}\) with update side \(V_{z,q}\), activation only at \(q\), and
+   certified dense prices \(T_{z,q},S_{z,q}\).  Its reduced gain is
+   \[
+      G_{z,q}=A_{z,q}-\tau_qT_{z,q}-\sigma S_{z,q}.
+      \tag{DS1}
+   \]
+   If
+   \[
+      \E_{Z\sim\Pi}\sum_{q\in\mathcal Q}G_{Z,q}>0,
+      \tag{DS2}
+   \]
+   then some dense slice \(D_{z,q}\) has positive reduced gain in the
+   filter-cover dual.
+
+   In particular, if \((WS1)\) holds and
+   \[
+      \E_{Z\sim\Pi}\sum_q
+      \bigl(\tau_qT_{Z,q}+\sigma S_{Z,q}\bigr)
+      <
+      \pi_1A_\alpha,
+      \tag{DS3}
+   \]
+   then a positive-gain dense slice exists.
+\end{lemma}
+
+\begin{proof}
+   The first claim is just averaging: if every dense slice had nonpositive
+   reduced gain, then the expectation in \((DS2)\) would be nonpositive.
+
+   For the sufficient condition, the average captured demand is
+   \[
+      \E_Z\sum_qA_{Z,q}
+      =
+      \sum_{(p,q)\in\mathcal N}
+      \alpha_{p,q}\Pr_Z[p\in U_Z\cap H(q)].
+   \]
+   Since \(p\in H(q)\) for every demand, this is at least
+   \[
+      \sum_{(p,q)\in\mathcal N}
+      \alpha_{p,q}\Pr_Z[p\in U_Z,\ \chi_Z(q)=1].
+   \]
+   By \((WS1)\), the latter is at least
+   \[
+      \pi_1\sum_{(p,q)\in\mathcal N}\alpha_{p,q}
+      =
+      \pi_1A_\alpha .
+   \]
+   Subtracting the average dense prices, \((DS3)\) gives \((DS2)\).
+\end{proof}
+
+When \(H(q)\) is a spherical cap, the slices in
+\cref{lem:high-correlation-dense-slice-separator} are genuine certified dense
+filters.  For example, if the resident points lie on the unit sphere and
+\[
+   H_\beta(q)=\{x\in P:\ip{x}{q}\ge\beta\},
+\]
+then every \(V_{z,q}\subseteq H_\beta(q)\) lies in the Euclidean ball centered
+at \(\beta q\) of radius \(\sqrt{1-\beta^2}\).  Thus it may be priced as a
+radius-contracting child, for instance by
+\[
+   T_{z,q}=|V_{z,q}|^{\rho_D}\Psi(\sqrt{1-\beta^2}),
+   \qquad
+   S_{z,q}=|V_{z,q}|^{1+\rho_D}\Psi(\sqrt{1-\beta^2}),
+\]
+or by any sharper certified descendant Pareto price.  The singleton-query
+activation is only a finite-signature normal form: in a retained all-query
+structure, equivalent slices with the same activation signature are merged and
+priced once by \cref{lem:finite-signature-filter-cover}.
+
+\begin{corollary}[Spherical-or-dense moment obstruction]
+   \label{cor:spherical-dense-moment-obstruction}
+   In the setting of \cref{lem:weighted-spherical-reduced-gain} and
+   \cref{lem:high-correlation-dense-slice-separator},
+   assume the budget and surplus inequalities \((WS6)\)--\((WS7)\).  If no
+   spherical bucket and no high-correlation dense slice has positive reduced
+   gain, then both
+   \[
+      \mathsf D_H(\tau)>\frac{\pi_1}{2}A_\alpha
+      \tag{SD1}
+   \]
+   and
+   \[
+      \E_{Z\sim\Pi}\sum_q
+      \bigl(\tau_qT_{Z,q}+\sigma S_{Z,q}\bigr)
+      \ge
+      \pi_1A_\alpha
+      \tag{SD2}
+   \]
+   hold.  Thus any remaining dual obstruction must simultaneously have large raw
+   high-correlation co-load and large recursive dense-slice moment.  The
+   geometric task is to rule out this simultaneous pair under the proposed
+   dense-slice pricing, or to quotient the slices until \((SD2)\) falls below the
+   demand captured in \cref{lem:high-correlation-dense-slice-separator}.
+\end{corollary}
+
+\begin{proof}
+   If no spherical bucket has positive reduced gain, then
+   \cref{lem:weighted-spherical-reduced-gain} gives \((SD1)\).  If no dense slice
+   has positive reduced gain, the contrapositive of the sufficient condition
+   \((DS3)\) in \cref{lem:high-correlation-dense-slice-separator} gives
+   \((SD2)\).
+\end{proof}
+
 \begin{lemma}[Finite-signature filter-cover compiler]
    \label{lem:finite-signature-filter-cover}
    Let $\Omega$ be a query domain for one resident node \(P\), and let
@@ -22510,8 +22625,15 @@ dense overlap is charged locally and does not multiply over levels.
 dual dichotomy in the exact reduced-gain language: if ordinary spherical buckets
 do not violate a surplus dual certificate, then the dual must carry large
 query-priced mass on high-correlation buckets.  The remaining dense theorem is
-therefore narrower: turn that weighted high-correlation co-load into a
-positive-gain radius-contracting filter.  Since
+therefore narrower: \cref{lem:high-correlation-dense-slice-separator} intersects
+those buckets with the high-correlation cap around the priced query, producing
+certified radius-contracting singleton-signature dense slices.  If the
+Renyi-priced moment of these slices is below their average captured demand, one
+slice has positive reduced gain.  \Cref{cor:spherical-dense-moment-obstruction}
+shows that any remaining obstruction must have both large raw high-correlation
+co-load and large recursive dense-slice moment; the next geometric step is to
+rule out that simultaneous event or to quotient equivalent slices until the
+dense moment drops.  Since
 preprocessing time is deliberately not a scarce resource,
 \cref{lem:finite-pool-optimizer} and
 \cref{cor:offline-pareto-compression} allow the build stage to enumerate,
