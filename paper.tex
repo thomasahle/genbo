@@ -9645,6 +9645,109 @@ This certificate is the local form of the remaining problem. It is analogous in 
    and pruned rules are merely two ways to parameterize the same allocation.
 \end{remark}
 
+\begin{proposition}[Budget-thinned one-tree work bound]
+   \label{prop:budget-thinned-work}
+   Work in one bounded-diameter localized instance with root state
+   \((P_0,o_0,R_0)\), \(|P_0|=m_0\), and \(R_0/r=\log^{O_c(1)}n\).  Run the
+   randomized one-tree construction with almost-total cap parameter \(\eta\),
+   residual parameter \(\delta=\Theta_c(\eta^{2/\rho_c})\), and
+   \[
+      \alpha=\Theta_c(\eta\delta).
+   \]
+   At every geometric opportunity use the canonical budget-thinned activation
+   rule of \cref{lem:budget-thinned-opportunities}.  Assume each offered cap
+   split is certified and satisfies the local storage and radius-contraction
+   hypotheses of \cref{lem:thin-cap-contraction}, and scan a cap-free bucket
+   only under the low-correlation condition of
+   \cref{lem:cap-free-scan-accounting}.  Then, for every query, the expected
+   score work, activated recursive child work, and terminal scan work in this
+   localized instance are at most
+   \[
+      d\,F_4(m_0,R_0)\,
+      \alpha^{-1}\eta^{-2}
+      \exp(O_c(\eta\log n))\log^{O_c(1)}n .
+      \tag{BW1}
+   \]
+   Consequently, with \(\eta=(\log n)^{-2/3}\) this work scale is
+   \[
+      d\,m_0^{\rho_c}
+      \exp(O_c((\log n)^{1/3}))\log^{O_c(1)}n,
+   \]
+   while with
+   \[
+      \eta=\Theta_c\!\left(\frac{\log\log n}{\log n}\right)
+   \]
+   it is
+   \[
+      d\,m_0^{\rho_c}\log^{O_c(1)}n .
+   \]
+   Thus the old mixed-frontier work assumption is not needed for the
+   budget-thinned algorithm; the remaining issue is only near-route value
+   delivery.
+\end{proposition}
+
+\begin{proof}
+   Let \(F=F_4(m,R)\) at a current state.  The local score work is bounded by
+   the continuation-mass work theorem, and the cap-free terminal scans are
+   bounded by \cref{lem:cap-free-scan-accounting}.  Since \(\alpha\le1\), both
+   contributions are bounded by
+   \[
+      C_c\,d\,\alpha^{-1}\exp(O_c(\eta\log n))
+      F\log^{O_c(1)}n .
+      \tag{BW2}
+   \]
+
+   For activated geometric children, apply
+   \cref{lem:budget-thinned-opportunities} with the canonical mixed budget from
+   \cref{lem:canonical-mixed-budget}.  The expected sum of child potentials is
+   at most
+   \[
+      (1-\kappa\eta^2)F .
+      \tag{BW3}
+   \]
+   Every activated certified cap child decreases the radius by a factor
+   \(1-\Theta_c(\eta^2)\), so before the radius becomes terminal there are at
+   most
+   \[
+      H=O_c\!\left(\eta^{-2}\log(R_0/r)\right)
+      \tag{BW4}
+   \]
+   radius-decreasing generations.
+
+   Let \(A_h\) be the smallest constant such that every state of remaining
+   radius rank at most \(h\) and potential \(F\) has expected remaining work at
+   most
+   \[
+      A_h\,d\,\alpha^{-1}\exp(O_c(\eta\log n))
+      F\log^{O_c(1)}n .
+   \]
+   From \((BW2)\) and \((BW3)\), and by induction over the activated child
+   states,
+   \[
+      A_h\le C_c+(1-\kappa\eta^2)A_{h-1}.
+   \]
+   Therefore
+   \[
+      A_h\le \frac{C_c}{\kappa\eta^2}.
+   \]
+   Since \(R_0/r=\log^{O_c(1)}n\), the rank bound \((BW4)\) is consistent with
+   this geometric-series estimate, proving \((BW1)\).
+
+   The two parameter substitutions use
+   \[
+      F_4(m_0,R_0)=m_0^{\rho_c}\log^{O_c(1)}n,
+      \qquad
+      \delta=\Theta_c(\eta^{2/\rho_c}),
+      \qquad
+      \alpha^{-1}=\eta^{-1-2/\rho_c}\Theta_c(1).
+   \]
+   For \(\eta=(\log n)^{-2/3}\), all powers of \(\eta^{-1}\) are
+   polylogarithmic and \(\exp(O_c(\eta\log n))=\exp(O_c((\log n)^{1/3}))\).
+   For \(\eta=\Theta_c((\log\log n)/\log n)\), both
+   \(\alpha^{-1}\eta^{-2}\) and the exponential factor are polylogarithmic in
+   \(n\).
+\end{proof}
+
 \begin{lemma}[Canonical budget activation factor]\label{lem:canonical-budget-activation}
    Use the canonical mixed budget of \cref{lem:canonical-mixed-budget} inside
    one current geometric state. Thus the parent radius factor in the budget is
@@ -12725,25 +12828,15 @@ This certificate is the local form of the remaining problem. It is analogous in 
 
 \begin{proof}
    Work after bounded-diameter localization, so the initial radius ratio is
-   $R_0/r=\log^{O_c(1)}n$. The cap-free terminal scans are charged to
-   low-correlation accepting collisions by
-   \cref{lem:cap-free-scan-accounting}. For geometric opportunities,
-   \cref{lem:budget-thinned-opportunities}, applied with the canonical mixed
-   budget of \cref{lem:canonical-mixed-budget}, gives the expected activated
-   recursive work bound
+   $R_0/r=\log^{O_c(1)}n$.  With
+   \(\eta=\Theta_c((\log\log n)/\log n)\) and
+   \(\delta=\Theta_c(\eta^{2/\rho_c})\),
+   \cref{prop:budget-thinned-work} gives expected query work
    \[
-      (1-\kappa\eta^2)F_4(m,R)
+      dF_4(n,R_0)\log^{O_c(1)}n
+      =
+      d\,n^{\rho_c}\log^{O_c(1)}n .
    \]
-   at every state. Thus the query-work recurrence contracts by
-   $1-\Theta_c(\eta^2)$ per radius-decreasing generation, while local score
-   work, guards, and cap-free scans contribute only
-   $dF_4(m,R)\log^{O_c(1)}n$. Since every activated cap child decreases radius
-   by $1-\Theta_c(\eta^2)$, the number of generations is
-   \[
-      O_c\!\left(\eta^{-2}\log\frac{R_0}{r}\right)=\log^{O_c(1)}n.
-   \]
-   Summing the contracting recurrence gives
-   $dF_4(n,R_0)\log^{O_c(1)}n=d\,n^{\rho_c}\log^{O_c(1)}n$.
 
    Storage is controlled by the deterministic storage part of
    \cref{lem:thin-cap-contraction} and the stored-prefix bounds for the score
