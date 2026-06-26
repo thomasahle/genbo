@@ -14805,21 +14805,21 @@ singleton slices by hand.
    \[
       V_{z,q}\subseteq U_C,\qquad q\in Q'_C
       \qquad((z,q)\in\mathcal I_C).
-      \tag{PCH1}
+      \tag{PCOV1}
    \]
    Assume the following paid-compression separator: for every nonnegative
    price system \((\gamma,\tau,\sigma)\) such that
    \[
       A_{z,q}^{\gamma}\le P_{z,q}^{\tau,\sigma}
       \qquad(z,q),
-      \tag{PCH2}
+      \tag{PCOV2}
    \]
    and
    \[
       \sum_{(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}
       >
       \pi_1\left(L\sum_q\tau_q+\sigma S\right),
-      \tag{PCH3}
+      \tag{PCOV3}
    \]
    there is a nonnegative finite intensity vector \(\lambda_C\) on
    \(\mathcal C\) such that
@@ -14831,7 +14831,7 @@ singleton slices by hand.
       \left(
          T_C\sum_{q\in Q'_C}\tau_q+\sigma S_C
       \right).
-      \tag{PCH4}
+      \tag{PCOV4}
    \]
    Then the primitive hit-kernel cover
    \((\mathsf{HKC}_{\mathcal U})\) is feasible.
@@ -14851,15 +14851,112 @@ singleton slices by hand.
       =
       P_{z,q}^{\tau,\sigma},
    \]
-   so \((PCH2)\) holds.  The surplus inequality \((HKC\text{-}D1)\) is
-   \((PCH3)\).
+   so \((PCOV2)\) holds.  The surplus inequality \((HKC\text{-}D1)\) is
+   \((PCOV3)\).
 
    The paid-compression separator therefore gives a conic certificate
-   \((PCH4)\).  Applying
+   \((PCOV4)\).  Applying
    \cref{lem:paid-quotient-reduced-gain} to the assigned records in the support
    of \(\lambda\) exposes at least one underlying Boolean core record with
    positive reduced gain.  This contradicts \((HKC\text{-}D2)\).  Hence
    \((\mathsf{HKC}_{\mathcal U})\) is feasible.
+\end{proof}
+
+\begin{lemma}[Canonical paid-core hinge normal form]
+   \label{lem:canonical-paid-core-hinge}
+   Work with nonnegative prices \((\gamma,\tau,\sigma)\).  Let
+   \(U\) be a Pareto core with prices \(T_U,S_U\), and assume the Boolean core
+   universe contains \((U,Q',T_U,S_U)\) for every \(Q'\subseteq\mathcal Q\).
+   Define the canonical paid whole-slice support of \(U\) at query \(q\) by
+   \[
+      h_U^\gamma(q)
+      =
+      \sum_{z:V_{z,q}\subseteq U}\Pi(z)A_{z,q}^{\gamma}.
+      \tag{CPH1}
+   \]
+   Then
+   \[
+      \max_{Q'\subseteq\mathcal Q}
+      \left[
+         \sum_{q\in Q'}h_U^\gamma(q)
+         -
+         T_U\sum_{q\in Q'}\tau_q
+         -
+         \sigma S_U
+      \right]
+      =
+      \sum_q\bigl(h_U^\gamma(q)-T_U\tau_q\bigr)_+
+      -
+      \sigma S_U .
+      \tag{CPH2}
+   \]
+   The maximum is attained by
+   \[
+      Q_\gamma^+(U)=\{q:h_U^\gamma(q)>T_U\tau_q\}.
+      \tag{CPH3}
+   \]
+   Consequently, if
+   \[
+      \sum_q\bigl(h_U^\gamma(q)-T_U\tau_q\bigr)_+
+      >
+      \sigma S_U,
+      \tag{CPH4}
+   \]
+   then the Boolean record \((U,Q_\gamma^+(U),T_U,S_U)\), assigned all primitive
+   records \((z,q)\) with \(q\in Q_\gamma^+(U)\) and \(V_{z,q}\subseteq U\), has
+   positive repair reduced gain.  Conversely, if any assignment
+   \(\mathcal I\) to any record \((U,Q',T_U,S_U)\) satisfying
+   \[
+      V_{z,q}\subseteq U,\qquad q\in Q'
+      \qquad((z,q)\in\mathcal I)
+   \]
+   has paid value larger than its query/storage price, then \((CPH4)\) holds.
+\end{lemma}
+
+\begin{proof}
+   For a fixed query set \(Q'\), the largest paid value obtainable by assigning
+   primitive records to \((U,Q')\) is achieved by assigning every visible
+   primitive record:
+   \[
+      \mathcal I^\star(U,Q')
+      =
+      \{(z,q):q\in Q',\ V_{z,q}\subseteq U\},
+   \]
+   because all coefficients \(\Pi(z)A_{z,q}^{\gamma}\) are nonnegative.  Its
+   value is \(\sum_{q\in Q'}h_U^\gamma(q)\).  Hence optimizing the paid surplus
+   over assignments and query sets is exactly
+   \[
+      \max_{Q'\subseteq\mathcal Q}
+      \sum_{q\in Q'}\bigl(h_U^\gamma(q)-T_U\tau_q\bigr)-\sigma S_U .
+   \]
+   The maximum keeps exactly the positive-margin queries, giving
+   \((CPH2)\)--\((CPH3)\).  If \((CPH4)\) holds, this canonical assignment has
+   paid value above price, so
+   \cref{lem:paid-quotient-reduced-gain} gives positive repair reduced gain.
+   The converse follows because any noncanonical assignment to any \(Q'\) has
+   value at most the canonical value for that \(Q'\), which is bounded by the
+   positive-part maximum in \((CPH2)\).
+\end{proof}
+
+\begin{corollary}[Canonical paid-core separator implies hit-kernel cover]
+   \label{cor:canonical-paid-core-hit-kernel-cover}
+   Work in the setting of
+   \cref{cor:paid-compression-hit-kernel-cover}.  Suppose the assigned core
+   family is closed under the canonical assignment from
+   \cref{lem:canonical-paid-core-hinge}.  If every nonnegative price system
+   \((\gamma,\tau,\sigma)\) satisfying \((PCOV2)\)--\((PCOV3)\) admits a Pareto
+   core \(U\) satisfying \((CPH4)\), then
+   \((\mathsf{HKC}_{\mathcal U})\) is feasible.
+\end{corollary}
+
+\begin{proof}
+   Given prices satisfying \((PCOV2)\)--\((PCOV3)\), choose the core \(U\) from
+   the hypothesis and use the canonical query side \(Q_\gamma^+(U)\) and
+   canonical assignment from \cref{lem:canonical-paid-core-hinge}.  By
+   \((CPH4)\), the single assigned record has paid value above price, which is
+   \((PCOV4)\) with one nonzero intensity.  Therefore the paid-compression
+   separator hypothesis of \cref{cor:paid-compression-hit-kernel-cover} holds,
+   and that corollary gives the primitive hit-kernel cover.
 \end{proof}
 
 \Cref{cor:paid-compression-hit-kernel-cover} is the fractional dense-filter
@@ -14872,7 +14969,10 @@ Query overlap is charged by
 kernel.  Thus ordinary spherical slices, singleton dense slices, quotient
 cores, \(k\)-means-style facilities, additive-quantization buckets, and
 list-decoding outputs are all merely proposal mechanisms for the same paid
-reduced-cost inequality \((PCH4)\).
+reduced-cost inequality \((PCOV4)\).  When the family is closed under canonical
+assignment, \cref{lem:canonical-paid-core-hinge} removes the assignment and
+query-side choices too: preprocessing only has to search for an update core
+whose paid whole-slice support violates the hinge inequality \((CPH4)\).
 
 \begin{assumption}[Compression-dual separator]
    \label{asm:compression-dual-separator}
@@ -26741,6 +26841,11 @@ duplicate-slice loss.  \Cref{cor:paid-compression-hit-kernel-cover} packages
 this as a local-cover theorem: if every surplus singleton-saturated paid law
 admits a conic compression into assigned Pareto cores with paid value exceeding
 query/storage price, then the primitive hit-kernel cover is feasible.
+\Cref{lem:canonical-paid-core-hinge} and
+\cref{cor:canonical-paid-core-hit-kernel-cover} simplify the separator further:
+for a fixed update core, the best primitive assignment is all visible paid
+slices and the best query side is the positive-margin set, so the remaining
+search can target only the hinge violation \((CPH4)\).
 Because
 preprocessing time is deliberately not a scarce resource,
 \cref{lem:finite-pool-optimizer} and
