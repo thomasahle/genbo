@@ -14142,6 +14142,70 @@ For a threshold $u$, the posterior-superlevel child is
    quotient universe.
 \end{proof}
 
+\begin{corollary}[Soft list-decoding reduced-cost separator]
+   \label{cor:soft-list-decoding-reduced-cost-separator}
+   Let \(\mathcal U\subseteq\prod_{i=1}^h\Sigma_i\) be an implicit code,
+   trellis, or residue label universe.  Fix a restricted dual state \(E\) as in
+   \cref{lem:implicit-reduced-gain-separation}.  Suppose that, for every
+   \(x\in S\), the signed point score from
+   \cref{cor:pointwise-reduced-cost-separation} has the coordinatewise form
+   \[
+      \operatorname{Score}_E(x,a)
+      =
+      \kappa_E(x)+\sum_{i=1}^h\psi_{E,x,i}(a_i),
+      \qquad a=(a_1,\ldots,a_h)\in\mathcal U,
+      \tag{SL1}
+   \]
+   where \(\kappa_E(x)\) and the reliabilities
+   \(\psi_{E,x,i}:\Sigma_i\to\mathbb R\) are computable during
+   preprocessing.
+
+   Assume a certified soft threshold decoder for \(\mathcal U\): on input
+   reliabilities \((\psi_i)_{i=1}^h\) and threshold \(\Theta\), it returns a
+   finite list \(\mathsf L(\psi,\Theta)\) containing every label satisfying
+   \[
+      \sum_{i=1}^h\psi_i(a_i)>\Theta.
+      \tag{SL2}
+   \]
+   Returned labels may be a superset, provided each returned label can be scored
+   exactly and filtered.
+
+   Then the following procedure is an exact pointwise reduced-cost separator
+   over \(\mathcal U\).  For each \(x\in S\), call the decoder with
+   \[
+      \psi_i=\psi_{E,x,i},
+      \qquad
+      \Theta=-\kappa_E(x),
+      \tag{SL3}
+   \]
+   score the returned labels exactly, and return any pair \((x,a)\) with
+   \(\operatorname{Score}_E(x,a)>0\).  If no such pair is found for any
+   \(x\), then
+   \[
+      \operatorname{Score}_E(x,a)\le0
+      \qquad(x\in S,\ a\in\mathcal U),
+      \tag{SL4}
+   \]
+   so the no-positive-gain certificate \((IG3)\) holds on \(\mathcal U\).
+   Consequently, this decoder is a complete build-time separation oracle for
+   finite-support rate-coverage certificates inside \(\mathcal U\).
+\end{corollary}
+
+\begin{proof}
+   If a positive pair exists, then for that point \(x\)
+   \[
+      \sum_{i=1}^h\psi_{E,x,i}(a_i)>-\kappa_E(x).
+   \]
+   The decoder call \((SL3)\) must therefore include \(a\) in its output list.
+   Exact filtering accepts it, so the procedure finds a positive pair.
+   Conversely, if the procedure finds no positive pair, then no label can have
+   satisfied the strict threshold for any \(x\), proving \((SL4)\).  The
+   equivalence between \((SL4)\), \((IG3)\), and finite-support infeasibility
+   over the implicit universe is exactly
+   \cref{cor:pointwise-reduced-cost-separation} and
+   \cref{lem:implicit-reduced-gain-separation}.
+\end{proof}
+
 \begin{remark}[Offline certificate for facility search]
    \label{rem:rate-coverage-offline-certificate}
    \Cref{lem:finite-rate-coverage-convex} is the build-time certificate
@@ -14186,6 +14250,16 @@ For a threshold $u$, the posterior-superlevel child is
    quotient label classes: either it exposes a positive reduced-gain bucket, or
    the current dual obstruction certifies that no finite-support panel from that
    universe can solve the rate-coverage constraints.
+   \Cref{cor:soft-list-decoding-reduced-cost-separator} is the concrete
+   code/lattice version of this interface.  If the reduced point score separates
+   into coordinate reliabilities, then a certified soft list decoder, stack
+   decoder, or residue-code list-recovery oracle is already an exact
+   reduced-cost separator after exact filtering.  This is the transferable
+   content of soft-decision Reed--Solomon decoding, expander-code list recovery,
+   Construction-A quotient decoding, and Barnes--Wall style lattice recursion:
+   the decoder optimizes the dual-priced score, while the convex certificate
+   verifies storage, query load, and tilted witness coverage before retaining
+   the bucket.
 \end{remark}
 
 \begin{assumption}[Compact rate-coverage panel]
@@ -15608,7 +15682,10 @@ events, parameterized by candidate intensities.
 \Cref{lem:layer-cake-reduced-gain-separation} then reduces positive-gain
 exposure to one subset layer and, after truncation, a logarithmic dyadic search
 over layer weights.  \Cref{cor:pointwise-reduced-cost-separation} identifies
-the exact completeness oracle as a point-label weighted coverage score.  The
+the exact completeness oracle as a point-label weighted coverage score.
+\Cref{cor:soft-list-decoding-reduced-cost-separator} then shows that any
+coordinatewise soft list decoder for that score is already an exact implicit
+separator after filtering.  The
 seeded search
 compiler \cref{lem:seeded-reduced-gain-search} isolates the useful
 code/lattice contribution: a proposal sampler or list decoder only has to
@@ -15856,6 +15933,10 @@ layer, with a dyadic scalar grid whenever the retained intensities are capped.
 \Cref{cor:pointwise-reduced-cost-separation} sharpens the final separator:
 to certify completeness it is enough to find one point and one implicit label
 whose residual tilted coverage exceeds its query-load and storage price.
+\Cref{cor:soft-list-decoding-reduced-cost-separator} converts this into the
+standard soft-decoding interface when the score is coordinatewise additive:
+threshold-list codewords, lattice residues, or trellis paths by the dual-priced
+reliability score, then exactly filter the returned candidates.
 
 \Cref{lem:smoothed-max-score-margin} gives a still simpler non-channel target: a query-centered Gaussian score direction separates every invalid point from the true near point by an additive $\Theta_c(tr^2)$ score margin, with high probability. The softest resulting primitive is \cref{asm:smoothed-gibbs}: with inverse-polylogarithmic probability, report a list carrying inverse-polylogarithmic mass under the Gaussian Gibbs kernel on data points. Sampling from the kernel restricted to that list gives a pointwise dominated output law by \cref{lem:captured-gibbs-domination}, and \cref{lem:smoothed-gibbs-suffices} then returns a valid answer because invalid points have negligible Gibbs mass and cannot be oversampled too much. A more exact sampling route is certified additive Gumbel-MIPS: \cref{lem:gumbel-additive-domination} shows that an $O(\log\log m)$ additive optimizer for the Gumbel-perturbed scores gives precisely the required one-sided Gibbs domination, yielding \cref{prop:gumbel-mips-polylog}. A stronger but different implementation route is smoothed additive nearest-neighbor search for the perturbed center $Y/t$ with additive squared-distance error $\Theta_c(r^2)$, exactly equivalent to additive score maximization by \cref{lem:score-max-additive-nn}. These oracles would bypass dyadic scales and representatives entirely, as recorded in \cref{prop:smoothed-gibbs-polylog}, \cref{prop:gumbel-mips-polylog}, and \cref{prop:smoothed-score-max-polylog}. They are targets, not implemented theorems; \cref{rem:gumbel-mips-not-ann} explains why black-box multiplicative ANN does not supply the Gumbel primitive. The older finite restricted-channel compiler \cref{asm:finite-restricted-channel} and \cref{prop:finite-channel-polylog} remain as a coarse explicit-enumeration special case and as a useful diagnostic framework.
 
