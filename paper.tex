@@ -11919,6 +11919,83 @@ inside many high-correlation slices.  The retained child is still the ordinary
 filter \(G=(U_G,a_G,T_G,S_G)\); the atom set is only a certificate proving that
 its true captured demand exceeds its query and storage price.
 
+\begin{lemma}[Atom de-duplication normal form]
+   \label{lem:atom-deduplication-normal-form}
+   Fix a container \(W\subseteq P\), a query set \(Q'\subseteq\mathcal Q\), a
+   price factor \(\psi>0\), and an exponent \(0\le\rho_D\le1\).  Put
+   \[
+      \mathsf T(Q')=\sum_{q\in Q'}\tau_q .
+   \]
+   Let
+   \[
+      \mathcal A\subseteq
+      \{(z,q,p):p\in W,\ q\in Q',\ p\in V_{z,q},\ (p,q)\in\mathcal N_j\}
+   \]
+   be any finite atom family, and suppose
+   \[
+      |\{z:(z,q,p)\in\mathcal A\}|\le b
+      \qquad((p,q)\in\mathcal N_j).
+      \tag{AD0}
+   \]
+   Then there is a subfamily \(\mathcal A^\sharp\subseteq\mathcal A\) with
+   duplicate bound \(1\) such that, for every \(U\subseteq W\),
+   \[
+      |\{(z,q,p)\in\mathcal A^\sharp:p\in U\}|
+      \ge
+      \frac1b|\{(z,q,p)\in\mathcal A:p\in U\}|.
+      \tag{AD1}
+   \]
+   Consequently, if a \(k\)-point update side \(U\) satisfies
+   \[
+      \frac{\theta_j}{b}
+      |\{(z,q,p)\in\mathcal A:p\in U\}|
+      >
+      \psi\bigl(\mathsf T(Q')k^{\rho_D}
+      +\sigma k^{1+\rho_D}\bigr),
+      \tag{AD2}
+   \]
+   then the same \(U\) satisfies the duplicate-free atomized inequality
+   \[
+      \theta_j|\{(z,q,p)\in\mathcal A^\sharp:p\in U\}|
+      >
+      \psi\bigl(\mathsf T(Q')k^{\rho_D}
+      +\sigma k^{1+\rho_D}\bigr).
+      \tag{AD3}
+   \]
+\end{lemma}
+
+\begin{proof}
+   For each pair \((p,q)\) for which some atom \((z,q,p)\in\mathcal A\) exists,
+   choose one such atom and put it in \(\mathcal A^\sharp\).  Then no pair
+   \((p,q)\) appears more than once in \(\mathcal A^\sharp\), so the duplicate
+   bound is \(1\).  For a fixed \(U\subseteq W\), write
+   \[
+      t_{p,q}=|\{z:(z,q,p)\in\mathcal A\}|.
+   \]
+   On the pairs with \(p\in U\), each nonzero \(t_{p,q}\) is at most \(b\), hence
+   \[
+      \sum_{\substack{(p,q):p\in U\\t_{p,q}>0}}1
+      \ge
+      \frac1b\sum_{\substack{(p,q):p\in U}}t_{p,q}.
+   \]
+   The left-hand side is exactly the number of atoms of
+   \(\mathcal A^\sharp\) with point in \(U\), while the right-hand side is
+   \(b^{-1}\) times the corresponding count for \(\mathcal A\).  This proves
+   \((AD1)\), and \((AD3)\) follows immediately from \((AD1)\) and \((AD2)\).
+\end{proof}
+
+\Cref{lem:atom-deduplication-normal-form} removes the duplicate factor from the
+atomized part of the separator.  Duplicate factors are still useful when a
+quotient is certified by whole primitive slices, but once individual
+point-slice incidences are available, the certificate should keep one witness
+slice per covered near pair.  The degree used by the atomized prefix search can
+therefore be read as a pair-support degree,
+\[
+   d^\sharp(p)=|\{q:\exists z\ (z,q,p)\in\mathcal A,\ (p,q)\in\mathcal N_j\}|,
+\]
+and the subsequent top-degree, envelope, and dyadic-cardinality reductions may
+be applied in the duplicate-free case \(b=1\).
+
 \begin{lemma}[Top-degree update prefix for atomized cores]
    \label{lem:top-degree-atomized-prefix}
    Fix a certified container \(W\subseteq P\), a query set
@@ -23793,7 +23870,9 @@ storage price.  With logarithmic slack,
 \cref{lem:dyadic-query-margin-layer} further reduces this to one uniform
 query-margin class, matching the same unweighted search model as the demand
 layer.  \Cref{lem:atomized-quotient-reduced-gain} allows the quotient certificate
-to use selected point-slice incidences rather than whole primitive slices, and
+to use selected point-slice incidences rather than whole primitive slices.
+\Cref{lem:atom-deduplication-normal-form} then removes the atom duplicate
+factor by keeping one witness slice per covered near pair, and
 \cref{lem:top-degree-atomized-prefix} shows that within a fixed certified
 container and query layer the best \(k\)-point update side is the degree-sorted
 prefix.  Thus the remaining geometric separator can be searched as a
