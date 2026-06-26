@@ -19883,6 +19883,122 @@ inequality \((QP3)\).
    \((DCB3)\), and \cref{cor:distinct-canonical-bucket-net} applies.
 \end{proof}
 
+\begin{lemma}[Tuple witnesses for distinct child tails]
+   \label{lem:tuple-witness-distinct-child-tail}
+   Work at one resident node \(P\), fix a separation scale \(\delta>0\), and
+   let \(\mathcal T_k(P,\delta)\) be as in
+   \cref{lem:packing-list-tuple-moment}.  In the setting of
+   \cref{lem:dyadic-tail-distinct-child-storage}, suppose that for every
+   dyadic price class \(i\) we choose an integer \(k_i\ge1\) and a number
+   \(R_i>0\).  Each distinct canonical child \(\kappa\) in class \(i\) has an
+   associated separated net \(A_{z,\kappa}\subseteq P\), and satisfies the
+   witness lower bound
+   \[
+      \left|
+      \{(x_1,\ldots,x_{k_i})\in\mathcal T_{k_i}(P,\delta):
+      x_j\in A_{z,\kappa}\ \forall j\}
+      \right|
+      \ge R_i .
+      \tag{TWT1}
+   \]
+   For a tuple \(\mathbf x\in\mathcal T_{k_i}(P,\delta)\), let
+   \[
+      M_z(i,\mathbf x)
+      =
+      \left|
+      \{\kappa\in\kappa_z(\mathcal B_z):
+      2^i\le u_{z,\kappa}<2^{i+1},
+      \ x_j\in A_{z,\kappa}\ \forall j\}
+      \right|.
+      \tag{TWT2}
+   \]
+   Then
+   \[
+      C_z(i)
+      \le
+      \frac1{R_i}
+      \sum_{\mathbf x\in\mathcal T_{k_i}(P,\delta)}
+      M_z(i,\mathbf x).
+      \tag{TWT3}
+   \]
+
+   In particular, if every child in class \(i\) has
+   \(|A_{z,\kappa}|\ge K_i\), then one may take \(R_i=K_i^{k_i}\), since
+   repetitions are allowed in \(\mathcal T_{k_i}(P,\delta)\).
+\end{lemma}
+
+\begin{proof}
+   Sum the witness lower bound \((TWT1)\) over all distinct canonical children
+   in the dyadic class \(i\):
+   \[
+      R_iC_z(i)
+      \le
+      \sum_{\substack{\kappa\in\kappa_z(\mathcal B_z):\\
+                      2^i\le u_{z,\kappa}<2^{i+1}}}
+      \sum_{\mathbf x\in\mathcal T_{k_i}(P,\delta)}
+      \mathbf 1\{x_j\in A_{z,\kappa}\ \forall j\}.
+   \]
+   Interchanging the two finite sums gives
+   \(\sum_{\mathbf x}M_z(i,\mathbf x)\), and division by \(R_i\) proves
+   \((TWT3)\).  If \(|A_{z,\kappa}|\ge K_i\), then every ordered \(k_i\)-tuple
+   from \(A_{z,\kappa}\), with repetitions, belongs to
+   \(\mathcal T_{k_i}(P,\delta)\) because the distinct entries of
+   \(A_{z,\kappa}\) are \(\delta\)-separated.  Hence there are at least
+   \(K_i^{k_i}\) witnesses.
+\end{proof}
+
+\begin{corollary}[Tuple-profile distinct-storage certificate]
+   \label{cor:tuple-profile-distinct-storage}
+   Work in the setting of
+   \cref{cor:dyadic-distinct-storage-bucket-net} and
+   \cref{lem:tuple-witness-distinct-child-tail}.  Suppose that for every price
+   class \(i\) there are certified tuple-incidence envelopes
+   \(J_i(\mathbf x)\ge0\) such that
+   \[
+      \E_z M_z(i,\mathbf x)\le J_i(\mathbf x)
+      \qquad
+      (\mathbf x\in\mathcal T_{k_i}(P,\delta)).
+      \tag{TST1}
+   \]
+   If \(\Sigma^+=\emptyset\), the cover is feasible.  Otherwise let \(a_*\) be
+   as in \((BNR1)\).  Suppose \(a_*>0\), the active first moments satisfy
+   \((DCB2)\), and
+   \[
+      \E_z\Gamma_z+
+      2\sum_i2^iR_i^{-1}
+      \sum_{\mathbf x\in\mathcal T_{k_i}(P,\delta)}J_i(\mathbf x)
+      \le
+      a_*S .
+      \tag{TST2}
+   \]
+   Then \((\mathsf{ESFC}_\Sigma)\) is feasible.
+
+   Equivalently, if \(\mathcal T_{k_i}(P,\delta)\) is partitioned into profile
+   classes \(\Pi_i\), each profile \(\pi\in\Pi_i\) has cardinality
+   \(N_{i,\pi}\), and every tuple in \(\pi\) has
+   \(J_i(\mathbf x)\le e^{-I_{i,\pi}}\), then it is enough to replace the inner
+   tuple sum in \((TST2)\) by
+   \[
+      \sum_{\pi\in\Pi_i}N_{i,\pi}e^{-I_{i,\pi}} .
+      \tag{TST3}
+   \]
+\end{corollary}
+
+\begin{proof}
+   Taking expectations in \((TWT3)\) and using \((TST1)\) gives
+   \[
+      \E_zC_z(i)
+      \le
+      R_i^{-1}
+      \sum_{\mathbf x\in\mathcal T_{k_i}(P,\delta)}J_i(\mathbf x).
+   \]
+   Substituting this into \((DDS1)\) shows that \((TST2)\) implies the dyadic
+   distinct-child tail bound of
+   \cref{cor:dyadic-distinct-storage-bucket-net}.  That corollary gives
+   feasibility.  The profile form \((TST3)\) is just summation of the envelope
+   \(J_i(\mathbf x)\le e^{-I_{i,\pi}}\) over each profile class.
+\end{proof}
+
 \Cref{lem:exact-near-set-filter-cover} is strictly weaker than
 \cref{lem:finite-signature-filter-cover} when the exact near set is part of the
 signature.  The all-pair LP covers every \(p\in N_{\sigma_0}\); the existential
@@ -20049,6 +20165,11 @@ and explicit metadata.
 \cref{cor:dyadic-distinct-storage-bucket-net} turn the same target into dyadic
 large-child counting: prove, at each recursive price scale, that the number of
 distinct canonical bucket nets is small enough.
+\Cref{lem:tuple-witness-distinct-child-tail} and
+\cref{cor:tuple-profile-distinct-storage} give the corresponding
+entropy-energy normal form: each large canonical child supplies many separated
+tuple witnesses, so it is enough to bound the expected canonical-child
+incidence of every tuple profile.
 
 \begin{proposition}[Conditional fractional filter-cover endpoint]
    \label{prop:fractional-filter-cover-polylog}
@@ -32548,7 +32669,12 @@ once per decoded occurrence, with only occurrence pointers left in the metadata
 budget.  \Cref{cor:dyadic-distinct-storage-bucket-net} rewrites that target as a
 dyadic large-child counting problem: for every recursive price scale, bound the
 number of distinct canonical bucket nets whose shared child index has that
-price.  The storage side is therefore a distinct-net geometric target.
+price.  \Cref{lem:tuple-witness-distinct-child-tail} and
+\cref{cor:tuple-profile-distinct-storage} reduce each dyadic count to tuple
+incidence: a large separated child contains many ordered witness tuples, so the
+storage proof can be stated as an entropy-energy bound on how often a tuple
+profile can appear in distinct canonical children.  The storage side is
+therefore a distinct-net geometric target.
 \Cref{lem:occurrence-moments-dominate-dag},
 \cref{lem:packing-list-tuple-moment},
 \cref{lem:gaussian-cap-intersection-energy}, and
