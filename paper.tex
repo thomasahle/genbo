@@ -17984,6 +17984,56 @@ inequality \((QP3)\).
    \(\mathsf{EC}\), and \cref{lem:exact-signature-coverage-list-oracle} applies.
 \end{proof}
 
+\begin{corollary}[Hit-probability exact-signature proposal]
+   \label{cor:hit-probability-exact-signature-proposal}
+   In the setting of \cref{lem:exact-signature-coverage-list-oracle}, the
+   seeded proposal condition may be proved through hit probabilities.  For every
+   nonnegative price system satisfying \((EN\text{-}D1)\), suppose there is a
+   finite seed law \(s\sim\nu\) such that seed \(s\) chooses a template
+   \(C_s\in\mathcal C\) and a randomized list
+   \(\mathcal L_s\subseteq W_{C_s}\), always of size \(K_{C_s}\).  Put
+   \[
+      h_s(\sigma_0)=
+      \Pr[\mathcal L_s\cap N_{\sigma_0}\ne\emptyset]
+      \qquad(\sigma_0\in\Sigma^+).
+      \tag{EHP1}
+   \]
+   If
+   \[
+      \E_s
+      \left[
+         \sum_{\sigma_0\in\Sigma^+}
+         h_s(\sigma_0)
+         \bigl(\beta_{\sigma_0}-T_{C_s}\tau_{\sigma_0}\bigr)_+
+         -
+         \theta S_{C_s}
+      \right]
+      >0,
+      \tag{EHP2}
+   \]
+   then \((\mathsf{ESFC}_\Sigma)\) is feasible.
+
+   More generally, it is enough to provide certified lower bounds
+   \(\underline h_s(\sigma_0)\le h_s(\sigma_0)\) satisfying \((EHP2)\) with
+   \(h_s\) replaced by \(\underline h_s\).
+\end{corollary}
+
+\begin{proof}
+   Expand the seed by also drawing the randomized list
+   \(L_s\sim\mathcal L_s\).  Conditional on \(s\), the expected bracket in
+   \((ESL1)\) is exactly the bracket in \((EHP2)\), because
+   \[
+      \E_{\mathcal L_s}
+      \mathbf 1\{\mathcal L_s\cap N_{\sigma_0}\ne\emptyset\}
+      =
+      h_s(\sigma_0).
+   \]
+   Thus \((EHP2)\) gives a finite seed law over deterministic lists satisfying
+   \((ESL1)\), and \cref{cor:seeded-exact-signature-list-proposal} applies.
+   Replacing \(h_s\) by smaller certified lower bounds only decreases the left
+   side, so the same argument applies.
+\end{proof}
+
 \Cref{lem:exact-near-set-filter-cover} is strictly weaker than
 \cref{lem:finite-signature-filter-cover} when the exact near set is part of the
 signature.  The all-pair LP covers every \(p\in N_{\sigma_0}\); the existential
@@ -18005,6 +18055,15 @@ violator search, and lattice/list-decoding panels can be used as seeded
 proposal laws only through the checkable inequality \((ESL1)\); the retained
 column is still the deterministic list and positive-margin signature layer
 verified by \((ECL2)\)--\((ECL4)\).
+\Cref{cor:hit-probability-exact-signature-proposal} is the probabilistic form:
+the analysis may lower-bound only the chance that the proposed list hits each
+exact near set.  For independent soft responsibilities, for example, this is
+the computable quantity
+\[
+   1-\prod_{p\in N_{\sigma_0}\cap W_s}(1-\pi_{s,p}),
+\]
+or any certified lower bound on it, while the final retained column remains a
+deterministic list exposed by the averaging argument.
 
 \begin{proposition}[Conditional fractional filter-cover endpoint]
    \label{prop:fractional-filter-cover-polylog}
