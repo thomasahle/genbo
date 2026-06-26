@@ -14283,6 +14283,72 @@ For a threshold $u$, the posterior-superlevel child is
    infeasibility over \(\mathcal U\).
 \end{proof}
 
+\begin{corollary}[Positive-coverage screening for reduced cost]
+   \label{cor:positive-coverage-screen}
+   In the setting of \cref{cor:threshold-event-reduced-cost}, write the signed
+   test weights as
+   \[
+      \beta_t=\beta_t^+-\beta_t^-,
+      \qquad
+      \beta_t^+=\max\{\beta_t,0\},\quad
+      \beta_t^-=\max\{-\beta_t,0\}.
+      \tag{PS1}
+   \]
+   For a label \(a\), let
+   \[
+      P(a)=
+      \sum_t\beta_t^+
+      \mathbf 1\left\{
+      \kappa_t+\sum_i\phi_{t,i}(a_i)>0
+      \right\}
+      \tag{PS2}
+   \]
+   be its positive coverage, and let \(S(a)\) be the signed coverage in
+   \((TE4)\).  Since \(S(a)\le P(a)\), every reduced-cost witness with
+   \(S(a)>\Gamma\) also satisfies
+   \[
+      P(a)>\Gamma .
+      \tag{PS3}
+   \]
+
+   Consequently, an exact nonnegative threshold-coverage lister is enough for
+   signed reduced-cost separation.  Namely, suppose that on input nonnegative
+   weights \((w_t)\), tests \((\kappa_t,\phi_{t,i})\), and threshold
+   \(\Gamma\), the lister returns a finite superset of all labels with
+   \[
+      \sum_t w_t
+      \mathbf 1\left\{
+      \kappa_t+\sum_i\phi_{t,i}(a_i)>0
+      \right\}>\Gamma .
+      \tag{PS4}
+   \]
+   Run it with \(w_t=\beta_t^+\), score every returned label by the original
+   signed objective \(S(a)\), and return any label with \(S(a)>\Gamma\).  If no
+   returned label passes this exact filter, then no label in \(\mathcal U\)
+   has positive signed reduced cost.
+
+   Thus the code/lattice offline oracle may be stated as a one-sided positive
+   coverage lister plus exact verification of signed reduced cost; negative
+   tests never have to be used to generate candidates.
+\end{corollary}
+
+\begin{proof}
+   The inequality \(S(a)\le P(a)\) follows immediately from
+   \[
+      S(a)=P(a)-
+      \sum_t\beta_t^-
+      \mathbf 1\left\{
+      \kappa_t+\sum_i\phi_{t,i}(a_i)>0
+      \right\}.
+   \]
+   Hence any label with \(S(a)>\Gamma\) is included in the lister output for
+   the nonnegative weights \(w_t=\beta_t^+\).  Exact filtering accepts every
+   true signed witness and rejects every false candidate.  If the filter finds
+   none, then no signed witness exists, so
+   \cref{cor:threshold-event-reduced-cost} certifies the corresponding
+   no-positive reduced-cost condition.
+\end{proof}
+
 \begin{corollary}[Unified soft-decoded rate-coverage compiler]
    \label{cor:unified-soft-decoded-rate-coverage}
    Let \(\mathcal U\subseteq\prod_{i=1}^h\Sigma_i\) be a finite quotient label
@@ -14312,7 +14378,9 @@ For a threshold $u$, the posterior-superlevel child is
    soft-decoding interface of
    \cref{cor:soft-list-decoding-reduced-cost-separator}, by the signed
    threshold-coverage interface of \cref{cor:threshold-event-reduced-cost}, or
-   by any other exact offline optimization over the implicit quotient family.
+   by the positive-coverage screen of
+   \cref{cor:positive-coverage-screen}, or by any other exact offline
+   optimization over the implicit quotient family.
    Its running time is a preprocessing cost, not a query resource.
 
    Suppose the finite rate-coverage system over \(S\times\mathcal U\) is
@@ -14435,7 +14503,9 @@ For a threshold $u$, the posterior-superlevel child is
    where reporter events are themselves coordinatewise threshold predicates,
    \cref{cor:threshold-event-reduced-cost} identifies the exact offline
    objective as signed threshold coverage: maximize the dual-priced sum of
-   satisfied reporter tests.  This is the transferable content of
+   satisfied reporter tests.  \Cref{cor:positive-coverage-screen} simplifies
+   even this: enumerate labels with enough positively priced reporter tests and
+   use the negative tests only in the exact verifier.  This is the transferable content of
    soft-decision Reed--Solomon decoding, expander-code list recovery,
    Construction-A quotient decoding, and Barnes--Wall style lattice recursion:
    the decoder optimizes the dual-priced score or coverage objective, while the
@@ -15876,6 +15946,9 @@ separator after filtering.
 reporter itself is threshold-decoded: the offline separator is signed
 threshold coverage over the reporter tests, not necessarily one additive
 codeword score.
+\Cref{cor:positive-coverage-screen} then removes the signed part from
+candidate generation: list labels with enough positive coverage and use the
+negative tests only for exact reduced-cost filtering.
 \Cref{cor:unified-soft-decoded-rate-coverage} packages the desired retained
 object: the compact query decoder handles online reporter lists, an exact
 offline separator drives preprocessing, and the convex certificate charges
@@ -16134,6 +16207,9 @@ reliability score, then exactly filter the returned candidates.
 \Cref{cor:threshold-event-reduced-cost} records the corresponding exact target
 for ordinary threshold reporters: solve a signed weighted coverage problem over
 the satisfied threshold tests.
+\Cref{cor:positive-coverage-screen} reduces candidate generation to the
+nonnegative part of that coverage objective; signed terms are checked only
+after a candidate label is returned.
 \Cref{cor:unified-soft-decoded-rate-coverage} is the corresponding full panel
 contract: offline separation is a build-time concern, while online decoder
 output, candidate incidence load, and stored replication are charged as three
