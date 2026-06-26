@@ -14792,6 +14792,88 @@ separator may therefore search for cores that capture a large amount of
 probability-weighted paid primitive value, rather than de-duplicating raw
 singleton slices by hand.
 
+\begin{corollary}[Paid compression implies hit-kernel cover]
+   \label{cor:paid-compression-hit-kernel-cover}
+   Work in the setting of
+   \cref{lem:primitive-slice-law-hit-kernel-cover}, with finite primitive
+   support, and suppose the Boolean core universe contains every primitive
+   singleton record \(R_{z,q}=(V_{z,q},\{q\},T_{z,q},S_{z,q})\).
+   Let \(\mathcal C\) be a finite family of assigned Boolean Pareto core
+   records \(C=(R_C,\mathcal I_C)\), where
+   \(R_C=(U_C,Q'_C,T_C,S_C)\) is in the Boolean core universe and
+   \(\mathcal I_C\subseteq\mathcal Z\times\mathcal Q\) satisfies
+   \[
+      V_{z,q}\subseteq U_C,\qquad q\in Q'_C
+      \qquad((z,q)\in\mathcal I_C).
+      \tag{PCH1}
+   \]
+   Assume the following paid-compression separator: for every nonnegative
+   price system \((\gamma,\tau,\sigma)\) such that
+   \[
+      A_{z,q}^{\gamma}\le P_{z,q}^{\tau,\sigma}
+      \qquad(z,q),
+      \tag{PCH2}
+   \]
+   and
+   \[
+      \sum_{(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}
+      >
+      \pi_1\left(L\sum_q\tau_q+\sigma S\right),
+      \tag{PCH3}
+   \]
+   there is a nonnegative finite intensity vector \(\lambda_C\) on
+   \(\mathcal C\) such that
+   \[
+      \sum_C\lambda_C
+      \sum_{(z,q)\in\mathcal I_C}\Pi(z)A_{z,q}^{\gamma}
+      >
+      \sum_C\lambda_C
+      \left(
+         T_C\sum_{q\in Q'_C}\tau_q+\sigma S_C
+      \right).
+      \tag{PCH4}
+   \]
+   Then the primitive hit-kernel cover
+   \((\mathsf{HKC}_{\mathcal U})\) is feasible.
+\end{corollary}
+
+\begin{proof}
+   Suppose \((\mathsf{HKC}_{\mathcal U})\) were infeasible.  By
+   \cref{lem:primitive-hit-kernel-cover-equivalence}, there are nonnegative
+   prices \((\gamma,\tau,\sigma)\) satisfying the surplus inequality
+   \((HKC\text{-}D1)\) while every Boolean core record has nonpositive reduced
+   gain \((HKC\text{-}D2)\).  Applied to the primitive singleton record
+   \(R_{z,q}\), this nonpositive-gain condition gives exactly
+   \[
+      A_{z,q}^{\gamma}
+      \le
+      T_{z,q}\tau_q+\sigma S_{z,q}
+      =
+      P_{z,q}^{\tau,\sigma},
+   \]
+   so \((PCH2)\) holds.  The surplus inequality \((HKC\text{-}D1)\) is
+   \((PCH3)\).
+
+   The paid-compression separator therefore gives a conic certificate
+   \((PCH4)\).  Applying
+   \cref{lem:paid-quotient-reduced-gain} to the assigned records in the support
+   of \(\lambda\) exposes at least one underlying Boolean core record with
+   positive reduced gain.  This contradicts \((HKC\text{-}D2)\).  Hence
+   \((\mathsf{HKC}_{\mathcal U})\) is feasible.
+\end{proof}
+
+\Cref{cor:paid-compression-hit-kernel-cover} is the fractional dense-filter
+cover in its paid form.  The separator does not choose disjoint dense clusters.
+It only has to prove that any overbudget value-proportional primitive law can be
+compressed, fractionally and with arbitrary overlap, into cheaper Pareto cores.
+Query overlap is charged by
+\(\sum_C\lambda_CT_C\mathbf 1\{q\in Q'_C\}\), storage by
+\(\sum_C\lambda_CS_C\), and coverage is inherited from the primitive hit
+kernel.  Thus ordinary spherical slices, singleton dense slices, quotient
+cores, \(k\)-means-style facilities, additive-quantization buckets, and
+list-decoding outputs are all merely proposal mechanisms for the same paid
+reduced-cost inequality \((PCH4)\).
+
 \begin{assumption}[Compression-dual separator]
    \label{asm:compression-dual-separator}
    Work in the setting of \cref{cor:residual-separator-local-cover}.  Fix a
@@ -26655,7 +26737,10 @@ value-proportional and has total price equal to the primitive captured mass
 \(\sum\gamma r\).  \Cref{lem:paid-quotient-reduced-gain} then gives the
 corresponding compression test: a core with probability-weighted paid primitive
 value larger than its query/storage price has positive reduced gain, with no
-duplicate-slice loss.
+duplicate-slice loss.  \Cref{cor:paid-compression-hit-kernel-cover} packages
+this as a local-cover theorem: if every surplus singleton-saturated paid law
+admits a conic compression into assigned Pareto cores with paid value exceeding
+query/storage price, then the primitive hit-kernel cover is feasible.
 Because
 preprocessing time is deliberately not a scarce resource,
 \cref{lem:finite-pool-optimizer} and
