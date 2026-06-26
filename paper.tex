@@ -821,10 +821,13 @@ The smooth product filter is not a replacement for \cref{lem:adaptive-continuati
    Space would need the corresponding shared-DAG version for canonicalized
    bucket nets, roughly
    \[
-      \sum_A \operatorname{mult}(A)\,|A|^{1+\rho'}
+      \sum_A |A|^{1+\rho'}
       \le
       m^{1+\rho_c}\polylog m .
    \]
+   The occurrence multiplicities are still charged as filter metadata and
+   through the query sampling law, but the recursive child index is stored once
+   per distinct canonical net.
    These are Renyi average list-decoding statements for separated spherical
    codes.  They hold in the random-position tensor calculation above, but they
    are not yet proved for arbitrary dense tangent-cap configurations.
@@ -876,10 +879,9 @@ The smooth product filter is not a replacement for \cref{lem:adaptive-continuati
 
    Third, the coordinates of the original resident points are stored once
    globally; recursive children store only point identifiers, filter metadata,
-   and their own incidence structures.  If \(\operatorname{mult}(A)\) is the
-   number of retained filter occurrences whose canonical net is \(A\), then
+   and their own incidence structures.  The distinct canonical child nets obey
    \[
-      \sum_A \operatorname{mult}(A)\bigl(1+|A|^{1+\rho_{j+1}}\bigr)
+      \sum_A |A|^{1+\rho_{j+1}}
       \le
       m^{1+\rho_j}L(m).
       \tag{CB2}
@@ -920,9 +922,9 @@ The smooth product filter is not a replacement for \cref{lem:adaptive-continuati
       \le
       m^{1+\rho_j}\log^{O_c(1)}(m+2),
    \]
-   after absorbing the retained metadata and using \(\operatorname{mult}(A)\ge
-   1\) for every retained class.  Adding the single global coordinate array
-   gives \(dm+m^{1+\rho_j}\log^{O_c(1)}(m+2)\).  Thus the space bound holds.
+   after absorbing the retained metadata.  Adding the single global coordinate
+   array gives \(dm+m^{1+\rho_j}\log^{O_c(1)}(m+2)\).  Thus the space bound
+   holds.
 
    On query \(q\), repeat independent probes until a verified \(c_jr_j\)-near
    neighbor is found, and cap the resulting expected algorithm as in the
@@ -963,6 +965,96 @@ The smooth product filter is not a replacement for \cref{lem:adaptive-continuati
    desired expected query bound.  The standard truncation paragraph converts
    the expected geometric repetition into a capped constant-success query
    procedure.
+\end{proof}
+
+\begin{lemma}[First-moment query compression]\label{lem:first-moment-query-compression}
+   In the query part of \cref{prop:success-normalized-bucket-dag}, suppose
+   that the sampled filter law satisfies the stronger but simpler
+   success-normalized expected-load bound
+   \[
+      \E_{F\sim\mu_q}|N_F|
+      \le
+      a_j(q,p)\,m^{\rho_j}L(m).
+      \tag{FMQ1}
+   \]
+   Then the Renyi query moment \((CB1)\) follows.
+
+   In particular, it is enough to prove \((FMQ1)\) with \(|B_F|\) in place of
+   \(|N_F|\).  Thus the query side of the compressed-bucket recursion is just
+   the usual LSH/LSF success-normalized candidate-load estimate: recursive
+   compression and spherical list-size effects are needed for storage, not for
+   this query moment.
+\end{lemma}
+
+\begin{proof}
+   The net size is an integer and \(0\le\rho_{j+1}\le1\).  Hence
+   \[
+      |N_F|^{\rho_{j+1}}\le |N_F|
+   \]
+   pointwise, with the convention \(0^{\rho_{j+1}}=0\).  Averaging and applying
+   \((FMQ1)\) gives \((CB1)\).  Since \(N_F\subseteq B_F\), the same conclusion
+   follows from the corresponding expected-load bound for \(|B_F|\).
+\end{proof}
+
+\begin{lemma}[Occurrence moments dominate shared-DAG storage]
+   \label{lem:occurrence-moments-dominate-dag}
+   Let \(\mathcal F\) be a finite set of retained filter occurrences, each with
+   a canonical net \(N_F\), and let \(\mathcal A\) be the set of distinct
+   canonical nets.  For \(0\le r\le1\),
+   \[
+      \sum_{A\in\mathcal A}|A|^{1+r}
+      \le
+      \sum_{F\in\mathcal F}|N_F|^{1+r}.
+      \tag{OMD1}
+   \]
+   Moreover, with
+   \[
+      S_1=\sum_{F\in\mathcal F}|N_F|,
+      \qquad
+      S_2=\sum_{F\in\mathcal F}|N_F|^2,
+   \]
+   the occurrence moment satisfies
+   \[
+      \sum_{F\in\mathcal F}|N_F|^{1+r}
+      \le
+      S_1^{1-r}S_2^r .
+      \tag{OMD2}
+   \]
+   Consequently, the shared-DAG storage hypothesis \((CB2)\) follows if the
+   retained occurrences have
+   \[
+      S_1\le m^{1+\rho_j}L(m),
+      \qquad
+      S_2\le m^{1+\rho_j}L(m),
+   \]
+   and it also follows from any sharper direct bound on the distinct-net sum in
+   \((OMD1)\).
+\end{lemma}
+
+\begin{proof}
+   Choose one occurrence \(F(A)\) for each distinct canonical net \(A\).  Since
+   \(N_{F(A)}=A\),
+   \[
+      \sum_{A\in\mathcal A}|A|^{1+r}
+      =
+      \sum_{A\in\mathcal A}|N_{F(A)}|^{1+r}
+      \le
+      \sum_{F\in\mathcal F}|N_F|^{1+r},
+   \]
+   proving \((OMD1)\).
+
+   The interpolation inequality is Holder's inequality applied to
+   \[
+      |N_F|^{1+r}=|N_F|^{1-r}\bigl(|N_F|^2\bigr)^r:
+   \]
+   \[
+      \sum_F |N_F|^{1-r}\bigl(|N_F|^2\bigr)^r
+      \le
+      \left(\sum_F |N_F|\right)^{1-r}
+      \left(\sum_F |N_F|^2\right)^r .
+   \]
+   Substituting the two displayed bounds on \(S_1,S_2\) gives \((CB2)\), after
+   absorbing \(L(m)\) into the polylogarithmic factor.
 \end{proof}
 
 \begin{lemma}[Packing-list moments by separated tuples]
@@ -1134,13 +1226,17 @@ The smooth product filter is not a replacement for \cref{lem:adaptive-continuati
       \le
       \text{recursive Renyi budget}+O_c(\log\log m).
    \]
-   The query side uses \(r=\rho_{j+1}\le1\) under the query-biased Gaussian
-   law and is therefore a first-moment profile estimate relative to the near
-   hit probability \(a_j(q,p)\).  The space side uses
-   \(r=1+\rho_{j+1}\le2\) under the stored-filter law and is controlled by the
-   first and second tuple profile sums.  Canonical quotienting of equal bucket
-   nets can only reduce the retained space relative to the occurrence sum
-   bounded by these tuple moments.
+   By \cref{lem:first-moment-query-compression}, the query side needs only the
+   success-normalized first moment of the queried bucket or net, relative to
+   the near hit probability \(a_j(q,p)\).  The space side uses
+   \(r=1+\rho_{j+1}\le2\) under the stored-filter law and can be controlled by
+   the first and second tuple profile sums.  Those tuple sums bound the
+   occurrence-weighted moment
+   \(\sum_F |N_F|^{1+\rho_{j+1}}\), which remains a sufficient condition for
+   \((CB2)\) by \cref{lem:occurrence-moments-dominate-dag}.  The actual
+   shared-DAG requirement is weaker: it charges only
+   \(\sum_A|A|^{1+\rho_{j+1}}\) over distinct canonical nets, while occurrence
+   multiplicities are charged separately as retained filter metadata.
 \end{remark}
 
 \begin{lemma}[Flat shells give the data-independent exponent]\label{lem:flat-shell-obstruction}
@@ -21836,13 +21932,19 @@ The compressed-bucket route from \cref{prop:success-normalized-bucket-dag} is
 now separated just as cleanly.  The recursion accounting is finished: a finite
 approximation ladder gives \(n^{\rho_c}\polylog n\) query time once each rung
 has a per-probe near-hit lower bound, a success-normalized query moment, and a
-shared-DAG storage moment.  \Cref{lem:packing-list-tuple-moment},
+shared-DAG storage moment.  The query moment is no longer a separate
+list-decoding problem: by \cref{lem:first-moment-query-compression}, the usual
+success-normalized expected bucket load implies it.  The storage side is the
+real geometric target.  \Cref{lem:occurrence-moments-dominate-dag},
+\cref{lem:packing-list-tuple-moment},
 \cref{lem:gaussian-cap-intersection-energy}, and
-\cref{cor:tuple-profile-renyi-certificate} turn those two moments into an
-explicit tuple-profile calculation: count separated tuples in a bucket and
-subtract their Gaussian cap-intersection energy.  Thus the remaining theorem
-for this route is an entropy-energy inequality for separated spherical tuples,
-together with canonical quotienting of repeated bucket nets.
+\cref{cor:tuple-profile-renyi-certificate} give a sufficient occurrence
+co-load route: count separated tuples in a bucket and subtract their Gaussian
+cap-intersection energy.  The actual shared-DAG theorem is weaker still,
+because it charges each distinct canonical bucket net once and charges
+occurrence multiplicity only as metadata.  Thus the remaining theorem for this
+route is a distinct-net entropy-energy inequality for separated spherical
+buckets, with occurrence co-load as a clean sufficient certificate.
 
 For the randomized cap-thinning route, one remaining task is the branching first-split work estimate in \cref{asm:mixed-continuation-operator}: prove that the thinned geometric child potentials contract over random cap-discovery frontiers without replacing the branching decoder by a normalized path law. The newer budget-thinned variant proves the expected work bound from a canonical prefix supermartingale and packages the remaining near-side issue as \cref{asm:aggregate-value-delivery}: prove that the saturated value, or equivalently every route-cut prefix mass, is inverse-polylogarithmic rather than tracking a product along one distinguished path. For laminar route tries, \cref{lem:lca-value-flow} turns the second-moment version into the concrete LCA target
 \[
