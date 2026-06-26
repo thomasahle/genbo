@@ -10211,6 +10211,72 @@ This certificate is the local form of the remaining problem. It is analogous in 
    \((ACE3)\) implies \((ACE0)\) with \(M=e^B\), giving \((ACE4)\).
 \end{proof}
 
+\begin{corollary}[Affinity-proportional route law]
+   \label{cor:affinity-proportional-route-law}
+   Work in the setting of \cref{cor:affinity-cut-energy}.  Let
+   \(\mathcal S\) be a support subtree of good terminal skeleton routes.  At
+   every nonterminal skeleton state \(s\in\mathcal S\) with positive
+   \(\Lambda(s)\), choose a nonempty set \(E_s\) of outgoing edges whose
+   descendants remain in \(\mathcal S\), and put
+   \[
+      \Omega_s=\sum_{e\in E_s}\omega_e .
+      \tag{APR0}
+   \]
+   Assume \(\Omega_s>0\), and define the local route law by
+   \[
+      \lambda_e=
+      \begin{cases}
+         \omega_e/\Omega_s,& e\in E_s,\\
+         0,& e\notin E_s .
+      \end{cases}
+      \tag{APR1}
+   \]
+   Then the affinity square toll at \(s\) is exactly
+   \[
+      \chi_{\rm aff}(s)=\frac1{\Omega_s}.
+      \tag{APR2}
+   \]
+   Moreover, the square-biased spine from \cref{cor:affinity-cut-energy}
+   has the same transition probabilities as this route law.  Consequently, if
+   up to every skeleton route cut the stopped affinity-proportional spine
+   satisfies
+   \[
+      \sum_s\log_+\frac1{\Omega_s}\le B
+      \tag{APR3}
+   \]
+   on every realization, then
+   \[
+      W(r_{s_0})\ge\frac{e^{-B}}{L(s_0)}.
+      \tag{APR4}
+   \]
+
+   Thus, after posterior-superlevel decoding, the local route-law choice
+   carries no additional branching penalty: the entire second-moment toll is
+   the cumulative deficit in total outgoing affinity \(\Omega_s\).  A
+   structured code, lattice, trellis, or facility decoder can therefore be
+   analyzed by the affinity mass of the decoded port list, followed by exact
+   certification of the reported children.
+\end{corollary}
+
+\begin{proof}
+   By \((APR1)\),
+   \[
+      \chi_{\rm aff}(s)
+      =
+      \sum_{e:s\to t}\frac{\lambda_e^2}{\omega_e}
+      =
+      \sum_{e\in E_s}
+      \frac{\omega_e^2}{\Omega_s^2\omega_e}
+      =
+      \frac1{\Omega_s}.
+   \]
+   The square-biased spine transition is proportional to
+   \(\lambda_e^2/\omega_e=\omega_e/\Omega_s^2\) on \(E_s\), hence after
+   normalization it is \(\omega_e/\Omega_s=\lambda_e\).  The stopped toll
+   condition \((APR3)\) is therefore exactly \((ACE3)\), and
+   \cref{cor:affinity-cut-energy} gives \((APR4)\).
+\end{proof}
+
 \begin{corollary}[Surprise-defect route-law certificate]
    \label{cor:surprise-defect-route-law}
    Consider a candidate near-route trie in the canonical budget-thinned
@@ -10330,6 +10396,13 @@ This certificate is the local form of the remaining problem. It is analogous in 
    second-moment version of the same target: it is enough to construct a law
    on good port routes whose \(\chi^2\) energy against these affinity weights
    is polylogarithmic on every skeleton cut.
+   \Cref{cor:affinity-proportional-route-law} gives the canonical local
+   normalization of that law: once a decoder exposes a port list \(E_s\),
+   branch proportionally to \(\omega_e\).  The square-biased spine is then the
+   same process, and the only toll is
+   \(\sum_s\log_+(1/\sum_{e\in E_s}\omega_e)\).  Thus the list-decoding or
+   lattice-decoding theorem should prove high total outgoing affinity of the
+   decoded port list, not an additional route-law inequality.
 \end{remark}
 
 \begin{lemma}[Activated good-route moments]\label{lem:activated-good-route-moments}
@@ -13551,6 +13624,13 @@ This certificate is the local form of the remaining problem. It is analogous in 
    on every stopped skeleton cut, or equivalently to bound the stopped
    square-spine toll
    \(\sum\log_+\chi_{\rm aff}\).
+   \Cref{cor:affinity-proportional-route-law} removes the arbitrary choice of
+   local route law from this formulation: for any decoded outgoing port list
+   \(E_s\), the affinity-proportional transition
+   \(\lambda_e=\omega_e/\sum_{f\in E_s}\omega_f\) makes
+   \(\chi_{\rm aff}(s)=1/\sum_{f\in E_s}\omega_f\).  Hence the clean
+   code/lattice target is a decoded port list with only
+   \(O_c(\log\log n)\) cumulative outgoing-affinity deficit before every cut.
    Thus one sufficient geometric theorem is to prove this affinity cut mass;
    another is to construct a tame route law whose expected cumulative
    canonical budget defect is \(O_c(\log\log n)\).
@@ -19046,6 +19126,12 @@ For the randomized cap-thinning route, one remaining task is the branching first
    \log^{O_c(1)}n\,V(\varnothing)^2 .
 \]
 \Cref{lem:local-lca-energy} further reduces this to a local Bellman multiplier, and \cref{cor:square-nonexpansive-routes} shows that square-nonexpansive value branching costs only the polylogarithmic route depth. Equivalently, \cref{lem:energy-spine-toll} says that it is enough to prove only $O_c(\log\log n)$ positive square-energy toll along the energy-biased route spine. The capped-flow certificate \cref{lem:unit-capped-value-flow}, the Bellman recursion \cref{lem:saturated-value-recursion}, and the min-cut dual \cref{lem:saturated-value-mincut} give a still simpler sufficient formulation: prove that every route cut has inverse-polylogarithmic prefix-success mass. The equivalent dominated-law form in \cref{lem:dominated-route-law} says to construct a tilted law on tame routes whose prefix probabilities are dominated by activation prefix masses up to a polylogarithmic factor; by \cref{cor:typical-route-law-toll}, it is enough to prove only $O_c(\log\log n)$ expected positive domination toll under that route law and prune the bad tail. The cut-energy form \cref{lem:cut-energy-route-law} is closer to stopping-time proofs: it asks only for polylogarithmic $\sum_{u\in\mathcal C}\Lambda(u)^2/A(u)$ on each route cut $\mathcal C$. By \cref{lem:frontier-square-toll}, this is equivalent to bounding the positive square toll of the square-biased route spine up to each stopped frontier, with no all-prefix depth summation. The stronger all-prefix bound in \cref{cor:route-law-prefix-energy} remains an LCA-compatible sufficient condition. \Cref{lem:unit-success-skeleton-contraction} contracts ordinary score-only regions into additive harmonic resistance, so the remaining value theorem can be stated on the skeleton of genuinely thinned opportunities. Conditional on either aggregate value statement, \cref{prop:budget-thinned-polylog} gives the desired polylogarithmic ANN theorem. This is a fully non-channel route; the smooth product terminal filter can be used after localization and no longer contributes an inverse-polylogarithmic table-recall penalty. The structured posterior route replaces the cap-frontier obstacle by the tilted witness-list target \cref{asm:smoothed-witness-list}: prove a compact reporter whose verified candidate list contains the true near point with constant mass under the query-centered tilted Gaussian law. The rate-coverage panel \cref{asm:rate-coverage-panel} is the most concrete facility version of this target: a multi-assignment scheme is certified by the closed-form miss term \(\exp(-a_p\mu_p(B))\), the reported-load bound, and the total replication budget. The stronger max-tilted sampler \cref{asm:alpha-leader-sampler} and nearest-cell decoder \cref{asm:smoothed-nearest-cell} remain clean implementation normal forms, but k-means++-style or lattice/code buckets only need the rate-coverage certificates. The smoothed sampling route replaces both by \cref{asm:smoothed-gibbs} or \cref{asm:gumbel-mips}: prove either an optimal-exponent reporter that captures inverse-polylogarithmic Gaussian Gibbs mass, or a certified $O(\log\log n)$-additive Gumbel-MIPS primitive. Smoothed additive nearest neighbor is another stronger sufficient primitive. The detector-vote cohort-or-leaf route is a separate possible generalization to arbitrary certified child hierarchies, where the remaining issue is near-lineage coupling between ordinary continuation paths and detector activations.
+\Cref{cor:affinity-proportional-route-law} gives the cleanest current
+list-decoding interpretation of the posterior handoff: once the reporter
+decodes an outgoing port list, branch by local affinity and pay only the
+cumulative deficit in the list's total affinity.  Thus the score-tree/lattice
+analogy has become a concrete theorem target: prove that the decoded port
+lists have inverse-polylogarithmic affinity across every skeleton cut.
 
 \appendix
 
