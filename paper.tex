@@ -14332,6 +14332,143 @@ solve the finite repair LP, inspect its dual, and search only for a positive
 repair-gain core.  Successful repair plus
 \cref{lem:excess-slice-moment-repair} gives the hit-kernel cover.
 
+\begin{lemma}[Joint deletion-repair dual]
+   \label{lem:joint-deletion-repair-dual}
+   In the setting of \cref{lem:finite-repair-dual}, assume the primitive law has
+   finite support and let \(\mathcal R\) be a finite family of Boolean Pareto
+   core records.  Consider the joint repair feasibility problem
+   \[
+   \begin{array}{ll}
+   \text{\rm find} & \mu_R\ge0,\qquad 0\le\delta_{z,q}\le\Pi(z)\\[0.4em]
+   \text{\rm subject to}
+      & \displaystyle
+        \sum_R\mu_Rb_R(p,q)
+        \ge
+        \sum_z\delta_{z,q}\mathbf 1\{p\in V_{z,q}\}
+        \qquad((p,q)\in\mathcal N),\\[0.8em]
+      & \displaystyle
+        \E_ZT_{Z,q}
+        -
+        \sum_z\delta_{z,q}T_{z,q}
+        +
+        \sum_{R:q\in Q'_R}\mu_R T_R
+        \le \pi_1L
+        \qquad(q\in\mathcal Q),\\[0.8em]
+      & \displaystyle
+        \E_Z\sum_qS_{Z,q}
+        -
+        \sum_{z,q}\delta_{z,q}S_{z,q}
+        +
+        \sum_R\mu_R S_R
+        \le \pi_1S .
+   \end{array}
+   \tag{$\mathsf{JointRepair}$}
+   \]
+   For nonnegative prices \((\gamma,\tau,\sigma)\), write
+   \[
+      A_{z,q}^\gamma
+      =
+      \sum_{\substack{p:(p,q)\in\mathcal N\\ p\in V_{z,q}}}
+      \gamma_{p,q},
+      \qquad
+      P_{z,q}^{\tau,\sigma}
+      =
+      \tau_qT_{z,q}+\sigma S_{z,q}.
+   \]
+   Then \((\mathsf{JointRepair})\) is infeasible if and only if there are
+   nonnegative prices \((\gamma,\tau,\sigma)\) such that every repair record
+   satisfies
+   \[
+      \sum_{(p,q)\in\mathcal N}\gamma_{p,q}b_R(p,q)
+      \le
+      T_R\sum_{q\in Q'_R}\tau_q+\sigma S_R ,
+      \tag{JDR1}
+   \]
+   while
+   \[
+      \sum_q\tau_q\bigl(\E_ZT_{Z,q}-\pi_1L\bigr)
+      +
+      \sigma\left(\E_Z\sum_qS_{Z,q}-\pi_1S\right)
+      >
+      \sum_{z,q}\Pi(z)
+      \bigl(P_{z,q}^{\tau,\sigma}-A_{z,q}^\gamma\bigr)_+ .
+      \tag{JDR2}
+   \]
+   Equivalently, under fixed dual prices the deletion sublaw that is most
+   favorable to feasibility saturates exactly the primitive slices with
+   \(P_{z,q}^{\tau,\sigma}>A_{z,q}^\gamma\), deletes none of the slices with
+   \(P_{z,q}^{\tau,\sigma}<A_{z,q}^\gamma\), and is arbitrary on ties.
+\end{lemma}
+
+\begin{proof}
+   Put
+   \[
+      B_q=\pi_1L-\E_ZT_{Z,q},
+      \qquad
+      B_S=\pi_1S-\E_Z\sum_qS_{Z,q}.
+   \]
+   Write the coverage constraints in the form
+   \[
+      \sum_z\delta_{z,q}\mathbf 1\{p\in V_{z,q}\}
+      -
+      \sum_R\mu_Rb_R(p,q)
+      \le0,
+   \]
+   the query and storage constraints as
+   \[
+      \sum_{R:q\in Q'_R}\mu_RT_R-\sum_z\delta_{z,q}T_{z,q}\le B_q,
+      \qquad
+      \sum_R\mu_RS_R-\sum_{z,q}\delta_{z,q}S_{z,q}\le B_S,
+   \]
+   and the upper bounds as \(\delta_{z,q}\le\Pi(z)\).
+
+   By Farkas' lemma, infeasibility is equivalent to nonnegative multipliers
+   \(\gamma_{p,q},\tau_q,\sigma,\xi_{z,q}\) whose coefficient on every
+   nonnegative variable is nonnegative and whose weighted right-hand side is
+   negative.  The coefficient condition for a repair variable \(\mu_R\) is
+   exactly \((JDR1)\).  The coefficient condition for \(\delta_{z,q}\) is
+   \[
+      A_{z,q}^\gamma-P_{z,q}^{\tau,\sigma}+\xi_{z,q}\ge0 .
+      \tag{JDR3}
+   \]
+   For fixed \((\gamma,\tau,\sigma)\), the smallest admissible upper-bound
+   multiplier is therefore
+   \[
+      \xi_{z,q}=
+      \bigl(P_{z,q}^{\tau,\sigma}-A_{z,q}^\gamma\bigr)_+ .
+   \]
+   Substituting this choice into the weighted right-hand side gives
+   \[
+      \sum_q\tau_qB_q+\sigma B_S
+      +
+      \sum_{z,q}\Pi(z)
+      \bigl(P_{z,q}^{\tau,\sigma}-A_{z,q}^\gamma\bigr)_+
+      <0,
+   \]
+   which is \((JDR2)\) after moving the first two terms to the other side.
+
+   The final statement is the primal form of the same hinge.  For fixed prices,
+   the deletion-dependent part of the priced margin is
+   \[
+      \sum_{z,q}\delta_{z,q}
+      \bigl(A_{z,q}^\gamma-P_{z,q}^{\tau,\sigma}\bigr),
+   \]
+   minimized over \(0\le\delta_{z,q}\le\Pi(z)\) by setting
+   \(\delta_{z,q}=\Pi(z)\) when
+   \(P_{z,q}^{\tau,\sigma}>A_{z,q}^\gamma\) and
+   \(\delta_{z,q}=0\) when
+   \(P_{z,q}^{\tau,\sigma}<A_{z,q}^\gamma\).
+\end{proof}
+
+\Cref{lem:joint-deletion-repair-dual} removes another artificial choice from
+the repair picture.  The build stage does not have to guess a special family of
+overbudget dense slices.  Given dual prices, the fractional deletion step is a
+canonical hinge: delete the primitive records whose saved recursive
+query/storage price exceeds their exposed near-pair value, then ask the
+repair-core oracle to compress what remains.  Thus the dense side is now a
+single reduced-cost search over repaired primitive moments rather than a
+separate greedy selection rule.
+
 \begin{assumption}[Compression-dual separator]
    \label{asm:compression-dual-separator}
    Work in the setting of \cref{cor:residual-separator-local-cover}.  Fix a
@@ -26174,7 +26311,13 @@ slices, while the affordable part of the spherical slice law is kept unchanged.
 \Cref{lem:finite-repair-dual} gives the matching reduced-gain oracle for this
 repair LP, so the build stage can choose a deletion sublaw, solve the finite
 repair problem, and search for positive-gain replacement cores exactly as in
-ordinary column generation.
+ordinary column generation.  \Cref{lem:joint-deletion-repair-dual} optimizes
+the deletion sublaw as well:
+for fixed dual prices, primitive slices are deleted by the single hinge rule
+``saved recursive price exceeds exposed hit value.''  Thus the remaining dense
+theorem is not to guess dense clusters, but to rule out the joint
+deletion-repair dual obstruction \((JDR1)\)--\((JDR2)\) for a rich enough
+Pareto-core family.
 Because
 preprocessing time is deliberately not a scarce resource,
 \cref{lem:finite-pool-optimizer} and
