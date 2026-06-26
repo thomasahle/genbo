@@ -14244,16 +14244,20 @@ For a threshold $u$, the posterior-superlevel child is
       \right\rceil
       \tag{DAB2}
    \]
-   times, with \(C_\rho\) a sufficiently large constant.  For each repetition
-   create one analysis port whose success event is that the decoded output
-   contains at least one useful child at that scale; give that port weight
+   times, with \(C_\rho\) a sufficiently large constant.  In every repetition,
+   use the decoded children themselves as the outgoing analysis ports.  A child
+   \(C\) at scale \(\xi\) has port weight
    \[
-      \omega_{\xi,j}=1-\exp(-\Lambda_\xi).
+      \omega_{\xi,j}(C)=1-\exp(-\lambda_q(C)),
       \tag{DAB3}
    \]
+   the probability that this Poisson group decodes at least one copy of \(C\).
    Then the total outgoing useful affinity
    \[
-      \Omega=\sum_\xi\sum_{j=1}^{T_\xi}\omega_{\xi,j}
+      \Omega=
+      \sum_\xi\sum_{j=1}^{T_\xi}
+      \sum_{\substack{C\text{ at scale }\xi\\p\in C}}
+      \omega_{\xi,j}(C)
       \tag{DAB4}
    \]
    satisfies
@@ -14266,8 +14270,8 @@ For a threshold $u$, the posterior-superlevel child is
    \(O_\rho(\log(1/\varepsilon))\).
 
    Consequently, in the affinity-proportional skeleton of
-   \cref{cor:affinity-proportional-route-law}, this local port list contributes
-   square toll at most
+   \cref{cor:affinity-proportional-route-law}, the useful decoded child ports
+   at this state contribute square toll at most
    \[
       \log_+\frac1\Omega
       \le 2\varepsilon .
@@ -14305,9 +14309,10 @@ For a threshold $u$, the posterior-superlevel child is
    Taking \(C_\rho\ge2^\rho\) makes the probability that at least one useful
    child is decoded at least \(1-\varepsilon\).
 
-   This same probability is the probability of the union of the analysis port
-   success events.  By the union bound it is at most the sum of their
-   probabilities, which is exactly \(\Omega\).  This proves \((DAB5)\).
+   This same probability is the probability of the union of the useful child
+   activation events across all repeated groups.  By the union bound it is at
+   most the sum of the probabilities of those child events, which is exactly
+   \(\Omega\).  This proves \((DAB5)\).
    Multiplying the repetitions in \cref{lem:dyadic-structured-amplification}
    by the extra factor \(O_\rho(\log(1/\varepsilon))\) gives the resource
    statement.  Finally, for \(\varepsilon<1/2\),
