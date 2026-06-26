@@ -18161,6 +18161,81 @@ inequality \((QP3)\).
    hitting \(N_{\sigma_0}\) at size \(k\).
 \end{proof}
 
+\begin{corollary}[Capped Bernoulli exact-signature mass certificate]
+   \label{cor:capped-bernoulli-exact-signature-mass}
+   Work in the setting of \cref{lem:exact-signature-coverage-list-oracle}.  A
+   seed \(s\) chooses a fixed-size template \(C_s\in\mathcal C\), written
+   \(C_s=(W_s,H_s,T_s,S_s)\), where \(1\le H_s\le |W_s|\), and independent
+   responsibilities \(0\le\pi_{s,p}\le1\) on \(W_s\).  Let
+   \(B_s\subseteq W_s\) include each \(p\) independently with probability
+   \(\pi_{s,p}\), and let \(\varepsilon_s\) be any certified upper bound on
+   \[
+      \Pr[|B_s|>H_s].
+      \tag{ECB1}
+   \]
+   Define the exact-near-set hit mass and its mass-only lower bound by
+   \[
+      m_s(\sigma_0)=
+      \sum_{p\in W_s\cap N_{\sigma_0}}\pi_{s,p},
+      \qquad
+      \underline h_s(\sigma_0)=
+      \bigl(1-e^{-m_s(\sigma_0)}-\varepsilon_s\bigr)_+ .
+      \tag{ECB2}
+   \]
+   If every nonnegative price system satisfying \((EN\text{-}D1)\) admits a
+   finite seed law such that
+   \[
+      \E_s
+      \left[
+         \sum_{\sigma_0\in\Sigma^+}
+         \underline h_s(\sigma_0)
+         \bigl(\beta_{\sigma_0}-T_s\tau_{\sigma_0}\bigr)_+
+         -
+         \theta S_s
+      \right]
+      >0,
+      \tag{ECB3}
+   \]
+   then \((\mathsf{ESFC}_\Sigma)\) is feasible.
+
+   In particular, if \(\mu_s=\sum_{p\in W_s}\pi_{s,p}\), then the elementary
+   bound
+   \[
+      \varepsilon_s=\frac{\mu_s}{H_s+1}
+      \tag{ECB4}
+   \]
+   is always valid; sharper Chernoff or exact Poisson-binomial tail bounds may
+   be substituted whenever useful.
+\end{corollary}
+
+\begin{proof}
+   Convert the soft bucket into a random \(H_s\)-point list.  Sample \(B_s\).
+   If \(|B_s|\le H_s\), pad \(B_s\) arbitrarily to an \(H_s\)-point subset
+   \(L_s\subseteq W_s\).  If \(|B_s|>H_s\), output any fixed \(H_s\)-point
+   subset of \(W_s\).  For every nonempty exact signature,
+   \[
+      \Pr[L_s\cap N_{\sigma_0}\ne\emptyset]
+      \ge
+      \Pr[B_s\cap N_{\sigma_0}\ne\emptyset]-\Pr[|B_s|>H_s].
+      \tag{ECB5}
+   \]
+   Independence gives
+   \[
+      \Pr[B_s\cap N_{\sigma_0}\ne\emptyset]
+      =
+      1-\prod_{p\in W_s\cap N_{\sigma_0}}(1-\pi_{s,p})
+      \ge
+      1-e^{-m_s(\sigma_0)}.
+      \tag{ECB6}
+   \]
+   Hence \(\underline h_s(\sigma_0)\) is a certified lower bound on the hit
+   probability of the padded fixed-size list.  Applying
+   \cref{cor:hit-probability-exact-signature-proposal} to these lower bounds
+   gives feasibility from \((ECB3)\).  Finally, \((ECB4)\) is Markov's
+   inequality, since \(|B_s|>H_s\) implies \(|B_s|\ge H_s+1\) and
+   \(\E|B_s|=\mu_s\).
+\end{proof}
+
 \begin{corollary}[Normalized exact-signature coverage obstruction]
    \label{cor:normalized-exact-signature-coverage-obstruction}
    Work in the setting of \cref{lem:exact-signature-coverage-list-oracle} with
@@ -18260,6 +18335,12 @@ computed from size-stratified hit probabilities of the independent
 responsibility model.  This is the form in which additive quantization,
 facility buckets, or randomized list decoders can be certified without
 pretending their proposal lists have deterministic size.
+\Cref{cor:capped-bernoulli-exact-signature-mass} gives the coarser but cleaner
+mass-only screen: a responsibility bucket is capped and padded to one fixed
+list size, and its useful coverage is certified from the total responsibility
+mass it assigns to each exact near set.  This is the most direct fractional
+form for analyzing soft \(k\)-means, additive-quantization, or list-decoding
+proposal buckets.
 \Cref{cor:normalized-exact-signature-coverage-obstruction} states the exact
 residual left when those certified proposals fail: after normalizing the
 signature prices to a probability distribution, every available list has
