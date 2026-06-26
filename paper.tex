@@ -14206,6 +14206,83 @@ For a threshold $u$, the posterior-superlevel child is
    \cref{lem:implicit-reduced-gain-separation}.
 \end{proof}
 
+\begin{corollary}[Threshold-event reduced-cost normal form]
+   \label{cor:threshold-event-reduced-cost}
+   Work in the finite-outcome version of
+   \cref{lem:implicit-reduced-gain-separation}: each \(\nu_q\) is supported on
+   a finite set \(\Omega_q\).  Let
+   \(\mathcal U\subseteq\prod_{i=1}^h\Sigma_i\), and suppose every reporter
+   event is a coordinatewise soft threshold,
+   \[
+      h_{q,a}(\omega)
+      =
+      \mathbf 1\left\{
+      \kappa_{q,\omega}+\sum_{i=1}^h\phi_{q,\omega,i}(a_i)>0
+      \right\}.
+      \tag{TE1}
+   \]
+   For a restricted dual state \(E\) and a point \(x\), define the signed
+   threshold-test weights
+   \[
+      \beta^E_{x,q,\omega}
+      =
+      \nu_q(\omega)\bigl(W^E_{x,q}(\omega)-\theta_q\bigr),
+      \tag{TE2}
+   \]
+   where \(\nu_q(\omega)=\nu_q\{\omega\}\).  Then the pointwise reduced-cost
+   score of \cref{cor:pointwise-reduced-cost-separation} is exactly
+   \[
+   \begin{aligned}
+      \operatorname{Score}_E(x,a)
+      &=
+      -\gamma+
+      \sum_q\sum_{\omega\in\Omega_q}
+      \beta^E_{x,q,\omega}
+      \mathbf 1\left\{
+      \kappa_{q,\omega}
+      +\sum_{i=1}^h\phi_{q,\omega,i}(a_i)>0
+      \right\}.
+   \end{aligned}
+      \tag{TE3}
+   \]
+
+   Consequently, a certified signed threshold-coverage decoder for
+   \(\mathcal U\) is a complete reduced-cost separator: on input finite tests
+   \((\kappa_t,\phi_{t,i})\), signed weights \((\beta_t)\), and a threshold
+   \(\Gamma\), it either returns \(a\in\mathcal U\) with
+   \[
+      \sum_t\beta_t
+      \mathbf 1\left\{
+      \kappa_t+\sum_i\phi_{t,i}(a_i)>0
+      \right\}>\Gamma
+      \tag{TE4}
+   \]
+   or certifies that no such label exists.  Running this decoder for each
+   \(x\in S\), with \(\Gamma=\gamma\) and weights \((TE2)\), either returns a
+   positive reduced-cost point-label pair or certifies \((IG3)\) over
+   \(\mathcal U\).
+\end{corollary}
+
+\begin{proof}
+   Substitute \((TE1)\) into the point score
+   \[
+      \sum_q\int h_{q,a}(\omega)W^E_{x,q}(\omega)d\nu_q(\omega)
+      -
+      \gamma-\sum_q\theta_q\int h_{q,a}(\omega)d\nu_q(\omega).
+   \]
+   Since the outcome laws are finite, the integrals are sums, and the
+   coefficient of each threshold event is precisely \((TE2)\).  This gives
+   \((TE3)\).
+
+   A label satisfying \((TE4)\) with \(\Gamma=\gamma\) has
+   \(\operatorname{Score}_E(x,a)>0\), hence is an improving pair by
+   \cref{cor:pointwise-reduced-cost-separation}.  If the decoder certifies that
+   no such label exists for every \(x\), then all point scores are nonpositive;
+   \cref{cor:pointwise-reduced-cost-separation} gives \((IG3)\) and
+   \cref{lem:implicit-reduced-gain-separation} gives finite-support
+   infeasibility over \(\mathcal U\).
+\end{proof}
+
 \begin{corollary}[Unified soft-decoded rate-coverage compiler]
    \label{cor:unified-soft-decoded-rate-coverage}
    Let \(\mathcal U\subseteq\prod_{i=1}^h\Sigma_i\) be a finite quotient label
@@ -14228,10 +14305,15 @@ For a threshold $u$, the posterior-superlevel child is
       D^{\rm rep}(q,\omega)+O(|\widehat A_q(\omega)|).
       \tag{US2}
    \]
-   Also assume that every restricted dual state arising during column
-   generation satisfies the coordinatewise reduced-cost form \((SL1)\), so the
-   same decoder implements the separator of
-   \cref{cor:soft-list-decoding-reduced-cost-separator}.
+   Also assume that preprocessing has an exact reduced-cost separator for every
+   restricted dual state arising during column generation: it either returns a
+   positive reduced-cost point-label pair or certifies \((IG3)\) over
+   \(\mathcal U\).  This separator may be implemented by the additive
+   soft-decoding interface of
+   \cref{cor:soft-list-decoding-reduced-cost-separator}, by the signed
+   threshold-coverage interface of \cref{cor:threshold-event-reduced-cost}, or
+   by any other exact offline optimization over the implicit quotient family.
+   Its running time is a preprocessing cost, not a query resource.
 
    Suppose the finite rate-coverage system over \(S\times\mathcal U\) is
    feasible with targets \((\tau_{p,q})\), \((\ell_q)\), and \(S_0\), and with
@@ -14274,10 +14356,9 @@ For a threshold $u$, the posterior-superlevel child is
    The online reporter is implemented by the threshold decoder through
    \((US1)\)--\((US2)\), followed by exact filtering if the decoder returns a
    certified superset.  During preprocessing, if a restricted convex solve is
-   infeasible, \cref{cor:soft-list-decoding-reduced-cost-separator} either
-   returns a positive reduced-cost pair or proves \((IG3)\) over
-   \(\mathcal U\).  The latter is impossible while the full finite system over
-   \(\mathcal U\) is feasible, by
+   infeasible, the exact reduced-cost separator either returns a positive
+   pair or proves \((IG3)\) over \(\mathcal U\).  The latter is impossible
+   while the full finite system over \(\mathcal U\) is feasible, by
    \cref{lem:implicit-reduced-gain-separation}.  Thus every infeasible
    restricted solve yields a valid new pair.  Since the quotient family has
    only \(|\mathcal U/{\sim}|\) reporter classes, at most \((US3)\) distinct
@@ -14350,15 +14431,21 @@ For a threshold $u$, the posterior-superlevel child is
    code/lattice version of this interface.  If the reduced point score separates
    into coordinate reliabilities, then a certified soft list decoder, stack
    decoder, or residue-code list-recovery oracle is already an exact
-   reduced-cost separator after exact filtering.  This is the transferable
-   content of soft-decision Reed--Solomon decoding, expander-code list recovery,
+   reduced-cost separator after exact filtering.  For the more common case
+   where reporter events are themselves coordinatewise threshold predicates,
+   \cref{cor:threshold-event-reduced-cost} identifies the exact offline
+   objective as signed threshold coverage: maximize the dual-priced sum of
+   satisfied reporter tests.  This is the transferable content of
+   soft-decision Reed--Solomon decoding, expander-code list recovery,
    Construction-A quotient decoding, and Barnes--Wall style lattice recursion:
-   the decoder optimizes the dual-priced score, while the convex certificate
-   verifies storage, query load, and tilted witness coverage before retaining
-   the bucket.  \Cref{cor:unified-soft-decoded-rate-coverage} composes the
-   pieces into the actual build contract: the same soft decoder may implement
-   online reporter enumeration and offline reduced-cost separation, while the
-   final retained intensities are accepted only by the rate-coverage verifier.
+   the decoder optimizes the dual-priced score or coverage objective, while the
+   convex certificate verifies storage, query load, and tilted witness coverage
+   before retaining the bucket.
+   \Cref{cor:unified-soft-decoded-rate-coverage} composes the
+   pieces into the actual build contract: the query-facing decoder implements
+   online reporter enumeration, any exact offline separator may drive column
+   generation during preprocessing, and the final retained intensities are
+   accepted only by the rate-coverage verifier.
 \end{remark}
 
 \begin{assumption}[Compact rate-coverage panel]
@@ -15785,10 +15872,14 @@ the exact completeness oracle as a point-label weighted coverage score.
 \Cref{cor:soft-list-decoding-reduced-cost-separator} then shows that any
 coordinatewise soft list decoder for that score is already an exact implicit
 separator after filtering.
+\Cref{cor:threshold-event-reduced-cost} gives the exact normal form when the
+reporter itself is threshold-decoded: the offline separator is signed
+threshold coverage over the reporter tests, not necessarily one additive
+codeword score.
 \Cref{cor:unified-soft-decoded-rate-coverage} packages the desired retained
-object: one compact decoder handles both online reporter lists and offline
-separation, while the convex certificate charges empty decoder output,
-reported incidences, and storage separately.  The
+object: the compact query decoder handles online reporter lists, an exact
+offline separator drives preprocessing, and the convex certificate charges
+empty decoder output, reported incidences, and storage separately.  The
 seeded search
 compiler \cref{lem:seeded-reduced-gain-search} isolates the useful
 code/lattice contribution: a proposal sampler or list decoder only has to
@@ -16040,9 +16131,13 @@ whose residual tilted coverage exceeds its query-load and storage price.
 standard soft-decoding interface when the score is coordinatewise additive:
 threshold-list codewords, lattice residues, or trellis paths by the dual-priced
 reliability score, then exactly filter the returned candidates.
+\Cref{cor:threshold-event-reduced-cost} records the corresponding exact target
+for ordinary threshold reporters: solve a signed weighted coverage problem over
+the satisfied threshold tests.
 \Cref{cor:unified-soft-decoded-rate-coverage} is the corresponding full panel
-contract: online decoder output, candidate incidence load, and stored
-replication are charged as three separate resources.
+contract: offline separation is a build-time concern, while online decoder
+output, candidate incidence load, and stored replication are charged as three
+separate resources.
 
 \Cref{lem:smoothed-max-score-margin} gives a still simpler non-channel target: a query-centered Gaussian score direction separates every invalid point from the true near point by an additive $\Theta_c(tr^2)$ score margin, with high probability. The softest resulting primitive is \cref{asm:smoothed-gibbs}: with inverse-polylogarithmic probability, report a list carrying inverse-polylogarithmic mass under the Gaussian Gibbs kernel on data points. Sampling from the kernel restricted to that list gives a pointwise dominated output law by \cref{lem:captured-gibbs-domination}, and \cref{lem:smoothed-gibbs-suffices} then returns a valid answer because invalid points have negligible Gibbs mass and cannot be oversampled too much. A more exact sampling route is certified additive Gumbel-MIPS: \cref{lem:gumbel-additive-domination} shows that an $O(\log\log m)$ additive optimizer for the Gumbel-perturbed scores gives precisely the required one-sided Gibbs domination, yielding \cref{prop:gumbel-mips-polylog}. A stronger but different implementation route is smoothed additive nearest-neighbor search for the perturbed center $Y/t$ with additive squared-distance error $\Theta_c(r^2)$, exactly equivalent to additive score maximization by \cref{lem:score-max-additive-nn}. These oracles would bypass dyadic scales and representatives entirely, as recorded in \cref{prop:smoothed-gibbs-polylog}, \cref{prop:gumbel-mips-polylog}, and \cref{prop:smoothed-score-max-polylog}. They are targets, not implemented theorems; \cref{rem:gumbel-mips-not-ann} explains why black-box multiplicative ANN does not supply the Gumbel primitive. The older finite restricted-channel compiler \cref{asm:finite-restricted-channel} and \cref{prop:finite-channel-polylog} remain as a coarse explicit-enumeration special case and as a useful diagnostic framework.
 
