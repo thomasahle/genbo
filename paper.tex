@@ -10817,6 +10817,172 @@ separator, and the materialization certificate above.  Conditional on
 dense filters, spherical filters, residual scans, and terminal samplers are all
 handled by one filter-cover process rather than by separate branching rules.
 
+\begin{lemma}[Finite-signature filter-cover compiler]
+   \label{lem:finite-signature-filter-cover}
+   Let $\Omega$ be a query domain for one resident node \(P\), and let
+   $\mathcal F$ be a finite priced-filter universe.  Suppose preprocessing
+   supplies a finite signature set \(\Sigma\), a decoder
+   \(\sigma:\Omega\to\Sigma\), active bits \(a_A(\sigma_0)\in\{0,1\}\), and
+   witness supersets \(W_{\sigma_0}\subseteq P\) such that, for every
+   \(q\in\Omega\) with \(\sigma(q)=\sigma_0\),
+   \[
+      a_A(q)=a_A(\sigma_0)\qquad(A\in\mathcal F),
+      \qquad
+      \{p\in P:\|p-q\|\le r\}\subseteq W_{\sigma_0}.
+      \tag{FS1}
+   \]
+   Each filter \(A\) has update side \(U_A\), certified query price \(T_A\),
+   and certified storage price \(S_A\).  Assume the finite signature LP
+   \[
+   \begin{array}{ll}
+   \text{\rm find} & \lambda_A\ge0\\[0.4em]
+   \text{\rm subject to}
+      & \displaystyle
+        \sum_{A:p\in U_A}a_A(\sigma_0)\lambda_A\ge1
+        \qquad(\sigma_0\in\Sigma,\ p\in W_{\sigma_0}),\\[0.8em]
+      & \displaystyle
+        \sum_Aa_A(\sigma_0)T_A\lambda_A\le L_{\sigma_0}
+        \qquad(\sigma_0\in\Sigma),\\[0.8em]
+      & \displaystyle
+        \sum_AS_A\lambda_A\le S
+   \end{array}
+   \tag{$\mathsf{SFC}_\Sigma$}
+   \]
+   is feasible, and that the atom bounds
+   \[
+      a_A(\sigma_0)T_A\le L_{\sigma_0}
+      \qquad(A\in\mathcal F,\ \sigma_0\in\Sigma),
+      \qquad
+      S_A\le S
+      \tag{FS2}
+   \]
+   hold.  Put
+   \[
+      M_\Sigma=\sum_{\sigma_0\in\Sigma}|W_{\sigma_0}|,
+      \qquad
+      B\ge
+      \max\left\{
+         1,\log(4(M_\Sigma+1)),\log(8(|\Sigma|+1))
+      \right\}.
+   \]
+   Then preprocessing can retain an integral multiset of filters \(\mathcal R\)
+   such that every query \(q\in\Omega\) has certified active cost
+   \[
+      \sum_{A\in\mathcal R}a_A(q)T_A
+      \le
+      3B\,L_{\sigma(q)},
+   \]
+   total storage
+   \[
+      \sum_{A\in\mathcal R}S_A\le3BS,
+   \]
+   and routing correctness for all near pairs: if \(p\in P\) and
+   \(\|p-q\|\le r\), then some retained active filter \(A\in\mathcal R\)
+   satisfies \(p\in U_A\).
+\end{lemma}
+
+\begin{proof}
+   Apply \cref{lem:poisson-filter-cover-materialization} with query constraint
+   set \(\Sigma\) and demand set
+   \[
+      \mathcal N_\Sigma
+      =
+      \{(p,\sigma_0):\sigma_0\in\Sigma,\ p\in W_{\sigma_0}\}.
+   \]
+   The coverage coefficient is
+   \[
+      c_A(p,\sigma_0)=\mathbf 1\{p\in U_A\}a_A(\sigma_0),
+   \]
+   and the LP \((\mathsf{SFC}_\Sigma)\) is exactly
+   \((\mathsf{FC}_{\mathcal N_\Sigma})\).  The materialization lemma gives a
+   retained multiset whose signature loads and storage are bounded by the
+   displayed factors and whose every finite demand is covered.
+
+   Now fix an actual query \(q\), let \(\sigma_0=\sigma(q)\), and let
+   \(p\in P\) satisfy \(\|p-q\|\le r\).  By \((FS1)\), \(p\in W_{\sigma_0}\).
+   The retained finite cover contains some \(A\) with \(p\in U_A\) and
+   \(a_A(\sigma_0)=1\).  Again by \((FS1)\), \(a_A(q)=1\).  Thus the query probes
+   a retained child containing the near point.  The active-cost bound for the
+   actual query is the signature-load bound for \(\sigma_0\).
+\end{proof}
+
+\begin{proposition}[Conditional fractional filter-cover endpoint]
+   \label{prop:fractional-filter-cover-polylog}
+   Fix \(c>1\) and \(\rho_c=1/(2c^2-1)\).  Suppose that after the usual
+   bounded-diameter localization, every resident node \(P\), \(|P|=N\), admits a
+   finite-signature filter-cover certificate of
+   \cref{lem:finite-signature-filter-cover} with the following uniform bounds.
+   The decoder computes \(\sigma(q)\) and the retained active filters in time
+   \(d\,N^{\rho_c}\log^{O_c(1)}n\).  Its entropy and witness size obey
+   \[
+      \log\left(2+\sum_{\sigma_0\in\Sigma}|W_{\sigma_0}|\right)
+      \le \log^{O_c(1)}n.
+      \tag{FE1}
+   \]
+   The signature budgets satisfy
+   \[
+      L_{\sigma_0}\le N^{\rho_c}\log^{O_c(1)}n,
+      \qquad
+      S\le N^{1+\rho_c}\log^{O_c(1)}n.
+      \tag{FE2}
+   \]
+   Each filter is either terminal, in which case \(T_A\) is a verified normalized
+   scan or smooth-product terminal price, or it invokes a child structure whose
+   certified normalized query price and storage are \(T_A,S_A\).  Invoking a
+   child of normalized price \(T_A\) costs \(O(d\,T_A)\) time.  Nonterminal
+   filters have strictly smaller certified radius, so the inductive construction
+   is acyclic.
+
+   Then worst-case Euclidean ANN has query time and space
+   \[
+      Q(n,d)=d\,n^{\rho_c}\log^{O_c(1)}n,
+      \qquad
+      S(n,d)=dn+n^{1+\rho_c}\log^{O_c(1)}n .
+   \]
+\end{proposition}
+
+\begin{proof}
+   Order all possible recursive nodes by certified radius, breaking ties by
+   resident set size.  Terminal nodes have the stated prices by hypothesis.
+   Assume all smaller children already have certified prices.  At a node \(P\),
+   solve the finite signature LP using those child prices and materialize it by
+   \cref{lem:finite-signature-filter-cover}.  By \((FE1)\), the rounding factor
+   \(B\) is \(\log^{O_c(1)}n\).  Therefore \((FE2)\) gives retained active cost
+   at most \(N^{\rho_c}\log^{O_c(1)}n\) for every signature and retained storage
+   at most \(N^{1+\rho_c}\log^{O_c(1)}n\).
+
+   The important point is that \(T_A\) is the full certified normalized query
+   cost of the child structure, not just a local bucket size.  Thus a query at
+   \(P\) pays the decoder cost plus
+   \[
+      d\sum_{A\in\mathcal R:a_A(q)=1}T_A
+      \le
+      d\,N^{\rho_c}\log^{O_c(1)}n,
+   \]
+   so recursive overlap has already been charged inside the local LP.  Similarly,
+   the retained node stores child structures of total certified storage
+   \[
+      \sum_{A\in\mathcal R}S_A
+      \le
+      N^{1+\rho_c}\log^{O_c(1)}n.
+   \]
+   Routing correctness follows from the last conclusion of
+   \cref{lem:finite-signature-filter-cover}: for every near pair, at least one
+   active retained filter contains the near point, and that child is correct by
+   its own certificate.  Final candidates are verified in the original metric.
+
+   Applying this induction at the localized root with \(N=n\), and adding the
+   single global storage of the original coordinates, gives the displayed
+   bounds.  Standard constant-probability amplification and truncation affect
+   only the logarithmic factors.
+\end{proof}
+
+The role of \cref{asm:weighted-dense-spherical-dichotomy} is now precise.  It is
+not an additional recursion rule; it is the separation theorem that would prove
+the finite signature LPs used in \cref{prop:fractional-filter-cover-polylog}
+feasible.  Once feasibility is certified, the recursive accounting is already
+closed because every dense child is priced by its full descendant cost.
+
 \begin{lemma}[Finite activation-pattern verifier]\label{lem:finite-activation-patterns}
    Fix a finite retained family of certified children $\mathcal C$ and a query
    domain $\Omega$.  Each child $C$ has an activation predicate
@@ -22194,8 +22360,13 @@ rounds any finite feasible cover with only a logarithmic factor in the number of
 certified signatures.  The remaining geometric theorem is
 \cref{asm:weighted-dense-spherical-dichotomy}: every surplus dual obstruction
 must either buy a radius-contracting dense filter or be pseudo-random enough for
-a large-range spherical filter.  Since preprocessing time is deliberately not a
-scarce resource,
+a large-range spherical filter.  \Cref{lem:finite-signature-filter-cover} is the
+all-query version: signatures record the active-filter pattern and a superset of
+possible near witnesses, so a finite LP certifies every continuous near pair.
+\Cref{prop:fractional-filter-cover-polylog} closes the recursive accounting
+conditional on such certificates: child prices are full descendant prices, hence
+dense overlap is charged locally and does not multiply over levels.  Since
+preprocessing time is deliberately not a scarce resource,
 \cref{lem:finite-pool-optimizer} and
 \cref{cor:offline-pareto-compression} allow the build stage to enumerate,
 sample, or learn a huge proposal pool and then keep only the certified cover on
