@@ -18664,6 +18664,63 @@ inequality \((QP3)\).
    \(W_B(t)=0\), there is no violation.
 \end{proof}
 
+\begin{corollary}[Randomized superlevel proposal]
+   \label{cor:randomized-superlevel-proposal}
+   Work in the setting of
+   \cref{cor:finite-exact-signature-superlevel-separator}.  It is enough to
+   prove the separator by an averaged build-time proposal.  Namely, suppose
+   that for every normalized price system satisfying \((ESNO1)\) there is a
+   finite seed law \(s\sim\nu\) such that seed \(s\) chooses
+   \(B_s\in\mathcal B\) and \(t_s\in\mathcal T_{B_s}\), and
+   \[
+      \E_s\left[
+         (1-e^{-t_s})
+         \sum_{\substack{\sigma_0\in\Sigma^+\\
+                         m_{B_s}(\sigma_0)\ge t_s}}
+         \bigl(\beta_{\sigma_0}-T_{B_s}\tau_{\sigma_0}\bigr)_+
+         -
+         \theta S_{B_s}
+         -
+         \varepsilon_{B_s}
+      \right]>0 .
+      \tag{ERP1}
+   \]
+   Then \((\mathsf{ESFC}_\Sigma)\) is feasible.
+
+   More generally, it is enough to provide certified quantities
+   \[
+      \underline W_s
+      \le
+      \sum_{\substack{\sigma_0\in\Sigma^+\\
+                      m_{B_s}(\sigma_0)\ge t_s}}
+      \bigl(\beta_{\sigma_0}-T_{B_s}\tau_{\sigma_0}\bigr)_+,
+      \qquad
+      \overline S_s\ge S_{B_s},
+      \qquad
+      \overline\varepsilon_s\ge\varepsilon_{B_s},
+      \tag{ERP2}
+   \]
+   satisfying
+   \[
+      \E_s\left[
+         (1-e^{-t_s})\underline W_s
+         -
+         \theta\overline S_s
+         -
+         \overline\varepsilon_s
+      \right]>0 .
+      \tag{ERP3}
+   \]
+\end{corollary}
+
+\begin{proof}
+   If \((ERP1)\) holds, then some seed \(s\) has positive realized surplus.
+   That seed gives a deterministic pair \((B_s,t_s)\) satisfying \((EFS2)\), so
+   \cref{cor:finite-exact-signature-superlevel-separator} applies.  The
+   certified version only decreases the displayed surplus, because
+   \(\theta\ge0\).  Thus \((ERP3)\) implies \((ERP1)\).
+\end{proof}
+
 \Cref{lem:exact-near-set-filter-cover} is strictly weaker than
 \cref{lem:finite-signature-filter-cover} when the exact near set is part of the
 signature.  The all-pair LP covers every \(p\in N_{\sigma_0}\); the existential
@@ -18738,6 +18795,11 @@ responsibility masses on exact near-set signatures.  Thus a \(k\)-means++,
 additive-quantization, range-reporting, or list-decoding proposal only has to
 solve a finite weighted superlevel search and then pass the deterministic
 inequality \((EFS2)\).
+\Cref{cor:randomized-superlevel-proposal} is the corresponding proposal-law
+form.  A randomized \(k\)-means++, AQ, lattice-decoding, or range-reporting
+routine is useful only through positive expected certified surplus; after
+averaging, the retained certificate is still one deterministic bucket and one
+deterministic responsibility-mass level.
 
 \begin{proposition}[Conditional fractional filter-cover endpoint]
    \label{prop:fractional-filter-cover-polylog}
