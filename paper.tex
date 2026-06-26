@@ -9841,6 +9841,153 @@ This certificate is the local form of the remaining problem. It is analogous in 
    The final statement is the special case $\beta_q(u)=1$.
 \end{proof}
 
+\begin{lemma}[Canonical defect splits into affinity and resident surprise]
+   \label{lem:canonical-defect-splitting}
+   Use the canonical mixed budget of
+   \cref{lem:canonical-mixed-budget} inside one bounded-diameter geometric
+   state.  Let \(u\) be the tail of a budget-thinned recentering opportunity
+   needed by a fixed near witness \(p\), and assume \(p\in P[u]\).  Write
+   \(H_p(u)\) for the one-point continuation mass of \(p\) at \(u\),
+   \(Q_q(u)\) for the query continuation mass, and
+   \(\overline H(u)=D(u)/|P[u]|\).  Suppose the opportunity has certified
+   recursive charge
+   \[
+      \Gamma(u)\le F_4(|P[u]|,R_u).
+      \tag{CD0}
+   \]
+   Define the pair-score affinity defect and resident-surprise defect by
+   \[
+      \mathfrak a_{p,q}(u)
+      =
+      \log_+
+      \frac{H_0}{H_p(u)^\rho Q_q(u)^s},
+      \qquad
+      \mathfrak r_p(u)
+      =
+      \rho\log_+
+      \frac{H_p(u)}{\overline H(u)} ,
+      \tag{CD1}
+   \]
+   with the convention that the right side is \(+\infty\) if a denominator is
+   zero while the numerator is positive.  Then the canonical budget-thinning
+   defect at this opportunity satisfies
+   \[
+      \Delta(u):=
+      \log_+
+      \frac{\Gamma(u)}
+           {(1-\kappa\eta^2)\mathcal B_q^{\rm mix}(u)}
+      \le
+      \log\frac1{1-\kappa\eta^2}
+      +
+      \mathfrak a_{p,q}(u)
+      +
+      \mathfrak r_p(u).
+      \tag{CD2}
+   \]
+\end{lemma}
+
+\begin{proof}
+   If \(\Gamma(u)=0\), the claim is trivial.  Otherwise, by the definition of
+   the canonical budget and by \((CD0)\),
+   \[
+      \frac{\Gamma(u)}
+           {(1-\kappa\eta^2)\mathcal B_q^{\rm mix}(u)}
+      \le
+      \frac{H_0}
+           {(1-\kappa\eta^2)\overline H(u)^\rho Q_q(u)^s}.
+   \]
+   Since \(p\in P[u]\), the identity
+   \[
+      \frac{H_0}
+           {\overline H(u)^\rho Q_q(u)^s}
+      =
+      \frac{H_0}{H_p(u)^\rho Q_q(u)^s}
+      \left(\frac{H_p(u)}{\overline H(u)}\right)^\rho
+   \]
+   holds whenever the quantities are finite, and the stated infinite
+   convention covers the remaining cases.  Taking \(\log_+\) and using
+   \(\log_+(abc)\le\log a+\log_+b+\log_+c\) for
+   \(a=(1-\kappa\eta^2)^{-1}\ge1\) proves \((CD2)\).
+\end{proof}
+
+\begin{corollary}[Surprise-defect route-law certificate]
+   \label{cor:surprise-defect-route-law}
+   Consider a candidate near-route trie in the canonical budget-thinned
+   process.  Deterministic score edges and budget-stable recentering edges have
+   success probability \(1\), and every remaining required recentering edge
+   \(e\) leaves a prefix \(u(e)\) satisfying the local charge bound
+   \[
+      \Gamma_e\le F_4(|P[u(e)]|,R_{u(e)}).
+      \tag{SD0}
+   \]
+   Fix a near witness \(p\) and a probability law \(\Lambda\) on successful
+   routes for that witness, supported on prefixes containing \(p\).  Suppose
+   every route uses at most \(H\) remaining required recentering edges and
+   \[
+      \E_{v\sim\Lambda}
+      \sum_{e\preceq v}
+      \bigl(
+         \mathfrak a_{p,q}(u(e))
+         +
+         \mathfrak r_p(u(e))
+      \bigr)
+      \le B ,
+      \tag{SD1}
+   \]
+   where the two defects are defined in \((CD1)\).  Then the saturated route
+   value satisfies
+   \[
+      U(\varnothing)
+      \ge
+      \frac12
+      \exp\!\left(
+         -2B
+         -2H\log\frac1{1-\kappa\eta^2}
+      \right).
+      \tag{SD2}
+   \]
+   In particular, if
+   \[
+      B+H\eta^2=O_c(\log\log n),
+      \tag{SD3}
+   \]
+   then the budget-thinned value delivered to this route family is
+   inverse-polylogarithmic.  After contracting unit-success regions, the same
+   statement applies to the port skeleton; \cref{cor:skeleton-cut-conductance}
+   then loses only the polylogarithmic skeleton depth denominator.
+\end{corollary}
+
+\begin{proof}
+   On deterministic score and budget-stable edges the canonical defect from
+   \cref{cor:canonical-budget-defect-toll} is zero.  On every remaining edge
+   \(e\), apply \cref{lem:canonical-defect-splitting} at \(u(e)\).  Along any
+   sampled route,
+   \[
+      \sum_{e\preceq v}\Delta_e
+      \le
+      \sum_{e\preceq v}
+      \bigl(
+         \mathfrak a_{p,q}(u(e))
+         +
+         \mathfrak r_p(u(e))
+      \bigr)
+      +
+      H\log\frac1{1-\kappa\eta^2}.
+   \]
+   Taking expectation and using \((SD1)\), the expected canonical defect is at
+   most
+   \[
+      B+H\log\frac1{1-\kappa\eta^2}.
+   \]
+   The expectation form of \cref{cor:canonical-budget-defect-toll} gives
+   \((SD2)\).  Since
+   \(\log(1/(1-\kappa\eta^2))=O(\eta^2)\) for the small \(\eta\) used in the
+   construction, \((SD3)\) gives inverse-polylogarithmic value.  The final
+   port-skeleton statement is exactly the unit-success contraction and cut
+   comparison from \cref{lem:port-skeleton-saturated-comparison} and
+   \cref{cor:skeleton-cut-conductance}.
+\end{proof}
+
 \begin{remark}[Work can be bought by thinning]\label{rem:budget-thinning}
    \Cref{cor:budget-gated-splits} is deterministic: a split is live only when
    the local budget pays its whole charge.  \Cref{lem:budget-stable-prefix-list}
@@ -9857,6 +10004,18 @@ This certificate is the local form of the remaining problem. It is analogous in 
    the activated geometric work.
 
    In a homogeneous balanced prefix at depth $\ell$, the canonical budget is smaller than the local recursive charge by about $B^{(1-\rho)\ell}$, so the activation probability is about $B^{-(1-\rho)\ell}$. This is exactly the missing factor in the naive sum over the $B^\ell$ query prefixes. Thus the balanced-prefix obstruction is no longer a work blow-up; it becomes a near-lineage question: prove that the tame-good near paths supplied by \cref{lem:adaptive-continuation} contain enough budget-thinned first opportunities that one complete radius-decreasing lineage survives with inverse-polylogarithmic probability.
+
+   \Cref{lem:canonical-defect-splitting} makes that near-lineage question more
+   local.  The loss at an unstable port is the sum of two interpretable
+   quantities: a pair-score affinity defect
+   \(\log_+(H_0/(H_p^\rho Q_q^s))\), and a resident-surprise defect
+   \(\rho\log_+(H_p/\overline H)\).  The first is a continuation-mass
+   analogue of the spherical near-pair affinity calculation.  The second says
+   that the near point is atypically heavy inside the resident bucket.  High
+   resident surprise is exactly the regime where posterior/rate-coverage
+   buckets or list-decoded facility proposals should help: they need only cover
+   the exposed high-posterior prefixes, while low-surprise prefixes are already
+   paid for by the canonical budget.
 \end{remark}
 
 \begin{lemma}[Activated good-route moments]\label{lem:activated-good-route-moments}
@@ -13049,6 +13208,17 @@ This certificate is the local form of the remaining problem. It is analogous in 
       \frac{\Gamma(u)}
            {(1-\kappa\eta^2)\mathcal B_q^{\rm mix}(u)} .
    \]
+   \Cref{lem:canonical-defect-splitting} decomposes this toll into the
+   pair-score affinity defect
+   \(\log_+(H_0/(H_p^\rho Q_q^s))\), the resident-surprise defect
+   \(\rho\log_+(H_p/\overline H)\), and the harmless
+   \(O(\eta^2)\) activation slack.  Hence
+   \cref{cor:surprise-defect-route-law} gives a more geometric sufficient
+   theorem: prove \(O_c(\log\log n)\) expected cumulative affinity-plus-surprise
+   along a tame route law.  Low-surprise prefixes are paid for by the canonical
+   budget; high-surprise prefixes are precisely the exposed posterior prefixes
+   that should be handled by structured rate-coverage or list-decoded facility
+   buckets.
    Thus a sufficient geometric theorem is to construct a tame route law whose
    expected cumulative canonical budget defect is \(O_c(\log\log n)\).
    The pruned version \cref{cor:pruned-budget-defect-toll} allows an
