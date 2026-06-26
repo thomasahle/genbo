@@ -14244,6 +14244,94 @@ local: \((ESR1)\) says the replacement cores dominate the deleted hit kernel,
 while \((ESR2)\)--\((ESR3)\) say that the replacement saves enough query and
 storage price to fit the \(\pi_1\)-scaled budgets.
 
+\begin{lemma}[Finite repair dual]
+   \label{lem:finite-repair-dual}
+   Fix a deletion sublaw \(\delta\) as in
+   \cref{lem:excess-slice-moment-repair}, and put
+   \[
+      d_\delta(p,q)=
+      \sum_z\delta_{z,q}\mathbf 1\{p\in V_{z,q}\}.
+   \]
+   Define the residual query and storage budgets
+   \[
+      \bar L_q=
+      \pi_1L-\E_ZT_{Z,q}+\sum_z\delta_{z,q}T_{z,q},
+      \tag{FRD0}
+   \]
+   and
+   \[
+      \bar S=
+      \pi_1S-\E_Z\sum_qS_{Z,q}+\sum_{z,q}\delta_{z,q}S_{z,q}.
+      \tag{FRD1}
+   \]
+   Let \(\mathcal R\) be a finite family of Boolean Pareto core records.  The
+   finite repair LP
+   \[
+   \begin{array}{ll}
+   \text{\rm find} & \mu_R\ge0\\[0.4em]
+   \text{\rm subject to}
+      & \displaystyle
+        \sum_R\mu_Rb_R(p,q)\ge d_\delta(p,q)
+        \qquad((p,q)\in\mathcal N),\\[0.8em]
+      & \displaystyle
+        \sum_{R:q\in Q'_R}\mu_R T_R\le\bar L_q
+        \qquad(q\in\mathcal Q),\\[0.8em]
+      & \displaystyle
+        \sum_R\mu_R S_R\le\bar S
+   \end{array}
+   \tag{$\mathsf{Repair}_\delta$}
+   \]
+   is infeasible if and only if there are nonnegative prices
+   \(\gamma_{p,q},\tau_q,\sigma\) such that
+   \[
+      \sum_{(p,q)\in\mathcal N}\gamma_{p,q}d_\delta(p,q)
+      >
+      \sum_q\tau_q\bar L_q+\sigma\bar S,
+      \tag{FRD2}
+   \]
+   while every repair record satisfies
+   \[
+      \sum_{(p,q)\in\mathcal N}\gamma_{p,q}b_R(p,q)
+      \le
+      T_R\sum_{q\in Q'_R}\tau_q+\sigma S_R .
+      \tag{FRD3}
+   \]
+   Equivalently, a column-generation repair routine succeeds over a finite
+   universe \(\mathcal R_\star\) iff every price system satisfying
+   \((FRD2)\) exposes some record \(R\in\mathcal R_\star\) with positive repair
+   reduced gain
+   \[
+      \sum_{p,q}\gamma_{p,q}b_R(p,q)
+      -
+      T_R\sum_{q\in Q'_R}\tau_q
+      -
+      \sigma S_R .
+      \tag{FRD4}
+   \]
+\end{lemma}
+
+\begin{proof}
+   This is Farkas' lemma applied to the finite repair system.  The coverage
+   inequalities have right-hand sides \(d_\delta(p,q)\), while the query and
+   storage budgets have right-hand sides \(\bar L_q\) and \(\bar S\).  A
+   nonnegative multiplier system certifies infeasibility exactly when its
+   coefficient on every variable \(\mu_R\) is nonnegative and its weighted
+   right-hand side is negative.  Written with the coverage multipliers
+   \(\gamma\) on the opposite side, these two conditions are precisely
+   \((FRD3)\) and \((FRD2)\).  Negating the infeasibility certificate gives the
+   column-generation statement: if all surplus repair duals have a positive
+   reduced-gain record, no infeasible restricted optimum can be final; finiteness
+   gives termination after at most \(|\mathcal R_\star|\) added records.
+\end{proof}
+
+Thus the overbudget repair problem has the same local form as the original
+filter-cover LP, but with the deleted primitive hit kernel
+\(d_\delta\) as demand and the saved primitive slice costs as residual budgets.
+This is useful algorithmically: preprocessing may choose a deletion sublaw,
+solve the finite repair LP, inspect its dual, and search only for a positive
+repair-gain core.  Successful repair plus
+\cref{lem:excess-slice-moment-repair} gives the hit-kernel cover.
+
 \begin{assumption}[Compression-dual separator]
    \label{asm:compression-dual-separator}
    Work in the setting of \cref{cor:residual-separator-local-cover}.  Fix a
@@ -26083,6 +26171,10 @@ cheaper Pareto cores when the primitive recursive moment is too large.
 \Cref{lem:excess-slice-moment-repair} sharpens this once more: the separator
 only has to delete and repair a fractional overbudget sublaw of primitive
 slices, while the affordable part of the spherical slice law is kept unchanged.
+\Cref{lem:finite-repair-dual} gives the matching reduced-gain oracle for this
+repair LP, so the build stage can choose a deletion sublaw, solve the finite
+repair problem, and search for positive-gain replacement cores exactly as in
+ordinary column generation.
 Because
 preprocessing time is deliberately not a scarce resource,
 \cref{lem:finite-pool-optimizer} and
