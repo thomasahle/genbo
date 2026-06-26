@@ -15853,6 +15853,60 @@ singleton slices by hand.
    costs sum to at most \(1-\varepsilon\).
 \end{definition}
 
+\begin{lemma}[Average list-size panel criterion]
+   \label{lem:average-list-size-panel-criterion}
+   Work in the setting of
+   \cref{def:success-normalized-aggregate-list-panel}.  Let \(\nu\) be a
+   probability law on a finite set of levels \(\delta\), and write
+   \(H_\delta=h_\delta\).  If
+   \[
+      \E_{\delta\sim\nu}\delta H_\delta
+      >
+      \psi\left(
+         \widehat A_y\bigl(\E_{\delta\sim\nu}H_\delta\bigr)^\rho
+         +
+         \sigma\,\E_{\delta\sim\nu}H_\delta^{1+\rho}
+      \right),
+      \tag{ALP1}
+   \]
+   then an available paid prefix has positive repair reduced gain.  More
+   quantitatively, if for some \(\varepsilon>0\),
+   \[
+      \psi\left(
+         \widehat A_y\bigl(\E H_\delta\bigr)^\rho
+         +
+         \sigma\,\E H_\delta^{1+\rho}
+      \right)
+      \le
+      (1-\varepsilon)\E \delta H_\delta ,
+      \tag{ALP2}
+   \]
+   then the finite panel \(\lambda_\delta=\nu(\delta)\) is
+   \(\varepsilon\)-balanced.  In the capped-list form, it is enough that
+   \(H_\delta\le H\) on the support of \(\nu\) and
+   \[
+      \psi\left(
+         \widehat A_y\bigl(\E H_\delta\bigr)^\rho
+         +
+         \sigma H^\rho\,\E H_\delta
+      \right)
+      \le
+      (1-\varepsilon)\E \delta H_\delta .
+      \tag{ALP3}
+   \]
+\end{lemma}
+
+\begin{proof}
+   Use the finite level panel with weights
+   \(\lambda_\delta=\nu(\delta)\).  Then \(M_0=1\),
+   \(M_1=\E H_\delta\), \(M_{1+\rho}=\E H_\delta^{1+\rho}\), and
+   \(B=\E\delta H_\delta\).  Thus \((ALP1)\) is exactly \((ALM1)\), so
+   \cref{lem:aggregate-list-moment-weak-type-separator} exposes a positive paid
+   prefix.  The inequalities \((ALP2)\) and \((ALP3)\) are precisely the
+   balanced and capped-balanced forms of
+   \cref{def:success-normalized-aggregate-list-panel}.
+\end{proof}
+
 \begin{assumption}[Balanced aggregate list-size separator]
    \label{asm:balanced-aggregate-list-size-separator}
    Work in the setting of \cref{asm:paid-atomized-prefix-separator}, and assume
@@ -15930,6 +15984,21 @@ violator search, lattice decoders, or any other proposal mechanism.  A proposed
 geometric proof only has to output one balanced aggregate panel; the LP
 materialization then turns that averaged certificate into ordinary retained
 filters.
+\Cref{lem:average-list-size-panel-criterion} gives the normalized probability
+form of the same target.  After choosing a finite law over levels, the geometric
+proof only has to show
+\[
+   \E[\text{captured paid list mass}]
+   >
+   \psi\left(
+      \widehat A_y(\E[\text{list size}])^\rho
+      +
+      \sigma\E[\text{list size}^{1+\rho}]
+   \right),
+\]
+or the capped analogue.  This is the exact average Renyi list-size statement
+suggested by the compressed-bucket route; large lists are allowed if their
+\((1+\rho)\)-moment is paid by the captured hit mass.
 \Cref{cor:aggregate-list-moment-residual-envelope} is the matching obstruction:
 if the hit-kernel cover fails, every finite list-size panel obeys \((ALR1)\).
 Thus a proof of the polylog endpoint can now target a single averaged
