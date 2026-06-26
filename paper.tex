@@ -4256,6 +4256,186 @@ partition ignores the bias coordinates that certify the list size.
    Applying this with \(a=D_{j+1}\) and with \(a\equiv1\) proves \((PFX5)\).
 \end{proof}
 
+\begin{lemma}[Gibbs-prefix additive-IVF sampler]
+   \label{lem:gibbs-prefix-additive-ivf-sampler}
+   Let \(\mathcal C_1,\ldots,\mathcal C_h\subset\mathbb R^d\) be finite
+   codebooks in the same ambient space, and use the additive suffix scores
+   \(S_z^{j:h}\) from \cref{lem:priced-prefix-additive-ivf-reporter}.  Fix
+   \(\beta>0\).  Define the exact suffix partition functions
+   \[
+      Z_{h+1}(z)=1,
+      \qquad
+      Z_j(z)=
+      \sum_{v\in\mathcal C_j\times\cdots\times\mathcal C_h}
+      \exp\!\left(\beta S_z^{j:h}(v)\right).
+   \]
+   Then
+   \[
+      Z_j(z)=
+      \sum_{a\in\mathcal C_j}
+      \exp\!\left(\beta\left(\ip{z}{a}-\frac12\|a\|^2\right)\right)
+      Z_{j+1}(z-a).
+      \tag{GPS1}
+   \]
+   The following sequential procedure samples a complete tuple
+   \(c=(c_1,\ldots,c_h)\) from the exact Gibbs law
+   \[
+      \pi_q(c)=
+      \frac{\exp(\beta S_q^{1:h}(c))}{Z_1(q)}.
+      \tag{GPS2}
+   \]
+   Start with \(z_1=q\).  At step \(j\), choose \(c_j=a\in\mathcal C_j\) with
+   probability proportional to
+   \[
+      \exp\!\left(\beta\left(\ip{z_j}{a}-\frac12\|a\|^2\right)\right)
+      Z_{j+1}(z_j-a),
+      \tag{GPS3}
+   \]
+   and set \(z_{j+1}=z_j-c_j\).
+\end{lemma}
+
+\begin{proof}
+   The shifted-prefix identity \((PFX0)\) gives, for
+   \(v=(a,c_{j+1},\ldots,c_h)\),
+   \[
+      S_z^{j:h}(v)
+      =
+      \ip{z}{a}-\frac12\|a\|^2
+      +
+      S_{z-a}^{j+1:h}(c_{j+1},\ldots,c_h).
+   \]
+   Summing \(\exp(\beta S_z^{j:h})\) over all suffixes with first symbol
+   \(a\), and then over \(a\), proves \((GPS1)\).
+
+   By \((GPS1)\), the transition probabilities in \((GPS3)\) are normalized.
+   The probability of outputting a fixed tuple \(c\) is the telescoping product
+   \[
+      \prod_{j=1}^h
+      \frac{
+         \exp\!\left(\beta(\ip{z_j}{c_j}-\|c_j\|^2/2)\right)
+         Z_{j+1}(z_{j+1})
+      }{
+         Z_j(z_j)
+      }
+      =
+      \frac{
+         \exp(\beta S_q^{1:h}(c))
+      }{
+         Z_1(q)
+      },
+   \]
+   because the additive score is the sum of the displayed residual increments.
+   This is \((GPS2)\).
+\end{proof}
+
+\begin{proposition}[Gibbs sampled additive-IVF spectrum compiler]
+   \label{prop:gibbs-sampled-additive-ivf-compiler}
+   Fix a terminal localized ANN subproblem of size \(m\), approximation \(c\),
+   and exponent \(\rho=\rho_c\).  Let \(L_m=\log^{A_c}m\).  A random sampled
+   additive-IVF panel consists of finite ambient codebooks
+   \(\mathcal C_1,\ldots,\mathcal C_h\), the true nonorthogonal additive score
+   \[
+      S_y(c_1,\ldots,c_h)
+      =
+      \ip{y}{\sum_jc_j}
+      -\frac12\left\|\sum_jc_j\right\|^2,
+   \]
+   a storage threshold \(\theta_P\), and a query Gibbs sampler
+   \[
+      \pi_q(c)=
+      \frac{e^{\beta S_q(c)}}{Z_q},
+      \qquad
+      Z_q=\sum_{a\in\mathcal C_1\times\cdots\times\mathcal C_h}e^{\beta S_q(a)}.
+      \tag{GSA0}
+   \]
+   In this proposition, every unqualified sum over \(a\) ranges over
+   \(\mathcal C_1\times\cdots\times\mathcal C_h\).
+   Assume the sampler is exact and runs in \(d\log^{O_c(1)}m\) time per trial;
+   \cref{lem:gibbs-prefix-additive-ivf-sampler} gives one sufficient
+   implementation when the suffix partition functions can be evaluated
+   compactly.
+
+   Suppose that, for some \(\alpha,\beta>0\),
+   \[
+      \E
+      \sum_{x\in P}
+      e^{-\alpha\theta_P}
+      \sum_{a\in\mathcal C_1\times\cdots\times\mathcal C_h}
+      e^{\alpha S_x(a)}
+      \le m^{1+\rho}L_m,
+      \tag{GSA1}
+   \]
+   and, for every promised query \(q\),
+   \[
+      \E
+      \sum_{\substack{x\in P\\ \|x-q\|>cr}}
+      \frac{
+         e^{-\alpha\theta_P}
+         \sum_{a}
+         e^{\alpha S_x(a)+\beta S_q(a)}
+      }{Z_q}
+      \le m^\rho L_m .
+      \tag{GSA2}
+   \]
+   Finally assume that every near pair \((p,q)\), \(\|p-q\|\le r\), satisfies
+   \[
+      \E
+      \frac{
+         \sum_{a:\,S_p(a)\ge\theta_P}e^{\beta S_q(a)}
+      }{Z_q}
+      \ge L_m^{-1}.
+      \tag{GSA3}
+   \]
+   Then \(O(L_m)\) independent sampled additive-IVF panels give terminal query
+   work
+   \[
+      d\,m^\rho\log^{O_c(1)}m
+   \]
+   and space
+   \[
+      dm+m^{1+\rho}\log^{O_c(1)}m .
+   \]
+\end{proposition}
+
+\begin{proof}
+   Use \cref{prop:sampled-structured-panel} with label set
+   \(\mathcal L=\mathcal C_1\times\cdots\times\mathcal C_h\), predicate
+   \(A_a(x)=\mathbf 1\{S_x(a)\ge\theta_P\}\), and query law \(\pi_q\) from
+   \((GSA0)\).  The storage condition \((SP1)\) follows from
+   \[
+      A_a(x)\le e^{\alpha(S_x(a)-\theta_P)}
+   \]
+   and \((GSA1)\).  For a far point \(x\),
+   \[
+      \sum_a\pi_q(a)A_a(x)
+      \le
+      \frac{
+         e^{-\alpha\theta_P}
+         \sum_a e^{\alpha S_x(a)+\beta S_q(a)}
+      }{Z_q},
+   \]
+   so \((GSA2)\) implies \((SP2)\).  The near sampled mass condition
+   \((SP3)\) is exactly \((GSA3)\).  The sampled-panel compiler gives the
+   claimed resources.
+\end{proof}
+
+\begin{remark}[Sampled AQ avoids the interaction-cover tax]
+   \label{rem:sampled-aq-interaction}
+   The all-reporting route for nonorthogonal additive quantization needs
+   either low-width interaction rectangles, as in
+   \cref{prop:rectangular-interaction-cover-aq}, or admissible upper bounds
+   for a prefix list, as in \cref{lem:priced-prefix-additive-ivf-reporter}.
+   The sampled route is different: \cref{lem:gibbs-prefix-additive-ivf-sampler}
+   uses the true residual partition functions, so the interaction term is
+   handled exactly rather than lower-bounded and exact-filtered afterward.
+   The remaining theorem is correspondingly sharper and more spectral: build
+   codebooks, a trellis, or a lattice quotient whose suffix partition functions
+   are compactly samplable and whose true tuple score satisfies
+   \((GSA1)\)--\((GSA3)\).  Lloyd or AQ distortion can be a proposal heuristic
+   for those panels, but the proof object is the sampled spectrum and exact
+   partition sampler.
+\end{remark}
+
 \begin{proposition}[Priced-pair additive-IVF spectrum compiler]
    \label{prop:priced-pair-additive-ivf-compiler}
    Fix a terminal localized ANN subproblem of size \(m\), approximation \(c\),
@@ -21596,6 +21776,15 @@ admissible suffix scores turn the full tuple search into an output-sensitive
 prefix list.  Thus multi-codebook AQ is not a separate theorem object; it is
 the same reporter-work, storage-spectrum, far-load-spectrum, and near-hit
 certificate over a larger tuple label space.
+\Cref{lem:gibbs-prefix-additive-ivf-sampler} gives the sampled counterpart:
+exact suffix partition functions sample the true nonorthogonal AQ Gibbs law by
+successive residual queries \(q-\sum_i c_i\), so the interaction term is paid
+inside the partition recursion rather than by a rectangular lower bound or an
+all-listing prefix search.  Conditional on compact partition evaluation,
+\cref{prop:gibbs-sampled-additive-ivf-compiler} reduces sampled AQ to three
+spectral tests: stored tuple incidences, far sampled co-load, and near Gibbs
+mass.  This is the additive-vector-quantization analogue of the discrete
+Gaussian code/lattice route.
 \Cref{prop:finite-retained-priced-pair} gives the corresponding retained-index
 certificate.  Build time may use \(k\)-means++, random centroids, additive
 quantization, list-decoding proposals, or column generation to produce panels,
