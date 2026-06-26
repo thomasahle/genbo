@@ -17712,6 +17712,83 @@ inequality \((QP3)\).
    actual query is the signature-load bound for \(\sigma_0\).
 \end{proof}
 
+\begin{lemma}[Exact-near-set finite-signature compiler]
+   \label{lem:exact-near-set-filter-cover}
+   Work in the setting of \cref{lem:finite-signature-filter-cover}, but suppose
+   the signature records the exact unresolved near set.  Thus preprocessing
+   supplies sets \(N_{\sigma_0}\subseteq P\) such that, for every
+   \(q\in\Omega\) with \(\sigma(q)=\sigma_0\),
+   \[
+      a_A(q)=a_A(\sigma_0)\qquad(A\in\mathcal F),
+      \qquad
+      \{p\in P:\|p-q\|\le r\}=N_{\sigma_0}.
+      \tag{EN1}
+   \]
+   For each nonempty \(N_{\sigma_0}\), let preprocessing choose one witness
+   \(w_{\sigma_0}\in N_{\sigma_0}\).  Assume the weaker existential signature LP
+   \[
+   \begin{array}{ll}
+   \text{\rm find} & \lambda_A\ge0\\[0.4em]
+   \text{\rm subject to}
+      & \displaystyle
+        \sum_{A:w_{\sigma_0}\in U_A}a_A(\sigma_0)\lambda_A\ge1
+        \qquad(\sigma_0\in\Sigma,\ N_{\sigma_0}\ne\emptyset),\\[0.8em]
+      & \displaystyle
+        \sum_Aa_A(\sigma_0)T_A\lambda_A\le L_{\sigma_0}
+        \qquad(\sigma_0\in\Sigma),\\[0.8em]
+      & \displaystyle
+        \sum_AS_A\lambda_A\le S
+   \end{array}
+   \tag{$\mathsf{ESFC}_\Sigma$}
+   \]
+   is feasible, and that the atom bounds \((FS2)\) hold.  Put
+   \[
+      M_\Sigma^{\exists}=|\{\sigma_0\in\Sigma:N_{\sigma_0}\ne\emptyset\}|,
+      \qquad
+      B\ge
+      \max\left\{
+         1,\log(4(M_\Sigma^{\exists}+1)),\log(8(|\Sigma|+1))
+      \right\}.
+   \]
+   Then preprocessing can retain an integral multiset of filters \(\mathcal R\)
+   with active cost at most \(3B\,L_{\sigma(q)}\) for every query, total storage
+   at most \(3BS\), and ANN routing correctness: if \(N_{\sigma(q)}\ne\emptyset\),
+   then some retained active filter contains a point within distance \(r\) of
+   \(q\).
+\end{lemma}
+
+\begin{proof}
+   Apply \cref{lem:poisson-filter-cover-materialization} with query constraint
+   set \(\Sigma\) and demand set
+   \[
+      \mathcal E_\Sigma
+      =
+      \{(w_{\sigma_0},\sigma_0):\sigma_0\in\Sigma,\ N_{\sigma_0}\ne\emptyset\}.
+   \]
+   The coverage coefficient is again
+   \(c_A(w_{\sigma_0},\sigma_0)=
+   \mathbf 1\{w_{\sigma_0}\in U_A\}a_A(\sigma_0)\), so the displayed LP is
+   exactly the finite filter-cover LP on \(\mathcal E_\Sigma\).  The
+   materialization lemma gives the same \(3B\)-inflated signature loads and
+   storage.
+
+   Now take an actual query \(q\) with \(\sigma(q)=\sigma_0\) and
+   \(N_{\sigma_0}\ne\emptyset\).  By \((EN1)\), the selected witness
+   \(w_{\sigma_0}\) satisfies \(\|w_{\sigma_0}-q\|\le r\).  The retained cover
+   contains an active filter \(A\) with \(w_{\sigma_0}\in U_A\) and
+   \(a_A(\sigma_0)=1\); by \((EN1)\), \(a_A(q)=1\).  Querying that child is
+   therefore enough for ANN after final metric verification.  The cost and
+   storage bounds are the materialized signature bounds.
+\end{proof}
+
+\Cref{lem:exact-near-set-filter-cover} is strictly weaker than
+\cref{lem:finite-signature-filter-cover} when the exact near set is part of the
+signature.  The all-pair LP covers every \(p\in N_{\sigma_0}\); the existential
+LP covers only one chosen witness \(w_{\sigma_0}\), which is all ANN needs.
+This does not make exact near-set signatures free, but it separates the two
+issues: pairwise robustness is no longer baked into the dense-overlap LP, and
+any remaining cost of exact signatures is explicit metadata or decoder entropy.
+
 \begin{proposition}[Conditional fractional filter-cover endpoint]
    \label{prop:fractional-filter-cover-polylog}
    Fix \(c>1\) and \(\rho_c=1/(2c^2-1)\).  Suppose that after the usual
@@ -17782,6 +17859,17 @@ inequality \((QP3)\).
    bounds.  Standard constant-probability amplification and truncation affect
    only the logarithmic factors.
 \end{proof}
+
+The same induction applies if, at some node, the all-pair finite-signature
+certificate of \cref{lem:finite-signature-filter-cover} is replaced by the
+exact-near-set existential certificate of
+\cref{lem:exact-near-set-filter-cover}, with the same decoder, query-budget,
+and storage bounds.  The child reached by the selected signature witness is a
+valid ANN child for that query, so the proof only changes the routing sentence;
+the recursive cost accounting is identical.  Thus a proof of polylogarithmic
+overhead may target exact-signature existential covers wherever compact exact
+near-set signatures are available, and reserve per-pair covers for robust
+all-witness certificates.
 
 The role of \cref{asm:weighted-dense-spherical-dichotomy} is now precise.  It is
 not an additional recursion rule; it is the separation theorem that would prove
