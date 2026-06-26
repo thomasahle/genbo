@@ -13728,6 +13728,94 @@ For a threshold $u$, the posterior-superlevel child is
    \cref{lem:implicit-reduced-gain-separation}.
 \end{proof}
 
+\begin{lemma}[Layer-cake coverage separation]
+   \label{lem:layer-cake-reduced-gain-separation}
+   Work in the notation of
+   \cref{lem:reduced-gain-variational-separation}.  For a subset
+   \(U\subseteq S\) and a scalar \(\beta\in(0,1]\), define the one-layer
+   signed coverage surplus
+   \[
+   \begin{aligned}
+      \Omega_E(a;U,\beta)
+      &=
+      \sum_q
+      \int
+      h_{q,a}(\omega)
+      \left[
+         \beta\sum_{x\in U}W^E_{x,q}(\omega)
+         -|U|\theta_q
+      \right]d\nu_q(\omega)\\
+      &\qquad - |U|\gamma .
+   \end{aligned}
+      \tag{LC1}
+   \]
+   Then a label \(a\) has positive reduced gain if and only if there are
+   \(U\subseteq S\) and \(\beta\in(0,1]\) with
+   \[
+      \Omega_E(a;U,\beta)>0 .
+      \tag{LC2}
+   \]
+
+   More precisely, for any intensity profile \(s\), let
+   \(U_t=\{x:\ s_x>t\}\).  Then
+   \[
+      \Psi_E(a;s)
+      =
+      \int_0^\infty
+      \Omega_E(a;U_t,e^{-t})\,dt .
+      \tag{LC3}
+   \]
+   Conversely, if \(\Omega_E(a;U,e^{-t_0})>0\), then the uniform profile
+   \(s_x=t_0\mathbf 1\{x\in U\}\), or an arbitrarily small positive multiple of
+   \(\mathbf 1_U\) when \(t_0=0\), has positive surplus.
+
+   Consequently, if a positive-gain label has a witnessing profile with
+   \(0\le s_x\le B\), then it has a positive one-layer witness with
+   \(\beta\ge e^{-B}\).  In that \(B\)-truncated case it is enough to test the
+   dyadic grid
+   \[
+      \beta_j=2^{-j},
+      \qquad
+      0\le j\le\lceil B/\log 2\rceil,
+      \tag{LC4}
+   \]
+   because increasing \(\beta\) can only increase \(\Omega_E(a;U,\beta)\).
+\end{lemma}
+
+\begin{proof}
+   The layer-cake identities
+   \[
+      s_x=\int_0^\infty \mathbf 1\{s_x>t\}\,dt,
+      \qquad
+      1-e^{-s_x}=\int_0^\infty e^{-t}\mathbf 1\{s_x>t\}\,dt
+   \]
+   turn \((VG1)\) into \((LC3)\) after exchanging the finite sums and
+   integrable layer terms.  If \(\Psi_E(a;s)>0\), then \((LC3)\) implies that
+   \(\Omega_E(a;U_t,e^{-t})>0\) for some \(t\), proving one direction of
+   \((LC2)\).
+
+   Conversely, assume \(\Omega_E(a;U,e^{-t_0})>0\).  For every \(0\le t<t_0\),
+   monotonicity in the first argument gives
+   \[
+      \Omega_E(a;U,e^{-t})
+      \ge
+      \Omega_E(a;U,e^{-t_0})>0 .
+   \]
+   Hence the profile \(s_x=t_0\mathbf 1\{x\in U\}\) has positive surplus by
+   \((LC3)\) when \(t_0>0\).  If \(t_0=0\), the same strict inequality persists
+   on a short interval \([0,\varepsilon]\), so
+   \(s_x=\varepsilon\mathbf 1\{x\in U\}\) has positive surplus for sufficiently
+   small \(\varepsilon>0\).  By
+   \cref{lem:reduced-gain-variational-separation}, positive surplus is
+   equivalent to positive reduced gain.
+
+   If \(s_x\le B\), then any layer exposed by \((LC3)\) has
+   \(t\le B\), hence \(\beta=e^{-t}\ge e^{-B}\).  Choose \(j\) with
+   \(\beta\le 2^{-j}\le 2\beta\); this \(j\) lies in the range \((LC4)\).
+   Since \(\Omega_E(a;U,\beta)\) is nondecreasing in \(\beta\), the dyadic
+   value \(2^{-j}\) is also a positive witness.
+\end{proof}
+
 \begin{lemma}[Finite rate-coverage column generation]
    \label{lem:finite-rate-coverage-column-generation}
    Fix a finite candidate label family \(\mathcal B\) and a reporter
@@ -14014,6 +14102,10 @@ For a threshold $u$, the posterior-superlevel child is
    a signed weighted coverage objective after choosing candidate intensities,
    so a code, lattice, trellis, or facility generator can search with its native
    weighted reporter and then verify the exact nonlinear gain.
+   \Cref{lem:layer-cake-reduced-gain-separation} reduces this further to one
+   uniform intensity layer on a point subset; under a preprocessing-certified
+   intensity cap, only a logarithmic dyadic grid of layer weights has to be
+   tested.
    \Cref{lem:seeded-reduced-gain-search} is the build-time version of the same
    statement.  A \(k\)-means++ sampler, repulsive facility search, product-code
    threshold reporter, Construction-A residue decoder, or lattice
@@ -15445,7 +15537,10 @@ whole-bucket-gain, and column-generation lemmas,
 search exact for any finite candidate label family.
 \Cref{lem:reduced-gain-variational-separation} turns the nonlinear
 whole-bucket objective into a signed weighted coverage problem over label
-events, parameterized by candidate intensities.  The seeded search
+events, parameterized by candidate intensities.
+\Cref{lem:layer-cake-reduced-gain-separation} then reduces positive-gain
+exposure to one subset layer and, after truncation, a logarithmic dyadic search
+over layer weights.  The seeded search
 compiler \cref{lem:seeded-reduced-gain-search} isolates the useful
 code/lattice contribution: a proposal sampler or list decoder only has to
 expose a positive reduced-gain label against each surviving dual obstruction;
@@ -15686,6 +15781,9 @@ that universe.  \Cref{lem:reduced-gain-variational-separation} gives the
 search form of the oracle: after choosing tentative point intensities, the
 label generator only solves a signed weighted coverage problem, and exact
 verification converts any positive surplus into a valid column.
+\Cref{lem:layer-cake-reduced-gain-separation} removes the remaining continuous
+profile from that search, replacing it by a single point subset and scalar
+layer, with a dyadic scalar grid whenever the retained intensities are capped.
 
 \Cref{lem:smoothed-max-score-margin} gives a still simpler non-channel target: a query-centered Gaussian score direction separates every invalid point from the true near point by an additive $\Theta_c(tr^2)$ score margin, with high probability. The softest resulting primitive is \cref{asm:smoothed-gibbs}: with inverse-polylogarithmic probability, report a list carrying inverse-polylogarithmic mass under the Gaussian Gibbs kernel on data points. Sampling from the kernel restricted to that list gives a pointwise dominated output law by \cref{lem:captured-gibbs-domination}, and \cref{lem:smoothed-gibbs-suffices} then returns a valid answer because invalid points have negligible Gibbs mass and cannot be oversampled too much. A more exact sampling route is certified additive Gumbel-MIPS: \cref{lem:gumbel-additive-domination} shows that an $O(\log\log m)$ additive optimizer for the Gumbel-perturbed scores gives precisely the required one-sided Gibbs domination, yielding \cref{prop:gumbel-mips-polylog}. A stronger but different implementation route is smoothed additive nearest-neighbor search for the perturbed center $Y/t$ with additive squared-distance error $\Theta_c(r^2)$, exactly equivalent to additive score maximization by \cref{lem:score-max-additive-nn}. These oracles would bypass dyadic scales and representatives entirely, as recorded in \cref{prop:smoothed-gibbs-polylog}, \cref{prop:gumbel-mips-polylog}, and \cref{prop:smoothed-score-max-polylog}. They are targets, not implemented theorems; \cref{rem:gumbel-mips-not-ann} explains why black-box multiplicative ANN does not supply the Gumbel primitive. The older finite restricted-channel compiler \cref{asm:finite-restricted-channel} and \cref{prop:finite-channel-polylog} remain as a coarse explicit-enumeration special case and as a useful diagnostic framework.
 
