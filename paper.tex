@@ -13252,6 +13252,125 @@ Thus the geometric separator can focus on producing a smaller-radius or cheaper
 Pareto core with large positive support-minus-load margin; the query side is
 canonical.
 
+\begin{lemma}[Fractional Pareto-core packing separator]
+   \label{lem:fractional-pareto-core-packing-separator}
+   Fix a dyadic demand layer \(\mathcal N_j\) and a finite family of certified
+   cores \(\mathcal U\).  For \(U\in\mathcal U\), let \(c_U(q)\) be its
+   saturated layer support from \cref{lem:pareto-core-hinge-normal-form}.  Let
+   \(\Lambda\) be any finite nonnegative measure on records \((U,y)\), where
+   \(U\in\mathcal U\) and \(0\le y_q\le1\).  If
+   \[
+      \sum_{(U,y)}\Lambda_{U,y}
+      \left[
+         \theta_j\sum_qy_qc_U(q)
+         -
+         T_U\sum_q\tau_qy_q
+         -
+         \sigma S_U
+      \right]
+      >
+      0,
+      \tag{FPC1}
+   \]
+   then some threshold activation of a core in \(\mathcal U\) has positive
+   reduced gain.
+
+   Conversely, if no threshold activation of any core in \(\mathcal U\) has
+   positive reduced gain, then \((FPC1)\) fails for every such nonnegative
+   measure \(\Lambda\).  Equivalently, after optimizing out the fractional query
+   weights, the same condition is
+   \[
+      \sum_{U\in\mathcal U}\lambda_U
+      \left[
+         \sum_q(\theta_jc_U(q)-T_U\tau_q)_+
+         -
+         \sigma S_U
+      \right]
+      \le
+      0
+      \tag{FPC2}
+   \]
+   for every nonnegative vector \(\lambda_U\).
+\end{lemma}
+
+\begin{proof}
+   If \((FPC1)\) holds, then at least one record \((U,y)\) in the support of
+   \(\Lambda\) has
+   \[
+      \theta_j\sum_qy_qc_U(q)
+      >
+      T_U\sum_q\tau_qy_q+\sigma S_U .
+   \]
+   Since
+   \[
+      \sum_qy_qc_U(q)=\sum_{p\in U}d_y(p),
+   \]
+   this is exactly the hypothesis \((PDL1)\) of
+   \cref{lem:pareto-dense-core-layercake}.  Hence some threshold activation of
+   \(U\) has positive reduced gain.
+
+   For the converse, if no threshold activation has positive reduced gain, then
+   \cref{cor:pareto-dense-core-envelope} gives \((PDCE1)\) for every \(U\) and
+   \(y\).  Multiplying these inequalities by \(\Lambda_{U,y}\) and summing
+   proves that the left-hand side of \((FPC1)\) is nonpositive.
+
+   Finally, for a fixed \(U\), maximizing the bracketed expression in
+   \((FPC1)\) over \(0\le y\le1\) gives
+   \[
+      \sum_q(\theta_jc_U(q)-T_U\tau_q)_+-\sigma S_U
+   \]
+   by \cref{lem:pareto-core-hinge-normal-form}.  Therefore the query-weighted
+   conic form \((FPC1)\) is equivalent to the optimized core form \((FPC2)\).
+\end{proof}
+
+\begin{corollary}[Fractional Pareto-core packing implies local cover]
+   \label{cor:fractional-pareto-core-packing-local-cover}
+   Work in the setting of \cref{cor:core-envelope-local-cover}.  Suppose that
+   every surplus dual price system \((\alpha,\tau,\sigma)\) satisfying
+   \((RS1)\), after dyadically partitioning its positive demand prices, admits
+   some layer \(\mathcal L\) and a nonnegative measure on query-weighted records
+   \[
+      (U,y),
+      \qquad
+      (U,T_U,S_U)\in\mathcal U(\mathcal L),
+      \qquad
+      0\le y\le1,
+   \]
+   satisfying \((FPC1)\).  Then the finite filter-cover LP
+   \((\mathsf{FC}_{\mathcal N})\) is feasible with query budget \(L\) and
+   storage budget \(S\).
+\end{corollary}
+
+\begin{proof}
+   If the LP were infeasible, \cref{lem:finite-filter-cover-dual} would give a
+   surplus dual certificate with nonpositive reduced gain on every retained
+   column.  By hypothesis, one dyadic layer admits a fractional Pareto-core
+   packing satisfying \((FPC1)\).  Then
+   \cref{lem:fractional-pareto-core-packing-separator} exposes a positive-gain
+   threshold activation of a core in the enlarged universe, contradicting the
+   dual certificate.  Hence the cover LP is feasible.
+\end{proof}
+
+This is the fully fractional dense-overlap search problem in its most compact
+form.  A proposal mechanism does not have to choose disjoint clusters, Lloyd
+centers, or even integral query sides.  It may output any conic combination of
+certified cores and fractional query weights.  The verifier reduces positive
+total reduced cost to one ordinary retained filter, and
+\cref{lem:pareto-core-hinge-normal-form} says that the exact core oracle is the
+hinge maximization
+\[
+   \max_{(U,T_U,S_U)\in\mathcal U}
+   \left\{
+      \sum_q(\theta_jc_U(q)-T_U\tau_q)_+-\sigma S_U
+   \right\}.
+\]
+Thus \(k\)-means++, additive vector quantization, list decoding, range-reporting
+violator search, or learned proposals are useful only insofar as they find
+positive reduced-cost cores for this objective.  If every such conic packing has
+nonpositive value, the inequalities \((FPC1)\)--\((FPC2)\) are the explicit
+weighted pseudo-randomness certificate that must be fed back into the spherical
+analysis.
+
 \begin{assumption}[Layer quotient separator]
    \label{asm:layer-quotient-separator}
    Work in the setting of \cref{cor:residual-separator-local-cover}.  Suppose a
@@ -24972,6 +25091,12 @@ every certified core must obey the weighted support envelope \((PDCE1)\).
 positive-margin query side of a proposed core, and
 \cref{cor:dyadic-pareto-core-margin-screen} shows that logarithmically many
 margin layers suffice for proposal search before exact verification.
+\Cref{lem:fractional-pareto-core-packing-separator} then removes the last
+integrality from the proposal side: any conic combination of certified cores and
+fractional query weights with positive reduced-cost value exposes one ordinary
+positive-gain threshold activation.  Equivalently, the dense proposal oracle is
+the hinge objective \((FPC2)\), and failure of every such packing is the precise
+weighted pseudo-randomness condition left for the spherical residual analysis.
 By
 \cref{cor:layer-separation-local-cover},
 \cref{cor:hinge-container-separator-local-cover}, and
