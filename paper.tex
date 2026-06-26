@@ -14959,6 +14959,123 @@ singleton slices by hand.
    and that corollary gives the primitive hit-kernel cover.
 \end{proof}
 
+\begin{lemma}[Atomized paid-core hinge normal form]
+   \label{lem:atomized-paid-core-hinge}
+   Work with nonnegative prices \((\gamma,\tau,\sigma)\), primitive slices
+   \(V_{z,q}\), and primitive hit kernel
+   \[
+      r_{p,q}=\sum_z\Pi(z)\mathbf 1\{p\in V_{z,q}\}.
+   \]
+   Let \(U\) be a Pareto core with prices \(T_U,S_U\), and assume the Boolean
+   core universe contains \((U,Q',T_U,S_U)\) for every \(Q'\subseteq\mathcal Q\).
+   Define the atomized paid support of \(U\) at query \(q\) by
+   \[
+      \bar h_U^\gamma(q)
+      =
+      \sum_{\substack{p:(p,q)\in\mathcal N\\ p\in U}}
+      \gamma_{p,q}r_{p,q}.
+      \tag{APH1}
+   \]
+   Then the maximum paid atom surplus over all query sides and all atom
+   assignments inside \(U\) is
+   \[
+      \max_{Q'\subseteq\mathcal Q}
+      \left[
+         \sum_{q\in Q'}\bar h_U^\gamma(q)
+         -
+         T_U\sum_{q\in Q'}\tau_q
+         -
+         \sigma S_U
+      \right]
+      =
+      \sum_q\bigl(\bar h_U^\gamma(q)-T_U\tau_q\bigr)_+
+      -
+      \sigma S_U .
+      \tag{APH2}
+   \]
+   The maximum is attained by
+   \[
+      \bar Q_\gamma^+(U)=\{q:\bar h_U^\gamma(q)>T_U\tau_q\}.
+      \tag{APH3}
+   \]
+   Consequently, if
+   \[
+      \sum_q\bigl(\bar h_U^\gamma(q)-T_U\tau_q\bigr)_+
+      >
+      \sigma S_U,
+      \tag{APH4}
+   \]
+   then the Boolean record \((U,\bar Q_\gamma^+(U),T_U,S_U)\) has positive
+   repair reduced gain.
+\end{lemma}
+
+\begin{proof}
+   For a fixed query side \(Q'\), the largest atomized paid value inside \(U\)
+   is obtained by assigning all primitive atoms
+   \[
+      (z,p,q)
+      \quad\text{with}\quad
+      q\in Q',\ (p,q)\in\mathcal N,\ p\in U\cap V_{z,q}.
+   \]
+   Its value is
+   \[
+      \sum_{q\in Q'}
+      \sum_{\substack{p:(p,q)\in\mathcal N\\ p\in U}}
+      \gamma_{p,q}
+      \sum_{z:p\in V_{z,q}}\Pi(z)
+      =
+      \sum_{q\in Q'}\bar h_U^\gamma(q).
+   \]
+   Thus the assignment has disappeared, and optimizing over \(Q'\) is the
+   coordinatewise positive-part maximization in \((APH2)\), attained by
+   \((APH3)\).
+
+   If \((APH4)\) holds, the atomized paid value of the record
+   \(R=(U,\bar Q_\gamma^+(U),T_U,S_U)\) is larger than its query/storage price.
+   For every fixed near pair \((p,q)\), the total primitive probability of
+   assigned atoms with that pair is at most
+   \(r_{p,q}\le1\).  Hence the atomized value is at most
+   \[
+      \sum_{(p,q)\in\mathcal N}\gamma_{p,q}b_R(p,q),
+   \]
+   the same de-duplication argument as in
+   \cref{lem:paid-quotient-reduced-gain}.  Therefore \(R\) has positive repair
+   reduced gain.
+\end{proof}
+
+\begin{corollary}[Atomized paid-core separator implies hit-kernel cover]
+   \label{cor:atomized-paid-core-hit-kernel-cover}
+   Work in the setting of
+   \cref{lem:primitive-slice-law-hit-kernel-cover}, with finite primitive
+   support, and suppose the Boolean core universe contains every primitive
+   singleton record and all query-side threshold activations of a Pareto core
+   family \(\mathcal U_{\rm at}\).  If every nonnegative price system
+   \((\gamma,\tau,\sigma)\) satisfying
+   \[
+      A_{z,q}^{\gamma}\le P_{z,q}^{\tau,\sigma}\qquad(z,q),
+      \tag{APC1}
+   \]
+   and
+   \[
+      \sum_{(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}
+      >
+      \pi_1\left(L\sum_q\tau_q+\sigma S\right)
+      \tag{APC2}
+   \]
+   admits a core \(U\in\mathcal U_{\rm at}\) satisfying \((APH4)\), then
+   \((\mathsf{HKC}_{\mathcal U})\) is feasible.
+\end{corollary}
+
+\begin{proof}
+   If \((\mathsf{HKC}_{\mathcal U})\) were infeasible, the proof of
+   \cref{cor:paid-compression-hit-kernel-cover} gives a nonnegative dual price
+   system satisfying \((APC1)\)--\((APC2)\) and having nonpositive reduced gain
+   on every Boolean core record.  By hypothesis, some core \(U\) satisfies
+   \((APH4)\).  Then \cref{lem:atomized-paid-core-hinge} exposes a Boolean
+   threshold activation of \(U\) with positive repair reduced gain, a
+   contradiction.  Hence the primitive hit-kernel cover is feasible.
+\end{proof}
+
 \Cref{cor:paid-compression-hit-kernel-cover} is the fractional dense-filter
 cover in its paid form.  The separator does not choose disjoint dense clusters.
 It only has to prove that any overbudget value-proportional primitive law can be
@@ -14973,6 +15090,17 @@ reduced-cost inequality \((PCOV4)\).  When the family is closed under canonical
 assignment, \cref{lem:canonical-paid-core-hinge} removes the assignment and
 query-side choices too: preprocessing only has to search for an update core
 whose paid whole-slice support violates the hinge inequality \((CPH4)\).
+\Cref{lem:atomized-paid-core-hinge} is sharper still.  It allows a core to
+capture only the paid primitive atoms that actually lie in its update side, so
+the support term becomes the hit-kernel-weighted quantity
+\[
+   \bar h_U^\gamma(q)
+   =
+   \sum_{p\in U:(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}.
+\]
+The remaining dense theorem can therefore be stated without choosing primitive
+slice assignments at all: every surplus singleton-saturated paid dual must
+contain a radius-contracting core whose atomized support violates \((APH4)\).
 
 \begin{assumption}[Compression-dual separator]
    \label{asm:compression-dual-separator}
@@ -26845,7 +26973,13 @@ query/storage price, then the primitive hit-kernel cover is feasible.
 \cref{cor:canonical-paid-core-hit-kernel-cover} simplify the separator further:
 for a fixed update core, the best primitive assignment is all visible paid
 slices and the best query side is the positive-margin set, so the remaining
-search can target only the hinge violation \((CPH4)\).
+search can target only the hinge violation \((CPH4)\).  Finally,
+\cref{lem:atomized-paid-core-hinge} and
+\cref{cor:atomized-paid-core-hit-kernel-cover} remove the whole-slice
+restriction: it is enough for a core to capture hit-kernel-weighted paid atom
+mass
+\(\bar h_U^\gamma(q)=\sum_{p\in U}\gamma_{p,q}r_{p,q}\), and a violation of
+\((APH4)\) already forces the primitive hit-kernel cover.
 Because
 preprocessing time is deliberately not a scarce resource,
 \cref{lem:finite-pool-optimizer} and
