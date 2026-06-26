@@ -13552,6 +13552,56 @@ For a threshold $u$, the posterior-superlevel child is
    which gives \((CG4)\).
 \end{proof}
 
+\begin{corollary}[Whole-bucket reduced gain]
+   \label{cor:whole-bucket-reduced-gain}
+   In the setting of \cref{lem:rate-coverage-column-gain}, suppose a proposed
+   label \(a_*\) may receive arbitrary nonnegative intensities
+   \(s_x=b_{x,a_*}\) for all points \(x\in S\).  With \(c_*\) and \(G_x(a_*)\)
+   as in \((CG0)\)--\((CG1)\), the best simultaneous update has value
+   \[
+      \inf_{s_x\ge0}
+      \sum_{x\in S}
+      \left[
+         G_x(a_*)\bigl(e^{-s_x}-1\bigr)+c_*s_x
+      \right]
+      =
+      -\sum_{x\in S}\Phi_{c_*}(G_x(a_*)),
+      \tag{BG1}
+   \]
+   where the reduced-gain function is
+   \[
+      \Phi_c(G)=
+      \begin{cases}
+      0, & G\le c,\\[1mm]
+      G-c-c\log(G/c), & G>c>0,\\[1mm]
+      G, & c=0.
+      \end{cases}
+      \tag{BG2}
+   \]
+   The minimizing assignment is
+   \[
+      s_x=\log(G_x(a_*)/c_*)_+
+      \tag{BG3}
+   \]
+   when \(c_*>0\), with the evident \(s_x\to\infty\) limiting convention on
+   coordinates with \(c_*=0<G_x(a_*)\).  Thus the scalar
+   \[
+      \operatorname{Gain}(a_*)=
+      \sum_{x\in S}\Phi_{c_*}(G_x(a_*))
+      \tag{BG4}
+   \]
+   is exactly the best dual-improvement supplied by the proposed bucket label.
+\end{corollary}
+
+\begin{proof}
+   After the reporter event of \(a_*\) is fixed, the Lagrangian change is the
+   sum over \(x\) of the one-coordinate changes in \((CG2)\).  There is no
+   coupling between the variables \(s_x\), because storage and reported load are
+   charged per point-label incidence.  Applying \((CG3)\) independently to each
+   point gives \((BG1)\)--\((BG3)\), and \((BG4)\) is just the negative of the
+   minimized Lagrangian change.
+\end{proof}
+
 \begin{lemma}[Finite rate-coverage column generation]
    \label{lem:finite-rate-coverage-column-generation}
    Fix a finite candidate label family \(\mathcal B\) and a reporter
@@ -13652,12 +13702,13 @@ For a threshold $u$, the posterior-superlevel child is
    buckets.  \Cref{lem:rate-coverage-column-gain} gives the actual score to
    optimize: a proposed label is valuable for point \(x\) when its residual
    tilted witness coverage \(G_x(a)\) exceeds its dual query-load and storage
-   price.  \Cref{lem:finite-rate-coverage-column-generation} turns this into an
-   exact finite build algorithm: if a finite candidate family is feasible, then
-   every infeasible restricted solve reveals such a positive-gain pair until a
-   feasible active certificate is found.  Thus the theorem target is no longer
-   Lloyd convergence; it is the absence of a positive dual obstruction for a
-   compact decodable label family.
+   price, and \cref{cor:whole-bucket-reduced-gain} sums the optimal gains over
+   all points assigned to that bucket.  \Cref{lem:finite-rate-coverage-column-generation}
+   turns this into an exact finite build algorithm: if a finite candidate family
+   is feasible, then every infeasible restricted solve reveals such a
+   positive-gain pair until a feasible active certificate is found.  Thus the
+   theorem target is no longer Lloyd convergence; it is the absence of a
+   positive dual obstruction for a compact decodable label family.
 \end{remark}
 
 \begin{assumption}[Compact rate-coverage panel]
@@ -15069,11 +15120,11 @@ when their reported union has small scan load and high tilted witness capture.
 \Cref{lem:poisson-rate-coverage} turns this into the scalar rate-coverage
 certificate \((RC1)\)--\((RC3)\), and
 \cref{lem:finite-rate-coverage-convex} gives the offline convex verifier and
-dual obstruction for a proposed finite panel.  The reduced-cost and
-column-generation lemmas,
-\cref{lem:rate-coverage-column-gain} and
-\cref{lem:finite-rate-coverage-column-generation},
-make expensive build-time search exact for any finite candidate label family.
+dual obstruction for a proposed finite panel.  The reduced-cost,
+whole-bucket-gain, and column-generation lemmas,
+\cref{lem:rate-coverage-column-gain}, \cref{cor:whole-bucket-reduced-gain}, and
+\cref{lem:finite-rate-coverage-column-generation}, make expensive build-time
+search exact for any finite candidate label family.
 \Cref{prop:rate-coverage-polylog} records the resulting posterior endpoint.
 \Cref{cor:weighted-gaussian-quadrature-panel} records the exact positive
 finite certificate: a weighted retained label set only has to pass storage,
