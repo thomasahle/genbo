@@ -13071,6 +13071,212 @@ For a threshold $u$, the posterior-superlevel child is
    and space bounds are immediate.
 \end{proof}
 
+\begin{lemma}[Smoothed witness-list compiler]
+   \label{lem:smoothed-witness-list-compiler}
+   Work in the setting and with the dimension-aware parameters of
+   \cref{cor:query-centered-cell-reweighting}.  Fix a query \(q\), a near
+   witness \(p\in S\cap\Ball(q,r)\), and a retained candidate-list routine
+   which, on input \((q,Z)\), returns a set
+   \[
+      \mathcal L(q,Z)\subseteq S .
+   \]
+   Put
+   \[
+      R_{p,q}(Z)
+      =
+      \exp\!\left(
+         \frac{\alpha t}{2}
+         \bigl(\|Z-q\|^2-\|Z-p\|^2\bigr)
+      \right),
+      \qquad Z\sim N(q,I_D/t).
+      \tag{WL0}
+   \]
+   Then
+   \[
+      \E R_{p,q}(Z)
+      =
+      \exp\!\left(
+         -\frac{\alpha(1-\alpha)t}{2}\|p-q\|^2
+      \right)
+      \ge a_c>0 ,
+      \tag{WL1}
+   \]
+   where \(a_c\) depends only on \(c\).  Suppose further that the list routine
+   has tilted witness loss
+   \[
+      \E\left[
+         R_{p,q}(Z)\mathbf 1_{\{p\notin\mathcal L(q,Z)\}}
+      \right]
+      \le a_c/4 .
+      \tag{WL2}
+   \]
+   Let \(B=\log^{A_c}m\), with \(A_c\) large enough.  One trial of the
+   following procedure succeeds with probability at least
+   \(\Omega_c(1/B)\): sample \(Z\sim N(q,I_D/t)\), form
+   \(\mathcal L(q,Z)\), verify all listed candidates in the original metric,
+   and for every verified valid \(x\in\mathcal L(q,Z)\cap\Ball(q,cr)\) define
+   \[
+      \Delta_x(Z)=
+      \frac{\alpha t}{2}
+      \bigl(\|Z-q\|^2-\|Z-x\|^2\bigr).
+   \]
+   Let
+   \[
+      W_{\rm val}(Z)
+      =
+      \sum_{\substack{x\in\mathcal L(q,Z)\cap\Ball(q,cr)\\
+                      \Delta_x(Z)\le\log B}}
+      e^{\Delta_x(Z)} .
+   \]
+   Accept with probability \(\min\{1,W_{\rm val}(Z)/B\}\); conditional on
+   accepting, return a listed valid point with probability proportional to
+   \(e^{\Delta_x(Z)}\) over the capped valid candidates.  Thus
+   \(O_c(B)\) independent trials return a valid \(cr\)-neighbor with constant
+   probability.  The query work is \(O_c(B)\) times the cost of producing and
+   verifying one list.
+\end{lemma}
+
+\begin{proof}
+   The identity \((WL1)\) is the same Gaussian affinity calculation used above:
+   multiplying the density of \(N(q,I_D/t)\) by \(R_{p,q}\) gives the density
+   of \(N((1-\alpha)q+\alpha p,I_D/t)\), times the normalizing factor
+   displayed in \((WL1)\).  Since \(\|p-q\|\le r\) and
+   \(\alpha t r^2=\Theta_c(1)\), this factor is bounded below by a positive
+   constant \(a_c\).
+
+   As in the proof of \((QC3)\),
+   \[
+      \Delta_p(Z)
+      \le
+      \frac{\alpha t}{2}\|Z-q\|^2
+      =
+      \frac{\alpha}{2}\chi_D^2 ,
+   \]
+   and therefore
+   \[
+      \E\left[
+         R_{p,q}(Z)\mathbf 1_{\{\Delta_p(Z)>\log B\}}
+      \right]
+      \le e^{2\kappa}/B .
+      \tag{WL3}
+   \]
+   On the event \(p\in\mathcal L(q,Z)\) and \(\Delta_p(Z)\le\log B\), the
+   candidate \(p\) is valid and contributes \(e^{\Delta_p(Z)}\) to
+   \(W_{\rm val}(Z)\).  Because \(e^{\Delta_p(Z)}\le B\),
+   \[
+      \min\{1,W_{\rm val}(Z)/B\}
+      \ge
+      B^{-1}R_{p,q}(Z)
+      \mathbf 1_{\{p\in\mathcal L(q,Z),\,\Delta_p(Z)\le\log B\}} .
+   \]
+   Taking expectations and using \((WL1)\)--\((WL3)\) gives one-trial success
+   probability at least
+   \[
+      \frac1B\left(a_c-a_c/4-e^{2\kappa}/B\right)
+      =
+      \Omega_c(1/B),
+   \]
+   after choosing \(A_c\) large.  The returned point is explicitly verified,
+   so false positives cannot occur.  Independent repetition gives constant
+   success probability.
+\end{proof}
+
+\begin{corollary}[Facility-bucket witness form]
+   \label{cor:facility-bucket-witness}
+   In the setting of \cref{lem:smoothed-witness-list-compiler}, suppose the
+   retained structure consists of bucket sets \(\{S_a:a\in\mathcal A\}\) and a
+   query reporter which, on input \((q,Z)\), outputs labels
+   \(\mathcal A(q,Z)\subseteq\mathcal A\).  Let
+   \[
+      \mathcal L(q,Z)=\bigcup_{a\in\mathcal A(q,Z)}S_a .
+   \]
+   If, for every near pair \(p,q\),
+   \[
+      \E\left[
+         R_{p,q}(Z)
+         \mathbf 1_{\{p\notin\bigcup_{a\in\mathcal A(q,Z)}S_a\}}
+      \right]
+      \le a_c/4,
+      \tag{FB1}
+   \]
+   and the reported bucket union has expected scan size
+   \(m^\rho\log^{O_c(1)}m\), then \(O_c(\log^{A_c}m)\) trials of the bucket
+   procedure return a valid neighbor with constant probability using expected
+   scan work \(D\,m^\rho\log^{O_c(1)}m\), up to the cost of reporting the
+   labels.
+\end{corollary}
+
+\begin{proof}
+   Apply \cref{lem:smoothed-witness-list-compiler} to the candidate list
+   \(\mathcal L(q,Z)\).  The scan-size assumption bounds the verification work,
+   and \((FB1)\) is exactly the tilted witness-loss condition \((WL2)\).
+\end{proof}
+
+\begin{remark}[What \(k\)-means++ would have to prove]
+   \label{rem:kmeanspp-facility-target}
+   \Cref{cor:facility-bucket-witness} is the k-means-friendly version of the
+   posterior route.  A Lloyd or \(k\)-means++ run may be useful at build time
+   because it proposes data-adapted facility buckets, but the analysis does not
+   need to certify convergence to a centroid optimum.  It needs the two
+   inequalities \((FB1)\) and the expected bucket-union load.  In words, under
+   the tilted Gaussian law that moves the query a distance
+   \(\alpha\|p-q\|\) toward the hidden near point and adds noise
+   \(I_D/t\), the reported facilities must contain \(p\) with constant
+   weighted mass, while far and irrelevant buckets must not inflate the scan
+   beyond \(m^\rho\polylog m\).
+
+   This also suggests a cleaner practical alternative to plain Lloyd cells:
+   use expensive preprocessing to search over many soft or multi-assignment
+   facility panels--for example squared-distance seeded panels, repulsive
+   center sets, product-code panels, or lattice quotient buckets--and retain
+   only panels whose bucket-load and tilted witness-capture certificates are
+   good.  The retained query algorithm is then just a facility reporter plus
+   verified bucket scanning, while the proof object is the pair of finite
+   spectrum inequalities above.
+\end{remark}
+
+\begin{assumption}[Compact smoothed witness-list decoder]
+   \label{asm:smoothed-witness-list}
+   Fix \(c>1\) and \(\rho=\rho_c\).  For every bounded-diameter localized node
+   with \(m\) resident points in projected dimension \(D\), there is a retained
+   candidate-list decoder of space
+   \[
+      m^{1+\rho}\log^{O_c(1)}m
+   \]
+   such that, for every promised query \(q\) and every near witness
+   \(p\in S\cap\Ball(q,r)\), the tilted witness-loss condition \((WL2)\) holds.
+   One list can be generated and verified in expected query time
+   \[
+      D\,m^\rho\log^{O_c(1)}m .
+   \]
+\end{assumption}
+
+\begin{proposition}[Conditional witness-list posterior endpoint]
+   \label{prop:witness-list-polylog}
+   Under \cref{asm:smoothed-witness-list}, worst-case Euclidean ANN has query
+   time
+   \[
+      Q(n,d)=d\,n^{\rho_c}\log^{O_c(1)}n
+   \]
+   and space
+   \[
+      S(n,d)=dn+n^{1+\rho_c}\log^{O_c(1)}n .
+   \]
+\end{proposition}
+
+\begin{proof}
+   Apply the projected bounded-diameter localization of
+   \cref{lem:localization}.  In a good localized copy containing a true near
+   pair \(p,q\), run \cref{lem:smoothed-witness-list-compiler} with the
+   retained decoder from \cref{asm:smoothed-witness-list}.  The
+   \(O_c(\log^{A_c}m)\) rejection repetitions contribute only a polylogarithmic
+   factor, and the local expected query work is
+   \(D\,m^\rho\log^{O_c(1)}m\).  Projection and final metric verification are
+   absorbed in the displayed ambient \(d\)-dependent bound.  The space bound is
+   the retained local decoder space plus raw coordinates, summed over the
+   polylogarithmic localized copies.
+\end{proof}
+
 \begin{assumption}[Smoothed structured nearest-cell decoder]
    \label{asm:smoothed-nearest-cell}
    Fix \(c>1\) and \(\rho=\rho_c\).  For every bounded-diameter localized node
@@ -13401,7 +13607,12 @@ sample from the normalized point measures \(\Lambda_{q,\xi}\).  But
 \cref{lem:scale-amplified-alpha-leader} shows that even the scale resolution is
 not intrinsic after amplification: the dyadic weights collapse to the single
 max-tilted leader law \((AL2)\).  Thus the sharpest current posterior target is
-\cref{asm:alpha-leader-sampler}.  The hidden-label assumption
+\cref{asm:alpha-leader-sampler}.  The query-centered form then weakens the
+algorithmic target further: \cref{lem:smoothed-witness-list-compiler} does not
+need exact max-tilted sampling or exact Voronoi-cell decoding.  It only needs a
+short list that contains the hidden near witness with constant mass under the
+tilted Gaussian law \((WL0)\), after which scalar rejection and metric
+verification finish the query.  The hidden-label assumption
 \cref{asm:normalized-likelihood-leader-sampler} remains a more general
 implementation normal form for code, lattice, product-panel, or trellis
 samplers that expose a partition function \(W_{q,\xi}\) and sample a tilted
@@ -14342,6 +14553,11 @@ nearest-cell decoder into the max-tilted posterior sampler with only a
 polylogarithmic rejection overhead.  \Cref{rem:nearest-cell-structured-decoding}
 is the important caveat: this is not a black-box exact-NN assumption, but a
 code/lattice/trellis decoder target for smoothed Voronoi or quotient cells.
+\Cref{lem:smoothed-witness-list-compiler} weakens this again: the query need
+not identify the exact nearest cell of the perturbation, only list the true near
+witness with constant tilted mass.  \Cref{cor:facility-bucket-witness} is the
+corresponding facility or \(k\)-means++-style form: retained buckets are useful
+when their reported union has small scan load and high tilted witness capture.
 \Cref{cor:weighted-gaussian-quadrature-panel} records the exact positive
 finite certificate: a weighted retained label set only has to pass storage,
 sampled far-load, and near-mass checks under the tilted query sampler.  The
@@ -14559,7 +14775,7 @@ pattern-complete materialization produce the stored cover required by
 \paragraph{Structured posterior route.}
 \Cref{lem:posterior-superlevel-compiler} records the negative-moment identity suggested by the latest notes. \Cref{lem:explicit-enumeration-barrier} makes the coarse-child obstruction precise: the scale $\xi=m^{-1/(2c^2)}$ is the price of explicitly enumerating $B\simeq\xi^{-1}$ outcomes, not a geometric limit. \Cref{lem:oblivious-sparsification-barrier} adds the complementary warning that the moment bounds alone still permit $\Omega(\xi^{-1})$ disjoint possible witnesses, so direct random sparsification cannot replace structured decoding without an additional sensitivity theorem. \Cref{lem:scale-window-compiler} and \cref{lem:dyadic-structured-amplification} isolate the important arithmetic: if mass windows can be decoded output-sensitively, then $\xi^{-\rho}$ repetitions at each dyadic scale convert negative-moment value into constant hit probability, and summing all scales down to $1/m$ still fits the $m^\rho$ query budget. This scale-aware amplification is essential; a raw negative-moment diagnostic alone does not imply that the near point is actually listed with inverse-polylogarithmic probability.
 
-The continuous likelihood-ball family now proves both analytic sides of the desired posterior decoder: \cref{thm:continuous-likelihood-balls} gives the guard-or-pure-child value, and \cref{lem:ideal-likelihood-scale-profile} gives the scale-normalized query and storage moments. \Cref{lem:likelihood-rank-prefix} further collapses the threshold continuum to rank gaps of a random score order. \Cref{cor:likelihood-prefix-leader} removes another artificial materialization cost: for ANN, every pure prefix may report the same score leader, so the decoder can aggregate prefix mass by leader buckets instead of storing one representative per prefix. \Cref{lem:dyadic-leader-quotient} records the full amplification in this hidden-label form and contributes no per-prefix storage term, and \cref{cor:likelihood-leader-intensity} identifies the exact quotient law as the rank-gap weighted measure over score leaders. \Cref{lem:ideal-likelihood-leader-law} further proves that this quotient law has constant total intensity per scale and constant scale-weighted valid intensity under guard failure. \Cref{lem:poissonized-normalized-leader-sampler} removes the remaining all-listing requirement from a sampled implementation: computing the total intensity and sampling from the normalized tilted law gives the exact Poisson leader process. Finally, \cref{lem:scale-amplified-alpha-leader} shows that the dyadic repetitions cancel the rank powers, collapsing the whole amplified posterior to the max-tilted leader law \((AL2)\), with constant total mass and constant valid mass for every near pair. The cleanest structured target is therefore \cref{asm:alpha-leader-sampler}; conditional on it, \cref{prop:alpha-leader-polylog} gives the desired polylogarithmic ANN bounds. \Cref{lem:alpha-leader-voronoi-capture} gives an equivalent geometric normal form for that same target: the max-tilted intensity of \(x\) is a Gaussian Voronoi-cell capture probability for the interpolated center \((1-\alpha)q+\alpha x\), multiplied by the explicit distance tilt \(\exp(-\alpha(1-\alpha)t\|x-q\|^2/2)\). Thus the sampler can be attacked as a compact smoothed Voronoi-cell sampler, not only as an integral over score directions. The scale-resolved sampler \cref{asm:ideal-likelihood-leader-law-sampler}, the hidden-label sampler \cref{asm:normalized-likelihood-leader-sampler}, and the older all-listing \cref{asm:multiscale-structured-likelihood} remain sufficient implementation forms.
+The continuous likelihood-ball family now proves both analytic sides of the desired posterior decoder: \cref{thm:continuous-likelihood-balls} gives the guard-or-pure-child value, and \cref{lem:ideal-likelihood-scale-profile} gives the scale-normalized query and storage moments. \Cref{lem:likelihood-rank-prefix} further collapses the threshold continuum to rank gaps of a random score order. \Cref{cor:likelihood-prefix-leader} removes another artificial materialization cost: for ANN, every pure prefix may report the same score leader, so the decoder can aggregate prefix mass by leader buckets instead of storing one representative per prefix. \Cref{lem:dyadic-leader-quotient} records the full amplification in this hidden-label form and contributes no per-prefix storage term, and \cref{cor:likelihood-leader-intensity} identifies the exact quotient law as the rank-gap weighted measure over score leaders. \Cref{lem:ideal-likelihood-leader-law} further proves that this quotient law has constant total intensity per scale and constant scale-weighted valid intensity under guard failure. \Cref{lem:poissonized-normalized-leader-sampler} removes the remaining all-listing requirement from a sampled implementation: computing the total intensity and sampling from the normalized tilted law gives the exact Poisson leader process. Finally, \cref{lem:scale-amplified-alpha-leader} shows that the dyadic repetitions cancel the rank powers, collapsing the whole amplified posterior to the max-tilted leader law \((AL2)\), with constant total mass and constant valid mass for every near pair. The clean measure target is therefore \cref{asm:alpha-leader-sampler}; conditional on it, \cref{prop:alpha-leader-polylog} gives the desired polylogarithmic ANN bounds. \Cref{lem:alpha-leader-voronoi-capture} gives an equivalent geometric normal form for that same target: the max-tilted intensity of \(x\) is a Gaussian Voronoi-cell capture probability for the interpolated center \((1-\alpha)q+\alpha x\), multiplied by the explicit distance tilt \(\exp(-\alpha(1-\alpha)t\|x-q\|^2/2)\). \Cref{cor:query-centered-cell-reweighting} and \cref{cor:truncated-nearest-cell-compiler} then reduce max-tilted sampling to query-centered nearest-cell decoding plus scalar rejection. The weakest current algorithmic posterior target is \cref{asm:smoothed-witness-list}: list the true near witness with constant tilted Gaussian mass and scan the verified list. Conditional on it, \cref{prop:witness-list-polylog} gives the same polylogarithmic ANN bound. The facility form \cref{cor:facility-bucket-witness} is the version most directly connected to \(k\)-means++ or other build-time bucket proposals. The scale-resolved sampler \cref{asm:ideal-likelihood-leader-law-sampler}, the hidden-label sampler \cref{asm:normalized-likelihood-leader-sampler}, the structured nearest-cell decoder \cref{asm:smoothed-nearest-cell}, and the older all-listing \cref{asm:multiscale-structured-likelihood} remain stronger sufficient implementation forms.
 
 \Cref{lem:smoothed-max-score-margin} gives a still simpler non-channel target: a query-centered Gaussian score direction separates every invalid point from the true near point by an additive $\Theta_c(tr^2)$ score margin, with high probability. The softest resulting primitive is \cref{asm:smoothed-gibbs}: with inverse-polylogarithmic probability, report a list carrying inverse-polylogarithmic mass under the Gaussian Gibbs kernel on data points. Sampling from the kernel restricted to that list gives a pointwise dominated output law by \cref{lem:captured-gibbs-domination}, and \cref{lem:smoothed-gibbs-suffices} then returns a valid answer because invalid points have negligible Gibbs mass and cannot be oversampled too much. A more exact sampling route is certified additive Gumbel-MIPS: \cref{lem:gumbel-additive-domination} shows that an $O(\log\log m)$ additive optimizer for the Gumbel-perturbed scores gives precisely the required one-sided Gibbs domination, yielding \cref{prop:gumbel-mips-polylog}. A stronger but different implementation route is smoothed additive nearest-neighbor search for the perturbed center $Y/t$ with additive squared-distance error $\Theta_c(r^2)$, exactly equivalent to additive score maximization by \cref{lem:score-max-additive-nn}. These oracles would bypass dyadic scales and representatives entirely, as recorded in \cref{prop:smoothed-gibbs-polylog}, \cref{prop:gumbel-mips-polylog}, and \cref{prop:smoothed-score-max-polylog}. They are targets, not implemented theorems; \cref{rem:gumbel-mips-not-ann} explains why black-box multiplicative ANN does not supply the Gumbel primitive. The older finite restricted-channel compiler \cref{asm:finite-restricted-channel} and \cref{prop:finite-channel-polylog} remain as a coarse explicit-enumeration special case and as a useful diagnostic framework.
 
@@ -14586,7 +14802,7 @@ For the randomized cap-thinning route, one remaining task is the branching first
    \le
    \log^{O_c(1)}n\,V(\varnothing)^2 .
 \]
-\Cref{lem:local-lca-energy} further reduces this to a local Bellman multiplier, and \cref{cor:square-nonexpansive-routes} shows that square-nonexpansive value branching costs only the polylogarithmic route depth. Equivalently, \cref{lem:energy-spine-toll} says that it is enough to prove only $O_c(\log\log n)$ positive square-energy toll along the energy-biased route spine. The capped-flow certificate \cref{lem:unit-capped-value-flow}, the Bellman recursion \cref{lem:saturated-value-recursion}, and the min-cut dual \cref{lem:saturated-value-mincut} give a still simpler sufficient formulation: prove that every route cut has inverse-polylogarithmic prefix-success mass. The equivalent dominated-law form in \cref{lem:dominated-route-law} says to construct a tilted law on tame routes whose prefix probabilities are dominated by activation prefix masses up to a polylogarithmic factor; by \cref{cor:typical-route-law-toll}, it is enough to prove only $O_c(\log\log n)$ expected positive domination toll under that route law and prune the bad tail. The cut-energy form \cref{lem:cut-energy-route-law} is closer to stopping-time proofs: it asks only for polylogarithmic $\sum_{u\in\mathcal C}\Lambda(u)^2/A(u)$ on each route cut $\mathcal C$. By \cref{lem:frontier-square-toll}, this is equivalent to bounding the positive square toll of the square-biased route spine up to each stopped frontier, with no all-prefix depth summation. The stronger all-prefix bound in \cref{cor:route-law-prefix-energy} remains an LCA-compatible sufficient condition. Conditional on either aggregate value statement, \cref{prop:budget-thinned-polylog} gives the desired polylogarithmic ANN theorem. This is a fully non-channel route; the smooth product terminal filter can be used after localization and no longer contributes an inverse-polylogarithmic table-recall penalty. The structured posterior route replaces the cap-frontier obstacle by \cref{asm:alpha-leader-sampler}: prove a compact sampler for the max-tilted leader law \((AL2)\), equivalently for the smoothed Voronoi-cell capture weights in \cref{lem:alpha-leader-voronoi-capture}; the target is not a small explicitly enumerable channel, not a dyadic rank-prefix reporter, and not a stored hierarchy of posterior buckets. The smoothed sampling route replaces both by \cref{asm:smoothed-gibbs} or \cref{asm:gumbel-mips}: prove either an optimal-exponent reporter that captures inverse-polylogarithmic Gaussian Gibbs mass, or a certified $O(\log\log n)$-additive Gumbel-MIPS primitive. Smoothed additive nearest neighbor is another stronger sufficient primitive. The detector-vote cohort-or-leaf route is a separate possible generalization to arbitrary certified child hierarchies, where the remaining issue is near-lineage coupling between ordinary continuation paths and detector activations.
+\Cref{lem:local-lca-energy} further reduces this to a local Bellman multiplier, and \cref{cor:square-nonexpansive-routes} shows that square-nonexpansive value branching costs only the polylogarithmic route depth. Equivalently, \cref{lem:energy-spine-toll} says that it is enough to prove only $O_c(\log\log n)$ positive square-energy toll along the energy-biased route spine. The capped-flow certificate \cref{lem:unit-capped-value-flow}, the Bellman recursion \cref{lem:saturated-value-recursion}, and the min-cut dual \cref{lem:saturated-value-mincut} give a still simpler sufficient formulation: prove that every route cut has inverse-polylogarithmic prefix-success mass. The equivalent dominated-law form in \cref{lem:dominated-route-law} says to construct a tilted law on tame routes whose prefix probabilities are dominated by activation prefix masses up to a polylogarithmic factor; by \cref{cor:typical-route-law-toll}, it is enough to prove only $O_c(\log\log n)$ expected positive domination toll under that route law and prune the bad tail. The cut-energy form \cref{lem:cut-energy-route-law} is closer to stopping-time proofs: it asks only for polylogarithmic $\sum_{u\in\mathcal C}\Lambda(u)^2/A(u)$ on each route cut $\mathcal C$. By \cref{lem:frontier-square-toll}, this is equivalent to bounding the positive square toll of the square-biased route spine up to each stopped frontier, with no all-prefix depth summation. The stronger all-prefix bound in \cref{cor:route-law-prefix-energy} remains an LCA-compatible sufficient condition. Conditional on either aggregate value statement, \cref{prop:budget-thinned-polylog} gives the desired polylogarithmic ANN theorem. This is a fully non-channel route; the smooth product terminal filter can be used after localization and no longer contributes an inverse-polylogarithmic table-recall penalty. The structured posterior route replaces the cap-frontier obstacle by the tilted witness-list target \cref{asm:smoothed-witness-list}: prove a compact reporter whose verified candidate list contains the true near point with constant mass under the query-centered tilted Gaussian law. The stronger max-tilted sampler \cref{asm:alpha-leader-sampler} and nearest-cell decoder \cref{asm:smoothed-nearest-cell} remain clean implementation normal forms, but the facility-bucket compiler \cref{cor:facility-bucket-witness} shows that k-means++-style or lattice/code buckets only need witness capture and scan-load certificates. The smoothed sampling route replaces both by \cref{asm:smoothed-gibbs} or \cref{asm:gumbel-mips}: prove either an optimal-exponent reporter that captures inverse-polylogarithmic Gaussian Gibbs mass, or a certified $O(\log\log n)$-additive Gumbel-MIPS primitive. Smoothed additive nearest neighbor is another stronger sufficient primitive. The detector-vote cohort-or-leaf route is a separate possible generalization to arbitrary certified child hierarchies, where the remaining issue is near-lineage coupling between ordinary continuation paths and detector activations.
 
 \appendix
 
