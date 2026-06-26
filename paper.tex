@@ -11154,6 +11154,114 @@ every high-correlation bucket lies below the Renyi density envelope \((DP5)\).
 This is the weighted pseudo-random condition that the next geometric step must
 combine with the spherical co-load lower bound \((SD1)\).
 
+\begin{lemma}[Dense-slice quotient separation]
+   \label{lem:dense-slice-quotient-separation}
+   Work in the setting of \cref{lem:high-correlation-dense-slice-separator}.
+   Let \(\mathcal G\) be a finite family of certified dense quotient filters.
+   Each \(G\in\mathcal G\) has update side \(U_G\subseteq P\), activation
+   predicate \(a_G:\mathcal Q\to\{0,1\}\), and certified prices \(T_G,S_G\).
+   Suppose also that \(G\) is assigned a finite set of primitive slices
+   \[
+      \mathcal I_G\subseteq\mathcal Z\times\mathcal Q
+   \]
+   such that, for every \((z,q)\in\mathcal I_G\),
+   \[
+      V_{z,q}\subseteq U_G,
+      \qquad
+      a_G(q)=1 .
+      \tag{DQ1}
+   \]
+   Define the quotient demand captured by \(G\) as
+   \[
+      A_G=
+      \sum_{(p,q)\in\mathcal N}
+      \alpha_{p,q}\mathbf 1\{p\in U_G\}a_G(q).
+      \tag{DQ2}
+   \]
+   If a probability law \(\Gamma\) on \(\mathcal G\) satisfies
+   \[
+      \E_{G\sim\Gamma}
+      \left[
+         A_G
+         -
+         T_G\sum_q\tau_qa_G(q)
+         -
+         \sigma S_G
+      \right]
+      >0,
+      \tag{DQ3}
+   \]
+   then some quotient filter \(G\) has positive reduced gain in the
+   filter-cover dual.
+
+   Moreover, put
+   \[
+      b_G=
+      \max\left\{
+         1,\;
+         \max_{(p,q)\in\mathcal N}
+         \left|
+            \{z:(z,q)\in\mathcal I_G,\ p\in V_{z,q}\}
+         \right|
+      \right\}.
+      \tag{DQ4}
+   \]
+   Then
+   \[
+      A_G
+      \ge
+      \frac1{b_G}
+      \sum_{(z,q)\in\mathcal I_G}A_{z,q}.
+      \tag{DQ5}
+   \]
+   Hence the stronger check
+   \[
+      \E_{G\sim\Gamma}
+      \left[
+         \frac1{b_G}
+         \sum_{(z,q)\in\mathcal I_G}A_{z,q}
+         -
+         T_G\sum_q\tau_qa_G(q)
+         -
+         \sigma S_G
+      \right]
+      >0
+      \tag{DQ6}
+   \]
+   also exposes a positive-gain quotient.
+\end{lemma}
+
+\begin{proof}
+   The expression inside \((DQ3)\) is exactly the reduced gain of the filter
+   \(G=(U_G,a_G,T_G,S_G)\).  If its average over \(\Gamma\) is positive, at least
+   one member of \(\mathcal G\) has positive gain.
+
+   For \((DQ5)\), expand the assigned primitive demand:
+   \[
+      \sum_{(z,q)\in\mathcal I_G}A_{z,q}
+      =
+      \sum_{(p,q)\in\mathcal N}
+      \alpha_{p,q}
+      \left|
+         \{z:(z,q)\in\mathcal I_G,\ p\in V_{z,q}\}
+      \right|.
+   \]
+   By \((DQ1)\), every primitive incidence counted on the right also satisfies
+   \(p\in U_G\) and \(a_G(q)=1\).  By the definition of \(b_G\), each demand pair
+   is counted at most \(b_G\) times.  Therefore the last display is at most
+   \(b_GA_G\), which proves \((DQ5)\).  Combining \((DQ5)\) with \((DQ6)\) gives
+   \((DQ3)\).
+\end{proof}
+
+This is the exact dual form of dense merging.  If many singleton slices are
+different views of the same smaller-radius region, the proof need not pay their
+storage repeatedly: it may propose a quotient \(G\), verify its activation
+predicate and descendant price once, and use \cref{lem:dense-slice-quotient-separation}
+to test whether the merged column has positive reduced gain.  Thus the remaining
+dense theorem is not a clustering theorem in Lloyd form; it is a geometric
+separator for quotients whose primitive demand is large compared with their
+query-price overlap, storage price, and duplicate-incidence factor \(b_G\).
+
 \begin{lemma}[Finite-signature filter-cover compiler]
    \label{lem:finite-signature-filter-cover}
    Let $\Omega$ be a query domain for one resident node \(P\), and let
@@ -22719,7 +22827,10 @@ dense moment drops.  \Cref{lem:dense-slice-prefix-separation} sharpens the dense
 side further: after sorting dual demand prices inside each high-correlation
 slice, every profitable atom-safe subcolumn is witnessed by a prefix, and
 therefore any unresolved obstruction must have all price superlevels below the
-Renyi density envelope \((DP5)\).  Since
+Renyi density envelope \((DP5)\).  \Cref{lem:dense-slice-quotient-separation}
+then gives the exact merge test: grouped singleton slices can be replaced by one
+certified dense quotient whenever their de-duplicated primitive demand beats the
+quotient query and storage prices.  Since
 preprocessing time is deliberately not a scarce resource,
 \cref{lem:finite-pool-optimizer} and
 \cref{cor:offline-pareto-compression} allow the build stage to enumerate,
