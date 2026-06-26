@@ -13761,6 +13761,108 @@ For a threshold $u$, the posterior-superlevel child is
    finitely many augmentations proves the expected proposal bounds.
 \end{proof}
 
+\begin{lemma}[Implicit reduced-gain separation]
+   \label{lem:implicit-reduced-gain-separation}
+   Let \(\mathcal U\) be an arbitrary implicit label universe.  For each
+   \(a\in\mathcal U\) and query \(q\), let
+   \(h_{q,a}(\omega)=\mathbf 1\{a\in A_q(\omega)\}\) be a measurable reporter
+   event.  Let \(E\subseteq S\times\mathcal U\) be finite, and consider the
+   restricted rate-coverage system in which only variables in \(E\) may be
+   nonzero.  Suppose this restricted system is infeasible, has a dual
+   certificate \((\lambda,\theta,\gamma)\), and has an attained restricted
+   dual minimizer \(b^E\).
+
+   For every \(a\in\mathcal U\), define
+   \[
+      c_a=\gamma+\sum_q\theta_q\int h_{q,a}(\omega)\,d\nu_q(\omega),
+      \tag{IG0}
+   \]
+   \[
+      G_x^E(a)
+      =
+      \sum_{q:\,(x,q)\in\mathcal N}
+      \lambda_{x,q}
+      \int
+      r_{x,q}(\omega)h_{q,a}(\omega)
+      \exp\!\left(
+         -\sum_{(x,a')\in E}
+         h_{q,a'}(\omega)b^E_{x,a'}
+      \right)d\nu_q(\omega),
+      \tag{IG1}
+   \]
+   and
+   \[
+      \operatorname{Gain}_E(a)
+      =
+      \sum_{x\in S}\Phi_{c_a}\!\left(G_x^E(a)\right).
+      \tag{IG2}
+   \]
+   If
+   \[
+      \operatorname{Gain}_E(a)=0
+      \qquad(a\in\mathcal U),
+      \tag{IG3}
+   \]
+   then the same dual certificate proves infeasibility of every finite-support
+   extension of \(E\) inside \(S\times\mathcal U\).  Equivalently, no feasible
+   rate-coverage certificate with finite label support exists in
+   \(\mathcal U\).
+
+   Thus an exact reduced-gain separator for \(\mathcal U\), which either
+   returns a label \(a\) with \(\operatorname{Gain}_E(a)>0\) or certifies
+   \((IG3)\), is a complete build-time separation oracle for finite-support
+   certificates.  If the finite-support system over \(\mathcal U\) is feasible
+   and the current restricted system is infeasible, the separator must return a
+   positive-gain label.
+
+   Moreover, suppose labels are quotient by the equivalence relation
+   \(a\sim a'\) when
+   \(h_{q,a}=h_{q,a'}\) \(\nu_q\)-almost everywhere for every \(q\), and the
+   quotient has \(N\) classes.  If column generation keeps at most one
+   representative of each quotient class and adds all pairs
+   \((x,a)\) with \(G_x^E(a)>c_a\) for every positive-gain representative it
+   receives, then an exact separator over quotient representatives either
+   produces a feasible active certificate or proves finite-support
+   infeasibility after at most \(|S|N\) successful augmentations.
+\end{lemma}
+
+\begin{proof}
+   The attained minimizer \(b^E\) satisfies the active KKT conditions exactly
+   as in the proof of \cref{lem:finite-rate-coverage-column-generation}:
+   \[
+      G_x^E(a)\le c_a,\qquad
+      b^E_{x,a}\bigl(c_a-G_x^E(a)\bigr)=0
+      \qquad((x,a)\in E).
+      \tag{IG4}
+   \]
+   Since \(\Phi_c(G)=0\) is equivalent to \(G\le c\), condition \((IG3)\)
+   implies \(G_x^E(a)\le c_a\) for every inactive pair
+   \((x,a)\notin E\).  Hence \(b^E\), extended by zero, satisfies the KKT
+   conditions on \(E\cup F\) for every finite set
+   \(F\subseteq S\times\mathcal U\).  Convexity of the finite-dimensional
+   Lagrangian on that active orthant makes this extension a global minimizer
+   over \(E\cup F\).
+
+   The restricted dual certificate has Lagrangian value strictly larger than
+   the weighted target in \((FC4)\).  The zero-extended point has the same value
+   on every finite extension \(E\cup F\), and it is the minimizer there.  Thus
+   the same multipliers satisfy \((FC4)\) for every finite extension.  Every
+   finite-support rate-coverage certificate uses some such finite set \(F\), so
+   no finite-support feasible certificate can exist.
+
+   The separator statement is the contrapositive: if a finite-support feasible
+   certificate exists and the current restricted system is infeasible, then
+   \((IG3)\) cannot hold, so some label has positive gain and an exact separator
+   must return one.  The quotient statement follows because all quantities
+   \((IG0)\)--\((IG2)\), and all primal constraints involving a label, depend
+   only on the reporter events \(h_{q,a}\) up to \(\nu_q\)-null sets.  With one
+   representative per quotient class, each successful augmentation adds at
+   least one previously inactive pair in the finite set of size \(|S|N\).
+   If the process exhausts those pairs without feasibility, the no-positive-gain
+   certificate above proves finite-support infeasibility over the entire
+   quotient universe.
+\end{proof}
+
 \begin{remark}[Offline certificate for facility search]
    \label{rem:rate-coverage-offline-certificate}
    \Cref{lem:finite-rate-coverage-convex} is the build-time certificate
@@ -13789,7 +13891,12 @@ For a threshold $u$, the posterior-superlevel child is
    \(\mathsf P_E\).  The only property needed for the proof is exposure of a
    positive reduced-gain label against every surviving dual obstruction; the
    proposed label is then verified by the exact finite convex certificate
-   before it is retained.
+   before it is retained.  \Cref{lem:implicit-reduced-gain-separation} removes
+   the need to enumerate the proposal universe in advance.  A retained
+   code/lattice/trellis decoder may act as an implicit separator over its
+   quotient label classes: either it exposes a positive reduced-gain bucket, or
+   the current dual obstruction certifies that no finite-support panel from that
+   universe can solve the rate-coverage constraints.
 \end{remark}
 
 \begin{assumption}[Compact rate-coverage panel]
@@ -15209,7 +15316,11 @@ search exact for any finite candidate label family.  The seeded search
 compiler \cref{lem:seeded-reduced-gain-search} isolates the useful
 code/lattice contribution: a proposal sampler or list decoder only has to
 expose a positive reduced-gain label against each surviving dual obstruction;
-the finite verifier then decides whether to retain it.
+the finite verifier then decides whether to retain it.  The implicit separator
+\cref{lem:implicit-reduced-gain-separation} further shows that a compact
+code/lattice quotient does not have to be enumerated in advance: no-positive-gain
+separation is itself an infeasibility certificate for every finite-support
+panel in that universe.
 \Cref{prop:rate-coverage-polylog} records the resulting posterior endpoint.
 \Cref{cor:weighted-gaussian-quadrature-panel} records the exact positive
 finite certificate: a weighted retained label set only has to pass storage,
@@ -15434,7 +15545,11 @@ The continuous likelihood-ball family now proves both analytic sides of the desi
 finite certificate to list-decoding and lattice-decoding proposals: the
 proposal mechanism only has to expose a positive reduced-gain label against
 the current dual obstruction, because the retained panel is accepted by the
-same exact convex verifier.
+same exact convex verifier.  \Cref{lem:implicit-reduced-gain-separation}
+turns this into a true separation-oracle statement for implicit quotient
+families: if a code, lattice, trellis, or facility universe cannot expose
+positive gain, the dual obstruction rules out every finite-support panel from
+that universe.
 
 \Cref{lem:smoothed-max-score-margin} gives a still simpler non-channel target: a query-centered Gaussian score direction separates every invalid point from the true near point by an additive $\Theta_c(tr^2)$ score margin, with high probability. The softest resulting primitive is \cref{asm:smoothed-gibbs}: with inverse-polylogarithmic probability, report a list carrying inverse-polylogarithmic mass under the Gaussian Gibbs kernel on data points. Sampling from the kernel restricted to that list gives a pointwise dominated output law by \cref{lem:captured-gibbs-domination}, and \cref{lem:smoothed-gibbs-suffices} then returns a valid answer because invalid points have negligible Gibbs mass and cannot be oversampled too much. A more exact sampling route is certified additive Gumbel-MIPS: \cref{lem:gumbel-additive-domination} shows that an $O(\log\log m)$ additive optimizer for the Gumbel-perturbed scores gives precisely the required one-sided Gibbs domination, yielding \cref{prop:gumbel-mips-polylog}. A stronger but different implementation route is smoothed additive nearest-neighbor search for the perturbed center $Y/t$ with additive squared-distance error $\Theta_c(r^2)$, exactly equivalent to additive score maximization by \cref{lem:score-max-additive-nn}. These oracles would bypass dyadic scales and representatives entirely, as recorded in \cref{prop:smoothed-gibbs-polylog}, \cref{prop:gumbel-mips-polylog}, and \cref{prop:smoothed-score-max-polylog}. They are targets, not implemented theorems; \cref{rem:gumbel-mips-not-ann} explains why black-box multiplicative ANN does not supply the Gumbel primitive. The older finite restricted-channel compiler \cref{asm:finite-restricted-channel} and \cref{prop:finite-channel-polylog} remain as a coarse explicit-enumeration special case and as a useful diagnostic framework.
 
