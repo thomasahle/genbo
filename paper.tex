@@ -13688,6 +13688,79 @@ For a threshold $u$, the posterior-superlevel child is
    contradict feasibility of the full system by the first part.
 \end{proof}
 
+\begin{lemma}[Seeded reduced-gain search]
+   \label{lem:seeded-reduced-gain-search}
+   Work in the finite candidate setting of
+   \cref{lem:finite-rate-coverage-column-generation}.  At an infeasible
+   restricted solve with attained minimizer \(b^E\) and dual multipliers
+   \((\lambda,\theta,\gamma)\), define \(c_a\), \(G_x^E(a)\), and
+   \(\Phi_c\) by \((GC0)\), \((GC1)\), and \((BG2)\).  For a candidate label
+   \(a\in\mathcal B\), put
+   \[
+      \operatorname{Gain}_E(a)
+      =
+      \sum_{x\in S}\Phi_{c_a}\!\left(G_x^E(a)\right).
+      \tag{SG1}
+   \]
+   Let \(\mathsf P_E\) be any possibly randomized preprocessing proposal
+   routine that outputs labels in \(\mathcal B\).  Suppose that, whenever the
+   full finite candidate system over \(\mathcal B\) is feasible but the current
+   restricted system is infeasible,
+   \[
+      \Pr_{a\sim\mathsf P_E}\!\left[
+         \operatorname{Gain}_E(a)>0
+      \right]\ge p_E .
+      \tag{SG2}
+   \]
+   Then exact verification of proposed labels and Las Vegas repetition finds a
+   positive-gain label after expected at most \(1/p_E\) proposals.  Adding all
+   inactive pairs
+   \[
+      (x,a)\notin E
+      \qquad\text{with}\qquad
+      G_x^E(a)>c_a
+      \tag{SG3}
+   \]
+   is a valid column-generation augmentation.
+
+   Consequently, if \(p_E\ge p_0>0\) at every infeasible restricted solve, the
+   seeded column-generation algorithm reaches a feasible active certificate in
+   expected at most
+   \[
+      |S|\,|\mathcal B|/p_0
+   \]
+   proposal calls.  More generally, the same conclusion holds with total
+   expected proposal count bounded by the sum of \(1/p_E\) over the
+   augmentations that occur.  If instead one runs
+   \(R=\lceil p_E^{-1}\log(1/\delta)\rceil\) independent proposals at a fixed
+   restricted solve, a positive-gain label is found with probability at least
+   \(1-\delta\).
+\end{lemma}
+
+\begin{proof}
+   By \cref{cor:whole-bucket-reduced-gain}, \(\operatorname{Gain}_E(a)>0\)
+   is equivalent to the existence of at least one point \(x\) with
+   \(G_x^E(a)>c_a\), and the simultaneous assignment \(s_x\) in \((BG3)\)
+   strictly decreases the dual Lagrangian.  Thus every pair in \((SG3)\) is an
+   improving inactive column in the sense of
+   \cref{lem:finite-rate-coverage-column-generation}.
+
+   Exact verification computes \(\operatorname{Gain}_E(a)\) for each proposed
+   label and accepts precisely when it is positive.  Under \((SG2)\), the
+   number of proposals until acceptance is stochastically dominated by a
+   geometric random variable of mean \(1/p_E\), and \(R\) independent proposals
+   fail with probability at most \((1-p_E)^R\le\delta\).
+
+   Each successful augmentation adds at least one previously inactive pair
+   \((x,a)\) and never removes active pairs.  There are only
+   \(|S|\,|\mathcal B|\) such pairs.  If the full candidate system is feasible,
+   \cref{lem:finite-rate-coverage-column-generation} guarantees that an
+   infeasible restricted solve always has a positive-gain inactive pair; the
+   exposure hypothesis \((SG2)\) lets the seeded proposal routine find one with
+   the displayed expected effort.  Summing the geometric waiting times over the
+   finitely many augmentations proves the expected proposal bounds.
+\end{proof}
+
 \begin{remark}[Offline certificate for facility search]
    \label{rem:rate-coverage-offline-certificate}
    \Cref{lem:finite-rate-coverage-convex} is the build-time certificate
@@ -13709,6 +13782,14 @@ For a threshold $u$, the posterior-superlevel child is
    positive-gain pair until a feasible active certificate is found.  Thus the
    theorem target is no longer Lloyd convergence; it is the absence of a
    positive dual obstruction for a compact decodable label family.
+   \Cref{lem:seeded-reduced-gain-search} is the build-time version of the same
+   statement.  A \(k\)-means++ sampler, repulsive facility search, product-code
+   threshold reporter, Construction-A residue decoder, or lattice
+   discrete-Gaussian sampler may be used as the proposal routine
+   \(\mathsf P_E\).  The only property needed for the proof is exposure of a
+   positive reduced-gain label against every surviving dual obstruction; the
+   proposed label is then verified by the exact finite convex certificate
+   before it is retained.
 \end{remark}
 
 \begin{assumption}[Compact rate-coverage panel]
@@ -15124,7 +15205,11 @@ dual obstruction for a proposed finite panel.  The reduced-cost,
 whole-bucket-gain, and column-generation lemmas,
 \cref{lem:rate-coverage-column-gain}, \cref{cor:whole-bucket-reduced-gain}, and
 \cref{lem:finite-rate-coverage-column-generation}, make expensive build-time
-search exact for any finite candidate label family.
+search exact for any finite candidate label family.  The seeded search
+compiler \cref{lem:seeded-reduced-gain-search} isolates the useful
+code/lattice contribution: a proposal sampler or list decoder only has to
+expose a positive reduced-gain label against each surviving dual obstruction;
+the finite verifier then decides whether to retain it.
 \Cref{prop:rate-coverage-polylog} records the resulting posterior endpoint.
 \Cref{cor:weighted-gaussian-quadrature-panel} records the exact positive
 finite certificate: a weighted retained label set only has to pass storage,
@@ -15344,6 +15429,12 @@ pattern-complete materialization produce the stored cover required by
 \Cref{lem:posterior-superlevel-compiler} records the negative-moment identity suggested by the latest notes. \Cref{lem:explicit-enumeration-barrier} makes the coarse-child obstruction precise: the scale $\xi=m^{-1/(2c^2)}$ is the price of explicitly enumerating $B\simeq\xi^{-1}$ outcomes, not a geometric limit. \Cref{lem:oblivious-sparsification-barrier} adds the complementary warning that the moment bounds alone still permit $\Omega(\xi^{-1})$ disjoint possible witnesses, so direct random sparsification cannot replace structured decoding without an additional sensitivity theorem. \Cref{lem:scale-window-compiler} and \cref{lem:dyadic-structured-amplification} isolate the important arithmetic: if mass windows can be decoded output-sensitively, then $\xi^{-\rho}$ repetitions at each dyadic scale convert negative-moment value into constant hit probability, and summing all scales down to $1/m$ still fits the $m^\rho$ query budget. This scale-aware amplification is essential; a raw negative-moment diagnostic alone does not imply that the near point is actually listed with inverse-polylogarithmic probability.
 
 The continuous likelihood-ball family now proves both analytic sides of the desired posterior decoder: \cref{thm:continuous-likelihood-balls} gives the guard-or-pure-child value, and \cref{lem:ideal-likelihood-scale-profile} gives the scale-normalized query and storage moments. \Cref{lem:likelihood-rank-prefix} further collapses the threshold continuum to rank gaps of a random score order. \Cref{cor:likelihood-prefix-leader} removes another artificial materialization cost: for ANN, every pure prefix may report the same score leader, so the decoder can aggregate prefix mass by leader buckets instead of storing one representative per prefix. \Cref{lem:dyadic-leader-quotient} records the full amplification in this hidden-label form and contributes no per-prefix storage term, and \cref{cor:likelihood-leader-intensity} identifies the exact quotient law as the rank-gap weighted measure over score leaders. \Cref{lem:ideal-likelihood-leader-law} further proves that this quotient law has constant total intensity per scale and constant scale-weighted valid intensity under guard failure. \Cref{lem:poissonized-normalized-leader-sampler} removes the remaining all-listing requirement from a sampled implementation: computing the total intensity and sampling from the normalized tilted law gives the exact Poisson leader process. Finally, \cref{lem:scale-amplified-alpha-leader} shows that the dyadic repetitions cancel the rank powers, collapsing the whole amplified posterior to the max-tilted leader law \((AL2)\), with constant total mass and constant valid mass for every near pair. The clean measure target is therefore \cref{asm:alpha-leader-sampler}; conditional on it, \cref{prop:alpha-leader-polylog} gives the desired polylogarithmic ANN bounds. \Cref{lem:alpha-leader-voronoi-capture} gives an equivalent geometric normal form for that same target: the max-tilted intensity of \(x\) is a Gaussian Voronoi-cell capture probability for the interpolated center \((1-\alpha)q+\alpha x\), multiplied by the explicit distance tilt \(\exp(-\alpha(1-\alpha)t\|x-q\|^2/2)\). \Cref{cor:query-centered-cell-reweighting} and \cref{cor:truncated-nearest-cell-compiler} then reduce max-tilted sampling to query-centered nearest-cell decoding plus scalar rejection. The weakest current algorithmic posterior target is \cref{asm:smoothed-witness-list}: list the true near witness with constant tilted Gaussian mass and scan the verified list. Conditional on it, \cref{prop:witness-list-polylog} gives the same polylogarithmic ANN bound. The facility form \cref{cor:facility-bucket-witness} is the version most directly connected to \(k\)-means++ or other build-time bucket proposals. \Cref{lem:poisson-rate-coverage} and \cref{asm:rate-coverage-panel} sharpen this further into the redundancy theorem object: point-label intensities, query label sets, the tilted miss bound, and the scan-load bound. \Cref{lem:finite-rate-coverage-convex} gives the finite convex feasibility test and dual obstruction for proposed panels. Conditional on that finite rate-coverage panel, \cref{prop:rate-coverage-polylog} gives the same endpoint. The scale-resolved sampler \cref{asm:ideal-likelihood-leader-law-sampler}, the hidden-label sampler \cref{asm:normalized-likelihood-leader-sampler}, the structured nearest-cell decoder \cref{asm:smoothed-nearest-cell}, and the older all-listing \cref{asm:multiscale-structured-likelihood} remain stronger sufficient implementation forms.
+
+\Cref{lem:seeded-reduced-gain-search} is the build-time bridge from this
+finite certificate to list-decoding and lattice-decoding proposals: the
+proposal mechanism only has to expose a positive reduced-gain label against
+the current dual obstruction, because the retained panel is accepted by the
+same exact convex verifier.
 
 \Cref{lem:smoothed-max-score-margin} gives a still simpler non-channel target: a query-centered Gaussian score direction separates every invalid point from the true near point by an additive $\Theta_c(tr^2)$ score margin, with high probability. The softest resulting primitive is \cref{asm:smoothed-gibbs}: with inverse-polylogarithmic probability, report a list carrying inverse-polylogarithmic mass under the Gaussian Gibbs kernel on data points. Sampling from the kernel restricted to that list gives a pointwise dominated output law by \cref{lem:captured-gibbs-domination}, and \cref{lem:smoothed-gibbs-suffices} then returns a valid answer because invalid points have negligible Gibbs mass and cannot be oversampled too much. A more exact sampling route is certified additive Gumbel-MIPS: \cref{lem:gumbel-additive-domination} shows that an $O(\log\log m)$ additive optimizer for the Gumbel-perturbed scores gives precisely the required one-sided Gibbs domination, yielding \cref{prop:gumbel-mips-polylog}. A stronger but different implementation route is smoothed additive nearest-neighbor search for the perturbed center $Y/t$ with additive squared-distance error $\Theta_c(r^2)$, exactly equivalent to additive score maximization by \cref{lem:score-max-additive-nn}. These oracles would bypass dyadic scales and representatives entirely, as recorded in \cref{prop:smoothed-gibbs-polylog}, \cref{prop:gumbel-mips-polylog}, and \cref{prop:smoothed-score-max-polylog}. They are targets, not implemented theorems; \cref{rem:gumbel-mips-not-ann} explains why black-box multiplicative ANN does not supply the Gumbel primitive. The older finite restricted-channel compiler \cref{asm:finite-restricted-channel} and \cref{prop:finite-channel-polylog} remain as a coarse explicit-enumeration special case and as a useful diagnostic framework.
 
