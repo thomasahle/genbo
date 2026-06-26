@@ -18161,6 +18161,67 @@ inequality \((QP3)\).
    hitting \(N_{\sigma_0}\) at size \(k\).
 \end{proof}
 
+\begin{corollary}[Normalized exact-signature coverage obstruction]
+   \label{cor:normalized-exact-signature-coverage-obstruction}
+   Work in the setting of \cref{lem:exact-signature-coverage-list-oracle} with
+   a fixed finite list-template family \(\mathcal C\).  Failure of the
+   list-separation condition \((ECL3)\) is equivalent to the existence of
+   nonnegative prices \(\beta,\tau,\theta\) such that
+   \[
+      \sum_{\sigma_0\in\Sigma^+}\beta_{\sigma_0}=1,
+      \qquad
+      \sum_{\sigma_0\in\Sigma}\tau_{\sigma_0}L_{\sigma_0}
+      +\theta S<1,
+      \tag{ESNO1}
+   \]
+   and every template \(C\in\mathcal C\) satisfies
+   \[
+      \max_{\substack{L\subseteq W_C\\ |L|=K_C}}
+      \sum_{\substack{\sigma_0\in\Sigma^+\\
+                      L\cap N_{\sigma_0}\ne\emptyset}}
+      \bigl(\beta_{\sigma_0}-T_C\tau_{\sigma_0}\bigr)_+
+      \le
+      \theta S_C .
+      \tag{ESNO2}
+   \]
+   Equivalently, every finite randomized proposal over template/list pairs has
+   nonpositive expected exact-signature reduced gain against the normalized
+   witness \((\beta,\tau,\theta)\).
+
+   In the variable-size setting of
+   \cref{cor:variable-size-exact-signature-proposal}, the same obstruction is
+   obtained by treating every available pair \((s,k)\) as a separate template
+   with container \(W_s\), cardinality \(k\), and prices \(T_{s,k},S_{s,k}\).
+   Consequently every Bernoulli or soft-bucket proposal whose true
+   size-stratified hit probabilities are used in \((EVS3)\) has nonpositive
+   left-hand side under this witness.
+\end{corollary}
+
+\begin{proof}
+   Failure of \((ECL3)\) means that some nonnegative price system satisfies the
+   surplus inequality \((EN\text{-}D1)\), but
+   \(\mathsf{EC}_{\beta,\tau,\theta}(C)\le0\) for every \(C\in\mathcal C\).
+   The surplus inequality forces
+   \(M=\sum_{\sigma_0\in\Sigma^+}\beta_{\sigma_0}>0\).  Divide
+   \(\beta,\tau,\theta\) by \(M\).  The strict surplus becomes \((ESNO1)\), and
+   the positive part in \((ESNO2)\) is homogeneous, so
+   \(\mathsf{EC}\le0\) becomes exactly \((ESNO2)\).
+
+   Conversely, multiplying any normalized witness by an arbitrary positive
+   scalar gives a surplus price system satisfying \((EN\text{-}D1)\) and
+   \(\mathsf{EC}_{\beta,\tau,\theta}(C)\le0\) for every \(C\), so \((ECL3)\)
+   fails.  The randomized-proposal formulation is just averaging: if every
+   deterministic template/list pair has nonpositive gain, then every finite
+   law over such pairs has nonpositive expected gain, and a positive expected
+   gain would expose a deterministic positive-gain pair.
+
+   The variable-size claim is a relabeling of templates by the pair \((s,k)\).
+   Applying the first part after this relabeling gives nonpositive expectation
+   for the true size-stratified hit probabilities in \((EVS3)\); certified
+   lower hit bounds and upper size-probability bounds only decrease that left
+   side further.
+\end{proof}
+
 \Cref{lem:exact-near-set-filter-cover} is strictly weaker than
 \cref{lem:finite-signature-filter-cover} when the exact near set is part of the
 signature.  The all-pair LP covers every \(p\in N_{\sigma_0}\); the existential
@@ -18199,6 +18260,11 @@ computed from size-stratified hit probabilities of the independent
 responsibility model.  This is the form in which additive quantization,
 facility buckets, or randomized list decoders can be certified without
 pretending their proposal lists have deterministic size.
+\Cref{cor:normalized-exact-signature-coverage-obstruction} states the exact
+residual left when those certified proposals fail: after normalizing the
+signature prices to a probability distribution, every available list has
+weighted exact-near-set coverage at most its recursive query/storage price.
+This is the precise finite target for the remaining geometric theorem.
 
 \begin{proposition}[Conditional fractional filter-cover endpoint]
    \label{prop:fractional-filter-cover-polylog}
