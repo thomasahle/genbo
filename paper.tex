@@ -14349,6 +14349,66 @@ For a threshold $u$, the posterior-superlevel child is
    no-positive reduced-cost condition.
 \end{proof}
 
+\begin{corollary}[Dyadic unweighting for positive list recovery]
+   \label{cor:dyadic-positive-list-recovery}
+   In the positive-coverage lister of \cref{cor:positive-coverage-screen}, let
+   \(E_t(a)\) denote the Boolean threshold event in \((PS2)\), let
+   \(w_t\ge0\), and let \(\Gamma\ge0\).  Partition the positive weights into
+   nonempty dyadic classes \(T_j\), with representatives \(\lambda_j>0\),
+   such that
+   \[
+      t\in T_j
+      \quad\Longrightarrow\quad
+      \lambda_j\le w_t<2\lambda_j .
+      \tag{DU1}
+   \]
+   Write \(B\) for the number of nonempty classes and
+   \[
+      N_j(a)=\sum_{t\in T_j}E_t(a).
+      \tag{DU2}
+   \]
+   If \(B=0\), then no label has positive coverage above \(\Gamma\).  Otherwise,
+   suppose that for each \(j\) an unweighted coverage lister returns a finite
+   superset of all labels satisfying
+   \[
+      N_j(a)>
+      \frac{\Gamma}{2B\lambda_j}.
+      \tag{DU3}
+   \]
+   Then the union of these \(B\) lists contains every label with
+   \[
+      \sum_t w_tE_t(a)>\Gamma .
+      \tag{DU4}
+   \]
+   Exact evaluation of the weighted positive coverage on the returned labels
+   therefore gives a complete positive-coverage lister.
+
+   Thus arbitrary nonnegative dual weights can be moved out of the decoder and
+   into a logarithmic number of unweighted list-recovery calls, followed by the
+   same exact reduced-cost verification.  In the ordinary list-recovery special
+   case, \(E_t(a)\) is a coordinate or block membership test.  For a lattice or
+   trellis quotient, \(E_t\) is the corresponding local residue or path test;
+   the same statement applies to the implicit coverage code
+   \(a\mapsto(E_t(a))_t\).
+\end{corollary}
+
+\begin{proof}
+   The case \(B=0\) is immediate because all weights are zero.  Assume
+   \(B>0\), and let \(P(a)=\sum_t w_tE_t(a)\).  If a label \(a\) is not
+   returned by any unweighted lister, then \(N_j(a)\le
+   \Gamma/(2B\lambda_j)\) for every \(j\).  By \((DU1)\),
+   \[
+      \sum_{t\in T_j}w_tE_t(a)
+      \le
+      2\lambda_j N_j(a)
+      \le
+      \frac{\Gamma}{B}.
+   \]
+   Summing over the \(B\) classes gives \(P(a)\le\Gamma\).  Hence every label
+   with \(P(a)>\Gamma\) appears in the union of the unweighted lists.  Exact
+   filtering by \(P(a)>\Gamma\) removes all false positives.
+\end{proof}
+
 \begin{corollary}[Unified soft-decoded rate-coverage compiler]
    \label{cor:unified-soft-decoded-rate-coverage}
    Let \(\mathcal U\subseteq\prod_{i=1}^h\Sigma_i\) be a finite quotient label
@@ -14379,8 +14439,9 @@ For a threshold $u$, the posterior-superlevel child is
    \cref{cor:soft-list-decoding-reduced-cost-separator}, by the signed
    threshold-coverage interface of \cref{cor:threshold-event-reduced-cost}, or
    by the positive-coverage screen of
-   \cref{cor:positive-coverage-screen}, or by any other exact offline
-   optimization over the implicit quotient family.
+   \cref{cor:positive-coverage-screen}, by the dyadic unweighted
+   list-recovery screen of \cref{cor:dyadic-positive-list-recovery}, or by any
+   other exact offline optimization over the implicit quotient family.
    Its running time is a preprocessing cost, not a query resource.
 
    Suppose the finite rate-coverage system over \(S\times\mathcal U\) is
@@ -14505,12 +14566,18 @@ For a threshold $u$, the posterior-superlevel child is
    objective as signed threshold coverage: maximize the dual-priced sum of
    satisfied reporter tests.  \Cref{cor:positive-coverage-screen} simplifies
    even this: enumerate labels with enough positively priced reporter tests and
-   use the negative tests only in the exact verifier.  This is the transferable content of
-   soft-decision Reed--Solomon decoding, expander-code list recovery,
-   Construction-A quotient decoding, and Barnes--Wall style lattice recursion:
-   the decoder optimizes the dual-priced score or coverage objective, while the
-   convex certificate verifies storage, query load, and tilted witness coverage
-   before retaining the bucket.
+   use the negative tests only in the exact verifier.
+   \Cref{cor:dyadic-positive-list-recovery} removes one more mismatch with the
+   coding literature: real dual weights can be grouped into dyadic classes, so
+   the proposal routine only has to solve unweighted agreement/list-recovery
+   instances and the exact verifier restores the original weighted objective.
+   This is the transferable content of soft-decision Reed--Solomon decoding
+   \cite{KV03}, high-rate expander and tensor-code list recovery
+   \cite{HW15,HRW17,ST25}, Construction-A quotient decoding, and
+   Barnes--Wall style lattice recursion \cite{GP17,MP20}: the decoder optimizes
+   or enumerates a dual-priced score/coverage surrogate, while the convex
+   certificate verifies storage, query load, and tilted witness coverage before
+   retaining the bucket.
    \Cref{cor:unified-soft-decoded-rate-coverage} composes the
    pieces into the actual build contract: the query-facing decoder implements
    online reporter enumeration, any exact offline separator may drive column
@@ -14567,11 +14634,11 @@ For a threshold $u$, the posterior-superlevel child is
 \begin{remark}[What \(k\)-means++ would have to prove]
    \label{rem:kmeanspp-facility-target}
    \Cref{cor:facility-bucket-witness} is the k-means-friendly version of the
-   posterior route.  A Lloyd or \(k\)-means++ run may be useful at build time
-   because it proposes data-adapted facility buckets, but the analysis does not
-   need to certify convergence to a centroid optimum.  It needs the two
-   inequalities \((FB1)\) and the expected bucket-union load.  In words, under
-   the tilted Gaussian law that moves the query a distance
+   posterior route.  A Lloyd or \(k\)-means++ run \cite{AV07} may be useful at
+   build time because it proposes data-adapted facility buckets, but the
+   analysis does not need to certify convergence to a centroid optimum.  It
+   needs the two inequalities \((FB1)\) and the expected bucket-union load.  In
+   words, under the tilted Gaussian law that moves the query a distance
    \(\alpha\|p-q\|\) toward the hidden near point and adds noise
    \(I_D/t\), the reported facilities must contain \(p\) with constant
    weighted mass, while far and irrelevant buckets must not inflate the scan
@@ -15949,6 +16016,9 @@ codeword score.
 \Cref{cor:positive-coverage-screen} then removes the signed part from
 candidate generation: list labels with enough positive coverage and use the
 negative tests only for exact reduced-cost filtering.
+\Cref{cor:dyadic-positive-list-recovery} reduces the weighted positive
+coverage lister to dyadic unweighted agreement/list-recovery calls plus exact
+filtering.
 \Cref{cor:unified-soft-decoded-rate-coverage} packages the desired retained
 object: the compact query decoder handles online reporter lists, an exact
 offline separator drives preprocessing, and the convex certificate charges
@@ -16210,6 +16280,9 @@ the satisfied threshold tests.
 \Cref{cor:positive-coverage-screen} reduces candidate generation to the
 nonnegative part of that coverage objective; signed terms are checked only
 after a candidate label is returned.
+\Cref{cor:dyadic-positive-list-recovery} then converts arbitrary nonnegative
+dual weights into dyadic unweighted list-recovery calls, with the exact
+weighted reduced cost checked only at the filter step.
 \Cref{cor:unified-soft-decoded-rate-coverage} is the corresponding full panel
 contract: offline separation is a build-time concern, while online decoder
 output, candidate incidence load, and stored replication are charged as three
@@ -16333,6 +16406,12 @@ The one-sided spherical proof is motivated by the Ahle--Knudsen manuscript suppl
    \newblock Learning to hash robustly, guaranteed.
    \newblock In \emph{Proceedings of the 39th International Conference on Machine Learning (ICML)}, PMLR 162, 2022.
 
+   \bibitem{AV07}
+   David Arthur and Sergei Vassilvitskii.
+   \newblock \(k\)-means++: The advantages of careful seeding.
+   \newblock In \emph{Proceedings of the 18th Annual ACM-SIAM Symposium on
+   Discrete Algorithms (SODA)}, pages 1027--1035, 2007.
+
    \bibitem{IM98}
    Piotr Indyk and Rajeev Motwani.
    \newblock Approximate nearest neighbors: Towards removing the curse of dimensionality.
@@ -16450,6 +16529,19 @@ The one-sided spherical proof is motivated by the Ahle--Knudsen manuscript suppl
    with optimal redundancy.
    \newblock \emph{IEEE Transactions on Information Theory}, 54(1):135--150,
    2008.
+
+   \bibitem{HW15}
+   Brett Hemenway and Mary Wootters.
+   \newblock Linear-time list recovery of high-rate expander codes.
+   \newblock In \emph{Proceedings of the 42nd International Colloquium on
+   Automata, Languages, and Programming (ICALP)}, LNCS 9134, pages 701--712,
+   2015.
+
+   \bibitem{HRW17}
+   Brett Hemenway, Noga Ron-Zewi, and Mary Wootters.
+   \newblock Local list recovery of high-rate tensor codes and applications.
+   \newblock In \emph{Proceedings of the 58th Annual IEEE Symposium on
+   Foundations of Computer Science (FOCS)}, pages 204--215, 2017.
 
    \bibitem{ST25}
    Nikhil Srivastava and Madhur Tulsiani.
