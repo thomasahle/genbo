@@ -13971,6 +13971,86 @@ law already has positive reduced gain.
    scale-fixed failure of \cref{asm:one-potential-core-separator}.
 \end{proof}
 
+\begin{lemma}[Primitive hit-kernel cover equivalence]
+   \label{lem:primitive-hit-kernel-cover-equivalence}
+   Work in the setting of \cref{asm:one-potential-core-separator}.  For each
+   Pareto core \(U\in\mathcal U\) and query subset \(Q'\subseteq\mathcal Q\),
+   form the Boolean core record
+   \[
+      R=(U,Q'),\qquad T_R=T_U,\qquad S_R=S_U,
+   \]
+   with incidence
+   \[
+      b_R(p,q)
+      =
+      \mathbf 1\{p\in U,\ p\in V_{z,q}\text{ for some }z\}\mathbf 1\{q\in Q'\}.
+   \]
+   Consider the fractional primitive hit-kernel cover
+   \[
+   \begin{array}{ll}
+   \text{\rm find} & \lambda_R\ge0\\[0.4em]
+   \text{\rm subject to}
+      & \displaystyle
+        \sum_R\lambda_R b_R(p,q)\ge r_{p,q}
+        \qquad((p,q)\in\mathcal N),\\[0.8em]
+      & \displaystyle
+        \sum_{R:q\in Q'_R}\lambda_R T_R\le \pi_1 L
+        \qquad(q\in\mathcal Q),\\[0.8em]
+      & \displaystyle
+        \sum_R\lambda_R S_R\le \pi_1 S .
+   \end{array}
+   \tag{$\mathsf{HKC}_{\mathcal U}$}
+   \]
+   Then \(\mathcal U\) is one-potential separating if and only if
+   \((\mathsf{HKC}_{\mathcal U})\) is feasible.
+\end{lemma}
+
+\begin{proof}
+   Apply Farkas' lemma exactly as in
+   \cref{lem:finite-filter-cover-dual}.  Infeasibility of
+   \((\mathsf{HKC}_{\mathcal U})\) is equivalent to the existence of
+   nonnegative prices \(\gamma_{p,q},\tau_q,\sigma\) such that
+   \[
+      \sum_{(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}
+      >
+      \pi_1\left(L\sum_q\tau_q+\sigma S\right),
+      \tag{HKC-D1}
+   \]
+   and every Boolean core record satisfies
+   \[
+      \sum_{(p,q)\in\mathcal N}\gamma_{p,q}b_R(p,q)
+      \le
+      T_R\sum_{q\in Q'_R}\tau_q+\sigma S_R .
+      \tag{HKC-D2}
+   \]
+   For a fixed core \(U\), the left side of \((HKC\text{-}D2)\) is
+   \[
+      \sum_{q\in Q'}a_U^\gamma(q),
+   \]
+   with \(a_U^\gamma\) as in \((CDH1)\).  Therefore the constraints
+   \((HKC\text{-}D2)\) over all \(Q'\subseteq\mathcal Q\) are equivalent to
+   \[
+      \sum_q\bigl(a_U^\gamma(q)-T_U\tau_q\bigr)_+
+      \le
+      \sigma S_U
+      \qquad(U\in\mathcal U).
+   \]
+   The strict surplus condition \((HKC\text{-}D1)\) is exactly \((OPC2)\).
+   Thus infeasibility of the primitive hit-kernel cover is exactly failure of
+   \cref{asm:one-potential-core-separator}.  Negating gives the equivalence.
+\end{proof}
+
+Consequently the one-potential theorem has a primal form: fractionally cover the
+spherical primitive hit kernel \(r_{p,q}\), not a hand-picked set of dense
+clusters.  Since \(r_{p,q}\ge\pi_1\) for every demanded pair under \((WS1)\),
+scaling a feasible solution of \((\mathsf{HKC}_{\mathcal U})\) by \(1/\pi_1\)
+gives an ordinary near-pair core cover with query budget \(L\) and storage
+budget \(S\).  The remaining geometric task can therefore be read either as the
+normalized obstruction of
+\cref{cor:normalized-one-potential-obstruction} or as the fully fractional
+hit-kernel cover \((\mathsf{HKC}_{\mathcal U})\); they are the same minimax
+statement.
+
 \begin{assumption}[Compression-dual separator]
    \label{asm:compression-dual-separator}
    Work in the setting of \cref{cor:residual-separator-local-cover}.  Fix a
@@ -25792,7 +25872,13 @@ high-correlation captured mass exceeds the local query/storage price while every
 Pareto core obeys its hinge envelope.
 \Cref{cor:normalized-one-potential-obstruction} removes the last irrelevant
 scale: the obstruction is a unit captured-mass potential whose total
-query/storage price is below \(1/\pi_1\).  Because
+query/storage price is below \(1/\pi_1\).
+\Cref{lem:primitive-hit-kernel-cover-equivalence} gives the matching primal
+form: the same theorem is equivalent to fractionally covering the primitive
+spherical hit kernel \(r_{p,q}\) by Pareto cores at \(\pi_1\)-scaled query and
+storage budgets.  Since \(r_{p,q}\ge\pi_1\) on every demanded pair, such a
+hit-kernel cover scales directly to an ordinary near-pair cover with budgets
+\((L,S)\).  Because
 preprocessing time is deliberately not a scarce resource,
 \cref{lem:finite-pool-optimizer} and
 \cref{cor:offline-pareto-compression} allow the build stage to enumerate,
