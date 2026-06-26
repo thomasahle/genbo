@@ -11303,6 +11303,52 @@ handled by one filter-cover process rather than by separate branching rules.
    Hence the finite filter-cover LP is feasible.
 \end{proof}
 
+\begin{corollary}[Guard-ball spherical fallback]
+   \label{cor:guard-ball-spherical-fallback}
+   Work in the same finite local filter-cover setting as
+   \cref{cor:contained-high-correlation-local-cover}.  Suppose the spherical
+   bucket law satisfies the near-hit and update bounds \((WS1)\) and \((WS3)\),
+   and satisfies the direct guard-ball far bound
+   \[
+      \Pr_{Z\sim\Pi}[x\in U_Z,\ \chi_Z(q)=1]\le\pi_2
+      \qquad
+      \bigl(q\in\mathcal Q,\ x\notin P\cap B(q,cr)\bigr).
+      \tag{GBF1}
+   \]
+   Assume the budget inequalities
+   \[
+      \pi_2m\le\frac{\pi_1L}{4},
+      \qquad
+      \pi_um\le\frac{\pi_1S}{4},
+      \tag{GBF2}
+   \]
+   and put \(a_q=\Pr_{Z\sim\Pi}[\chi_Z(q)=1]\).  If every query constraint lies
+   in the low-guard domain
+   \[
+      |P\cap B(q,cr)|<\gamma_0m
+      \qquad(q\in\mathcal Q),
+      \tag{GBF3}
+   \]
+   and
+   \[
+      \gamma_0m\max_q a_q\le\frac{\pi_1L}{2},
+      \tag{GBF4}
+   \]
+   then the finite filter-cover LP over any universe containing the spherical
+   buckets is feasible with query budget \(L\) and storage budget \(S\).
+\end{corollary}
+
+\begin{proof}
+   Apply \cref{cor:contained-high-correlation-local-cover} with
+   \[
+      H(q)=P\cap B(q,cr).
+   \]
+   Then every demanded pair \((p,q)\) with \(\|p-q\|\le r\) has \(p\in H(q)\),
+   and \((GBF1)\) is exactly \((WS2)\) for this choice of \(H\).  Conditions
+   \((GBF2)\), \((GBF3)\), and \((GBF4)\) give \((WS6)\), \((CHC1)\), and
+   \((CHC2)\), respectively.  The cited corollary gives feasibility.
+\end{proof}
+
 For the smooth product or Gaussian cap family, \(\pi_1\) is the near collision
 probability, \(\pi_2\) is the ordinary far co-load probability, and \(\pi_u\) is
 the update probability.  The usual exponent calculation is precisely
@@ -11323,6 +11369,11 @@ guard removes this obstruction on the low-guard domain.
 \Cref{cor:contained-high-correlation-local-cover} packages this as a local LP
 certificate: in the contained-cap regime, no dense scalar reporter is needed at
 all, because the spherical buckets themselves separate every surplus dual.
+\Cref{cor:guard-ball-spherical-fallback} is the most useful specialization:
+when the primitive law has the ordinary far collision bound outside the true
+resident \(cr\)-guard ball, low-guard nodes are solved by spherical buckets
+alone.  Dense/list-decoding reporters are needed only for the remaining
+annular high-correlation leakage not covered by this direct far bound.
 
 \begin{lemma}[High-correlation dense-slice separator]
    \label{lem:high-correlation-dense-slice-separator}
@@ -36090,6 +36141,11 @@ leaves only guard-leaking or guard-heavy residuals for the dense reporter.
 budget-compatible regime: the inside-guard contribution is bounded by
 \(\eta\pi_1\kappa\), so the residual must charge annular high-correlation
 leakage outside \(B(q,cr)\).
+\Cref{cor:guard-ball-spherical-fallback} records the complementary
+pseudo-random case: if the primitive spherical law already has its far
+collision bound outside the true \(cr\)-guard ball, then low-guard local cover
+feasibility follows with no dense reporter.  Thus the dense theorem only has to
+explain failures of this direct guard-ball far bound.
 \Cref{lem:primitive-hit-kernel-cover-equivalence} gives the matching primal
 form: the same theorem is equivalent to fractionally covering the primitive
 spherical hit kernel \(r_{p,q}\) by Pareto cores at \(\pi_1\)-scaled query and
