@@ -13328,6 +13328,122 @@ For a threshold $u$, the posterior-superlevel child is
    \(a_x=0\) have arbitrary \(\mu_x\).
 \end{proof}
 
+\begin{lemma}[Finite-signature rate-coverage envelope]
+   \label{lem:finite-signature-rate-coverage}
+   Let \(\mathcal Q\) be an arbitrary, possibly continuous, query domain for
+   one localized node, and let \(\Lambda\) be a finite label universe.  A
+   retained reporter maps each query and random outcome to a label set
+   \[
+      B(q,\omega)=A(q,\omega)\subseteq\Lambda .
+   \]
+   All probabilities and expectations below are with respect to the reporter
+   outcome law for the queried point \(q\).
+   Suppose preprocessing supplies a finite signature set \(\Sigma\) and a map
+   \(\sigma:\mathcal Q\to\Sigma\).  For each signature \(\sigma_0\), let
+   \(N_{\sigma_0}\subseteq S\) contain every possible near witness for queries
+   of that signature:
+   \[
+      \{p\in S:\exists q\in\mathcal Q,\ \sigma(q)=\sigma_0,\ \|p-q\|\le r\}
+      \subseteq N_{\sigma_0}.
+      \tag{FS1}
+   \]
+   Assume that for every signature \(\sigma_0\), every label set
+   \(B\subseteq\Lambda\), and every \(p\in N_{\sigma_0}\), preprocessing has
+   certified finite upper envelopes
+   \[
+      U_{p,\sigma_0,B}
+      \ge
+      \E_{\omega}\!\left[
+         R_{p,q}(\omega)\,
+         \mathbf 1\{B(q,\omega)=B\}
+      \right]
+      \tag{FS2}
+   \]
+   for all \(q\in\mathcal Q\) with \(\sigma(q)=\sigma_0\) and
+   \(\|p-q\|\le r\), and
+   \[
+      V_{\sigma_0,B}
+      \ge
+      \Pr_{\omega}[B(q,\omega)=B]
+      \tag{FS3}
+   \]
+   for all \(q\in\mathcal Q\) with \(\sigma(q)=\sigma_0\).  Let
+   \(b_{x,a}\ge0\) be point-label intensities and write
+   \(b_x(B)=\sum_{a\in B}b_{x,a}\).  If the finite inequalities
+   \[
+      \sum_{B\subseteq\Lambda}
+      U_{p,\sigma_0,B}\exp(-b_p(B))
+      \le \tau
+      \qquad(\sigma_0\in\Sigma,\ p\in N_{\sigma_0})
+      \tag{FS4}
+   \]
+   and
+   \[
+      \sum_{B\subseteq\Lambda}
+      V_{\sigma_0,B}
+      \sum_{x\in S}b_x(B)
+      \le \ell
+      \qquad(\sigma_0\in\Sigma)
+      \tag{FS5}
+   \]
+   hold, then the continuous-query rate-coverage conditions
+   \[
+      \E_{\omega}\!\left[
+         R_{p,q}(\omega)\exp(-b_p(B(q,\omega)))
+      \right]\le\tau
+      \tag{FS6}
+   \]
+   for every promised near pair \(\|p-q\|\le r\), and
+   \[
+      \E_{\omega}\sum_{x\in S}b_x(B(q,\omega))\le\ell
+      \tag{FS7}
+   \]
+   for every \(q\in\mathcal Q\), both hold.  The storage bound remains
+   \(\sum_{x,a}b_{x,a}\).
+
+   Thus a continuous query domain can be certified without a metric net: it is
+   enough to enumerate or decode finitely many reporter signatures and to prove
+   finite upper envelopes for their tilted miss and load coefficients.
+\end{lemma}
+
+\begin{proof}
+   Fix a promised near pair \((p,q)\), and put
+   \(\sigma_0=\sigma(q)\).  By \((FS1)\), \(p\in N_{\sigma_0}\).  Decompose the
+   expectation according to the finite label set \(B(q,\omega)\):
+   \[
+   \begin{aligned}
+      \E_\omega\!\left[
+         R_{p,q}(\omega)e^{-b_p(B(q,\omega))}
+      \right]
+      &=
+      \sum_{B\subseteq\Lambda}
+      e^{-b_p(B)}
+      \E_\omega\!\left[
+         R_{p,q}(\omega)\mathbf 1\{B(q,\omega)=B\}
+      \right]  \\
+      &\le
+      \sum_{B\subseteq\Lambda}
+      U_{p,\sigma_0,B}e^{-b_p(B)}
+      \le \tau .
+   \end{aligned}
+   \]
+   This proves \((FS6)\).  The load bound is identical:
+   \[
+   \begin{aligned}
+      \E_\omega\sum_xb_x(B(q,\omega))
+      &=
+      \sum_{B\subseteq\Lambda}
+      \Pr[B(q,\omega)=B]\sum_xb_x(B)\\
+      &\le
+      \sum_{B\subseteq\Lambda}
+      V_{\sigma_0,B}\sum_xb_x(B)
+      \le\ell .
+   \end{aligned}
+   \]
+   Poisson materialization gives the same stored incidence count as in
+   \cref{cor:rate-coverage-intensity}.
+\end{proof}
+
 \begin{lemma}[Scalar redundancy water filling]
    \label{lem:scalar-redundancy-waterfill}
    Work in the Poisson multi-assignment model of
@@ -14735,12 +14851,16 @@ For a threshold $u$, the posterior-superlevel child is
    query probes labels \(B=\mathcal A(q,Z)\), misses \(p\) with probability
    \(\exp(-a_p\mu_p(B))\).  Thus the right redundancy rule is a water-filling
    problem over the scalar coverages \(\mu_p(\mathcal A(q,Z))\) under the
-   tilted witness law.  \Cref{lem:scalar-redundancy-waterfill} gives the exact
-   marginal rule: keep adding redundancy to the points whose current marginal
-   tilted coverage \(D_p(a_p)\) is above the storage price.  Fixed top-\(k\)
-   multi-assignment, adaptive boundary replication, and \(k\)-means++ seeding
-   are all proposal mechanisms for the same certificate: small tilted miss
-   \((RC1)\), small reported load \((RC2)\), and total storage \((RC4)\).
+   tilted witness law.  \Cref{lem:finite-signature-rate-coverage} explains how
+   this can be certified for a continuous query domain: group queries by
+   reporter signatures and prove finite upper envelopes for the tilted miss and
+   load coefficients.  \Cref{lem:scalar-redundancy-waterfill} gives the exact
+   marginal rule once those coefficients and assignment laws are fixed: keep
+   adding redundancy to the points whose current marginal tilted coverage
+   \(D_p(a_p)\) is above the storage price.  Fixed top-\(k\) multi-assignment,
+   adaptive boundary replication, and \(k\)-means++ seeding are all proposal
+   mechanisms for the same certificate: small tilted miss \((RC1)\), small
+   reported load \((RC2)\), and total storage \((RC4)\).
 
    This also suggests a cleaner practical alternative to plain Lloyd cells:
    use expensive preprocessing to search over many soft or multi-assignment
@@ -16081,6 +16201,9 @@ corresponding facility or \(k\)-means++-style form: retained buckets are useful
 when their reported union has small scan load and high tilted witness capture.
 \Cref{lem:poisson-rate-coverage} turns this into the scalar rate-coverage
 certificate \((RC1)\)--\((RC3)\), and
+\cref{lem:finite-signature-rate-coverage} gives a conservative all-query
+verification route through finite reporter signatures and coefficient
+envelopes.
 \cref{lem:scalar-redundancy-waterfill} gives the optimal scalar redundancy
 rule once a reporter and point assignment law are fixed.
 \cref{lem:finite-rate-coverage-convex} gives the offline convex verifier and
@@ -16340,7 +16463,7 @@ pattern-complete materialization produce the stored cover required by
 \paragraph{Structured posterior route.}
 \Cref{lem:posterior-superlevel-compiler} records the negative-moment identity suggested by the latest notes. \Cref{lem:explicit-enumeration-barrier} makes the coarse-child obstruction precise: the scale $\xi=m^{-1/(2c^2)}$ is the price of explicitly enumerating $B\simeq\xi^{-1}$ outcomes, not a geometric limit. \Cref{lem:oblivious-sparsification-barrier} adds the complementary warning that the moment bounds alone still permit $\Omega(\xi^{-1})$ disjoint possible witnesses, so direct random sparsification cannot replace structured decoding without an additional sensitivity theorem. \Cref{lem:scale-window-compiler} and \cref{lem:dyadic-structured-amplification} isolate the important arithmetic: if mass windows can be decoded output-sensitively, then $\xi^{-\rho}$ repetitions at each dyadic scale convert negative-moment value into constant hit probability, and summing all scales down to $1/m$ still fits the $m^\rho$ query budget. This scale-aware amplification is essential; a raw negative-moment diagnostic alone does not imply that the near point is actually listed with inverse-polylogarithmic probability.
 
-The continuous likelihood-ball family now proves both analytic sides of the desired posterior decoder: \cref{thm:continuous-likelihood-balls} gives the guard-or-pure-child value, and \cref{lem:ideal-likelihood-scale-profile} gives the scale-normalized query and storage moments. \Cref{lem:likelihood-rank-prefix} further collapses the threshold continuum to rank gaps of a random score order. \Cref{cor:likelihood-prefix-leader} removes another artificial materialization cost: for ANN, every pure prefix may report the same score leader, so the decoder can aggregate prefix mass by leader buckets instead of storing one representative per prefix. \Cref{lem:dyadic-leader-quotient} records the full amplification in this hidden-label form and contributes no per-prefix storage term, and \cref{cor:likelihood-leader-intensity} identifies the exact quotient law as the rank-gap weighted measure over score leaders. \Cref{lem:ideal-likelihood-leader-law} further proves that this quotient law has constant total intensity per scale and constant scale-weighted valid intensity under guard failure. \Cref{lem:poissonized-normalized-leader-sampler} removes the remaining all-listing requirement from a sampled implementation: computing the total intensity and sampling from the normalized tilted law gives the exact Poisson leader process. Finally, \cref{lem:scale-amplified-alpha-leader} shows that the dyadic repetitions cancel the rank powers, collapsing the whole amplified posterior to the max-tilted leader law \((AL2)\), with constant total mass and constant valid mass for every near pair. The clean measure target is therefore \cref{asm:alpha-leader-sampler}; conditional on it, \cref{prop:alpha-leader-polylog} gives the desired polylogarithmic ANN bounds. \Cref{lem:alpha-leader-voronoi-capture} gives an equivalent geometric normal form for that same target: the max-tilted intensity of \(x\) is a Gaussian Voronoi-cell capture probability for the interpolated center \((1-\alpha)q+\alpha x\), multiplied by the explicit distance tilt \(\exp(-\alpha(1-\alpha)t\|x-q\|^2/2)\). \Cref{cor:query-centered-cell-reweighting} and \cref{cor:truncated-nearest-cell-compiler} then reduce max-tilted sampling to query-centered nearest-cell decoding plus scalar rejection. The weakest current algorithmic posterior target is \cref{asm:smoothed-witness-list}: list the true near witness with constant tilted Gaussian mass and scan the verified list. Conditional on it, \cref{prop:witness-list-polylog} gives the same polylogarithmic ANN bound. The facility form \cref{cor:facility-bucket-witness} is the version most directly connected to \(k\)-means++ or other build-time bucket proposals. \Cref{lem:poisson-rate-coverage}, \cref{lem:scalar-redundancy-waterfill}, and \cref{asm:rate-coverage-panel} sharpen this further into the redundancy theorem object: point-label intensities, query label sets, the marginal replication water level, the tilted miss bound, and the scan-load bound. \Cref{lem:finite-rate-coverage-convex} gives the finite convex feasibility test and dual obstruction for proposed panels. Conditional on that finite rate-coverage panel, \cref{prop:rate-coverage-polylog} gives the same endpoint. The scale-resolved sampler \cref{asm:ideal-likelihood-leader-law-sampler}, the hidden-label sampler \cref{asm:normalized-likelihood-leader-sampler}, the structured nearest-cell decoder \cref{asm:smoothed-nearest-cell}, and the older all-listing \cref{asm:multiscale-structured-likelihood} remain stronger sufficient implementation forms.
+The continuous likelihood-ball family now proves both analytic sides of the desired posterior decoder: \cref{thm:continuous-likelihood-balls} gives the guard-or-pure-child value, and \cref{lem:ideal-likelihood-scale-profile} gives the scale-normalized query and storage moments. \Cref{lem:likelihood-rank-prefix} further collapses the threshold continuum to rank gaps of a random score order. \Cref{cor:likelihood-prefix-leader} removes another artificial materialization cost: for ANN, every pure prefix may report the same score leader, so the decoder can aggregate prefix mass by leader buckets instead of storing one representative per prefix. \Cref{lem:dyadic-leader-quotient} records the full amplification in this hidden-label form and contributes no per-prefix storage term, and \cref{cor:likelihood-leader-intensity} identifies the exact quotient law as the rank-gap weighted measure over score leaders. \Cref{lem:ideal-likelihood-leader-law} further proves that this quotient law has constant total intensity per scale and constant scale-weighted valid intensity under guard failure. \Cref{lem:poissonized-normalized-leader-sampler} removes the remaining all-listing requirement from a sampled implementation: computing the total intensity and sampling from the normalized tilted law gives the exact Poisson leader process. Finally, \cref{lem:scale-amplified-alpha-leader} shows that the dyadic repetitions cancel the rank powers, collapsing the whole amplified posterior to the max-tilted leader law \((AL2)\), with constant total mass and constant valid mass for every near pair. The clean measure target is therefore \cref{asm:alpha-leader-sampler}; conditional on it, \cref{prop:alpha-leader-polylog} gives the desired polylogarithmic ANN bounds. \Cref{lem:alpha-leader-voronoi-capture} gives an equivalent geometric normal form for that same target: the max-tilted intensity of \(x\) is a Gaussian Voronoi-cell capture probability for the interpolated center \((1-\alpha)q+\alpha x\), multiplied by the explicit distance tilt \(\exp(-\alpha(1-\alpha)t\|x-q\|^2/2)\). \Cref{cor:query-centered-cell-reweighting} and \cref{cor:truncated-nearest-cell-compiler} then reduce max-tilted sampling to query-centered nearest-cell decoding plus scalar rejection. The weakest current algorithmic posterior target is \cref{asm:smoothed-witness-list}: list the true near witness with constant tilted Gaussian mass and scan the verified list. Conditional on it, \cref{prop:witness-list-polylog} gives the same polylogarithmic ANN bound. The facility form \cref{cor:facility-bucket-witness} is the version most directly connected to \(k\)-means++ or other build-time bucket proposals. \Cref{lem:poisson-rate-coverage}, \cref{lem:finite-signature-rate-coverage}, \cref{lem:scalar-redundancy-waterfill}, and \cref{asm:rate-coverage-panel} sharpen this further into the redundancy theorem object: point-label intensities, query label sets, finite coefficient envelopes, the marginal replication water level, the tilted miss bound, and the scan-load bound. \Cref{lem:finite-rate-coverage-convex} gives the finite convex feasibility test and dual obstruction for proposed panels. Conditional on that finite rate-coverage panel, \cref{prop:rate-coverage-polylog} gives the same endpoint. The scale-resolved sampler \cref{asm:ideal-likelihood-leader-law-sampler}, the hidden-label sampler \cref{asm:normalized-likelihood-leader-sampler}, the structured nearest-cell decoder \cref{asm:smoothed-nearest-cell}, and the older all-listing \cref{asm:multiscale-structured-likelihood} remain stronger sufficient implementation forms.
 
 \Cref{lem:seeded-reduced-gain-search} is the build-time bridge from this
 finite certificate to list-decoding and lattice-decoding proposals: the
