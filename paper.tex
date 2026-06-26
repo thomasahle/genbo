@@ -12590,6 +12590,162 @@ For a threshold $u$, the posterior-superlevel child is
    belongs to \(P_i(Y)\subseteq\Ball(q,cr)\).
 \end{proof}
 
+\begin{lemma}[Scale-amplified likelihood collapses to max-tilted leaders]
+   \label{lem:scale-amplified-alpha-leader}
+   In the notation of \cref{lem:likelihood-rank-prefix}, let
+   \[
+      M_Y=\max_{x\in S}L_Y(x),
+      \qquad
+      \ell(Y)\in\operatorname*{arg\,max}_{x\in S}L_Y(x)
+   \]
+   with deterministic tie-breaking.  Let the dyadic scale windows
+   \([\xi/2,\xi]\), \(\xi\in[1/m,1]\), partition the possible prefix masses.
+   Then, for every fixed \(Y\),
+   \[
+      2^{-\rho}M_Y^\alpha
+      \le
+      \sum_{\xi}\xi^{-\rho}B_\xi(Y)
+      \le
+      M_Y^\alpha .
+      \tag{AL1}
+   \]
+   Thus the scale-amplified quotient posterior process is, up to constants
+   depending only on \(\rho\), the max-tilted leader process with point
+   intensities
+   \[
+      \widetilde\Lambda_q(x)
+      =
+      \int_{\{\ell(Y)=x\}}
+      L_Y(q)^{s_\alpha}M_Y^\alpha\,d\gamma_t(Y).
+      \tag{AL2}
+   \]
+
+   If
+   \[
+      \alpha=\kappa/\log m,\qquad
+      t=C_c\log m/r^2
+   \]
+   with \(\kappa=\kappa(c)\) sufficiently small and \(C_c=C_c(c)\)
+   sufficiently large, then the total mass of \((AL2)\) is bounded by a
+   constant:
+   \[
+      \widetilde W_q=\sum_x\widetilde\Lambda_q(x)
+      =
+      \int L_Y(q)^{s_\alpha}M_Y^\alpha\,d\gamma_t(Y)
+      \le C_c .
+      \tag{AL3}
+   \]
+   Moreover, for every near pair \(\|p-q\|\le r\),
+   \[
+      \sum_{x\in S\cap\Ball(q,cr)}\widetilde\Lambda_q(x)\ge c_c .
+      \tag{AL4}
+   \]
+\end{lemma}
+
+\begin{proof}
+   For fixed \(Y\), write
+   \(\mu_i(Y)=k_i(Y)/m\) and
+   \(\Delta_i(Y)=r_i^\alpha-r_{i+1}^\alpha\).  Each rank prefix belongs to a
+   unique dyadic window \([\xi/2,\xi]\), and on that window
+   \[
+      2^{-\rho}\le \xi^{-\rho}\mu_i(Y)^\rho\le1 .
+   \]
+   Let \(\xi(i)\) denote this unique dyadic scale for prefix \(i\).  Therefore
+   \[
+      \sum_{\xi}\xi^{-\rho}B_\xi(Y)
+      =
+      \sum_i \xi(i)^{-\rho}\mu_i(Y)^\rho\Delta_i(Y)
+   \]
+   lies between \(2^{-\rho}\sum_i\Delta_i(Y)\) and
+   \(\sum_i\Delta_i(Y)\).  The latter sum telescopes to
+   \(r_1^\alpha=M_Y^\alpha\), proving \((AL1)\).  Since every prefix reports
+   the same leader \(\ell(Y)\), multiplying the scale-\(\xi\) process by
+   \(\xi^{-\rho}\) and summing over scales gives \((AL2)\) up to the constants
+   in \((AL1)\).
+
+   For the total mass, put \(Z_Y=m^{-1}\sum_{x\in S}L_Y(x)\).  Since
+   \(M_Y\le mZ_Y\),
+   \[
+      M_Y^\alpha\le m^\alpha Z_Y^\alpha .
+   \]
+   The Jensen/affinity calculation in
+   \cref{lem:ideal-likelihood-scale-profile} gives
+   \[
+      \int L_Y(q)^{s_\alpha}Z_Y^\alpha\,d\gamma_t(Y)\le1.
+   \]
+   Because \(m^\alpha=e^\kappa\), this proves \((AL3)\).
+
+   For the valid mass, use the tilted probability measure proportional to
+   \[
+      L_Y(p)^\alpha L_Y(q)^{s_\alpha}\,d\gamma_t(Y).
+   \]
+   Its normalizing constant is
+   \[
+      A_{p,q}
+      =
+      \exp\!\left(-\frac{\alpha s_\alpha t}{2}\|p-q\|^2\right)
+      \ge c_c
+   \]
+   for the displayed choice of \(\alpha,t\).  The same Gaussian margin
+   calculation as in \cref{thm:continuous-likelihood-balls} shows that, after
+   increasing \(C_c\), with tilted probability at least \(1-O(m^{-2})\) every
+   invalid point \(z\notin\Ball(q,cr)\) satisfies \(L_Y(z)<L_Y(p)\).  On this
+   event the leader \(\ell(Y)\) is valid and \(M_Y^\alpha\ge L_Y(p)^\alpha\).
+   Hence
+   \[
+   \begin{aligned}
+      \sum_{x\in S\cap\Ball(q,cr)}\widetilde\Lambda_q(x)
+      &=
+      \int L_Y(q)^{s_\alpha}M_Y^\alpha
+      \mathbf 1_{\{\ell(Y)\in\Ball(q,cr)\}}\,d\gamma_t(Y)\\
+      &\ge
+      A_{p,q}(1-O(m^{-2}))
+      \ge c_c ,
+   \end{aligned}
+   \]
+   after adjusting the constant.
+\end{proof}
+
+\begin{assumption}[Compact max-tilted leader sampler]
+   \label{asm:alpha-leader-sampler}
+   Fix \(c>1\) and \(\rho=\rho_c\).  For every bounded-diameter localized node
+   with \(m\) resident points there is a retained sampler of space
+   \(m^{1+\rho}\log^{O_c(1)}m\) for the max-tilted leader law
+   \[
+      \Pr[X=x]
+      =
+      \frac{\widetilde\Lambda_q(x)}
+           {\sum_z\widetilde\Lambda_q(z)}
+   \]
+   from \((AL2)\), with
+   \(\alpha=\Theta_c(1/\log m)\) and \(t=\Theta_c(\log m/r^2)\).  For every
+   promised query \(q\), one sample can be produced in
+   \(d\,m^\rho\log^{O_c(1)}m\) time.
+\end{assumption}
+
+\begin{proposition}[Conditional max-tilted leader endpoint]
+   \label{prop:alpha-leader-polylog}
+   Under \cref{asm:alpha-leader-sampler}, worst-case Euclidean ANN has query
+   time
+   \[
+      Q(n,d)=d\,n^{\rho_c}\log^{O_c(1)}n
+   \]
+   and space
+   \[
+      S(n,d)=dn+n^{1+\rho_c}\log^{O_c(1)}n .
+   \]
+\end{proposition}
+
+\begin{proof}
+   Work after bounded-diameter localization in a copy containing a true near
+   pair.  Draw one point from the max-tilted leader sampler and verify it in
+   the original metric.  By \((AL3)\) and \((AL4)\), the normalized sampler
+   returns a valid \(cr\)-neighbor with probability at least \(c_c/C_c\).
+   Repeating a constant number of times gives constant success probability.
+   The local query and space bounds are exactly those assumed, and summing
+   over the standard localized copies gives the displayed global bounds.
+\end{proof}
+
 \begin{assumption}[Compact ideal likelihood leader-law sampler]
    \label{asm:ideal-likelihood-leader-law-sampler}
    Fix \(c>1\) and \(\rho=\rho_c\).  For every bounded-diameter localized node
@@ -12767,21 +12923,23 @@ For a threshold $u$, the posterior-superlevel child is
    global space and query bounds.
 \end{proof}
 
-\Cref{asm:ideal-likelihood-leader-law-sampler} is the exact continuous target:
-all geometric and scale arithmetic has been discharged in
-\cref{lem:ideal-likelihood-leader-law}.  The implementation only has to sample
-from the normalized point measures \(\Lambda_{q,\xi}\).  The hidden-label
-assumption \cref{asm:normalized-likelihood-leader-sampler} is a more general
+\Cref{asm:ideal-likelihood-leader-law-sampler} is the exact scale-resolved
+continuous target: all geometric and scale arithmetic has been discharged in
+\cref{lem:ideal-likelihood-leader-law}, and the implementation only has to
+sample from the normalized point measures \(\Lambda_{q,\xi}\).  But
+\cref{lem:scale-amplified-alpha-leader} shows that even the scale resolution is
+not intrinsic after amplification: the dyadic weights collapse to the single
+max-tilted leader law \((AL2)\).  Thus the sharpest current posterior target is
+\cref{asm:alpha-leader-sampler}.  The hidden-label assumption
+\cref{asm:normalized-likelihood-leader-sampler} remains a more general
 implementation normal form for code, lattice, product-panel, or trellis
 samplers that expose a partition function \(W_{q,\xi}\) and sample a tilted
 path before quotienting to its leader, exactly as in
-\cref{lem:compressed-aggregate-sampler}.  Thus the remaining data-structure
-theorem is a compact normalized leader sampler, not an all-listing prefix
-decoder and not a stored hierarchy of posterior children.
+\cref{lem:compressed-aggregate-sampler}.
 
 Choose $\eta_m=m^{-\rho}\log^{A_c}m$. A uniform guard of size $m^\rho\log^{O_c(1)}m$ handles the case where at least $\eta_m m/2$ points are already valid answers. Otherwise \cref{thm:continuous-likelihood-balls} supplies constant pure negative-moment value below mass $\eta_m$, and \cref{lem:ideal-likelihood-scale-profile} shows that the same ideal continuum already has the scale-normalized query and storage moments needed by \cref{lem:dyadic-structured-amplification}. \Cref{lem:ideal-likelihood-leader-law} packages these facts in the quotient language: each scale has only constant total leader intensity, and the scale-weighted valid-leader intensity is constant under guard failure. The value need not sit at the top scale $\eta_m$; it may be concentrated near singleton children. This is why the amplification lemma runs all dyadic scales down to $1/m$. The geometric cost of doing so is still only $m^\rho\log^{O_c(1)}m$.
 
-Thus the remaining posterior problem is no longer geometric. By \cref{lem:likelihood-rank-prefix}, it is also not inherently a finite-channel quantization problem: after the Gaussian score \(Y\) is fixed, the threshold continuum collapses to score-prefix rank gaps. By \cref{cor:likelihood-prefix-leader}, even those prefixes do not need separate materialized representatives for ANN; a pure prefix certifies that the score leader for the same \(Y\) is already valid. \Cref{lem:dyadic-leader-quotient} gives the corresponding compiler, and \cref{cor:likelihood-leader-intensity} identifies the exact quotient law: sample or report data points from the aggregate score-leader intensities \((LI)\), where the rank-prefix gaps appear only as weights. By \cref{lem:poissonized-normalized-leader-sampler}, an implementation does not have to list active hidden labels either; it is enough to compute the scale partition function and sample from the normalized rank-gap law. The cleanest exact form is \cref{asm:ideal-likelihood-leader-law-sampler}, which samples the quotient point law directly. Uniformly choosing a representative from the whole node would lose a factor equal to the prefix mass, so the sampler still has to be sensitive to the rank-prefix measure. But the charged object is now a compact leader-intensity sampler, not a stored hierarchy of posterior buckets.
+Thus the remaining posterior problem is no longer geometric. By \cref{lem:likelihood-rank-prefix}, it is also not inherently a finite-channel quantization problem: after the Gaussian score \(Y\) is fixed, the threshold continuum collapses to score-prefix rank gaps. By \cref{cor:likelihood-prefix-leader}, even those prefixes do not need separate materialized representatives for ANN; a pure prefix certifies that the score leader for the same \(Y\) is already valid. \Cref{lem:dyadic-leader-quotient} gives the corresponding compiler, and \cref{cor:likelihood-leader-intensity} identifies the exact quotient law: sample or report data points from the aggregate score-leader intensities \((LI)\), where the rank-prefix gaps appear only as weights. By \cref{lem:poissonized-normalized-leader-sampler}, an implementation does not have to list active hidden labels either; it is enough to compute the scale partition function and sample from the normalized rank-gap law. After applying the scale repetitions analytically, \cref{lem:scale-amplified-alpha-leader} collapses these normalized laws to one max-tilted leader sampler. Uniformly choosing a representative from the whole node would lose a factor equal to the prefix mass, but the rank-prefix sensitivity is now encoded in the max tilt \(M_Y^\alpha\), not in stored posterior buckets.
 
 There is an even more collapsed non-channel target. Taking the likelihood exponent to the $\alpha=0$ endpoint turns the posterior child family into one smoothed score order. Then it is enough to draw a point from the high-score part of that order; no threshold continuum, dyadic scale, or stored representative is needed.
 
@@ -13912,7 +14070,7 @@ pattern-complete materialization produce the stored cover required by
 \paragraph{Structured posterior route.}
 \Cref{lem:posterior-superlevel-compiler} records the negative-moment identity suggested by the latest notes. \Cref{lem:explicit-enumeration-barrier} makes the coarse-child obstruction precise: the scale $\xi=m^{-1/(2c^2)}$ is the price of explicitly enumerating $B\simeq\xi^{-1}$ outcomes, not a geometric limit. \Cref{lem:oblivious-sparsification-barrier} adds the complementary warning that the moment bounds alone still permit $\Omega(\xi^{-1})$ disjoint possible witnesses, so direct random sparsification cannot replace structured decoding without an additional sensitivity theorem. \Cref{lem:scale-window-compiler} and \cref{lem:dyadic-structured-amplification} isolate the important arithmetic: if mass windows can be decoded output-sensitively, then $\xi^{-\rho}$ repetitions at each dyadic scale convert negative-moment value into constant hit probability, and summing all scales down to $1/m$ still fits the $m^\rho$ query budget. This scale-aware amplification is essential; a raw negative-moment diagnostic alone does not imply that the near point is actually listed with inverse-polylogarithmic probability.
 
-The continuous likelihood-ball family now proves both analytic sides of the desired posterior decoder: \cref{thm:continuous-likelihood-balls} gives the guard-or-pure-child value, and \cref{lem:ideal-likelihood-scale-profile} gives the scale-normalized query and storage moments. \Cref{lem:likelihood-rank-prefix} further collapses the threshold continuum to rank gaps of a random score order. \Cref{cor:likelihood-prefix-leader} removes another artificial materialization cost: for ANN, every pure prefix may report the same score leader, so the decoder can aggregate prefix mass by leader buckets instead of storing one representative per prefix. \Cref{lem:dyadic-leader-quotient} records the full amplification in this hidden-label form and contributes no per-prefix storage term, and \cref{cor:likelihood-leader-intensity} identifies the exact quotient law as the rank-gap weighted measure over score leaders. \Cref{lem:ideal-likelihood-leader-law} further proves that this quotient law has constant total intensity per scale and constant scale-weighted valid intensity under guard failure. \Cref{lem:poissonized-normalized-leader-sampler} removes the remaining all-listing requirement from a sampled implementation: computing the total intensity and sampling from the normalized tilted law gives the exact Poisson leader process. The cleanest structured target is therefore \cref{asm:ideal-likelihood-leader-law-sampler}: implement the quotient point measures \(\Lambda_{q,\xi}\) as compact normalized samplers. Conditional on that theorem, \cref{prop:ideal-leader-law-polylog} gives the desired polylogarithmic ANN bounds in one posterior layer. The hidden-label sampler \cref{asm:normalized-likelihood-leader-sampler} and the older all-listing \cref{asm:multiscale-structured-likelihood} remain sufficient implementation forms.
+The continuous likelihood-ball family now proves both analytic sides of the desired posterior decoder: \cref{thm:continuous-likelihood-balls} gives the guard-or-pure-child value, and \cref{lem:ideal-likelihood-scale-profile} gives the scale-normalized query and storage moments. \Cref{lem:likelihood-rank-prefix} further collapses the threshold continuum to rank gaps of a random score order. \Cref{cor:likelihood-prefix-leader} removes another artificial materialization cost: for ANN, every pure prefix may report the same score leader, so the decoder can aggregate prefix mass by leader buckets instead of storing one representative per prefix. \Cref{lem:dyadic-leader-quotient} records the full amplification in this hidden-label form and contributes no per-prefix storage term, and \cref{cor:likelihood-leader-intensity} identifies the exact quotient law as the rank-gap weighted measure over score leaders. \Cref{lem:ideal-likelihood-leader-law} further proves that this quotient law has constant total intensity per scale and constant scale-weighted valid intensity under guard failure. \Cref{lem:poissonized-normalized-leader-sampler} removes the remaining all-listing requirement from a sampled implementation: computing the total intensity and sampling from the normalized tilted law gives the exact Poisson leader process. Finally, \cref{lem:scale-amplified-alpha-leader} shows that the dyadic repetitions cancel the rank powers, collapsing the whole amplified posterior to the max-tilted leader law \((AL2)\), with constant total mass and constant valid mass for every near pair. The cleanest structured target is therefore \cref{asm:alpha-leader-sampler}; conditional on it, \cref{prop:alpha-leader-polylog} gives the desired polylogarithmic ANN bounds. The scale-resolved sampler \cref{asm:ideal-likelihood-leader-law-sampler}, the hidden-label sampler \cref{asm:normalized-likelihood-leader-sampler}, and the older all-listing \cref{asm:multiscale-structured-likelihood} remain sufficient implementation forms.
 
 \Cref{lem:smoothed-max-score-margin} gives a still simpler non-channel target: a query-centered Gaussian score direction separates every invalid point from the true near point by an additive $\Theta_c(tr^2)$ score margin, with high probability. The softest resulting primitive is \cref{asm:smoothed-gibbs}: with inverse-polylogarithmic probability, report a list carrying inverse-polylogarithmic mass under the Gaussian Gibbs kernel on data points. Sampling from the kernel restricted to that list gives a pointwise dominated output law by \cref{lem:captured-gibbs-domination}, and \cref{lem:smoothed-gibbs-suffices} then returns a valid answer because invalid points have negligible Gibbs mass and cannot be oversampled too much. A more exact sampling route is certified additive Gumbel-MIPS: \cref{lem:gumbel-additive-domination} shows that an $O(\log\log m)$ additive optimizer for the Gumbel-perturbed scores gives precisely the required one-sided Gibbs domination, yielding \cref{prop:gumbel-mips-polylog}. A stronger but different implementation route is smoothed additive nearest-neighbor search for the perturbed center $Y/t$ with additive squared-distance error $\Theta_c(r^2)$, exactly equivalent to additive score maximization by \cref{lem:score-max-additive-nn}. These oracles would bypass dyadic scales and representatives entirely, as recorded in \cref{prop:smoothed-gibbs-polylog}, \cref{prop:gumbel-mips-polylog}, and \cref{prop:smoothed-score-max-polylog}. They are targets, not implemented theorems; \cref{rem:gumbel-mips-not-ann} explains why black-box multiplicative ANN does not supply the Gumbel primitive. The older finite restricted-channel compiler \cref{asm:finite-restricted-channel} and \cref{prop:finite-channel-polylog} remain as a coarse explicit-enumeration special case and as a useful diagnostic framework.
 
@@ -13939,7 +14097,7 @@ For the randomized cap-thinning route, one remaining task is the branching first
    \le
    \log^{O_c(1)}n\,V(\varnothing)^2 .
 \]
-\Cref{lem:local-lca-energy} further reduces this to a local Bellman multiplier, and \cref{cor:square-nonexpansive-routes} shows that square-nonexpansive value branching costs only the polylogarithmic route depth. Equivalently, \cref{lem:energy-spine-toll} says that it is enough to prove only $O_c(\log\log n)$ positive square-energy toll along the energy-biased route spine. The capped-flow certificate \cref{lem:unit-capped-value-flow}, the Bellman recursion \cref{lem:saturated-value-recursion}, and the min-cut dual \cref{lem:saturated-value-mincut} give a still simpler sufficient formulation: prove that every route cut has inverse-polylogarithmic prefix-success mass. The equivalent dominated-law form in \cref{lem:dominated-route-law} says to construct a tilted law on tame routes whose prefix probabilities are dominated by activation prefix masses up to a polylogarithmic factor; by \cref{cor:typical-route-law-toll}, it is enough to prove only $O_c(\log\log n)$ expected positive domination toll under that route law and prune the bad tail. The cut-energy form \cref{lem:cut-energy-route-law} is closer to stopping-time proofs: it asks only for polylogarithmic $\sum_{u\in\mathcal C}\Lambda(u)^2/A(u)$ on each route cut $\mathcal C$. By \cref{lem:frontier-square-toll}, this is equivalent to bounding the positive square toll of the square-biased route spine up to each stopped frontier, with no all-prefix depth summation. The stronger all-prefix bound in \cref{cor:route-law-prefix-energy} remains an LCA-compatible sufficient condition. Conditional on either aggregate value statement, \cref{prop:budget-thinned-polylog} gives the desired polylogarithmic ANN theorem. This is a fully non-channel route; the smooth product terminal filter can be used after localization and no longer contributes an inverse-polylogarithmic table-recall penalty. The structured posterior route replaces the cap-frontier obstacle by \cref{asm:ideal-likelihood-leader-law-sampler}: prove a compact normalized sampler for the quotient likelihood leader laws, not a small explicitly enumerable channel and not an all-listing prefix reporter. The smoothed sampling route replaces both by \cref{asm:smoothed-gibbs} or \cref{asm:gumbel-mips}: prove either an optimal-exponent reporter that captures inverse-polylogarithmic Gaussian Gibbs mass, or a certified $O(\log\log n)$-additive Gumbel-MIPS primitive. Smoothed additive nearest neighbor is another stronger sufficient primitive. The detector-vote cohort-or-leaf route is a separate possible generalization to arbitrary certified child hierarchies, where the remaining issue is near-lineage coupling between ordinary continuation paths and detector activations.
+\Cref{lem:local-lca-energy} further reduces this to a local Bellman multiplier, and \cref{cor:square-nonexpansive-routes} shows that square-nonexpansive value branching costs only the polylogarithmic route depth. Equivalently, \cref{lem:energy-spine-toll} says that it is enough to prove only $O_c(\log\log n)$ positive square-energy toll along the energy-biased route spine. The capped-flow certificate \cref{lem:unit-capped-value-flow}, the Bellman recursion \cref{lem:saturated-value-recursion}, and the min-cut dual \cref{lem:saturated-value-mincut} give a still simpler sufficient formulation: prove that every route cut has inverse-polylogarithmic prefix-success mass. The equivalent dominated-law form in \cref{lem:dominated-route-law} says to construct a tilted law on tame routes whose prefix probabilities are dominated by activation prefix masses up to a polylogarithmic factor; by \cref{cor:typical-route-law-toll}, it is enough to prove only $O_c(\log\log n)$ expected positive domination toll under that route law and prune the bad tail. The cut-energy form \cref{lem:cut-energy-route-law} is closer to stopping-time proofs: it asks only for polylogarithmic $\sum_{u\in\mathcal C}\Lambda(u)^2/A(u)$ on each route cut $\mathcal C$. By \cref{lem:frontier-square-toll}, this is equivalent to bounding the positive square toll of the square-biased route spine up to each stopped frontier, with no all-prefix depth summation. The stronger all-prefix bound in \cref{cor:route-law-prefix-energy} remains an LCA-compatible sufficient condition. Conditional on either aggregate value statement, \cref{prop:budget-thinned-polylog} gives the desired polylogarithmic ANN theorem. This is a fully non-channel route; the smooth product terminal filter can be used after localization and no longer contributes an inverse-polylogarithmic table-recall penalty. The structured posterior route replaces the cap-frontier obstacle by \cref{asm:alpha-leader-sampler}: prove a compact sampler for the max-tilted leader law \((AL2)\), not a small explicitly enumerable channel, not a dyadic rank-prefix reporter, and not a stored hierarchy of posterior buckets. The smoothed sampling route replaces both by \cref{asm:smoothed-gibbs} or \cref{asm:gumbel-mips}: prove either an optimal-exponent reporter that captures inverse-polylogarithmic Gaussian Gibbs mass, or a certified $O(\log\log n)$-additive Gumbel-MIPS primitive. Smoothed additive nearest neighbor is another stronger sufficient primitive. The detector-vote cohort-or-leaf route is a separate possible generalization to arbitrary certified child hierarchies, where the remaining issue is near-lineage coupling between ordinary continuation paths and detector activations.
 
 \appendix
 
