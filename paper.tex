@@ -16337,7 +16337,7 @@ success-normalized bucket-net argument.
       \qquad
       \sigma_q=\frac{s_q}{\ell_q}\quad(q\in Q^+).
    \]
-   For \(t\ge A\), define the low-efficiency prefix statistics
+   For \(t>A\), define the low-efficiency prefix statistics
    \[
       L(t)=\sum_{\substack{q\in Q^+\\ \sigma_q\le t}}\ell_q,
       \qquad
@@ -16348,7 +16348,7 @@ success-normalized bucket-net argument.
       G(t)=tL(t)-S(t)-(t-A)\Lambda .
       \tag{TRB1}
    \]
-   Then the Lagrange screen with multiplier \(\lambda=t-A>0\) is equivalent
+   Then the Lagrange screen with multiplier \(\lambda=t-A\) is equivalent
    to
    \[
       G(t)\le0 .
@@ -16459,6 +16459,73 @@ success-normalized bucket-net argument.
    proves local filter-cover feasibility.
 \end{proof}
 
+\begin{corollary}[Threshold recycled-sublayer separator suffices]
+   \label{cor:threshold-recycled-sublayer-separator-suffices}
+   Work under the hypotheses of \cref{cor:annular-reporter-local-cover}, assume
+   finite primitive support and prefix-closed retained containers as in
+   \cref{cor:recycled-sublayer-separator-suffices}.  Suppose the following
+   threshold screen holds for every guarded normalized residual and every
+   single-seed annular query layer \(Q'=Q_{z,\beta,\Delta}\) satisfying
+   \((SAQ1)\)--\((SAQ2)\).  There are a retained container \(W\), a size
+   certificate \(|W|\le K\), a congestion parameter \(C>0\), and
+   \(0\le\theta\le1\) satisfying \((HMC1)\).  Put
+   \[
+      m=|P|,
+      \qquad
+      \mathcal D_m=\{2^\ell:0\le\ell\le\lceil\log_2m\rceil\},
+      \qquad
+      H_m(\Delta)=|\{\Delta''\in\mathcal D_m:\Delta\le\Delta''\le m\}|,
+   \]
+   and
+   \[
+      A=\frac{2H_m(\Delta)}{C},
+      \qquad
+      \Lambda=
+      \frac{(1-\xi)\beta_0C_\eta\pi_1\kappa}
+      {16J K_{|P|}H_m(\Delta)} .
+   \]
+   For each dyadic \(\Delta'\in\mathcal D_m\) with \(\Delta'\ge\Delta\), define
+   \[
+      Q_{\Delta'}=\{q\in Q':|B_{z,\beta}(q)|\ge\Delta'\},
+      \qquad
+      \ell_q=\Delta'\bar\tau_q,
+      \qquad
+      s_q=s_{W,\theta}(q),
+   \]
+   and, for \(t>A\),
+   \[
+      L_{\Delta'}(t)
+      =
+      \sum_{\substack{q\in Q_{\Delta'}\\ \ell_q>0\\ s_q/\ell_q\le t}}
+      \ell_q,
+      \qquad
+      S_{\Delta'}(t)
+      =
+      \sum_{\substack{q\in Q_{\Delta'}\\ \ell_q>0\\ s_q/\ell_q\le t}}
+      s_q .
+   \]
+   If for every such \(\Delta'\) there exists a threshold \(t_{\Delta'}>A\)
+   such that
+   \[
+      t_{\Delta'}L_{\Delta'}(t_{\Delta'})
+      -
+      S_{\Delta'}(t_{\Delta'})
+      \le
+      (t_{\Delta'}-A)\Lambda ,
+      \tag{TRS1}
+   \]
+   then the enlarged local filter-cover LP is feasible.
+\end{corollary}
+
+\begin{proof}
+   Fix a dyadic \(\Delta'\).  Applying
+   \cref{lem:threshold-recycled-bad-layers} with \(t=t_{\Delta'}\) shows that
+   \((TRS1)\) is exactly the positive-part Lagrange screen \((LRS4)\), with
+   multiplier \(\lambda_{\Delta'}=t_{\Delta'}-A>0\).  Since this holds for
+   every dyadic level, \cref{cor:lagrange-recycled-sublayer-separator-suffices}
+   proves local feasibility.
+\end{proof}
+
 The transport formulation is useful because it cleanly separates the two
 remaining tasks.  The annular witnesses are far points and still cannot be used
 as cover columns.  A geometric or list-recovery argument must instead construct
@@ -16504,6 +16571,10 @@ than as an all-subsets Hall check.  \Cref{lem:threshold-recycled-bad-layers}
 gives the matching primal search form: any fractional bad sublayer is witnessed
 by a low-efficiency prefix in the ratios \(s_{W,\theta}(q)/(\Delta'\bar\tau_q)\),
 with at most one fractional boundary level.
+\Cref{cor:threshold-recycled-sublayer-separator-suffices} packages this into a
+build-facing certificate: for each dyadic annular size level it is enough to
+sort queries by that efficiency and find one threshold whose low-efficiency
+prefix passes the scalar inequality.
 
 \begin{corollary}[Annular reporter closes the local cover]
    \label{cor:annular-reporter-local-cover}
@@ -38273,6 +38344,11 @@ low-efficiency prefix after sorting queries by
 \(s_{W,\theta}(q)/(\Delta'\bar\tau_q)\), with only a boundary level fractional.
 This is the range-reporting/list-recovery object that an implementation or a
 geometric theorem should search for.
+\Cref{cor:threshold-recycled-sublayer-separator-suffices} turns this into the
+current sufficient certificate: at every dyadic annular size level, one
+affordable retained container must admit a low-efficiency threshold whose
+prefix statistic satisfies
+\(tL_{\Delta'}(t)-S_{\Delta'}(t)\le(t-2H_m(\Delta)/C)\Lambda\).
 \Cref{lem:primitive-hit-kernel-cover-equivalence} gives the matching primal
 form: the same theorem is equivalent to fractionally covering the primitive
 spherical hit kernel \(r_{p,q}\) by Pareto cores at \(\pi_1\)-scaled query and
