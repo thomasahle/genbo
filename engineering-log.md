@@ -675,3 +675,5 @@
 - Updated the audit trail to make this density envelope the current residual inequality for no-layer-cake dense proposals.
 - Added the benefit-per-price proposal normal form. Fractional dense-filter proposal laws now have an exact size-biased reduced-gain interpretation: after biasing by certified recursive price, useful proposals are precisely those with mean dual benefit per price above one, clarifying why mass-only \(k\)-means++ seeding is only a heuristic unless it approximates the dual-priced separator.
 - Updated the audit trail to connect this benefit-per-price criterion to the fully fractional dense-overlap LP.
+- Added the centerwise clipped exact-prefix proposal law. Hard supports and soft memberships from facility, AQ, list/lattice decoding, or \(k\)-means++-style build-time routines now close the no-layer-cake dense screen whenever their expected clipped surplus is positive; the verifier still retains only one deterministic exact top prefix.
+- Updated the audit trail to identify this as the centerwise/facility interface for the clipped exact-prefix residual.

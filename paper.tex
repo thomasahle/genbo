@@ -39744,6 +39744,92 @@ family.
    residual envelopes are the contrapositives.
 \end{proof}
 
+\begin{corollary}[Centerwise clipped exact-prefix proposal law]
+   \label{cor:centerwise-clipped-exact-prefix-proposal-law}
+   Work in the setting of \cref{cor:clipped-exact-prefix-density-residual}.
+   A centerwise clipped proposal is a finite or sampled report \(R\) attached to
+   one exact-prefix slot \(i\), of one of the following two types.
+
+   In the hard case, \(R\) gives a support \(S_R\subseteq W_i\), its size
+   \(m_R=|S_R|\ge1\), and a one-sided lower mass certificate
+   \[
+      0\le X_R\le\sum_{p\in S_R}d_i(p).
+      \tag{CCP1}
+   \]
+   Its clipped surplus is
+   \[
+      Z(R)=X_R-\beta_i m_R\Theta_i(m_R).
+      \tag{CCP2}
+   \]
+   In the soft case, \(R\) gives memberships \(0\le\theta_{R,p}\le1\),
+   \[
+      \mu_R=\sum_p\theta_{R,p},\qquad
+      m_R=\max\{1,\mu_R\},
+      \qquad
+      0\le X_R\le\sum_p\theta_{R,p}d_i(p),
+      \tag{CCP3}
+   \]
+   and its clipped surplus is again
+   \[
+      Z(R)=X_R-\beta_i m_R\Theta_i(m_R).
+      \tag{CCP4}
+   \]
+   If a finite weighted panel of such proposals satisfies
+   \[
+      \sum_R\lambda_R Z(R)>0,
+      \qquad \lambda_R\ge0,
+      \tag{CCP5}
+   \]
+   then one deterministic exact top-prefix report gives a closed-shadow repair.
+   Consequently, if no exact-prefix repair exists in the searched family, every
+   finite centerwise clipped proposal panel has nonpositive total surplus.
+
+   The same statement holds in Las Vegas build time.  If a randomized proposal
+   routine returns a finite panel with certified surplus \(Z(s)\) satisfying
+   \[
+      \E_sZ(s)\ge\Gamma>0,
+      \qquad
+      Z(s)_+\le U
+      \quad\text{almost surely},
+      \tag{CCP6}
+   \]
+   then
+   \[
+      B\ge\frac U\Gamma\log\frac1\delta
+      \tag{CCP7}
+   \]
+   independent build-time seeds find a deterministic exact-prefix repair with
+   probability at least \(1-\delta\).  Failed or nonpositive sampled proposals
+   are discarded and are not retained in the index.
+\end{corollary}
+
+\begin{proof}
+   If \((CCP5)\) holds, some positive-weight report has \(Z(R)>0\).  In the hard
+   case this is exactly a violation of \((ECD1)\), and in the soft case it is
+   exactly a violation of \((ECD2)\).  By
+   \cref{cor:clipped-exact-prefix-density-residual}, either violation
+   materializes one deterministic exact top-prefix repair.  The nonpositive
+   panel statement is the contrapositive.
+
+   For the sampled statement, \((CCP6)\) gives
+   \[
+      \Pr[Z(s)>0]\ge\frac{\Gamma}{U}.
+   \]
+   Hence \(B\) independent seeds all fail to produce positive surplus with
+   probability at most \(\exp(-B\Gamma/U)\).  A positive sampled panel satisfies
+   the deterministic part and is verified into one retained exact-prefix repair.
+\end{proof}
+
+\Cref{cor:centerwise-clipped-exact-prefix-proposal-law} is the no-layer-cake
+interface for facility, additive-quantization, list-decoding, lattice-decoding,
+or \(k\)-means++-style dense proposals.  Such routines may choose centers,
+supports, or soft memberships by any expensive build-time rule, including rules
+adapted to the current dual prices.  The verifier only reads the one-sided mass
+certificate and the clipped recursive density price.  Positive expected surplus
+is enough by averaging, while the retained object is again the ordinary
+deterministic top prefix from
+\cref{cor:clipped-exact-prefix-density-residual}.
+
 \begin{corollary}[Balanced Hall-shadow density screen]
    \label{cor:balanced-hall-shadow-density-screen}
    Work in the setting of \cref{cor:no-merge-hall-shadow-envelope}.  Fix a
