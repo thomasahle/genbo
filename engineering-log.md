@@ -632,3 +632,4 @@
 - Added the closed-shadow query-layer relaxation. Fractional signature-side query weights are now only a proposal language: any positive fractional closed-shadow prefix objective convexifies to a certified Boolean query layer, so the retained repair remains an ordinary Hall-shadow prefix.
 - Updated the audit trail to record the same query-layer relaxation in the dense-side status summary.
 - Added the closed-shadow soft proposal hardening step. A proposal may now certify only fractional signature weights, soft point memberships, and a normalized lower mass; the verifier hardens any positive certificate to a Boolean signature layer and top-\(K\) Hall-shadow prefix.
+- Updated the audit trail to mention the closed-shadow soft proposal hardening in the dense-side status summary.
