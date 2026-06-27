@@ -45498,6 +45498,46 @@ certificate is the verified positive-gain column and the finite LP it augments.
    a correct no-certificate report over the finite universe.
 \end{proof}
 
+\begin{corollary}[Las Vegas sampled-center profile oracle]
+   \label{cor:las-vegas-sampled-center-profile-oracle}
+   Work in the setting of
+   \cref{cor:one-sided-polylog-sampled-center-profile-oracle}.  Suppose that,
+   for each resident node and each normalized exact-signature price system,
+   preprocessing has a randomized proposal law over candidate profiles and
+   candidate numerical certificates.  A deterministic verifier accepts a
+   proposal only when the proposed profile and numbers satisfy
+   \((OSP1)\)--\((OSP3)\).
+
+   Assume that whenever a profile in the finite universe
+   \(\mathcal P_\star\) admits such a one-sided certificate, one proposal is
+   accepted with probability at least \(p_E>0\).  Then repeating proposals
+   until the first accepted certificate is a Las Vegas implementation of the
+   profile oracle, with expected at most \(1/p_E\) proposal calls.  Rejected
+   proposals and unverifiable certificates are discarded and are never charged
+   to the retained index.
+
+   Consequently, if every normalized residual has some profile in
+   \(\mathcal P_\star\) admitting a certificate satisfying
+   \((OSP1)\)--\((OSP3)\), and the proposal law hits one with positive
+   probability, then the same
+   \(d\,n^{\rho_c}\log^{O_c(1)}n\) query and
+   \(dn+n^{1+\rho_c}\log^{O_c(1)}n\) storage endpoint follows.
+\end{corollary}
+
+\begin{proof}
+   For a fixed resident node and price system, the probability that the first
+   \(B\) independent proposals are all rejected is at most \((1-p_E)^B\).
+   Thus the repeat-until-accepted procedure terminates almost surely and has
+   expected number of proposals at most \(1/p_E\).  Every accepted proposal is,
+   by deterministic verification, a valid one-sided profile certificate in the
+   sense of
+   \cref{cor:one-sided-polylog-sampled-center-profile-oracle}.  Failed
+   proposals are preprocessing artifacts only.  The retained column-generation
+   process sees exactly the first accepted certified profile, so query work and
+   storage are those certified by
+   \cref{cor:one-sided-polylog-sampled-center-profile-oracle}.
+\end{proof}
+
 \begin{corollary}[Min-cost split-profile separator endpoint]
    \label{cor:min-cost-split-profile-separator-endpoint}
    In the setting of
@@ -59500,6 +59540,10 @@ target: polynomial dynamic range and sampled-center price
 \Cref{cor:one-sided-polylog-sampled-center-profile-oracle} gives the verifier
 form of that target using only one-sided certificates: lower residual benefit
 and upper high-correlation/sample-price bounds.
+\Cref{cor:las-vegas-sampled-center-profile-oracle} is the build-time sampling
+form: any proposal law that hits such a one-sided certificate with positive
+probability can be repeated until accepted, while failed proposals are
+discarded before they affect the retained index.
 \Cref{cor:min-cost-split-profile-separator-endpoint} turns this scalar envelope
 into an endpoint statement: if every normalized exact-signature dual violates
 the optimized envelope for some finite split-profile panel, and the resulting
