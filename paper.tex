@@ -18143,6 +18143,96 @@ success-normalized bucket-net argument.
    Powers of two are \(2\)-dense from above, giving the final claim.
 \end{proof}
 
+\begin{corollary}[Finite prefix-template separation game]
+   \label{cor:finite-prefix-template-separation-game}
+   Work in the setting of
+   \cref{cor:cardinality-net-cohort-prefix-envelope}, and fix a finite retained
+   prefix-record pool \(\mathcal P_b\).  A record
+   \(T\in\mathcal P_b\) consists of
+   \[
+      T=(W_T,\theta_T,h_T,K_T,U_T),
+      \qquad
+      U_T\subseteq W_T,\quad |U_T|=h_T,
+      \qquad
+      h_T\le K_T\le b h_T,
+      \tag{FPT0}
+   \]
+   where \(K_T\in\mathcal K_{W_T,\theta_T}\) and every sublist of \(W_T\) of
+   size at most \(K_T\) is reportable with size certificate \(K_T\).  Define
+   the cohort value and verified surplus
+   \[
+      V_\eta(T)=\sum_{p\in U_T}d_\eta^{\theta_T}(p),
+      \qquad
+      G(T,\eta)=V_\eta(T)-\Theta_C L_b(h_T).
+      \tag{FPT1}
+   \]
+   Then
+   \[
+      \max_{\omega\in\Delta_{\mathcal P_b}}
+      \min_{\eta\in\Delta_{\mathcal E_{\rm load}}}
+      \sum_{T\in\mathcal P_b}\omega_TG(T,\eta)
+      =
+      \min_{\eta\in\Delta_{\mathcal E_{\rm load}}}
+      \max_{T\in\mathcal P_b}G(T,\eta).
+      \tag{FPT2}
+   \]
+   If the common value in \((FPT2)\) is nonnegative, then the averaged
+   dominated-load certificate \((DPG3)\) holds.
+
+   Conversely, if \((DPG3)\) fails, then there is a cohort law \(\eta\) such
+   that, for this pool and indeed for every retained prefix-record pool
+   satisfying \((FPT0)\),
+   \[
+      G(T,\eta)<0
+      \qquad(T\in\mathcal P_b)
+      \tag{FPT3}
+   \]
+   This same \(\eta\) is independent of the chosen finite pool.
+
+   In particular, when the pool contains all reportable \(h\)-subsets of each
+   retained parent \(W\), optimizing over \(U_T\) for fixed \(W,\theta,h\) is
+   exactly the top-prefix quantity \(D_\eta^\theta(W,h)\).  Thus the build-time
+   separation objective is the verified score
+   \[
+      D_\eta^\theta(W,h)-\Theta_C L_b(h),
+      \tag{FPT4}
+   \]
+   or equivalently the ratio \(D_\eta^\theta(W,h)/L_b(h)\).
+\end{corollary}
+
+\begin{proof}
+   The set \(\mathcal E_{\rm load}\) is finite, and \(G(T,\eta)\) is linear in
+   \(\eta\) for each fixed retained record \(T\).  Hence \((FPT2)\) is the
+   finite matrix-game minimax theorem.
+
+   If the value is nonnegative, choose a maximizing law \(\omega\).  For every
+   cohort law \(\eta\), the \(\omega\)-average of \(G(T,\eta)\) is nonnegative,
+   so some support record has \(G(T,\eta)\ge0\).  For that record,
+   \[
+      D_\eta^{\theta_T}(W_T,h_T)\ge V_\eta(T)\ge\Theta_C L_b(h_T),
+   \]
+   because \(U_T\) is one feasible \(h_T\)-subset of \(W_T\).  Therefore
+   \((CNC2)\) holds for every cohort law, and
+   \cref{cor:cardinality-net-cohort-prefix-envelope} gives \((DPG3)\).
+
+   Conversely, if \((DPG3)\) fails, then
+   \cref{cor:cardinality-net-cohort-prefix-envelope} gives a cohort law
+   \(\eta\) satisfying the strict envelope \((CNC3)\) for every retained
+   \(W,\theta,h\).  For any record \(T\),
+   \[
+      V_\eta(T)
+      \le
+      D_\eta^{\theta_T}(W_T,h_T)
+      <
+      \Theta_C L_b(h_T),
+   \]
+   which is \((FPT3)\).
+
+   The final statement is only the definition of
+   \(D_\eta^\theta(W,h)\) as the maximum \(d_\eta^\theta\)-mass over
+   \(h\)-subsets of \(W\).
+\end{proof}
+
 The lemma is the fractional version of the dominated-load endpoint.  It does not
 claim the remaining geometric theorem.  Rather, after terminal low-load levels
 and the \(A\)-boundary alternative have been dealt with by
@@ -18202,6 +18292,13 @@ count \(H_m(\Delta)\) cancels out of the retained prefix threshold.
 \Cref{cor:cardinality-net-cohort-prefix-envelope} removes exact-cardinality
 search: a factor-\(b\) retained cardinality net, in particular dyadic sizes
 with \(b=2\), leaves only the explicit envelope with \(K\) replaced by \(bh\).
+\Cref{cor:finite-prefix-template-separation-game} is the final finite
+column-generation form of this target: preprocessing may spend arbitrary time
+proposing \(W,\theta,h\) and candidate sublists, but the retained column is
+accepted only when the verified surplus
+\(V_\eta(T)-\Theta_CL_b(h_T)\) is nonnegative against the current cohort law.
+If the dominated-load certificate fails, one cohort law witnesses negative
+surplus for every generated template.
 Pools with different congestion guesses may be split into dyadic \(C\)-strata and
 tested by the same game within each stratum.
 
@@ -40406,6 +40503,12 @@ top-prefix envelope has no extra dyadic-annulus multiplicative loss.
 \Cref{cor:cardinality-net-cohort-prefix-envelope} removes exact-cardinality
 search from this target: powers of two are enough, replacing \(K\) by at most
 \(2K\) inside the logarithm.
+\Cref{cor:finite-prefix-template-separation-game} packages the remaining
+build-time target as a finite matrix game over verified prefix records:
+positive value gives the dominated-load certificate, while failure of the local
+cover leaves one cohort law with negative verified surplus for every generated
+record.  This is the precise theoretical replacement for choosing dense
+clusters by mass or by a Lloyd/\(k\)-means++ heuristic.
 \Cref{cor:load-quantile-recycled-obstruction-profile} is the corresponding
 residual normal form: outside the \(A\)-boundary and terminal cases, the
 remaining obstruction is just strict positivity at that weighted quantile.
