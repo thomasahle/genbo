@@ -38970,6 +38970,88 @@ family.
    \(\sum_p\theta_pd_i(p)\).
 \end{proof}
 
+\begin{corollary}[Reported soft support hardens to a top prefix]
+   \label{cor:reported-soft-support-prefix-hardening}
+   Work in the setting of \cref{cor:point-coupled-one-slot-support-law}.  Fix
+   one reported support slot \(i\), and let \(d_i(p)\) be the point score from
+   \((RCS4)\).  For soft memberships \(0\le\theta_p\le1\), put
+   \[
+      \mu=\sum_p\theta_p,
+      \qquad
+      X\le\sum_p\theta_pd_i(p).
+      \tag{RSH1}
+   \]
+   For an available cardinality \(K\ge1\), let \(U_K\) be the top \(K\) points
+   of \(W_i\) in decreasing order of \(d_i\), and write
+   \(D_i(K)=\sum_{p\in U_K}d_i(p)\).  If
+   \[
+      K\,\frac{X}{\max\{\mu,K\}}
+      >
+      2b_iJ_i\psi_i
+      \left(
+         A_{y_i}K^{\rho_i}
+         +
+         \zeta K^{1+\rho_i}
+      \right),
+      \tag{RSH2}
+   \]
+   then the deterministic top-prefix support \(U_K\) satisfies \((RPR2)\), and
+   hence the Hall-cut repair alternative \((HCR2)\) holds.
+
+   Equivalently, in any residual with no reported closed-shadow repair, every
+   soft membership vector and every available \(K\) obey the reverse inequality
+   in \((RSH2)\).  Thus soft cluster, facility, or additive-quantization
+   assignments are only proposal languages: the verifier retains the exact
+   top-\(K\) support for the induced score \(d_i\).
+
+   In particular, if every cardinality is available and
+   \(\mu_+=\max\{1,\mu\}\), then the simpler condition
+   \[
+      X>
+      4b_iJ_i\psi_i
+      \left(
+         A_{y_i}\mu_+^{\rho_i}
+         +
+         \zeta\mu_+^{1+\rho_i}
+      \right)
+      \tag{RSH3}
+   \]
+   already gives \((HCR2)\).
+\end{corollary}
+
+\begin{proof}
+   Order \(W_i=\{p_1,p_2,\ldots\}\) so that
+   \(d_i(p_1)\ge d_i(p_2)\ge\cdots\).  The standard rearrangement bound gives
+   \[
+      D_i(K)\ge K\,\frac{X}{\max\{\mu,K\}}.
+      \tag{RSH4}
+   \]
+   Indeed, if \(\mu\le K\), the top \(K\) integral prefix has at least the mass
+   of any fractional vector \(0\le\theta\le1\) of total mass \(\mu\).  If
+   \(\mu>K\), the average of the top \(K\) scores is at least the average score
+   under any fractional mass \(\mu\).
+
+   Combining \((RSH2)\) and \((RSH4)\), the reported support \(U_K\), with
+   lower mass certificate \(D_i(K)\), has routed paid mass larger than its
+   reported support price
+   \[
+      2b_iJ_i\psi_i
+      \left(
+         A_{y_i}K^{\rho_i}
+         +
+         \zeta K^{1+\rho_i}
+      \right).
+   \]
+   This is a one-slot instance of \((RPR2)\), so
+   \cref{cor:reported-support-price-routing-residual} gives \((HCR2)\).  The
+   residual statement is the contrapositive.
+
+   For the coarse scale, choose \(K=1\) if \(\mu<2\), and otherwise
+   \(K=\lfloor\mu\rfloor\).  Then \(K\le\mu_+\) and
+   \(K/\max\{\mu,K\}\ge1/2\).  Hence \((RSH3)\) implies \((RSH2)\) for this
+   \(K\).
+\end{proof}
+
 \begin{corollary}[Balanced Hall-shadow density screen]
    \label{cor:balanced-hall-shadow-density-screen}
    Work in the setting of \cref{cor:no-merge-hall-shadow-envelope}.  Fix a
@@ -54303,8 +54385,11 @@ benefit-per-cost surplus is positive.
 \Cref{cor:point-coupled-one-slot-support-law} sharpens the certificate for soft
 clusters: atoms of the same data point may be coupled to one Bernoulli support
 event, so the recursive price is charged to the point support probability
-\(\sum_pq_p\), not to a union bound over that point's routed atoms.  The older
-sufficient forms include
+\(\sum_pq_p\), not to a union bound over that point's routed atoms.
+\Cref{cor:reported-soft-support-prefix-hardening} then removes the stochastic
+support from the retained object: any soft assignment satisfying the exact
+cardinality test \((RSH2)\), or the coarse scale test \((RSH3)\), materializes
+one deterministic top-\(K\) reported support.  The older sufficient forms include
 \cref{cor:exact-scale-soft-hall-shadow-separator-endpoint},
 \cref{cor:thresholded-shadow-routing-separator-endpoint},
 \cref{cor:soft-mass-hall-shadow-separator-endpoint},

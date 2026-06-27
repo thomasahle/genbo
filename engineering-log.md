@@ -657,3 +657,5 @@
 - Updated the audit trail to record the one-slot screen as the cleanest current target for k-means++/AQ/list-decoding/lattice-style dense proposals.
 - Added the point-coupled one-slot support law. Soft cluster memberships can now couple all routed atoms of one data point to a single Bernoulli support event, so the reported support price uses point support mass \(\sum_p q_p\) rather than the atom-union upper bound.
 - Updated the audit trail to identify the point-coupled form as the sharper soft-cluster interface for dense proposals.
+- Added reported soft-support prefix hardening. Any soft dense proposal that beats the exact cardinality price now materializes as one deterministic top-\(K\) reported support, with a simple coarse scale test when all cardinalities are available.
+- Updated the audit trail to record that the retained object is again an exact top-prefix support, not a stochastic or fractional support.
