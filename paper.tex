@@ -45680,6 +45680,75 @@ certificate is the verified positive-gain column and the finite LP it augments.
    budgets.
 \end{proof}
 
+\begin{corollary}[One-sided integrated clipped profile oracle]
+   \label{cor:one-sided-integrated-clipped-profile-oracle}
+   Work in the setting of
+   \cref{cor:integrated-clipped-singleton-density-endpoint}, and fix a finite
+   universe \(\mathcal P_{\Sigma}\) of materializable split profiles equipped
+   with atomized high-correlation representations and dyadic clipped singleton
+   certificates.  A one-sided integrated clipped certificate consists of a
+   profile \(\pi\in\mathcal P_{\Sigma}\), a truncation
+   \(0<\varepsilon_\pi\le1\), and numbers
+   \[
+      \underline D_\pi,\qquad
+      \overline B_\pi^{\rm hi},\qquad
+      \overline G_{\Sigma,\pi}
+   \]
+   satisfying
+   \[
+      0<\underline D_\pi\le B_\pi-C_\pi^{\rm lo},
+      \qquad
+      B_\pi^{\rm hi}\le\overline B_\pi^{\rm hi},
+      \qquad
+      \mathfrak G_{\Sigma,\pi}\le\overline G_{\Sigma,\pi},
+      \tag{OIC1}
+   \]
+   and
+   \[
+      \varepsilon_\pi\overline B_\pi^{\rm hi}
+      +2\overline G_{\Sigma,\pi}
+      <\underline D_\pi .
+      \tag{OIC2}
+   \]
+   Suppose that at every resident node and for every normalized
+   exact-signature price system satisfying \((ESNO1)\), uncharged preprocessing
+   has an oracle which returns such a certificate, or correctly certifies that
+   no profile in \(\mathcal P_{\Sigma}\) has such a one-sided certificate.  If
+   the no-certificate outcome never occurs on a normalized residual, then the
+   full \(d\,n^{\rho_c}\log^{O_c(1)}n\) query and
+   \(dn+n^{1+\rho_c}\log^{O_c(1)}n\) storage endpoint follows.
+
+   The same statement holds in Las Vegas build time: if a randomized proposal
+   law returns a verifiable certificate satisfying \((OIC1)\)--\((OIC2)\) with
+   probability at least \(p_E>0\) whenever one exists in the finite universe,
+   repeat proposals until the first accepted certificate.  Failed or
+   unverifiable proposals are discarded and are not charged to the retained
+   index.
+\end{corollary}
+
+\begin{proof}
+   A returned certificate gives
+   \(D_\pi=(B_\pi-C_\pi^{\rm lo})_+\ge\underline D_\pi>0\), and
+   \[
+      \varepsilon_\pi B_\pi^{\rm hi}
+      +2\mathfrak G_{\Sigma,\pi}
+      \le
+      \varepsilon_\pi\overline B_\pi^{\rm hi}
+      +2\overline G_{\Sigma,\pi}
+      <\underline D_\pi
+      \le D_\pi .
+   \]
+   Hence \((ICE1)\)--\((ICE2)\) hold for the returned profile, and
+   \cref{cor:integrated-clipped-singleton-density-endpoint} gives the endpoint
+   if this happens at every normalized residual.
+
+   For Las Vegas sampling, the probability that the first \(B\) independent
+   proposals all fail is at most \((1-p_E)^B\), so repeat-until-accepted
+   terminates almost surely with expected at most \(1/p_E\) proposals.  The
+   retained index contains only the first verified certificate, so failed
+   proposals have no query or storage cost.
+\end{proof}
+
 \begin{corollary}[One-sided clipped-singleton profile oracle]
    \label{cor:one-sided-clipped-singleton-profile-oracle}
    Work in the setting of
@@ -60194,6 +60263,10 @@ dyadic sum of clipped singleton prices over the layer-cake cuts.
 \Cref{cor:integrated-clipped-singleton-density-endpoint} is the corresponding
 endpoint: it is enough that this dyadic sum be a constant fraction of the
 residual benefit after a polynomial dynamic-range truncation.
+\Cref{cor:one-sided-integrated-clipped-profile-oracle} is the verifier-facing
+form of this sharper target: certify upper bounds on the high-correlation mass
+and integrated clipped price, plus the truncation, so that
+\(\varepsilon\overline B^{\rm hi}+2\overline G_\Sigma<\underline D\).
 \Cref{cor:one-sided-clipped-singleton-profile-oracle} gives the verifier form:
 build-time search only needs lower residual benefit and upper high-correlation
 mass/clipped-price certificates, and Las Vegas sampling may discard every
