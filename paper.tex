@@ -36788,6 +36788,86 @@ and compressed-bucket estimates.
    contrapositive.
 \end{proof}
 
+\begin{corollary}[Local close-pay-cut trichotomy]
+   \label{cor:local-close-pay-cut-trichotomy}
+   Work in the setting of
+   \cref{lem:fractional-local-list-size-certificate}, and fix a certified
+   subcontainer \(U\) with \(H=H_{G'}(U)>0\).  Let \(\kappa>0\).  A local
+   assignment solve at congestion \(\kappa\) has the following complete
+   certificate.
+
+   If the assignment constraints \((FLS4)\)--\((FLS5)\) are infeasible, then
+   there is a duplicate-guard cut \(\mathcal A\subseteq\mathcal I_U\) with
+   \[
+      B(\mathcal A)>\kappa P(\mathcal A),
+      \tag{LCT1}
+   \]
+   where \(B\) and \(P\) are as in \((SDD1)\).
+
+   If a feasible assignment \(f\) exists, form its responsibility multiplicities
+   \(M_x(p)\).  Since \(H>0\), some responsibility mass is positive; put
+   \[
+      M_{\min}(f)=\min\{M_x(p):M_x(p)>0\},
+      \qquad
+      M_{\max}(f)=\max_{x,p}M_x(p),
+   \]
+   and let
+   \[
+      \mathcal T_f=
+      \{2^jM_{\min}(f):0\le j<
+      1+\lceil\log_2(M_{\max}(f)/M_{\min}(f))\rceil\}.
+      \tag{LCT2}
+   \]
+   For the superlevels \(S_{x,t}=\{p\in U:M_x(p)\ge t\}\), define the
+   integrated responsibility price
+   \[
+      \mathfrak R_\star(f)
+      =
+      \sum_x\sum_{\substack{t\in\mathcal T_f\\|S_{x,t}|>0}}
+      R_x(|S_{x,t}|).
+      \tag{LCT3}
+   \]
+   Then either the guarded residual closes, or both residual payment inequalities
+   hold:
+   \[
+      \frac{H}{\kappa}\le R_W(|U|)
+      \tag{LCT4}
+   \]
+   and
+   \[
+      \frac{H}{\kappa}\le 2\mathfrak R_\star(f).
+      \tag{LCT5}
+   \]
+   Equivalently, a feasible assignment closes the residual whenever
+   \[
+      \frac{H}{\kappa}>
+      \min\{R_W(|U|),\,2\mathfrak R_\star(f)\}.
+      \tag{LCT6}
+   \]
+
+   Thus a surviving local residual at congestion \(\kappa\) is forced into one of
+   two explicit objects: either a duplicate cut of ratio \(>\kappa\), or a
+   feasible high-correlation responsibility decomposition whose dyadic recursive
+   price pays the transported guard mass.
+\end{corollary}
+
+\begin{proof}
+   If the assignment constraints are infeasible, the max-flow/min-cut criterion
+   in \cref{lem:local-duplicate-guard-cut} gives a set
+   \(\mathcal A\subseteq\mathcal I_U\) violating \((DGC1)\), which is exactly
+   \((LCT1)\).
+
+   Suppose now that \(f\) is feasible.  If \(H/\kappa>R_W(|U|)\), then
+   \cref{lem:fractional-local-list-size-certificate} closes the residual, so a
+   nonclosing residual must satisfy \((LCT4)\).  Construct the responsibility
+   tensor from \(f\) as in \cref{cor:local-transport-to-star-bridge}.  If
+   \(H/\kappa>2\mathfrak R_\star(f)\), then
+   \cref{cor:integrated-responsibility-star-residual} exposes a closing dyadic
+   responsibility star.  Hence a residual with no closing star satisfies
+   \((LCT5)\).  The minimum form \((LCT6)\) is the contrapositive of these two
+   closing tests.
+\end{proof}
+
 \Cref{lem:fractional-local-list-size-certificate} weakens the pointwise
 certificate \((LGS2)\): a proposed container only needs to fractionally assign
 its captured guard load to the paid shadow with congestion \(\kappa\).  The
@@ -36810,6 +36890,10 @@ unstructured branching problem.
 \Cref{cor:integrated-responsibility-star-residual} integrates this envelope over
 the dyadic responsibility levels and replaces the older global center-count loss
 by the actual recursive price of the responsibility levels that appear.
+\Cref{cor:local-close-pay-cut-trichotomy} packages the resulting local
+separator: a max-flow solve either returns a duplicate cut, or returns a
+responsibility decomposition whose integrated recursive price must pay the
+captured load unless a verified dense column has already closed.
 
 \begin{corollary}[Guard-capture Hall separator]
    \label{cor:guard-capture-hall-separator}
