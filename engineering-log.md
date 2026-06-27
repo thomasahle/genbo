@@ -639,3 +639,5 @@
 - Updated the audit trail to identify this residual envelope as the current compact dense-side obstruction, rather than only recording the positive-proposal endpoint.
 - Added the closed-shadow fractional superlevel envelope. Choosing the soft membership vector to be a paid-degree superlevel converts \((CSSR1)\) into the weak-type bound \(\min\{M,K\delta\}\le R_C(y,K)\), and a \(b\)-dense cardinality net yields the cumulative mass envelope \((CSW6)\)--\((CSW7)\) for every fractional signature layer.
 - Updated the audit trail to state the remaining closed-shadow obstruction in this searchable superlevel form.
+- Added the closed-shadow dyadic layer-cake separator. A build-time reporter can now certify the dyadic superlevel profile of one container/layer; if total paid degree exceeds twice the aggregate recursive price of those layers, the verifier extracts one positive superlevel repair.
+- Updated the audit trail to record this finite reporter form as the next closed-shadow target.
