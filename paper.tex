@@ -18014,6 +18014,86 @@ success-normalized bucket-net argument.
    exact-prefix records in the finite cover LP.
 \end{proof}
 
+\begin{corollary}[Sublist-closed exact-prefix separator]
+   \label{cor:sublist-closed-exact-prefix-separator}
+   Work in the setting of \cref{cor:exact-prefix-column-generation}.  Let
+   \(\mathcal B_{\rm ex}\) be a finite family of exact-prefix templates
+   \(B=(W_B,K_B,\theta_B)\), with \(1\le K_B\le |W_B|\), such that every
+   \(K_B\)-point subset \(U\subseteq W_B\) is materializable as an affordable
+   retained record \((U,K_B,\theta_B)\in\mathcal R\).  Let
+   \(\mathcal U_{\rm ex}(\mathcal B_{\rm ex})\) be the induced finite universe of
+   exact-prefix records \(T=(W_B,\theta_B,K_B,U)\).  For a cohort law \(\eta\),
+   put
+   \[
+      H_{\rm ex}(B,\eta)
+      =
+      D_\eta^{\theta_B}(W_B,K_B)-A\Lambda .
+      \tag{SCE0}
+   \]
+   Then
+   \[
+      \max_{T\in\mathcal U_{\rm ex}(\mathcal B_{\rm ex})}G_{\rm ex}(T,\eta)
+      =
+      \max_{B\in\mathcal B_{\rm ex}}H_{\rm ex}(B,\eta).
+      \tag{SCE1}
+   \]
+   Consequently, if
+   \[
+      \min_{\eta\in\Delta_{\mathcal E_{\rm load}}}
+      \max_{B\in\mathcal B_{\rm ex}}H_{\rm ex}(B,\eta)\ge0,
+      \tag{SCE2}
+   \]
+   then the averaged dominated-load certificate \((DPG3)\) holds.
+
+   Conversely, if \((DPG3)\) fails, then there is a cohort law \(\eta\) such
+   that every materializable sublist-closed exact-prefix template satisfies
+   \[
+      H_{\rm ex}(B,\eta)<0 .
+      \tag{SCE3}
+   \]
+
+   Finally, suppose a build-time oracle, for every cohort law \(\eta\), either
+   returns \(B\in\mathcal B_{\rm ex}\) together with a maximizing
+   \(K_B\)-subset \(U\subseteq W_B\) satisfying \(H_{\rm ex}(B,\eta)\ge0\), or
+   certifies
+   \[
+      \max_{B\in\mathcal B_{\rm ex}}H_{\rm ex}(B,\eta)<0 .
+      \tag{SCE4}
+   \]
+   Then this oracle is a complete separator for
+   \(\mathcal U_{\rm ex}(\mathcal B_{\rm ex})\) in
+   \cref{cor:exact-prefix-column-generation}.  Under \((SCE2)\), ordinary column
+   generation finds a finite verified pool proving \((DPG3)\).  The only records
+   charged to the retained index are the maximizing subsets actually returned by
+   the oracle.
+\end{corollary}
+
+\begin{proof}
+   Fix \(\eta\) and \(B=(W_B,K_B,\theta_B)\).  By definition,
+   \(D_\eta^{\theta_B}(W_B,K_B)\) is the maximum of
+   \(\sum_{p\in U}d_\eta^{\theta_B}(p)\) over all \(K_B\)-subsets of \(W_B\).
+   For the corresponding exact record \(T=(W_B,\theta_B,K_B,U)\), this sum is
+   \(V_\eta(T)\).  Hence maximizing \(G_{\rm ex}(T,\eta)\) over all induced
+   records with this fixed template gives \(H_{\rm ex}(B,\eta)\), and maximizing
+   over \(B\) gives \((SCE1)\).
+
+   If \((SCE2)\) holds, then the full exact-record universe has nonnegative value
+   by \((SCE1)\), so \cref{cor:exact-prefix-column-generation} gives
+   \((DPG3)\).  If \((DPG3)\) fails, then
+   \cref{cor:exact-top-prefix-cohort-game} gives a cohort law for which every
+   materializable exact-prefix record has negative \(G_{\rm ex}\).  Applying this
+   to a maximizing subset of each sublist-closed template gives \((SCE3)\).
+
+   For the oracle statement, a successful output gives an exact record
+   \(T=(W_B,\theta_B,K_B,U)\) with
+   \[
+      G_{\rm ex}(T,\eta)=H_{\rm ex}(B,\eta)\ge0,
+   \]
+   while \((SCE4)\) is exactly \((EPC1)\) by \((SCE1)\).  Thus the hypotheses of
+   \cref{cor:exact-prefix-column-generation} hold for the induced exact-record
+   universe, proving the claim.
+\end{proof}
+
 \begin{corollary}[Cohort-law weak-type superlevel normal form]
    \label{cor:cohort-law-weak-type-superlevel}
    Work in the setting of
@@ -19238,7 +19318,10 @@ choice of disjoint dense clusters.  \Cref{cor:exact-top-prefix-cohort-game} and
 \cref{cor:exact-prefix-column-generation} record the sharp build-time version:
 if exact top-prefix records can be separated in a finite implicit universe,
 ordinary column generation closes the dominated-load certificate at threshold
-\(A\Lambda\), with no dyadic reporter loss.  In the weak-type form of
+\(A\Lambda\), with no dyadic reporter loss.
+\Cref{cor:sublist-closed-exact-prefix-separator} compresses this separator for
+sublist-closed containers to the scalar objective
+\(D_\eta^\theta(W,K)-A\Lambda\).  In the weak-type form of
 \cref{cor:cohort-law-weak-type-superlevel}, the remaining range-reporting target
 is just to find one affordable scalar superlevel with \(\delta h\ge A\Lambda\).
 \Cref{cor:certified-cohort-law-superlevel-reporter} is the build-facing version:
@@ -19287,6 +19370,10 @@ the restricted cohort game, add any exact-prefix record with nonnegative surplus
 \(V_\eta(T)-A\Lambda\), and charge only the final verified pool.  This route has
 no logarithmic threshold; the logarithmic forms below are for weaker reporters
 that cannot materialize the exact cohort-degree prefix directly.
+\Cref{cor:sublist-closed-exact-prefix-separator} is the practical exact-prefix
+interface for sublist-closed retained containers: the build oracle optimizes
+\(D_\eta^\theta(W,K)-A\Lambda\), materializes the maximizing \(K\)-subset, and
+stores only that verified subset.
 \Cref{cor:finite-prefix-template-separation-game} is the final finite
 column-generation form of this target: preprocessing may spend arbitrary time
 proposing \(W,\theta,h\) and candidate sublists, but the retained column is
@@ -35788,11 +35875,13 @@ itself spherical-pseudo-random enough to close the dichotomy.
    \cref{cor:exact-load-cohort-law-separator},
    \cref{cor:exact-top-prefix-cohort-game},
    \cref{cor:exact-prefix-column-generation},
+   \cref{cor:sublist-closed-exact-prefix-separator},
    \cref{cor:finite-prefix-template-separation-game}, or
    \cref{cor:prefix-template-column-generation}.  In particular, a finite
-   exact-prefix universe with nonnegative game value \((EPC3)\), or a weaker
-   prefix-template proposal universe with nonnegative value \((PTC3)\), at every
-   node supplies the same endpoint.
+   exact-prefix universe with nonnegative game value \((EPC3)\), a sublist-closed
+   template universe satisfying \((SCE2)\), or a weaker prefix-template proposal
+   universe with nonnegative value \((PTC3)\), at every node supplies the same
+   endpoint.
 \end{corollary}
 
 \begin{proof}
@@ -35809,7 +35898,10 @@ itself spherical-pseudo-random enough to close the dichotomy.
 
    The final statement uses the chain
    \[
-      \text{\((EPC3)\), \((PTC3)\), or finite cohort separation}
+      \begin{gathered}
+         \text{\((EPC3)\), \((SCE2)\), \((PTC3)\),}\\
+         \text{or finite cohort separation}
+      \end{gathered}
       \Longrightarrow
       \text{\((DPG3)\)}
       \Longrightarrow
@@ -35820,6 +35912,7 @@ itself spherical-pseudo-random enough to close the dichotomy.
    The first implication is
    \cref{cor:exact-top-prefix-cohort-game},
    \cref{cor:exact-prefix-column-generation},
+   \cref{cor:sublist-closed-exact-prefix-separator},
    \cref{cor:finite-prefix-template-separation-game} or
    \cref{cor:prefix-template-column-generation}; the exact-load cohort versions
    are \cref{lem:finite-dominated-load-proposal-game} and
@@ -47534,6 +47627,10 @@ every affordable retained top-\(K\) prefix has \(d_\eta^\theta\)-mass below
 preprocessing can solve the exact separator: a finite implicit universe of
 materializable top-prefix records is complete under ordinary column generation,
 and the accepted records only need surplus \(V_\eta(T)-A\Lambda\ge0\).
+\Cref{cor:sublist-closed-exact-prefix-separator} is the finite-container version
+of the same statement: for sublist-closed templates, the reduced-gain objective
+is exactly \(D_\eta^\theta(W,K)-A\Lambda\), and the retained record is just the
+maximizing \(K\)-subset.
 \Cref{cor:cohort-law-weak-type-superlevel} is the range-reporting version of the
 same target: a certified superlevel with height \(\delta\) and size \(h\) closes
 the cohort law once \(\delta h\ge A\Lambda\).
