@@ -47013,6 +47013,91 @@ For a threshold $u$, the posterior-superlevel child is
    the original metric gives the displayed global bounds.
 \end{proof}
 
+\begin{corollary}[Finite-signature rate-coverage endpoint]
+   \label{cor:finite-signature-rate-coverage-polylog}
+   Fix \(c>1\) and \(\rho_c=1/(2c^2-1)\).  Suppose that after
+   bounded-diameter localization, every resident node \(P\), \(|P|=m\), in
+   projected dimension \(D\), has a finite label universe and a finite
+   signature rate-coverage certificate as in
+   \cref{lem:finite-signature-rate-coverage}.  Let \(a_c\) be the constant from
+   \cref{lem:smoothed-witness-list-compiler}.  Assume that the certificate
+   supplies point-label intensities satisfying the strengthened finite miss and
+   load inequalities \((FRC1)\)--\((FRC2)\) of
+   \cref{cor:finite-signature-retained-buckets} with
+   \[
+      \tau=a_c,\qquad
+      \ell\le m^{\rho_c}\log^{O_c(1)}n,
+      \qquad
+      S_0\le m^{1+\rho_c}\log^{O_c(1)}n .
+      \tag{FRE1}
+   \]
+   Suppose further that the corresponding realization parameter \(K\) in
+   \((FRC3)\) is at most \(\log^{O_c(1)}n\), that the finite load-envelope
+   additive term is harmless,
+   \[
+      C_V\log(8\max\{1,|\Sigma|\})
+      \le m^{\rho_c}\log^{O_c(1)}n,
+      \tag{FRE2}
+   \]
+   and that the retained reporter computes its finite label set in expected
+   time
+   \[
+      D\,m^{\rho_c}\log^{O_c(1)}n .
+      \tag{FRE3}
+   \]
+   Then the resulting finite retained bucket index gives worst-case Euclidean
+   ANN query time and space
+   \[
+      Q(n,d)=d\,n^{\rho_c}\log^{O_c(1)}n,
+      \qquad
+      S(n,d)=dn+n^{1+\rho_c}\log^{O_c(1)}n .
+   \]
+
+   In particular, a \(k\)-means++/facility, AQ, product-code, or lattice
+   proposal mechanism may be analyzed entirely through finite envelopes: once
+   \((FRE1)\)--\((FRE3)\) are verified, the retained proof object is one fixed
+   bucket index from \cref{cor:finite-signature-retained-buckets}.  Failed
+   proposal samples or failed offline separators are build-time artifacts and
+   contribute neither query work nor space.
+\end{corollary}
+
+\begin{proof}
+   Apply \cref{cor:finite-signature-retained-buckets} independently at every
+   localized node.  Because \(\tau=a_c\), the retained realization satisfies
+   \((FRC4)\), namely
+   \[
+      \E_\omega\!\left[
+         R_{p,q}(\omega)
+         \mathbf 1\{p\text{ has no retained copy in }B(q,\omega)\}
+      \right]\le a_c/4
+   \]
+   for every promised near pair.  This is exactly the tilted witness-loss
+   condition \((WL2)\) for the candidate list formed by the union of the
+   retained buckets reported by \(B(q,\omega)\).
+
+   The same retained realization has expected scan load at most
+   \[
+      (e-1)K\ell+C_V\log(8\max\{1,|\Sigma|\})
+      \le m^{\rho_c}\log^{O_c(1)}n
+   \]
+   by \((FRE1)\)--\((FRE2)\), and total retained incidences at most
+   \[
+      (e-1)KS_0+\log8
+      \le m^{1+\rho_c}\log^{O_c(1)}n .
+   \]
+   Together with \((FRE3)\), one trial of
+   \cref{lem:smoothed-witness-list-compiler} costs
+   \(D\,m^{\rho_c}\log^{O_c(1)}n\) in expectation and succeeds with probability
+   \(1/\log^{O_c(1)}n\).  Repeating polylogarithmically many independent
+   trials and verifying every returned candidate gives constant success at the
+   stated query cost.
+
+   Summing the retained incidences over localized nodes gives the
+   \(n^{1+\rho_c}\log^{O_c(1)}n\) noncoordinate space term, and the original
+   data coordinates are stored once globally.  Replacing \(D\) by the ambient
+   dimension \(d\) at the root yields the displayed bounds.
+\end{proof}
+
 \begin{remark}[What \(k\)-means++ would have to prove]
    \label{rem:kmeanspp-facility-target}
    \Cref{cor:facility-bucket-witness} is the k-means-friendly version of the
@@ -47040,6 +47125,10 @@ For a threshold $u$, the posterior-superlevel child is
    \Cref{cor:finite-signature-retained-buckets} applies this directly to the
    signature envelopes, producing one retained bucket index that satisfies the
    all-query tilted-miss and scan-load certificates.
+   \Cref{cor:finite-signature-rate-coverage-polylog} is the corresponding
+   endpoint: after the finite envelopes, load term, and realization parameter
+   are polylogarithmic, this single retained index already gives the
+   \(d\,n^{\rho_c}\polylog n\) ANN bound.
    \Cref{cor:finite-transcript-rate-coverage} is the
    list-decoding form of the same certificate: finite decoder transcripts or
    lattice quotient states replace enumeration of all label subsets and charge
