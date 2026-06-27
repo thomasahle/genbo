@@ -36509,6 +36509,70 @@ and compressed-bucket estimates.
    fail for some \(\mathcal A\), which is \((DGC3)\).
 \end{proof}
 
+\begin{corollary}[Intrinsic local list-size]
+   \label{cor:intrinsic-local-list-size}
+   Work in the setting of \cref{lem:local-duplicate-guard-cut}.  Define the
+   intrinsic local list-size of \(U\) by
+   \[
+      \kappa_U^*
+      =
+      \max_{\mathcal A\subseteq\mathcal I_U}
+      \frac{
+         \sum_{(q,x)\in\mathcal A}b_{q,x}
+      }{
+         \sum_{(p,q)\in N_U(\mathcal A)}w_{p,q}
+      },
+      \tag{ILS1}
+   \]
+   with the convention that a positive numerator over a zero denominator gives
+   \(+\infty\), while \(0/0\) contributes \(0\).  Then \(\kappa_U^*\) is the
+   minimum congestion \(\kappa\) for which a full fractional assignment
+   \((FLS4)\)--\((FLS5)\) exists.  Consequently, if \(\kappa_U^*<\infty\) and
+   \[
+      \frac{H_{G'}(U)}{\kappa_U^*}>R_W(|U|),
+      \tag{ILS2}
+   \]
+   then \(U\) satisfies \((SMH1)\), and the guarded residual closes.
+
+   Equivalently, if no proposed certified subcontainer closes by
+   \((SMH1)\), then every proposed \(U\) satisfies the intrinsic residual bound
+   \[
+      H_{G'}(U)\le \kappa_U^* R_W(|U|),
+      \tag{ILS3}
+   \]
+   where the bound is vacuous when \(\kappa_U^*=+\infty\).  More generally, a
+   finite nonnegative panel of proposed subcontainers closes whenever
+   \[
+      \sum_i\lambda_i
+      \left(
+         \frac{H_{G'}(U_i)}{\kappa_{U_i}^*}
+         -
+         R_{W_i}(|U_i|)
+      \right)>0,
+      \tag{ILS4}
+   \]
+   with terms of the form \(H_{G'}(U_i)/\infty\) interpreted as \(0\), and the
+   harmless zero-load case \(H_{G'}(U_i)=\kappa_{U_i}^*=0\) also interpreted as
+   \(0\).  In that case one deterministic member of the panel satisfies
+   \((SMH1)\).
+\end{corollary}
+
+\begin{proof}
+   By \cref{lem:local-duplicate-guard-cut}, a congestion value \(\kappa\) is
+   feasible exactly when it satisfies all cut inequalities \((DGC1)\).  This is
+   equivalent to \(\kappa\ge\kappa_U^*\), with the stated conventions for zero
+   denominators.  Thus, when \(\kappa_U^*<\infty\), there is a full assignment
+   with congestion \(\kappa_U^*\).  Applying
+   \cref{lem:fractional-local-list-size-certificate} with
+   \(\kappa=\kappa_U^*\) gives the closing condition \((ILS2)\).
+
+   The residual statement is the contrapositive of the one-subset condition.
+   For the panel statement, a positive weighted sum in \((ILS4)\) contains an
+   active index \(i\) with
+   \(H_{G'}(U_i)/\kappa_{U_i}^*>R_{W_i}(|U_i|)\), and the one-subset argument
+   closes for that member.
+\end{proof}
+
 \Cref{lem:fractional-local-list-size-certificate} weakens the pointwise
 certificate \((LGS2)\): a proposed container only needs to fractionally assign
 its captured guard load to the paid shadow with congestion \(\kappa\).  The
@@ -36517,8 +36581,9 @@ per-pair list-size bound.  \Cref{lem:local-duplicate-guard-cut} gives the
 matching residual.  If a container captures enough guard load for its price but
 cannot certify bounded local list size, then the obstruction is not vague
 overlap; it is a smaller Hall cut of guard incidences whose paid-pair
-neighborhood is too light.  This is the next object that the dense-star or
-low-correlation tuple machinery must absorb.
+neighborhood is too light.  \Cref{cor:intrinsic-local-list-size} packages this
+as a scalar reduced-gain test \(H_{G'}(U)/\kappa_U^*-R_W(|U|)\).  This is the
+next object that the dense-star or low-correlation tuple machinery must absorb.
 
 \begin{corollary}[Guard-capture Hall separator]
    \label{cor:guard-capture-hall-separator}
