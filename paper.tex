@@ -36656,6 +36656,75 @@ smaller Hall cut whose paid-pair capacity is measured only inside that subset.
    finite-prefix repair alternative.
 \end{proof}
 
+\begin{corollary}[Bounded-fanout radius-discount refinement]
+   \label{cor:bounded-fanout-radius-discount-refinement}
+   Work in the setting of
+   \cref{cor:price-compatible-query-free-refinement}.  Suppose the partition
+   has at most \(J\) nonempty pieces and every child price factor satisfies
+   \[
+      \psi_i\le\theta\psi .
+      \tag{BFR1}
+   \]
+   If
+   \[
+      \theta J^{1-\rho}\le1,
+      \tag{BFR2}
+   \]
+   then the refinement is price-compatible, so any parent list satisfying
+   \((PQR3)\) has a child piece satisfying \((PQR4)\).
+
+   In particular, for the padded radius potential
+   \[
+      \psi(R)=\Psi(R)=1+\left(\frac Rr\right)^4,
+   \]
+   a refinement of a parent ball of radius \(R\) into at most \(J\) certified
+   balls of radii \(R_i\le R_\star\) is price-compatible whenever
+   \[
+      \frac{\Psi(R_\star)}{\Psi(R)}
+      \le
+      J^{-(1-\rho)} .
+      \tag{BFR3}
+   \]
+   Thus a bounded-fanout ball decomposition can be used as a compact
+   Hall-shadow repair exactly when its radius contraction pays the
+   \(J^{1-\rho}\) concave query-price surcharge.
+\end{corollary}
+
+\begin{proof}
+   Since \(0<\rho<1\) and the \(K_i\)'s sum to \(K\),
+   \[
+      \sum_iK_i^\rho
+      \le
+      J^{1-\rho}K^\rho
+      \tag{BFR4}
+   \]
+   by Hölder's inequality.  Therefore \((BFR1)\)--\((BFR2)\) give
+   \[
+      \sum_i\psi_iK_i^\rho
+      \le
+      \theta\psi J^{1-\rho}K^\rho
+      \le
+      \psi K^\rho .
+   \]
+   For storage,
+   \[
+      \sum_iK_i^{1+\rho}\le K^{1+\rho},
+   \]
+   because the pieces are disjoint and the exponent is at least one.  Also
+   \((BFR2)\) implies \(\theta\le1\).  Hence
+   \[
+      \sum_i\psi_iK_i^{1+\rho}
+      \le
+      \theta\psi\sum_iK_i^{1+\rho}
+      \le
+      \psi K^{1+\rho}.
+   \]
+   This is \((PQR2)\), so
+   \cref{cor:price-compatible-query-free-refinement} applies.  The radius
+   statement is the specialization \(\psi_i=\Psi(R_i)\), \(\psi=\Psi(R)\), and
+   \(R_i\le R_\star\).
+\end{proof}
+
 \begin{corollary}[Low-diameter query-free Hall-shadow seeding]
    \label{cor:low-diameter-query-free-hall-seeding}
    Work in the setting of
@@ -36922,6 +36991,12 @@ and storage prices \(\sum_i\psi_iK_i^\rho\) and
 \(\sum_i\psi_iK_i^{1+\rho}\) are no larger than the parent prices.  This is
 where radius contraction can pay for the otherwise fatal concavity loss in
 \(K^\rho\).
+\Cref{cor:bounded-fanout-radius-discount-refinement} gives the usable geometric
+screen: a split into \(J\) pieces is safe if each piece has radius-potential
+discount at most \(J^{-(1-\rho)}\).  Thus the build-time clustering target is a
+bounded-fanout ball decomposition whose certified radii beat this fanout
+threshold; if such a decomposition carries the Hall-shadow gain, one child
+piece already closes.
 \Cref{cor:low-diameter-query-free-hall-seeding} gives the corresponding
 compact-shadow sampling guarantee.  If the positive-gain list is contained in a
 low-diameter shell cap and carries an \(\alpha\)-fraction of the chosen residual
@@ -64245,6 +64320,11 @@ the pieces must make \(\sum_i\psi_iK_i^\rho\) and
 \(\sum_i\psi_iK_i^{1+\rho}\) fit under the parent query and storage prices.
 Under that condition one refined piece has positive gain, so compactification
 is a theorem rather than a heuristic.
+\Cref{cor:bounded-fanout-radius-discount-refinement} makes this check
+geometric: if \(J\) refined balls all reduce the padded radius potential by
+at least \(J^{1-\rho}\), the price compatibility follows automatically.  This
+is the exact fanout-versus-contraction inequality that a \(k\)-means, facility,
+or range-reporting ball decomposition must certify.
 \Cref{cor:low-diameter-query-free-hall-seeding} connects this score to seeded
 cluster proposals: a hidden low-diameter positive-gain list is found by
 residual or dual weighted cap seeding with the usual \(e^{-\alpha T}\) miss
