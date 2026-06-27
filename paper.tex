@@ -44286,6 +44286,97 @@ certificate is the verified positive-gain column and the finite LP it augments.
    proving \((AHC6)\).
 \end{proof}
 
+\begin{corollary}[High-correlation atom-cut star screen]
+   \label{cor:high-correlation-atom-cut-star-screen}
+   Work in the setting of
+   \cref{cor:layer-cake-atom-cut-normal-form}, and fix one threshold \(t\).
+   Suppose every atom \(a\in A_t\) is represented by an ordered pair
+   \((c_a,p_a)\in P\times P\) satisfying
+   \[
+      \ip{c_a}{p_a}\ge\underline\theta
+      \qquad(-1<\underline\theta<1).
+      \tag{ACS1}
+   \]
+   Give atom \(a\) scaled weight \(\omega_a=tb_a\), and define
+   \[
+      M_x(p)=
+      \sum_{\substack{a\in A_t:\\ c_a=x,\ p_a=p}}\omega_a,
+      \qquad
+      W_t=\sum_{a\in A_t}\omega_a=tB(t).
+      \tag{ACS2}
+   \]
+   Assume all positive \(M_x(p)\) lie in
+   \([M_{\min},M_{\max}]\), and let
+   \[
+      J_{\rm cut}=
+      1+\left\lceil\log_2\frac{M_{\max}}{M_{\min}}\right\rceil .
+      \tag{ACS3}
+   \]
+   Suppose the atomized routing record family contains every dyadic star
+   superlevel
+   \[
+      U_{x,s}=\{p\in P:M_x(p)\ge s\},
+      \qquad
+      s\in\{2^jM_{\min}:0\le j<J_{\rm cut}\},
+      \tag{ACS4}
+   \]
+   with certified radius
+   \[
+      U_{x,s}\subseteq P\cap B\!\left(x,\sqrt{2(1-\underline\theta)}\right),
+      \tag{ACS5}
+   \]
+   atom lower certificates satisfying
+   \[
+      x_{(x,s),a}\ge
+      b_a\,\mathbf 1\{c_a=x,\ p_a\in U_{x,s}\},
+      \tag{ACS6}
+   \]
+   and recursive price envelope \(P_{x,s}\le P_0\).
+
+   If no such star record exposes a positive smaller-radius dense prefix, then
+   the scaled cut benefit obeys
+   \[
+      tB(t)=W_t\le 2|P|J_{\rm cut}P_0 .
+      \tag{ACS7}
+   \]
+   Equivalently, if \(tB(t)>2|P|J_{\rm cut}P_0\), then one dyadic
+   high-correlation atom-cut star record exposes a positive dense prefix.
+\end{corollary}
+
+\begin{proof}
+   Apply \cref{lem:high-correlation-pair-star-reporter} to the weighted edge
+   family with one edge record for each atom \(a\in A_t\), weight
+   \(\omega_a=tb_a\), and edge set \(\{(c_a,p_a)\}\).  Conditions \((ACS1)\)
+   and \((ACS2)\) are exactly \((HPS1)\)--\((HPS2)\).  Hence either
+   \(W_t=0\), in which case \((ACS7)\) is immediate, or there are \(x\) and a
+   dyadic level \(s\) such that
+   \[
+      s|U_{x,s}|\ge \frac{W_t}{2|P|J_{\rm cut}} .
+      \tag{ACS8}
+   \]
+
+   For the corresponding atomized routing record, \((ACS6)\) gives
+   \[
+      tX_{x,s}(t)
+      =
+      t\sum_{a\in A_t}x_{(x,s),a}
+      \ge
+      \sum_{\substack{a\in A_t:\\ c_a=x,\ p_a\in U_{x,s}}}tb_a
+      =
+      \sum_{p\in U_{x,s}}M_x(p)
+      \ge
+      s|U_{x,s}| .
+      \tag{ACS9}
+   \]
+   If no dense prefix is exposed, the no-star inequality \((AHC3)\) applied to
+   this record gives
+   \[
+      tX_{x,s}(t)\le P_{x,s}\le P_0 .
+   \]
+   Combining with \((ACS8)\)--\((ACS9)\) proves \((ACS7)\).  The final
+   statement is the contrapositive.
+\end{proof}
+
 \begin{corollary}[Min-cost split-profile separator endpoint]
    \label{cor:min-cost-split-profile-separator-endpoint}
    In the setting of
@@ -58223,6 +58314,10 @@ one atom cut: at some dyadic level, scaled cut benefit is a logarithmic fraction
 of the dual value while the scaled mass seen by every certified star is still
 below its recursive price.  This is the current cut-style high-correlation
 obstruction.
+\Cref{cor:high-correlation-atom-cut-star-screen} then applies the geometric
+pair-star reporter to such a cut: if the scaled high-correlation incidence is
+larger than the fixed star price tail \(2|P|J_{\rm cut}P_0\), a
+smaller-radius dense prefix must fire.
 \Cref{cor:min-cost-split-profile-separator-endpoint} turns this scalar envelope
 into an endpoint statement: if every normalized exact-signature dual violates
 the optimized envelope for some finite split-profile panel, and the resulting
