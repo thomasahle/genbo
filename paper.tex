@@ -33317,6 +33317,65 @@ they expose such prefixes; the proof does not depend on their sampling rule.
    which is stronger than \((TPD5)\).
 \end{proof}
 
+\begin{corollary}[Fixed-threshold balanced density screen]
+   \label{cor:fixed-threshold-balanced-density-screen}
+   Work in the setting of
+   \cref{cor:balanced-top-prefix-density-screen}.  For \(a\ge1\), assume
+   \[
+      \Xi_{W,a}
+      =
+      4a\psi_W C_{\rho_W}A_+^{\rho_W}\sigma^{1-\rho_W}
+      >0,
+      \qquad
+      L_{W,a}
+      =
+      1+\left\lceil
+         \log_2\frac{2}{\min\{\Xi_{W,a},1\}}
+      \right\rceil .
+      \tag{FTD1}
+   \]
+   If a certified top prefix satisfies \((TPD1)\) and
+   \[
+      \delta_h>\Xi_{W,a}L_{W,a},
+      \tag{FTD2}
+   \]
+   then the guarded residual closes.  If a coarse report has an available
+   balanced trim satisfying \((TPD3)\) and
+   \[
+      \delta>\Xi_{W,a}L_{W,a},
+      \tag{FTD3}
+   \]
+   then the guarded residual closes.
+
+   Consequently, if no retained deficient-shadow prefix closes, every retained
+   top prefix satisfying \((TPD1)\) obeys the reverse inequality in \((FTD2)\),
+   and every coarse report with an available balanced trim satisfying
+   \((TPD3)\) obeys the reverse inequality in \((FTD3)\).  Thus the
+   reporter-facing target is the fixed density level
+   \[
+      \psi_W C_{\rho_W}A_+^{\rho_W}\sigma^{1-\rho_W}
+      \log\frac{2}{\min\{\psi_W C_{\rho_W}A_+^{\rho_W}\sigma^{1-\rho_W},1\}}
+   \]
+   up to constants and balance factors.
+\end{corollary}
+
+\begin{proof}
+   We first note that \(J(t)\le L_{W,a}\) whenever \(t>\Xi_{W,a}\).  If
+   \(\Xi_{W,a}<1\) and \(t<1\), this follows from
+   \(2/t<2/\Xi_{W,a}\); if \(t\ge1\), then \(J(t)=2\le L_{W,a}\).  If
+   \(\Xi_{W,a}\ge1\), then \(t>1\), so again \(J(t)=2=L_{W,a}\).
+
+   Under \((FTD2)\), we have \(\delta_h>\Xi_{W,a}\), hence
+   \(J(\delta_h)\le L_{W,a}\), and therefore
+   \[
+      \delta_h>\Xi_{W,a}J(\delta_h).
+   \]
+   This is exactly \((TPD2)\).  The top-prefix conclusion follows from
+   \cref{cor:balanced-top-prefix-density-screen}.  The coarse-report statement
+   is identical, using \((FTD3)\) to imply \((TPD4)\).  The residual statements
+   are the contrapositives.
+\end{proof}
+
 \begin{corollary}[Deficient-shadow residual obstruction]
    \label{cor:deficient-shadow-residual-obstruction}
    Work in the setting of
@@ -33359,7 +33418,8 @@ they expose such prefixes; the proof does not depend on their sampling rule.
    balanced mass-support record satisfying \((BDS3)\) fails the balanced density
    screen \((BDS4)\).  Every retained top-prefix record satisfying \((TPD1)\)
    fails \((TPD2)\), and every coarse report with an available balanced trim
-   satisfying \((TPD3)\) fails \((TPD4)\).
+   satisfying \((TPD3)\) fails \((TPD4)\).  Equivalently, these records obey the
+   fixed-threshold residual bounds obtained by reversing \((FTD2)\)--\((FTD3)\).
 \end{corollary}
 
 \begin{proof}
@@ -33390,7 +33450,8 @@ they expose such prefixes; the proof does not depend on their sampling rule.
    statement is \cref{cor:average-density-mass-support-screen}.  The balanced
    density-screen statement is \cref{cor:balanced-average-density-screen}.  The
    top-prefix and trimmed-prefix density statements are
-   \cref{cor:balanced-top-prefix-density-screen}.
+   \cref{cor:balanced-top-prefix-density-screen}.  The fixed-threshold
+   restatement is \cref{cor:fixed-threshold-balanced-density-screen}.
 \end{proof}
 
 \Cref{cor:deficient-shadow-residual-obstruction} is the current proof bottleneck
@@ -33449,6 +33510,10 @@ version: if the reporter can certify a top deficient-shadow prefix near the
 stationary support scale, the dynamic-range factor \(\mathfrak J\) is replaced
 by the one-level charge \(J(\delta)\), and oversized coarse reports may be
 trimmed down to that scale.
+\Cref{cor:fixed-threshold-balanced-density-screen} removes the remaining
+self-reference in \(J(\delta)\): a reporter may target one fixed density level
+\(\Xi\log(2/\min\{\Xi,1\})\), where
+\(\Xi\asymp\psi_WA_+^{\rho_W}\sigma^{1-\rho_W}\).
 
 \begin{corollary}[Tuple-profile distinct-storage certificate]
    \label{cor:tuple-profile-distinct-storage}
@@ -33972,6 +34037,9 @@ density threshold.
 materializing the balanced prefix replaces the coarse dynamic-range charge by a
 single \(J(\delta)\) factor, and oversized reports can be trimmed before
 certification.
+\Cref{cor:fixed-threshold-balanced-density-screen} makes this a noncircular
+density target by replacing \(J(\delta)\) with a fixed logarithm evaluated at
+the mixed query-storage density scale.
 \Cref{cor:pair-compatible-hall-guarded-cover} assembles the chain back into the
 local LP: a half-shipment with sufficient layer-cake surplus supplies the
 guarded star-panel reporter and closes the residual.
@@ -47297,6 +47365,8 @@ of the same certificate.
 single mixed density threshold at the stationary support scale.
 \Cref{cor:balanced-top-prefix-density-screen} gives the sharper materialized
 prefix form and trims oversized coarse reports to the same stationary scale.
+\Cref{cor:fixed-threshold-balanced-density-screen} converts the remaining
+self-referential \(J(\delta)\) test into one fixed dyadic density threshold.
 \Cref{cor:pair-compatible-hall-guarded-cover} states the final local theorem
 target in this language: prove the Hall expansion and the resulting
 layer-cake price inequality for every guarded residual.
