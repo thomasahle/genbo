@@ -44426,6 +44426,53 @@ certificate is the verified positive-gain column and the finite LP it augments.
    Combining \((ACA3)\)--\((ACA4)\) proves \((ACA1)\).
 \end{proof}
 
+\begin{corollary}[Reported-center atom-cut star-price screen]
+   \label{cor:reported-center-atom-cut-screen}
+   Work in the setting of
+   \cref{cor:high-correlation-atom-cut-star-screen}, but let
+   \(C\subseteq P\) be any reported center set, and assume the atomized record
+   family contains the dyadic star superlevels only for centers \(x\in C\).
+   Define the scaled unreported-center tail
+   \[
+      E_C(t)=
+      \sum_{\substack{a\in A_t:\\ c_a\notin C}}tb_a .
+      \tag{RCA1}
+   \]
+   If no reported star record exposes a positive smaller-radius dense prefix,
+   then
+   \[
+      tB(t)
+      \le
+      E_C(t)+2\sum_{x\in C}\sum_sP_{x,s},
+      \tag{RCA2}
+   \]
+   where the second sum ranges over the reported dyadic levels for \(M_x\).
+
+   Thus a build-time center proposal does not need to report all possible
+   centers.  Its missing high-correlation incidence appears as an explicit
+   tail \(E_C(t)\), while reported incidence is charged by the aggregate
+   recursive star price of the reported centers and levels.
+\end{corollary}
+
+\begin{proof}
+   Split the scaled cut mass as
+   \[
+      tB(t)=E_C(t)+\sum_{x\in C}\sum_pM_x(p).
+      \tag{RCA3}
+   \]
+   Applying the dyadic layer-cake inequality \((ACA2)\) only to the reported
+   centers gives
+   \[
+      \sum_{x\in C}\sum_pM_x(p)
+      \le
+      2\sum_{x\in C}\sum_s s|U_{x,s}| .
+      \tag{RCA4}
+   \]
+   For each reported dyadic star, the same argument as in \((ACA4)\) gives
+   \(s|U_{x,s}|\le P_{x,s}\) unless that star exposes a positive dense prefix.
+   Substituting this into \((RCA3)\)--\((RCA4)\) proves \((RCA2)\).
+\end{proof}
+
 \begin{corollary}[Atomized high-correlation fixed-tail bound]
    \label{cor:atomized-high-correlation-fixed-tail}
    Work in the atomized high-correlation routing dual
@@ -44439,13 +44486,14 @@ certificate is the verified positive-gain column and the finite LP it augments.
    Assume that every atom with positive benefit is represented by an ordered
    high-correlation pair \((c_a,p_a)\in P\times P\), and that, for every
    dyadic threshold cut arising from the \(\varepsilon\)-truncation of any
-   feasible dual vector, the atomized record family contains the dyadic star
-   superlevels used in
-   \cref{cor:high-correlation-atom-cut-aggregate-screen}.  Suppose the
-   aggregate recursive price of those cut stars is always at most
-   \(\mathfrak P_\star\):
+   feasible dual vector, preprocessing certifies a reported center set
+   \(C(t)\), the dyadic star superlevels used in
+   \cref{cor:reported-center-atom-cut-screen} for those centers, and two
+   envelopes
    \[
-      \sum_{x,s}P_{x,s}\le\mathfrak P_\star .
+      E_{C(t)}(t)\le\mathfrak E_\star,
+      \qquad
+      \sum_{x\in C(t)}\sum_sP_{x,s}\le\mathfrak P_\star .
       \tag{AHF2}
    \]
 
@@ -44454,6 +44502,7 @@ certificate is the verified positive-gain column and the finite LP it augments.
       \sum_ab_ay_a
       \le
       \varepsilon B_\pi^{\rm hi}
+      +2J_\varepsilon\mathfrak E_\star
       +4J_\varepsilon\mathfrak P_\star,
       \tag{AHF3}
    \]
@@ -44464,6 +44513,7 @@ certificate is the verified positive-gain column and the finite LP it augments.
       \Phi_{\pi,{\rm at}}^{\rm hi}
       \le
       \varepsilon B_\pi^{\rm hi}
+      +2J_\varepsilon\mathfrak E_\star
       +4J_\varepsilon\mathfrak P_\star.
       \tag{AHF4}
    \]
@@ -44473,12 +44523,14 @@ certificate is the verified positive-gain column and the finite LP it augments.
       \Phi_\pi^{\rm hi}
       \le
       \varepsilon B_\pi^{\rm hi}
+      +2J_\varepsilon\mathfrak E_\star
       +4J_\varepsilon\mathfrak P_\star
       \tag{AHF5}
    \]
    unless a positive smaller-radius dense prefix has already been found.
 
-   The previous uniform-price form is the special case
+   The full-center aggregate-price form is the special case
+   \(\mathfrak E_\star=0\).  The previous uniform-price form further uses
    \(\mathfrak P_\star\le |P|J_\star P_0\).
 \end{corollary}
 
@@ -44510,11 +44562,10 @@ certificate is the verified positive-gain column and the finite LP it augments.
       \sum_ab_ay_a^{(\varepsilon)} .
       \tag{AHF7}
    \]
-   For this cut,
-   \cref{cor:high-correlation-atom-cut-aggregate-screen} gives either
-   a positive dense prefix or
+   For this cut, \cref{cor:reported-center-atom-cut-screen} gives either a
+   positive dense prefix or
    \[
-      tB(t)\le2\mathfrak P_\star .
+      tB(t)\le\mathfrak E_\star+2\mathfrak P_\star .
       \tag{AHF8}
    \]
    Combining \((AHF6)\)--\((AHF8)\) proves \((AHF3)\).
@@ -44533,12 +44584,14 @@ certificate is the verified positive-gain column and the finite LP it augments.
    \(\pi\in\Pi\), suppose its high-correlation part has an atomized
    representation satisfying
    \cref{cor:atomized-high-correlation-fixed-tail} with parameters
-   \(\varepsilon_\pi,J_{\varepsilon,\pi},\mathfrak P_{\star,\pi}\).  Define the
+   \(\varepsilon_\pi,J_{\varepsilon,\pi},
+   \mathfrak E_{\star,\pi},\mathfrak P_{\star,\pi}\).  Define the
    explicit high-correlation tail
    \[
       \Psi_\pi^{\rm hi}
       =
       \varepsilon_\pi B_\pi^{\rm hi}
+      +2J_{\varepsilon,\pi}\mathfrak E_{\star,\pi}
       +4J_{\varepsilon,\pi}\mathfrak P_{\star,\pi}.
       \tag{EST1}
    \]
@@ -58526,11 +58579,17 @@ smaller-radius dense prefix must fire.
 the aggregate recursive price \(\sum_{x,s}P_{x,s}\) of the reported dyadic
 stars; the uniform \(2|P|J_{\rm cut}P_0\) term is only a fallback
 specialization.
+\Cref{cor:reported-center-atom-cut-screen} is the build-facing version: a
+center proposal may report only \(C\subseteq P\), paying an explicit
+unreported-center tail \(E_C(t)\) plus the aggregate recursive price of its
+reported stars.
 \Cref{cor:atomized-high-correlation-fixed-tail} aggregates this over the whole
 atomized routing dual: after \(\varepsilon\)-truncation, either a dense prefix
 fires or
 \(\Phi_\pi^{\rm hi}\le
-\varepsilon B_\pi^{\rm hi}+4J_\varepsilon\mathfrak P_\star\).
+\varepsilon B_\pi^{\rm hi}
++2J_\varepsilon\mathfrak E_\star
++4J_\varepsilon\mathfrak P_\star\).
 \Cref{cor:explicit-split-profile-tail-separator} feeds this explicit tail into
 the split-profile panel separator, replacing the abstract min-cost
 high-correlation price by a checkable scalar envelope.
