@@ -28628,6 +28628,90 @@ inequality \((QP3)\).
    are certified tuples.
 \end{proof}
 
+\begin{corollary}[Uniform tuple witness-packing certificate]
+   \label{cor:uniform-tuple-witness-packing-storage}
+   Work in the setting of
+   \cref{cor:price-weighted-witness-packing-storage}.  Fix a separation scale
+   \(\delta>0\) and a finite set of tuple orders \(\mathcal K\subset\mathbb N\).
+   For every distinct child \(\kappa\in\kappa_z(\mathcal B_z)\), suppose there
+   is a certified separated net \(A_{z,\kappa}\subseteq P\) and a chosen order
+   \(k_{z,\kappa}\in\mathcal K\) such that
+   \[
+      |A_{z,\kappa}|\ge1,
+      \qquad
+      A_{z,\kappa}\text{ is }\delta\text{-separated}.
+      \tag{UTW0}
+   \]
+   For \(k\in\mathcal K\) and
+   \(\mathbf x\in\mathcal T_k(P,\delta)\), define the price-weighted tuple
+   congestion
+   \[
+      W_z(k,\mathbf x)
+      =
+      \sum_{\substack{\kappa\in\kappa_z(\mathcal B_z):\\
+         k_{z,\kappa}=k,\ x_j\in A_{z,\kappa}\ \forall j}}
+      \frac{u_{z,\kappa}}{|A_{z,\kappa}|^k}.
+      \tag{UTW1}
+   \]
+   Suppose there are certified envelopes \(J_k(\mathbf x)\ge0\) with
+   \[
+      \E_z W_z(k,\mathbf x)\le J_k(\mathbf x)
+      \qquad(k\in\mathcal K,\ \mathbf x\in\mathcal T_k(P,\delta)).
+      \tag{UTW2}
+   \]
+   If \(\Sigma^+=\emptyset\), the cover is feasible.  Otherwise suppose \(a>0\),
+   the corresponding active first-moment condition holds, and
+   \[
+      \E_z\Gamma_z+
+      \sum_{k\in\mathcal K}
+      \sum_{\mathbf x\in\mathcal T_k(P,\delta)}J_k(\mathbf x)
+      \le aS .
+      \tag{UTW3}
+   \]
+   Then \((\mathsf{ESFC}_\Sigma)\) is feasible.
+
+   In particular, if
+   \(u_{z,\kappa}=\psi_{z,\kappa}|A_{z,\kappa}|^{1+\rho_{z,\kappa}}\) with
+   \(0\le\rho_{z,\kappa}\le1\) and one takes \(k_{z,\kappa}=2\), then each
+   tuple-incidence is weighted by
+   \[
+      \psi_{z,\kappa}|A_{z,\kappa}|^{\rho_{z,\kappa}-1}\le\psi_{z,\kappa}.
+      \tag{UTW4}
+   \]
+   Thus, up to the child price factor \(\psi\), the storage theorem can be
+   attacked as an ordinary pair-congestion bound for distinct canonical nets.
+\end{corollary}
+
+\begin{proof}
+   Let
+   \[
+      \Omega=\bigcup_{k\in\mathcal K}\{k\}\times\mathcal T_k(P,\delta).
+   \]
+   For a child \(\kappa\), define \(\pi_{z,\kappa}\) to be the uniform law on
+   ordered \(k_{z,\kappa}\)-tuples from \(A_{z,\kappa}\), embedded in the
+   corresponding component of \(\Omega\).  Because \(A_{z,\kappa}\) is
+   \(\delta\)-separated and repetitions are allowed in
+   \(\mathcal T_k(P,\delta)\), this is a probability law on \(\Omega\).  For an
+   atom \((k,\mathbf x)\),
+   \[
+      \sum_{\kappa}u_{z,\kappa}\pi_{z,\kappa}(k,\mathbf x)
+      =
+      W_z(k,\mathbf x).
+   \]
+   Hence \((UTW2)\) is exactly \((PWP1)\) for the witness universe \(\Omega\), and
+   \((UTW3)\) is \((PWP2)\).  Applying
+   \cref{cor:price-weighted-witness-packing-storage} proves feasibility.
+
+   The final statement is the identity
+   \[
+      \frac{u_{z,\kappa}}{|A_{z,\kappa}|^2}
+      =
+      \psi_{z,\kappa}|A_{z,\kappa}|^{\rho_{z,\kappa}-1},
+   \]
+   and the inequality follows from \(|A_{z,\kappa}|\ge1\) and
+   \(\rho_{z,\kappa}\le1\).
+\end{proof}
+
 \begin{corollary}[Tuple-profile distinct-storage certificate]
    \label{cor:tuple-profile-distinct-storage}
    Work in the setting of
@@ -28982,6 +29066,10 @@ matching tuple-witness form without first choosing dyadic price classes.
 \Cref{cor:price-weighted-witness-packing-storage} is the most direct version:
 assign each distinct stored child its own randomized witness atom and bound the
 price-weighted congestion of these witnesses.
+\Cref{cor:uniform-tuple-witness-packing-storage} makes this checkable for
+compressed nets by choosing a uniform ordered tuple inside each child; with
+two-tuples, the paid weight is at most the child price factor \(\psi\), leaving a
+plain pair-congestion target up to that factor.
 \Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} give the corresponding
 entropy-energy normal form: each large canonical child supplies many separated
@@ -42068,6 +42156,10 @@ discretization when a geometric proof can bound the integrated tail directly.
 \Cref{cor:price-weighted-witness-packing-storage} removes the tail parameter
 altogether: each distinct child may choose a randomized tuple witness, and the
 storage theorem becomes a bound on price-weighted witness congestion.
+\Cref{cor:uniform-tuple-witness-packing-storage} gives the canonical choice for
+bucket nets: sample a uniform tuple from the child itself.  In the pair case this
+reduces the remaining theorem to bounding distinct-child pair congestion weighted
+by \(\psi |A|^{\rho-1}\le\psi\).
 \Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} reduce each dyadic count to tuple
 incidence: a large separated child contains many ordered witness tuples, so the
