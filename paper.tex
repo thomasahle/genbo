@@ -32097,13 +32097,9 @@ query mass rather than producing a cost-effective dense filter.
       \sum_{p\in W}d_{W,y}^{\gamma}(p).
       \tag{GSM1}
    \]
-   Put
-   \[
-      J_{K,V}=1+\left\lceil\log_2\frac{2K}{V}\right\rceil .
-   \]
    If
    \[
-      \frac{V}{4J_{K,V}}
+      V
       >
       \psi_W
       \left(
@@ -32119,37 +32115,11 @@ query mass rather than producing a cost-effective dense filter.
 \end{corollary}
 
 \begin{proof}
-   Let
-   \[
-      M=\sum_{p\in W}d_{W,y}^{\gamma}(p).
-   \]
-   Since \(0\le y_q\le1\), \((GSP1)\) gives \(M\le1\), and hence every value
-   \(d_{W,y}^{\gamma}(p)\) is at most one.  For
-   \(1\le j\le J_{K,V}\), put \(\delta_j=2^{-j}\) and
-   \[
-      H_j=\{p\in W:d_{W,y}^{\gamma}(p)\ge\delta_j\},
-      \qquad h_j=|H_j|.
-   \]
-   The dyadic layer-cake bound gives
-   \[
-      M
-      \le
-      2^{-J_{K,V}}K
-      +
-      2\sum_{j=1}^{J_{K,V}}\delta_jh_j .
-   \]
-   By the definition of \(J_{K,V}\), \(2^{-J_{K,V}}K\le V/4\).  Since
-   \(M\ge V\), some \(j\) satisfies
-   \[
-      \delta_jh_j>\frac{V}{4J_{K,V}}.
-      \tag{GSM3}
-   \]
-   Submit the one-record panel with container \(W\), query weights \(y\),
-   update side \(U=H_j\), lower certificate \(X=\delta_jh_j\), size certificate
-   \(K_i=h_j\), and multiplicity one.  This record satisfies \((HSP1)\) by the
-   definition of \(H_j\).  Since \(h_j\le K\), \((GSM2)\) and \((GSM3)\) imply
-   the strict surplus inequality \((HSP2)\).  Thus this is the required
-   hit-weighted star panel.
+   Submit the one-record panel with container \(W\), query weights \(y\), update
+   side \(U=W\), lower certificate \(X=V\), size certificate \(K_i=K\), and
+   multiplicity one.  The certificates in \((GSM1)\) are exactly \((HSP1)\),
+   and \((GSM2)\) is exactly the strict surplus inequality \((HSP2)\).  Thus
+   this is the required hit-weighted star panel.
 \end{proof}
 
 \begin{definition}[Guard-to-shadow transport]
@@ -32190,13 +32160,9 @@ query mass rather than producing a cost-effective dense filter.
    \label{cor:guard-shadow-transport-reporter}
    In the setting of \cref{def:guard-shadow-transport}, suppose
    \(|W|\le K\) and a \(C\)-congested transport of mass \(M>0\) enters \(W\).
-   Put \(V=M/C\) and
-   \[
-      J_{K,V}=1+\left\lceil\log_2\frac{2K}{V}\right\rceil .
-   \]
    If
    \[
-      \frac{M}{4C J_{K,V}}
+      \frac{M}{C}
       >
       \psi_W
       \left(
@@ -61889,6 +61855,9 @@ Renyi amount of hit-weighted paid mass at every degree superlevel.
 \Cref{cor:guard-shadow-transport-reporter} isolates the bridge still missing
 from geometry: a bounded-congestion shipment of the large guard co-load into
 that paid shadow would contradict the no-star envelope.
+In this guard-shadow route the certified container itself is submitted as the
+hit-weighted star record, so a successful transport pays no dyadic
+dynamic-range loss.
 \Cref{lem:guard-shadow-cut-normal-form} and
 \cref{cor:half-mass-guard-shadow-cut-obstruction} turn failure of that shipment
 into a concrete cut: a high-price query sublayer with large guard load and
