@@ -45195,6 +45195,109 @@ certificate is the verified positive-gain column and the finite LP it augments.
    gives \((ICL4)\) under the uniform certificate \((ICL3)\).
 \end{proof}
 
+\begin{corollary}[Integrated singleton reduced-cost screen]
+   \label{cor:integrated-singleton-reduced-cost-screen}
+   Work with the dyadic cuts \(\mathcal T_\varepsilon\) of
+   \cref{cor:integrated-clipped-singleton-high-correlation}.  For each
+   \(t\in\mathcal T_\varepsilon\), let \(\mathcal X(t)\) be a finite
+   materialized center universe for the cut \(A_t(y)\).  For
+   \(x\in\mathcal X(t)\), write
+   \[
+      m_{x,t}=
+      \sum_{\substack{a\in A_t(y):\\ c_a=x}}tb_a,
+      \qquad
+      P_{x,t}=\sum_sP_{x,t,s},
+      \tag{ISC1}
+   \]
+   where the second sum is over the dyadic star records reported for center
+   \(x\) at cut \(t\).  Assume each individual center-cut record is an
+   admissible singleton reported-center panel for the corresponding threshold
+   cut, in the sense of \cref{cor:singleton-reported-center-screen}.
+
+   If a finite panel of center-cut records has nonnegative weights
+   \(\lambda_{x,t}\) and positive integrated surplus
+   \[
+      \sum_{t\in\mathcal T_\varepsilon}
+      \sum_{x\in\mathcal X(t)}
+      \lambda_{x,t}\bigl(m_{x,t}-2P_{x,t}\bigr)>0,
+      \tag{ISC2}
+   \]
+   then some individual center-cut record satisfies
+   \[
+      m_{x,t}>2P_{x,t},
+      \tag{ISC3}
+   \]
+   and therefore exposes a positive smaller-radius dense prefix.
+
+   In particular, if the same center \(x\) is proposed across several cuts and
+   its integrated captured mass and price are
+   \[
+      M_x^\Sigma=\sum_{t:x\in\mathcal X(t)}m_{x,t},
+      \qquad
+      P_x^\Sigma=\sum_{t:x\in\mathcal X(t)}P_{x,t},
+      \tag{ISC4}
+   \]
+   then
+   \[
+      M_x^\Sigma>2P_x^\Sigma
+      \tag{ISC5}
+   \]
+   already exposes a positive dense prefix at one cut.  Thus a facility,
+   list-decoding, range-reporting, or \(k\)-means++-style proposal may score a
+   center by its integrated dyadic surplus before the verifier materializes the
+   single winning cut.
+\end{corollary}
+
+\begin{proof}
+   If \((ISC2)\) holds, at least one record with \(\lambda_{x,t}>0\) has
+   \(m_{x,t}-2P_{x,t}>0\), proving \((ISC3)\).  Applying
+   \cref{cor:singleton-reported-center-screen} to that one threshold cut
+   exposes a positive dense prefix.  The centerwise statement is the special
+   case in which the panel consists of all cut records for one center with unit
+   weights.
+\end{proof}
+
+\begin{corollary}[One-sided integrated singleton center certificate]
+   \label{cor:one-sided-integrated-singleton-center}
+   Work in the setting of
+   \cref{cor:integrated-singleton-reduced-cost-screen}.  A one-sided
+   integrated center certificate consists of a center \(x\), a set of dyadic
+   cuts on which it is materialized, and numbers
+   \[
+      \underline M_x^\Sigma,\qquad
+      \overline P_x^\Sigma
+   \]
+   satisfying
+   \[
+      0<\underline M_x^\Sigma\le M_x^\Sigma,
+      \qquad
+      P_x^\Sigma\le\overline P_x^\Sigma,
+      \qquad
+      \underline M_x^\Sigma>2\overline P_x^\Sigma .
+      \tag{OIS1}
+   \]
+   Any such certificate exposes a positive smaller-radius dense prefix after
+   the verifier checks the reported cut records.  If a randomized build-time
+   proposal returns a verifiable certificate satisfying \((OIS1)\) with
+   probability at least \(p_E>0\) whenever one exists in the finite proposal
+   universe, Las Vegas repetition finds a valid dense-prefix augmentation after
+   expected at most \(1/p_E\) proposals; failed proposals are discarded.
+\end{corollary}
+
+\begin{proof}
+   From \((OIS1)\),
+   \[
+      M_x^\Sigma\ge \underline M_x^\Sigma
+      >2\overline P_x^\Sigma
+      \ge2P_x^\Sigma .
+   \]
+   Hence \((ISC5)\) holds, and
+   \cref{cor:integrated-singleton-reduced-cost-screen} exposes a positive dense
+   prefix at one cut.  The Las Vegas statement is the standard
+   repeat-until-accepted argument; only the verified cut record that fires is
+   retained.
+\end{proof}
+
 \begin{corollary}[Explicit split-profile tail separator]
    \label{cor:explicit-split-profile-tail-separator}
    Work in the setting of
@@ -60260,6 +60363,10 @@ directly into the logarithmic endpoint: polynomial dynamic range and
 \Cref{cor:integrated-clipped-singleton-high-correlation} removes the
 worst-cut multiplier: the high-correlation price is bounded by the actual
 dyadic sum of clipped singleton prices over the layer-cake cuts.
+\Cref{cor:integrated-singleton-reduced-cost-screen} turns positive integrated
+center surplus into one winning cut, and
+\cref{cor:one-sided-integrated-singleton-center} gives the corresponding
+one-sided build-time certificate.
 \Cref{cor:integrated-clipped-singleton-density-endpoint} is the corresponding
 endpoint: it is enough that this dyadic sum be a constant fraction of the
 residual benefit after a polynomial dynamic-range truncation.
