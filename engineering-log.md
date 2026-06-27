@@ -677,3 +677,5 @@
 - Updated the audit trail to connect this benefit-per-price criterion to the fully fractional dense-overlap LP.
 - Added the centerwise clipped exact-prefix proposal law. Hard supports and soft memberships from facility, AQ, list/lattice decoding, or \(k\)-means++-style build-time routines now close the no-layer-cake dense screen whenever their expected clipped surplus is positive; the verifier still retains only one deterministic exact top prefix.
 - Updated the audit trail to identify this as the centerwise/facility interface for the clipped exact-prefix residual.
+- Added the shared-canonical panel reduced-gain separator. A decoded bucket/list/AQ/facility panel can now be scored directly against the normalized exact-signature dual, with query load summed over records but canonical child storage charged once per retained panel.
+- Updated the audit trail to identify this as the dual-facing, fully fractional bucket analogue of the dense benefit-per-price score.
