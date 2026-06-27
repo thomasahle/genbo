@@ -44583,6 +44583,50 @@ certificate is the verified positive-gain column and the finite LP it augments.
    \((SRC3)\)--\((SRC4)\) are nonpositive, proving the residual inequalities.
 \end{proof}
 
+\begin{corollary}[One-sided singleton center certificate]
+   \label{cor:one-sided-singleton-center-certificate}
+   Work with one threshold atom cut in the setting of
+   \cref{cor:singleton-reported-center-screen}.  A one-sided singleton center
+   certificate consists of a center \(x\), a lower certified captured mass
+   \(\underline m_x\), and an upper certified star price \(\overline P_x\)
+   satisfying
+   \[
+      0<\underline m_x\le m_x(t),
+      \qquad
+      P_x\le\overline P_x,
+      \qquad
+      \underline m_x>2\overline P_x .
+      \tag{OSC1}
+   \]
+   Any such certificate exposes a positive smaller-radius dense prefix after
+   exact verification of the singleton's dyadic star records.
+
+   If a finite center universe is searched by a deterministic verifier which
+   either returns a certificate satisfying \((OSC1)\) or correctly certifies
+   that no center satisfies the exact singleton inequality \(m_x(t)>2P_x\),
+   then the cut-local center oracle is complete for all reported-center sets
+   and all sampled center laws over that universe.  If a randomized build-time
+   proposal returns a verifiable certificate satisfying \((OSC1)\) with
+   probability at least \(p_E>0\) whenever such a certificate exists, Las Vegas
+   repetition finds a valid dense-prefix augmentation after expected at most
+   \(1/p_E\) proposals; failed proposals are discarded.
+\end{corollary}
+
+\begin{proof}
+   From \((OSC1)\),
+   \[
+      m_x(t)\ge\underline m_x>2\overline P_x\ge2P_x .
+   \]
+   Hence the singleton satisfies \((SRC2)\), and
+   \cref{cor:singleton-reported-center-screen} exposes a positive dense prefix.
+   If the verifier certifies that no exact positive singleton exists, then
+   \cref{cor:singleton-reported-center-screen} implies that no center set or
+   sampled law over the same universe has positive surplus.  The Las Vegas
+   claim is the standard repeat-until-accepted argument: the first \(B\)
+   proposals all fail with probability at most \((1-p_E)^B\), and only the
+   first accepted verified singleton is retained.
+\end{proof}
+
 \begin{corollary}[Fractional reported-center cover dual]
    \label{cor:fractional-reported-center-cover-dual}
    Work with one threshold atom cut as in
@@ -59560,6 +59604,10 @@ because both captured mass and reported star price are additive over centers,
 any positive set or sampled-law surplus contains one singleton center with
 \(m_x(t)>2P_x\).  Thus the verifier may enumerate or sample centers one at a
 time at a fixed cut.
+\Cref{cor:one-sided-singleton-center-certificate} is the build-facing
+certificate: a proposed center need only lower-certify its captured cut mass and
+upper-certify its recursive star price; if \(\underline m_x>2\overline P_x\),
+the usual verified dense prefix fires.
 \Cref{cor:fractional-reported-center-cover-dual} packages center search as a
 finite LP: either fractional reported-center panels lower the tail-only cost,
 which hardens to one positive dense-prefix column, or the all-ones no-center
