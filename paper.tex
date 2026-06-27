@@ -29555,6 +29555,124 @@ inequality \((QP3)\).
    \((HPS4)\), \((SPW4)\) gives \((PWN3)\).
 \end{proof}
 
+\begin{lemma}[Certified star-panel separator]
+   \label{lem:certified-star-panel-separator}
+   Work in the setting of \cref{lem:star-prefix-weak-type-residual}, and assume
+   each available cardinality family \(\mathcal K_x\) is \(b_x\)-dense from
+   below.  A finite star panel consists of records \(i\in I\), each with a
+   center \(x_i\in\mathcal X\), a level \(\delta_i>0\), a nonnegative weight
+   \(\lambda_i\), and one-sided certificates \(X_i,K_i\) satisfying
+   \[
+      0\le X_i\le \delta_i h_i,
+      \qquad
+      h_i\le K_i,
+      \qquad
+      h_i=\left|\{p\in W_{x_i}:d_{x_i}(p)\ge\delta_i\}\right|.
+      \tag{STP1}
+   \]
+   If
+   \[
+      \sum_{i\in I}\lambda_iX_i
+      >
+      \sum_{i\in I}\lambda_i\psi_{x_i}
+      \left(
+         b_{x_i}^{1-\rho_{x_i}}A_{x_i}K_i^{\rho_{x_i}}
+         +\sigma K_i^{1+\rho_{x_i}}
+      \right),
+      \tag{STP2}
+   \]
+   then some star prefix has positive reduced gain.
+
+   Conversely, if no star prefix has positive reduced gain, then every finite
+   certified star panel satisfies the reverse inequality
+   \[
+      \sum_i\lambda_iX_i
+      \le
+      \sum_i\lambda_i\psi_{x_i}
+      \left(
+         b_{x_i}^{1-\rho_{x_i}}A_{x_i}K_i^{\rho_{x_i}}
+         +\sigma K_i^{1+\rho_{x_i}}
+      \right).
+      \tag{STP3}
+   \]
+\end{lemma}
+
+\begin{proof}
+   Suppose no star prefix has positive reduced gain.  By
+   \cref{lem:star-prefix-weak-type-residual}, each nonempty superlevel obeys
+   \[
+      \delta_i h_i
+      \le
+      \psi_{x_i}
+      \left(
+         b_{x_i}^{1-\rho_{x_i}}A_{x_i}h_i^{\rho_{x_i}}
+         +\sigma h_i^{1+\rho_{x_i}}
+      \right).
+   \]
+   Since \(0<\rho_{x_i}<1\) and \(h_i\le K_i\), the right hand side is at most
+   the corresponding \(K_i\)-bound in \((STP3)\).  Together with
+   \(X_i\le\delta_i h_i\), this proves \((STP3)\).  Therefore any panel
+   satisfying the strict reverse inequality \((STP2)\) contradicts the
+   no-positive-prefix hypothesis, so some star prefix has positive reduced
+   gain.
+\end{proof}
+
+\begin{corollary}[Paid pair-star panel certificate]
+   \label{cor:paid-pair-star-panel-certificate}
+   In the setting of \cref{cor:pair-star-weak-type-normal-form}, suppose a
+   build-time reporter returns finitely many pair-star records
+   \((x_i,t_i)\), weights \(\lambda_i\ge0\), lower paid-mass certificates
+   \(X_i\), and upper size certificates \(K_i\) such that
+   \[
+      0\le X_i\le
+      \sum_{p\in U_{x_i,t_i}}
+      \sum_{q:\,(p,q)\in\mathcal N}
+         \alpha_{p,q}a_{x_i}(q),
+      \qquad
+      |U_{x_i,t_i}|\le K_i .
+      \tag{PPC1}
+   \]
+   If
+   \[
+      \sum_i\lambda_iX_i
+      >
+      \sum_i\lambda_i\psi_\star
+      \left(
+         A_{x_i}K_i^{\rho_\star}
+         +\sigma K_i^{1+\rho_\star}
+      \right),
+      \tag{PPC2}
+   \]
+   then the dense-filter column generator exposes a positive-gain
+   smaller-radius prefix.  If no such prefix exists, then every reported
+   pair-star panel satisfies the reverse of \((PPC2)\).
+
+   Thus high-correlation incidence becomes algorithmically relevant only after
+   it is converted into certified paid mass \(X_i\).  The geometric reporter may
+   over-report sizes through \(K_i\), but the final retained object remains the
+   exact best paid prefix verified by the finite filter-cover dual.
+\end{corollary}
+
+\begin{proof}
+   Suppose no smaller-radius prefix has positive reduced gain.  By
+   \cref{cor:pair-star-weak-type-normal-form}, every reported pair-star
+   \(U_{x_i,t_i}\) satisfies \((PWN3)\).  Combining \((PWN3)\) with
+   \(X_i\le\sum_{p\in U_{x_i,t_i}}d_{x_i}(p)\) and
+   \(|U_{x_i,t_i}|\le K_i\) gives
+   \[
+      X_i
+      \le
+      \psi_\star
+      \left(
+         A_{x_i}K_i^{\rho_\star}
+         +\sigma K_i^{1+\rho_\star}
+      \right).
+   \]
+   Multiplying by \(\lambda_i\) and summing gives the reverse of \((PPC2)\).
+   Therefore any strict violation \((PPC2)\) forces the existence of a
+   positive-gain prefix.
+\end{proof}
+
 \begin{corollary}[Tuple-profile distinct-storage certificate]
    \label{cor:tuple-profile-distinct-storage}
    Work in the setting of
@@ -29943,6 +30061,11 @@ otherwise the exact no-star inequality becomes part of the diffuse residual.
 geometric routine reports a center, the verifier may keep the best paid prefix
 inside that smaller ball, and failure of all prefixes forces a weak-type
 Renyi cap on every reported star.
+\Cref{lem:certified-star-panel-separator} and
+\cref{cor:paid-pair-star-panel-certificate} give the reporter-facing version:
+a panel of reported stars needs only lower paid-mass and upper size
+certificates, and any aggregate violation of the Renyi costs yields an exact
+positive dense column.
 \Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} give the corresponding
 entropy-energy normal form: each large canonical child supplies many separated
@@ -43074,6 +43197,12 @@ the explicit no-star reduced-gain inequality \((PSG4)\).
 best dual-price prefix in the same certified ball; if no prefix is profitable,
 every reported star has paid near-pair mass bounded by the query/storage
 Renyi envelope \((PWN3)\).
+\Cref{lem:certified-star-panel-separator} and
+\cref{cor:paid-pair-star-panel-certificate} are the matching one-sided reporter
+interface: a range-reporting, clustering, AQ, or list-decoding routine may
+return a whole panel of stars with lower paid-mass certificates and upper size
+certificates; a strict aggregate surplus is enough for the finite verifier to
+retain one positive prefix.
 \Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} reduce each dyadic count to tuple
 incidence: a large separated child contains many ordered witness tuples, so the
