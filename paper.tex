@@ -28565,6 +28565,69 @@ inequality \((QP3)\).
    class.
 \end{proof}
 
+\begin{corollary}[Price-weighted witness-packing storage certificate]
+   \label{cor:price-weighted-witness-packing-storage}
+   Work in either of the two settings of
+   \cref{cor:layer-cake-distinct-storage-bucket-net}, with the corresponding
+   value of \(a\).  Let \(\Omega\) be a finite witness universe.  For every seed
+   \(z\) and every distinct canonical child
+   \(\kappa\in\kappa_z(\mathcal B_z)\), suppose preprocessing certifies a
+   probability law \(\pi_{z,\kappa}\) on \(\Omega\).  Let \(u_{z,\kappa}\) be the
+   child storage price from \((DTS4)\).  Suppose there are certified envelopes
+   \(J(\omega)\ge0\) such that
+   \[
+      \E_z
+      \sum_{\kappa\in\kappa_z(\mathcal B_z)}
+      u_{z,\kappa}\pi_{z,\kappa}(\omega)
+      \le
+      J(\omega)
+      \qquad(\omega\in\Omega).
+      \tag{PWP1}
+   \]
+   If \(\Sigma^+=\emptyset\), the cover is feasible.  Otherwise suppose \(a>0\),
+   the corresponding active first-moment condition holds, and
+   \[
+      \E_z\Gamma_z+\sum_{\omega\in\Omega}J(\omega)\le aS .
+      \tag{PWP2}
+   \]
+   Then \((\mathsf{ESFC}_\Sigma)\) is feasible.
+
+   In the tuple specialization, \(\Omega\) may be a finite union of separated
+   tuple sets \(\mathcal T_k(P,\delta)\), and \(\pi_{z,\kappa}\) is supported on
+   tuple witnesses lying inside the separated net \(A_{z,\kappa}\).  Then the
+   remaining storage theorem is a price-weighted tuple-congestion bound: every
+   distinct child pays its full recursive storage price once, and the geometric
+   proof only has to show that no tuple or tuple profile receives too much total
+   paid child price.
+\end{corollary}
+
+\begin{proof}
+   For each seed \(z\),
+   \[
+   \begin{aligned}
+      \sum_{\kappa\in\kappa_z(\mathcal B_z)}u_{z,\kappa}
+      &=
+      \sum_{\kappa\in\kappa_z(\mathcal B_z)}
+      u_{z,\kappa}
+      \sum_{\omega\in\Omega}\pi_{z,\kappa}(\omega) \\
+      &=
+      \sum_{\omega\in\Omega}
+      \sum_{\kappa\in\kappa_z(\mathcal B_z)}
+      u_{z,\kappa}\pi_{z,\kappa}(\omega).
+   \end{aligned}
+   \]
+   Taking expectation over \(z\) and applying \((PWP1)\) gives
+   \[
+      \E_z\sum_{\kappa\in\kappa_z(\mathcal B_z)}u_{z,\kappa}
+      \le
+      \sum_{\omega\in\Omega}J(\omega).
+   \]
+   Therefore \((PWP2)\) implies the layer-cake storage condition \((LCDS1)\), and
+   \cref{cor:layer-cake-distinct-storage-bucket-net} gives feasibility.  The
+   tuple specialization is the same argument with a witness universe whose atoms
+   are certified tuples.
+\end{proof}
+
 \begin{corollary}[Tuple-profile distinct-storage certificate]
    \label{cor:tuple-profile-distinct-storage}
    Work in the setting of
@@ -28916,6 +28979,9 @@ distinct canonical bucket nets is small enough.
 from the theorem target by using the exact integrated tail count of distinct
 children, and \cref{cor:integrated-tuple-tail-distinct-storage} gives the
 matching tuple-witness form without first choosing dyadic price classes.
+\Cref{cor:price-weighted-witness-packing-storage} is the most direct version:
+assign each distinct stored child its own randomized witness atom and bound the
+price-weighted congestion of these witnesses.
 \Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} give the corresponding
 entropy-energy normal form: each large canonical child supplies many separated
@@ -41999,6 +42065,9 @@ number of distinct canonical bucket nets whose shared child index has that
 price.  \Cref{cor:layer-cake-distinct-storage-bucket-net} and
 \cref{cor:integrated-tuple-tail-distinct-storage} remove this dyadic
 discretization when a geometric proof can bound the integrated tail directly.
+\Cref{cor:price-weighted-witness-packing-storage} removes the tail parameter
+altogether: each distinct child may choose a randomized tuple witness, and the
+storage theorem becomes a bound on price-weighted witness congestion.
 \Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} reduce each dyadic count to tuple
 incidence: a large separated child contains many ordered witness tuples, so the
