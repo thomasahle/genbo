@@ -12961,6 +12961,109 @@ query-price overlap, storage price, and duplicate-incidence factor \(b_G\).
    by assumption, so \((IACP1)\) gives \((IACP2)\).
 \end{proof}
 
+\begin{corollary}[Inherited-activation spread-star residual]
+   \label{cor:inherited-activation-spread-star-residual}
+   Work in a finite filter-cover dual with near-pair demands \(\mathcal N\), and
+   let \(G=(U,a,T,S)\) be a parent quotient whose activation \(a\) is retained
+   routing-safe for \(U\).  Put
+   \[
+      \mathsf T_a=\sum_q\tau_qa(q),
+      \qquad
+      b(y)=\sum_{q:\,(y,q)\in\mathcal N}\alpha_{y,q}a(q)
+      \qquad(y\in U).
+      \tag{IASR0}
+   \]
+   Let \(E\subseteq U\) be a separated packing, and work with one profile
+   \(\pi\subseteq E_{\ne}^2\) and weights \(\omega_{x,y}\) as in
+   \cref{cor:spread-packing-star-signal}.  Assume the high edges have
+   correlation at least \(\underline\theta\), and define \(M_x(y)\),
+   \(W_{\rm hi}\), \(J_\omega\), and dyadic superlevels \(U_{x,t_j}\) by
+   \((SPSS3)\)--\((SPSS5)\).  For every star center \(x\in E\), let
+   \(R_x=\sqrt{2(1-\underline\theta)}\), and suppose the dense verifier may add
+   every inherited-activation prefix of \(U\cap B(x,R_x)\) with prices
+   \[
+      T_{x,h}=\psi_xh^{\rho_x},
+      \qquad
+      S_{x,h}=\psi_xh^{1+\rho_x},
+      \qquad 0<\rho_x<1 .
+      \tag{IASR1}
+   \]
+   Finally suppose the high-correlation multiplicities are dominated by the
+   parent paid degree,
+   \[
+      M_x(y)\le b(y)\qquad(x,y\in E).
+      \tag{IASR2}
+   \]
+
+   If no inherited-activation prefix from these star containers has positive
+   reduced gain, then, interpreting the \(j\)-sum as empty when \(W_{\rm hi}=0\),
+   \[
+      W_{\rm hi}
+      \le
+      2\sum_{x\in E}\sum_{j=0}^{J_\omega-1}
+      \psi_x
+      \left(
+         \mathsf T_a|U_{x,t_j}|^{\rho_x}
+         +
+         \sigma |U_{x,t_j}|^{1+\rho_x}
+      \right).
+      \tag{IASR3}
+   \]
+   Consequently, if the low part of the profile has contribution at most
+   \(B_{\rm lo}\), then the whole weighted profile satisfies
+   \[
+      \sum_{(x,y)\in\pi}\omega_{x,y}
+      \le
+      B_{\rm lo}
+      +
+      2\sum_{x\in E}\sum_{j=0}^{J_\omega-1}
+      \psi_x
+      \left(
+         \mathsf T_a|U_{x,t_j}|^{\rho_x}
+         +
+         \sigma |U_{x,t_j}|^{1+\rho_x}
+      \right).
+      \tag{IASR4}
+   \]
+   Equivalently, a violation of \((IASR4)\) exposes a positive reduced-gain
+   smaller-radius prefix using the parent activation \(a\).
+\end{corollary}
+
+\begin{proof}
+   If \(W_{\rm hi}=0\), then both claims are immediate.  Otherwise, by
+   \cref{cor:spread-packing-star-signal}, every \(U_{x,t_j}\) is contained in
+   \(E\cap B(x,R_x)\subseteq U\cap B(x,R_x)\).  Since no inherited-activation
+   prefix in \(U\cap B(x,R_x)\) has positive gain, the top-prefix argument gives
+   \[
+      \sum_{y\in U_{x,t_j}} b(y)
+      \le
+      \psi_x
+      \left(
+         \mathsf T_a|U_{x,t_j}|^{\rho_x}
+         +
+         \sigma |U_{x,t_j}|^{1+\rho_x}
+      \right).
+      \tag{IASR5}
+   \]
+   The superlevel definition and domination \((IASR2)\) give
+   \[
+      t_j|U_{x,t_j}|
+      \le
+      \sum_{y\in U_{x,t_j}}M_x(y)
+      \le
+      \sum_{y\in U_{x,t_j}}b(y).
+      \tag{IASR6}
+   \]
+   Summing \((IASR6)\) over \(x,j\), using \((IASR5)\), and applying the dyadic
+   layer-cake lower bound from the proof of
+   \cref{cor:spread-packing-star-signal},
+   \[
+      \frac12W_{\rm hi}\le\sum_{x,j}t_j|U_{x,t_j}|,
+   \]
+   proves \((IASR3)\).  Adding the low contribution bound gives \((IASR4)\),
+   and the final statement is the contrapositive.
+\end{proof}
+
 \begin{corollary}[Paid Renyi-cover obstruction]
    \label{cor:paid-renyi-cover-obstruction}
    In the setting of \cref{cor:paid-cover-quotient-star-residual}, suppose
@@ -13172,6 +13275,10 @@ geometric wrapper.  \Cref{cor:inherited-activation-cover-spread-packing} then
 feeds a surviving same-activation quotient directly to the packing-entropy side:
 failure of all low-fanout certified-ball covers is exactly the separated-set
 witness required by \cref{cor:spread-packing-entropy-energy-screen}.
+\Cref{cor:inherited-activation-spread-star-residual} applies the same
+same-activation idea to entropy-energy failures: high-correlation pair mass
+dominated by the parent paid degree is paid by inherited star-prefix prices,
+without introducing ball-thickened query activation.
 \Cref{cor:activation-inflation-assigned-cover} makes the standalone-wrapper
 replacement cost quantitative: after Renyi-price compatibility is paid, a
 surviving cover must create explicit query-activation inflation.  This is the
