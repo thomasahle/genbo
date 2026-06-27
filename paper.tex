@@ -45055,7 +45055,9 @@ certificate is the verified positive-gain column and the finite LP it augments.
       \tag{CLH5}
    \]
    or one materialized singleton center exposes a positive smaller-radius dense
-   prefix.  Consequently, if no such singleton dense prefix is exposed, then
+   prefix.  Consequently, if no such singleton dense prefix is exposed and this
+   atomized record family is included in the admissible routing universe of
+   \cref{cor:min-cost-split-profile-envelope}, then
    \[
       \Phi_\pi^{\rm hi}
       \le
@@ -45380,6 +45382,127 @@ certificate is the verified positive-gain column and the finite LP it augments.
    \]
    for a universal \(C_0\).  The case \(A=0\) follows directly from
    \((OSR2)\) by taking \(\varepsilon\downarrow0\).
+\end{proof}
+
+\begin{corollary}[Clipped-singleton logarithmic density endpoint]
+   \label{cor:clipped-singleton-density-endpoint}
+   Work in the setting of
+   \cref{cor:shared-panel-positive-separator-endpoint}.  Suppose the full
+   certified panel universe \(\mathcal Z_\star\) contains every materializable
+   low-correlation class-local profile record used in
+   \cref{cor:gaussian-tuple-profile-witness-density} and every smaller-radius
+   dense prefix that can be verified by the paid dense-prefix verifier for the
+   high-correlation records used below.
+
+   Let \((\Pi,\eta)\) be a finite split-profile panel.  For each
+   \(\pi\in\Pi\), suppose its high-correlation part has an atomized
+   representation included in the admissible routing universe of
+   \cref{cor:min-cost-split-profile-envelope}, and suppose that for every
+   \(0<\varepsilon\le1\) the dyadic cuts in
+   \cref{cor:clipped-singleton-high-correlation-fixed-tail} admit the same
+   clipped singleton envelope \(\mathfrak G_{\star,\pi}\).  Put
+   \[
+      A_\pi^{\rm clip}=2\mathfrak G_{\star,\pi}.
+      \tag{CDE1}
+   \]
+   If
+   \[
+      \sum_{\pi\in\Pi}\eta_\pi
+      \left(
+         B_\pi-C_\pi^{\rm lo}
+         -\Theta(B_\pi^{\rm hi},A_\pi^{\rm clip})
+      \right)>0,
+      \tag{CDE2}
+   \]
+   then the fixed normalized price system exposes either a positive
+   low-correlation shared-panel record or a positive smaller-radius dense
+   prefix.
+
+   Consequently, suppose that at every resident node of size at most \(n\), and
+   for every normalized exact-signature price system satisfying \((ESNO1)\),
+   preprocessing can certify one such split profile \(\pi\) with
+   \[
+      D_\pi=(B_\pi-C_\pi^{\rm lo})_+>0,
+      \tag{CDE3}
+   \]
+   \[
+      B_\pi^{\rm hi}\le n^{K_{\rm dyn}}D_\pi,
+      \tag{CDE4}
+   \]
+   and
+   \[
+      A_\pi^{\rm clip}
+      \le
+      \frac{D_\pi}{\log^{K_{\rm den}}n}
+      \qquad(K_{\rm den}>1).
+      \tag{CDE5}
+   \]
+   Then, after increasing the logarithmic constants in the local budgets and
+   treating bounded \(n\) by the resident scan base case, worst-case Euclidean
+   ANN has
+   \[
+      Q(n,d)=d\,n^{\rho_c}\log^{O_c(1)}n,
+      \qquad
+      S(n,d)=dn+n^{1+\rho_c}\log^{O_c(1)}n .
+   \]
+
+   Thus the remaining high-correlation theorem may be stated without sampled
+   center panels: under every normalized residual, certify one profile whose
+   cut-wise clipped singleton price is an inverse-polylogarithmic fraction of
+   its residual benefit; strict clipping gain is the special case in which the
+   dense prefix is already witnessed by one singleton center.
+\end{corollary}
+
+\begin{proof}
+   First prove the panel statement.  Assume no low-correlation record and no
+   positive dense prefix is positive.  For any choice of
+   \(0<\varepsilon_\pi\le1\), \cref{cor:clipped-singleton-high-correlation-fixed-tail}
+   gives
+   \[
+      \Phi_\pi^{\rm hi}
+      \le
+      \varepsilon_\pi B_\pi^{\rm hi}
+      +
+      A_\pi^{\rm clip}
+      \left(1+\left\lceil\log_2\frac1{\varepsilon_\pi}\right\rceil\right).
+      \tag{CDE6}
+   \]
+   If \((CDE2)\) holds, choose each \(\varepsilon_\pi\) within a small enough
+   additive error of the infimum defining \(\Theta\) to obtain
+   \[
+      \sum_{\pi\in\Pi}\eta_\pi
+      \left(
+         B_\pi-C_\pi^{\rm lo}-\Phi_\pi^{\rm hi}
+      \right)>0.
+   \]
+   Then \cref{cor:min-cost-split-profile-envelope} exposes either a positive
+   low-correlation record or a positive dense prefix, contradicting the
+   residual assumption.  Hence a violation of the clipped logarithmic envelope
+   gives one of the stated positive columns.
+
+   For the endpoint, use the same arithmetic as in
+   \cref{cor:polylog-sampled-center-density-endpoint}, with
+   \(A_\pi^{\rm clip}\) in place of \(A_\pi^{\rm samp}\).  Conditions
+   \((CDE4)\)--\((CDE5)\) imply, for all sufficiently large \(n\), that either
+   \(A_\pi^{\rm clip}=0\), in which case
+   \(\Theta(B_\pi^{\rm hi},A_\pi^{\rm clip})=0<D_\pi\), or else
+   \[
+      C_0A_\pi^{\rm clip}
+      \left(
+         1+\log_+\frac{B_\pi^{\rm hi}}{A_\pi^{\rm clip}}
+      \right)
+      <D_\pi .
+   \]
+   In the latter case, \((OSR4)\) implies
+   \[
+      \Theta(B_\pi^{\rm hi},A_\pi^{\rm clip})<D_\pi.
+   \]
+   Therefore the one-profile panel satisfies \((CDE2)\) for every normalized
+   price system at every sufficiently large node.  The panel statement gives a
+   verified positive column in \(\mathcal Z_\star\), so \((SPP1)\) holds at
+   every such node.  Bounded-size nodes are handled by resident scan, and
+   \cref{cor:shared-panel-positive-separator-endpoint} gives the displayed
+   query and storage bounds.
 \end{proof}
 
 \begin{corollary}[Logarithmic sampled-center separator endpoint]
@@ -59804,6 +59927,10 @@ singleton version: a cut-wise clipped envelope
 \(\Gamma_{\rm clip}=E_{\mathcal X}+\sum_x\min\{m_x,2P_x\}\) gives the same
 bound with \(A^{\rm clip}=2\Gamma_{\rm clip}\), and any strict clipping gain
 already fires one singleton dense prefix.
+\Cref{cor:clipped-singleton-density-endpoint} feeds this scalar envelope
+directly into the logarithmic endpoint: polynomial dynamic range and
+\(A^{\rm clip}\le D/\log^{1+\Omega(1)}n\) already imply the full
+\(n^{\rho_c}\polylog n\) theorem.
 \Cref{cor:explicit-split-profile-tail-separator} feeds this explicit tail into
 the split-profile panel separator, replacing the abstract min-cost
 high-correlation price by a checkable scalar envelope.
