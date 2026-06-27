@@ -605,3 +605,4 @@
 - Added the soft-mass clipped Hall-shadow reporter. Fractional facility/AQ/list-decoder memberships now feed the same clipped surplus test by a top-\(K\) rearrangement inequality, leaving exact hard prefixes only to the verifier.
 - Added the soft-mass Hall-shadow separator endpoint. The current dense-side target now accepts Hall-success or a positive soft-membership clipped surplus directly, composing through the verifier to the polylogarithmic ANN endpoint.
 - Added the exact-scale soft Hall-shadow reporter and endpoint. The verifier may now optimize over prefix cardinalities and charge the exact recursive price, so clipped/balanced scales are proposal screens rather than endpoint restrictions.
+- Added shadow-routing exact-scale soft reporting. Any fractional routing of paid Hall-shadow atoms into certified templates now becomes a verified soft panel, and failure even for cut-center routings leaves the explicit cut-center obstruction \((CCO2)\).

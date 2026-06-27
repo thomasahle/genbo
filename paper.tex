@@ -38017,6 +38017,136 @@ into query-dominated, storage-dominated, and balanced cases.
    gives \((SES3)\).
 \end{proof}
 
+\begin{corollary}[Shadow-routing exact-scale soft reporter]
+   \label{cor:shadow-routing-exact-scale-soft-reporter}
+   Work in the setting of
+   \cref{cor:exact-scale-soft-hall-shadow-reporter}.  Let \(\mathcal Y\) be a
+   finite repair-template family.  A fractional shadow routing is a family
+   \(0\le r_{y,p,\sigma_0}\le1\), supported only when
+   \[
+      y\in\mathcal Y,\qquad
+      (p,\sigma_0)\in N(A),\qquad
+      p\in W_y,\qquad
+      a_y(\sigma_0)=1,
+      \tag{SRT1}
+   \]
+   and satisfying
+   \[
+      \sum_{y\in\mathcal Y}r_{y,p,\sigma_0}\le1
+      \qquad((p,\sigma_0)\in N(A)).
+      \tag{SRT2}
+   \]
+   For \(y\in\mathcal Y\), define the routed shadow mass at \(p\) by
+   \[
+      m_y(p)=
+      \sum_{\sigma_0:\,(p,\sigma_0)\in N(A)}
+      r_{y,p,\sigma_0}\alpha_{p,\sigma_0},
+      \qquad
+      X_y=\sum_{p\in W_y}m_y(p),
+      \tag{SRT3}
+   \]
+   and define memberships
+   \[
+      \theta_{y,p}=
+      \begin{cases}
+      m_y(p)/d_{A,y}(p), & d_{A,y}(p)>0,\\
+      0, & d_{A,y}(p)=0.
+      \end{cases}
+      \tag{SRT4}
+   \]
+   Then \(0\le\theta_{y,p}\le1\), and each \(y\) with \(X_y>0\) is a valid
+   soft-mass record:
+   \[
+      X_y=\sum_{p\in W_y}\theta_{y,p}d_{A,y}(p).
+      \tag{SRT5}
+   \]
+
+   Consequently, if the routing and cardinalities \(K_y\in\mathcal K_y\)
+   satisfy
+   \[
+      \sum_{y\in\mathcal Y}
+      K_y\left(
+         \frac{X_y}{\max\{\mu_y,K_y\}}
+         -
+         \psi_y\left(A_yK_y^{\rho_y-1}+\zeta K_y^{\rho_y}\right)
+      \right)>0,
+      \qquad
+      \mu_y=\sum_{p\in W_y}\theta_{y,p},
+      \tag{SRT6}
+   \]
+   then some \(y\) gives a one-record Hall-shadow merge.
+
+   In particular, it is enough to route only part of the paid shadow.  If no
+   exact-scale soft Hall-shadow merge exists for \(\mathcal Y\), then every
+   fractional shadow routing and every choice of cardinalities satisfies the
+   reverse of \((SRT6)\).
+\end{corollary}
+
+\begin{proof}
+   By the support condition \((SRT1)\),
+   \[
+      m_y(p)
+      \le
+      \sum_{\sigma_0:\,(p,\sigma_0)\in N(A)}
+      \alpha_{p,\sigma_0}a_y(\sigma_0)
+      =
+      d_{A,y}(p).
+   \]
+   Hence \(0\le\theta_{y,p}\le1\), and \((SRT5)\) follows from the definition
+   of \(\theta\).  The records \((y,\theta_y,X_y,K_y)\) are therefore valid
+   exact-scale soft records in the sense of
+   \cref{cor:exact-scale-soft-hall-shadow-reporter}.  Condition \((SRT6)\) is
+   precisely the panel surplus \((ESH3)\) for this induced panel, so that
+   corollary gives a one-record Hall-shadow merge.  The final statement is the
+   contrapositive.
+\end{proof}
+
+\begin{corollary}[Cut-center routing obstruction]
+   \label{cor:cut-center-routing-obstruction}
+   Work in the setting of
+   \cref{cor:shadow-routing-exact-scale-soft-reporter}, and take
+   \(\mathcal Y\) to contain every template center \(x\) that appears in the
+   failed cut \(A\).  Since every \((p,\sigma_0)\in N(A)\) has at least one
+   adjacent \((\sigma_0,x)\in A\), there is an integral routing of all paid
+   shadow mass to cut centers satisfying \((SRT1)\)--\((SRT2)\).  For every
+   such routing,
+   \[
+      \sum_{x\in\mathcal Y}X_x
+      =
+      \sum_{(p,\sigma_0)\in N(A)}\alpha_{p,\sigma_0}.
+      \tag{CCO1}
+   \]
+
+   Therefore, if no exact-scale soft Hall-shadow merge is exposed by any
+   routing to the cut centers, then every assignment of each paid shadow atom
+   to one adjacent cut center, and every choice of cardinalities
+   \(K_x\in\mathcal K_x\), satisfies
+   \[
+      \sum_x
+      K_x\frac{X_x}{\max\{\mu_x,K_x\}}
+      \le
+      \sum_x
+      \psi_x
+      \left(
+         A_xK_x^{\rho_x}
+         +\zeta K_x^{1+\rho_x}
+      \right).
+      \tag{CCO2}
+   \]
+   Together with the failed Hall cut \((FHT5)\), this is the cut-center
+   residual obstruction that a richer geometric template family must beat.
+\end{corollary}
+
+\begin{proof}
+   For each right atom \((p,\sigma_0)\in N(A)\), choose one neighboring cut
+   atom \((\sigma_0,x)\in A\).  Routing that atom to \(x\) satisfies
+   \((SRT1)\)--\((SRT2)\), and routes every unit of paid shadow exactly once,
+   proving \((CCO1)\).  If some assignment and cardinality choice violated
+   \((CCO2)\), then \((SRT6)\) would hold and
+   \cref{cor:shadow-routing-exact-scale-soft-reporter} would expose a
+   one-record merge.  The displayed obstruction is therefore the contrapositive.
+\end{proof}
+
 \begin{corollary}[Fractional balanced Hall-shadow density panel]
    \label{cor:fractional-balanced-hall-shadow-density-panel}
    Work in the setting of \cref{cor:balanced-hall-shadow-density-screen}.  Let
@@ -50911,8 +51041,13 @@ a top-\(K\) rearrangement inequality.  The exact-scale form
 \cref{cor:sampled-exact-scale-soft-hall-shadow-search} then lets the verifier
 optimize over the available prefix cardinalities and charge the exact recursive
 price, so clipped and balanced scales become proposal screens rather than
-endpoint restrictions.  The Hall cut itself can also be assumed marginally
-closed by \cref{lem:maximal-hall-cut-marginal-normal-form}.  The consolidated
+endpoint restrictions.  The routing form
+\cref{cor:shadow-routing-exact-scale-soft-reporter} converts any fractional
+routing of paid shadow atoms into exact-scale soft records, and
+\cref{cor:cut-center-routing-obstruction} records the first obstruction left
+when even the cut's own centers cannot route their paid shadow at positive
+surplus.  The Hall cut itself can also be assumed marginally closed by
+\cref{lem:maximal-hall-cut-marginal-normal-form}.  The consolidated
 endpoint is
 \cref{cor:exact-scale-soft-hall-shadow-separator-endpoint}, with
 \cref{cor:soft-mass-hall-shadow-separator-endpoint},
