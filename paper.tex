@@ -43530,6 +43530,64 @@ certificate is the verified positive-gain column and the finite LP it augments.
    restricted column generation exposes a normalized residual price system.
 \end{proof}
 
+\begin{corollary}[Witness-report panel hardening]
+   \label{cor:witness-report-panel-hardening}
+   Work in the setting of
+   \cref{cor:witness-law-residual-obstruction}, and fix a normalized price
+   system.  Let \(I\) be a finite panel of admissible witness reports with
+   nonnegative weights \(\lambda_i\).  If
+   \[
+      \sum_{i\in I}\lambda_i
+      \left(
+         A_{\mathcal R_i}-Q_{\mathcal R_i}-W_{\mathcal R_i}
+      \right)>0,
+      \tag{WRP1}
+   \]
+   then some report \(\mathcal R_i\) with \(\lambda_i>0\) has positive witness
+   surplus
+   \[
+      A_{\mathcal R_i}>Q_{\mathcal R_i}+W_{\mathcal R_i}.
+      \tag{WRP2}
+   \]
+   Consequently it exposes a deterministic positive shared-panel gain for the
+   fixed price system.
+
+   Equivalently, in any residual satisfying \((WRO3)\), every finite
+   nonnegative panel of admissible reports satisfies the reverse inequality in
+   \((WRP1)\).  Thus a list decoder, range reporter, additive-quantization
+   search, or facility routine may output a whole batch of candidate certified
+   reports; only the aggregate surplus is needed for analysis, and the verifier
+   retains one positive report.
+
+   The same Las Vegas sampling guarantee as
+   \cref{cor:sampled-witness-report-separation} holds for sampled panels: if a
+   seed returns a finite weighted panel with surplus \(Z_{\rm pan}(s)\), and
+   \[
+      \E_sZ_{\rm pan}(s)\ge\Gamma>0,
+      \qquad
+      Z_{\rm pan}(s)_+\le M
+      \quad\text{almost surely},
+      \tag{WRP3}
+   \]
+   then \(B\ge(M/\Gamma)\log(1/\delta)\) independent build-time seeds find a
+   panel containing a positive report with probability at least \(1-\delta\).
+\end{corollary}
+
+\begin{proof}
+   If every positive-weight report had
+   \(A_{\mathcal R_i}\le Q_{\mathcal R_i}+W_{\mathcal R_i}\), then the left side
+   of \((WRP1)\) would be nonpositive.  Hence a positive aggregate surplus
+   contains one positive-surplus report.  Applying the final paragraph of the
+   proof of \cref{cor:sampled-witness-report-separation} to that report exposes
+   positive shared-panel gain for the fixed price system.  The residual
+   statement is the contrapositive.
+
+   For sampled panels, apply the same positive-part argument to
+   \(Z_{\rm pan}\): condition \((WRP3)\) gives
+   \(\Pr[Z_{\rm pan}(s)>0]\ge\Gamma/M\), and a positive panel contains one
+   positive report by the deterministic part.
+\end{proof}
+
 The role of \cref{asm:weighted-dense-spherical-dichotomy} is now precise.  It is
 not an additional recursion rule; it is the separation theorem that would prove
 the finite signature LPs used in \cref{prop:fractional-filter-cover-polylog}
@@ -57369,6 +57427,9 @@ dual-priced witness storage.
 a proposal routine only has to produce certified reports with positive expected
 surplus \(A-Q-W\); after enough uncharged samples, one positive report is
 verified and reduced to an ordinary positive shared-panel column.
+\Cref{cor:witness-report-panel-hardening} removes another artificial
+restriction: a proposal may return a finite weighted panel of reports, and a
+positive aggregate surplus already contains one deterministic positive report.
 \Cref{cor:tuple-profile-compressed-bucket-storage}
 gives the direct
 low-correlation certificate for this target: first list moment plus two-point
