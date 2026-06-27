@@ -29883,6 +29883,85 @@ inequality \((QP3)\).
    certificate.  Therefore the local cover LP is feasible.
 \end{proof}
 
+\begin{corollary}[Guarded no-star residual envelope]
+   \label{cor:guarded-no-star-residual-envelope}
+   Work with one price system \((\gamma,\tau,\sigma)\) satisfying
+   \((GSP1)\)--\((GSP3)\), and let \(\mathcal W_\star\) be the certified
+   star-container family available to the reporter.  For \(W\in\mathcal W_\star\)
+   and fractional query weights \(0\le y_q\le1\), define the hit-weighted degree
+   \[
+      d_{W,y}^{\gamma}(p)
+      =
+      \sum_{q:(p,q)\in\mathcal N}y_q\gamma_{p,q}r_{p,q}
+      \qquad(p\in W),
+      \tag{GNE0}
+   \]
+   and the superlevel
+   \[
+      H_{W,\delta}(y)=\{p\in W:d_{W,y}^{\gamma}(p)\ge\delta\},
+      \qquad h_{W,\delta}(y)=|H_{W,\delta}(y)|.
+   \]
+   Suppose no certified hit-weighted star panel over \(\mathcal W_\star\)
+   satisfies \((HSP1)\)--\((HSP2)\).  Then every \(W\in\mathcal W_\star\), every
+   \(0\le y\le1\), and every \(\delta>0\) with
+   \(h=h_{W,\delta}(y)>0\) satisfy
+   \[
+      \delta h
+      \le
+      \psi_W
+      \left(
+         h^{\rho_W}\sum_q\tau_qy_q+\sigma h^{1+\rho_W}
+      \right).
+      \tag{GNE1}
+   \]
+   More generally, for any finite reported level panel
+   \((W_i,y_i,\delta_i,\lambda_i)_i\), after discarding empty levels and writing
+   \(h_i=h_{W_i,\delta_i}(y_i)>0\), one has
+   \[
+      \sum_i\lambda_i\delta_i h_i
+      \le
+      \sum_i\lambda_i\psi_{W_i}
+      \left(
+         h_i^{\rho_{W_i}}\sum_q\tau_qy_i(q)
+         +\sigma h_i^{1+\rho_{W_i}}
+      \right).
+      \tag{GNE2}
+   \]
+
+   If \(0<\rho_W<1\), the pointwise envelope implies the weak-type alternatives
+   of \cref{lem:paid-prefix-weak-type} with
+   \(A_y=\sum_q\tau_qy_q\), \(\rho=\rho_W\), and \(\psi=\psi_W\).  Thus any
+   counterexample to the guarded star-panel theorem must simultaneously satisfy
+   the large guard co-load \((GSP2)\) and the no-star weak-type envelope
+   \((GNE1)\) for every certified smaller-radius star container.
+\end{corollary}
+
+\begin{proof}
+   If \((GNE2)\) failed, restrict to the nonempty reported levels and submit the
+   panel with
+   \[
+      U_i=H_{W_i,\delta_i}(y_i),\qquad
+      X_i=\delta_i h_i,\qquad
+      K_i=h_i .
+   \]
+   For each \(i\),
+   \[
+      X_i
+      =
+      \delta_i h_i
+      \le
+      \sum_{p\in H_{W_i,\delta_i}(y_i)}
+      d_{W_i,y_i}^{\gamma}(p),
+   \]
+   so \((HSP1)\) holds.  The strict failure of \((GNE2)\) is exactly
+   \((HSP2)\), contradicting the no-panel hypothesis.  Hence \((GNE2)\) holds.
+   The pointwise statement \((GNE1)\) is the single-level case.
+
+   The weak-type alternatives follow by applying
+   \cref{lem:paid-prefix-weak-type} to the displayed envelope, or directly by
+   the same elementary rearrangement used in its proof.
+\end{proof}
+
 \begin{corollary}[Tuple-profile distinct-storage certificate]
    \label{cor:tuple-profile-distinct-storage}
    Work in the setting of
@@ -30287,6 +30366,9 @@ verifier extracts the Boolean top-prefix column.
 the star panel only has to be proved for normalized residuals that already carry
 large activation-weighted high-correlation guard mass after spherical buckets
 fail.
+\Cref{cor:guarded-no-star-residual-envelope} gives the exact failure form:
+without such a panel, every hit-weighted degree superlevel in every reported
+star container obeys the Renyi weak-type envelope \((GNE1)\).
 \Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} give the corresponding
 entropy-energy normal form: each large canonical child supplies many separated
@@ -30543,6 +30625,9 @@ mass and upper list-size certificates forces a positive paid prefix.
 \Cref{cor:guarded-star-panel-local-cover} combines this with the spherical
 reduced-gain residual: only price systems satisfying the normalized guard-mass
 obstruction \((GSP1)\)--\((GSP3)\) need such a panel.
+\Cref{cor:guarded-no-star-residual-envelope} records the corresponding
+counterexample: large guard co-load must coexist with a no-star weak-type cap
+on all certified smaller-radius containers.
 Conversely,
 \cref{cor:paid-prefix-residual-envelope} says that a failed dense separator has
 only one possible form: a paid residual whose every certified container obeys
@@ -43441,6 +43526,9 @@ share the same remaining reporter theorem.
 the reporter only has to work on normalized residuals with unit primitive hit
 mass, below-budget price, large guard co-load, and no profitable primitive
 singleton slice.
+\Cref{cor:guarded-no-star-residual-envelope} is its exact negation in reporter
+language: if this target fails, every certified star container has only the
+Renyi amount of hit-weighted paid mass at every degree superlevel.
 \Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} reduce each dyadic count to tuple
 incidence: a large separated child contains many ordered witness tuples, so the
