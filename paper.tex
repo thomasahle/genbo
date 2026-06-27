@@ -32067,7 +32067,8 @@ trusts the verified surplus law and the retained guard-credit columns.
       \tag{DRP1}
    \]
    Suppose the reporter supplies a finite probability law \(\nu\) over raw
-   records \(B=(W_B,K_B,C_B,X_B)\) with \(K_B\ge1\), \(C_B>0\), and
+   records \(B=(W_B,K_B,C_B,X_B)\), where \(W_B\) is an affordable certified
+   container, \(K_B\ge1\) is a size certificate for \(W_B\), \(C_B>0\), and
    \[
       0\le X_B\le D_{G'}(W_B).
       \tag{DRP2}
@@ -32111,6 +32112,84 @@ the paid neighborhood \(N_{\rm hc}(G')\) with surplus after the single
 layer-cake logarithm.  The proposal search no longer has to reason about all near
 pairs or all dense clusters at once; it only has to separate this one deficient
 paid shadow.
+
+\begin{corollary}[Deficient-shadow prefix certificate]
+   \label{cor:deficient-shadow-prefix-certificate}
+   Work in the setting of \cref{cor:deficit-restricted-proposal-law}.  Fix an
+   affordable certified ambient container \(W\) with price factor \(\psi_W\) and
+   exponent \(\rho_W\).  For \(p\in W\), define the deficient-shadow degree
+   \[
+      d_{G'}(p)=
+      \sum_{\substack{q\in\mathcal Q_+\\p\in N_{\rm hc}(G')(q)}}
+      a_q\gamma_{p,q}r_{p,q}.
+      \tag{DSP1}
+   \]
+   Let \(U\subseteq W\) be a certified subcontainer, still certified by the
+   geometry of \(W\) and with inherited price parameters
+   \(\psi_U=\psi_W\), \(\rho_U=\rho_W\).  Put \(h=|U|\ge1\).  Suppose \(X\) is a
+   lower certificate for its deficient-shadow mass,
+   \[
+      0<X\le\sum_{p\in U}d_{G'}(p).
+      \tag{DSP2}
+   \]
+   Define
+   \[
+      v=\min\{X,h\},
+      \qquad
+      J=1+\left\lceil\log_2\frac{2h}{v}\right\rceil ,
+      \tag{DSP3}
+   \]
+   and
+   \[
+      R_W(h)=
+      \psi_W
+      \left(
+         h^{\rho_W}\sum_{q\in\mathcal Q_+}\tau_qa_q
+         +\sigma h^{1+\rho_W}
+      \right).
+      \tag{DSP4}
+   \]
+   If
+   \[
+      \frac{X}{4J}>R_W(h),
+      \tag{DSP5}
+   \]
+   then the guarded residual closes.
+
+   In particular, if the reporter can certify the top-\(h\) deficient-shadow
+   prefix in \(W\), with
+   \[
+      D_{G',W}(h)=
+      \max_{\substack{U\subseteq W\\|U|=h}}
+      \sum_{p\in U}d_{G'}(p),
+      \tag{DSP6}
+   \]
+   and \((DSP5)\) holds with \(X=D_{G',W}(h)\), then that one prefix is a valid
+   separating proposal.
+\end{corollary}
+
+\begin{proof}
+   Use the point mass proposal law on the raw record
+   \[
+      B=(U,h,1,X).
+   \]
+   Since \(U\subseteq W\) inherits the certified geometry and price parameters of
+   \(W\), it is an affordable certified container with size certificate \(h\),
+   and its recursive price is \(R_W(h)\).  By \((DSP2)\), the record satisfies
+   \((DRP2)\).  With \(C_B=1\), the quantities \(v,J\), and \(R_W(h)\) are exactly
+   the corresponding quantities in \((DRP3)\).  Thus \((DSP5)\) implies the
+   strict proposal surplus required by
+   \cref{cor:deficit-restricted-proposal-law}, which closes the residual.  The
+   top-prefix statement is the same argument with \(U\) chosen to attain
+   \((DSP6)\).
+\end{proof}
+
+\Cref{cor:deficient-shadow-prefix-certificate} is the most concrete current
+search problem.  Given one positive-excess Hall sublayer, compute or certify a
+top deficient-shadow prefix inside an affordable smaller-radius container and
+compare its mass with the recursive price.  Thus \(k\)-means++, additive
+quantization, LP range reporting, and list decoding are useful only insofar as
+they expose such prefixes; the proof does not depend on their sampling rule.
 
 \begin{corollary}[Tuple-profile distinct-storage certificate]
    \label{cor:tuple-profile-distinct-storage}
@@ -32591,6 +32670,9 @@ separator: every failed lower-hull Hall profile must yield such a positive
 proposal law, with the lower-hull witness used only as build-time advice.
 \Cref{cor:deficit-restricted-proposal-law} localizes that proposal search to the
 paid shadow of one positive-excess Hall sublayer.
+\Cref{cor:deficient-shadow-prefix-certificate} reduces the accepted proposal to
+one certified top deficient-shadow prefix inside an affordable smaller-radius
+container.
 \Cref{cor:pair-compatible-hall-guarded-cover} assembles the chain back into the
 local LP: a half-shipment with sufficient layer-cake surplus supplies the
 guarded star-panel reporter and closes the residual.
@@ -45876,6 +45958,9 @@ geometric obligation: convert every strict lower-hull Hall deficit into such a
 positive proposal law.
 \Cref{cor:deficit-restricted-proposal-law} further restricts this obligation to
 the paid shadow of the one positive-excess sublayer.
+\Cref{cor:deficient-shadow-prefix-certificate} is the concrete separator form:
+find one top deficient-shadow prefix whose certified mass beats its inherited
+recursive price.
 \Cref{cor:pair-compatible-hall-guarded-cover} states the final local theorem
 target in this language: prove the Hall expansion and the resulting
 layer-cake price inequality for every guarded residual.
