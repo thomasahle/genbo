@@ -39163,6 +39163,66 @@ into query-dominated, storage-dominated, and balanced cases.
    tail Hall-shadow merge.
 \end{proof}
 
+\begin{corollary}[Atom-marginal support-law certificate]
+   \label{cor:atom-marginal-support-law-certificate}
+   Work in the setting of
+   \cref{cor:independent-support-law-assignment-certificate}.  Suppose a
+   certificate gives stochastic atom-routing weights
+   \(z_{x,p,\sigma_0}\ge0\), supported only on adjacent cut centers as in
+   \((ISL1)\), such that
+   \[
+      \sum_x z_{x,p,\sigma_0}=1
+      \qquad((p,\sigma_0)\in N(A)).
+      \tag{AML1}
+   \]
+   For each center and point put
+   \[
+      \nu_{x,p}=
+      \min\left\{1,\sum_{\sigma_0\in\Sigma_A(p)}z_{x,p,\sigma_0}\right\},
+      \qquad
+      \nu_x=\sum_p\nu_{x,p},
+      \tag{AML2}
+   \]
+   and define
+   \[
+      \overline\Phi_b=
+      \sum_x\psi_x
+      \left(
+         b^{1-\rho_x}A_x\nu_x^{\rho_x}
+         +b^{\rho_x}\zeta(\nu_x+\nu_x^{1+\rho_x})
+      \right).
+      \tag{AML3}
+   \]
+   If
+   \[
+      M_A>(b+1)\overline\Phi_b,
+      \tag{AML4}
+   \]
+   then some deterministic atom routing exposes a support-adaptive exact tail
+   Hall-shadow merge.
+\end{corollary}
+
+\begin{proof}
+   Independently for each paid atom \((p,\sigma_0)\), choose one adjacent center
+   \(x\) with probability \(z_{x,p,\sigma_0}\).  Choices for different data
+   points are independent, so this is an independent pointwise routing law.
+   For a fixed \(x,p\), the probability that point \(p\) uses center \(x\) is
+   \[
+      q_{x,p}
+      =
+      1-\prod_{\sigma_0\in\Sigma_A(p)}
+      (1-z_{x,p,\sigma_0})
+      \le
+      \nu_{x,p}.
+      \tag{AML5}
+   \]
+   Hence the support means \(\mu_x=\sum_pq_{x,p}\) from \((ISL2)\) satisfy
+   \(\mu_x\le\nu_x\).  Since the marginal support price \((ISL3)\) is
+   coordinatewise increasing in \(\mu_x\), \(\widehat\Phi_b\le\overline\Phi_b\).
+   Thus \((AML4)\) implies \((ISL4)\), and
+   \cref{cor:independent-support-law-assignment-certificate} gives the merge.
+\end{proof}
+
 \begin{corollary}[Fractional balanced Hall-shadow density panel]
    \label{cor:fractional-balanced-hall-shadow-density-panel}
    Work in the setting of \cref{cor:balanced-hall-shadow-density-screen}.  Let
@@ -39553,7 +39613,11 @@ dense merge already exists.  The independent support-law form
 \cref{cor:independent-support-law-assignment-certificate} is the sampling
 version of the same test: it is enough to control the expected number
 \(\mu_x\) of data points touching each cut center, paying only
-\(\mu_x^{\rho_x}\) for query and \(\mu_x+\mu_x^{1+\rho_x}\) for storage.
+\(\mu_x^{\rho_x}\) for query and \(\mu_x+\mu_x^{1+\rho_x}\) for storage.  The
+atom-marginal version
+\cref{cor:atom-marginal-support-law-certificate} reduces this further to local
+stochastic routing weights, with support probability bounded by a union bound
+inside each data point.
 
 \begin{corollary}[Support-price shadow-routing separator endpoint]
    \label{cor:support-price-shadow-routing-separator-endpoint}
@@ -39623,12 +39687,21 @@ version of the same test: it is enough to control the expected number
    high-correlation co-load residual.  Consequently the dense/spherical
    separator condition \((DSF2)\) holds, and the polylogarithmic ANN endpoint
    follows.
+
+   The same conclusion holds if, in the second alternative, the separator
+   returns stochastic atom-routing weights satisfying \((AML1)\) and
+   \[
+      M_A>(b+1)\overline\Phi_b
+      \tag{MRL2}
+   \]
+   in place of an explicit pointwise routing law.
 \end{corollary}
 
 \begin{proof}
-   Fix a surplus dual satisfying \((HCS1)\).  If \((HCR1)\) holds, the first
-   alternative of \cref{cor:finite-signature-hall-cut-repair-endpoint} applies.
-   Otherwise \((MRL1)\) and
+   Fix a surplus dual satisfying \((HCS1)\).  For the pointwise-law version,
+   if \((HCR1)\) holds, the first alternative of
+   \cref{cor:finite-signature-hall-cut-repair-endpoint} applies.  Otherwise
+   \((MRL1)\) and
    \cref{cor:independent-support-law-assignment-certificate} produce a
    deterministic pointwise routing exposing a support-adaptive exact tail
    Hall-shadow merge.  As in
@@ -39639,6 +39712,11 @@ version of the same test: it is enough to control the expected number
    \cref{cor:finite-signature-hall-cut-repair-endpoint}, giving \((HCS2)\), and
    \cref{cor:high-correlation-coload-separator-endpoint} gives the
    dense/spherical separator endpoint.
+
+   For the atom-routing variant, the \((HCR1)\) case is identical.  Otherwise
+   \((MRL2)\) and \cref{cor:atom-marginal-support-law-certificate} first
+   produce the deterministic support-adaptive Hall-shadow merge, and the same
+   endpoint argument applies.
 \end{proof}
 
 \begin{corollary}[Balanced Hall-shadow separator endpoint]
