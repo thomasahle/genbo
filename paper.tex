@@ -44614,6 +44614,57 @@ certificate is the verified positive-gain column and the finite LP it augments.
    solution has value \(W_t\), so \(\Xi_t=W_t\).
 \end{proof}
 
+\begin{corollary}[Sampled reported-center tail certificate]
+   \label{cor:sampled-reported-center-tail-certificate}
+   Work with one threshold atom cut in the setting of
+   \cref{cor:fractional-reported-center-cover-dual}.  Let \(\nu\) be a finite
+   law over certified reported-center panels \(C\in\mathcal C_t\).  Define
+   \[
+      \mathfrak T_\nu(t)
+      =
+      \E_{C\sim\nu}\left[
+         E_C(t)+2P_C
+      \right]
+      =
+      W_t-\E_{C\sim\nu}M_C(t)+2\E_{C\sim\nu}P_C .
+      \tag{RCT1}
+   \]
+   If
+   \[
+      \mathfrak T_\nu(t)<W_t,
+      \tag{RCT2}
+   \]
+   then some panel in the support of \(\nu\) exposes a positive
+   smaller-radius dense prefix.  Conversely, if no panel in the support exposes
+   such a prefix, then
+   \[
+      W_t\le\mathfrak T_\nu(t),
+      \qquad\text{equivalently}\qquad
+      \E_{C\sim\nu}M_C(t)\le2\E_{C\sim\nu}P_C .
+      \tag{RCT3}
+   \]
+
+   Therefore randomized center generation has the same reduced-cost target as a
+   deterministic panel: it must capture more scaled cut mass than twice its
+   aggregate recursive star price.  No extra rounding, set-cover, or branching
+   loss is introduced by using a distribution over center proposals; a positive
+   expected surplus contains one verified deterministic dense-prefix column.
+\end{corollary}
+
+\begin{proof}
+   If no panel in the support exposes a positive prefix, then
+   \cref{cor:reported-center-atom-cut-screen} gives
+   \(W_t\le E_C(t)+2P_C\) for every \(C\) in the support.  Taking expectation
+   gives \(W_t\le\mathfrak T_\nu(t)\).  Since
+   \(E_C(t)=W_t-M_C(t)\), this is equivalent to the second inequality in
+   \((RCT3)\).  The positive statement is the contrapositive.  Equivalently,
+   \((RCT2)\) says
+   \(\E(M_C(t)-2P_C)>0\), so some deterministic support point has
+   \(M_C(t)>2P_C\), and
+   \cref{cor:reported-center-benefit-price-screen} verifies a positive dense
+   prefix.
+\end{proof}
+
 \begin{corollary}[Atomized high-correlation fixed-tail bound]
    \label{cor:atomized-high-correlation-fixed-tail}
    Work in the atomized high-correlation routing dual
@@ -58732,6 +58783,10 @@ laws are judged by the expected surplus \(M_C(t)-2P_C\).
 finite LP: either fractional reported-center panels lower the tail-only cost,
 which hardens to one positive dense-prefix column, or the all-ones no-center
 dual is feasible.
+\Cref{cor:sampled-reported-center-tail-certificate} gives the same statement
+for randomized center laws: surviving residuals satisfy
+\(\E M_C(t)\le2\E P_C\), so positive expected center surplus already contains
+one deterministic verified prefix.
 \Cref{cor:atomized-high-correlation-fixed-tail} aggregates this over the whole
 atomized routing dual: after \(\varepsilon\)-truncation, either a dense prefix
 fires or
