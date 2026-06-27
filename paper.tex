@@ -38996,6 +38996,79 @@ into query-dominated, storage-dominated, and balanced cases.
    gives \((SAP2)\).  Summing over a full assignment gives \((SAP3)\).
 \end{proof}
 
+\begin{corollary}[Support-price assignment separator]
+   \label{cor:support-price-assignment-separator}
+   Work in the setting of
+   \cref{cor:support-adaptive-cut-center-price-obstruction}.  Let
+   \(\mathcal R_{\rm full}(A)\) be the set of fractional shadow routings into
+   the cut centers satisfying equality in \((SRT2)\) for every paid shadow atom
+   \((p,\sigma_0)\in N(A)\).  For \(r\in\mathcal R_{\rm full}(A)\), define
+   \(m_x^r(p)\), \(X_x^r\), and
+   \[
+      s_x(r)=|\{p:m_x^r(p)>0\}|
+   \]
+   as in \((SRT3)\) and \((SSC1)\), and put
+   \[
+      \Phi_b(r)=
+      \sum_{x:\,s_x(r)>0}
+      \psi_x
+      \left(
+         b^{1-\rho_x}A_xs_x(r)^{\rho_x}
+         +b^{\rho_x}\zeta s_x(r)^{1+\rho_x}
+      \right).
+      \tag{SPA1}
+   \]
+   Let
+   \[
+      M_A=
+      \sum_{(p,\sigma_0)\in N(A)}\alpha_{p,\sigma_0}.
+   \]
+   If there is a full fractional routing \(r\in\mathcal R_{\rm full}(A)\)
+   such that
+   \[
+      M_A>(b+1)\Phi_b(r),
+      \tag{SPA2}
+   \]
+   then some cut center exposes a support-adaptive exact tail Hall-shadow merge.
+
+   Equivalently, if no support-adaptive exact tail report exposes a merge at
+   any cut center, then
+   \[
+      M_A
+      \le
+      (b+1)\inf_{r\in\mathcal R_{\rm full}(A)}\Phi_b(r).
+      \tag{SPA3}
+   \]
+\end{corollary}
+
+\begin{proof}
+   Fix a full fractional routing \(r\).  Since equality holds in \((SRT2)\),
+   summing \((SRT3)\) over centers gives
+   \[
+      \sum_xX_x^r=M_A .
+      \tag{SPA4}
+   \]
+   The support condition \((SRT1)\) gives \(0\le m_x^r(p)\le d_{A,x}(p)\) for
+   every center and point, as in the proof of
+   \cref{cor:support-adaptive-cut-center-price-obstruction}.  If no
+   support-adaptive exact tail report fires, then applying
+   \cref{cor:support-adaptive-exact-hall-shadow-tail-screen} at the
+   factor-\(b\) cardinality supplied for each used support gives
+   \[
+      X_x^r
+      \le
+      (b+1)\psi_x
+      \left(
+         b^{1-\rho_x}A_xs_x(r)^{\rho_x}
+         +b^{\rho_x}\zeta s_x(r)^{1+\rho_x}
+      \right).
+   \]
+   Summing over used centers and using \((SPA4)\) gives
+   \(M_A\le(b+1)\Phi_b(r)\).  Thus any routing satisfying \((SPA2)\) forces a
+   report to fire.  Since the same inequality holds for every full routing in a
+   surviving residual, taking the infimum gives \((SPA3)\).
+\end{proof}
+
 \begin{corollary}[Fractional balanced Hall-shadow density panel]
    \label{cor:fractional-balanced-hall-shadow-density-panel}
    Work in the setting of \cref{cor:balanced-hall-shadow-density-screen}.  Let
@@ -39377,7 +39450,55 @@ restriction and leaves the explicit extra term \(s_x\Theta_x\) for large assigne
 support.  The exact support-adaptive screen
 \cref{cor:support-adaptive-cut-center-price-obstruction} then charges that
 large-support branch by the recursive price at the assigned support size, up to
-the retained cardinality-net factor.
+the retained cardinality-net factor.  Equivalently,
+\cref{cor:support-price-assignment-separator} compresses the whole failed-cut
+branch to one scalar optimization: minimize the support-recursive price
+\(\Phi_b(r)\) over full fractional routings of the paid shadow.  If the paid
+shadow mass beats this minimum price by the cardinality-net constant, a verified
+dense merge already exists.
+
+\begin{corollary}[Support-price shadow-routing separator endpoint]
+   \label{cor:support-price-shadow-routing-separator-endpoint}
+   Work in the setting of
+   \cref{cor:finite-signature-hall-cut-repair-endpoint}.  Suppose that every
+   high-correlation co-load residual satisfying \((HCS1)\) admits an uncharged
+   support-price shadow-routing separator with the following certified behavior.
+   The separator chooses a finite template set \(\mathcal X\), a factor
+   \(b\ge1\), and a loss \(C_{\rm tr}\), runs the Hall transport test of
+   \cref{lem:finite-signature-coload-hall-transport}, and certifies one of two
+   alternatives.
+
+   First, the Hall-success alternative \((HCR1)\) holds.  Second, the Hall test
+   exposes a cut \(A\subseteq\mathcal L\) satisfying \((FHT5)\), the cut-center
+   cardinality nets are factor-\(b\) complete on the used supports, all used
+   exponents satisfy \(0<\rho_x<1\), and the separator returns a full
+   fractional routing \(r\in\mathcal R_{\rm full}(A)\) such that
+   \[
+      M_A>(b+1)\Phi_b(r),
+      \tag{SPR1}
+   \]
+   with \(M_A\) and \(\Phi_b\) defined in
+   \cref{cor:support-price-assignment-separator}.  Then the structured
+   completeness condition \((HCS2)\) holds for every high-correlation co-load
+   residual.  Consequently the dense/spherical separator condition \((DSF2)\)
+   holds, and the polylogarithmic ANN endpoint follows.
+\end{corollary}
+
+\begin{proof}
+   Fix a surplus dual satisfying \((HCS1)\).  If \((HCR1)\) holds, the first
+   alternative of \cref{cor:finite-signature-hall-cut-repair-endpoint} applies.
+   Otherwise the returned routing satisfies \((SPR1)\), so
+   \cref{cor:support-price-assignment-separator} implies that some cut center
+   exposes a support-adaptive exact tail Hall-shadow merge.  This is a
+   one-record Hall-shadow merge, hence
+   \cref{cor:one-record-hall-shadow-merge} and
+   \cref{cor:finite-signature-hall-shadow-repair} supply the Hall-cut repair
+   alternative \((HCR2)\).  Thus every residual satisfies one of the two
+   alternatives of
+   \cref{cor:finite-signature-hall-cut-repair-endpoint}, giving \((HCS2)\), and
+   \cref{cor:high-correlation-coload-separator-endpoint} gives the
+   dense/spherical separator endpoint.
+\end{proof}
 
 \begin{corollary}[Balanced Hall-shadow separator endpoint]
    \label{cor:balanced-hall-shadow-separator-endpoint}
