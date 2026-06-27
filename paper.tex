@@ -36388,6 +36388,138 @@ and compressed-bucket estimates.
    to that member.
 \end{proof}
 
+\begin{lemma}[Fractional local list-size certificate]
+   \label{lem:fractional-local-list-size-certificate}
+   Work in the setting of \cref{lem:local-list-size-guard-shadow}.  Fix a
+   certified subcontainer \(U\subseteq W\), and let \(\mathcal I_U\) be the
+   visible guard incidences counted by \(H_{G'}(U)\):
+   \[
+      \mathcal I_U=
+      \left\{
+      (q,x):q\in\mathcal Q_+,\ x\in G'(q),\
+      \exists p\in U\text{ with }(p,q)\in\mathcal N,\ p\in W_x,
+      \text{ and }(x,p)\text{ satisfying }(HPS1)
+      \right\}.
+      \tag{FLS1}
+   \]
+   Let \(\mathcal J_U\) be the paid-pair shadow
+   \[
+      \mathcal J_U=
+      \left\{
+      (p,q):p\in U,\ q\in\mathcal Q_+,\ p\in N_{\rm hc}(G')(q)
+      \right\},
+      \tag{FLS2}
+   \]
+   with source weights \(b_{q,x}=\tau_qa_q\) and paid weights
+   \(w_{p,q}=a_q\gamma_{p,q}r_{p,q}\).  Join
+   \((q,x)\in\mathcal I_U\) to \((p,q)\in\mathcal J_U\) when
+   \[
+      (p,q)\in\mathcal N,\qquad p\in W_x,\qquad
+      (x,p)\text{ satisfying }(HPS1).
+      \tag{FLS3}
+   \]
+   Suppose that for some \(\kappa>0\) there is a nonnegative assignment
+   \(f_{q,x,p}\) supported on these edges such that every visible guard
+   incidence is fully assigned,
+   \[
+      \sum_p f_{q,x,p}=b_{q,x}
+      \qquad ((q,x)\in\mathcal I_U),
+      \tag{FLS4}
+   \]
+   and every paid pair has congestion at most \(\kappa\),
+   \[
+      \sum_x f_{q,x,p}\le \kappa w_{p,q}
+      \qquad ((p,q)\in\mathcal J_U).
+      \tag{FLS5}
+   \]
+   Then
+   \[
+      H_{G'}(U)\le \kappa D_{G'}(U).
+      \tag{FLS6}
+   \]
+   In particular, if
+   \[
+      \frac{H_{G'}(U)}{\kappa}>R_W(|U|),
+      \tag{FLS7}
+   \]
+   then \(U\) satisfies \((SMH1)\), and the guarded residual closes.
+\end{lemma}
+
+\begin{proof}
+   Summing the full-assignment equations \((FLS4)\) gives
+   \[
+      H_{G'}(U)=\sum_{(q,x)\in\mathcal I_U}b_{q,x}
+      =
+      \sum_{(p,q)\in\mathcal J_U}\sum_x f_{q,x,p}.
+   \]
+   Applying \((FLS5)\) and then the definition of \(D_{G'}(U)\) gives
+   \[
+      H_{G'}(U)
+      \le
+      \kappa\sum_{(p,q)\in\mathcal J_U}w_{p,q}
+      =
+      \kappa D_{G'}(U).
+   \]
+   Thus \((FLS7)\) implies \(D_{G'}(U)>R_W(|U|)\), and
+   \cref{cor:shadow-mass-hall-deficit-oracle} closes the residual.
+\end{proof}
+
+\begin{lemma}[Local duplicate-guard cut]
+   \label{lem:local-duplicate-guard-cut}
+   Work in the setting of
+   \cref{lem:fractional-local-list-size-certificate}.  For
+   \(\mathcal A\subseteq\mathcal I_U\), let \(N_U(\mathcal A)\subseteq
+   \mathcal J_U\) be its paid-pair neighborhood in the graph \((FLS3)\).  A
+   full assignment satisfying \((FLS4)\)--\((FLS5)\) exists if and only if
+   \[
+      \sum_{(q,x)\in\mathcal A}b_{q,x}
+      \le
+      \kappa\sum_{(p,q)\in N_U(\mathcal A)}w_{p,q}
+      \qquad(\mathcal A\subseteq\mathcal I_U).
+      \tag{DGC1}
+   \]
+   Consequently, if
+   \[
+      H_{G'}(U)>\kappa R_W(|U|)
+      \tag{DGC2}
+   \]
+   but \(U\) does not close the residual through \((SMH1)\), then there is a
+   local duplicate-guard cut \(\mathcal A\subseteq\mathcal I_U\) such that
+   \[
+      \sum_{(q,x)\in\mathcal A}\tau_qa_q
+      >
+      \kappa
+      \sum_{(p,q)\in N_U(\mathcal A)}
+      a_q\gamma_{p,q}r_{p,q}.
+      \tag{DGC3}
+   \]
+\end{lemma}
+
+\begin{proof}
+   This is the max-flow/min-cut theorem for the bipartite network with source
+   capacities \(b_{q,x}\), infinite middle edges \((FLS3)\), and sink capacities
+   \(\kappa w_{p,q}\).  A finite cut is determined by the set
+   \(\mathcal A\) of visible guard incidences kept on the source side; all of
+   \(N_U(\mathcal A)\) must also be kept, and the cut condition for routing all
+   source mass is exactly \((DGC1)\).
+
+   If \((DGC1)\) holds, the full assignment exists.  Since \((DGC2)\) is the
+   same as \((FLS7)\), \cref{lem:fractional-local-list-size-certificate} would
+   close the residual.  Therefore, in a nonclosing residual, \((DGC1)\) must
+   fail for some \(\mathcal A\), which is \((DGC3)\).
+\end{proof}
+
+\Cref{lem:fractional-local-list-size-certificate} weakens the pointwise
+certificate \((LGS2)\): a proposed container only needs to fractionally assign
+its captured guard load to the paid shadow with congestion \(\kappa\).  The
+proof may therefore use exact build-time max-flow rather than a uniform
+per-pair list-size bound.  \Cref{lem:local-duplicate-guard-cut} gives the
+matching residual.  If a container captures enough guard load for its price but
+cannot certify bounded local list size, then the obstruction is not vague
+overlap; it is a smaller Hall cut of guard incidences whose paid-pair
+neighborhood is too light.  This is the next object that the dense-star or
+low-correlation tuple machinery must absorb.
+
 \begin{corollary}[Guard-capture Hall separator]
    \label{cor:guard-capture-hall-separator}
    Work in the setting of \cref{lem:local-list-size-guard-shadow}.  Let
@@ -36397,7 +36529,8 @@ and compressed-bucket estimates.
       \tag{GCH1}
    \]
    Suppose a certified \(U\subseteq W\) has a local list-size certificate
-   \(\kappa_U\), and captures an \(\eta\)-fraction of the guard load,
+   \(\kappa_U\), either pointwise as in \((LGS2)\) or fractionally as in
+   \((FLS4)\)--\((FLS5)\), and captures an \(\eta\)-fraction of the guard load,
    \[
       H_{G'}(U)\ge \eta L(G')
       \tag{GCH2}
@@ -36438,7 +36571,8 @@ and compressed-bucket estimates.
       >
       R_W(|U|)
    \]
-   and \cref{lem:local-list-size-guard-shadow}.  Since
+   and either \cref{lem:local-list-size-guard-shadow} or
+   \cref{lem:fractional-local-list-size-certificate}.  Since
    \(\Delta(G')>0\) implies \(L(G')>B_{\rm pc}/2\), condition \((GCH4)\)
    implies \((GCH3)\).  The residual inequalities are the contrapositives of
    the same one-subset test.
