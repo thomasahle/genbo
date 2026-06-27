@@ -43462,6 +43462,74 @@ certificate is the verified positive-gain column and the finite LP it augments.
    \((WRO3)\).
 \end{proof}
 
+\begin{corollary}[Sampled witness-report separation]
+   \label{cor:sampled-witness-report-separation}
+   Work at one resident node and fix a normalized exact-signature price system
+   \((\beta,\tau,\theta)\) satisfying \((ESNO1)\).  A build-time seed
+   \(s\sim\Pi\) returns either \(\bot\), interpreted as zero surplus, or an
+   admissible finite witness report \(\mathcal R_s\) in the sense of
+   \cref{cor:witness-law-residual-obstruction}.  Let
+   \[
+      Z(s)=
+      A_{\mathcal R_s}-Q_{\mathcal R_s}-W_{\mathcal R_s}
+      \tag{SWR1}
+   \]
+   for non-null reports and \(Z(s)=0\) for \(\bot\).  Suppose the verifier
+   certifies
+   \[
+      \E_s Z(s)\ge\Gamma>0,
+      \qquad
+      Z(s)_+\le M
+      \quad\text{almost surely}.
+      \tag{SWR2}
+   \]
+   Then \(B\) independent build-time samples contain an admissible report with
+   positive witness surplus with probability at least
+   \[
+      1-\exp\left(-\frac{B\Gamma}{M}\right).
+      \tag{SWR3}
+   \]
+   In particular,
+   \[
+      B\ge \frac{M}{\Gamma}\log\frac1\delta
+      \tag{SWR4}
+   \]
+   suffices to find such a report with probability at least \(1-\delta\).
+
+   A successful report satisfies the witness-law hypothesis for this fixed
+   price system, and therefore exposes a deterministic positive shared-panel
+   gain after the exact verifier expands its finite seed law.  If a sampler with
+   \((SWR2)\) exists for every normalized residual price system at every node,
+   then the witness-law shared-panel endpoint applies.  Failed samples and null
+   reports are discarded and are never charged to query time or storage.
+\end{corollary}
+
+\begin{proof}
+   The proof is the same positive-part argument as
+   \cref{lem:sampled-proposal-law-separation}.  Since
+   \(Z=Z_+-Z_-\), \((SWR2)\) implies \(\E Z_+\ge\Gamma\).  With
+   \(Z_+\le M\), this gives
+   \[
+      \Pr[Z(s)>0]\ge\Gamma/M.
+   \]
+   Hence \(B\) independent samples all fail with probability at most
+   \((1-\Gamma/M)^B\le\exp(-B\Gamma/M)\).
+
+   If \(Z(s)>0\), then
+   \(A_{\mathcal R_s}>Q_{\mathcal R_s}+W_{\mathcal R_s}\), so
+   \(A_{\mathcal R_s}>0\) and the proof of
+   \cref{cor:witness-law-residual-obstruction} supplies
+   \((WLE3)\)--\((WLE4)\) with
+   \(q=Q_{\mathcal R_s}/A_{\mathcal R_s}\) and
+   \(u=W_{\mathcal R_s}/A_{\mathcal R_s}\).  Thus
+   \cref{cor:dual-priced-witness-storage-separator}, followed by the fixed-dual
+   implication in the proof of
+   \cref{cor:witness-law-shared-panel-endpoint}, exposes a deterministic
+   positive shared-panel gain for this price system.  The final nodewise
+   endpoint statement follows by invoking the same sampled search whenever
+   restricted column generation exposes a normalized residual price system.
+\end{proof}
+
 The role of \cref{asm:weighted-dense-spherical-dichotomy} is now precise.  It is
 not an additional recursion rule; it is the separation theorem that would prove
 the finite signature LPs used in \cref{prop:fractional-filter-cover-polylog}
@@ -57297,6 +57365,10 @@ bounds.
 fixed certified report class: a surviving normalized dual makes every report
 satisfy \(A\le Q+W\), hence every query-efficient report must pay comparable
 dual-priced witness storage.
+\Cref{cor:sampled-witness-report-separation} is the sampled build-time version:
+a proposal routine only has to produce certified reports with positive expected
+surplus \(A-Q-W\); after enough uncharged samples, one positive report is
+verified and reduced to an ordinary positive shared-panel column.
 \Cref{cor:tuple-profile-compressed-bucket-storage}
 gives the direct
 low-correlation certificate for this target: first list moment plus two-point
