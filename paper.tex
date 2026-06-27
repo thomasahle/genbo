@@ -31476,6 +31476,120 @@ inequality \((QP3)\).
    \cref{cor:pair-compatible-guard-responsibility-star}.
 \end{proof}
 
+\begin{lemma}[Fractional Hall obstruction for pair-compatible guards]
+   \label{lem:fractional-pair-compatible-hall-obstruction}
+   Work in the setting of
+   \cref{cor:geometric-hall-pair-compatible-guard}.  Define the fractional
+   bad-sublayer value
+   \[
+      \Psi_{\rm pc}
+      =
+      \max_{\zeta,\omega}
+      \left\{
+      \sum_q\tau_qy_q\sum_{x\in G(q)}\zeta_{q,x}
+      -
+      C_{\rm pair}
+      \sum_{(p,q)\in\mathcal N}y_q\gamma_{p,q}r_{p,q}\,\omega_{p,q}
+      \right\},
+      \tag{FHG1}
+   \]
+   where
+   \[
+      0\le\zeta_{q,x}\le1,
+      \qquad
+      0\le\omega_{p,q}\le1,
+      \tag{FHG2}
+   \]
+   and
+   \[
+      \zeta_{q,x}\le\omega_{p,q}
+      \tag{FHG3}
+   \]
+   whenever \(x\in G(q)\), \((p,q)\in\mathcal N\), \(p\in W_x\), and
+   \((x,p)\) is certified high-correlation in the sense of \((HPS1)\).
+   Then a pair-compatible high-correlation shipment of mass at least \(M_0\)
+   exists if and only if
+   \[
+      \Psi_{\rm pc}\le B_{\rm pc}-M_0 .
+      \tag{FHG4}
+   \]
+   In particular, if no half-shipment exists, then
+   \[
+      \Psi_{\rm pc}>\frac{B_{\rm pc}}2.
+      \tag{FHG5}
+   \]
+   Equivalently, there is a feasible fractional pair
+   \((\zeta,\omega)\) with load
+   \[
+      L(\zeta)=\sum_q\tau_qy_q\sum_{x\in G(q)}\zeta_{q,x}
+   \]
+   and paid neighborhood capacity
+   \[
+      C(\omega)=
+      C_{\rm pair}
+      \sum_{(p,q)\in\mathcal N}y_q\gamma_{p,q}r_{p,q}\,\omega_{p,q}
+   \]
+   such that
+   \[
+      L(\zeta)> \frac{B_{\rm pc}}2,
+      \qquad
+      C(\omega)<L(\zeta)-\frac{B_{\rm pc}}2 .
+      \tag{FHG6}
+   \]
+   The optimum in \((FHG1)\) may always be chosen integral; then
+   \(\zeta\) is the indicator of guard sublayers \(G'(q)\), and
+   \(\omega\) is the indicator of the corresponding certified
+   high-correlation paid neighborhoods \(N_{\rm hc}(G')(q)\).
+\end{lemma}
+
+\begin{proof}
+   For an integral choice
+   \[
+      \zeta_{q,x}=\mathbf 1\{x\in G'(q)\},
+   \]
+   the cheapest feasible \(\omega\) is exactly the indicator of the neighboring
+   paid pair nodes, namely \(p\in N_{\rm hc}(G')(q)\).  Thus the integral value
+   of \((FHG1)\) is
+   \[
+      \sum_q\tau_qy_q|G'(q)|
+      -
+      C_{\rm pair}
+      \sum_q\sum_{p\in N_{\rm hc}(G')(q)}
+      y_q\gamma_{p,q}r_{p,q}.
+      \tag{FHG7}
+   \]
+   By \cref{cor:geometric-hall-pair-compatible-guard}, a shipment of mass
+   \(M_0\) exists exactly when this quantity is at most \(B_{\rm pc}-M_0\) for
+   every sublayer \(G'\).
+
+   It remains only to check that the displayed fractional relaxation has no
+   integrality gap.  The constraint matrix of
+   \[
+      \zeta_{q,x}-\omega_{p,q}\le0
+   \]
+   over the high-correlation incidence graph is the directed incidence matrix
+   of a bipartite graph, with some columns sign-reversed.  Such matrices are
+   totally unimodular, and appending the identity rows for the bounds
+   \((FHG2)\) preserves total unimodularity.  Since the right hand sides are
+   integral, every vertex of the polytope \((FHG2)\)--\((FHG3)\) is integral.
+   A linear objective therefore has an integral optimum, and the fractional
+   optimum equals the maximum integral value in \((FHG7)\).  This proves
+   \((FHG4)\).  The half-shipment statement is the case \(M_0=B_{\rm pc}/2\),
+   and \((FHG6)\) is just the inequality
+   \(L(\zeta)-C(\omega)>B_{\rm pc}/2\) rewritten.
+\end{proof}
+
+The fractional Hall form is the exact local version of the dense-overlap LP at
+the current bottleneck.  The variables \(\zeta\) choose guard incidences and the
+variables \(\omega\) pay for their certified paid-near-pair closure.  Because
+the paid-neighborhood term is a submodular union cost, one should not replace
+this condition by a scalar prefix or quantile rule without an additional
+geometric separator.  What \cref{lem:fractional-pair-compatible-hall-obstruction}
+does give is a finite column-generation target: a proposal family for
+k-means++ centers, additive-quantization records, lattice/list decoders, or
+LP-range-reporting cells is successful exactly when it separates this
+fractional obstruction by producing a lower-certified guard-credit column.
+
 \begin{corollary}[Pair-compatible Hall separator closes guarded residuals]
    \label{cor:pair-compatible-hall-guarded-cover}
    Work in the setting of \cref{cor:guarded-star-panel-local-cover}.  Let
@@ -31997,6 +32111,11 @@ incidences and pairwise paid capacities.
 \Cref{cor:geometric-hall-pair-compatible-guard} rewrites the same obstruction
 geometrically: every guard sublayer must have enough paid near-pair capacity in
 its certified high-correlation neighborhood.
+\Cref{lem:fractional-pair-compatible-hall-obstruction} gives the equivalent
+fractional bad-sublayer LP.  This is the exact dense-overlap obstruction at the
+frontier: guard incidences may be fractional, but their paid-neighborhood
+closure is charged by explicit variables and the relaxation has no integrality
+gap.
 \Cref{cor:pair-compatible-hall-guarded-cover} assembles the chain back into the
 local LP: a half-shipment with sufficient layer-cake surplus supplies the
 guarded star-panel reporter and closes the residual.
@@ -45262,6 +45381,9 @@ neighbors have insufficient paid pair capacity.
 \Cref{cor:geometric-hall-pair-compatible-guard} removes the graph notation from
 that certificate and identifies the bad object as a high-load guard sublayer
 with small paid near-pair neighborhood.
+\Cref{lem:fractional-pair-compatible-hall-obstruction} gives the matching
+fractional LP for this bad object, with explicit variables for guard incidences
+and their paid-neighborhood closure and no integrality loss.
 \Cref{cor:pair-compatible-hall-guarded-cover} states the final local theorem
 target in this language: prove the Hall expansion and the resulting
 layer-cake price inequality for every guarded residual.
