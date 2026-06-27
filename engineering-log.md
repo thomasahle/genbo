@@ -667,3 +667,5 @@
 - Updated the audit trail to distinguish the sharper exact-prefix route from the support-size reported layer-cake route.
 - Added the aggregate exact-prefix support-mass panel. Finite or sampled panels of hard and soft support reports now close when aggregate certified mass beats aggregate exact-prefix price, and the verifier extracts one deterministic top-prefix repair.
 - Updated the audit trail to make the exact-prefix panel price the build-facing no-layer-cake dense proposal target.
+- Added the optimized exact-prefix support price. Hard support reports now pay \(s\inf_K\psi(AK^{\rho-1}+\zeta K^\rho)\), and soft reports pay the analogous \(\inf_K\max\{\mu,K\}\psi(AK^{\rho-1}+\zeta K^\rho)\), letting the verifier choose the recursive scale after seeing the proposal.
+- Updated the audit trail to make the optimized price-density expression the sharpest current no-layer-cake dense proposal target.

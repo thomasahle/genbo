@@ -39444,6 +39444,111 @@ family.
    repair.
 \end{proof}
 
+\begin{corollary}[Optimized exact-prefix support price]
+   \label{cor:optimized-exact-prefix-support-price}
+   Work in the setting of
+   \cref{cor:exact-prefix-support-mass-no-layer-cake}.  For a hard support
+   report with \(S_i\subseteq W_i\), \(s_i=|S_i|\ge1\), and
+   \(X_i\le\sum_{p\in S_i}d_i(p)\), define the optimized exact-prefix price
+   \[
+      P_i^{\rm opt}(s_i)
+      =
+      \inf_{\substack{K\in\mathcal K_i\\ 1\le K\le s_i}}
+      s_i\psi_i
+      \left(
+         A_iK^{\rho_i-1}
+         +
+         \zeta K^{\rho_i}
+      \right).
+      \tag{EOP1}
+   \]
+   If
+   \[
+      X_i>P_i^{\rm opt}(s_i),
+      \tag{EOP2}
+   \]
+   then the Hall-cut repair alternative \((HCR2)\) holds.
+
+   For a soft report with memberships \(0\le\theta_{i,p}\le1\),
+   \[
+      \mu_i=\sum_p\theta_{i,p},
+      \qquad
+      X_i\le\sum_p\theta_{i,p}d_i(p),
+      \tag{EOP3}
+   \]
+   define
+   \[
+      P_i^{\rm opt}(\mu_i)
+      =
+      \inf_{K\in\mathcal K_i}
+      \max\{\mu_i,K\}\psi_i
+      \left(
+         A_iK^{\rho_i-1}
+         +
+         \zeta K^{\rho_i}
+      \right).
+      \tag{EOP4}
+   \]
+   If
+   \[
+      X_i>P_i^{\rm opt}(\mu_i),
+      \tag{EOP5}
+   \]
+   then \((HCR2)\) holds.
+
+   More generally, any finite panel of hard or soft reports with weights
+   \(\lambda_i\ge0\) and the corresponding optimized prices satisfies
+   \[
+      \sum_i\lambda_iX_i>
+      \sum_i\lambda_iP_i^{\rm opt}
+      \tag{EOP6}
+   \]
+   only if some report exposes a deterministic exact top-prefix repair.  Hence
+   in a surviving residual every such optimized exact-prefix panel obeys the
+   reverse inequality in \((EOP6)\).
+
+   Thus the support-size price in \((EPP1)\) and soft-mass price in \((EPP3)\)
+   may be replaced by the discrete optimized price-density expressions
+   \((EOP1)\) and \((EOP4)\).  The verifier chooses the winning cardinality
+   after seeing the report; the proposal mechanism need not guess the recursive
+   scale.
+\end{corollary}
+
+\begin{proof}
+   For the hard report, choose \(K\in\mathcal K_i\), \(K\le s_i\), whose value
+   in \((EOP1)\) is strictly below \(X_i\).  As in \((EPM6)\), the top-\(K\)
+   prefix mass satisfies
+   \[
+      D_i(K)\ge\frac{K}{s_i}X_i.
+   \]
+   The choice of \(K\) gives
+   \[
+      \frac{K}{s_i}X_i
+      >
+      \psi_i
+      \left(
+         A_iK^{\rho_i}
+         +
+         \zeta K^{1+\rho_i}
+      \right).
+   \]
+   Therefore \((QLR2)\) holds for this cardinality, and
+   \cref{cor:closed-shadow-query-layer-relaxation} gives \((HCR2)\).
+
+   For the soft report, choose \(K\in\mathcal K_i\) whose value in \((EOP4)\)
+   is strictly below \(X_i\).  The rearrangement bound \((RSH4)\) gives
+   \[
+      D_i(K)\ge K\frac{X_i}{\max\{\mu_i,K\}}.
+   \]
+   The choice of \(K\) implies this lower bound is larger than
+   \(\psi_i(A_iK^{\rho_i}+\zeta K^{1+\rho_i})\), so \((QLR2)\) again holds.
+
+   For the panel statement, if every positive-weight report had
+   \(X_i\le P_i^{\rm opt}\), then \((EOP6)\) would fail.  Hence some report
+   satisfies its one-report optimized condition, and the preceding paragraphs
+   apply.  The residual statement is the contrapositive.
+\end{proof}
+
 \begin{corollary}[Balanced Hall-shadow density screen]
    \label{cor:balanced-hall-shadow-density-screen}
    Work in the setting of \cref{cor:no-merge-hall-shadow-envelope}.  Fix a
@@ -54795,8 +54900,12 @@ directly, hard and soft support-mass proposals close at the exact finite-prefix
 price, without the reported layer-cake factor \(2bJ\).
 \Cref{cor:aggregate-exact-prefix-support-mass-panel} gives the matching finite
 and sampled panel form: aggregate surplus over hard and soft exact-prefix
-support reports already contains one exact top-prefix repair.  The older
-sufficient forms include
+support reports already contains one exact top-prefix repair.
+\Cref{cor:optimized-exact-prefix-support-price} sharpens the price further:
+hard supports pay
+\(s\inf_K\psi(AK^{\rho-1}+\zeta K^\rho)\), and soft supports pay the analogous
+\(\inf_K\max\{\mu,K\}\psi(AK^{\rho-1}+\zeta K^\rho)\), so the proposal need not
+guess the recursive scale.  The older sufficient forms include
 \cref{cor:exact-scale-soft-hall-shadow-separator-endpoint},
 \cref{cor:thresholded-shadow-routing-separator-endpoint},
 \cref{cor:soft-mass-hall-shadow-separator-endpoint},
