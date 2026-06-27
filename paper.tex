@@ -36717,6 +36717,76 @@ and compressed-bucket estimates.
    proves the final assignment statement.
 \end{proof}
 
+\begin{corollary}[Duplicate-closure shadow repair]
+   \label{cor:duplicate-closure-shadow-repair}
+   Work in the setting of \cref{lem:canonical-duplicate-cut-closure}.  Let
+   \(\mathcal A\subseteq\mathcal I_U\) be any duplicate closure, and define its
+   closed paid-shadow degree on \(U\) by
+   \[
+      d_{\mathcal A}(p)
+      =
+      \sum_{\substack{q:\,(p,q)\in N_U(\mathcal A)}}w_{p,q}
+      =
+      \sum_{\substack{q:\,(p,q)\in N_U(\mathcal A)}}
+      a_q\gamma_{p,q}r_{p,q}.
+      \tag{DCS1}
+   \]
+   Let \(V\subseteq U\) be a certified subcontainer that inherits the price
+   parameters of \(W\), and put \(h=|V|\ge1\).  If
+   \[
+      \sum_{p\in V}d_{\mathcal A}(p)>R_W(h),
+      \tag{DCS2}
+   \]
+   then the guarded residual closes.
+
+   In particular, suppose a finite repair family consists of ambient certified
+   containers \(Y\subseteq U\) and available cardinalities \(\mathcal K_Y\), and
+   that the top-\(h\) prefix of \(Y\) by \(d_{\mathcal A}\) is certified for
+   every \(h\in\mathcal K_Y\).  If no such prefix closes, then every available
+   pair satisfies the closed-shadow envelope
+   \[
+      D_{\mathcal A,Y}(h)
+      \le R_Y(h),
+      \qquad
+      Y,\ h\in\mathcal K_Y,
+      \tag{DCS3}
+   \]
+   where
+   \[
+      D_{\mathcal A,Y}(h)=
+      \max_{\substack{V\subseteq Y\\|V|=h}}
+      \sum_{p\in V}d_{\mathcal A}(p).
+      \tag{DCS4}
+   \]
+   For the canonical closure \(\mathcal A^\star\), a surviving duplicate branch
+   is therefore localized to two objects: the closed shadow
+   \(N_U(\mathcal A^\star)\), whose certified prefixes obey \((DCS3)\), and the
+   already-routable complement from \cref{lem:canonical-duplicate-cut-closure}.
+\end{corollary}
+
+\begin{proof}
+   If \((p,q)\in N_U(\mathcal A)\), then by definition of the local graph
+   \((FLS3)\) there is \(x\in G'(q)\) such that \(p\in W_x\),
+   \((p,q)\in\mathcal N\), and \((x,p)\) is certified high-correlation.  Hence
+   \(p\in N_{\rm hc}(G')(q)\), and
+   \[
+      d_{\mathcal A}(p)
+      \le
+      \sum_{\substack{q\in\mathcal Q_+\\p\in N_{\rm hc}(G')(q)}}
+      a_q\gamma_{p,q}r_{p,q}
+      =
+      d_{G'}(p).
+   \]
+   Thus \(X=\sum_{p\in V}d_{\mathcal A}(p)\) is a valid lower certificate for
+   the deficient-shadow mass of \(V\).  If \((DCS2)\) holds,
+   \cref{cor:deficient-shadow-prefix-certificate} closes the residual.
+
+   The envelope \((DCS3)\) is the contrapositive applied to every certified
+   top prefix in the finite repair family.  The final statement combines this
+   no-prefix envelope with the complement-routing conclusion of
+   \cref{lem:canonical-duplicate-cut-closure}.
+\end{proof}
+
 \begin{corollary}[Local transport-to-star bridge]
    \label{cor:local-transport-to-star-bridge}
    Work in the setting of
@@ -36984,6 +37054,10 @@ paid-shadow mass is small at the container's own price density.
 canonical merge: the maximum-excess closure contains the whole duplicate
 obstruction, and the complement is already routable once the closure's paid
 shadow is charged.
+\Cref{cor:duplicate-closure-shadow-repair} gives the matching repair/no-repair
+interface for that closed shadow: any certified prefix whose cut-shadow mass
+beats its recursive price closes the original deficient-shadow residual, while
+failure leaves a no-prefix envelope localized to the duplicate closure.
 \Cref{cor:local-transport-to-star-bridge} gives the complementary positive
 form: any successful local assignment is already a high-correlation
 responsibility tensor, so the dense-star machinery only has to find a
