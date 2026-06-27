@@ -39246,7 +39246,7 @@ family.
    \cref{cor:closed-shadow-query-layer-relaxation}.  Fix one certified
    exact-prefix slot \(i\): a container \(W_i\), a fractional layer
    \(y_i\in\operatorname{conv}\{\mathbf 1_Q:Q\in\mathcal Q_i\}\), prices
-   \((\psi_i,\rho_i)\), and available top-prefix cardinalities
+   \((\psi_i,\rho_i)\) with \(0<\rho_i\le1\), and available top-prefix cardinalities
    \(\mathcal K_i\) which are \(\beta_i\)-dense from below in the sense of
    \((RSP1)\).  Assume that for every \(K\in\mathcal K_i\), the pool contains
    the corresponding certified prefix template with container \(W_i\),
@@ -39547,6 +39547,111 @@ family.
    \(X_i\le P_i^{\rm opt}\), then \((EOP6)\) would fail.  Hence some report
    satisfies its one-report optimized condition, and the preceding paragraphs
    apply.  The residual statement is the contrapositive.
+\end{proof}
+
+\begin{corollary}[Clipped optimized exact-prefix price]
+   \label{cor:clipped-optimized-exact-prefix-price}
+   Work in the setting of \cref{cor:optimized-exact-prefix-support-price}, and
+   assume the available cardinalities \(\mathcal K_i\) are \(\beta_i\)-dense
+   from below.  For \(m\ge1\), define
+   \[
+      f_i(K)=A_iK^{\rho_i-1}+\zeta K^{\rho_i}.
+      \tag{EOC1}
+   \]
+   Let \(K_i^\natural(m)\in[1,m]\) be the clipped continuous minimizer of
+   \(f_i\) on \([1,m]\):
+   \[
+      K_i^\natural(m)=
+      \begin{cases}
+      1, & A_i=0,\\
+      m, & \zeta=0\text{ and }A_i>0,\\
+      \min\!\left\{m,\max\!\left\{1,
+      \dfrac{(1-\rho_i)A_i}{\rho_i\zeta}\right\}\right\},
+         & A_i>0,\ \zeta>0 .
+      \end{cases}
+      \tag{EOC2}
+   \]
+   Put
+   \[
+      \Theta_i(m)=\psi_i f_i\!\left(K_i^\natural(m)\right).
+      \tag{EOC3}
+   \]
+
+   For a hard support report of size \(s_i\), if
+   \[
+      X_i>\beta_i s_i\Theta_i(s_i),
+      \tag{EOC4}
+   \]
+   then the Hall-cut repair alternative \((HCR2)\) holds.  For a soft report
+   with \(\mu_i=\sum_p\theta_{i,p}\) and \(\mu_{i,+}=\max\{1,\mu_i\}\), if
+   \[
+      X_i>\beta_i\mu_{i,+}\Theta_i(\mu_{i,+}),
+      \tag{EOC5}
+   \]
+   then \((HCR2)\) holds.
+
+   More generally, any finite hard/soft panel whose aggregate certified mass
+   beats the sum of the right sides of \((EOC4)\)--\((EOC5)\) contains one
+   deterministic exact top-prefix repair.  Thus the optimized discrete prices
+   \((EOP1)\) and \((EOP4)\) may be replaced, up to the cardinality-net factor
+   \(\beta_i\), by the closed clipped density \(\Theta_i\).
+\end{corollary}
+
+\begin{proof}
+   Let \(m\ge1\), and abbreviate \(K^\natural=K_i^\natural(m)\).  By
+   \((RSP1)\), there is an available \(K\in\mathcal K_i\) with
+   \[
+      \max\{1,K^\natural/\beta_i\}\le K\le K^\natural .
+      \tag{EOC6}
+   \]
+   Since \(0<\rho_i\le1\), this implies
+   \[
+      f_i(K)
+      =
+      A_iK^{\rho_i-1}+\zeta K^{\rho_i}
+      \le
+      \beta_i
+      \left(
+         A_i(K^\natural)^{\rho_i-1}
+         +
+         \zeta (K^\natural)^{\rho_i}
+      \right)
+      =
+      \beta_i f_i(K^\natural).
+      \tag{EOC7}
+   \]
+   Also \(K\le K^\natural\le m\).
+
+   For a hard support of size \(s_i\), take \(m=s_i\).  Equation \((EOC7)\)
+   gives
+   \[
+      P_i^{\rm opt}(s_i)
+      \le
+      \beta_i s_i\psi_i f_i(K_i^\natural(s_i))
+      =
+      \beta_i s_i\Theta_i(s_i).
+   \]
+   Hence \((EOC4)\) implies \((EOP2)\), and
+   \cref{cor:optimized-exact-prefix-support-price} gives \((HCR2)\).
+
+   For a soft report, take \(m=\mu_{i,+}\).  If \(\mu_i\ge1\), then the
+   available \(K\) above satisfies \(K\le\mu_i\), so
+   \[
+      P_i^{\rm opt}(\mu_i)
+      \le
+      \mu_i\psi_i f_i(K)
+      \le
+      \beta_i\mu_{i,+}\Theta_i(\mu_{i,+}).
+   \]
+   If \(\mu_i<1\), the cardinality \(K=1\) is available and gives
+   \(P_i^{\rm opt}(\mu_i)\le\Theta_i(1)\le
+   \beta_i\mu_{i,+}\Theta_i(\mu_{i,+})\).  Thus \((EOC5)\) implies
+   \((EOP5)\), and again
+   \cref{cor:optimized-exact-prefix-support-price} applies.
+
+   The panel statement follows because aggregate surplus against these clipped
+   upper bounds is also aggregate surplus against the optimized prices in
+   \((EOP6)\).
 \end{proof}
 
 \begin{corollary}[Balanced Hall-shadow density screen]
@@ -54905,7 +55010,10 @@ support reports already contains one exact top-prefix repair.
 hard supports pay
 \(s\inf_K\psi(AK^{\rho-1}+\zeta K^\rho)\), and soft supports pay the analogous
 \(\inf_K\max\{\mu,K\}\psi(AK^{\rho-1}+\zeta K^\rho)\), so the proposal need not
-guess the recursive scale.  The older sufficient forms include
+guess the recursive scale.  \Cref{cor:clipped-optimized-exact-prefix-price}
+replaces this discrete infimum by the closed clipped threshold
+\(\Theta_i(m)=\psi_i f_i(K_i^\natural(m))\), losing only the retained
+cardinality-net factor.  The older sufficient forms include
 \cref{cor:exact-scale-soft-hall-shadow-separator-endpoint},
 \cref{cor:thresholded-shadow-routing-separator-endpoint},
 \cref{cor:soft-mass-hall-shadow-separator-endpoint},

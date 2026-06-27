@@ -669,3 +669,5 @@
 - Updated the audit trail to make the exact-prefix panel price the build-facing no-layer-cake dense proposal target.
 - Added the optimized exact-prefix support price. Hard support reports now pay \(s\inf_K\psi(AK^{\rho-1}+\zeta K^\rho)\), and soft reports pay the analogous \(\inf_K\max\{\mu,K\}\psi(AK^{\rho-1}+\zeta K^\rho)\), letting the verifier choose the recursive scale after seeing the proposal.
 - Updated the audit trail to make the optimized price-density expression the sharpest current no-layer-cake dense proposal target.
+- Added the clipped optimized exact-prefix price. The discrete optimized support price is now upper-bounded by the closed clipped threshold \(\Theta_i(m)=\psi_i f_i(K_i^\natural(m))\) up to the cardinality-net factor, so support reports can target one canonical scale.
+- Updated the audit trail to record the clipped threshold as the current scalar no-layer-cake dense proposal screen.
