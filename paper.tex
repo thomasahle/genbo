@@ -16709,6 +16709,52 @@ success-normalized bucket-net argument.
    \(G(a_j)\le0\), which is \((LQS3)\).
 \end{proof}
 
+\begin{lemma}[Exact-load recycled quantile screen]
+   \label{lem:exact-load-recycled-quantile-screen}
+   Work in the notation of
+   \cref{lem:finite-prefix-recycled-threshold-screen}, and assume
+   \(L_0<\Lambda\le L_\infty\).  Let
+   \[
+      j=\min\{i\in\{1,\ldots,k\}:L_i\ge\Lambda\},
+      \qquad
+      \alpha=\frac{\Lambda-L_{j-1}}{L_j-L_{j-1}} .
+      \tag{ELQ1}
+   \]
+   Define the fractional \(\Lambda\)-load quantile capacity
+   \[
+      \widehat S_\Lambda
+      =
+      S_{j-1}+\alpha(S_j-S_{j-1}) .
+      \tag{ELQ2}
+   \]
+   Then the quantile breakpoint condition in \((LQS3)\) is equivalent to
+   \[
+      \widehat S_\Lambda\ge A\Lambda .
+      \tag{ELQ3}
+   \]
+   Equivalently, in the non-boundary regime \(L_0<\Lambda\le L_\infty\), the
+   threshold screen holds if and only if the lowest-efficiency fractional prefix
+   of exact load \(\Lambda\) has average capacity at least \(A\).
+\end{lemma}
+
+\begin{proof}
+   All mass added between \(L_{j-1}\) and \(L_j\) has efficiency \(a_j\).  Hence
+   \[
+      S_j-S_{j-1}=a_j(L_j-L_{j-1}),
+   \]
+   and therefore
+   \[
+      \widehat S_\Lambda
+      =
+      S_j-a_j(L_j-\Lambda).
+   \]
+   The inequality \(\widehat S_\Lambda\ge A\Lambda\) is exactly
+   \(a_jL_j-S_j\le(a_j-A)\Lambda\), which is the quantile condition in
+   \((LQS3)\).  The final sentence follows from
+   \cref{lem:load-quantile-recycled-threshold-screen} under the standing
+   assumption \(L_0<\Lambda\le L_\infty\).
+\end{proof}
+
 \begin{corollary}[Load-quantile recycled-sublayer separator suffices]
    \label{cor:load-quantile-recycled-sublayer-separator-suffices}
    In \cref{cor:finite-prefix-recycled-sublayer-separator-suffices}, the finite
@@ -16741,6 +16787,42 @@ success-normalized bucket-net argument.
    Apply \cref{lem:load-quantile-recycled-threshold-screen} at each dyadic
    level.  The resulting threshold screen is precisely the hypothesis needed by
    \cref{cor:threshold-recycled-sublayer-separator-suffices}.
+\end{proof}
+
+\begin{corollary}[Exact-load recycled-sublayer separator suffices]
+   \label{cor:exact-load-recycled-sublayer-separator-suffices}
+   In \cref{cor:finite-prefix-recycled-sublayer-separator-suffices}, the finite
+   prefix condition may be replaced by the following exact-load quantile
+   condition at each dyadic \(\Delta'\).  With \(a_i,L_i,S_i,L_\infty,A,\Lambda\)
+   as there, at least one of
+   \[
+      A L_0-S_0=0
+      \quad\text{and}\quad
+      L_0\le\Lambda ,
+      \tag{ELR1}
+   \]
+   \[
+      L_\infty<\Lambda ,
+      \tag{ELR2}
+   \]
+   or
+   \[
+      L_0<\Lambda\le L_\infty
+      \quad\text{and}\quad
+      \widehat S_\Lambda\ge A\Lambda ,
+      \tag{ELR3}
+   \]
+   holds, where \(\widehat S_\Lambda\) is the fractional quantile capacity from
+   \cref{lem:exact-load-recycled-quantile-screen}.  Then the enlarged local
+   filter-cover LP is feasible.
+\end{corollary}
+
+\begin{proof}
+   In the third alternative,
+   \cref{lem:exact-load-recycled-quantile-screen} gives exactly the quantile
+   breakpoint condition \((LQR3)\).  The first two alternatives are \((LQR1)\)
+   and \((LQR2)\).  Hence
+   \cref{cor:load-quantile-recycled-sublayer-separator-suffices} applies.
 \end{proof}
 
 \begin{corollary}[Load-quantile recycled obstruction profile]
@@ -16782,6 +16864,30 @@ success-normalized bucket-net argument.
    well-defined, and failure of \((LQS3)\) is exactly \((LQO4)\).  If
    \(L_0\ge\Lambda\), the quantile alternative \((LQS3)\) is inapplicable, so no
    additional condition remains.
+\end{proof}
+
+\begin{corollary}[Exact-load recycled obstruction profile]
+   \label{cor:exact-load-recycled-obstruction-profile}
+   Work in the notation of
+   \cref{lem:finite-prefix-recycled-threshold-screen}.  The threshold screen
+   \((FPS1)\) fails if and only if \(L_\infty\ge\Lambda\), the boundary
+   alternative \((LQS1)\) fails, and, in the non-boundary case
+   \(L_0<\Lambda\), the fractional \(\Lambda\)-load quantile capacity satisfies
+   \[
+      \widehat S_\Lambda<A\Lambda .
+      \tag{ELO1}
+   \]
+   Thus, after excluding terminal low load and the \(A\)-boundary case, the
+   entire residual obstruction is that the lowest-efficiency fractional prefix
+   of exact load \(\Lambda\) has average capacity strictly below \(A\).
+\end{corollary}
+
+\begin{proof}
+   This is \cref{cor:load-quantile-recycled-obstruction-profile} with the
+   quantile deficit \((LQO4)\) rewritten by
+   \cref{lem:exact-load-recycled-quantile-screen}.  The exact-load rewrite is
+   needed only when \(L_0<\Lambda\), which is precisely the non-boundary case in
+   which the quantile breakpoint is active.
 \end{proof}
 
 \begin{corollary}[Finite-prefix recycled obstruction profile]
@@ -16940,9 +17046,17 @@ terminal low-total-load case can certify the threshold screen.
 further: because the excess curve is convex, all positive breakpoints collapse
 to the first one whose cumulative load reaches \(\Lambda\).  The build-time
 certificate is therefore a weighted-quantile test, not a full prefix scan.
+\Cref{lem:exact-load-recycled-quantile-screen} and
+\cref{cor:exact-load-recycled-sublayer-separator-suffices} remove the remaining
+overshoot from that test in the non-boundary case: the reporter only has to
+certify that the lowest-efficiency fractional prefix of exact load \(\Lambda\)
+has capacity at least \(A\Lambda\).
 \Cref{cor:load-quantile-recycled-obstruction-profile} gives the matching
 failure form: after the terminal and \(A\)-boundary cases are excluded, one
 strict deficit at this weighted quantile is the entire obstruction.
+\Cref{cor:exact-load-recycled-obstruction-profile} rewrites the same residual as
+\(\widehat S_\Lambda<A\Lambda\), which is the clean exact-load form for the
+remaining range-reporting/list-recovery theorem.
 \Cref{cor:finite-prefix-recycled-obstruction-profile} gives the exact negation:
 if the finite scan fails, total load is at least \(\Lambda\), every positive
 breakpoint prefix has strict deficit, and the \(A\)-boundary already carries
@@ -38740,9 +38854,17 @@ terminal low-load cases.
 to one weighted quantile: once cumulative low-efficiency load reaches
 \(\Lambda\), convexity of the excess curve implies that no later breakpoint can
 be better.
+\Cref{lem:exact-load-recycled-quantile-screen} and
+\cref{cor:exact-load-recycled-sublayer-separator-suffices} express that quantile
+without breakpoint overshoot: outside the boundary cases, the certificate is
+exactly \(\widehat S_\Lambda\ge A\Lambda\) for the fractional prefix of load
+\(\Lambda\).
 \Cref{cor:load-quantile-recycled-obstruction-profile} is the corresponding
 residual normal form: outside the \(A\)-boundary and terminal cases, the
 remaining obstruction is just strict positivity at that weighted quantile.
+\Cref{cor:exact-load-recycled-obstruction-profile} gives the equivalent
+capacity form \(\widehat S_\Lambda<A\Lambda\), which is the cleanest target for a
+one-sided reporter certificate.
 \Cref{cor:finite-prefix-recycled-obstruction-profile} records the precise
 failure mode of this finite scan: the total query load is not terminally small,
 all positive breakpoints have strict prefix deficit, and the \(A\)-boundary has
