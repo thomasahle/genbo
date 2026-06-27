@@ -38775,6 +38775,104 @@ family.
    residual inequality \((RML6)\) is the contrapositive.
 \end{proof}
 
+\begin{corollary}[Certified one-slot marginal support search]
+   \label{cor:certified-one-slot-marginal-support-search}
+   Work in the setting of \cref{cor:reported-marginal-support-law}.  Fix one
+   reported support slot \(i\).  A certified one-slot marginal report consists
+   of numbers \(z_{p,\sigma_0}\) and \(\gamma_{\sigma_0}\) with
+   \(0\le z_{p,\sigma_0}\le1\), \(0\le\gamma_{\sigma_0}\le y_i(\sigma_0)\),
+   supported only when \(p\in W_i\), together with one-sided certificates
+   \[
+      0\le\widehat X
+      \le
+      \sum_{(p,\sigma_0)\in N(A)}
+      \alpha_{p,\sigma_0}z_{p,\sigma_0}\gamma_{\sigma_0},
+      \qquad
+      \sum_p
+      \min\left\{1,\sum_{\sigma_0\in\Sigma_A(p)}z_{p,\sigma_0}\right\}
+      \le\widehat\nu .
+      \tag{RMS1}
+   \]
+   Define its certified one-slot surplus by
+   \[
+      \widehat Z_i
+      =
+      \widehat X
+      -
+      2b_iJ_i\psi_i
+      \left(
+         A_{y_i}\widehat\nu^{\rho_i}
+         +
+         \zeta(\widehat\nu+\widehat\nu^{1+\rho_i})
+      \right).
+      \tag{RMS2}
+   \]
+   If
+   \[
+      \widehat Z_i>0,
+      \tag{RMS3}
+   \]
+   then the Hall-cut repair alternative \((HCR2)\) holds.
+
+   Conversely, if no reported closed-shadow repair exists, every certified
+   one-slot marginal report satisfies \(\widehat Z_i\le0\).  Moreover, if a
+   multi-slot marginal law satisfies the aggregate surplus condition
+   \((RML5)\), then at least one used slot has positive exact one-slot surplus,
+   and hence the same repair conclusion follows from that slot alone.
+
+   The same conclusion holds in Las Vegas build time for a randomized one-slot
+   proposal law.  If the law returns certified reports with
+   \[
+      \E_s\widehat Z_i(s)\ge\Gamma>0,
+      \qquad
+      \widehat Z_i(s)_+\le U
+      \quad\text{almost surely},
+      \tag{RMS4}
+   \]
+   then
+   \[
+      B\ge\frac U\Gamma\log\frac1\delta
+      \tag{RMS5}
+   \]
+   independent build-time seeds find a deterministic reported repair with
+   probability at least \(1-\delta\).  Nonpositive samples are discarded.
+\end{corollary}
+
+\begin{proof}
+   The report defines a singleton marginal law by setting
+   \(z_{i,p,\sigma_0}=z_{p,\sigma_0}\) and all other slot probabilities to
+   zero.  Let
+   \[
+      X_i=
+      \sum_{(p,\sigma_0)\in N(A)}
+      \alpha_{p,\sigma_0}z_{p,\sigma_0}\gamma_{\sigma_0},
+      \qquad
+      \nu_i=
+      \sum_p
+      \min\left\{1,\sum_{\sigma_0\in\Sigma_A(p)}z_{p,\sigma_0}\right\}.
+   \]
+   By \((RMS1)\), \(X_i\ge\widehat X\) and \(\nu_i\le\widehat\nu\).  Since the
+   reported support price is increasing in \(\nu_i\), \((RMS3)\) implies the
+   exact singleton surplus condition \((RML5)\).  Therefore
+   \cref{cor:reported-marginal-support-law} gives \((HCR2)\).  The residual
+   statement is the contrapositive applied to singleton laws.
+
+   For the multi-slot statement, write \(X_i\) and \(P_i\) for the exact routed
+   mass and exact marginal price of slot \(i\) in \((RML2)\)--\((RML4)\).  Since
+   \(X_z=\sum_iX_i\) and \(\widehat\Psi_{\rm rep}(z)=\sum_iP_i\), condition
+   \((RML5)\) implies \(X_i>P_i\) for at least one \(i\).  Restricting the law
+   to that slot gives the preceding singleton case.
+
+   Finally, \((RMS4)\) gives
+   \[
+      \Pr_s[\widehat Z_i(s)>0]\ge\Gamma/U.
+   \]
+   Thus \(B\) independent nonpositive samples have probability at most
+   \(\exp(-B\Gamma/U)\).  A positive sample satisfies the deterministic
+   one-slot condition and is then verified before any reported support is
+   retained.
+\end{proof}
+
 \begin{corollary}[Balanced Hall-shadow density screen]
    \label{cor:balanced-hall-shadow-density-screen}
    Work in the setting of \cref{cor:no-merge-hall-shadow-envelope}.  Fix a
@@ -54099,8 +54197,12 @@ routed paid mass larger than its marginal reported support price, independent
 rounding exposes one deterministic reported routing and hence one ordinary
 closed-shadow repair.  Therefore proposal mechanisms may be analyzed through
 support probabilities \(\nu_{i,p}\) and one-sided routed-mass certificates; the
-retained index still stores only verified deterministic reported supports.  The
-older sufficient forms include
+retained index still stores only verified deterministic reported supports.
+\Cref{cor:certified-one-slot-marginal-support-search} removes the last
+coordination artifact from that sufficient condition: any positive aggregate
+marginal law contains one positive reported support slot, and a randomized
+build-time search only has to sample one certified slot whose conservative
+benefit-per-cost surplus is positive.  The older sufficient forms include
 \cref{cor:exact-scale-soft-hall-shadow-separator-endpoint},
 \cref{cor:thresholded-shadow-routing-separator-endpoint},
 \cref{cor:soft-mass-hall-shadow-separator-endpoint},

@@ -653,3 +653,5 @@
 - Updated the audit trail to record \((RPR4)\) as the support-price optimization form of the closed-shadow residual.
 - Added the reported marginal support-law certificate. A stochastic proposal law now only has to beat the marginal reported support price \(\widehat\Psi_{\rm rep}\); independent rounding over data points hardens positive expected surplus into one deterministic reported routing, so facility/AQ/list-decoding/lattice-style proposal mechanisms can be analyzed by support probabilities rather than explicit hard clusters.
 - Updated the audit trail to record this marginal-law bridge as the current build-facing route into the reported support-price residual.
+- Added the certified one-slot marginal support search. Positive aggregate marginal surplus now separates to one reported support slot, and a randomized build-time proposal only has to sample one slot with positive conservative benefit-per-cost surplus before the verifier materializes an ordinary deterministic report.
+- Updated the audit trail to record the one-slot screen as the cleanest current target for k-means++/AQ/list-decoding/lattice-style dense proposals.
