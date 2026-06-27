@@ -38387,6 +38387,79 @@ into query-dominated, storage-dominated, and balanced cases.
    \((TRE2)\) and using \(K\le h\) gives \((TRE5)\).
 \end{proof}
 
+\begin{corollary}[Cumulative superlevel Hall-shadow reporter]
+   \label{cor:cumulative-superlevel-hall-shadow-reporter}
+   Work in the setting of
+   \cref{cor:thresholded-shadow-routing-screen}.  For a repair template \(y\)
+   and threshold \(\delta>0\), define the cumulative Hall-shadow superlevel mass
+   \[
+      M_A(y,\delta)=
+      \sum_{\substack{p\in W_y:\\ d_{A,y}(p)\ge\delta}}d_{A,y}(p).
+      \tag{CSH1}
+   \]
+   Suppose a record certifies a one-sided lower bound
+   \[
+      0\le \widehat M\le M_A(y,\delta)
+      \tag{CSH2}
+   \]
+   and an available cardinality \(K\in\mathcal K_y\).  If
+   \[
+      \min\{\widehat M,K\delta\}
+      >
+      \psi_y\left(A_yK^{\rho_y}+\zeta K^{1+\rho_y}\right),
+      \tag{CSH3}
+   \]
+   then \(y\) gives a one-record Hall-shadow merge.
+
+   More generally, if a finite panel of independent records
+   \((y_i,\delta_i,K_i,\widehat M_i)\) with nonnegative weights \(\lambda_i\)
+   satisfies
+   \[
+      \sum_i\lambda_i
+      \left[
+         \min\{\widehat M_i,K_i\delta_i\}
+         -
+         \psi_{y_i}
+         \left(A_{y_i}K_i^{\rho_{y_i}}
+         +\zeta K_i^{1+\rho_{y_i}}\right)
+      \right]>0,
+      \tag{CSH4}
+   \]
+   then some record in the panel gives a one-record Hall-shadow merge.
+
+   Consequently, if no canonical cumulative-superlevel record exposes a merge,
+   then every template, threshold, and available cardinality obeys the weak-type
+   envelope
+   \[
+      \min\{M_A(y,\delta),K\delta\}
+      \le
+      \psi_y\left(A_yK^{\rho_y}+\zeta K^{1+\rho_y}\right).
+      \tag{CSH5}
+   \]
+\end{corollary}
+
+\begin{proof}
+   Fix one record.  Define a one-template thresholded routing by routing every
+   paid shadow atom \((p,\sigma_0)\in N(A)\) to \(y\) when
+   \[
+      p\in W_y,\qquad a_y(\sigma_0)=1,\qquad d_{A,y}(p)\ge\delta,
+   \]
+   and routing no other atom.  This satisfies \((SRT1)\)--\((SRT2)\) for the
+   one-template family \(\{y\}\), and its routed mass is exactly
+   \(X=M_A(y,\delta)\).  Hence
+   \[
+      \min\{X,K\delta\}\ge \min\{\widehat M,K\delta\}.
+   \]
+   Condition \((CSH3)\) therefore implies the one-record thresholded surplus
+   \((TSR3)\), so
+   \cref{cor:thresholded-shadow-routing-screen} gives a Hall-shadow merge.
+
+   For the panel statement, positive weighted surplus with
+   \(\lambda_i\ge0\) implies at least one record satisfies \((CSH3)\).  The
+   weak-type envelope is the contrapositive with
+   \(\widehat M=M_A(y,\delta)\).
+\end{proof}
+
 \begin{corollary}[Cut-center routing obstruction]
    \label{cor:cut-center-routing-obstruction}
    Work in the setting of
@@ -38793,7 +38866,11 @@ prefix below \(X/\delta\), or its total mass pays for a larger prefix directly.
 \Cref{cor:thresholded-routing-residual-envelope} is the matching obstruction:
 on a surviving residual, every degree-superlevel whose density beats recursive
 price is forced above \(X/\delta\) and has total routed mass no larger than its
-recursive price.
+recursive price.  The cumulative version
+\cref{cor:cumulative-superlevel-hall-shadow-reporter} removes the routing
+variables entirely for a proposed template: it is enough to certify a one-sided
+lower bound on the mass of the superlevel
+\(\{p:d_{A,y}(p)\ge\delta\}\).
 
 \begin{corollary}[Balanced Hall-shadow separator endpoint]
    \label{cor:balanced-hall-shadow-separator-endpoint}
@@ -51410,7 +51487,12 @@ receive many fractional degree-superlevel routes, and
 to the scalar price-density test below or above \(X/\delta\).  The residual
 envelope \cref{cor:thresholded-routing-residual-envelope} records the exact
 contrapositive: any surviving price-density-winning superlevel is total-mass
-limited by the same recursive price.
+limited by the same recursive price.  Finally,
+\cref{cor:cumulative-superlevel-hall-shadow-reporter} shows that a reporter need
+not construct an explicit routing for one template: a lower bound on the
+cumulative mass \(M_A(y,\delta)\) of one degree superlevel is already a
+thresholded route certificate, and failure of all such reports is the weak-type
+envelope \((CSH5)\).
 \cref{cor:cut-center-routing-obstruction} records the first obstruction left
 when even the cut's own centers cannot route their paid shadow at positive
 surplus.  The Hall cut itself can also be assumed marginally closed by
