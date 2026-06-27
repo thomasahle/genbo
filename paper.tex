@@ -18406,6 +18406,64 @@ success-normalized bucket-net argument.
    Las Vegas separator.
 \end{proof}
 
+\begin{corollary}[Soft exact-prefix relaxation is tight]
+   \label{cor:soft-exact-prefix-relaxation-tight}
+   Work in the setting of \cref{cor:no-loss-exact-cardinality-net}.  For a
+   cohort law \(\eta\), a searched retained parent \(W\), a segment \(\theta\),
+   and a responsibility vector \(0\le\pi_p\le1\), define
+   \[
+      P_\eta^\theta(W,\pi)
+      =
+      \sum_{p\in W}\pi_p d_\eta^\theta(p).
+      \tag{SER0}
+   \]
+   If every cohort law \(\eta\in\Delta_{\mathcal E_{\rm load}}\) admits a
+   searched \(W,\theta\) and a responsibility vector \(\pi\in[0,1]^W\) satisfying
+   \[
+      P_\eta^\theta(W,\pi)\ge A\Lambda ,
+      \tag{SER1}
+   \]
+   then the averaged dominated-load certificate \((DPG3)\) holds.
+
+   Conversely, if \((DPG3)\) fails, then there is a cohort law \(\eta\) such that
+   every searched \(W,\theta\) and every responsibility vector
+   \(\pi\in[0,1]^W\) satisfy
+   \[
+      P_\eta^\theta(W,\pi)<A\Lambda .
+      \tag{SER2}
+   \]
+   Thus soft responsibilities, capped marginals, and learned assignment weights
+   introduce no relaxation gap on the sharp exact-prefix route: they are only a
+   proposal language for finding one hard top-prefix column.
+\end{corollary}
+
+\begin{proof}
+   If \((SER1)\) holds, apply
+   \cref{cor:soft-average-density-exact-prefix-scale-choice} with
+   \(X=P_\eta^\theta(W,\pi)\).  This gives a materialized top-prefix separator
+   for every cohort law, hence \((DPG3)\).
+
+   Conversely suppose \((DPG3)\) fails.  By
+   \cref{cor:no-loss-exact-cardinality-net}, there is a cohort law \(\eta\) for
+   which every searched retained parent \(W\), segment \(\theta\), and analytic
+   prefix size \(1\le h\le |W|\) obeys \(D_\eta^\theta(W,h)<A\Lambda\).
+   Fix \(W,\theta\), order \(W=\{p_1,\ldots,p_m\}\) so that
+   \(d_i=d_\eta^\theta(p_i)\) is nonincreasing, and let \(F\) be the fractional
+   top-mass curve from \((SDEX6)\).  For any \(\pi\in[0,1]^W\) with
+   \(\mu=\sum_p\pi_p\), the rearrangement bound gives
+   \[
+      P_\eta^\theta(W,\pi)\le F(\mu).
+      \tag{SER3}
+   \]
+   If \(\mu=0\), then \(P_\eta^\theta(W,\pi)=0<A\Lambda\).  If
+   \(k<\mu<k+1\), then \(F(\mu)\) is a convex combination of
+   \(D_\eta^\theta(W,k)\) and \(D_\eta^\theta(W,k+1)\), with
+   \(D_\eta^\theta(W,0)=0\).  Both endpoint values are \(<A\Lambda\).  If
+   \(\mu\) is an integer, \(F(\mu)=D_\eta^\theta(W,\mu)<A\Lambda\).  Hence
+   \(P_\eta^\theta(W,\pi)<A\Lambda\) for every responsibility vector, proving
+   \((SER2)\).
+\end{proof}
+
 \begin{corollary}[Exact-prefix proposal-law separator]
    \label{cor:exact-prefix-proposal-law-separator}
    Work in the setting of
@@ -19784,6 +19842,10 @@ cardinality net at the same sharp threshold.
 scale choice for soft responsibilities: a proposal certifies only total soft
 mass \(\mu\) and value \(X\), and the exact verifier chooses
 \(h_*=\lceil A\Lambda\mu/X\rceil\) before materializing one hard top prefix.
+\Cref{cor:soft-exact-prefix-relaxation-tight} records the converse: if the
+exact-prefix route fails for a cohort law, every responsibility vector in every
+searched container has soft value below \(A\Lambda\).  Soft panels are therefore
+not a weaker theorem target, only a way to search for the hard prefix.
 \Cref{rem:exact-template-linearization} records the important caveat: these
 template objectives are separation objectives for a fixed cohort law; minimax is
 still performed over the materialized exact records, where the payoff is linear.
@@ -19860,6 +19922,9 @@ version for AQ, learned, or randomized soft panels: the proposal certifies
 \(X\le\sum_p\pi_p d_\eta^\theta(p)\), sets
 \(h_*=\lceil A\Lambda\sum_p\pi_p/X\rceil\), and still retains only an exact
 hard prefix.
+\Cref{cor:soft-exact-prefix-relaxation-tight} shows this soft interface has no
+relaxation gap: if no hard exact prefix closes, no admissible responsibility
+vector has value \(A\Lambda\) either.
 \Cref{cor:exact-prefix-proposal-law-separator} and
 \cref{cor:sampled-soft-exact-prefix-separator} make randomized proposal panels
 compatible with this sharp interface: it is enough to certify nonnegative
@@ -36372,6 +36437,7 @@ itself spherical-pseudo-random enough to close the dichotomy.
    \cref{cor:average-mass-exact-prefix-screen},
    \cref{cor:average-density-exact-prefix-scale-choice},
    \cref{cor:soft-average-density-exact-prefix-scale-choice},
+   \cref{cor:soft-exact-prefix-relaxation-tight},
    \cref{cor:exact-prefix-proposal-law-separator},
    \cref{cor:sampled-soft-exact-prefix-separator},
    \cref{cor:finite-prefix-template-separation-game}, or
@@ -36380,7 +36446,8 @@ itself spherical-pseudo-random enough to close the dichotomy.
    template universe satisfying \((SCE2)\), a no-loss cardinality-net witness
    \((ECN1)\), an average-mass exact-prefix certificate \((AEX2)\) or \((AEX3)\),
    an average-density scale certificate \((DEX1)\) or \((DEX4)\), a soft
-   average-density certificate \((SDEX2)\) or \((SDEX5)\), an exact
+   average-density certificate \((SDEX2)\) or \((SDEX5)\), a tight soft
+   responsibility witness \((SER1)\), an exact
    proposal law satisfying \((SEP0)\) or \((SEP3)\), a soft exact
    proposal law satisfying \((SEP8)\), or a weaker prefix-template proposal
    universe with nonnegative value \((PTC3)\), at every node supplies the same
@@ -36406,6 +36473,7 @@ itself spherical-pseudo-random enough to close the dichotomy.
          \text{\((AEX2)\), \((AEX3)\),}\\
          \text{\((DEX1)\), \((DEX4)\),}\\
          \text{\((SDEX2)\), \((SDEX5)\),}\\
+         \text{\((SER1)\),}\\
          \text{\((SEP0)\), \((SEP3)\),}\\
          \text{\((SEP8)\), \((PTC3)\),}\\
          \text{or finite cohort separation}
@@ -36425,6 +36493,7 @@ itself spherical-pseudo-random enough to close the dichotomy.
    \cref{cor:average-mass-exact-prefix-screen},
    \cref{cor:average-density-exact-prefix-scale-choice},
    \cref{cor:soft-average-density-exact-prefix-scale-choice},
+   \cref{cor:soft-exact-prefix-relaxation-tight},
    \cref{cor:exact-prefix-proposal-law-separator},
    \cref{cor:sampled-soft-exact-prefix-separator},
    \cref{cor:finite-prefix-template-separation-game} or
@@ -48159,6 +48228,10 @@ keeps the same \(A\Lambda\) threshold.
 responsibility reports: once \(X\ge A\Lambda\), the mass
 \(\mu=\sum_p\pi_p\) determines \(h_*=\lceil A\Lambda\mu/X\rceil\), and the
 stored object is again one verified hard prefix.
+\Cref{cor:soft-exact-prefix-relaxation-tight} gives the matching obstruction:
+the cohort law left by failure of exact prefixes also defeats every soft
+responsibility vector, so soft assignment mechanisms need only be analyzed as
+search procedures for exact prefixes.
 \Cref{cor:exact-prefix-proposal-law-separator} and
 \cref{cor:sampled-soft-exact-prefix-separator} put \(k\)-means++,
 additive-quantization, list-recovery, or learned proposal panels on this same
