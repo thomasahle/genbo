@@ -36624,6 +36624,111 @@ and compressed-bucket estimates.
    follows by substituting \(H\ge\eta L(G')\).
 \end{proof}
 
+\begin{corollary}[Local transport-to-star bridge]
+   \label{cor:local-transport-to-star-bridge}
+   Work in the setting of
+   \cref{lem:fractional-local-list-size-certificate}.  Suppose
+   \(f_{q,x,p}\) satisfies \((FLS4)\)--\((FLS5)\) with congestion
+   \(\kappa>0\).  For every triple with \(w_{p,q}>0\), define
+   \[
+      \eta_{x,p,q}=\frac{f_{q,x,p}}{\kappa w_{p,q}},
+      \qquad
+      w_{p,q}=a_q\gamma_{p,q}r_{p,q},
+      \tag{LTB1}
+   \]
+   and put \(\eta_{x,p,q}=0\) when \(w_{p,q}=0\).  Let
+   \[
+      M_x(p)=
+      \sum_{q:\,(p,q)\in\mathcal J_U}
+      \eta_{x,p,q}w_{p,q}.
+      \tag{LTB2}
+   \]
+   Then \(0\le\eta_{x,p,q}\le1\), the tensor is supported only on triples with
+   \(p\in U\cap W_x\), \((p,q)\in\mathcal N\), and \((x,p)\) satisfying
+   \((HPS1)\), and its total responsibility mass is
+   \[
+      \sum_x\sum_{p\in U}M_x(p)
+      =
+      \frac{H_{G'}(U)}{\kappa}.
+      \tag{LTB3}
+   \]
+
+   For \(t>0\), let
+   \[
+      S_{x,t}=\{p\in U:M_x(p)\ge t\}.
+      \tag{LTB4}
+   \]
+   Every nonempty \(S_{x,t}\) is a certified smaller-radius star container around
+   \(x\), with the radius supplied by the high-correlation certificate in
+   \((HPS1)\), and
+   \[
+      t|S_{x,t}|
+      \le
+      \sum_{p\in S_{x,t}}d_{G'}(p),
+      \tag{LTB5}
+   \]
+   where \(d_{G'}\) is the deficient-shadow degree from \((DSP1)\).
+
+   Consequently, if the descendant price of this star superlevel is
+   \(R_x(|S_{x,t}|)\) and
+   \[
+      t|S_{x,t}|>R_x(|S_{x,t}|),
+      \tag{LTB6}
+   \]
+   then the guarded residual closes.  Equivalently, in a residual where all such
+   responsibility star superlevels have been proposed and no one closes, every
+   nonempty superlevel satisfies the weak-type envelope
+   \[
+      t|S_{x,t}|\le R_x(|S_{x,t}|).
+      \tag{LTB7}
+   \]
+   Thus any successful local assignment with \(H_{G'}(U)/\kappa\) large either
+   already gives the shadow-mass certificate through
+   \cref{lem:fractional-local-list-size-certificate}, or its mass must be
+   distributed over high-correlation responsibility stars obeying \((LTB7)\).
+\end{corollary}
+
+\begin{proof}
+   If \(w_{p,q}=0\), then \((FLS5)\) forces
+   \(\sum_x f_{q,x,p}=0\), so setting \(\eta_{x,p,q}=0\) loses no mass.  If
+   \(w_{p,q}>0\), then \((FLS5)\) gives
+   \(f_{q,x,p}\le \sum_{x'}f_{q,x',p}\le\kappa w_{p,q}\), hence
+   \(0\le\eta_{x,p,q}\le1\).  The support statement is exactly the edge
+   condition \((FLS3)\).  Summing and using \((FLS4)\),
+   \[
+      \sum_x\sum_pM_x(p)
+      =
+      \frac1\kappa\sum_{q,x,p}f_{q,x,p}
+      =
+      \frac1\kappa\sum_{(q,x)\in\mathcal I_U}b_{q,x}
+      =
+      \frac{H_{G'}(U)}{\kappa},
+   \]
+   proving \((LTB3)\).
+
+   If \(p\in S_{x,t}\), then \(M_x(p)>0\), so some supporting triple has
+   \((x,p)\) certified high-correlation.  The high-correlation certificate gives
+   the smaller-radius containment exactly as in
+   \cref{lem:high-correlation-pair-star-reporter}.  Moreover
+   \[
+      M_x(p)
+      \le
+      \sum_{\substack{q\in\mathcal Q_+\\p\in N_{\rm hc}(G')(q)}}
+      a_q\gamma_{p,q}r_{p,q}
+      =
+      d_{G'}(p),
+   \]
+   because every active triple witnesses \(p\in N_{\rm hc}(G')(q)\) and
+   \(0\le\eta_{x,p,q}\le1\).  Summing \(t\le M_x(p)\le d_{G'}(p)\) over
+   \(p\in S_{x,t}\) gives \((LTB5)\).
+
+   Finally, \((LTB5)\) makes \(X=t|S_{x,t}|\) a valid lower certificate for the
+   deficient-shadow mass of the certified star superlevel.  If \((LTB6)\) holds,
+   \cref{cor:deficient-shadow-prefix-certificate} closes the residual.  The
+   envelope \((LTB7)\) is the contrapositive applied to every proposed
+   responsibility star superlevel.
+\end{proof}
+
 \Cref{lem:fractional-local-list-size-certificate} weakens the pointwise
 certificate \((LGS2)\): a proposed container only needs to fractionally assign
 its captured guard load to the paid shadow with congestion \(\kappa\).  The
@@ -36636,8 +36741,13 @@ neighborhood is too light.  \Cref{cor:intrinsic-local-list-size} packages this
 as a scalar reduced-gain test \(H_{G'}(U)/\kappa_U^*-R_W(|U|)\).
 \Cref{cor:slack-duplicate-cut-descent} gives the nonclosing form: captured
 guard load that fails to close exposes a weighted incidence cut whose
-paid-shadow mass is small at the container's own price density.  This is the
-next object that the dense-star or low-correlation tuple machinery must absorb.
+paid-shadow mass is small at the container's own price density.
+\Cref{cor:local-transport-to-star-bridge} gives the complementary positive
+form: any successful local assignment is already a high-correlation
+responsibility tensor, so the dense-star machinery only has to find a
+responsibility superlevel violating its recursive price.  If no such superlevel
+exists, the obstruction is the explicit weak-type envelope \((LTB7)\), not an
+unstructured branching problem.
 
 \begin{corollary}[Guard-capture Hall separator]
    \label{cor:guard-capture-hall-separator}
