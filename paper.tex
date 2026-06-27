@@ -38722,6 +38722,90 @@ into query-dominated, storage-dominated, and balanced cases.
    inequality is the contrapositive.
 \end{proof}
 
+\begin{corollary}[Support-adaptive exact Hall-shadow tail screen]
+   \label{cor:support-adaptive-exact-hall-shadow-tail-screen}
+   Work in the setting of
+   \cref{cor:cumulative-hall-shadow-price-density-screen}.  Fix a template \(y\)
+   and an available cardinality \(K\in\mathcal K_y\).  Put
+   \[
+      \theta_K=\psi_y\left(A_yK^{\rho_y-1}+\zeta K^{\rho_y}\right).
+      \tag{SAH1}
+   \]
+   Suppose a reporter certifies a finitely supported shadow submeasure
+   \(0\le m(p)\le d_{A,y}(p)\), with
+   \[
+      s=|\{p:m(p)>0\}|,
+      \qquad
+      X=\sum_p m(p).
+      \tag{SAH2}
+   \]
+   If
+   \[
+      X>(K+s)\theta_K,
+      \tag{SAH3}
+   \]
+   then \(y\) gives a one-record Hall-shadow merge.
+
+   Consequently, if no support-adaptive exact tail report exposes a merge, then
+   every such submeasure obeys
+   \[
+      X\le (K+s)\theta_K
+      \qquad(K\in\mathcal K_y).
+      \tag{SAH4}
+   \]
+   If, in addition, \(0<\rho_y<1\), \(b\ge1\), and the retained cardinality net
+   contains \(K\in\mathcal K_y\) with \(s/b\le K\le bs\), then every surviving
+   submeasure satisfies
+   \[
+      X
+      \le
+      (b+1)\psi_y
+      \left(
+         b^{1-\rho_y}A_ys^{\rho_y}
+         +b^{\rho_y}\zeta s^{1+\rho_y}
+      \right).
+      \tag{SAH5}
+   \]
+\end{corollary}
+
+\begin{proof}
+   Split the support of \(m\) at the exact price-density level:
+   \[
+      U_+=\{p:m(p)>0,\ d_{A,y}(p)>\theta_K\},
+      \qquad
+      U_0=\{p:m(p)>0,\ d_{A,y}(p)\le\theta_K\}.
+   \]
+   If
+   \[
+      \sum_{p\in U_+}d_{A,y}(p)>K\theta_K,
+   \]
+   then, as in the proof of
+   \cref{cor:tail-mass-cumulative-hall-shadow-screen}, choosing the smallest
+   degree strictly above \(\theta_K\) gives a threshold \(\delta>\theta_K\) with
+   \(M_A(y,\delta)>K\theta_K\).  Thus \((CPD2)\)--\((CPD3)\) hold for this
+   \(K\), and
+   \cref{cor:cumulative-hall-shadow-price-density-screen} gives a merge.
+   Otherwise
+   \[
+      X
+      \le
+      \sum_{p\in U_+}d_{A,y}(p)+\sum_{p\in U_0}d_{A,y}(p)
+      \le
+      K\theta_K+s\theta_K,
+   \]
+   contradicting \((SAH3)\).  This proves the merge implication and hence the
+   contrapositive \((SAH4)\).
+
+   For the net statement, \(K\le bs\) gives \(K+s\le(b+1)s\).  Also
+   \(K\ge s/b\) and \(K\le bs\) give
+   \[
+      K^{\rho_y-1}\le b^{1-\rho_y}s^{\rho_y-1},
+      \qquad
+      K^{\rho_y}\le b^{\rho_y}s^{\rho_y}.
+   \]
+   Substituting these two bounds into \((SAH4)\) gives \((SAH5)\).
+\end{proof}
+
 \begin{corollary}[Cut-center routing obstruction]
    \label{cor:cut-center-routing-obstruction}
    Work in the setting of
@@ -38858,6 +38942,58 @@ into query-dominated, storage-dominated, and balanced cases.
    \cref{cor:support-sensitive-tail-hall-shadow-screen} applies to each center
    and yields \((SSC2)\) if no report fires.  Summing \((SSC2)\) over a full
    assignment gives \((SSC3)\).
+\end{proof}
+
+\begin{corollary}[Support-adaptive cut-center price obstruction]
+   \label{cor:support-adaptive-cut-center-price-obstruction}
+   Work in the setting of
+   \cref{cor:support-sensitive-cut-center-tail-obstruction}.  Assume
+   \(0<\rho_x<1\) for the used cut centers, and suppose the cardinality nets are
+   factor-\(b\) complete in the following sense: for every used center \(x\) with
+   support size \(s_x\ge1\), there is \(K_x\in\mathcal K_x\) satisfying
+   \[
+      s_x/b\le K_x\le bs_x .
+      \tag{SAP1}
+   \]
+   If no support-adaptive exact tail report exposes a merge at any cut center,
+   then
+   \[
+      X_x
+      \le
+      (b+1)\psi_x
+      \left(
+         b^{1-\rho_x}A_xs_x^{\rho_x}
+         +b^{\rho_x}\zeta s_x^{1+\rho_x}
+      \right)
+      \tag{SAP2}
+   \]
+   for every used center \(x\).  Hence any full assignment of every paid shadow
+   atom to one adjacent cut center satisfies
+   \[
+      \sum_{(p,\sigma_0)\in N(A)}\alpha_{p,\sigma_0}
+      \le
+      (b+1)
+      \sum_x
+      \psi_x
+      \left(
+         b^{1-\rho_x}A_xs_x^{\rho_x}
+         +b^{\rho_x}\zeta s_x^{1+\rho_x}
+      \right).
+      \tag{SAP3}
+   \]
+\end{corollary}
+
+\begin{proof}
+   As before, the assigned mass
+   \[
+      m_x(p)=
+      \sum_{\sigma_0:\,(p,\sigma_0)\in N(A)}
+      r_{x,p,\sigma_0}\alpha_{p,\sigma_0}
+   \]
+   satisfies \(0\le m_x(p)\le d_{A,x}(p)\).  Apply
+   \cref{cor:support-adaptive-exact-hall-shadow-tail-screen} with the
+   cardinality \(K_x\) supplied by \((SAP1)\).  Its net conclusion \((SAH5)\)
+   gives \((SAP2)\).  Summing over a full assignment gives \((SAP3)\).
 \end{proof}
 
 \begin{corollary}[Fractional balanced Hall-shadow density panel]
@@ -39238,7 +39374,10 @@ cut-center obstruction: a support-\(K\) assignment can carry at most
 support-sensitive form
 \cref{cor:support-sensitive-cut-center-tail-obstruction} removes the support
 restriction and leaves the explicit extra term \(s_x\Theta_x\) for large assigned
-support.
+support.  The exact support-adaptive screen
+\cref{cor:support-adaptive-cut-center-price-obstruction} then charges that
+large-support branch by the recursive price at the assigned support size, up to
+the retained cardinality-net factor.
 
 \begin{corollary}[Balanced Hall-shadow separator endpoint]
    \label{cor:balanced-hall-shadow-separator-endpoint}
@@ -51886,6 +52025,15 @@ large-support branch explicit:
 \[
    X_x\le(K_x+s_x)\Theta_x .
 \]
+With a factor-\(b\) cardinality net, the support-adaptive price obstruction
+\cref{cor:support-adaptive-cut-center-price-obstruction} charges the same mass
+by
+\[
+   \psi_x
+   \left(A_xs_x^{\rho_x}+\zeta s_x^{1+\rho_x}\right)
+\]
+up to \(b^{O(1)}\) constants, which is the exact recursive price scale of the
+assigned support.
 \cref{cor:cut-center-routing-obstruction} records the first obstruction left
 when even the cut's own centers cannot route their paid shadow at positive
 surplus.  The Hall cut itself can also be assumed marginally closed by
