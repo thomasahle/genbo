@@ -31297,6 +31297,107 @@ inequality \((QP3)\).
    corollary gives the final claim with \(W_{\rm resp}=M/C\).
 \end{proof}
 
+\begin{lemma}[Pair-compatible guard transport cut normal form]
+   \label{lem:pair-compatible-guard-cut-normal-form}
+   Work in the setting of
+   \cref{cor:pair-compatible-guard-responsibility-star}.  Fix a pair congestion
+   \(C_{\rm pair}>0\).  Let
+   \[
+      \mathcal I=\{(q,x):q\in\mathcal Q,\ x\in G(q)\},
+      \qquad
+      b_{q,x}=\tau_qy_q,
+      \tag{PCG0}
+   \]
+   and let
+   \[
+      \mathcal J=\{(p,q):(p,q)\in\mathcal N\},
+      \qquad
+      c_{p,q}=C_{\rm pair}\,y_q\gamma_{p,q}r_{p,q}.
+      \tag{PCG1}
+   \]
+   Join \(i=(q,x)\in\mathcal I\) to \(j=(p,q')\in\mathcal J\) when
+   \(q'=q\), \(p\in W_x\), and \((x,p)\) is certified high-correlation in the
+   sense of \((HPS1)\).  Let \(\Phi_{\rm pc}\) be the maximum of
+   \[
+      \sum_{(q,x,p)}f_{q,x,p}
+   \]
+   over nonnegative variables supported on these edges and satisfying
+   \[
+      \sum_p f_{q,x,p}\le b_{q,x}
+      \qquad((q,x)\in\mathcal I),
+      \tag{PCG2}
+   \]
+   \[
+      \sum_{x\in G(q)}f_{q,x,p}\le c_{p,q}
+      \qquad((p,q)\in\mathcal J).
+      \tag{PCG3}
+   \]
+   Then
+   \[
+      \Phi_{\rm pc}
+      =
+      \min_{\mathcal A\subseteq\mathcal I}
+      \left\{
+         \sum_{i\in\mathcal I\setminus\mathcal A}b_i
+         +
+         \sum_{j\in N(\mathcal A)}c_j
+      \right\},
+      \tag{PCG4}
+   \]
+   where \(N(\mathcal A)\) is the set of pair-capacity nodes adjacent to
+   \(\mathcal A\).  Consequently, for \(0\le M_0\le\sum_ib_i\), a
+   pair-compatible high-correlation shipment of mass at least \(M_0\) exists if
+   and only if every \(\mathcal A\subseteq\mathcal I\) satisfies
+   \[
+      \sum_{i\in\mathcal A}b_i
+      \le
+      \sum_{j\in N(\mathcal A)}c_j
+      +
+      \sum_ib_i-M_0 .
+      \tag{PCG5}
+   \]
+   In particular, all guard-incidence mass can be shipped if and only if
+   \[
+      \sum_{i\in\mathcal A}b_i
+      \le
+      \sum_{j\in N(\mathcal A)}c_j
+      \qquad(\mathcal A\subseteq\mathcal I).
+      \tag{PCG6}
+   \]
+
+   Moreover any feasible \(f\) of mass \(M\) induces transport variables
+   \(\pi_{q,x,p}=f_{q,x,p}/(\tau_qy_q)\) when \(\tau_qy_q>0\), and zero
+   otherwise, satisfying \((PCR1)\)--\((PCR2)\) with \(C=C_{\rm pair}\).
+   Thus if the hypotheses of
+   \cref{cor:pair-compatible-guard-responsibility-star} hold with this \(M\),
+   the same flow produces a separating guard-credit star.
+\end{lemma}
+
+\begin{proof}
+   This is the max-flow/min-cut theorem on the bipartite network with source
+   edges of capacities \(b_i\), middle edges \(i\to j\) of infinite capacity
+   whenever \(j\in N(\{i\})\), and sink edges of capacities \(c_j\).  A finite
+   \(s\)-\(t\) cut is determined by the subset \(\mathcal A\) of left nodes kept
+   on the source side; all adjacent right nodes \(N(\mathcal A)\) must also be
+   on the source side.  Its capacity is exactly the expression in \((PCG4)\).
+   The equivalence \((PCG5)\) is just \(\Phi_{\rm pc}\ge M_0\) rewritten using
+   \((PCG4)\), and \((PCG6)\) is the case \(M_0=\sum_ib_i\).
+
+   For the final statement, define \(\pi_{q,x,p}=f_{q,x,p}/(\tau_qy_q)\) on
+   positive-load guard incidences and zero otherwise.  Then \((PCG2)\) gives
+   \(\sum_p\pi_{q,x,p}\le1\), while
+   \[
+      \sum_q\tau_qy_q\sum_{x,p}\pi_{q,x,p}
+      =
+      \sum_{q,x,p}f_{q,x,p}
+      =
+      M.
+   \]
+   Finally, \((PCG3)\) is exactly \((PCR2)\) with \(C=C_{\rm pair}\).  Therefore
+   \cref{cor:pair-compatible-guard-responsibility-star} applies whenever its
+   remaining layer-cake and price hypotheses are satisfied.
+\end{proof}
+
 \begin{corollary}[Tuple-profile distinct-storage certificate]
    \label{cor:tuple-profile-distinct-storage}
    Work in the setting of
@@ -31747,6 +31848,9 @@ inside the paid near-shadow.
 \Cref{cor:pair-compatible-guard-responsibility-star} connects this back to
 guard transport: a pair-compatible shipment of guard load into paid
 near-shadow capacity immediately induces the responsibility tensor.
+\Cref{lem:pair-compatible-guard-cut-normal-form} gives the exact finite
+obstruction to such a shipment as a max-flow/min-cut inequality over guard
+incidences and pairwise paid capacities.
 \Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} give the corresponding
 entropy-energy normal form: each large canonical child supplies many separated
@@ -32048,6 +32152,9 @@ high-correlation centers already provides valid lower certificates.
 if the large guard co-load can be shipped to paid near-shadow capacity
 pair-by-pair with bounded congestion and high-correlation support, the
 responsibility star separator follows.
+\Cref{lem:pair-compatible-guard-cut-normal-form} records the matching
+obstruction: some guard-incidence sublayer has more load than its neighboring
+paid pair capacities, up to the allowed unshipped mass.
 Conversely,
 \cref{cor:paid-prefix-residual-envelope} says that a failed dense separator has
 only one possible form: a paid residual whose every certified container obeys
@@ -44994,6 +45101,9 @@ high-correlation pairs.
 \Cref{cor:pair-compatible-guard-responsibility-star} is the equivalent
 guard-load form: pair-compatible high-correlation transport of mass \(M\)
 produces responsibility mass \(M/C\).
+\Cref{lem:pair-compatible-guard-cut-normal-form} makes the failure certificate
+finite and explicit: a subset of guard incidences whose high-correlation
+neighbors have insufficient paid pair capacity.
 \Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} reduce each dyadic count to tuple
 incidence: a large separated child contains many ordered witness tuples, so the
