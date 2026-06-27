@@ -15196,12 +15196,12 @@ law already has positive reduced gain.
    this layer, satisfies
    \[
       \E_R\Phi(R)>0
-      \tag{SSP1}
+      \tag{SRP1}
    \]
    or satisfies the capped analogue
    \[
       \E_R\Phi_{\rm cap}(R)>0 .
-      \tag{SSP2}
+      \tag{SRP2}
    \]
    Then this single-seed layer yields the one-sided scalar reporter required in
    \cref{asm:weighted-annular-scalar-reporter}.  Consequently, if every
@@ -15211,7 +15211,7 @@ law already has positive reduced gain.
 \end{corollary}
 
 \begin{proof}
-   If \((SSP1)\) holds, some record \(R\) has \(\Phi(R)>0\).  In particular
+   If \((SRP1)\) holds, some record \(R\) has \(\Phi(R)>0\).  In particular
    \(\E_{\nu_R}X^R_\delta>0\), because the price terms in \((ARR1)\) are
    nonnegative.  The certificates \((ARR0)\) are exactly \((CSR0)\) for the
    residual potential \(\bar\gamma^{\theta_R}\), the retained container
@@ -15231,10 +15231,105 @@ The criterion above is the fully fractional dense-overlap interface at the
 current annular endpoint.  A \(k\)-means++ panel, additive-quantization panel,
 lattice list-decoder, or range-reporting routine is useful only through a
 finite law over certified records with positive expected surplus
-\((SSP1)\) or \((SSP2)\).  The annular far points remain proposal evidence; they
+\((SRP1)\) or \((SRP2)\).  The annular far points remain proposal evidence; they
 are not themselves cover columns.  The retained object is the deterministic
 record exposed by averaging, which is then verified against the scalar
 near-pair degree and charged by the ordinary filter-cover LP.
+
+\begin{corollary}[Near-shadow mass certificate for annular reporters]
+   \label{cor:annular-near-shadow-mass-reporter}
+   Work in the setting of
+   \cref{cor:single-seed-reporter-proposal-criterion}.  Fix a guarded
+   normalized residual, a parameter \(0\le\theta\le1\), a query layer
+   \(Q'\subseteq\mathcal Q\), and a retained container \(W\).  Put
+   \[
+      d^\theta(p)
+      =
+      \sum_{q:(p,q)\in\mathcal N}
+      \bar\gamma^\theta_{p,q}r_{p,q},
+      \qquad
+      d_{Q'}^\theta(p)
+      =
+      \sum_{\substack{q\in Q'\\(p,q)\in\mathcal N}}
+      \bar\gamma^\theta_{p,q}r_{p,q}.
+   \]
+   Suppose a proposal routine certifies numbers \(K\ge1\) and \(V>0\) such that
+   \[
+      |W|\le K,
+      \qquad
+      V\le\sum_{p\in W}d_{Q'}^\theta(p).
+      \tag{ANS1}
+   \]
+   Let
+   \[
+      J_{K,V}=1+\left\lceil\log_2\frac{2K}{V}\right\rceil .
+   \]
+   If
+   \[
+      \frac{V}{4J_{K,V}}
+      >
+      \frac{b\,\psi_W}{\pi_1}
+      \left(
+         \frac{(\chi\beta b_0)^{\rho_W}K^{\rho_W}}{L}
+         +
+         \frac{(\chi\beta b_0)^{1+\rho_W}K^{1+\rho_W}}{S}
+      \right),
+      \tag{ANS2}
+   \]
+   then the proposal routine can materialize an annular scalar-reporter record
+   with positive certified surplus \(\Phi(R)>0\).  Consequently this
+   single-seed annular layer satisfies the reporter hypothesis of
+   \cref{cor:single-seed-reporter-proposal-criterion}.
+\end{corollary}
+
+\begin{proof}
+   Since \(d_{Q'}^\theta(p)\le d^\theta(p)\), \((ANS1)\) gives
+   \[
+      V\le M:=\sum_{p\in W}d^\theta(p).
+   \]
+   By \((GNR1)\), the total mass of \(d^\theta\) over \(P\) is one, so every
+   value \(d^\theta(p)\) lies in \([0,1]\).  For
+   \(1\le j\le J_{K,V}\), put \(\delta_j=2^{-j}\) and
+   \[
+      H_j=\left|\{p\in W:d^\theta(p)\ge\delta_j\}\right|.
+   \]
+   The elementary dyadic layer-cake bound gives
+   \[
+      M
+      \le
+      2^{-J_{K,V}}K
+      +
+      2\sum_{j=1}^{J_{K,V}}\delta_jH_j .
+   \]
+   The choice of \(J_{K,V}\) makes \(2^{-J_{K,V}}K\le V/4\).  Therefore
+   \[
+      2\sum_{j=1}^{J_{K,V}}\delta_jH_j
+      \ge M-\frac V4
+      \ge \frac{3V}{4},
+   \]
+   so some \(j\) satisfies
+   \[
+      \delta_jH_j>\frac{V}{4J_{K,V}}.
+      \tag{ANS3}
+   \]
+   Form the point-mass reporter record \(R\) with \(\theta_R=\theta\),
+   \(W_R=W\), \(\nu_R=\delta_{\delta_j}\), exact lower hit certificate
+   \(X^R_{\delta_j}=\delta_jH_j\), and exact size certificate
+   \(K^R_{\delta_j}=H_j\).  This satisfies \((ARR0)\).  Since \(H_j\le |W|\le K\),
+   the price side in \((ARR1)\) is at most the right side of \((ANS2)\).  By
+   \((ANS2)\) and \((ANS3)\), \(\Phi(R)>0\).  The final statement is
+   \cref{cor:single-seed-reporter-proposal-criterion}.
+\end{proof}
+
+Thus the single-seed annular reporter theorem can be attacked through a simpler
+range-reporting certificate.  For the layer \(Q_{z,\beta,\Delta}\), it is enough
+to output one retained container with a certified lower bound on the true
+near-shadow mass \(\sum_{p\in W}d_{Q_{z,\beta,\Delta}}^\theta(p)\) and a
+certified size upper bound \(K\) satisfying \((ANS2)\).  The dyadic loss
+\(J_{K,V}\) is logarithmic once the certificate has positive margin.  This is a
+more concrete target for \(k\)-means++ panels, additive-quantization buckets,
+lattice/list decoders, and LP range-reporting routines than directly producing
+a scalar level panel.
 
 \begin{corollary}[Annular reporter closes the local cover]
    \label{cor:annular-reporter-local-cover}
@@ -36955,9 +37050,12 @@ interface in column-generation form: a randomized \(k\)-means++,
 additive-quantization, lattice/list-decoding, or range-reporting panel only has
 to produce certified scalar reporter records with positive expected surplus.
 Averaging exposes one deterministic retained record, so the annular far points
-serve only as proposal evidence and never become cover columns themselves.  This
-makes the next geometric theorem a finite list-recovery statement rather than an
-overlapping-cluster selection problem.
+serve only as proposal evidence and never become cover columns themselves.
+\Cref{cor:annular-near-shadow-mass-reporter} makes this still more concrete:
+one certified container with enough true near-shadow mass and a size upper bound
+already yields the scalar reporter after a dyadic layer-cake loss.  This makes
+the next geometric theorem a finite weighted range-reporting/list-recovery
+statement rather than an overlapping-cluster selection problem.
 \Cref{lem:primitive-hit-kernel-cover-equivalence} gives the matching primal
 form: the same theorem is equivalent to fractionally covering the primitive
 spherical hit kernel \(r_{p,q}\) by Pareto cores at \(\pi_1\)-scaled query and
