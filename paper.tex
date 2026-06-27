@@ -44519,6 +44519,70 @@ certificate is the verified positive-gain column and the finite LP it augments.
    discarded.
 \end{proof}
 
+\begin{corollary}[Singleton reported-center reduced-cost screen]
+   \label{cor:singleton-reported-center-screen}
+   Work with one threshold atom cut in the setting of
+   \cref{cor:reported-center-benefit-price-screen}.  For each center put
+   \[
+      m_x(t)=
+      \sum_{\substack{a\in A_t:\\ c_a=x}}tb_a,
+      \qquad
+      P_x=\sum_sP_{x,s},
+      \tag{SRC1}
+   \]
+   where the second sum ranges over the dyadic star records materialized for
+   \(x\).  Assume the reported-center universe contains the singleton panel
+   \(\{x\}\) whenever these records are materialized.  Then the following are
+   equivalent:
+   \begin{enumerate}
+      \item some finite reported center set \(C\) has positive surplus
+      \(M_C(t)>2P_C\);
+      \item some finite or sampled reported-center law has positive expected
+      surplus \(\E M_C(t)>2\E P_C\);
+      \item some singleton center satisfies
+      \[
+         m_x(t)>2P_x .
+         \tag{SRC2}
+      \]
+   \end{enumerate}
+   Whenever these conditions hold, the singleton panel \(\{x\}\) exposes a
+   positive smaller-radius dense prefix after verification.  If no singleton
+   satisfies \((SRC2)\), then every deterministic center set and every sampled
+   center law satisfies the residual inequality \(M_C(t)\le2P_C\) in
+   expectation.
+
+   Thus, cut-locally, additive reported-center prices collapse the fractional
+   center-search problem to a one-center benefit-density test.  Expensive
+   build-time routines may still be used to propose promising centers, but the
+   proof oracle need only verify the scalar inequality \((SRC2)\).
+\end{corollary}
+
+\begin{proof}
+   Additivity gives, for every finite center set,
+   \[
+      M_C(t)-2P_C
+      =
+      \sum_{x\in C}\bigl(m_x(t)-2P_x\bigr).
+      \tag{SRC3}
+   \]
+   Hence a deterministic set has positive surplus only if at least one
+   singleton summand is positive, and any positive singleton gives a positive
+   deterministic set.  The same identity and linearity give
+   \[
+      \E\bigl[M_C(t)-2P_C\bigr]
+      =
+      \sum_x\Pr[x\in C]\bigl(m_x(t)-2P_x\bigr)
+      \tag{SRC4}
+   \]
+   for any sampled center law.  Positive expected surplus again requires a
+   positive singleton summand, and a positive singleton gives a sampled law
+   supported on that singleton.  Finally,
+   \cref{cor:reported-center-benefit-price-screen} applied to \(C=\{x\}\)
+   shows that any singleton satisfying \((SRC2)\) exposes a positive dense
+   prefix.  If no singleton satisfies \((SRC2)\), then all summands in
+   \((SRC3)\)--\((SRC4)\) are nonpositive, proving the residual inequalities.
+\end{proof}
+
 \begin{corollary}[Fractional reported-center cover dual]
    \label{cor:fractional-reported-center-cover-dual}
    Work with one threshold atom cut as in
@@ -59491,6 +59555,11 @@ reported stars.
 cost test: if a proposed center set captures scaled mass \(M_C(t)>2P_C\), then
 one reported star must already be a positive dense prefix; randomized center
 laws are judged by the expected surplus \(M_C(t)-2P_C\).
+\Cref{cor:singleton-reported-center-screen} sharpens this cut-local search:
+because both captured mass and reported star price are additive over centers,
+any positive set or sampled-law surplus contains one singleton center with
+\(m_x(t)>2P_x\).  Thus the verifier may enumerate or sample centers one at a
+time at a fixed cut.
 \Cref{cor:fractional-reported-center-cover-dual} packages center search as a
 finite LP: either fractional reported-center panels lower the tail-only cost,
 which hardens to one positive dense-prefix column, or the all-ones no-center
