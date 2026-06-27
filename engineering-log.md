@@ -649,3 +649,5 @@
 - Updated the audit trail to fold routed-support mechanisms into the current reported closed-shadow obstruction language.
 - Added the aggregate routed-support closed-shadow panel. Multi-center support-price or atom-routing reports now need only aggregate routed paid mass beating the sum of support prices; the verifier extracts one positive reported layer-cake repair.
 - Updated the audit trail to include this aggregate routed-support panel as the support-price bridge to the current \((CRR3)\) obstruction.
+- Added the reported support-price routing residual. Any partial routing whose paid mass beats its reported support price now repairs the cut; if no report fires, every partial routing satisfies \((RPR3)\), and every full routing gives the scalar obstruction \((RPR4)\).
+- Updated the audit trail to record \((RPR4)\) as the support-price optimization form of the closed-shadow residual.
