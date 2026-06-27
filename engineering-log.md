@@ -687,3 +687,5 @@
 - Updated the compressed-bucket audit to identify this as the concrete weighted list-decoding theorem target.
 - Added the certified-storage weighted panel separator. The weighted shared-panel inequality can now use any certified upper envelope for shared child storage, letting tuple-profile, dyadic-tail, or multiplicity-discounted storage analyses feed the same endpoint.
 - Updated the audit trail to record this as the storage-envelope interface for the compressed-bucket/list-decoding route.
+- Added the certified-storage weighted residual envelope. Failure of the finite panel separator is now exactly a normalized dual under which every seed law has useful hit bounded by active load plus certified storage envelope.
+- Updated the audit trail to make this residual inequality the current counterexample format for the weighted shared-panel route.
