@@ -38610,6 +38610,69 @@ into query-dominated, storage-dominated, and balanced cases.
    \(\widehat M^+=M_A^+(y,\Theta_y)\).
 \end{proof}
 
+\begin{corollary}[Support-limited tail Hall-shadow screen]
+   \label{cor:support-limited-tail-hall-shadow-screen}
+   Work in the setting of
+   \cref{cor:tail-mass-cumulative-hall-shadow-screen}.  Fix a template \(y\), an
+   available cardinality \(K\), and a slack \(a\ge1\) satisfying the clipped
+   scale condition \((CCH1)\).  Let \(\Theta_y\) be the corresponding threshold
+   from \((CCH2)\).
+   Suppose a reporter certifies a finitely supported shadow submeasure
+   \(0\le m(p)\le d_{A,y}(p)\) on \(W_y\), with
+   \[
+      |\{p:m(p)>0\}|\le K,
+      \qquad
+      X=\sum_{p\in W_y}m(p).
+      \tag{SLT1}
+   \]
+   If
+   \[
+      X>2K\Theta_y,
+      \tag{SLT2}
+   \]
+   then \(y\) gives a one-record Hall-shadow merge.
+
+   Consequently, if no support-limited tail report exposes a merge, then every
+   such submeasure obeys
+   \[
+      \sum_{p\in W_y}m(p)\le2K\Theta_y .
+      \tag{SLT3}
+   \]
+   In particular, every subset \(U\subseteq W_y\) with \(|U|\le K\) satisfies
+   \[
+      \sum_{p\in U}d_{A,y}(p)\le2K\Theta_y .
+      \tag{SLT4}
+   \]
+\end{corollary}
+
+\begin{proof}
+   Split the support of \(m\) into
+   \[
+      U_+=\{p:m(p)>0,\ d_{A,y}(p)>\Theta_y\},
+      \qquad
+      U_0=\{p:m(p)>0,\ d_{A,y}(p)\le\Theta_y\}.
+   \]
+   If
+   \[
+      \sum_{p\in U_+}d_{A,y}(p)>K\Theta_y,
+   \]
+   then \(M_A^+(y,\Theta_y)>K\Theta_y\), so
+   \cref{cor:tail-mass-cumulative-hall-shadow-screen} gives a merge.  Otherwise,
+   since \(m(p)\le d_{A,y}(p)\) and \(|U_0|\le K\),
+   \[
+      X
+      =
+      \sum_{p\in U_+}m(p)+\sum_{p\in U_0}m(p)
+      \le
+      K\Theta_y+|U_0|\Theta_y
+      \le
+      2K\Theta_y,
+   \]
+   contradicting \((SLT2)\).  Thus \((SLT2)\) forces a merge.  The residual
+   statement is the contrapositive, and \((SLT4)\) follows by taking
+   \(m(p)=d_{A,y}(p)\mathbf 1\{p\in U\}\).
+\end{proof}
+
 \begin{corollary}[Cut-center routing obstruction]
    \label{cor:cut-center-routing-obstruction}
    Work in the setting of
@@ -38654,6 +38717,63 @@ into query-dominated, storage-dominated, and balanced cases.
    \((CCO2)\), then \((SRT6)\) would hold and
    \cref{cor:shadow-routing-exact-scale-soft-reporter} would expose a
    one-record merge.  The displayed obstruction is therefore the contrapositive.
+\end{proof}
+
+\begin{corollary}[Support-limited cut-center tail obstruction]
+   \label{cor:support-limited-cut-center-tail-obstruction}
+   Work in the setting of \cref{cor:cut-center-routing-obstruction}, and assume
+   the template family contains the cut centers.  Consider any fractional
+   assignment of paid shadow atoms to adjacent cut centers,
+   \(0\le r_{x,p,\sigma_0}\le1\), satisfying the support condition \((SRT1)\).
+   Put
+   \[
+      m_x(p)=
+      \sum_{\sigma_0:\,(p,\sigma_0)\in N(A)}
+      r_{x,p,\sigma_0}\alpha_{p,\sigma_0},
+      \qquad
+      X_x=\sum_p m_x(p).
+      \tag{SCT1}
+   \]
+   For each used center \(x\), choose an available cardinality
+   \(K_x\in\mathcal K_x\) and a slack \(a_x\ge1\) satisfying the clipped scale
+   condition \((CCH1)\).  Let \(\Theta_x\) be the corresponding clipped
+   price-density threshold from \((CCH2)\), and assume the support-size condition
+   \[
+      |\{p:m_x(p)>0\}|\le K_x .
+      \tag{SCT2}
+   \]
+   If no support-limited tail Hall-shadow report exposes a merge at any cut
+   center, then
+   \[
+      X_x\le2K_x\Theta_x
+      \qquad\text{for every used }x.
+      \tag{SCT3}
+   \]
+   Hence any full assignment of every paid shadow atom to one adjacent cut center
+   satisfies
+   \[
+      \sum_{(p,\sigma_0)\in N(A)}\alpha_{p,\sigma_0}
+      \le
+      2\sum_xK_x\Theta_x .
+      \tag{SCT4}
+   \]
+\end{corollary}
+
+\begin{proof}
+   The support condition \((SRT1)\) gives, for every \(x,p\),
+   \[
+      m_x(p)
+      \le
+      \sum_{\sigma_0:\,(p,\sigma_0)\in N(A)}
+      \alpha_{p,\sigma_0}a_x(\sigma_0)
+      =
+      d_{A,x}(p).
+   \]
+   Thus \(m_x\) is an admissible support-limited shadow submeasure for
+   \cref{cor:support-limited-tail-hall-shadow-screen}.  If no such report
+   exposes a merge, \((SLT3)\) gives \((SCT3)\).  For a full assignment,
+   summing \((SCT1)\) over centers gives the left side of \((SCT4)\), as in
+   \((CCO1)\), and summing \((SCT3)\) gives the displayed bound.
 \end{proof}
 
 \begin{corollary}[Fractional balanced Hall-shadow density panel]
@@ -39026,7 +39146,11 @@ target to one scalar density inequality at the canonical clipped price-density
 scale \(K_y^\natural\).  The tail-mass screen
 \cref{cor:tail-mass-cumulative-hall-shadow-screen} removes the last threshold
 choice at that scale: it is enough to certify that the strict tail above the
-price-density level \(\Theta_y\) has mass larger than \(K\Theta_y\).
+price-density level \(\Theta_y\) has mass larger than \(K\Theta_y\).  Finally,
+\cref{cor:support-limited-tail-hall-shadow-screen} and
+\cref{cor:support-limited-cut-center-tail-obstruction} turn this into a
+cut-center obstruction: a support-\(K\) assignment can carry at most
+\(2K\Theta_y\) paid shadow unless it already exposes a merge.
 
 \begin{corollary}[Balanced Hall-shadow separator endpoint]
    \label{cor:balanced-hall-shadow-separator-endpoint}
@@ -51663,7 +51787,12 @@ threshold: no surviving residual may have
 \[
    M_A^+\!\left(y,\Theta_y\right)>K\Theta_y
 \]
-at that clipped scale.
+at that clipped scale.  The support-limited and cut-center consequences
+\cref{cor:support-limited-tail-hall-shadow-screen} and
+\cref{cor:support-limited-cut-center-tail-obstruction} convert this tail bound
+into a direct Hall-cut accounting statement: if assigned paid shadow at every cut
+center is supported on at most \(K_x\) points, then a surviving residual can carry
+only \(O(K_x\Theta_x)\) mass through that center.
 \cref{cor:cut-center-routing-obstruction} records the first obstruction left
 when even the cut's own centers cannot route their paid shadow at positive
 surplus.  The Hall cut itself can also be assumed marginally closed by
