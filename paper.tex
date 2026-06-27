@@ -39352,6 +39352,98 @@ family.
    \((HCR2)\).
 \end{proof}
 
+\begin{corollary}[Aggregate exact-prefix support-mass panel]
+   \label{cor:aggregate-exact-prefix-support-mass-panel}
+   Work in the setting of
+   \cref{cor:exact-prefix-support-mass-no-layer-cake}.  Let \(I\) be a finite
+   panel of exact-prefix support reports with weights \(\lambda_i\ge0\).  Each
+   report is of one of the following two types.
+
+   A hard report specifies \(S_i\subseteq W_i\), \(s_i=|S_i|\ge1\), and
+   \[
+      X_i\le\sum_{p\in S_i}d_i(p),
+      \qquad
+      P_i^{\rm ex}=
+      \beta_i\psi_i
+      \left(
+         A_is_i^{\rho_i}
+         +
+         \zeta s_i^{1+\rho_i}
+      \right).
+      \tag{EPP1}
+   \]
+   A soft report specifies memberships \(0\le\theta_{i,p}\le1\),
+   \[
+      \mu_i=\sum_p\theta_{i,p},
+      \qquad
+      \mu_{i,+}=\max\{1,\mu_i\},
+      \qquad
+      X_i\le\sum_p\theta_{i,p}d_i(p),
+      \tag{EPP2}
+   \]
+   and
+   \[
+      P_i^{\rm ex}=
+      2\beta_i\psi_i
+      \left(
+         A_i\mu_{i,+}^{\rho_i}
+         +
+         \zeta\mu_{i,+}^{1+\rho_i}
+      \right).
+      \tag{EPP3}
+   \]
+   If
+   \[
+      \sum_{i\in I}\lambda_iX_i
+      >
+      \sum_{i\in I}\lambda_iP_i^{\rm ex},
+      \tag{EPP4}
+   \]
+   then the Hall-cut repair alternative \((HCR2)\) holds.  Consequently, in any
+   residual with no reported closed-shadow repair, every finite exact-prefix
+   support-mass panel obeys the reverse inequality in \((EPP4)\).
+
+   The same conclusion holds in Las Vegas build time for a randomized
+   exact-prefix support panel law.  If the sampled certified surplus
+   \[
+      Z(s)=
+      \sum_{i\in I_s}\lambda_i(s)X_i(s)
+      -
+      \sum_{i\in I_s}\lambda_i(s)P_i^{\rm ex}(s)
+      \tag{EPP5}
+   \]
+   satisfies
+   \[
+      \E_sZ(s)\ge\Gamma>0,
+      \qquad
+      Z(s)_+\le U
+      \quad\text{almost surely},
+      \tag{EPP6}
+   \]
+   then
+   \[
+      B\ge\frac U\Gamma\log\frac1\delta
+      \tag{EPP7}
+   \]
+   independent build-time seeds find a deterministic exact-prefix repair with
+   probability at least \(1-\delta\).  Nonpositive sampled panels are discarded.
+\end{corollary}
+
+\begin{proof}
+   If every positive-weight report had \(X_i\le P_i^{\rm ex}\), then
+   \((EPP4)\) would fail.  Thus some positive-weight report has
+   \(X_i>P_i^{\rm ex}\).  If it is hard, this is \((EPM3)\); if it is soft, it
+   is \((EPM5)\).  In either case
+   \cref{cor:exact-prefix-support-mass-no-layer-cake} gives \((HCR2)\).  The
+   residual statement is the contrapositive.
+
+   The sampled form follows from
+   \(\Pr[Z(s)>0]\ge\Gamma/U\), so \(B\) independent samples are all nonpositive
+   with probability at most \(\exp(-B\Gamma/U)\).  A positive sampled panel
+   satisfies the deterministic part and is verified into one exact top-prefix
+   repair.
+\end{proof}
+
 \begin{corollary}[Balanced Hall-shadow density screen]
    \label{cor:balanced-hall-shadow-density-screen}
    Work in the setting of \cref{cor:no-merge-hall-shadow-envelope}.  Fix a
@@ -54700,8 +54792,11 @@ and every soft or sampled panel violation contains one ordinary reported prefix
 violation.  \Cref{cor:exact-prefix-support-mass-no-layer-cake} records the
 sharper exact-prefix route: if the verifier can materialize the top prefix
 directly, hard and soft support-mass proposals close at the exact finite-prefix
-price, without the reported layer-cake factor \(2bJ\).  The older sufficient
-forms include
+price, without the reported layer-cake factor \(2bJ\).
+\Cref{cor:aggregate-exact-prefix-support-mass-panel} gives the matching finite
+and sampled panel form: aggregate surplus over hard and soft exact-prefix
+support reports already contains one exact top-prefix repair.  The older
+sufficient forms include
 \cref{cor:exact-scale-soft-hall-shadow-separator-endpoint},
 \cref{cor:thresholded-shadow-routing-separator-endpoint},
 \cref{cor:soft-mass-hall-shadow-separator-endpoint},

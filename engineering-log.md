@@ -665,3 +665,5 @@
 - Updated the audit trail to identify \((RSN2)\) as the current residual form behind the soft-support proposal interface.
 - Added the exact-prefix support-mass no-layer-cake screen. When the verifier can materialize exact top-prefix columns, hard and soft support-mass proposals close at the finite-prefix price without the reported \(2bJ\) layer-cake toll.
 - Updated the audit trail to distinguish the sharper exact-prefix route from the support-size reported layer-cake route.
+- Added the aggregate exact-prefix support-mass panel. Finite or sampled panels of hard and soft support reports now close when aggregate certified mass beats aggregate exact-prefix price, and the verifier extracts one deterministic top-prefix repair.
+- Updated the audit trail to make the exact-prefix panel price the build-facing no-layer-cake dense proposal target.
