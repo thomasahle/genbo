@@ -36292,6 +36292,135 @@ smaller Hall cut whose paid-pair capacity is measured only inside that subset.
    gives \((QLDS7)\) when \(0<\rho_W<1\).
 \end{proof}
 
+\begin{corollary}[Query-layer random-list deficient-shadow repair]
+   \label{cor:query-layer-random-list-deficient-shadow-repair}
+   Work in the setting of \cref{cor:finite-prefix-hall-deficit-oracle}.  Assume
+   the Hall-success alternative is absent, the exact-load Hall profile has a
+   strict lower-hull deficit, and the integral normal form exposes a
+   positive-excess guard sublayer \(G'\).  Fix a finite prefix-search family
+   \((\mathcal W,\mathcal K_W)\).  Let \(W\in\mathcal W\) be a certified
+   container, fix a fractional query layer \(0\le y_q\le1\), and let
+   \(\mathcal L\subseteq W\) be a finite random certified list.  Put
+   \[
+      K=|\mathcal L|,
+      \qquad
+      A_y=\sum_{q\in\mathcal Q_+}\widehat\tau_qy_q,
+      \tag{QRL1}
+   \]
+   and
+   \[
+      V(\mathcal L)
+      =
+      \sum_{p\in\mathcal L}
+      \sum_{\substack{q:\,(p,q)\in\mathcal N_{G'}}}
+      y_q\widehat\gamma_{p,q}r_{p,q}.
+      \tag{QRL2}
+   \]
+   If \(K\in\mathcal K_W\) almost surely when \(K>0\), and
+   \[
+      \E V(\mathcal L)
+      >
+      \psi_W\left(
+         A_y\,\E K^{\rho_W}
+         +
+         \sigma\,\E K^{1+\rho_W}
+      \right),
+      \tag{QRL3}
+   \]
+   then the finite-prefix repair alternative of
+   \cref{cor:finite-prefix-hall-deficit-oracle} holds.
+
+   More generally, suppose \(\mathcal K_W\) is \(b_0\)-dense from above: for
+   every \(1\le K\le |W|\), some \(k\in\mathcal K_W\) satisfies
+   \(K\le k\le b_0K\).  Then it is enough that
+   \[
+      \E V(\mathcal L)
+      >
+      \psi_W\left(
+         b_0^{\rho_W}A_y\,\E K^{\rho_W}
+         +
+         b_0^{1+\rho_W}\sigma\,\E K^{1+\rho_W}
+      \right).
+      \tag{QRL4}
+   \]
+
+   In particular, let \(0\le\pi_p\le1\) be realizable inclusion marginals on
+   \(W\), let \(\mu=\sum_{p\in W}\pi_p\), and suppose the realizing random list
+   satisfies \(\E K^2\le M_2\).  Define
+   \[
+      V_\pi
+      =
+      \sum_{p\in W}\pi_p
+      \sum_{\substack{q:\,(p,q)\in\mathcal N_{G'}}}
+      y_q\widehat\gamma_{p,q}r_{p,q}.
+      \tag{QRL5}
+   \]
+   Under the same \(b_0\)-dense cardinality net, the repair alternative holds
+   if
+   \[
+      V_\pi
+      >
+      \psi_W\left(
+         b_0^{\rho_W}A_y\,\mu^{\rho_W}
+         +
+         b_0^{1+\rho_W}\sigma\,\mu^{1-\rho_W}M_2^{\rho_W}
+      \right).
+      \tag{QRL6}
+   \]
+   For independent Bernoulli inclusion one may take \(M_2\le\mu+\mu^2\); if
+   \(\mu\ge1\), the storage term in \((QRL6)\) is at most
+   \(2b_0^{1+\rho_W}\psi_W\sigma\mu^{1+\rho_W}\).
+\end{corollary}
+
+\begin{proof}
+   Suppose no finite-prefix repair holds.  Then
+   \cref{cor:query-layer-deficient-shadow-residual-obstruction} gives the
+   residual envelope \((QLDS2)\).  For an outcome with \(K=0\), \(V=0\).  For an
+   outcome with \(K>0\) and \(K\in\mathcal K_W\), the top \(K\)-prefix in \(W\)
+   has \(y\)-weighted deficient-shadow mass at least \(V(\mathcal L)\), so
+   \((QLDS2)\) gives
+   \[
+      V(\mathcal L)
+      \le
+      \psi_W\left(
+         A_yK^{\rho_W}+\sigma K^{1+\rho_W}
+      \right).
+   \]
+   Averaging contradicts \((QRL3)\).  Hence a positive finite-prefix repair
+   must exist.
+
+   In the cardinality-net case, choose for each nonzero outcome a retained
+   \(k\in\mathcal K_W\) with \(K\le k\le b_0K\).  The top \(k\)-prefix contains
+   at least as much \(y\)-weighted mass as \(\mathcal L\), and the residual
+   envelope at \(k\) gives
+   \[
+      V(\mathcal L)
+      \le
+      \psi_W\left(
+         b_0^{\rho_W}A_yK^{\rho_W}
+         +
+         b_0^{1+\rho_W}\sigma K^{1+\rho_W}
+      \right).
+   \]
+   Averaging contradicts \((QRL4)\).
+
+   For the marginal form, the realizing random list has
+   \(\E V(\mathcal L)=V_\pi\) and \(\E K=\mu\).  Jensen gives
+   \(\E K^{\rho_W}\le\mu^{\rho_W}\).  Log-convexity of \(L_p\)-moments between
+   powers \(1\) and \(2\) gives
+   \[
+      \E K^{1+\rho_W}
+      \le
+      (\E K)^{1-\rho_W}(\E K^2)^{\rho_W}
+      \le
+      \mu^{1-\rho_W}M_2^{\rho_W}.
+   \]
+   Thus \((QRL6)\) implies \((QRL4)\).  The Bernoulli and \(\mu\ge1\)
+   simplifications are the standard bounds
+   \(\E K^2\le\mu+\mu^2\) and
+   \(\mu^{1-\rho_W}(\mu+\mu^2)^{\rho_W}\le2\mu^{1+\rho_W}\).
+\end{proof}
+
 \begin{corollary}[Deficient-shadow residual obstruction]
    \label{cor:deficient-shadow-residual-obstruction}
    Work in the setting of
@@ -36406,6 +36535,12 @@ layer price \(A_y=\sum_q\widehat\tau_qy_q\), not the global loaded-query price
 remaining failure into a query-price bound or a storage-price bound at every
 exposed scale, and \((QLDS7)\) says that a residual layer can survive only by
 being small enough for its own query layer or large enough for storage price.
+\Cref{cor:query-layer-random-list-deficient-shadow-repair} is the build-time
+proposal interface at this level: a randomized list, center set, additive
+quantizer output, or list-decoding panel closes as soon as its expected
+query-layer captured mass beats the corresponding query/storage Renyi moments.
+Thus expensive preprocessing may search heuristically, but the retained proof
+object is still one Boolean query layer and one top prefix.
 \Cref{cor:transported-deficient-shadow-certificate} is the corresponding
 threshold-free reporter form: if the geometry supplies one bounded-congestion
 shipment into a certified subset whose transported mass per congestion beats
@@ -49836,6 +49971,72 @@ itself spherical-pseudo-random enough to close the dichotomy.
    the displayed bounds.  The subset search is build-time separation work:
    failed proposals are discarded, and the retained index stores only the
    deterministic subset or prefix certified by positive shadow-mass surplus.
+\end{proof}
+
+\begin{corollary}[Finite-prefix Hall-deficit endpoint]
+   \label{cor:finite-prefix-hall-deficit-polylog-endpoint}
+   Fix \(c>1\) and \(\rho_c=1/(2c^2-1)\).  Suppose that after bounded-diameter
+   localization, every resident node \(P\), \(|P|=N\), has a finite-signature
+   system as in \cref{lem:finite-signature-filter-cover}, with decoder time
+   \(d\,N^{\rho_c}\log^{O_c(1)}n\), signature entropy satisfying \((FE1)\), and
+   local budgets
+   \[
+      L=N^{\rho_c}\log^{O_c(1)}n,
+      \qquad
+      S=N^{1+\rho_c}\log^{O_c(1)}n .
+      \tag{FPHE1}
+   \]
+   For the induced finite demand set \(\mathcal N_\Sigma\), assume
+   preprocessing supplies the finite spherical law, primitive singleton slice
+   cores, and paid-prefix core universe required by
+   \cref{cor:guarded-star-panel-local-cover}.  Assume moreover that every
+   residual price system \((\gamma,\tau,\sigma)\) satisfying
+   \((GSP1)\)--\((GSP3)\) satisfies one of the two alternatives in
+   \cref{cor:finite-prefix-hall-deficit-oracle}: either the Hall-success
+   alternative holds, or the exposed lower-hull Hall deficit has a certified
+   finite-prefix record \((W,h,y)\) satisfying \((DFN3)\) in the weighted
+   demand system
+   \((\mathcal N_{G'},\widehat\gamma,\widehat\tau)\).
+   Each nonterminal retained prefix or dense record is a strictly smaller
+   certified child and is charged by its full descendant query and storage
+   prices.
+
+   Then worst-case Euclidean ANN has query time and space
+   \[
+      Q(n,d)=d\,n^{\rho_c}\log^{O_c(1)}n,
+      \qquad
+      S(n,d)=dn+n^{1+\rho_c}\log^{O_c(1)}n .
+   \]
+
+   The finite-prefix repair alternative may be supplied by randomized
+   build-time proposal laws of
+   \cref{cor:query-layer-random-list-deficient-shadow-repair}.  Failed proposals
+   are discarded; only a verified Boolean query layer and top prefix retained
+   by \cref{cor:deficient-shadow-finite-prefix-normal-form} enters the index.
+\end{corollary}
+
+\begin{proof}
+   Fix a resident node and its induced finite demand system.  By
+   \cref{cor:finite-prefix-hall-deficit-oracle}, the stated Hall-success or
+   finite-prefix repair alternative implies the reporter theorem required in
+   \cref{cor:guarded-star-panel-local-cover}.  Therefore the finite local
+   filter-cover LP is feasible with query budget \(L\) and storage budget \(S\).
+
+   This is the local feasibility required by
+   \cref{prop:fractional-filter-cover-polylog} for the finite-signature system,
+   with \(L_{\sigma_0}\le L\) for every signature and storage budget \(S\).
+   Since all nonterminal columns are charged by full descendant prices and have
+   strictly smaller certified radius, the recursive accounting in
+   \cref{prop:fractional-filter-cover-polylog} applies at every node and gives
+   the displayed bounds.
+
+   If the finite-prefix repair is found through a randomized list or marginal
+   proposal law, \cref{cor:query-layer-random-list-deficient-shadow-repair}
+   shows that positive expected surplus rules out the residual envelope and
+   hence forces a deterministic finite-prefix repair.  The hardening step in
+   \cref{cor:deficient-shadow-finite-prefix-normal-form} converts the
+   fractional query layer to one Boolean query layer and one top prefix before
+   materialization, so the retained query and storage accounting is unchanged.
 \end{proof}
 
 \begin{corollary}[Quotient-packing separator endpoint]
@@ -63635,6 +63836,10 @@ must satisfy the query-layer envelope \((QLDS2)\) on every searched affordable
 prefix.  The older no-prefix residual
 \cref{cor:deficient-shadow-residual-obstruction} is recovered by setting
 \(y\equiv1\).
+\Cref{cor:query-layer-random-list-deficient-shadow-repair} gives the matching
+proposal-law criterion for this sharper residual: positive expected surplus of
+a random list or marginal center law rules out \((QLDS2)\), and the verifier
+keeps only a deterministic query layer and prefix.
 \Cref{cor:tail-deficient-shadow-envelope} rewrites the same residual as a bound
 on every searched deficient-shadow threshold layer.
 \Cref{cor:two-price-deficient-shadow-screen} records the scale dichotomy left by
@@ -63696,6 +63901,13 @@ fixed-threshold density target by the exact max-flow reduced-gain target
 congestion parameter from this statement.  This is the cleanest current
 Hall-deficit endpoint: prove that every exposed positive-excess shadow has one
 affordable subset whose deficient-shadow mass beats recursive price.
+\Cref{cor:finite-prefix-hall-deficit-polylog-endpoint} is the sharper endpoint
+matching the current bottleneck: it is enough to produce one positive
+finite-prefix record for the weighted demand system
+\((\mathcal N_{G'},\widehat\gamma,\widehat\tau)\), possibly through the
+random-list criterion above, and the same
+\(d\,n^{\rho_c}\log^{O_c(1)}n\) query and
+\(dn+n^{1+\rho_c}\log^{O_c(1)}n\) space bounds follow.
 \Cref{cor:pair-compatible-hall-guarded-cover} states the final local theorem
 target in this language: prove the Hall expansion and the resulting
 direct mixed-density repair inequality for every guarded residual.
