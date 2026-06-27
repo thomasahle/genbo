@@ -17867,6 +17867,107 @@ success-normalized bucket-net argument.
    \(\pi\), and \((CMM5)\) is exactly \((CMM2)\).
 \end{proof}
 
+\begin{corollary}[Finite capped-marginal proposal oracle]
+   \label{cor:finite-capped-marginal-cohort-oracle}
+   Work in the setting of
+   \cref{cor:capped-marginal-cohort-law-mass-reporter}.  For every cohort law
+   \(\eta\), every \(0\le\theta\le1\), and every point \(p\),
+   \[
+      0\le d_\eta^\theta(p)\le1.
+      \tag{FCM0}
+   \]
+   Let \(\mathcal B\) be a finite pool of reportable capped-marginal templates.
+   A template \(B\in\mathcal B\) consists of a segment parameter
+   \(\theta_B\), an integer size certificate \(K_B\ge1\), and inclusion
+   marginals \(\pi_{B,p}\) that are realized by a reportable capped list law
+   with height certificate \(1\).  Put
+   \[
+      L_B
+      =
+      1+\left\lceil
+      \log_2\max\left\{2,\frac{2K_B}{A\Lambda}\right\}
+      \right\rceil ,
+      \tag{FCM1}
+   \]
+   and, for a cohort law \(\eta\),
+   \[
+      V_\eta(B)=\sum_p\pi_{B,p}d_\eta^{\theta_B}(p),
+      \qquad
+      G(B,\eta)=\frac{V_\eta(B)}{4L_B}-A\Lambda .
+      \tag{FCM2}
+   \]
+   Then
+   \[
+      \max_{\omega\in\Delta_{\mathcal B}}
+      \min_{\eta\in\Delta_{\mathcal E_{\rm load}}}
+      \sum_{B\in\mathcal B}\omega_BG(B,\eta)
+      =
+      \min_{\eta\in\Delta_{\mathcal E_{\rm load}}}
+      \max_{B\in\mathcal B}G(B,\eta).
+      \tag{FCM3}
+   \]
+   Consequently, if either side of \((FCM3)\) is nonnegative, then the averaged
+   dominated-load certificate \((DPG3)\) holds.  Equivalently, it is enough that
+   every cohort law \(\eta\) have some template \(B\in\mathcal B\) with
+   \[
+      V_\eta(B)\ge4A\Lambda L_B .
+      \tag{FCM4}
+   \]
+
+   Conversely, if no randomized law on \(\mathcal B\) satisfies
+   \[
+      \sum_B\omega_B\frac{V_\eta(B)}{4L_B}\ge A\Lambda
+      \qquad(\eta\in\Delta_{\mathcal E_{\rm load}}),
+      \tag{FCM5}
+   \]
+   then there is a cohort law \(\eta\) such that every template in the finite
+   pool satisfies
+   \[
+      V_\eta(B)<4A\Lambda L_B .
+      \tag{FCM6}
+   \]
+\end{corollary}
+
+\begin{proof}
+   The unit-height bound follows from \(0\le e_q\le1\), \(0\le r_{p,q}\le1\),
+   and \((GNR1)\):
+   \[
+   \begin{aligned}
+      \sum_p d_\eta^\theta(p)
+      &=
+      \E_{(\Delta',e)\sim\eta}
+      \sum_q e_q
+      \sum_{\substack{p:(p,q)\in\mathcal N}}
+      \bar\gamma^\theta_{p,q}r_{p,q}\\
+      &\le
+      \sum_{(p,q)\in\mathcal N}\bar\gamma^\theta_{p,q}r_{p,q}
+      =
+      \mathsf M(\bar\gamma^\theta)
+      =
+      1 .
+   \end{aligned}
+   \]
+   Hence each summand is in \([0,1]\), proving \((FCM0)\).
+
+   Since \(\mathcal E_{\rm load}\) and \(\mathcal B\) are finite and
+   \(G(B,\eta)\) is linear in \(\eta\) and \(\omega\), \((FCM3)\) is the finite
+   matrix-game minimax theorem.  If the value is nonnegative, choose a
+   maximizing law \(\omega\).  For every cohort law \(\eta\),
+   \[
+      \sum_B\omega_B\frac{V_\eta(B)}{4L_B}\ge A\Lambda .
+   \]
+   Sampling \(B\sim\omega\) and then sampling the capped list law realizing its
+   marginals gives the finite outer law required in \((CMM3)\), with the common
+   height certificate \(1\) for each sampled template.  Therefore
+   \cref{cor:capped-marginal-cohort-law-mass-reporter} gives \((DPG3)\).  The
+   pointwise condition \((FCM4)\) is exactly the statement that the right side of
+   \((FCM3)\) is nonnegative.
+
+   If no randomized law satisfies \((FCM5)\), the value in \((FCM3)\) is
+   strictly negative.  A minimizing cohort law \(\eta\) then has
+   \(\max_BG(B,\eta)<0\), which is exactly \((FCM6)\).
+\end{proof}
+
 The lemma is the fractional version of the dominated-load endpoint.  It does not
 claim the remaining geometric theorem.  Rather, after terminal low-load levels
 and the \(A\)-boundary alternative have been dealt with by
@@ -17909,6 +18010,12 @@ output a finite law over capped hard lists and be analyzed only through its
 inclusion marginals.  If the parent container is closed under sublists, even a
 responsibility vector with total mass at most \(K\) is enough, by integral
 decomposition of the capped hypersimplex.
+\Cref{cor:finite-capped-marginal-cohort-oracle} packages the build step as a
+finite matrix game over generated soft panels: either a randomized panel law
+beats every cohort law at the explicit logarithmic mass threshold, or one cohort
+law witnesses that every generated panel is below threshold.  Because the
+cohort degrees have unit height under \((GNR1)\), the logarithmic factor depends
+only on the size certificate \(K_B\).
 Pools with different congestion guesses may be split into dyadic \(C\)-strata and
 tested by the same game within each stratum.
 
@@ -40099,6 +40206,10 @@ has \(V=O(A\Lambda\log(2BK/(A\Lambda)))\).
 proposal interface: finite capped-list laws are analyzed only through inclusion
 marginals, and sublist-closed retained containers accept any responsibility
 vector of total mass at most \(K\).
+\Cref{cor:finite-capped-marginal-cohort-oracle} turns a generated finite pool of
+such panels into an exact matrix game: either a randomized panel law beats every
+cohort law at the explicit mass threshold, or one cohort law certifies that all
+generated panels are below threshold.
 \Cref{cor:load-quantile-recycled-obstruction-profile} is the corresponding
 residual normal form: outside the \(A\)-boundary and terminal cases, the
 remaining obstruction is just strict positivity at that weighted quantile.
