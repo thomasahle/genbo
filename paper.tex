@@ -17389,6 +17389,74 @@ success-normalized bucket-net argument.
    implication read forward.
 \end{proof}
 
+\begin{corollary}[Cohort-law scalar prefix normal form]
+   \label{cor:cohort-law-scalar-prefix-normal-form}
+   Work in the setting of \cref{cor:exact-load-cohort-law-separator}.  For a
+   cohort law \(\eta\) and a segment parameter \(0\le\theta\le1\), define the
+   cohort scalar degree
+   \[
+      d_\eta^\theta(p)
+      =
+      \E_{(\Delta',e)\sim\eta}
+      \sum_{\substack{q\in Q_{\Delta'}^+\\(p,q)\in\mathcal N}}
+      e_q\,\bar\gamma^\theta_{p,q}r_{p,q}.
+      \tag{CSP1}
+   \]
+   For a retained parent container \(W_0\), an integer \(1\le K\le |W_0|\), and
+   \(\theta\), let
+   \[
+      D_\eta^\theta(W_0,K)
+      =
+      \max_{\substack{U\subseteq W_0\\ |U|=K}}
+      \sum_{p\in U}d_\eta^\theta(p).
+      \tag{CSP2}
+   \]
+   Assume that every maximizing subset \(U\) in \((CSP2)\) can be materialized as
+   an affordable record \((U,K,\theta)\in\mathcal R\) whenever
+   \(U,K,C,\theta\) satisfy \((HMC1)\).  If every cohort law \(\eta\) admits
+   \(W_0,K,\theta\) satisfying \((HMC1)\) and
+   \[
+      D_\eta^\theta(W_0,K)\ge A\Lambda ,
+      \tag{CSP3}
+   \]
+   then the averaged dominated-load certificate \((DPG3)\) holds.
+
+   Conversely, if \((DPG3)\) fails, then there is a cohort law \(\eta\) such that
+   every materializable affordable prefix template satisfies the strict prefix
+   envelope
+   \[
+      D_\eta^\theta(W_0,K)< A\Lambda .
+      \tag{CSP4}
+   \]
+\end{corollary}
+
+\begin{proof}
+   For any retained record \(R=(U,K,\theta)\), Fubini's theorem and the
+   definition of \(s_R^{\Delta'}\) give
+   \[
+   \begin{aligned}
+      \E_{(\Delta',e)\sim\eta}
+      \sum_{q\in Q_{\Delta'}^+}e_qs_R^{\Delta'}(q)
+      &=
+      \E_{(\Delta',e)\sim\eta}
+      \sum_{q\in Q_{\Delta'}^+}
+      e_q
+      \sum_{\substack{p\in U\\(p,q)\in\mathcal N}}
+      \bar\gamma^\theta_{p,q}r_{p,q}\\
+      &=
+      \sum_{p\in U}d_\eta^\theta(p).
+   \end{aligned}
+      \tag{CSP5}
+   \]
+   Thus, if \(U\) is a maximizing \(K\)-subset of \(W_0\) and \((CSP3)\) holds,
+   the materialized record satisfies \((CLS1)\).  Applying
+   \cref{cor:exact-load-cohort-law-separator} gives \((DPG3)\).
+
+   Conversely, if \((DPG3)\) fails, the same corollary gives a cohort law
+   \(\eta\) for which every affordable record has strict capacity \(<A\Lambda\).
+   Applying \((CSP5)\) to the materialized top-\(K\) records gives \((CSP4)\).
+\end{proof}
+
 The lemma is the fractional version of the dominated-load endpoint.  It does not
 claim the remaining geometric theorem.  Rather, after terminal low-load levels
 and the \(A\)-boundary alternative have been dealt with by
@@ -17402,7 +17470,10 @@ oracle should be analyzed against the single weighted cohort objective in
 \((EDP2)\) or \((EDP3)\).  Equivalently,
 \cref{cor:exact-load-cohort-law-separator} says that the remaining finite-pool
 theorem is to beat every law over these cohorts by one affordable retained
-record, not to choose disjoint dense clusters.
+record.  Finally,
+\cref{cor:cohort-law-scalar-prefix-normal-form} rewrites that record search as a
+scalar top-prefix problem for the cohort degree \(d_\eta^\theta\), not as a
+choice of disjoint dense clusters.
 Pools with different congestion guesses may be split into dyadic \(C\)-strata and
 tested by the same game within each stratum.
 
@@ -17720,6 +17791,10 @@ arguments.
 \Cref{cor:exact-load-cohort-law-separator} turns it into the sharp finite-pool
 separator target: every law over those exact-load cohorts must be beaten by one
 affordable retained record.
+\Cref{cor:cohort-law-scalar-prefix-normal-form} then removes the last record
+notation: a cohort law induces a scalar degree \(d_\eta^\theta\) on data points,
+and the retained oracle only has to find an affordable top-\(K\) prefix with mass
+at least \(A\Lambda\).
 \Cref{cor:load-quantile-recycled-obstruction-profile} gives the matching
 failure form: after the terminal and \(A\)-boundary cases are excluded, one
 strict deficit at this weighted quantile is the entire obstruction.
@@ -39563,6 +39638,10 @@ decoding.
 \Cref{cor:exact-load-cohort-law-separator} is the corresponding theorem target:
 for every law over these cohorts, find one affordable retained record with
 expected near-shadow capacity at least \(A\Lambda\).
+\Cref{cor:cohort-law-scalar-prefix-normal-form} makes this a scalar prefix
+problem: the law over cohorts defines \(d_\eta^\theta(p)\), and failure means
+every affordable retained top-\(K\) prefix has \(d_\eta^\theta\)-mass below
+\(A\Lambda\).
 \Cref{cor:load-quantile-recycled-obstruction-profile} is the corresponding
 residual normal form: outside the \(A\)-boundary and terminal cases, the
 remaining obstruction is just strict positivity at that weighted quantile.
