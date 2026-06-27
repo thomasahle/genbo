@@ -32475,6 +32475,88 @@ they expose such prefixes; the proof does not depend on their sampling rule.
    query-price summand.
 \end{proof}
 
+\begin{corollary}[Layer-cake deficient-shadow reporter]
+   \label{cor:layer-cake-deficient-shadow-reporter}
+   Work in the setting of
+   \cref{cor:cardinality-net-deficient-shadow-reporter}.  For \(t>0\), put
+   \[
+      h_t=|\{p\in W:d_{G'}(p)\ge t\}|
+   \]
+   and define the signed level surplus
+   \[
+      \mathcal E_W(t)
+      =
+      t h_t
+      -
+      4J(t)\psi_W
+      \left(
+         b^{1-\rho_W}A_+h_t^{\rho_W}
+         +\sigma h_t^{1+\rho_W}
+      \right).
+      \tag{DCL1}
+   \]
+   If \(\mathcal E_W(t)>0\) for some level \(t\), then the guarded residual
+   closes.  More generally, if a finite nonnegative level panel
+   \((\lambda_i,t_i)_i\) satisfies
+   \[
+      \sum_i\lambda_i\mathcal E_W(t_i)>0,
+      \tag{DCL2}
+   \]
+   then the guarded residual closes.
+
+   In particular, fix \(u>0\), and suppose all reported levels satisfy
+   \(t_i\ge u\).  Write \(h_i=h_{t_i}\).  If
+   \[
+      \sum_i\lambda_i t_i h_i
+      >
+      4J(u)\psi_W
+      \left(
+         b^{1-\rho_W}A_+\sum_i\lambda_i h_i^{\rho_W}
+         +\sigma\sum_i\lambda_i h_i^{1+\rho_W}
+      \right),
+      \tag{DCL3}
+   \]
+   then the guarded residual closes.
+
+   Equivalently, for a nonzero panel define
+   \[
+      M_0=\sum_i\lambda_i,\qquad
+      M_1=\sum_i\lambda_i h_i,\qquad
+      M_{1+\rho_W}=\sum_i\lambda_i h_i^{1+\rho_W},
+      \qquad
+      B=\sum_i\lambda_i t_i h_i .
+      \tag{DCL4}
+   \]
+   It is enough that
+   \[
+      B>
+      4J(u)\psi_W
+      \left(
+         b^{1-\rho_W}A_+M_0^{1-\rho_W}M_1^{\rho_W}
+         +\sigma M_{1+\rho_W}
+      \right).
+      \tag{DCL5}
+   \]
+\end{corollary}
+
+\begin{proof}
+   The inequality \(\mathcal E_W(t)>0\) is exactly \((CSD3)\) multiplied by
+   \(h_t\).  Thus a positive level closes by
+   \cref{cor:cardinality-net-deficient-shadow-reporter}.  If \((DCL2)\) holds,
+   at least one level with \(\lambda_i>0\) has \(\mathcal E_W(t_i)>0\), and the
+   first conclusion applies.
+
+   If \(t_i\ge u\), then \(J(t_i)\le J(u)\), since \(J(\cdot)\) is
+   nonincreasing.  Therefore \((DCL3)\) implies \((DCL2)\).  Finally, because
+   \(0<\rho_W<1\), the concavity of \(x^{\rho_W}\) gives
+   \[
+      \sum_i\lambda_i h_i^{\rho_W}
+      \le
+      M_0^{1-\rho_W}M_1^{\rho_W}.
+   \]
+   Hence \((DCL5)\) implies \((DCL3)\).
+\end{proof}
+
 \begin{corollary}[Deficient-shadow residual obstruction]
    \label{cor:deficient-shadow-residual-obstruction}
    Work in the setting of
@@ -32500,7 +32582,8 @@ they expose such prefixes; the proof does not depend on their sampling rule.
    Moreover, if \(0<\rho_W<1\) and \(\mathcal K_W\) is \(b\)-dense from below as
    in \((CSD1)\), then no threshold \(t>0\) with \(h_{W,t}>0\) can satisfy
    \((CSD3)\).  In particular, when \(\sigma>0\), no such threshold layer can
-   satisfy the constant-slack forbidden-interval condition \((CSD4)\).
+   satisfy the constant-slack forbidden-interval condition \((CSD4)\), and no
+   finite level panel can satisfy the layer-cake surplus condition \((DCL2)\).
 \end{corollary}
 
 \begin{proof}
@@ -32513,7 +32596,8 @@ they expose such prefixes; the proof does not depend on their sampling rule.
    is \cref{cor:two-price-deficient-shadow-screen}.  The scale conclusion is
    \cref{cor:forbidden-middle-deficient-shadow-scale}.  The final
    cardinality-net exclusion is the contrapositive of
-   \cref{cor:cardinality-net-deficient-shadow-reporter}.
+   \cref{cor:cardinality-net-deficient-shadow-reporter}, and the panel exclusion
+   is the contrapositive of \cref{cor:layer-cake-deficient-shadow-reporter}.
 \end{proof}
 
 \Cref{cor:deficient-shadow-residual-obstruction} is the current proof bottleneck
@@ -32530,7 +32614,10 @@ enough for query price or large enough for storage price.
 \Cref{cor:cardinality-net-deficient-shadow-reporter} removes the exact-size
 artifact from this target: with dyadic retained prefix sizes, an arbitrary
 reported superlevel in the forbidden interval is rounded down to a certified
-prefix at only constant loss.
+prefix at only constant loss.  \Cref{cor:layer-cake-deficient-shadow-reporter}
+is the averaged version: a range-reporting or list-decoding panel only has to
+make captured deficient-shadow mass beat the aggregate query and storage moments
+on one height window.
 
 \begin{corollary}[Tuple-profile distinct-storage certificate]
    \label{cor:tuple-profile-distinct-storage}
@@ -33028,6 +33115,8 @@ surviving layers are either query-small or storage-large.
 \Cref{cor:cardinality-net-deficient-shadow-reporter} shows that a reporter need
 only find an arbitrary superlevel in this forbidden gap; retained dyadic prefix
 sizes round it to a certified proposal.
+\Cref{cor:layer-cake-deficient-shadow-reporter} allows the same conclusion from
+an aggregate panel whose captured mass beats its Renyi query/storage moments.
 \Cref{cor:pair-compatible-hall-guarded-cover} assembles the chain back into the
 local LP: a half-shipment with sufficient layer-cake surplus supplies the
 guarded star-panel reporter and closes the residual.
@@ -46330,6 +46419,8 @@ explicit forbidden middle cardinality interval for every reported threshold.
 \Cref{cor:cardinality-net-deficient-shadow-reporter} removes exact cardinalities
 from the search: a reported superlevel is rounded down to a retained prefix and
 still closes if it lies in the constant-slack forbidden interval.
+\Cref{cor:layer-cake-deficient-shadow-reporter} is the corresponding averaged
+form for panels or moment bounds on one threshold-height window.
 \Cref{cor:pair-compatible-hall-guarded-cover} states the final local theorem
 target in this language: prove the Hall expansion and the resulting
 layer-cake price inequality for every guarded residual.
