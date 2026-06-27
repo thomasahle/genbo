@@ -37489,6 +37489,91 @@ are active, a repair proposal does not need to search all prefix sizes: a
 template with enough cut-shadow density near \(K_y^\circ\) immediately violates
 the no-merge envelope.
 
+\begin{corollary}[Fractional balanced Hall-shadow density panel]
+   \label{cor:fractional-balanced-hall-shadow-density-panel}
+   Work in the setting of \cref{cor:balanced-hall-shadow-density-screen}.  Let
+   \(i\in I\) range over a finite panel of verified balanced Hall-shadow records
+   with nonnegative weights \(\lambda_i\).  Record \(i\) consists of a repair
+   template \(y_i\), an available prefix cardinality \(K_i\in\mathcal K_{y_i}\),
+   and a balance factor \(a_i\ge1\) such that
+   \[
+      a_i^{-1}K_{y_i}^\circ\le K_i\le a_iK_{y_i}^\circ .
+      \tag{FBH1}
+   \]
+   Put
+   \[
+      \Delta_i=\Delta_A(y_i,K_i),
+      \qquad
+      \Theta_i=
+      a_i\psi_{y_i}C_{\rho_{y_i}}
+      A_{y_i}^{\rho_{y_i}}\zeta^{1-\rho_{y_i}} .
+      \tag{FBH2}
+   \]
+   If
+   \[
+      \sum_i\lambda_iK_i(\Delta_i-\Theta_i)>0,
+      \tag{FBH3}
+   \]
+   then some record in the panel gives a one-record Hall-shadow merge.
+
+   Consequently, if no available Hall-shadow merge exists, every finite
+   nonnegative balanced panel has nonpositive surplus \((FBH3)\).
+\end{corollary}
+
+\begin{proof}
+   Since \(\lambda_i\ge0\) and \(K_i>0\), positive total surplus implies that
+   at least one record has \(\Delta_i>\Theta_i\).  Together with \((FBH1)\),
+   this is exactly the balanced density condition \((BHE3)\)--\((BHE4)\) for
+   that record.  Hence
+   \cref{cor:balanced-hall-shadow-density-screen} gives a one-record
+   Hall-shadow merge.  The nonpositive-panel statement is the contrapositive.
+\end{proof}
+
+\begin{corollary}[Sampled balanced Hall-shadow density search]
+   \label{cor:sampled-balanced-hall-shadow-density-search}
+   Work in the setting of
+   \cref{cor:fractional-balanced-hall-shadow-density-panel}.  A randomized
+   build-time proposal routine, on seed \(s\), returns a finite verified
+   balanced panel \(I_s\) with nonnegative weights \(\lambda_{s,i}\).  Define
+   its certified balanced surplus by
+   \[
+      Z(s)=
+      \sum_{i\in I_s}
+      \lambda_{s,i}K_{s,i}\bigl(\Delta_{s,i}-\Theta_{s,i}\bigr).
+      \tag{SBH1}
+   \]
+   Suppose
+   \[
+      \E_s Z(s)\ge\Gamma>0,
+      \qquad
+      Z(s)_+\le M
+      \quad\text{almost surely}.
+      \tag{SBH2}
+   \]
+   Then \(B\) independent build-time seeds contain a valid one-record
+   Hall-shadow merge with probability at least
+   \[
+      1-\exp\left(-\frac{B\Gamma}{M}\right).
+      \tag{SBH3}
+   \]
+\end{corollary}
+
+\begin{proof}
+   From \((SBH2)\), \(\E Z_+\ge\Gamma\).  Since \(Z_+\le M\), one seed has
+   \(Z(s)>0\) with probability at least \(\Gamma/M\).  Thus \(B\) independent
+   seeds all fail with probability at most
+   \((1-\Gamma/M)^B\le\exp(-B\Gamma/M)\).  For any successful seed,
+   \cref{cor:fractional-balanced-hall-shadow-density-panel} extracts a
+   deterministic one-record Hall-shadow merge.  Failed samples are discarded.
+\end{proof}
+
+\Cref{cor:fractional-balanced-hall-shadow-density-panel} and
+\cref{cor:sampled-balanced-hall-shadow-density-search} are the concrete
+build-facing contracts for the Hall-shadow route.  A proposal mechanism may
+generate many balanced templates, but it is analyzed only through the scalar
+surplus \(K(\Delta-\Theta)\); any positive verified surplus collapses to one
+ordinary retained dense prefix.
+
 \begin{corollary}[Proposal-law finite-signature endpoint]
    \label{cor:proposal-law-finite-signature-endpoint}
    Work in the setting of
@@ -50003,7 +50088,10 @@ valid dense column.  \Cref{cor:proposal-law-hall-shadow-merge} is the matching
 build-time sampler form, and \cref{cor:no-merge-hall-shadow-envelope} gives the
 explicit weak-type residual if every such merge fails.  The balanced-scale
 screen \cref{cor:balanced-hall-shadow-density-screen} reduces the positive test
-to one density threshold near the stationary prefix size.
+to one density threshold near the stationary prefix size, while
+\cref{cor:fractional-balanced-hall-shadow-density-panel} and
+\cref{cor:sampled-balanced-hall-shadow-density-search} give the batched and
+sampled surplus forms.
 \Cref{lem:weighted-spherical-reduced-gain} proves the spherical half of the
 dual dichotomy in the exact reduced-gain language: if ordinary spherical buckets
 do not violate a surplus dual certificate, then the dual must carry large
