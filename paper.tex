@@ -16856,6 +16856,47 @@ success-normalized bucket-net argument.
    least \(V_H\), giving the consequence.
 \end{proof}
 
+\begin{lemma}[Dominated-load recycled screen]
+   \label{lem:dominated-load-recycled-screen}
+   Work in the notation of \cref{lem:exact-load-recycled-quantile-screen}.  In
+   the non-boundary regime \(L_0<\Lambda\le L_\infty\), the threshold screen
+   holds if and only if every probability vector \(\nu\) on \(Q^+\) satisfying
+   \[
+      0\le\nu_q\le\frac{\ell_q}{\Lambda},
+      \qquad
+      \sum_{q\in Q^+}\nu_q=1
+      \tag{DLR1}
+   \]
+   has average efficiency at least \(A\):
+   \[
+      \sum_{q\in Q^+}\nu_q\sigma_q\ge A .
+      \tag{DLR2}
+   \]
+   Failure of the threshold screen in this regime is equivalently the existence
+   of such a dominated probability vector with average efficiency \(<A\).
+\end{lemma}
+
+\begin{proof}
+   Exact-load fractional layers \(y\) are in bijection with vectors \(\nu\)
+   satisfying \((DLR1)\) by
+   \[
+      \nu_q=\frac{y_q\ell_q}{\Lambda},
+      \qquad
+      y_q=\frac{\Lambda\nu_q}{\ell_q}
+      \quad(q\in Q^+).
+   \]
+   Under this change of variables,
+   \[
+      \frac1\Lambda\sum_{q\in Q^+}y_qs_q
+      =
+      \sum_{q\in Q^+}\nu_q\frac{s_q}{\ell_q}
+      =
+      \sum_{q\in Q^+}\nu_q\sigma_q .
+   \]
+   The claim is therefore exactly
+   \cref{lem:variational-exact-load-recycled-screen} divided by \(\Lambda\).
+\end{proof}
+
 \begin{corollary}[Load-quantile recycled-sublayer separator suffices]
    \label{cor:load-quantile-recycled-sublayer-separator-suffices}
    In \cref{cor:finite-prefix-recycled-sublayer-separator-suffices}, the finite
@@ -16966,6 +17007,50 @@ success-normalized bucket-net argument.
    \cref{cor:exact-load-recycled-sublayer-separator-suffices} applies.
 \end{proof}
 
+\begin{corollary}[Dominated-load recycled separator suffices]
+   \label{cor:dominated-load-recycled-separator-suffices}
+   In \cref{cor:finite-prefix-recycled-sublayer-separator-suffices}, the finite
+   prefix condition may be replaced by the following dominated-load condition at
+   each dyadic \(\Delta'\).  With \(L_0,S_0,L_\infty,A,\Lambda\) as there, at
+   least one of
+   \[
+      A L_0-S_0=0
+      \quad\text{and}\quad
+      L_0\le\Lambda ,
+      \tag{DLR3}
+   \]
+   \[
+      L_\infty<\Lambda ,
+      \tag{DLR4}
+   \]
+   or
+   \[
+      L_0<\Lambda\le L_\infty
+      \quad\text{and}\quad
+      \sum_{q\in Q_{\Delta'}}\nu_q
+      \frac{s_{W,\theta}(q)}{\Delta'\bar\tau_q}
+      \ge A
+      \tag{DLR5}
+   \]
+   for every probability vector \(\nu\) supported on queries with
+   \(\bar\tau_q>0\) and satisfying
+   \[
+      0\le\nu_q\le\frac{\Delta'\bar\tau_q}{\Lambda},
+      \qquad
+      \sum_q\nu_q=1
+      \tag{DLR6}
+   \]
+   holds.  Then the enlarged local filter-cover LP is feasible.
+\end{corollary}
+
+\begin{proof}
+   In the third case, apply \cref{lem:dominated-load-recycled-screen} with
+   \(\ell_q=\Delta'\bar\tau_q\) and \(s_q=s_{W,\theta}(q)\).  The dominated-load
+   inequality \((DLR5)\)--\((DLR6)\) is equivalent to the variational
+   exact-load condition, so
+   \cref{cor:variational-exact-load-recycled-separator-suffices} applies.
+\end{proof}
+
 \begin{corollary}[Load-quantile recycled obstruction profile]
    \label{cor:load-quantile-recycled-obstruction-profile}
    Work in the notation of
@@ -17058,6 +17143,35 @@ success-normalized bucket-net argument.
    \cref{cor:exact-load-recycled-obstruction-profile} is equivalent to the
    existence of a fractional sublayer satisfying \((VEO1)\)--\((VEO2)\), and an
    optimizer is the lowest-efficiency fractional prefix.
+\end{proof}
+
+\begin{corollary}[Dominated-load recycled obstruction profile]
+   \label{cor:dominated-load-recycled-obstruction-profile}
+   Work in the notation of
+   \cref{lem:finite-prefix-recycled-threshold-screen}.  The threshold screen
+   \((FPS1)\) fails if and only if \(L_\infty\ge\Lambda\), the boundary
+   alternative \((LQS1)\) fails, and, in the non-boundary case \(L_0<\Lambda\),
+   there exists a probability vector \(\nu\) satisfying
+   \[
+      0\le\nu_q\le\frac{\ell_q}{\Lambda},
+      \qquad
+      \sum_{q\in Q^+}\nu_q=1,
+      \tag{DLO1}
+   \]
+   whose average efficiency is strictly deficient:
+   \[
+      \sum_{q\in Q^+}\nu_q\sigma_q<A .
+      \tag{DLO2}
+   \]
+   Moreover, the deficient \(\nu\) may be chosen by filling the lowest
+   efficiencies up to the load cap \(\ell_q/\Lambda\).
+\end{corollary}
+
+\begin{proof}
+   This is \cref{cor:variational-exact-load-recycled-obstruction-profile} under
+   the change of variables from \cref{lem:dominated-load-recycled-screen}.  The
+   extremal choice follows from the lowest-efficiency prefix optimizer in
+   \cref{lem:variational-exact-load-recycled-screen}.
 \end{proof}
 
 \begin{corollary}[Finite-prefix recycled obstruction profile]
@@ -17228,6 +17342,11 @@ language entirely: equivalently, every fractional sublayer of exact load
 \Cref{lem:exact-load-margin-extension} shows why this exact-load condition is
 not merely a boundary artifact: once it holds, every larger fractional layer has
 strict positive margin because all additional load has efficiency \(>A\).
+\Cref{lem:dominated-load-recycled-screen} and
+\cref{cor:dominated-load-recycled-separator-suffices} normalize the exact-load
+condition further: it is enough to prove that every probability distribution
+dominated by the normalized query load has average near-shadow efficiency at
+least \(A\).
 \Cref{cor:load-quantile-recycled-obstruction-profile} gives the matching
 failure form: after the terminal and \(A\)-boundary cases are excluded, one
 strict deficit at this weighted quantile is the entire obstruction.
@@ -17238,6 +17357,9 @@ remaining range-reporting/list-recovery theorem.
 corresponding witness form: a failed non-boundary screen is exactly an
 exact-load fractional query layer whose true near-shadow capacity is below the
 allowed \(A\)-multiple.
+\Cref{cor:dominated-load-recycled-obstruction-profile} gives the normalized
+witness: a probability distribution dominated by the query-load measure whose
+mean efficiency is below \(A\).
 \Cref{cor:finite-prefix-recycled-obstruction-profile} gives the exact negation:
 if the finite scan fails, total load is at least \(\Lambda\), every positive
 breakpoint prefix has strict deficit, and the \(A\)-boundary already carries
@@ -39048,6 +39170,10 @@ to certify directly.
 \Cref{lem:exact-load-margin-extension} then recovers the original large-layer
 separator with slack: every layer of load \(H>\Lambda\) has capacity at least
 \(AH+(a_j-A)(H-\Lambda)\), so the strict recycled-sublayer condition follows.
+\Cref{lem:dominated-load-recycled-screen} and
+\cref{cor:dominated-load-recycled-separator-suffices} put the same condition in
+normalized weak-type form: all probability measures dominated by
+\(\ell/\Lambda\) must have mean efficiency at least \(A\).
 \Cref{cor:load-quantile-recycled-obstruction-profile} is the corresponding
 residual normal form: outside the \(A\)-boundary and terminal cases, the
 remaining obstruction is just strict positivity at that weighted quantile.
@@ -39058,6 +39184,9 @@ one-sided reporter certificate.
 form: the residual contains one fractional exact-load layer with capacity
 strictly below \(A\Lambda\), and the lowest-efficiency prefix is the extremal
 choice.
+\Cref{cor:dominated-load-recycled-obstruction-profile} is the same witness after
+normalization: a dominated probability distribution has average efficiency
+strictly below \(A\).
 \Cref{cor:finite-prefix-recycled-obstruction-profile} records the precise
 failure mode of this finite scan: the total query load is not terminally small,
 all positive breakpoints have strict prefix deficit, and the \(A\)-boundary has
