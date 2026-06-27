@@ -29673,6 +29673,50 @@ inequality \((QP3)\).
    positive-gain prefix.
 \end{proof}
 
+\begin{corollary}[Spherical-or-star-panel local cover criterion]
+   \label{cor:spherical-star-panel-local-cover}
+   Work in a finite local filter-cover instance with resident set \(P\),
+   query constraints \(\mathcal Q\), near-pair demands \(\mathcal N\), uniform
+   query budget \(L\), and storage budget \(S\).  Suppose the filter universe
+   contains the spherical buckets from
+   \cref{lem:weighted-spherical-reduced-gain} and, for every pair-star center
+   that may be reported, the smaller-radius paid prefixes used in
+   \cref{cor:paid-pair-star-panel-certificate}.  Assume the spherical bucket law
+   satisfies \((WS1)\)--\((WS6)\).
+
+   Suppose that every nonnegative dual price system \((\alpha,\tau,\sigma)\)
+   with surplus
+   \[
+      A_\alpha>L\sum_{q\in\mathcal Q}\tau_q+\sigma S
+      \tag{SPL1}
+   \]
+   and nonpositive reduced gain on every spherical bucket admits a certified
+   paid pair-star panel satisfying \((PPC2)\).  Then the finite filter-cover LP
+   \((\mathsf{FC}_{\mathcal N})\) over this universe is feasible with budgets
+   \(L,S\).
+
+   Equivalently, under \((WS1)\)--\((WS6)\), the remaining geometric theorem may
+   be stated as follows: every spherical residual dual, necessarily satisfying
+   the high-correlation obstruction \((WS8)\), must generate a certified
+   pair-star panel whose paid mass beats its recursive query/storage Renyi cost.
+\end{corollary}
+
+\begin{proof}
+   Suppose the finite cover LP were infeasible.  By
+   \cref{lem:finite-filter-cover-dual}, there is a nonnegative dual price system
+   satisfying \((SPL1)\) and having nonpositive reduced gain on every column in
+   the universe.  In particular, every spherical bucket has nonpositive gain.
+   By the assumed star-panel separator, this dual admits a certified paid
+   pair-star panel satisfying \((PPC2)\).  Then
+   \cref{cor:paid-pair-star-panel-certificate} exposes a positive-gain
+   smaller-radius prefix, which is a column of the universe.  This contradicts
+   nonpositive gain on every column.  Hence the finite cover LP is feasible.
+
+   The final reformulation follows because, for any such surplus dual with no
+   positive spherical bucket, \cref{lem:weighted-spherical-reduced-gain} gives
+   the high-correlation alternative \((WS8)\).
+\end{proof}
+
 \begin{corollary}[Tuple-profile distinct-storage certificate]
    \label{cor:tuple-profile-distinct-storage}
    Work in the setting of
@@ -30066,6 +30110,9 @@ Renyi cap on every reported star.
 a panel of reported stars needs only lower paid-mass and upper size
 certificates, and any aggregate violation of the Renyi costs yields an exact
 positive dense column.
+\Cref{cor:spherical-star-panel-local-cover} plugs this into the finite-cover
+duality: after spherical buckets fail, it is enough to construct one certified
+paid star panel from the high-correlation residual.
 \Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} give the corresponding
 entropy-energy normal form: each large canonical child supplies many separated
@@ -43203,6 +43250,9 @@ interface: a range-reporting, clustering, AQ, or list-decoding routine may
 return a whole panel of stars with lower paid-mass certificates and upper size
 certificates; a strict aggregate surplus is enough for the finite verifier to
 retain one positive prefix.
+\Cref{cor:spherical-star-panel-local-cover} packages this as a local theorem
+target: every surplus dual that survives the spherical reduced-gain test must
+admit such a certified panel, otherwise the finite LP cover is already feasible.
 \Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} reduce each dyadic count to tuple
 incidence: a large separated child contains many ordered witness tuples, so the
