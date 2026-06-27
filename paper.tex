@@ -18312,6 +18312,100 @@ success-normalized bucket-net argument.
    Las Vegas separator.
 \end{proof}
 
+\begin{corollary}[Soft average-density exact-prefix scale choice]
+   \label{cor:soft-average-density-exact-prefix-scale-choice}
+   Work in the setting of \cref{cor:no-loss-exact-cardinality-net}.  Fix a
+   cohort law \(\eta\), searched retained parent \(W\), and segment \(\theta\).
+   Let \(\pi=(\pi_p)_{p\in W}\) be a responsibility vector with
+   \(0\le\pi_p\le1\), and put
+   \[
+      \mu=\sum_{p\in W}\pi_p .
+      \tag{SDEX0}
+   \]
+   Suppose preprocessing gives a one-sided soft value certificate
+   \[
+      0\le X\le\sum_{p\in W}\pi_p d_\eta^\theta(p)
+      \tag{SDEX1}
+   \]
+   and
+   \[
+      X\ge A\Lambda>0 .
+      \tag{SDEX2}
+   \]
+   Put
+   \[
+      h_*=
+      \left\lceil\frac{A\Lambda\,\mu}{X}\right\rceil .
+      \tag{SDEX3}
+   \]
+   Then \(1\le h_*\le |W|\).  If the exact cardinality net contains
+   \(K\in\mathcal K^{\rm ex}_{W,\theta}\) with
+   \[
+      h_*\le K\le b h_*,
+      \tag{SDEX4}
+   \]
+   then the template \(B=(W,K,\theta)\) has \(H_{\rm ex}(B,\eta)\ge0\), and
+   materializing the top \(K\)-subset gives a valid exact-prefix separator output.
+
+   More generally, a finite law, or a sampleable law with integrable \(X-A\Lambda\),
+   over soft reports \((W,\theta,\pi,\mu,X)\) satisfying \(0\le\pi_p\le1\) and
+   \((SDEX0)\)--\((SDEX1)\) is a valid exact-prefix proposal source whenever
+   \[
+      \E[X-A\Lambda]\ge0 .
+      \tag{SDEX5}
+   \]
+   The separator samples until \((SDEX2)\) holds, chooses \(h_*\) and then any
+   net \(K\) satisfying \((SDEX4)\), which exists by \((ECN0)\), and stores only
+   the resulting deterministic top-\(K\) record.  The hard-support statement
+   \cref{cor:average-density-exact-prefix-scale-choice} is the special case
+   \(\pi=\mathbf 1_S\), \(\mu=|S|\), and \(X=M\).
+\end{corollary}
+
+\begin{proof}
+   Under \((SDEX2)\), \((SDEX1)\) implies \(\mu>0\).  Since
+   \(A\Lambda\le X\) and \(\mu\le |W|\), we have
+   \(1\le h_*\le\lceil\mu\rceil\le |W|\).
+
+   Order \(W=\{p_1,\ldots,p_m\}\) so that
+   \(d_i=d_\eta^\theta(p_i)\) is nonincreasing, and put
+   \(D(h)=\sum_{i\le h}d_i\).  Let \(F(t)\) be the fractional top-\(t\) mass,
+   \[
+      F(t)=D(\lfloor t\rfloor)
+      +(t-\lfloor t\rfloor)d_{\lfloor t\rfloor+1},
+      \qquad 0\le t\le m,
+      \tag{SDEX6}
+   \]
+   with the last term omitted at \(t=m\).  Since \(\pi\in[0,1]^W\) has total
+   mass \(\mu\), the fractional rearrangement bound gives
+   \[
+      \sum_{p\in W}\pi_p d_\eta^\theta(p)\le F(\mu).
+      \tag{SDEX7}
+   \]
+   Also \(F(t)\) is nondecreasing and \(F(t)/t\) is nonincreasing for
+   \(t>0\).  Therefore, for every integer \(h\),
+   \[
+      D(h)=F(h)
+      \ge
+      \min\{h/\mu,1\}\,F(\mu)
+      \ge
+      \min\{h/\mu,1\}\,X .
+      \tag{SDEX8}
+   \]
+   Applying this to \(h=h_*\), if \(h_*<\mu\) then
+   \(D(h_*)\ge h_*X/\mu\ge A\Lambda\), while if \(h_*\ge\mu\) then
+   \(D(h_*)\ge X\ge A\Lambda\).  Thus
+   \(D_\eta^\theta(W,h_*)\ge A\Lambda\).  Monotonicity in the cardinality and
+   \(K\ge h_*\) give \(D_\eta^\theta(W,K)\ge A\Lambda\), hence
+   \(H_{\rm ex}(B,\eta)\ge0\).
+
+   For a finite law, nonnegative expectation in \((SDEX5)\) implies one support
+   report has \(X\ge A\Lambda\).  For a sampleable law, if
+   \(\Pr[X-A\Lambda\ge0]=0\), then \(X-A\Lambda<0\) almost surely; integrability
+   would force \(\E[X-A\Lambda]<0\), contradicting \((SDEX5)\).  Hence a
+   closing report has positive probability, and independent repetitions give the
+   Las Vegas separator.
+\end{proof}
+
 \begin{corollary}[Exact-prefix proposal-law separator]
    \label{cor:exact-prefix-proposal-law-separator}
    Work in the setting of
@@ -19686,6 +19780,10 @@ top-\(K\) value at least \(KM/s\), again with no layer-cake loss.
 proposal to guess \(K\): a coarse support-mass report with \(M\ge A\Lambda\)
 chooses \(h_*=\lceil A\Lambda s/M\rceil\) and rounds up through the retained
 cardinality net at the same sharp threshold.
+\Cref{cor:soft-average-density-exact-prefix-scale-choice} gives the same
+scale choice for soft responsibilities: a proposal certifies only total soft
+mass \(\mu\) and value \(X\), and the exact verifier chooses
+\(h_*=\lceil A\Lambda\mu/X\rceil\) before materializing one hard top prefix.
 \Cref{rem:exact-template-linearization} records the important caveat: these
 template objectives are separation objectives for a fixed cohort law; minimax is
 still performed over the materialized exact records, where the payoff is linear.
@@ -19757,6 +19855,11 @@ support size \(s\), then choose \(K\) with \(KM/s\ge A\Lambda\).
 automatic on a retained cardinality net: if the report already has
 \(M\ge A\Lambda\), the analytic scale \(h_*=\lceil A\Lambda s/M\rceil\) closes
 after net rounding, with no extra logarithmic price.
+\Cref{cor:soft-average-density-exact-prefix-scale-choice} is the responsibility
+version for AQ, learned, or randomized soft panels: the proposal certifies
+\(X\le\sum_p\pi_p d_\eta^\theta(p)\), sets
+\(h_*=\lceil A\Lambda\sum_p\pi_p/X\rceil\), and still retains only an exact
+hard prefix.
 \Cref{cor:exact-prefix-proposal-law-separator} and
 \cref{cor:sampled-soft-exact-prefix-separator} make randomized proposal panels
 compatible with this sharp interface: it is enough to certify nonnegative
@@ -36268,6 +36371,7 @@ itself spherical-pseudo-random enough to close the dichotomy.
    \cref{cor:no-loss-exact-cardinality-net},
    \cref{cor:average-mass-exact-prefix-screen},
    \cref{cor:average-density-exact-prefix-scale-choice},
+   \cref{cor:soft-average-density-exact-prefix-scale-choice},
    \cref{cor:exact-prefix-proposal-law-separator},
    \cref{cor:sampled-soft-exact-prefix-separator},
    \cref{cor:finite-prefix-template-separation-game}, or
@@ -36275,7 +36379,8 @@ itself spherical-pseudo-random enough to close the dichotomy.
    exact-prefix universe with nonnegative game value \((EPC3)\), a sublist-closed
    template universe satisfying \((SCE2)\), a no-loss cardinality-net witness
    \((ECN1)\), an average-mass exact-prefix certificate \((AEX2)\) or \((AEX3)\),
-   an average-density scale certificate \((DEX1)\) or \((DEX4)\), an exact
+   an average-density scale certificate \((DEX1)\) or \((DEX4)\), a soft
+   average-density certificate \((SDEX2)\) or \((SDEX5)\), an exact
    proposal law satisfying \((SEP0)\) or \((SEP3)\), a soft exact
    proposal law satisfying \((SEP8)\), or a weaker prefix-template proposal
    universe with nonnegative value \((PTC3)\), at every node supplies the same
@@ -36300,6 +36405,7 @@ itself spherical-pseudo-random enough to close the dichotomy.
          \text{\((EPC3)\), \((SCE2)\), \((ECN1)\),}\\
          \text{\((AEX2)\), \((AEX3)\),}\\
          \text{\((DEX1)\), \((DEX4)\),}\\
+         \text{\((SDEX2)\), \((SDEX5)\),}\\
          \text{\((SEP0)\), \((SEP3)\),}\\
          \text{\((SEP8)\), \((PTC3)\),}\\
          \text{or finite cohort separation}
@@ -36318,6 +36424,7 @@ itself spherical-pseudo-random enough to close the dichotomy.
    \cref{cor:no-loss-exact-cardinality-net},
    \cref{cor:average-mass-exact-prefix-screen},
    \cref{cor:average-density-exact-prefix-scale-choice},
+   \cref{cor:soft-average-density-exact-prefix-scale-choice},
    \cref{cor:exact-prefix-proposal-law-separator},
    \cref{cor:sampled-soft-exact-prefix-separator},
    \cref{cor:finite-prefix-template-separation-game} or
@@ -48048,6 +48155,10 @@ top-prefix column whenever \(KM/s\ge A\Lambda\).
 guess from this bridge: a report with \(M\ge A\Lambda\) sets
 \(h_*=\lceil A\Lambda s/M\rceil\), rounds to the retained cardinality net, and
 keeps the same \(A\Lambda\) threshold.
+\Cref{cor:soft-average-density-exact-prefix-scale-choice} extends this to soft
+responsibility reports: once \(X\ge A\Lambda\), the mass
+\(\mu=\sum_p\pi_p\) determines \(h_*=\lceil A\Lambda\mu/X\rceil\), and the
+stored object is again one verified hard prefix.
 \Cref{cor:exact-prefix-proposal-law-separator} and
 \cref{cor:sampled-soft-exact-prefix-separator} put \(k\)-means++,
 additive-quantization, list-recovery, or learned proposal panels on this same
