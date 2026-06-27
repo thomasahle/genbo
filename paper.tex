@@ -34272,12 +34272,115 @@ paid shadow.
    \((DSP5)\).
 \end{proof}
 
+\begin{corollary}[Deficient shadows are finite-prefix residuals]
+   \label{cor:deficient-shadow-finite-prefix-normal-form}
+   Work in the setting of \cref{cor:deficit-restricted-proposal-law}, and assume
+   the paid-prefix verifier of \cref{cor:hit-weighted-star-panel-prefix} is
+   available for the current price system.  For the integral Hall-deficit
+   sublayer \(G'\), form the finite demand system
+   \[
+      \mathcal N_{G'}
+      =
+      \{(p,q):q\in\mathcal Q_+,\ p\in N_{\rm hc}(G')(q)\},
+      \qquad
+      \widehat\gamma_{p,q}=a_q\gamma_{p,q},
+      \qquad
+      \widehat\tau_q=a_q\tau_q .
+      \tag{DFN1}
+   \]
+   For a certified container \(W\), cardinality \(h\), and fractional query
+   layer \(0\le y_q\le1\), put
+   \[
+      D_{G',W,y}^{\widehat\gamma}(h)
+      =
+      \max_{\substack{U\subseteq W\\|U|=h}}
+      \sum_{p\in U}
+      \sum_{\substack{q:\,(p,q)\in\mathcal N_{G'}}}
+      y_q\widehat\gamma_{p,q}r_{p,q}.
+      \tag{DFN2}
+   \]
+   If
+   \[
+      D_{G',W,y}^{\widehat\gamma}(h)
+      >
+      \psi_W
+      \left(
+         h^{\rho_W}\sum_{q\in\mathcal Q_+}\widehat\tau_qy_q
+         +\sigma h^{1+\rho_W}
+      \right),
+      \tag{DFN3}
+   \]
+   then the reporter has a certified hit-weighted star panel satisfying
+   \((HSP1)\)--\((HSP2)\).  Consequently the paid-prefix verifier exposes an
+   available positive repair prefix.
+
+   Moreover, if \((DFN3)\) holds for a fractional layer \(y\), then it holds
+   for some Boolean query layer \(Q\subseteq\mathcal Q_+\).  Thus a surviving
+   no-repair residual satisfies the ordinary finite-prefix envelope
+   \[
+      D_{G',W,y}^{\widehat\gamma}(h)
+      \le
+      \psi_W
+      \left(
+         h^{\rho_W}\sum_{q\in\mathcal Q_+}\widehat\tau_qy_q
+         +\sigma h^{1+\rho_W}
+      \right)
+      \tag{DFN4}
+   \]
+   for every searched \((W,h,y)\).  The all-loaded-query certificate
+   \cref{cor:deficient-shadow-prefix-certificate} is the special case
+   \(y_q\equiv1\), where \((DFN2)\) is \(D_{G',W}(h)\) and the query price is
+   \(R_W(h)\).
+\end{corollary}
+
+\begin{proof}
+   Let \(U\subseteq W\) attain \((DFN2)\), and put
+   \(X=D_{G',W,y}^{\widehat\gamma}(h)\).  Submit the one-record hit-weighted
+   star panel with container \(W\), update side \(U\), size certificate \(h\),
+   query weights \(\widetilde y_q=a_qy_q\), lower certificate \(X\), and
+   multiplicity \(1\).  Since \(0\le a_q\le1\), the query weights are in
+   \([0,1]\).  Also \(\mathcal N_{G'}\subseteq\mathcal N\), so
+   \[
+      X
+      \le
+      \sum_{p\in U}
+      \sum_{\substack{q:\,(p,q)\in\mathcal N}}
+      \widetilde y_q\gamma_{p,q}r_{p,q}.
+   \]
+   Thus \((HSP1)\) holds.  The strict inequality \((DFN3)\) is exactly the
+   one-record instance of \((HSP2)\), so
+   \cref{cor:hit-weighted-star-panel-prefix} gives a positive repair prefix.
+
+   For hardening, define the reduced-cost function
+   \[
+      F(y)=
+      D_{G',W,y}^{\widehat\gamma}(h)
+      -
+      \psi_Wh^{\rho_W}\sum_q\widehat\tau_qy_q
+      -
+      \psi_W\sigma h^{1+\rho_W}.
+   \]
+   The prefix term is a maximum of linear functions of \(y\), hence \(F\) is
+   convex on \([0,1]^{\mathcal Q_+}\).  If \(F(y)>0\) somewhere, its maximum on
+   the cube is positive at an extreme point, i.e. at \(y=\mathbf 1_Q\) for some
+   Boolean query layer \(Q\).  The residual envelope is the contrapositive over
+   the searched finite pool.  Finally, \(y_q\equiv1\) gives exactly
+   \((DSP5)\) and \((DSP3)\).
+\end{proof}
+
 \Cref{cor:deficient-shadow-prefix-certificate} is the most concrete current
 search problem.  Given one positive-excess Hall sublayer, compute or certify a
 top deficient-shadow prefix inside an affordable smaller-radius container and
 compare its mass with the recursive price.  Thus \(k\)-means++, additive
 quantization, LP range reporting, and list decoding are useful only insofar as
 they expose such prefixes; the proof does not depend on their sampling rule.
+\Cref{cor:deficient-shadow-finite-prefix-normal-form} gives the sharper
+query-layer form of the same target: the deficient shadow is an ordinary
+finite-prefix demand system after the substitution
+\(\widehat\gamma_{p,q}=a_q\gamma_{p,q}\),
+\(\widehat\tau_q=a_q\tau_q\).  The reporter may therefore search fractional
+query layers and pay only \(\sum_q\widehat\tau_qy_q\); any positive fractional
+certificate hardens to one Boolean query layer and one paid prefix.
 \Cref{cor:transported-deficient-shadow-certificate} gives the same target in
 transport form: a bounded-congestion shipment into one certified subset is
 already a lower certificate for the corresponding prefix mass, so no dyadic
@@ -36043,6 +36146,49 @@ smaller Hall cut whose paid-pair capacity is measured only inside that subset.
    \cref{cor:flow-value-shadow-mass-equivalence}: positive flow-value surplus
    over unrestricted congestion scales exists exactly when a certified subset
    has positive shadow-mass surplus.
+\end{proof}
+
+\begin{corollary}[Finite-prefix Hall-deficit oracle]
+   \label{cor:finite-prefix-hall-deficit-oracle}
+   Work in the setting of \cref{cor:lower-hull-hall-proposal-separator}.  Keep
+   the Hall-success alternative unchanged.  Replace the lower-hull proposal
+   alternative by the following finite-prefix repair alternative.
+
+   The exact-load Hall profile has a strict deficit \((LHP1)\), and
+   \cref{cor:integral-hall-deficit-normal-form} supplies an integral
+   positive-excess Hall sublayer \(G'\).  In the associated finite-prefix
+   deficient-shadow instance \((DFN1)\), the reporter supplies one certified
+   container \(W\), one cardinality \(h\), and one fractional query layer
+   \(0\le y_q\le1\) satisfying the strict finite-prefix surplus \((DFN3)\).
+
+   Then the reporter theorem required in
+   \cref{cor:guarded-star-panel-local-cover} holds.  Consequently the finite
+   local filter-cover LP in that corollary is feasible.
+
+   Equivalently, the single-subset shadow-mass surplus \((SMH1)\) in
+   \cref{cor:shadow-mass-hall-deficit-oracle} may be replaced by one positive
+   finite-prefix reduced-cost record for the weighted demand system
+   \((\mathcal N_{G'},\widehat\gamma,\widehat\tau)\).  This strictly refines the
+   all-loaded-query test by allowing the repair to pay only the query layer that
+   carries the certified shadow mass.
+\end{corollary}
+
+\begin{proof}
+   Fix a residual price system satisfying \((GSP1)\)--\((GSP3)\).  If the
+   Hall-success alternative holds, the Hall-success part of
+   \cref{cor:lower-hull-hall-proposal-separator} gives the required reporter
+   theorem.
+
+   Otherwise the finite-prefix repair alternative supplies \(G'\) and a record
+   satisfying \((DFN3)\).  By
+   \cref{cor:deficient-shadow-finite-prefix-normal-form}, this record is a
+   certified hit-weighted star panel satisfying \((HSP1)\)--\((HSP2)\).  This is
+   exactly the reporter conclusion assumed in
+   \cref{cor:guarded-star-panel-local-cover}; applying that corollary gives
+   local filter-cover feasibility.
+
+   The comparison with \((SMH1)\) is the specialization \(y_q\equiv1\) in
+   \cref{cor:deficient-shadow-finite-prefix-normal-form}.
 \end{proof}
 
 \begin{corollary}[Deficient-shadow residual obstruction]
