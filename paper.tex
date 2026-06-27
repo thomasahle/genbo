@@ -46004,6 +46004,63 @@ certificate is the verified positive-gain column and the finite LP it augments.
    applies.
 \end{proof}
 
+\begin{corollary}[Sampled shared prefix density search]
+   \label{cor:sampled-shared-prefix-density-search}
+   Work in the setting of \cref{cor:shared-prefix-density-panel}.  A randomized
+   build-time proposal routine, on seed \(s\), returns a finite verified panel
+   \(I_s\) with nonnegative weights \(\lambda_{s,i}\).  Every active record in
+   the returned panel satisfies the one-sided local density condition
+   \[
+      K_{s,i}\delta_{s,i}>2\overline P_{s,i}
+      \qquad(\lambda_{s,i}>0),
+      \tag{SPS1}
+   \]
+   and has certified lower mass \(\underline M_{s,i}\) and upper price
+   \(\overline P_{s,i}\) as in \((SPD4)\)--\((SPD5)\).  Define the certified
+   shared-prefix surplus
+   \[
+      Z(s)=
+      \sum_{i\in I_s}
+      \lambda_{s,i}\bigl(\underline M_{s,i}-2\overline P_{s,i}\bigr).
+      \tag{SPS2}
+   \]
+   Suppose
+   \[
+      \E_sZ(s)\ge\Gamma>0,
+      \qquad
+      Z(s)_+\le M
+      \quad\text{almost surely}.
+      \tag{SPS3}
+   \]
+   Then \(B\) independent build-time seeds contain a verified panel that exposes
+   a positive shared top-prefix column with probability at least
+   \[
+      1-\exp\left(-\frac{B\Gamma}{M}\right).
+      \tag{SPS4}
+   \]
+
+   Thus expensive randomized preprocessing may search a large family of
+   \(k\)-means++, facility, AQ, range, list-decoding, or lattice panels.  Only
+   the first verified positive panel is used, and
+   \cref{cor:shared-prefix-density-panel} immediately hardens it to one
+   deterministic retained top prefix.
+\end{corollary}
+
+\begin{proof}
+   From \((SPS3)\), \(\E Z_+\ge\Gamma\).  Since \(Z_+\le M\), one seed has
+   \(Z(s)>0\) with probability at least \(\Gamma/M\).  Thus \(B\) independent
+   seeds all fail to produce a positive-surplus panel with probability at most
+   \[
+      \left(1-\frac{\Gamma}{M}\right)^B
+      \le
+      \exp\left(-\frac{B\Gamma}{M}\right).
+   \]
+   For any successful seed, \((SPS1)\) and \(Z(s)>0\) are exactly the one-sided
+   panel conditions \((SPD4)\)--\((SPD5)\).  Hence
+   \cref{cor:shared-prefix-density-panel} returns a positive shared top-prefix
+   column.  Failed samples are discarded before materialization.
+\end{proof}
+
 \begin{corollary}[Shared integrated cover-cost endpoint]
    \label{cor:shared-integrated-cover-cost-endpoint}
    Work in the setting of
@@ -61289,6 +61346,9 @@ materializes one positive top-prefix column.
 finite or sampled facility, AQ, range, list, or lattice proposals may be scored
 by aggregate shared-degree surplus, but any positive panel still reduces to one
 deterministic verified top prefix.
+\Cref{cor:sampled-shared-prefix-density-search} gives the Las Vegas
+build-time wrapper: a positive expected certified surplus is amplified by
+repetition, while failed panels are discarded before materialization.
 \Cref{cor:shared-integrated-cover-cost-endpoint} and
 \cref{cor:shared-integrated-dense-profile-endpoint} are the corresponding
 polylogarithmic endpoints.  This is the current clean fractional-overlap target:
