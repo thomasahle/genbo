@@ -17947,6 +17947,73 @@ success-normalized bucket-net argument.
    which is \((ETP3)\).
 \end{proof}
 
+\begin{corollary}[Exact-prefix column generation]
+   \label{cor:exact-prefix-column-generation}
+   Work in the setting of \cref{cor:exact-top-prefix-cohort-game}.  Let
+   \(\mathcal U_{\rm ex}\) be a finite full universe of materializable affordable
+   exact-prefix records.  Suppose that for every cohort law \(\eta\) a build-time
+   separator either returns a record \(T\in\mathcal U_{\rm ex}\) with
+   \[
+      G_{\rm ex}(T,\eta)\ge0
+      \tag{EPC0}
+   \]
+   or certifies
+   \[
+      \max_{T\in\mathcal U_{\rm ex}}G_{\rm ex}(T,\eta)<0 .
+      \tag{EPC1}
+   \]
+   Start with any nonempty finite pool
+   \(\mathcal P\subseteq\mathcal U_{\rm ex}\), and repeatedly solve
+   \[
+      v_{\rm ex}(\mathcal P)
+      =
+      \min_{\eta\in\Delta_{\mathcal E_{\rm load}}}
+      \max_{T\in\mathcal P}G_{\rm ex}(T,\eta).
+      \tag{EPC2}
+   \]
+   If \(v_{\rm ex}(\mathcal P)\ge0\), then \((DPG3)\) holds.  If
+   \(v_{\rm ex}(\mathcal P)<0\), call the separator on a minimizing cohort law
+   \(\eta_{\mathcal P}\).  A successful call adds its returned record to the
+   pool; a certificate \((EPC1)\) proves that this exact-prefix universe cannot
+   close the dominated-load certificate.
+
+   Consequently, if
+   \[
+      \min_{\eta\in\Delta_{\mathcal E_{\rm load}}}
+      \max_{T\in\mathcal U_{\rm ex}}G_{\rm ex}(T,\eta)\ge0,
+      \tag{EPC3}
+   \]
+   the procedure terminates after at most \(|\mathcal U_{\rm ex}|\) successful
+   additions with a finite pool proving \((DPG3)\).  The separator and game solves
+   are preprocessing only; the retained index pays only for the final verified
+   pool, and the sharp threshold remains \(A\Lambda\).
+\end{corollary}
+
+\begin{proof}
+   If \(v_{\rm ex}(\mathcal P)\ge0\), then
+   \cref{cor:exact-top-prefix-cohort-game} applied to the current pool gives
+   \((DPG3)\).
+
+   Suppose \(v_{\rm ex}(\mathcal P)<0\), and choose a minimizer
+   \(\eta_{\mathcal P}\) in \((EPC2)\).  Then
+   \[
+      G_{\rm ex}(T,\eta_{\mathcal P})<0
+      \qquad(T\in\mathcal P).
+      \tag{EPC4}
+   \]
+   Thus any separator output satisfying \((EPC0)\) is not already in
+   \(\mathcal P\), so each successful call strictly enlarges the pool.  Since
+   \(\mathcal U_{\rm ex}\) is finite, this can happen at most
+   \(|\mathcal U_{\rm ex}|\) times.
+
+   If the separator certifies \((EPC1)\), then the full universe has negative
+   value at \(\eta_{\mathcal P}\), so \((EPC3)\) is false.  Under \((EPC3)\), the
+   certificate \((EPC1)\) can never be valid, and finite enlargement must
+   eventually reach a pool with nonnegative restricted value.  The final resource
+   statement is the separation between build-time search and retained verified
+   exact-prefix records in the finite cover LP.
+\end{proof}
+
 \begin{corollary}[Cohort-law weak-type superlevel normal form]
    \label{cor:cohort-law-weak-type-superlevel}
    Work in the setting of
@@ -19167,7 +19234,11 @@ theorem is to beat every law over these cohorts by one affordable retained
 record.  Finally,
 \cref{cor:cohort-law-scalar-prefix-normal-form} rewrites that record search as a
 scalar top-prefix problem for the cohort degree \(d_\eta^\theta\), not as a
-choice of disjoint dense clusters.  In the weak-type form of
+choice of disjoint dense clusters.  \Cref{cor:exact-top-prefix-cohort-game} and
+\cref{cor:exact-prefix-column-generation} record the sharp build-time version:
+if exact top-prefix records can be separated in a finite implicit universe,
+ordinary column generation closes the dominated-load certificate at threshold
+\(A\Lambda\), with no dyadic reporter loss.  In the weak-type form of
 \cref{cor:cohort-law-weak-type-superlevel}, the remaining range-reporting target
 is just to find one affordable scalar superlevel with \(\delta h\ge A\Lambda\).
 \Cref{cor:certified-cohort-law-superlevel-reporter} is the build-facing version:
@@ -19210,6 +19281,12 @@ count \(H_m(\Delta)\) cancels out of the retained prefix threshold.
 \Cref{cor:cardinality-net-cohort-prefix-envelope} removes exact-cardinality
 search: a factor-\(b\) retained cardinality net, in particular dyadic sizes
 with \(b=2\), leaves only the explicit envelope with \(K\) replaced by \(bh\).
+\Cref{cor:exact-prefix-column-generation} is the corresponding sharp finite
+form when exact top-prefix separation is available during preprocessing: solve
+the restricted cohort game, add any exact-prefix record with nonnegative surplus
+\(V_\eta(T)-A\Lambda\), and charge only the final verified pool.  This route has
+no logarithmic threshold; the logarithmic forms below are for weaker reporters
+that cannot materialize the exact cohort-degree prefix directly.
 \Cref{cor:finite-prefix-template-separation-game} is the final finite
 column-generation form of this target: preprocessing may spend arbitrary time
 proposing \(W,\theta,h\) and candidate sublists, but the retained column is
@@ -35709,10 +35786,13 @@ itself spherical-pseudo-random enough to close the dichotomy.
    finite cohort forms from
    \cref{lem:finite-dominated-load-proposal-game},
    \cref{cor:exact-load-cohort-law-separator},
+   \cref{cor:exact-top-prefix-cohort-game},
+   \cref{cor:exact-prefix-column-generation},
    \cref{cor:finite-prefix-template-separation-game}, or
    \cref{cor:prefix-template-column-generation}.  In particular, a finite
-   prefix-template proposal universe with nonnegative game value \((PTC3)\) at
-   every node supplies the same endpoint.
+   exact-prefix universe with nonnegative game value \((EPC3)\), or a weaker
+   prefix-template proposal universe with nonnegative value \((PTC3)\), at every
+   node supplies the same endpoint.
 \end{corollary}
 
 \begin{proof}
@@ -35729,7 +35809,7 @@ itself spherical-pseudo-random enough to close the dichotomy.
 
    The final statement uses the chain
    \[
-      \text{\((PTC3)\) or finite cohort separation}
+      \text{\((EPC3)\), \((PTC3)\), or finite cohort separation}
       \Longrightarrow
       \text{\((DPG3)\)}
       \Longrightarrow
@@ -35738,6 +35818,8 @@ itself spherical-pseudo-random enough to close the dichotomy.
       \text{local cover}.
    \]
    The first implication is
+   \cref{cor:exact-top-prefix-cohort-game},
+   \cref{cor:exact-prefix-column-generation},
    \cref{cor:finite-prefix-template-separation-game} or
    \cref{cor:prefix-template-column-generation}; the exact-load cohort versions
    are \cref{lem:finite-dominated-load-proposal-game} and
@@ -47447,6 +47529,11 @@ expected near-shadow capacity at least \(A\Lambda\).
 problem: the law over cohorts defines \(d_\eta^\theta(p)\), and failure means
 every affordable retained top-\(K\) prefix has \(d_\eta^\theta\)-mass below
 \(A\Lambda\).
+\Cref{cor:exact-top-prefix-cohort-game} and
+\cref{cor:exact-prefix-column-generation} give the cleanest continuation when
+preprocessing can solve the exact separator: a finite implicit universe of
+materializable top-prefix records is complete under ordinary column generation,
+and the accepted records only need surplus \(V_\eta(T)-A\Lambda\ge0\).
 \Cref{cor:cohort-law-weak-type-superlevel} is the range-reporting version of the
 same target: a certified superlevel with height \(\delta\) and size \(h\) closes
 the cohort law once \(\delta h\ge A\Lambda\).
