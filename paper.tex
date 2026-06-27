@@ -1511,6 +1511,98 @@ The smooth product filter is not a replacement for \cref{lem:adaptive-continuati
    \((TPG3)\).  Substitute these profile energies into \((TP1)\) for \(k=2\).
 \end{proof}
 
+\begin{corollary}[Tuple-profile storage certificate for compressed buckets]
+   \label{cor:tuple-profile-compressed-bucket-storage}
+   Let \(P\subset\mathbb S^{D-1}\), let \(\delta>0\), and let
+   \(0\le s\le1\).  Let \(G_1,\ldots,G_M\), \(M\ge1\), be independent copies of
+   a Gaussian cap label \(G\sim N(\mu,I_D)\), with
+   \[
+      U_G=\{x:\ip{G}{x}\ge T\}.
+   \]
+   For each occurrence choose any \(\delta\)-separated net
+   \(N_i\subseteq P\cap U_{G_i}\), and let \(\mathcal A\) be the set of distinct
+   canonical nets represented among the \(N_i\)'s.  Suppose that, for a target
+   storage budget \(B>0\),
+   \[
+      M\sum_{x\in P}\Pr[x\in U_G]\le B,
+      \tag{TPS1}
+   \]
+   Let
+   \[
+      \mathcal T_2^\ne(P,\delta)
+      =
+      \{(x,y)\in P^2:x\ne y,\ \|x-y\|\ge\delta\}.
+   \]
+   Suppose the distinct separated pair tuples are partitioned into finitely many
+   profiles \(\Pi_2^\ne\) with \(M_\pi=|\pi|\) and certified cap-intersection
+   energies \(I_\pi\) satisfying
+   \[
+      M\left(
+         \sum_{x\in P}\Pr[x\in U_G]
+         +
+         \sum_{\pi\in\Pi_2^\ne}M_\pi e^{-I_\pi}
+      \right)\le B .
+      \tag{TPS2}
+   \]
+   Then
+   \[
+      \E\sum_{i=1}^M |N_i|^{1+s}\le B,
+      \qquad
+      \E\sum_{A\in\mathcal A}|A|^{1+s}\le B .
+      \tag{TPS3}
+   \]
+
+   In particular, for one rung of the compressed-bucket recursion, \((TPS1)\)
+   and \((TPS2)\) with \(s=\rho_{j+1}\) certify the occurrence-weighted storage
+   moment and therefore the shared-DAG storage hypothesis \((CB2)\) in
+   expectation.  The pair energies \(I_\pi\) may be supplied by the explicit
+   correlation-margin bound of
+   \cref{cor:two-point-tuple-profile-gaussian}; the diagonal part of the second
+   moment is exactly the first moment already present in \((TPS1)\)--\((TPS2)\).
+\end{corollary}
+
+\begin{proof}
+   Let \(L_\delta(G)\) be the maximum \(\delta\)-separated list size from
+   \cref{lem:packing-list-tuple-moment}.  Since each \(N_i\) is
+   \(\delta\)-separated inside \(P\cap U_{G_i}\),
+   \[
+      |N_i|\le L_\delta(G_i).
+   \]
+   Put
+   \[
+      A_1=\sum_{x\in P}\Pr[x\in U_G],
+      \qquad
+      A_2=\sum_{(x,y)\in\mathcal T_2(P,\delta)}
+      \Pr[x,y\in U_G].
+   \]
+   Split \(A_2\) into the diagonal contribution \(A_1\) and the distinct-pair
+   contribution.  By \cref{cor:tuple-profile-renyi-certificate}, or directly by
+   \cref{lem:gaussian-cap-intersection-energy} summed over the distinct-pair
+   profiles,
+   \[
+      A_2
+      \le
+      A_1+\sum_{\pi\in\Pi_2^\ne}M_\pi e^{-I_\pi}.
+   \]
+   Thus \((TPS1)\)--\((TPS2)\) give \(A_1\le B/M\) and \(A_2\le B/M\).
+   Applying \((TM3)\) with exponent \(1+s\) gives
+   \[
+      \E L_\delta(G)^{1+s}\le A_1^{1-s}A_2^s\le B/M .
+   \]
+   Summing over the \(M\) independent occurrences proves the first inequality in
+   \((TPS3)\).
+
+   The second inequality is pointwise weaker than the first by
+   \cref{lem:occurrence-moments-dominate-dag}: selecting one representative
+   occurrence for each distinct canonical net gives
+   \[
+      \sum_{A\in\mathcal A}|A|^{1+s}
+      \le
+      \sum_{i=1}^M |N_i|^{1+s}.
+   \]
+   Taking expectations completes the proof.
+\end{proof}
+
 \begin{remark}[The Renyi target is entropy minus energy]
    \label{rem:renyi-entropy-energy-target}
    \Cref{cor:tuple-profile-renyi-certificate} is the promised self-contained
@@ -1537,6 +1629,11 @@ The smooth product filter is not a replacement for \cref{lem:adaptive-continuati
    incidence into smaller-radius star superlevels for the dense-filter
    separator.  Thus a large high-correlation contribution is not a failure of
    tensoring; it is exactly the signal that a dense column should be proposed.
+   \Cref{cor:tuple-profile-compressed-bucket-storage} supplies the matching
+   low-correlation storage compiler: once the first list moment and the
+   two-point tuple-profile energy are both within the desired storage budget, the
+   occurrence moment and the weaker shared-DAG distinct-net sum both satisfy
+   \((CB2)\).
    By \cref{lem:first-moment-query-compression}, the query side needs only the
    success-normalized first moment of the queried bucket or net, relative to
    the near hit probability \(a_j(q,p)\).  The space side uses the exponent
@@ -47923,10 +48020,14 @@ with false active buckets included in the active layer.
 \Cref{cor:distinct-canonical-bucket-net} further sharpens the storage target:
 the recursive child index is charged once per distinct canonical bucket net, not
 once per decoded occurrence, with only occurrence pointers left in the metadata
-budget.  \Cref{cor:dyadic-distinct-storage-bucket-net} rewrites that target as a
-dyadic large-child counting problem: for every recursive price scale, bound the
-number of distinct canonical bucket nets whose shared child index has that
-price.  \Cref{cor:layer-cake-distinct-storage-bucket-net} and
+budget.  \Cref{cor:tuple-profile-compressed-bucket-storage} gives the direct
+low-correlation certificate for this target: first list moment plus two-point
+Gaussian tuple-profile energy imply the needed occurrence moment, and the
+shared-DAG distinct-net sum is smaller.
+\Cref{cor:dyadic-distinct-storage-bucket-net} rewrites that target as a dyadic
+large-child counting problem: for every recursive price scale, bound the number
+of distinct canonical bucket nets whose shared child index has that price.
+\Cref{cor:layer-cake-distinct-storage-bucket-net} and
 \cref{cor:integrated-tuple-tail-distinct-storage} remove this dyadic
 discretization when a geometric proof can bound the integrated tail directly.
 \Cref{cor:price-weighted-witness-packing-storage} removes the tail parameter
