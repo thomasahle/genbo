@@ -36304,6 +36304,159 @@ certified smaller-radius subset whose paid shadow beats its descendant price, or
 falls into the low-correlation/list-size regime already handled by the spherical
 and compressed-bucket estimates.
 
+\begin{lemma}[Local list-size converts guard load to shadow mass]
+   \label{lem:local-list-size-guard-shadow}
+   Work in the setting of \cref{cor:shadow-mass-hall-deficit-oracle}, and let
+   \(G'\) be an integral Hall-deficit sublayer.  For a certified subcontainer
+   \(U\subseteq W\), define its visible guard load by
+   \[
+      H_{G'}(U)=
+      \sum_{q\in\mathcal Q_+}\tau_qa_q
+      \left|
+      \left\{
+      x\in G'(q):
+      \exists p\in U\text{ with }(p,q)\in\mathcal N,\ p\in W_x,
+      \text{ and }(x,p)\text{ satisfying }(HPS1)
+      \right\}
+      \right|.
+      \tag{LGS1}
+   \]
+   Suppose \(U\) has a local list-size certificate \(\kappa_U>0\), meaning that
+   for every \(p\in U\), every \(q\in\mathcal Q_+\), and every near pair
+   \((p,q)\in\mathcal N\),
+   \[
+      \sum_{\substack{x\in G'(q):\ p\in W_x\\
+      (x,p)\text{ satisfying }(HPS1)}}\tau_qa_q
+      \le
+      \kappa_U a_q\gamma_{p,q}r_{p,q}.
+      \tag{LGS2}
+   \]
+   Then
+   \[
+      H_{G'}(U)\le \kappa_U D_{G'}(U).
+      \tag{LGS3}
+   \]
+   Consequently, if
+   \[
+      \frac{H_{G'}(U)}{\kappa_U}>R_W(|U|),
+      \tag{LGS4}
+   \]
+   then \(U\) satisfies the shadow-mass surplus test \((SMH1)\), and the
+   guarded residual closes.
+
+   More generally, if a finite family of certified subcontainers
+   \(U_i\subseteq W_i\) has local list-size certificates \(\kappa_i\) and
+   nonnegative weights \(\lambda_i\) with
+   \[
+      \sum_i\lambda_i
+      \left(
+         \frac{H_{G'}(U_i)}{\kappa_i}-R_{W_i}(|U_i|)
+      \right)>0,
+      \tag{LGS5}
+   \]
+   then one deterministic member of the family satisfies \((SMH1)\).
+\end{lemma}
+
+\begin{proof}
+   For a fixed \(q\) and \(x\in G'(q)\), the indicator that \(x\) is visible
+   from \(U\) is at most the number of paid points \(p\in U\) adjacent to
+   \((q,x)\) through the high-correlation relation in \((HPS1)\).  Therefore
+   \[
+      H_{G'}(U)
+      \le
+      \sum_{q\in\mathcal Q_+}
+      \sum_{p\in U:\ (p,q)\in\mathcal N}
+      \sum_{\substack{x\in G'(q):\ p\in W_x\\
+      (x,p)\text{ satisfying }(HPS1)}}\tau_qa_q .
+   \]
+   Terms with no adjacent \(x\) have zero inner sum, so after applying
+   \((LGS2)\) only pairs with \(p\in N_{\rm hc}(G')(q)\) remain.  Therefore
+   \[
+      H_{G'}(U)
+      \le
+      \kappa_U
+      \sum_{p\in U}
+      \sum_{\substack{q\in\mathcal Q_+\\p\in N_{\rm hc}(G')(q)}}
+      a_q\gamma_{p,q}r_{p,q}
+      =
+      \kappa_U D_{G'}(U).
+   \]
+   Thus \((LGS4)\) implies \(D_{G'}(U)>R_W(|U|)\), which is \((SMH1)\).
+   The panel statement follows because a positive weighted average in
+   \((LGS5)\) contains an index \(i\) with
+   \(H_{G'}(U_i)/\kappa_i>R_{W_i}(|U_i|)\), and the one-subset argument applies
+   to that member.
+\end{proof}
+
+\begin{corollary}[Guard-capture Hall separator]
+   \label{cor:guard-capture-hall-separator}
+   Work in the setting of \cref{lem:local-list-size-guard-shadow}.  Let
+   \(G'\) be a positive-excess Hall sublayer, so
+   \[
+      L(G')=\sum_q\tau_qa_q|G'(q)|>\frac{B_{\rm pc}}2 .
+      \tag{GCH1}
+   \]
+   Suppose a certified \(U\subseteq W\) has a local list-size certificate
+   \(\kappa_U\), and captures an \(\eta\)-fraction of the guard load,
+   \[
+      H_{G'}(U)\ge \eta L(G')
+      \tag{GCH2}
+   \]
+   for some \(\eta>0\).  If
+   \[
+      \eta L(G')>\kappa_U R_W(|U|),
+      \tag{GCH3}
+   \]
+   then the guarded residual closes.  In particular, the simpler sufficient
+   condition
+   \[
+      \frac{\eta B_{\rm pc}}2>\kappa_U R_W(|U|)
+      \tag{GCH4}
+   \]
+   also closes.
+
+   Hence, in any surviving no-shadow-mass residual, every certified
+   subcontainer with a local list-size certificate must obey
+   \[
+      H_{G'}(U)\le \kappa_U R_W(|U|).
+      \tag{GCH5}
+   \]
+   Equivalently, a container that captures an \(\eta\)-fraction of the exposed
+   Hall load can survive only if
+   \[
+      \kappa_U R_W(|U|)\ge \eta L(G')>\frac{\eta B_{\rm pc}}2 .
+      \tag{GCH6}
+   \]
+\end{corollary}
+
+\begin{proof}
+   The first statement is immediate from
+   \[
+      \frac{H_{G'}(U)}{\kappa_U}
+      \ge
+      \frac{\eta L(G')}{\kappa_U}
+      >
+      R_W(|U|)
+   \]
+   and \cref{lem:local-list-size-guard-shadow}.  Since
+   \(\Delta(G')>0\) implies \(L(G')>B_{\rm pc}/2\), condition \((GCH4)\)
+   implies \((GCH3)\).  The residual inequalities are the contrapositives of
+   the same one-subset test.
+\end{proof}
+
+\Cref{lem:local-list-size-guard-shadow} is the positive counterpart to
+\cref{lem:hall-excess-no-algebraic-shadow-surplus}.  The obstruction in that
+lemma duplicates many guard incidences against one paid point; here that
+duplication is measured by \(\kappa_U\).  Thus a geometric proof of the
+shadow-mass separator may target guard load rather than deficient-shadow degree:
+find a smaller-radius container that captures enough exposed guard incidences
+and certify that no paid pair in the container explains too many of them.
+\Cref{cor:guard-capture-hall-separator} records the exact trilemma left by a
+surviving residual: every searched container either captures too little of the
+Hall load, has too large a recursive price, or has too large a local list-size
+factor.  This is the form that list decoding, additive quantization, LP range
+reporting, or seeded center proposals should try to violate.
+
 \begin{corollary}[Tuple-profile distinct-storage certificate]
    \label{cor:tuple-profile-distinct-storage}
    Work in the setting of
