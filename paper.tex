@@ -16406,6 +16406,82 @@ success-normalized bucket-net argument.
    and feasibility, and the optimizer has the threshold form just proved.
 \end{proof}
 
+\begin{lemma}[Finite prefix screen for recycled thresholds]
+   \label{lem:finite-prefix-recycled-threshold-screen}
+   Work in the notation of \cref{lem:threshold-recycled-bad-layers}.  Let
+   \(a_1<\cdots<a_k\) be the distinct values of \(\sigma_q\) that are larger
+   than \(A\).  Put \(a_0=A\), and define
+   \[
+      L_i=\sum_{\substack{q\in Q^+\\ \sigma_q\le a_i}}\ell_q,
+      \qquad
+      S_i=\sum_{\substack{q\in Q^+\\ \sigma_q\le a_i}}s_q
+      \qquad(0\le i\le k),
+   \]
+   with \(L_\infty=\sum_{q\in Q^+}\ell_q\).  The threshold screen
+   \[
+      \exists t>A:
+      \qquad
+      tL(t)-S(t)\le(t-A)\Lambda
+      \tag{FPS1}
+   \]
+   holds if and only if at least one of the following finite alternatives
+   holds:
+   \[
+      A L_0-S_0=0
+      \quad\text{and}\quad
+      L_0\le\Lambda ,
+      \tag{FPS2}
+   \]
+   \[
+      \exists i\in\{1,\ldots,k\}:
+      \qquad
+      a_iL_i-S_i\le(a_i-A)\Lambda ,
+      \tag{FPS3}
+   \]
+   or
+   \[
+      L_\infty<\Lambda .
+      \tag{FPS4}
+   \]
+   Thus a threshold certificate can be searched by sorting the finitely many
+   efficiencies \(\sigma_q\) and scanning prefix sums.
+\end{lemma}
+
+\begin{proof}
+   Let
+   \[
+      G(t)=tL(t)-S(t)-(t-A)\Lambda .
+   \]
+   The function \(G\) is continuous and affine on each interval
+   \((a_i,a_{i+1})\), with slope \(L_i-\Lambda\).  It is continuous at each
+   breakpoint because the newly added queries have \(s_q=a_i\ell_q\).  On the
+   last interval \((a_k,\infty)\) its slope is \(L_\infty-\Lambda\).
+
+   The three displayed alternatives are sufficient.  If \((FPS2)\) holds, then
+   either \(G(t)=0\) for all sufficiently small \(t>A\) or \(G(t)<0\) for all
+   sufficiently small \(t>A\).  If \((FPS3)\) holds, choose \(t=a_i\).  If
+   \((FPS4)\) holds, then \(G(t)\to-\infty\) as \(t\to\infty\).
+
+   Conversely suppose \(G(t)\le0\) for some \(t>A\).  If \(t=a_i\) for a
+   breakpoint \(i\ge1\), then \((FPS3)\) holds.  If \(t\in(a_i,a_{i+1})\),
+   then \(G\) is affine on that interval.  When its slope is nonnegative,
+   moving left cannot increase \(G\); if \(i\ge1\) this gives \((FPS3)\).  If
+   \(i=0\), then \(G(A)=A L_0-S_0\le0\).  Since every included query has
+   \(\sigma_q\le A\), also \(G(A)\ge0\).  Thus \(G(A)=0\), and the fact that
+   \(G(t)\le0\) with nonnegative slope forces \(L_0-\Lambda=0\), giving
+   \((FPS2)\).  When the slope is negative, moving right cannot increase
+   \(G\); if \(i<k\) this gives \((FPS3)\), while if \(i=k\) it gives
+   \(L_\infty<\Lambda\).
+
+   It remains to handle \(t>a_k\), including the case \(k=0\).  On
+   \((a_k,\infty)\), if the slope \(L_\infty-\Lambda\) is negative then
+   \((FPS4)\) holds.  If the slope is nonnegative and \(k\ge1\), moving left to
+   \(a_k\) gives \((FPS3)\).  If the slope is nonnegative and \(k=0\), the
+   same argument at \(A\) gives \(G(A)=0\), and nonnegative slope plus
+   \(G(t)\le0\) again forces \(L_0=\Lambda\), hence \((FPS2)\).  These cases
+   exhaust all \(t>A\).
+\end{proof}
+
 \begin{corollary}[Lagrange recycled-sublayer separator suffices]
    \label{cor:lagrange-recycled-sublayer-separator-suffices}
    Work under the hypotheses of \cref{cor:annular-reporter-local-cover}, assume
@@ -16526,6 +16602,55 @@ success-normalized bucket-net argument.
    proves local feasibility.
 \end{proof}
 
+\begin{corollary}[Finite-prefix recycled-sublayer separator suffices]
+   \label{cor:finite-prefix-recycled-sublayer-separator-suffices}
+   In \cref{cor:threshold-recycled-sublayer-separator-suffices}, the threshold
+   condition \((TRS1)\) may be replaced by the following finite prefix
+   condition at each dyadic \(\Delta'\).  Let \(a_1<\cdots<a_k\) be the
+   distinct values larger than \(A\) of
+   \(s_{W,\theta}(q)/(\Delta'\bar\tau_q)\) over queries
+   \(q\in Q_{\Delta'}\) with \(\bar\tau_q>0\).  Set \(a_0=A\), and define
+   \[
+      L_i=\sum_{\substack{q\in Q_{\Delta'}\\
+                  \bar\tau_q>0\\
+                  s_{W,\theta}(q)/(\Delta'\bar\tau_q)\le a_i}}
+            \Delta'\bar\tau_q,
+      \qquad
+      S_i=\sum_{\substack{q\in Q_{\Delta'}\\
+                  \bar\tau_q>0\\
+                  s_{W,\theta}(q)/(\Delta'\bar\tau_q)\le a_i}}
+            s_{W,\theta}(q).
+   \]
+   If, for every \(\Delta'\), at least one of
+   \[
+      A L_0-S_0=0\quad\text{and}\quad L_0\le\Lambda ,
+      \tag{FPR1}
+   \]
+   \[
+      \exists i\in\{1,\ldots,k\}:
+      \qquad
+      a_iL_i-S_i\le(a_i-A)\Lambda ,
+      \tag{FPR2}
+   \]
+   or
+   \[
+      \sum_{\substack{q\in Q_{\Delta'}\\ \bar\tau_q>0}}
+      \Delta'\bar\tau_q
+      <\Lambda
+      \tag{FPR3}
+   \]
+   holds, then the enlarged local filter-cover LP is feasible.
+\end{corollary}
+
+\begin{proof}
+   For each fixed dyadic \(\Delta'\), this is exactly
+   \cref{lem:finite-prefix-recycled-threshold-screen} applied with
+   \(\ell_q=\Delta'\bar\tau_q\) and \(s_q=s_{W,\theta}(q)\).  Hence the
+   threshold condition of
+   \cref{cor:threshold-recycled-sublayer-separator-suffices} holds at every
+   dyadic level, and that corollary proves feasibility.
+\end{proof}
+
 The transport formulation is useful because it cleanly separates the two
 remaining tasks.  The annular witnesses are far points and still cannot be used
 as cover columns.  A geometric or list-recovery argument must instead construct
@@ -16575,6 +16700,10 @@ with at most one fractional boundary level.
 build-facing certificate: for each dyadic annular size level it is enough to
 sort queries by that efficiency and find one threshold whose low-efficiency
 prefix passes the scalar inequality.
+\Cref{lem:finite-prefix-recycled-threshold-screen} and
+\cref{cor:finite-prefix-recycled-sublayer-separator-suffices} make the search
+finite: only the sorted prefix breakpoints, the right-limit at \(A\), and the
+terminal low-total-load case can certify the threshold screen.
 
 \begin{corollary}[Annular reporter closes the local cover]
    \label{cor:annular-reporter-local-cover}
@@ -38349,6 +38478,11 @@ current sufficient certificate: at every dyadic annular size level, one
 affordable retained container must admit a low-efficiency threshold whose
 prefix statistic satisfies
 \(tL_{\Delta'}(t)-S_{\Delta'}(t)\le(t-2H_m(\Delta)/C)\Lambda\).
+\Cref{lem:finite-prefix-recycled-threshold-screen} and
+\cref{cor:finite-prefix-recycled-sublayer-separator-suffices} remove the
+remaining continuum parameter: the certificate is found, if it exists, by
+scanning the sorted efficiency breakpoints, plus the \(A\)-boundary and
+terminal low-load cases.
 \Cref{lem:primitive-hit-kernel-cover-equivalence} gives the matching primal
 form: the same theorem is equivalent to fractionally covering the primitive
 spherical hit kernel \(r_{p,q}\) by Pareto cores at \(\pi_1\)-scaled query and
