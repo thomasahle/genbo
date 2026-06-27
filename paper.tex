@@ -33376,6 +33376,72 @@ they expose such prefixes; the proof does not depend on their sampling rule.
    are the contrapositives.
 \end{proof}
 
+\begin{corollary}[Fractional fixed-threshold density panel]
+   \label{cor:fractional-fixed-threshold-density-panel}
+   Work in the setting of
+   \cref{cor:fixed-threshold-balanced-density-screen}.  Let \(i\in I\) range
+   over a finite panel of verified balanced-density records with nonnegative
+   weights \(\lambda_i\).  Each record has an ambient container \(W_i\), a
+   balance factor \(a_i\ge1\), and a certified density \(\delta_i\).  Define
+   \[
+      \Theta_i
+      =
+      \Xi_{W_i,a_i}L_{W_i,a_i}
+      =
+      4a_i\psi_{W_i}C_{\rho_{W_i}}A_+^{\rho_{W_i}}\sigma^{1-\rho_{W_i}}
+      \left(
+         1+\left\lceil
+            \log_2
+            \frac{2}{\min\{\Xi_{W_i,a_i},1\}}
+         \right\rceil
+      \right),
+      \tag{FFD1}
+   \]
+   with \(\Xi_{W_i,a_i}\) as in \((FTD1)\).  A record is admissible if it is one
+   of the following two types.
+
+   First, it may be a retained top-prefix record: an available certified
+   top-prefix cardinality \(h_i\) satisfying \((TPD1)\), with
+   \[
+      \kappa_i=h_i,
+      \qquad
+      \delta_i=\frac{D_{G',W_i}(h_i)}{h_i}.
+      \tag{FFD2}
+   \]
+   Second, it may be a coarse report with an available balanced trim satisfying
+   \((TPD3)\), with certificates \(M_i,K_i,V_i\) and
+   \[
+      \kappa_i=K_i,
+      \qquad
+      \delta_i=\frac{M_i}{K_i}.
+      \tag{FFD3}
+   \]
+   If
+   \[
+      \sum_i\lambda_i\kappa_i(\delta_i-\Theta_i)>0,
+      \tag{FFD4}
+   \]
+   then the guarded residual closes.
+
+   Equivalently, if no retained deficient-shadow prefix closes, every finite
+   nonnegative admissible panel has nonpositive surplus \((FFD4)\).  Hence a
+   randomized or batched proposal routine may be analyzed only through its
+   expected fixed-threshold density surplus; a positive expectation already
+   contains one deterministic retained dense column.
+\end{corollary}
+
+\begin{proof}
+   Since all \(\lambda_i\) and \(\kappa_i\) are nonnegative and every admissible
+   record has \(\kappa_i>0\), condition \((FFD4)\) implies that at least one
+   record with \(\lambda_i>0\) satisfies \(\delta_i>\Theta_i\).  If that record
+   is of top-prefix type, then \((FTD2)\) holds and
+   \cref{cor:fixed-threshold-balanced-density-screen} closes the residual.  If
+   it is of coarse-trim type, then \((FTD3)\) holds and the same corollary
+   closes the residual.  The nonpositive-panel statement is the contrapositive,
+   and the randomized-law statement is the special case
+   \(\lambda_i=\nu(i)\) for a finite proposal support.
+\end{proof}
+
 \begin{corollary}[Deficient-shadow residual obstruction]
    \label{cor:deficient-shadow-residual-obstruction}
    Work in the setting of
@@ -33419,7 +33485,9 @@ they expose such prefixes; the proof does not depend on their sampling rule.
    screen \((BDS4)\).  Every retained top-prefix record satisfying \((TPD1)\)
    fails \((TPD2)\), and every coarse report with an available balanced trim
    satisfying \((TPD3)\) fails \((TPD4)\).  Equivalently, these records obey the
-   fixed-threshold residual bounds obtained by reversing \((FTD2)\)--\((FTD3)\).
+   fixed-threshold residual bounds obtained by reversing \((FTD2)\)--\((FTD3)\),
+   and every finite admissible fixed-threshold density panel has nonpositive
+   surplus \((FFD4)\).
 \end{corollary}
 
 \begin{proof}
@@ -33451,7 +33519,9 @@ they expose such prefixes; the proof does not depend on their sampling rule.
    density-screen statement is \cref{cor:balanced-average-density-screen}.  The
    top-prefix and trimmed-prefix density statements are
    \cref{cor:balanced-top-prefix-density-screen}.  The fixed-threshold
-   restatement is \cref{cor:fixed-threshold-balanced-density-screen}.
+   restatement is \cref{cor:fixed-threshold-balanced-density-screen}.  The
+   fixed-threshold panel statement is
+   \cref{cor:fractional-fixed-threshold-density-panel}.
 \end{proof}
 
 \Cref{cor:deficient-shadow-residual-obstruction} is the current proof bottleneck
@@ -33514,6 +33584,9 @@ trimmed down to that scale.
 self-reference in \(J(\delta)\): a reporter may target one fixed density level
 \(\Xi\log(2/\min\{\Xi,1\})\), where
 \(\Xi\asymp\psi_WA_+^{\rho_W}\sigma^{1-\rho_W}\).
+\Cref{cor:fractional-fixed-threshold-density-panel} restores the proposal-law
+interface at this fixed level: positive expected density surplus over a finite
+panel already contains one deterministic retained dense column.
 
 \begin{corollary}[Tuple-profile distinct-storage certificate]
    \label{cor:tuple-profile-distinct-storage}
@@ -34040,6 +34113,9 @@ certification.
 \Cref{cor:fixed-threshold-balanced-density-screen} makes this a noncircular
 density target by replacing \(J(\delta)\) with a fixed logarithm evaluated at
 the mixed query-storage density scale.
+\Cref{cor:fractional-fixed-threshold-density-panel} is the proposal-law version:
+positive aggregate fixed-threshold density surplus in any finite panel exposes
+one deterministic balanced dense column.
 \Cref{cor:pair-compatible-hall-guarded-cover} assembles the chain back into the
 local LP: a half-shipment with sufficient layer-cake surplus supplies the
 guarded star-panel reporter and closes the residual.
@@ -47367,6 +47443,8 @@ single mixed density threshold at the stationary support scale.
 prefix form and trims oversized coarse reports to the same stationary scale.
 \Cref{cor:fixed-threshold-balanced-density-screen} converts the remaining
 self-referential \(J(\delta)\) test into one fixed dyadic density threshold.
+\Cref{cor:fractional-fixed-threshold-density-panel} gives the corresponding
+finite proposal-law surplus test.
 \Cref{cor:pair-compatible-hall-guarded-cover} states the final local theorem
 target in this language: prove the Hall expansion and the resulting
 layer-cake price inequality for every guarded residual.
