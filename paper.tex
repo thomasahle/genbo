@@ -15598,7 +15598,8 @@ success-normalized bucket-net argument.
       \sum_{\substack{q\in Q'\\(p,q)\in\mathcal N}}
       \bar\gamma^\theta_{p,q}r_{p,q}.
    \]
-   The unit case has \(s_{q,x}=1\) for every annular incidence.
+   The weighted-unit case has \(s_{q,x}=1\) for every annular incidence with
+   \(\bar\tau_q>0\); zero-price incidences carry no mass and may be ignored.
 \end{definition}
 
 \begin{lemma}[Transport certificate for annular reporters]
@@ -15662,7 +15663,7 @@ success-normalized bucket-net argument.
       \right).
       \tag{AST5}
    \]
-   In particular, any unit transport into \(W\) obeys
+   In particular, any weighted-unit transport into \(W\) obeys
    \[
       \frac{
          \sum_{q\in Q'}\bar\tau_q |B_{z,\beta}(q)|
@@ -15689,7 +15690,7 @@ success-normalized bucket-net argument.
    \cref{cor:annular-reporter-local-cover}, that reporter materializes a
    positive reduced-gain retained prefix/core and contradicts the hinge
    envelope \((GNR3)\) of the surviving residual.  Hence no such transport can
-   exist under local infeasibility.  The unit-transport statement is the
+   exist under local infeasibility.  The weighted-unit statement is the
    specialization \(s_{q,x}=1\), for which the mass identity \((AST2)\) gives
    the displayed value of \(M\).
 \end{proof}
@@ -15709,7 +15710,7 @@ success-normalized bucket-net argument.
       \tag{AST7}
    \]
    Therefore, for the single-seed layer with \(|B_{z,\beta}(q)|\ge\Delta\) on
-   \(Q'\), any unit transport into a \(K\)-point prefix core of price
+   \(Q'\), any weighted-unit transport into a \(K\)-point prefix core of price
    \(T_W=\psi K^\rho\), \(S_W=\psi K^{1+\rho}\) must have
    \[
       C
@@ -15734,6 +15735,196 @@ success-normalized bucket-net argument.
    and substituting the prefix prices into \((AST7)\) gives \((AST8)\).
 \end{proof}
 
+\begin{lemma}[Annular-shadow cut normal form]
+   \label{lem:annular-shadow-cut-normal-form}
+   Work in the setting of \cref{def:annular-shadow-transport}.  Put
+   \[
+      b_q=\bar\tau_q|B(q)|,
+      \qquad
+      B_{\rm tot}=\sum_{q\in Q'}b_q,
+   \]
+   and, for \(Y\subseteq Q'\),
+   \[
+      N_W(Y)=\{p\in W:\exists q\in Y,\ (p,q)\in\mathcal N\},
+      \qquad
+      D_W^\theta(Y)=\sum_{p\in N_W(Y)}d_{Q'}^\theta(p).
+   \]
+   Let \(\Phi_C^\theta(W)\) be the largest mass \(M\) for which a
+   \(C\)-congested \(\theta\)-shadow transport into \(W\) exists.  Then
+   \[
+      \Phi_C^\theta(W)
+      =
+      \min_{Y\subseteq Q'}
+      \left\{
+         \sum_{q\in Q'\setminus Y}b_q
+         +C D_W^\theta(Y)
+      \right\}
+      =
+      B_{\rm tot}
+      -
+      \max_{Y\subseteq Q'}
+      \left\{
+         \sum_{q\in Y}b_q-CD_W^\theta(Y)
+      \right\}.
+      \tag{ASC1}
+   \]
+   Consequently, for \(0\le M_0\le B_{\rm tot}\), a transport of mass at least
+   \(M_0\) exists if and only if every \(Y\subseteq Q'\) satisfies
+   \[
+      \sum_{q\in Y}b_q
+      \le
+      C D_W^\theta(Y)+B_{\rm tot}-M_0 .
+      \tag{ASC2}
+   \]
+   In particular, a weighted-unit transport of all positive-price annular
+   incidences exists if and only if
+   \[
+      \sum_{q\in Y}b_q\le C D_W^\theta(Y)
+      \qquad(Y\subseteq Q').
+      \tag{ASC3}
+   \]
+\end{lemma}
+
+\begin{proof}
+   Aggregate the transport variables by query and point.  A transport of mass
+   \(M\) is equivalent to nonnegative variables \(f_{q,p}\), supported on
+   \(p\in W\) with \((p,q)\in\mathcal N\), such that
+   \[
+      \sum_{p\in N_W(\{q\})}f_{q,p}\le b_q,
+      \qquad
+      \sum_{\substack{q\in Q':\\(p,q)\in\mathcal N}}f_{q,p}
+      \le C d_{Q'}^\theta(p),
+      \qquad
+      \sum_{q,p}f_{q,p}=M .
+   \]
+   The equivalence follows by setting
+   \(f_{q,p}=\bar\tau_q\sum_{x\in B(q)}\pi_{q,x,p}\).  Conversely, because
+   \(\sum_pf_{q,p}\le\bar\tau_q|B(q)|\), the normalized amount
+   \(\bar\tau_q^{-1}f_{q,p}\) can be distributed fractionally among the
+   \(|B(q)|\) incidences when \(\bar\tau_q>0\); queries with
+   \(\bar\tau_q=0\) carry no mass.
+
+   Thus \(\Phi_C^\theta(W)\) is the optimum of the finite fractional flow LP
+   that maximizes \(\sum_{q,p}f_{q,p}\) subject to the two displayed capacity
+   constraints.  Its dual is
+   \[
+      \min
+      \left\{
+         \sum_qb_qu_q+C\sum_{p\in W}d_{Q'}^\theta(p)v_p:
+         u_q+v_p\ge1\ \text{whenever }(p,q)\in\mathcal N,\quad
+         u_q,v_p\ge0
+      \right\}.
+      \tag{ASC4}
+   \]
+   Strong duality holds because the finite primal is feasible and bounded.
+
+   For any \(Y\subseteq Q'\), the Boolean dual
+   \[
+      u_q=\mathbf 1\{q\notin Y\},
+      \qquad
+      v_p=\mathbf 1\{p\in N_W(Y)\}
+   \]
+   is feasible and has value
+   \[
+      \sum_{q\in Q'\setminus Y}b_q+CD_W^\theta(Y).
+   \]
+   Therefore the dual optimum is at most the right side of \((ASC1)\).
+
+   Conversely, take any feasible dual \((u,v)\) and truncate it to
+   \(0\le u_q,v_p\le1\), which cannot increase the objective or destroy the
+   constraints.  For \(t\in(0,1]\), let
+   \[
+      Y_t=\{q:u_q<t\},
+      \qquad
+      P_t=\{p:v_p\ge1-t\}.
+   \]
+   If \(q\in Y_t\) and \((p,q)\in\mathcal N\), then
+   \(v_p\ge1-u_q>1-t\), so \(N_W(Y_t)\subseteq P_t\).  Hence
+   \[
+   \begin{aligned}
+      \sum_qb_qu_q+C\sum_pd_{Q'}^\theta(p)v_p
+      &=
+      \int_0^1
+      \left(
+         \sum_{q:u_q\ge t}b_q
+         +C\sum_{p:v_p\ge1-t}d_{Q'}^\theta(p)
+      \right)dt\\
+      &\ge
+      \int_0^1
+      \left(
+         \sum_{q\in Q'\setminus Y_t}b_q
+         +C D_W^\theta(Y_t)
+      \right)dt\\
+      &\ge
+      \min_{Y\subseteq Q'}
+      \left\{
+         \sum_{q\in Q'\setminus Y}b_q
+         +C D_W^\theta(Y)
+      \right\}.
+   \end{aligned}
+   \]
+   This proves the cut formula \((ASC1)\).  Rewriting
+   \(\Phi_C^\theta(W)\ge M_0\) using the second form of \((ASC1)\) gives
+   \((ASC2)\), and \(M_0=B_{\rm tot}\) gives \((ASC3)\).
+\end{proof}
+
+\begin{corollary}[Cut-certified annular reporter]
+   \label{cor:cut-certified-annular-reporter}
+   Work under the hypotheses of
+   \cref{cor:single-seed-near-shadow-prefix-obstruction}.  Let
+   \(Q'=Q_{z,\beta,\Delta}\), \(B(q)=B_{z,\beta}(q)\), and define
+   \(b_q,B_{\rm tot},D_W^\theta\) as in
+   \cref{lem:annular-shadow-cut-normal-form}.  Suppose there are a retained
+   container \(W\), a size certificate \(|W|\le K\), a congestion parameter
+   \(C>0\), a segment point \(0\le\theta\le1\), and a target mass
+   \(0<M_0\le B_{\rm tot}\) such that every query sublayer \(Y\subseteq Q'\)
+   satisfies the cut inequalities
+   \[
+      \sum_{q\in Y}b_q
+      \le
+      C D_W^\theta(Y)+B_{\rm tot}-M_0,
+      \tag{CCR1}
+   \]
+   and
+   \[
+      \frac{M_0}{4C J_{K,M_0/C}}
+      >
+      \frac{b\,\psi_W}{\pi_1}
+      \left(
+         \frac{(\chi\beta b_0)^{\rho_W}K^{\rho_W}}{L}
+         +
+         \frac{(\chi\beta b_0)^{1+\rho_W}K^{1+\rho_W}}{S}
+      \right).
+      \tag{CCR2}
+   \]
+   Then this single-seed annular layer yields the scalar reporter required by
+   \cref{asm:weighted-annular-scalar-reporter}.
+
+   Conversely, if the local filter-cover LP is infeasible, then for every
+   choice of \(W,K,C,\theta,M_0\) satisfying \((CCR2)\) there is a query
+   sublayer \(Y\subseteq Q'\) with
+   \[
+      \sum_{q\in Y}b_q
+      >
+      C D_W^\theta(Y)+B_{\rm tot}-M_0 .
+      \tag{CCR3}
+   \]
+\end{corollary}
+
+\begin{proof}
+   By \cref{lem:annular-shadow-cut-normal-form}, the cut inequalities
+   \((CCR1)\) are equivalent to the existence of a
+   \(C\)-congested \(\theta\)-shadow transport of mass at least \(M_0\) into
+   \(W\).  With \((CCR2)\), \cref{lem:annular-shadow-transport-reporter}
+   produces the required scalar reporter.
+
+   For the converse, if no violating sublayer existed, then \((CCR1)\) would
+   hold and the first part would produce the reporter.  As in
+   \cref{cor:annular-shadow-transport-obstruction}, that reporter contradicts
+   the surviving residual's hinge envelope under local infeasibility.  Hence
+   some cut violation \((CCR3)\) must exist.
+\end{proof}
+
 The transport formulation is useful because it cleanly separates the two
 remaining tasks.  The annular witnesses are far points and still cannot be used
 as cover columns.  A geometric or list-recovery argument must instead construct
@@ -15742,10 +15933,14 @@ near-shadow mass.  If it does, \cref{lem:annular-shadow-transport-reporter}
 turns that transport into the same verified scalar reporter as before.  If the
 LP remains infeasible, \cref{cor:annular-shadow-transport-obstruction} and
 \cref{cor:annular-shadow-congestion-lower-bound} say that every such transport
-must have large congestion.  Thus the current irreducible obstruction can be
-stated as a purely geometric transport failure: a query-price-heavy annular
-layer exists, but no retained smaller-radius container can receive even a
-constant fraction of its incidences into the true near-shadow potential at
+must have large congestion.  \Cref{lem:annular-shadow-cut-normal-form} and
+\cref{cor:cut-certified-annular-reporter} make the same failure cut-based:
+for every proposed retained container and target mass, some sublayer of the
+annular queries has annular demand larger than its true near-shadow neighborhood
+capacity plus the allowed unshipped tail.  Thus the current irreducible
+obstruction can be stated as a purely geometric Hall failure: a query-price-heavy
+annular layer exists, but no retained smaller-radius container receives a large
+fraction of its incidences into the true near-shadow potential at
 Renyi-affordable congestion.
 
 \begin{corollary}[Annular reporter closes the local cover]
@@ -37480,9 +37675,15 @@ is still missing: annular false-positive incidences must be transported into
 true near-shadow mass with low congestion.  Such a transport immediately
 materializes the scalar reporter; if the LP remains infeasible, every retained
 smaller-radius container has a Renyi-affordable congestion lower bound by
-\cref{cor:annular-shadow-congestion-lower-bound}.  Thus the remaining
-geometric theorem can be phrased as ruling out a heavy annular query layer that
-admits no low-congestion transport into actual near witnesses.
+\cref{cor:annular-shadow-congestion-lower-bound}.
+\Cref{lem:annular-shadow-cut-normal-form} and
+\cref{cor:cut-certified-annular-reporter} give the exact cut version of this
+statement: either every query sublayer has enough near-shadow neighborhood
+capacity, in which case the reporter follows, or some sublayer has annular
+demand exceeding its near-shadow cut capacity plus the allowed unshipped tail.
+Thus the remaining geometric theorem can be phrased as ruling out a heavy
+annular query layer whose every retained smaller-radius container has such a
+Hall-type cut obstruction.
 \Cref{lem:primitive-hit-kernel-cover-equivalence} gives the matching primal
 form: the same theorem is equivalent to fractionally covering the primitive
 spherical hit kernel \(r_{p,q}\) by Pareto cores at \(\pi_1\)-scaled query and
