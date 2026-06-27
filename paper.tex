@@ -46456,6 +46456,77 @@ For a threshold $u$, the posterior-superlevel child is
    quotient universe.
 \end{proof}
 
+\begin{corollary}[One-sided reduced-gain column generation]
+   \label{cor:one-sided-reduced-gain-column-generation}
+   Work in the setting of \cref{lem:implicit-reduced-gain-separation}, at an
+   infeasible restricted solve with attained minimizer \(b^E\) and dual
+   multipliers \((\lambda,\theta,\gamma)\).  A point report is a tuple
+   \((x,a,X)\) satisfying the one-sided certificate
+   \[
+      0<X\le G_x^E(a)-c_a,
+      \tag{ORG1}
+   \]
+   and a label report is a tuple \((a,X)\) satisfying
+   \[
+      0<X\le \operatorname{Gain}_E(a).
+      \tag{ORG2}
+   \]
+   Suppose a preprocessing oracle, for every restricted dual state, either
+   returns a point report, returns a label report whose exact point scores can
+   be evaluated for the reported label, or certifies the no-positive condition
+   \[
+      G_x^E(a)\le c_a
+      \qquad(x\in S,\ a\in\mathcal U).
+      \tag{ORG3}
+   \]
+   Then this one-sided oracle is a complete column-generation oracle for
+   finite-support rate-coverage certificates inside \(\mathcal U\).
+
+   On a point report, add the single pair \((x,a)\).  On a label report, first
+   verify \((ORG2)\) by exact evaluation of \(G_x^E(a)\) and \(c_a\), then add
+   all pairs \((x,a)\) with \(G_x^E(a)>c_a\).  At least one such pair exists.
+   If labels are quotiented into \(N\) reporter-event classes as in
+   \cref{lem:implicit-reduced-gain-separation}, repeated one-sided column
+   generation either finds a feasible active certificate or proves
+   finite-support infeasibility after at most \(|S|N\) successful
+   augmentations.
+
+   The same statement holds for randomized proposal laws: if, whenever a
+   finite-support certificate exists and the restricted solve is infeasible, a
+   sampleable build-time law returns a verifiable one-sided report with
+   probability at least \(p_E\), then Las Vegas repetition finds a valid
+   augmentation after expected at most \(1/p_E\) proposals.  Failed proposals
+   and proposals whose one-sided certificate does not verify are discarded and
+   are never charged to the retained index.
+\end{corollary}
+
+\begin{proof}
+   A point report has \(G_x^E(a)>c_a\), hence it is an improving inactive pair
+   by \cref{lem:finite-rate-coverage-column-generation}.  For a label report,
+   \((ORG2)\) implies \(\operatorname{Gain}_E(a)>0\).  Since
+   \[
+      \operatorname{Gain}_E(a)=\sum_x\Phi_{c_a}(G_x^E(a))
+   \]
+   and \(\Phi_c(G)>0\) holds exactly when \(G>c\), exact evaluation of the
+   returned label exposes at least one point with \(G_x^E(a)>c_a\).  Adding all
+   such pairs is therefore a valid augmentation.
+
+   If the oracle certifies \((ORG3)\), then
+   \(\operatorname{Gain}_E(a)=0\) for every \(a\in\mathcal U\).  By
+   \cref{lem:implicit-reduced-gain-separation}, the current dual certificate
+   rules out every finite-support extension inside \(\mathcal U\).  Thus a
+   no-positive certificate cannot occur while a finite-support feasible
+   certificate exists.
+
+   Each successful augmentation adds at least one previously inactive
+   point-label pair.  After quotienting labels by reporter-event class, there
+   are only \(|S|N\) possible pairs, so the deterministic termination bound is
+   the one in \cref{lem:implicit-reduced-gain-separation}.  The randomized
+   claim is the same geometric waiting-time argument as in
+   \cref{lem:seeded-reduced-gain-search}, with exact verification applied
+   before accepting a proposed report.
+\end{proof}
+
 \begin{corollary}[Soft list-decoding reduced-cost separator]
    \label{cor:soft-list-decoding-reduced-cost-separator}
    Let \(\mathcal U\subseteq\prod_{i=1}^h\Sigma_i\) be an implicit code,
@@ -46810,7 +46881,11 @@ For a threshold $u$, the posterior-superlevel child is
    Also assume that preprocessing has an exact reduced-cost separator for every
    restricted dual state arising during column generation: it either returns a
    positive reduced-cost point-label pair or certifies \((IG3)\) over
-   \(\mathcal U\).  This separator may be implemented by the additive
+   \(\mathcal U\).  Equivalently, this may be the one-sided oracle of
+   \cref{cor:one-sided-reduced-gain-column-generation}: returned approximate
+   labels or point-label pairs are accepted only after their certified lower
+   reduced gain verifies, while a no-positive answer must certify \((IG3)\).
+   This separator may be implemented by the additive
    soft-decoding interface of
    \cref{cor:soft-list-decoding-reduced-cost-separator}, by the signed
    threshold-coverage interface of \cref{cor:threshold-event-reduced-cost}, or
@@ -46928,7 +47003,10 @@ For a threshold $u$, the posterior-superlevel child is
    \(\mathsf P_E\).  The only property needed for the proof is exposure of a
    positive reduced-gain label against every surviving dual obstruction; the
    proposed label is then verified by the exact finite convex certificate
-   before it is retained.  \Cref{lem:implicit-reduced-gain-separation} removes
+   before it is retained.  \Cref{cor:one-sided-reduced-gain-column-generation}
+   records the weakest safe interface: the proposal may give only a lower
+   bound on the point score or whole-label gain, and failed or unverifiable
+   proposals are discarded.  \Cref{lem:implicit-reduced-gain-separation} removes
    the need to enumerate the proposal universe in advance.  A retained
    code/lattice/trellis decoder may act as an implicit separator over its
    quotient label classes: either it exposes a positive reduced-gain bucket, or
@@ -49096,6 +49174,10 @@ coverage and polylogarithmic constraint entropy, randomized materialization
 gives one deterministic retained pair index.  The dual prices identify the
 right replacement for Lloyd distortion: propose panels with positive reduced
 gain against witness-value prices and work/storage/load prices.
+\Cref{cor:one-sided-reduced-gain-column-generation} is the corresponding
+safe approximate interface: a proposal only needs a certified lower bound on
+one point score or whole-label gain, and the exact verifier decides whether any
+column is retained.
 \Cref{prop:sampled-structured-panel} records the corresponding sampler
 alternative.  A structured code or lattice panel need not list all active
 labels if it can sample labels from a certified Gibbs or discrete-Gaussian law:
