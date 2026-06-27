@@ -29709,6 +29709,126 @@ inequality \((QP3)\).
    verification of \((OSPC1)\) before a seed is added.
 \end{proof}
 
+\begin{corollary}[Weighted shared-panel Renyi separator]
+   \label{cor:weighted-shared-panel-renyi-separator}
+   Work in the finite shared-panel universe of
+   \cref{cor:shared-canonical-panel-reduced-gain}.  Assume each seed panel is a
+   recursive compressed-net panel with local-error records
+   \[
+      b\in\mathcal B_z:
+      \qquad
+      (\mathcal H_{z,b},\mathcal Q_{z,b},s_{z,b},
+      \varepsilon_{z,b}(\cdot),K_{z,b},\rho_{z,b},\psi_{z,b},\kappa_{z,b}),
+   \]
+   where \(\mathcal H_{z,b}\subseteq\Sigma^+\) is the captured signature set,
+   \(\mathcal Q_{z,b}\subseteq\Sigma\) is the active query-signature set,
+   \(0\le s_{z,b}\le1\), \(0\le\rho_{z,b}\le1\), and
+   \(K_{z,b},\psi_{z,b}\ge0\).  Let
+   \[
+      U_z^{\rm sh}
+      =
+      \Gamma_z+
+      \sum_{\kappa\in\kappa_z(\mathcal B_z)}
+      \psi_{z,\kappa}K_{z,\kappa}^{1+\rho_{z,\kappa}}
+      \tag{WSPR0}
+   \]
+   be the shared canonical child-storage price.
+
+   For normalized prices \((\beta,\tau,\theta)\), define the weighted useful
+   hit, active Renyi query load, and first-moment active load of seed \(z\) by
+   \[
+   \begin{aligned}
+      \mathsf H_z(\beta)
+      &=
+      \sum_{b\in\mathcal B_z}
+      \left[
+         s_{z,b}\sum_{\sigma_0\in\mathcal H_{z,b}}\beta_{\sigma_0}
+         -
+         \sum_{\sigma_0\in\Sigma^+}
+         \beta_{\sigma_0}\varepsilon_{z,b}(\sigma_0)
+      \right],                                      \\
+      \mathsf L_z^{(\rho)}(\tau)
+      &=
+      \sum_{b\in\mathcal B_z}
+      s_{z,b}\psi_{z,b}K_{z,b}^{\rho_{z,b}}
+      \sum_{\sigma_0\in\mathcal Q_{z,b}}\tau_{\sigma_0},                 \\
+      \mathsf L_z^{(1)}(\tau)
+      &=
+      \sum_{b\in\mathcal B_z}
+      s_{z,b}\psi_{z,b}K_{z,b}
+      \sum_{\sigma_0\in\mathcal Q_{z,b}}\tau_{\sigma_0}.
+   \end{aligned}
+      \tag{WSPR1}
+   \]
+   If every normalized price system satisfying \((ESNO1)\) admits a finite law
+   \(\nu\) on the seed universe such that
+   \[
+      \E_{z\sim\nu}\mathsf H_z(\beta)
+      >
+      \E_{z\sim\nu}\left[
+         \mathsf L_z^{(\rho)}(\tau)+\theta U_z^{\rm sh}
+      \right],
+      \tag{WSPR2}
+   \]
+   then the shared-panel positive separator condition \((SPP1)\) holds.  Hence,
+   under the endpoint hypotheses of
+   \cref{cor:shared-panel-positive-separator-endpoint}, worst-case Euclidean
+   ANN has
+   \[
+      Q(n,d)=d\,n^{\rho_c}\log^{O_c(1)}n,
+      \qquad
+      S(n,d)=dn+n^{1+\rho_c}\log^{O_c(1)}n .
+   \]
+
+   It is enough to prove the first-moment variant
+   \[
+      \E_{z\sim\nu}\mathsf H_z(\beta)
+      >
+      \E_{z\sim\nu}\left[
+         \mathsf L_z^{(1)}(\tau)+\theta U_z^{\rm sh}
+      \right],
+      \tag{WSPR3}
+   \]
+   whenever every nonzero compressed child has \(K_{z,b}\ge1\).  Thus the query
+   half of the weighted separator is the usual success-normalized active-load
+   estimate; the genuinely superlinear part is the shared canonical storage
+   moment in \(U_z^{\rm sh}\).
+\end{corollary}
+
+\begin{proof}
+   The record profiles in \cref{cor:local-error-bucket-net-ratio} have
+   \[
+      H_{z,b}(\sigma_0)=
+      s_{z,b}\mathbf 1\{\sigma_0\in\mathcal H_{z,b}\},
+      \qquad
+      L_{z,b}(\sigma_0)=
+      s_{z,b}\psi_{z,b}K_{z,b}^{\rho_{z,b}}
+      \mathbf 1\{\sigma_0\in\mathcal Q_{z,b}\},
+   \]
+   with local error vector \(\varepsilon_{z,b}(\sigma_0)\).  Substituting these
+   expressions into \((SCR3)\) gives exactly
+   \[
+      \operatorname{PGain}_{\beta,\tau,\theta}(z)
+      =
+      \mathsf H_z(\beta)
+      -
+      \mathsf L_z^{(\rho)}(\tau)
+      -
+      \theta U_z^{\rm sh}.
+      \tag{WSPR4}
+   \]
+   Therefore \((WSPR2)\) says that the expected panel gain under \(\nu\) is
+   positive.  Since the seed universe is finite, one deterministic seed has
+   positive panel gain, giving \((SPP1)\).  The endpoint conclusion is
+   \cref{cor:shared-panel-positive-separator-endpoint}.
+
+   If \(K_{z,b}=0\), the corresponding record has zero query price by
+   convention.  For every nonzero child, \(K_{z,b}\ge1\) and
+   \(0\le\rho_{z,b}\le1\), hence \(K_{z,b}^{\rho_{z,b}}\le K_{z,b}\).  Thus
+   \(\mathsf L_z^{(\rho)}(\tau)\le\mathsf L_z^{(1)}(\tau)\) pointwise, so
+   \((WSPR3)\) implies \((WSPR2)\).
+\end{proof}
+
 \begin{corollary}[Distinct-canonical bucket-net certificate]
    \label{cor:distinct-canonical-bucket-net}
    Work in the setting of \cref{cor:bucket-net-ratio-form}.  In addition to the
@@ -36085,6 +36205,10 @@ the full finite panel universe.
 \Cref{cor:shared-panel-positive-separator-endpoint} packages the same condition
 at endpoint level: a nodewise positive shared-panel separator is enough to
 construct the exact-signature covers used by the polylogarithmic induction.
+\Cref{cor:weighted-shared-panel-renyi-separator} expands the positive-gain
+condition into the weighted moment inequality a geometric analysis should
+prove: priced useful hit mass must beat active Renyi query load plus shared
+canonical child storage, with a first-moment query-load sufficient form.
 \Cref{cor:local-error-distinct-canonical-bucket-net},
 \cref{cor:local-error-dyadic-distinct-storage-bucket-net}, and
 \cref{cor:local-error-tuple-profile-distinct-storage} propagate this denominator
@@ -56727,6 +56851,10 @@ profile cover.  \Cref{cor:shared-panel-positive-separator-endpoint} is the
 nodewise endpoint statement: proving this positive separator for the finite
 panel universe at every localized node gives the \(n^{\rho_c}\polylog n\)
 query and \(n^{1+\rho_c}\polylog n\) space bounds.
+\Cref{cor:weighted-shared-panel-renyi-separator} is the weighted
+list-decoding form of that target: under every normalized dual, a seed law must
+capture more priced useful hit mass than its active first-moment/Renyi query
+load plus shared child-storage moment.
 \Cref{cor:tuple-profile-compressed-bucket-storage}
 gives the direct
 low-correlation certificate for this target: first list moment plus two-point

@@ -683,3 +683,5 @@
 - Updated the compressed-bucket audit to identify the shared-panel oracle as the build-time search procedure behind the success-normalized bucket route.
 - Added the shared-panel positive-separator endpoint. A nodewise theorem that every normalized exact-signature dual has positive shared-panel gain now directly implies the exact-signature covers needed for the polylogarithmic fractional-filter induction.
 - Updated the audit trail to name this as the endpoint-level compressed-bucket theorem target.
+- Added the weighted shared-panel Renyi separator. Positive shared-panel gain is now expanded as priced useful hit mass beating active Renyi query load plus shared canonical child storage, with a first-moment query-load sufficient form.
+- Updated the compressed-bucket audit to identify this as the concrete weighted list-decoding theorem target.
