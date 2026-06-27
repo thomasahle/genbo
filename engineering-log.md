@@ -599,3 +599,4 @@
 - Added the no-merge Hall-shadow envelope. If every available Hall-shadow prefix fails, the failed cut satisfies an explicit top-prefix envelope and weak-type superlevel bounds, giving the exact residual a geometric separator must rule out.
 - Added the balanced Hall-shadow density screen. Near the stationary prefix size \(K^\circ=(1-\rho)A/(\rho\zeta)\), a Hall-shadow prefix closes as soon as its density beats \(\psi C_\rho A^\rho\zeta^{1-\rho}\) up to the balance factor.
 - Added fractional and sampled balanced Hall-shadow density panels. Batched proposal mechanisms are now scored by the scalar surplus \(K(\Delta-\Theta)\), and any positive verified surplus collapses to one retained Hall-shadow prefix.
+- Added the balanced Hall-shadow separator endpoint. Hall-success or positive balanced Hall-shadow surplus at every high-correlation residual now directly implies the finite-signature dense/spherical separator and the polylogarithmic ANN endpoint.
