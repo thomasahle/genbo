@@ -36235,6 +36235,69 @@ one-sided reduced-gain verifier.  Query overlap is then charged by the local LP
 through \(\sum_Aa_A(\sigma_0)T_A\lambda_A\), and recursive overlap never appears
 as a separate branching factor.
 
+\begin{corollary}[Positive finite-signature separator endpoint]
+   \label{cor:positive-finite-signature-separator-endpoint}
+   Work in the setting of
+   \cref{cor:one-sided-finite-signature-filter-cover}, but do not assume in
+   advance that the full signature LP over \(\mathcal F_\star\) is feasible.
+   Assume instead the following nodewise positive reduced-gain theorem.  For
+   every nonnegative price system \((\alpha,\tau,\zeta)\) satisfying the surplus
+   inequality \((OSF1)\), the unified finite filter universe exposes a positive
+   column:
+   \[
+      \max_{A\in\mathcal F_\star}
+      \operatorname{Gain}_{\alpha,\tau,\zeta}(A)>0 .
+      \tag{PFS1}
+   \]
+   Suppose also that the one-sided separator of
+   \cref{cor:one-sided-finite-signature-filter-cover} implements this universe:
+   on every restricted dual state it either returns a verifiable inactive column
+   satisfying \((OSF3)\), or certifies the universal no-gain inequality
+   \((OSF4)\) on the inactive quotient classes.  The signature decoder and
+   active retained-column reporter have the time bound required in
+   \cref{prop:fractional-filter-cover-polylog}.
+
+   Then the full finite-signature cover exists and can be found by uncharged
+   column generation.  Consequently worst-case Euclidean ANN has
+   \[
+      Q(n,d)=d\,n^{\rho_c}\log^{O_c(1)}n,
+      \qquad
+      S(n,d)=dn+n^{1+\rho_c}\log^{O_c(1)}n .
+   \]
+\end{corollary}
+
+\begin{proof}
+   If the full signature LP were infeasible, the finite filter-cover dual
+   \cref{lem:finite-filter-cover-dual}, applied to the signature demand set
+   \(\mathcal N_\Sigma\), would give nonnegative prices satisfying
+   \((OSF1)\) and
+   \[
+      \operatorname{Gain}_{\alpha,\tau,\zeta}(A)\le0
+      \qquad(A\in\mathcal F_\star).
+   \]
+   This contradicts \((PFS1)\).  Hence the full LP is feasible.
+
+   Now run restricted column generation.  At an infeasible restricted solve, the
+   restricted Farkas certificate has nonpositive gain on every active column.
+   By \((PFS1)\), some full-universe column has positive gain, and it must be
+   inactive.  Therefore a valid no-gain certificate \((OSF4)\) cannot occur;
+   the one-sided separator must expose a verified improving column satisfying
+   \((OSF3)\).  Since the quotient universe is finite, this process reaches a
+   feasible restricted signature LP after finitely many successful additions.
+   The materialization and recursive endpoint are then exactly
+   \cref{lem:finite-signature-filter-cover} and
+   \cref{prop:fractional-filter-cover-polylog}.
+\end{proof}
+
+\Cref{cor:positive-finite-signature-separator-endpoint} is the cleanest finite
+form of the desired polylogarithmic theorem.  The remaining geometric work is
+precisely \((PFS1)\): every surplus dual obstruction must be separated by one
+column from the unified family.  A spherical bucket may do it on pseudo-random
+residuals; a radius-contracting dense core, facility bucket, additive-code
+cell, or list-decoder output may do it on structured residuals.  The verifier
+does not distinguish these cases once a positive reduced-gain column is
+certified.
+
 \begin{corollary}[Decoded-panel endpoint certificate]
    \label{cor:decoded-panel-polylog-endpoint}
    Fix \(c>1\) and \(\rho_c=1/(2c^2-1)\).  Suppose that after bounded-diameter
