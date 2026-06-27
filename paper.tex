@@ -36561,6 +36561,79 @@ smaller Hall cut whose paid-pair capacity is measured only inside that subset.
    same as in \cref{cor:query-layer-random-list-deficient-shadow-repair}.
 \end{proof}
 
+\begin{corollary}[Low-diameter query-free Hall-shadow seeding]
+   \label{cor:low-diameter-query-free-hall-seeding}
+   Work in the setting of
+   \cref{cor:query-free-deficient-shadow-list-gain}, and suppose the current
+   resident points lie in one shell around a center \(o\).  For
+   \(x\ne o\), write \(\widehat x_o=(x-o)/\|x-o\|\).  Let \(W_0\) be a
+   certified ambient container, let \(\omega_p\ge0\) be sampling weights on
+   \(W_0\), and let \(\omega(W_0)>0\).  Draw \(T\) independent seeds from
+   \(W_0\) with probabilities \(\omega_p/\omega(W_0)\).  Assume there is a
+   nonempty hidden list \(A\subseteq W_0\), \(K_A=|A|\), such that
+   \[
+      \omega(A)\ge\alpha\,\omega(W_0)
+      \tag{LQH1}
+   \]
+   for some \(\alpha>0\), and
+   \[
+      \|\widehat p_o-\widehat p'_o\|\le\eta
+      \qquad(p,p'\in A).
+      \tag{LQH2}
+   \]
+   When a seed \(x\) is sampled, suppose preprocessing proposes a certified cap
+   container \(W_x\) containing
+   \[
+      C_x=
+      \left\{
+      p\in W_0:
+      \langle\widehat x_o,\widehat p_o\rangle
+      \ge 1-\frac{\eta^2}{2}
+      \right\},
+      \tag{LQH3}
+   \]
+   and the retained cardinalities in \(W_x\) are \(b_0\)-dense from above.
+   Define the hidden-list shadow profile
+   \[
+      h_A(q)=
+      \sum_{\substack{p\in A:\,(p,q)\in\mathcal N_{G'}}}
+      \widehat\gamma_{p,q}r_{p,q}.
+      \tag{LQH4}
+   \]
+   If, for every seed \(x\in A\), the proposed container \(W_x\) with parameters
+   \((\psi_x,\rho_x)\) satisfies
+   \[
+      \sum_{q\in\mathcal Q_+}
+      \bigl(h_A(q)-b_0^{\rho_x}\psi_xK_A^{\rho_x}\widehat\tau_q\bigr)_+
+      >
+      b_0^{1+\rho_x}\psi_x\sigma K_A^{1+\rho_x},
+      \tag{LQH5}
+   \]
+   then the sampled proposal routine finds a finite-prefix repair with
+   probability at least \(1-e^{-\alpha T}\).  Exhaustive enumeration of all
+   data directions in \(W_0\) finds such a repair deterministically.
+\end{corollary}
+
+\begin{proof}
+   By \((LQH1)\), the probability that no sampled seed lies in \(A\) is at most
+   \((1-\alpha)^T\le e^{-\alpha T}\).  If a sampled seed \(x\) lies in \(A\),
+   then \((LQH2)\) gives, for every \(p\in A\),
+   \[
+      \langle\widehat x_o,\widehat p_o\rangle
+      =
+      1-\frac12\|\widehat x_o-\widehat p_o\|^2
+      \ge
+      1-\frac{\eta^2}{2}.
+   \]
+   Thus \(A\subseteq C_x\subseteq W_x\).  Applying the cardinality-net form
+   \((QFG3)\) of \cref{cor:query-free-deficient-shadow-list-gain} inside this
+   container, with the deterministic list \(L=A\), shows that \((LQH5)\)
+   supplies the finite-prefix repair alternative of
+   \cref{cor:finite-prefix-hall-deficit-oracle}.  Enumerating all data
+   directions includes every \(x\in A\), so the same argument is deterministic
+   in the exhaustive build-time variant.
+\end{proof}
+
 \begin{corollary}[Deficient-shadow residual obstruction]
    \label{cor:deficient-shadow-residual-obstruction}
    Work in the setting of
@@ -36687,6 +36760,14 @@ part over queries, and any positive score already contains the Boolean query
 layer needed by \((DFN3)\).  This is the reduced-gain objective that build-time
 \(k\)-means++, facility, AQ, range-reporting, or list-decoding proposals should
 try to maximize.
+\Cref{cor:low-diameter-query-free-hall-seeding} gives the corresponding
+compact-shadow sampling guarantee.  If the positive-gain list is contained in a
+low-diameter shell cap and carries an \(\alpha\)-fraction of the chosen residual
+or dual sampling weight, \(T=O(\alpha^{-1}\log(1/\delta))\) seeds find a cap
+proposal containing it with probability \(1-\delta\), and exhaustive
+enumeration finds it deterministically.  Thus \(k\)-means++-style seeding is
+analyzable once the geometric separator proves that some compact positive-gain
+Hall shadow exists; the corollary does not by itself prove that existence.
 \Cref{cor:transported-deficient-shadow-certificate} is the corresponding
 threshold-free reporter form: if the geometry supplies one bounded-congestion
 shipment into a certified subset whose transported mass per congestion beats
@@ -63990,6 +64071,14 @@ keeps only a deterministic query layer and prefix.
 form of the same statement: the proposal routine returns only a list or soft
 support, while the proof chooses the profitable query layer by thresholding the
 hinge \(h(q)-\psi K^\rho\widehat\tau_q\).
+\Cref{cor:low-diameter-query-free-hall-seeding} connects this score to seeded
+cluster proposals: a hidden low-diameter positive-gain list is found by
+residual or dual weighted cap seeding with the usual \(e^{-\alpha T}\) miss
+probability, and by exhaustive center enumeration deterministically.  This is
+the precise theorem justified by the empirical success of \(k\)-means-like
+centers; the remaining proof obligation is still the geometric existence of
+such a compact positive-gain Hall shadow, or an alternate range/list-decoding
+certificate.
 \Cref{cor:tail-deficient-shadow-envelope} rewrites the same residual as a bound
 on every searched deficient-shadow threshold layer.
 \Cref{cor:two-price-deficient-shadow-screen} records the scale dichotomy left by
