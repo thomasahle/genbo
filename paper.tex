@@ -17527,6 +17527,83 @@ success-normalized bucket-net argument.
    This is \((CWS3)\).
 \end{proof}
 
+\begin{corollary}[Certified cohort-law superlevel reporter]
+   \label{cor:certified-cohort-law-superlevel-reporter}
+   Work in the setting of \cref{cor:cohort-law-weak-type-superlevel}.  For a
+   cohort law \(\eta\), call
+   \[
+      (W_0,\theta,\delta,U,K,X)
+   \]
+   an \(\eta\)-superlevel report if
+   \[
+      U=\{p\in W_0:d_\eta^\theta(p)\ge\delta\},
+      \qquad
+      h=|U|>0,
+      \tag{CWR0}
+   \]
+   the report gives one-sided certificates
+   \[
+      h\le K,
+      \qquad
+      0\le X\le \delta h,
+      \tag{CWR1}
+   \]
+   and the retained record with update side \(U\), size certificate \(K\), and
+   segment parameter \(\theta\) is affordable:
+   \[
+      (U,K,\theta)\in\mathcal R .
+      \tag{CWR2}
+   \]
+   Here \(K\) may be a certified upper bound rather than the exact size; if the
+   retained pool stores only exact-size records, take \(K=h\).
+
+   Suppose that every cohort law \(\eta\in\Delta_{\mathcal E_{\rm load}}\)
+   admits an \(\eta\)-superlevel report satisfying
+   \[
+      X\ge A\Lambda .
+      \tag{CWR3}
+   \]
+   Then the averaged dominated-load certificate \((DPG3)\) holds.  More
+   generally, it is enough that every \(\eta\) admits a finite probability law
+   \(\zeta\) over \(\eta\)-superlevel reports with
+   \[
+      \E_{(W_0,\theta,\delta,U,K,X)\sim\zeta}X\ge A\Lambda ,
+      \tag{CWR4}
+   \]
+   since some deterministic report in the support then satisfies \((CWR3)\).
+
+   Conversely, if \((DPG3)\) fails, then there is a cohort law \(\eta\) for
+   which every affordable \(\eta\)-superlevel report satisfies
+   \[
+      X<A\Lambda .
+      \tag{CWR5}
+   \]
+\end{corollary}
+
+\begin{proof}
+   Let \((W_0,\theta,\delta,U,K,X)\) be an \(\eta\)-superlevel report satisfying
+   \((CWR3)\).  Since every point of \(U\) has
+   \(d_\eta^\theta(p)\ge\delta\),
+   \[
+      \sum_{p\in U}d_\eta^\theta(p)\ge\delta h\ge X\ge A\Lambda .
+      \tag{CWR6}
+   \]
+   By \((CSP5)\), the affordable retained record \(R=(U,K,\theta)\) therefore
+   satisfies the cohort capacity inequality \((CLS1)\).  If every cohort law has
+   such a report, \cref{cor:exact-load-cohort-law-separator} gives \((DPG3)\).
+   The randomized-report variant follows because a finite average at least
+   \(A\Lambda\) has some support point with \(X\ge A\Lambda\).
+
+   Conversely, if \((DPG3)\) fails, then
+   \cref{cor:exact-load-cohort-law-separator} supplies a cohort law \(\eta\) for
+   which every affordable retained record has cohort capacity strictly below
+   \(A\Lambda\).  For any affordable \(\eta\)-superlevel report,
+   \[
+      X\le\delta h\le \sum_{p\in U}d_\eta^\theta(p)<A\Lambda ,
+   \]
+   which is \((CWR5)\).
+\end{proof}
+
 The lemma is the fractional version of the dominated-load endpoint.  It does not
 claim the remaining geometric theorem.  Rather, after terminal low-load levels
 and the \(A\)-boundary alternative have been dealt with by
@@ -17546,6 +17623,13 @@ scalar top-prefix problem for the cohort degree \(d_\eta^\theta\), not as a
 choice of disjoint dense clusters.  In the weak-type form of
 \cref{cor:cohort-law-weak-type-superlevel}, the remaining range-reporting target
 is just to find one affordable scalar superlevel with \(\delta h\ge A\Lambda\).
+\Cref{cor:certified-cohort-law-superlevel-reporter} is the build-facing version:
+the decoder need only give a one-sided lower certificate \(X\le\delta h\) and a
+certified size bound \(K\) for the exact retained superlevel; any finite
+randomized panel whose expected certificate reaches \(A\Lambda\) exposes a
+deterministic affordable record.  Thus \(k\)-means++ panels, additive
+quantization, list recovery, or LP range reporting can be analyzed through
+certified superlevel reports rather than exact dense-cluster choices.
 Pools with different congestion guesses may be split into dyadic \(C\)-strata and
 tested by the same game within each stratum.
 
@@ -39721,6 +39805,11 @@ every affordable retained top-\(K\) prefix has \(d_\eta^\theta\)-mass below
 \Cref{cor:cohort-law-weak-type-superlevel} is the range-reporting version of the
 same target: a certified superlevel with height \(\delta\) and size \(h\) closes
 the cohort law once \(\delta h\ge A\Lambda\).
+\Cref{cor:certified-cohort-law-superlevel-reporter} is the implementation-facing
+form: a finite randomized decoder only needs a one-sided certificate
+\(X\le\delta h\) and a certified size bound for the retained superlevel; if its
+expected certificate reaches \(A\Lambda\), averaging exposes one deterministic
+affordable record.
 \Cref{cor:load-quantile-recycled-obstruction-profile} is the corresponding
 residual normal form: outside the \(A\)-boundary and terminal cases, the
 remaining obstruction is just strict positivity at that weighted quantile.
