@@ -685,3 +685,5 @@
 - Updated the audit trail to name this as the endpoint-level compressed-bucket theorem target.
 - Added the weighted shared-panel Renyi separator. Positive shared-panel gain is now expanded as priced useful hit mass beating active Renyi query load plus shared canonical child storage, with a first-moment query-load sufficient form.
 - Updated the compressed-bucket audit to identify this as the concrete weighted list-decoding theorem target.
+- Added the certified-storage weighted panel separator. The weighted shared-panel inequality can now use any certified upper envelope for shared child storage, letting tuple-profile, dyadic-tail, or multiplicity-discounted storage analyses feed the same endpoint.
+- Updated the audit trail to record this as the storage-envelope interface for the compressed-bucket/list-decoding route.
