@@ -17134,6 +17134,152 @@ success-normalized bucket-net argument.
    filter-cover feasibility.
 \end{proof}
 
+\begin{lemma}[Finite dominated-load proposal game]
+   \label{lem:finite-dominated-load-proposal-game}
+   Fix the guarded residual and single-seed annular query layer in
+   \cref{cor:dominated-load-recycled-local-cover-endpoint}.  Fix also one
+   congestion stratum \(C\), and put \(A=2H_m(\Delta)/C\) and \(\Lambda\) as in
+   \((DLE1)\).  Let
+   \[
+      \mathcal I\subseteq
+      \{\Delta'\in\mathcal D_m:\Delta'\ge\Delta\}
+   \]
+   be a nonempty set of active dyadic levels for which
+   \[
+      Q_{\Delta'}^+=
+      \{q\in Q': |B_{z,\beta}(q)|\ge\Delta',\ \Delta'\bar\tau_q>0\}
+   \]
+   has total load at least \(\Lambda\).  For \(\Delta'\in\mathcal I\), define
+   \[
+      \mathcal V_{\Delta'}
+      =
+      \left\{
+      \nu\in\R_+^{Q_{\Delta'}^+}:
+      \sum_{q\in Q_{\Delta'}^+}\nu_q=1,\quad
+      \nu_q\le\frac{\Delta'\bar\tau_q}{\Lambda}
+      \right\}.
+      \tag{DPG1}
+   \]
+   Let \(\mathcal R\) be a finite family of affordable candidate records
+   \(R=(W_R,K_R,\theta_R)\) such that \(W_R,K_R,C,\theta_R\) satisfy
+   \((HMC1)\).  For \(R\in\mathcal R\), \(\Delta'\in\mathcal I\), and
+   \(\nu\in\mathcal V_{\Delta'}\), write
+   \[
+      s_R^{\Delta'}(q)=s_{W_R,\theta_R}(q),
+      \qquad
+      \sigma_R^{\Delta'}(q)=
+      \frac{s_R^{\Delta'}(q)}{\Delta'\bar\tau_q},
+   \]
+   and define the dominated-load margin
+   \[
+      M(R,\Delta',\nu)
+      =
+      \sum_{q\in Q_{\Delta'}^+}\nu_q\sigma_R^{\Delta'}(q)-A .
+   \]
+   Then
+   \[
+   \begin{aligned}
+      &\max_{\omega\in\Delta_{\mathcal R}}
+      \min_{\Delta'\in\mathcal I}
+      \min_{\nu\in\mathcal V_{\Delta'}}
+      \sum_{R\in\mathcal R}\omega_R M(R,\Delta',\nu)\\
+      &\qquad =
+      \min_{\substack{\alpha\in\Delta_{\mathcal I}\\
+                      \nu^{\Delta'}\in\mathcal V_{\Delta'}}}
+      \max_{R\in\mathcal R}
+      \sum_{\Delta'\in\mathcal I}
+      \alpha_{\Delta'}M(R,\Delta',\nu^{\Delta'}).
+   \end{aligned}
+      \tag{DPG2}
+   \]
+   Consequently, there is a proposal law \(\omega\) whose averaged candidate
+   passes every dominated-load test,
+   \[
+      \sum_{R\in\mathcal R}\omega_R
+      \sum_{q\in Q_{\Delta'}^+}\nu_q\sigma_R^{\Delta'}(q)
+      \ge A
+      \qquad
+      (\Delta'\in\mathcal I,\ \nu\in\mathcal V_{\Delta'}),
+      \tag{DPG3}
+   \]
+   if and only if no level-weighted dominated residual
+   \((\alpha,\{\nu^{\Delta'}\})\) satisfies
+   \[
+      \sum_{\Delta'\in\mathcal I}
+      \alpha_{\Delta'}
+      \sum_{q\in Q_{\Delta'}^+}
+      \nu_q^{\Delta'}\sigma_R^{\Delta'}(q)
+      < A
+      \qquad(R\in\mathcal R).
+      \tag{DPG4}
+   \]
+\end{lemma}
+
+\begin{proof}
+   Each \(\mathcal V_{\Delta'}\) is a nonempty finite-dimensional polytope, and
+   the margin is linear in \(\nu\).  Hence the inner minimum over
+   \(\mathcal V_{\Delta'}\) is attained at an extreme point.  Let
+   \[
+      \mathcal E=
+      \{(\Delta',e):\Delta'\in\mathcal I,
+        e\in\operatorname{Ext}(\mathcal V_{\Delta'})\}.
+   \]
+   This set is finite.  The left side of \((DPG2)\) is the value of the finite
+   matrix game
+   \[
+      \max_{\omega\in\Delta_{\mathcal R}}
+      \min_{(\Delta',e)\in\mathcal E}
+      \sum_R\omega_RM(R,\Delta',e).
+   \]
+   Write this value as the linear program
+   \[
+      \max v
+      \quad\text{subject to}\quad
+      \sum_R\omega_RM(R,\Delta',e)\ge v\ ((\Delta',e)\in\mathcal E),
+      \quad
+      \omega\in\Delta_{\mathcal R}.
+   \]
+   Its finite LP dual is
+   \[
+      \min z
+      \quad\text{subject to}\quad
+      \sum_{(\Delta',e)\in\mathcal E}\alpha_{\Delta',e}M(R,\Delta',e)\le z
+      \ (R\in\mathcal R),
+      \quad
+      \alpha\in\Delta_{\mathcal E}.
+   \]
+   Strong duality gives equality of the two displayed values.  Finally collapse
+   the dual distribution over extreme points inside each dyadic level.  Put
+   \(\alpha_{\Delta'}=\sum_e\alpha_{\Delta',e}\); if
+   \(\alpha_{\Delta'}>0\), define
+   \[
+      \nu^{\Delta'}
+      =
+      \alpha_{\Delta'}^{-1}
+      \sum_e\alpha_{\Delta',e}e\in\mathcal V_{\Delta'}.
+   \]
+   Levels with \(\alpha_{\Delta'}=0\) may choose any point of
+   \(\mathcal V_{\Delta'}\).  This gives the right side of \((DPG2)\), and the
+   converse expansion of each \(\nu^{\Delta'}\) into extreme points gives the
+   reverse inequality.
+
+   The final statement is just the sign form of \((DPG2)\).  The compact maxima
+   and minima are attained, so failure of \((DPG3)\) is equivalent to the value
+   in \((DPG2)\) being strictly negative, which is exactly the existence of
+   \((DPG4)\).
+\end{proof}
+
+The lemma is the fractional version of the dominated-load endpoint.  It does not
+claim the remaining geometric theorem.  Rather, after terminal low-load levels
+and the \(A\)-boundary alternative have been dealt with by
+\((DLE2)\)--\((DLE3)\), a finite proposal pool fails only if the dual can choose
+level weights and one dominated query distribution per level so that every
+affordable record has mean efficiency below \(A\).  Thus a list-decoding,
+LP-range-reporting, additive-quantization, or seeded clustering oracle should be
+analyzed against the single weighted objective in \((DPG4)\), not as a greedy
+choice of disjoint dense clusters.  Pools with different congestion guesses may
+be split into dyadic \(C\)-strata and tested by the same game within each stratum.
+
 \begin{corollary}[Load-quantile recycled obstruction profile]
    \label{cor:load-quantile-recycled-obstruction-profile}
    Work in the notation of
@@ -17434,6 +17580,13 @@ least \(A\).
 current local theorem target: one affordable retained container must pass the
 dominated-load mean-efficiency test at every dyadic annular level, and then the
 local fractional cover is feasible.
+\Cref{lem:finite-dominated-load-proposal-game} gives the corresponding fully
+fractional finite-pool target: after terminal and boundary alternatives are
+removed, either a proposal law over affordable retained records passes every
+dominated-load test in the averaged sense, or a single level-weighted family of
+dominated query distributions prices every affordable record below \(A\).  This
+is the column-generation obstruction that a list-decoding, range-reporting, or
+additive-quantization theorem should beat.
 \Cref{cor:load-quantile-recycled-obstruction-profile} gives the matching
 failure form: after the terminal and \(A\)-boundary cases are excluded, one
 strict deficit at this weighted quantile is the entire obstruction.
@@ -39263,6 +39416,12 @@ normalized weak-type form: all probability measures dominated by
 \(\ell/\Lambda\) must have mean efficiency at least \(A\).
 \Cref{cor:dominated-load-recycled-local-cover-endpoint} is the build-facing
 endpoint of this reduction, with the actual annular constants substituted.
+\Cref{lem:finite-dominated-load-proposal-game} is the fractional-overlap version
+of that endpoint for a finite affordable pool in one congestion stratum: a
+proposal law passes all dominated-load tests exactly when there is no
+level-weighted dominated residual whose average efficiency is below \(A\) for
+every retained record.  This is the clean minimax form of the remaining
+range-reporting/list-decoding separator.
 \Cref{cor:load-quantile-recycled-obstruction-profile} is the corresponding
 residual normal form: outside the \(A\)-boundary and terminal cases, the
 remaining obstruction is just strict positivity at that weighted quantile.
