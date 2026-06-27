@@ -36191,6 +36191,107 @@ smaller Hall cut whose paid-pair capacity is measured only inside that subset.
    \cref{cor:deficient-shadow-finite-prefix-normal-form}.
 \end{proof}
 
+\begin{corollary}[Query-layer deficient-shadow residual obstruction]
+   \label{cor:query-layer-deficient-shadow-residual-obstruction}
+   Work in the setting of
+   \cref{cor:finite-prefix-hall-deficit-oracle}.  Fix a finite prefix-search
+   family \((\mathcal W,\mathcal K_W)\) as in
+   \cref{cor:no-prefix-deficient-shadow-envelope}.  Suppose the Hall-success
+   alternative is not certified, the exact-load Hall profile has a strict
+   lower-hull deficit for the declared pair congestion, and no finite-prefix
+   record with \(W\in\mathcal W\), \(h\in\mathcal K_W\), and
+   \(0\le y_q\le1\) satisfies the surplus condition \((DFN3)\).  Then there is
+   an integral guard sublayer \(G'\) such that
+   \[
+      \Delta(G')>0
+      \tag{QLDS1}
+   \]
+   and, in the associated weighted demand system
+   \((\mathcal N_{G'},\widehat\gamma,\widehat\tau)\) of \((DFN1)\),
+   \[
+      D_{G',W,y}^{\widehat\gamma}(h)
+      \le
+      \psi_W
+      \left(
+         h^{\rho_W}\sum_{q\in\mathcal Q_+}\widehat\tau_qy_q
+         +\sigma h^{1+\rho_W}
+      \right)
+      \tag{QLDS2}
+   \]
+   for every \(W\in\mathcal W\), \(h\in\mathcal K_W\), and fractional query
+   layer \(0\le y_q\le1\).
+
+   Consequently, fix \(W\in\mathcal W\) and \(0\le y_q\le1\), and write
+   \[
+      d_{G',y}^{\widehat\gamma}(p)
+      =
+      \sum_{\substack{q:\,(p,q)\in\mathcal N_{G'}}}
+      y_q\widehat\gamma_{p,q}r_{p,q},
+      \qquad
+      A_y=\sum_{q\in\mathcal Q_+}\widehat\tau_qy_q .
+      \tag{QLDS3}
+   \]
+   For a threshold \(t>0\), put
+   \[
+      U_{W,y,t}
+      =
+      \{p\in W:d_{G',y}^{\widehat\gamma}(p)\ge t\},
+      \qquad
+      h_{W,y,t}=|U_{W,y,t}|.
+      \tag{QLDS4}
+   \]
+   If \(h_{W,y,t}\in\mathcal K_W\) and \(h_{W,y,t}>0\), then
+   \[
+      t h_{W,y,t}
+      \le
+      \psi_W
+      \left(
+         A_yh_{W,y,t}^{\rho_W}
+         +\sigma h_{W,y,t}^{1+\rho_W}
+      \right).
+      \tag{QLDS5}
+   \]
+   Hence at least one of the two inequalities
+   \[
+      t h_{W,y,t}\le2\psi_WA_yh_{W,y,t}^{\rho_W},
+      \qquad
+      t h_{W,y,t}\le2\psi_W\sigma h_{W,y,t}^{1+\rho_W}
+      \tag{QLDS6}
+   \]
+   holds.  If \(0<\rho_W<1\), \(A_y>0\), and \(\sigma>0\), every surviving
+   nonzero threshold layer satisfies
+   \[
+      h_{W,y,t}
+      \le
+      \left(\frac{2\psi_WA_y}{t}\right)^{1/(1-\rho_W)}
+      \quad\text{or}\quad
+      h_{W,y,t}
+      \ge
+      \left(\frac{t}{2\psi_W\sigma}\right)^{1/\rho_W}.
+      \tag{QLDS7}
+   \]
+   Thus the all-loaded deficient-shadow envelopes are only the specialization
+   \(y_q\equiv1\); the sharp residual pays the query-layer price \(A_y\).
+\end{corollary}
+
+\begin{proof}
+   By \cref{cor:integral-hall-deficit-normal-form}, the strict exact-load
+   deficit supplies an integral guard sublayer \(G'\) satisfying \((QLDS1)\).
+   If \((QLDS2)\) failed for some searched \(W,h,y\), then the same triple would
+   satisfy the strict surplus condition \((DFN3)\).  By
+   \cref{cor:deficient-shadow-finite-prefix-normal-form}, that record is a
+   valid positive repair prefix, and
+   \cref{cor:finite-prefix-hall-deficit-oracle} would close the guarded
+   residual, contradicting the hypothesis.
+
+   For the tail form, the top \(h_{W,y,t}\) points of \(W\) by
+   \(d_{G',y}^{\widehat\gamma}\)-degree have total mass at least
+   \(t h_{W,y,t}\).  Applying \((QLDS2)\) at this cardinality gives
+   \((QLDS5)\).  If both inequalities in \((QLDS6)\) failed, their sum would
+   contradict \((QLDS5)\).  Rearranging the two alternatives in \((QLDS6)\)
+   gives \((QLDS7)\) when \(0<\rho_W<1\).
+\end{proof}
+
 \begin{corollary}[Deficient-shadow residual obstruction]
    \label{cor:deficient-shadow-residual-obstruction}
    Work in the setting of
@@ -36292,17 +36393,19 @@ smaller Hall cut whose paid-pair capacity is measured only inside that subset.
    \cref{cor:fractional-fixed-threshold-density-panel}.
 \end{proof}
 
-\Cref{cor:deficient-shadow-residual-obstruction} is the current proof bottleneck
-in one line: rule out the simultaneous existence of a positive-excess Hall
-sublayer and the weak-type deficient-shadow envelopes \((NDE2)\) and \((TDE2)\)
-over a rich enough family of affordable smaller-radius containers.  The tail
-form \((TDE2)\) is the reporter-facing version: a geometric argument, LP range
-reporter, list decoder, or additive quantizer only has to expose one threshold
-superlevel whose mass beats its inherited recursive price.  The two-price screen
-\((TDS2)\)--\((TDS3)\) separates the remaining failure into a query-price bound
-or a storage-price bound at every exposed scale.  The forbidden-middle form
-\((FMS1)\)--\((FMS2)\) says that a residual layer can survive only by being small
-enough for query price or large enough for storage price.
+\Cref{cor:query-layer-deficient-shadow-residual-obstruction} is the current
+proof bottleneck in one line: rule out the simultaneous existence of a
+positive-excess Hall sublayer and the query-layer finite-prefix envelopes
+\((QLDS2)\)--\((QLDS5)\) over a rich enough family of affordable smaller-radius
+containers.  The older all-loaded shadow-mass obstruction
+\cref{cor:deficient-shadow-residual-obstruction} is the specialization
+\(y_q\equiv1\).  The useful gain is that a geometric argument, LP range
+reporter, list decoder, additive quantizer, or center proposal only pays the
+layer price \(A_y=\sum_q\widehat\tau_qy_q\), not the global loaded-query price
+\(\sum_q\tau_qa_q\).  The query-layer two-price screen \((QLDS6)\) separates the
+remaining failure into a query-price bound or a storage-price bound at every
+exposed scale, and \((QLDS7)\) says that a residual layer can survive only by
+being small enough for its own query layer or large enough for storage price.
 \Cref{cor:transported-deficient-shadow-certificate} is the corresponding
 threshold-free reporter form: if the geometry supplies one bounded-congestion
 shipment into a certified subset whose transported mass per congestion beats
@@ -38041,10 +38144,15 @@ paid shadow of one positive-excess Hall sublayer.
 \Cref{cor:deficient-shadow-prefix-certificate} reduces the accepted proposal to
 one certified top deficient-shadow prefix inside an affordable smaller-radius
 container.
+\Cref{cor:deficient-shadow-finite-prefix-normal-form},
+\cref{cor:finite-prefix-hall-deficit-oracle}, and
+\cref{cor:query-layer-deficient-shadow-residual-obstruction} give the sharper
+remaining obstruction: positive Hall excess together with a finite-prefix
+query-layer envelope for the weighted demand system
+\((\mathcal N_{G'},\widehat\gamma,\widehat\tau)\).
 \Cref{cor:no-prefix-deficient-shadow-envelope} and
-\cref{cor:deficient-shadow-residual-obstruction} give the exact remaining
-obstruction: positive Hall excess together with a weak-type bound for every
-searched deficient-shadow prefix.
+\cref{cor:deficient-shadow-residual-obstruction} are the all-loaded-query
+specialization \(y\equiv1\).
 \Cref{cor:tail-deficient-shadow-envelope} converts that bound to threshold
 superlevels, which is the form exposed by range-reporting or list-decoding
 proposal mechanisms.
@@ -63510,19 +63618,23 @@ lower mass certificate without exposing all deficient-shadow degrees.
 \Cref{lem:restricted-deficient-shadow-transport-cut} is its one-subset
 max-flow/min-cut normal form and turns failed shipment into a localized
 deficient-shadow Hall cut.
-\Cref{cor:flow-value-deficient-shadow-screen} packages this as the current
-finite reporter target: every proposed subset and congestion scale must have
-nonpositive flow-value surplus in a surviving residual.
+\Cref{cor:flow-value-deficient-shadow-screen} packages this verifier view:
+every proposed subset and congestion scale must have nonpositive flow-value
+surplus in a surviving all-loaded residual.
 \Cref{lem:infinitesimal-flow-deficient-shadow} then collapses the unrestricted
 congestion parameter: for a fixed subset, the largest normalized flow value is
 exactly the subset's deficient-shadow mass.  Consequently
 \cref{cor:flow-value-shadow-mass-equivalence} says that the max-flow endpoint is
 equivalent to finding one certified subset with deficient-shadow mass above its
 recursive price; flow is only a lower-certification mechanism.
-\Cref{cor:no-prefix-deficient-shadow-envelope} and
-\cref{cor:deficient-shadow-residual-obstruction} state the exact residual if
-that search fails: the positive-excess Hall sublayer must satisfy a weak-type
-deficient-shadow envelope on every searched affordable prefix.
+\Cref{cor:deficient-shadow-finite-prefix-normal-form},
+\cref{cor:finite-prefix-hall-deficit-oracle}, and
+\cref{cor:query-layer-deficient-shadow-residual-obstruction} state the sharper
+residual if the finite-prefix search fails: the positive-excess Hall sublayer
+must satisfy the query-layer envelope \((QLDS2)\) on every searched affordable
+prefix.  The older no-prefix residual
+\cref{cor:deficient-shadow-residual-obstruction} is recovered by setting
+\(y\equiv1\).
 \Cref{cor:tail-deficient-shadow-envelope} rewrites the same residual as a bound
 on every searched deficient-shadow threshold layer.
 \Cref{cor:two-price-deficient-shadow-screen} records the scale dichotomy left by
