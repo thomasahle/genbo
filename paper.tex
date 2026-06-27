@@ -39069,6 +39069,100 @@ into query-dominated, storage-dominated, and balanced cases.
    surviving residual, taking the infimum gives \((SPA3)\).
 \end{proof}
 
+\begin{corollary}[Independent support-law assignment certificate]
+   \label{cor:independent-support-law-assignment-certificate}
+   Work in the setting of
+   \cref{cor:support-price-assignment-separator}.  For each data point \(p\),
+   let
+   \[
+      \Sigma_A(p)=\{\sigma_0:\,(p,\sigma_0)\in N(A)\}.
+   \]
+   A pointwise routing map \(\varphi_p\) assigns every
+   \(\sigma_0\in\Sigma_A(p)\) to one adjacent cut center \(x\), meaning
+   \[
+      (\sigma_0,x)\in A,\qquad p\in W_x,\qquad a_x(\sigma_0)=1 .
+      \tag{ISL1}
+   \]
+   Suppose a randomized certificate chooses the maps \(\varphi_p\) independently
+   over \(p\), with arbitrary dependence among the signatures of the same point.
+   Let
+   \[
+      q_{x,p}=\Pr[x\in\varphi_p(\Sigma_A(p))],
+      \qquad
+      \mu_x=\sum_pq_{x,p}.
+      \tag{ISL2}
+   \]
+   Define the marginal support price
+   \[
+      \widehat\Phi_b=
+      \sum_x\psi_x
+      \left(
+         b^{1-\rho_x}A_x\mu_x^{\rho_x}
+         +b^{\rho_x}\zeta(\mu_x+\mu_x^{1+\rho_x})
+      \right).
+      \tag{ISL3}
+   \]
+   If
+   \[
+      M_A>(b+1)\widehat\Phi_b,
+      \tag{ISL4}
+   \]
+   then some deterministic pointwise routing exposes a support-adaptive exact
+   tail Hall-shadow merge.
+\end{corollary}
+
+\begin{proof}
+   A sampled pointwise routing map induces an integral full routing
+   \(r\in\mathcal R_{\rm full}(A)\) by routing the atom \((p,\sigma_0)\) to
+   \(\varphi_p(\sigma_0)\).  For a fixed center \(x\), its support size is
+   \[
+      S_x=s_x(r)=\sum_p I_{x,p},
+      \qquad
+      I_{x,p}=\mathbf 1\{x\in\varphi_p(\Sigma_A(p))\}.
+   \]
+   The variables \(I_{x,p}\) are independent over \(p\), and
+   \(\E S_x=\mu_x\).  Since \(0<\rho_x<1\) and \(u^{\rho_x}\) is concave,
+   \[
+      \E S_x^{\rho_x}\le\mu_x^{\rho_x}.
+      \tag{ISL5}
+   \]
+   For the storage moment, use the elementary integer inequality
+   \[
+      k^{1+\rho}\le k+k(k-1)_+^\rho
+      \qquad(k\in\mathbb Z_{\ge0},\ 0<\rho<1),
+      \tag{ISL6}
+   \]
+   which follows from
+   \(k^\rho=(1+k-1)^\rho\le1+(k-1)^\rho\) for \(k\ge1\).  With
+   \(S_x^{(p)}=\sum_{p'\ne p}I_{x,p'}\), independence gives
+   \[
+   \begin{aligned}
+      \E S_x(S_x-1)_+^{\rho_x}
+      &=
+      \sum_p q_{x,p}\E\left(S_x^{(p)}\right)^{\rho_x}  \\
+      &\le
+      \sum_p q_{x,p}(\mu_x-q_{x,p})^{\rho_x}
+      \le
+      \mu_x^{1+\rho_x},
+   \end{aligned}
+      \tag{ISL7}
+   \]
+   again by concavity.  Combining \((ISL6)\)--\((ISL7)\) yields
+   \[
+      \E S_x^{1+\rho_x}\le\mu_x+\mu_x^{1+\rho_x}.
+      \tag{ISL8}
+   \]
+   Therefore
+   \[
+      \E_r\Phi_b(r)\le\widehat\Phi_b.
+      \tag{ISL9}
+   \]
+   If \((ISL4)\) holds, some sampled deterministic routing has
+   \(M_A>(b+1)\Phi_b(r)\).  Applying
+   \cref{cor:support-price-assignment-separator} gives a support-adaptive exact
+   tail Hall-shadow merge.
+\end{proof}
+
 \begin{corollary}[Fractional balanced Hall-shadow density panel]
    \label{cor:fractional-balanced-hall-shadow-density-panel}
    Work in the setting of \cref{cor:balanced-hall-shadow-density-screen}.  Let
@@ -39455,7 +39549,11 @@ the retained cardinality-net factor.  Equivalently,
 branch to one scalar optimization: minimize the support-recursive price
 \(\Phi_b(r)\) over full fractional routings of the paid shadow.  If the paid
 shadow mass beats this minimum price by the cardinality-net constant, a verified
-dense merge already exists.
+dense merge already exists.  The independent support-law form
+\cref{cor:independent-support-law-assignment-certificate} is the sampling
+version of the same test: it is enough to control the expected number
+\(\mu_x\) of data points touching each cut center, paying only
+\(\mu_x^{\rho_x}\) for query and \(\mu_x+\mu_x^{1+\rho_x}\) for storage.
 
 \begin{corollary}[Support-price shadow-routing separator endpoint]
    \label{cor:support-price-shadow-routing-separator-endpoint}
@@ -39494,6 +39592,49 @@ dense merge already exists.
    \cref{cor:one-record-hall-shadow-merge} and
    \cref{cor:finite-signature-hall-shadow-repair} supply the Hall-cut repair
    alternative \((HCR2)\).  Thus every residual satisfies one of the two
+   alternatives of
+   \cref{cor:finite-signature-hall-cut-repair-endpoint}, giving \((HCS2)\), and
+   \cref{cor:high-correlation-coload-separator-endpoint} gives the
+   dense/spherical separator endpoint.
+\end{proof}
+
+\begin{corollary}[Marginal support-law separator endpoint]
+   \label{cor:marginal-support-law-separator-endpoint}
+   Work in the setting of
+   \cref{cor:finite-signature-hall-cut-repair-endpoint}.  Suppose that every
+   high-correlation co-load residual satisfying \((HCS1)\) admits an uncharged
+   marginal support-law separator with the following certified behavior.  The
+   separator chooses a finite template set \(\mathcal X\), a factor \(b\ge1\),
+   and a loss \(C_{\rm tr}\), runs the Hall transport test of
+   \cref{lem:finite-signature-coload-hall-transport}, and certifies one of two
+   alternatives.
+
+   First, the Hall-success alternative \((HCR1)\) holds.  Second, the Hall test
+   exposes a cut \(A\subseteq\mathcal L\) satisfying \((FHT5)\), the cut-center
+   cardinality nets are factor-\(b\) complete on every support that can appear,
+   all used exponents satisfy \(0<\rho_x<1\), and the separator returns an
+   independent pointwise routing law in the sense of
+   \cref{cor:independent-support-law-assignment-certificate} such that
+   \[
+      M_A>(b+1)\widehat\Phi_b .
+      \tag{MRL1}
+   \]
+   Then the structured completeness condition \((HCS2)\) holds for every
+   high-correlation co-load residual.  Consequently the dense/spherical
+   separator condition \((DSF2)\) holds, and the polylogarithmic ANN endpoint
+   follows.
+\end{corollary}
+
+\begin{proof}
+   Fix a surplus dual satisfying \((HCS1)\).  If \((HCR1)\) holds, the first
+   alternative of \cref{cor:finite-signature-hall-cut-repair-endpoint} applies.
+   Otherwise \((MRL1)\) and
+   \cref{cor:independent-support-law-assignment-certificate} produce a
+   deterministic pointwise routing exposing a support-adaptive exact tail
+   Hall-shadow merge.  As in
+   \cref{cor:support-price-shadow-routing-separator-endpoint}, this is a
+   one-record Hall-shadow merge and hence supplies the Hall-cut repair
+   alternative \((HCR2)\).  Therefore every residual satisfies one of the two
    alternatives of
    \cref{cor:finite-signature-hall-cut-repair-endpoint}, giving \((HCS2)\), and
    \cref{cor:high-correlation-coload-separator-endpoint} gives the
