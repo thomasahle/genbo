@@ -17269,16 +17269,101 @@ success-normalized bucket-net argument.
    \((DPG4)\).
 \end{proof}
 
+\begin{corollary}[Exact-load form of the dominated proposal obstruction]
+   \label{cor:exact-load-dominated-proposal-obstruction}
+   In the setting of \cref{lem:finite-dominated-load-proposal-game}, failure of
+   the averaged dominated-load test \((DPG3)\) is equivalent to the existence of
+   level weights \(\alpha\in\Delta_{\mathcal I}\) and, for each
+   \(\Delta'\in\mathcal I\), a fractional exact-load cohort
+   \(0\le y_q^{\Delta'}\le1\) on \(Q_{\Delta'}^+\) satisfying
+   \[
+      \sum_{q\in Q_{\Delta'}^+}
+      y_q^{\Delta'}\,\Delta'\bar\tau_q
+      =
+      \Lambda ,
+      \tag{EDP1}
+   \]
+   such that every affordable record \(R\in\mathcal R\) has deficient averaged
+   near-shadow capacity
+   \[
+      \sum_{\Delta'\in\mathcal I}
+      \alpha_{\Delta'}
+      \sum_{q\in Q_{\Delta'}^+}
+      y_q^{\Delta'}s_R^{\Delta'}(q)
+      <
+      A\Lambda .
+      \tag{EDP2}
+   \]
+   Moreover each cohort \(y^{\Delta'}\) decomposes into extreme exact-load
+   cohorts.  Equivalently, the same obstruction may be represented by a
+   probability law \(\eta\) on pairs \((\Delta',e)\), where \(e\) is an
+   exact-load cohort at level \(\Delta'\) with all but at most one coordinate in
+   \(\{0,1\}\), such that
+   \[
+      \E_{(\Delta',e)\sim\eta}
+      \sum_{q\in Q_{\Delta'}^+}e_qs_R^{\Delta'}(q)
+      <
+      A\Lambda
+      \qquad(R\in\mathcal R).
+      \tag{EDP3}
+   \]
+\end{corollary}
+
+\begin{proof}
+   Starting from the dominated residual \((\alpha,\nu^{\Delta'})\) in
+   \((DPG4)\), set
+   \[
+      y_q^{\Delta'}
+      =
+      \frac{\Lambda\nu_q^{\Delta'}}{\Delta'\bar\tau_q}.
+   \]
+   The cap in \((DPG1)\) gives \(0\le y_q^{\Delta'}\le1\), and
+   \(\sum_q\nu_q^{\Delta'}=1\) gives \((EDP1)\).  Also
+   \[
+      \sum_{q\in Q_{\Delta'}^+}
+      \nu_q^{\Delta'}\sigma_R^{\Delta'}(q)
+      =
+      \frac1\Lambda
+      \sum_{q\in Q_{\Delta'}^+}
+      y_q^{\Delta'}s_R^{\Delta'}(q),
+   \]
+   so \((DPG4)\) is exactly \((EDP2)\) after multiplying by \(\Lambda\).
+   The converse change of variables is identical:
+   \[
+      \nu_q^{\Delta'}
+      =
+      \frac{y_q^{\Delta'}\,\Delta'\bar\tau_q}{\Lambda}.
+   \]
+
+   The exact-load feasible region
+   \[
+      \{0\le y\le1:\sum_qy_q\Delta'\bar\tau_q=\Lambda\}
+   \]
+   is a bounded polytope, so each \(y^{\Delta'}\) is a convex combination of its
+   extreme points.  Expanding these combinations and absorbing the level weight
+   \(\alpha_{\Delta'}\) into the coefficients gives the law \(\eta\) and preserves
+   the strict inequalities in \((EDP2)\) by linearity, giving \((EDP3)\).
+
+   It remains only to identify the extreme points.  If two coordinates \(i,j\)
+   are both strictly between \(0\) and \(1\), moving a small amount of load from
+   \(i\) to \(j\) or from \(j\) to \(i\) preserves \((EDP1)\) and remains
+   feasible, so the point is not extreme.  Hence an extreme point has at most one
+   fractional coordinate.
+\end{proof}
+
 The lemma is the fractional version of the dominated-load endpoint.  It does not
 claim the remaining geometric theorem.  Rather, after terminal low-load levels
 and the \(A\)-boundary alternative have been dealt with by
 \((DLE2)\)--\((DLE3)\), a finite proposal pool fails only if the dual can choose
 level weights and one dominated query distribution per level so that every
-affordable record has mean efficiency below \(A\).  Thus a list-decoding,
-LP-range-reporting, additive-quantization, or seeded clustering oracle should be
-analyzed against the single weighted objective in \((DPG4)\), not as a greedy
-choice of disjoint dense clusters.  Pools with different congestion guesses may
-be split into dyadic \(C\)-strata and tested by the same game within each stratum.
+affordable record has mean efficiency below \(A\).  By
+\cref{cor:exact-load-dominated-proposal-obstruction}, the same obstruction is a
+law over exact-load cohorts, each integral except for one boundary query.  Thus a
+list-decoding, LP-range-reporting, additive-quantization, or seeded clustering
+oracle should be analyzed against the single weighted cohort objective in
+\((EDP2)\) or \((EDP3)\), not as a greedy choice of disjoint dense clusters.
+Pools with different congestion guesses may be split into dyadic \(C\)-strata and
+tested by the same game within each stratum.
 
 \begin{corollary}[Load-quantile recycled obstruction profile]
    \label{cor:load-quantile-recycled-obstruction-profile}
@@ -17587,6 +17672,10 @@ dominated-load test in the averaged sense, or a single level-weighted family of
 dominated query distributions prices every affordable record below \(A\).  This
 is the column-generation obstruction that a list-decoding, range-reporting, or
 additive-quantization theorem should beat.
+\Cref{cor:exact-load-dominated-proposal-obstruction} rewrites that obstruction as
+a law over exact-load cohorts, each with at most one fractional query.  This is
+the discrete cohort form needed for finite reporter or integer-materialization
+arguments.
 \Cref{cor:load-quantile-recycled-obstruction-profile} gives the matching
 failure form: after the terminal and \(A\)-boundary cases are excluded, one
 strict deficit at this weighted quantile is the entire obstruction.
@@ -39422,6 +39511,11 @@ proposal law passes all dominated-load tests exactly when there is no
 level-weighted dominated residual whose average efficiency is below \(A\) for
 every retained record.  This is the clean minimax form of the remaining
 range-reporting/list-decoding separator.
+\Cref{cor:exact-load-dominated-proposal-obstruction} converts the same minimax
+residual into a law over exact-load cohorts: each sampled cohort has load exactly
+\(\Lambda\), and extremality leaves at most one fractional query.  This makes the
+finite-pool obstruction compatible with cohort materialization and prefix/list
+decoding.
 \Cref{cor:load-quantile-recycled-obstruction-profile} is the corresponding
 residual normal form: outside the \(A\)-boundary and terminal cases, the
 remaining obstruction is just strict positivity at that weighted quantile.
