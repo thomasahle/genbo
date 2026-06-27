@@ -38673,6 +38673,55 @@ into query-dominated, storage-dominated, and balanced cases.
    \(m(p)=d_{A,y}(p)\mathbf 1\{p\in U\}\).
 \end{proof}
 
+\begin{corollary}[Support-sensitive tail Hall-shadow screen]
+   \label{cor:support-sensitive-tail-hall-shadow-screen}
+   Work in the setting of
+   \cref{cor:tail-mass-cumulative-hall-shadow-screen}.  Fix a template \(y\), an
+   available cardinality \(K\), and a slack \(a\ge1\) satisfying the clipped
+   scale condition \((CCH1)\).  Let \(\Theta_y\) be the corresponding threshold
+   from \((CCH2)\).  Suppose a reporter certifies a finitely supported shadow
+   submeasure \(0\le m(p)\le d_{A,y}(p)\) on \(W_y\), with
+   \[
+      s=|\{p:m(p)>0\}|,
+      \qquad
+      X=\sum_{p\in W_y}m(p).
+      \tag{SST1}
+   \]
+   If
+   \[
+      X>(K+s)\Theta_y,
+      \tag{SST2}
+   \]
+   then \(y\) gives a one-record Hall-shadow merge.
+
+   Consequently, if no support-sensitive tail report exposes a merge, then every
+   such submeasure obeys
+   \[
+      \sum_{p\in W_y}m(p)\le (K+s)\Theta_y .
+      \tag{SST3}
+   \]
+\end{corollary}
+
+\begin{proof}
+   Use the same split
+   \[
+      U_+=\{p:m(p)>0,\ d_{A,y}(p)>\Theta_y\},
+      \qquad
+      U_0=\{p:m(p)>0,\ d_{A,y}(p)\le\Theta_y\}.
+   \]
+   If \(\sum_{p\in U_+}d_{A,y}(p)>K\Theta_y\), then the tail-mass screen fires.
+   Otherwise
+   \[
+      X
+      \le
+      \sum_{p\in U_+}d_{A,y}(p)+\sum_{p\in U_0}d_{A,y}(p)
+      \le
+      K\Theta_y+s\Theta_y,
+   \]
+   contradicting \((SST2)\).  Hence \((SST2)\) forces a merge, and the residual
+   inequality is the contrapositive.
+\end{proof}
+
 \begin{corollary}[Cut-center routing obstruction]
    \label{cor:cut-center-routing-obstruction}
    Work in the setting of
@@ -38774,6 +38823,41 @@ into query-dominated, storage-dominated, and balanced cases.
    exposes a merge, \((SLT3)\) gives \((SCT3)\).  For a full assignment,
    summing \((SCT1)\) over centers gives the left side of \((SCT4)\), as in
    \((CCO1)\), and summing \((SCT3)\) gives the displayed bound.
+\end{proof}
+
+\begin{corollary}[Support-sensitive cut-center tail obstruction]
+   \label{cor:support-sensitive-cut-center-tail-obstruction}
+   Work in the setting of \cref{cor:support-limited-cut-center-tail-obstruction},
+   but remove the support-size assumption \((SCT2)\).  For each used cut center
+   define
+   \[
+      s_x=|\{p:m_x(p)>0\}|.
+      \tag{SSC1}
+   \]
+   If no support-sensitive tail Hall-shadow report exposes a merge at any cut
+   center, then
+   \[
+      X_x\le (K_x+s_x)\Theta_x
+      \qquad\text{for every used }x.
+      \tag{SSC2}
+   \]
+   Hence any full assignment of every paid shadow atom to one adjacent cut center
+   satisfies
+   \[
+      \sum_{(p,\sigma_0)\in N(A)}\alpha_{p,\sigma_0}
+      \le
+      \sum_x(K_x+s_x)\Theta_x .
+      \tag{SSC3}
+   \]
+\end{corollary}
+
+\begin{proof}
+   As in the proof of
+   \cref{cor:support-limited-cut-center-tail-obstruction}, the support condition
+   gives \(0\le m_x(p)\le d_{A,x}(p)\).  Thus
+   \cref{cor:support-sensitive-tail-hall-shadow-screen} applies to each center
+   and yields \((SSC2)\) if no report fires.  Summing \((SSC2)\) over a full
+   assignment gives \((SSC3)\).
 \end{proof}
 
 \begin{corollary}[Fractional balanced Hall-shadow density panel]
@@ -39150,7 +39234,11 @@ price-density level \(\Theta_y\) has mass larger than \(K\Theta_y\).  Finally,
 \cref{cor:support-limited-tail-hall-shadow-screen} and
 \cref{cor:support-limited-cut-center-tail-obstruction} turn this into a
 cut-center obstruction: a support-\(K\) assignment can carry at most
-\(2K\Theta_y\) paid shadow unless it already exposes a merge.
+\(2K\Theta_y\) paid shadow unless it already exposes a merge.  The
+support-sensitive form
+\cref{cor:support-sensitive-cut-center-tail-obstruction} removes the support
+restriction and leaves the explicit extra term \(s_x\Theta_x\) for large assigned
+support.
 
 \begin{corollary}[Balanced Hall-shadow separator endpoint]
    \label{cor:balanced-hall-shadow-separator-endpoint}
@@ -51792,7 +51880,12 @@ at that clipped scale.  The support-limited and cut-center consequences
 \cref{cor:support-limited-cut-center-tail-obstruction} convert this tail bound
 into a direct Hall-cut accounting statement: if assigned paid shadow at every cut
 center is supported on at most \(K_x\) points, then a surviving residual can carry
-only \(O(K_x\Theta_x)\) mass through that center.
+only \(O(K_x\Theta_x)\) mass through that center.  The support-sensitive version
+\cref{cor:support-sensitive-cut-center-tail-obstruction} makes the remaining
+large-support branch explicit:
+\[
+   X_x\le(K_x+s_x)\Theta_x .
+\]
 \cref{cor:cut-center-routing-obstruction} records the first obstruction left
 when even the cut's own centers cannot route their paid shadow at positive
 surplus.  The Hall cut itself can also be assumed marginally closed by
