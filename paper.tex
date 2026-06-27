@@ -45335,6 +45335,95 @@ certificate is the verified positive-gain column and the finite LP it augments.
    and \((ISD3)\) follows with \(c_0=(C_0C_1)^{-1}\).
 \end{proof}
 
+\begin{corollary}[Polylog sampled-center density endpoint]
+   \label{cor:polylog-sampled-center-density-endpoint}
+   Work in the endpoint setting of
+   \cref{cor:log-sampled-center-separator-endpoint}.  Fix constants
+   \(K_{\rm dyn}\ge0\) and \(K_{\rm den}>1\).  Suppose that at every resident
+   node of size at most \(n\), and for every normalized exact-signature price
+   system satisfying \((ESNO1)\), preprocessing can certify one split profile
+   \(\pi\) with sampled center laws uniform over truncation levels such that
+   \[
+      D_\pi=(B_\pi-C_\pi^{\rm lo})_+>0,
+      \tag{PSD1}
+   \]
+   \[
+      B_\pi^{\rm hi}\le n^{K_{\rm dyn}}D_\pi,
+      \tag{PSD2}
+   \]
+   and
+   \[
+      A_\pi^{\rm samp}
+      \le
+      \frac{D_\pi}{\log^{K_{\rm den}} n}.
+      \tag{PSD3}
+   \]
+   Then, after increasing the logarithmic constants in the local budgets and
+   treating bounded \(n\) by the resident scan base case, the positive
+   shared-panel separator \((SPP1)\) holds at every node.  Consequently
+   worst-case Euclidean ANN has
+   \[
+      Q(n,d)=d\,n^{\rho_c}\log^{O_c(1)}n,
+      \qquad
+      S(n,d)=dn+n^{1+\rho_c}\log^{O_c(1)}n .
+   \]
+
+   More quantitatively, it is enough for \((PSD3)\) to hold with
+   \(\log^{K_{\rm den}}n\) replaced by
+   \[
+      2C_0
+      \left(
+         1+K_{\rm dyn}\log n+K_{\rm den}\log\log n
+      \right),
+      \tag{PSD4}
+   \]
+   for all sufficiently large \(n\).  Thus the remaining sampled-center
+   proposal theorem may target a purely polylogarithmic density statement:
+   the expected unreported center tail plus recursive star price should be
+   smaller than the profile's residual benefit by any fixed power of \(\log n\)
+   exceeding one, assuming only polynomial global dynamic range.
+\end{corollary}
+
+\begin{proof}
+   Let \(A=A_\pi^{\rm samp}\) and \(D=D_\pi\).  If \(A=0\), then
+   \cref{cor:single-profile-log-density-screen} applies immediately.  Otherwise
+   \((PSD2)\)--\((PSD3)\) imply
+   \[
+      1+\log_+\frac{B_\pi^{\rm hi}}{A}
+      \le
+      1+K_{\rm dyn}\log n+K_{\rm den}\log\log n .
+      \tag{PSD5}
+   \]
+   Under the quantitative hypothesis \((PSD4)\), this gives
+   \[
+      C_0A
+      \left(
+         1+\log_+\frac{B_\pi^{\rm hi}}{A}
+      \right)
+      \le D/2<D .
+   \]
+   Therefore \((SLD1)\)--\((SLD2)\) hold for
+   \(H_\pi=1+\log_+(B_\pi^{\rm hi}/A)\), and
+   \cref{cor:single-profile-log-density-screen} exposes a positive verified
+   panel column for the fixed price system.  Since the price system was
+   arbitrary, \((SPP1)\) holds at every node, and
+   \cref{cor:shared-panel-positive-separator-endpoint} gives the displayed
+   bounds.
+
+   Finally, because \(K_{\rm den}>1\), for all sufficiently large \(n\),
+   \[
+      \log^{K_{\rm den}}n
+      \ge
+      2C_0
+      \left(
+         1+K_{\rm dyn}\log n+K_{\rm den}\log\log n
+      \right).
+   \]
+   Hence \((PSD3)\) implies the quantitative hypothesis outside a bounded
+   range of \(n\).  Bounded-size resident nodes are handled by direct scan and
+   are absorbed into the constant in the logarithmic overhead.
+\end{proof}
+
 \begin{corollary}[Min-cost split-profile separator endpoint]
    \label{cor:min-cost-split-profile-separator-endpoint}
    In the setting of
@@ -59331,6 +59420,9 @@ price.
 price-density form: surviving residuals force
 \(A^{\rm samp}\gtrsim D/(1+\log_+(B^{\rm hi}/D))\), where
 \(D=(B-C^{\rm lo})_+\).
+\Cref{cor:polylog-sampled-center-density-endpoint} is the concrete polylog
+target: polynomial dynamic range and sampled-center price
+\(A^{\rm samp}\le D/\log^{1+\Omega(1)}n\) already imply the endpoint.
 \Cref{cor:min-cost-split-profile-separator-endpoint} turns this scalar envelope
 into an endpoint statement: if every normalized exact-signature dual violates
 the optimized envelope for some finite split-profile panel, and the resulting
