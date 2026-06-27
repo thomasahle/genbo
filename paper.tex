@@ -45617,6 +45617,112 @@ certificate is the verified positive-gain column and the finite LP it augments.
    Combining this with the layer-cake estimate \((SIH7)\) proves \((SIC5)\).
 \end{proof}
 
+\begin{corollary}[Shared integrated cover column generation]
+   \label{cor:shared-integrated-cover-column-generation}
+   Work in the setting of
+   \cref{cor:finite-shared-integrated-cover-dual}, with a finite full shared
+   record universe \(\mathcal R\).  Let \(E\subseteq\mathcal R\) be the active
+   restricted record set, and let \(\Psi_\Sigma^E(y)\) be the cover value
+   \((SIC2)\) with records restricted to \(E\).  Its dual has the constraints
+   \[
+      0\le u_a\le\ell_a^\Sigma(y),
+      \qquad
+      \sum_ah_{i,a}u_a\le2P_i\quad(i\in E).
+      \tag{SCG1}
+   \]
+
+   Suppose \(u^E\) is an optimal restricted dual solution.  If some inactive
+   record \(i\in\mathcal R\setminus E\) has positive shared reduced cost
+   \[
+      \operatorname{SGain}_{u^E}(i)
+      =
+      \sum_ah_{i,a}u_a^E-2P_i>0,
+      \tag{SCG2}
+   \]
+   then adding \(i\) is a valid column-generation step: the current restricted
+   dual certificate is not feasible for the enlarged restricted LP, and hence it
+   cannot certify the full shared-cover value.
+
+   Conversely, if no inactive record satisfies \((SCG2)\), then \(u^E\) is
+   feasible for the full dual \((SIC3)\), and
+   \[
+      \Psi_\Sigma^E(y)=\Psi_\Sigma(y).
+      \tag{SCG3}
+   \]
+   Therefore exhaustive column generation over \(\mathcal R\) terminates after at
+   most \(|\mathcal R|\) successful additions with the exact full shared-cover
+   value.
+
+   In particular, for any target \(C_\Sigma\), the procedure either finds a
+   feasible shared cover of value at most \(C_\Sigma\), or certifies
+   \[
+      \Psi_\Sigma(y)>C_\Sigma
+      \tag{SCG4}
+   \]
+   together with a full-dual obstruction \(u\) satisfying every shared-record
+   inequality.
+\end{corollary}
+
+\begin{proof}
+   The restricted primal and dual are the finite programs \((SIC2)\)--\((SIC3)\)
+   with \(\mathcal R\) replaced by \(E\), so strong duality holds.  If
+   \((SCG2)\) holds, then \(u^E\) violates the dual constraint for the enlarged
+   active set \(E\cup\{i\}\).  Thus it is not a valid certificate for that
+   enlarged problem.
+
+   If no inactive record violates \((SCG2)\), then \(u^E\) satisfies every dual
+   constraint for every record in \(\mathcal R\), so it is feasible for the full
+   dual.  Since the restricted primal is a relaxation of the full primal,
+   \[
+      \Psi_\Sigma^E(y)\ge\Psi_\Sigma(y).
+   \]
+   Since \(u^E\) is full-dual feasible and has value \(\Psi_\Sigma^E(y)\), weak
+   duality gives the reverse inequality, proving \((SCG3)\).  Each successful
+   addition strictly enlarges the active set, so finite termination is immediate.
+   The target statement follows by comparing the final exact value with
+   \(C_\Sigma\).
+\end{proof}
+
+\begin{corollary}[One-sided shared integrated cover oracle]
+   \label{cor:one-sided-shared-integrated-cover-oracle}
+   Work in the setting of
+   \cref{cor:shared-integrated-cover-column-generation}.  A one-sided shared
+   record oracle takes a restricted dual \(u\) and either returns a record
+   \(i\in\mathcal R\) with a verifiable certificate
+   \[
+      \underline H_i>2\overline P_i,
+      \qquad
+      0\le\underline H_i\le\sum_ah_{i,a}u_a,
+      \qquad
+      P_i\le\overline P_i,
+      \tag{SIO1}
+   \]
+   or correctly certifies that no record in \(\mathcal R\) has positive shared
+   reduced cost \((SCG2)\).  Then this oracle is complete for shared-cover
+   column generation: every accepted record is a valid column, and a no-record
+   certificate proves full optimality of the current restricted shared cover.
+
+   The positive branch may be implemented in Las Vegas build time.  If a
+   randomized proposal law returns an accepted certificate satisfying \((SIO1)\)
+   with probability at least \(p_E>0\) whenever a positive shared-reduced-cost
+   record exists, repeat proposals until one is accepted; failed or unverifiable
+   proposals are discarded.  The no-record branch remains an exact finite
+   certificate over \(\mathcal R\).
+\end{corollary}
+
+\begin{proof}
+   A certificate \((SIO1)\) implies
+   \[
+      \sum_ah_{i,a}u_a\ge\underline H_i>2\overline P_i\ge2P_i,
+   \]
+   hence \((SCG2)\) holds and the record may be added by
+   \cref{cor:shared-integrated-cover-column-generation}.  If the oracle correctly
+   certifies that no positive record exists, the same corollary proves full
+   optimality of the restricted cover.  For the Las Vegas positive branch, the
+   probability that the first \(B\) independent proposals all fail is at most
+   \((1-p_E)^B\), and only verified records are retained.
+\end{proof}
+
 \begin{corollary}[Shared integrated cover-cost endpoint]
    \label{cor:shared-integrated-cover-cost-endpoint}
    Work in the setting of
@@ -60883,6 +60989,11 @@ tail bound
 \cref{cor:finite-shared-integrated-cover-dual} packages the same certificate as
 a finite LP.  Its objective is integrated unassigned tail plus twice the
 one-time recursive price, and its dual is the exact no-shared-record residual.
+\Cref{cor:shared-integrated-cover-column-generation} and
+\cref{cor:one-sided-shared-integrated-cover-oracle} give the corresponding
+build-time reduced-cost interface: a proposed shared record is useful exactly
+when \(\sum_ah_{i,a}u_a>2P_i\), with one-sided certificates allowed on the
+positive branch.
 \Cref{cor:shared-integrated-cover-cost-endpoint} and
 \cref{cor:shared-integrated-dense-profile-endpoint} are the corresponding
 polylogarithmic endpoints.  This is the current clean fractional-overlap target:
