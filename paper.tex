@@ -12385,6 +12385,64 @@ query-price overlap, storage price, and duplicate-incidence factor \(b_G\).
    separated pair at scale \(R_\star\), proving \((QSPE4)\).
 \end{proof}
 
+\begin{corollary}[Spread packing entropy-energy screen]
+   \label{cor:spread-packing-entropy-energy-screen}
+   In the setting of \cref{cor:quotient-spread-packing-entropy}, let
+   \(E\subseteq U\) be the separated set from \((QSPE2)\), with \(M=|E|\).  Let
+   \(U_G\) be any Gaussian-cap or spherical-code bucket, and partition the
+   ordered distinct pairs
+   \[
+      E_{\ne}^2=\{(x,y)\in E^2:x\ne y\}
+   \]
+   into finitely many profiles \(\Pi_E\).  Suppose every pair in profile
+   \(\pi\in\Pi_E\) has certified bucket-intersection energy at least \(I_\pi\),
+   in the sense that
+   \[
+      \Pr[x,y\in U_G]\le e^{-I_\pi}
+      \qquad ((x,y)\in\pi).
+      \tag{SPEE1}
+   \]
+   Then
+   \[
+      \E |E\cap U_G|^2
+      \le
+      \sum_{x\in E}\Pr[x\in U_G]
+      +
+      \sum_{\pi\in\Pi_E}|\pi|e^{-I_\pi}.
+      \tag{SPEE2}
+   \]
+   In particular, if
+   \[
+      I_\pi\ge\log|\pi|+\Lambda
+      \qquad(\pi\in\Pi_E),
+      \tag{SPEE3}
+   \]
+   then the distinct-pair contribution of the spread packing is at most
+   \[
+      |\Pi_E|e^{-\Lambda}.
+      \tag{SPEE4}
+   \]
+   Thus the spherical/list-decoding side pays a high-spread quotient exactly by
+   proving that cap-intersection energy dominates the packing entropy
+   \(\log|\pi|\) on the separated profiles; failure of this inequality is the
+   high-correlation signal that should feed the dense-star or quotient
+   separator.
+\end{corollary}
+
+\begin{proof}
+   Expand the second moment:
+   \[
+      \E |E\cap U_G|^2
+      =
+      \sum_{x\in E}\Pr[x\in U_G]
+      +
+      \sum_{\substack{x,y\in E\\x\ne y}}\Pr[x,y\in U_G].
+   \]
+   Summing the bound \((SPEE1)\) over the profiles gives \((SPEE2)\).  If
+   \((SPEE3)\) holds, then each profile contributes at most \(e^{-\Lambda}\) to
+   the second sum, proving \((SPEE4)\).
+\end{proof}
+
 \Cref{lem:reduced-gain-quotient-refinement} is the finite-cover analogue of the
 Hall-shadow refinement lemma.  It says that once a quotient has positive
 reduced gain, any demand-preserving split whose radius discount pays the Renyi
@@ -12394,7 +12452,9 @@ dual residual certificate: if spherical buckets and all smaller-radius quotients
 fail, the remaining positive object must be diffuse across every certified
 radius-contracting refinement.  \Cref{cor:quotient-spread-packing-entropy}
 turns that diffuse residual into a separated packing with explicit Renyi
-effective support.  This is the precise place where the spherical/list-decoding
+effective support.  \Cref{cor:spread-packing-entropy-energy-screen} then states
+the exact spherical payment: cap-intersection energy must dominate the separated
+profile entropy.  This is the precise place where the spherical/list-decoding
 side should use entropy rather than density.
 
 \begin{corollary}[Residual dense-cover obstruction certificate]
@@ -63114,7 +63174,10 @@ certified radius-contracting quotient refinement, not merely hard to find by
 seeding.  \Cref{cor:quotient-spread-packing-entropy} converts this residual
 spread into an \(R_\star\)-separated packing with Renyi effective support at
 least \((\Psi(R)/\Psi(R_\star))^{1/(1-\rho)}\), giving the
-spherical/list-decoding side an explicit entropy witness.  Finally,
+spherical/list-decoding side an explicit entropy witness.
+\Cref{cor:spread-packing-entropy-energy-screen} gives the matching payment
+rule: profile energy must beat the logarithm of the separated-pair count, or
+else the offending profile is the dense high-correlation signal.  Finally,
 \cref{cor:residual-dense-cover-obstruction} packages the surviving dual
 certificate into the explicit inequalities \((RO1)\)--\((RO5)\).  The remaining
 geometric theorem is now exactly to rule out those inequalities for a rich enough
@@ -64805,6 +64868,9 @@ spread obstruction is not tied to one Hall-shadow normal form.
 \Cref{cor:quotient-spread-packing-entropy} then extracts a separated packing
 from any quotient that survives all smaller-radius children, giving the
 tuple-profile entropy side a concrete witness to charge.
+\Cref{cor:spread-packing-entropy-energy-screen} records the corresponding
+charge: each separated-pair profile is harmless when its intersection energy
+dominates its entropy, and otherwise it is the high-correlation dense signal.
 \Cref{cor:metric-entropy-hall-shadow-closure} and
 \cref{cor:low-doubling-hall-shadow-close} sharpen the remaining geometric
 obligation: any positive Hall shadow of certified covering number below
