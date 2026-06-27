@@ -18181,12 +18181,13 @@ success-normalized bucket-net argument.
 
    Conversely, if \((DPG3)\) fails, then there is a cohort law \(\eta\) such
    that, for this pool and indeed for every retained prefix-record pool
-   satisfying \((FPT0)\),
+   satisfying \((FPT0)\), the strict inequalities
    \[
       G(T,\eta)<0
       \qquad(T\in\mathcal P_b)
       \tag{FPT3}
    \]
+   hold.
    This same \(\eta\) is independent of the chosen finite pool.
 
    In particular, when the pool contains all reportable \(h\)-subsets of each
@@ -18231,6 +18232,81 @@ success-normalized bucket-net argument.
    The final statement is only the definition of
    \(D_\eta^\theta(W,h)\) as the maximum \(d_\eta^\theta\)-mass over
    \(h\)-subsets of \(W\).
+\end{proof}
+
+\begin{corollary}[Prefix-template column generation]
+   \label{cor:prefix-template-column-generation}
+   Work in the setting of
+   \cref{cor:finite-prefix-template-separation-game}.  Let
+   \(\mathcal U_b\) be a finite full universe of retained prefix records
+   satisfying \((FPT0)\).  Suppose that for every cohort law \(\eta\) one has
+   a separation oracle that either returns a record \(T\in\mathcal U_b\) with
+   \[
+      G(T,\eta)\ge0
+      \tag{PTC0}
+   \]
+   or certifies
+   \[
+      \max_{T\in\mathcal U_b}G(T,\eta)<0 .
+      \tag{PTC1}
+   \]
+   Then the following column-generation procedure is complete for this
+   universe.  Start with any nonempty finite pool
+   \(\mathcal P\subseteq\mathcal U_b\).  Repeatedly solve the restricted game
+   \[
+      v(\mathcal P)
+      =
+      \min_{\eta\in\Delta_{\mathcal E_{\rm load}}}
+      \max_{T\in\mathcal P}G(T,\eta).
+      \tag{PTC2}
+   \]
+   If \(v(\mathcal P)\ge0\), then \((DPG3)\) holds.  If
+   \(v(\mathcal P)<0\), let \(\eta_{\mathcal P}\) be a minimizer and call the
+   separator on \(\eta_{\mathcal P}\).  If it returns \(T\), add \(T\) to the
+   pool; if it certifies \((PTC1)\), then the full universe
+   \(\mathcal U_b\) cannot satisfy the prefix-template sufficient condition.
+
+   Consequently, if
+   \[
+      \min_{\eta\in\Delta_{\mathcal E_{\rm load}}}
+      \max_{T\in\mathcal U_b}G(T,\eta)\ge0,
+      \tag{PTC3}
+   \]
+   the procedure terminates after at most \(|\mathcal U_b|\) successful
+   additions with a pool proving \((DPG3)\).  The cost of solving the games and
+   running the separator is preprocessing only; the retained index pays only
+   for the final verified pool.
+\end{corollary}
+
+\begin{proof}
+   If \(v(\mathcal P)\ge0\), then
+   \cref{cor:finite-prefix-template-separation-game} applied to the current
+   pool gives \((DPG3)\).
+
+   Suppose \(v(\mathcal P)<0\) and let \(\eta_{\mathcal P}\) attain the
+   minimum in \((PTC2)\).  Then
+   \[
+      G(T,\eta_{\mathcal P})<0
+      \qquad(T\in\mathcal P),
+      \tag{PTC4}
+   \]
+   because the maximum over the current pool is negative.  Hence any separator
+   output satisfying \((PTC0)\) is not already in \(\mathcal P\), so a
+   successful call strictly enlarges the pool.  Since \(\mathcal U_b\) is
+   finite, there can be at most \(|\mathcal U_b|\) successful additions.
+
+   If the separator certifies \((PTC1)\) at some minimizer, then the full
+   universe has negative value at that cohort law, so \((PTC3)\) is false.  In
+   particular, \(\mathcal U_b\) does not contain a prefix record satisfying
+   \((CNC2)\) for that \(\eta\), and this prefix universe alone cannot close
+   the dominated-load certificate through
+   \cref{cor:cardinality-net-cohort-prefix-envelope}.
+
+   Under \((PTC3)\), the certificate \((PTC1)\) can never be valid.  Therefore
+   the finite enlargement process must eventually reach a pool with
+   nonnegative restricted value, and the first paragraph gives \((DPG3)\).
+   The last sentence is just the separation between build-time search and the
+   retained verified records in the finite cover LP.
 \end{proof}
 
 The lemma is the fractional version of the dominated-load endpoint.  It does not
@@ -18299,6 +18375,13 @@ accepted only when the verified surplus
 \(V_\eta(T)-\Theta_CL_b(h_T)\) is nonnegative against the current cohort law.
 If the dominated-load certificate fails, one cohort law witnesses negative
 surplus for every generated template.
+\Cref{cor:prefix-template-column-generation} turns this into an exact
+build-time algorithm for any finite implicit universe: solve the restricted
+game, ask the separator for a nonnegative-surplus prefix against the minimizing
+cohort law, and add only verified records.  If the full universe satisfies the
+prefix condition, this terminates after finitely many additions; if the
+separator proves no such prefix exists, the certificate identifies the actual
+cohort-law obstruction for that universe.
 Pools with different congestion guesses may be split into dyadic \(C\)-strata and
 tested by the same game within each stratum.
 
@@ -40509,6 +40592,10 @@ positive value gives the dominated-load certificate, while failure of the local
 cover leaves one cohort law with negative verified surplus for every generated
 record.  This is the precise theoretical replacement for choosing dense
 clusters by mass or by a Lloyd/\(k\)-means++ heuristic.
+\Cref{cor:prefix-template-column-generation} adds the build-time consequence:
+an exact implicit separator over a finite prefix universe is complete by
+ordinary column generation, and only the final verified records are charged to
+the index.
 \Cref{cor:load-quantile-recycled-obstruction-profile} is the corresponding
 residual normal form: outside the \(A\)-boundary and terminal cases, the
 remaining obstruction is just strict positivity at that weighted quantile.
