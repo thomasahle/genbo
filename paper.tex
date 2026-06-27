@@ -46061,6 +46061,87 @@ certificate is the verified positive-gain column and the finite LP it augments.
    column.  Failed samples are discarded before materialization.
 \end{proof}
 
+\begin{corollary}[Clipped shared prefix price-density screen]
+   \label{cor:clipped-shared-prefix-density-screen}
+   Work in the setting of \cref{cor:shared-prefix-price-density-screen}.  Put
+   \(m_B=|W_B|\) and
+   \[
+      f_B(K)=A_BK^{\rho_B-1}+\zeta_BK^{\rho_B}.
+      \tag{SHC1}
+   \]
+   If \(A_B=\zeta_B=0\), then any available top prefix with positive shared
+   degree is a positive shared-cover column.  Otherwise define the clipped
+   minimizer
+   \[
+      K_B^\natural=
+      \begin{cases}
+      1, & A_B=0,\\[0.2em]
+      m_B, & \zeta_B=0,\\[0.4em]
+      \min\!\left\{m_B,\max\!\left\{1,
+      \dfrac{(1-\rho_B)A_B}{\rho_B\zeta_B}\right\}\right\},
+         & A_B>0,\ \zeta_B>0 .
+      \end{cases}
+      \tag{SHC2}
+   \]
+   Let \(a\ge1\).  If an available cardinality \(K\in\mathcal K_B\) satisfies
+   \[
+      a^{-1}K_B^\natural\le K\le aK_B^\natural
+      \tag{SHC3}
+   \]
+   and some threshold \(\delta>0\) satisfies
+   \[
+      \delta>2a\psi_Bf_B(K_B^\natural),
+      \qquad
+      M_B(\delta)>2a\psi_BKf_B(K_B^\natural),
+      \tag{SHC4}
+   \]
+   then \(B\) contains a positive shared top-prefix column.
+
+   Conversely, in a residual where all shared prefixes of \(B\) fail, every
+   available \(K\) satisfying \((SHC3)\) and every threshold \(\delta>0\) obeys
+   at least one reverse inequality in \((SHC4)\).  Thus the shared-prefix
+   separator may focus on the clipped stationary support scale
+   \(K_B^\natural\), up to the available-cardinality net factor.
+\end{corollary}
+
+\begin{proof}
+   If \(A_B=\zeta_B=0\), then \(P_B(K)=0\) for every available \(K\).  Any
+   positive-degree prefix has positive shared reduced cost by
+   \cref{cor:shared-top-prefix-reduced-cost-compiler}.
+
+   Assume at least one price is positive.  It is enough to show that
+   \[
+      f_B(K)\le a f_B(K_B^\natural)
+      \tag{SHC5}
+   \]
+   whenever \((SHC3)\) holds.  If the unclipped stationary point lies in
+   \([1,m_B]\), write \(K=\lambda K_B^\natural\) with
+   \(\lambda\in[a^{-1},a]\).  Then
+   \[
+      f_B(K)
+      =
+      \lambda^{\rho_B-1}A_B(K_B^\natural)^{\rho_B-1}
+      +
+      \lambda^{\rho_B}\zeta_B(K_B^\natural)^{\rho_B}
+      \le a f_B(K_B^\natural),
+   \]
+   since \(0<\rho_B<1\).  If \(K_B^\natural=1\), then \(K\in[1,a]\) and the
+   first term of \(f_B\) is nonincreasing while the second term grows by at most
+   \(a\).  If \(K_B^\natural=m_B\), then \(K\in[m_B/a,m_B]\) and the first term
+   grows by at most \(a\) while the second term is nondecreasing and bounded by
+   its value at \(m_B\).  These boundary cases also give \((SHC5)\).
+
+   Conditions \((SHC4)\) and \((SHC5)\) imply
+   \[
+      \delta>2\psi_Bf_B(K),
+      \qquad
+      M_B(\delta)>2\psi_BKf_B(K).
+   \]
+   This is exactly \((SHD3)\), so
+   \cref{cor:shared-prefix-price-density-screen} gives a positive shared
+   top-prefix column.  The residual statement is the contrapositive.
+\end{proof}
+
 \begin{corollary}[Shared integrated cover-cost endpoint]
    \label{cor:shared-integrated-cover-cost-endpoint}
    Work in the setting of
@@ -61349,6 +61430,10 @@ deterministic verified top prefix.
 \Cref{cor:sampled-shared-prefix-density-search} gives the Las Vegas
 build-time wrapper: a positive expected certified surplus is amplified by
 repetition, while failed panels are discarded before materialization.
+\Cref{cor:clipped-shared-prefix-density-screen} is the corresponding core
+simplification: once the query and storage prices of a shared container are
+fixed, the residual need only be challenged near the clipped minimizer of
+\(A K^{\rho-1}+\zeta K^\rho\), rather than across all prefix sizes.
 \Cref{cor:shared-integrated-cover-cost-endpoint} and
 \cref{cor:shared-integrated-dense-profile-endpoint} are the corresponding
 polylogarithmic endpoints.  This is the current clean fractional-overlap target:
