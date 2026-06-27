@@ -32239,6 +32239,67 @@ they expose such prefixes; the proof does not depend on their sampling rule.
    \((NDE3)\) is \((DSP5)\).  Hence that prefix would close the guarded residual.
 \end{proof}
 
+\begin{corollary}[Tail form of the deficient-shadow envelope]
+   \label{cor:tail-deficient-shadow-envelope}
+   Work in the setting of \cref{cor:no-prefix-deficient-shadow-envelope}, and
+   assume no searched prefix closes the guarded residual.  For
+   \(W\in\mathcal W\) and a threshold \(t>0\), put
+   \[
+      U_{W,t}=\{p\in W:d_{G'}(p)\ge t\},
+      \qquad
+      h_{W,t}=|U_{W,t}|.
+      \tag{TDE1}
+   \]
+   If \(h_{W,t}\in\mathcal K_W\) and \(h_{W,t}>0\), then
+   \[
+      t\,h_{W,t}
+      \le
+      4J_{W,t}\,
+      \psi_W
+      \left(
+         h_{W,t}^{\rho_W}\sum_{q\in\mathcal Q_+}\tau_qa_q
+         +\sigma h_{W,t}^{1+\rho_W}
+      \right),
+      \tag{TDE2}
+   \]
+   where
+   \[
+      J_{W,t}=
+      1+\left\lceil
+         \log_2
+         \frac{2h_{W,t}}{\min\{t h_{W,t},h_{W,t}\}}
+      \right\rceil .
+      \tag{TDE3}
+   \]
+   If \(h_{W,t}=0\), the bound is trivial.
+\end{corollary}
+
+\begin{proof}
+   Let \(h=h_{W,t}>0\).  Since \(U_{W,t}\) has \(h\) points and each has
+   deficient-shadow degree at least \(t\),
+   \[
+      D_{G',W}(h)\ge t h .
+      \tag{TDE4}
+   \]
+   Applying \((NDE3)\) at this cardinality gives
+   \[
+      t h
+      \le D_{G',W}(h)
+      \le
+      4J_{G',W}(h)\,
+      \psi_W
+      \left(
+         h^{\rho_W}\sum_{q\in\mathcal Q_+}\tau_qa_q
+         +\sigma h^{1+\rho_W}
+      \right).
+   \]
+   Finally, \((TDE4)\) implies
+   \[
+      \min\{D_{G',W}(h),h\}\ge\min\{t h,h\},
+   \]
+   so \(J_{G',W}(h)\le J_{W,t}\).  This proves \((TDE2)\).
+\end{proof}
+
 \begin{corollary}[Deficient-shadow residual obstruction]
    \label{cor:deficient-shadow-residual-obstruction}
    Work in the setting of
@@ -32254,7 +32315,9 @@ they expose such prefixes; the proof does not depend on their sampling rule.
       \tag{DSR1}
    \]
    and the deficient-shadow envelope \((NDE3)\) holds for every
-   \(W\in\mathcal W\) and \(h\in\mathcal K_W\).
+   \(W\in\mathcal W\) and \(h\in\mathcal K_W\).  Consequently the tail envelope
+   \((TDE2)\) holds for every threshold \(t>0\) whose superlevel cardinality
+   \(h_{W,t}\) lies in \(\mathcal K_W\).
 \end{corollary}
 
 \begin{proof}
@@ -32262,15 +32325,17 @@ they expose such prefixes; the proof does not depend on their sampling rule.
    supplies an integral guard sublayer \(G'\) satisfying \((DSR1)\).  Applying
    \cref{cor:no-prefix-deficient-shadow-envelope} to this \(G'\) gives
    \((NDE3)\) for every searched prefix, because no such prefix closes the
-   residual by hypothesis.
+   residual by hypothesis.  The tail statement is then
+   \cref{cor:tail-deficient-shadow-envelope}.
 \end{proof}
 
 \Cref{cor:deficient-shadow-residual-obstruction} is the current proof bottleneck
 in one line: rule out the simultaneous existence of a positive-excess Hall
-sublayer and the weak-type deficient-shadow envelope \((NDE3)\) over a rich
-enough family of affordable smaller-radius containers.  This is the exact place
-where a geometric argument, LP range reporter, list decoder, or additive
-quantizer must enter.
+sublayer and the weak-type deficient-shadow envelopes \((NDE3)\) and \((TDE2)\)
+over a rich enough family of affordable smaller-radius containers.  The tail
+form \((TDE2)\) is the reporter-facing version: a geometric argument, LP range
+reporter, list decoder, or additive quantizer only has to expose one threshold
+superlevel whose mass beats its inherited recursive price.
 
 \begin{corollary}[Tuple-profile distinct-storage certificate]
    \label{cor:tuple-profile-distinct-storage}
@@ -32758,6 +32823,9 @@ container.
 \cref{cor:deficient-shadow-residual-obstruction} give the exact remaining
 obstruction: positive Hall excess together with a weak-type bound for every
 searched deficient-shadow prefix.
+\Cref{cor:tail-deficient-shadow-envelope} converts that bound to threshold
+superlevels, which is the form exposed by range-reporting or list-decoding
+proposal mechanisms.
 \Cref{cor:pair-compatible-hall-guarded-cover} assembles the chain back into the
 local LP: a half-shipment with sufficient layer-cake surplus supplies the
 guarded star-panel reporter and closes the residual.
@@ -46050,6 +46118,8 @@ recursive price.
 \cref{cor:deficient-shadow-residual-obstruction} state the exact residual if
 that search fails: the positive-excess Hall sublayer must satisfy a weak-type
 deficient-shadow envelope on every searched affordable prefix.
+\Cref{cor:tail-deficient-shadow-envelope} rewrites the same residual as a bound
+on every searched deficient-shadow threshold layer.
 \Cref{cor:pair-compatible-hall-guarded-cover} states the final local theorem
 target in this language: prove the Hall expansion and the resulting
 layer-cake price inequality for every guarded residual.
