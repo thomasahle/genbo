@@ -36725,6 +36725,134 @@ smaller Hall cut whose paid-pair capacity is measured only inside that subset.
    \(R_i\le R_\star\).
 \end{proof}
 
+\begin{corollary}[Metric-entropy Hall-shadow closure]
+   \label{cor:metric-entropy-hall-shadow-closure}
+   Work in the setting of
+   \cref{cor:bounded-fanout-radius-discount-refinement}, and suppose the parent
+   list \(L\) lies in a certified parent ball with price
+   \(\psi=\Psi(R)\).  Let \(\mathcal B_\star\) be a family of available
+   certified child ball containers, each with price factor at most
+   \(\Psi(R_\star)\), the same exponent \(\rho\), and \(b_0\)-dense retained
+   cardinalities.  Define the certified covering number
+   \[
+      N_\star(L,R_\star)
+      =
+      \min\left\{
+      J:\ L\subseteq\bigcup_{j=1}^J W_j,\quad W_j\in\mathcal B_\star
+      \right\}.
+      \tag{MEH1}
+   \]
+   If \(L\) satisfies the positive parent gain condition \((PQR3)\) and
+   \[
+      N_\star(L,R_\star)^{1-\rho}\Psi(R_\star)
+      \le
+      \Psi(R),
+      \tag{MEH2}
+   \]
+   then the finite-prefix repair alternative of
+   \cref{cor:finite-prefix-hall-deficit-oracle} holds.  More precisely, for
+   any certified cover in \((MEH1)\) whose size \(J\) satisfies
+   \(J^{1-\rho}\Psi(R_\star)\le\Psi(R)\), assigning every point of \(L\) to one
+   covering container yields a child list that satisfies the positive child
+   gain condition \((PQR4)\).
+
+   Consequently, suppose the available radius-\(R_\star\) family contains no
+   certified child list satisfying the child gain condition \((PQR4)\).  Then
+   every positive-gain parent list \(L\) must obey the metric-entropy
+   obstruction
+   \[
+      N_\star(L,R_\star)
+      >
+      \left(\frac{\Psi(R)}{\Psi(R_\star)}\right)^{1/(1-\rho)} .
+      \tag{MEH3}
+   \]
+   Thus an unclosed Hall shadow is forced to have large certified covering
+   number at every radius whose potential discount is large enough to pay the
+   \(J^{1-\rho}\) fanout surcharge.
+\end{corollary}
+
+\begin{proof}
+   Choose a certified cover \(W_1,\ldots,W_J\in\mathcal B_\star\) of \(L\) with
+   \(J=N_\star(L,R_\star)\), or any cover satisfying the displayed
+   fanout--discount inequality.  Break ties arbitrarily and assign each
+   \(p\in L\) to one covering container.  This partitions \(L\) into nonempty
+   child lists \(L_i\subseteq W_i\), after discarding empty parts.
+
+   Each child price factor is at most \(\Psi(R_\star)\), so with
+   \(\theta=\Psi(R_\star)/\Psi(R)\) we have
+   \[
+      \psi_i\le\theta\psi .
+   \]
+   The inequality \(J^{1-\rho}\Psi(R_\star)\le\Psi(R)\) is exactly
+   \(\theta J^{1-\rho}\le1\).  Hence
+   \cref{cor:bounded-fanout-radius-discount-refinement} applies to the
+   partition, and some child satisfies \((PQR4)\).  The finite-prefix repair
+   follows from
+   \cref{cor:price-compatible-query-free-refinement}.
+
+   The obstruction \((MEH3)\) is the contrapositive: if a positive parent list
+   had covering number at most the right hand side, the first part would
+   produce a certified child repair in the radius-\(R_\star\) family.
+\end{proof}
+
+\begin{corollary}[Low-doubling Hall shadows close]
+   \label{cor:low-doubling-hall-shadow-close}
+   In the setting of
+   \cref{cor:metric-entropy-hall-shadow-closure}, let \(0<\lambda\le1\) and
+   \(R_\star=\lambda R\).  Suppose a positive-gain parent list \(L\) has a
+   certified low-entropy cover
+   \[
+      N_\star(L,\lambda R)\le C_{\rm dbl}\lambda^{-\delta}
+      \tag{LDH1}
+   \]
+   and the scale parameters satisfy
+   \[
+      C_{\rm dbl}\lambda^{-\delta}
+      \le
+      \left(\frac{\Psi(R)}{\Psi(\lambda R)}\right)^{1/(1-\rho)} .
+      \tag{LDH2}
+   \]
+   Then the finite-prefix repair alternative holds.
+
+   In particular, if
+   \[
+      \delta<\frac{4}{1-\rho},
+      \tag{LDH3}
+   \]
+   then for every fixed \(C_{\rm dbl}\) there is a constant
+   \(\lambda=\lambda(\rho,\delta,C_{\rm dbl})\in(0,1]\) such that \((LDH2)\)
+   holds whenever \(R\ge r/\lambda\).  Therefore, away from the terminal radius,
+   any positive Hall shadow that survives all radius-\(\lambda R\) certified
+   child repairs must have no certified doubling cover of dimension below
+   \(4/(1-\rho)\) at that scale.
+\end{corollary}
+
+\begin{proof}
+   The first claim is \cref{cor:metric-entropy-hall-shadow-closure} with
+   \(R_\star=\lambda R\) and the bound \((LDH1)\).
+
+   For the final claim, choose \(\lambda\) small enough that
+   \[
+      C_{\rm dbl}\lambda^{-\delta}
+      \le
+      2^{-1/(1-\rho)}\lambda^{-4/(1-\rho)} ,
+      \tag{LDH4}
+   \]
+   which is possible by \((LDH3)\).  If \(R\ge r/\lambda\), then
+   \(x=R/r\) satisfies \(\lambda^4x^4\ge1\), and hence
+   \[
+      \frac{\Psi(R)}{\Psi(\lambda R)}
+      =
+      \frac{1+x^4}{1+\lambda^4x^4}
+      \ge
+      \frac{x^4}{2\lambda^4x^4}
+      =
+      \frac1{2\lambda^4}.
+   \]
+   Raising to the power \(1/(1-\rho)\) and using \((LDH4)\) gives \((LDH2)\).
+   The surviving-shadow statement is the contrapositive of the first claim.
+\end{proof}
+
 \begin{corollary}[Low-diameter query-free Hall-shadow seeding]
    \label{cor:low-diameter-query-free-hall-seeding}
    Work in the setting of
@@ -36997,6 +37125,14 @@ discount at most \(J^{-(1-\rho)}\).  Thus the build-time clustering target is a
 bounded-fanout ball decomposition whose certified radii beat this fanout
 threshold; if such a decomposition carries the Hall-shadow gain, one child
 piece already closes.
+\Cref{cor:metric-entropy-hall-shadow-closure} turns this into a metric
+separator: any positive-gain Hall shadow with certified covering number below
+\((\Psi(R)/\Psi(R_\star))^{1/(1-\rho)}\) at radius \(R_\star\) already closes.
+\Cref{cor:low-doubling-hall-shadow-close} gives the clean large-radius
+interpretation: low certified doubling dimension, below \(4/(1-\rho)\), is
+enough to force a repair at a constant radius drop.  Hence an unclosed shadow is
+not merely ``not found by \(k\)-means''; it must be genuinely high-entropy at
+the tested scale.
 \Cref{cor:low-diameter-query-free-hall-seeding} gives the corresponding
 compact-shadow sampling guarantee.  If the positive-gain list is contained in a
 low-diameter shell cap and carries an \(\alpha\)-fraction of the chosen residual
@@ -64325,6 +64461,14 @@ geometric: if \(J\) refined balls all reduce the padded radius potential by
 at least \(J^{1-\rho}\), the price compatibility follows automatically.  This
 is the exact fanout-versus-contraction inequality that a \(k\)-means, facility,
 or range-reporting ball decomposition must certify.
+\Cref{cor:metric-entropy-hall-shadow-closure} and
+\cref{cor:low-doubling-hall-shadow-close} sharpen the remaining geometric
+obligation: any positive Hall shadow of certified covering number below
+\((\Psi(R)/\Psi(R_\star))^{1/(1-\rho)}\) closes, and in the large-radius regime
+any low-doubling shadow of dimension below \(4/(1-\rho)\) closes after a
+constant radius drop.  Thus a residual not closed by smaller-radius balls must
+be a high-entropy object, which is exactly the kind of residual the spherical
+or range/list-decoding side should exploit.
 \Cref{cor:low-diameter-query-free-hall-seeding} connects this score to seeded
 cluster proposals: a hidden low-diameter positive-gain list is found by
 residual or dual weighted cap seeding with the usual \(e^{-\alpha T}\) miss
