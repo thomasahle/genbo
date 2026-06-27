@@ -32949,6 +32949,93 @@ they expose such prefixes; the proof does not depend on their sampling rule.
    residual.  The contrapositive gives the certified-panel residual statement.
 \end{proof}
 
+\begin{corollary}[Mass-support log-Lorentz certificate]
+   \label{cor:mass-support-log-lorentz-certificate}
+   Work in the setting of
+   \cref{cor:certified-log-lorentz-deficient-shadow-panel}.  Let \(i\in I\)
+   range over a finite panel of records.  Each record chooses a container
+   \(W_i\), and gives certificates \(M_i>0\), \(K_i\ge1\), and \(V_i>0\) such
+   that
+   \[
+      M_i\le\sum_{p\in W_i}d_{G'}(p),
+      \tag{MSL1}
+   \]
+   \[
+      |\{p\in W_i:d_{G'}(p)>0\}|\le K_i,
+      \qquad
+      d_{G'}(p)\le V_i\quad(p\in W_i).
+      \tag{MSL2}
+   \]
+   Put
+   \[
+      u_i=\frac{M_i}{2K_i},\qquad v_i=V_i,
+      \qquad
+      L_i=\left\lceil\log_2\frac{v_i}{u_i}\right\rceil ,
+      \tag{MSL3}
+   \]
+   and
+   \[
+      \mathcal J_i
+      =
+      \sum_{j=0}^{L_i-1}J(2^ju_i).
+      \tag{MSL4}
+   \]
+   Define the mass-support surplus
+   \[
+      \Theta_i
+      =
+      \frac{M_i}{2}
+      -
+      4(\log 2)\psi_{W_i}\mathcal J_i
+      \left(
+         b^{1-\rho_{W_i}}A_+K_i^{\rho_{W_i}}
+         +\sigma K_i^{1+\rho_{W_i}}
+      \right).
+      \tag{MSL5}
+   \]
+   If
+   \[
+      \sum_i\lambda_i\Theta_i>0,
+      \tag{MSL6}
+   \]
+   then the guarded residual closes.
+
+   Equivalently, if no retained deficient-shadow prefix closes, every finite
+   mass-support panel satisfying \((MSL1)\)--\((MSL2)\) has nonpositive surplus
+   \((MSL6)\).  Thus a reporter may certify a useful dense column using only
+   three scalars per proposed container: captured shadow mass, support size, and
+   maximum deficient-shadow degree.
+\end{corollary}
+
+\begin{proof}
+   First note that \(v_i>u_i\).  Indeed, \((MSL1)\)--\((MSL2)\) imply
+   \[
+      M_i\le\sum_{p\in W_i}d_{G'}(p)\le K_iV_i=K_iv_i,
+   \]
+   so \(v_i\ge M_i/K_i>u_i\).  For this interval \([u_i,v_i]\), the capped
+   captured mass satisfies
+   \[
+   \begin{aligned}
+      \sum_{p\in W_i}
+      \left(\min\{d_{G'}(p),v_i\}-u_i\right)_+
+      &=
+      \sum_{p\in W_i}\left(d_{G'}(p)-u_i\right)_+ \\
+      &\ge
+      \sum_{p\in W_i}d_{G'}(p)
+      -u_i|\{p\in W_i:d_{G'}(p)>0\}| \\
+      &\ge M_i-u_iK_i=\frac{M_i}{2}.
+   \end{aligned}
+   \tag{MSL7}
+   \]
+   Moreover each dyadic superlevel in \([u_i,v_i]\) is contained in the support
+   \(\{p:d_{G'}(p)>0\}\), so it has cardinality at most \(K_i\).  Therefore
+   \((CLL1)\)--\((CLL2)\) hold for this record with
+   \(X_i=M_i/2\) and \(K_{i,j}=K_i\).  The certified surplus \((CLL3)\) is
+   exactly \(\Theta_i\).  Applying
+   \cref{cor:certified-log-lorentz-deficient-shadow-panel} proves the closing
+   statement and its contrapositive.
+\end{proof}
+
 \begin{corollary}[Deficient-shadow residual obstruction]
    \label{cor:deficient-shadow-residual-obstruction}
    Work in the setting of
@@ -32985,7 +33072,8 @@ they expose such prefixes; the proof does not depend on their sampling rule.
    interval \(0<u<v\), and every finite fractional log-Lorentz panel has
    nonpositive total surplus \((FLL3)\).  The same is true for every certified
    log-Lorentz panel satisfying \((CLL1)\)--\((CLL2)\): its certified surplus
-   \((CLL4)\) is nonpositive.
+   \((CLL4)\) is nonpositive.  In particular, every finite mass-support panel
+   satisfying \((MSL1)\)--\((MSL2)\) has nonpositive surplus \((MSL6)\).
 \end{corollary}
 
 \begin{proof}
@@ -33010,7 +33098,9 @@ they expose such prefixes; the proof does not depend on their sampling rule.
    \cref{cor:dyadic-log-lorentz-deficient-shadow-separator}.  The panel
    statement is \cref{cor:fractional-log-lorentz-deficient-shadow-panel}.  The
    final certified-panel statement is
-   \cref{cor:certified-log-lorentz-deficient-shadow-panel}.
+   \cref{cor:certified-log-lorentz-deficient-shadow-panel}.  The final
+   mass-support statement is
+   \cref{cor:mass-support-log-lorentz-certificate}.
 \end{proof}
 
 \Cref{cor:deficient-shadow-residual-obstruction} is the current proof bottleneck
@@ -33053,6 +33143,10 @@ reporter output further: lower bounds on capped captured mass and upper bounds
 on dyadic superlevel cardinalities are enough.  This is the rank-profile form
 that a range-reporting or list-decoding theorem can certify without exactly
 materializing the whole deficient-shadow degree sequence.
+\Cref{cor:mass-support-log-lorentz-certificate} removes the interval choice
+when the reporter has only coarse statistics: total captured shadow mass,
+support size, and maximum degree determine a canonical interval that captures
+half the mass.
 
 \begin{corollary}[Tuple-profile distinct-storage certificate]
    \label{cor:tuple-profile-distinct-storage}
@@ -33565,6 +33659,8 @@ proposal-law form: a finite panel of containers and height windows closes as
 soon as its total verified log-Lorentz surplus is positive.
 \Cref{cor:certified-log-lorentz-deficient-shadow-panel} replaces exact
 superlevel counts by lower captured-mass and upper rank certificates.
+\Cref{cor:mass-support-log-lorentz-certificate} gives a still coarser
+certificate using only mass, support, and maximum degree.
 \Cref{cor:pair-compatible-hall-guarded-cover} assembles the chain back into the
 local LP: a half-shipment with sufficient layer-cake surplus supplies the
 guarded star-panel reporter and closes the residual.
@@ -46882,6 +46978,8 @@ cardinality envelope.
 fully fractional target for proposal families.
 \Cref{cor:certified-log-lorentz-deficient-shadow-panel} is the reporter-facing
 rank-certificate version.
+\Cref{cor:mass-support-log-lorentz-certificate} is the corresponding
+three-scalar container certificate.
 \Cref{cor:pair-compatible-hall-guarded-cover} states the final local theorem
 target in this language: prove the Hall expansion and the resulting
 layer-cake price inequality for every guarded residual.
