@@ -659,3 +659,5 @@
 - Updated the audit trail to identify the point-coupled form as the sharper soft-cluster interface for dense proposals.
 - Added reported soft-support prefix hardening. Any soft dense proposal that beats the exact cardinality price now materializes as one deterministic top-\(K\) reported support, with a simple coarse scale test when all cardinalities are available.
 - Updated the audit trail to record that the retained object is again an exact top-prefix support, not a stochastic or fractional support.
+- Added the soft-support price envelope and panel screen. A finite or sampled soft proposal panel now closes when aggregate certified mass beats the scalar support-mass price \(\mathsf P_i^{\rm soft}\); the verifier then extracts one deterministic top-prefix report.
+- Updated the audit trail to make \((RSP3)\)--\((RSP5)\) the build-facing scalar target for soft dense proposals.

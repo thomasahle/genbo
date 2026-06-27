@@ -39052,6 +39052,121 @@ family.
    \(K\).
 \end{proof}
 
+\begin{corollary}[Soft-support price envelope and panels]
+   \label{cor:reported-soft-support-price-panel}
+   Work in the setting of
+   \cref{cor:reported-soft-support-prefix-hardening}.  For each reported
+   support slot \(i\), let the available top-prefix cardinalities
+   \(\mathcal K_i\) be \(\beta_i\)-dense from below: \(\beta_i\ge1\), \(1\in
+   \mathcal K_i\), and for every \(1\le h\le |W_i|\) there is
+   \(K\in\mathcal K_i\) with
+   \[
+      \max\{1,h/\beta_i\}\le K\le h .
+      \tag{RSP1}
+   \]
+   For a soft support report on slot \(i\), put
+   \[
+      \mu_i=\sum_p\theta_{i,p},
+      \qquad
+      X_i\le\sum_p\theta_{i,p}d_i(p),
+      \qquad
+      \mu_{i,+}=\max\{1,\mu_i\},
+      \tag{RSP2}
+   \]
+   and define its soft support price
+   \[
+      \mathsf P_i^{\rm soft}
+      =
+      4\beta_i b_iJ_i\psi_i
+      \left(
+         A_{y_i}\mu_{i,+}^{\rho_i}
+         +
+         \zeta\mu_{i,+}^{1+\rho_i}
+      \right).
+      \tag{RSP3}
+   \]
+   If one report satisfies
+   \[
+      X_i>\mathsf P_i^{\rm soft},
+      \tag{RSP4}
+   \]
+   then the Hall-cut repair alternative \((HCR2)\) holds.
+
+   More generally, let \(I\) be a finite panel of soft support reports with
+   weights \(\lambda_i\ge0\).  If
+   \[
+      \sum_{i\in I}\lambda_iX_i
+      >
+      \sum_{i\in I}\lambda_i\mathsf P_i^{\rm soft},
+      \tag{RSP5}
+   \]
+   then some reported top-prefix support repairs the closed Hall cut.  Hence in
+   any residual with no reported closed-shadow repair, every finite soft support
+   panel satisfies the reverse inequality in \((RSP5)\).
+
+   The same conclusion holds in Las Vegas build time for a randomized soft
+   support panel law.  If the sampled certified surplus
+   \[
+      Z(s)=
+      \sum_{i\in I_s}\lambda_i(s)X_i(s)
+      -
+      \sum_{i\in I_s}\lambda_i(s)\mathsf P_i^{\rm soft}(s)
+      \tag{RSP6}
+   \]
+   satisfies
+   \[
+      \E_sZ(s)\ge\Gamma>0,
+      \qquad
+      Z(s)_+\le U
+      \quad\text{almost surely},
+      \tag{RSP7}
+   \]
+   then
+   \[
+      B\ge\frac U\Gamma\log\frac1\delta
+      \tag{RSP8}
+   \]
+   independent build-time seeds find a deterministic reported top-prefix repair
+   with probability at least \(1-\delta\).  Nonpositive sampled panels are
+   discarded.
+\end{corollary}
+
+\begin{proof}
+   First consider one report.  If \(\mu_i<2\), take \(h=1\); otherwise take
+   \(h=\lfloor\mu_i\rfloor\).  Since \(0\le\theta_{i,p}\le1\), the case
+   \(\mu_i\ge2\) has \(h\le |W_i|\).  By \((RSP1)\), choose an available
+   \(K\in\mathcal K_i\) with \(\max\{1,h/\beta_i\}\le K\le h\).  Then
+   \(K\le\mu_{i,+}\) and
+   \[
+      \frac{K}{\max\{\mu_i,K\}}\ge\frac1{2\beta_i}.
+      \tag{RSP9}
+   \]
+   Thus \((RSP4)\) implies
+   \[
+      K\frac{X_i}{\max\{\mu_i,K\}}
+      >
+      2b_iJ_i\psi_i
+      \left(
+         A_{y_i}\mu_{i,+}^{\rho_i}
+         +
+         \zeta\mu_{i,+}^{1+\rho_i}
+      \right).
+   \]
+   Since \(K\le\mu_{i,+}\), the right hand side is at least the recursive price
+   at cardinality \(K\).  Hence \((RSH2)\) holds for this \(K\), and
+   \cref{cor:reported-soft-support-prefix-hardening} gives \((HCR2)\).
+
+   For the panel statement, if every \(i\) with \(\lambda_i>0\) had
+   \(X_i\le\mathsf P_i^{\rm soft}\), then \((RSP5)\) would fail.  Therefore
+   some positive-weight record satisfies \((RSP4)\), and the one-report
+   implication applies.  The residual statement is the contrapositive.
+
+   Finally, \((RSP7)\) gives \(\Pr[Z(s)>0]\ge\Gamma/U\).  With \(B\) independent
+   seeds, all sampled panels are nonpositive with probability at most
+   \(\exp(-B\Gamma/U)\).  A positive sampled panel satisfies the deterministic
+   panel condition and is then verified into one reported top-prefix support.
+\end{proof}
+
 \begin{corollary}[Balanced Hall-shadow density screen]
    \label{cor:balanced-hall-shadow-density-screen}
    Work in the setting of \cref{cor:no-merge-hall-shadow-envelope}.  Fix a
@@ -54389,7 +54504,12 @@ event, so the recursive price is charged to the point support probability
 \Cref{cor:reported-soft-support-prefix-hardening} then removes the stochastic
 support from the retained object: any soft assignment satisfying the exact
 cardinality test \((RSH2)\), or the coarse scale test \((RSH3)\), materializes
-one deterministic top-\(K\) reported support.  The older sufficient forms include
+one deterministic top-\(K\) reported support.
+\Cref{cor:reported-soft-support-price-panel} packages this as the scalar
+build-facing screen: a soft support report or sampled panel only has to beat the
+support-mass price \(\mathsf P_i^{\rm soft}\) in \((RSP3)\), after which the
+verifier extracts one deterministic reported prefix.  The older sufficient forms
+include
 \cref{cor:exact-scale-soft-hall-shadow-separator-endpoint},
 \cref{cor:thresholded-shadow-routing-separator-endpoint},
 \cref{cor:soft-mass-hall-shadow-separator-endpoint},
