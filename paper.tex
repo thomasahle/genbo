@@ -45828,6 +45828,111 @@ certificate is the verified positive-gain column and the finite LP it augments.
    the finite family.
 \end{proof}
 
+\begin{corollary}[Shared prefix weak-type residual]
+   \label{cor:shared-prefix-weak-type-residual}
+   Work in the setting of
+   \cref{cor:shared-top-prefix-reduced-cost-compiler}.  Suppose a template \(B\)
+   has prices
+   \[
+      P_B(K)=\psi_B\left(A_BK^{\rho_B}+\zeta_BK^{1+\rho_B}\right),
+      \qquad 0<\rho_B<1,
+      \tag{SHW1}
+   \]
+   and that the available cardinalities \(\mathcal K_B\) are \(b_B\)-dense from
+   below: for every \(1\le h\le |W_B|\), some \(K\in\mathcal K_B\) satisfies
+   \(h/b_B\le K\le h\).  If no available top prefix of \(B\) has positive shared
+   reduced cost, then every degree superlevel
+   \[
+      H_{B,\delta}=\{p\in W_B:d_B^u(p)\ge\delta\},
+      \qquad h=|H_{B,\delta}|,
+      \tag{SHW2}
+   \]
+   obeys
+   \[
+      \delta
+      \le
+      2\psi_B\left(
+         b_B^{1-\rho_B}A_Bh^{\rho_B-1}
+         +\zeta_Bh^{\rho_B}
+      \right)
+      \qquad(h>0).
+      \tag{SHW3}
+   \]
+   Equivalently, if a reported container certifies a level \(\delta\) and
+   cardinality \(h>0\) violating \((SHW3)\), then some available shared top prefix
+   in that container is a positive shared-cover column.
+\end{corollary}
+
+\begin{proof}
+   Let \(h>0\) and choose \(K\in\mathcal K_B\) with \(h/b_B\le K\le h\).  The top
+   \(K\) prefix has every point of degree at least \(\delta\), so
+   \[
+      K\delta\le\sum_{j\le K}d_B^u(p_j).
+   \]
+   Since no available top prefix is positive, \((SPF4)\) fails:
+   \[
+      \sum_{j\le K}d_B^u(p_j)
+      \le2P_B(K)
+      =
+      2\psi_B\left(A_BK^{\rho_B}+\zeta_BK^{1+\rho_B}\right).
+   \]
+   Dividing by \(K\) gives
+   \[
+      \delta
+      \le
+      2\psi_B\left(A_BK^{\rho_B-1}+\zeta_BK^{\rho_B}\right).
+   \]
+   Since \(\rho_B-1<0\), \(K\ge h/b_B\) gives
+   \(K^{\rho_B-1}\le b_B^{1-\rho_B}h^{\rho_B-1}\), while \(K\le h\) gives
+   \(K^{\rho_B}\le h^{\rho_B}\).  This proves \((SHW3)\).  The positive
+   statement is the contrapositive followed by
+   \cref{cor:shared-top-prefix-reduced-cost-compiler}.
+\end{proof}
+
+\begin{corollary}[Shared prefix price-density screen]
+   \label{cor:shared-prefix-price-density-screen}
+   Work in the setting of \cref{cor:shared-prefix-weak-type-residual}.  For
+   \(K\ge1\), put
+   \[
+      f_B(K)=A_BK^{\rho_B-1}+\zeta_BK^{\rho_B}.
+      \tag{SHD1}
+   \]
+   If, for some available \(K\in\mathcal K_B\) and some threshold \(\delta>0\),
+   the superlevel mass
+   \[
+      M_B(\delta)=\sum_{p:\ d_B^u(p)\ge\delta}d_B^u(p)
+      \tag{SHD2}
+   \]
+   satisfies
+   \[
+      \delta>2\psi_B f_B(K),
+      \qquad
+      M_B(\delta)>2\psi_BKf_B(K),
+      \tag{SHD3}
+   \]
+   then \(B\) contains a positive shared top-prefix column.  Consequently, in a
+   residual where all shared prefixes of \(B\) fail, at least one of the reverse
+   inequalities in \((SHD3)\) holds for every threshold and available \(K\).
+\end{corollary}
+
+\begin{proof}
+   Conditions \((SHD3)\) say that both entries in
+   \[
+      \min\{M_B(\delta),K\delta\}
+   \]
+   are larger than
+   \[
+      2\psi_BKf_B(K)=2P_B(K).
+   \]
+   Let \(h=|H_{B,\delta}|\).  If \(h\ge K\), then the top \(K\) points all have
+   degree at least \(\delta\), so their total shared degree is larger than
+   \(2P_B(K)\).  If \(h<K\), then the top \(K\) prefix contains all of
+   \(H_{B,\delta}\), so its total shared degree is at least \(M_B(\delta)\), again
+   larger than \(2P_B(K)\).  In either case \((SPF4)\) holds and
+   \cref{cor:shared-top-prefix-reduced-cost-compiler} gives a positive shared
+   prefix.  The residual statement is the contrapositive.
+\end{proof}
+
 \begin{corollary}[Shared integrated cover-cost endpoint]
    \label{cor:shared-integrated-cover-cost-endpoint}
    Work in the setting of
@@ -61104,6 +61209,11 @@ positive branch.
 the usual exact top-prefix operation inside a certified smaller-radius
 container: sort points by shared-cover degree and test whether one prefix beats
 twice its one-time recursive price.
+\Cref{cor:shared-prefix-weak-type-residual} and
+\cref{cor:shared-prefix-price-density-screen} record the matching residual:
+if every such prefix fails, the shared degrees in every certified container
+obey an explicit weak-type envelope, while a height-and-mass density violation
+materializes one positive top-prefix column.
 \Cref{cor:shared-integrated-cover-cost-endpoint} and
 \cref{cor:shared-integrated-dense-profile-endpoint} are the corresponding
 polylogarithmic endpoints.  This is the current clean fractional-overlap target:
