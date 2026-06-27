@@ -44010,6 +44010,83 @@ certificate is the verified positive-gain column and the finite LP it augments.
    contrapositive of the positive statement.
 \end{proof}
 
+\begin{corollary}[Min-cost split-profile envelope]
+   \label{cor:min-cost-split-profile-envelope}
+   Work in the setting of \cref{cor:split-profile-panel-hardening}, and fix the
+   finite dense-prefix verifier for the reported high-correlation stars.  For a
+   split profile \(\pi\), call a high-correlation routing certificate admissible
+   if it consists of a tail allowance \(E_\pi^{\rm hi}\), records
+   \(i\in I_\pi\), weights \(\lambda_{\pi,i}\ge0\), lower certificates
+   \(X_{\pi,i}\), and price envelopes \(P_{\pi,i}\), satisfying \((WPP2)\) and
+   admissible for the common paid pair-star verifier.  Define its cost by
+   \[
+      \operatorname{cost}_\pi(E,I,\lambda)
+      =
+      E_\pi^{\rm hi}
+      +\sum_{i\in I_\pi}\lambda_{\pi,i}P_{\pi,i},
+      \tag{WMC1}
+   \]
+   and let
+   \[
+      \Phi_\pi^{\rm hi}
+      =
+      \inf\operatorname{cost}_\pi(E,I,\lambda),
+      \tag{WMC2}
+   \]
+   with value \(+\infty\) if no admissible certificate exists.
+
+   If a finite nonnegative split-profile panel satisfies
+   \[
+      \sum_{\pi\in\Pi}\eta_\pi
+      \left(
+         B_\pi-C_\pi^{\rm lo}-\Phi_\pi^{\rm hi}
+      \right)>0,
+      \tag{WMC3}
+   \]
+   then either some low-correlation profile record exposes a positive
+   shared-panel gain, or the dense verifier exposes a positive smaller-radius
+   prefix.
+
+   Consequently, in any residual satisfying \((WRO3)\) and in which no reported
+   pair-star prefix has positive reduced gain, every finite nonnegative panel
+   obeys the optimized scalar envelope
+   \[
+      \sum_{\pi\in\Pi}\eta_\pi B_\pi
+      \le
+      \sum_{\pi\in\Pi}\eta_\pi
+      \left(
+         C_\pi^{\rm lo}+\Phi_\pi^{\rm hi}
+      \right).
+      \tag{WMC4}
+   \]
+   Thus the high-correlation side of the dense-overlap proof can be treated as
+   a fractional min-cost routing problem over certified star records and
+   explicit tails.  The optimizer may be found by arbitrarily expensive
+   preprocessing; only a verified positive prefix, if one exists, enters the
+   retained index.
+\end{corollary}
+
+\begin{proof}
+   If \((WMC3)\) holds, then all profiles with \(\eta_\pi>0\) and positive
+   contribution have finite \(\Phi_\pi^{\rm hi}\).  Choose admissible routing
+   certificates whose costs are within \(\varepsilon_\pi>0\) of
+   \(\Phi_\pi^{\rm hi}\), with
+   \[
+      \sum_{\pi\in\Pi}\eta_\pi\varepsilon_\pi
+      <
+      \sum_{\pi\in\Pi}\eta_\pi
+      \left(
+         B_\pi-C_\pi^{\rm lo}-\Phi_\pi^{\rm hi}
+      \right).
+   \]
+   Substituting these certificates turns \((WMC3)\) into the strict aggregate
+   surplus condition \((WPP3)\).  Hence
+   \cref{cor:split-profile-panel-hardening} exposes either a low-correlation
+   positive witness record or a high-correlation positive dense prefix.
+   The residual envelope \((WMC4)\) is the contrapositive, using the same
+   approximation of the infimum if a strict violation of \((WMC4)\) occurred.
+\end{proof}
+
 The role of \cref{asm:weighted-dense-spherical-dichotomy} is now precise.  It is
 not an additional recursion rule; it is the separation theorem that would prove
 the finite signature LPs used in \cref{prop:fractional-filter-cover-polylog}
@@ -57875,6 +57952,11 @@ restriction: any finite nonnegative panel of split profiles with positive
 aggregate surplus contains either a low-correlation witness violation or a
 paid high-correlation dense-prefix violation.  This is the form needed for
 build-time list/range/facility/AQ/lattice proposal oracles.
+\Cref{cor:min-cost-split-profile-envelope} optimizes out the chosen
+high-correlation routing: each profile pays the infimum over certified star
+routings and explicit tails, leaving a scalar residual envelope
+\(B_\pi\le C_\pi^{\rm lo}+\Phi_\pi^{\rm hi}\) in aggregate.  This is the
+closest current form to the desired fractional dense-filter cover theorem.
 \Cref{cor:tuple-profile-compressed-bucket-storage}
 gives the direct
 low-correlation certificate for this target: first list moment plus two-point
