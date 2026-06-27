@@ -34463,6 +34463,57 @@ smaller Hall cut whose paid-pair capacity is measured only inside that subset.
    rewriting the cut value inequality.
 \end{proof}
 
+\begin{corollary}[Flow-value deficient-shadow screen]
+   \label{cor:flow-value-deficient-shadow-screen}
+   Work in the setting of
+   \cref{lem:restricted-deficient-shadow-transport-cut}.  Let
+   \(\mathcal U\) be a finite family of certified subcontainers \(U\subseteq W\),
+   each inheriting the price parameters of its ambient container.  For each
+   record \(i\), choose \(U_i\in\mathcal U\), let \(W_i\) be its ambient
+   container, choose a congestion \(C_i>0\), and a nonnegative weight
+   \(\lambda_i\).  If
+   \[
+      \sum_i\lambda_i
+      \left[
+         \frac{\Phi_{U_i}(C_i)}{C_i}
+         -
+         R_{W_i}(|U_i|)
+      \right]>0,
+      \tag{FVS1}
+   \]
+   then the guarded residual closes.
+
+   Equivalently, if no transported deficient-shadow repair over
+   \(\mathcal U\) closes, then
+   \[
+      \frac{\Phi_U(C)}{C}\le R_W(|U|)
+      \tag{FVS2}
+   \]
+   for every \(U\in\mathcal U\), ambient \(W\), and every \(C>0\).  Moreover,
+   for every target \(M\) with \(M/C>R_W(|U|)\), the localized cut obstruction
+   \((RDT8)\) holds.
+
+   Thus the reporter may replace explicit transported-load certificates by
+   exact max-flow values.  A positive reduced value \(\Phi_U(C)/C-R_W(|U|)\) is
+   already one deterministic dense repair, while failure supplies a finite
+   cut certificate inside each proposed subset.
+\end{corollary}
+
+\begin{proof}
+   If \((FVS1)\) holds, at least one record with \(\lambda_i>0\) satisfies
+   \[
+      \Phi_{U_i}(C_i)/C_i>R_{W_i}(|U_i|).
+   \]
+   By \((RDT7)\) in
+   \cref{lem:restricted-deficient-shadow-transport-cut}, that record closes the
+   guarded residual.
+
+   The inequality \((FVS2)\) is the contrapositive of the one-record statement.
+   If \(M/C>R_W(|U|)\) and no transported repair closes, then
+   \(\Phi_U(C)<M\).  Rewriting the min-cut identity \((RDT5)\) gives a cut
+   satisfying \((RDT8)\).
+\end{proof}
+
 \begin{corollary}[No-prefix deficient-shadow envelope]
    \label{cor:no-prefix-deficient-shadow-envelope}
    Work in the setting of \cref{cor:deficient-shadow-prefix-certificate}.  Let
@@ -35782,12 +35833,16 @@ smaller Hall cut whose paid-pair capacity is measured only inside that subset.
       \tag{DSR1}
    \]
    and the deficient-shadow envelope \((NDE2)\) holds for every
-   \(W\in\mathcal W\) and \(h\in\mathcal K_W\).  Consequently the tail envelope
-   \((TDE2)\) holds for every threshold \(t>0\) whose superlevel cardinality
-   \(h_{W,t}\) lies in \(\mathcal K_W\), and every such threshold layer satisfies
-   the two-price alternative \((TDS2)\)--\((TDS3)\).  When \(0<\rho_W<1\), the
-   same layer also satisfies the forbidden-middle-scale conclusion
-   \((FMS1)\)--\((FMS2)\).
+   \(W\in\mathcal W\) and \(h\in\mathcal K_W\).  In addition, for any finite
+   family \(\mathcal U\) of certified subcontainers \(U\subseteq W\) with
+   \(W\in\mathcal W\) and \(|U|\in\mathcal K_W\), the flow-value residual
+   \((FVS2)\) holds for every \(U\in\mathcal U\) and every congestion \(C>0\);
+   every target \(M/C>R_W(|U|)\) therefore exposes the localized cut
+   obstruction \((RDT8)\).  Consequently the tail envelope \((TDE2)\) holds for
+   every threshold \(t>0\) whose superlevel cardinality \(h_{W,t}\) lies in
+   \(\mathcal K_W\), and every such threshold layer satisfies the two-price
+   alternative \((TDS2)\)--\((TDS3)\).  When \(0<\rho_W<1\), the same layer also
+   satisfies the forbidden-middle-scale conclusion \((FMS1)\)--\((FMS2)\).
 
    Moreover, if \(0<\rho_W<1\) and \(\mathcal K_W\) is \(b\)-dense from below as
    in \((CSD1)\), then no threshold \(t>0\) with \(h_{W,t}>0\) can satisfy
@@ -35820,7 +35875,14 @@ smaller Hall cut whose paid-pair capacity is measured only inside that subset.
    supplies an integral guard sublayer \(G'\) satisfying \((DSR1)\).  Applying
    \cref{cor:no-prefix-deficient-shadow-envelope} to this \(G'\) gives
    \((NDE2)\) for every searched prefix, because no such prefix closes the
-   residual by hypothesis.  The tail statement is then
+   residual by hypothesis.  The flow-value statement is the contrapositive of
+   \cref{cor:flow-value-deficient-shadow-screen}: if a certified
+   \(U\subseteq W\), \(|U|\in\mathcal K_W\), had
+   \(\Phi_U(C)/C>R_W(|U|)\), then the top-\(|U|\) deficient-shadow prefix in
+   \(W\) would close by
+   \cref{cor:deficient-shadow-prefix-certificate}, contradicting the
+   hypothesis.  The cut conclusion is the final part of
+   \cref{cor:flow-value-deficient-shadow-screen}.  The tail statement is then
    \cref{cor:tail-deficient-shadow-envelope}, and the final two-price alternative
    is \cref{cor:two-price-deficient-shadow-screen}.  The scale conclusion is
    \cref{cor:forbidden-middle-deficient-shadow-scale}.  The final
@@ -35868,6 +35930,10 @@ the direct mixed price, the same deficient-shadow prefix closes immediately.
 for one proposed subset: if such a shipment cannot be certified at a price level
 that would close, the obstruction is a localized Hall cut with too much
 guard-incidence load for the paid shadow available inside that subset.
+\Cref{cor:flow-value-deficient-shadow-screen} is the family-level version:
+preprocessing may solve the finite max-flow instances exactly, and a surviving
+residual must have nonpositive flow-value surplus for every proposed subset and
+congestion scale.
 \Cref{cor:cardinality-net-deficient-shadow-reporter} removes the exact-size
 artifact from this target: with dyadic retained prefix sizes, an arbitrary
 reported superlevel in the forbidden interval is rounded down to a certified
@@ -61784,6 +61850,9 @@ lower mass certificate without exposing all deficient-shadow degrees.
 \Cref{lem:restricted-deficient-shadow-transport-cut} is its one-subset
 max-flow/min-cut normal form and turns failed shipment into a localized
 deficient-shadow Hall cut.
+\Cref{cor:flow-value-deficient-shadow-screen} packages this as the current
+finite reporter target: every proposed subset and congestion scale must have
+nonpositive flow-value surplus in a surviving residual.
 \Cref{cor:no-prefix-deficient-shadow-envelope} and
 \cref{cor:deficient-shadow-residual-obstruction} state the exact residual if
 that search fails: the positive-excess Hall sublayer must satisfy a weak-type
