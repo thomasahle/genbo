@@ -17457,6 +17457,76 @@ success-normalized bucket-net argument.
    Applying \((CSP5)\) to the materialized top-\(K\) records gives \((CSP4)\).
 \end{proof}
 
+\begin{corollary}[Cohort-law weak-type superlevel normal form]
+   \label{cor:cohort-law-weak-type-superlevel}
+   Work in the setting of
+   \cref{cor:cohort-law-scalar-prefix-normal-form}.  For a cohort law \(\eta\),
+   a segment parameter \(\theta\), a retained parent container \(W_0\), and a
+   level \(\delta>0\), put
+   \[
+      U_{\eta,\theta,\delta}(W_0)
+      =
+      \{p\in W_0:d_\eta^\theta(p)\ge\delta\},
+      \qquad
+      h_{\eta,\theta,\delta}(W_0)=|U_{\eta,\theta,\delta}(W_0)|.
+      \tag{CWS1}
+   \]
+   Assume that every nonempty set \(U_{\eta,\theta,\delta}(W_0)\) can be
+   materialized as an affordable record
+   \[
+      (U_{\eta,\theta,\delta}(W_0),
+       h_{\eta,\theta,\delta}(W_0),\theta)\in\mathcal R
+   \]
+   whenever its size certificate and \(\theta\) satisfy \((HMC1)\).  If every
+   cohort law \(\eta\) admits \(W_0,\theta,\delta\) with
+   \(h=h_{\eta,\theta,\delta}(W_0)>0\), such that the superlevel record
+   \((U_{\eta,\theta,\delta}(W_0),h,\theta)\) satisfies \((HMC1)\), and
+   \[
+      \delta h\ge A\Lambda ,
+      \tag{CWS2}
+   \]
+   then the averaged dominated-load certificate \((DPG3)\) holds.
+
+   Conversely, if \((DPG3)\) fails, then there is a cohort law \(\eta\) such that
+   every materializable affordable superlevel satisfies the strict weak-type
+   envelope
+   \[
+      \delta\,h_{\eta,\theta,\delta}(W_0)<A\Lambda .
+      \tag{CWS3}
+   \]
+\end{corollary}
+
+\begin{proof}
+   If \((CWS2)\) holds, then the materialized superlevel record \(R=(U,h,\theta)\)
+   has capacity, by \((CSP5)\),
+   \[
+      \E_{(\Delta',e)\sim\eta}
+      \sum_{q\in Q_{\Delta'}^+}e_qs_R^{\Delta'}(q)
+      =
+      \sum_{p\in U}d_\eta^\theta(p)
+      \ge
+      \delta h
+      \ge
+      A\Lambda .
+   \]
+   Hence \((CLS1)\) holds for this cohort law, and
+   \cref{cor:exact-load-cohort-law-separator} gives \((DPG3)\).
+
+   Conversely, if \((DPG3)\) fails, then
+   \cref{cor:cohort-law-scalar-prefix-normal-form} gives a cohort law satisfying
+   the strict prefix envelope \((CSP4)\).  For a materializable affordable
+   superlevel with \(h>0\), the top \(h\) points in \(W_0\) have mass at least
+   \(\delta h\), so
+   \[
+      \delta h
+      \le
+      D_\eta^\theta(W_0,h)
+      <
+      A\Lambda .
+   \]
+   This is \((CWS3)\).
+\end{proof}
+
 The lemma is the fractional version of the dominated-load endpoint.  It does not
 claim the remaining geometric theorem.  Rather, after terminal low-load levels
 and the \(A\)-boundary alternative have been dealt with by
@@ -17473,7 +17543,9 @@ theorem is to beat every law over these cohorts by one affordable retained
 record.  Finally,
 \cref{cor:cohort-law-scalar-prefix-normal-form} rewrites that record search as a
 scalar top-prefix problem for the cohort degree \(d_\eta^\theta\), not as a
-choice of disjoint dense clusters.
+choice of disjoint dense clusters.  In the weak-type form of
+\cref{cor:cohort-law-weak-type-superlevel}, the remaining range-reporting target
+is just to find one affordable scalar superlevel with \(\delta h\ge A\Lambda\).
 Pools with different congestion guesses may be split into dyadic \(C\)-strata and
 tested by the same game within each stratum.
 
@@ -17795,6 +17867,10 @@ affordable retained record.
 notation: a cohort law induces a scalar degree \(d_\eta^\theta\) on data points,
 and the retained oracle only has to find an affordable top-\(K\) prefix with mass
 at least \(A\Lambda\).
+\Cref{cor:cohort-law-weak-type-superlevel} gives the equivalent weak-type
+superlevel target: find a materializable affordable superlevel with
+\(\delta h\ge A\Lambda\), or else every such superlevel obeys the strict cap
+\(\delta h<A\Lambda\).
 \Cref{cor:load-quantile-recycled-obstruction-profile} gives the matching
 failure form: after the terminal and \(A\)-boundary cases are excluded, one
 strict deficit at this weighted quantile is the entire obstruction.
@@ -39642,6 +39718,9 @@ expected near-shadow capacity at least \(A\Lambda\).
 problem: the law over cohorts defines \(d_\eta^\theta(p)\), and failure means
 every affordable retained top-\(K\) prefix has \(d_\eta^\theta\)-mass below
 \(A\Lambda\).
+\Cref{cor:cohort-law-weak-type-superlevel} is the range-reporting version of the
+same target: a certified superlevel with height \(\delta\) and size \(h\) closes
+the cohort law once \(\delta h\ge A\Lambda\).
 \Cref{cor:load-quantile-recycled-obstruction-profile} is the corresponding
 residual normal form: outside the \(A\)-boundary and terminal cases, the
 remaining obstruction is just strict positivity at that weighted quantile.
