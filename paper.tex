@@ -12443,6 +12443,115 @@ query-price overlap, storage price, and duplicate-incidence factor \(b_G\).
    the second sum, proving \((SPEE4)\).
 \end{proof}
 
+\begin{corollary}[Spread-packing entropy failure gives a star signal]
+   \label{cor:spread-packing-star-signal}
+   In the setting of \cref{cor:spread-packing-entropy-energy-screen}, assume
+   after the spherical normalization that \(E\subseteq\mathbb S^{D-1}\).  Let
+   \(\pi\subseteq E_{\ne}^2\) be one separated-pair profile, and assign
+   nonnegative weights \(\omega_{x,y}\) to pairs in \(\pi\).  Split
+   \[
+      \pi=\pi_{\rm lo}\dot\cup\pi_{\rm hi}.
+   \]
+   Suppose the low part has certified weighted contribution at most \(B_{\rm lo}\):
+   \[
+      \sum_{(x,y)\in\pi_{\rm lo}}\omega_{x,y}\le B_{\rm lo}.
+      \tag{SPSS1}
+   \]
+   Suppose every high edge is genuinely high-correlation,
+   \[
+      (x,y)\in\pi_{\rm hi}
+      \quad\Longrightarrow\quad
+      \ip{x}{y}\ge\underline\theta
+      \qquad(-1<\underline\theta<1).
+      \tag{SPSS2}
+   \]
+   For \(x,y\in E\), put
+   \[
+      M_x(y)=\omega_{x,y}\mathbf 1\{(x,y)\in\pi_{\rm hi}\},
+      \qquad
+      W_{\rm hi}=\sum_{x,y\in E}M_x(y).
+      \tag{SPSS3}
+   \]
+   If \(W_{\rm hi}=0\), set \(J_\omega=1\).  Otherwise suppose the positive
+   values of \(M_x(y)\) lie in
+   \([\omega_{\min},\omega_{\max}]\), and let
+   \[
+      J_\omega=1+\left\lceil\log_2\frac{\omega_{\max}}{\omega_{\min}}\right\rceil
+      \tag{SPSS4}
+   \]
+   and define dyadic star superlevels
+   \[
+      U_{x,t}=\{y\in E:M_x(y)\ge t\},
+      \qquad
+      t\in\{\omega_{\min}2^j:0\le j<J_\omega\}.
+      \tag{SPSS5}
+   \]
+   Then every nonempty \(U_{x,t}\) is contained in the certified smaller ball
+   \[
+      U_{x,t}\subseteq
+      E\cap B\!\left(x,\sqrt{2(1-\underline\theta)}\right).
+      \tag{SPSS6}
+   \]
+   Moreover, for every \(\Lambda>0\), either
+   \[
+      W_{\rm hi}\le 2|E|J_\omega\Lambda,
+      \tag{SPSS7}
+   \]
+   or some dyadic star satisfies
+   \[
+      t|U_{x,t}|\ge\Lambda.
+      \tag{SPSS8}
+   \]
+   Consequently, if the dyadic family contains no high-correlation star of
+   scale at least \(\Lambda\), then the whole profile contribution obeys
+   \[
+      \sum_{(x,y)\in\pi}\omega_{x,y}
+      \le
+      B_{\rm lo}+2|E|J_\omega\Lambda.
+      \tag{SPSS9}
+   \]
+
+   In particular, taking
+   \(\omega_{x,y}=\Pr[x,y\in U_G]\) identifies the precise obstruction left by
+   \cref{cor:spread-packing-entropy-energy-screen}: any excess over the
+   low-correlation entropy-energy payment must organize into a smaller-radius
+   pair-star candidate, which the algorithm submits to the dense verifier.  The
+   exact paid usefulness of that candidate is then checked by
+   \cref{cor:pair-star-dense-column-generator} and
+   \cref{cor:paid-pair-star-panel-certificate}.
+\end{corollary}
+
+\begin{proof}
+   If \(y\in U_{x,t}\), then \(M_x(y)>0\), so \((x,y)\in\pi_{\rm hi}\).  By
+   \((SPSS2)\),
+   \[
+      \|x-y\|^2=2-2\ip{x}{y}\le2(1-\underline\theta),
+   \]
+   proving \((SPSS6)\).
+
+   If \(W_{\rm hi}=0\), then \((SPSS7)\) and \((SPSS9)\) are immediate.  Hence
+   assume \(W_{\rm hi}>0\).
+
+   For fixed \(x\), the dyadic layer-cake estimate gives
+   \[
+      \sum_{j=0}^{J_\omega-1}\omega_{\min}2^j|U_{x,\omega_{\min}2^j}|
+      \ge
+      \frac12\sum_{y\in E}M_x(y).
+   \]
+   Summing over \(x\in E\), if every dyadic star had
+   \(t|U_{x,t}|<\Lambda\), then
+   \[
+      \frac12W_{\rm hi}
+      \le
+      \sum_{x\in E}\sum_{j=0}^{J_\omega-1}
+      \omega_{\min}2^j|U_{x,\omega_{\min}2^j}|
+      <
+      |E|J_\omega\Lambda,
+   \]
+   which is \((SPSS7)\).  The contrapositive gives \((SPSS8)\).  Combining
+   \((SPSS1)\) and \((SPSS7)\) proves \((SPSS9)\) under the no-star condition.
+\end{proof}
+
 \Cref{lem:reduced-gain-quotient-refinement} is the finite-cover analogue of the
 Hall-shadow refinement lemma.  It says that once a quotient has positive
 reduced gain, any demand-preserving split whose radius discount pays the Renyi
@@ -12454,8 +12563,11 @@ radius-contracting refinement.  \Cref{cor:quotient-spread-packing-entropy}
 turns that diffuse residual into a separated packing with explicit Renyi
 effective support.  \Cref{cor:spread-packing-entropy-energy-screen} then states
 the exact spherical payment: cap-intersection energy must dominate the separated
-profile entropy.  This is the precise place where the spherical/list-decoding
-side should use entropy rather than density.
+profile entropy.  \Cref{cor:spread-packing-star-signal} adds the contrapositive
+handoff: after the low-correlation energy part is paid, any remaining profile
+mass must appear as a smaller-radius high-correlation star whose paid value is
+tested by the dense-column verifier.  This is the precise place where the
+spherical/list-decoding side should use entropy rather than density.
 
 \begin{corollary}[Residual dense-cover obstruction certificate]
    \label{cor:residual-dense-cover-obstruction}
