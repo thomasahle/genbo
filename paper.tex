@@ -34514,6 +34514,124 @@ smaller Hall cut whose paid-pair capacity is measured only inside that subset.
    satisfying \((RDT8)\).
 \end{proof}
 
+\begin{lemma}[Infinitesimal flow value equals deficient-shadow mass]
+   \label{lem:infinitesimal-flow-deficient-shadow}
+   Work in the setting of
+   \cref{lem:restricted-deficient-shadow-transport-cut}.  For a certified
+   subcontainer \(U\), put
+   \[
+      D_{G'}(U)=
+      \sum_{(p,q)\in N_U(\mathcal I_{G'})}
+      a_q\gamma_{p,q}r_{p,q}
+      =
+      \sum_{p\in U}d_{G'}(p).
+      \tag{IFD1}
+   \]
+   Then
+   \[
+      \frac{\Phi_U(C)}{C}\le D_{G'}(U)
+      \qquad(C>0),
+      \tag{IFD2}
+   \]
+   and, if \(D_{G'}(U)>0\), there is \(C_0(U)>0\) such that
+   \[
+      \Phi_U(C)=C\,D_{G'}(U)
+      \qquad(0<C\le C_0(U)).
+      \tag{IFD3}
+   \]
+   Consequently
+   \[
+      \sup_{C>0}\frac{\Phi_U(C)}{C}=D_{G'}(U).
+      \tag{IFD4}
+   \]
+   In particular, if all congestion scales are allowed, a certified subset
+   \(U\) has positive flow-value surplus for some \(C\) if and only if
+   \[
+      D_{G'}(U)>R_W(|U|).
+      \tag{IFD5}
+   \]
+   Thus the exact flow-value screen is not a stronger geometric separator than
+   the deficient-shadow prefix test.  Its role is to provide a build-time
+   lower certificate for \(D_{G'}(U)\) when the shadow degrees themselves are
+   not materialized.
+\end{lemma}
+
+\begin{proof}
+   The identity in \((IFD1)\) is the definition of the deficient-shadow degree:
+   a pair \((p,q)\) lies in \(N_U(\mathcal I_{G'})\) exactly when
+   \(p\in U\cap N_{\rm hc}(G')(q)\).
+
+   For the upper bound, take \(\mathcal A=\mathcal I_{G'}\) in the min-cut
+   formula \((RDT5)\).  This gives
+   \[
+      \Phi_U(C)\le
+      C\sum_{(p,q)\in N_U(\mathcal I_{G'})}
+      a_q\gamma_{p,q}r_{p,q}
+      =
+      C D_{G'}(U).
+   \]
+
+   For the reverse inequality at small congestion, assume \(D_{G'}(U)>0\).
+   For every paid-pair node
+   \(j=(p,q)\in N_U(\mathcal I_{G'})\) with
+   \(w_j=a_q\gamma_{p,q}r_{p,q}>0\), choose one adjacent incidence
+   \(i(j)=(q,x)\in\mathcal I_{G'}\).  Let
+   \[
+      s_i=\sum_{j:\ i(j)=i}w_j .
+   \]
+   If \(s_i>0\), then \(i=(q,x)\) has \(x\in G'(q)\) and
+   \(q\in\mathcal Q_+\), so its source capacity
+   \(b_i=\tau_qa_q\) is positive.  Define
+   \[
+      C_0(U)=\min_{i:\ s_i>0}\frac{b_i}{s_i}.
+   \]
+   For \(0<C\le C_0(U)\), route \(Cw_j\) units of flow from \(i(j)\) to each
+   paid-pair node \(j\).  The source load at incidence \(i\) is \(Cs_i\le b_i\),
+   and the sink capacity of \(j=(p,q)\) is exactly
+   \(C a_q\gamma_{p,q}r_{p,q}=Cw_j\).  Hence this is a feasible flow of total
+   value \(C\sum_jw_j=C D_{G'}(U)\).  Together with the upper bound this proves
+   \((IFD3)\) and \((IFD4)\).
+
+   Finally, if \(\Phi_U(C)/C>R_W(|U|)\) for some \(C\), then \((IFD2)\) gives
+   \(D_{G'}(U)>R_W(|U|)\).  Conversely, if \((IFD5)\) holds, choose
+   \(C\le C_0(U)\) in \((IFD3)\).  Then
+   \(\Phi_U(C)/C=D_{G'}(U)>R_W(|U|)\).
+\end{proof}
+
+\begin{corollary}[Flow-value screen collapses to shadow-mass separation]
+   \label{cor:flow-value-shadow-mass-equivalence}
+   In the setting of \cref{cor:flow-value-deficient-shadow-screen}, if the
+   reporter is allowed to choose arbitrary positive congestion scales, then
+   \((FVS1)\) holds for a finite panel if and only if at least one certified
+   subcontainer in the panel satisfies
+   \[
+      D_{G'}(U)>R_W(|U|).
+      \tag{FSM1}
+   \]
+   Equivalently, the no-flow-value residual \((FVS2)\) over all \(C>0\) is
+   exactly the no-shadow-mass residual
+   \[
+      D_{G'}(U)\le R_W(|U|)
+      \tag{FSM2}
+   \]
+   for every proposed certified subcontainer \(U\).
+
+   Therefore a proof should not rely on optimizing over congestion scales as a
+   separate source of power.  The remaining geometric task is to expose one
+   affordable smaller-radius subset with enough deficient-shadow mass; max-flow
+   certificates are a convenient way to verify such mass from adjacency data.
+\end{corollary}
+
+\begin{proof}
+   If \((FVS1)\) holds, one active record has
+   \(\Phi_U(C)/C>R_W(|U|)\), and
+   \cref{lem:infinitesimal-flow-deficient-shadow} gives \((FSM1)\).  Conversely,
+   if a proposed \(U\) satisfies \((FSM1)\), the same lemma gives a sufficiently
+   small congestion \(C\) with \(\Phi_U(C)/C=D_{G'}(U)>R_W(|U|)\), so the
+   one-record panel satisfies \((FVS1)\).  The residual statement is the
+   contrapositive.
+\end{proof}
+
 \begin{corollary}[No-prefix deficient-shadow envelope]
    \label{cor:no-prefix-deficient-shadow-envelope}
    Work in the setting of \cref{cor:deficient-shadow-prefix-certificate}.  Let
@@ -35980,6 +36098,13 @@ guard-incidence load for the paid shadow available inside that subset.
 preprocessing may solve the finite max-flow instances exactly, and a surviving
 residual must have nonpositive flow-value surplus for every proposed subset and
 congestion scale.
+\Cref{lem:infinitesimal-flow-deficient-shadow} and
+\cref{cor:flow-value-shadow-mass-equivalence} simplify this endpoint: if the
+congestion scale is unrestricted, the supremum of the normalized flow value for
+one subset is exactly its deficient-shadow mass.  Thus the max-flow screen is
+not an additional geometric principle; it is a verifier for the same subset
+shadow-mass certificate used by
+\cref{cor:deficient-shadow-prefix-certificate}.
 \Cref{cor:cardinality-net-deficient-shadow-reporter} removes the exact-size
 artifact from this target: with dyadic retained prefix sizes, an arbitrary
 reported superlevel in the forbidden interval is rounded down to a certified
@@ -48158,6 +48283,10 @@ itself spherical-pseudo-random enough to close the dichotomy.
    Hall-deficit shadow, preprocessing may search over certified smaller-radius
    subsets and congestion scales, solve their finite flow problems, and retain
    only the deterministic prefix extracted from a positive reduced flow value.
+   By \cref{cor:flow-value-shadow-mass-equivalence}, if all congestion scales are
+   admissible this is equivalently a deficient-shadow mass separator for one
+   certified subset; the flow computation is a certification device rather than
+   an independent source of geometric gain.
 \end{corollary}
 
 \begin{proof}
@@ -61961,6 +62090,12 @@ deficient-shadow Hall cut.
 \Cref{cor:flow-value-deficient-shadow-screen} packages this as the current
 finite reporter target: every proposed subset and congestion scale must have
 nonpositive flow-value surplus in a surviving residual.
+\Cref{lem:infinitesimal-flow-deficient-shadow} then collapses the unrestricted
+congestion parameter: for a fixed subset, the largest normalized flow value is
+exactly the subset's deficient-shadow mass.  Consequently
+\cref{cor:flow-value-shadow-mass-equivalence} says that the max-flow endpoint is
+equivalent to finding one certified subset with deficient-shadow mass above its
+recursive price; flow is only a lower-certification mechanism.
 \Cref{cor:no-prefix-deficient-shadow-envelope} and
 \cref{cor:deficient-shadow-residual-obstruction} state the exact residual if
 that search fails: the positive-excess Hall sublayer must satisfy a weak-type
