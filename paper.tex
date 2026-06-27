@@ -36809,6 +36809,141 @@ inside certified smaller-radius templates.  This is the finite analogue of a
 guard-shadow transport theorem, and it is the object that facility, AQ,
 range-reporting, or list/lattice proposal families should try to certify.
 
+\begin{lemma}[Finite-signature co-load Hall transport]
+   \label{lem:finite-signature-coload-hall-transport}
+   Work in the setting of
+   \cref{cor:finite-signature-coload-transport-endpoint}, and fix a finite
+   template set \(\mathcal X\) and a loss \(C_{\rm tr}\ge1\).  Let the left
+   nodes be
+   \[
+      \mathcal L=
+      \{(\sigma_0,x):\sigma_0\in\Sigma,\ x\in\mathcal X,\ g_{\sigma_0,x}>0\}
+   \]
+   with scaled load
+   \[
+      b_{\sigma_0,x}=\frac{\tau_{\sigma_0}g_{\sigma_0,x}}{C_{\rm tr}},
+      \tag{FHT1}
+   \]
+   and let the right nodes be
+   \[
+      \mathcal R=\{(p,\sigma_0):p\in W_{\sigma_0}\}
+   \]
+   with capacity \(c_{p,\sigma_0}=\alpha_{p,\sigma_0}\).  Join
+   \((\sigma_0,x)\in\mathcal L\) to \((p,\sigma_0)\in\mathcal R\) when
+   \(p\in W_x\) and \(a_x(\sigma_0)=1\).  A packed co-load shipment means a
+   nonnegative flow that sends all scaled left load to the right nodes subject
+   to the capacities \(c_{p,\sigma_0}\).  Such a shipment exists if and only if
+   the Hall inequalities
+   \[
+      \sum_{(\sigma_0,x)\in A}
+      \frac{\tau_{\sigma_0}g_{\sigma_0,x}}{C_{\rm tr}}
+      \le
+      \sum_{(p,\sigma_0)\in N(A)}\alpha_{p,\sigma_0}
+      \qquad(A\subseteq\mathcal L),
+      \tag{FHT3}
+   \]
+   hold, where \(N(A)\) is the neighborhood of \(A\) in \(\mathcal R\).
+
+   Whenever \((FHT3)\) holds, it produces responsibilities satisfying
+   \[
+      W_{\rm resp}\ge B_{\mathcal X}/C_{\rm tr},
+      \tag{FHT2}
+   \]
+   More precisely, these responsibilities are supported on the displayed
+   edges with
+   \[
+      W_{\rm resp}=
+      \frac1{C_{\rm tr}}
+      \sum_{\sigma_0}\tau_{\sigma_0}\sum_{x\in\mathcal X}g_{\sigma_0,x}
+      =
+      \frac{B_{\mathcal X}}{C_{\rm tr}}.
+      \tag{FHT4}
+   \]
+   If \((FHT3)\) fails, then there is a finite Hall cut \(A\subseteq\mathcal L\)
+   satisfying
+   \[
+      \sum_{(\sigma_0,x)\in A}\tau_{\sigma_0}g_{\sigma_0,x}
+      >
+      C_{\rm tr}
+      \sum_{(p,\sigma_0)\in N(A)}\alpha_{p,\sigma_0}.
+      \tag{FHT5}
+   \]
+\end{lemma}
+
+\begin{proof}
+   Build the bipartite flow network with source edges of capacities
+   \(b_{\sigma_0,x}\), infinite middle edges on the displayed adjacency relation,
+   and sink edges of capacities \(\alpha_{p,\sigma_0}\).  By the max-flow
+   min-cut theorem, all left scaled load can be shipped if and only if every
+   subset \(A\subseteq\mathcal L\) has load at most the capacity of its
+   neighborhood.  This is exactly \((FHT3)\).
+
+   Given such a flow \(f_{\sigma_0,x,p}\), define
+   \[
+      \eta_{x,p,\sigma_0}
+      =
+      \begin{cases}
+      f_{\sigma_0,x,p}/\alpha_{p,\sigma_0},
+         & \alpha_{p,\sigma_0}>0,\\
+      0, & \alpha_{p,\sigma_0}=0.
+      \end{cases}
+   \]
+   The sink-capacity constraints give \(0\le\eta_{x,p,\sigma_0}\le1\), and the
+   edge relation gives the support conditions in
+   \cref{cor:finite-signature-responsibility-star-endpoint}.  Moreover
+   \(a_x(\sigma_0)=1\) on every used edge, so the total responsibility mass is
+   \[
+      \sum_{x,p,\sigma_0}
+      \eta_{x,p,\sigma_0}\alpha_{p,\sigma_0}a_x(\sigma_0)
+      =
+      \sum_{\sigma_0,x,p}f_{\sigma_0,x,p}
+      =
+      \sum_{\sigma_0,x}b_{\sigma_0,x},
+   \]
+   which is \((FHT4)\).  Conversely, any responsibilities with the stronger
+   per-paid-atom packing condition
+   \[
+      \sum_x\eta_{x,p,\sigma_0}\le1
+      \qquad(p,\sigma_0)\in\mathcal R
+   \]
+   define such a flow by
+   \(f_{\sigma_0,x,p}=\eta_{x,p,\sigma_0}\alpha_{p,\sigma_0}\).  Thus
+   \((FHT3)\) is the exact condition for the packed transport version, and it is
+   a sufficient condition for the responsibility endpoint.  The failed-cut
+   statement \((FHT5)\) is simply the negation of \((FHT3)\) after multiplying by
+   \(C_{\rm tr}\).
+\end{proof}
+
+\begin{corollary}[Finite-signature Hall transport endpoint]
+   \label{cor:finite-signature-hall-transport-endpoint}
+   In \cref{cor:finite-signature-coload-transport-endpoint}, replace the
+   assumed responsibilities \((FCT3)\) by the Hall inequalities \((FHT3)\) for
+   the same \(\mathcal X\) and \(C_{\rm tr}\).  If the dynamic-range and price
+   hypotheses \((FCT4)\)--\((FCT5)\) also hold for the induced responsibilities,
+   then the residual has a separating finite-signature star panel, and the
+   polylogarithmic ANN endpoint follows.
+
+   Equivalently, the only way this Hall-transport route can fail is through a
+   cut \(A\subseteq\mathcal L\) satisfying \((FHT5)\).  Thus the remaining
+   geometric theorem may be stated as ruling out these finite Hall cuts, or
+   adding a richer certified template family that makes all of them feasible.
+\end{corollary}
+
+\begin{proof}
+   By \cref{lem:finite-signature-coload-hall-transport}, \((FHT3)\) produces
+   responsibilities with \(W_{\rm resp}=B_{\mathcal X}/C_{\rm tr}\).  Therefore
+   the hypotheses of
+   \cref{cor:finite-signature-coload-transport-endpoint} hold, and that
+   corollary gives the separating star panel and endpoint.  The failed-cut
+   statement is \((FHT5)\).
+\end{proof}
+
+\Cref{cor:finite-signature-hall-transport-endpoint} is a sharper target than a
+bare responsibility conjecture.  It gives the exact obstruction to responsibility
+construction: a set of high-correlation co-load atoms whose paid neighborhood in
+the proposed smaller-radius templates is too small by a factor \(C_{\rm tr}\).
+This is the finite place where the next geometric argument has to operate.
+
 \begin{corollary}[Proposal-law finite-signature endpoint]
    \label{cor:proposal-law-finite-signature-endpoint}
    Work in the setting of
