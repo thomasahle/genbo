@@ -30610,6 +30610,90 @@ inequality \((QP3)\).
    the required hit-weighted star panel.
 \end{proof}
 
+\begin{corollary}[Finite guard-credit flow separator]
+   \label{cor:finite-guard-credit-flow-separator}
+   Work in the setting of \cref{lem:guard-shadow-cut-normal-form}.  Let
+   \(\mathcal A\) be a finite pool of affordable guard-credit templates.  A
+   template \(A\in\mathcal A\) consists of a certified star container \(W_A\),
+   a size certificate \(|W_A|\le K_A\), a congestion parameter \(C_A>0\), and a
+   credited-mass scale \(0<v_A\le K_A\).  Put
+   \[
+      J_A=1+\left\lceil\log_2\frac{2K_A}{v_A}\right\rceil ,
+      \qquad
+      R_A=
+      \psi_{W_A}
+      \left(
+         K_A^{\rho_{W_A}}\sum_q\tau_qy_q+\sigma K_A^{1+\rho_{W_A}}
+      \right).
+      \tag{FGF0}
+   \]
+   Suppose the following finite linear program has positive value.  The
+   variables are multiplicities \(\lambda_A\ge0\) and flow variables
+   \(F_{A,q,p}\ge0\), supported only when \(p\in W_A\) and
+   \((p,q)\in\mathcal N\).  Write \(M_A=\sum_{q,p}F_{A,q,p}\).  The constraints
+   are
+   \[
+      \sum_{A\in\mathcal A}
+      \sum_{p\in N_{W_A}(\{q\})}F_{A,q,p}\le b_q
+      \qquad(q\in\mathcal Q),
+      \tag{FGF1}
+   \]
+   \[
+      \sum_{\substack{q:\,(p,q)\in\mathcal N}}F_{A,q,p}
+      \le
+      \lambda_AC_A d_{W_A,y}^{\gamma}(p)
+      \qquad(A\in\mathcal A,\ p\in W_A),
+      \tag{FGF2}
+   \]
+   \[
+      \lambda_AC_Av_A\le M_A
+      \qquad(A\in\mathcal A),
+      \tag{FGF3}
+   \]
+   and the objective is
+   \[
+      \sum_{A\in\mathcal A}\frac{M_A}{4C_AJ_A}
+      -
+      \sum_{A\in\mathcal A}\lambda_AR_A .
+      \tag{FGF4}
+   \]
+   If the optimum of \((FGF1)\)--\((FGF4)\) is positive, then the guarded
+   residual has a certified hit-weighted star panel satisfying
+   \((HSP1)\)--\((HSP2)\).
+
+   Conversely, if no such panel exists, the optimum is nonpositive for every
+   finite affordable template pool \(\mathcal A\).  Thus preprocessing may use
+   ordinary finite LP optimization or column generation over \(k\)-means++,
+   additive-quantization, range-reporting, or list-decoding proposals: only a
+   positive verified guard-credit flow is retained.
+\end{corollary}
+
+\begin{proof}
+   Let \((\lambda,F)\) be any feasible solution with positive objective, and
+   keep only the templates with \(M_A>0\).  For such a template, \((FGF2)\)
+   forces \(\lambda_A>0\), and \((FGF3)\) gives
+   \[
+      \frac{M_A}{\lambda_AC_A}\ge v_A .
+      \tag{FGF5}
+   \]
+   Therefore
+   \[
+      1+\left\lceil
+      \log_2\frac{2K_A}{M_A/(\lambda_AC_A)}
+      \right\rceil
+      \le J_A .
+      \tag{FGF6}
+   \]
+   The demand and capacity constraints \((FGF1)\)--\((FGF2)\) are exactly
+   \((JGC1)\)--\((JGC2)\) for the active templates.  The true logarithmic
+   factors \(J_i\) in \((JGC3)\) are bounded above by \(J_A\) by \((FGF6)\).
+   Hence the strict positivity of \((FGF4)\) implies the joint surplus
+   condition \((JGC4)\).  \Cref{cor:joint-fractional-guard-credit-cover} then
+   gives the required hit-weighted star panel.
+
+   The converse is the contrapositive.
+\end{proof}
+
 \begin{corollary}[Tuple-profile distinct-storage certificate]
    \label{cor:tuple-profile-distinct-storage}
    Work in the setting of
@@ -31035,6 +31119,9 @@ affordable smaller-radius container.
 overlapping-filter form: a finite fractional flow may distribute guard demand
 among many affordable containers, while recursive costs remain charged locally
 to the receiving containers.
+\Cref{cor:finite-guard-credit-flow-separator} freezes the logarithmic
+layer-cake scale of each proposal and makes this an ordinary finite LP
+separator over the generated dense proposal pool.
 \Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} give the corresponding
 entropy-energy normal form: each large canonical child supplies many separated
@@ -31308,6 +31395,9 @@ the guard load using its paid near-shadow capacity.
 \cref{cor:joint-fractional-guard-credit-cover} remove the last single-container
 restriction: the verified object may be an overlapping fractional panel, with
 query demand used once and recursive cost paid per container.
+\Cref{cor:finite-guard-credit-flow-separator} gives the build-facing LP: a
+finite proposal pool succeeds exactly by exposing positive verified
+guard-credit surplus after the credited-mass scales are fixed.
 Conversely,
 \cref{cor:paid-prefix-residual-envelope} says that a failed dense separator has
 only one possible form: a paid residual whose every certified container obeys
@@ -44226,6 +44316,10 @@ more than half of the guard load uncredited.
 the dense-overlap program: many proposed dense containers may jointly receive a
 fractional guard-credit flow, and only their verified local recursive costs are
 charged.
+\Cref{cor:finite-guard-credit-flow-separator} turns that into the finite
+column-generation target for practical proposal families: if the generated pool
+contains a positive guard-credit LP solution, the ordinary star-panel verifier
+closes the residual.
 \Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} reduce each dyadic count to tuple
 incidence: a large separated child contains many ordered witness tuples, so the
