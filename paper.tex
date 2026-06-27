@@ -29169,6 +29169,136 @@ inequality \((QP3)\).
    \((GAP4)\) to obtain \((AMP4)\) with \((GAP6)\).
 \end{proof}
 
+\begin{lemma}[High-correlation pair-star reporter]
+   \label{lem:high-correlation-pair-star-reporter}
+   Let \(P\subseteq\mathbb S^{D-1}\), let \(\mathcal R\) be finite, and for
+   each \(r\in\mathcal R\) let \(w_r\ge0\) and
+   \(E_r\subseteq P\times P\).  Suppose every retained edge is
+   \(\underline\theta\)-correlated:
+   \[
+      (x,y)\in E_r
+      \quad\Longrightarrow\quad
+      \ip{x}{y}\ge\underline\theta
+      \qquad(-1<\underline\theta<1).
+      \tag{HPS1}
+   \]
+   Define the weighted star multiplicities
+   \[
+      M_x(y)=\sum_{r:\ (x,y)\in E_r}w_r,
+      \qquad
+      W=\sum_{x,y\in P}M_x(y)=\sum_{r\in\mathcal R}w_r|E_r|.
+      \tag{HPS2}
+   \]
+   For \(t>0\), put
+   \[
+      U_{x,t}=\{y\in P:M_x(y)\ge t\}.
+      \tag{HPS3}
+   \]
+   Then every \(U_{x,t}\) is contained in the smaller Euclidean ball
+   \[
+      U_{x,t}\subseteq P\cap B\!\left(x,\sqrt{2(1-\underline\theta)}\right),
+      \tag{HPS4}
+   \]
+   and the exact layer-cake identity
+   \[
+      W=\sum_{x\in P}\int_0^\infty |U_{x,t}|\,dt
+      \tag{HPS5}
+   \]
+   holds.
+
+   In particular, suppose all positive multiplicities \(M_x(y)\) lie in
+   \([M_{\min},M_{\max}]\), where \(0<M_{\min}\le M_{\max}\), and let
+   \[
+      J=1+\left\lceil\log_2\frac{M_{\max}}{M_{\min}}\right\rceil .
+      \tag{HPS6}
+   \]
+   Then there are \(x\in P\) and a dyadic level
+   \(t\in\{2^jM_{\min}:0\le j<J\}\) such that
+   \[
+      t\,|U_{x,t}|
+      \ge
+      \frac{W}{2|P|J}.
+      \tag{HPS7}
+   \]
+   Thus any profile layer with large weighted high-correlation incidence either
+   has small total incidence \(W\), or exposes a certified smaller-radius
+   superlevel \(U_{x,t}\).
+\end{lemma}
+
+\begin{proof}
+   If \(y\in U_{x,t}\), then \(M_x(y)>0\), so \((x,y)\in E_r\) for some \(r\)
+   with \(w_r>0\).  By \((HPS1)\),
+   \[
+      \|x-y\|^2=2-2\ip{x}{y}\le2(1-\underline\theta),
+   \]
+   proving \((HPS4)\).
+
+   For every fixed ordered pair \((x,y)\),
+   \[
+      M_x(y)=\int_0^\infty \mathbf 1\{M_x(y)\ge t\}\,dt .
+   \]
+   Summing over ordered pairs gives \((HPS5)\).
+
+   Choose \(x\) with
+   \[
+      \sum_yM_x(y)\ge W/|P|.
+   \]
+   For a positive number \(m\in[M_{\min},M_{\max}]\),
+   \[
+      \sum_{\substack{0\le j<J:\\ 2^jM_{\min}\le m}}2^jM_{\min}
+      \ge \frac m2 .
+   \]
+   Therefore
+   \[
+      \sum_{j=0}^{J-1}2^jM_{\min}|U_{x,2^jM_{\min}}|
+      \ge
+      \frac12\sum_yM_x(y)
+      \ge
+      \frac{W}{2|P|}.
+   \]
+   One of the \(J\) dyadic levels satisfies \((HPS7)\).
+\end{proof}
+
+\begin{corollary}[Dense-star alternative for Gaussian profile layers]
+   \label{cor:dense-star-gaussian-profile-layer}
+   In the setting of
+   \cref{cor:gaussian-aggregate-profile-layer-storage}, suppose in addition
+   that every edge in every \(E_r\) satisfies
+   \[
+      \ip{x}{y}\ge\underline\theta_{\pi,\ell}
+      \qquad(-1<\underline\theta_{\pi,\ell}<1),
+      \tag{DSG1}
+   \]
+   and that the positive weighted star multiplicities from \((HPS2)\) lie in a
+   certified range \([M_{\min},M_{\max}]\).  If \(J\) is as in \((HPS6)\) and
+   \(W_{\pi,\ell}\) is the incidence weight in \((GAP3)\), then either
+   \(W_{\pi,\ell}=0\), or there are a center \(x\in P\), a dyadic level \(t\),
+   and a certified smaller-radius superlevel
+   \[
+      U_{x,t}\subseteq
+      P\cap B\!\left(x,\sqrt{2(1-\underline\theta_{\pi,\ell})}\right)
+      \tag{DSG2}
+   \]
+   with
+   \[
+      t|U_{x,t}|
+      \ge
+      \frac{W_{\pi,\ell}}{2|P|J}.
+      \tag{DSG3}
+   \]
+   Consequently, failure of the Gaussian entropy-energy inequality in a
+   high-correlation profile layer can be routed to the dense-cover separator:
+   a range reporter only has to search these star superlevels and submit the
+   deterministic candidate to the finite filter-cover verifier.
+\end{corollary}
+
+\begin{proof}
+   Apply \cref{lem:high-correlation-pair-star-reporter} to the weighted edge
+   family \((\mathcal R_{\pi,\ell},w_r,E_r)\).  The total incidence \(W\) in
+   \((HPS2)\) is \(W_{\pi,\ell}\) by \((GAP3)\), and the radius claim is
+   \((HPS4)\).
+\end{proof}
+
 \begin{corollary}[Tuple-profile distinct-storage certificate]
    \label{cor:tuple-profile-distinct-storage}
    Work in the setting of
@@ -29544,6 +29674,10 @@ aggregate profile-layer entropy-energy sum directly.
 \Cref{cor:gaussian-aggregate-profile-layer-storage} gives the corresponding
 Gaussian check: profile-layer storage is certified by weighted incidence
 entropy, shifted-threshold margin, and maximum pair correlation.
+\Cref{lem:high-correlation-pair-star-reporter} and
+\cref{cor:dense-star-gaussian-profile-layer} explain what happens when that
+incidence entropy is concentrated on genuinely high-correlation pairs: a dyadic
+star superlevel is a certified smaller-radius dense proposal.
 \Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} give the corresponding
 entropy-energy normal form: each large canonical child supplies many separated
@@ -42660,6 +42794,11 @@ instance of this target into the explicit inequality
 \]
 up to metadata, where \(H\) is weighted incidence entropy, \(\beta\) is the
 shifted-threshold margin, and \(\theta\) is the worst pair correlation.
+\Cref{lem:high-correlation-pair-star-reporter} adds the matching dense
+alternative: if a profile layer has large weighted incidence on pairs with
+correlation at least \(\underline\theta\), then some dyadic star superlevel lies
+inside a ball of radius \(\sqrt{2(1-\underline\theta)}\) and carries incidence
+at least the average layer mass up to a logarithmic dynamic-range factor.
 \Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} reduce each dyadic count to tuple
 incidence: a large separated child contains many ordered witness tuples, so the
