@@ -18014,6 +18014,75 @@ success-normalized bucket-net argument.
    exact-prefix records in the finite cover LP.
 \end{proof}
 
+\begin{corollary}[One-sided exact-prefix value column generation]
+   \label{cor:one-sided-exact-prefix-value-column-generation}
+   Work in the setting of \cref{cor:exact-prefix-column-generation}.  For a
+   cohort law \(\eta\), call \((T,X)\) a one-sided exact-prefix report if
+   \(T\in\mathcal U_{\rm ex}\) and
+   \[
+      0\le X\le V_\eta(T).
+      \tag{OEX0}
+   \]
+   The report is separating if
+   \[
+      X\ge A\Lambda .
+      \tag{OEX1}
+   \]
+   Suppose that for every cohort law \(\eta\) a build-time oracle either returns
+   a separating one-sided exact-prefix report or certifies
+   \[
+      \max_{T\in\mathcal U_{\rm ex}}G_{\rm ex}(T,\eta)<0 .
+      \tag{OEX2}
+   \]
+   Then the column-generation procedure of
+   \cref{cor:exact-prefix-column-generation} remains complete with this
+   one-sided oracle: on a successful call, add only the verified hard record
+   \(T\) to the pool, and score it in all later restricted games by its exact
+   payoff \(G_{\rm ex}(T,\cdot)\).
+
+   Consequently, if the full universe satisfies \((EPC3)\), the procedure
+   terminates after finitely many successful one-sided reports with a hard-record
+   pool proving \((DPG3)\).  If the oracle returns \((OEX2)\), then this exact
+   universe cannot close the sharp dominated-load certificate.
+
+   More generally, fix a cohort law \(\eta\).  A finite law, or a sampleable law
+   with integrable certified surplus, over one-sided exact-prefix reports is a
+   valid separator source whenever
+   \[
+      \E[X-A\Lambda]\ge0 .
+      \tag{OEX3}
+   \]
+   Repeated preprocessing samples until \(X\ge A\Lambda\), and the retained
+   object is again only the corresponding hard record \(T\).
+\end{corollary}
+
+\begin{proof}
+   A separating report satisfies
+   \[
+      G_{\rm ex}(T,\eta)
+      =
+      V_\eta(T)-A\Lambda
+      \ge
+      X-A\Lambda
+      \ge0 .
+      \tag{OEX4}
+   \]
+   Hence a successful one-sided oracle call is a valid separator output
+   satisfying \((EPC0)\).  If the current restricted value is negative at the
+   minimizing law \(\eta_{\mathcal P}\), every current pool record has
+   \(G_{\rm ex}(T,\eta_{\mathcal P})<0\).  Therefore any successful one-sided
+   report has \(T\notin\mathcal P\) and strictly enlarges the pool.  The
+   column-generation and no-column claims are now exactly
+   \cref{cor:exact-prefix-column-generation}.
+
+   For the proposal-law statement, if a finite law has nonnegative expectation
+   in \((OEX3)\), some support report has \(X-A\Lambda\ge0\).  For a sampleable
+   law, if \(\Pr[X-A\Lambda\ge0]=0\), then \(X-A\Lambda<0\) almost surely; by
+   integrability its expectation would be strictly negative, contradicting
+   \((OEX3)\).  Thus a separating report has positive probability, and
+   independent repetitions give the Las Vegas separator.
+\end{proof}
+
 \begin{corollary}[Sublist-closed exact-prefix separator]
    \label{cor:sublist-closed-exact-prefix-separator}
    Work in the setting of \cref{cor:exact-prefix-column-generation}.  Let
@@ -19977,6 +20046,10 @@ choice of disjoint dense clusters.  \Cref{cor:exact-top-prefix-cohort-game} and
 if exact top-prefix records can be separated in a finite implicit universe,
 ordinary column generation closes the dominated-load certificate at threshold
 \(A\Lambda\), with no dyadic reporter loss.
+\Cref{cor:one-sided-exact-prefix-value-column-generation} is the same sharp
+route with one-sided value certificates: a reporter may lower-bound one hard
+record's current cohort value, while the retained LP stores that record and
+uses its exact payoff in every later restricted game.
 \Cref{cor:sublist-closed-exact-prefix-separator} compresses this separator for
 sublist-closed containers to the scalar objective
 \(D_\eta^\theta(W,K)-A\Lambda\).
@@ -20062,6 +20135,10 @@ the restricted cohort game, add any exact-prefix record with nonnegative surplus
 \(V_\eta(T)-A\Lambda\), and charge only the final verified pool.  This route has
 no logarithmic threshold; the logarithmic forms below are for weaker reporters
 that cannot materialize the exact cohort-degree prefix directly.
+\Cref{cor:one-sided-exact-prefix-value-column-generation} lets an approximate
+range-reporting, AQ, or list-decoding separator stay on this sharp route as long
+as it gives a one-sided lower certificate \(X\le V_\eta(T)\) with
+\(X\ge A\Lambda\); the retained record is still scored exactly later.
 \Cref{cor:sublist-closed-exact-prefix-separator} is the practical exact-prefix
 interface for sublist-closed retained containers: the build oracle optimizes
 \(D_\eta^\theta(W,K)-A\Lambda\), materializes the maximizing \(K\)-subset, and
@@ -36597,6 +36674,7 @@ itself spherical-pseudo-random enough to close the dichotomy.
    \cref{cor:exact-load-cohort-law-separator},
    \cref{cor:exact-top-prefix-cohort-game},
    \cref{cor:exact-prefix-column-generation},
+   \cref{cor:one-sided-exact-prefix-value-column-generation},
    \cref{cor:sublist-closed-exact-prefix-separator},
    \cref{cor:no-loss-exact-cardinality-net},
    \cref{cor:average-mass-exact-prefix-screen},
@@ -36609,7 +36687,8 @@ itself spherical-pseudo-random enough to close the dichotomy.
    \cref{cor:sampled-soft-exact-prefix-separator},
    \cref{cor:finite-prefix-template-separation-game}, or
    \cref{cor:prefix-template-column-generation}.  In particular, a finite
-   exact-prefix universe with nonnegative game value \((EPC3)\), a sublist-closed
+   exact-prefix universe with nonnegative game value \((EPC3)\), a one-sided
+   exact-prefix value certificate \((OEX1)\) or \((OEX3)\), a sublist-closed
    template universe satisfying \((SCE2)\), a no-loss cardinality-net witness
    \((ECN1)\), an average-mass exact-prefix certificate \((AEX2)\) or \((AEX3)\),
    an average-density scale certificate \((DEX1)\) or \((DEX4)\), a soft
@@ -36637,6 +36716,7 @@ itself spherical-pseudo-random enough to close the dichotomy.
    \[
       \begin{gathered}
          \text{\((EPC3)\), \((SCE2)\), \((ECN1)\),}\\
+         \text{\((OEX1)\), \((OEX3)\),}\\
          \text{\((AEX2)\), \((AEX3)\),}\\
          \text{\((DEX1)\), \((DEX4)\),}\\
          \text{\((SDEX2)\), \((SDEX5)\),}\\
@@ -36656,6 +36736,7 @@ itself spherical-pseudo-random enough to close the dichotomy.
    The first implication is
    \cref{cor:exact-top-prefix-cohort-game},
    \cref{cor:exact-prefix-column-generation},
+   \cref{cor:one-sided-exact-prefix-value-column-generation},
    \cref{cor:sublist-closed-exact-prefix-separator},
    \cref{cor:no-loss-exact-cardinality-net},
    \cref{cor:average-mass-exact-prefix-screen},
@@ -48380,6 +48461,10 @@ every affordable retained top-\(K\) prefix has \(d_\eta^\theta\)-mass below
 preprocessing can solve the exact separator: a finite implicit universe of
 materializable top-prefix records is complete under ordinary column generation,
 and the accepted records only need surplus \(V_\eta(T)-A\Lambda\ge0\).
+\Cref{cor:one-sided-exact-prefix-value-column-generation} gives the verifier
+form of the same sharp condition: a reporter may return a hard record with any
+certified lower value \(X\le V_\eta(T)\), and \(X\ge A\Lambda\) is already a
+valid column-generation step.
 \Cref{cor:sublist-closed-exact-prefix-separator} is the finite-container version
 of the same statement: for sublist-closed templates, the reduced-gain objective
 is exactly \(D_\eta^\theta(W,K)-A\Lambda\), and the retained record is just the
