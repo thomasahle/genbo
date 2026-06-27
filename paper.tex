@@ -18468,6 +18468,82 @@ success-normalized bucket-net argument.
    no-column certificate.
 \end{proof}
 
+\begin{corollary}[Sampled soft-prefix proposal separator]
+   \label{cor:sampled-soft-prefix-proposal-separator}
+   Work in the setting of
+   \cref{cor:sampled-one-sided-prefix-separator}.  A soft prefix proposal for a
+   cohort law \(\eta\) is a tuple
+   \[
+      R=(W_R,\theta_R,h_R,K_R,\pi_R,X_R)
+   \]
+   such that \(1\le h_R\le |W_R|\) is an integer,
+   \(h_R\le K_R\le b h_R\), \(K_R\in\mathcal K_{W_R,\theta_R}\), every sublist
+   of \(W_R\) of size at most \(K_R\) is reportable with size certificate
+   \(K_R\),
+   \[
+      0\le \pi_{R,p}\le1,\qquad
+      \sum_{p\in W_R}\pi_{R,p}\le h_R,
+      \tag{SFP0}
+   \]
+   and the proposal gives a one-sided value certificate
+   \[
+      0\le X_R\le
+      \sum_{p\in W_R}\pi_{R,p}d_\eta^{\theta_R}(p).
+      \tag{SFP1}
+   \]
+   Assume that whenever such a tuple is sampled, preprocessing can materialize an
+   \(h_R\)-point maximizer
+   \[
+      U_R^*\in
+      \arg\max_{\substack{U\subseteq W_R\\ |U|=h_R}}
+      \sum_{p\in U}d_\eta^{\theta_R}(p),
+      \tag{SFP2}
+   \]
+   and that the corresponding record
+   \(T_R=(W_R,\theta_R,h_R,K_R,U_R^*)\) lies in \(\mathcal U_b\).  If
+   preprocessing has a sampleable law on soft prefix proposals with integrable
+   surplus and for which
+   \[
+      \E\bigl[X_R-\Theta_C L_b(h_R)\bigr]\ge0,
+      \tag{SFP3}
+   \]
+   then repeated sampling, exact materialization of \(U_R^*\), and verification of
+   \(X_R\ge\Theta_C L_b(h_R)\) form a Las Vegas separator for the current cohort
+   law.
+
+   Thus a randomized \(k\)-means++, additive-quantization, range-reporting, or
+   learned panel may be analyzed only through soft inclusion responsibilities and
+   a one-sided lower value certificate.  The retained index still stores only the
+   deterministic prefix record \(T_R\), never the soft proposal itself.
+\end{corollary}
+
+\begin{proof}
+   For any admissible proposal, the top-\(h_R\) set \(U_R^*\) dominates the soft
+   responsibility vector.  Indeed, the polytope
+   \[
+      \left\{x\in[0,1]^{W_R}:\sum_{p\in W_R}x_p\le h_R\right\}
+   \]
+   has integral vertices, and every such vertex is the indicator of a subset of
+   size at most \(h_R\).  Since \(d_\eta^{\theta_R}(p)\ge0\), the maximum of the
+   linear functional \(\sum_p x_p d_\eta^{\theta_R}(p)\) over this polytope is
+   attained by an \(h_R\)-point top prefix.  Hence
+   \[
+      V_\eta(T_R)
+      =
+      \sum_{p\in U_R^*}d_\eta^{\theta_R}(p)
+      \ge
+      \sum_{p\in W_R}\pi_{R,p}d_\eta^{\theta_R}(p)
+      \ge X_R .
+      \tag{SFP4}
+   \]
+   Therefore \((T_R,X_R)\) is a one-sided prefix-value report in the sense of
+   \((OPV0)\).  Its surplus is exactly
+   \(X_R-\Theta_C L_b(h_R)\), so \((SFP3)\) is the expectation hypothesis
+   \((SOP1)\) for the induced law on one-sided reports.  Applying
+   \cref{cor:sampled-one-sided-prefix-separator} gives positive probability of a
+   separating sample and the stated Las Vegas separator.
+\end{proof}
+
 \begin{corollary}[Cardinality-net cohort superlevel reporter]
    \label{cor:cardinality-net-cohort-superlevel-reporter}
    Work in the setting of
@@ -18673,6 +18749,10 @@ enumeration requirement from the theorem target: a sampleable proposal law with
 nonnegative expected verified surplus can be searched by unlimited
 preprocessing until a separating report is found, and only that report is
 retained.
+\Cref{cor:sampled-soft-prefix-proposal-separator} gives the same interface for
+soft responsibilities: a proposal may output fractional inclusion weights, after
+which preprocessing materializes the exact top-degree prefix and retains only
+that deterministic record.
 \Cref{cor:cardinality-net-cohort-superlevel-reporter} removes the need for the
 separator to optimize an exact top prefix: any certified threshold list with
 one-sided value \(X\ge\Theta_C L_b(h)\) is already a valid column, and failure
@@ -40904,6 +40984,10 @@ negative reduced gain rules out every such batch.
 if a sampleable proposal law has nonnegative expected verified surplus, repeated
 preprocessing samples eventually expose a deterministic accepted column; no
 sampled object is trusted without verification.
+\Cref{cor:sampled-soft-prefix-proposal-separator} specializes this to soft
+proposal panels: fractional inclusion weights are acceptable proposal evidence,
+but preprocessing converts every accepted sample to the exact top-degree prefix
+before it enters the retained LP.
 \Cref{cor:cardinality-net-cohort-superlevel-reporter} is the corresponding
 one-sided reporter interface: a range-reporting, list-decoding, additive
 quantization, or seeded-clustering separator may return any certified
