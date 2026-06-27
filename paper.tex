@@ -11081,6 +11081,63 @@ children that survive the final deterministic certificate.
    reduced gain would be nonpositive, contradicting \((PLS1)\).
 \end{proof}
 
+\begin{lemma}[Sampled proposal-law separation]
+   \label{lem:sampled-proposal-law-separation}
+   Work in the setting of \cref{lem:proposal-law-filter-separator}, and fix one
+   surplus price system \((\alpha,\tau,\sigma)\).  Let a seed \(s\sim\nu\)
+   generate a certified filter \(A_s\), and write
+   \[
+      G(s)=\operatorname{gain}_{\alpha,\tau,\sigma}(A_s).
+   \]
+   Suppose that
+   \[
+      \E_sG(s)\ge\Gamma>0,
+      \qquad
+      G(s)_+\le M
+      \quad\text{almost surely}.
+      \tag{SPL1}
+   \]
+   Then \(B\) independent build-time samples contain a positive reduced-gain
+   filter with probability at least
+   \[
+      1-\exp\left(-\frac{B\Gamma}{M}\right).
+      \tag{SPL2}
+   \]
+   Thus
+   \[
+      B\ge \frac{M}{\Gamma}\log\frac1\delta
+      \tag{SPL3}
+   \]
+   suffices to expose a deterministic positive-gain column with probability at
+   least \(1-\delta\).
+
+   Consequently a randomized proposal mechanism does not have to be retained in
+   the final index.  If the verifier computes \(G(s)\) and accepts only
+   positive-gain columns, arbitrary extra preprocessing can amplify a
+   positive-margin proposal law into an ordinary deterministic column-generation
+   step.
+\end{lemma}
+
+\begin{proof}
+   Since \(G=G_+-G_-\), condition \((SPL1)\) gives
+   \[
+      \E G_+\ge \E G\ge\Gamma .
+   \]
+   The upper bound \(G_+\le M\) implies
+   \[
+      \Pr[G>0]\ge\frac{\Gamma}{M}.
+   \]
+   Hence the probability that \(B\) independent seeds all have nonpositive gain
+   is at most
+   \[
+      \left(1-\frac{\Gamma}{M}\right)^B
+      \le
+      \exp\left(-\frac{B\Gamma}{M}\right).
+   \]
+   Whenever a positive seed appears, its certified filter is an ordinary
+   positive reduced-gain column for \cref{cor:filter-cover-column-generation}.
+\end{proof}
+
 The LP above is the fully fractional version of dense overlap.  A dense ball,
 cap, facility bucket, additive-quantization bucket, list-decoder output, or
 ordinary spherical LSF bucket is just a column \(A=(U_A,a_A,T_A,S_A)\).  A hard
@@ -11097,9 +11154,10 @@ not a greedy clustering rule.
 \Cref{lem:proposal-law-filter-separator} is the corresponding build-time
 interface: a randomized geometric routine is useful exactly when its induced
 incidence marginals have positive expected reduced gain against the current
-dual.  The routine itself is not stored; preprocessing enumerates or repeats it
-until the deterministic verifier finds one positive-gain column, then the final
-fractional LP and rounding charge only retained columns.
+dual.  \Cref{lem:sampled-proposal-law-separation} makes the amplification
+explicit: a positive-margin seed law can be sampled until the deterministic
+verifier finds one positive-gain column.  The routine itself is not stored; the
+final fractional LP and rounding charge only retained columns.
 
 The finite restriction is not a technicality.  A cover written directly for all
 queries \(q\in\R^d\) is an analytic guide, but it is not yet a data structure
@@ -33442,6 +33500,52 @@ they expose such prefixes; the proof does not depend on their sampling rule.
    \(\lambda_i=\nu(i)\) for a finite proposal support.
 \end{proof}
 
+\begin{corollary}[Sampled fixed-threshold density search]
+   \label{cor:sampled-fixed-threshold-density-search}
+   Work in the setting of
+   \cref{cor:fractional-fixed-threshold-density-panel}.  A randomized
+   build-time proposal routine, on seed \(s\), returns a finite admissible panel
+   \(I_s\) with nonnegative weights \(\lambda_{s,i}\).  Define its certified
+   surplus by
+   \[
+      Z(s)=
+      \sum_{i\in I_s}
+         \lambda_{s,i}\kappa_{s,i}
+         \bigl(\delta_{s,i}-\Theta_{s,i}\bigr).
+      \tag{SFD1}
+   \]
+   Suppose
+   \[
+      \E_s Z(s)\ge\Gamma>0,
+      \qquad
+      Z(s)_+\le M
+      \quad\text{almost surely}.
+      \tag{SFD2}
+   \]
+   Then \(B\) independent build-time seeds produce a panel that closes the
+   guarded residual with probability at least
+   \[
+      1-\exp\left(-\frac{B\Gamma}{M}\right).
+      \tag{SFD3}
+   \]
+   In particular, after a successful sampled panel is found, the retained proof
+   object may be reduced to one deterministic balanced dense record satisfying
+   \(\delta_i>\Theta_i\).
+\end{corollary}
+
+\begin{proof}
+   As in \cref{lem:sampled-proposal-law-separation},
+   \[
+      \Pr_s[Z(s)>0]\ge\frac{\Gamma}{M}.
+   \]
+   Therefore \(B\) independent seeds all fail to have positive surplus with
+   probability at most \(\exp(-B\Gamma/M)\).  If \(Z(s)>0\), then
+   \cref{cor:fractional-fixed-threshold-density-panel} applies to the realized
+   panel \(I_s\), so one of its records satisfies \(\delta_i>\Theta_i\) and the
+   guarded residual closes by
+   \cref{cor:fixed-threshold-balanced-density-screen}.
+\end{proof}
+
 \begin{corollary}[Deficient-shadow residual obstruction]
    \label{cor:deficient-shadow-residual-obstruction}
    Work in the setting of
@@ -33587,6 +33691,10 @@ self-reference in \(J(\delta)\): a reporter may target one fixed density level
 \Cref{cor:fractional-fixed-threshold-density-panel} restores the proposal-law
 interface at this fixed level: positive expected density surplus over a finite
 panel already contains one deterministic retained dense column.
+\Cref{cor:sampled-fixed-threshold-density-search} is the build-time version:
+with a positive surplus margin and a bound on positive surplus, repeated seeded
+proposal panels find such a deterministic column with high probability, while
+only the verified retained record is charged to the index.
 
 \begin{corollary}[Tuple-profile distinct-storage certificate]
    \label{cor:tuple-profile-distinct-storage}
@@ -34116,6 +34224,9 @@ the mixed query-storage density scale.
 \Cref{cor:fractional-fixed-threshold-density-panel} is the proposal-law version:
 positive aggregate fixed-threshold density surplus in any finite panel exposes
 one deterministic balanced dense column.
+\Cref{cor:sampled-fixed-threshold-density-search} adds the expensive-build
+wrapper: a positive-margin seeded panel law is enough, because repeated samples
+are discarded after the verifier keeps one deterministic closing record.
 \Cref{cor:pair-compatible-hall-guarded-cover} assembles the chain back into the
 local LP: a half-shipment with sufficient layer-cake surplus supplies the
 guarded star-panel reporter and closes the residual.
@@ -47445,6 +47556,10 @@ prefix form and trims oversized coarse reports to the same stationary scale.
 self-referential \(J(\delta)\) test into one fixed dyadic density threshold.
 \Cref{cor:fractional-fixed-threshold-density-panel} gives the corresponding
 finite proposal-law surplus test.
+\Cref{cor:sampled-fixed-threshold-density-search} says that this test can be
+met by expensive build-time sampling from any positive-margin panel law; the
+sampled panels are discarded after one deterministic closing record is
+certified.
 \Cref{cor:pair-compatible-hall-guarded-cover} states the final local theorem
 target in this language: prove the Hall expansion and the resulting
 layer-cake price inequality for every guarded residual.
