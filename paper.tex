@@ -45107,6 +45107,94 @@ certificate is the verified positive-gain column and the finite LP it augments.
    \cref{cor:atomized-high-correlation-fixed-tail}.
 \end{proof}
 
+\begin{corollary}[Integrated clipped-singleton high-correlation bound]
+   \label{cor:integrated-clipped-singleton-high-correlation}
+   Work in the atomized high-correlation routing dual \((AHR4)\) for one split
+   profile \(\pi\).  Fix \(0<\varepsilon\le1\), put
+   \(J_\varepsilon=\lceil\log_2(1/\varepsilon)\rceil\), and let
+   \[
+      \mathcal T_\varepsilon=\{2^{-j}:0\le j\le J_\varepsilon\}.
+      \tag{ICL1}
+   \]
+   For a feasible dual vector \(y\), define the threshold cuts
+   \(A_t(y)=\{a:y_a\ge t\}\).  Suppose that for every
+   \(t\in\mathcal T_\varepsilon\), preprocessing materializes a finite center
+   universe for the cut \(A_t(y)\), and let \(\Gamma_{\rm clip}^y(t)\) be the
+   clipped singleton tail-price of that cut as in \((CLH3)\).
+
+   Then either one materialized singleton center exposes a positive
+   smaller-radius dense prefix, or
+   \[
+      \sum_ab_ay_a
+      \le
+      \varepsilon B_\pi^{\rm hi}
+      +
+      2\sum_{t\in\mathcal T_\varepsilon}\Gamma_{\rm clip}^y(t).
+      \tag{ICL2}
+   \]
+
+   Consequently, if for every feasible dual \(y\) the corresponding dyadic cuts
+   have certified clipped prices satisfying
+   \[
+      \sum_{t\in\mathcal T_\varepsilon}\Gamma_{\rm clip}^y(t)
+      \le \mathfrak G_{\Sigma,\pi},
+      \tag{ICL3}
+   \]
+   and the atomized record family is included in the admissible routing
+   universe of \cref{cor:min-cost-split-profile-envelope}, then, unless a
+   singleton dense prefix has already been exposed,
+   \[
+      \Phi_\pi^{\rm hi}
+      \le
+      \varepsilon B_\pi^{\rm hi}
+      +2\mathfrak G_{\Sigma,\pi}.
+      \tag{ICL4}
+   \]
+
+   This replaces the earlier \(J_\varepsilon\) times worst-cut envelope by the
+   actual dyadic sum of clipped singleton cut prices.
+\end{corollary}
+
+\begin{proof}
+   Let \(y^{(\varepsilon)}=y\,\mathbf 1\{y\ge\varepsilon\}\).  As in
+   \((AHF6)\),
+   \[
+      \sum_ab_ay_a
+      \le
+      \varepsilon B_\pi^{\rm hi}
+      +\sum_ab_ay_a^{(\varepsilon)} .
+      \tag{ICL5}
+   \]
+   For every \(u\in[\varepsilon,1]\),
+   \[
+      u
+      \le
+      2\sum_{\substack{t\in\mathcal T_\varepsilon:\\ t\le u}}t .
+      \tag{ICL6}
+   \]
+   Indeed, if \(2^{-k}\le u<2^{-k+1}\), then the sum on the right contains
+   \(2^{-k}\ge u/2\).  Applying \((ICL6)\) to every positive coordinate of
+   \(y^{(\varepsilon)}\) gives
+   \[
+      \sum_ab_ay_a^{(\varepsilon)}
+      \le
+      2\sum_{t\in\mathcal T_\varepsilon}tB_y(t),
+      \tag{ICL7}
+   \]
+   where \(B_y(t)=\sum_{a\in A_t(y)}b_a\).
+
+   For a fixed dyadic cut, if
+   \(\Gamma_{\rm clip}^y(t)<tB_y(t)\), then the proof of
+   \cref{cor:clipped-singleton-high-correlation-fixed-tail}, using
+   \cref{cor:clipped-singleton-center-cover}, exposes a positive singleton
+   dense prefix.  If no singleton prefix is exposed, then
+   \(tB_y(t)\le\Gamma_{\rm clip}^y(t)\) for every \(t\).  Combining this with
+   \((ICL5)\)--\((ICL7)\) proves \((ICL2)\).
+
+   Taking the supremum over feasible atomized duals and applying \((AHR8)\)
+   gives \((ICL4)\) under the uniform certificate \((ICL3)\).
+\end{proof}
+
 \begin{corollary}[Explicit split-profile tail separator]
    \label{cor:explicit-split-profile-tail-separator}
    Work in the setting of
@@ -45503,6 +45591,93 @@ certificate is the verified positive-gain column and the finite LP it augments.
    every such node.  Bounded-size nodes are handled by resident scan, and
    \cref{cor:shared-panel-positive-separator-endpoint} gives the displayed
    query and storage bounds.
+\end{proof}
+
+\begin{corollary}[Integrated clipped-singleton density endpoint]
+   \label{cor:integrated-clipped-singleton-density-endpoint}
+   Work in the setting of
+   \cref{cor:shared-panel-positive-separator-endpoint}.  Suppose the full
+   certified panel universe \(\mathcal Z_\star\) contains every materializable
+   low-correlation class-local profile record used in
+   \cref{cor:gaussian-tuple-profile-witness-density} and every smaller-radius
+   dense prefix verified by the paid dense-prefix verifier below.
+
+   Suppose that at every resident node of size at most \(n\), and for every
+   normalized exact-signature price system satisfying \((ESNO1)\),
+   preprocessing can certify one split profile \(\pi\), an atomized
+   high-correlation representation included in the admissible routing universe
+   of \cref{cor:min-cost-split-profile-envelope}, a truncation
+   \(0<\varepsilon_\pi\le1\), and a uniform integrated clipped certificate
+   \(\mathfrak G_{\Sigma,\pi}\) satisfying \((ICL3)\), such that
+   \[
+      D_\pi=(B_\pi-C_\pi^{\rm lo})_+>0
+      \tag{ICE1}
+   \]
+   and
+   \[
+      \varepsilon_\pi B_\pi^{\rm hi}
+      +2\mathfrak G_{\Sigma,\pi}
+      <D_\pi .
+      \tag{ICE2}
+   \]
+   Then worst-case Euclidean ANN has
+   \[
+      Q(n,d)=d\,n^{\rho_c}\log^{O_c(1)}n,
+      \qquad
+      S(n,d)=dn+n^{1+\rho_c}\log^{O_c(1)}n .
+   \]
+
+   In particular, it is sufficient to certify constants \(K_{\rm dyn}\ge0\)
+   with
+   \[
+      B_\pi^{\rm hi}\le n^{K_{\rm dyn}}D_\pi
+      \tag{ICE3}
+   \]
+   and
+   \[
+      \mathfrak G_{\Sigma,\pi}\le D_\pi/4,
+      \tag{ICE4}
+   \]
+   because then one may take
+   \(\varepsilon_\pi=\min\{1,1/(4n^{K_{\rm dyn}})\}\), giving
+   \(\varepsilon_\pi B_\pi^{\rm hi}\le D_\pi/4\) and hence \((ICE2)\).
+
+   Thus the sharpest clipped-singleton target is an integrated dyadic
+   statement: the sum of clipped singleton prices over the
+   \(O_c(\log n)\) relevant layer-cake cuts should be a constant fraction of
+   the residual benefit.  A per-cut inverse-polylogarithmic bound is only a
+   convenient sufficient condition.
+\end{corollary}
+
+\begin{proof}
+   Fix a resident node and normalized price system, and take the certified
+   profile supplied by the hypothesis.  If a singleton dense prefix is exposed
+   while certifying \((ICL3)\), then this is already a positive column in
+   \(\mathcal Z_\star\).  Otherwise
+   \cref{cor:integrated-clipped-singleton-high-correlation} gives
+   \[
+      \Phi_\pi^{\rm hi}
+      \le
+      \varepsilon_\pi B_\pi^{\rm hi}
+      +2\mathfrak G_{\Sigma,\pi}
+      <D_\pi .
+   \]
+   Since \(D_\pi=(B_\pi-C_\pi^{\rm lo})_+\), this implies
+   \[
+      B_\pi-C_\pi^{\rm lo}-\Phi_\pi^{\rm hi}>0.
+   \]
+   Applying \cref{cor:min-cost-split-profile-envelope} to the one-profile panel
+   exposes either a positive low-correlation shared-panel record or a positive
+   dense prefix.  In both cases the verified object is in \(\mathcal Z_\star\),
+   so \((SPP1)\) holds for the fixed normalized price system.  Since the price
+   system and node were arbitrary, \((SPP1)\) holds at every resident node, and
+   \cref{cor:shared-panel-positive-separator-endpoint} gives the displayed
+   bounds.
+
+   The sufficient conditions \((ICE3)\)--\((ICE4)\) imply \((ICE2)\) by the
+   displayed choice of \(\varepsilon_\pi\), after treating bounded \(n\) by the
+   resident scan base case and absorbing constants into the logarithmic
+   budgets.
 \end{proof}
 
 \begin{corollary}[One-sided clipped-singleton profile oracle]
@@ -60013,6 +60188,12 @@ already fires one singleton dense prefix.
 directly into the logarithmic endpoint: polynomial dynamic range and
 \(A^{\rm clip}\le D/\log^{1+\Omega(1)}n\) already imply the full
 \(n^{\rho_c}\polylog n\) theorem.
+\Cref{cor:integrated-clipped-singleton-high-correlation} removes the
+worst-cut multiplier: the high-correlation price is bounded by the actual
+dyadic sum of clipped singleton prices over the layer-cake cuts.
+\Cref{cor:integrated-clipped-singleton-density-endpoint} is the corresponding
+endpoint: it is enough that this dyadic sum be a constant fraction of the
+residual benefit after a polynomial dynamic-range truncation.
 \Cref{cor:one-sided-clipped-singleton-profile-oracle} gives the verifier form:
 build-time search only needs lower residual benefit and upper high-correlation
 mass/clipped-price certificates, and Las Vegas sampling may discard every
