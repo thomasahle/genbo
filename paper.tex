@@ -28240,6 +28240,45 @@ inequality \((QP3)\).
    for each finite child price and interchange the finite sum and the integral.
 \end{proof}
 
+\begin{corollary}[Layer-cake distinct-storage bucket-net certificate]
+   \label{cor:layer-cake-distinct-storage-bucket-net}
+   Work in either of the following two settings:
+   the scalar distinct-storage setting of
+   \cref{cor:distinct-canonical-bucket-net}, with \(a=a_*\) and active
+   first-moment condition \((DCB2)\), or the local-error setting of
+   \cref{cor:local-error-distinct-canonical-bucket-net}, with
+   \(a=a_{\rm loc}\) and active first-moment condition \((LDCB2)\).  For each
+   seed \(z\), define \(u_{z,\kappa}\) and \(N_z(t)\) as in
+   \cref{lem:dyadic-tail-distinct-child-storage}.  If \(\Sigma^+=\emptyset\),
+   the cover is feasible.  Otherwise suppose \(a>0\), the corresponding active
+   first-moment condition holds, and
+   \[
+      \E_z\Gamma_z+
+      \E_z\int_0^\infty N_z(t)\,dt
+      \le
+      aS .
+      \tag{LCDS1}
+   \]
+   Then \((\mathsf{ESFC}_\Sigma)\) is feasible.
+
+   Thus the dyadic large-child formulation is only a convenient discretization.
+   The exact storage theorem is an integrated tail bound for the number of
+   distinct canonical children whose recursive price exceeds \(t\).
+\end{corollary}
+
+\begin{proof}
+   By the layer-cake identity \((DTS4)\),
+   \[
+      \E_z\int_0^\infty N_z(t)\,dt
+      =
+      \E_z\sum_{\kappa\in\kappa_z(\mathcal B_z)}u_{z,\kappa}.
+   \]
+   Hence \((LCDS1)\) is exactly the storage condition \((DCB3)\) in the scalar
+   setting and \((LDCB3)\) in the local-error setting.  The conclusion follows
+   from \cref{cor:distinct-canonical-bucket-net} and
+   \cref{cor:local-error-distinct-canonical-bucket-net}, respectively.
+\end{proof}
+
 \begin{corollary}[Dyadic distinct-storage bucket-net certificate]
    \label{cor:dyadic-distinct-storage-bucket-net}
    Work in the setting of \cref{cor:distinct-canonical-bucket-net}.  For each
@@ -28441,6 +28480,89 @@ inequality \((QP3)\).
    \(m_z(\kappa_{z,b})^{-1}\le M_i^{-1}\).  Thus
    \(\widetilde M_z(i,\mathbf x)\le M_i^{-1}M_z^{\rm occ}(i,\mathbf x)\), and
    substituting this into \((MDT2)\) gives \((MDT4)\).
+\end{proof}
+
+\begin{corollary}[Integrated tuple-tail distinct-storage certificate]
+   \label{cor:integrated-tuple-tail-distinct-storage}
+   Work in either of the two settings of
+   \cref{cor:layer-cake-distinct-storage-bucket-net}, with the corresponding
+   value of \(a\).  Fix a separation scale \(\delta>0\).  For every \(t>0\),
+   suppose that an integer \(k(t)\ge1\), a number \(R(t)>0\), and certified
+   measurable envelopes \(J_t(\mathbf x)\ge0\) are chosen so that every distinct
+   child \(\kappa\) with \(u_{z,\kappa}\ge t\) has an associated separated net
+   \(A_{z,\kappa}\subseteq P\) satisfying
+   \[
+      \left|
+      \{(x_1,\ldots,x_{k(t)})\in\mathcal T_{k(t)}(P,\delta):
+      x_j\in A_{z,\kappa}\ \forall j\}
+      \right|
+      \ge R(t),
+      \tag{ITD1}
+   \]
+   and, with
+   \[
+      M_z(t,\mathbf x)
+      =
+      \left|
+      \{\kappa\in\kappa_z(\mathcal B_z):
+      u_{z,\kappa}\ge t,\
+      x_j\in A_{z,\kappa}\ \forall j\}
+      \right|,
+      \tag{ITD2}
+   \]
+   one has
+   \[
+      \E_zM_z(t,\mathbf x)\le J_t(\mathbf x).
+      \tag{ITD3}
+   \]
+   If \(\Sigma^+=\emptyset\), the cover is feasible.  Otherwise suppose \(a>0\),
+   the corresponding active first-moment condition holds, and
+   \[
+      \E_z\Gamma_z+
+      \int_0^\infty
+      \frac1{R(t)}
+      \sum_{\mathbf x\in\mathcal T_{k(t)}(P,\delta)}
+      J_t(\mathbf x)\,dt
+      \le
+      aS .
+      \tag{ITD4}
+   \]
+   Then \((\mathsf{ESFC}_\Sigma)\) is feasible.
+
+   Equivalently, if for each \(t\) the tuple set is partitioned into profile
+   classes \(\Pi_t\), every tuple in profile \(\pi\in\Pi_t\) has
+   \(J_t(\mathbf x)\le e^{-I_{t,\pi}}\), and the profile has size
+   \(N_{t,\pi}\), it is enough to replace the inner tuple sum in \((ITD4)\) by
+   \[
+      \sum_{\pi\in\Pi_t}N_{t,\pi}e^{-I_{t,\pi}} .
+      \tag{ITD5}
+   \]
+\end{corollary}
+
+\begin{proof}
+   Fix \(t>0\).  Summing the witness bound \((ITD1)\) over all children with
+   \(u_{z,\kappa}\ge t\) and interchanging finite sums gives
+   \[
+      N_z(t)
+      \le
+      \frac1{R(t)}
+      \sum_{\mathbf x\in\mathcal T_{k(t)}(P,\delta)}
+      M_z(t,\mathbf x).
+      \tag{ITD6}
+   \]
+   Taking expectation and using \((ITD3)\),
+   \[
+      \E_zN_z(t)
+      \le
+      \frac1{R(t)}
+      \sum_{\mathbf x\in\mathcal T_{k(t)}(P,\delta)}
+      J_t(\mathbf x).
+   \]
+   Integrating this inequality over \(t\) and applying \((ITD4)\) gives
+   \((LCDS1)\).  Therefore
+   \cref{cor:layer-cake-distinct-storage-bucket-net} proves feasibility.  The
+   profile form is just summation of the pointwise envelope over each profile
+   class.
 \end{proof}
 
 \begin{corollary}[Tuple-profile distinct-storage certificate]
@@ -28790,6 +28912,10 @@ through the distinct-child, dyadic-tail, and tuple-profile storage certificates.
 \cref{cor:dyadic-distinct-storage-bucket-net} turn the same target into dyadic
 large-child counting: prove, at each recursive price scale, that the number of
 distinct canonical bucket nets is small enough.
+\Cref{cor:layer-cake-distinct-storage-bucket-net} removes that discretization
+from the theorem target by using the exact integrated tail count of distinct
+children, and \cref{cor:integrated-tuple-tail-distinct-storage} gives the
+matching tuple-witness form without first choosing dyadic price classes.
 \Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} give the corresponding
 entropy-energy normal form: each large canonical child supplies many separated
@@ -41870,7 +41996,10 @@ once per decoded occurrence, with only occurrence pointers left in the metadata
 budget.  \Cref{cor:dyadic-distinct-storage-bucket-net} rewrites that target as a
 dyadic large-child counting problem: for every recursive price scale, bound the
 number of distinct canonical bucket nets whose shared child index has that
-price.  \Cref{lem:tuple-witness-distinct-child-tail} and
+price.  \Cref{cor:layer-cake-distinct-storage-bucket-net} and
+\cref{cor:integrated-tuple-tail-distinct-storage} remove this dyadic
+discretization when a geometric proof can bound the integrated tail directly.
+\Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} reduce each dyadic count to tuple
 incidence: a large separated child contains many ordered witness tuples, so the
 storage proof can be stated as an entropy-energy bound on how often a tuple
