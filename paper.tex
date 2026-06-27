@@ -30694,6 +30694,85 @@ inequality \((QP3)\).
    The converse is the contrapositive.
 \end{proof}
 
+\begin{lemma}[Dual obstruction to finite guard-credit flow]
+   \label{lem:finite-guard-credit-flow-dual}
+   Work in the setting of
+   \cref{cor:finite-guard-credit-flow-separator}, and let
+   \(\operatorname{val}(\mathcal A)\) denote the optimum of the finite LP
+   \((FGF1)\)--\((FGF4)\).  Then
+   \[
+      \operatorname{val}(\mathcal A)
+      =
+      \min\sum_{q\in\mathcal Q}b_qx_q,
+      \tag{FGD0}
+   \]
+   where the minimum is over nonnegative variables
+   \[
+      x_q\ge0,\qquad u_{A,p}\ge0,\qquad s_A\ge0
+   \]
+   satisfying
+   \[
+      x_q+u_{A,p}-s_A
+      \ge
+      \frac1{4C_AJ_A}
+      \qquad
+      (A\in\mathcal A,\ p\in W_A,\ (p,q)\in\mathcal N),
+      \tag{FGD1}
+   \]
+   and
+   \[
+      C_A
+      \left(
+         \sum_{p\in W_A}d_{W_A,y}^{\gamma}(p)u_{A,p}
+         -
+         v_As_A
+      \right)
+      \le
+      R_A
+      \qquad(A\in\mathcal A).
+      \tag{FGD2}
+   \]
+   Consequently, the finite pool has no positive guard-credit separator if and
+   only if there is such a dual certificate with
+   \[
+      \sum_qb_qx_q=0.
+      \tag{FGD3}
+   \]
+
+   In particular, after discarding zero-load queries, a failed finite pool has
+   a zero-demand-price obstruction: every affordable template must satisfy the
+   internal point-capacity inequalities \((FGD1)\)--\((FGD2)\) with
+   \(x_q=0\) on the guard load that remains to be credited.
+\end{lemma}
+
+\begin{proof}
+   Write the primal in standard finite form with variables \(F_{A,q,p}\ge0\)
+   and \(\lambda_A\ge0\).  The demand constraints \((FGF1)\) get dual variables
+   \(x_q\ge0\).  The point-capacity constraints \((FGF2)\) get dual variables
+   \(u_{A,p}\ge0\), and the credited-mass constraints \((FGF3)\), written as
+   \(\lambda_AC_Av_A-\sum_{q,p}F_{A,q,p}\le0\), get dual variables
+   \(s_A\ge0\).
+
+   The coefficient of \(F_{A,q,p}\) in the dual constraint is
+   \(x_q+u_{A,p}-s_A\), which must dominate its objective coefficient
+   \(1/(4C_AJ_A)\).  This gives \((FGD1)\).  The coefficient of
+   \(\lambda_A\) is
+   \[
+      -C_A\sum_{p\in W_A}d_{W_A,y}^{\gamma}(p)u_{A,p}
+      +C_Av_As_A,
+   \]
+   which must dominate the primal objective coefficient \(-R_A\).  This is
+   equivalent to \((FGD2)\).  Since the right sides of \((FGF2)\)--\((FGF3)\)
+   are zero, the dual objective is \(\sum_qb_qx_q\), proving \((FGD0)\) by
+   finite-dimensional LP duality.
+
+   The primal has the zero feasible solution, so
+   \(\operatorname{val}(\mathcal A)\ge0\).  The dual objective is also
+   nonnegative.  Hence the optimum is nonpositive exactly when both optima are
+   zero, which is \((FGD3)\).  If \(b_q>0\), then \((FGD3)\) forces
+   \(x_q=0\), giving the final specialization.
+\end{proof}
+
 \begin{corollary}[Tuple-profile distinct-storage certificate]
    \label{cor:tuple-profile-distinct-storage}
    Work in the setting of
@@ -31122,6 +31201,9 @@ to the receiving containers.
 \Cref{cor:finite-guard-credit-flow-separator} freezes the logarithmic
 layer-cake scale of each proposal and makes this an ordinary finite LP
 separator over the generated dense proposal pool.
+\Cref{lem:finite-guard-credit-flow-dual} gives its exact obstruction: if the
+pool fails, point-side paid-shadow prices and scale prices cancel every
+guard-credit edge at zero total priced guard demand.
 \Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} give the corresponding
 entropy-energy normal form: each large canonical child supplies many separated
@@ -31398,6 +31480,9 @@ query demand used once and recursive cost paid per container.
 \Cref{cor:finite-guard-credit-flow-separator} gives the build-facing LP: a
 finite proposal pool succeeds exactly by exposing positive verified
 guard-credit surplus after the credited-mass scales are fixed.
+\Cref{lem:finite-guard-credit-flow-dual} is the matching finite-pool
+certificate of failure, so a proposal oracle only has to separate that explicit
+dual obstruction.
 Conversely,
 \cref{cor:paid-prefix-residual-envelope} says that a failed dense separator has
 only one possible form: a paid residual whose every certified container obeys
@@ -44320,6 +44405,9 @@ charged.
 column-generation target for practical proposal families: if the generated pool
 contains a positive guard-credit LP solution, the ordinary star-panel verifier
 closes the residual.
+\Cref{lem:finite-guard-credit-flow-dual} gives the corresponding oracle state
+when the current generated pool fails: a zero-mass guard-demand price and
+per-template capacity/scale prices blocking every candidate edge.
 \Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} reduce each dyadic count to tuple
 incidence: a large separated child contains many ordered witness tuples, so the
