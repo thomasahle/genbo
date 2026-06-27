@@ -689,3 +689,4 @@
 - Updated the audit trail to record this as the storage-envelope interface for the compressed-bucket/list-decoding route.
 - Added the certified-storage weighted residual envelope. Failure of the finite panel separator is now exactly a normalized dual under which every seed law has useful hit bounded by active load plus certified storage envelope.
 - Updated the audit trail to make this residual inequality the current counterexample format for the weighted shared-panel route.
+- Added the query-storage split for weighted residuals. A failed separator now has an explicit dichotomy for every proposed seed law: either active first-moment/Renyi load is already comparable to useful priced hit, or the certified shared-storage envelope carries the missing mass. This makes the fully fractional dense-overlap target a pair of ratios \(Q/A\) and \(W/A\), rather than a branching-count problem.

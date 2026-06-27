@@ -29933,6 +29933,78 @@ inequality \((QP3)\).
    \(\mathsf L^{(\rho)}\).
 \end{proof}
 
+\begin{corollary}[Query-storage split for weighted residuals]
+   \label{cor:certified-storage-residual-split}
+   Work in the setting of
+   \cref{cor:certified-storage-weighted-residual}.  For a finite seed law
+   \(\nu\), write
+   \[
+      A_\nu=\E_{z\sim\nu}\mathsf H_z(\beta),
+      \qquad
+      Q_\nu^{(\rho)}=\E_{z\sim\nu}\mathsf L_z^{(\rho)}(\tau),
+      \qquad
+      W_\nu=\theta\,\E_{z\sim\nu}\widehat U_z .
+      \tag{CSRS1}
+   \]
+   If the certified-storage separator \((CSWP2)\) fails, then every finite seed
+   law satisfies
+   \[
+      A_\nu\le Q_\nu^{(\rho)}+W_\nu .
+      \tag{CSRS2}
+   \]
+   Hence, for every \(0<\varepsilon<1\) and every law with \(A_\nu>0\), either
+   \[
+      Q_\nu^{(\rho)}\ge (1-\varepsilon)A_\nu
+      \tag{CSRS3}
+   \]
+   or
+   \[
+      W_\nu\ge \varepsilon A_\nu .
+      \tag{CSRS4}
+   \]
+   Conversely, if for every normalized dual price system satisfying
+   \((ESNO1)\) there is a finite seed law \(\nu\) and constants \(q,u\ge0\) with
+   \(q+u<1\) such that
+   \[
+      Q_\nu^{(\rho)}\le qA_\nu,
+      \qquad
+      W_\nu\le uA_\nu,
+      \qquad
+      A_\nu>0,
+      \tag{CSRS5}
+   \]
+   then the certified-storage separator \((CSWP2)\) holds.
+
+   The same statements hold for the first-moment relaxation after replacing
+   \(Q_\nu^{(\rho)}\) by
+   \(Q_\nu^{(1)}=\E_{z\sim\nu}\mathsf L_z^{(1)}(\tau)\).  Thus a proposed
+   decoded panel law separates precisely when useful priced hit mass beats the
+   sum of its active-load ratio and its certified shared-storage ratio; a
+   residual counterexample must put comparable mass in one of those two
+   obstructions.
+\end{corollary}
+
+\begin{proof}
+   Inequality \((CSRS2)\) is exactly \((CSWR2)\) with the notation
+   \((CSRS1)\).  If both \((CSRS3)\) and \((CSRS4)\) failed, then
+   \(Q_\nu^{(\rho)}+W_\nu<A_\nu\), contradicting \((CSRS2)\).  Conversely,
+   \((CSRS5)\) gives
+   \[
+      Q_\nu^{(\rho)}+W_\nu\le(q+u)A_\nu<A_\nu,
+   \]
+   which is precisely \((CSWP2)\) for that dual price system.  The first-moment
+   version is identical, using \((CSWR3)\) and \((CSWP3)\).
+\end{proof}
+
+This split is the fractional-overlap replacement for hard branching counts.
+A build-time proposal such as additive quantization, list/lattice decoding,
+facility search, or \(k\)-means-style seeding is useful only after it is scored
+by the two dimensionless quantities \(Q_\nu/A_\nu\) and \(W_\nu/A_\nu\).  If the
+active-load ratio is bounded away from one, the remaining theorem is purely a
+certified shared-storage theorem.  If the active-load ratio is already near one,
+then the dual residual says that the proposal is mostly re-enumerating active
+query mass rather than producing a cost-effective dense filter.
+
 \begin{corollary}[Distinct-canonical bucket-net certificate]
    \label{cor:distinct-canonical-bucket-net}
    Work in the setting of \cref{cor:bucket-net-ratio-form}.  In addition to the
@@ -56973,6 +57045,12 @@ shared-panel endpoint without changing the retained child DAG.
 \Cref{cor:certified-storage-weighted-residual} is the exact counterexample
 format left for geometry: a normalized dual under which every finite proposed
 panel law has useful hit at most active load plus certified storage envelope.
+\Cref{cor:certified-storage-residual-split} isolates the two possible
+obstructions in such a counterexample: either the proposal's active-load ratio
+is already near its useful hit mass, or its certified shared-storage envelope
+must carry a comparable fraction of that mass.  Thus the remaining
+list-decoding theorem may be attacked by proving both a first-moment active-load
+gap and a storage-envelope bound for one dual-priced panel law.
 \Cref{cor:tuple-profile-compressed-bucket-storage}
 gives the direct
 low-correlation certificate for this target: first list moment plus two-point
