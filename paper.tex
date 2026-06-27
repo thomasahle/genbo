@@ -36787,6 +36787,102 @@ and compressed-bucket estimates.
    \cref{lem:canonical-duplicate-cut-closure}.
 \end{proof}
 
+\begin{corollary}[Query-layer duplicate-closure prefix compiler]
+   \label{cor:query-layer-duplicate-closure-prefix}
+   Work in the setting of
+   \cref{cor:duplicate-closure-shadow-repair}, and assume the paid-prefix
+   verifier of \cref{cor:hit-weighted-star-panel-prefix} is available for the
+   current price system.  Let \(Y\subseteq U\) be an affordable certified
+   container with price factor \(\psi_Y\), exponent \(\rho_Y\), and available
+   cardinality \(h\).  For \(0\le y_q\le1\), \(q\in\mathcal Q_+\), define the
+   query-layered duplicate-shadow degree
+   \[
+      d_{\mathcal A,y}(p)
+      =
+      \sum_{\substack{q:\,(p,q)\in N_U(\mathcal A)}}
+      a_qy_q\gamma_{p,q}r_{p,q}
+      \qquad(p\in Y),
+      \tag{QDC1}
+   \]
+   and the top-prefix value
+   \[
+      D_{\mathcal A,Y,y}(h)
+      =
+      \max_{\substack{V\subseteq Y\\ |V|=h}}
+      \sum_{p\in V}d_{\mathcal A,y}(p).
+      \tag{QDC2}
+   \]
+   If
+   \[
+      D_{\mathcal A,Y,y}(h)
+      >
+      \psi_Y
+      \left(
+         h^{\rho_Y}\sum_{q\in\mathcal Q_+}\tau_qa_qy_q
+         +\sigma h^{1+\rho_Y}
+      \right),
+      \tag{QDC3}
+   \]
+   then an available paid prefix has positive repair reduced gain.
+
+   Moreover, if \((QDC3)\) holds for a fractional layer \(y\), then it holds
+   for some Boolean query layer \(Q\subseteq\mathcal Q_+\), with
+   \(y=\mathbf 1_Q\).  Thus the retained column may be taken to be the
+   top-\(h\) prefix of \(Y\) for one ordinary query layer, charged by
+   \[
+      \psi_Y
+      \left(
+         h^{\rho_Y}\sum_{q\in Q}\tau_qa_q
+         +\sigma h^{1+\rho_Y}
+      \right).
+      \tag{QDC4}
+   \]
+
+   Consequently, if no available query layer and prefix separates, then every
+   fractional layer in the searched pool satisfies the reverse inequality in
+   \((QDC3)\).  The all-query envelope \((DCS3)\) is the special case
+   \(y_q\equiv1\).
+\end{corollary}
+
+\begin{proof}
+   Let \(V\subseteq Y\) attain \((QDC2)\), and put
+   \(X=D_{\mathcal A,Y,y}(h)\).  Submit the one-record hit-weighted star panel
+   with container \(Y\), update side \(V\), size certificate \(h\), query
+   weights \(\widetilde y_q=a_qy_q\), lower certificate \(X\), and multiplicity
+   \(1\).  Since \(0\le a_q\le1\), also \(0\le\widetilde y_q\le1\).  Because
+   \(N_U(\mathcal A)\subseteq\mathcal N\),
+   \[
+      X
+      \le
+      \sum_{p\in V}
+      \sum_{\substack{q:\,(p,q)\in\mathcal N}}
+      \widetilde y_q\gamma_{p,q}r_{p,q},
+   \]
+   so \((HSP1)\) holds.  The strict inequality \((QDC3)\) is exactly the
+   one-record instance of \((HSP2)\).  Therefore
+   \cref{cor:hit-weighted-star-panel-prefix} exposes a positive paid prefix.
+
+   For the hardening statement, define
+   \[
+      F(y)=
+      D_{\mathcal A,Y,y}(h)
+      -
+      \psi_Yh^{\rho_Y}\sum_q\tau_qa_qy_q
+      -
+      \psi_Y\sigma h^{1+\rho_Y}.
+   \]
+   The first term is the maximum, over \(h\)-subsets \(V\subseteq Y\), of a
+   linear function of \(y\).  Hence \(F\) is convex on
+   \([0,1]^{\mathcal Q_+}\).  If \(F(y)>0\) at some fractional layer, then the
+   maximum of \(F\) over the cube is positive and is attained at an extreme
+   point, which is the indicator of a Boolean query layer \(Q\).  This gives
+   \((QDC3)\) with \(y=\mathbf 1_Q\), i.e. \((QDC4)\).
+
+   The residual envelope is the contrapositive over the finite searched pool.
+   Taking \(y_q\equiv1\) gives the degree \(d_{\mathcal A}\) and the price
+   \(R_Y(h)\) from \cref{cor:duplicate-closure-shadow-repair}.
+\end{proof}
+
 \begin{corollary}[Local transport-to-star bridge]
    \label{cor:local-transport-to-star-bridge}
    Work in the setting of
@@ -37058,6 +37154,10 @@ shadow is charged.
 interface for that closed shadow: any certified prefix whose cut-shadow mass
 beats its recursive price closes the original deficient-shadow residual, while
 failure leaves a no-prefix envelope localized to the duplicate closure.
+\Cref{cor:query-layer-duplicate-closure-prefix} is the cost-refined version:
+the same duplicate shadow can be searched with fractional query layers, charged
+only by \(\sum_q\tau_qa_qy_q\), and any positive fractional certificate hardens
+to one Boolean query layer and its top prefix.
 \Cref{cor:local-transport-to-star-bridge} gives the complementary positive
 form: any successful local assignment is already a high-correlation
 responsibility tensor, so the dense-star machinery only has to find a
