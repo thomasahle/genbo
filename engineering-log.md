@@ -641,3 +641,5 @@
 - Updated the audit trail to state the remaining closed-shadow obstruction in this searchable superlevel form.
 - Added the closed-shadow dyadic layer-cake separator. A build-time reporter can now certify the dyadic superlevel profile of one container/layer; if total paid degree exceeds twice the aggregate recursive price of those layers, the verifier extracts one positive superlevel repair.
 - Updated the audit trail to record this finite reporter form as the next closed-shadow target.
+- Added the reported closed-shadow layer-cake separator. The reporter now needs only one-sided certificates: a lower bound on total paid degree and upper bounds on dyadic superlevel sizes; positive certified surplus compiles through the exact verifier, with a Las Vegas sampled form.
+- Updated the audit trail to make this one-sided reported certificate the build-facing closed-shadow target.
