@@ -36883,6 +36883,92 @@ and compressed-bucket estimates.
    \(R_Y(h)\) from \cref{cor:duplicate-closure-shadow-repair}.
 \end{proof}
 
+\begin{corollary}[Duplicate closures are finite-prefix residuals]
+   \label{cor:duplicate-closure-finite-prefix-normal-form}
+   Work in the setting of
+   \cref{cor:query-layer-duplicate-closure-prefix}.  Associate to a duplicate
+   closure \(\mathcal A\) the finite demand system
+   \[
+      \mathcal N_{\mathcal A}=N_U(\mathcal A)\subseteq U\times\mathcal Q_+,
+      \qquad
+      \widehat\gamma_{p,q}=a_q\gamma_{p,q},
+      \qquad
+      \widehat\tau_q=a_q\tau_q .
+      \tag{DFP1}
+   \]
+   For a certified container \(Y\subseteq U\), cardinality \(h\), and
+   fractional query layer \(0\le y_q\le1\), let
+   \(D_{Y,y}^{\widehat\gamma,\mathcal A}(h)\) be the ordinary top-\(h\)
+   finite-prefix value in this demand system:
+   \[
+      D_{Y,y}^{\widehat\gamma,\mathcal A}(h)
+      =
+      \max_{\substack{V\subseteq Y\\|V|=h}}
+      \sum_{p\in V}
+      \sum_{\substack{q:\,(p,q)\in\mathcal N_{\mathcal A}}}
+      y_q\widehat\gamma_{p,q}r_{p,q}.
+      \tag{DFP2}
+   \]
+   Then the duplicate-closure prefix objective is exactly the finite-prefix
+   reduced-cost objective
+   \[
+   \begin{aligned}
+      &D_{\mathcal A,Y,y}(h)
+      -
+      \psi_Y
+      \left(
+         h^{\rho_Y}\sum_{q\in\mathcal Q_+}\tau_qa_qy_q
+         +\sigma h^{1+\rho_Y}
+      \right)  \\
+      &\qquad =
+      D_{Y,y}^{\widehat\gamma,\mathcal A}(h)
+      -
+      \psi_Y
+      \left(
+         h^{\rho_Y}\sum_{q\in\mathcal Q_+}\widehat\tau_qy_q
+         +\sigma h^{1+\rho_Y}
+      \right).
+   \end{aligned}
+      \tag{DFP3}
+   \]
+   Hence a positive finite-prefix reduced cost in the demand system
+   \(\mathcal N_{\mathcal A}\) gives an available paid prefix with positive
+   repair reduced gain, and failure of all searched finite-prefix tests is
+   precisely the residual envelope
+   \[
+      D_{Y,y}^{\widehat\gamma,\mathcal A}(h)
+      \le
+      \psi_Y
+      \left(
+         h^{\rho_Y}\sum_{q\in\mathcal Q_+}\widehat\tau_qy_q
+         +\sigma h^{1+\rho_Y}
+      \right)
+      \tag{DFP4}
+   \]
+   for every searched \((Y,h,y)\).
+
+   In particular, for the canonical closure \(\mathcal A^\star\) of
+   \cref{lem:canonical-duplicate-cut-closure}, a surviving infeasible local
+   assignment branch is an ordinary finite-prefix residual on
+   \(\mathcal N_{\mathcal A^\star}\), together with the already-routable
+   complement from \((DCC3)\).  Thus cardinality-net, threshold, layer-cake, or
+   reported-support finite-prefix separators may be applied to the duplicate
+   branch with the substituted weights \((\widehat\gamma,\widehat\tau,\sigma)\).
+\end{corollary}
+
+\begin{proof}
+   The identity \((DFP3)\) follows by substituting
+   \(\widehat\gamma_{p,q}=a_q\gamma_{p,q}\) and
+   \(\widehat\tau_q=a_q\tau_q\) in \((DFP2)\): the resulting prefix value is
+   exactly \((QDC2)\), and the query-price term is the one in \((QDC3)\).
+   Therefore any strict violation of \((DFP4)\) is the positive surplus
+   condition \((QDC3)\), so
+   \cref{cor:query-layer-duplicate-closure-prefix} gives a positive paid
+   prefix.  The envelope \((DFP4)\) is the contrapositive over the finite
+   searched family.  The canonical-closure statement adds the complement
+   routing certificate from \cref{lem:canonical-duplicate-cut-closure}.
+\end{proof}
+
 \begin{corollary}[Local transport-to-star bridge]
    \label{cor:local-transport-to-star-bridge}
    Work in the setting of
@@ -37158,6 +37244,11 @@ failure leaves a no-prefix envelope localized to the duplicate closure.
 the same duplicate shadow can be searched with fractional query layers, charged
 only by \(\sum_q\tau_qa_qy_q\), and any positive fractional certificate hardens
 to one Boolean query layer and its top prefix.
+\Cref{cor:duplicate-closure-finite-prefix-normal-form} makes this identification
+literal: the duplicate closure is an ordinary finite-prefix demand system after
+the weight substitution \(\widehat\gamma_{p,q}=a_q\gamma_{p,q}\),
+\(\widehat\tau_q=a_q\tau_q\).  Thus the duplicate branch uses the same
+finite-prefix reporter language as the closed Hall-shadow branch.
 \Cref{cor:local-transport-to-star-bridge} gives the complementary positive
 form: any successful local assignment is already a high-correlation
 responsibility tensor, so the dense-star machinery only has to find a
