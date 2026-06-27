@@ -37557,6 +37557,104 @@ family.
    endpoint.
 \end{proof}
 
+\begin{corollary}[Hall-shadow prefixes are finite-prefix separation]
+   \label{cor:hall-shadow-finite-prefix-separation}
+   Work in the setting of \cref{cor:one-record-hall-shadow-merge}.  Fix a
+   failed Hall cut \(A\).  Form the cut-shadow demand system
+   \[
+      \mathcal N_A=N(A)\subseteq P\times\Sigma,
+      \qquad
+      \gamma_{p,\sigma_0}=\alpha_{p,\sigma_0},
+      \qquad
+      \sigma_{\rm st}=\zeta .
+      \tag{HFP1}
+   \]
+   For a repair template \(y\), let its associated Boolean query layer be
+   \[
+      Q_y=\{\sigma_0:a_y(\sigma_0)=1\},
+      \qquad
+      A_y=\sum_{\sigma_0\in Q_y}\tau_{\sigma_0}.
+      \tag{HFP2}
+   \]
+   Then for every available cardinality \(K\in\mathcal K_y\), the Hall-shadow
+   top-prefix value is exactly the finite-prefix reduced-cost value of the
+   container/query-layer/cardinality triple \((W_y,Q_y,K)\):
+   \[
+      D_A(y,K)
+      -
+      \psi_y
+      \left(
+         A_yK^{\rho_y}+\zeta K^{1+\rho_y}
+      \right)
+      =
+      D_{W_y,\mathbf 1_{Q_y}}^\gamma(K)
+      -
+      \psi_y
+      \left(
+         K^{\rho_y}\sum_{\sigma_0}\tau_{\sigma_0}\mathbf 1_{Q_y}(\sigma_0)
+         +
+         \sigma_{\rm st}K^{1+\rho_y}
+      \right).
+      \tag{HFP3}
+   \]
+   Hence a positive finite-prefix reduced cost for one such triple is precisely
+   a one-record Hall-shadow merge, while failure of all such triples is
+   precisely the restricted finite-prefix residual envelope on
+   \(\mathcal N_A\).
+
+   More generally, suppose a build-time oracle proposes any certified
+   container \(W\), Boolean signature layer \(Q\subseteq\Sigma\), cardinality
+   \(K\), and prices \((\psi,\rho)\) with
+   \[
+      D_{W,\mathbf 1_Q}^\gamma(K)
+      >
+      \psi
+      \left(
+         K^\rho\sum_{\sigma_0\in Q}\tau_{\sigma_0}
+         +
+         \zeta K^{1+\rho}
+      \right).
+      \tag{HFP4}
+   \]
+   If this triple is certified as a valid smaller-radius repair template with
+   activation \(a(\sigma_0)=\mathbf 1_Q(\sigma_0)\), then it gives the
+   Hall-cut repair alternative \((HCR2)\).  Consequently, any finite-prefix
+   separator for the cut-shadow demand systems \(\mathcal N_A\), with
+   \(r\equiv1\), can be used as the dense repair routine in
+   \cref{cor:finite-signature-hall-cut-repair-endpoint}.
+\end{corollary}
+
+\begin{proof}
+   For \(p\in W_y\), the paid degree in the cut-shadow demand system under the
+   query layer \(Q_y\) is
+   \[
+      \sum_{\sigma_0:\,(p,\sigma_0)\in\mathcal N_A}
+      \gamma_{p,\sigma_0}\mathbf 1_{Q_y}(\sigma_0)
+      =
+      \sum_{\sigma_0:\,(p,\sigma_0)\in N(A)}
+      \alpha_{p,\sigma_0}a_y(\sigma_0)
+      =
+      d_{A,y}(p).
+   \]
+   Sorting \(W_y\) by this degree therefore gives the same top-\(K\) prefix and
+   the same prefix mass \(D_A(y,K)\) on both sides of \((HFP3)\).  The query
+   price identity is the definition of \(A_y\), and the storage price is
+   \(\sigma_{\rm st}K^{1+\rho_y}=\zeta K^{1+\rho_y}\).  This proves
+   \((HFP3)\).
+
+   If the common value in \((HFP3)\) is positive, then \((NHE2)\) holds for
+   \((y,K)\), and \cref{cor:one-record-hall-shadow-merge} gives the
+   one-record repair.  If all such values are nonpositive, the displayed
+   inequality is exactly \((NHE3)\), rewritten as the finite-prefix residual
+   envelope restricted to the query layers \(Q_y\).
+
+   Finally, a proposed certified triple satisfying \((HFP4)\) may be regarded
+   as a new repair template with container \(W\), activation \(\mathbf 1_Q\),
+   exponent \(\rho\), and price factor \(\psi\).  The first part then gives
+   \((NHE2)\) for that new template, hence a one-record Hall-shadow merge and
+   the Hall-cut repair alternative \((HCR2)\).
+\end{proof}
+
 \begin{corollary}[Balanced Hall-shadow density screen]
    \label{cor:balanced-hall-shadow-density-screen}
    Work in the setting of \cref{cor:no-merge-hall-shadow-envelope}.  Fix a
