@@ -30773,6 +30773,114 @@ inequality \((QP3)\).
    \(x_q=0\), giving the final specialization.
 \end{proof}
 
+\begin{corollary}[One-template separation of the guard-credit dual]
+   \label{cor:one-template-guard-credit-separation}
+   Work in the setting of
+   \cref{lem:finite-guard-credit-flow-dual}.  Let \(B\) be another affordable
+   guard-credit template, with parameters
+   \(W_B,K_B,C_B,v_B,J_B,R_B\) defined as in \((FGF0)\), and put
+   \[
+      \beta_B=\frac1{4C_BJ_B}.
+   \]
+   Fix a dual feasible certificate for the pool \(\mathcal A\), and write
+   \(x\) for its demand-price vector.  Define
+   \[
+      \ell_{B,p}(x)=
+      \max_{q:\,(p,q)\in\mathcal N}
+      \{\beta_B-x_q\}
+      \qquad(p\in W_B),
+      \tag{FGS1}
+   \]
+   with the convention that the maximum over the empty set is \(-\infty\).
+   Then this dual certificate extends over the enlarged pool
+   \(\mathcal A\cup\{B\}\) with the same objective value if and only if
+   \[
+      C_B
+      \inf_{t\ge0}
+      \left\{
+         \sum_{p\in W_B}d_{W_B,y}^{\gamma}(p)
+         \bigl(t+\ell_{B,p}(x)\bigr)_+
+         -
+         v_Bt
+      \right\}
+      \le R_B .
+      \tag{FGS2}
+   \]
+   Thus a template \(B\) for which \((FGS2)\) fails cuts off this particular
+   dual certificate.  More generally, if a finite proposal family
+   \(\mathcal B\) cuts off every zero-objective dual certificate of the current
+   pool in this sense, then the enlarged pool
+   \(\mathcal A\cup\mathcal B\) has positive guard-credit LP value.
+
+   In particular, after discarding queries with \(b_q=0\), every
+   zero-objective certificate has \(x_q=0\).  Let
+   \[
+      E_B=\{p\in W_B:\exists q\in\mathcal Q\text{ with }(p,q)\in\mathcal N\},
+      \qquad
+      D_B=\sum_{p\in E_B}d_{W_B,y}^{\gamma}(p).
+      \tag{FGS3}
+   \]
+   If \(0<v_B\le D_B\) and
+   \[
+      \frac{D_B}{4J_B}>R_B,
+      \tag{FGS4}
+   \]
+   then \(B\) cuts off every zero-objective dual certificate of the current
+   pool, and therefore the enlarged pool \(\mathcal A\cup\{B\}\) has positive
+   value.  Thus the build-time proposal oracle for the failed guard-credit LP
+   may search for a certified smaller-radius container whose active paid-shadow
+   mass \(D_B\) beats its recursive query/storage price after the single
+   logarithmic layer-cake factor \(J_B\).
+\end{corollary}
+
+\begin{proof}
+   Adding \(B\) to the primal appends the variables \(F_{B,q,p}\) and
+   \(\lambda_B\), together with the constraints \((FGF2)\)--\((FGF3)\) for
+   this template.  In the dual, this appends only the variables
+   \(u_{B,p}\ge0\) and \(s_B\ge0\), while the demand prices \(x_q\) and the
+   objective value are unchanged.  The new block is feasible exactly when
+   \[
+      x_q+u_{B,p}-s_B\ge\beta_B
+      \qquad(p\in W_B,\ (p,q)\in\mathcal N),
+      \tag{FGS5}
+   \]
+   and
+   \[
+      C_B
+      \left(
+         \sum_{p\in W_B}d_{W_B,y}^{\gamma}(p)u_{B,p}
+         -
+         v_Bs_B
+      \right)
+      \le R_B .
+      \tag{FGS6}
+   \]
+   For a fixed value \(t=s_B\), the smallest feasible \(u_{B,p}\) in
+   \((FGS5)\) is
+   \[
+      u_{B,p}=\bigl(t+\ell_{B,p}(x)\bigr)_+ .
+   \]
+   Substituting this into \((FGS6)\) and then minimizing over \(t\ge0\) gives
+   \((FGS2)\).
+
+   Thus failure of \((FGS2)\) means exactly that this dual certificate cannot
+   remain feasible after \(B\) is added.  If a finite proposal family cuts off
+   every zero-objective dual certificate, then the enlarged pool has no
+   zero-objective dual.  Since the enlarged LP has nonnegative value and its
+   dual optimum is attained, \cref{lem:finite-guard-credit-flow-dual} implies
+   that the enlarged finite LP has positive value.
+
+   After zero-load queries are discarded, \((FGD3)\) forces \(x_q=0\) for every
+   remaining query.  Hence \(\ell_{B,p}(x)=\beta_B\) for \(p\in E_B\) and
+   \(\ell_{B,p}(x)=-\infty\) otherwise.  The left side of \((FGS2)\) becomes
+   \[
+      C_B\inf_{t\ge0}\{\beta_BD_B+t(D_B-v_B)\}.
+   \]
+   When \(v_B\le D_B\), the infimum is attained at \(t=0\), and the value is
+   \(C_B\beta_BD_B=D_B/(4J_B)\).  Thus \((FGS4)\) is exactly the failure of
+   \((FGS2)\).
+\end{proof}
+
 \begin{corollary}[Tuple-profile distinct-storage certificate]
    \label{cor:tuple-profile-distinct-storage}
    Work in the setting of
@@ -31204,6 +31312,10 @@ separator over the generated dense proposal pool.
 \Cref{lem:finite-guard-credit-flow-dual} gives its exact obstruction: if the
 pool fails, point-side paid-shadow prices and scale prices cancel every
 guard-credit edge at zero total priced guard demand.
+\Cref{cor:one-template-guard-credit-separation} turns this obstruction into a
+single-template search rule: a new affordable container separates the failed
+pool as soon as its active paid-shadow mass beats its recursive price after the
+one layer-cake logarithm.
 \Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} give the corresponding
 entropy-energy normal form: each large canonical child supplies many separated
@@ -31483,6 +31595,10 @@ guard-credit surplus after the credited-mass scales are fixed.
 \Cref{lem:finite-guard-credit-flow-dual} is the matching finite-pool
 certificate of failure, so a proposal oracle only has to separate that explicit
 dual obstruction.
+\Cref{cor:one-template-guard-credit-separation} gives the corresponding
+reduced objective for one additional proposal: after zero-load queries are
+removed, find a certified container whose reachable paid-shadow degree \(D_B\)
+satisfies \(D_B/(4J_B)>R_B\).
 Conversely,
 \cref{cor:paid-prefix-residual-envelope} says that a failed dense separator has
 only one possible form: a paid residual whose every certified container obeys
@@ -44408,6 +44524,10 @@ closes the residual.
 \Cref{lem:finite-guard-credit-flow-dual} gives the corresponding oracle state
 when the current generated pool fails: a zero-mass guard-demand price and
 per-template capacity/scale prices blocking every candidate edge.
+\Cref{cor:one-template-guard-credit-separation} eliminates that per-template
+block for a new proposal: in the normalized zero-price obstruction, the only
+quantity to report is the paid-shadow mass reachable from positive guard-load
+queries, compared with the recursive price \(R_B\).
 \Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} reduce each dyadic count to tuple
 incidence: a large separated child contains many ordered witness tuples, so the
