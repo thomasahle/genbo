@@ -36082,6 +36082,9 @@ benefit-per-price dense-filter score.
 explicit: a proposal routine may add only panels with verified one-sided
 positive gain, while a no-positive certificate is sound only when it rules out
 the full finite panel universe.
+\Cref{cor:shared-panel-positive-separator-endpoint} packages the same condition
+at endpoint level: a nodewise positive shared-panel separator is enough to
+construct the exact-signature covers used by the polylogarithmic induction.
 \Cref{cor:local-error-distinct-canonical-bucket-net},
 \cref{cor:local-error-dyadic-distinct-storage-bucket-net}, and
 \cref{cor:local-error-tuple-profile-distinct-storage} propagate this denominator
@@ -42855,6 +42858,68 @@ certificate is the verified positive-gain column and the finite LP it augments.
    accounting as in \cref{cor:decoded-panel-polylog-endpoint}.  Localizing the
    error changes only the local feasibility certificate, not the recursive query
    or storage induction.
+\end{proof}
+
+\begin{corollary}[Shared-panel positive-separator endpoint]
+   \label{cor:shared-panel-positive-separator-endpoint}
+   In \cref{cor:decoded-panel-polylog-endpoint}, replace the primal decoded-panel
+   spectrum hypothesis by the following dual shared-panel separator.  At every
+   resident node there is a finite universe \(\mathcal Z_\star\) of certified
+   local-error shared-canonical decoded panels as in
+   \cref{cor:one-sided-shared-panel-column-generation}.  Each panel's canonical
+   children have strictly smaller certified radius, and their query and storage
+   prices are the full certified descendant prices.  The represented filter
+   atoms satisfy the atom bounds needed by
+   \cref{lem:exact-near-set-filter-cover}.  For every normalized
+   exact-signature price system \((\beta,\tau,\theta)\) satisfying \((ESNO1)\),
+   the full panel universe exposes positive shared-panel gain:
+   \[
+      \max_{z\in\mathcal Z_\star}
+      \operatorname{PGain}_{\beta,\tau,\theta}(z)>0 .
+      \tag{SPP1}
+   \]
+   Suppose moreover that uncharged preprocessing has a one-sided oracle for this
+   universe in the sense of
+   \cref{cor:one-sided-shared-panel-column-generation}, and that the exact
+   signature decoder and retained active-filter reporter have the same time,
+   entropy, and budget bounds \((DPE1)\)--\((DPE2)\).
+
+   Then preprocessing constructs the local exact-signature covers required by
+   the exact-near-set version of
+   \cref{prop:fractional-filter-cover-polylog}.  Consequently worst-case
+   Euclidean ANN has
+   \[
+      Q(n,d)=d\,n^{\rho_c}\log^{O_c(1)}n,
+      \qquad
+      S(n,d)=dn+n^{1+\rho_c}\log^{O_c(1)}n .
+   \]
+
+   The same conclusion holds with Las Vegas build time if, whenever a positive
+   inactive panel exists during restricted column generation, a randomized
+   proposal law returns a verified one-sided positive-gain panel with
+   probability at least \(p_E>0\).  Failed proposals are discarded.
+\end{corollary}
+
+\begin{proof}
+   Fix one resident node and its finite panel universe.  Condition \((SPP1)\)
+   is exactly \((OSPC3)\) for the local-error shared-panel profile LP.  Hence
+   \cref{cor:one-sided-shared-panel-column-generation} constructs, by finite
+   restricted column generation, a feasible local-error profile cover over the
+   retained panels.  Applying
+   \cref{cor:local-error-observable-profile-cover} converts this feasible
+   profile cover into feasibility of the existential signature LP
+   \((\mathsf{ESFC}_\Sigma)\).  The atom bounds then allow
+   \cref{lem:exact-near-set-filter-cover} to materialize the local cover with
+   only the logarithmic signature factor.
+
+   Since every nonterminal canonical child in a retained panel is charged by its
+   full already-certified descendant query and storage prices, recursive
+   overlap is paid inside the local LP.  With \((DPE1)\)--\((DPE2)\), the
+   exact-near-set version of \cref{prop:fractional-filter-cover-polylog}
+   applies at all localized nodes and gives the displayed global query and
+   storage bounds.  The Las Vegas statement is the randomized part of
+   \cref{cor:one-sided-shared-panel-column-generation}; unsuccessful proposals
+   are build-time work only.
 \end{proof}
 
 The role of \cref{asm:weighted-dense-spherical-dichotomy} is now precise.  It is
@@ -56658,7 +56723,10 @@ interface, not a separate hard branching rule.
 \Cref{cor:one-sided-shared-panel-column-generation} is the corresponding
 offline search procedure: arbitrary preprocessing may sample or optimize over
 decoded panels, but only verified positive-gain panels enter the restricted
-profile cover.
+profile cover.  \Cref{cor:shared-panel-positive-separator-endpoint} is the
+nodewise endpoint statement: proving this positive separator for the finite
+panel universe at every localized node gives the \(n^{\rho_c}\polylog n\)
+query and \(n^{1+\rho_c}\polylog n\) space bounds.
 \Cref{cor:tuple-profile-compressed-bucket-storage}
 gives the direct
 low-correlation certificate for this target: first list moment plus two-point

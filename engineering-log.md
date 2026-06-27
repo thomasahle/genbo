@@ -681,3 +681,5 @@
 - Updated the audit trail to identify this as the dual-facing, fully fractional bucket analogue of the dense benefit-per-price score.
 - Added one-sided shared-panel column generation. Restricted profile covers can now be grown by verified positive-gain decoded panels; a no-positive certificate is sound only when it rules out the full finite panel universe.
 - Updated the compressed-bucket audit to identify the shared-panel oracle as the build-time search procedure behind the success-normalized bucket route.
+- Added the shared-panel positive-separator endpoint. A nodewise theorem that every normalized exact-signature dual has positive shared-panel gain now directly implies the exact-signature covers needed for the polylogarithmic fractional-filter induction.
+- Updated the audit trail to name this as the endpoint-level compressed-bucket theorem target.
