@@ -18309,6 +18309,57 @@ success-normalized bucket-net argument.
    retained verified records in the finite cover LP.
 \end{proof}
 
+\begin{corollary}[One-sided prefix-value column generation]
+   \label{cor:one-sided-prefix-value-column-generation}
+   Work in the setting of
+   \cref{cor:prefix-template-column-generation}.  For a cohort law \(\eta\),
+   call \((T,X)\) a one-sided prefix-value report if \(T\in\mathcal U_b\) and
+   \[
+      0\le X\le V_\eta(T).
+      \tag{OPV0}
+   \]
+   The report is separating if
+   \[
+      X\ge \Theta_C L_b(h_T).
+      \tag{OPV1}
+   \]
+   Suppose that for every cohort law \(\eta\) a build-time oracle either
+   returns a separating one-sided prefix-value report or certifies
+   \[
+      \max_{T\in\mathcal U_b}G(T,\eta)<0 .
+      \tag{OPV2}
+   \]
+   Then the column-generation procedure of
+   \cref{cor:prefix-template-column-generation} remains complete when the
+   separator call is replaced by this one-sided oracle: on a successful call,
+   add only the verified record \(T\) to the pool, and score it in all later
+   restricted games by its exact payoff \(G(T,\cdot)\).
+
+   Consequently, if the full universe satisfies \((PTC3)\), the procedure
+   terminates after finitely many successful one-sided reports with a pool
+   proving \((DPG3)\).  If the oracle returns \((OPV2)\), then the full universe
+   cannot satisfy the prefix-template sufficient condition.
+\end{corollary}
+
+\begin{proof}
+   A separating report satisfies
+   \[
+      G(T,\eta)
+      =
+      V_\eta(T)-\Theta_C L_b(h_T)
+      \ge
+      X-\Theta_C L_b(h_T)
+      \ge0 .
+      \tag{OPV3}
+   \]
+   Hence a successful one-sided oracle call is also a valid separator output
+   satisfying \((PTC0)\).  If the current restricted value is negative at the
+   minimizing law \(\eta_{\mathcal P}\), every current pool record has
+   \(G(T,\eta_{\mathcal P})<0\); therefore any successful one-sided report has
+   \(T\notin\mathcal P\) and strictly enlarges the pool.  The rest is exactly
+   \cref{cor:prefix-template-column-generation}.
+\end{proof}
+
 \begin{corollary}[Cardinality-net cohort superlevel reporter]
    \label{cor:cardinality-net-cohort-superlevel-reporter}
    Work in the setting of
@@ -18378,6 +18429,8 @@ success-normalized bucket-net argument.
    \]
    lies in the implicit universe \(\mathcal U_b\) is a valid separator output:
    it satisfies \(G(T,\eta)\ge0\).
+   Equivalently, \((T,X)\) is a separating one-sided prefix-value report in the
+   sense of \cref{cor:one-sided-prefix-value-column-generation}.
 \end{corollary}
 
 \begin{proof}
@@ -18497,6 +18550,11 @@ cohort law, and add only verified records.  If the full universe satisfies the
 prefix condition, this terminates after finitely many additions; if the
 separator proves no such prefix exists, the certificate identifies the actual
 cohort-law obstruction for that universe.
+\Cref{cor:one-sided-prefix-value-column-generation} weakens the required
+separator output further: the build oracle may return any retained record with a
+one-sided lower value certificate \(X\le V_\eta(T)\) beating
+\(\Theta_C L_b(h_T)\); later games still use the exact verified payoff of the
+record.
 \Cref{cor:cardinality-net-cohort-superlevel-reporter} removes the need for the
 separator to optimize an exact top prefix: any certified threshold list with
 one-sided value \(X\ge\Theta_C L_b(h)\) is already a valid column, and failure
@@ -40716,6 +40774,10 @@ clusters by mass or by a Lloyd/\(k\)-means++ heuristic.
 an exact implicit separator over a finite prefix universe is complete by
 ordinary column generation, and only the final verified records are charged to
 the index.
+\Cref{cor:one-sided-prefix-value-column-generation} is the sharper
+implementation interface: the oracle only has to certify a current lower bound
+on one retained record's value; the LP then reuses that record with its exact
+payoff against all later cohort laws.
 \Cref{cor:cardinality-net-cohort-superlevel-reporter} is the corresponding
 one-sided reporter interface: a range-reporting, list-decoding, additive
 quantization, or seeded-clustering separator may return any certified
