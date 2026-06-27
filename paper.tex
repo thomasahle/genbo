@@ -38198,6 +38198,126 @@ into query-dominated, storage-dominated, and balanced cases.
    one-record Hall-shadow merge.  Independent repetition gives \((STS2)\).
 \end{proof}
 
+\begin{corollary}[Layered thresholded shadow-routing screen]
+   \label{cor:layered-thresholded-shadow-routing-screen}
+   Work in the setting of
+   \cref{cor:shadow-routing-exact-scale-soft-reporter}.  Let \(\mathcal J\) be a
+   finite set of layer labels.  Each layer \(\ell\in\mathcal J\) has a repair
+   template \(y(\ell)\in\mathcal Y\) and a threshold \(\delta_\ell>0\).  A
+   layered thresholded routing is a family
+   \(0\le r_{\ell,p,\sigma_0}\le1\), supported only when
+   \[
+      (p,\sigma_0)\in N(A),\qquad
+      p\in W_{y(\ell)},\qquad
+      a_{y(\ell)}(\sigma_0)=1,\qquad
+      d_{A,y(\ell)}(p)\ge\delta_\ell ,
+      \tag{LTR1}
+   \]
+   and satisfying
+   \[
+      \sum_{\ell\in\mathcal J}r_{\ell,p,\sigma_0}\le1
+      \qquad((p,\sigma_0)\in N(A)).
+      \tag{LTR2}
+   \]
+   Define the routed mass of layer \(\ell\) by
+   \[
+      X_\ell=
+      \sum_{p\in W_{y(\ell)}}
+      \sum_{\sigma_0:\,(p,\sigma_0)\in N(A)}
+      r_{\ell,p,\sigma_0}\alpha_{p,\sigma_0}.
+      \tag{LTR3}
+   \]
+   If there are available cardinalities
+   \(K_\ell\in\mathcal K_{y(\ell)}\) such that
+   \[
+      \sum_{\ell\in\mathcal J}
+      \left[
+         \min\{X_\ell,K_\ell\delta_\ell\}
+         -
+         \psi_{y(\ell)}
+         \left(
+            A_{y(\ell)}K_\ell^{\rho_{y(\ell)}}
+            +\zeta K_\ell^{1+\rho_{y(\ell)}}
+         \right)
+      \right]>0,
+      \tag{LTR4}
+   \]
+   then some layer gives a one-record Hall-shadow merge.
+
+   Thus a proposal mechanism may split paid shadow fractionally across many
+   degree superlevels of the same template.  Only the total routed mass of a
+   near-pair atom is limited by \((LTR2)\); overlapping geometric reports are
+   harmless once their verified layer surplus is positive.
+\end{corollary}
+
+\begin{proof}
+   Replace every layer \(\ell\) by a formal copy of its template
+   \(y(\ell)\), with the same update set, activation predicate, prices, and
+   cardinality net.  Conditions \((LTR1)\)--\((LTR2)\) are exactly the support
+   and one-use constraints for a fractional shadow routing into this copied
+   family, and each copied template is thresholded at level \(\delta_\ell\).
+   Applying \cref{cor:thresholded-shadow-routing-screen} to the copied family
+   gives a one-record Hall-shadow merge from the positive surplus
+   \((LTR4)\).  Removing the formal copy notation leaves the same retained
+   prefix for the original template \(y(\ell)\).
+\end{proof}
+
+\begin{corollary}[Cardinality-optimized thresholded routing screen]
+   \label{cor:cardinality-optimized-thresholded-routing-screen}
+   In the setting of \cref{cor:thresholded-shadow-routing-screen}, fix one
+   thresholded route into a template \(y\) with \(0<\rho_y<1\), routed mass
+   \(X>0\), and threshold \(\delta>0\).  Put
+   \[
+      H=\frac X\delta,\qquad
+      g_y(K)=A_yK^{\rho_y-1}+\zeta K^{\rho_y}.
+      \tag{COT0}
+   \]
+   The one-layer success condition \((TSR3)\) is equivalent to the existence of
+   an available cardinality \(K\in\mathcal K_y\) satisfying either
+   \[
+      K\le H,
+      \qquad
+      \delta>\psi_yg_y(K),
+      \tag{COT1}
+   \]
+   or
+   \[
+      K\ge H,
+      \qquad
+      X>\psi_yK g_y(K).
+      \tag{COT2}
+   \]
+   In particular, suppose \(b\ge1\), \(h\le H\), and the retained cardinality
+   net contains \(K\in\mathcal K_y\) with \(h/b\le K\le h\).  Then the route
+   succeeds whenever
+   \[
+      \delta>
+      \psi_y\left(
+         b^{1-\rho_y}A_yh^{\rho_y-1}
+         +\zeta h^{\rho_y}
+      \right).
+      \tag{COT3}
+   \]
+\end{corollary}
+
+\begin{proof}
+   For a fixed \(K\), the surplus in \((TSR3)\) is
+   \[
+      \min\{X,K\delta\}-\psi_yK g_y(K).
+   \]
+   If \(K\le H=X/\delta\), this is positive exactly when
+   \(K\delta>\psi_yK g_y(K)\), which is \((COT1)\).  If \(K\ge H\), it is
+   positive exactly when \(X>\psi_yK g_y(K)\), which is \((COT2)\).
+
+   For the net statement, \(K\le h\le H\) puts us in the first branch.  Since
+   \(\rho_y-1<0\) and \(K\ge h/b\),
+   \[
+      K^{\rho_y-1}\le b^{1-\rho_y}h^{\rho_y-1},
+   \]
+   while \(K\le h\) gives \(K^{\rho_y}\le h^{\rho_y}\).  Thus \((COT3)\)
+   implies \(\delta>\psi_yg_y(K)\), and \((COT1)\) applies.
+\end{proof}
+
 \begin{corollary}[Cut-center routing obstruction]
    \label{cor:cut-center-routing-obstruction}
    Work in the setting of
@@ -38535,6 +38655,72 @@ fractional memberships and a lower cut-shadow mass; the verifier chooses the
 best retained prefix cardinality and checks the exact recursive price.  The
 clipped and balanced screens are now search heuristics for finding positive
 records, not theorem-level restrictions.
+
+\begin{corollary}[Thresholded shadow-routing separator endpoint]
+   \label{cor:thresholded-shadow-routing-separator-endpoint}
+   Work in the setting of
+   \cref{cor:finite-signature-hall-cut-repair-endpoint}.  Suppose that every
+   high-correlation co-load residual satisfying \((HCS1)\) admits an uncharged
+   thresholded shadow-routing separator with the following certified behavior.
+   The separator chooses a finite template set \(\mathcal X\) and a loss
+   \(C_{\rm tr}\), runs the Hall transport test of
+   \cref{lem:finite-signature-coload-hall-transport}, and certifies one of two
+   alternatives.
+
+   First, the Hall-success alternative \((HCR1)\) holds.  Second, the Hall test
+   exposes a cut \(A\subseteq\mathcal L\) satisfying \((FHT5)\), and the
+   separator returns a finite layered thresholded shadow-routing panel satisfying
+   \((LTR1)\)--\((LTR4)\) for that cut.  Then the structured completeness
+   condition \((HCS2)\) holds for every high-correlation co-load residual.
+   Consequently the dense/spherical separator condition \((DSF2)\) holds, and
+   the polylogarithmic ANN endpoint follows.
+
+   The same conclusion holds in Las Vegas build time if, in the second
+   alternative, a randomized proposal routine returns verified layered
+   thresholded panels whose surplus \(Z(s)\), the left side of \((LTR4)\),
+   satisfies
+   \[
+      \E_sZ(s)\ge\Gamma>0,
+      \qquad
+      Z(s)_+\le M
+      \quad\text{almost surely}.
+      \tag{TSE1}
+   \]
+   Repeating
+   \[
+      B\ge \frac{M}{\Gamma}\log\frac1\delta
+      \tag{TSE2}
+   \]
+   independent build-time seeds finds a deterministic Hall-shadow merge with
+   probability at least \(1-\delta\); failed samples are discarded.
+\end{corollary}
+
+\begin{proof}
+   Fix a surplus dual satisfying \((HCS1)\).  If \((HCR1)\) holds, the first
+   alternative of \cref{cor:finite-signature-hall-cut-repair-endpoint} applies.
+   Otherwise the layered panel has positive surplus \((LTR4)\), so
+   \cref{cor:layered-thresholded-shadow-routing-screen} extracts a one-record
+   Hall-shadow merge.  By \cref{cor:one-record-hall-shadow-merge} and
+   \cref{cor:finite-signature-hall-shadow-repair}, this supplies the Hall-cut
+   repair alternative \((HCR2)\).  Hence every residual satisfies one of the
+   alternatives of \cref{cor:finite-signature-hall-cut-repair-endpoint}, giving
+   \((HCS2)\), and
+   \cref{cor:high-correlation-coload-separator-endpoint} gives the
+   dense/spherical separator endpoint.
+
+   For the sampled statement, \((TSE1)\) implies
+   \(\Pr[Z(s)>0]\ge\Gamma/M\).  Thus \(B\) independent failed samples have
+   probability at most \(\exp(-B\Gamma/M)\).  A successful sample is verified
+   into a deterministic merge by the argument above.
+\end{proof}
+
+\Cref{cor:thresholded-shadow-routing-separator-endpoint} is the most
+range-reporting-friendly dense endpoint.  The proposal routine may return many
+overlapping superlevel layers, but the verifier only uses the scalar surplus
+\(\min\{X,K\delta\}\) minus the exact recursive price.  The cardinality split in
+\cref{cor:cardinality-optimized-thresholded-routing-screen} is the local
+benefit-per-cost test: either the routed layer supports a price-density-winning
+prefix below \(X/\delta\), or its total mass pays for a larger prefix directly.
 
 \begin{corollary}[Balanced Hall-shadow separator endpoint]
    \label{cor:balanced-hall-shadow-separator-endpoint}
@@ -51144,17 +51330,20 @@ routing of paid shadow atoms into exact-scale soft records, and
 \cref{cor:thresholded-shadow-routing-screen} gives the range-reporting-friendly
 version: routed mass \(X\) supported on a degree superlevel \(d_{A,y}\ge\delta\)
 contributes the simple certified benefit \(\min\{X,K\delta\}\) at cardinality
-\(K\).
+\(K\).  The layered form
+\cref{cor:layered-thresholded-shadow-routing-screen} allows the same template to
+receive many fractional degree-superlevel routes, and
+\cref{cor:cardinality-optimized-thresholded-routing-screen} reduces each layer
+to the scalar price-density test below or above \(X/\delta\).
 \cref{cor:cut-center-routing-obstruction} records the first obstruction left
 when even the cut's own centers cannot route their paid shadow at positive
 surplus.  The Hall cut itself can also be assumed marginally closed by
-\cref{lem:maximal-hall-cut-marginal-normal-form}.  The consolidated
-endpoint is
+\cref{lem:maximal-hall-cut-marginal-normal-form}.  The consolidated endpoint is
 \cref{cor:exact-scale-soft-hall-shadow-separator-endpoint}, with
+\cref{cor:thresholded-shadow-routing-separator-endpoint},
 \cref{cor:soft-mass-hall-shadow-separator-endpoint},
 \cref{cor:clipped-hall-shadow-separator-endpoint}, and
-\cref{cor:balanced-hall-shadow-separator-endpoint} as scale-restricted special
-cases.
+\cref{cor:balanced-hall-shadow-separator-endpoint} as verified sufficient forms.
 \Cref{lem:weighted-spherical-reduced-gain} proves the spherical half of the
 dual dichotomy in the exact reduced-gain language: if ordinary spherical buckets
 do not violate a surplus dual certificate, then the dual must carry large
