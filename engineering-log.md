@@ -671,3 +671,5 @@
 - Updated the audit trail to make the optimized price-density expression the sharpest current no-layer-cake dense proposal target.
 - Added the clipped optimized exact-prefix price. The discrete optimized support price is now upper-bounded by the closed clipped threshold \(\Theta_i(m)=\psi_i f_i(K_i^\natural(m))\) up to the cardinality-net factor, so support reports can target one canonical scale.
 - Updated the audit trail to record the clipped threshold as the current scalar no-layer-cake dense proposal screen.
+- Added the clipped exact-prefix density residual. If no exact-prefix dense repair exists, every hard or soft support proposal has average paid density at most \(\beta_i\Theta_i\) at its clipped scale; any violation materializes one deterministic top-prefix repair.
+- Updated the audit trail to make this density envelope the current residual inequality for no-layer-cake dense proposals.
