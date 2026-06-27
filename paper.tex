@@ -18464,6 +18464,158 @@ success-normalized bucket-net argument.
    \((SER2)\).
 \end{proof}
 
+\begin{corollary}[Finite soft exact-prefix oracle]
+   \label{cor:finite-soft-exact-prefix-oracle}
+   Work in the setting of \cref{cor:no-loss-exact-cardinality-net}.  Let
+   \(\mathcal B_{\rm soft}\) be a finite pool of soft templates
+   \(B=(W_B,\theta_B,\pi_B)\), where \(W_B\) is a searched retained parent,
+   \(0\le\pi_{B,p}\le1\), and all top-prefix records in \(W_B\) at retained
+   cardinalities are materializable as in \((ECN0)\).  Let
+   \(\mathcal T_{\rm ex}(\mathcal B_{\rm soft})\) be the finite hard universe
+   consisting of every materializable record
+   \[
+      T=(W_B,\theta_B,K,U),
+      \qquad
+      B\in\mathcal B_{\rm soft},\quad
+      K\in\mathcal K_{W_B,\theta_B},\quad
+      U\subseteq W_B,\quad |U|=K .
+      \tag{FSE0}
+   \]
+   Define
+   \[
+      P_\eta(B)
+      =
+      \sum_{p\in W_B}\pi_{B,p}d_\eta^{\theta_B}(p),
+      \qquad
+      G_{\rm soft}(B,\eta)=P_\eta(B)-A\Lambda .
+      \tag{FSE1}
+   \]
+   Then
+   \[
+      \max_{\omega\in\Delta_{\mathcal B_{\rm soft}}}
+      \min_{\eta\in\Delta_{\mathcal E_{\rm load}}}
+      \sum_{B\in\mathcal B_{\rm soft}}\omega_BG_{\rm soft}(B,\eta)
+      =
+      \min_{\eta\in\Delta_{\mathcal E_{\rm load}}}
+      \max_{B\in\mathcal B_{\rm soft}}G_{\rm soft}(B,\eta).
+      \tag{FSE2}
+   \]
+   If the common value is nonnegative, then the averaged dominated-load
+   certificate \((DPG3)\) holds.  Equivalently, it is enough that every cohort
+   law \(\eta\) have some soft template \(B\in\mathcal B_{\rm soft}\) with
+   \[
+      P_\eta(B)\ge A\Lambda .
+      \tag{FSE3}
+   \]
+
+   Conversely, if \((DPG3)\) fails, then there is a cohort law \(\eta\) such that
+   every soft template in the pool satisfies
+   \[
+      P_\eta(B)<A\Lambda .
+      \tag{FSE4}
+   \]
+
+   Thus a finite pool of \(k\)-means++, additive-quantization, learned,
+   list-recovery, or LP-range-reporting soft panels may be used at the sharp
+   \(A\Lambda\) threshold.  The retained index stores only the hard top-prefix
+   record materialized from a positive soft template; failed soft templates are
+   discarded.
+\end{corollary}
+
+\begin{proof}
+   The equality \((FSE2)\) is the finite matrix-game minimax theorem, since
+   \(G_{\rm soft}(B,\eta)\) is linear in both the mixed template law and the
+   cohort law.
+
+   If the common value is nonnegative, then every cohort law \(\eta\) has a
+   template \(B=(W,\theta,\pi)\) satisfying \((FSE3)\).  Applying
+   \cref{cor:soft-average-density-exact-prefix-scale-choice} with
+   \(X=P_\eta(B)\) materializes a hard top-prefix separator for this cohort law.
+   By construction this separator belongs to the finite hard universe
+   \(\mathcal T_{\rm ex}(\mathcal B_{\rm soft})\).  Thus, for every \(\eta\),
+   some \(T\in\mathcal T_{\rm ex}(\mathcal B_{\rm soft})\) has
+   \(G_{\rm ex}(T,\eta)\ge0\), where \(G_{\rm ex}\) is defined in \((ETP1)\).
+   Applying \cref{cor:exact-top-prefix-cohort-game} to this finite induced hard
+   universe gives \((DPG3)\).
+
+   Conversely, if \((DPG3)\) fails, then
+   \cref{cor:soft-exact-prefix-relaxation-tight} supplies a cohort law \(\eta\)
+   for which every searched \(W,\theta\) and every responsibility vector
+   \(\pi\in[0,1]^W\) has value below \(A\Lambda\).  In particular every
+   \(B\in\mathcal B_{\rm soft}\) satisfies \((FSE4)\).
+\end{proof}
+
+\begin{corollary}[Soft exact-prefix column generation]
+   \label{cor:soft-exact-prefix-column-generation}
+   Work in the setting of \cref{cor:finite-soft-exact-prefix-oracle}.  Let
+   \(\mathcal U_{\rm soft}\) be a finite implicit universe of soft templates,
+   and let \(\mathcal U_{\rm ex}(\mathcal U_{\rm soft})\) be the finite induced
+   universe of all materializable exact-prefix records in their retained parents
+   at retained cardinalities.  Thus every positive soft template can be converted
+   by \cref{cor:soft-average-density-exact-prefix-scale-choice} into a record in
+   \(\mathcal U_{\rm ex}(\mathcal U_{\rm soft})\).  Throughout,
+   \(G_{\rm ex}\) is the hard-record payoff from \((ETP1)\).
+   Suppose that for every cohort law \(\eta\), a build-time separator either
+   returns \(B\in\mathcal U_{\rm soft}\) with
+   \[
+      G_{\rm soft}(B,\eta)\ge0
+      \tag{FSC0}
+   \]
+   or certifies
+   \[
+      \max_{B\in\mathcal U_{\rm soft}}G_{\rm soft}(B,\eta)<0 .
+      \tag{FSC1}
+   \]
+   Start with any nonempty finite hard-record pool
+   \(\mathcal P\subseteq\mathcal U_{\rm ex}(\mathcal U_{\rm soft})\), and
+   repeatedly solve
+   \[
+      v_{\rm ex}(\mathcal P)
+      =
+      \min_{\eta\in\Delta_{\mathcal E_{\rm load}}}
+      \max_{T\in\mathcal P}G_{\rm ex}(T,\eta).
+      \tag{FSC2}
+   \]
+   If \(v_{\rm ex}(\mathcal P)\ge0\), then \((DPG3)\) holds.  If
+   \(v_{\rm ex}(\mathcal P)<0\), call the soft separator on a minimizing cohort
+   law.  A successful call returns a soft template \(B\); materialize the hard
+   top-prefix record \(T_B(\eta)\in\mathcal U_{\rm ex}(\mathcal U_{\rm soft})\)
+   exposed by \cref{cor:soft-average-density-exact-prefix-scale-choice} and add
+   that verified hard record to \(\mathcal P\).  A certificate \((FSC1)\) proves
+   that this implicit soft universe cannot close the sharp exact-prefix
+   certificate.
+
+   Consequently, if
+   \[
+      \min_{\eta\in\Delta_{\mathcal E_{\rm load}}}
+      \max_{B\in\mathcal U_{\rm soft}}G_{\rm soft}(B,\eta)\ge0,
+      \tag{FSC3}
+   \]
+   then the procedure terminates after at most
+   \(|\mathcal U_{\rm ex}(\mathcal U_{\rm soft})|\) successful additions with a
+   finite hard-record pool proving \((DPG3)\).  All soft templates and failed
+   separator calls are build-time evidence only; the retained index pays only for
+   the verified hard prefixes actually added to \(\mathcal P\).
+\end{corollary}
+
+\begin{proof}
+   If \(v_{\rm ex}(\mathcal P)\ge0\), then
+   \cref{cor:exact-top-prefix-cohort-game} applied to the current hard pool gives
+   \((DPG3)\).  If \(v_{\rm ex}(\mathcal P)<0\), choose a minimizing cohort law
+   \(\eta_{\mathcal P}\).  Every current hard record has
+   \(G_{\rm ex}(T,\eta_{\mathcal P})<0\).  A separator output satisfying
+   \((FSC0)\) has \(P_{\eta_{\mathcal P}}(B)\ge A\Lambda\), so
+   \cref{cor:soft-average-density-exact-prefix-scale-choice} materializes a hard
+   exact-prefix record \(T_B(\eta_{\mathcal P})\) with
+   \(G_{\rm ex}(T_B(\eta_{\mathcal P}),\eta_{\mathcal P})\ge0\).  This record is
+   not already in \(\mathcal P\), and each successful call strictly enlarges the
+   hard pool.  Since the induced hard universe is finite, this happens at most
+   \(|\mathcal U_{\rm ex}(\mathcal U_{\rm soft})|\) times.  If the separator
+   certifies \((FSC1)\), then \((FSC3)\) is false at \(\eta_{\mathcal P}\).
+   Under \((FSC3)\), that certificate cannot be valid, so finite enlargement
+   eventually reaches a nonnegative restricted exact-record value.
+\end{proof}
+
 \begin{corollary}[Exact-prefix proposal-law separator]
    \label{cor:exact-prefix-proposal-law-separator}
    Work in the setting of
@@ -19846,6 +19998,14 @@ mass \(\mu\) and value \(X\), and the exact verifier chooses
 exact-prefix route fails for a cohort law, every responsibility vector in every
 searched container has soft value below \(A\Lambda\).  Soft panels are therefore
 not a weaker theorem target, only a way to search for the hard prefix.
+\Cref{cor:finite-soft-exact-prefix-oracle} makes this finite and minimax:
+generated \(k\)-means++, AQ, learned, list-recovery, or LP-range-reporting soft
+panels may be scored at the sharp \(A\Lambda\) threshold, but a successful panel
+is immediately compiled into a materialized exact-prefix record.
+\Cref{cor:soft-exact-prefix-column-generation} gives the corresponding
+build-time algorithm: solve the restricted hard-record game, ask the soft
+separator only for evidence against the minimizing cohort law, and retain only
+the verified hard prefix exposed by that evidence.
 \Cref{rem:exact-template-linearization} records the important caveat: these
 template objectives are separation objectives for a fixed cohort law; minimax is
 still performed over the materialized exact records, where the payoff is linear.
@@ -19925,6 +20085,11 @@ hard prefix.
 \Cref{cor:soft-exact-prefix-relaxation-tight} shows this soft interface has no
 relaxation gap: if no hard exact prefix closes, no admissible responsibility
 vector has value \(A\Lambda\) either.
+\Cref{cor:finite-soft-exact-prefix-oracle} and
+\cref{cor:soft-exact-prefix-column-generation} are the finite column-generation
+form of this statement: soft proposal families are separation oracles for the
+sharp hard-prefix game, and failed soft proposals are discarded without entering
+the retained LP.
 \Cref{cor:exact-prefix-proposal-law-separator} and
 \cref{cor:sampled-soft-exact-prefix-separator} make randomized proposal panels
 compatible with this sharp interface: it is enough to certify nonnegative
@@ -36438,6 +36603,8 @@ itself spherical-pseudo-random enough to close the dichotomy.
    \cref{cor:average-density-exact-prefix-scale-choice},
    \cref{cor:soft-average-density-exact-prefix-scale-choice},
    \cref{cor:soft-exact-prefix-relaxation-tight},
+   \cref{cor:finite-soft-exact-prefix-oracle},
+   \cref{cor:soft-exact-prefix-column-generation},
    \cref{cor:exact-prefix-proposal-law-separator},
    \cref{cor:sampled-soft-exact-prefix-separator},
    \cref{cor:finite-prefix-template-separation-game}, or
@@ -36447,11 +36614,11 @@ itself spherical-pseudo-random enough to close the dichotomy.
    \((ECN1)\), an average-mass exact-prefix certificate \((AEX2)\) or \((AEX3)\),
    an average-density scale certificate \((DEX1)\) or \((DEX4)\), a soft
    average-density certificate \((SDEX2)\) or \((SDEX5)\), a tight soft
-   responsibility witness \((SER1)\), an exact
-   proposal law satisfying \((SEP0)\) or \((SEP3)\), a soft exact
-   proposal law satisfying \((SEP8)\), or a weaker prefix-template proposal
-   universe with nonnegative value \((PTC3)\), at every node supplies the same
-   endpoint.
+   responsibility witness \((SER1)\), a finite soft pool satisfying \((FSE2)\)
+   or \((FSE3)\), a soft column-generation universe satisfying \((FSC3)\), an
+   exact proposal law satisfying \((SEP0)\) or \((SEP3)\), a soft exact proposal
+   law satisfying \((SEP8)\), or a weaker prefix-template proposal universe with
+   nonnegative value \((PTC3)\), at every node supplies the same endpoint.
 \end{corollary}
 
 \begin{proof}
@@ -36474,6 +36641,7 @@ itself spherical-pseudo-random enough to close the dichotomy.
          \text{\((DEX1)\), \((DEX4)\),}\\
          \text{\((SDEX2)\), \((SDEX5)\),}\\
          \text{\((SER1)\),}\\
+         \text{\((FSE2)\), \((FSE3)\), \((FSC3)\),}\\
          \text{\((SEP0)\), \((SEP3)\),}\\
          \text{\((SEP8)\), \((PTC3)\),}\\
          \text{or finite cohort separation}
@@ -36494,6 +36662,8 @@ itself spherical-pseudo-random enough to close the dichotomy.
    \cref{cor:average-density-exact-prefix-scale-choice},
    \cref{cor:soft-average-density-exact-prefix-scale-choice},
    \cref{cor:soft-exact-prefix-relaxation-tight},
+   \cref{cor:finite-soft-exact-prefix-oracle},
+   \cref{cor:soft-exact-prefix-column-generation},
    \cref{cor:exact-prefix-proposal-law-separator},
    \cref{cor:sampled-soft-exact-prefix-separator},
    \cref{cor:finite-prefix-template-separation-game} or
@@ -48232,6 +48402,13 @@ stored object is again one verified hard prefix.
 the cohort law left by failure of exact prefixes also defeats every soft
 responsibility vector, so soft assignment mechanisms need only be analyzed as
 search procedures for exact prefixes.
+\Cref{cor:finite-soft-exact-prefix-oracle} is the finite minimax version of this
+bridge: a generated pool of soft panels closes the dominated-load certificate
+exactly when its sharp soft value is nonnegative against every cohort law, and
+the proof stores only the induced exact-prefix records.
+\Cref{cor:soft-exact-prefix-column-generation} turns that criterion into a
+column-generation procedure over hard records, with soft panels used only as
+build-time separators against the current minimizing cohort law.
 \Cref{cor:exact-prefix-proposal-law-separator} and
 \cref{cor:sampled-soft-exact-prefix-separator} put \(k\)-means++,
 additive-quantization, list-recovery, or learned proposal panels on this same
