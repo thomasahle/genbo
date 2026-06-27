@@ -18138,7 +18138,7 @@ success-normalized bucket-net argument.
    strict reverse of \((CDC1)\).  Given any analytic \(h\), choose
    \(K\in\mathcal K_{W,\theta}\) with \(h\le K\le bh\).  Since
    \(D_\eta^\theta(W,h)\le D_\eta^\theta(W,K)\), and the \(K\)-threshold is at
-   most \(\Theta_CL_b(h)\), we get \((CNC3)\).
+   most \(\Theta_C L_b(h)\), we get \((CNC3)\).
 
    Powers of two are \(2\)-dense from above, giving the final claim.
 \end{proof}
@@ -18309,6 +18309,121 @@ success-normalized bucket-net argument.
    retained verified records in the finite cover LP.
 \end{proof}
 
+\begin{corollary}[Cardinality-net cohort superlevel reporter]
+   \label{cor:cardinality-net-cohort-superlevel-reporter}
+   Work in the setting of
+   \cref{cor:cardinality-net-cohort-prefix-envelope}.  For a cohort law
+   \(\eta\), a retained parent container \(W\), a segment parameter \(\theta\),
+   and a level \(\delta>0\), call
+   \[
+      (W,\theta,\delta,U,h,K,X)
+   \]
+   a certified cardinality-net superlevel report if
+   \[
+      U\subseteq W,\qquad |U|=h>0,\qquad
+      d_\eta^\theta(p)\ge\delta\quad(p\in U),
+      \tag{CNS0}
+   \]
+   \[
+      K\in\mathcal K_{W,\theta},
+      \qquad h\le K\le bh,
+      \tag{CNS1}
+   \]
+   every sublist of \(W\) of size at most \(K\) is reportable with size
+   certificate \(K\), and the report gives the one-sided certificate
+   \[
+      0\le X\le\delta h .
+      \tag{CNS2}
+   \]
+   Its certified surplus is
+   \[
+      \Phi_\eta(W,\theta,\delta,U,h,K,X)
+      =
+      X-\Theta_C L_b(h).
+      \tag{CNS3}
+   \]
+   If every cohort law \(\eta\in\Delta_{\mathcal E_{\rm load}}\) admits a
+   certified cardinality-net superlevel report with
+   \[
+      \Phi_\eta(W,\theta,\delta,U,h,K,X)\ge0,
+      \tag{CNS4}
+   \]
+   then the averaged dominated-load certificate \((DPG3)\) holds.  More
+   generally, it is enough that every \(\eta\) admits a finite probability law
+   over such reports with
+   \[
+      \E\Phi_\eta(W,\theta,\delta,U,h,K,X)\ge0,
+      \tag{CNS5}
+   \]
+   because some deterministic report in the support has nonnegative certified
+   surplus.
+
+   Conversely, if \((DPG3)\) fails, then there is a cohort law \(\eta\) for
+   which every certified cardinality-net superlevel report satisfies
+   \[
+      \Phi_\eta(W,\theta,\delta,U,h,K,X)<0.
+      \tag{CNS6}
+   \]
+   In particular every such report has
+   \[
+      \delta h<\Theta_C L_b(h).
+      \tag{CNS7}
+   \]
+
+   In the finite-universe setting of
+   \cref{cor:prefix-template-column-generation}, any report satisfying
+   \((CNS4)\) whose record
+   \[
+      T=(W,\theta,h,K,U)
+   \]
+   lies in the implicit universe \(\mathcal U_b\) is a valid separator output:
+   it satisfies \(G(T,\eta)\ge0\).
+\end{corollary}
+
+\begin{proof}
+   Let \((W,\theta,\delta,U,h,K,X)\) be a report satisfying \((CNS4)\).  Since
+   every point of \(U\) has \(d_\eta^\theta(p)\ge\delta\),
+   \[
+      \sum_{p\in U}d_\eta^\theta(p)\ge\delta h\ge X
+      \ge\Theta_C L_b(h).
+      \tag{CNS8}
+   \]
+   Hence the top \(h\)-prefix in \(W\) also has mass at least
+   \(\Theta_C L_b(h)\), so \((CNC2)\) holds for this cohort law.  If every
+   cohort law has such a report, then
+   \cref{cor:cardinality-net-cohort-prefix-envelope} gives \((DPG3)\).  The
+   randomized-report variant follows because a finite average of
+   \(\Phi_\eta\) is nonnegative only if some support report has
+   \(\Phi_\eta\ge0\).
+
+   Conversely, if \((DPG3)\) fails, then
+   \cref{cor:cardinality-net-cohort-prefix-envelope} gives a cohort law
+   \(\eta\) satisfying \((CNC3)\) for every retained parent, segment, and
+   analytic prefix size.  For any certified report, the reported list is one
+   \(h\)-subset of \(W\), so
+   \[
+      X\le\delta h
+      \le
+      \sum_{p\in U}d_\eta^\theta(p)
+      \le
+      D_\eta^\theta(W,h)
+      <
+      \Theta_C L_b(h).
+      \tag{CNS9}
+   \]
+   This proves \((CNS6)\), and \((CNS7)\) follows from the same displayed
+   inequality without \(X\).
+
+   Finally, in the finite prefix-template game the corresponding record has
+   \[
+      V_\eta(T)
+      =
+      \sum_{p\in U}d_\eta^\theta(p)
+      \ge X\ge\Theta_C L_b(h),
+   \]
+   hence \(G(T,\eta)\ge0\).
+\end{proof}
+
 The lemma is the fractional version of the dominated-load endpoint.  It does not
 claim the remaining geometric theorem.  Rather, after terminal low-load levels
 and the \(A\)-boundary alternative have been dealt with by
@@ -18372,7 +18487,7 @@ with \(b=2\), leaves only the explicit envelope with \(K\) replaced by \(bh\).
 column-generation form of this target: preprocessing may spend arbitrary time
 proposing \(W,\theta,h\) and candidate sublists, but the retained column is
 accepted only when the verified surplus
-\(V_\eta(T)-\Theta_CL_b(h_T)\) is nonnegative against the current cohort law.
+\(V_\eta(T)-\Theta_C L_b(h_T)\) is nonnegative against the current cohort law.
 If the dominated-load certificate fails, one cohort law witnesses negative
 surplus for every generated template.
 \Cref{cor:prefix-template-column-generation} turns this into an exact
@@ -18382,6 +18497,11 @@ cohort law, and add only verified records.  If the full universe satisfies the
 prefix condition, this terminates after finitely many additions; if the
 separator proves no such prefix exists, the certificate identifies the actual
 cohort-law obstruction for that universe.
+\Cref{cor:cardinality-net-cohort-superlevel-reporter} removes the need for the
+separator to optimize an exact top prefix: any certified threshold list with
+one-sided value \(X\ge\Theta_C L_b(h)\) is already a valid column, and failure
+leaves the strict weak-type cap \(\delta h<\Theta_C L_b(h)\) for every retained
+threshold-list report.
 Pools with different congestion guesses may be split into dyadic \(C\)-strata and
 tested by the same game within each stratum.
 
@@ -40596,6 +40716,11 @@ clusters by mass or by a Lloyd/\(k\)-means++ heuristic.
 an exact implicit separator over a finite prefix universe is complete by
 ordinary column generation, and only the final verified records are charged to
 the index.
+\Cref{cor:cardinality-net-cohort-superlevel-reporter} is the corresponding
+one-sided reporter interface: a range-reporting, list-decoding, additive
+quantization, or seeded-clustering separator may return any certified
+threshold-list report whose value beats \(\Theta_C L_b(h)\); it does not have to
+solve the top-prefix optimization problem exactly.
 \Cref{cor:load-quantile-recycled-obstruction-profile} is the corresponding
 residual normal form: outside the \(A\)-boundary and terminal cases, the
 remaining obstruction is just strict positivity at that weighted quantile.
