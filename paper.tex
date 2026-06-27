@@ -45505,6 +45505,88 @@ certificate is the verified positive-gain column and the finite LP it augments.
    query and storage bounds.
 \end{proof}
 
+\begin{corollary}[One-sided clipped-singleton profile oracle]
+   \label{cor:one-sided-clipped-singleton-profile-oracle}
+   Work in the setting of
+   \cref{cor:clipped-singleton-density-endpoint}, and fix a finite universe
+   \(\mathcal P_{\rm clip}\) of materializable split profiles equipped with
+   clipped singleton center universes for every truncation level.  A one-sided
+   clipped profile certificate consists of a profile
+   \(\pi\in\mathcal P_{\rm clip}\) and numbers
+   \[
+      \underline D_\pi,\qquad
+      \overline B_\pi^{\rm hi},\qquad
+      \overline A_\pi^{\rm clip}
+   \]
+   satisfying
+   \[
+      0<\underline D_\pi\le B_\pi-C_\pi^{\rm lo},
+      \qquad
+      B_\pi^{\rm hi}\le\overline B_\pi^{\rm hi},
+      \qquad
+      A_\pi^{\rm clip}\le\overline A_\pi^{\rm clip}.
+      \tag{OCD1}
+   \]
+   Suppose that at every resident node of size at most \(n\), and for every
+   normalized exact-signature price system satisfying \((ESNO1)\), uncharged
+   preprocessing has an oracle which returns such a certificate with
+   \[
+      \overline B_\pi^{\rm hi}\le n^{K_{\rm dyn}}\underline D_\pi,
+      \tag{OCD2}
+   \]
+   and
+   \[
+      \overline A_\pi^{\rm clip}
+      \le
+      \frac{\underline D_\pi}{\log^{K_{\rm den}}n}
+      \qquad(K_{\rm den}>1),
+      \tag{OCD3}
+   \]
+   or correctly certifies that no profile in \(\mathcal P_{\rm clip}\) has
+   such a one-sided certificate.  If the no-certificate outcome never occurs on
+   a normalized residual, then the same
+   \(d\,n^{\rho_c}\log^{O_c(1)}n\) query and
+   \(dn+n^{1+\rho_c}\log^{O_c(1)}n\) storage endpoint follows.
+
+   The same statement holds in Las Vegas build time.  If a randomized proposal
+   law returns a verifiable certificate satisfying \((OCD1)\)--\((OCD3)\) with
+   probability at least \(p_E>0\) whenever one exists in the finite universe,
+   repeat proposals until the first accepted certificate.  The expected number
+   of proposal calls is at most \(1/p_E\), and failed or unverifiable proposals
+   are discarded before they affect the retained index.
+\end{corollary}
+
+\begin{proof}
+   A returned certificate gives
+   \(D_\pi=(B_\pi-C_\pi^{\rm lo})_+\ge\underline D_\pi>0\).  Conditions
+   \((OCD1)\)--\((OCD2)\) imply
+   \[
+      B_\pi^{\rm hi}
+      \le
+      n^{K_{\rm dyn}}\underline D_\pi
+      \le
+      n^{K_{\rm dyn}}D_\pi,
+   \]
+   and \((OCD1)\)--\((OCD3)\) imply
+   \[
+      A_\pi^{\rm clip}
+      \le
+      \frac{\underline D_\pi}{\log^{K_{\rm den}}n}
+      \le
+      \frac{D_\pi}{\log^{K_{\rm den}}n}.
+   \]
+   Thus \((CDE3)\)--\((CDE5)\) hold for the returned profile, and
+   \cref{cor:clipped-singleton-density-endpoint} gives the endpoint if this
+   happens for every normalized residual.
+
+   For the Las Vegas statement, the probability that the first \(B\)
+   independent proposals all fail is at most \((1-p_E)^B\), so the
+   repeat-until-accepted search terminates almost surely with expected at most
+   \(1/p_E\) proposals.  Since only a deterministically verified certificate is
+   retained, query work and storage are exactly those certified by the clipped
+   density endpoint.
+\end{proof}
+
 \begin{corollary}[Logarithmic sampled-center separator endpoint]
    \label{cor:log-sampled-center-separator-endpoint}
    In the setting of
@@ -59931,6 +60013,10 @@ already fires one singleton dense prefix.
 directly into the logarithmic endpoint: polynomial dynamic range and
 \(A^{\rm clip}\le D/\log^{1+\Omega(1)}n\) already imply the full
 \(n^{\rho_c}\polylog n\) theorem.
+\Cref{cor:one-sided-clipped-singleton-profile-oracle} gives the verifier form:
+build-time search only needs lower residual benefit and upper high-correlation
+mass/clipped-price certificates, and Las Vegas sampling may discard every
+failed proposal.
 \Cref{cor:explicit-split-profile-tail-separator} feeds this explicit tail into
 the split-profile panel separator, replacing the abstract min-cost
 high-correlation price by a checkable scalar envelope.
