@@ -16328,6 +16328,84 @@ success-normalized bucket-net argument.
    equality.
 \end{proof}
 
+\begin{lemma}[Threshold form of recycled bad layers]
+   \label{lem:threshold-recycled-bad-layers}
+   Work in the notation of
+   \cref{lem:fractional-recycled-layer-dual-normal-form}, and put
+   \[
+      Q^+=\{q\in Q_{\Delta'}:\ell_q>0\},
+      \qquad
+      \sigma_q=\frac{s_q}{\ell_q}\quad(q\in Q^+).
+   \]
+   For \(t\ge A\), define the low-efficiency prefix statistics
+   \[
+      L(t)=\sum_{\substack{q\in Q^+\\ \sigma_q\le t}}\ell_q,
+      \qquad
+      S(t)=\sum_{\substack{q\in Q^+\\ \sigma_q\le t}}s_q,
+   \]
+   and
+   \[
+      G(t)=tL(t)-S(t)-(t-A)\Lambda .
+      \tag{TRB1}
+   \]
+   Then the Lagrange screen with multiplier \(\lambda=t-A>0\) is equivalent
+   to
+   \[
+      G(t)\le0 .
+      \tag{TRB2}
+   \]
+   Moreover, if the fractional bad-layer problem \((FRD1)\) is feasible, it
+   has an optimizer \(y\) of the following threshold form.  There is a level
+   \(t_*\ge A\) such that
+   \[
+      y_q=1\quad(\sigma_q<t_*),
+      \qquad
+      y_q=0\quad(\sigma_q>t_*),
+      \tag{TRB3}
+   \]
+   with arbitrary coefficients \(0\le y_q\le1\) only on the boundary
+   \(\sigma_q=t_*\).  Queries with \(\ell_q=0\) may be assigned \(y_q=0\).
+   Consequently, if a fractional sublayer of load \(>\Lambda\) and capacity at
+   most \(A\) times its load exists, then such a threshold sublayer exists with
+   load at least \(\Lambda\) and capacity at most \(A\) times its load.
+\end{lemma}
+
+\begin{proof}
+   For \(t=A+\lambda\), the positive part in \((LRS1)\) is nonzero exactly
+   when \(\sigma_q\le t\), up to zero-valued boundary terms.  Hence
+   \[
+      \sum_{q\in Q_{\Delta'}}
+      \bigl((A+\lambda)\ell_q-s_q\bigr)_+
+      =
+      tL(t)-S(t),
+   \]
+   and \((LRS1)\) is precisely \((TRB2)\).
+
+   It remains to record the standard fractional-knapsack structure of
+   \((FRD1)\).  Terms with \(\ell_q=0\) have coefficient \(-s_q\le0\) and do
+   not help meet the load constraint, so an optimizer may set them to zero.
+   Since
+   \[
+      A\ell_q-s_q=(A-\sigma_q)\ell_q\qquad(q\in Q^+),
+   \]
+   every query with \(\sigma_q<A\) has positive profit per unit load and may be
+   included fully in an optimizer.  Queries with \(\sigma_q=A\) have zero
+   profit per unit load and can be used only to meet the load constraint.
+   After those levels are fixed, the remaining task, if any load is still
+   needed, is to minimize \(\sum_qy_q(\sigma_q-A)\ell_q\) over
+   \(\sigma_q>A\) subject to a lower load constraint.  The fractional
+   knapsack exchange argument sorts by increasing \(\sigma_q\): if
+   \(\sigma_i<\sigma_j\), \(y_i<1\), and \(y_j>0\), moving an equal amount of
+   load from \(j\) to \(i\) does not reduce feasibility and strictly improves
+   the objective.  Thus an optimizer has the threshold form \((TRB3)\), with
+   at most one boundary level partially used.
+
+   If a fractional sublayer has load \(>\Lambda\) and
+   \(\sum_qy_qs_q\le A\sum_qy_q\ell_q\), then its objective in \((FRD1)\) is
+   nonnegative.  Replacing it by an optimizer preserves nonnegative objective
+   and feasibility, and the optimizer has the threshold form just proved.
+\end{proof}
+
 \begin{corollary}[Lagrange recycled-sublayer separator suffices]
    \label{cor:lagrange-recycled-sublayer-separator-suffices}
    Work under the hypotheses of \cref{cor:annular-reporter-local-cover}, assume
@@ -16422,7 +16500,10 @@ Lagrange budget.  \Cref{lem:fractional-recycled-layer-dual-normal-form}
 identifies this condition as the positive-multiplier dual certificate for a
 fractional bad-sublayer knapsack.  Thus the remaining separator can be searched
 as a one-dimensional dual screen over query-wise near-shadow masses, rather
-than as an all-subsets Hall check.
+than as an all-subsets Hall check.  \Cref{lem:threshold-recycled-bad-layers}
+gives the matching primal search form: any fractional bad sublayer is witnessed
+by a low-efficiency prefix in the ratios \(s_{W,\theta}(q)/(\Delta'\bar\tau_q)\),
+with at most one fractional boundary level.
 
 \begin{corollary}[Annular reporter closes the local cover]
    \label{cor:annular-reporter-local-cover}
@@ -38186,6 +38267,12 @@ fractional knapsack dual behind that screen: a positive multiplier with
 nonpositive dual value rules out every strict-load fractional recycled layer,
 so the geometric separator can be phrased as producing an optimizable scalar
 dual certificate rather than checking all sublayers.
+\Cref{lem:threshold-recycled-bad-layers} gives the primal normal form for the
+same scalar problem: any remaining fractional bad layer can be chosen as a
+low-efficiency prefix after sorting queries by
+\(s_{W,\theta}(q)/(\Delta'\bar\tau_q)\), with only a boundary level fractional.
+This is the range-reporting/list-recovery object that an implementation or a
+geometric theorem should search for.
 \Cref{lem:primitive-hit-kernel-cover-equivalence} gives the matching primal
 form: the same theorem is equivalent to fractionally covering the primitive
 spherical hit kernel \(r_{p,q}\) by Pareto cores at \(\pi_1\)-scaled query and
