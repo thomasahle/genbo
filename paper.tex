@@ -39069,6 +39069,75 @@ into query-dominated, storage-dominated, and balanced cases.
    surviving residual, taking the infimum gives \((SPA3)\).
 \end{proof}
 
+\begin{corollary}[Partial support-price assignment separator]
+   \label{cor:partial-support-price-assignment-separator}
+   Work in the setting of
+   \cref{cor:support-adaptive-cut-center-price-obstruction}.  A partial
+   fractional shadow routing is a family \(0\le r_{x,p,\sigma_0}\le1\)
+   satisfying the support condition \((SRT1)\) and
+   \[
+      \sum_x r_{x,p,\sigma_0}\le1
+      \qquad((p,\sigma_0)\in N(A)).
+      \tag{PSL1}
+   \]
+   Define \(m_x^r(p)\), \(X_x^r\), and \(s_x(r)\) as in
+   \((SRT3)\) and \((SSC1)\), and put
+   \[
+      X(r)=\sum_xX_x^r
+      =
+      \sum_{(p,\sigma_0)\in N(A)}
+      \alpha_{p,\sigma_0}\sum_xr_{x,p,\sigma_0},
+      \tag{PSL2}
+   \]
+   \[
+      \Phi_b(r)=
+      \sum_{x:\,s_x(r)>0}
+      \psi_x
+      \left(
+         b^{1-\rho_x}A_xs_x(r)^{\rho_x}
+         +b^{\rho_x}\zeta s_x(r)^{1+\rho_x}
+      \right).
+      \tag{PSL3}
+   \]
+   If some partial routing satisfies
+   \[
+      X(r)>(b+1)\Phi_b(r),
+      \tag{PSL4}
+   \]
+   then some cut center exposes a support-adaptive exact tail Hall-shadow merge.
+
+   Equivalently, if no support-adaptive exact tail report exposes a merge at
+   any cut center, then every partial routing obeys
+   \[
+      X(r)\le(b+1)\Phi_b(r).
+      \tag{PSL5}
+   \]
+\end{corollary}
+
+\begin{proof}
+   For each used center, the assigned submeasure
+   \[
+      m_x^r(p)=
+      \sum_{\sigma_0:\,(p,\sigma_0)\in N(A)}
+      r_{x,p,\sigma_0}\alpha_{p,\sigma_0}
+   \]
+   satisfies \(0\le m_x^r(p)\le d_{A,x}(p)\) by the support condition
+   \((SRT1)\).  If no support-adaptive exact tail report fires, then
+   \cref{cor:support-adaptive-exact-hall-shadow-tail-screen}, applied at the
+   factor-\(b\) cardinality for the support \(s_x(r)\), gives
+   \[
+      X_x^r
+      \le
+      (b+1)\psi_x
+      \left(
+         b^{1-\rho_x}A_xs_x(r)^{\rho_x}
+         +b^{\rho_x}\zeta s_x(r)^{1+\rho_x}
+      \right).
+   \]
+   Summing over centers gives \((PSL5)\).  Its contrapositive is the merge
+   implication \((PSL4)\).
+\end{proof}
+
 \begin{corollary}[Independent support-law assignment certificate]
    \label{cor:independent-support-law-assignment-certificate}
    Work in the setting of
@@ -39221,6 +39290,73 @@ into query-dominated, storage-dominated, and balanced cases.
    coordinatewise increasing in \(\mu_x\), \(\widehat\Phi_b\le\overline\Phi_b\).
    Thus \((AML4)\) implies \((ISL4)\), and
    \cref{cor:independent-support-law-assignment-certificate} gives the merge.
+\end{proof}
+
+\begin{corollary}[Partial atom-marginal support-law certificate]
+   \label{cor:partial-atom-marginal-support-law-certificate}
+   Work in the setting of
+   \cref{cor:partial-support-price-assignment-separator}.  Suppose a certificate
+   gives partial stochastic atom-routing weights \(z_{x,p,\sigma_0}\ge0\),
+   supported only on adjacent cut centers as in \((ISL1)\), such that
+   \[
+      \sum_x z_{x,p,\sigma_0}\le1
+      \qquad((p,\sigma_0)\in N(A)).
+      \tag{PAM1}
+   \]
+   Let the routed paid mass be
+   \[
+      X_z=
+      \sum_{(p,\sigma_0)\in N(A)}
+      \alpha_{p,\sigma_0}\sum_xz_{x,p,\sigma_0}.
+      \tag{PAM2}
+   \]
+   For each center and point put
+   \[
+      \nu_{x,p}=
+      \min\left\{1,\sum_{\sigma_0\in\Sigma_A(p)}z_{x,p,\sigma_0}\right\},
+      \qquad
+      \nu_x=\sum_p\nu_{x,p},
+      \tag{PAM3}
+   \]
+   and define
+   \[
+      \overline\Phi_b(z)=
+      \sum_x\psi_x
+      \left(
+         b^{1-\rho_x}A_x\nu_x^{\rho_x}
+         +b^{\rho_x}\zeta(\nu_x+\nu_x^{1+\rho_x})
+      \right).
+      \tag{PAM4}
+   \]
+   If
+   \[
+      X_z>(b+1)\overline\Phi_b(z),
+      \tag{PAM5}
+   \]
+   then some deterministic partial atom routing exposes a support-adaptive
+   exact tail Hall-shadow merge.
+\end{corollary}
+
+\begin{proof}
+   Independently for each paid atom \((p,\sigma_0)\), route it to center \(x\)
+   with probability \(z_{x,p,\sigma_0}\), and leave it unrouted with the
+   remaining probability.  This produces a random partial routing satisfying
+   \((PSL1)\).  Its expected routed paid mass is exactly \(X_z\).
+
+   For each \(x,p\), the probability that point \(p\) touches center \(x\) is
+   at most \(\nu_{x,p}\) by the same union-bound calculation as \((AML5)\).
+   The moment estimates \((ISL5)\)--\((ISL8)\), applied to the resulting
+   independent support indicators, therefore give
+   \[
+      \E\Phi_b(r)\le\overline\Phi_b(z).
+      \tag{PAM6}
+   \]
+   Hence \((PAM5)\) implies
+   \[
+      \E\left[X(r)-(b+1)\Phi_b(r)\right]>0.
+   \]
+   Some deterministic sampled partial routing satisfies \((PSL4)\), and
+   \cref{cor:partial-support-price-assignment-separator} gives the merge.
 \end{proof}
 
 \begin{corollary}[Fractional balanced Hall-shadow density panel]
@@ -39617,7 +39753,10 @@ version of the same test: it is enough to control the expected number
 atom-marginal version
 \cref{cor:atom-marginal-support-law-certificate} reduces this further to local
 stochastic routing weights, with support probability bounded by a union bound
-inside each data point.
+inside each data point.  The partial form
+\cref{cor:partial-atom-marginal-support-law-certificate} is the sharpest of
+these reductions: a proposal may discard low-value paid atoms and only needs a
+positive surplus \(X_z-(b+1)\overline\Phi_b(z)\) on the submeasure it routes.
 
 \begin{corollary}[Support-price shadow-routing separator endpoint]
    \label{cor:support-price-shadow-routing-separator-endpoint}
@@ -39695,6 +39834,13 @@ inside each data point.
       \tag{MRL2}
    \]
    in place of an explicit pointwise routing law.
+
+   Finally, the same conclusion holds if the separator returns partial
+   atom-routing weights satisfying \((PAM1)\) and
+   \[
+      X_z>(b+1)\overline\Phi_b(z).
+      \tag{MRL3}
+   \]
 \end{corollary}
 
 \begin{proof}
@@ -39717,6 +39863,9 @@ inside each data point.
    \((MRL2)\) and \cref{cor:atom-marginal-support-law-certificate} first
    produce the deterministic support-adaptive Hall-shadow merge, and the same
    endpoint argument applies.
+
+   For the partial atom-routing variant, use
+   \cref{cor:partial-atom-marginal-support-law-certificate} in the same way.
 \end{proof}
 
 \begin{corollary}[Balanced Hall-shadow separator endpoint]
