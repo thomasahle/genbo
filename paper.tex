@@ -969,6 +969,83 @@ The smooth product filter is not a replacement for \cref{lem:adaptive-continuati
    procedure.
 \end{proof}
 
+\begin{corollary}[Fractional probing form of compressed buckets]
+   \label{cor:fractional-probe-compressed-bucket}
+   In \cref{prop:success-normalized-bucket-dag}, the two query hypotheses
+   \((CB0)\)--\((CB1)\) may be replaced by the following single
+   cost-normalized fractional probing condition.  For each promised query \(q\),
+   let \(\lambda_{q,F}\ge0\) be a finite intensity measure on the retained
+   filter occurrences visible to \(q\), sampleable after normalization in
+   \(dL(m)\) expected nonrecursive work.  For every near witness \(p\) with
+   \(\|p-q\|\le r_j\), assume
+   \[
+      H_q(p):=\sum_{F:p\in B_F}\lambda_{q,F}>0
+      \tag{FPB0}
+   \]
+   and
+   \[
+      \sum_F\lambda_{q,F}
+      \left(L(m)+|N_F|^{\rho_{j+1}}\right)
+      \le
+      H_q(p)\,m^{\rho_j}L(m).
+      \tag{FPB1}
+   \]
+   Then the same recursive query bound as in
+   \cref{prop:success-normalized-bucket-dag} holds, with the same storage
+   hypothesis \((CB2)\).
+
+   Equivalently, after rescaling \(\lambda_q\) separately for each witness, the
+   condition says that the visible compressed buckets form a fractional cover of
+   \(p\) whose total one-probe price
+   \(L(m)+|N_F|^{\rho_{j+1}}\) is at most \(m^{\rho_j}L(m)\).  Thus the query
+   invariant is exactly recursive cost divided by near-witness coverage
+   probability, not raw bucket size and not a fixed hit probability.
+\end{corollary}
+
+\begin{proof}
+   Put \(\Lambda_q=\sum_F\lambda_{q,F}\).  If \(\Lambda_q=0\), then
+   \((FPB0)\) is impossible for a promised near witness, so assume
+   \(\Lambda_q>0\) and sample
+   \[
+      \mu_q(F)=\lambda_{q,F}/\Lambda_q .
+   \]
+   For a fixed near witness \(p\), the one-probe hit probability is
+   \[
+      a_j(q,p)=\Pr_{F\sim\mu_q}[p\in B_F]
+      =
+      \frac{H_q(p)}{\Lambda_q}.
+      \tag{FPB2}
+   \]
+   The expected normalized child work is
+   \[
+      \E_{F\sim\mu_q}|N_F|^{\rho_{j+1}}
+      =
+      \frac1{\Lambda_q}\sum_F\lambda_{q,F}|N_F|^{\rho_{j+1}} .
+      \tag{FPB3}
+   \]
+   Therefore the whole one-probe cost divided by hit probability is
+   \[
+   \begin{aligned}
+      \frac{L(m)+\E_{F\sim\mu_q}|N_F|^{\rho_{j+1}}}{a_j(q,p)}
+      &=
+      \frac{
+         \sum_F\lambda_{q,F}
+         \left(L(m)+|N_F|^{\rho_{j+1}}\right)
+      }{H_q(p)}  \\
+      &\le m^{\rho_j}L(m)
+   \end{aligned}
+      \tag{FPB4}
+   \]
+   by \((FPB1)\).  The query analysis in
+   \cref{prop:success-normalized-bucket-dag} used \((CB0)\)--\((CB1)\) only
+   through this ratio bound: the \(dL(m)\) probe-generation cost contributes the
+   \(L(m)\) term in the numerator, and the child recursion contributes
+   \(|N_F|^{\rho_{j+1}}\) up to the common polylogarithmic induction factor.
+   Substituting \((FPB4)\) in that display gives the same
+   \(d\,m^{\rho_j}\log^{O_c(1)}(m+2)\) expected query time.  The space argument is
+   unchanged because it depends only on the retained metadata and \((CB2)\).
+\end{proof}
+
 \begin{lemma}[First-moment query compression]\label{lem:first-moment-query-compression}
    In the query part of \cref{prop:success-normalized-bucket-dag}, suppose
    that the sampled filter law satisfies the stronger but simpler
@@ -41779,10 +41856,12 @@ The exact pieces now aligned for the randomized cap-thinning route are: continua
 The compressed-bucket route from \cref{prop:success-normalized-bucket-dag} is
 now separated just as cleanly.  The recursion accounting is finished: a finite
 approximation ladder gives \(n^{\rho_c}\polylog n\) query time once each rung
-has a per-probe near-hit lower bound, a success-normalized query moment, and a
-shared-DAG storage moment.  The query moment is no longer a separate
-list-decoding problem: by \cref{lem:first-moment-query-compression}, the usual
-success-normalized expected bucket load implies it, and
+has a cost-normalized fractional probing law and a shared-DAG storage moment.
+\Cref{cor:fractional-probe-compressed-bucket} folds the old near-hit lower bound
+and query Renyi moment into one invariant: recursive one-probe price divided by
+near-witness coverage.  The query moment is therefore no longer a separate
+list-decoding problem; by \cref{lem:first-moment-query-compression}, the usual
+success-normalized expected bucket load implies the Renyi child-work bound, and
 \cref{cor:first-moment-active-load-query} is the exact finite-profile version
 with false active buckets included in the active layer.
 \Cref{cor:distinct-canonical-bucket-net} further sharpens the storage target:
