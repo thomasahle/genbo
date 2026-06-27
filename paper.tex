@@ -15559,6 +15559,195 @@ makes the annular layer heavy.  This is now the concrete geometric theorem left
 for LP range reporting, list recovery, additive quantization, or a
 success-normalized bucket-net argument.
 
+\begin{definition}[Annular-to-shadow transport]
+   \label{def:annular-shadow-transport}
+   Fix a guarded normalized residual, a parameter \(0\le\theta\le1\), a query
+   layer \(Q'\subseteq\mathcal Q\), annular witness sets \(B(q)\subseteq P\) for
+   \(q\in Q'\), and a retained container \(W\).  A \(C\)-congested
+   \(\theta\)-shadow transport of mass \(M\) from the annular witnesses into
+   \(W\) consists of numbers
+   \[
+      \pi_{q,x,p}\ge0
+      \qquad(q\in Q',\ x\in B(q),\ p\in W)
+   \]
+   and shipped amounts \(0\le s_{q,x}\le1\) such that
+   \[
+      \sum_{\substack{p\in W:\\ (p,q)\in\mathcal N}}\pi_{q,x,p}
+      =
+      s_{q,x}
+      \qquad(q\in Q',\ x\in B(q)),
+      \tag{AST1}
+   \]
+   \[
+      M=
+      \sum_{q\in Q'}\bar\tau_q
+      \sum_{x\in B(q)}s_{q,x},
+      \tag{AST2}
+   \]
+   and, for every \(p\in W\),
+   \[
+      \sum_{q\in Q'}\bar\tau_q
+      \sum_{x\in B(q)}\pi_{q,x,p}
+      \le
+      C\,d_{Q'}^\theta(p),
+      \tag{AST3}
+   \]
+   where
+   \[
+      d_{Q'}^\theta(p)=
+      \sum_{\substack{q\in Q'\\(p,q)\in\mathcal N}}
+      \bar\gamma^\theta_{p,q}r_{p,q}.
+   \]
+   The unit case has \(s_{q,x}=1\) for every annular incidence.
+\end{definition}
+
+\begin{lemma}[Transport certificate for annular reporters]
+   \label{lem:annular-shadow-transport-reporter}
+   Work in the setting of
+   \cref{cor:annular-near-shadow-mass-reporter}.  Suppose the annular witness
+   family \(B(q)\) admits a \(C\)-congested \(\theta\)-shadow transport of mass
+   \(M>0\) into a retained container \(W\), and suppose \(|W|\le K\).  Put
+   \[
+      V=\frac{M}{C},
+      \qquad
+      J_{K,V}=1+\left\lceil\log_2\frac{2K}{V}\right\rceil .
+   \]
+   If
+   \[
+      \frac{M}{4C J_{K,V}}
+      >
+      \frac{b\,\psi_W}{\pi_1}
+      \left(
+         \frac{(\chi\beta b_0)^{\rho_W}K^{\rho_W}}{L}
+         +
+         \frac{(\chi\beta b_0)^{1+\rho_W}K^{1+\rho_W}}{S}
+      \right),
+      \tag{AST4}
+   \]
+   then the single-seed annular layer yields the scalar reporter required by
+   \cref{asm:weighted-annular-scalar-reporter}.
+\end{lemma}
+
+\begin{proof}
+   Summing \((AST3)\) over \(p\in W\) and using \((AST1)\)--\((AST2)\) gives
+   \[
+      M
+      \le
+      C\sum_{p\in W}d_{Q'}^\theta(p).
+   \]
+   Hence \(V=M/C\) is a certified lower bound on the near-shadow mass in \(W\).
+   The assumptions \(|W|\le K\) and \((AST4)\) are exactly \((ANS1)\) and
+   \((ANS2)\) of \cref{cor:annular-near-shadow-mass-reporter}, with this value
+   of \(V\).  That corollary materializes a positive annular scalar-reporter
+   record, which is the reporter demanded by
+   \cref{asm:weighted-annular-scalar-reporter}.
+\end{proof}
+
+\begin{corollary}[Transport obstruction for a surviving annular layer]
+   \label{cor:annular-shadow-transport-obstruction}
+   Work under the hypotheses of
+   \cref{cor:single-seed-near-shadow-prefix-obstruction}.  Let
+   \(Q'=Q_{z,\beta,\Delta}\) be the single-seed annular query layer, and take
+   \(B(q)=B_{z,\beta}(q)\).  If the local filter-cover LP is infeasible, then
+   every \(C\)-congested \(\theta\)-shadow transport of mass \(M>0\) into every
+   retained container \(W\) with \(|W|\le K\) satisfies the reverse inequality
+   \[
+      \frac{M}{4C J_{K,M/C}}
+      \le
+      \frac{b\,\psi_W}{\pi_1}
+      \left(
+         \frac{(\chi\beta b_0)^{\rho_W}K^{\rho_W}}{L}
+         +
+         \frac{(\chi\beta b_0)^{1+\rho_W}K^{1+\rho_W}}{S}
+      \right).
+      \tag{AST5}
+   \]
+   In particular, any unit transport into \(W\) obeys
+   \[
+      \frac{
+         \sum_{q\in Q'}\bar\tau_q |B_{z,\beta}(q)|
+      }{
+         4C J_{K,M/C}
+      }
+      \le
+      \frac{b\,\psi_W}{\pi_1}
+      \left(
+         \frac{(\chi\beta b_0)^{\rho_W}K^{\rho_W}}{L}
+         +
+         \frac{(\chi\beta b_0)^{1+\rho_W}K^{1+\rho_W}}{S}
+      \right),
+      \tag{AST6}
+   \]
+   with \(M=\sum_{q\in Q'}\bar\tau_q |B_{z,\beta}(q)|\).
+\end{corollary}
+
+\begin{proof}
+   If \((AST5)\) failed for some transport, then
+   \cref{lem:annular-shadow-transport-reporter} would produce the scalar
+   reporter required by \cref{asm:weighted-annular-scalar-reporter} for this
+   guarded residual and this single-seed layer.  As in the proof of
+   \cref{cor:annular-reporter-local-cover}, that reporter materializes a
+   positive reduced-gain retained prefix/core and contradicts the hinge
+   envelope \((GNR3)\) of the surviving residual.  Hence no such transport can
+   exist under local infeasibility.  The unit-transport statement is the
+   specialization \(s_{q,x}=1\), for which the mass identity \((AST2)\) gives
+   the displayed value of \(M\).
+\end{proof}
+
+\begin{corollary}[Query-local congestion lower bound]
+   \label{cor:annular-shadow-congestion-lower-bound}
+   Work with a guarded normalized residual satisfying \((GNR3)\).  Let
+   \(Q'\subseteq\mathcal Q\), let \(W\) be a retained core with prices
+   \(T_W,S_W\), and suppose a \(C\)-congested \(\theta\)-shadow transport of
+   mass \(M\) enters \(W\).  Then
+   \[
+      M
+      \le
+      C\left(
+         T_W\sum_{q\in Q'}\bar\tau_q+\bar\sigma S_W
+      \right).
+      \tag{AST7}
+   \]
+   Therefore, for the single-seed layer with \(|B_{z,\beta}(q)|\ge\Delta\) on
+   \(Q'\), any unit transport into a \(K\)-point prefix core of price
+   \(T_W=\psi K^\rho\), \(S_W=\psi K^{1+\rho}\) must have
+   \[
+      C
+      \ge
+      \frac{\Delta\sum_{q\in Q'}\bar\tau_q}
+      {\psi K^\rho\sum_{q\in Q'}\bar\tau_q
+       +\bar\sigma\psi K^{1+\rho}} .
+      \tag{AST8}
+   \]
+\end{corollary}
+
+\begin{proof}
+   Summing the congestion bound \((AST3)\) gives
+   \(M\le C\sum_{p\in W}d_{Q'}^\theta(p)\).  Applying
+   \cref{lem:query-layer-near-shadow-hinge} to \(W\) gives \((AST7)\).  In the
+   unit single-seed case,
+   \[
+      M=\sum_{q\in Q'}\bar\tau_q|B_{z,\beta}(q)|
+      \ge
+      \Delta\sum_{q\in Q'}\bar\tau_q,
+   \]
+   and substituting the prefix prices into \((AST7)\) gives \((AST8)\).
+\end{proof}
+
+The transport formulation is useful because it cleanly separates the two
+remaining tasks.  The annular witnesses are far points and still cannot be used
+as cover columns.  A geometric or list-recovery argument must instead construct
+a low-congestion transport from those annular incidences into actual
+near-shadow mass.  If it does, \cref{lem:annular-shadow-transport-reporter}
+turns that transport into the same verified scalar reporter as before.  If the
+LP remains infeasible, \cref{cor:annular-shadow-transport-obstruction} and
+\cref{cor:annular-shadow-congestion-lower-bound} say that every such transport
+must have large congestion.  Thus the current irreducible obstruction can be
+stated as a purely geometric transport failure: a query-price-heavy annular
+layer exists, but no retained smaller-radius container can receive even a
+constant fraction of its incidences into the true near-shadow potential at
+Renyi-affordable congestion.
+
 \begin{corollary}[Annular reporter closes the local cover]
    \label{cor:annular-reporter-local-cover}
    Work under the hypotheses of
@@ -37284,6 +37473,16 @@ one certified container with enough true near-shadow mass and a size upper bound
 already yields the scalar reporter after a dyadic layer-cake loss.  This makes
 the next geometric theorem a finite weighted range-reporting/list-recovery
 statement rather than an overlapping-cluster selection problem.
+\Cref{def:annular-shadow-transport},
+\cref{lem:annular-shadow-transport-reporter}, and
+\cref{cor:annular-shadow-transport-obstruction} isolate the exact bridge that
+is still missing: annular false-positive incidences must be transported into
+true near-shadow mass with low congestion.  Such a transport immediately
+materializes the scalar reporter; if the LP remains infeasible, every retained
+smaller-radius container has a Renyi-affordable congestion lower bound by
+\cref{cor:annular-shadow-congestion-lower-bound}.  Thus the remaining
+geometric theorem can be phrased as ruling out a heavy annular query layer that
+admits no low-congestion transport into actual near witnesses.
 \Cref{lem:primitive-hit-kernel-cover-equivalence} gives the matching primal
 form: the same theorem is equivalent to fractionally covering the primitive
 spherical hit kernel \(r_{p,q}\) by Pareto cores at \(\pi_1\)-scaled query and
