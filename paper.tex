@@ -36115,6 +36115,126 @@ of polylogarithmic overhead may target exact-signature existential covers
 wherever compact exact near-set signatures are available, and reserve per-pair
 covers for robust all-witness certificates.
 
+\begin{corollary}[One-sided finite-signature filter-cover endpoint]
+   \label{cor:one-sided-finite-signature-filter-cover}
+   Fix \(c>1\) and \(\rho_c=1/(2c^2-1)\).  Suppose that after bounded-diameter
+   localization, every resident node \(P\), \(|P|=N\), has a finite signature
+   system as in \cref{lem:finite-signature-filter-cover}, with budgets satisfying
+   \[
+      \log\left(2+\sum_{\sigma_0\in\Sigma}|W_{\sigma_0}|\right)
+      \le\log^{O_c(1)}n,
+      \qquad
+      L_{\sigma_0}\le N^{\rho_c}\log^{O_c(1)}n,
+      \qquad
+      S\le N^{1+\rho_c}\log^{O_c(1)}n .
+      \tag{OSF0}
+   \]
+   Let \(\mathcal F_\star\) be a finite, possibly implicitly represented,
+   quotient of all admissible priced filters at the node.  The quotient may
+   contain terminal spherical filters, radius-contracting dense filters,
+   facility or additive-quantization buckets, list-decoder outputs, and any
+   other certified columns; each column \(A\) has update side \(U_A\), signature
+   activation bits \(a_A(\sigma_0)\), and certified prices \(T_A,S_A\).  Assume
+   the atom bounds \((FS2)\), and assume the full signature LP
+   \((\mathsf{SFC}_\Sigma)\) over \(\mathcal F_\star\) is feasible.
+
+   At a restricted active set \(E\subseteq\mathcal F_\star\), let
+   \((\alpha,\tau,\zeta)\) be any surplus Farkas certificate for the restricted
+   signature LP: it has
+   \[
+      \sum_{\sigma_0\in\Sigma}\sum_{p\in W_{\sigma_0}}\alpha_{p,\sigma_0}
+      >
+      \sum_{\sigma_0\in\Sigma}\tau_{\sigma_0}L_{\sigma_0}+\zeta S
+      \tag{OSF1}
+   \]
+   and nonpositive reduced gain on every active column.  For any candidate
+   column \(A\), define
+   \[
+   \begin{aligned}
+      \operatorname{Gain}_{\alpha,\tau,\zeta}(A)
+      &=
+      \sum_{\sigma_0\in\Sigma}
+      \sum_{p\in W_{\sigma_0}}
+      \alpha_{p,\sigma_0}
+      \mathbf 1\{p\in U_A\}a_A(\sigma_0)  \\
+      &\qquad
+      -
+      T_A\sum_{\sigma_0\in\Sigma}\tau_{\sigma_0}a_A(\sigma_0)
+      -
+      \zeta S_A .
+   \end{aligned}
+      \tag{OSF2}
+   \]
+   Suppose uncharged preprocessing has a one-sided separator which, for every
+   such restricted dual state, either returns an inactive column
+   \(A\in\mathcal F_\star\setminus E\) with a verifiable lower certificate
+   \[
+      0<X\le \operatorname{Gain}_{\alpha,\tau,\zeta}(A),
+      \tag{OSF3}
+   \]
+   or certifies
+   \[
+      \operatorname{Gain}_{\alpha,\tau,\zeta}(A)\le0
+      \qquad(A\in\mathcal F_\star\setminus E).
+      \tag{OSF4}
+   \]
+   Then preprocessing can construct the finite-signature certificate required
+   by \cref{prop:fractional-filter-cover-polylog}.  Consequently worst-case
+   Euclidean ANN has
+   \[
+      Q(n,d)=d\,n^{\rho_c}\log^{O_c(1)}n,
+      \qquad
+      S(n,d)=dn+n^{1+\rho_c}\log^{O_c(1)}n .
+   \]
+
+   If the separator is randomized and returns a verifiable column satisfying
+   \((OSF3)\) with probability at least \(p_E\) whenever one exists, Las Vegas
+   repetition adds an improving column after expected at most \(1/p_E\) proposal
+   calls at that restricted solve; failed proposals are not retained or charged
+   to the index.
+\end{corollary}
+
+\begin{proof}
+   The finite signature LP is the filter-cover LP of
+   \cref{lem:finite-filter-cover-dual} applied to the demand set
+   \[
+      \mathcal N_\Sigma
+      =
+      \{(p,\sigma_0):\sigma_0\in\Sigma,\ p\in W_{\sigma_0}\}.
+   \]
+   Its Farkas dual is exactly \((OSF1)\) together with nonpositive reduced gain
+   on the columns under consideration, with reduced gain given by \((OSF2)\).
+
+   Run ordinary column generation on the finite quotient \(\mathcal F_\star\).
+   If the restricted LP is feasible, stop.  If it is infeasible, take a surplus
+   dual certificate for the restricted pool.  A returned column satisfying
+   \((OSF3)\) violates that restricted Farkas certificate and is added to the
+   active set.  If instead the separator certifies \((OSF4)\), then the active
+   columns already had nonpositive gain by restricted dual feasibility, and all
+   inactive columns have nonpositive gain by \((OSF4)\).  Hence the same dual
+   certificate proves infeasibility of the full LP over \(\mathcal F_\star\),
+   contradicting the assumed full feasibility.  Therefore column generation
+   cannot stop with a no-positive certificate before finding a feasible
+   restricted LP.  Since the quotient is finite, deterministic preprocessing
+   adds at most \(|\mathcal F_\star|\) successful columns.
+
+   Once the finite signature LP is feasible, \((OSF0)\), the atom bounds, and
+   \cref{lem:finite-signature-filter-cover} give the retained finite cover with
+   only logarithmic materialization loss.  Applying
+   \cref{prop:fractional-filter-cover-polylog} at all localized nodes gives the
+   displayed global query and space bounds.  The randomized statement is the
+   usual geometric-waiting argument applied only to verified positive columns.
+\end{proof}
+
+This corollary is the fully fractional dense-overlap interface in endpoint
+form.  There is no theorem-level choice of a disjoint dense-cluster family.
+Preprocessing may spend arbitrary time proposing overlapping dense regions,
+spherical buckets, facility panels, additive-code cells, or list-decoder
+records, but the retained index only keeps columns that pass the finite
+one-sided reduced-gain verifier.  Query overlap is then charged by the local LP
+through \(\sum_Aa_A(\sigma_0)T_A\lambda_A\), and recursive overlap never appears
+as a separate branching factor.
+
 \begin{corollary}[Decoded-panel endpoint certificate]
    \label{cor:decoded-panel-polylog-endpoint}
    Fix \(c>1\) and \(\rho_c=1/(2c^2-1)\).  Suppose that after bounded-diameter
