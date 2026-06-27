@@ -32191,6 +32191,87 @@ compare its mass with the recursive price.  Thus \(k\)-means++, additive
 quantization, LP range reporting, and list decoding are useful only insofar as
 they expose such prefixes; the proof does not depend on their sampling rule.
 
+\begin{corollary}[No-prefix deficient-shadow envelope]
+   \label{cor:no-prefix-deficient-shadow-envelope}
+   Work in the setting of \cref{cor:deficient-shadow-prefix-certificate}.  Let
+   \(\mathcal W\) be a finite family of affordable certified ambient containers.
+   For each \(W\in\mathcal W\), let \(\mathcal K_W\) be a finite set of
+   cardinalities such that the top-\(h\) deficient-shadow prefix in \(W\) is a
+   certified subcontainer inheriting the price parameters of \(W\) for every
+   \(h\in\mathcal K_W\).  Put
+   \[
+      D_{G',W}(h)=
+      \max_{\substack{U\subseteq W\\|U|=h}}
+      \sum_{p\in U}d_{G'}(p),
+      \tag{NDE1}
+   \]
+   and, when \(D_{G',W}(h)>0\),
+   \[
+      J_{G',W}(h)=
+      1+\left\lceil
+         \log_2\frac{2h}{\min\{D_{G',W}(h),h\}}
+      \right\rceil .
+      \tag{NDE2}
+   \]
+   If no prefix from the family \((W,h)\), \(W\in\mathcal W\),
+   \(h\in\mathcal K_W\), closes the guarded residual through
+   \cref{cor:deficient-shadow-prefix-certificate}, then every such pair satisfies
+   \[
+      D_{G',W}(h)
+      \le
+      4J_{G',W}(h)\,
+      \psi_W
+      \left(
+         h^{\rho_W}\sum_{q\in\mathcal Q_+}\tau_qa_q
+         +\sigma h^{1+\rho_W}
+      \right)
+      \tag{NDE3}
+   \]
+   whenever \(D_{G',W}(h)>0\).  If \(D_{G',W}(h)=0\), the same bound is interpreted
+   as trivial.
+\end{corollary}
+
+\begin{proof}
+   This is the contrapositive of
+   \cref{cor:deficient-shadow-prefix-certificate}.  If \((NDE3)\) failed for some
+   \(W,h\) with positive top-prefix mass, take \(X=D_{G',W}(h)\).  The definitions
+   \((NDE1)\)--\((NDE2)\) are exactly \((DSP2)\)--\((DSP4)\), and failure of
+   \((NDE3)\) is \((DSP5)\).  Hence that prefix would close the guarded residual.
+\end{proof}
+
+\begin{corollary}[Deficient-shadow residual obstruction]
+   \label{cor:deficient-shadow-residual-obstruction}
+   Work in the setting of
+   \cref{cor:lower-hull-hall-proposal-separator}.  Fix a finite prefix-search
+   family \((\mathcal W,\mathcal K_W)\) as in
+   \cref{cor:no-prefix-deficient-shadow-envelope}.  Suppose the Hall-success
+   alternative is not certified, the exact-load Hall profile has a strict
+   lower-hull deficit for the declared pair congestion, and no prefix in this
+   finite family closes the guarded residual.  Then there is an integral guard
+   sublayer \(G'\) such that
+   \[
+      \Delta(G')>0
+      \tag{DSR1}
+   \]
+   and the deficient-shadow envelope \((NDE3)\) holds for every
+   \(W\in\mathcal W\) and \(h\in\mathcal K_W\).
+\end{corollary}
+
+\begin{proof}
+   By \cref{cor:integral-hall-deficit-normal-form}, the strict exact-load deficit
+   supplies an integral guard sublayer \(G'\) satisfying \((DSR1)\).  Applying
+   \cref{cor:no-prefix-deficient-shadow-envelope} to this \(G'\) gives
+   \((NDE3)\) for every searched prefix, because no such prefix closes the
+   residual by hypothesis.
+\end{proof}
+
+\Cref{cor:deficient-shadow-residual-obstruction} is the current proof bottleneck
+in one line: rule out the simultaneous existence of a positive-excess Hall
+sublayer and the weak-type deficient-shadow envelope \((NDE3)\) over a rich
+enough family of affordable smaller-radius containers.  This is the exact place
+where a geometric argument, LP range reporter, list decoder, or additive
+quantizer must enter.
+
 \begin{corollary}[Tuple-profile distinct-storage certificate]
    \label{cor:tuple-profile-distinct-storage}
    Work in the setting of
@@ -32673,6 +32754,10 @@ paid shadow of one positive-excess Hall sublayer.
 \Cref{cor:deficient-shadow-prefix-certificate} reduces the accepted proposal to
 one certified top deficient-shadow prefix inside an affordable smaller-radius
 container.
+\Cref{cor:no-prefix-deficient-shadow-envelope} and
+\cref{cor:deficient-shadow-residual-obstruction} give the exact remaining
+obstruction: positive Hall excess together with a weak-type bound for every
+searched deficient-shadow prefix.
 \Cref{cor:pair-compatible-hall-guarded-cover} assembles the chain back into the
 local LP: a half-shipment with sufficient layer-cake surplus supplies the
 guarded star-panel reporter and closes the residual.
@@ -45961,6 +46046,10 @@ the paid shadow of the one positive-excess sublayer.
 \Cref{cor:deficient-shadow-prefix-certificate} is the concrete separator form:
 find one top deficient-shadow prefix whose certified mass beats its inherited
 recursive price.
+\Cref{cor:no-prefix-deficient-shadow-envelope} and
+\cref{cor:deficient-shadow-residual-obstruction} state the exact residual if
+that search fails: the positive-excess Hall sublayer must satisfy a weak-type
+deficient-shadow envelope on every searched affordable prefix.
 \Cref{cor:pair-compatible-hall-guarded-cover} states the final local theorem
 target in this language: prove the Hall expansion and the resulting
 layer-cake price inequality for every guarded residual.
