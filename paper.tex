@@ -29789,6 +29789,100 @@ inequality \((QP3)\).
    \cref{cor:paid-prefix-hit-kernel-cover} gives the primitive hit-kernel cover.
 \end{proof}
 
+\begin{corollary}[Guarded star-panel reporter closes the local cover]
+   \label{cor:guarded-star-panel-local-cover}
+   Work in the local setting of
+   \cref{cor:guarded-normalized-residual-segment}.  Assume the finite core
+   universe contains the primitive singleton slice cores \(V_{z,q}\) with their
+   certified prices \(T_{z,q},S_{z,q}\), and contains the paid-prefix cores used
+   by every reported star container, with all cardinalities in each such
+   container available.
+   Let \(a_q=\Pr_{Z\sim\Pi}[\chi_Z(q)=1]\).  Suppose the following reporter
+   theorem holds.
+
+   For every \(\kappa\in[1,\pi_1^{-1}]\) and every nonnegative price system
+   \((\gamma,\tau,\sigma)\) satisfying
+   \[
+      \sum_{(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}=1,
+      \qquad
+      L\sum_q\tau_q+\sigma S<\kappa,
+      \tag{GSP1}
+   \]
+   \[
+      \sum_q\tau_qa_q|H(q)|>\frac{\pi_1\kappa}{2},
+      \tag{GSP2}
+   \]
+   and the primitive singleton constraints
+   \[
+      A_{z,q}^{\gamma}
+      :=
+      \sum_{\substack{p:(p,q)\in\mathcal N\\ p\in V_{z,q}}}
+      \gamma_{p,q}
+      \le
+      T_{z,q}\tau_q+\sigma S_{z,q}
+      \qquad(z,q),
+      \tag{GSP3}
+   \]
+   the reporter returns a certified hit-weighted star panel satisfying
+   \((HSP1)\)--\((HSP2)\).  Then the finite local filter-cover LP is feasible.
+
+   Thus the remaining star-panel theorem need only be proved on the residuals
+   that have already survived the spherical reduced-gain test: unit primitive
+   hit mass, below-budget normalized price, large activation-weighted
+   high-correlation guard mass, and no profitable primitive singleton slice.
+\end{corollary}
+
+\begin{proof}
+   Suppose the local cover were infeasible.  By
+   \cref{cor:guarded-normalized-residual-segment}, there are
+   \(\kappa\in[1,\pi_1^{-1}]\), normalized prices
+   \((\bar\tau,\bar\sigma)\), and a segment of nonnegative potentials
+   \(\bar\gamma^\theta\), \(0\le\theta\le1\), satisfying \((GNR1)\)--\((GNR4)\).
+   Fix any \(\theta\) and put
+   \[
+      \gamma=\bar\gamma^\theta,\qquad
+      \tau=\bar\tau,\qquad
+      \sigma=\bar\sigma .
+   \]
+   Then \((GNR1)\), \((GNR2)\), and \((GNR4)\) are exactly
+   \((GSP1)\)--\((GSP2)\).
+
+   It remains to check \((GSP3)\).  Since the primitive singleton slice core
+   \(V_{z,q}\) is in the finite universe, \((GNR3)\) applied to that core gives
+   \[
+      \sum_{q'\in\mathcal Q}
+      \bigl(a_{V_{z,q}}^\gamma(q')-T_{z,q}\tau_{q'}\bigr)_+
+      \le
+      \sigma S_{z,q}.
+   \]
+   The \(q\)-term alone is therefore at most \(\sigma S_{z,q}\), and
+   \(a_{V_{z,q}}^\gamma(q)\ge A_{z,q}^{\gamma}\).  Hence
+   \(A_{z,q}^{\gamma}\le T_{z,q}\tau_q+\sigma S_{z,q}\), proving
+   \((GSP3)\).
+
+   The reporter hypothesis now supplies a hit-weighted star panel satisfying
+   \((HSP1)\)--\((HSP2)\).  The singleton constraints \((GSP3)\) are precisely
+   \((APC1)\), and \((GSP1)\) with \(\kappa\le\pi_1^{-1}\) gives
+   \[
+      \sum_{(p,q)\in\mathcal N}\gamma_{p,q}r_{p,q}
+      =
+      1
+      >
+      \pi_1\left(L\sum_q\tau_q+\sigma S\right),
+   \]
+   which is \((APC2)\).  By
+   \cref{cor:hit-weighted-star-panel-prefix}, an available paid prefix has
+   positive hit-weighted repair reduced gain.  For the same prefix \(U\) and
+   Boolean query side \(Q'\), the one-potential support
+   \(a_U^\gamma(q)\) dominates the hit-weighted support
+   \[
+      \sum_{\substack{p\in U\\(p,q)\in\mathcal N}}\gamma_{p,q}r_{p,q},
+   \]
+   because \(0\le r_{p,q}\le1\).  Thus the same prefix violates the
+   one-potential hinge envelope \((GNR3)\), contradicting the residual
+   certificate.  Therefore the local cover LP is feasible.
+\end{proof}
+
 \begin{corollary}[Tuple-profile distinct-storage certificate]
    \label{cor:tuple-profile-distinct-storage}
    Work in the setting of
@@ -30189,6 +30283,10 @@ paid star panel from the high-correlation residual.
 the paid hit-kernel language: replace the direct dual prices by
 \(\gamma_{p,q}r_{p,q}\), allow fractional query weights, and the paid-prefix
 verifier extracts the Boolean top-prefix column.
+\Cref{cor:guarded-star-panel-local-cover} narrows the reporter theorem further:
+the star panel only has to be proved for normalized residuals that already carry
+large activation-weighted high-correlation guard mass after spherical buckets
+fail.
 \Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} give the corresponding
 entropy-energy normal form: each large canonical child supplies many separated
@@ -30442,6 +30540,9 @@ certificate.
 \Cref{cor:hit-weighted-star-panel-prefix} shows that certified star panels are
 one concrete way to satisfy this oracle: a panel with lower hit-weighted paid
 mass and upper list-size certificates forces a positive paid prefix.
+\Cref{cor:guarded-star-panel-local-cover} combines this with the spherical
+reduced-gain residual: only price systems satisfying the normalized guard-mass
+obstruction \((GSP1)\)--\((GSP3)\) need such a panel.
 Conversely,
 \cref{cor:paid-prefix-residual-envelope} says that a failed dense separator has
 only one possible form: a paid residual whose every certified container obeys
@@ -43336,6 +43437,10 @@ admit such a certified panel, otherwise the finite LP cover is already feasible.
 that target: a panel certified against \(\gamma_{p,q}r_{p,q}\) is already a
 finite-prefix separator witness, so the star-panel and paid-prefix endpoints
 share the same remaining reporter theorem.
+\Cref{cor:guarded-star-panel-local-cover} is the current sharp local target:
+the reporter only has to work on normalized residuals with unit primitive hit
+mass, below-budget price, large guard co-load, and no profitable primitive
+singleton slice.
 \Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} reduce each dyadic count to tuple
 incidence: a large separated child contains many ordered witness tuples, so the
