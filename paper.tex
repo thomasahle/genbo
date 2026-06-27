@@ -44989,6 +44989,121 @@ certificate is the verified positive-gain column and the finite LP it augments.
    hypothesis.
 \end{proof}
 
+\begin{corollary}[Optimized sampled-center split-profile residual]
+   \label{cor:optimized-sampled-center-split-profile-residual}
+   Work in the setting of
+   \cref{cor:sampled-center-split-profile-residual}.  Suppose that for each
+   profile \(\pi\), the sampled center laws and their certificates are available
+   with the same envelopes
+   \(\mathfrak E_{\star,\pi},\mathfrak P_{\star,\pi}\) for every
+   \(0<\varepsilon\le1\).  Put
+   \[
+      A_\pi^{\rm samp}
+      =
+      2\mathfrak E_{\star,\pi}+4\mathfrak P_{\star,\pi},
+      \tag{OSR1}
+   \]
+   and define
+   \[
+      \Theta(B,A)=
+      \inf_{0<\varepsilon\le1}
+      \left[
+         \varepsilon B+
+         A\left(1+\left\lceil\log_2\frac1\varepsilon\right\rceil\right)
+      \right],
+      \tag{OSR2}
+   \]
+   with \(\Theta(B,0)=0\).  Then any surviving residual satisfies, for every
+   finite sampled-center split-profile panel,
+   \[
+      \sum_{\pi\in\Pi}\eta_\pi B_\pi
+      \le
+      \sum_{\pi\in\Pi}\eta_\pi
+      \left(
+         C_\pi^{\rm lo}
+         +
+         \Theta(B_\pi^{\rm hi},A_\pi^{\rm samp})
+      \right).
+      \tag{OSR3}
+   \]
+   Conversely, any strict violation of \((OSR3)\) exposes either a
+   low-correlation positive shared-panel record or one sampled high-correlation
+   dense prefix.
+
+   Moreover, for a universal constant \(C_0\),
+   \[
+      \Theta(B,A)
+      \le
+      C_0 A
+      \left(
+         1+\log_+\frac{B}{A}
+      \right)
+      \qquad(A>0),
+      \tag{OSR4}
+   \]
+   and \(\Theta(B,0)=0\).  Hence a simpler sufficient residual envelope is
+   \[
+      \sum_{\pi\in\Pi}\eta_\pi B_\pi
+      \le
+      \sum_{\pi\in\Pi}\eta_\pi
+      \left[
+         C_\pi^{\rm lo}
+         +
+         C_0A_\pi^{\rm samp}
+         \left(
+            1+\log_+\frac{B_\pi^{\rm hi}}{A_\pi^{\rm samp}}
+         \right)
+      \right],
+      \tag{OSR5}
+   \]
+   with the logarithmic term interpreted as \(0\) when
+   \(A_\pi^{\rm samp}=0\).
+
+   This removes the free truncation parameter from the high-correlation
+   obstruction.  The remaining sampled-center theorem only has to make the
+   expected unreported tail plus recursive star price logarithmically smaller
+   than the useful high-correlation benefit.
+\end{corollary}
+
+\begin{proof}
+   Fix a finite panel and assume no positive low-correlation record or sampled
+   dense prefix exists.  For any choice of
+   \(0<\varepsilon_\pi\le1\), the residual envelope \((SCSR1)\) gives
+   \[
+      \sum_\pi\eta_\pi B_\pi
+      \le
+      \sum_\pi\eta_\pi
+      \left(
+         C_\pi^{\rm lo}
+         +\varepsilon_\pi B_\pi^{\rm hi}
+         +A_\pi^{\rm samp}
+          \left(1+\left\lceil\log_2\frac1{\varepsilon_\pi}\right\rceil\right)
+      \right),
+      \tag{OSR6}
+   \]
+   because \(J_{\varepsilon_\pi}=1+\lceil\log_2(1/\varepsilon_\pi)\rceil\).
+   Taking the infimum independently over the finitely many
+   \(\varepsilon_\pi\) proves \((OSR3)\); if a strict violation of \((OSR3)\)
+   occurred, choose each \(\varepsilon_\pi\) within a small enough additive
+   error of the infimum to obtain a strict violation of \((SCSR1)\), and apply
+   \cref{cor:sampled-center-split-profile-residual}.
+
+   It remains to prove \((OSR4)\).  If \(B\le A\), choose
+   \(\varepsilon=1\), giving \(\Theta(B,A)\le B+A\le2A\).  If \(B>A\), choose
+   \(k=\lfloor\log_2(B/A)\rfloor\) and \(\varepsilon=2^{-k}\).  Then
+   \(\varepsilon B\le2A\) and
+   \(1+k\le1+\log_2(B/A)\).  Therefore
+   \[
+      \Theta(B,A)
+      \le
+      2A+A\left(1+\log_2\frac BA\right)
+      \le
+      C_0A\left(1+\log_+\frac BA\right)
+   \]
+   for a universal \(C_0\).  The case \(A=0\) follows directly from
+   \((OSR2)\) by taking \(\varepsilon\downarrow0\).
+\end{proof}
+
 \begin{corollary}[Min-cost split-profile separator endpoint]
    \label{cor:min-cost-split-profile-separator-endpoint}
    In the setting of
@@ -58969,6 +59084,11 @@ hardens to one ordinary verified panel column.
 \Cref{cor:sampled-center-split-profile-residual} records the exact surviving
 counterexample envelope \(B\le C^{\rm lo}+\varepsilon B^{\rm hi}
 +2J_\varepsilon\mathfrak E_\star+4J_\varepsilon\mathfrak P_\star\).
+\Cref{cor:optimized-sampled-center-split-profile-residual} optimizes out
+\(\varepsilon\) when the sampled-center certificates are uniform over
+truncation levels, giving the logarithmic toll
+\(A(1+\log_+(B^{\rm hi}/A))\) with
+\(A=2\mathfrak E_\star+4\mathfrak P_\star\).
 \Cref{cor:min-cost-split-profile-separator-endpoint} turns this scalar envelope
 into an endpoint statement: if every normalized exact-signature dual violates
 the optimized envelope for some finite split-profile panel, and the resulting
