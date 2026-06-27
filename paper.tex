@@ -12552,6 +12552,121 @@ query-price overlap, storage price, and duplicate-incidence factor \(b_G\).
    \((SPSS1)\) and \((SPSS7)\) proves \((SPSS9)\) under the no-star condition.
 \end{proof}
 
+\begin{corollary}[Paid integrated star residual for spread profiles]
+   \label{cor:paid-integrated-spread-star-residual}
+   Work in the setting of \cref{cor:spread-packing-star-signal}, and also fix a
+   finite filter-cover dual \((\alpha,\tau,\sigma)\) on near-pair demands
+   \(\mathcal N\) with near radius \(r\).  For every possible star center
+   \(x\in E\), put
+   \[
+      R_x=\sqrt{2(1-\underline\theta)},
+      \qquad
+      W_x=P\cap B(x,R_x),
+      \qquad
+      a_x(q)=\mathbf 1\{\|q-x\|\le R_x+r\},
+      \tag{PSSR1}
+   \]
+   and define the paid degree and query price
+   \[
+      d_x(y)=
+      \sum_{q:\,(y,q)\in\mathcal N}\alpha_{y,q}a_x(q),
+      \qquad
+      A_x=\sum_q\tau_qa_x(q).
+      \tag{PSSR2}
+   \]
+   Suppose the dense verifier may add, for every \(x\in E\) and every
+   cardinality \(h\le |W_x|\), the best paid \(h\)-point prefix of \(W_x\) with
+   prices
+   \[
+      T_{x,h}=\psi_xh^{\rho_x},
+      \qquad
+      S_{x,h}=\psi_xh^{1+\rho_x},
+      \qquad 0<\rho_x<1 .
+      \tag{PSSR3}
+   \]
+   Finally suppose the high-correlation multiplicities are dominated by the paid
+   near-shadow degrees,
+   \[
+      M_x(y)\le d_x(y)
+      \qquad(x,y\in E).
+      \tag{PSSR4}
+   \]
+
+   If no such smaller-radius paid prefix has positive reduced gain, then,
+   writing \(t_j=\omega_{\min}2^j\) when \(W_{\rm hi}>0\) and interpreting the
+   \(j\)-sums below as empty when \(W_{\rm hi}=0\),
+   \[
+      W_{\rm hi}
+      \le
+      2\sum_{x\in E}\sum_{j=0}^{J_\omega-1}
+      \psi_x
+      \left(
+         A_x|U_{x,t_j}|^{\rho_x}
+         +
+         \sigma |U_{x,t_j}|^{1+\rho_x}
+      \right),
+      \tag{PSSR5}
+   \]
+   Consequently the whole weighted profile satisfies
+   \[
+      \sum_{(x,y)\in\pi}\omega_{x,y}
+      \le
+      B_{\rm lo}
+      +
+      2\sum_{x\in E}\sum_{j=0}^{J_\omega-1}
+      \psi_x
+      \left(
+         A_x|U_{x,t_j}|^{\rho_x}
+         +
+         \sigma |U_{x,t_j}|^{1+\rho_x}
+      \right).
+      \tag{PSSR6}
+   \]
+   Equivalently, a violation of \((PSSR6)\) exposes a positive reduced-gain
+   smaller-radius prefix.  Thus the high-correlation part of a failed
+   entropy-energy profile is charged by the integrated Renyi price of the
+   dyadic paid star levels, not by a worst-case \(|E|J_\omega\) overlap bound.
+\end{corollary}
+
+\begin{proof}
+   The case \(W_{\rm hi}=0\) is immediate, so assume \(W_{\rm hi}>0\).  By
+   \cref{cor:spread-packing-star-signal}, every \(U_{x,t_j}\) is contained in
+   \(W_x\).  Since no \(h\)-point paid prefix in \(W_x\) has positive gain,
+   the top-prefix optimality argument of
+   \cref{lem:star-prefix-weak-type-residual} gives, for every \(x\) and \(j\),
+   \[
+      \sum_{y\in U_{x,t_j}}d_x(y)
+      \le
+      \psi_x
+      \left(
+         A_x|U_{x,t_j}|^{\rho_x}
+         +
+         \sigma |U_{x,t_j}|^{1+\rho_x}
+      \right).
+      \tag{PSSR7}
+   \]
+   On the other hand,
+   \[
+      t_j|U_{x,t_j}|
+      \le
+      \sum_{y\in U_{x,t_j}}M_x(y)
+      \le
+      \sum_{y\in U_{x,t_j}}d_x(y),
+      \tag{PSSR8}
+   \]
+   where the first inequality is the definition of the superlevel and the
+   second is \((PSSR4)\).  Summing \((PSSR8)\) over \(x,j\), using \((PSSR7)\),
+   and applying the dyadic layer-cake lower bound from the proof of
+   \cref{cor:spread-packing-star-signal},
+   \[
+      \frac12W_{\rm hi}
+      \le
+      \sum_{x,j}t_j|U_{x,t_j}|,
+   \]
+   proves \((PSSR5)\).  Adding the low contribution bound \((SPSS1)\) gives
+   \((PSSR6)\).  The final statement is the contrapositive.
+\end{proof}
+
 \Cref{lem:reduced-gain-quotient-refinement} is the finite-cover analogue of the
 Hall-shadow refinement lemma.  It says that once a quotient has positive
 reduced gain, any demand-preserving split whose radius discount pays the Renyi
@@ -12566,7 +12681,11 @@ the exact spherical payment: cap-intersection energy must dominate the separated
 profile entropy.  \Cref{cor:spread-packing-star-signal} adds the contrapositive
 handoff: after the low-correlation energy part is paid, any remaining profile
 mass must appear as a smaller-radius high-correlation star whose paid value is
-tested by the dense-column verifier.  This is the precise place where the
+tested by the dense-column verifier.
+\Cref{cor:paid-integrated-spread-star-residual} gives the exact residual form:
+if the star multiplicities are paid responsibilities and all dense prefixes
+fail, then the high-correlation profile mass is bounded by the integrated Renyi
+price of those star superlevels.  This is the precise place where the
 spherical/list-decoding side should use entropy rather than density.
 
 \begin{corollary}[Residual dense-cover obstruction certificate]
