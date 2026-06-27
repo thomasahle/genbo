@@ -645,3 +645,5 @@
 - Updated the audit trail to make this one-sided reported certificate the build-facing closed-shadow target.
 - Added the reported closed-shadow residual dichotomy. For any finite certified report universe, either one report has positive certified surplus and repairs the cut, or every report satisfies the scalar reverse inequality \((CRR3)\); ruling out that residual is now the compact geometric reporter theorem.
 - Updated the audit trail to name \((CRR3)\) as the finite reported closed-shadow obstruction.
+- Added the routed-support closed-shadow report bridge. A support-price, atom-routing, list-decoding, or facility report that certifies a routed support and lower paid mass now compiles into the reported layer-cake interface; if only support size is reported, the loss is the dyadic dynamic-range factor.
+- Updated the audit trail to fold routed-support mechanisms into the current reported closed-shadow obstruction language.
