@@ -43813,6 +43813,114 @@ certificate is the verified positive-gain column and the finite LP it augments.
    \((CLW2)\)--\((CLW7)\) specialized to this profile.
 \end{proof}
 
+\begin{corollary}[Correlation-split witness-profile residual]
+   \label{cor:correlation-split-witness-profile-residual}
+   Work at one resident node and fix the normalized dual prices used in
+   \cref{cor:witness-law-residual-obstruction}.  Let a materializable two-point
+   witness profile have useful benefit split as
+   \[
+      B_\pi=B_\pi^{\rm lo}+B_\pi^{\rm hi}.
+      \tag{WPR1}
+   \]
+   Assume the low-correlation part is materializable in the sense of
+   \cref{cor:gaussian-tuple-profile-witness-density}, with certified count
+   \(M_\pi^{\rm lo}\), threshold margin \(\beta_\pi^{\rm lo}\), and pair
+   correlation at most \(\theta_\pi^{\rm lo}\).  Put
+   \[
+      C_\pi^{\rm lo}
+      =
+      M_\pi^{\rm lo}
+      \exp\!\left(
+         -\frac{(\beta_\pi^{\rm lo})^2}{1+\theta_\pi^{\rm lo}}
+      \right).
+      \tag{WPR2}
+   \]
+
+   For the high-correlation part, suppose preprocessing reports a finite
+   pair-star panel in the setting of
+   \cref{cor:paid-pair-star-panel-certificate}.  Thus the panel has records
+   \(i\in I\), weights \(\lambda_i\ge0\), lower paid-mass certificates \(X_i\),
+   upper size certificates \(K_i\), query prices \(A_{x_i}\), and recursive
+   price envelope
+   \[
+      P_i
+      =
+      \psi_\star
+      \left(
+         A_{x_i}K_i^{\rho_\star}
+         +\sigma K_i^{1+\rho_\star}
+      \right).
+      \tag{WPR3}
+   \]
+   Let \(E_\pi^{\rm hi}\ge0\) be a certified unreported tail allowance, and
+   assume the high-correlation benefit routed through this panel satisfies
+   \[
+      B_\pi^{\rm hi}
+      \le
+      E_\pi^{\rm hi}+\sum_{i\in I}\lambda_iX_i .
+      \tag{WPR4}
+   \]
+
+   If
+   \[
+      B_\pi
+      >
+      C_\pi^{\rm lo}
+      +E_\pi^{\rm hi}
+      +\sum_{i\in I}\lambda_iP_i ,
+      \tag{WPR5}
+   \]
+   then either the low-correlation record exposes a positive shared-panel gain,
+   or the high-correlation panel exposes a positive smaller-radius dense prefix.
+   Consequently, in any residual satisfying \((WRO3)\) and in which no reported
+   pair-star prefix has positive reduced gain, every such split profile obeys
+   \[
+      B_\pi
+      \le
+      C_\pi^{\rm lo}
+      +E_\pi^{\rm hi}
+      +\sum_{i\in I}\lambda_iP_i .
+      \tag{WPR6}
+   \]
+
+   If the high-correlation report comes from the raw correlation split of
+   \cref{cor:correlation-split-gaussian-profile-layer}, one may take
+   \(E_\pi^{\rm hi}=2|P|J_{\rm hi}\Lambda\) after all star records with
+   certified scale at least \(\Lambda\) have been offered to the dense verifier.
+   In the fixed-threshold guarded version of
+   \cref{cor:correlation-split-fixed-threshold-star-screen}, this becomes the
+   explicit tail \(2|P|J_{\rm hi}\Lambda_0\).  Thus high-correlation overlap is
+   not a separate branching loss: it is either converted into paid dense-prefix
+   price or remains as a named residual tail.
+\end{corollary}
+
+\begin{proof}
+   Suppose neither separator fires.  Since the low-correlation record does not
+   expose positive gain, the residual conclusion of
+   \cref{cor:gaussian-tuple-profile-witness-density} gives
+   \(B_\pi^{\rm lo}\le C_\pi^{\rm lo}\).  Since no reported pair-star prefix has
+   positive reduced gain, the converse statement in
+   \cref{cor:paid-pair-star-panel-certificate} gives
+   \[
+      \sum_i\lambda_iX_i\le\sum_i\lambda_iP_i .
+   \]
+   Combining this inequality with \((WPR1)\) and \((WPR4)\) yields
+   \[
+      B_\pi
+      \le
+      C_\pi^{\rm lo}
+      +E_\pi^{\rm hi}
+      +\sum_i\lambda_iP_i ,
+   \]
+   which is the negation of \((WPR5)\).  Therefore any violation of
+   \((WPR5)\) must trigger one of the two certified separators, and the residual
+   envelope \((WPR6)\) is the contrapositive.
+
+   The final tail choices are exactly the no-large-star conclusions
+   \((CSG4)\)--\((CSG7)\) and \((CFS5)\)--\((CFS6)\), read as unreported
+   high-correlation benefit allowances.
+\end{proof}
+
 The role of \cref{asm:weighted-dense-spherical-dichotomy} is now precise.  It is
 not an additional recursion rule; it is the separation theorem that would prove
 the finite signature LPs used in \cref{prop:fractional-filter-cover-polylog}
@@ -57667,6 +57775,12 @@ the explicit density inequality \(B_\ell\le N_\ell e^{-I_\ell}\).
 pair profiles: the low-correlation residual inequality is
 \(B_\pi\le M_\pi\exp(-\beta_\pi^2/(1+\theta_\pi))\), or the analogous
 two-margin bound.
+\Cref{cor:correlation-split-witness-profile-residual} combines this with the
+high-correlation star reporter in the same fractional residual language: a
+surviving split profile must have benefit bounded by low-correlation Gaussian
+congestion, explicit unreported high-correlation tail, and the paid recursive
+price of reported star prefixes.  Thus dense overlap is charged as panel price,
+not as a branching factor.
 \Cref{cor:tuple-profile-compressed-bucket-storage}
 gives the direct
 low-correlation certificate for this target: first list moment plus two-point
