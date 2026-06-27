@@ -44627,6 +44627,80 @@ certificate is the verified positive-gain column and the finite LP it augments.
    first accepted verified singleton is retained.
 \end{proof}
 
+\begin{corollary}[Clipped singleton center-cover formula]
+   \label{cor:clipped-singleton-center-cover}
+   Work with one threshold atom cut in the setting of
+   \cref{cor:singleton-reported-center-screen}.  Let \(\mathcal X\) be a finite
+   materialized center universe, with captured masses \(m_x(t)\) and additive
+   singleton star prices \(P_x\).  Consider the singleton fractional cover
+   \[
+   \begin{array}{ll}
+   \Xi_t^{\rm sing}=\min
+      & \displaystyle
+        \sum_{x\in\mathcal X}m_x(t)e_x
+        +2\sum_{x\in\mathcal X}P_x\lambda_x\\[0.8em]
+   \text{\rm subject to}
+      & e_x+\lambda_x\ge1\qquad(x\in\mathcal X),\\[0.3em]
+      & e_x,\lambda_x\ge0 .
+   \end{array}
+      \tag{CSC1}
+   \]
+   Then
+   \[
+      \Xi_t^{\rm sing}
+      =
+      \sum_{x\in\mathcal X}\min\{m_x(t),2P_x\}.
+      \tag{CSC2}
+   \]
+   Moreover, suppose a reported-center panel universe contains every singleton
+   \(\{x\}\) and every panel \(C\) has additive price
+   \(P_C=\sum_{x\in C}P_x\).  Then the full fractional center-cover LP
+   \((RCC2)\) over that panel universe has the same optimum \((CSC2)\).
+
+   Consequently, for additive reported-center prices,
+   \[
+      \Xi_t^{\rm sing}<W_t:=\sum_{x\in\mathcal X}m_x(t)
+      \quad\Longleftrightarrow\quad
+      \exists x\in\mathcal X:\ m_x(t)>2P_x.
+      \tag{CSC3}
+   \]
+   In that case the singleton center \(x\) exposes a positive smaller-radius
+   dense prefix.  If no such singleton exists, the clipped cover value is the
+   tail-only value \(W_t\), so no deterministic set or sampled center law over
+   \(\mathcal X\) can improve the cut-local tail certificate.
+
+   Thus the additive center-cover problem has no hidden fractional or
+   correlated-set advantage: the exact reduced price is the scalar clipped sum
+   \(\sum_x\min\{m_x(t),2P_x\}\).
+\end{corollary}
+
+\begin{proof}
+   The singleton LP separates over centers.  For fixed \(x\), an optimal
+   solution has \(e_x+\lambda_x=1\) and \(0\le\lambda_x\le1\), so its
+   contribution is
+   \[
+      \min_{0\le\lambda\le1}
+      \bigl[m_x(t)(1-\lambda)+2P_x\lambda\bigr]
+      =
+      \min\{m_x(t),2P_x\}.
+   \]
+   Summing over \(x\) proves \((CSC2)\).
+
+   Now allow arbitrary reported center panels with additive prices.  Any panel
+   solution \((e,\lambda_C)\) can be expanded into a singleton solution by
+   replacing each \(\lambda_C\) by the singleton increments
+   \(\lambda_x\leftarrow\lambda_x+\lambda_C\) for all \(x\in C\).  The cover
+   constraints remain satisfied and the objective is unchanged because
+   \(P_C=\sum_{x\in C}P_x\).  Conversely, singleton variables are feasible in
+   the full panel LP because singleton panels are present.  Hence the optima
+   coincide.
+
+   Finally, \(\Xi_t^{\rm sing}<W_t\) holds exactly when at least one summand
+   in \((CSC2)\) is strictly smaller than \(m_x(t)\), namely when
+   \(m_x(t)>2P_x\).  The dense-prefix conclusion and the residual statement
+   are \cref{cor:singleton-reported-center-screen}.
+\end{proof}
+
 \begin{corollary}[Fractional reported-center cover dual]
    \label{cor:fractional-reported-center-cover-dual}
    Work with one threshold atom cut as in
@@ -59608,6 +59682,10 @@ time at a fixed cut.
 certificate: a proposed center need only lower-certify its captured cut mass and
 upper-certify its recursive star price; if \(\underline m_x>2\overline P_x\),
 the usual verified dense prefix fires.
+\Cref{cor:clipped-singleton-center-cover} gives the closed-form LP value in
+the additive case: the fractional center-cover price is exactly
+\(\sum_x\min\{m_x(t),2P_x\}\), and any strict improvement over tailing all cut
+mass is already a positive singleton.
 \Cref{cor:fractional-reported-center-cover-dual} packages center search as a
 finite LP: either fractional reported-center panels lower the tail-only cost,
 which hardens to one positive dense-prefix column, or the all-ones no-center
