@@ -16213,6 +16213,121 @@ success-normalized bucket-net argument.
    contradicting \((LRS1)\).
 \end{proof}
 
+\begin{lemma}[Fractional recycled-layer dual normal form]
+   \label{lem:fractional-recycled-layer-dual-normal-form}
+   Work in the notation of \cref{lem:lagrange-recycled-sublayer-screen}.
+   With the convention that the maximum over an empty feasible set is
+   \(-\infty\), define the fractional bad-layer value
+   \[
+      \Phi_{\Delta'}(W,\theta)
+      =
+      \max
+      \left\{
+      \sum_{q\in Q_{\Delta'}} y_q(A\ell_q-s_q):
+      0\le y_q\le1,\quad
+      \sum_{q\in Q_{\Delta'}}y_q\ell_q\ge\Lambda
+      \right\}.
+      \tag{FRD1}
+   \]
+   Then, in the same extended-real convention,
+   \[
+      \Phi_{\Delta'}(W,\theta)
+      =
+      \inf_{\lambda\ge0}
+      \left\{
+      \sum_{q\in Q_{\Delta'}}
+      \bigl((A+\lambda)\ell_q-s_q\bigr)_+
+      -
+      \lambda\Lambda
+      \right\}.
+      \tag{FRD2}
+   \]
+   Moreover, for every \(\lambda>0\) and every vector
+   \(0\le y_q\le1\),
+   \[
+      \sum_{q\in Q_{\Delta'}}y_q(A\ell_q-s_q)
+      \le
+      \sum_{q\in Q_{\Delta'}}
+      \bigl((A+\lambda)\ell_q-s_q\bigr)_+
+      -
+      \lambda\Lambda
+      -
+      \lambda
+      \left(
+         \sum_{q\in Q_{\Delta'}}y_q\ell_q-\Lambda
+      \right).
+      \tag{FRD3}
+   \]
+   Consequently, if the dual expression in \((FRD2)\) is at most \(0\) for
+   some positive \(\lambda\), then every fractional sublayer \(y\) with
+   \[
+      \sum_{q\in Q_{\Delta'}}y_q\ell_q>\Lambda
+   \]
+   satisfies
+   \[
+      \sum_{q\in Q_{\Delta'}}y_qs_q
+      >
+      A\sum_{q\in Q_{\Delta'}}y_q\ell_q .
+      \tag{FRD4}
+   \]
+   In particular every integral sublayer \(Y'\subseteq Q_{\Delta'}\) with
+   load above \(\Lambda\) satisfies \((LRS3)\).
+\end{lemma}
+
+\begin{proof}
+   The inequality \((FRD3)\) is the pointwise Lagrange upper bound.  Indeed,
+   \[
+   \begin{aligned}
+      &\sum_{q\in Q_{\Delta'}}y_q(A\ell_q-s_q)
+      +
+      \lambda
+      \left(
+         \sum_{q\in Q_{\Delta'}}y_q\ell_q-\Lambda
+      \right)\\
+      &\qquad =
+      \sum_{q\in Q_{\Delta'}}
+      y_q\bigl((A+\lambda)\ell_q-s_q\bigr)
+      -
+      \lambda\Lambda\\
+      &\qquad \le
+      \sum_{q\in Q_{\Delta'}}
+      \bigl((A+\lambda)\ell_q-s_q\bigr)_+
+      -
+      \lambda\Lambda .
+   \end{aligned}
+   \]
+   Rearranging gives \((FRD3)\).  If the displayed dual expression is at most
+   zero and \(\sum_qy_q\ell_q>\Lambda\), then \((FRD3)\) gives
+   \[
+      \sum_qy_q(A\ell_q-s_q)<0,
+   \]
+   which is \((FRD4)\).  Taking \(y_q=\mathbf 1_{\{q\in Y'\}}\) gives the
+   asserted integral consequence.
+
+   It remains only to identify the exact fractional value.  If
+   \(\sum_q\ell_q<\Lambda\), the feasible set in \((FRD1)\) is empty, while
+   the right-hand side of \((FRD2)\) tends to \(-\infty\) as
+   \(\lambda\to\infty\).  Otherwise \((FRD1)\) is the finite linear program
+   \[
+      \max\ c^\top y
+      \quad\text{subject to}\quad
+      -\ell^\top y\le-\Lambda,\quad
+      y\le\mathbf 1,\quad
+      -y\le0,
+   \]
+   where \(c_q=A\ell_q-s_q\).  Its dual is
+   \[
+      \min_{\lambda,u,v\ge0}
+      -\lambda\Lambda+\sum_qu_q
+      \quad\text{subject to}\quad
+      -\lambda\ell_q+u_q-v_q\ge c_q\quad(q\in Q_{\Delta'}).
+   \]
+   For fixed \(\lambda\), minimizing over \(u_q,v_q\) gives
+   \(u_q=(c_q+\lambda\ell_q)_+\).  Thus the dual objective is exactly the
+   right-hand side of \((FRD2)\), and finite-dimensional LP duality proves
+   equality.
+\end{proof}
+
 \begin{corollary}[Lagrange recycled-sublayer separator suffices]
    \label{cor:lagrange-recycled-sublayer-separator-suffices}
    Work under the hypotheses of \cref{cor:annular-reporter-local-cover}, assume
@@ -16303,8 +16418,11 @@ closes the local fractional cover.
 of the same target: for each dyadic annular size level, it is enough to find a
 positive multiplier \(\lambda\) for which the total positive query deficit
 \(\sum_q((2H/C+\lambda)\Delta'\bar\tau_q-s_{W,\theta}(q))_+\) is below the
-Lagrange budget.  This turns the all-sublayer Hall check into a one-dimensional
-positive-part screen over query-wise near-shadow masses.
+Lagrange budget.  \Cref{lem:fractional-recycled-layer-dual-normal-form}
+identifies this condition as the positive-multiplier dual certificate for a
+fractional bad-sublayer knapsack.  Thus the remaining separator can be searched
+as a one-dimensional dual screen over query-wise near-shadow masses, rather
+than as an all-subsets Hall check.
 
 \begin{corollary}[Annular reporter closes the local cover]
    \label{cor:annular-reporter-local-cover}
@@ -38063,6 +38181,11 @@ already feasible.
 \cref{cor:lagrange-recycled-sublayer-separator-suffices} reduce that all-sublayer
 condition to a one-parameter positive-part screen over query-wise near-shadow
 deficits at each dyadic annular size level.
+\Cref{lem:fractional-recycled-layer-dual-normal-form} gives the exact
+fractional knapsack dual behind that screen: a positive multiplier with
+nonpositive dual value rules out every strict-load fractional recycled layer,
+so the geometric separator can be phrased as producing an optimizable scalar
+dual certificate rather than checking all sublayers.
 \Cref{lem:primitive-hit-kernel-cover-equivalence} gives the matching primal
 form: the same theorem is equivalent to fractionally covering the primitive
 spherical hit kernel \(r_{p,q}\) by Pareto cores at \(\pi_1\)-scaled query and
