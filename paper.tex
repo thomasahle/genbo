@@ -29299,6 +29299,120 @@ inequality \((QP3)\).
    \((HPS4)\).
 \end{proof}
 
+\begin{lemma}[Star-superlevel column verifier]
+   \label{lem:star-superlevel-column-verifier}
+   Work in a finite filter-cover instance
+   \((P,\mathcal Q,\mathcal N)\) as in
+   \cref{lem:finite-filter-cover-dual}, where every demand
+   \((p,q)\in\mathcal N\) satisfies \(\|p-q\|\le r\).  Let
+   \(U\subseteq P\) be certified inside a ball \(B(x,R_U)\), and define the
+   ball-thickened query activation
+   \[
+      a_U(q)=\mathbf 1\{\|q-x\|\le R_U+r\}
+      \qquad(q\in\mathcal Q).
+      \tag{SVC1}
+   \]
+   Let \(T_U,S_U\) be certified query and storage prices for the child on
+   \(U\).  Then
+   \[
+      A_U=(U,a_U,T_U,S_U)
+      \tag{SVC2}
+   \]
+   is a valid dense-filter column: if \(p\in U\) and \(\|p-q\|\le r\), then
+   \(a_U(q)=1\).
+
+   For any filter-cover dual prices \((\alpha,\tau,\sigma)\), its reduced gain
+   is exactly
+   \[
+      \mathsf G(U)
+      =
+      \sum_{\substack{(p,q)\in\mathcal N:\\ p\in U}}
+         \alpha_{p,q}a_U(q)
+      -
+      T_U\sum_{q\in\mathcal Q}\tau_qa_U(q)
+      -
+      \sigma S_U .
+      \tag{SVC3}
+   \]
+   If \(\mathsf G(U)>0\), then \(A_U\) is a positive reduced-gain column and
+   the finite column-generation step of
+   \cref{cor:filter-cover-column-generation} may add it.  Conversely, if a
+   finite star family \(\mathcal U_\star\) contains no positive column, then
+   every \(U\in\mathcal U_\star\) satisfies the explicit residual inequality
+   \[
+      \sum_{\substack{(p,q)\in\mathcal N:\\ p\in U}}
+         \alpha_{p,q}a_U(q)
+      \le
+      T_U\sum_q\tau_qa_U(q)+\sigma S_U .
+      \tag{SVC4}
+   \]
+\end{lemma}
+
+\begin{proof}
+   If \(p\in U\subseteq B(x,R_U)\) and \(\|p-q\|\le r\), then
+   \[
+      \|q-x\|\le\|q-p\|+\|p-x\|\le r+R_U,
+   \]
+   so \(a_U(q)=1\).  Thus \((SVC2)\) satisfies the filter correctness condition
+   used in \cref{def:fractional-dense-filter-cover}.  Formula \((SVC3)\) is
+   \cref{cor:filter-cover-column-generation}'s reduced-gain definition applied
+   to this column.  Positive gain is therefore an admissible column-generation
+   certificate, and nonpositive gain for every member of a finite star family is
+   exactly \((SVC4)\).
+\end{proof}
+
+\begin{corollary}[Pair-star reporter as dense-column generator]
+   \label{cor:pair-star-dense-column-generator}
+   In the setting of
+   \cref{lem:high-correlation-pair-star-reporter}, also fix a finite
+   filter-cover instance \((P,\mathcal Q,\mathcal N)\) with near radius \(r\).
+   For each nonempty reported superlevel \(U_{x,t}\), put
+   \[
+      R_\star=\sqrt{2(1-\underline\theta)}
+      \tag{PSG1}
+   \]
+   and equip \(U_{x,t}\) with the activation
+   \[
+      a_{x,t}(q)=\mathbf 1\{\|q-x\|\le R_\star+r\}.
+      \tag{PSG2}
+   \]
+   Let \(T_{x,t},S_{x,t}\) be any certified descendant prices for this
+   smaller-radius child.  For dual prices \((\alpha,\tau,\sigma)\), define
+   \[
+      \mathsf G(x,t)
+      =
+      \sum_{\substack{(p,q)\in\mathcal N:\\ p\in U_{x,t}}}
+         \alpha_{p,q}a_{x,t}(q)
+      -
+      T_{x,t}\sum_q\tau_qa_{x,t}(q)
+      -
+      \sigma S_{x,t}.
+      \tag{PSG3}
+   \]
+   If some dyadic reporter level has \(\mathsf G(x,t)>0\), then the fractional
+   dense-filter cover has a valid positive-gain dense column.  If no dyadic
+   reporter level has positive gain, then the residual dual satisfies
+   \[
+      \sum_{\substack{(p,q)\in\mathcal N:\\ p\in U_{x,t}}}
+         \alpha_{p,q}a_{x,t}(q)
+      \le
+      T_{x,t}\sum_q\tau_qa_{x,t}(q)+\sigma S_{x,t}
+      \tag{PSG4}
+   \]
+   for every reported star.  Thus the high-correlation pair-star construction
+   is a safe build-time proposal mechanism: it may generate many overlapping
+   candidates, but only the exact reduced-gain test \((PSG3)\) can retain one,
+   and \((PSG4)\) is the precise no-star condition left for the diffuse
+   spherical/list-decoding analysis.
+\end{corollary}
+
+\begin{proof}
+   By \((HPS4)\), every nonempty \(U_{x,t}\) lies in \(B(x,R_\star)\).  Apply
+   \cref{lem:star-superlevel-column-verifier} with \(U=U_{x,t}\) and
+   \(R_U=R_\star\).  The displayed gain and residual inequalities are exactly
+   \((SVC3)\) and \((SVC4)\).
+\end{proof}
+
 \begin{corollary}[Tuple-profile distinct-storage certificate]
    \label{cor:tuple-profile-distinct-storage}
    Work in the setting of
@@ -29678,6 +29792,10 @@ entropy, shifted-threshold margin, and maximum pair correlation.
 \cref{cor:dense-star-gaussian-profile-layer} explain what happens when that
 incidence entropy is concentrated on genuinely high-correlation pairs: a dyadic
 star superlevel is a certified smaller-radius dense proposal.
+\Cref{lem:star-superlevel-column-verifier} and
+\cref{cor:pair-star-dense-column-generator} add the finite LP check: the star
+is retained only if its ball-thickened query side has positive reduced gain;
+otherwise the exact no-star inequality becomes part of the diffuse residual.
 \Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} give the corresponding
 entropy-energy normal form: each large canonical child supplies many separated
@@ -42799,6 +42917,11 @@ alternative: if a profile layer has large weighted incidence on pairs with
 correlation at least \(\underline\theta\), then some dyadic star superlevel lies
 inside a ball of radius \(\sqrt{2(1-\underline\theta)}\) and carries incidence
 at least the average layer mass up to a logarithmic dynamic-range factor.
+\Cref{lem:star-superlevel-column-verifier} and
+\cref{cor:pair-star-dense-column-generator} turn such a superlevel into an
+ordinary fractional-cover column by using the certified query activation
+\(\|q-x\|\le\sqrt{2(1-\underline\theta)}+r\); failure of every such column is
+the explicit no-star reduced-gain inequality \((PSG4)\).
 \Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} reduce each dyadic count to tuple
 incidence: a large separated child contains many ordered witness tuples, so the
