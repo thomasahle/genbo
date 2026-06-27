@@ -37219,6 +37219,59 @@ and compressed-bucket estimates.
    closing tests.
 \end{proof}
 
+\begin{corollary}[Local finite-prefix residual normal form]
+   \label{cor:local-finite-prefix-residual-normal-form}
+   Work in the setting of
+   \cref{cor:local-close-pay-cut-trichotomy}.  Fix a finite duplicate-prefix
+   search pool: for every duplicate closure \(\mathcal A\subseteq\mathcal I_U\)
+   that may be exposed, the pool contains certified containers \(Y\subseteq U\),
+   available cardinalities \(h\), and admissible fractional query layers
+   \(0\le y_q\le1\).  Run the local assignment test at congestion \(\kappa\).
+   Then exactly one of the following certified outcomes is obtained.
+
+   First, the assignment is infeasible and the canonical duplicate closure
+   \(\mathcal A^\star\) satisfies \((LCT1)\).  If some searched
+   \((Y,h,y)\) violates the finite-prefix envelope \((DFP4)\) for
+   \(\mathcal A^\star\), then the paid-prefix verifier exposes a positive
+   repair prefix.  If no searched record violates \((DFP4)\), then the whole
+   duplicate obstruction is localized to the ordinary finite-prefix residual
+   \[
+      D_{Y,y}^{\widehat\gamma,\mathcal A^\star}(h)
+      \le
+      \psi_Y
+      \left(
+         h^{\rho_Y}\sum_{q\in\mathcal Q_+}\widehat\tau_qy_q
+         +\sigma h^{1+\rho_Y}
+      \right)
+      \tag{LFP1}
+   \]
+   for every searched \((Y,h,y)\), with
+   \(\widehat\gamma_{p,q}=a_q\gamma_{p,q}\) and
+   \(\widehat\tau_q=a_q\tau_q\), while the complement outside
+   \(\mathcal A^\star\) is routable at congestion \(\kappa\).
+
+   Second, the assignment is feasible.  Then either the guarded residual closes,
+   or the whole-container and responsibility-star payment inequalities
+   \((LCT4)\)--\((LCT5)\) both hold.
+
+   Thus a local solve never creates a tree of duplicate children.  The failed
+   duplicate branch contributes either one verified paid-prefix column or one
+   finite-prefix residual instance plus an already packed complement.
+\end{corollary}
+
+\begin{proof}
+   Apply \cref{cor:local-close-pay-cut-trichotomy}.  In the infeasible branch,
+   it returns the canonical closure \(\mathcal A^\star\), the strict cut
+   inequality \((LCT1)\), and the complement assignment after deleting
+   \(N_U(\mathcal A^\star)\).  Apply
+   \cref{cor:duplicate-closure-finite-prefix-normal-form} to
+   \(\mathcal A^\star\).  A strict violation of \((DFP4)\) is exactly a
+   positive finite-prefix reduced cost and therefore gives the paid-prefix
+   repair; if none exists, \((LFP1)\) holds for every searched record.  The
+   feasible branch is the second branch of
+   \cref{cor:local-close-pay-cut-trichotomy}.
+\end{proof}
+
 \Cref{lem:fractional-local-list-size-certificate} weakens the pointwise
 certificate \((LGS2)\): a proposed container only needs to fractionally assign
 its captured guard load to the paid shadow with congestion \(\kappa\).  The
@@ -37249,6 +37302,10 @@ literal: the duplicate closure is an ordinary finite-prefix demand system after
 the weight substitution \(\widehat\gamma_{p,q}=a_q\gamma_{p,q}\),
 \(\widehat\tau_q=a_q\tau_q\).  Thus the duplicate branch uses the same
 finite-prefix reporter language as the closed Hall-shadow branch.
+\Cref{cor:local-finite-prefix-residual-normal-form} is the resulting local
+algorithmic form: a max-flow failure is either repaired by one verified
+finite-prefix column or leaves one finite-prefix residual instance and an
+already packed complement.
 \Cref{cor:local-transport-to-star-bridge} gives the complementary positive
 form: any successful local assignment is already a high-correlation
 responsibility tensor, so the dense-star machinery only has to find a
