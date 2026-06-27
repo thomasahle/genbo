@@ -15925,6 +15925,65 @@ success-normalized bucket-net argument.
    some cut violation \((CCR3)\) must exist.
 \end{proof}
 
+\begin{corollary}[Half-mass excess-cut obstruction]
+   \label{cor:half-mass-excess-cut-obstruction}
+   Work under the hypotheses of
+   \cref{cor:single-seed-near-shadow-prefix-obstruction}, and keep the notation
+   \(Q'\), \(B(q)\), \(b_q\), \(B_{\rm tot}\), and \(D_W^\theta\) from
+   \cref{cor:cut-certified-annular-reporter}.  Fix a retained container \(W\),
+   a size certificate \(|W|\le K\), a congestion parameter \(C>0\), and
+   \(0\le\theta\le1\).  Assume \(B_{\rm tot}>0\), and suppose
+   \[
+      \frac{B_{\rm tot}}
+      {8C\,J_{K,B_{\rm tot}/(2C)}}
+      >
+      \frac{b\,\psi_W}{\pi_1}
+      \left(
+         \frac{(\chi\beta b_0)^{\rho_W}K^{\rho_W}}{L}
+         +
+         \frac{(\chi\beta b_0)^{1+\rho_W}K^{1+\rho_W}}{S}
+      \right).
+      \tag{HMC1}
+   \]
+   If the local filter-cover LP is infeasible, then there is a query sublayer
+   \(Y\subseteq Q'\) satisfying
+   \[
+      \sum_{q\in Y}b_q-C D_W^\theta(Y)>\frac{B_{\rm tot}}2 .
+      \tag{HMC2}
+   \]
+   In particular,
+   \[
+      \sum_{q\in Y}b_q>\frac{B_{\rm tot}}2,
+      \qquad
+      D_W^\theta(Y)
+      <
+      \frac1C
+      \left(\sum_{q\in Y}b_q-\frac{B_{\rm tot}}2\right)
+      \le \frac1C\sum_{q\in Y}b_q .
+      \tag{HMC3}
+   \]
+   Conversely, if for some \(W,K,C,\theta\) satisfying \((HMC1)\) every query
+   sublayer obeys
+   \[
+      \sum_{q\in Y}b_q-C D_W^\theta(Y)\le\frac{B_{\rm tot}}2,
+      \tag{HMC4}
+   \]
+   then the single-seed annular layer yields the scalar reporter required by
+   \cref{asm:weighted-annular-scalar-reporter}.
+\end{corollary}
+
+\begin{proof}
+   Apply \cref{cor:cut-certified-annular-reporter} with
+   \(M_0=B_{\rm tot}/2\).  The affordability condition \((CCR2)\) becomes
+   exactly \((HMC1)\), and the cut violation \((CCR3)\) becomes \((HMC2)\).
+   The two inequalities in \((HMC3)\) are immediate from \((HMC2)\) and
+   nonnegativity of \(D_W^\theta(Y)\).
+
+   For the converse, \((HMC4)\) is exactly the cut condition \((CCR1)\) with
+   \(M_0=B_{\rm tot}/2\).  Together with \((HMC1)\), the first part of
+   \cref{cor:cut-certified-annular-reporter} gives the reporter.
+\end{proof}
+
 The transport formulation is useful because it cleanly separates the two
 remaining tasks.  The annular witnesses are far points and still cannot be used
 as cover columns.  A geometric or list-recovery argument must instead construct
@@ -15941,7 +16000,12 @@ capacity plus the allowed unshipped tail.  Thus the current irreducible
 obstruction can be stated as a purely geometric Hall failure: a query-price-heavy
 annular layer exists, but no retained smaller-radius container receives a large
 fraction of its incidences into the true near-shadow potential at
-Renyi-affordable congestion.
+Renyi-affordable congestion.  \Cref{cor:half-mass-excess-cut-obstruction}
+removes the last target-mass parameter: any container whose half-mass transport
+would be affordable must have a sublayer \(Y\) with excess
+\(\sum_{q\in Y}b_q-C D_W^\theta(Y)>B_{\rm tot}/2\).  The next geometric theorem
+can therefore try to rule out these excess cuts directly, or else feed the
+large-excess sublayer back into the spherical far-load analysis.
 
 \begin{corollary}[Annular reporter closes the local cover]
    \label{cor:annular-reporter-local-cover}
@@ -37681,9 +37745,13 @@ smaller-radius container has a Renyi-affordable congestion lower bound by
 statement: either every query sublayer has enough near-shadow neighborhood
 capacity, in which case the reporter follows, or some sublayer has annular
 demand exceeding its near-shadow cut capacity plus the allowed unshipped tail.
-Thus the remaining geometric theorem can be phrased as ruling out a heavy
-annular query layer whose every retained smaller-radius container has such a
-Hall-type cut obstruction.
+\Cref{cor:half-mass-excess-cut-obstruction} removes the target-mass parameter:
+any retained container for which half-mass transport would be affordable must
+have a sublayer with excess annular demand
+\(\sum_{q\in Y}b_q-C D_W^\theta(Y)>B_{\rm tot}/2\).  Thus the remaining
+geometric theorem can be phrased as ruling out a heavy annular query layer whose
+every retained smaller-radius container has such a Hall-type half-mass cut
+obstruction.
 \Cref{lem:primitive-hit-kernel-cover-equivalence} gives the matching primal
 form: the same theorem is equivalent to fractionally covering the primitive
 spherical hit kernel \(r_{p,q}\) by Pareto cores at \(\pi_1\)-scaled query and
