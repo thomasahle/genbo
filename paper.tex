@@ -36421,6 +36421,146 @@ smaller Hall cut whose paid-pair capacity is measured only inside that subset.
    \(\mu^{1-\rho_W}(\mu+\mu^2)^{\rho_W}\le2\mu^{1+\rho_W}\).
 \end{proof}
 
+\begin{corollary}[Query-free deficient-shadow list gain]
+   \label{cor:query-free-deficient-shadow-list-gain}
+   Work in the setting of
+   \cref{cor:query-layer-random-list-deficient-shadow-repair}.  For a
+   deterministic certified list \(L\subseteq W\), put \(K=|L|\) and
+   \[
+      h_L(q)=
+      \sum_{\substack{p\in L:\,(p,q)\in\mathcal N_{G'}}}
+      \widehat\gamma_{p,q}r_{p,q}.
+      \tag{QFG1}
+   \]
+   If \(K\in\mathcal K_W\) and
+   \[
+      \sum_{q\in\mathcal Q_+}
+      \bigl(h_L(q)-\psi_WK^{\rho_W}\widehat\tau_q\bigr)_+
+      >
+      \psi_W\sigma K^{1+\rho_W},
+      \tag{QFG2}
+   \]
+   then the finite-prefix repair alternative of
+   \cref{cor:finite-prefix-hall-deficit-oracle} holds.
+
+   More generally, if \(\mathcal K_W\) is \(b_0\)-dense from above, it is enough
+   that
+   \[
+      \sum_{q\in\mathcal Q_+}
+      \bigl(h_L(q)-b_0^{\rho_W}\psi_WK^{\rho_W}\widehat\tau_q\bigr)_+
+      >
+      b_0^{1+\rho_W}\psi_W\sigma K^{1+\rho_W}.
+      \tag{QFG3}
+   \]
+
+   Finally, let \(0\le\pi_p\le1\) be realizable inclusion marginals on \(W\),
+   let \(\mu=\sum_p\pi_p\), let the realizing random list satisfy
+   \(\E K^2\le M_2\), and define
+   \[
+      h_\pi(q)=
+      \sum_{\substack{p\in W:\,(p,q)\in\mathcal N_{G'}}}
+      \pi_p\widehat\gamma_{p,q}r_{p,q}.
+      \tag{QFG4}
+   \]
+   Under the same \(b_0\)-dense cardinality net, the repair alternative holds
+   if
+   \[
+      \sum_{q\in\mathcal Q_+}
+      \bigl(h_\pi(q)-b_0^{\rho_W}\psi_W\mu^{\rho_W}\widehat\tau_q\bigr)_+
+      >
+      b_0^{1+\rho_W}\psi_W\sigma\,
+      \mu^{1-\rho_W}M_2^{\rho_W}.
+      \tag{QFG5}
+   \]
+   For independent Bernoulli inclusion one may take \(M_2\le\mu+\mu^2\), and
+   when \(\mu\ge1\) the right hand storage term is at most
+   \(2b_0^{1+\rho_W}\psi_W\sigma\mu^{1+\rho_W}\).
+
+   Thus a center, facility, additive-code, or list-decoding proposal can be
+   scored without preselecting a query layer: the verifier computes the positive
+   part in \((QFG2)\), \((QFG3)\), or \((QFG5)\), then hardens the winning
+   positive coordinates to a Boolean query layer.
+\end{corollary}
+
+\begin{proof}
+   For \((QFG2)\), define
+   \[
+      Q^+=
+      \{q\in\mathcal Q_+:
+        h_L(q)>\psi_WK^{\rho_W}\widehat\tau_q\}.
+   \]
+   With \(y=\mathbf 1_{Q^+}\), the left side of \((DFN3)\) is at least
+   \(\sum_{q\in Q^+}h_L(q)\), because the top \(K\)-prefix in \(W\) dominates
+   the list \(L\).  Inequality \((QFG2)\) is exactly
+   \[
+      \sum_{q\in Q^+}h_L(q)
+      >
+      \psi_W\left(
+         K^{\rho_W}\sum_{q\in Q^+}\widehat\tau_q
+         +\sigma K^{1+\rho_W}
+      \right),
+   \]
+   so \((DFN3)\) holds and the finite-prefix repair alternative follows.
+
+   For \((QFG3)\), choose \(k\in\mathcal K_W\) with \(K\le k\le b_0K\).  The
+   top \(k\)-prefix dominates \(L\), and the same argument with
+   \(Q^+=\{q:h_L(q)>b_0^{\rho_W}\psi_WK^{\rho_W}\widehat\tau_q\}\) gives
+   \[
+      D_{G',W,\mathbf 1_{Q^+}}^{\widehat\gamma}(k)
+      >
+      \psi_W\left(
+         k^{\rho_W}\sum_{q\in Q^+}\widehat\tau_q
+         +\sigma k^{1+\rho_W}
+      \right),
+   \]
+   since \(k^{\rho_W}\le b_0^{\rho_W}K^{\rho_W}\) and
+   \(k^{1+\rho_W}\le b_0^{1+\rho_W}K^{1+\rho_W}\).  Hence \((DFN3)\) holds.
+
+   For the marginal form, let \(\mathcal L\) be a realizing random list and put
+   \(K=|\mathcal L|\).  For each \(q\), define
+   \[
+      X_q=
+      \sum_{\substack{p\in\mathcal L:\,(p,q)\in\mathcal N_{G'}}}
+      \widehat\gamma_{p,q}r_{p,q}
+      -
+      b_0^{\rho_W}\psi_WK^{\rho_W}\widehat\tau_q .
+   \]
+   Jensen gives \(\E K^{\rho_W}\le\mu^{\rho_W}\), so
+   \[
+      \E X_q
+      \ge
+      h_\pi(q)-b_0^{\rho_W}\psi_W\mu^{\rho_W}\widehat\tau_q .
+   \]
+   By convexity of \(x\mapsto x_+\),
+   \[
+      \E(X_q)_+
+      \ge
+      \bigl(
+      h_\pi(q)-b_0^{\rho_W}\psi_W\mu^{\rho_W}\widehat\tau_q
+      \bigr)_+ .
+   \]
+   Summing over \(q\), using \((QFG5)\), and applying the log-convex moment
+   bound
+   \[
+      \E K^{1+\rho_W}
+      \le
+      (\E K)^{1-\rho_W}(\E K^2)^{\rho_W}
+      \le
+      \mu^{1-\rho_W}M_2^{\rho_W}
+   \]
+   shows that
+   \[
+      \E\left[
+      \sum_q(X_q)_+
+      -
+      b_0^{1+\rho_W}\psi_W\sigma K^{1+\rho_W}
+      \right]>0.
+   \]
+   Some hard-list outcome therefore satisfies \((QFG3)\), and the previous
+   paragraph applies.  The Bernoulli and \(\mu\ge1\) simplifications are the
+   same as in \cref{cor:query-layer-random-list-deficient-shadow-repair}.
+\end{proof}
+
 \begin{corollary}[Deficient-shadow residual obstruction]
    \label{cor:deficient-shadow-residual-obstruction}
    Work in the setting of
@@ -36541,6 +36681,12 @@ quantizer output, or list-decoding panel closes as soon as its expected
 query-layer captured mass beats the corresponding query/storage Renyi moments.
 Thus expensive preprocessing may search heuristically, but the retained proof
 object is still one Boolean query layer and one top prefix.
+\Cref{cor:query-free-deficient-shadow-list-gain} optimizes out the query layer
+for proposal search: a hard list or marginal center law is scored by a positive
+part over queries, and any positive score already contains the Boolean query
+layer needed by \((DFN3)\).  This is the reduced-gain objective that build-time
+\(k\)-means++, facility, AQ, range-reporting, or list-decoding proposals should
+try to maximize.
 \Cref{cor:transported-deficient-shadow-certificate} is the corresponding
 threshold-free reporter form: if the geometry supplies one bounded-congestion
 shipment into a certified subset whose transported mass per congestion beats
@@ -63840,6 +63986,10 @@ prefix.  The older no-prefix residual
 proposal-law criterion for this sharper residual: positive expected surplus of
 a random list or marginal center law rules out \((QLDS2)\), and the verifier
 keeps only a deterministic query layer and prefix.
+\Cref{cor:query-free-deficient-shadow-list-gain} is the operational scoring
+form of the same statement: the proposal routine returns only a list or soft
+support, while the proof chooses the profitable query layer by thresholding the
+hinge \(h(q)-\psi K^\rho\widehat\tau_q\).
 \Cref{cor:tail-deficient-shadow-envelope} rewrites the same residual as a bound
 on every searched deficient-shadow threshold layer.
 \Cref{cor:two-price-deficient-shadow-screen} records the scale dichotomy left by
