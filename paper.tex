@@ -38101,6 +38101,103 @@ into query-dominated, storage-dominated, and balanced cases.
    contrapositive.
 \end{proof}
 
+\begin{corollary}[Thresholded shadow-routing screen]
+   \label{cor:thresholded-shadow-routing-screen}
+   Work in the setting of
+   \cref{cor:shadow-routing-exact-scale-soft-reporter}.  A thresholded shadow
+   routing is a fractional shadow routing together with thresholds
+   \(\delta_y>0\) such that routed mass for template \(y\) is supported only on
+   \[
+      d_{A,y}(p)\ge\delta_y .
+      \tag{TSR1}
+   \]
+   Let \(X_y\) be the routed shadow mass from \((SRT3)\).  If there are
+   available cardinalities \(K_y\in\mathcal K_y\) such that
+   \[
+      \sum_{y\in\mathcal Y}
+      \left[
+         \min\{X_y,K_y\delta_y\}
+         -
+         \psi_y
+         \left(
+            A_yK_y^{\rho_y}
+            +\zeta K_y^{1+\rho_y}
+         \right)
+      \right]>0,
+      \tag{TSR2}
+   \]
+   then some \(y\) gives a one-record Hall-shadow merge.
+
+   Equivalently, a single thresholded route into \(y\) succeeds whenever
+   \[
+      \max_{K\in\mathcal K_y}
+      \left[
+         \min\{X_y,K\delta_y\}
+         -
+         \psi_y
+         \left(
+            A_yK^{\rho_y}
+            +\zeta K^{1+\rho_y}
+         \right)
+      \right]>0 .
+      \tag{TSR3}
+   \]
+\end{corollary}
+
+\begin{proof}
+   Use the memberships induced by the routing in \((SRT4)\).  By the threshold
+   support condition \((TSR1)\),
+   \[
+      \mu_y
+      =
+      \sum_{p\in W_y}\frac{m_y(p)}{d_{A,y}(p)}
+      \le
+      \frac{X_y}{\delta_y}.
+      \tag{TSR4}
+   \]
+   Hence for every \(K_y\),
+   \[
+      K_y\frac{X_y}{\max\{\mu_y,K_y\}}
+      \ge
+      K_y\frac{X_y}{\max\{X_y/\delta_y,K_y\}}
+      =
+      \min\{X_y,K_y\delta_y\}.
+      \tag{TSR5}
+   \]
+   Therefore \((TSR2)\) implies the shadow-routing surplus \((SRT6)\), and
+   \cref{cor:shadow-routing-exact-scale-soft-reporter} gives a one-record
+   Hall-shadow merge.  The one-record optimized form \((TSR3)\) is the same
+   implication after maximizing over the cardinality net.
+\end{proof}
+
+\begin{corollary}[Sampled thresholded shadow-routing search]
+   \label{cor:sampled-thresholded-shadow-routing-search}
+   In the setting of \cref{cor:thresholded-shadow-routing-screen}, suppose a
+   randomized build-time proposal routine returns a finite thresholded shadow
+   routing panel on seed \(s\), and let \(Z(s)\) be the left side of \((TSR2)\)
+   for that panel.  If
+   \[
+      \E_sZ(s)\ge\Gamma>0,
+      \qquad
+      Z(s)_+\le M
+      \quad\text{almost surely},
+      \tag{STS1}
+   \]
+   then \(B\) independent build-time seeds contain a valid one-record
+   Hall-shadow merge with probability at least
+   \[
+      1-\exp\left(-\frac{B\Gamma}{M}\right).
+      \tag{STS2}
+   \]
+\end{corollary}
+
+\begin{proof}
+   As before, \((STS1)\) implies \(\Pr[Z(s)>0]\ge\Gamma/M\).  A positive seed
+   satisfies \((TSR2)\), so
+   \cref{cor:thresholded-shadow-routing-screen} verifies it into a deterministic
+   one-record Hall-shadow merge.  Independent repetition gives \((STS2)\).
+\end{proof}
+
 \begin{corollary}[Cut-center routing obstruction]
    \label{cor:cut-center-routing-obstruction}
    Work in the setting of
@@ -51044,6 +51141,10 @@ price, so clipped and balanced scales become proposal screens rather than
 endpoint restrictions.  The routing form
 \cref{cor:shadow-routing-exact-scale-soft-reporter} converts any fractional
 routing of paid shadow atoms into exact-scale soft records, and
+\cref{cor:thresholded-shadow-routing-screen} gives the range-reporting-friendly
+version: routed mass \(X\) supported on a degree superlevel \(d_{A,y}\ge\delta\)
+contributes the simple certified benefit \(\min\{X,K\delta\}\) at cardinality
+\(K\).
 \cref{cor:cut-center-routing-obstruction} records the first obstruction left
 when even the cut's own centers cannot route their paid shadow at positive
 surplus.  The Hall cut itself can also be assumed marginally closed by
