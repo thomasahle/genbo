@@ -29413,6 +29413,148 @@ inequality \((QP3)\).
    \((SVC3)\) and \((SVC4)\).
 \end{proof}
 
+\begin{lemma}[Star-prefix weak-type residual]
+   \label{lem:star-prefix-weak-type-residual}
+   Work in a finite filter-cover instance as in
+   \cref{lem:finite-filter-cover-dual}.  Let \(\mathcal X\) be a finite set of
+   certified star centers.  For \(x\in\mathcal X\), let
+   \(W_x\subseteq P\cap B(x,R_x)\) be a certified container, let
+   \[
+      a_x(q)=\mathbf 1\{\|q-x\|\le R_x+r\},
+      \tag{SPW0}
+   \]
+   and let the child price for a \(K\)-point prefix of \(W_x\) be
+   \[
+      T_{x,K}=\psi_xK^{\rho_x},
+      \qquad
+      S_{x,K}=\psi_xK^{1+\rho_x},
+      \qquad 0<\rho_x<1 .
+      \tag{SPW1}
+   \]
+   For dual prices \((\alpha,\tau,\sigma)\), define the star paid degrees and
+   query price
+   \[
+      d_x(p)=
+      \sum_{q:\,(p,q)\in\mathcal N}\alpha_{p,q}a_x(q),
+      \qquad
+      A_x=\sum_{q\in\mathcal Q}\tau_qa_x(q).
+      \tag{SPW2}
+   \]
+   Order \(W_x=\{p_1,p_2,\ldots\}\) so that
+   \(d_x(p_1)\ge d_x(p_2)\ge\cdots\).  Suppose that, after the current dual
+   prices are known, the column generator may add, for every available
+   cardinality \(K\in\mathcal K_x\), the star prefix
+   \(U_{x,K}=\{p_1,\ldots,p_K\}\) with activation \(a_x\) and prices
+   \((SPW1)\).  Equivalently, the finite universe may contain all
+   \(K\)-subsets of \(W_x\), with the verifier selecting the best one.  If no
+   such star prefix has positive reduced gain, then
+   \[
+      \sum_{i\le K}d_x(p_i)
+      \le
+      \psi_x\left(A_xK^{\rho_x}+\sigma K^{1+\rho_x}\right)
+      \qquad(x\in\mathcal X,\ K\in\mathcal K_x).
+      \tag{SPW3}
+   \]
+   Consequently every \(U\subseteq W_x\) with \(|U|=K\in\mathcal K_x\) satisfies
+   \[
+      \sum_{p\in U}d_x(p)
+      \le
+      \psi_x\left(A_xK^{\rho_x}+\sigma K^{1+\rho_x}\right).
+      \tag{SPW4}
+   \]
+
+   If \(\mathcal K_x\) is \(b\)-dense from below, meaning that every
+   \(1\le h\le |W_x|\) has some \(K\in\mathcal K_x\) with \(h/b\le K\le h\),
+   then every nonempty paid-degree superlevel
+   \[
+      H_{x,\delta}=\{p\in W_x:d_x(p)\ge\delta\},
+      \qquad h=|H_{x,\delta}|,
+      \tag{SPW5}
+   \]
+   obeys the weak-type cap
+   \[
+      \delta
+      \le
+      \psi_x\left(
+         b^{1-\rho_x}A_xh^{\rho_x-1}
+         +\sigma h^{\rho_x}
+      \right).
+      \tag{SPW6}
+   \]
+\end{lemma}
+
+\begin{proof}
+   The reduced gain of \(U_{x,K}\) is
+   \[
+      \sum_{i\le K}d_x(p_i)
+      -
+      \psi_xK^{\rho_x}A_x
+      -
+      \sigma\psi_xK^{1+\rho_x}.
+   \]
+   Nonpositive gain for every available prefix is exactly \((SPW3)\).  Since
+   the top \(K\) prefix maximizes \(\sum_{p\in U}d_x(p)\) among \(K\)-subsets of
+   \(W_x\), \((SPW4)\) follows.
+
+   For the weak-type statement, choose \(K\in\mathcal K_x\) with
+   \(h/b\le K\le h\).  The top \(K\) points all have degree at least \(\delta\),
+   so \(\delta K\le\sum_{i\le K}d_x(p_i)\).  Dividing \((SPW3)\) by \(K\) gives
+   \[
+      \delta
+      \le
+      \psi_x\left(A_xK^{\rho_x-1}+\sigma K^{\rho_x}\right).
+   \]
+   Because \(\rho_x-1<0\), \(K\ge h/b\) gives
+   \(K^{\rho_x-1}\le b^{1-\rho_x}h^{\rho_x-1}\), while \(K\le h\) gives
+   \(K^{\rho_x}\le h^{\rho_x}\).  This proves \((SPW6)\).
+\end{proof}
+
+\begin{corollary}[Pair-star weak-type normal form]
+   \label{cor:pair-star-weak-type-normal-form}
+   In the setting of
+   \cref{cor:pair-star-dense-column-generator}, let
+   \(\mathcal X_\star\) be the finite set of centers produced by the reporter,
+   and put
+   \[
+      W_x=P\cap B(x,R_\star),
+      \qquad
+      a_x(q)=\mathbf 1\{\|q-x\|\le R_\star+r\}.
+      \tag{PWN1}
+   \]
+   Suppose the dense-filter column generator may add the best paid prefix of
+   each \(W_x\) at every cardinality, priced as
+   \[
+      T_{x,K}=\psi_\star K^{\rho_\star},
+      \qquad
+      S_{x,K}=\psi_\star K^{1+\rho_\star}.
+      \tag{PWN2}
+   \]
+   If no reported center yields a positive-gain prefix, then every reported
+   pair-star superlevel \(U_{x,t}\) satisfies
+   \[
+      \sum_{p\in U_{x,t}}
+      \sum_{q:\,(p,q)\in\mathcal N}
+         \alpha_{p,q}a_x(q)
+      \le
+      \psi_\star\left(
+         A_x|U_{x,t}|^{\rho_\star}
+         +\sigma |U_{x,t}|^{1+\rho_\star}
+      \right),
+      \tag{PWN3}
+   \]
+   where \(A_x=\sum_q\tau_qa_x(q)\).  Equivalently, a high-correlation
+   pair-star reporter is useful only through a paid-degree violation of
+   \((PWN3)\): geometric incidence alone proposes the center and smaller radius,
+   while the exact finite-cover verifier chooses the best paid prefix.
+\end{corollary}
+
+\begin{proof}
+   Apply \cref{lem:star-prefix-weak-type-residual} with
+   \(R_x=R_\star\), \(\psi_x=\psi_\star\), \(\rho_x=\rho_\star\), and
+   \(\mathcal K_x=\{1,\ldots,|W_x|\}\).  Since \(U_{x,t}\subseteq W_x\) by
+   \((HPS4)\), \((SPW4)\) gives \((PWN3)\).
+\end{proof}
+
 \begin{corollary}[Tuple-profile distinct-storage certificate]
    \label{cor:tuple-profile-distinct-storage}
    Work in the setting of
@@ -29796,6 +29938,11 @@ star superlevel is a certified smaller-radius dense proposal.
 \cref{cor:pair-star-dense-column-generator} add the finite LP check: the star
 is retained only if its ball-thickened query side has positive reduced gain;
 otherwise the exact no-star inequality becomes part of the diffuse residual.
+\Cref{lem:star-prefix-weak-type-residual} and
+\cref{cor:pair-star-weak-type-normal-form} sharpen this further: after a
+geometric routine reports a center, the verifier may keep the best paid prefix
+inside that smaller ball, and failure of all prefixes forces a weak-type
+Renyi cap on every reported star.
 \Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} give the corresponding
 entropy-energy normal form: each large canonical child supplies many separated
@@ -42922,6 +43069,11 @@ at least the average layer mass up to a logarithmic dynamic-range factor.
 ordinary fractional-cover column by using the certified query activation
 \(\|q-x\|\le\sqrt{2(1-\underline\theta)}+r\); failure of every such column is
 the explicit no-star reduced-gain inequality \((PSG4)\).
+\Cref{lem:star-prefix-weak-type-residual} and
+\cref{cor:pair-star-weak-type-normal-form} replace exact reported stars by the
+best dual-price prefix in the same certified ball; if no prefix is profitable,
+every reported star has paid near-pair mass bounded by the query/storage
+Renyi envelope \((PWN3)\).
 \Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} reduce each dyadic count to tuple
 incidence: a large separated child contains many ordered witness tuples, so the
