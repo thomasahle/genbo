@@ -38873,6 +38873,103 @@ family.
    retained.
 \end{proof}
 
+\begin{corollary}[Point-coupled one-slot support law]
+   \label{cor:point-coupled-one-slot-support-law}
+   Work in the setting of
+   \cref{cor:certified-one-slot-marginal-support-search}.  Fix one reported
+   support slot \(i\).  Suppose a report gives point support probabilities
+   \(0\le q_p\le1\), atom routing marginals \(z_{p,\sigma_0}\), and routed
+   fractions \(\gamma_{\sigma_0}\), supported only when \(p\in W_i\), such that
+   \[
+      0\le z_{p,\sigma_0}\le q_p,
+      \qquad
+      0\le\gamma_{\sigma_0}\le y_i(\sigma_0).
+      \tag{RCS1}
+   \]
+   Let
+   \[
+      0\le\widehat X
+      \le
+      \sum_{(p,\sigma_0)\in N(A)}
+      \alpha_{p,\sigma_0}z_{p,\sigma_0}\gamma_{\sigma_0},
+      \qquad
+      \sum_pq_p\le\widehat\nu .
+      \tag{RCS2}
+   \]
+   If
+   \[
+      \widehat X
+      >
+      2b_iJ_i\psi_i
+      \left(
+         A_{y_i}\widehat\nu^{\rho_i}
+         +
+         \zeta(\widehat\nu+\widehat\nu^{1+\rho_i})
+      \right),
+      \tag{RCS3}
+   \]
+   then the Hall-cut repair alternative \((HCR2)\) holds.
+
+   In particular, define the point score
+   \[
+      d_i(p)=
+      \sum_{\sigma_0:\,(p,\sigma_0)\in N(A)}
+      \alpha_{p,\sigma_0}y_i(\sigma_0).
+      \tag{RCS4}
+   \]
+   For any soft point membership \(0\le\theta_p\le1\), the choice
+   \(q_p=\theta_p\), \(z_{p,\sigma_0}=\theta_p\), and
+   \(\gamma_{\sigma_0}=y_i(\sigma_0)\) is valid.  Thus a one-sided certificate
+   \[
+      0\le\widehat X\le\sum_p\theta_pd_i(p),
+      \qquad
+      \sum_p\theta_p\le\widehat\nu,
+      \tag{RCS5}
+   \]
+   satisfying \((RCS3)\) already exposes a reported closed-shadow repair.
+   This point-coupled form avoids the union-bound loss
+   \(\min\{1,\sum_{\sigma_0}z_{p,\sigma_0}\}\) when many paid atoms of the same
+   data point are routed together.
+\end{corollary}
+
+\begin{proof}
+   Independently for each data point \(p\), activate the slot with probability
+   \(q_p\).  Conditional on activation, route atom \((p,\sigma_0)\) to slot
+   \(i\) with probability \(z_{p,\sigma_0}/q_p\), interpreted as zero when
+   \(q_p=0\), and route the fraction \(\gamma_{\sigma_0}\) if the atom is
+   chosen.  The condition \(z_{p,\sigma_0}\le q_p\) makes this a valid
+   conditional probability, and the expected routed paid mass is at least
+   \(\widehat X\).
+
+   For a sampled outcome, use the activated points as the reported support
+   \(\mathsf S_i\).  Its routed mass is at most
+   \[
+      \sum_{p\in\mathsf S_i}
+      \sum_{\sigma_0:\,(p,\sigma_0)\in N(A)}
+      \alpha_{p,\sigma_0}y_i(\sigma_0),
+   \]
+   so it is an admissible one-sided routed-support report.  If
+   \(S_i=|\mathsf S_i|=\sum_pB_p\) is the number of activated points, then the
+   Bernoulli variables \(B_p\) are independent and
+   \(\mu=\E S_i=\sum_pq_p\le\widehat\nu\).  The moment calculation in
+   \((RML8)\) gives
+   \[
+      \E S_i^{\rho_i}\le\widehat\nu^{\rho_i},
+      \qquad
+      \E S_i^{1+\rho_i}\le\widehat\nu+\widehat\nu^{1+\rho_i}.
+      \tag{RCS6}
+   \]
+   Therefore the expected reported support price is at most the right hand
+   side of \((RCS3)\).  If \((RCS3)\) holds, some sampled deterministic report
+   has routed paid mass larger than its reported support price, so
+   \cref{cor:reported-support-price-routing-residual} gives \((HCR2)\).
+
+   The soft-membership specialization follows by substitution.  In that case
+   \(z_{p,\sigma_0}=q_p=\theta_p\) couples all selected atoms of point \(p\) to
+   the same support event, and the expected routed paid mass is
+   \(\sum_p\theta_pd_i(p)\).
+\end{proof}
+
 \begin{corollary}[Balanced Hall-shadow density screen]
    \label{cor:balanced-hall-shadow-density-screen}
    Work in the setting of \cref{cor:no-merge-hall-shadow-envelope}.  Fix a
@@ -54202,7 +54299,12 @@ retained index still stores only verified deterministic reported supports.
 coordination artifact from that sufficient condition: any positive aggregate
 marginal law contains one positive reported support slot, and a randomized
 build-time search only has to sample one certified slot whose conservative
-benefit-per-cost surplus is positive.  The older sufficient forms include
+benefit-per-cost surplus is positive.
+\Cref{cor:point-coupled-one-slot-support-law} sharpens the certificate for soft
+clusters: atoms of the same data point may be coupled to one Bernoulli support
+event, so the recursive price is charged to the point support probability
+\(\sum_pq_p\), not to a union bound over that point's routed atoms.  The older
+sufficient forms include
 \cref{cor:exact-scale-soft-hall-shadow-separator-endpoint},
 \cref{cor:thresholded-shadow-routing-separator-endpoint},
 \cref{cor:soft-mass-hall-shadow-separator-endpoint},
