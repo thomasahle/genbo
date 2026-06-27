@@ -43385,6 +43385,83 @@ certificate is the verified positive-gain column and the finite LP it augments.
    \cref{cor:dual-priced-witness-storage-separator}.
 \end{proof}
 
+\begin{corollary}[Witness-law residual obstruction]
+   \label{cor:witness-law-residual-obstruction}
+   Work at one resident node in the setting of
+   \cref{cor:witness-law-shared-panel-endpoint}.  Fix the class of admissible
+   finite witness reports available to preprocessing.  Against a normalized
+   exact-signature price system \((\beta,\tau,\theta)\), such a report
+   \(\mathcal R\) consists of a finite seed law \(\nu_{\mathcal R}\), certified
+   envelopes as in \((WLE1)\), a finite witness universe, child witness laws,
+   and certified congestion envelopes satisfying \((DPW2)\).  Define
+   \[
+      A_{\mathcal R}
+      =
+      \E_{z\sim\nu_{\mathcal R}}\mathsf H_z(\beta),
+      \qquad
+      Q_{\mathcal R}
+      =
+      \E_{z\sim\nu_{\mathcal R}}\mathsf L_z^{(\rho)}(\tau),
+      \tag{WRO1}
+   \]
+   and
+   \[
+      W_{\mathcal R}
+      =
+      \theta\,\E_{z\sim\nu_{\mathcal R}}\Gamma_z
+      +
+      \sum_{\omega\in\Omega_{\mathcal R}}J_{\mathcal R}(\omega).
+      \tag{WRO2}
+   \]
+   The node satisfies the witness-law hypothesis of
+   \cref{cor:witness-law-shared-panel-endpoint} for this report class if and
+   only if no normalized price system satisfying \((ESNO1)\) has the residual
+   property
+   \[
+      A_{\mathcal R}\le Q_{\mathcal R}+W_{\mathcal R}
+      \qquad(\mathcal R\text{ admissible}).
+      \tag{WRO3}
+   \]
+
+   Equivalently, for any \(0<\varepsilon<1\), a residual satisfying
+   \((WRO3)\) has the following split for every admissible report with
+   \(A_{\mathcal R}>0\): either
+   \[
+      Q_{\mathcal R}\ge(1-\varepsilon)A_{\mathcal R}
+      \tag{WRO4}
+   \]
+   or
+   \[
+      W_{\mathcal R}\ge\varepsilon A_{\mathcal R}.
+      \tag{WRO5}
+   \]
+   Thus the remaining geometric theorem may be phrased as a pure residual
+   exclusion: every normalized dual must admit one certified report whose useful
+   hit beats active load plus dual-priced witness storage.
+   The same equivalence holds for the first-moment relaxation after replacing
+   \(Q_{\mathcal R}\) by
+   \(\E_{z\sim\nu_{\mathcal R}}\mathsf L_z^{(1)}(\tau)\).
+\end{corollary}
+
+\begin{proof}
+   For a fixed report with \(A_{\mathcal R}>0\), the inequalities
+   \((WLE3)\)--\((WLE4)\) hold for some \(q,u\ge0\) with \(q+u<1\) if and only
+   if
+   \[
+      Q_{\mathcal R}+W_{\mathcal R}<A_{\mathcal R}.
+   \]
+   Indeed, the forward direction is immediate, and the reverse direction follows
+   by taking
+   \(q=Q_{\mathcal R}/A_{\mathcal R}\) and
+   \(u=W_{\mathcal R}/A_{\mathcal R}\).  Therefore failure of the witness-law
+   hypothesis for the fixed report class is exactly the existence of a
+   normalized price system for which every admissible report satisfies
+   \((WRO3)\).  Finally, if both \((WRO4)\) and \((WRO5)\) failed for some
+   report, then
+   \(Q_{\mathcal R}+W_{\mathcal R}<A_{\mathcal R}\), contradicting
+   \((WRO3)\).
+\end{proof}
+
 The role of \cref{asm:weighted-dense-spherical-dichotomy} is now precise.  It is
 not an additional recursion rule; it is the separation theorem that would prove
 the finite signature LPs used in \cref{prop:fractional-filter-cover-polylog}
@@ -57216,6 +57293,10 @@ shortest endpoint theorem: at every localized node, a dual-priced witness law
 with \(Q/A+W/A<1\) implies the shared-panel positive separator and hence the
 full \(n^{\rho_c}\polylog n\) query and \(n^{1+\rho_c}\polylog n\) space
 bounds.
+\Cref{cor:witness-law-residual-obstruction} gives the exact negation over any
+fixed certified report class: a surviving normalized dual makes every report
+satisfy \(A\le Q+W\), hence every query-efficient report must pay comparable
+dual-priced witness storage.
 \Cref{cor:tuple-profile-compressed-bucket-storage}
 gives the direct
 low-correlation certificate for this target: first list moment plus two-point
