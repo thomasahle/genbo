@@ -16146,6 +16146,126 @@ success-normalized bucket-net argument.
    \((RSS2)\).  This contradiction rules out local infeasibility.
 \end{proof}
 
+\begin{lemma}[Lagrange screen for recycled sublayers]
+   \label{lem:lagrange-recycled-sublayer-screen}
+   Work in the setting of
+   \cref{cor:recycled-sublayer-separator-suffices}, and fix
+   \(W,C,\theta,\Delta'\).  Put
+   \[
+      Q_{\Delta'}=\{q\in Q': |B_{z,\beta}(q)|\ge\Delta'\},
+      \qquad
+      \ell_q=\Delta'\bar\tau_q ,
+   \]
+   \[
+      s_q=s_{W,\theta}(q)
+      =
+      \sum_{\substack{p\in W\\(p,q)\in\mathcal N}}
+      \bar\gamma^\theta_{p,q}r_{p,q},
+      \qquad
+      A=\frac{2H_m(\Delta)}{C},
+   \]
+   and let \(\Lambda>0\).  If there is a number \(\lambda>0\) such that
+   \[
+      \sum_{q\in Q_{\Delta'}}
+      \bigl((A+\lambda)\ell_q-s_q\bigr)_+
+      \le
+      \lambda\Lambda ,
+      \tag{LRS1}
+   \]
+   then every subset \(Y'\subseteq Q_{\Delta'}\) with
+   \[
+      \sum_{q\in Y'}\ell_q>\Lambda
+      \tag{LRS2}
+   \]
+   satisfies
+   \[
+      D_{W,Y'}^\theta(Y')
+      >
+      A\sum_{q\in Y'}\ell_q .
+      \tag{LRS3}
+   \]
+\end{lemma}
+
+\begin{proof}
+   For \(Y'\subseteq Q_{\Delta'}\), the restricted near-shadow capacity is
+   additive in the selected queries:
+   \[
+      D_{W,Y'}^\theta(Y')
+      =
+      \sum_{q\in Y'}s_q .
+   \]
+   If \((LRS3)\) failed for some \(Y'\) satisfying \((LRS2)\), then
+   \[
+   \begin{aligned}
+      \sum_{q\in Q_{\Delta'}}
+      \bigl((A+\lambda)\ell_q-s_q\bigr)_+
+      &\ge
+      \sum_{q\in Y'}\bigl((A+\lambda)\ell_q-s_q\bigr)\\
+      &=
+      A\sum_{q\in Y'}\ell_q-D_{W,Y'}^\theta(Y')
+      +\lambda\sum_{q\in Y'}\ell_q\\
+      &\ge
+      \lambda\sum_{q\in Y'}\ell_q\\
+      &>
+      \lambda\Lambda ,
+   \end{aligned}
+   \]
+   contradicting \((LRS1)\).
+\end{proof}
+
+\begin{corollary}[Lagrange recycled-sublayer separator suffices]
+   \label{cor:lagrange-recycled-sublayer-separator-suffices}
+   Work under the hypotheses of \cref{cor:annular-reporter-local-cover}, assume
+   finite primitive support and prefix-closed retained containers as in
+   \cref{cor:recycled-sublayer-separator-suffices}.  Suppose the following
+   positive-part screen holds for every guarded normalized residual and every
+   single-seed annular query layer \(Q'=Q_{z,\beta,\Delta}\) satisfying
+   \((SAQ1)\)--\((SAQ2)\).  There are a retained container \(W\), a size
+   certificate \(|W|\le K\), a congestion parameter \(C>0\), and
+   \(0\le\theta\le1\) satisfying \((HMC1)\).  Put
+   \[
+      m=|P|,
+      \qquad
+      \mathcal D_m=\{2^\ell:0\le\ell\le\lceil\log_2m\rceil\},
+      \qquad
+      H_m(\Delta)=|\{\Delta''\in\mathcal D_m:\Delta\le\Delta''\le m\}|.
+   \]
+   Suppose that for every dyadic \(\Delta'\in\mathcal D_m\) with
+   \(\Delta'\ge\Delta\) there is \(\lambda_{\Delta'}>0\) with
+   \[
+      \sum_{q\in Q_{\Delta'}}
+      \left(
+         \left(\frac{2H_m(\Delta)}{C}+\lambda_{\Delta'}\right)
+         \Delta'\bar\tau_q
+         -
+         s_{W,\theta}(q)
+      \right)_+
+      \le
+      \lambda_{\Delta'}\,
+      \frac{(1-\xi)\beta_0C_\eta\pi_1\kappa}
+      {16J K_{|P|}H_m(\Delta)} .
+      \tag{LRS4}
+   \]
+   Here \(Q_{\Delta'}=\{q\in Q':|B_{z,\beta}(q)|\ge\Delta'\}\),
+   and \(s_{W,\theta}(q)\) is the query-wise near-shadow mass from
+   \cref{lem:lagrange-recycled-sublayer-screen}.  Then the enlarged local
+   filter-cover LP is feasible.
+\end{corollary}
+
+\begin{proof}
+   Apply \cref{lem:lagrange-recycled-sublayer-screen} at each dyadic
+   \(\Delta'\), with
+   \[
+      \Lambda=
+      \frac{(1-\xi)\beta_0C_\eta\pi_1\kappa}
+      {16J K_{|P|}H_m(\Delta)} .
+   \]
+   The screen \((LRS4)\) gives exactly \((RSS2)\) for every layer satisfying
+   \((RSS1)\).  Thus the separator property of
+   \cref{cor:recycled-sublayer-separator-suffices} holds, and that corollary
+   proves local filter-cover feasibility.
+\end{proof}
+
 The transport formulation is useful because it cleanly separates the two
 remaining tasks.  The annular witnesses are far points and still cannot be used
 as cover columns.  A geometric or list-recovery argument must instead construct
@@ -16178,6 +16298,13 @@ clusters.  Equivalently,
 \cref{cor:recycled-sublayer-separator-suffices} says that a separator only has
 to rule out those recycled layers for one affordable retained container; doing so
 closes the local fractional cover.
+\Cref{lem:lagrange-recycled-sublayer-screen} and
+\cref{cor:lagrange-recycled-sublayer-separator-suffices} give the additive form
+of the same target: for each dyadic annular size level, it is enough to find a
+positive multiplier \(\lambda\) for which the total positive query deficit
+\(\sum_q((2H/C+\lambda)\Delta'\bar\tau_q-s_{W,\theta}(q))_+\) is below the
+Lagrange budget.  This turns the all-sublayer Hall check into a one-dimensional
+positive-part screen over query-wise near-shadow masses.
 
 \begin{corollary}[Annular reporter closes the local cover]
    \label{cor:annular-reporter-local-cover}
@@ -37932,6 +38059,10 @@ branch.  \Cref{cor:recycled-sublayer-separator-suffices} records the exact
 sufficiency statement: if one affordable retained container rules out all large
 recycled layers by a near-shadow lower bound, then the local fractional cover is
 already feasible.
+\Cref{lem:lagrange-recycled-sublayer-screen} and
+\cref{cor:lagrange-recycled-sublayer-separator-suffices} reduce that all-sublayer
+condition to a one-parameter positive-part screen over query-wise near-shadow
+deficits at each dyadic annular size level.
 \Cref{lem:primitive-hit-kernel-cover-equivalence} gives the matching primal
 form: the same theorem is equivalent to fractionally covering the primitive
 spherical hit kernel \(r_{p,q}\) by Pareto cores at \(\pi_1\)-scaled query and
