@@ -647,3 +647,5 @@
 - Updated the audit trail to name \((CRR3)\) as the finite reported closed-shadow obstruction.
 - Added the routed-support closed-shadow report bridge. A support-price, atom-routing, list-decoding, or facility report that certifies a routed support and lower paid mass now compiles into the reported layer-cake interface; if only support size is reported, the loss is the dyadic dynamic-range factor.
 - Updated the audit trail to fold routed-support mechanisms into the current reported closed-shadow obstruction language.
+- Added the aggregate routed-support closed-shadow panel. Multi-center support-price or atom-routing reports now need only aggregate routed paid mass beating the sum of support prices; the verifier extracts one positive reported layer-cake repair.
+- Updated the audit trail to include this aggregate routed-support panel as the support-price bridge to the current \((CRR3)\) obstruction.
