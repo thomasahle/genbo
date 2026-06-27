@@ -30005,6 +30005,90 @@ certified shared-storage theorem.  If the active-load ratio is already near one,
 then the dual residual says that the proposal is mostly re-enumerating active
 query mass rather than producing a cost-effective dense filter.
 
+\begin{corollary}[Dual-priced witness-storage separator]
+   \label{cor:dual-priced-witness-storage-separator}
+   Work in the setting of
+   \cref{cor:certified-storage-weighted-panel-separator}.  Fix a normalized
+   dual price system \((\beta,\tau,\theta)\) satisfying \((ESNO1)\), a finite
+   seed law \(\nu\), and write \(A_\nu,Q_\nu^{(\rho)}\) as in \((CSRS1)\).
+   Suppose the certified storage envelope for every seed has a witness decomposition
+   \[
+      \widehat U_z
+      \le
+      \Gamma_z+\sum_{\kappa\in\mathcal K_z}u_{z,\kappa},
+      \qquad
+      u_{z,\kappa}\ge0,
+      \tag{DPW1}
+   \]
+   where \(\Gamma_z\) is nonrecursive metadata and each \(u_{z,\kappa}\) is the
+   certified storage price of one distinct canonical child.  Let \(\Omega\) be
+   a finite witness universe.  For each pair \((z,\kappa)\), let
+   \(\pi_{z,\kappa}\) be a probability law on \(\Omega\).  Assume there are
+   certified witness-congestion envelopes \(J(\omega)\ge0\) satisfying
+   \[
+      \theta\,
+      \E_{z\sim\nu}
+      \sum_{\kappa\in\mathcal K_z}
+      u_{z,\kappa}\pi_{z,\kappa}(\omega)
+      \le
+      J(\omega)
+      \qquad(\omega\in\Omega).
+      \tag{DPW2}
+   \]
+   If \(A_\nu>0\) and, for some \(q,u\ge0\) with \(q+u<1\),
+   \[
+      Q_\nu^{(\rho)}\le qA_\nu,
+      \tag{DPW3}
+   \]
+   \[
+      \theta\,\E_{z\sim\nu}\Gamma_z
+      +
+      \sum_{\omega\in\Omega}J(\omega)
+      \le
+      uA_\nu,
+      \tag{DPW4}
+   \]
+   then this dual price system has a positive certified-storage separator
+   \((CSWP2)\).  The same conclusion holds in the first-moment relaxation after
+   replacing \(Q_\nu^{(\rho)}\) by \(Q_\nu^{(1)}\).
+
+   Consequently, dyadic tails, tuple-profile tails, multiplicity-discounted
+   witnesses, LP range reports, or list-decoding witnesses may all be analyzed
+   through the same dual-priced storage interface: every distinct child pays
+   its recursive storage price once, distributes that price over certified
+   witnesses, and the geometric theorem only has to bound the resulting
+   witness congestion relative to useful priced hit.
+\end{corollary}
+
+\begin{proof}
+   Since each \(\pi_{z,\kappa}\) is a probability law,
+   \[
+      \sum_{\kappa\in\mathcal K_z}u_{z,\kappa}
+      =
+      \sum_{\omega\in\Omega}
+      \sum_{\kappa\in\mathcal K_z}
+      u_{z,\kappa}\pi_{z,\kappa}(\omega).
+   \]
+   Taking expectation over \(z\), multiplying by \(\theta\), and using
+   \((DPW2)\) gives
+   \[
+      \theta\E_{z\sim\nu}\widehat U_z
+      \le
+      \theta\E_{z\sim\nu}\Gamma_z
+      +
+      \sum_{\omega\in\Omega}J(\omega)
+      \le
+      uA_\nu .
+   \]
+   Together with \((DPW3)\), this gives
+   \[
+      Q_\nu^{(\rho)}+\theta\E_{z\sim\nu}\widehat U_z
+      \le(q+u)A_\nu<A_\nu,
+   \]
+   which is exactly \((CSWP2)\) for the seed law \(\nu\).  The first-moment
+   version is identical.
+\end{proof}
+
 \begin{corollary}[Distinct-canonical bucket-net certificate]
    \label{cor:distinct-canonical-bucket-net}
    Work in the setting of \cref{cor:bucket-net-ratio-form}.  In addition to the
@@ -57051,6 +57135,10 @@ is already near its useful hit mass, or its certified shared-storage envelope
 must carry a comparable fraction of that mass.  Thus the remaining
 list-decoding theorem may be attacked by proving both a first-moment active-load
 gap and a storage-envelope bound for one dual-priced panel law.
+\Cref{cor:dual-priced-witness-storage-separator} gives the corresponding
+storage interface: distribute each distinct canonical child's storage price
+over certified witnesses, bound the dual-priced witness congestion, and combine
+that bound with the active-load gap to obtain a positive separator immediately.
 \Cref{cor:tuple-profile-compressed-bucket-storage}
 gives the direct
 low-correlation certificate for this target: first list moment plus two-point
