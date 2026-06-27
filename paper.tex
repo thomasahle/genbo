@@ -16083,6 +16083,69 @@ success-normalized bucket-net argument.
    \((CRA2)\) gives \((CRA4)\).
 \end{proof}
 
+\begin{corollary}[Recycled-sublayer separator suffices]
+   \label{cor:recycled-sublayer-separator-suffices}
+   Work under the hypotheses of \cref{cor:annular-reporter-local-cover}, assume
+   the primitive law has finite support, and assume the retained container family
+   is prefix-closed as in
+   \cref{cor:single-seed-near-shadow-prefix-obstruction}.  Suppose the following
+   separator property holds for every guarded normalized residual and every
+   single-seed annular query layer \(Q'=Q_{z,\beta,\Delta}\) satisfying
+   \((SAQ1)\)--\((SAQ2)\).  There are a retained container \(W\), a size
+   certificate \(|W|\le K\), a congestion parameter \(C>0\), and
+   \(0\le\theta\le1\) satisfying the affordability inequality \((HMC1)\), such
+   that, with
+   \[
+      m=|P|,
+      \qquad
+      \mathcal D_m=\{2^\ell:0\le\ell\le\lceil\log_2m\rceil\},
+      \qquad
+      H_m(\Delta)
+      =
+      |\{\Delta'\in\mathcal D_m:\Delta\le\Delta'\le m\}|,
+   \]
+   every dyadic level \(\Delta'\in\mathcal D_m\) with \(\Delta'\ge\Delta\) and
+   every cut-restricted layer
+   \[
+      Y'\subseteq\{q\in Q': |B_{z,\beta}(q)|\ge\Delta'\}
+   \]
+   with
+   \[
+      \Delta'\sum_{q\in Y'}\bar\tau_q
+      >
+      \frac{(1-\xi)\beta_0C_\eta\pi_1\kappa}
+      {16J K_{|P|}H_m(\Delta)}
+      \tag{RSS1}
+   \]
+   satisfies the near-shadow lower bound
+   \[
+      D_{W,Y'}^\theta(Y')
+      >
+      \frac{2H_m(\Delta)}{C}\,
+      \Delta'\sum_{q\in Y'}\bar\tau_q .
+      \tag{RSS2}
+   \]
+   where \(D_{W,Y'}^\theta(Y')\) is the restricted near-shadow capacity from
+   \cref{lem:cut-recycled-annular-sublayer}.
+   Then the enlarged local filter-cover LP is feasible.
+\end{corollary}
+
+\begin{proof}
+   Suppose the enlarged local LP were infeasible.  By
+   \cref{cor:single-seed-near-shadow-prefix-obstruction}, there is a guarded
+   normalized residual and a single-seed annular query layer
+   \(Q'=Q_{z,\beta,\Delta}\) satisfying \((SAQ1)\)--\((SAQ2)\) and \((SPO1)\).
+   Apply the assumed separator property to this layer and obtain
+   \(W,K,C,\theta\) satisfying \((HMC1)\).
+
+   Since the local LP is infeasible, \cref{cor:half-mass-excess-cut-obstruction}
+   gives a half-mass excess cut \(Y\subseteq Q'\).  Applying
+   \cref{lem:cut-recycled-annular-sublayer} to this cut produces a dyadic
+   \(\Delta'\) and a cut-restricted layer \(Y'\).  The load lower bound
+   \((CRA4)\) is exactly \((RSS1)\), while \((CRA3)\) gives the opposite of
+   \((RSS2)\).  This contradiction rules out local infeasibility.
+\end{proof}
+
 The transport formulation is useful because it cleanly separates the two
 remaining tasks.  The annular witnesses are far points and still cannot be used
 as cover columns.  A geometric or list-recovery argument must instead construct
@@ -16111,7 +16174,10 @@ logarithmic fraction of the annular load while the proposed retained core sees
 only \(O(H_m(\Delta)/C)\) times that load as true near-shadow capacity.  Thus the
 remaining obstruction can be searched as a weighted list-recovery/range-reporting
 problem on these recycled sublayers, rather than as a choice of disjoint dense
-clusters.
+clusters.  Equivalently,
+\cref{cor:recycled-sublayer-separator-suffices} says that a separator only has
+to rule out those recycled layers for one affordable retained container; doing so
+closes the local fractional cover.
 
 \begin{corollary}[Annular reporter closes the local cover]
    \label{cor:annular-reporter-local-cover}
@@ -37862,7 +37928,10 @@ into a dyadic cut-restricted annular layer that keeps a logarithmic fraction of
 the weighted annular load and has small true near-shadow capacity inside the
 tested container.  This is the current normal form for feeding failed dense
 transport back into list recovery, LP range reporting, or the spherical far-load
-branch.
+branch.  \Cref{cor:recycled-sublayer-separator-suffices} records the exact
+sufficiency statement: if one affordable retained container rules out all large
+recycled layers by a near-shadow lower bound, then the local fractional cover is
+already feasible.
 \Cref{lem:primitive-hit-kernel-cover-equivalence} gives the matching primal
 form: the same theorem is equivalent to fractionally covering the primitive
 spherical hit kernel \(r_{p,q}\) by Pareto cores at \(\pi_1\)-scaled query and
