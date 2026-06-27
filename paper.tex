@@ -28847,6 +28847,79 @@ inequality \((QP3)\).
    statement is obtained by substituting \((POD3)\) into \((POD2)\).
 \end{proof}
 
+\begin{corollary}[Multiplicity-layer pair-profile certificate]
+   \label{cor:multiplicity-layer-pair-profile-storage}
+   Work in the pair specialization of
+   \cref{cor:occurrence-discounted-tuple-storage}, with
+   \(u_{z,\kappa}=\psi_{z,\kappa}|A_{z,\kappa}|^{1+\rho_{z,\kappa}}\).
+   Partition \(\mathcal T_2(P,\delta)\) into finite profile classes \(\Pi\).
+   For \(\pi\in\Pi\), let \(N_\pi\) be its cardinality.
+   For \((x,y)\in\pi\) and \(\ell\ge0\), define the undiscounted occurrence
+   congestion in multiplicity layer \(\ell\) by
+   \[
+      V_z(\pi,\ell;x,y)
+      =
+      \sum_{\substack{b\in\mathcal B_z:\ x,y\in A_{z,\kappa_{z,b}}\\
+            2^\ell\le m_z(\kappa_{z,b})<2^{\ell+1}}}
+      \psi_{z,\kappa_{z,b}}
+      |A_{z,\kappa_{z,b}}|^{\rho_{z,\kappa_{z,b}}-1}.
+      \tag{MLP1}
+   \]
+   Suppose there are envelopes \(A_{\pi,\ell}\ge0\) such that
+   \[
+      \E_z V_z(\pi,\ell;x,y)\le A_{\pi,\ell}
+      \qquad((x,y)\in\pi,\ \ell\ge0).
+      \tag{MLP2}
+   \]
+   If \(\Sigma^+=\emptyset\), the cover is feasible.  Otherwise suppose \(a>0\),
+   the corresponding active first-moment condition holds, and
+   \[
+      \E_z\Gamma_z+
+      \sum_{\pi\in\Pi}N_\pi
+      \sum_{\ell\ge0}2^{-\ell}A_{\pi,\ell}
+      \le aS .
+      \tag{MLP3}
+   \]
+   Then \((\mathsf{ESFC}_\Sigma)\) is feasible.
+
+   In particular, if a profile analysis gives
+   \[
+      A_{\pi,\ell}\le C_{\pi,\ell}e^{-I_{\pi,\ell}},
+      \tag{MLP4}
+   \]
+   then it is enough to prove the discounted entropy-energy inequality
+   \[
+      \E_z\Gamma_z+
+      \sum_{\pi\in\Pi}N_\pi
+      \sum_{\ell\ge0}
+      2^{-\ell}C_{\pi,\ell}e^{-I_{\pi,\ell}}
+      \le aS .
+      \tag{MLP5}
+   \]
+   Thus high occurrence multiplicity appears as a literal \(2^{-\ell}\)
+   storage discount.  Low-multiplicity profiles must be paid by cap-intersection
+   or decoder energy; high-multiplicity profiles may be paid by quotienting many
+   decoded records to one canonical child.
+\end{corollary}
+
+\begin{proof}
+   For \((x,y)\in\pi\), decompose the discounted occurrence sum \((ODT4)\) by
+   the dyadic layer containing \(m_z(\kappa_{z,b})\).  Every record in layer
+   \(\ell\) has reciprocal multiplicity at most \(2^{-\ell}\), so
+   \[
+      \widehat W_z(2,x,y)
+      \le
+      \sum_{\ell\ge0}2^{-\ell}V_z(\pi,\ell;x,y).
+   \]
+   Taking expectations and using \((MLP2)\) gives the pair-profile envelope
+   \[
+      B_\pi=\sum_{\ell\ge0}2^{-\ell}A_{\pi,\ell}.
+   \]
+   Condition \((MLP3)\) is therefore \((POD2)\) for this envelope, and
+   \cref{cor:pair-profile-occurrence-discounted-storage} gives feasibility.
+   Substituting \((MLP4)\) gives \((MLP5)\).
+\end{proof}
+
 \begin{corollary}[Tuple-profile distinct-storage certificate]
    \label{cor:tuple-profile-distinct-storage}
    Work in the setting of
@@ -29213,6 +29286,9 @@ measured.
 entropy-energy target: partition separated pairs into profiles and prove that
 profile cardinality times reciprocal-multiplicity congestion energy sums to the
 storage budget.
+\Cref{cor:multiplicity-layer-pair-profile-storage} pushes the quotient directly
+into that target: a profile at occurrence-multiplicity scale \(2^\ell\) pays
+only \(2^{-\ell}\) times its undiscounted cap/list-decoding energy.
 \Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} give the corresponding
 entropy-energy normal form: each large canonical child supplies many separated
@@ -42310,6 +42386,9 @@ occurrences.
 entropy-energy check for that statistic; it is now enough to show that each pair
 profile has small discounted congestion \(B_\pi\), with
 \(\sum_\pi N_\pi B_\pi\) inside the storage budget.
+\Cref{cor:multiplicity-layer-pair-profile-storage} refines this into a
+high-multiplicity-or-high-energy target: after dyadic multiplicity
+stratification, layer \(\ell\) receives a \(2^{-\ell}\) quotient discount.
 \Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} reduce each dyadic count to tuple
 incidence: a large separated child contains many ordered witness tuples, so the
