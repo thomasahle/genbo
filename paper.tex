@@ -37229,6 +37229,76 @@ the remaining geometric theorem can be stated as a weighted range-reporting,
 list-decoding, additive-quantization, or seeded-template guarantee for the
 degree function \(d_{A,y}\) exposed by the failed Hall cut.
 
+\begin{corollary}[Proposal-law Hall-shadow merge]
+   \label{cor:proposal-law-hall-shadow-merge}
+   Work in the setting of \cref{cor:one-record-hall-shadow-merge}.  Suppose
+   that whenever \((HCR1)\) is not certified for a failed Hall cut \(A\),
+   uncharged preprocessing supplies a finite seed law \(s\sim\nu\).  A seed
+   declares a repair template \(y_s\) and a size certificate \(K_s\ge1\).  Let
+   \(P_s\) be the top \(K_s\) points of \(W_{y_s}\) by the cut-shadow degree
+   \(d_{A,y_s}(p)\), or all of \(W_{y_s}\) if \(|W_{y_s}|<K_s\), and define
+   \[
+      X(s)=\sum_{p\in P_s}d_{A,y_s}(p),
+      \tag{PHM1}
+   \]
+   \[
+      R(s)=
+      \psi_{y_s}
+      \left(
+         A_{y_s}K_s^{\rho_{y_s}}
+         +\zeta K_s^{1+\rho_{y_s}}
+      \right),
+      \qquad
+      Z(s)=X(s)-R(s),
+      \tag{PHM2}
+   \]
+   with \(A_y\) defined as in \((FSP2)\).  If
+   \[
+      \E_{s\sim\nu} Z(s)>0,
+      \tag{PHM3}
+   \]
+   then some deterministic seed satisfies the one-record Hall-shadow merge
+   condition \((OHM2)\), and the Hall-shadow repair criterion holds.
+
+   More quantitatively, if
+   \[
+      \E_s Z(s)\ge \Gamma>0,
+      \qquad
+      Z(s)_+\le M
+      \quad\text{almost surely},
+      \tag{PHM4}
+   \]
+   then \(B\) independent build-time samples contain a valid one-record merge
+   with probability at least
+   \[
+      1-\exp\left(-\frac{B\Gamma}{M}\right).
+      \tag{PHM5}
+   \]
+\end{corollary}
+
+\begin{proof}
+   If \((PHM3)\) holds, at least one seed has \(Z(s)>0\).  For that seed,
+   \(P_s\subseteq W_{y_s}\), \(|P_s|\le K_s\), and \(X(s)>R(s)\), which is
+   exactly \((OHM2)\) with \(U=P_s\), \(K=K_s\), and \(y=y_s\).  Hence
+   \cref{cor:one-record-hall-shadow-merge} applies.
+
+   For the sampled statement, \((PHM4)\) implies
+   \[
+      \E Z_+\ge\Gamma .
+   \]
+   Since \(Z_+\le M\), a seed has \(Z(s)>0\) with probability at least
+   \(\Gamma/M\).  Therefore \(B\) independent seeds all fail with probability
+   at most \((1-\Gamma/M)^B\le\exp(-B\Gamma/M)\).  A successful sampled seed is
+   then verified by the deterministic one-record test above; failed seeds are
+   discarded and never enter the retained filter cover.
+\end{proof}
+
+\Cref{cor:proposal-law-hall-shadow-merge} is the build-time-heavy version of the
+same target.  A \(k\)-means++ seed, additive-quantization code, range-reporting
+cell, or list-decoder output only has to generate positive expected
+Hall-shadow prefix surplus against the current cut.  The retained index still
+keeps only the verified top-prefix dense column.
+
 \begin{corollary}[Proposal-law finite-signature endpoint]
    \label{cor:proposal-law-finite-signature-endpoint}
    Work in the setting of
@@ -49739,7 +49809,8 @@ successful aggregate responsibility transport.  The sharper
 \cref{cor:finite-signature-hall-shadow-repair} and
 \cref{cor:one-record-hall-shadow-merge} reduce this repair to the cut-shadow
 degree \(d_{A,y}\): one affordable top-prefix merge for that degree is already a
-valid dense column.
+valid dense column.  \Cref{cor:proposal-law-hall-shadow-merge} is the matching
+build-time sampler form.
 \Cref{lem:weighted-spherical-reduced-gain} proves the spherical half of the
 dual dichotomy in the exact reduced-gain language: if ordinary spherical buckets
 do not violate a surplus dual certificate, then the dual must carry large
