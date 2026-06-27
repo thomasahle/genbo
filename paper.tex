@@ -44087,6 +44087,123 @@ certificate is the verified positive-gain column and the finite LP it augments.
    approximation of the infimum if a strict violation of \((WMC4)\) occurred.
 \end{proof}
 
+\begin{corollary}[Atomized high-correlation routing dual]
+   \label{cor:atomized-high-correlation-routing-dual}
+   Fix one high-correlation split profile \(\pi\).  Let \(\mathcal A_\pi\) be a
+   finite atom set with atom benefits \(b_a\ge0\), and write
+   \[
+      B_\pi^{\rm hi}=\sum_{a\in\mathcal A_\pi}b_a .
+      \tag{AHR1}
+   \]
+   Let \(I_\pi\) be a finite set of certified pair-star records.  Record \(i\)
+   has price \(P_i\ge0\) and nonnegative atom lower certificates
+   \(x_{i,a}\ge0\).  Put
+   \[
+      X_i=\sum_{a\in\mathcal A_\pi}x_{i,a},
+      \tag{AHR2}
+   \]
+   and assume that every finite panel of these records with lower certificates
+   \(X_i\) is admissible for
+   \cref{cor:paid-pair-star-panel-certificate}.
+
+   Define the atomized high-correlation routing value by
+   \[
+   \begin{array}{ll}
+   \Phi_{\pi,{\rm at}}^{\rm hi}=\min
+      & \displaystyle
+        \sum_{a\in\mathcal A_\pi}e_a+\sum_{i\in I_\pi}\lambda_iP_i\\[0.8em]
+   \text{\rm subject to}
+      & \displaystyle
+        e_a+\sum_{i\in I_\pi}\lambda_ix_{i,a}\ge b_a
+        \qquad(a\in\mathcal A_\pi),\\[0.8em]
+      & e_a\ge0,\qquad \lambda_i\ge0 .
+   \end{array}
+      \tag{AHR3}
+   \]
+   Then the dual formula is
+   \[
+   \begin{array}{ll}
+   \Phi_{\pi,{\rm at}}^{\rm hi}=\max
+      & \displaystyle
+        \sum_{a\in\mathcal A_\pi}b_ay_a\\[0.8em]
+   \text{\rm subject to}
+      & \displaystyle
+        0\le y_a\le1
+        \qquad(a\in\mathcal A_\pi),\\[0.8em]
+      & \displaystyle
+        \sum_{a\in\mathcal A_\pi}x_{i,a}y_a\le P_i
+        \qquad(i\in I_\pi).
+   \end{array}
+      \tag{AHR4}
+   \]
+
+   Moreover, any feasible primal routing with
+   \[
+      \sum_a e_a+\sum_i\lambda_iP_i
+      <
+      B_\pi^{\rm hi}
+      \tag{AHR5}
+   \]
+   exposes a positive smaller-radius dense prefix.  Conversely, if no panel of
+   these records exposes such a prefix, then
+   \[
+      X_i\le P_i\qquad(i\in I_\pi),
+      \tag{AHR6}
+   \]
+   the all-ones dual vector \(y_a=1\) is feasible in \((AHR4)\), and therefore
+   \[
+      \Phi_{\pi,{\rm at}}^{\rm hi}=B_\pi^{\rm hi}.
+      \tag{AHR7}
+   \]
+
+   Finally, any atomized routing feasible for \((AHR3)\) supplies an admissible
+   high-correlation certificate for \(\Phi_\pi^{\rm hi}\) in
+   \cref{cor:min-cost-split-profile-envelope} by taking
+   \(E_\pi^{\rm hi}=\sum_ae_a\) and the aggregate lower certificates \(X_i\).
+   Hence
+   \[
+      \Phi_\pi^{\rm hi}\le\Phi_{\pi,{\rm at}}^{\rm hi},
+      \tag{AHR8}
+   \]
+   whenever this atomized record family is included in the admissible routing
+   universe.
+\end{corollary}
+
+\begin{proof}
+   The program \((AHR3)\) is a finite covering LP.  Assign a nonnegative dual
+   variable \(y_a\) to the constraint for atom \(a\).  The coefficient of
+   \(e_a\) gives the dual upper bound \(y_a\le1\), and the coefficient of
+   \(\lambda_i\) gives
+   \(\sum_ax_{i,a}y_a\le P_i\).  Since the primal is feasible by taking
+   \(e_a=b_a\) and is bounded below, finite LP duality gives \((AHR4)\).
+
+   Let a feasible primal routing satisfy \((AHR5)\).  Summing its atom
+   constraints over \(a\) gives
+   \[
+      B_\pi^{\rm hi}
+      \le
+      \sum_ae_a+\sum_i\lambda_iX_i .
+   \]
+   Combining this with \((AHR5)\) yields
+   \[
+      \sum_i\lambda_iX_i>\sum_i\lambda_iP_i .
+   \]
+   This is \((PPC2)\) for the panel with records \(i\) and weights
+   \(\lambda_i\), so
+   \cref{cor:paid-pair-star-panel-certificate} exposes a positive
+   smaller-radius dense prefix.
+
+   If no panel exposes a positive prefix, applying the same corollary to the
+   one-record panel for \(i\) gives \(X_i\le P_i\).  Thus \(y_a=1\) satisfies
+   all dual constraints in \((AHR4)\) and has value \(B_\pi^{\rm hi}\).  The
+   primal solution \(e_a=b_a,\lambda_i=0\) has the same value, proving
+   \((AHR7)\).
+
+   For the final claim, sum the atom constraints of \((AHR3)\) to obtain
+   \(B_\pi^{\rm hi}\le E_\pi^{\rm hi}+\sum_i\lambda_iX_i\).  This is exactly
+   \((WPP2)\), and the cost in \((WMC1)\) is the objective of \((AHR3)\).
+\end{proof}
+
 \begin{corollary}[Min-cost split-profile separator endpoint]
    \label{cor:min-cost-split-profile-separator-endpoint}
    In the setting of
@@ -58014,6 +58131,11 @@ high-correlation routing: each profile pays the infimum over certified star
 routings and explicit tails, leaving a scalar residual envelope
 \(B_\pi\le C_\pi^{\rm lo}+\Phi_\pi^{\rm hi}\) in aggregate.  This is the
 closest current form to the desired fractional dense-filter cover theorem.
+\Cref{cor:atomized-high-correlation-routing-dual} gives the finite LP dual for
+one concrete implementation of \(\Phi_\pi^{\rm hi}\): atom benefits are routed
+either to explicit tail or to certified pair-star records, and the dual is a
+weighted no-star condition \(0\le y\le1\) with every star's weighted atom mass
+below its recursive price.
 \Cref{cor:min-cost-split-profile-separator-endpoint} turns this scalar envelope
 into an endpoint statement: if every normalized exact-signature dual violates
 the optimized envelope for some finite split-profile panel, and the resulting
