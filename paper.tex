@@ -47176,6 +47176,133 @@ For a threshold $u$, the posterior-superlevel child is
    dimension \(d\) at the root yields the displayed bounds.
 \end{proof}
 
+\begin{corollary}[One-sided finite-envelope rate-coverage endpoint]
+   \label{cor:one-sided-finite-envelope-rate-coverage}
+   Work at one localized node in the finite-signature setting of
+   \cref{lem:finite-signature-rate-coverage}.  Let
+   \(\Lambda\) be a finite label universe, possibly represented implicitly up
+   to equality of reporter events.  Consider the strengthened finite
+   rate-coverage system with variables \(b_{x,a}\ge0\),
+   \[
+      M_{\sigma_0,p}(b)
+      =
+      \sum_{B\subseteq\Lambda}
+      U_{p,\sigma_0,B}
+      \exp\!\left(-\sum_{a\in B}b_{p,a}\right)
+      \le a_c/(8e)
+      \qquad(\sigma_0\in\Sigma,\ p\in N_{\sigma_0}),
+      \tag{OFE1}
+   \]
+   \[
+      L_{\sigma_0}(b)
+      =
+      \sum_{B\subseteq\Lambda}
+      V_{\sigma_0,B}
+      \sum_{x\in S}\sum_{a\in B}b_{x,a}
+      \le \ell
+      \qquad(\sigma_0\in\Sigma),
+      \tag{OFE2}
+   \]
+   and
+   \[
+      \sum_{x\in S}\sum_{a\in\Lambda}b_{x,a}\le S_0 .
+      \tag{OFE3}
+   \]
+   Suppose the full finite system has a feasible finite-support solution, and
+   that restricted infeasible solves have attained dual minimizers.  At a
+   restricted active set \(E\subseteq S\times\Lambda\), write
+   \[
+      b_x^E(B)=\sum_{\substack{a\in B\\(x,a)\in E}}b^E_{x,a}.
+   \]
+   For a dual obstruction \((\lambda,\theta,\gamma)\), define the finite-envelope
+   reduced price and residual value of a candidate label \(a\) by
+   \[
+      c_a=
+      \gamma+
+      \sum_{\sigma_0\in\Sigma}\theta_{\sigma_0}
+      \sum_{B\ni a}V_{\sigma_0,B},
+      \tag{OFE4}
+   \]
+   and
+   \[
+      G_x^E(a)
+      =
+      \sum_{\sigma_0:\,x\in N_{\sigma_0}}
+      \lambda_{\sigma_0,x}
+      \sum_{B\ni a}
+      U_{x,\sigma_0,B}\exp(-b_x^E(B)).
+      \tag{OFE5}
+   \]
+   Assume preprocessing has a one-sided separator which, for every such
+   restricted dual state, either returns an inactive pair \((x,a)\notin E\)
+   with a certified lower bound
+   \[
+      0<X\le G_x^E(a)-c_a,
+      \tag{OFE6}
+   \]
+   or certifies
+   \[
+      G_x^E(a)\le c_a
+      \qquad(x\in S,\ a\in\Lambda).
+      \tag{OFE7}
+   \]
+   Then uncharged preprocessing can find a feasible finite-support intensity
+   vector \(b\) for \((OFE1)\)--\((OFE3)\).  If labels are quotiented into
+   \(N_\Lambda\) reporter-event classes, this takes at most
+   \(|S|N_\Lambda\) successful augmentations.  If instead the separator is
+   randomized and returns a verifiable pair satisfying \((OFE6)\) with
+   probability at least \(p_E\) whenever a feasible finite-support solution
+   exists, Las Vegas repetition adds a valid pair after expected at most
+   \(1/p_E\) proposal calls at that restricted solve.
+
+   Consequently, if every localized node has such a one-sided finite-envelope
+   separator and the feasible solution satisfies
+   \[
+      \ell\le m^{\rho_c}\log^{O_c(1)}n,
+      \qquad
+      S_0\le m^{1+\rho_c}\log^{O_c(1)}n,
+      \tag{OFE8}
+   \]
+   while the realization parameter \(K\) of \((FRC3)\), the finite
+   load-envelope additive term in \((FRE2)\), and the retained reporter time
+   all satisfy the bounds required in
+   \cref{cor:finite-signature-rate-coverage-polylog}, then worst-case
+   Euclidean ANN has
+   \[
+      Q(n,d)=d\,n^{\rho_c}\log^{O_c(1)}n,
+      \qquad
+      S(n,d)=dn+n^{1+\rho_c}\log^{O_c(1)}n .
+   \]
+\end{corollary}
+
+\begin{proof}
+   The finite-envelope feasible set is convex: the miss constraints are sums
+   of exponentials of affine functions of \(b\), and the load and storage
+   constraints are linear.  Its Lagrangian has the same separated form as in
+   \cref{lem:finite-rate-coverage-convex}.  At a restricted minimizer \(b^E\),
+   differentiating in an inactive coordinate \((x,a)\) gives derivative
+   \(c_a-G_x^E(a)\), with \(c_a\) and \(G_x^E(a)\) defined in
+   \((OFE4)\)--\((OFE5)\).  Therefore a reported pair satisfying \((OFE6)\)
+   is a valid negative reduced-cost column.
+
+   If the separator certifies \((OFE7)\), then the KKT inequalities hold for
+   every inactive coordinate.  Together with the restricted KKT conditions at
+   \(b^E\), the zero extension of \(b^E\) minimizes the full finite-support
+   Lagrangian over any finite extension of \(E\).  Hence the same dual
+   obstruction proves infeasibility of every finite-support extension, exactly
+   as in \cref{lem:implicit-reduced-gain-separation}.  This contradicts the
+   assumed full finite-support feasibility.  Thus column generation cannot stop
+   with a no-positive certificate before reaching a feasible restricted system.
+   The deterministic and randomized augmentation bounds are the same finite
+   counting and geometric-waiting arguments as in
+   \cref{cor:one-sided-reduced-gain-column-generation}.
+
+   Once preprocessing has found \(b\), conditions \((OFE1)\)--\((OFE3)\) are
+   precisely \((FRC1)\)--\((FRC2)\) with \(\tau=a_c\), plus the storage
+   intensity bound \(S_0\).  The final paragraph is therefore
+   \cref{cor:finite-signature-rate-coverage-polylog}.
+\end{proof}
+
 \begin{remark}[What \(k\)-means++ would have to prove]
    \label{rem:kmeanspp-facility-target}
    \Cref{cor:facility-bucket-witness} is the k-means-friendly version of the
@@ -47207,6 +47334,10 @@ For a threshold $u$, the posterior-superlevel child is
    endpoint: after the finite envelopes, load term, and realization parameter
    are polylogarithmic, this single retained index already gives the
    \(d\,n^{\rho_c}\polylog n\) ANN bound.
+   \Cref{cor:one-sided-finite-envelope-rate-coverage} composes this endpoint
+   with reduced-gain column generation: the proposal oracle only has to certify
+   one positive finite-envelope score \((OFE6)\), or else prove the exact
+   no-positive inequality \((OFE7)\).
    \Cref{cor:finite-transcript-rate-coverage} is the
    list-decoding form of the same certificate: finite decoder transcripts or
    lattice quotient states replace enumeration of all label subsets and charge
