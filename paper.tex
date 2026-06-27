@@ -37798,6 +37798,120 @@ into query-dominated, storage-dominated, and balanced cases.
    \(B\) independent seeds is at most \(\exp(-B\Gamma/M)\).
 \end{proof}
 
+\begin{corollary}[Soft-mass clipped Hall-shadow reporter]
+   \label{cor:soft-mass-clipped-hall-shadow-reporter}
+   Work in the setting of
+   \cref{cor:fractional-clipped-hall-shadow-density-panel}.  A soft-mass record
+   consists of a repair template \(y\), fractional memberships
+   \[
+      0\le \theta_p\le1\qquad(p\in W_y),
+   \]
+   a certified lower shadow mass
+   \[
+      0\le X\le \sum_{p\in W_y}\theta_pd_{A,y}(p),
+      \tag{SHM1}
+   \]
+   an available prefix cardinality \(K\in\mathcal K_y\), and a slack factor
+   \(a\ge1\) satisfying the clipped-scale condition \((FCH1)\) when
+   \(A_y\) and \(\zeta\) are not both zero.  Put
+   \[
+      \mu=\sum_{p\in W_y}\theta_p,
+      \qquad
+      \widetilde\Delta=\frac{X}{\max\{\mu,K\}},
+      \tag{SHM2}
+   \]
+   and define \(\Theta\) from \(y,K,a\) as in \((FCH2)\).
+
+   If a finite soft-mass panel with nonnegative weights \(\lambda_i\) satisfies
+   \[
+      \sum_i\lambda_iK_i(\widetilde\Delta_i-\Theta_i)>0,
+      \tag{SHM3}
+   \]
+   then the same records satisfy the clipped Hall-shadow panel surplus
+   \((FCH3)\), and hence some record gives a one-record Hall-shadow merge.
+
+   Consequently fractional facility assignments, additive-quantization posterior
+   weights, learned scores converted to memberships, or list-decoder soft
+   reliabilities may be verified directly.  The hard top-\(K\) prefix remains
+   only the retained column chosen by the verifier.
+\end{corollary}
+
+\begin{proof}
+   Fix one record and order \(W_y=\{p_1,p_2,\ldots\}\) so that
+   \(d_{A,y}(p_1)\ge d_{A,y}(p_2)\ge\cdots\).  Let
+   \(D_K=D_A(y,K)=\sum_{i\le K}d_{A,y}(p_i)\).  We claim
+   \[
+      \frac{D_K}{K}
+      \ge
+      \frac{X}{\max\{\mu,K\}} .
+      \tag{SHM4}
+   \]
+   If \(\mu\le K\), then the linear functional
+   \(\sum_p\theta_pd_{A,y}(p)\) under the constraints
+   \(0\le\theta_p\le1\) and \(\sum_p\theta_p=\mu\) is maximized by placing
+   weight on the largest degrees.  Since \(K\ge\mu\) and all degrees are
+   nonnegative, this maximum is at most \(D_K\).  Hence
+   \(X\le D_K\), which gives \((SHM4)\).
+
+   If \(\mu>K\), the same rearrangement bound gives
+   \[
+      \sum_p\theta_pd_{A,y}(p)
+      \le
+      \mu\,\frac{D_K}{K},
+   \]
+   because the maximizing fractional vector fills the largest degrees first,
+   and the prefix average of a nonincreasing nonnegative sequence decreases as
+   the fractional prefix length increases.  Equivalently, writing
+   \(\mu=h+\lambda\), \(h=\lfloor\mu\rfloor\), \(0\le\lambda<1\), the maximum
+   is
+   \(\sum_{i\le h}d_{A,y}(p_i)+\lambda d_{A,y}(p_{h+1})\), whose average over
+   mass \(\mu>K\) is at most \(D_K/K\).  Thus \(X/\mu\le D_K/K\), which is
+   \((SHM4)\).
+
+   Equation \((SHM4)\) says precisely that
+   \(\Delta_A(y,K)\ge\widetilde\Delta\).  Multiplying by
+   \(\lambda_iK_i\) and summing over the panel shows that \((SHM3)\) implies
+   \((FCH3)\).  The merge conclusion is
+   \cref{cor:fractional-clipped-hall-shadow-density-panel}.
+\end{proof}
+
+\begin{corollary}[Sampled soft-mass clipped Hall-shadow search]
+   \label{cor:sampled-soft-mass-clipped-hall-shadow-search}
+   In the setting of
+   \cref{cor:soft-mass-clipped-hall-shadow-reporter}, suppose a randomized
+   build-time proposal routine returns a finite soft-mass panel \(I_s\) on seed
+   \(s\), and define
+   \[
+      Z(s)=
+      \sum_{i\in I_s}
+      \lambda_{s,i}K_{s,i}
+      \bigl(\widetilde\Delta_{s,i}-\Theta_{s,i}\bigr).
+      \tag{SSH1}
+   \]
+   If
+   \[
+      \E_sZ(s)\ge\Gamma>0,
+      \qquad
+      Z(s)_+\le M
+      \quad\text{almost surely},
+      \tag{SSH2}
+   \]
+   then \(B\) independent build-time seeds contain a valid one-record
+   Hall-shadow merge with probability at least
+   \[
+      1-\exp\left(-\frac{B\Gamma}{M}\right).
+      \tag{SSH3}
+   \]
+\end{corollary}
+
+\begin{proof}
+   The same positive-part argument as in
+   \cref{cor:sampled-clipped-hall-shadow-density-search} gives
+   \(\Pr[Z(s)>0]\ge\Gamma/M\).  A positive seed is converted by
+   \cref{cor:soft-mass-clipped-hall-shadow-reporter} into a deterministic
+   one-record Hall-shadow merge.  Independent repetition gives \((SSH3)\).
+\end{proof}
+
 \begin{corollary}[Fractional balanced Hall-shadow density panel]
    \label{cor:fractional-balanced-hall-shadow-density-panel}
    Work in the setting of \cref{cor:balanced-hall-shadow-density-screen}.  Let
@@ -50572,8 +50686,12 @@ support-mass bridge
 proposal requirement: a range-reporting, list-decoding, additive-quantization,
 or seeded facility routine may certify only a support size and a one-sided
 cut-shadow mass, and the verifier converts any positive coarse surplus into the
-exact top-prefix column.  The Hall cut itself can also be assumed marginally
-closed by \cref{lem:maximal-hall-cut-marginal-normal-form}.  The
+exact top-prefix column.  The soft versions
+\cref{cor:soft-mass-clipped-hall-shadow-reporter} and
+\cref{cor:sampled-soft-mass-clipped-hall-shadow-search} remove even the hard
+support requirement: fractional assignment weights certify the same density by
+a top-\(K\) rearrangement inequality.  The Hall cut itself can also be assumed
+marginally closed by \cref{lem:maximal-hall-cut-marginal-normal-form}.  The
 consolidated endpoint is
 \cref{cor:clipped-hall-shadow-separator-endpoint}, with
 \cref{cor:balanced-hall-shadow-separator-endpoint} as the internal stationary
