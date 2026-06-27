@@ -29372,6 +29372,101 @@ inequality \((QP3)\).
    \((HPS4)\).
 \end{proof}
 
+\begin{corollary}[Correlation-split Gaussian profile layer]
+   \label{cor:correlation-split-gaussian-profile-layer}
+   Work in the setting of
+   \cref{cor:gaussian-aggregate-profile-layer-storage}.  Suppose every edge set
+   is partitioned as
+   \[
+      E_r=E_r^{\rm lo}\,\dot\cup\,E_r^{\rm hi}.
+   \]
+   Assume the low-correlation part satisfies, for every
+   \((x,y)\in E_r^{\rm lo}\),
+   \[
+      \ip{x}{y}\le\theta_{\rm lo},
+      \qquad
+      T_r-\ip{\mu_r}{x}\ge\beta_{\rm lo},
+      \qquad
+      T_r-\ip{\mu_r}{y}\ge\beta_{\rm lo},
+      \tag{CSG0}
+   \]
+   where \(-1<\theta_{\rm lo}<1\) and \(\beta_{\rm lo}\ge0\).  Put
+   \[
+      W_{\rm lo}=\sum_r w_r|E_r^{\rm lo}|,
+      \qquad
+      W_{\rm hi}=\sum_r w_r|E_r^{\rm hi}|.
+      \tag{CSG1}
+   \]
+   Then the low-correlation contribution alone satisfies the aggregate storage
+   envelope
+   \[
+      \mathcal A_{\rm lo}
+      =
+      W_{\rm lo}
+      \exp\!\left(-\frac{\beta_{\rm lo}^2}{1+\theta_{\rm lo}}\right).
+      \tag{CSG2}
+   \]
+
+   For the high-correlation part, assume every edge in every \(E_r^{\rm hi}\)
+   has correlation at least \(\underline\theta\), with
+   \(-1<\underline\theta<1\), and that the positive star multiplicities induced
+   by \((E_r^{\rm hi})_r\) lie in a certified range
+   \([M_{\min},M_{\max}]\).  Let
+   \[
+      J_{\rm hi}
+      =
+      1+\left\lceil\log_2\frac{M_{\max}}{M_{\min}}\right\rceil .
+      \tag{CSG3}
+   \]
+   For every threshold \(\Lambda>0\), either
+   \[
+      W_{\rm hi}\le 2|P|J_{\rm hi}\Lambda,
+      \tag{CSG4}
+   \]
+   or there are a center \(x\in P\) and a dyadic level \(t\) such that
+   \[
+      U_{x,t}\subseteq P\cap B\!\left(x,\sqrt{2(1-\underline\theta)}\right)
+      \tag{CSG5}
+   \]
+   and
+   \[
+      t|U_{x,t}|\ge\Lambda.
+      \tag{CSG6}
+   \]
+
+   Consequently, after all high-correlation star records with certified scale
+   at least \(\Lambda\) have been proposed to the dense-filter verifier, the
+   unresolved part of this profile layer is bounded by the residual envelope
+   \[
+      \mathcal A_{\rm lo}+2|P|J_{\rm hi}\Lambda.
+      \tag{CSG7}
+   \]
+   A violation of this residual envelope must expose one of the proposed
+   smaller-radius star records.
+\end{corollary}
+
+\begin{proof}
+   Apply \cref{cor:gaussian-aggregate-profile-layer-storage} to the restricted
+   expansion containing only the low-correlation edge sets \(E_r^{\rm lo}\).
+   Conditions \((CSG0)\) are exactly the Gaussian profile hypotheses \((GAP2)\)
+   for that restricted expansion, giving \((CSG2)\).
+
+   For the high-correlation part, apply
+   \cref{lem:high-correlation-pair-star-reporter} to the weighted edge family
+   \((w_r,E_r^{\rm hi})_r\).  If \(W_{\rm hi}=0\), then \((CSG4)\) is immediate.
+   Otherwise \((HPS7)\) gives a dyadic star with
+   \[
+      t|U_{x,t}|\ge \frac{W_{\rm hi}}{2|P|J_{\rm hi}} .
+   \]
+   Thus, if \((CSG4)\) fails, this star satisfies \((CSG5)\)--\((CSG6)\).
+
+   The final statement is the same dichotomy read contrapositively: if no
+   proposed high-correlation star of scale at least \(\Lambda\) remains to be
+   handled by the dense verifier, then the high-correlation incidence is at most
+   \(2|P|J_{\rm hi}\Lambda\), while the low-correlation contribution is bounded
+   by \((CSG2)\).
+\end{proof}
+
 \begin{lemma}[Star-superlevel column verifier]
    \label{lem:star-superlevel-column-verifier}
    Work in a finite filter-cover instance
@@ -47612,6 +47707,10 @@ alternative: if a profile layer has large weighted incidence on pairs with
 correlation at least \(\underline\theta\), then some dyadic star superlevel lies
 inside a ball of radius \(\sqrt{2(1-\underline\theta)}\) and carries incidence
 at least the average layer mass up to a logarithmic dynamic-range factor.
+\Cref{cor:correlation-split-gaussian-profile-layer} packages the actual
+worst-case split: low-correlation edges are paid by the Gaussian
+entropy-energy term, while the high-correlation part is either below a chosen
+star scale or exposes a smaller-radius star proposal for the dense verifier.
 \Cref{lem:star-superlevel-column-verifier} and
 \cref{cor:pair-star-dense-column-generator} turn such a superlevel into an
 ordinary fractional-cover column by using the certified query activation
