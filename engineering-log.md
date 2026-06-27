@@ -663,3 +663,5 @@
 - Updated the audit trail to make \((RSP3)\)--\((RSP5)\) the build-facing scalar target for soft dense proposals.
 - Added the soft-support no-relaxation residual. Failure of the scalar soft screen is now exactly recorded as the ordinary top-prefix envelope \((RSN2)\); every positive soft or sampled panel must contain one deterministic prefix violation.
 - Updated the audit trail to identify \((RSN2)\) as the current residual form behind the soft-support proposal interface.
+- Added the exact-prefix support-mass no-layer-cake screen. When the verifier can materialize exact top-prefix columns, hard and soft support-mass proposals close at the finite-prefix price without the reported \(2bJ\) layer-cake toll.
+- Updated the audit trail to distinguish the sharper exact-prefix route from the support-size reported layer-cake route.

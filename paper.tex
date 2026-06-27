@@ -39240,6 +39240,118 @@ family.
    implication in \cref{cor:reported-soft-support-price-panel}.
 \end{proof}
 
+\begin{corollary}[Exact-prefix support reports avoid the layer-cake toll]
+   \label{cor:exact-prefix-support-mass-no-layer-cake}
+   Work in the setting of
+   \cref{cor:closed-shadow-query-layer-relaxation}.  Fix one certified
+   exact-prefix slot \(i\): a container \(W_i\), a fractional layer
+   \(y_i\in\operatorname{conv}\{\mathbf 1_Q:Q\in\mathcal Q_i\}\), prices
+   \((\psi_i,\rho_i)\), and available top-prefix cardinalities
+   \(\mathcal K_i\) which are \(\beta_i\)-dense from below in the sense of
+   \((RSP1)\).  Assume that for every \(K\in\mathcal K_i\), the pool contains
+   the corresponding certified prefix template with container \(W_i\),
+   cardinality \(K\), prices \((\psi_i,\rho_i)\), and Boolean layer family
+   \(\mathcal Q_i\).  Put
+   \[
+      d_i(p)=
+      \sum_{\sigma_0:\,(p,\sigma_0)\in N(A)}
+      \alpha_{p,\sigma_0}y_i(\sigma_0),
+      \qquad
+      A_i=\sum_{\sigma_0}\tau_{\sigma_0}y_i(\sigma_0).
+      \tag{EPM1}
+   \]
+
+   First, let \(S\subseteq W_i\) be a hard support of size \(s\ge1\), with a
+   one-sided mass certificate
+   \[
+      X\le\sum_{p\in S}d_i(p).
+      \tag{EPM2}
+   \]
+   If
+   \[
+      X>
+      \beta_i\psi_i
+      \left(
+         A_is^{\rho_i}
+         +
+         \zeta s^{1+\rho_i}
+      \right),
+      \tag{EPM3}
+   \]
+   then the Hall-cut repair alternative \((HCR2)\) holds.
+
+   Second, for soft memberships \(0\le\theta_p\le1\), put
+   \[
+      \mu=\sum_p\theta_p,
+      \qquad
+      \mu_+=\max\{1,\mu\},
+      \qquad
+      X\le\sum_p\theta_pd_i(p).
+      \tag{EPM4}
+   \]
+   If
+   \[
+      X>
+      2\beta_i\psi_i
+      \left(
+         A_i\mu_+^{\rho_i}
+         +
+         \zeta\mu_+^{1+\rho_i}
+      \right),
+      \tag{EPM5}
+   \]
+   then again \((HCR2)\) holds.
+
+   Consequently, when exact top-prefix columns are available, support-mass and
+   soft-support proposals do not need the reported layer-cake factor
+   \(2b_iJ_i\).  The verifier replaces the proposed support by one exact
+   top-\(K\) prefix and applies the finite-prefix separator directly.
+\end{corollary}
+
+\begin{proof}
+   Order \(W_i\) by decreasing \(d_i\), and let \(D_i(K)\) be the top-\(K\)
+   prefix mass.  For a hard support \(S\) of size \(s\), choose
+   \(K\in\mathcal K_i\) with \(s/\beta_i\le K\le s\).  Since the top \(K\)
+   scores have average at least the average of the top \(s\) scores, and the top
+   \(s\) scores dominate \(S\),
+   \[
+      D_i(K)\ge \frac Ks X.
+      \tag{EPM6}
+   \]
+   Condition \((EPM3)\) and \(K/s\ge1/\beta_i\) give
+   \[
+      D_i(K)>
+      \psi_i
+      \left(
+         A_is^{\rho_i}
+         +
+         \zeta s^{1+\rho_i}
+      \right)
+      \ge
+      \psi_i
+      \left(
+         A_iK^{\rho_i}
+         +
+         \zeta K^{1+\rho_i}
+      \right).
+   \]
+   This is \((QLR2)\) for slot \(i\), so
+   \cref{cor:closed-shadow-query-layer-relaxation} gives \((HCR2)\).
+
+   For the soft statement, choose \(h=1\) if \(\mu<2\), and
+   \(h=\lfloor\mu\rfloor\) otherwise.  Let \(K\in\mathcal K_i\) satisfy
+   \(\max\{1,h/\beta_i\}\le K\le h\).  The rearrangement bound \((RSH4)\)
+   gives
+   \[
+      D_i(K)\ge K\frac{X}{\max\{\mu,K\}},
+      \qquad
+      \frac{K}{\max\{\mu,K\}}\ge\frac1{2\beta_i}.
+      \tag{EPM7}
+   \]
+   Condition \((EPM5)\) and \(K\le\mu_+\) again imply \((QLR2)\), hence
+   \((HCR2)\).
+\end{proof}
+
 \begin{corollary}[Balanced Hall-shadow density screen]
    \label{cor:balanced-hall-shadow-density-screen}
    Work in the setting of \cref{cor:no-merge-hall-shadow-envelope}.  Fix a
@@ -54585,7 +54697,11 @@ verifier extracts one deterministic reported prefix.
 \Cref{cor:soft-support-no-relaxation-residual} records the exact
 contrapositive: a surviving residual is just the top-prefix envelope \((RSN2)\),
 and every soft or sampled panel violation contains one ordinary reported prefix
-violation.  The older sufficient forms include
+violation.  \Cref{cor:exact-prefix-support-mass-no-layer-cake} records the
+sharper exact-prefix route: if the verifier can materialize the top prefix
+directly, hard and soft support-mass proposals close at the exact finite-prefix
+price, without the reported layer-cake factor \(2bJ\).  The older sufficient
+forms include
 \cref{cor:exact-scale-soft-hall-shadow-separator-endpoint},
 \cref{cor:thresholded-shadow-routing-separator-endpoint},
 \cref{cor:soft-mass-hall-shadow-separator-endpoint},
