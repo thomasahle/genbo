@@ -45503,6 +45503,190 @@ certificate is the verified positive-gain column and the finite LP it augments.
    \cref{cor:integrated-clipped-singleton-high-correlation}.
 \end{proof}
 
+\begin{corollary}[Finite shared integrated cover dual]
+   \label{cor:finite-shared-integrated-cover-dual}
+   Work in the setting of
+   \cref{cor:shared-integrated-high-correlation-tail}.  For the fixed feasible
+   atomized dual \(y\), define the dyadic layer-cake weights
+   \[
+      \ell_a^\Sigma(y)
+      =
+      \sum_{\substack{t\in\mathcal T_\varepsilon:\\ t\le y_a}}t,
+      \qquad
+      \mathcal A_\Sigma(y)=\sum_ab_a\ell_a^\Sigma(y).
+      \tag{SIC1}
+   \]
+   Let \(\mathcal R\) be a finite family of shared star-prefix records.  Record
+   \(i\in\mathcal R\) has price \(P_i\ge0\) and nonnegative atom certificates
+   \(h_{i,a}\ge0\), and every finite panel with lower certificates
+   \(\sum_ah_{i,a}y_a\) is admissible for
+   \cref{cor:shared-integrated-star-prefix-screen}.
+
+   Consider the finite shared integrated cover program
+   \[
+   \begin{array}{ll}
+   \Psi_\Sigma(y)=\min
+      & \displaystyle
+        \sum_a\ell_a^\Sigma(y)e_a+2\sum_{i\in\mathcal R}\lambda_iP_i\\[0.8em]
+   \text{\rm subject to}
+      & \displaystyle
+        e_a+\sum_{i\in\mathcal R}\lambda_i h_{i,a}\ge b_a
+        \qquad(a\in\mathcal A_\pi),\\[0.8em]
+      & e_a\ge0,\qquad \lambda_i\ge0 .
+   \end{array}
+      \tag{SIC2}
+   \]
+   Its dual is
+   \[
+   \begin{array}{ll}
+   \Psi_\Sigma(y)=\max
+      & \displaystyle
+        \sum_ab_au_a\\[0.8em]
+   \text{\rm subject to}
+      & 0\le u_a\le \ell_a^\Sigma(y)
+        \qquad(a\in\mathcal A_\pi),\\[0.8em]
+      & \displaystyle
+        \sum_ah_{i,a}u_a\le2P_i
+        \qquad(i\in\mathcal R).
+   \end{array}
+      \tag{SIC3}
+   \]
+
+   If a feasible solution of \((SIC2)\) has value
+   \(C_\Sigma<\mathcal A_\Sigma(y)\), then some shared record exposes a positive
+   smaller-radius dense prefix.  Conversely, if no shared record in
+   \(\mathcal R\) exposes such a prefix, then
+   \[
+      \Psi_\Sigma(y)=\mathcal A_\Sigma(y),
+      \tag{SIC4}
+   \]
+   and \(u_a=\ell_a^\Sigma(y)\) is feasible for \((SIC3)\).
+
+   More generally, any feasible cover solution with value \(C_\Sigma\) gives the
+   dichotomy
+   \[
+      \sum_ab_ay_a
+      \le
+      \varepsilon B_\pi^{\rm hi}+2C_\Sigma,
+      \tag{SIC5}
+   \]
+   or one shared record exposes a positive smaller-radius dense prefix.
+\end{corollary}
+
+\begin{proof}
+   The program \((SIC2)\) is feasible by taking \(e_a=b_a\), and it is bounded
+   below.  Assign a nonnegative dual variable \(u_a\) to the covering constraint
+   for atom \(a\).  The coefficient of \(e_a\) gives
+   \(u_a\le\ell_a^\Sigma(y)\), and the coefficient of \(\lambda_i\) gives
+   \(\sum_ah_{i,a}u_a\le2P_i\).  Finite LP duality proves \((SIC3)\).
+
+   Let \((e,\lambda)\) be feasible, and put
+   \[
+      X_i^\Sigma(y)=
+      \sum_a h_{i,a}\ell_a^\Sigma(y).
+      \tag{SIC6}
+   \]
+   Multiplying the covering constraints by \(\ell_a^\Sigma(y)\) and summing over
+   \(a\) gives
+   \[
+      \mathcal A_\Sigma(y)
+      \le
+      \sum_a\ell_a^\Sigma(y)e_a+\sum_i\lambda_iX_i^\Sigma(y).
+      \tag{SIC7}
+   \]
+   If the cover value is \(C_\Sigma<\mathcal A_\Sigma(y)\), then
+   \[
+      \sum_i\lambda_iX_i^\Sigma(y)>2\sum_i\lambda_iP_i .
+   \]
+   This is exactly \((SIS3)\) for the panel with atom certificates \(h_{i,a}\),
+   so \cref{cor:shared-integrated-star-prefix-screen} exposes a positive dense
+   prefix.
+
+   If no shared prefix fires, the same screen gives
+   \(X_i^\Sigma(y)\le2P_i\) for every single-record panel.  Hence
+   \(u_a=\ell_a^\Sigma(y)\) satisfies all constraints of \((SIC3)\) and has value
+   \(\mathcal A_\Sigma(y)\).  The tail-only primal solution has the same value,
+   proving \((SIC4)\).
+
+   Finally, for any feasible solution of value \(C_\Sigma\), either the above
+   positive-prefix alternative fires or no shared prefix fires.  In the latter
+   case \((SIC7)\) and \cref{cor:shared-integrated-star-prefix-screen} imply
+   \[
+      \mathcal A_\Sigma(y)\le C_\Sigma .
+   \]
+   Combining this with the layer-cake estimate \((SIH7)\) proves \((SIC5)\).
+\end{proof}
+
+\begin{corollary}[Shared integrated cover-cost endpoint]
+   \label{cor:shared-integrated-cover-cost-endpoint}
+   Work in the setting of
+   \cref{cor:shared-panel-positive-separator-endpoint}.  Suppose the full
+   certified panel universe \(\mathcal Z_\star\) contains every materializable
+   low-correlation class-local profile record used in
+   \cref{cor:gaussian-tuple-profile-witness-density} and every smaller-radius
+   dense prefix verified by the paid dense-prefix verifier below.  For the
+   high-correlation side, use a finite shared cover universe \(\mathcal R_\pi\)
+   as in \cref{cor:finite-shared-integrated-cover-dual}.
+   Suppose that at every resident node of size at most \(n\), and for every
+   normalized exact-signature price system satisfying \((ESNO1)\), preprocessing
+   can certify one split profile \(\pi\), an atomized high-correlation
+   representation included in the admissible routing universe of
+   \cref{cor:min-cost-split-profile-envelope}, a truncation
+   \(0<\varepsilon_\pi\le1\), and a number \(\mathfrak C_{\Sigma,\pi}\) such that
+   every feasible atomized dual \(y\) for that profile satisfies
+   \[
+      \Psi_\Sigma(y)\le\mathfrak C_{\Sigma,\pi},
+      \tag{SIE1}
+   \]
+   and
+   \[
+      D_\pi=(B_\pi-C_\pi^{\rm lo})_+>0,
+      \tag{SIE2}
+   \]
+   \[
+      \varepsilon_\pi B_\pi^{\rm hi}
+      +2\mathfrak C_{\Sigma,\pi}
+      <D_\pi .
+      \tag{SIE3}
+   \]
+   Then worst-case Euclidean ANN has
+   \[
+      Q(n,d)=d\,n^{\rho_c}\log^{O_c(1)}n,
+      \qquad
+      S(n,d)=dn+n^{1+\rho_c}\log^{O_c(1)}n .
+   \]
+
+   Thus the shared dense-overlap target can be stated as one finite LP: every
+   high-correlation dual should admit a shared cover whose integrated unassigned
+   tail plus twice the one-time recursive price is a constant fraction of the
+   profile's residual benefit.
+\end{corollary}
+
+\begin{proof}
+   Fix a resident node and normalized price system, and take the certified
+   profile from the hypothesis.  If a shared record fires while certifying
+   \((SIE1)\), then this is already a positive column in \(\mathcal Z_\star\).
+   Otherwise \cref{cor:finite-shared-integrated-cover-dual} gives, for every
+   feasible atomized high-correlation dual \(y\),
+   \[
+      \sum_ab_ay_a
+      \le
+      \varepsilon_\pi B_\pi^{\rm hi}+2\mathfrak C_{\Sigma,\pi}.
+   \]
+   Taking the supremum over feasible atomized duals and using \((AHR8)\) yields
+   \[
+      \Phi_\pi^{\rm hi}
+      \le
+      \varepsilon_\pi B_\pi^{\rm hi}+2\mathfrak C_{\Sigma,\pi}
+      <D_\pi .
+   \]
+   The rest is identical to the proof of
+   \cref{cor:shared-integrated-dense-profile-endpoint}: apply
+   \cref{cor:min-cost-split-profile-envelope} to expose a positive
+   low-correlation shared-panel record or a positive dense prefix, then invoke
+   \cref{cor:shared-panel-positive-separator-endpoint}.
+\end{proof}
+
 \begin{corollary}[Shared integrated dense-profile endpoint]
    \label{cor:shared-integrated-dense-profile-endpoint}
    Work in the setting of
@@ -60696,10 +60880,14 @@ charged its recursive price once, up to the dyadic constant.
 tail bound
 \(\Phi_\pi^{\rm hi}\le\varepsilon B_\pi^{\rm hi}
 +2\mathfrak E_{\Sigma,\pi}+4\mathfrak P_{\Sigma,\pi}\), and
-\cref{cor:shared-integrated-dense-profile-endpoint} is the corresponding
-polylogarithmic endpoint.  This is the current clean fractional-overlap target:
-find shared high-correlation records whose unassigned integrated tail plus
-one-time recursive price is a constant fraction of the residual benefit.
+\cref{cor:finite-shared-integrated-cover-dual} packages the same certificate as
+a finite LP.  Its objective is integrated unassigned tail plus twice the
+one-time recursive price, and its dual is the exact no-shared-record residual.
+\Cref{cor:shared-integrated-cover-cost-endpoint} and
+\cref{cor:shared-integrated-dense-profile-endpoint} are the corresponding
+polylogarithmic endpoints.  This is the current clean fractional-overlap target:
+prove that the shared integrated cover value is a constant fraction of the
+residual benefit under every normalized high-correlation dual.
 \Cref{cor:one-sided-integrated-singleton-center} gives the corresponding
 one-sided build-time certificate.
 \Cref{cor:integrated-clipped-singleton-density-endpoint} is the corresponding
