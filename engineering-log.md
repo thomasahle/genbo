@@ -629,3 +629,4 @@
 - Updated the audit trail to mention the frontier expansion split explicitly, so the current dense-side target is recorded as closed-shadow finite-prefix failure plus outside paid-shadow expansion.
 - Added the outside-transport consequence of maximality. After deleting the closed cut and its shadow, the remaining co-load atoms satisfy Hall against the novel paid shadow, so the transport failure is fully localized to the closed cut.
 - Updated the audit trail to strengthen the frontier split: the outside frontier is already packable by Hall, so the remaining dense repair theorem only has to eliminate the closed-shadow finite-prefix obstruction.
+- Added the closed-shadow query-layer relaxation. Fractional signature-side query weights are now only a proposal language: any positive fractional closed-shadow prefix objective convexifies to a certified Boolean query layer, so the retained repair remains an ordinary Hall-shadow prefix.
