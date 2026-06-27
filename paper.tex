@@ -37912,6 +37912,111 @@ into query-dominated, storage-dominated, and balanced cases.
    one-record Hall-shadow merge.  Independent repetition gives \((SSH3)\).
 \end{proof}
 
+\begin{corollary}[Exact-scale soft Hall-shadow reporter]
+   \label{cor:exact-scale-soft-hall-shadow-reporter}
+   Work in the setting of \cref{cor:no-merge-hall-shadow-envelope}.  A
+   soft-mass record consists of a repair template \(y\), fractional memberships
+   \(0\le\theta_p\le1\) on \(W_y\), a certified lower shadow mass
+   \[
+      0\le X\le \sum_{p\in W_y}\theta_pd_{A,y}(p),
+      \tag{ESH1}
+   \]
+   and an available prefix cardinality \(K\in\mathcal K_y\).  Put
+   \[
+      \mu=\sum_{p\in W_y}\theta_p,
+      \qquad
+      \widetilde\Delta=\frac{X}{\max\{\mu,K\}},
+      \qquad
+      f_y(K)=A_yK^{\rho_y-1}+\zeta K^{\rho_y}.
+      \tag{ESH2}
+   \]
+   If a finite exact-scale soft panel with nonnegative weights \(\lambda_i\)
+   satisfies
+   \[
+      \sum_i\lambda_iK_i
+      \left(\widetilde\Delta_i-\psi_{y_i}f_{y_i}(K_i)\right)>0,
+      \tag{ESH3}
+   \]
+   then some record in the panel gives a one-record Hall-shadow merge.
+
+   Equivalently, a single soft proposal \((y,\theta,X)\) succeeds whenever
+   \[
+      \max_{K\in\mathcal K_y}
+      K\left(
+         \frac{X}{\max\{\sum_p\theta_p,K\}}
+         -\psi_y\left(A_yK^{\rho_y-1}+\zeta K^{\rho_y}\right)
+      \right)>0.
+      \tag{ESH4}
+   \]
+\end{corollary}
+
+\begin{proof}
+   The rearrangement argument in
+   \cref{cor:soft-mass-clipped-hall-shadow-reporter} proves, for every record,
+   \[
+      \Delta_A(y,K)=\frac{D_A(y,K)}K
+      \ge
+      \frac{X}{\max\{\mu,K\}}
+      =
+      \widetilde\Delta .
+      \tag{ESH5}
+   \]
+   Therefore \((ESH3)\) implies
+   \[
+      \sum_i\lambda_iK_i
+      \left(\Delta_A(y_i,K_i)-\psi_{y_i}f_{y_i}(K_i)\right)>0.
+   \]
+   Some record has a positive summand, which is exactly
+   \[
+      D_A(y_i,K_i)>
+      \psi_{y_i}
+      \left(
+         A_{y_i}K_i^{\rho_{y_i}}
+         +\zeta K_i^{1+\rho_{y_i}}
+      \right).
+   \]
+   This is \((NHE2)\), so
+   \cref{cor:no-merge-hall-shadow-envelope} gives a one-record Hall-shadow
+   merge.  The optimized form \((ESH4)\) is the one-record version of the same
+   inequality after maximizing over the verified cardinality net.
+\end{proof}
+
+\begin{corollary}[Sampled exact-scale soft Hall-shadow search]
+   \label{cor:sampled-exact-scale-soft-hall-shadow-search}
+   In the setting of \cref{cor:exact-scale-soft-hall-shadow-reporter}, suppose
+   a randomized build-time proposal routine returns a finite exact-scale soft
+   panel \(I_s\) on seed \(s\), and define
+   \[
+      Z(s)=
+      \sum_{i\in I_s}\lambda_{s,i}K_{s,i}
+      \left(\widetilde\Delta_{s,i}-\psi_{y_{s,i}}f_{y_{s,i}}(K_{s,i})\right).
+      \tag{SES1}
+   \]
+   If
+   \[
+      \E_sZ(s)\ge\Gamma>0,
+      \qquad
+      Z(s)_+\le M
+      \quad\text{almost surely},
+      \tag{SES2}
+   \]
+   then \(B\) independent build-time seeds contain a valid one-record
+   Hall-shadow merge with probability at least
+   \[
+      1-\exp\left(-\frac{B\Gamma}{M}\right).
+      \tag{SES3}
+   \]
+\end{corollary}
+
+\begin{proof}
+   From \((SES2)\), \(\E Z_+\ge\Gamma\).  Since \(Z_+\le M\), one seed has
+   \(Z(s)>0\) with probability at least \(\Gamma/M\).  Such a seed is a
+   positive exact-scale soft panel, hence verifies into a deterministic
+   Hall-shadow merge by
+   \cref{cor:exact-scale-soft-hall-shadow-reporter}.  Independent repetition
+   gives \((SES3)\).
+\end{proof}
+
 \begin{corollary}[Fractional balanced Hall-shadow density panel]
    \label{cor:fractional-balanced-hall-shadow-density-panel}
    Work in the setting of \cref{cor:balanced-hall-shadow-density-screen}.  Let
@@ -38142,11 +38247,67 @@ prefix scale to sit at \(1\), at \(|W_y|\), or at the internal balance point.
    retained cover.
 \end{proof}
 
-\Cref{cor:soft-mass-hall-shadow-separator-endpoint} is the weakest current
-Hall-shadow endpoint.  It asks the geometric proposal mechanism only for
-fractional memberships with enough cut-shadow mass at the clipped price scale;
-the verifier performs all hardening, prefix selection, and reduced-cost
-checking.
+\Cref{cor:soft-mass-hall-shadow-separator-endpoint} is the clipped-scale soft
+version of the Hall-shadow endpoint.  It asks the geometric proposal mechanism
+only for fractional memberships with enough cut-shadow mass near the clipped
+price-density minimizer; the verifier performs all hardening, prefix selection,
+and reduced-cost checking.
+
+\begin{corollary}[Exact-scale soft Hall-shadow separator endpoint]
+   \label{cor:exact-scale-soft-hall-shadow-separator-endpoint}
+   Work in the setting of
+   \cref{cor:finite-signature-hall-cut-repair-endpoint}.  Suppose that every
+   high-correlation co-load residual satisfying \((HCS1)\) admits an uncharged
+   exact-scale soft Hall-shadow separator with the following certified behavior.
+   The separator chooses a finite template set \(\mathcal X\) and a loss
+   \(C_{\rm tr}\), runs the Hall transport test of
+   \cref{lem:finite-signature-coload-hall-transport}, and certifies one of two
+   alternatives.
+
+   First, the Hall-success alternative \((HCR1)\) holds.  Second, the Hall test
+   exposes a cut \(A\subseteq\mathcal L\) satisfying \((FHT5)\), and the
+   separator returns a finite exact-scale soft Hall-shadow panel satisfying
+   \((ESH1)\)--\((ESH3)\) for that cut.  Then the structured completeness
+   condition \((HCS2)\) holds for every high-correlation co-load residual.
+   Consequently the dense/spherical separator condition \((DSF2)\) holds, and
+   the polylogarithmic ANN endpoint follows.
+
+   The same conclusion holds in Las Vegas build time if, in the second
+   alternative, a randomized proposal routine returns verified exact-scale soft
+   panels whose surplus \(Z(s)\) satisfies \((SES2)\) with \(\Gamma>0\).
+   Repeating
+   \[
+      B\ge \frac{M}{\Gamma}\log\frac1\delta
+      \tag{ESE1}
+   \]
+   independent build-time seeds finds a deterministic Hall-shadow merge with
+   probability at least \(1-\delta\); failed samples are discarded.
+\end{corollary}
+
+\begin{proof}
+   Fix a surplus dual satisfying \((HCS1)\).  If \((HCR1)\) holds, the first
+   alternative of \cref{cor:finite-signature-hall-cut-repair-endpoint} applies.
+   Otherwise \((ESH3)\) and
+   \cref{cor:exact-scale-soft-hall-shadow-reporter} produce a one-record
+   Hall-shadow merge.  By
+   \cref{cor:one-record-hall-shadow-merge} and
+   \cref{cor:finite-signature-hall-shadow-repair}, this supplies the Hall-cut
+   repair alternative \((HCR2)\).  Hence every residual satisfies one of the
+   alternatives of
+   \cref{cor:finite-signature-hall-cut-repair-endpoint}, giving \((HCS2)\), and
+   \cref{cor:high-correlation-coload-separator-endpoint} gives the
+   dense/spherical separator endpoint.
+
+   The sampled statement follows from
+   \cref{cor:sampled-exact-scale-soft-hall-shadow-search} and \((ESE1)\).
+\end{proof}
+
+\Cref{cor:exact-scale-soft-hall-shadow-separator-endpoint} is the most compact
+form of the current dense-side target.  A proposal mechanism supplies
+fractional memberships and a lower cut-shadow mass; the verifier chooses the
+best retained prefix cardinality and checks the exact recursive price.  The
+clipped and balanced screens are now search heuristics for finding positive
+records, not theorem-level restrictions.
 
 \begin{corollary}[Balanced Hall-shadow separator endpoint]
    \label{cor:balanced-hall-shadow-separator-endpoint}
@@ -50745,13 +50906,19 @@ exact top-prefix column.  The soft versions
 \cref{cor:soft-mass-clipped-hall-shadow-reporter} and
 \cref{cor:sampled-soft-mass-clipped-hall-shadow-search} remove even the hard
 support requirement: fractional assignment weights certify the same density by
-a top-\(K\) rearrangement inequality.  The Hall cut itself can also be assumed
-marginally closed by \cref{lem:maximal-hall-cut-marginal-normal-form}.  The
-consolidated endpoint is
-\cref{cor:soft-mass-hall-shadow-separator-endpoint}, with
-\cref{cor:clipped-hall-shadow-separator-endpoint} and
-\cref{cor:balanced-hall-shadow-separator-endpoint} as the internal stationary
-special cases.
+a top-\(K\) rearrangement inequality.  The exact-scale form
+\cref{cor:exact-scale-soft-hall-shadow-reporter} and
+\cref{cor:sampled-exact-scale-soft-hall-shadow-search} then lets the verifier
+optimize over the available prefix cardinalities and charge the exact recursive
+price, so clipped and balanced scales become proposal screens rather than
+endpoint restrictions.  The Hall cut itself can also be assumed marginally
+closed by \cref{lem:maximal-hall-cut-marginal-normal-form}.  The consolidated
+endpoint is
+\cref{cor:exact-scale-soft-hall-shadow-separator-endpoint}, with
+\cref{cor:soft-mass-hall-shadow-separator-endpoint},
+\cref{cor:clipped-hall-shadow-separator-endpoint}, and
+\cref{cor:balanced-hall-shadow-separator-endpoint} as scale-restricted special
+cases.
 \Cref{lem:weighted-spherical-reduced-gain} proves the spherical half of the
 dual dichotomy in the exact reduced-gain language: if ordinary spherical buckets
 do not violate a surplus dual certificate, then the dual must carry large
