@@ -36354,6 +36354,130 @@ gain does the proof need a spherical pseudo-randomness theorem, namely
 \((DSF2)\).  This is the exact place where a geometric argument, range-reporting
 separator, lattice/list decoder, or facility proposal must enter.
 
+\begin{lemma}[Finite-signature spherical reduced-gain test]
+   \label{lem:finite-signature-spherical-reduced-gain}
+   Work in the finite-signature setting of
+   \cref{cor:one-sided-finite-signature-filter-cover}.  Let
+   \(\mathcal Z\subseteq\mathcal F_\star\) be a finite family of spherical
+   columns with update buckets \(U_z\subseteq P\), signature activations
+   \(\chi_z(\sigma_0)\in\{0,1\}\), and terminal prices
+   \(T_z=S_z=|U_z|\).  Let \(\Pi\) be a probability law on \(\mathcal Z\), and
+   let \(H_{\sigma_0}\subseteq P\) be certified high-correlation sets.  Suppose
+   that for constants \(\pi_1,\pi_2,\pi_u>0\),
+   \[
+      \Pr_{Z\sim\Pi}[p\in U_Z,\ \chi_Z(\sigma_0)=1]\ge\pi_1
+      \qquad(p\in W_{\sigma_0}),
+      \tag{FSS1}
+   \]
+   \[
+      \Pr_{Z\sim\Pi}[x\in U_Z,\ \chi_Z(\sigma_0)=1]\le\pi_2
+      \qquad(x\notin H_{\sigma_0}),
+      \tag{FSS2}
+   \]
+   and
+   \[
+      \Pr_{Z\sim\Pi}[x\in U_Z]\le\pi_u
+      \qquad(x\in P).
+      \tag{FSS3}
+   \]
+   For a surplus signature dual \((\alpha,\tau,\zeta)\), put
+   \[
+      A_\alpha=
+      \sum_{\sigma_0\in\Sigma}\sum_{p\in W_{\sigma_0}}\alpha_{p,\sigma_0},
+      \qquad
+      L_\tau=\sum_{\sigma_0\in\Sigma}\tau_{\sigma_0}L_{\sigma_0},
+      \tag{FSS4}
+   \]
+   and define its high-correlation spherical co-load by
+   \[
+      \mathsf C_H(\tau)
+      =
+      \E_{Z\sim\Pi}
+      \sum_{\sigma_0\in\Sigma}
+      \tau_{\sigma_0}\chi_Z(\sigma_0)|U_Z\cap H_{\sigma_0}|.
+      \tag{FSS5}
+   \]
+   Then
+   \[
+      \E_{Z\sim\Pi}
+      \operatorname{Gain}_{\alpha,\tau,\zeta}(Z)
+      \ge
+      \pi_1A_\alpha
+      -\pi_2|P|\sum_{\sigma_0}\tau_{\sigma_0}
+      -\mathsf C_H(\tau)
+      -\pi_u|P|\zeta .
+      \tag{FSS6}
+   \]
+   Consequently, if
+   \[
+      \pi_2|P|\le \frac{\pi_1L_{\sigma_0}}4
+      \qquad(\sigma_0\in\Sigma),
+      \qquad
+      \pi_u|P|\le\frac{\pi_1S}{4},
+      \tag{FSS7}
+   \]
+   then every surplus dual satisfying \((OSF1)\) has a positive spherical
+   column unless
+   \[
+      \mathsf C_H(\tau)>\frac{\pi_1}{2}A_\alpha .
+      \tag{FSS8}
+   \]
+\end{lemma}
+
+\begin{proof}
+   Average the signature reduced gain \((OSF2)\) over \(Z\sim\Pi\).  The useful
+   coverage term is bounded below by \((FSS1)\):
+   \[
+      \E_Z
+      \sum_{\sigma_0}\sum_{p\in W_{\sigma_0}}
+      \alpha_{p,\sigma_0}\mathbf 1\{p\in U_Z\}\chi_Z(\sigma_0)
+      \ge \pi_1A_\alpha .
+   \]
+   For the query-price term, split each bucket into its high-correlation part
+   and complement:
+   \[
+   \begin{aligned}
+      \E_Z\sum_{\sigma_0}\tau_{\sigma_0}\chi_Z(\sigma_0)|U_Z|
+      &=
+      \mathsf C_H(\tau) \\
+      &\quad+
+      \sum_{\sigma_0}\tau_{\sigma_0}
+      \sum_{x\notin H_{\sigma_0}}
+      \Pr[x\in U_Z,\ \chi_Z(\sigma_0)=1].
+   \end{aligned}
+   \]
+   By \((FSS2)\), the second term is at most
+   \(\pi_2|P|\sum_{\sigma_0}\tau_{\sigma_0}\).  The storage term is bounded by
+   \[
+      \zeta\,\E_Z|U_Z|
+      =
+      \zeta\sum_{x\in P}\Pr[x\in U_Z]
+      \le
+      \pi_u|P|\zeta
+   \]
+   using \((FSS3)\).  This proves \((FSS6)\).
+
+   Under \((FSS7)\),
+   \[
+      \pi_2|P|\sum_{\sigma_0}\tau_{\sigma_0}
+      +
+      \pi_u|P|\zeta
+      \le
+      \frac{\pi_1}{4}(L_\tau+\zeta S).
+   \]
+   Surplus \((OSF1)\) says \(A_\alpha>L_\tau+\zeta S\).  If
+   \(\mathsf C_H(\tau)\le\pi_1A_\alpha/2\), then \((FSS6)\) gives positive
+   expected reduced gain over \(Z\sim\Pi\), so one spherical column in the
+   support has positive gain.  The contrapositive is \((FSS8)\).
+\end{proof}
+
+\Cref{lem:finite-signature-spherical-reduced-gain} is the signature-level
+spherical half of \((DSF2)\).  It shows that a residual dual not separated by
+spherical filters must concentrate query price on certified high-correlation
+bucket mass.  The dense side of the proof can therefore target only that
+co-load: produce one structured column with positive gain, or prove that the
+co-load residual cannot occur for the chosen spherical family.
+
 \begin{corollary}[Proposal-law finite-signature endpoint]
    \label{cor:proposal-law-finite-signature-endpoint}
    Work in the setting of
