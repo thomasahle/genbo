@@ -45723,6 +45723,111 @@ certificate is the verified positive-gain column and the finite LP it augments.
    \((1-p_E)^B\), and only verified records are retained.
 \end{proof}
 
+\begin{corollary}[Shared top-prefix reduced-cost compiler]
+   \label{cor:shared-top-prefix-reduced-cost-compiler}
+   Work in the setting of
+   \cref{cor:one-sided-shared-integrated-cover-oracle}.  A shared prefix
+   template \(B\) consists of a certified smaller-radius container \(W_B\subseteq
+   P\), nonnegative atom contributions
+   \[
+      h_{B,p,a}\ge0\qquad(p\in W_B,\ a\in\mathcal A_\pi),
+      \tag{SPF1}
+   \]
+   available cardinalities \(\mathcal K_B\), and prices \(P_B(K)\ge0\).  Assume
+   that for every \(K\in\mathcal K_B\) and every \(U\subseteq W_B\) with
+   \(|U|=K\), the shared record
+   \[
+      h_{U,a}=\sum_{p\in U}h_{B,p,a},
+      \qquad
+      P_U=P_B(K),
+      \tag{SPF2}
+   \]
+   is admissible for
+   \cref{cor:shared-integrated-cover-column-generation}.  For a restricted
+   shared-cover dual \(u\), define the shared degree
+   \[
+      d_B^u(p)=\sum_ah_{B,p,a}u_a,
+      \tag{SPF3}
+   \]
+   and order \(W_B=\{p_1,p_2,\ldots\}\) by nonincreasing \(d_B^u(p)\).
+
+   If for some \(K\in\mathcal K_B\)
+   \[
+      \sum_{j\le K}d_B^u(p_j)>2P_B(K),
+      \tag{SPF4}
+   \]
+   then the top prefix \(U_K=\{p_1,\ldots,p_K\}\) has positive shared reduced
+   cost and may be added by
+   \cref{cor:shared-integrated-cover-column-generation}.  Conversely, if
+   \((SPF4)\) fails for every \(K\in\mathcal K_B\), then no admissible subset of
+   this template and available cardinality has positive shared reduced cost:
+   \[
+      \sum_{p\in U}d_B^u(p)\le2P_B(K)
+      \qquad
+      (K\in\mathcal K_B,\ U\subseteq W_B,\ |U|=K).
+      \tag{SPF5}
+   \]
+
+   Thus a \(k\)-means++, facility, additive-quantization, range, list-decoding,
+   or lattice-decoding proposal only has to produce a certified container
+   template whose top shared-prefix degree beats the one-time recursive price.
+   The retained object is the same deterministic top-prefix shared record used by
+   the finite cover verifier.
+\end{corollary}
+
+\begin{proof}
+   For any fixed cardinality \(K\), the top \(K\) points in the order maximize
+   \(\sum_{p\in U}d_B^u(p)\) over all \(K\)-subsets of \(W_B\).  If \((SPF4)\)
+   holds, then for \(U_K\)
+   \[
+      \sum_ah_{U_K,a}u_a
+      =
+      \sum_{p\in U_K}d_B^u(p)
+      >
+      2P_B(K)=2P_{U_K},
+   \]
+   so \((SCG2)\) holds.  The column-generation corollary may add this shared
+   record.  If \((SPF4)\) fails for every available \(K\), top-prefix optimality
+   gives \((SPF5)\).
+\end{proof}
+
+\begin{corollary}[One-sided shared top-prefix certificate]
+   \label{cor:one-sided-shared-top-prefix-certificate}
+   Work in the setting of
+   \cref{cor:shared-top-prefix-reduced-cost-compiler}.  A one-sided top-prefix
+   certificate for a template \(B\) consists of an available cardinality
+   \(K\in\mathcal K_B\), a reported prefix \(U\subseteq W_B\) with \(|U|=K\), and
+   numbers \(\underline H,\overline P\) satisfying
+   \[
+      0\le\underline H\le\sum_{p\in U}d_B^u(p),
+      \qquad
+      P_B(K)\le\overline P,
+      \qquad
+      \underline H>2\overline P .
+      \tag{SPC1}
+   \]
+   Then \(U\) is a valid positive shared-cover column.  If the reporter instead
+   certifies that \((SPF4)\) fails for every template in a finite family and every
+   available cardinality, then no record from that family has positive shared
+   reduced cost.
+\end{corollary}
+
+\begin{proof}
+   The first two inequalities in \((SPC1)\) give
+   \[
+      \sum_ah_{U,a}u_a
+      =
+      \sum_{p\in U}d_B^u(p)
+      \ge \underline H
+      >2\overline P
+      \ge2P_B(K).
+   \]
+   Hence \((SCG2)\) holds for the record \(U\), so it is a valid
+   column-generation addition.  The no-record statement is the contrapositive of
+   \cref{cor:shared-top-prefix-reduced-cost-compiler} applied to each template in
+   the finite family.
+\end{proof}
+
 \begin{corollary}[Shared integrated cover-cost endpoint]
    \label{cor:shared-integrated-cover-cost-endpoint}
    Work in the setting of
@@ -60994,6 +61099,11 @@ one-time recursive price, and its dual is the exact no-shared-record residual.
 build-time reduced-cost interface: a proposed shared record is useful exactly
 when \(\sum_ah_{i,a}u_a>2P_i\), with one-sided certificates allowed on the
 positive branch.
+\Cref{cor:shared-top-prefix-reduced-cost-compiler} and
+\cref{cor:one-sided-shared-top-prefix-certificate} reduce that record search to
+the usual exact top-prefix operation inside a certified smaller-radius
+container: sort points by shared-cover degree and test whether one prefix beats
+twice its one-time recursive price.
 \Cref{cor:shared-integrated-cover-cost-endpoint} and
 \cref{cor:shared-integrated-dense-profile-endpoint} are the corresponding
 polylogarithmic endpoints.  This is the current clean fractional-overlap target:
