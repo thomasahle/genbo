@@ -44204,6 +44204,88 @@ certificate is the verified positive-gain column and the finite LP it augments.
    \((WPP2)\), and the cost in \((WMC1)\) is the objective of \((AHR3)\).
 \end{proof}
 
+\begin{corollary}[Layer-cake atom-cut normal form]
+   \label{cor:layer-cake-atom-cut-normal-form}
+   Work in the dual program \((AHR4)\) from
+   \cref{cor:atomized-high-correlation-routing-dual}.  Let \(y\) be any dual
+   feasible vector, and define the threshold atom cuts
+   \[
+      A_t=\{a\in\mathcal A_\pi:y_a\ge t\},
+      \qquad 0<t\le1.
+      \tag{AHC1}
+   \]
+   Write
+   \[
+      B(t)=\sum_{a\in A_t}b_a,
+      \qquad
+      X_i(t)=\sum_{a\in A_t}x_{i,a}.
+      \tag{AHC2}
+   \]
+   Then every threshold cut satisfies the scaled no-star inequalities
+   \[
+      t\,X_i(t)\le P_i
+      \qquad(i\in I_\pi,\ 0<t\le1),
+      \tag{AHC3}
+   \]
+   and the dual value has the layer-cake representation
+   \[
+      \sum_ab_ay_a=\int_0^1B(t)\,dt .
+      \tag{AHC4}
+   \]
+
+   Moreover, suppose all positive dual coordinates lie in
+   \([\eta,1]\), where \(0<\eta\le1\), and let
+   \[
+      J_\eta=1+\left\lceil\log_2\frac1\eta\right\rceil .
+      \tag{AHC5}
+   \]
+   Then some dyadic level
+   \(t\in\{1,2^{-1},\ldots,2^{-(J_\eta-1)}\}\) satisfies
+   \[
+      t\,B(t)\ge
+      \frac{1}{2J_\eta}\sum_ab_ay_a .
+      \tag{AHC6}
+   \]
+   Therefore any positive atomized high-correlation dual obstruction contains a
+   single threshold atom cut whose scaled benefit is a logarithmic fraction of
+   the dual value and whose scaled incidence against every certified star is
+   below that star's recursive price.
+\end{corollary}
+
+\begin{proof}
+   If \(a\in A_t\), then \(t\le y_a\).  Hence, for each star record \(i\),
+   \[
+      tX_i(t)
+      =
+      t\sum_{a\in A_t}x_{i,a}
+      \le
+      \sum_{a\in A_t}x_{i,a}y_a
+      \le
+      \sum_{a\in\mathcal A_\pi}x_{i,a}y_a
+      \le P_i,
+   \]
+   which proves \((AHC3)\).  The layer-cake identity follows from
+   \(y_a=\int_0^1\mathbf 1\{y_a\ge t\}\,dt\) and summing over atoms.
+
+   For the dyadic statement, put \(t_j=2^{-j}\) for
+   \(0\le j<J_\eta\).  Since every positive \(y_a\ge\eta\), the geometric sum
+   over all dyadic levels not exceeding \(y_a\) satisfies
+   \[
+      \sum_{\substack{0\le j<J_\eta:\\ t_j\le y_a}}t_j\ge y_a/2 .
+   \]
+   Therefore
+   \[
+      \sum_{j=0}^{J_\eta-1}t_jB(t_j)
+      =
+      \sum_ab_a
+      \sum_{\substack{0\le j<J_\eta:\\ t_j\le y_a}}t_j
+      \ge
+      \frac12\sum_ab_ay_a .
+   \]
+   One dyadic level has value at least the average over the \(J_\eta\) levels,
+   proving \((AHC6)\).
+\end{proof}
+
 \begin{corollary}[Min-cost split-profile separator endpoint]
    \label{cor:min-cost-split-profile-separator-endpoint}
    In the setting of
@@ -58136,6 +58218,11 @@ one concrete implementation of \(\Phi_\pi^{\rm hi}\): atom benefits are routed
 either to explicit tail or to certified pair-star records, and the dual is a
 weighted no-star condition \(0\le y\le1\) with every star's weighted atom mass
 below its recursive price.
+\Cref{cor:layer-cake-atom-cut-normal-form} thresholds that fractional dual into
+one atom cut: at some dyadic level, scaled cut benefit is a logarithmic fraction
+of the dual value while the scaled mass seen by every certified star is still
+below its recursive price.  This is the current cut-style high-correlation
+obstruction.
 \Cref{cor:min-cost-split-profile-separator-endpoint} turns this scalar envelope
 into an endpoint statement: if every normalized exact-signature dual violates
 the optimized envelope for some finite split-profile panel, and the resulting
