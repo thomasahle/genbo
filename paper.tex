@@ -30471,6 +30471,145 @@ inequality \((QP3)\).
    value of \(M_0\).  Finally, \((HGD3)\) is \((GSP2)\).
 \end{proof}
 
+\begin{corollary}[Fractional guard-credit panel reporter]
+   \label{cor:fractional-guard-credit-panel-reporter}
+   Work in the setting of \cref{lem:guard-shadow-cut-normal-form}.  Let
+   \(I\) be a finite index set.  For each \(i\in I\), suppose we are given a
+   certified star container \(W_i\), a size certificate \(|W_i|\le K_i\), a
+   congestion parameter \(C_i>0\), a multiplicity \(\lambda_i>0\), and a
+   \(C_i\)-credit certificate \(f_i\) in \(W_i\).  Put
+   \[
+      M_i=B_{\rm tot}-U(f_i).
+   \]
+   Discard the indices with \(M_i=0\), and relabel the remaining set as \(I\).
+   For the remaining indices put
+   \[
+      V_i=\frac{M_i}{C_i},
+      \qquad
+      J_i=1+\left\lceil\log_2\frac{2K_i}{V_i}\right\rceil ,
+      \tag{GCP0}
+   \]
+   If
+   \[
+      \sum_{i\in I}\lambda_i\frac{M_i}{4C_iJ_i}
+      >
+      \sum_{i\in I}\lambda_i\psi_{W_i}
+      \left(
+         K_i^{\rho_{W_i}}\sum_q\tau_qy_q+\sigma K_i^{1+\rho_{W_i}}
+      \right),
+      \tag{GCP1}
+   \]
+   then the guarded residual has a certified hit-weighted star panel satisfying
+   \((HSP1)\)--\((HSP2)\).
+
+   Conversely, if no such panel exists, every finite family of credit records
+   satisfies the reverse of \((GCP1)\).
+\end{corollary}
+
+\begin{proof}
+   For a surviving index \(i\), \((GCR1)\) gives
+   \[
+      M_i
+      \le
+      C_i\sum_{p\in W_i}d_{W_i,y}^{\gamma}(p).
+   \]
+   Hence \(V_i\le\sum_{p\in W_i}d_{W_i,y}^{\gamma}(p)\).  Repeating the
+   dyadic layer-cake step from \cref{cor:guard-shadow-mass-reporter} in
+   \(W_i\) gives a level \(\delta_i>0\) and a superlevel
+   \(U_i=\{p\in W_i:d_{W_i,y}^{\gamma}(p)\ge\delta_i\}\) such that, with
+   \(h_i=|U_i|\),
+   \[
+      \delta_i h_i>\frac{V_i}{4J_i}=\frac{M_i}{4C_iJ_i}.
+      \tag{GCP2}
+   \]
+   Submit the hit-weighted star-panel record with container \(W_i\), query
+   weights \(y\), update side \(U_i\), lower certificate
+   \(X_i=\delta_ih_i\), size certificate \(h_i\le K_i\), and multiplicity
+   \(\lambda_i\).  The certificate \((HSP1)\) follows from the definition of
+   the superlevel.  Summing \((GCP2)\) with weights \(\lambda_i\), and using
+   \((GCP1)\), gives the strict panel surplus \((HSP2)\).
+
+   The converse is the contrapositive of the first statement.
+\end{proof}
+
+\begin{corollary}[Joint fractional guard-credit cover]
+   \label{cor:joint-fractional-guard-credit-cover}
+   Work in the setting of \cref{lem:guard-shadow-cut-normal-form}.  Let \(I\) be
+   a finite set of certified containers \(W_i\), size certificates
+   \(|W_i|\le K_i\), congestion parameters \(C_i>0\), and multiplicities
+   \(\lambda_i>0\).  Suppose there are nonnegative variables
+   \[
+      F_{i,q,p}\ge0
+      \qquad(i\in I,\ q\in\mathcal Q,\ p\in W_i)
+   \]
+   supported on near incidences \((p,q)\in\mathcal N\), satisfying the joint
+   guard-demand constraints
+   \[
+      \sum_i\sum_{p\in N_{W_i}(\{q\})}F_{i,q,p}\le b_q
+      \qquad(q\in\mathcal Q),
+      \tag{JGC1}
+   \]
+   and the per-container paid-shadow capacities
+   \[
+      \sum_{\substack{q:\,(p,q)\in\mathcal N}}F_{i,q,p}
+      \le
+      \lambda_iC_i d_{W_i,y}^{\gamma}(p)
+      \qquad(i\in I,\ p\in W_i).
+      \tag{JGC2}
+   \]
+   Put
+   \[
+      M_i=\sum_{q,p}F_{i,q,p}.
+   \]
+   Discard the indices with \(M_i=0\), and relabel the remaining set as \(I\).
+   For the remaining indices put
+   \[
+      V_i=\frac{M_i}{\lambda_iC_i},
+      \qquad
+      J_i=1+\left\lceil\log_2\frac{2K_i}{V_i}\right\rceil ,
+      \tag{JGC3}
+   \]
+   If
+   \[
+      \sum_i\frac{M_i}{4C_iJ_i}
+      >
+      \sum_i\lambda_i\psi_{W_i}
+      \left(
+         K_i^{\rho_{W_i}}\sum_q\tau_qy_q+\sigma K_i^{1+\rho_{W_i}}
+      \right),
+      \tag{JGC4}
+   \]
+   then the guarded residual has a certified hit-weighted star panel satisfying
+   \((HSP1)\)--\((HSP2)\).
+
+   Thus an overlapping dense family may be certified by a single fractional
+   guard-credit flow: query demand is used at most once through \((JGC1)\), but
+   the paid-shadow capacities and recursive costs are charged locally to the
+   containers that receive the flow.
+\end{corollary}
+
+\begin{proof}
+   For each surviving \(i\), \((JGC2)\) gives
+   \[
+      M_i
+      \le
+      \lambda_iC_i\sum_{p\in W_i}d_{W_i,y}^{\gamma}(p).
+   \]
+   Hence \(V_i\le\sum_{p\in W_i}d_{W_i,y}^{\gamma}(p)\).  Repeating the dyadic
+   layer-cake step from \cref{cor:guard-shadow-mass-reporter} in \(W_i\) gives
+   a superlevel with lower certificate strictly larger than \(V_i/(4J_i)\).
+   With multiplicity \(\lambda_i\), its contribution to the hit-weighted panel
+   is strictly larger than
+   \[
+      \lambda_i\frac{M_i/\lambda_i}{4C_iJ_i}
+      =
+      \frac{M_i}{4C_iJ_i}.
+   \]
+   Summing these records and using \((JGC4)\) gives \((HSP2)\), while
+   \((HSP1)\) follows from the superlevel definitions.  Thus the records form
+   the required hit-weighted star panel.
+\end{proof}
+
 \begin{corollary}[Tuple-profile distinct-storage certificate]
    \label{cor:tuple-profile-distinct-storage}
    Work in the setting of
@@ -30891,6 +31030,11 @@ near-shadow capacity of \(W\) to query demands.
 \Cref{cor:half-mass-guard-shadow-deficit-obstruction} shows that a no-panel
 residual leaves more than half of the guard co-load uncredited for every
 affordable smaller-radius container.
+\Cref{cor:fractional-guard-credit-panel-reporter} and
+\cref{cor:joint-fractional-guard-credit-cover} give the corresponding
+overlapping-filter form: a finite fractional flow may distribute guard demand
+among many affordable containers, while recursive costs remain charged locally
+to the receiving containers.
 \Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} give the corresponding
 entropy-energy normal form: each large canonical child supplies many separated
@@ -31160,6 +31304,10 @@ with too much guard load for its paid near shadow.
 \cref{cor:half-mass-guard-shadow-deficit-obstruction} give the equivalent
 fractional form: every affordable container fails to credit more than half of
 the guard load using its paid near-shadow capacity.
+\Cref{cor:fractional-guard-credit-panel-reporter} and
+\cref{cor:joint-fractional-guard-credit-cover} remove the last single-container
+restriction: the verified object may be an overlapping fractional panel, with
+query demand used once and recursive cost paid per container.
 Conversely,
 \cref{cor:paid-prefix-residual-envelope} says that a failed dense separator has
 only one possible form: a paid residual whose every certified container obeys
@@ -44073,6 +44221,11 @@ small paid near shadow inside the tested container.
 language from the same obstruction: a surviving residual defeats every
 fractional assignment of paid near-shadow capacity to guard-load demand, leaving
 more than half of the guard load uncredited.
+\Cref{cor:fractional-guard-credit-panel-reporter} and
+\cref{cor:joint-fractional-guard-credit-cover} are the panel version needed for
+the dense-overlap program: many proposed dense containers may jointly receive a
+fractional guard-credit flow, and only their verified local recursive costs are
+charged.
 \Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} reduce each dyadic count to tuple
 incidence: a large separated child contains many ordered witness tuples, so the
