@@ -28920,6 +28920,82 @@ inequality \((QP3)\).
    Substituting \((MLP4)\) gives \((MLP5)\).
 \end{proof}
 
+\begin{corollary}[Aggregate multiplicity-profile storage certificate]
+   \label{cor:aggregate-multiplicity-profile-storage}
+   Work in the setting of
+   \cref{cor:multiplicity-layer-pair-profile-storage}.  For each profile
+   \(\pi\in\Pi\) and layer \(\ell\ge0\), define the aggregate undiscounted
+   layer congestion
+   \[
+      \mathcal V_z(\pi,\ell)
+      =
+      \sum_{(x,y)\in\pi}V_z(\pi,\ell;x,y).
+      \tag{AMP1}
+   \]
+   Suppose there are certified aggregate envelopes
+   \(\mathcal A_{\pi,\ell}\ge0\) such that
+   \[
+      \E_z\mathcal V_z(\pi,\ell)\le\mathcal A_{\pi,\ell}
+      \qquad(\pi\in\Pi,\ \ell\ge0).
+      \tag{AMP2}
+   \]
+   If \(\Sigma^+=\emptyset\), the cover is feasible.  Otherwise suppose \(a>0\),
+   the corresponding active first-moment condition holds, and
+   \[
+      \E_z\Gamma_z+
+      \sum_{\pi\in\Pi}\sum_{\ell\ge0}
+      2^{-\ell}\mathcal A_{\pi,\ell}
+      \le aS .
+      \tag{AMP3}
+   \]
+   Then \((\mathsf{ESFC}_\Sigma)\) is feasible.
+
+   In particular, it is enough to prove an aggregate entropy-energy estimate
+   \[
+      \mathcal A_{\pi,\ell}
+      \le
+      C_{\pi,\ell}\exp(H_{\pi,\ell}-I_{\pi,\ell}),
+      \tag{AMP4}
+   \]
+   where \(H_{\pi,\ell}\) is the logarithmic number or mass of pair occurrences
+   in the profile layer and \(I_{\pi,\ell}\) is the corresponding
+   cap-intersection or decoder energy, together with
+   \[
+      \E_z\Gamma_z+
+      \sum_{\pi,\ell}
+      2^{-\ell}C_{\pi,\ell}\exp(H_{\pi,\ell}-I_{\pi,\ell})
+      \le aS .
+      \tag{AMP5}
+   \]
+   Thus the storage proof does not need a uniform worst-pair bound inside a
+   profile.  It may bound the whole profile-layer mass directly.
+\end{corollary}
+
+\begin{proof}
+   For each separated pair \((x,y)\), set
+   \[
+      \widehat J_2(x,y)=\E_z\widehat W_z(2,x,y).
+   \]
+   This is a valid envelope for \((ODT2)\) with equality.  If \((x,y)\in\pi\),
+   the proof of \cref{cor:multiplicity-layer-pair-profile-storage} gives
+   pointwise in \(z\)
+   \[
+      \widehat W_z(2,x,y)
+      \le
+      \sum_{\ell\ge0}2^{-\ell}V_z(\pi,\ell;x,y).
+   \]
+   Summing over \((x,y)\in\pi\), taking expectations, and using \((AMP2)\)
+   gives
+   \[
+      \sum_{(x,y)\in\pi}\widehat J_2(x,y)
+      \le
+      \sum_{\ell\ge0}2^{-\ell}\mathcal A_{\pi,\ell}.
+   \]
+   Summing over profiles and applying \((AMP3)\) yields \((ODT3)\), so
+   \cref{cor:occurrence-discounted-tuple-storage} gives feasibility.  The final
+   claim follows by substituting \((AMP4)\) into \((AMP3)\).
+\end{proof}
+
 \begin{corollary}[Tuple-profile distinct-storage certificate]
    \label{cor:tuple-profile-distinct-storage}
    Work in the setting of
@@ -29289,6 +29365,9 @@ storage budget.
 \Cref{cor:multiplicity-layer-pair-profile-storage} pushes the quotient directly
 into that target: a profile at occurrence-multiplicity scale \(2^\ell\) pays
 only \(2^{-\ell}\) times its undiscounted cap/list-decoding energy.
+\Cref{cor:aggregate-multiplicity-profile-storage} removes the remaining
+worst-pair envelope inside a profile: the geometric proof may bound the
+aggregate profile-layer entropy-energy sum directly.
 \Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} give the corresponding
 entropy-energy normal form: each large canonical child supplies many separated
@@ -42389,6 +42468,10 @@ profile has small discounted congestion \(B_\pi\), with
 \Cref{cor:multiplicity-layer-pair-profile-storage} refines this into a
 high-multiplicity-or-high-energy target: after dyadic multiplicity
 stratification, layer \(\ell\) receives a \(2^{-\ell}\) quotient discount.
+\Cref{cor:aggregate-multiplicity-profile-storage} is the sharpest current
+storage certificate: prove the discounted aggregate entropy-energy sum over
+profile layers, without first proving a uniform bound for every pair in the
+profile.
 \Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} reduce each dyadic count to tuple
 incidence: a large separated child contains many ordered witness tuples, so the
