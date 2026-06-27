@@ -38460,6 +38460,105 @@ into query-dominated, storage-dominated, and balanced cases.
    \(\widehat M=M_A(y,\delta)\).
 \end{proof}
 
+\begin{corollary}[Cumulative Hall-shadow price-density screen]
+   \label{cor:cumulative-hall-shadow-price-density-screen}
+   Work in the setting of
+   \cref{cor:cumulative-superlevel-hall-shadow-reporter}.  Fix a template \(y\),
+   a threshold \(\delta>0\), and write \(M=M_A(y,\delta)\).  For an available
+   cardinality \(K\in\mathcal K_y\), put
+   \[
+      f_y(K)=A_yK^{\rho_y-1}+\zeta K^{\rho_y}.
+      \tag{CPD1}
+   \]
+   If
+   \[
+      \delta>\psi_yf_y(K)
+      \tag{CPD2}
+   \]
+   and
+   \[
+      M>\psi_yKf_y(K),
+      \tag{CPD3}
+   \]
+   then \(y\) gives a one-record Hall-shadow merge.
+
+   Conversely, if no canonical cumulative-superlevel record exposes a merge,
+   then for every template, threshold, and available cardinality, at least one
+   of the reverse inequalities in \((CPD2)\) and \((CPD3)\) holds.
+\end{corollary}
+
+\begin{proof}
+   Conditions \((CPD2)\)--\((CPD3)\) say exactly that both entries in
+   \[
+      \min\{M,K\delta\}
+   \]
+   are larger than
+   \[
+      \psi_yKf_y(K)
+      =
+      \psi_y\left(A_yK^{\rho_y}+\zeta K^{1+\rho_y}\right).
+   \]
+   Hence \((CSH3)\) holds with \(\widehat M=M\), and
+   \cref{cor:cumulative-superlevel-hall-shadow-reporter} gives a merge.  The
+   converse is the contrapositive.
+\end{proof}
+
+\begin{corollary}[Clipped cumulative Hall-shadow screen]
+   \label{cor:clipped-cumulative-hall-shadow-screen}
+   Work in the setting of
+   \cref{cor:cumulative-superlevel-hall-shadow-reporter}.  Fix a repair template
+   \(y\) with \(0<\rho_y<1\), put \(m_y=|W_y|\), and define \(f_y(K)\) and
+   \(K_y^\natural\) as in \((CHP1)\)--\((CHP2)\).  Let \(a\ge1\), and let
+   \(K\in\mathcal K_y\) satisfy
+   \[
+      a^{-1}K_y^\natural\le K\le aK_y^\natural
+      \tag{CCH1}
+   \]
+   when \(A_y\) and \(\zeta\) are not both zero.  Define
+   \[
+      \Theta_y=
+      \begin{cases}
+      0, & A_y=\zeta=0,\\
+      a\psi_yf_y(K_y^\natural), & \text{otherwise}.
+      \end{cases}
+      \tag{CCH2}
+   \]
+   If, for some threshold \(\delta>0\),
+   \[
+      \min\left\{\delta,\frac{M_A(y,\delta)}K\right\}>\Theta_y,
+      \tag{CCH3}
+   \]
+   then \(y\) gives a one-record Hall-shadow merge.
+
+   Consequently, if no cumulative superlevel report exposes a merge, then every
+   template \(y\), threshold \(\delta\), and available cardinality \(K\) satisfying
+   \((CCH1)\) obey
+   \[
+      \min\left\{\delta,\frac{M_A(y,\delta)}K\right\}\le\Theta_y .
+      \tag{CCH4}
+   \]
+\end{corollary}
+
+\begin{proof}
+   If \(A_y=\zeta=0\), then \(\Theta_y=0\) and \((CCH3)\) gives
+   \(\min\{M_A(y,\delta),K\delta\}>0\).  Since the recursive price is zero,
+   \((CSH3)\) applies.
+
+   Otherwise, the proof of
+   \cref{cor:clipped-hall-shadow-density-screen} shows that \((CCH1)\) implies
+   \[
+      f_y(K)\le a f_y(K_y^\natural).
+   \]
+   Thus \((CCH3)\) gives both
+   \[
+      \delta>\psi_yf_y(K),
+      \qquad
+      M_A(y,\delta)>\psi_yKf_y(K).
+   \]
+   \Cref{cor:cumulative-hall-shadow-price-density-screen} gives the merge.  The
+   residual envelope is again the contrapositive.
+\end{proof}
+
 \begin{corollary}[Cut-center routing obstruction]
    \label{cor:cut-center-routing-obstruction}
    Work in the setting of
@@ -38870,7 +38969,10 @@ recursive price.  The cumulative version
 \cref{cor:cumulative-superlevel-hall-shadow-reporter} removes the routing
 variables entirely for a proposed template: it is enough to certify a one-sided
 lower bound on the mass of the superlevel
-\(\{p:d_{A,y}(p)\ge\delta\}\).
+\(\{p:d_{A,y}(p)\ge\delta\}\).  The clipped cumulative screen
+\cref{cor:clipped-cumulative-hall-shadow-screen} then reduces the reporter
+target to one scalar density inequality at the canonical clipped price-density
+scale \(K_y^\natural\).
 
 \begin{corollary}[Balanced Hall-shadow separator endpoint]
    \label{cor:balanced-hall-shadow-separator-endpoint}
@@ -51492,7 +51594,16 @@ limited by the same recursive price.  Finally,
 not construct an explicit routing for one template: a lower bound on the
 cumulative mass \(M_A(y,\delta)\) of one degree superlevel is already a
 thresholded route certificate, and failure of all such reports is the weak-type
-envelope \((CSH5)\).
+envelope \((CSH5)\).  The price-density and clipped cumulative screens
+\cref{cor:cumulative-hall-shadow-price-density-screen} and
+\cref{cor:clipped-cumulative-hall-shadow-screen} reduce this to the canonical
+test
+\[
+   \min\left\{\delta,\frac{M_A(y,\delta)}K\right\}
+   >
+   a\psi_y f_y(K_y^\natural)
+\]
+near the clipped minimizer \(K_y^\natural\).
 \cref{cor:cut-center-routing-obstruction} records the first obstruction left
 when even the cut's own centers cannot route their paid shadow at positive
 surplus.  The Hall cut itself can also be assumed marginally closed by
