@@ -43313,6 +43313,78 @@ certificate is the verified positive-gain column and the finite LP it augments.
    are build-time work only.
 \end{proof}
 
+\begin{corollary}[Witness-law shared-panel endpoint]
+   \label{cor:witness-law-shared-panel-endpoint}
+   In \cref{cor:shared-panel-positive-separator-endpoint}, replace the
+   positive-gain hypothesis \((SPP1)\) by the following nodewise witness-law
+   hypothesis.  For every resident node and every normalized exact-signature
+   price system \((\beta,\tau,\theta)\) satisfying \((ESNO1)\), there is a
+   finite seed law \(\nu\) on the full certified panel universe
+   \(\mathcal Z_\star\), certified envelopes
+   \[
+      U_z^{\rm sh}\le\widehat U_z
+      \le
+      \Gamma_z+\sum_{\kappa\in\mathcal K_z}u_{z,\kappa},
+      \qquad u_{z,\kappa}\ge0,
+      \tag{WLE1}
+   \]
+   and a finite witness universe \(\Omega\) with child witness laws
+   \(\pi_{z,\kappa}\), such that the dual-priced congestion envelopes
+   \(J(\omega)\) satisfy \((DPW2)\).  With
+   \[
+      A_\nu=\E_{z\sim\nu}\mathsf H_z(\beta),
+      \qquad
+      Q_\nu^{(\rho)}=\E_{z\sim\nu}\mathsf L_z^{(\rho)}(\tau),
+      \tag{WLE2}
+   \]
+   assume that \(A_\nu>0\) and, for some \(q,u\ge0\) with \(q+u<1\),
+   \[
+      Q_\nu^{(\rho)}\le qA_\nu,
+      \tag{WLE3}
+   \]
+   \[
+      \theta\,\E_{z\sim\nu}\Gamma_z+
+      \sum_{\omega\in\Omega}J(\omega)
+      \le uA_\nu .
+      \tag{WLE4}
+   \]
+   Then the positive shared-panel separator \((SPP1)\) holds at every node.
+   Consequently the conclusion of
+   \cref{cor:shared-panel-positive-separator-endpoint} applies:
+   \[
+      Q(n,d)=d\,n^{\rho_c}\log^{O_c(1)}n,
+      \qquad
+      S(n,d)=dn+n^{1+\rho_c}\log^{O_c(1)}n .
+   \]
+
+   The same endpoint follows from the first-moment version obtained by
+   replacing \(Q_\nu^{(\rho)}\) in \((WLE2)\)--\((WLE3)\) by
+   \(Q_\nu^{(1)}=\E_{z\sim\nu}\mathsf L_z^{(1)}(\tau)\).  Thus the remaining
+   geometric theorem may be stated entirely as a dual-priced witness law: useful
+   hit must beat active query load plus witness-congestion storage, with every
+   retained child stored once through its canonical identifier.
+\end{corollary}
+
+\begin{proof}
+   Fix a node and a normalized price system.  The hypotheses are exactly those
+   of \cref{cor:dual-priced-witness-storage-separator}, with \((WLE1)\)
+   supplying both the certified upper envelope \(U_z^{\rm sh}\le\widehat U_z\)
+   and the witness decomposition \((DPW1)\).  Therefore the seed law satisfies
+   the certified-storage separator inequality \((CSWP2)\).  Since
+   \(\widehat U_z\ge U_z^{\rm sh}\), the proof of
+   \cref{cor:certified-storage-weighted-panel-separator} converts this, for the
+   fixed dual, into positive expected shared-panel gain.  A finite support law
+   with positive expected gain contains some deterministic panel with positive
+   shared-panel gain.  Since the price system was arbitrary, \((SPP1)\) holds at
+   the node.
+
+   Applying the same argument at every localized resident node gives the
+   hypothesis of \cref{cor:shared-panel-positive-separator-endpoint}, which
+   proves the displayed global query and storage bounds.  The first-moment
+   variant is the first-moment clause of
+   \cref{cor:dual-priced-witness-storage-separator}.
+\end{proof}
+
 The role of \cref{asm:weighted-dense-spherical-dichotomy} is now precise.  It is
 not an additional recursion rule; it is the separation theorem that would prove
 the finite signature LPs used in \cref{prop:fractional-filter-cover-polylog}
@@ -57139,6 +57211,11 @@ gap and a storage-envelope bound for one dual-priced panel law.
 storage interface: distribute each distinct canonical child's storage price
 over certified witnesses, bound the dual-priced witness congestion, and combine
 that bound with the active-load gap to obtain a positive separator immediately.
+\Cref{cor:witness-law-shared-panel-endpoint} packages this into the current
+shortest endpoint theorem: at every localized node, a dual-priced witness law
+with \(Q/A+W/A<1\) implies the shared-panel positive separator and hence the
+full \(n^{\rho_c}\polylog n\) query and \(n^{1+\rho_c}\polylog n\) space
+bounds.
 \Cref{cor:tuple-profile-compressed-bucket-storage}
 gives the direct
 low-correlation certificate for this target: first list moment plus two-point
