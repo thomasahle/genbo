@@ -29962,6 +29962,156 @@ inequality \((QP3)\).
    the same elementary rearrangement used in its proof.
 \end{proof}
 
+\begin{corollary}[Guard-shadow mass reporter]
+   \label{cor:guard-shadow-mass-reporter}
+   Work with one price system \((\gamma,\tau,\sigma)\) satisfying
+   \((GSP1)\)--\((GSP3)\).  Fix a certified star container
+   \(W\in\mathcal W_\star\), fractional query weights \(0\le y_q\le1\), and
+   numbers \(K\ge1\), \(V>0\) such that
+   \[
+      |W|\le K,
+      \qquad
+      V\le
+      \sum_{p\in W}d_{W,y}^{\gamma}(p).
+      \tag{GSM1}
+   \]
+   Put
+   \[
+      J_{K,V}=1+\left\lceil\log_2\frac{2K}{V}\right\rceil .
+   \]
+   If
+   \[
+      \frac{V}{4J_{K,V}}
+      >
+      \psi_W
+      \left(
+         K^{\rho_W}\sum_q\tau_qy_q+\sigma K^{1+\rho_W}
+      \right),
+      \tag{GSM2}
+   \]
+   then there is a certified hit-weighted star panel over \(W\) satisfying
+   \((HSP1)\)--\((HSP2)\).  Consequently the guarded star-panel reporter
+   hypothesis of \cref{cor:guarded-star-panel-local-cover} holds for this
+   residual once such a certificate can be produced for every residual price
+   system.
+\end{corollary}
+
+\begin{proof}
+   Let
+   \[
+      M=\sum_{p\in W}d_{W,y}^{\gamma}(p).
+   \]
+   Since \(0\le y_q\le1\), \((GSP1)\) gives \(M\le1\), and hence every value
+   \(d_{W,y}^{\gamma}(p)\) is at most one.  For
+   \(1\le j\le J_{K,V}\), put \(\delta_j=2^{-j}\) and
+   \[
+      H_j=\{p\in W:d_{W,y}^{\gamma}(p)\ge\delta_j\},
+      \qquad h_j=|H_j|.
+   \]
+   The dyadic layer-cake bound gives
+   \[
+      M
+      \le
+      2^{-J_{K,V}}K
+      +
+      2\sum_{j=1}^{J_{K,V}}\delta_jh_j .
+   \]
+   By the definition of \(J_{K,V}\), \(2^{-J_{K,V}}K\le V/4\).  Since
+   \(M\ge V\), some \(j\) satisfies
+   \[
+      \delta_jh_j>\frac{V}{4J_{K,V}}.
+      \tag{GSM3}
+   \]
+   Submit the one-record panel with container \(W\), query weights \(y\),
+   update side \(U=H_j\), lower certificate \(X=\delta_jh_j\), size certificate
+   \(K_i=h_j\), and multiplicity one.  This record satisfies \((HSP1)\) by the
+   definition of \(H_j\).  Since \(h_j\le K\), \((GSM2)\) and \((GSM3)\) imply
+   the strict surplus inequality \((HSP2)\).  Thus this is the required
+   hit-weighted star panel.
+\end{proof}
+
+\begin{definition}[Guard-to-shadow transport]
+   \label{def:guard-shadow-transport}
+   Fix a guarded residual as in \((GSP1)\)--\((GSP3)\), query weights
+   \(0\le y_q\le1\), witness sets \(G(q)\subseteq H(q)\), and a certified star
+   container \(W\).  A \(C\)-congested guard-to-shadow transport of mass \(M\)
+   from the raw guard incidences into \(W\) consists of numbers
+   \[
+      \pi_{q,x,p}\ge0
+      \qquad(q\in\mathcal Q,\ x\in G(q),\ p\in W)
+   \]
+   and shipped amounts \(0\le s_{q,x}\le1\) such that
+   \[
+      \sum_{\substack{p\in W:\\(p,q)\in\mathcal N}}\pi_{q,x,p}
+      =
+      s_{q,x}
+      \qquad(q\in\mathcal Q,\ x\in G(q)),
+      \tag{GST1}
+   \]
+   \[
+      M=
+      \sum_q\tau_qy_q\sum_{x\in G(q)}s_{q,x},
+      \tag{GST2}
+   \]
+   and, for every \(p\in W\),
+   \[
+      \sum_q\tau_qy_q\sum_{x\in G(q)}\pi_{q,x,p}
+      \le
+      C\,d_{W,y}^{\gamma}(p).
+      \tag{GST3}
+   \]
+   The weighted-unit case has \(s_{q,x}=1\) for every incidence with
+   \(\tau_qy_q>0\); zero-price incidences carry no mass.
+\end{definition}
+
+\begin{corollary}[Guard-shadow transport reporter]
+   \label{cor:guard-shadow-transport-reporter}
+   In the setting of \cref{def:guard-shadow-transport}, suppose
+   \(|W|\le K\) and a \(C\)-congested transport of mass \(M>0\) enters \(W\).
+   Put \(V=M/C\) and
+   \[
+      J_{K,V}=1+\left\lceil\log_2\frac{2K}{V}\right\rceil .
+   \]
+   If
+   \[
+      \frac{M}{4C J_{K,V}}
+      >
+      \psi_W
+      \left(
+         K^{\rho_W}\sum_q\tau_qy_q+\sigma K^{1+\rho_W}
+      \right),
+      \tag{GST4}
+   \]
+   then the guarded residual has a certified hit-weighted star panel satisfying
+   \((HSP1)\)--\((HSP2)\).
+
+   Conversely, if no such panel exists, every guard-to-shadow transport into
+   every certified container satisfies the reverse of \((GST4)\).  In
+   particular, with \(y_q=a_q\) and \(G(q)=H(q)\), any weighted-unit transport
+   has
+   \[
+      M=\sum_q\tau_qa_q|H(q)|,
+   \]
+   so \((GSP2)\) gives \(M>\pi_1\kappa/2\).  Thus a surviving no-star residual
+   can only exist if this large guard co-load cannot be transported into any
+   affordable smaller-radius star container with bounded congestion.
+\end{corollary}
+
+\begin{proof}
+   Summing \((GST3)\) over \(p\in W\) and using \((GST1)\)--\((GST2)\) gives
+   \[
+      M
+      \le
+      C\sum_{p\in W}d_{W,y}^{\gamma}(p).
+   \]
+   Hence \(V=M/C\) satisfies \((GSM1)\).  The inequality \((GST4)\) is exactly
+   \((GSM2)\) for this value of \(V\), so
+   \cref{cor:guard-shadow-mass-reporter} gives the hit-weighted star panel.
+   The converse is the contrapositive.  The final weighted-unit statement is
+   the specialization of \((GST2)\) with \(y_q=a_q\), \(G(q)=H(q)\), and all
+   positive-price incidences shipped.
+\end{proof}
+
 \begin{corollary}[Tuple-profile distinct-storage certificate]
    \label{cor:tuple-profile-distinct-storage}
    Work in the setting of
@@ -30369,6 +30519,10 @@ fail.
 \Cref{cor:guarded-no-star-residual-envelope} gives the exact failure form:
 without such a panel, every hit-weighted degree superlevel in every reported
 star container obeys the Renyi weak-type envelope \((GNE1)\).
+\Cref{cor:guard-shadow-transport-reporter} converts this into a transport
+target: if the large guard co-load can be shipped with bounded congestion into
+the hit-weighted near shadow of one affordable certified star container, the
+no-star envelope is violated and the dense column is exposed.
 \Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} give the corresponding
 entropy-energy normal form: each large canonical child supplies many separated
@@ -30628,6 +30782,9 @@ obstruction \((GSP1)\)--\((GSP3)\) need such a panel.
 \Cref{cor:guarded-no-star-residual-envelope} records the corresponding
 counterexample: large guard co-load must coexist with a no-star weak-type cap
 on all certified smaller-radius containers.
+\Cref{cor:guard-shadow-transport-reporter} states the positive form: any
+bounded-congestion transport from that guard co-load into paid near-shadow mass
+inside an affordable container immediately yields the missing star panel.
 Conversely,
 \cref{cor:paid-prefix-residual-envelope} says that a failed dense separator has
 only one possible form: a paid residual whose every certified container obeys
@@ -43529,6 +43686,9 @@ singleton slice.
 \Cref{cor:guarded-no-star-residual-envelope} is its exact negation in reporter
 language: if this target fails, every certified star container has only the
 Renyi amount of hit-weighted paid mass at every degree superlevel.
+\Cref{cor:guard-shadow-transport-reporter} isolates the bridge still missing
+from geometry: a bounded-congestion shipment of the large guard co-load into
+that paid shadow would contradict the no-star envelope.
 \Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} reduce each dyadic count to tuple
 incidence: a large separated child contains many ordered witness tuples, so the
