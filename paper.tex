@@ -17604,6 +17604,117 @@ success-normalized bucket-net argument.
    which is \((CWR5)\).
 \end{proof}
 
+\begin{corollary}[Certified cohort-law mass reporter]
+   \label{cor:certified-cohort-law-mass-reporter}
+   Work in the setting of \cref{cor:certified-cohort-law-superlevel-reporter}.
+   For a cohort law \(\eta\), call \((W_0,\theta,K,V,B)\) an
+   \(\eta\)-mass report if \(K\ge1\), \(V>0\), \(B>0\), and it certifies
+   \[
+      |W_0|\le K,
+      \qquad
+      V\le\sum_{p\in W_0}d_\eta^\theta(p),
+      \qquad
+      d_\eta^\theta(p)\le B\quad(p\in W_0).
+      \tag{CMR0}
+   \]
+   Define
+   \[
+      J_{B,K,V}
+      =
+      1+\left\lceil\log_2\frac{2BK}{V}\right\rceil,
+      \qquad
+      \delta_j=B2^{-j}
+      \quad(1\le j\le J_{B,K,V}),
+      \tag{CMR1}
+   \]
+   and
+   \[
+      U_j=\{p\in W_0:d_\eta^\theta(p)\ge\delta_j\}.
+      \tag{CMR2}
+   \]
+   Assume that every nonempty dyadic superlevel \(U_j\) from \((CMR2)\) can be
+   retained with the same size certificate:
+   \[
+      (U_j,K,\theta)\in\mathcal R .
+      \tag{CMR3}
+   \]
+   The certified yield of the mass report is
+   \[
+      Y(W_0,\theta,K,V,B)=\frac{V}{4J_{B,K,V}} .
+      \tag{CMR4}
+   \]
+   If every cohort law \(\eta\in\Delta_{\mathcal E_{\rm load}}\) admits an
+   \(\eta\)-mass report with
+   \[
+      Y(W_0,\theta,K,V,B)\ge A\Lambda ,
+      \tag{CMR5}
+   \]
+   then the averaged dominated-load certificate \((DPG3)\) holds.  More
+   generally, it is enough that every \(\eta\) admits a finite probability law
+   \(\zeta\) over \(\eta\)-mass reports with
+   \[
+      \E_{(W_0,\theta,K,V,B)\sim\zeta}
+      Y(W_0,\theta,K,V,B)
+      \ge A\Lambda .
+      \tag{CMR6}
+   \]
+
+   Conversely, if \((DPG3)\) fails, then there is a cohort law \(\eta\) for
+   which every \(\eta\)-mass report satisfying \((CMR0)\)--\((CMR3)\) has
+   \[
+      Y(W_0,\theta,K,V,B)<A\Lambda .
+      \tag{CMR7}
+   \]
+\end{corollary}
+
+\begin{proof}
+   Fix an \(\eta\)-mass report and write \(J=J_{B,K,V}\),
+   \(Y=V/(4J)\), and
+   \[
+      M=\sum_{p\in W_0}d_\eta^\theta(p).
+   \]
+   Since \(0\le d_\eta^\theta(p)\le B\) on \(W_0\), the dyadic layer-cake bound
+   gives
+   \[
+      M
+      \le
+      B2^{-J}K
+      +
+      2\sum_{j=1}^J\delta_j|U_j| .
+      \tag{CMR8}
+   \]
+   Indeed, for each \(x\in[0,B]\),
+   \(x\le B2^{-J}+2\sum_{j=1}^J\delta_j{\bf 1}\{x\ge\delta_j\}\), and summing
+   this inequality over \(x=d_\eta^\theta(p)\) gives \((CMR8)\).
+   By the choice of \(J\), \(B2^{-J}K\le V/4\).  Since \(M\ge V\), we get
+   \[
+      \sum_{j=1}^J\delta_j|U_j|\ge\frac{3V}{8}.
+   \]
+   Hence some \(j\) satisfies
+   \[
+      \delta_j|U_j|>\frac{V}{4J}=Y.
+      \tag{CMR9}
+   \]
+   For this \(j\), \(U_j\) is nonempty and affordable by \((CMR3)\), so
+   \[
+      (W_0,\theta,\delta_j,U_j,K,Y)
+   \]
+   is an \(\eta\)-superlevel report: its lower certificate obeys
+   \(0\le Y\le \delta_j|U_j|\).  If \((CMR5)\) holds, then this report satisfies
+   \((CWR3)\), and
+   \cref{cor:certified-cohort-law-superlevel-reporter} gives \((DPG3)\).  If a
+   finite law satisfies \((CMR6)\), one report in its support has yield at least
+   \(A\Lambda\), so the same argument applies.
+
+   Conversely, if \((DPG3)\) fails, then
+   \cref{cor:certified-cohort-law-superlevel-reporter} gives a cohort law
+   \(\eta\) for which every affordable \(\eta\)-superlevel report has
+   certificate \(<A\Lambda\).  Applying the layer-cake construction above to any
+   \(\eta\)-mass report produces an affordable superlevel report with
+   certificate \(Y(W_0,\theta,K,V,B)\).  Therefore this yield must be
+   \(<A\Lambda\), which is \((CMR7)\).
+\end{proof}
+
 The lemma is the fractional version of the dominated-load endpoint.  It does not
 claim the remaining geometric theorem.  Rather, after terminal low-load levels
 and the \(A\)-boundary alternative have been dealt with by
@@ -17630,6 +17741,11 @@ randomized panel whose expected certificate reaches \(A\Lambda\) exposes a
 deterministic affordable record.  Thus \(k\)-means++ panels, additive
 quantization, list recovery, or LP range reporting can be analyzed through
 certified superlevel reports rather than exact dense-cluster choices.
+\Cref{cor:certified-cohort-law-mass-reporter} removes the need to guess the
+level directly: it is enough to certify total cohort degree \(V\) in a retained
+container, a pointwise height bound \(B\), and a size bound \(K\).  A dyadic
+layer-cake then finds a reportable superlevel with certified yield
+\(V/O(\log(BK/V))\).
 Pools with different congestion guesses may be split into dyadic \(C\)-strata and
 tested by the same game within each stratum.
 
@@ -39810,6 +39926,9 @@ form: a finite randomized decoder only needs a one-sided certificate
 \(X\le\delta h\) and a certified size bound for the retained superlevel; if its
 expected certificate reaches \(A\Lambda\), averaging exposes one deterministic
 affordable record.
+\Cref{cor:certified-cohort-law-mass-reporter} gives the coarser mass interface:
+certifying total cohort degree \(V\) in a retained container, height bound \(B\),
+and size bound \(K\) is enough after a dyadic \(O(\log(BK/V))\) loss.
 \Cref{cor:load-quantile-recycled-obstruction-profile} is the corresponding
 residual normal form: outside the \(A\)-boundary and terminal cases, the
 remaining obstruction is just strict positivity at that weighted quantile.
