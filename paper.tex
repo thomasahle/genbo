@@ -36624,6 +36624,99 @@ and compressed-bucket estimates.
    follows by substituting \(H\ge\eta L(G')\).
 \end{proof}
 
+\begin{lemma}[Canonical duplicate-cut closure]
+   \label{lem:canonical-duplicate-cut-closure}
+   Work in the setting of \cref{lem:local-duplicate-guard-cut}, and fix
+   \(\kappa>0\).  For \(\mathcal A\subseteq\mathcal I_U\), define the
+   \(\kappa\)-excess
+   \[
+      E_\kappa(\mathcal A)
+      =
+      B(\mathcal A)-\kappa P(\mathcal A),
+      \tag{DCC1}
+   \]
+   where \(B\) and \(P\) are as in \((SDD1)\).  If
+   \(\max_{\mathcal A}E_\kappa(\mathcal A)\le0\), then the full local
+   assignment \((FLS4)\)--\((FLS5)\) exists.
+
+   Otherwise let \(\mathcal A^\star\) be the inclusion-maximal maximizer of
+   \(E_\kappa\).  Then
+   \[
+      E_\kappa(\mathcal A^\star)>0,
+      \qquad
+      B(\mathcal A^\star)>\kappa P(\mathcal A^\star),
+      \tag{DCC2}
+   \]
+   and the residual incidences outside \(\mathcal A^\star\) satisfy the
+   incremental Hall inequalities
+   \[
+      B(\mathcal C)
+      \le
+      \kappa
+      \sum_{(p,q)\in N_U(\mathcal C)\setminus N_U(\mathcal A^\star)}
+      w_{p,q}
+      \qquad
+      (\mathcal C\subseteq\mathcal I_U\setminus\mathcal A^\star).
+      \tag{DCC3}
+   \]
+   Consequently, after deleting \(\mathcal A^\star\) and its paid-pair
+   neighborhood \(N_U(\mathcal A^\star)\), all remaining visible guard
+   incidences can be assigned with congestion \(\kappa\) to the remaining
+   paid-pair capacities.
+
+   Thus a failed local assignment has a single canonical duplicate closure:
+   all further duplicate obstruction is contained in \(\mathcal A^\star\), while
+   the complement is already pair-compatible once the closure's paid shadow has
+   been charged.
+\end{lemma}
+
+\begin{proof}
+   The function \(B\) is modular and
+   \(\mathcal A\mapsto P(\mathcal A)\) is submodular, since \(P(\mathcal A)\)
+   is the weighted size of the union \(N_U(\mathcal A)\).  Therefore
+   \(E_\kappa\) is supermodular:
+   \[
+      E_\kappa(\mathcal A)+E_\kappa(\mathcal B)
+      \le
+      E_\kappa(\mathcal A\cup\mathcal B)
+      +E_\kappa(\mathcal A\cap\mathcal B).
+      \tag{DCC4}
+   \]
+   If the maximum excess is nonpositive, then
+   \(B(\mathcal A)\le\kappa P(\mathcal A)\) for every \(\mathcal A\), which is
+   exactly the cut criterion \((DGC1)\).  Hence
+   \cref{lem:local-duplicate-guard-cut} gives a full assignment.
+
+   If the maximum is positive, the family of maximizers is closed under unions:
+   when \(\mathcal A\) and \(\mathcal B\) are maximizers, \((DCC4)\) and
+   maximality force both \(\mathcal A\cup\mathcal B\) and
+   \(\mathcal A\cap\mathcal B\) to be maximizers.  Since the ground set is
+   finite, the union of all maximizers is the unique inclusion-maximal
+   maximizer \(\mathcal A^\star\), and \((DCC2)\) follows.
+
+   Let \(\mathcal C\subseteq\mathcal I_U\setminus\mathcal A^\star\).  By
+   maximality of \(E_\kappa(\mathcal A^\star)\),
+   \[
+      E_\kappa(\mathcal A^\star\cup\mathcal C)
+      \le
+      E_\kappa(\mathcal A^\star).
+   \]
+   Since \(\mathcal A^\star\) and \(\mathcal C\) are disjoint, this inequality
+   is exactly
+   \[
+      B(\mathcal C)
+      \le
+      \kappa\bigl(P(\mathcal A^\star\cup\mathcal C)
+      -P(\mathcal A^\star)\bigr).
+   \]
+   The difference of the two weighted neighborhoods is the right hand side of
+   \((DCC3)\), because
+   \(N_U(\mathcal A^\star\cup\mathcal C)=
+   N_U(\mathcal A^\star)\cup N_U(\mathcal C)\).
+   Applying the max-flow/min-cut criterion to the residual bipartite graph
+   proves the final assignment statement.
+\end{proof}
+
 \begin{corollary}[Local transport-to-star bridge]
    \label{cor:local-transport-to-star-bridge}
    Work in the setting of
@@ -36881,6 +36974,10 @@ as a scalar reduced-gain test \(H_{G'}(U)/\kappa_U^*-R_W(|U|)\).
 \Cref{cor:slack-duplicate-cut-descent} gives the nonclosing form: captured
 guard load that fails to close exposes a weighted incidence cut whose
 paid-shadow mass is small at the container's own price density.
+\Cref{lem:canonical-duplicate-cut-closure} shows that this cut family has a
+canonical merge: the maximum-excess closure contains the whole duplicate
+obstruction, and the complement is already routable once the closure's paid
+shadow is charged.
 \Cref{cor:local-transport-to-star-bridge} gives the complementary positive
 form: any successful local assignment is already a high-correlation
 responsibility tensor, so the dense-star machinery only has to find a
