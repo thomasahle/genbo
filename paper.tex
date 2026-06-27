@@ -43921,6 +43921,95 @@ certificate is the verified positive-gain column and the finite LP it augments.
    high-correlation benefit allowances.
 \end{proof}
 
+\begin{corollary}[Split-profile panel hardening]
+   \label{cor:split-profile-panel-hardening}
+   Work in the setting of
+   \cref{cor:correlation-split-witness-profile-residual}.  Let \(\Pi\) be a
+   finite family of split witness profiles, with nonnegative panel weights
+   \(\eta_\pi\).  For each \(\pi\in\Pi\), let
+   \[
+      B_\pi=B_\pi^{\rm lo}+B_\pi^{\rm hi},\qquad
+      C_\pi^{\rm lo},\qquad E_\pi^{\rm hi}
+      \tag{WPP1}
+   \]
+   be the certified benefit split, low-correlation Gaussian congestion, and
+   unreported high-correlation tail allowance.  Suppose the high-correlation
+   part of profile \(\pi\) is routed through pair-star records \(i\in I_\pi\)
+   with lower certificates \(X_{\pi,i}\), recursive price envelopes
+   \(P_{\pi,i}\), and internal weights \(\lambda_{\pi,i}\ge0\), so that
+   \[
+      B_\pi^{\rm hi}
+      \le
+      E_\pi^{\rm hi}
+      +\sum_{i\in I_\pi}\lambda_{\pi,i}X_{\pi,i}.
+      \tag{WPP2}
+   \]
+   Assume all reported star records belong to one finite dense-prefix verifier,
+   so their disjoint union with weights \(\eta_\pi\lambda_{\pi,i}\) is an
+   admissible panel for
+   \cref{cor:paid-pair-star-panel-certificate}.
+
+   If the aggregate split surplus is positive,
+   \[
+      \sum_{\pi\in\Pi}\eta_\pi
+      \left(
+         B_\pi-C_\pi^{\rm lo}-E_\pi^{\rm hi}
+      \right)
+      >
+      \sum_{\pi\in\Pi}\eta_\pi
+      \sum_{i\in I_\pi}\lambda_{\pi,i}P_{\pi,i},
+      \tag{WPP3}
+   \]
+   then either some low-correlation profile record exposes a positive
+   shared-panel gain, or the union of the high-correlation star records exposes
+   a positive smaller-radius dense prefix.
+
+   Consequently, in any residual satisfying \((WRO3)\) and in which no reported
+   pair-star prefix has positive reduced gain, every finite nonnegative
+   split-profile panel obeys
+   \[
+      \sum_{\pi\in\Pi}\eta_\pi B_\pi
+      \le
+      \sum_{\pi\in\Pi}\eta_\pi
+      \left(
+         C_\pi^{\rm lo}
+         +E_\pi^{\rm hi}
+         +\sum_{i\in I_\pi}\lambda_{\pi,i}P_{\pi,i}
+      \right).
+      \tag{WPP4}
+   \]
+   Thus a list decoder, range reporter, facility routine, additive
+   quantization search, or lattice decoder may be analyzed at the level of
+   aggregate profile surplus.  The verifier still retains only one ordinary
+   positive witness record or one ordinary smaller-radius dense prefix.
+\end{corollary}
+
+\begin{proof}
+   Suppose no low-correlation profile record exposes positive shared-panel gain.
+   Applying \cref{cor:gaussian-tuple-profile-witness-density} to each
+   materialized low profile gives
+   \[
+      B_\pi^{\rm lo}\le C_\pi^{\rm lo}
+      \qquad(\pi\in\Pi).
+      \tag{WPP5}
+   \]
+   Combining \((WPP1)\), \((WPP2)\), and \((WPP5)\), the strict aggregate
+   inequality \((WPP3)\) implies
+   \[
+      \sum_{\pi\in\Pi}\eta_\pi
+      \sum_{i\in I_\pi}\lambda_{\pi,i}X_{\pi,i}
+      >
+      \sum_{\pi\in\Pi}\eta_\pi
+      \sum_{i\in I_\pi}\lambda_{\pi,i}P_{\pi,i}.
+      \tag{WPP6}
+   \]
+   This is exactly the paid pair-star panel inequality \((PPC2)\) for the union
+   panel with weights \(\eta_\pi\lambda_{\pi,i}\).  Hence
+   \cref{cor:paid-pair-star-panel-certificate} exposes a positive
+   smaller-radius dense prefix.  The residual envelope \((WPP4)\) is the
+   contrapositive of the positive statement.
+\end{proof}
+
 The role of \cref{asm:weighted-dense-spherical-dichotomy} is now precise.  It is
 not an additional recursion rule; it is the separation theorem that would prove
 the finite signature LPs used in \cref{prop:fractional-filter-cover-polylog}
@@ -57781,6 +57870,11 @@ surviving split profile must have benefit bounded by low-correlation Gaussian
 congestion, explicit unreported high-correlation tail, and the paid recursive
 price of reported star prefixes.  Thus dense overlap is charged as panel price,
 not as a branching factor.
+\Cref{cor:split-profile-panel-hardening} removes the single-profile
+restriction: any finite nonnegative panel of split profiles with positive
+aggregate surplus contains either a low-correlation witness violation or a
+paid high-correlation dense-prefix violation.  This is the form needed for
+build-time list/range/facility/AQ/lattice proposal oracles.
 \Cref{cor:tuple-profile-compressed-bucket-storage}
 gives the direct
 low-correlation certificate for this target: first list moment plus two-point
