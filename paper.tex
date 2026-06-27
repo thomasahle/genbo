@@ -35818,6 +35818,52 @@ smaller Hall cut whose paid-pair capacity is measured only inside that subset.
    the reporter theorem and local filter-cover feasibility.
 \end{proof}
 
+\begin{corollary}[Flow-value Hall-deficit oracle]
+   \label{cor:flow-value-hall-deficit-oracle}
+   Work in the setting of \cref{cor:lower-hull-hall-proposal-separator}.  Keep
+   the Hall-success alternative of that corollary unchanged.  Replace its
+   lower-hull proposal alternative by the following flow-value repair
+   alternative.
+
+   The exact-load Hall profile has a strict deficit \((LHP1)\), and
+   \cref{cor:integral-hall-deficit-normal-form} supplies an integral
+   positive-excess Hall sublayer \(G'\).  In the deficient-shadow instance
+   associated with this \(G'\), the reporter supplies a finite family of
+   certified subcontainers and congestion scales satisfying the positive
+   flow-value surplus condition \((FVS1)\).
+
+   Then the reporter theorem required in
+   \cref{cor:guarded-star-panel-local-cover} holds.  Consequently the finite
+   local filter-cover LP in that corollary is feasible.
+
+   Equivalently, the fixed-threshold repair alternative of
+   \cref{cor:fixed-threshold-hall-deficit-oracle} may be replaced by the
+   max-flow reduced-gain test \((FVS1)\).  The retained certificate is still a
+   deterministic smaller-radius prefix; the max-flow computation is only a
+   build-time separator for finding it.
+\end{corollary}
+
+\begin{proof}
+   Fix a residual price system satisfying \((GSP1)\)--\((GSP3)\).  If the
+   Hall-success alternative holds, the Hall-success part of
+   \cref{cor:lower-hull-hall-proposal-separator} gives the required reporter
+   theorem.
+
+   Otherwise the flow-value repair alternative supplies \(G'\) and a finite
+   family satisfying \((FVS1)\).  By
+   \cref{cor:flow-value-deficient-shadow-screen}, some deterministic
+   subcontainer and congestion scale have positive reduced flow value.  Then
+   \cref{lem:restricted-deficient-shadow-transport-cut} gives a transported
+   deficient-shadow certificate, and
+   \cref{cor:transported-deficient-shadow-certificate} gives the
+   deficient-shadow prefix certificate
+   \cref{cor:deficient-shadow-prefix-certificate}.  Finally
+   \cref{cor:deficit-restricted-proposal-law} supplies the lower-hull proposal
+   alternative required by
+   \cref{cor:lower-hull-hall-proposal-separator}.  Applying that corollary gives
+   the reporter theorem and local filter-cover feasibility.
+\end{proof}
+
 \begin{corollary}[Deficient-shadow residual obstruction]
    \label{cor:deficient-shadow-residual-obstruction}
    Work in the setting of
@@ -35997,6 +36043,11 @@ shadow.
 \Cref{cor:single-record-fixed-threshold-hall-separator} removes the panel
 artifact from this statement: a single verified balanced top prefix, or a coarse
 report with a balanced trim, already gives the same repair.
+\Cref{cor:flow-value-hall-deficit-oracle} is the sharper endpoint-facing form:
+instead of reporting a balanced-density panel, the build stage may solve finite
+max-flow instances on proposed certified subsets and use positive reduced flow
+value as the separator.  The retained object is still the deterministic prefix
+extracted by the deficient-shadow certificate.
 
 \begin{corollary}[Tuple-profile distinct-storage certificate]
    \label{cor:tuple-profile-distinct-storage}
@@ -48068,6 +48119,63 @@ itself spherical-pseudo-random enough to close the dichotomy.
    certificate before materialization.  The failed samples are discarded, so
    they never enter the retained filter-cover LP and do not change query or
    storage.
+\end{proof}
+
+\begin{corollary}[Flow-value Hall-deficit endpoint]
+   \label{cor:flow-value-hall-deficit-polylog-endpoint}
+   Fix \(c>1\) and \(\rho_c=1/(2c^2-1)\).  Suppose that after bounded-diameter
+   localization, every resident node \(P\), \(|P|=N\), has a finite-signature
+   system as in \cref{lem:finite-signature-filter-cover}, with decoder time
+   \(d\,N^{\rho_c}\log^{O_c(1)}n\), signature entropy satisfying \((FE1)\), and
+   local budgets
+   \[
+      L=N^{\rho_c}\log^{O_c(1)}n,
+      \qquad
+      S=N^{1+\rho_c}\log^{O_c(1)}n .
+      \tag{FVH1}
+   \]
+   For the induced finite demand set \(\mathcal N_\Sigma\), assume
+   preprocessing supplies the finite spherical law, primitive singleton slice
+   cores, and paid-prefix core universe required by
+   \cref{cor:guarded-star-panel-local-cover}.  Assume moreover that every
+   residual price system \((\gamma,\tau,\sigma)\) satisfying
+   \((GSP1)\)--\((GSP3)\) satisfies one of the two alternatives in
+   \cref{cor:flow-value-hall-deficit-oracle}: either the Hall-success
+   alternative holds, or the exposed lower-hull Hall deficit has a finite
+   certified subcontainer/congestion panel with positive flow-value surplus
+   \((FVS1)\).  Each nonterminal retained prefix or dense record is a strictly
+   smaller certified child and is charged by its full descendant query and
+   storage prices.
+
+   Then worst-case Euclidean ANN has query time and space
+   \[
+      Q(n,d)=d\,n^{\rho_c}\log^{O_c(1)}n,
+      \qquad
+      S(n,d)=dn+n^{1+\rho_c}\log^{O_c(1)}n .
+   \]
+
+   Thus the endpoint may be proved by a max-flow separator: for every exposed
+   Hall-deficit shadow, preprocessing may search over certified smaller-radius
+   subsets and congestion scales, solve their finite flow problems, and retain
+   only the deterministic prefix extracted from a positive reduced flow value.
+\end{corollary}
+
+\begin{proof}
+   Fix a resident node and its induced finite demand system.  By
+   \cref{cor:flow-value-hall-deficit-oracle}, the stated Hall-success or
+   flow-value repair alternative implies the reporter theorem required in
+   \cref{cor:guarded-star-panel-local-cover}.  Therefore the finite local
+   filter-cover LP is feasible with query budget \(L\) and storage budget \(S\).
+
+   This is the local feasibility required by
+   \cref{prop:fractional-filter-cover-polylog} for the finite-signature system,
+   with \(L_{\sigma_0}\le L\) for every signature and storage budget \(S\).
+   Since all nonterminal columns are charged by full descendant prices and have
+   strictly smaller certified radius, the recursive accounting in
+   \cref{prop:fractional-filter-cover-polylog} applies at every node and gives
+   the displayed bounds.  The max-flow searches are build-time separation work:
+   failed subsets and congestion scales are discarded, and the retained index
+   stores only the deterministic prefix certified by the positive flow value.
 \end{proof}
 
 \begin{corollary}[Quotient-packing separator endpoint]
@@ -61909,6 +62017,12 @@ global endpoint: if this fixed-threshold Hall-deficit separator is available at
 every resident node, the fractional filter-cover induction gives
 \(d\,n^{\rho_c}\log^{O_c(1)}n\) query time and
 \(dn+n^{1+\rho_c}\log^{O_c(1)}n\) space.
+\Cref{cor:flow-value-hall-deficit-oracle} and
+\cref{cor:flow-value-hall-deficit-polylog-endpoint} replace the
+fixed-threshold density target by the exact max-flow reduced-gain target
+\((FVS1)\).  This is the cleanest current Hall-deficit endpoint: prove that
+every exposed positive-excess shadow has one affordable subset and congestion
+scale with positive flow-value surplus.
 \Cref{cor:pair-compatible-hall-guarded-cover} states the final local theorem
 target in this language: prove the Hall expansion and the resulting
 direct mixed-density repair inequality for every guarded residual.
