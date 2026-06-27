@@ -29717,6 +29717,78 @@ inequality \((QP3)\).
    the high-correlation alternative \((WS8)\).
 \end{proof}
 
+\begin{corollary}[Hit-weighted star panels feed paid prefixes]
+   \label{cor:hit-weighted-star-panel-prefix}
+   Work in the setting of
+   \cref{asm:paid-atomized-prefix-separator}, and assume that the available
+   cardinalities of every reported container include all sizes.  Fix a
+   nonnegative paid price system \((\gamma,\tau,\sigma)\) satisfying
+   \((APC1)\)--\((APC2)\).  Suppose a reporter returns finitely many records
+   \(i\), each consisting of a certified container \(W_i\in\mathcal W\), a set
+   \(U_i\subseteq W_i\), fractional query weights \(0\le y_i(q)\le1\), a
+   multiplicity \(\lambda_i\ge0\), a lower paid-mass certificate \(X_i\), and an
+   upper size certificate \(K_i\), such that
+   \[
+      0\le X_i\le
+      \sum_{p\in U_i}\sum_{q:(p,q)\in\mathcal N}
+      y_i(q)\gamma_{p,q}r_{p,q},
+      \qquad
+      |U_i|\le K_i .
+      \tag{HSP1}
+   \]
+   If
+   \[
+      \sum_i\lambda_iX_i
+      >
+      \sum_i\lambda_i\psi_{W_i}
+      \left(
+         K_i^{\rho_{W_i}}\sum_q\tau_qy_i(q)
+         +\sigma K_i^{1+\rho_{W_i}}
+      \right),
+      \tag{HSP2}
+   \]
+   then an available paid prefix has positive repair reduced gain.  Therefore,
+   if every paid dual satisfying \((APC1)\)--\((APC2)\) admits such a certified
+   hit-weighted star panel, the primitive hit-kernel cover is feasible by
+   \cref{cor:paid-prefix-hit-kernel-cover}.
+
+   In particular, \((HSP2)\) is the hit-kernel analogue of \((PPC2)\).  The
+   reporter may be a range reporter, additive-quantization decoder, or
+   list-decoding panel; the retained object is still the exact Boolean
+   query-layer top prefix supplied by the paid-prefix verifier.
+\end{corollary}
+
+\begin{proof}
+   Suppose no available paid prefix has positive repair reduced gain.  By
+   \cref{cor:weighted-atomized-prefix-envelope}, for every reported \(i\), every
+   fractional query weighting, and every cardinality \(h\le |W_i|\),
+   \[
+      D_{W_i,y_i}^{\gamma}(h)
+      \le
+      \psi_{W_i}
+      \left(
+         h^{\rho_{W_i}}\sum_q\tau_qy_i(q)
+         +\sigma h^{1+\rho_{W_i}}
+      \right).
+   \]
+   Put \(h_i=|U_i|\).  If \(h_i=0\), then \((HSP1)\) gives \(X_i=0\).  Otherwise
+   the top-\(h_i\) paid-degree sum in \(W_i\) dominates the paid mass of \(U_i\),
+   so \((HSP1)\) gives
+   \[
+      X_i\le D_{W_i,y_i}^{\gamma}(h_i).
+   \]
+   Since \(h_i\le K_i\) and \(0\le\rho_{W_i}\le1\), this is at most the
+   corresponding right hand side with \(K_i\) in place of \(h_i\).  Thus the
+   same upper bound also holds in the empty case.  Multiplying by
+   \(\lambda_i\) and summing gives the reverse of \((HSP2)\), a contradiction.
+   Hence some available paid prefix has positive repair reduced gain.
+
+   If every surplus paid dual admits such a panel, then every price system
+   satisfying \((APC1)\)--\((APC2)\) admits a positive paid prefix.  This is
+   exactly the paid atomized-prefix separator condition, and
+   \cref{cor:paid-prefix-hit-kernel-cover} gives the primitive hit-kernel cover.
+\end{proof}
+
 \begin{corollary}[Tuple-profile distinct-storage certificate]
    \label{cor:tuple-profile-distinct-storage}
    Work in the setting of
@@ -30113,6 +30185,10 @@ positive dense column.
 \Cref{cor:spherical-star-panel-local-cover} plugs this into the finite-cover
 duality: after spherical buckets fail, it is enough to construct one certified
 paid star panel from the high-correlation residual.
+\Cref{cor:hit-weighted-star-panel-prefix} identifies the same certificate in
+the paid hit-kernel language: replace the direct dual prices by
+\(\gamma_{p,q}r_{p,q}\), allow fractional query weights, and the paid-prefix
+verifier extracts the Boolean top-prefix column.
 \Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} give the corresponding
 entropy-energy normal form: each large canonical child supplies many separated
@@ -30363,6 +30439,9 @@ layer before the filter is retained.
 container/cardinality templates: positivity of the top-\(K\) reduced-cost
 objective \((FPS1)\) is exactly the remaining dense column-generation
 certificate.
+\Cref{cor:hit-weighted-star-panel-prefix} shows that certified star panels are
+one concrete way to satisfy this oracle: a panel with lower hit-weighted paid
+mass and upper list-size certificates forces a positive paid prefix.
 Conversely,
 \cref{cor:paid-prefix-residual-envelope} says that a failed dense separator has
 only one possible form: a paid residual whose every certified container obeys
@@ -43253,6 +43332,10 @@ retain one positive prefix.
 \Cref{cor:spherical-star-panel-local-cover} packages this as a local theorem
 target: every surplus dual that survives the spherical reduced-gain test must
 admit such a certified panel, otherwise the finite LP cover is already feasible.
+\Cref{cor:hit-weighted-star-panel-prefix} gives the paid-prefix normalization of
+that target: a panel certified against \(\gamma_{p,q}r_{p,q}\) is already a
+finite-prefix separator witness, so the star-panel and paid-prefix endpoints
+share the same remaining reporter theorem.
 \Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} reduce each dyadic count to tuple
 incidence: a large separated child contains many ordered witness tuples, so the
