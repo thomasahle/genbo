@@ -36561,6 +36561,101 @@ smaller Hall cut whose paid-pair capacity is measured only inside that subset.
    same as in \cref{cor:query-layer-random-list-deficient-shadow-repair}.
 \end{proof}
 
+\begin{corollary}[Price-compatible query-free refinement]
+   \label{cor:price-compatible-query-free-refinement}
+   Work in the setting of
+   \cref{cor:query-free-deficient-shadow-list-gain}.  Let
+   \(L\subseteq W\) be a deterministic certified list with \(K=|L|\), price
+   factor \(\psi\), and exponent \(\rho\).  Suppose \(L\) is partitioned into
+   nonempty certified sublists
+   \[
+      L=\bigsqcup_{i\in I}L_i,
+      \qquad K_i=|L_i|,
+   \]
+   where \(L_i\subseteq W_i\), the child container \(W_i\) has price factor
+   \(\psi_i\) and the same exponent \(\rho\), and the retained cardinalities in
+   every \(W_i\) are \(b_0\)-dense from above.  Put
+   \[
+      h_i(q)=
+      \sum_{\substack{p\in L_i:\,(p,q)\in\mathcal N_{G'}}}
+      \widehat\gamma_{p,q}r_{p,q},
+      \qquad
+      h_L(q)=\sum_i h_i(q).
+      \tag{PQR1}
+   \]
+   Assume the refinement is price-compatible:
+   \[
+      \sum_i\psi_iK_i^\rho\le\psi K^\rho,
+      \qquad
+      \sum_i\psi_iK_i^{1+\rho}\le\psi K^{1+\rho}.
+      \tag{PQR2}
+   \]
+   If the parent list has positive query-free gain
+   \[
+      \sum_{q\in\mathcal Q_+}
+      \bigl(h_L(q)-b_0^\rho\psi K^\rho\widehat\tau_q\bigr)_+
+      >
+      b_0^{1+\rho}\psi\sigma K^{1+\rho},
+      \tag{PQR3}
+   \]
+   then some child list \(L_i\subseteq W_i\) satisfies
+   \[
+      \sum_{q\in\mathcal Q_+}
+      \bigl(h_i(q)-b_0^\rho\psi_iK_i^\rho\widehat\tau_q\bigr)_+
+      >
+      b_0^{1+\rho}\psi_i\sigma K_i^{1+\rho}.
+      \tag{PQR4}
+   \]
+   Consequently the finite-prefix repair alternative of
+   \cref{cor:finite-prefix-hall-deficit-oracle} holds.
+
+   Thus an arbitrary positive-gain list may be replaced by a compact or
+   ball-like sublist whenever the radius/potential decrease of the refined
+   pieces pays for the concave query-price increase
+   \(\sum_iK_i^\rho/K^\rho\).  Without \((PQR2)\), such a refinement need not
+   preserve positive gain.
+\end{corollary}
+
+\begin{proof}
+   For each \(q\), the first inequality in \((PQR2)\) gives
+   \[
+      b_0^\rho\sum_i\psi_iK_i^\rho\widehat\tau_q
+      \le
+      b_0^\rho\psi K^\rho\widehat\tau_q .
+   \]
+   Therefore
+   \[
+   \begin{aligned}
+      \bigl(h_L(q)-b_0^\rho\psi K^\rho\widehat\tau_q\bigr)_+
+      &\le
+      \left(
+         \sum_i h_i(q)
+         -
+         b_0^\rho\sum_i\psi_iK_i^\rho\widehat\tau_q
+      \right)_+  \\
+      &\le
+      \sum_i
+      \bigl(h_i(q)-b_0^\rho\psi_iK_i^\rho\widehat\tau_q\bigr)_+ ,
+   \end{aligned}
+   \]
+   using subadditivity of \(x\mapsto x_+\) in the final step.  Summing over
+   \(q\) and applying \((PQR3)\) yields
+   \[
+      \sum_i\sum_q
+      \bigl(h_i(q)-b_0^\rho\psi_iK_i^\rho\widehat\tau_q\bigr)_+
+      >
+      b_0^{1+\rho}\psi\sigma K^{1+\rho}.
+   \]
+   By the second inequality in \((PQR2)\), the right hand side is at least
+   \[
+      \sum_i b_0^{1+\rho}\psi_i\sigma K_i^{1+\rho}.
+   \]
+   Hence at least one index \(i\) satisfies \((PQR4)\).  Applying the
+   cardinality-net form \((QFG3)\) of
+   \cref{cor:query-free-deficient-shadow-list-gain} inside \(W_i\) gives the
+   finite-prefix repair alternative.
+\end{proof}
+
 \begin{corollary}[Low-diameter query-free Hall-shadow seeding]
    \label{cor:low-diameter-query-free-hall-seeding}
    Work in the setting of
@@ -36820,6 +36915,13 @@ part over queries, and any positive score already contains the Boolean query
 layer needed by \((DFN3)\).  This is the reduced-gain objective that build-time
 \(k\)-means++, facility, AQ, range-reporting, or list-decoding proposals should
 try to maximize.
+\Cref{cor:price-compatible-query-free-refinement} records the exact accounting
+needed to compactify a positive list: a refinement into smaller certified
+pieces preserves positive query-free gain whenever the refined aggregate query
+and storage prices \(\sum_i\psi_iK_i^\rho\) and
+\(\sum_i\psi_iK_i^{1+\rho}\) are no larger than the parent prices.  This is
+where radius contraction can pay for the otherwise fatal concavity loss in
+\(K^\rho\).
 \Cref{cor:low-diameter-query-free-hall-seeding} gives the corresponding
 compact-shadow sampling guarantee.  If the positive-gain list is contained in a
 low-diameter shell cap and carries an \(\alpha\)-fraction of the chosen residual
@@ -64137,6 +64239,12 @@ keeps only a deterministic query layer and prefix.
 form of the same statement: the proposal routine returns only a list or soft
 support, while the proof chooses the profitable query layer by thresholding the
 hinge \(h(q)-\psi K^\rho\widehat\tau_q\).
+\Cref{cor:price-compatible-query-free-refinement} identifies the only safe
+way to split such a list into compact pieces: the radius/potential decrease of
+the pieces must make \(\sum_i\psi_iK_i^\rho\) and
+\(\sum_i\psi_iK_i^{1+\rho}\) fit under the parent query and storage prices.
+Under that condition one refined piece has positive gain, so compactification
+is a theorem rather than a heuristic.
 \Cref{cor:low-diameter-query-free-hall-seeding} connects this score to seeded
 cluster proposals: a hidden low-diameter positive-gain list is found by
 residual or dual weighted cap seeding with the usual \(e^{-\alpha T}\) miss
