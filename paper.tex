@@ -45424,6 +45424,80 @@ certificate is the verified positive-gain column and the finite LP it augments.
    are absorbed into the constant in the logarithmic overhead.
 \end{proof}
 
+\begin{corollary}[One-sided polylog sampled-center profile oracle]
+   \label{cor:one-sided-polylog-sampled-center-profile-oracle}
+   Work in the setting of
+   \cref{cor:polylog-sampled-center-density-endpoint}, and fix a finite universe
+   \(\mathcal P_\star\) of materializable split profiles with sampled center
+   laws.  A one-sided profile certificate consists of a profile
+   \(\pi\in\mathcal P_\star\) and numbers
+   \[
+      \underline D_\pi,\qquad
+      \overline B_\pi^{\rm hi},\qquad
+      \overline A_\pi^{\rm samp}
+   \]
+   satisfying
+   \[
+      0<\underline D_\pi\le B_\pi-C_\pi^{\rm lo},
+      \qquad
+      B_\pi^{\rm hi}\le\overline B_\pi^{\rm hi},
+      \qquad
+      A_\pi^{\rm samp}\le\overline A_\pi^{\rm samp}.
+      \tag{OSP1}
+   \]
+   Suppose that at every resident node of size at most \(n\), and for every
+   normalized exact-signature price system satisfying \((ESNO1)\), uncharged
+   preprocessing has an oracle which returns such a certificate with
+   \[
+      \overline B_\pi^{\rm hi}\le n^{K_{\rm dyn}}\underline D_\pi,
+      \tag{OSP2}
+   \]
+   and
+   \[
+      \overline A_\pi^{\rm samp}
+      \le
+      \frac{\underline D_\pi}{\log^{K_{\rm den}}n}
+      \qquad(K_{\rm den}>1),
+      \tag{OSP3}
+   \]
+   or correctly certifies that no profile in \(\mathcal P_\star\) has such a
+   one-sided certificate.  If the no-certificate outcome never occurs on a
+   normalized residual, then the same
+   \(d\,n^{\rho_c}\log^{O_c(1)}n\) query and
+   \(dn+n^{1+\rho_c}\log^{O_c(1)}n\) storage endpoint follows.
+
+   Conversely, if for some normalized residual the oracle certifies no such
+   profile in \(\mathcal P_\star\), then every profile in the finite universe
+   fails at least one of the three checkable conditions: positive certified
+   residual benefit, polynomial certified dynamic range, or inverse-polylog
+   sampled-center price.  This is the finite verifier format for build-time
+   proposals: heuristics may propose candidates, but only one-sided certified
+   density violations enter the retained column-generation process.
+\end{corollary}
+
+\begin{proof}
+   If the oracle returns a certificate, then
+   \(D_\pi=(B_\pi-C_\pi^{\rm lo})_+\ge\underline D_\pi>0\).  Conditions
+   \((OSP1)\)--\((OSP2)\) give
+   \[
+      B_\pi^{\rm hi}\le n^{K_{\rm dyn}}\underline D_\pi
+      \le n^{K_{\rm dyn}}D_\pi,
+   \]
+   and \((OSP1)\)--\((OSP3)\) give
+   \[
+      A_\pi^{\rm samp}
+      \le
+      \frac{\underline D_\pi}{\log^{K_{\rm den}}n}
+      \le
+      \frac{D_\pi}{\log^{K_{\rm den}}n}.
+   \]
+   Thus the hypotheses \((PSD1)\)--\((PSD3)\) of
+   \cref{cor:polylog-sampled-center-density-endpoint} hold for the returned
+   profile.  If this happens for every normalized residual at every node, that
+   corollary gives the endpoint.  The converse statement is just the meaning of
+   a correct no-certificate report over the finite universe.
+\end{proof}
+
 \begin{corollary}[Min-cost split-profile separator endpoint]
    \label{cor:min-cost-split-profile-separator-endpoint}
    In the setting of
@@ -59423,6 +59497,9 @@ price-density form: surviving residuals force
 \Cref{cor:polylog-sampled-center-density-endpoint} is the concrete polylog
 target: polynomial dynamic range and sampled-center price
 \(A^{\rm samp}\le D/\log^{1+\Omega(1)}n\) already imply the endpoint.
+\Cref{cor:one-sided-polylog-sampled-center-profile-oracle} gives the verifier
+form of that target using only one-sided certificates: lower residual benefit
+and upper high-correlation/sample-price bounds.
 \Cref{cor:min-cost-split-profile-separator-endpoint} turns this scalar envelope
 into an endpoint statement: if every normalized exact-signature dual violates
 the optimized envelope for some finite split-profile panel, and the resulting
