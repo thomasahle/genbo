@@ -643,3 +643,5 @@
 - Updated the audit trail to record this finite reporter form as the next closed-shadow target.
 - Added the reported closed-shadow layer-cake separator. The reporter now needs only one-sided certificates: a lower bound on total paid degree and upper bounds on dyadic superlevel sizes; positive certified surplus compiles through the exact verifier, with a Las Vegas sampled form.
 - Updated the audit trail to make this one-sided reported certificate the build-facing closed-shadow target.
+- Added the reported closed-shadow residual dichotomy. For any finite certified report universe, either one report has positive certified surplus and repairs the cut, or every report satisfies the scalar reverse inequality \((CRR3)\); ruling out that residual is now the compact geometric reporter theorem.
+- Updated the audit trail to name \((CRR3)\) as the finite reported closed-shadow obstruction.
