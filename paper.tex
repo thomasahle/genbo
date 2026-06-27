@@ -12896,6 +12896,71 @@ query-price overlap, storage price, and duplicate-incidence factor \(b_G\).
    \((IAC4)\).
 \end{proof}
 
+\begin{corollary}[Inherited-activation cover spread gives packing]
+   \label{cor:inherited-activation-cover-spread-packing}
+   Work in the setting of
+   \cref{cor:inherited-activation-paid-cover}, and assume the children use the
+   same exponent \(\rho\).  Fix a smaller radius \(R_\star\) with child price
+   factor \(\psi_\star\le\psi\).  Suppose that for every certified ball
+   \(B(c,R_\star)\) the dense verifier may add inherited-activation prefixes of
+   \(U\cap B(c,R_\star)\) with price factor at most \(\psi_\star\).
+
+   If no inherited-activation prefix at radius \(R_\star\) has positive reduced
+   gain, then every certified radius-\(R_\star\) ball cover of \(U\) has size
+   \[
+      J>
+      \left(\frac{\psi}{\psi_\star}\right)^{1/(1-\rho)} .
+      \tag{IACP1}
+   \]
+   If, in addition, every point-centered ball \(B(x,R_\star)\), \(x\in U\), is
+   certified, then \(U\) contains an \(R_\star\)-separated set \(E\) with
+   \[
+      |E|>
+      \left(\frac{\psi}{\psi_\star}\right)^{1/(1-\rho)} .
+      \tag{IACP2}
+   \]
+
+   Thus, for a retained routing-safe parent filter, the standard certified-ball
+   recursion is the same filter-cover refinement as the high-spread witness for
+   spherical or list-decoding estimates: a low-fanout smaller-ball cover would
+   close inside the same activation predicate, while failure of all such covers
+   supplies separated packing entropy.
+\end{corollary}
+
+\begin{proof}
+   Let \(B_1,\ldots,B_J\) be any certified radius-\(R_\star\) ball cover of
+   \(U\), and assign each point of \(U\) to one covering ball.  Let \(K_i\) be
+   the nonzero assigned sizes.  If
+   \[
+      J\le\left(\frac{\psi}{\psi_\star}\right)^{1/(1-\rho)},
+   \]
+   then Hölder gives
+   \[
+      \sum_i\psi_\star K_i^\rho
+      \le
+      \psi_\star J^{1-\rho}K^\rho
+      \le
+      \psi K^\rho .
+   \]
+   Also, since the assigned sets are disjoint and \(\psi_\star\le\psi\),
+   \[
+      \sum_i\psi_\star K_i^{1+\rho}
+      \le
+      \psi_\star K^{1+\rho}
+      \le
+      \psi K^{1+\rho}.
+   \]
+   Hence \((IAC4)\) holds for this inherited-activation refinement, and
+   \cref{cor:inherited-activation-paid-cover} would force a positive
+   radius-\(R_\star\) prefix, contrary to the hypothesis.  Therefore
+   \((IACP1)\) holds.
+
+   For the separated-set statement, take \(E\subseteq U\) maximal with pairwise
+   distances \(>R_\star\).  Maximality implies that the point-centered
+   radius-\(R_\star\) balls around \(E\) cover \(U\).  These balls are certified
+   by assumption, so \((IACP1)\) gives \((IACP2)\).
+\end{proof}
+
 \begin{corollary}[Paid Renyi-cover obstruction]
    \label{cor:paid-renyi-cover-obstruction}
    In the setting of \cref{cor:paid-cover-quotient-star-residual}, suppose
@@ -13103,8 +13168,12 @@ a safe filter predicate, every smaller-radius child may inherit that activation,
 so low Renyi fanout closes with no extra activation term.  The
 ball-thickened-child analysis is needed only when the inherited activation is a
 finite-demand or analysis predicate that must be replaced by a standalone
-geometric wrapper.  \Cref{cor:activation-inflation-assigned-cover} makes exactly
-that replacement cost quantitative: after Renyi-price compatibility is paid, a
+geometric wrapper.  \Cref{cor:inherited-activation-cover-spread-packing} then
+feeds a surviving same-activation quotient directly to the packing-entropy side:
+failure of all low-fanout certified-ball covers is exactly the separated-set
+witness required by \cref{cor:spread-packing-entropy-energy-screen}.
+\Cref{cor:activation-inflation-assigned-cover} makes the standalone-wrapper
+replacement cost quantitative: after Renyi-price compatibility is paid, a
 surviving cover must create explicit query-activation inflation.  This is the
 precise place where the spherical/list-decoding side should use entropy rather
 than density.
