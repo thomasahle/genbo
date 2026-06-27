@@ -16691,6 +16691,64 @@ success-normalized bucket-net argument.
    The displayed form \((FPO4)\) is just \((FPO2)\) rearranged.
 \end{proof}
 
+\begin{lemma}[Integrated recycled-threshold obstruction]
+   \label{lem:integrated-recycled-threshold-obstruction}
+   Work in the notation of
+   \cref{lem:finite-prefix-recycled-threshold-screen}.  Define
+   the low-efficiency shortfall curve
+   \[
+      M(t)=
+      \sum_{q\in Q^+}(t-\sigma_q)_+\ell_q
+      =
+      tL(t)-S(t)
+      \qquad(t>A),
+   \]
+   and the excess-area curve
+   \[
+      E(t)=M(t)-(t-A)\Lambda .
+      \tag{ITO1}
+   \]
+   Then
+   \[
+      E(t)=
+      A L_0-S_0
+      +
+      \int_A^t (L(u)-\Lambda)\,du
+      \qquad(t>A),
+      \tag{ITO2}
+   \]
+   where \(L(u)=\sum_{\sigma_q\le u}\ell_q\).  Consequently the threshold
+   screen \((FPS1)\) fails if and only if
+   \[
+      A L_0-S_0
+      +
+      \int_A^t (L(u)-\Lambda)\,du
+      >
+      0
+      \qquad\text{for every }t>A.
+      \tag{ITO3}
+   \]
+   In particular, a failed finite-prefix scan is equivalently a cumulative
+   excess-load profile whose area never drops to zero.
+\end{lemma}
+
+\begin{proof}
+   The equality \(M(t)=tL(t)-S(t)\) follows by grouping the terms with
+   \(\sigma_q\le t\).  Extend \(M\) continuously to \(A\).  It is continuous and
+   piecewise affine, and its derivative agrees with the step function \(L(u)\)
+   away from the finitely many efficiency breakpoints.  Also
+   \[
+      M(A)=\sum_{\sigma_q\le A}(A-\sigma_q)\ell_q=A L_0-S_0.
+   \]
+   Integrating this step function from \(A\) to \(t\) gives
+   \[
+      M(t)=A L_0-S_0+\int_A^t L(u)\,du,
+   \]
+   and subtracting \((t-A)\Lambda\) gives \((ITO2)\).  The threshold screen is
+   exactly the existence of \(t>A\) with \(E(t)\le0\), so its failure is
+   \((ITO3)\).
+\end{proof}
+
 The transport formulation is useful because it cleanly separates the two
 remaining tasks.  The annular witnesses are far points and still cannot be used
 as cover columns.  A geometric or list-recovery argument must instead construct
@@ -16748,6 +16806,15 @@ terminal low-total-load case can certify the threshold screen.
 if the finite scan fails, total load is at least \(\Lambda\), every positive
 breakpoint prefix has strict deficit, and the \(A\)-boundary already carries
 either positive deficit or too much load.
+\Cref{lem:integrated-recycled-threshold-obstruction} converts the same failed
+scan into a cumulative excess-load profile:
+\[
+   A L_0-S_0+\int_A^t(L(u)-\Lambda)\,du>0
+   \qquad(t>A).
+\]
+Thus the remaining range-reporting/list-recovery target can also be phrased as
+forcing this excess-area curve to hit zero for one retained container and one
+dyadic annular size level.
 
 \begin{corollary}[Annular reporter closes the local cover]
    \label{cor:annular-reporter-local-cover}
@@ -38532,6 +38599,12 @@ failure mode of this finite scan: the total query load is not terminally small,
 all positive breakpoints have strict prefix deficit, and the \(A\)-boundary has
 either positive deficit or already exceeds the load threshold.  This is the
 current finite range-reporting/list-recovery obstruction.
+\Cref{lem:integrated-recycled-threshold-obstruction} rewrites that obstruction
+as a cumulative excess-load curve whose area above the baseline \(\Lambda\) never
+returns to zero.  This is the most compact analytic form of the finite
+prefix-screen failure: a reporter must find one retained container for which the
+low-efficiency load curve crosses enough below \(\Lambda\) to cancel the initial
+\(A\)-boundary shortfall.
 \Cref{lem:primitive-hit-kernel-cover-equivalence} gives the matching primal
 form: the same theorem is equivalent to fractionally covering the primitive
 spherical hit kernel \(r_{p,q}\) by Pareto cores at \(\pi_1\)-scaled query and
