@@ -634,3 +634,4 @@
 - Added the closed-shadow soft proposal hardening step. A proposal may now certify only fractional signature weights, soft point memberships, and a normalized lower mass; the verifier hardens any positive certificate to a Boolean signature layer and top-\(K\) Hall-shadow prefix.
 - Updated the audit trail to mention the closed-shadow soft proposal hardening in the dense-side status summary.
 - Added the closed-shadow soft-proposal separator endpoint. After maximal Hall-cut localization, one positive certified soft proposal for the closed shadow now directly implies the finite-signature Hall repair alternative and hence the dense/spherical polylog endpoint; a sampled Las Vegas variant only charges successful verified proposals.
+- Updated the audit trail to make the closed-shadow soft-proposal endpoint the compact current dense-side target, with the older exact-scale, thresholded, clipped, and balanced endpoints recorded as sufficient forms.
