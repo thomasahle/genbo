@@ -15383,6 +15383,72 @@ near-pair degree and charged by the ordinary filter-cover LP.
    every retained container and every available prefix size.
 \end{proof}
 
+\begin{lemma}[Query-layer near-shadow hinge envelope]
+   \label{lem:query-layer-near-shadow-hinge}
+   Work with a guarded normalized residual satisfying \((GNR3)\).  Let
+   \(Q'\subseteq\mathcal Q\), \(0\le\theta\le1\), and let
+   \(U\in\mathcal U\) be a retained core with certified prices \(T_U,S_U\).
+   Define
+   \[
+      d_{Q'}^\theta(p)
+      =
+      \sum_{\substack{q\in Q'\\(p,q)\in\mathcal N}}
+      \bar\gamma^\theta_{p,q}r_{p,q}.
+   \]
+   Then
+   \[
+      \sum_{p\in U}d_{Q'}^\theta(p)
+      \le
+      T_U\sum_{q\in Q'}\bar\tau_q+\bar\sigma S_U .
+      \tag{QNH1}
+   \]
+   In particular, if a prefix core \(U\) has price
+   \(T_U=\psi K^\rho\), \(S_U=\psi K^{1+\rho}\), then
+   \[
+      \sum_{p\in U}d_{Q'}^\theta(p)
+      \le
+      \psi K^\rho\sum_{q\in Q'}\bar\tau_q
+      +\bar\sigma\psi K^{1+\rho}.
+      \tag{QNH2}
+   \]
+\end{lemma}
+
+\begin{proof}
+   By definition of the primitive-visible support,
+   \[
+      a_U^{\bar\gamma^\theta}(q)
+      =
+      \sum_{\substack{p\in U\\(p,q)\in\mathcal N}}
+      \bar\gamma^\theta_{p,q}
+      \mathbf 1\{\exists z\in\mathcal Z:\ p\in V_{z,q}\}.
+   \]
+   Since \(0\le r_{p,q}=\Pr_Z[p\in V_{Z,q}]\le1\), and \(r_{p,q}>0\) implies
+   \(\exists z\) with \(p\in V_{z,q}\),
+   \[
+      \sum_{p\in U}d_{Q'}^\theta(p)
+      \le
+      \sum_{q\in Q'}a_U^{\bar\gamma^\theta}(q).
+   \]
+   For each \(q\),
+   \[
+      a_U^{\bar\gamma^\theta}(q)
+      \le
+      \bigl(a_U^{\bar\gamma^\theta}(q)-T_U\bar\tau_q\bigr)_+
+      +T_U\bar\tau_q .
+   \]
+   Summing over \(q\in Q'\) and then using \((GNR3)\) gives
+   \[
+      \sum_{q\in Q'}a_U^{\bar\gamma^\theta}(q)
+      \le
+      \sum_q
+      \bigl(a_U^{\bar\gamma^\theta}(q)-T_U\bar\tau_q\bigr)_+
+      +T_U\sum_{q\in Q'}\bar\tau_q
+      \le
+      \bar\sigma S_U+T_U\sum_{q\in Q'}\bar\tau_q .
+   \]
+   This proves \((QNH1)\), and \((QNH2)\) is the stated price specialization.
+\end{proof}
+
 \begin{corollary}[Single-seed near-shadow prefix obstruction]
    \label{cor:single-seed-near-shadow-prefix-obstruction}
    Work under the hypotheses of \cref{cor:annular-reporter-local-cover}, assume
@@ -15422,14 +15488,25 @@ near-pair degree and charged by the ordinary filter-cover LP.
       \right),
       \tag{SPO2}
    \]
+   and also the query-local hinge envelope
+   \[
+      V_K^\theta
+      \le
+      \psi_{W_0}K^{\rho_{W_0}}
+      \sum_{q\in Q'}\bar\tau_q
+      +
+      \bar\sigma\psi_{W_0}K^{1+\rho_{W_0}},
+      \tag{SPO3}
+   \]
    where \(W_K\) is the top-\(K\) prefix of \(W_0\) by
    \(d_{Q'}^\theta\), and
    \(J_K^\theta=1+\lceil\log_2(2K/V_K^\theta)\rceil\).
 
    Consequently, to prove local feasibility it is enough to prove the geometric
    statement that no guarded normalized residual can satisfy both the annular
-   lower bound \((SPO1)\) and the prefix envelope \((SPO2)\) for all retained
-   containers and all \(\theta\in[0,1]\).
+   lower bound \((SPO1)\), the prefix envelope \((SPO2)\), and the
+   query-local envelope \((SPO3)\) for all retained containers and all
+   \(\theta\in[0,1]\).
 \end{corollary}
 
 \begin{proof}
@@ -15447,6 +15524,12 @@ near-pair degree and charged by the ordinary filter-cover LP.
    conclusion, contradicting the assumed infeasible residual.  Therefore any
    infeasible residual must satisfy the reverse inequality for every
    \(\theta,W_0,K\), which is \((SPO2)\).
+
+   The same prefix \(W_K\) is a retained core by prefix-closure, with certified
+   prices
+   \(T_{W_K}=\psi_{W_0}K^{\rho_{W_0}}\) and
+   \(S_{W_K}=\psi_{W_0}K^{1+\rho_{W_0}}\).  Applying
+   \cref{lem:query-layer-near-shadow-hinge} to \(U=W_K\) gives \((SPO3)\).
 
    The final claim is the contrapositive: if the displayed simultaneous
    obstruction is geometrically impossible, every infeasible residual exposes a
@@ -15469,8 +15552,11 @@ weak-type envelope is the remaining pseudo-random obstruction.
 \Cref{cor:single-seed-near-shadow-prefix-obstruction} packages the exact
 counterexample: a query-price-heavy annular layer \((SPO1)\) coexists with the
 near-shadow prefix envelope \((SPO2)\) for every retained container and every
-point on the residual segment.  This is now the concrete geometric theorem
-left for LP range reporting, list recovery, additive quantization, or a
+point on the residual segment.  The original Pareto-core hinge envelope also
+gives the query-local bound \((SPO3)\), so the remaining obstruction is not just
+globally diffuse; it is diffuse even relative to the same query-price mass that
+makes the annular layer heavy.  This is now the concrete geometric theorem left
+for LP range reporting, list recovery, additive quantization, or a
 success-normalized bucket-net argument.
 
 \begin{corollary}[Annular reporter closes the local cover]
