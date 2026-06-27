@@ -30112,6 +30112,222 @@ inequality \((QP3)\).
    positive-price incidences shipped.
 \end{proof}
 
+\begin{lemma}[Guard-shadow cut normal form]
+   \label{lem:guard-shadow-cut-normal-form}
+   Work in the setting of \cref{def:guard-shadow-transport}.  Put
+   \[
+      b_q=\tau_qy_q|G(q)|,
+      \qquad
+      B_{\rm tot}=\sum_qb_q,
+   \]
+   and, for \(Y\subseteq\mathcal Q\),
+   \[
+      N_W(Y)=\{p\in W:\exists q\in Y,\ (p,q)\in\mathcal N\},
+      \qquad
+      D_{W,y}^{\gamma}(Y)=\sum_{p\in N_W(Y)}d_{W,y}^{\gamma}(p).
+   \]
+   Let \(\Phi_C(W;y,G)\) be the largest mass \(M\) for which a
+   \(C\)-congested guard-to-shadow transport into \(W\) exists.  Then
+   \[
+      \Phi_C(W;y,G)
+      =
+      \min_{Y\subseteq\mathcal Q}
+      \left\{
+         \sum_{q\notin Y}b_q
+         +C D_{W,y}^{\gamma}(Y)
+      \right\}
+      =
+      B_{\rm tot}
+      -
+      \max_{Y\subseteq\mathcal Q}
+      \left\{
+         \sum_{q\in Y}b_q-CD_{W,y}^{\gamma}(Y)
+      \right\}.
+      \tag{GSC1}
+   \]
+   Consequently, for \(0\le M_0\le B_{\rm tot}\), a transport of mass at least
+   \(M_0\) exists if and only if every \(Y\subseteq\mathcal Q\) satisfies
+   \[
+      \sum_{q\in Y}b_q
+      \le
+      C D_{W,y}^{\gamma}(Y)+B_{\rm tot}-M_0 .
+      \tag{GSC2}
+   \]
+   In particular, a weighted-unit transport of all positive-price guard
+   incidences exists if and only if
+   \[
+      \sum_{q\in Y}b_q\le C D_{W,y}^{\gamma}(Y)
+      \qquad(Y\subseteq\mathcal Q).
+      \tag{GSC3}
+   \]
+\end{lemma}
+
+\begin{proof}
+   Aggregate the transport variables by query and point.  A transport of mass
+   \(M\) is equivalent to nonnegative variables \(f_{q,p}\), supported on
+   \(p\in W\) with \((p,q)\in\mathcal N\), such that
+   \[
+      \sum_{p\in N_W(\{q\})}f_{q,p}\le b_q,
+      \qquad
+      \sum_{\substack{q:\,(p,q)\in\mathcal N}}f_{q,p}
+      \le C d_{W,y}^{\gamma}(p),
+      \qquad
+      \sum_{q,p}f_{q,p}=M .
+   \]
+   The equivalence follows by setting
+   \(f_{q,p}=\tau_qy_q\sum_{x\in G(q)}\pi_{q,x,p}\).  Conversely, if
+   \(\tau_qy_q>0\), distribute the normalized amounts
+   \(f_{q,p}/(\tau_qy_q)\) fractionally among the \(|G(q)|\) identical
+   incidences of capacity one; queries with \(\tau_qy_q=0\) carry no mass.
+
+   Thus \(\Phi_C(W;y,G)\) is the optimum of a finite fractional flow LP.  Its
+   dual is
+   \[
+      \min
+      \left\{
+         \sum_qb_qu_q+C\sum_{p\in W}d_{W,y}^{\gamma}(p)v_p:
+         u_q+v_p\ge1\ \text{whenever }(p,q)\in\mathcal N,\quad
+         u_q,v_p\ge0
+      \right\}.
+      \tag{GSC4}
+   \]
+   Strong duality holds because the finite primal is feasible and bounded.
+
+   For any \(Y\subseteq\mathcal Q\), the Boolean dual
+   \[
+      u_q=\mathbf 1\{q\notin Y\},
+      \qquad
+      v_p=\mathbf 1\{p\in N_W(Y)\}
+   \]
+   is feasible and has value
+   \(\sum_{q\notin Y}b_q+CD_{W,y}^{\gamma}(Y)\).
+
+   Conversely, take any feasible dual \((u,v)\) and truncate it to
+   \(0\le u_q,v_p\le1\), which cannot increase the objective or destroy the
+   constraints.  For \(t\in(0,1]\), let
+   \[
+      Y_t=\{q:u_q<t\},
+      \qquad
+      P_t=\{p:v_p\ge1-t\}.
+   \]
+   If \(q\in Y_t\) and \((p,q)\in\mathcal N\), then
+   \(v_p\ge1-u_q>1-t\), so \(N_W(Y_t)\subseteq P_t\).  Hence
+   \[
+   \begin{aligned}
+      \sum_qb_qu_q+C\sum_pd_{W,y}^{\gamma}(p)v_p
+      &=
+      \int_0^1
+      \left(
+         \sum_{q:u_q\ge t}b_q
+         +C\sum_{p:v_p\ge1-t}d_{W,y}^{\gamma}(p)
+      \right)dt\\
+      &\ge
+      \int_0^1
+      \left(
+         \sum_{q\notin Y_t}b_q
+         +C D_{W,y}^{\gamma}(Y_t)
+      \right)dt\\
+      &\ge
+      \min_{Y\subseteq\mathcal Q}
+      \left\{
+         \sum_{q\notin Y}b_q
+         +C D_{W,y}^{\gamma}(Y)
+      \right\}.
+   \end{aligned}
+   \]
+   This proves \((GSC1)\).  Rewriting \(\Phi_C(W;y,G)\ge M_0\) using the
+   second form of \((GSC1)\) gives \((GSC2)\), and \(M_0=B_{\rm tot}\) gives
+   \((GSC3)\).
+\end{proof}
+
+\begin{corollary}[Cut-certified guard-shadow reporter]
+   \label{cor:cut-certified-guard-shadow-reporter}
+   Work in the setting of \cref{def:guard-shadow-transport}, and define
+   \(b_q\), \(B_{\rm tot}\), and \(D_{W,y}^{\gamma}\) as in
+   \cref{lem:guard-shadow-cut-normal-form}.  Suppose \(|W|\le K\), \(C>0\),
+   and \(0<M_0\le B_{\rm tot}\) are such that every \(Y\subseteq\mathcal Q\)
+   satisfies
+   \[
+      \sum_{q\in Y}b_q
+      \le
+      C D_{W,y}^{\gamma}(Y)+B_{\rm tot}-M_0,
+      \tag{CSG1}
+   \]
+   and
+   \[
+      \frac{M_0}{4C J_{K,M_0/C}}
+      >
+      \psi_W
+      \left(
+         K^{\rho_W}\sum_q\tau_qy_q+\sigma K^{1+\rho_W}
+      \right).
+      \tag{CSG2}
+   \]
+   Then the guarded residual has a certified hit-weighted star panel satisfying
+   \((HSP1)\)--\((HSP2)\).
+
+   Conversely, if no such panel exists, then for every choice satisfying
+   \((CSG2)\) there is a query cut \(Y\subseteq\mathcal Q\) with
+   \[
+      \sum_{q\in Y}b_q
+      >
+      C D_{W,y}^{\gamma}(Y)+B_{\rm tot}-M_0 .
+      \tag{CSG3}
+   \]
+\end{corollary}
+
+\begin{proof}
+   By \cref{lem:guard-shadow-cut-normal-form}, \((CSG1)\) is equivalent to the
+   existence of a \(C\)-congested guard-to-shadow transport of mass at least
+   \(M_0\) into \(W\).  With \((CSG2)\),
+   \cref{cor:guard-shadow-transport-reporter} produces the required panel.  The
+   converse is the contrapositive.
+\end{proof}
+
+\begin{corollary}[Half-mass guard-shadow cut obstruction]
+   \label{cor:half-mass-guard-shadow-cut-obstruction}
+   Work with one price system satisfying \((GSP1)\)--\((GSP3)\).  Let
+   \(y_q=a_q\), \(G(q)=H(q)\), and
+   \[
+      b_q=\tau_qa_q|H(q)|,
+      \qquad
+      B_{\rm tot}=\sum_qb_q .
+   \]
+   Fix a certified star container \(W\) with \(|W|\le K\) and a congestion
+   parameter \(C>0\).  If \(B_{\rm tot}>0\) and
+   \[
+      \frac{B_{\rm tot}}{8C J_{K,B_{\rm tot}/(2C)}}
+      >
+      \psi_W
+      \left(
+         K^{\rho_W}\sum_q\tau_qa_q+\sigma K^{1+\rho_W}
+      \right),
+      \tag{HGC1}
+   \]
+   then either a certified hit-weighted star panel satisfying
+   \((HSP1)\)--\((HSP2)\) exists, or there is a query cut
+   \(Y\subseteq\mathcal Q\) such that
+   \[
+      \sum_{q\in Y}b_q-CD_{W,a}^{\gamma}(Y)>\frac{B_{\rm tot}}2 .
+      \tag{HGC2}
+   \]
+   In particular, under the no-panel hypothesis and \((GSP2)\),
+   \[
+      B_{\rm tot}>\frac{\pi_1\kappa}{2},
+      \tag{HGC3}
+   \]
+   so the remaining obstruction is a high-price guard sublayer whose paid
+   near-shadow capacity in \(W\) is less than its load up to congestion \(C\).
+\end{corollary}
+
+\begin{proof}
+   Apply \cref{cor:cut-certified-guard-shadow-reporter} with
+   \(M_0=B_{\rm tot}/2\).  The affordability condition \((CSG2)\) becomes
+   \((HGC1)\).  If the panel conclusion fails, the cut violation \((CSG3)\)
+   gives \((HGC2)\).  Finally, \((HGC3)\) is exactly \((GSP2)\) for
+   \(y_q=a_q\) and \(G(q)=H(q)\).
+\end{proof}
+
 \begin{corollary}[Tuple-profile distinct-storage certificate]
    \label{cor:tuple-profile-distinct-storage}
    Work in the setting of
@@ -30523,6 +30739,9 @@ star container obeys the Renyi weak-type envelope \((GNE1)\).
 target: if the large guard co-load can be shipped with bounded congestion into
 the hit-weighted near shadow of one affordable certified star container, the
 no-star envelope is violated and the dense column is exposed.
+\Cref{lem:guard-shadow-cut-normal-form} gives the exact min-cut obstruction to
+that shipment: a surviving residual must contain a query sublayer whose raw
+guard load exceeds the paid near-shadow capacity of the proposed container.
 \Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} give the corresponding
 entropy-energy normal form: each large canonical child supplies many separated
@@ -30785,6 +31004,9 @@ on all certified smaller-radius containers.
 \Cref{cor:guard-shadow-transport-reporter} states the positive form: any
 bounded-congestion transport from that guard co-load into paid near-shadow mass
 inside an affordable container immediately yields the missing star panel.
+\Cref{cor:half-mass-guard-shadow-cut-obstruction} gives the negative form:
+after fixing an affordable container, no panel implies a half-mass query cut
+with too much guard load for its paid near shadow.
 Conversely,
 \cref{cor:paid-prefix-residual-envelope} says that a failed dense separator has
 only one possible form: a paid residual whose every certified container obeys
@@ -43689,6 +43911,10 @@ Renyi amount of hit-weighted paid mass at every degree superlevel.
 \Cref{cor:guard-shadow-transport-reporter} isolates the bridge still missing
 from geometry: a bounded-congestion shipment of the large guard co-load into
 that paid shadow would contradict the no-star envelope.
+\Cref{lem:guard-shadow-cut-normal-form} and
+\cref{cor:half-mass-guard-shadow-cut-obstruction} turn failure of that shipment
+into a concrete cut: a high-price query sublayer with large guard load and
+small paid near shadow inside the tested container.
 \Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} reduce each dyadic count to tuple
 incidence: a large separated child contains many ordered witness tuples, so the
