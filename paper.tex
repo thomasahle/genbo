@@ -12148,6 +12148,178 @@ dense theorem is not a clustering theorem in Lloyd form; it is a geometric
 separator for quotients whose primitive demand is large compared with their
 query-price overlap, storage price, and duplicate-incidence factor \(b_G\).
 
+\begin{lemma}[Reduced-gain quotient refinement]
+   \label{lem:reduced-gain-quotient-refinement}
+   Work in the finite filter-cover dual with prices
+   \((\alpha,\tau,\sigma)\).  Let
+   \(G=(U,a,T,S)\) be a certified quotient column with \(K=|U|\), exponent
+   \(0<\rho<1\), price factor \(\psi\), and prices
+   \[
+      T=\psi K^\rho,
+      \qquad
+      S=\psi K^{1+\rho}.
+      \tag{RGQ1}
+   \]
+   Write
+   \[
+      \mathsf T_a=\sum_q\tau_qa(q),
+      \qquad
+      A_G=\sum_{(p,q)\in\mathcal N}
+      \alpha_{p,q}\mathbf 1\{p\in U\}a(q).
+      \tag{RGQ2}
+   \]
+   Suppose \(G\) has positive reduced gain:
+   \[
+      A_G>\psi\bigl(K^\rho\mathsf T_a+\sigma K^{1+\rho}\bigr).
+      \tag{RGQ3}
+   \]
+
+   Let \(G_i=(U_i,a_i,T_i,S_i)\) be a demand-preserving certified refinement:
+   the sets \(U_i\) form a partition of \(U\), \(K_i=|U_i|>0\), every activation
+   satisfies \(a_i(q)\le a(q)\), and
+   \[
+      \sum_iA_i=A_G,
+      \qquad
+      A_i=\sum_{(p,q)\in\mathcal N}
+      \alpha_{p,q}\mathbf 1\{p\in U_i\}a_i(q).
+      \tag{RGQ4}
+   \]
+   Assume each child has the same exponent and prices
+   \[
+      T_i=\psi_iK_i^\rho,
+      \qquad
+      S_i=\psi_iK_i^{1+\rho}.
+      \tag{RGQ5}
+   \]
+   If the refinement is price-compatible,
+   \[
+      \sum_i\psi_iK_i^\rho\le\psi K^\rho,
+      \qquad
+      \sum_i\psi_iK_i^{1+\rho}\le\psi K^{1+\rho},
+      \tag{RGQ6}
+   \]
+   then some child \(G_i\) has positive reduced gain:
+   \[
+      A_i>
+      \psi_iK_i^\rho\sum_q\tau_qa_i(q)
+      +
+      \sigma\psi_iK_i^{1+\rho}.
+      \tag{RGQ7}
+   \]
+\end{lemma}
+
+\begin{proof}
+   Suppose every child has nonpositive reduced gain.  Since \(a_i(q)\le a(q)\),
+   this implies
+   \[
+      A_i
+      \le
+      \psi_iK_i^\rho\sum_q\tau_qa_i(q)
+      +
+      \sigma\psi_iK_i^{1+\rho}
+      \le
+      \psi_iK_i^\rho\mathsf T_a
+      +
+      \sigma\psi_iK_i^{1+\rho}.
+   \]
+   Summing over \(i\), using demand preservation \((RGQ4)\), and applying
+   \((RGQ6)\) gives
+   \[
+      A_G
+      \le
+      \mathsf T_a\sum_i\psi_iK_i^\rho
+      +
+      \sigma\sum_i\psi_iK_i^{1+\rho}
+      \le
+      \psi\bigl(K^\rho\mathsf T_a+\sigma K^{1+\rho}\bigr),
+   \]
+   contradicting \((RGQ3)\).
+\end{proof}
+
+\begin{corollary}[Renyi-spread quotient obstruction]
+   \label{cor:renyi-spread-quotient-obstruction}
+   Work in the setting of
+   \cref{lem:reduced-gain-quotient-refinement}.  Suppose every child price
+   factor satisfies \(\psi_i\le\psi_\star\le\psi\).  If \(G\) has positive
+   reduced gain but no child \(G_i\) has positive reduced gain, then
+   \[
+      \sum_iK_i^\rho>\frac{\psi}{\psi_\star}K^\rho.
+      \tag{RSQ1}
+   \]
+   Equivalently, for \(z_i=K_i/K\),
+   \[
+      \sum_i z_i^\rho>\frac{\psi}{\psi_\star}.
+      \tag{RSQ2}
+   \]
+   Thus a surviving positive quotient cannot be concentrated in a
+   radius-discounted low-Renyi-spread refinement.  For padded ball prices,
+   \(\psi=\Psi(R)\) and \(\psi_\star=\Psi(R_\star)\).
+\end{corollary}
+
+\begin{proof}
+   If \((RSQ1)\) failed, then
+   \[
+      \sum_i\psi_iK_i^\rho
+      \le
+      \psi_\star\sum_iK_i^\rho
+      \le
+      \psi K^\rho .
+   \]
+   Also \(\psi_\star\le\psi\) and the partition is disjoint, so
+   \[
+      \sum_i\psi_iK_i^{1+\rho}
+      \le
+      \psi_\star\sum_iK_i^{1+\rho}
+      \le
+      \psi K^{1+\rho}.
+   \]
+   Hence the refinement is price-compatible, and
+   \cref{lem:reduced-gain-quotient-refinement} would force a positive child,
+   contrary to the hypothesis.  Dividing by \(K^\rho\) gives \((RSQ2)\).
+\end{proof}
+
+\begin{corollary}[Low-spread quotient closure]
+   \label{cor:low-spread-quotient-closure}
+   In the setting of
+   \cref{cor:renyi-spread-quotient-obstruction}, assume the child refinement is
+   certified at radius price \(\psi_\star=\Psi(R_\star)\), while the parent has
+   price \(\psi=\Psi(R)\).  If
+   \[
+      \sum_iK_i^\rho
+      \le
+      \frac{\Psi(R)}{\Psi(R_\star)}K^\rho,
+      \tag{LSQ1}
+   \]
+   then some refined child quotient has positive reduced gain.
+
+   Consequently, if a residual dual has no positive smaller-radius quotient,
+   every positive quotient exposed by the spherical/dense-slice system must
+   remain high-spread under every demand-preserving radius-\(R_\star\)
+   refinement:
+   \[
+      \sum_i\left(\frac{K_i}{K}\right)^\rho
+      >
+      \frac{\Psi(R)}{\Psi(R_\star)}.
+      \tag{LSQ2}
+   \]
+\end{corollary}
+
+\begin{proof}
+   The first claim is the contrapositive of
+   \cref{cor:renyi-spread-quotient-obstruction}.  The final statement is the
+   same implication rewritten for the normalized child sizes.
+\end{proof}
+
+\Cref{lem:reduced-gain-quotient-refinement} is the finite-cover analogue of the
+Hall-shadow refinement lemma.  It says that once a quotient has positive
+reduced gain, any demand-preserving split whose radius discount pays the Renyi
+query-price increase must contain a positive child quotient.  Therefore the
+high-spread condition in \cref{cor:low-spread-quotient-closure} is an actual
+dual residual certificate: if spherical buckets and all smaller-radius quotients
+fail, the remaining positive object must be diffuse across every certified
+radius-contracting refinement.  This is the precise place where the
+spherical/list-decoding side should use entropy rather than density.
+
 \begin{corollary}[Residual dense-cover obstruction certificate]
    \label{cor:residual-dense-cover-obstruction}
    Work in the setting of \cref{lem:weighted-spherical-reduced-gain} and
@@ -62854,7 +63026,15 @@ therefore any unresolved obstruction must have all price superlevels below the
 Renyi density envelope \((DP5)\).  \Cref{lem:dense-slice-quotient-separation}
 then gives the exact merge test: grouped singleton slices can be replaced by one
 certified dense quotient whenever their de-duplicated primitive demand beats the
-quotient query and storage prices.  Finally,
+quotient query and storage prices.
+\Cref{lem:reduced-gain-quotient-refinement} and
+\cref{cor:low-spread-quotient-closure} add the radius-contraction screen inside
+this same reduced-gain language: any positive quotient whose smaller-radius
+refinement has radius-discounted Renyi spread at most
+\(\Psi(R)/\Psi(R_\star)\) already contains a positive child quotient.  Hence a
+surviving dense/spherical residual is forced to be high-spread under every
+certified radius-contracting quotient refinement, not merely hard to find by
+seeding.  Finally,
 \cref{cor:residual-dense-cover-obstruction} packages the surviving dual
 certificate into the explicit inequalities \((RO1)\)--\((RO5)\).  The remaining
 geometric theorem is now exactly to rule out those inequalities for a rich enough
@@ -64538,6 +64718,10 @@ positive child, then the normalized child sizes \(z_i\) must satisfy
 \(\sum_i z_i^\rho>\Psi(R)/\Psi(R_\star)\).  Thus the right clustering objective
 is not just small fanout but small Renyi-effective fanout after radius
 discounting.
+\Cref{lem:reduced-gain-quotient-refinement} and
+\cref{cor:low-spread-quotient-closure} prove the same statement directly for
+positive reduced-gain quotient columns in the finite dense/spherical LP, so the
+spread obstruction is not tied to one Hall-shadow normal form.
 \Cref{cor:metric-entropy-hall-shadow-closure} and
 \cref{cor:low-doubling-hall-shadow-close} sharpen the remaining geometric
 obligation: any positive Hall shadow of certified covering number below
