@@ -36725,6 +36725,72 @@ smaller Hall cut whose paid-pair capacity is measured only inside that subset.
    \(R_i\le R_\star\).
 \end{proof}
 
+\begin{corollary}[Renyi-spread Hall-shadow obstruction]
+   \label{cor:renyi-spread-hall-shadow-obstruction}
+   Work in the setting of
+   \cref{cor:price-compatible-query-free-refinement}.  Let \(L\) be a
+   positive-gain parent list satisfying \((PQR3)\), with size \(K\), price
+   factor \(\psi\), and exponent \(0<\rho<1\).  Let
+   \[
+      L=\bigsqcup_{i\in I}L_i,\qquad K_i=|L_i|
+   \]
+   be any partition into nonempty certified child lists \(L_i\subseteq W_i\),
+   where every \(W_i\) has \(b_0\)-dense retained cardinalities and price factor
+   at most a common value \(\psi_\star\le\psi\).  If no child satisfies the
+   positive child gain condition \((PQR4)\), then the child-size distribution
+   must obey
+   \[
+      \sum_iK_i^\rho
+      >
+      \frac{\psi}{\psi_\star}K^\rho .
+      \tag{RSH1}
+   \]
+   Equivalently, for \(z_i=K_i/K\),
+   \[
+      \sum_i z_i^\rho>\frac{\psi}{\psi_\star},
+      \qquad
+      \left(\sum_i z_i^\rho\right)^{1/(1-\rho)}
+      >
+      \left(\frac{\psi}{\psi_\star}\right)^{1/(1-\rho)} .
+      \tag{RSH2}
+   \]
+   Thus a failed smaller-radius refinement is not just a large-fanout object:
+   the positive Hall shadow must be spread across many child cells in the
+   Renyi-effective sense.  For padded ball prices, \(\psi=\Psi(R)\) and
+   \(\psi_\star=\Psi(R_\star)\).
+\end{corollary}
+
+\begin{proof}
+   Suppose instead that
+   \[
+      \sum_iK_i^\rho
+      \le
+      \frac{\psi}{\psi_\star}K^\rho .
+   \]
+   Since every \(\psi_i\le\psi_\star\),
+   \[
+      \sum_i\psi_iK_i^\rho
+      \le
+      \psi_\star\sum_iK_i^\rho
+      \le
+      \psi K^\rho .
+   \]
+   The storage price is also compatible, because \(\psi_\star\le\psi\) and
+   \(1+\rho\ge1\):
+   \[
+      \sum_i\psi_iK_i^{1+\rho}
+      \le
+      \psi_\star\sum_iK_i^{1+\rho}
+      \le
+      \psi K^{1+\rho}.
+   \]
+   Hence \((PQR2)\) holds.  By
+   \cref{cor:price-compatible-query-free-refinement}, some child must satisfy
+   \((PQR4)\), contradicting the hypothesis.  Dividing \((RSH1)\) by
+   \(K^\rho\) gives the first form of \((RSH2)\); the effective-support form is
+   just a monotone reparameterization.
+\end{proof}
+
 \begin{corollary}[Metric-entropy Hall-shadow closure]
    \label{cor:metric-entropy-hall-shadow-closure}
    Work in the setting of
@@ -37125,6 +37191,11 @@ discount at most \(J^{-(1-\rho)}\).  Thus the build-time clustering target is a
 bounded-fanout ball decomposition whose certified radii beat this fanout
 threshold; if such a decomposition carries the Hall-shadow gain, one child
 piece already closes.
+\Cref{cor:renyi-spread-hall-shadow-obstruction} gives the sharper unbalanced
+form: if no child closes, the list mass cannot merely be covered by many cells;
+it must have large Renyi-effective support across the child partition.  This is
+the distribution-sensitive quantity a facility or additive-quantization cover
+should minimize.
 \Cref{cor:metric-entropy-hall-shadow-closure} turns this into a metric
 separator: any positive-gain Hall shadow with certified covering number below
 \((\Psi(R)/\Psi(R_\star))^{1/(1-\rho)}\) at radius \(R_\star\) already closes.
@@ -64461,6 +64532,12 @@ geometric: if \(J\) refined balls all reduce the padded radius potential by
 at least \(J^{1-\rho}\), the price compatibility follows automatically.  This
 is the exact fanout-versus-contraction inequality that a \(k\)-means, facility,
 or range-reporting ball decomposition must certify.
+\Cref{cor:renyi-spread-hall-shadow-obstruction} is the stronger
+distribution-sensitive version: if a proposed refinement does not contain a
+positive child, then the normalized child sizes \(z_i\) must satisfy
+\(\sum_i z_i^\rho>\Psi(R)/\Psi(R_\star)\).  Thus the right clustering objective
+is not just small fanout but small Renyi-effective fanout after radius
+discounting.
 \Cref{cor:metric-entropy-hall-shadow-closure} and
 \cref{cor:low-doubling-hall-shadow-close} sharpen the remaining geometric
 obligation: any positive Hall shadow of certified covering number below
