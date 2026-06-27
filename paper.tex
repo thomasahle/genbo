@@ -38634,6 +38634,147 @@ family.
    \((RPR3)\) to full routings gives \((RPR4)\).
 \end{proof}
 
+\begin{corollary}[Reported marginal support-law certificate]
+   \label{cor:reported-marginal-support-law}
+   Work in the setting of
+   \cref{cor:reported-support-price-routing-residual}.  Fix a finite set
+   \(\mathcal I\) of reported support slots.  Slot \(i\in\mathcal I\) specifies
+   a certified parent template \(C_i\), an admissible layer \(y_i\), a support
+   container \(W_i\subseteq W_{C_i}\), and parameters
+   \(b_i,J_i,\psi_i,\rho_i\), with \(0<\rho_i\le1\).  Every subset of \(W_i\)
+   is allowed as the routed support for slot \(i\).
+
+   A marginal stochastic routing law assigns, for every paid cut-shadow atom
+   \((p,\sigma_0)\in N(A)\), probabilities \(z_{i,p,\sigma_0}\ge0\) and routed
+   fractions \(\gamma_{i,\sigma_0}\) satisfying
+   \[
+      \sum_i z_{i,p,\sigma_0}\le1,
+      \qquad
+      0\le\gamma_{i,\sigma_0}\le y_i(\sigma_0),
+      \tag{RML1}
+   \]
+   with \(z_{i,p,\sigma_0}=0\) unless \(p\in W_i\).  Choices for different
+   data points are independent, while choices among the atoms of the same point
+   may be arbitrarily coupled, subject to the displayed marginals.  Define
+   \[
+      X_z=
+      \sum_{(p,\sigma_0)\in N(A)}
+      \alpha_{p,\sigma_0}
+      \sum_i z_{i,p,\sigma_0}\gamma_{i,\sigma_0},
+      \tag{RML2}
+   \]
+   and the marginal support upper bounds
+   \[
+      \nu_{i,p}=
+      \min\left\{1,\sum_{\sigma_0\in\Sigma_A(p)}z_{i,p,\sigma_0}\right\},
+      \qquad
+      \nu_i=\sum_p\nu_{i,p},
+      \tag{RML3}
+   \]
+   where
+   \(\Sigma_A(p)=\{\sigma_0:(p,\sigma_0)\in N(A)\}\).  Put
+   \[
+      \widehat\Psi_{\rm rep}(z)
+      =
+      \sum_i
+      2b_iJ_i\psi_i
+      \left(
+         A_{y_i}\nu_i^{\rho_i}
+         +
+         \zeta(\nu_i+\nu_i^{1+\rho_i})
+      \right),
+      \qquad
+      A_{y_i}=\sum_{\sigma_0}\tau_{\sigma_0}y_i(\sigma_0).
+      \tag{RML4}
+   \]
+   If
+   \[
+      X_z>\widehat\Psi_{\rm rep}(z),
+      \tag{RML5}
+   \]
+   then some deterministic partial routed-support report satisfies
+   \((RPR2)\).  Consequently the Hall-cut repair alternative \((HCR2)\) holds.
+
+   Equivalently, in any residual with no reported closed-shadow repair, every
+   marginal stochastic routing law obeys
+   \[
+      X_z\le\widehat\Psi_{\rm rep}(z).
+      \tag{RML6}
+   \]
+   Thus facility, additive-quantization, list-decoding, lattice-decoding, or
+   seeded-clustering proposal laws may be analyzed only through their marginal
+   support probabilities.  A positive law is rounded at build time and then
+   verified as an ordinary deterministic reported support routing; no
+   fractional support is retained in the index.
+\end{corollary}
+
+\begin{proof}
+   Sample independently over data points.  For each atom
+   \((p,\sigma_0)\), choose at most one slot \(i\) with marginal probability
+   \(z_{i,p,\sigma_0}\), and leave the atom unrouted with the remaining
+   probability.  If slot \(i\) is chosen, route the fraction
+   \(\gamma_{i,\sigma_0}\) of that atom to slot \(i\).  The expected routed paid
+   mass is exactly \(X_z\).
+
+   For a sampled deterministic routing \(r\), let
+   \(S_i(r)\) be the set of data points whose atoms route positive mass to slot
+   \(i\), and let \(s_i(r)=|S_i(r)|\).  Since
+   \(\gamma_{i,\sigma_0}\le y_i(\sigma_0)\), the mass routed to slot \(i\)
+   satisfies the one-sided report condition
+   \[
+      X_i(r)
+      \le
+      \sum_{p\in S_i(r)}
+      \sum_{\sigma_0:\,(p,\sigma_0)\in N(A)}
+      \alpha_{p,\sigma_0}y_i(\sigma_0)
+      =
+      \sum_{p\in S_i(r)}d_{C_i,y_i}(p).
+      \tag{RML7}
+   \]
+   Hence every sampled outcome is an admissible partial routing in the sense of
+   \cref{cor:reported-support-price-routing-residual}.
+
+   Let \(I_{i,p}\) be the indicator that point \(p\) appears in \(S_i(r)\), and
+   let \(q_{i,p}=\E I_{i,p}\).  The union bound gives
+   \(q_{i,p}\le\nu_{i,p}\), so
+   \(\mu_i=\sum_pq_{i,p}\le\nu_i\).  The variables \(I_{i,p}\) are independent
+   over \(p\).  For \(S_i=s_i(r)\), concavity gives
+   \(\E S_i^{\rho_i}\le\mu_i^{\rho_i}\le\nu_i^{\rho_i}\).  For the storage
+   moment, use
+   \(k^{1+\rho}\le k+k(k-1)_+^\rho\) for \(k\in\mathbb Z_{\ge0}\) and
+   \(0<\rho\le1\).  With
+   \(S_i^{(p)}=\sum_{p'\ne p}I_{i,p'}\),
+   \[
+   \begin{aligned}
+      \E S_i^{1+\rho_i}
+      &\le
+      \mu_i+
+      \sum_p q_{i,p}\E\left(S_i^{(p)}\right)^{\rho_i}  \\
+      &\le
+      \mu_i+\sum_pq_{i,p}(\mu_i-q_{i,p})^{\rho_i}
+      \le
+      \mu_i+\mu_i^{1+\rho_i}
+      \le
+      \nu_i+\nu_i^{1+\rho_i}.
+   \end{aligned}
+      \tag{RML8}
+   \]
+   Multiplying by the reported support-price coefficients and summing over
+   \(i\) yields
+   \[
+      \E_r\Psi_{\rm rep}(r)\le\widehat\Psi_{\rm rep}(z).
+      \tag{RML9}
+   \]
+   Combining \((RML2)\), \((RML5)\), and \((RML9)\), we get
+   \[
+      \E_r\left[X(r)-\Psi_{\rm rep}(r)\right]>0.
+   \]
+   Thus some deterministic sampled routing has
+   \(X(r)>\Psi_{\rm rep}(r)\), which is \((RPR2)\).  Applying
+   \cref{cor:reported-support-price-routing-residual} gives \((HCR2)\).  The
+   residual inequality \((RML6)\) is the contrapositive.
+\end{proof}
+
 \begin{corollary}[Balanced Hall-shadow density screen]
    \label{cor:balanced-hall-shadow-density-screen}
    Work in the setting of \cref{cor:no-merge-hall-shadow-envelope}.  Fix a
@@ -53951,7 +54092,15 @@ prices, one support report already repairs the cut.
 \Cref{cor:reported-support-price-routing-residual} is the scalar optimization
 form: in a surviving residual, every partial routed submeasure has mass at most
 its reported support price, and every full routing gives the obstruction
-\((RPR4)\).  The older sufficient forms include
+\((RPR4)\).  \Cref{cor:reported-marginal-support-law} converts this deterministic
+obstruction into a marginal law test: if a facility, additive-quantization,
+list-decoding, lattice-decoding, or seeded-clustering proposal law has expected
+routed paid mass larger than its marginal reported support price, independent
+rounding exposes one deterministic reported routing and hence one ordinary
+closed-shadow repair.  Therefore proposal mechanisms may be analyzed through
+support probabilities \(\nu_{i,p}\) and one-sided routed-mass certificates; the
+retained index still stores only verified deterministic reported supports.  The
+older sufficient forms include
 \cref{cor:exact-scale-soft-hall-shadow-separator-endpoint},
 \cref{cor:thresholded-shadow-routing-separator-endpoint},
 \cref{cor:soft-mass-hall-shadow-separator-endpoint},

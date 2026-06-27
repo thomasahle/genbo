@@ -651,3 +651,5 @@
 - Updated the audit trail to include this aggregate routed-support panel as the support-price bridge to the current \((CRR3)\) obstruction.
 - Added the reported support-price routing residual. Any partial routing whose paid mass beats its reported support price now repairs the cut; if no report fires, every partial routing satisfies \((RPR3)\), and every full routing gives the scalar obstruction \((RPR4)\).
 - Updated the audit trail to record \((RPR4)\) as the support-price optimization form of the closed-shadow residual.
+- Added the reported marginal support-law certificate. A stochastic proposal law now only has to beat the marginal reported support price \(\widehat\Psi_{\rm rep}\); independent rounding over data points hardens positive expected surplus into one deterministic reported routing, so facility/AQ/list-decoding/lattice-style proposal mechanisms can be analyzed by support probabilities rather than explicit hard clusters.
+- Updated the audit trail to record this marginal-law bridge as the current build-facing route into the reported support-price residual.
