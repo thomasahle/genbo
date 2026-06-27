@@ -18419,6 +18419,55 @@ success-normalized bucket-net argument.
    Averaging gives \((OPL3)\).
 \end{proof}
 
+\begin{corollary}[Sampled one-sided prefix separator]
+   \label{cor:sampled-one-sided-prefix-separator}
+   Work in the setting of
+   \cref{cor:one-sided-prefix-value-column-generation}.  Fix a cohort law
+   \(\eta\), and suppose preprocessing has a sampleable law \(\mathfrak P_\eta\)
+   on one-sided prefix-value reports \(R=(T_R,X_R)\) satisfying \((OPV0)\).
+   Let
+   \[
+      \Psi_\eta(R)=X_R-\Theta_C L_b(h_{T_R})
+      \tag{SOP0}
+   \]
+   and assume \(\Psi_\eta\) is integrable and
+   \[
+      \E_{R\sim\mathfrak P_\eta}\Psi_\eta(R)\ge0.
+      \tag{SOP1}
+   \]
+   Then
+   \[
+      \Pr_{R\sim\mathfrak P_\eta}[\Psi_\eta(R)\ge0]>0.
+      \tag{SOP2}
+   \]
+   Consequently, repeated independent sampling from \(\mathfrak P_\eta\), with
+   exact verification of \((OPV0)\) and \(\Psi_\eta(R)\ge0\) after each sample,
+   is a Las Vegas separator: it halts almost surely with a separating
+   one-sided prefix-value report, and if the probability in \((SOP2)\) is
+   \(\pi_\eta\), its expected number of samples is \(1/\pi_\eta\).
+
+   Therefore the column-generation procedure remains complete with uncharged
+   randomized preprocessing if, for every minimizing cohort law encountered by
+   the restricted game, either an exact oracle certifies \((OPV2)\) or
+   preprocessing supplies such a sampleable law.  The retained index still pays
+   only for the deterministic verified records that are actually accepted.
+\end{corollary}
+
+\begin{proof}
+   If \(\Pr[\Psi_\eta(R)\ge0]=0\), then \(\Psi_\eta(R)<0\) almost surely.  Since
+   \(\Psi_\eta\) is integrable, this implies
+   \(\E\Psi_\eta(R)<0\) unless \(\Psi_\eta=0\) almost surely, which contradicts
+   \(\Psi_\eta<0\) almost surely.  Hence \((SOP2)\) follows from \((SOP1)\).
+
+   A sample with \(\Psi_\eta(R)\ge0\) satisfies \(X_R\ge\Theta_C L_b(h_{T_R})\),
+   so it is separating by \((OPV1)\).  Independent repetitions hit this event
+   almost surely, and the geometric waiting-time formula gives expectation
+   \(1/\pi_\eta\).  The final statement is
+   \cref{cor:one-sided-prefix-value-column-generation}: every successful
+   sampled report is a valid separator output, while \((OPV2)\) is the exact
+   no-column certificate.
+\end{proof}
+
 \begin{corollary}[Cardinality-net cohort superlevel reporter]
    \label{cor:cardinality-net-cohort-superlevel-reporter}
    Work in the setting of
@@ -18619,6 +18668,11 @@ randomized proposal mechanisms: a finite \(k\)-means++, additive-quantization,
 range-reporting, or list-decoding batch is useful exactly when its verified
 average one-sided surplus is nonnegative, and then averaging exposes one
 deterministic column.
+\Cref{cor:sampled-one-sided-prefix-separator} removes even the finite-batch
+enumeration requirement from the theorem target: a sampleable proposal law with
+nonnegative expected verified surplus can be searched by unlimited
+preprocessing until a separating report is found, and only that report is
+retained.
 \Cref{cor:cardinality-net-cohort-superlevel-reporter} removes the need for the
 separator to optimize an exact top prefix: any certified threshold list with
 one-sided value \(X\ge\Theta_C L_b(h)\) is already a valid column, and failure
@@ -40846,6 +40900,10 @@ payoff against all later cohort laws.
 come from a finite randomized batch: if the verified average one-sided surplus
 is nonnegative, one support record is a valid deterministic column, while exact
 negative reduced gain rules out every such batch.
+\Cref{cor:sampled-one-sided-prefix-separator} is the Las Vegas build-time form:
+if a sampleable proposal law has nonnegative expected verified surplus, repeated
+preprocessing samples eventually expose a deterministic accepted column; no
+sampled object is trusted without verification.
 \Cref{cor:cardinality-net-cohort-superlevel-reporter} is the corresponding
 one-sided reporter interface: a range-reporting, list-decoding, additive
 quantization, or seeded-clustering separator may return any certified
