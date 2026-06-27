@@ -29566,6 +29566,108 @@ inequality \((QP3)\).
    \cref{cor:local-error-shared-canonical-panel-storage} gives feasibility.
 \end{proof}
 
+\begin{corollary}[Finite-signature compressed-bucket bridge]
+   \label{cor:finite-signature-compressed-bucket-bridge}
+   Work at one resident node in the exact-signature setting of
+   \cref{lem:exact-near-set-filter-cover}.  Let a finite seed \(z\sim\nu\)
+   produce decoded compressed-bucket records \(\mathcal B_z\), with active
+   signature sets \(\mathcal Q_{z,b}\), captured signature sets
+   \(\mathcal H_{z,b}\), hit weights \(s_{z,b}\), local errors
+   \(\varepsilon_{z,b}(\sigma_0)\), and canonical child identifiers
+   \(\kappa_{z,b}\) as in
+   \cref{cor:local-error-distinct-canonical-bucket-net}.  If
+   \(\Sigma^+=\emptyset\), the node is already feasible.  Otherwise define the
+   useful hit denominator
+   \[
+      a_{\rm cb}
+      =
+      \inf_{\sigma_0\in\Sigma^+}
+      \E_z\sum_{b\in\mathcal B_z}
+      \left(
+         s_{z,b}\mathbf 1\{\sigma_0\in\mathcal H_{z,b}\}
+         -
+         \varepsilon_{z,b}(\sigma_0)
+      \right),
+      \tag{FCB1}
+   \]
+   and suppose \(a_{\rm cb}>0\).  Suppose the success-normalized active load
+   satisfies
+   \[
+      \E_z\sum_{b:\sigma_0\in\mathcal Q_{z,b}}
+      s_{z,b}\psi_{z,b}K_{z,b}
+      \le
+      a_{\rm cb}L_{\sigma_0}
+      \qquad(\sigma_0\in\Sigma),
+      \tag{FCB2}
+   \]
+   while the shared canonical child storage satisfies
+   \[
+      \E_z\left[
+         \Gamma_z+
+         \sum_{\kappa\in\kappa_z(\mathcal B_z)}
+         \psi_{z,\kappa}K_{z,\kappa}^{1+\rho_{z,\kappa}}
+      \right]
+      \le
+      a_{\rm cb}S .
+      \tag{FCB3}
+   \]
+   Then the node has a feasible exact-signature finite-filter cover
+   \((\mathsf{ESFC}_\Sigma)\) with query budgets \(L_{\sigma_0}\) and storage
+   budget \(S\).
+
+   Thus the compressed-bucket step is not a second, hard-branching recursion
+   rule.  It is a finite fractional filter-cover certificate: the quantity
+   \(a_{\rm cb}\) is the near-witness coverage denominator, \((FCB2)\) is the
+   query-local overlap bound after division by this denominator, and \((FCB3)\)
+   charges each canonical recursive child once.  False active buckets are
+   included in the left side of \((FCB2)\), and repeated decoded occurrences
+   only affect query load and metadata.
+
+   Consequently, suppose that after bounded-diameter localization every
+   resident node \(P\), \(|P|=N\), admits such a finite compressed-bucket
+   certificate, with
+   \[
+      L_{\sigma_0}\le N^{\rho_c}\log^{O_c(1)}n,
+      \qquad
+      S\le N^{1+\rho_c}\log^{O_c(1)}n,
+      \qquad
+      \rho_c=\frac1{2c^2-1},
+      \tag{FCB4}
+   \]
+   finite-signature entropy
+   \(\log(2+|\Sigma|+|\Sigma^+|)\le\log^{O_c(1)}n\), decoder time
+   \(d\,N^{\rho_c}\log^{O_c(1)}n\), the atom bounds needed by
+   \cref{lem:exact-near-set-filter-cover}, and strictly smaller certified
+   radius for every nonterminal child.  If the child price factors
+   \(\psi_{z,\kappa}K_{z,\kappa}^{\rho_{z,\kappa}}\) and
+   \(\psi_{z,\kappa}K_{z,\kappa}^{1+\rho_{z,\kappa}}\) are the full certified
+   descendant query and storage prices, then the global ANN bounds are
+   \[
+      Q(n,d)=d\,n^{\rho_c}\log^{O_c(1)}n,
+      \qquad
+      S(n,d)=dn+n^{1+\rho_c}\log^{O_c(1)}n .
+   \]
+\end{corollary}
+
+\begin{proof}
+   If \(\Sigma^+=\emptyset\), the zero exact-signature cover is feasible, so
+   assume \(\Sigma^+\ne\emptyset\).  The denominator \(a_{\rm cb}\) is exactly
+   \(a_{\rm loc}\) from \((LBNR2)\) after expanding the record hit and local
+   error profiles.  Conditions \((FCB2)\) and \((FCB3)\) are precisely
+   \((LDCB2)\) and \((LDCB3)\), with \(a_{\rm loc}=a_{\rm cb}\).  Hence
+   \cref{cor:local-error-distinct-canonical-bucket-net} gives feasibility of
+   \((\mathsf{ESFC}_\Sigma)\).
+
+   For the endpoint statement, apply the exact-near-set version of
+   \cref{prop:fractional-filter-cover-polylog} with the budgets in \((FCB4)\).
+   The preceding feasibility statement supplies the required local cover at
+   each node, and the price-factor hypothesis says that a retained bucket
+   column is charged by the full descendant cost.  Therefore overlapping dense
+   or spherical bucket columns are paid by the local LP load constraints rather
+   than multiplied along a hard recursion tree.  The global coordinate array is
+   stored once, as in \cref{prop:fractional-filter-cover-polylog}.
+\end{proof}
+
 \begin{lemma}[Dyadic tail certificate for distinct child storage]
    \label{lem:dyadic-tail-distinct-child-storage}
    Work with one seed \(z\) in the setting of
@@ -49359,7 +49461,12 @@ with false active buckets included in the active layer.
 \Cref{cor:distinct-canonical-bucket-net} further sharpens the storage target:
 the recursive child index is charged once per distinct canonical bucket net, not
 once per decoded occurrence, with only occurrence pointers left in the metadata
-budget.  \Cref{cor:tuple-profile-compressed-bucket-storage} gives the direct
+budget.  \Cref{cor:finite-signature-compressed-bucket-bridge} is the formal
+bridge to the fractional dense-overlap picture: a compressed bucket panel is
+just a finite exact-signature filter-cover certificate once its useful hit
+denominator, active-load overlap, and distinct canonical storage are normalized
+by the same \(a_{\rm cb}\).  \Cref{cor:tuple-profile-compressed-bucket-storage}
+gives the direct
 low-correlation certificate for this target: first list moment plus two-point
 Gaussian tuple-profile energy imply the needed occurrence moment, and the
 shared-DAG distinct-net sum is smaller.
