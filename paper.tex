@@ -31749,6 +31749,121 @@ must turn into a lower-certified guard-credit proposal.
    local filter-cover feasibility.
 \end{proof}
 
+\begin{corollary}[Hall-profile repair closes guarded residuals]
+   \label{cor:hall-profile-repair-guarded-cover}
+   Work in the setting of \cref{cor:guarded-star-panel-local-cover}.  Let
+   \(a_q=\Pr_{Z\sim\Pi}[\chi_Z(q)=1]\).  Suppose that for every
+   \(\kappa\in[1,\pi_1^{-1}]\) and every nonnegative price system
+   \((\gamma,\tau,\sigma)\) satisfying \((GSP1)\)--\((GSP3)\), the reporter
+   supplies a finite center/container universe as in
+   \cref{cor:pair-compatible-hall-guarded-cover}.  Put
+   \[
+      y_q=a_q,\qquad G(q)=H(q),\qquad
+      b_q=\tau_qa_q|H(q)|,\qquad
+      B_{\rm pc}=\sum_qb_q,
+      \tag{HPR0}
+   \]
+   and let
+   \[
+      \mathcal Q_+=\{q\in\mathcal Q:b_q>0\}.
+      \tag{HPR1}
+   \]
+   Assume that, for each residual price system, at least one of the following
+   two alternatives holds.
+
+   First, the Hall-success alternative holds: the reported containers and a
+   pair congestion \(C_{\rm pair}\) satisfy the geometric Hall inequalities
+   \((GHP2)\) with \(M_0=B_{\rm pc}/2\), the induced positive responsibility
+   multiplicities lie in a certified range \([M_{\min},M_{\max}]\), and the
+   layer-cake price conditions \((HES1)\)--\((HES3)\) hold.
+
+   Second, the Hall-profile repair alternative holds: after restricting the
+   guard-credit instance to the loaded query set \(\mathcal Q_+\), the reporter
+   returns a finite lower-certified raw guard panel
+   \[
+      (W_i,K_i,C_i,X_i,\lambda_i)_{i\in I}
+   \]
+   with affordable certified containers \(W_i\), size certificates
+   \(K_i\ge1\), congestion parameters \(C_i>0\), and multiplicities
+   \(\lambda_i\ge0\),
+   such that
+   \[
+      0\le X_i\le
+      D_+(W_i):=
+      \sum_{p\in W_i}
+      \sum_{\substack{q\in\mathcal Q_+\\(p,q)\in\mathcal N}}
+      a_q\gamma_{p,q}r_{p,q},
+      \tag{HPR2}
+   \]
+   and, with
+   \[
+      v_i=\min\{X_i,K_i\},
+      \qquad
+      J_i=1+\left\lceil\log_2\frac{2K_i}{v_i}\right\rceil
+      \quad(v_i>0),
+      \tag{HPR3}
+   \]
+   the positive surplus inequality
+   \[
+      \sum_{i:\,v_i>0}\lambda_i
+      \left[
+         \frac{X_i}{4J_i}
+         -
+         \psi_{W_i}
+         \left(
+            K_i^{\rho_{W_i}}\sum_{q\in\mathcal Q_+}\tau_qa_q
+            +\sigma K_i^{1+\rho_{W_i}}
+         \right)
+      \right]>0
+      \tag{HPR4}
+   \]
+   holds.
+
+   Then the reporter theorem required in
+   \cref{cor:guarded-star-panel-local-cover} holds.  Consequently the finite
+   local filter-cover LP in that corollary is feasible.
+\end{corollary}
+
+\begin{proof}
+   Fix a residual price system satisfying \((GSP1)\)--\((GSP3)\).
+
+   In the Hall-success alternative, the proof of
+   \cref{cor:pair-compatible-hall-guarded-cover} applies verbatim: the Hall
+   inequalities give a pair-compatible shipment of mass \(B_{\rm pc}/2\);
+   \cref{cor:pair-compatible-guard-responsibility-star} converts it into a
+   responsibility-induced high-correlation star; and
+   \cref{cor:lower-certified-scale-free-guard-panel} and
+   \cref{cor:finite-guard-credit-flow-separator} convert that star into a
+   certified hit-weighted star panel satisfying \((HSP1)\)--\((HSP2)\).
+
+   In the repair alternative, restrict the finite guard-credit instance to
+   \(\mathcal Q_+\), use \(y_q=a_q\), and extend all query weights by zero
+   outside \(\mathcal Q_+\) after the panel is constructed.  The certificates
+   \((HPR2)\)--\((HPR4)\) are exactly the lower-certified scale-free guard-panel
+   condition \((LCG1)\)--\((LCG4)\) for this restricted instance.  Hence
+   \cref{cor:lower-certified-scale-free-guard-panel} gives a positive
+   guard-credit template, and
+   \cref{cor:finite-guard-credit-flow-separator} converts the resulting
+   positive guard-credit LP into a certified hit-weighted star panel satisfying
+   \((HSP1)\)--\((HSP2)\).  Since the panel has zero query weights outside
+   \(\mathcal Q_+\), it is also a valid panel for the original residual.
+
+   Thus every residual price system satisfying \((GSP1)\)--\((GSP3)\) admits
+   the hit-weighted star panel required by
+   \cref{cor:guarded-star-panel-local-cover}.  Applying that corollary gives
+   local filter-cover feasibility.
+\end{proof}
+
+\Cref{cor:hall-profile-repair-guarded-cover} is the exact interface for the
+lower-hull obstruction of
+\cref{cor:exact-load-pair-compatible-hall-profile}.  A failed Hall profile is
+not used as a data-structure column by itself; it is only a priced witness that
+must be repaired by a verified raw guard panel satisfying \((HPR2)\)--\((HPR4)\).
+This is the build-time target for range-reporting cells, list-decoding outputs,
+additive-quantization records, or seeded clustering proposals: find paid-shadow
+mass on the loaded Hall queries per recursive price, then let the existing
+guard-credit LP and paid-prefix verifier retain the actual filter column.
+
 \begin{corollary}[Tuple-profile distinct-storage certificate]
    \label{cor:tuple-profile-distinct-storage}
    Work in the setting of
@@ -32213,6 +32328,10 @@ gap.
 \Cref{cor:exact-load-pair-compatible-hall-profile} turns the same obstruction
 into a one-parameter exact-load closure profile; every bad fractional layer is
 seen on the lower convex envelope of ordinary guard sublayers.
+\Cref{cor:hall-profile-repair-guarded-cover} gives the corresponding repair
+interface: either the Hall profile supplies the half-shipment, or a proposal
+oracle must convert a lower-hull deficit into a lower-certified guard-credit
+panel on the loaded queries.
 \Cref{cor:pair-compatible-hall-guarded-cover} assembles the chain back into the
 local LP: a half-shipment with sufficient layer-cake surplus supplies the
 guarded star-panel reporter and closes the residual.
@@ -45484,6 +45603,10 @@ and their paid-neighborhood closure and no integrality loss.
 \Cref{cor:exact-load-pair-compatible-hall-profile} reduces the same bad object
 to an exact-load lower convex envelope over ordinary guard sublayers, which is
 the build-time profile a proposal oracle must separate.
+\Cref{cor:hall-profile-repair-guarded-cover} records the accepted separation
+format for that profile: a lower-hull Hall deficit is useful only after a
+verified guard-credit repair panel beats its recursive price on the loaded
+queries.
 \Cref{cor:pair-compatible-hall-guarded-cover} states the final local theorem
 target in this language: prove the Hall expansion and the resulting
 layer-cake price inequality for every guarded residual.
