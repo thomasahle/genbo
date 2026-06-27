@@ -15984,6 +15984,105 @@ success-normalized bucket-net argument.
    \cref{cor:cut-certified-annular-reporter} gives the reporter.
 \end{proof}
 
+\begin{lemma}[Cut-recycled annular sublayer]
+   \label{lem:cut-recycled-annular-sublayer}
+   Work under the hypotheses of
+   \cref{cor:half-mass-excess-cut-obstruction}, and suppose a query sublayer
+   \(Y\subseteq Q'\) satisfies the excess-cut conclusion \((HMC2)\).  Let
+   \(m=|P|\), write \(Q'=Q_{z,\beta,\Delta}\), and put
+   \[
+      \mathcal D_m=\{2^\ell:0\le\ell\le\lceil\log_2m\rceil\},
+      \qquad
+      \mathcal D_m(\Delta)
+      =
+      \{\Delta'\in\mathcal D_m:\Delta\le\Delta'\le m\},
+      \qquad
+      H_m(\Delta)=|\mathcal D_m(\Delta)|.
+   \]
+   If \(B_Y=\sum_{q\in Y}b_q\), then there are a dyadic level
+   \(\Delta'\in\mathcal D_m(\Delta)\) and a cut-restricted annular layer
+   \[
+      Y'=\{q\in Y: |B(q)|\ge\Delta'\}
+      \tag{CRA1}
+   \]
+   such that
+   \[
+      \Delta'\sum_{q\in Y'}\bar\tau_q
+      \ge
+      \frac{B_Y}{2H_m(\Delta)}
+      >
+      \frac{B_{\rm tot}}{4H_m(\Delta)} .
+      \tag{CRA2}
+   \]
+   Define the near-shadow capacity restricted to \(Y'\) by
+   \[
+      D_{W,Y'}^\theta(Y')
+      =
+      \sum_{p\in N_W(Y')}
+      \sum_{\substack{q\in Y'\\(p,q)\in\mathcal N}}
+      \bar\gamma^\theta_{p,q}r_{p,q}.
+   \]
+   Then
+   \[
+      D_{W,Y'}^\theta(Y')
+      \le
+      D_W^\theta(Y)
+      <
+      \frac{B_Y-B_{\rm tot}/2}{C}
+      \le
+      \frac{B_Y}{C}
+      \le
+      \frac{2H_m(\Delta)}{C}\,
+      \Delta'\sum_{q\in Y'}\bar\tau_q .
+      \tag{CRA3}
+   \]
+   In particular, if \(Y\) comes from an infeasible local cover through
+   \cref{cor:single-seed-near-shadow-prefix-obstruction}, then
+   \[
+      \Delta'\sum_{q\in Y'}\bar\tau_q
+      >
+      \frac{(1-\xi)\beta_0C_\eta\pi_1\kappa}
+      {16J K_{|P|}H_m(\Delta)} .
+      \tag{CRA4}
+   \]
+   Here \(K_{|P|}=1+\lceil\log_2|P|\rceil\).
+\end{lemma}
+
+\begin{proof}
+   For \(q\in Y\subseteq Q_{z,\beta,\Delta}\), the integer
+   \(h_q=|B(q)|\) is at least \(\Delta\).  Since \(\Delta\) and the levels in
+   \(\mathcal D_m\) are dyadic,
+   \[
+      h_q
+      \le
+      2\sum_{\Delta'\in\mathcal D_m(\Delta)}
+      \Delta'\mathbf 1\{h_q\ge\Delta'\}.
+   \]
+   Multiplying by \(\bar\tau_q\), summing over \(Y\), and using
+   \(b_q=\bar\tau_qh_q\) gives
+   \[
+      B_Y
+      \le
+      2\sum_{\Delta'\in\mathcal D_m(\Delta)}
+      \Delta'\sum_{\substack{q\in Y:\\ |B(q)|\ge\Delta'}}\bar\tau_q .
+   \]
+   Averaging over the \(H_m(\Delta)\) levels gives a level \(\Delta'\) satisfying
+   the first inequality in \((CRA2)\).  The second inequality is \((HMC2)\), since
+   \(D_W^\theta(Y)\ge0\).
+
+   The capacity comparison follows from monotonicity: \(Y'\subseteq Y\), so
+   \(N_W(Y')\subseteq N_W(Y)\), and the degree restricted to \(Y'\) is bounded by
+   the degree restricted to \(Q'\).  Therefore
+   \(D_{W,Y'}^\theta(Y')\le D_W^\theta(Y)\).  The strict middle inequality is
+   \((HMC2)\), and the final inequality is the rearranged lower bound in
+   \((CRA2)\).
+
+   Finally, \((SPO1)\) gives
+   \(B_{\rm tot}\ge\Delta\sum_{q\in Q'}\bar\tau_q
+   >(1-\xi)\beta_0C_\eta\pi_1\kappa/(4JK_{|P|})\).  Combining this with
+   \((CRA2)\) gives \((CRA4)\).
+\end{proof}
+
 The transport formulation is useful because it cleanly separates the two
 remaining tasks.  The annular witnesses are far points and still cannot be used
 as cover columns.  A geometric or list-recovery argument must instead construct
@@ -16006,6 +16105,13 @@ would be affordable must have a sublayer \(Y\) with excess
 \(\sum_{q\in Y}b_q-C D_W^\theta(Y)>B_{\rm tot}/2\).  The next geometric theorem
 can therefore try to rule out these excess cuts directly, or else feed the
 large-excess sublayer back into the spherical far-load analysis.
+\Cref{lem:cut-recycled-annular-sublayer} makes that feedback canonical: every
+such cut contains a dyadic cut-restricted annular layer that preserves a
+logarithmic fraction of the annular load while the proposed retained core sees
+only \(O(H_m(\Delta)/C)\) times that load as true near-shadow capacity.  Thus the
+remaining obstruction can be searched as a weighted list-recovery/range-reporting
+problem on these recycled sublayers, rather than as a choice of disjoint dense
+clusters.
 
 \begin{corollary}[Annular reporter closes the local cover]
    \label{cor:annular-reporter-local-cover}
@@ -37751,7 +37857,12 @@ have a sublayer with excess annular demand
 \(\sum_{q\in Y}b_q-C D_W^\theta(Y)>B_{\rm tot}/2\).  Thus the remaining
 geometric theorem can be phrased as ruling out a heavy annular query layer whose
 every retained smaller-radius container has such a Hall-type half-mass cut
-obstruction.
+obstruction.  \Cref{lem:cut-recycled-annular-sublayer} converts any such cut
+into a dyadic cut-restricted annular layer that keeps a logarithmic fraction of
+the weighted annular load and has small true near-shadow capacity inside the
+tested container.  This is the current normal form for feeding failed dense
+transport back into list recovery, LP range reporting, or the spherical far-load
+branch.
 \Cref{lem:primitive-hit-kernel-cover-equivalence} gives the matching primal
 form: the same theorem is equivalent to fractionally covering the primitive
 spherical hit kernel \(r_{p,q}\) by Pareto cores at \(\pi_1\)-scaled query and
