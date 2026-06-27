@@ -18187,6 +18187,69 @@ success-normalized bucket-net argument.
    mixed-template minimax theorem for \(H_{\rm ex}\).
 \end{remark}
 
+\begin{corollary}[Average-mass exact-prefix screen]
+   \label{cor:average-mass-exact-prefix-screen}
+   Work in the setting of \cref{cor:no-loss-exact-cardinality-net}.  Fix a
+   cohort law \(\eta\), a searched retained parent \(W\), a segment
+   \(\theta\), and a cardinality \(K\in\mathcal K^{\rm ex}_{W,\theta}\).  Let
+   \(S\subseteq W\) have size \(s\ge K\), and suppose preprocessing gives a
+   one-sided mass certificate
+   \[
+      0\le M\le\sum_{p\in S}d_\eta^\theta(p).
+      \tag{AEX0}
+   \]
+   Then
+   \[
+      D_\eta^\theta(W,K)\ge \frac{K}{s}M.
+      \tag{AEX1}
+   \]
+   Consequently, if
+   \[
+      \frac{K}{s}M\ge A\Lambda ,
+      \tag{AEX2}
+   \]
+   then the template \(B=(W,K,\theta)\) has \(H_{\rm ex}(B,\eta)\ge0\), and
+   materializing the top \(K\)-subset of \(W\) gives a valid exact-prefix
+   separator output.
+
+   More generally, a finite law, or a sampleable law with integrable certified
+   surplus, over reports \((W,\theta,K,S,s,M)\) satisfying \((AEX0)\) is a valid
+   exact-prefix proposal law whenever
+   \[
+      \E\left[\frac{K}{s}M-A\Lambda\right]\ge0 .
+      \tag{AEX3}
+   \]
+   In the sampled case, repeated preprocessing samples and verifies reports until
+   one satisfies \((AEX2)\); only the resulting deterministic top-\(K\) record is
+   retained.
+\end{corollary}
+
+\begin{proof}
+   Order the points of \(S\) by decreasing \(d_\eta^\theta\)-value, and let
+   \(U\subseteq S\) be the first \(K\) points.  Since the average of the top
+   \(K\) values is at least the average over all \(s\) values,
+   \[
+      \sum_{p\in U}d_\eta^\theta(p)
+      \ge
+      \frac{K}{s}\sum_{p\in S}d_\eta^\theta(p)
+      \ge
+      \frac{K}{s}M .
+   \]
+   Because \(U\) is one feasible \(K\)-subset of \(W\), this proves \((AEX1)\).
+   Condition \((AEX2)\) then gives \(D_\eta^\theta(W,K)\ge A\Lambda\), hence
+   \(H_{\rm ex}(B,\eta)\ge0\), and
+   \cref{cor:sublist-closed-exact-prefix-separator} accepts the materialized
+   top-\(K\) record.
+
+   The finite-law statement follows by averaging: if the expectation in
+   \((AEX3)\) is nonnegative, one support report has nonnegative certified
+   surplus.  For a sampleable law, put \(\Psi=KM/s-A\Lambda\).  If
+   \(\Pr[\Psi\ge0]=0\), then \(\Psi<0\) almost surely, and integrability would
+   force \(\E\Psi<0\), contradicting \((AEX3)\).  Thus a report satisfying
+   \((AEX2)\) has positive probability, and independent repetitions give the
+   Las Vegas separator.
+\end{proof}
+
 \begin{corollary}[Exact-prefix proposal-law separator]
    \label{cor:exact-prefix-proposal-law-separator}
    Work in the setting of
@@ -19554,6 +19617,9 @@ sublist-closed containers to the scalar objective
 \Cref{cor:no-loss-exact-cardinality-net} removes exact-cardinality search on this
 route: a dyadic net of retained cardinalities is enough and does not change the
 threshold.
+\Cref{cor:average-mass-exact-prefix-screen} turns coarse mass certificates into
+the same exact-prefix separator: mass \(M\) on \(s\) reported points certifies a
+top-\(K\) value at least \(KM/s\), again with no layer-cake loss.
 \Cref{rem:exact-template-linearization} records the important caveat: these
 template objectives are separation objectives for a fixed cohort law; minimax is
 still performed over the materialized exact records, where the payoff is linear.
@@ -19618,6 +19684,9 @@ stores only that verified subset.
 a factor-\(b\) cardinality net, for instance dyadic sizes: monotonicity of
 \(D_\eta^\theta(W,K)\) replaces exact \(K\) without the logarithmic threshold
 used by weaker reporters.
+\Cref{cor:average-mass-exact-prefix-screen} is the coarse-report interface on
+the sharp route: a container report need only lower-certify total mass \(M\) on
+support size \(s\), then choose \(K\) with \(KM/s\ge A\Lambda\).
 \Cref{cor:exact-prefix-proposal-law-separator} and
 \cref{cor:sampled-soft-exact-prefix-separator} make randomized proposal panels
 compatible with this sharp interface: it is enough to certify nonnegative
@@ -36127,14 +36196,16 @@ itself spherical-pseudo-random enough to close the dichotomy.
    \cref{cor:exact-prefix-column-generation},
    \cref{cor:sublist-closed-exact-prefix-separator},
    \cref{cor:no-loss-exact-cardinality-net},
+   \cref{cor:average-mass-exact-prefix-screen},
    \cref{cor:exact-prefix-proposal-law-separator},
    \cref{cor:sampled-soft-exact-prefix-separator},
    \cref{cor:finite-prefix-template-separation-game}, or
    \cref{cor:prefix-template-column-generation}.  In particular, a finite
    exact-prefix universe with nonnegative game value \((EPC3)\), a sublist-closed
    template universe satisfying \((SCE2)\), a no-loss cardinality-net witness
-   \((ECN1)\), an exact proposal law satisfying \((SEP0)\) or \((SEP3)\), a soft
-   exact proposal law satisfying \((SEP8)\), or a weaker prefix-template proposal
+   \((ECN1)\), an average-mass exact-prefix certificate \((AEX2)\) or \((AEX3)\),
+   an exact proposal law satisfying \((SEP0)\) or \((SEP3)\), a soft exact
+   proposal law satisfying \((SEP8)\), or a weaker prefix-template proposal
    universe with nonnegative value \((PTC3)\), at every node supplies the same
    endpoint.
 \end{corollary}
@@ -36155,6 +36226,7 @@ itself spherical-pseudo-random enough to close the dichotomy.
    \[
       \begin{gathered}
          \text{\((EPC3)\), \((SCE2)\), \((ECN1)\),}\\
+         \text{\((AEX2)\), \((AEX3)\),}\\
          \text{\((SEP0)\), \((SEP3)\),}\\
          \text{\((SEP8)\), \((PTC3)\),}\\
          \text{or finite cohort separation}
@@ -36171,6 +36243,7 @@ itself spherical-pseudo-random enough to close the dichotomy.
    \cref{cor:exact-prefix-column-generation},
    \cref{cor:sublist-closed-exact-prefix-separator},
    \cref{cor:no-loss-exact-cardinality-net},
+   \cref{cor:average-mass-exact-prefix-screen},
    \cref{cor:exact-prefix-proposal-law-separator},
    \cref{cor:sampled-soft-exact-prefix-separator},
    \cref{cor:finite-prefix-template-separation-game} or
@@ -47894,6 +47967,9 @@ maximizing \(K\)-subset.
 \Cref{cor:no-loss-exact-cardinality-net} removes the remaining exact-size
 artifact from this version: a dyadic net of \(K\)'s is sufficient at the same
 \(A\Lambda\) threshold.
+\Cref{cor:average-mass-exact-prefix-screen} is the coarse-mass bridge: a
+proposal that only certifies total cohort mass on a support still yields a sharp
+top-prefix column whenever \(KM/s\ge A\Lambda\).
 \Cref{cor:exact-prefix-proposal-law-separator} and
 \cref{cor:sampled-soft-exact-prefix-separator} put \(k\)-means++,
 additive-quantization, list-recovery, or learned proposal panels on this same
