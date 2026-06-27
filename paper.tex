@@ -37299,6 +37299,125 @@ cell, or list-decoder output only has to generate positive expected
 Hall-shadow prefix surplus against the current cut.  The retained index still
 keeps only the verified top-prefix dense column.
 
+\begin{corollary}[No-merge Hall-shadow envelope]
+   \label{cor:no-merge-hall-shadow-envelope}
+   Work in the setting of \cref{cor:one-record-hall-shadow-merge}.  Fix a failed
+   Hall cut \(A\), and let \(\mathcal Y\) be a finite repair-template family.
+   For each \(y\in\mathcal Y\), let
+   \(\mathcal K_y\subseteq\{1,\ldots,|W_y|\}\) be the available prefix
+   cardinalities.  Order \(W_y=\{p_{y,1},p_{y,2},\ldots\}\) by decreasing
+   cut-shadow degree \(d_{A,y}(p)\), and put
+   \[
+      D_A(y,K)=\sum_{i\le K}d_{A,y}(p_{y,i})
+      \qquad(K\in\mathcal K_y).
+      \tag{NHE1}
+   \]
+   Then either some available pair \((y,K)\) satisfies
+   \[
+      D_A(y,K)>
+      \psi_y
+      \left(
+         A_yK^{\rho_y}
+         +\zeta K^{1+\rho_y}
+      \right),
+      \tag{NHE2}
+   \]
+   and hence gives a one-record Hall-shadow merge, or the failed cut obeys the
+   top-prefix envelope
+   \[
+      D_A(y,K)\le
+      \psi_y
+      \left(
+         A_yK^{\rho_y}
+         +\zeta K^{1+\rho_y}
+      \right)
+      \qquad(y\in\mathcal Y,\ K\in\mathcal K_y).
+      \tag{NHE3}
+   \]
+
+   Assume moreover that \(0<\rho_y<1\), and that \(\mathcal K_y\) is
+   \(b\)-dense from below: every \(1\le h\le |W_y|\) has
+   \(K\in\mathcal K_y\) with \(h/b\le K\le h\).  If the no-merge envelope
+   \((NHE3)\) holds, then every nonempty cut-shadow superlevel
+   \[
+      H_{A,y,\delta}=\{p\in W_y:d_{A,y}(p)\ge\delta\},
+      \qquad h=|H_{A,y,\delta}|,
+      \tag{NHE4}
+   \]
+   satisfies
+   \[
+      \delta
+      \le
+      \psi_y\left(
+         b^{1-\rho_y}A_yh^{\rho_y-1}
+         +\zeta h^{\rho_y}
+      \right).
+      \tag{NHE5}
+   \]
+   Thus, when \(\zeta=0\),
+   \[
+      h
+      \le
+      \left(
+         \frac{\psi_y b^{1-\rho_y}A_y}{\delta}
+      \right)^{1/(1-\rho_y)}.
+      \tag{NHE6}
+   \]
+   When \(\zeta>0\), every such superlevel satisfies at least one of
+   \[
+      h
+      \le
+      \left(
+         \frac{2\psi_y b^{1-\rho_y}A_y}{\delta}
+      \right)^{1/(1-\rho_y)}
+      \tag{NHE7}
+   \]
+   or
+   \[
+      h
+      \ge
+      \left(
+         \frac{\delta}{2\psi_y\zeta}
+      \right)^{1/\rho_y}.
+      \tag{NHE8}
+   \]
+\end{corollary}
+
+\begin{proof}
+   The alternatives \((NHE2)\)--\((NHE3)\) are complementary.  If \((NHE2)\)
+   holds, then \cref{cor:one-record-hall-shadow-merge} applies with
+   \(U=\{p_{y,1},\ldots,p_{y,K}\}\).
+
+   Assume \((NHE3)\).  For a nonempty superlevel \(H_{A,y,\delta}\), choose
+   \(K\in\mathcal K_y\) with \(h/b\le K\le h\).  The top \(K\) points all have
+   cut-shadow degree at least \(\delta\), so
+   \[
+      \delta K\le D_A(y,K).
+   \]
+   Combining this with \((NHE3)\) and dividing by \(K\) gives
+   \[
+      \delta
+      \le
+      \psi_y\left(A_yK^{\rho_y-1}+\zeta K^{\rho_y}\right).
+   \]
+   Since \(\rho_y-1<0\), \(K\ge h/b\) gives
+   \(K^{\rho_y-1}\le b^{1-\rho_y}h^{\rho_y-1}\), while \(K\le h\) gives
+   \(K^{\rho_y}\le h^{\rho_y}\).  This proves \((NHE5)\).
+
+   If \(\zeta=0\), rearranging \((NHE5)\) gives \((NHE6)\).  If \(\zeta>0\),
+   at least one term on the right of \((NHE5)\) is at least \(\delta/2\).  The
+   query-price case gives \((NHE7)\), and the storage-price case gives
+   \((NHE8)\).
+\end{proof}
+
+\Cref{cor:no-merge-hall-shadow-envelope} is the exact residual left by the
+finite Hall-shadow target.  If all available template prefixes fail, then every
+shadow superlevel is either small because of query price or large because of
+storage price.  A geometric theorem for the polylog endpoint can therefore be
+phrased as ruling out \((NHE5)\)--\((NHE8)\) for the Hall cut exposed by
+\((FHT5)\), or as using that envelope to generate a richer repair-template
+family.
+
 \begin{corollary}[Proposal-law finite-signature endpoint]
    \label{cor:proposal-law-finite-signature-endpoint}
    Work in the setting of
@@ -49810,7 +49929,8 @@ successful aggregate responsibility transport.  The sharper
 \cref{cor:one-record-hall-shadow-merge} reduce this repair to the cut-shadow
 degree \(d_{A,y}\): one affordable top-prefix merge for that degree is already a
 valid dense column.  \Cref{cor:proposal-law-hall-shadow-merge} is the matching
-build-time sampler form.
+build-time sampler form, and \cref{cor:no-merge-hall-shadow-envelope} gives the
+explicit weak-type residual if every such merge fails.
 \Cref{lem:weighted-spherical-reduced-gain} proves the spherical half of the
 dual dichotomy in the exact reduced-gain language: if ordinary spherical buckets
 do not violate a surplus dual certificate, then the dual must carry large
