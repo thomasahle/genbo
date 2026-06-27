@@ -11309,6 +11309,56 @@ children that survive the final deterministic certificate.
    positive reduced-gain column for \cref{cor:filter-cover-column-generation}.
 \end{proof}
 
+\begin{corollary}[Benefit-per-price proposal normal form]
+   \label{cor:benefit-per-price-proposal}
+   Work in the setting of \cref{lem:proposal-law-filter-separator}, and fix one
+   surplus price system \((\alpha,\tau,\sigma)\).  For a proposed filter \(A\),
+   write its dual benefit and recursive price as
+   \[
+      B_A=
+      \sum_{(p,q)\in\mathcal N}\alpha_{p,q}c_A(p,q),
+      \qquad
+      R_A=
+      S_A\sigma+T_A\sum_{q\in\mathcal Q}\tau_qa_A(q).
+      \tag{BPP1}
+   \]
+   If a proposal law \(\nu\) puts positive probability on a column with
+   \(R_A=0\) and \(B_A>0\), then \(\nu\) exposes a positive reduced-gain column
+   with positive probability.  Otherwise assume \(\E_\nu R_A>0\) and
+   \(B_A=0\) whenever \(R_A=0\).  Let \(\nu^R\) be the \(R\)-size-biased law,
+   \[
+      \nu^R(A)=\frac{R_A\nu(A)}{\E_\nu R_A}.
+      \tag{BPP2}
+   \]
+   Then
+   \[
+      \E_\nu(B_A-R_A)>0
+      \quad\Longleftrightarrow\quad
+      \E_{A\sim\nu^R}\frac{B_A}{R_A}>1 .
+      \tag{BPP3}
+   \]
+   In particular, a finite proposal panel with positive average reduced gain
+   contains a deterministic column with \(B_A/R_A>1\), after discarding zero-price
+   zero-benefit columns.  Thus the proof-aligned sampling score is not data mass
+   or squared-distance mass by itself; it is dual benefit per certified
+   recursive price.
+\end{corollary}
+
+\begin{proof}
+   If \(R_A=0\) and \(B_A>0\), then the reduced gain \(B_A-R_A\) is positive, so
+   the first claim is immediate.  In the remaining case,
+   \[
+      \E_{A\sim\nu^R}\frac{B_A}{R_A}
+      =
+      \frac{\E_\nu B_A}{\E_\nu R_A}.
+   \]
+   Since \(\E_\nu R_A>0\), this ratio is larger than one exactly when
+   \(\E_\nu B_A>\E_\nu R_A\), which is \(\E_\nu(B_A-R_A)>0\).  For a finite panel,
+   if every positive-price column had \(B_A/R_A\le1\) and every zero-price column
+   had zero benefit, then the average reduced gain would be nonpositive.  Hence
+   positive average reduced gain exposes one deterministic positive-gain column.
+\end{proof}
+
 The LP above is the fully fractional version of dense overlap.  A dense ball,
 cap, facility bucket, additive-quantization bucket, list-decoder output, or
 ordinary spherical LSF bucket is just a column \(A=(U_A,a_A,T_A,S_A)\).  A hard
@@ -11345,7 +11395,9 @@ A proposal is useful exactly when \(B_A-R_A>0\), or in law when
 quantization, range reporting, and list/lattice decoding are analyzable only to
 the extent that they approximate this reduced-gain separator.  Sampling by
 data mass alone is not an invariant of the proof; the invariant is
-cost-normalized priced demand captured per retained filter column.
+cost-normalized priced demand captured per retained filter column, equivalently
+the benefit-per-price criterion of
+\cref{cor:benefit-per-price-proposal}.
 
 The finite restriction is not a technicality.  A cover written directly for all
 queries \(q\in\R^d\) is an analytic guide, but it is not yet a data structure
@@ -54838,7 +54890,10 @@ columns \(A=(U_A,a_A,T_A,S_A)\), coverage is imposed directly on demands
 \(\sum_Aa_A(q)T_A\lambda_A\).  \Cref{cor:filter-cover-column-generation} turns a
 failed cover into demand, query-load, and storage prices, so the dense merge
 operation becomes a positive reduced-gain separation problem rather than a
-greedy clustering rule.  \Cref{lem:poisson-filter-cover-materialization} then
+greedy clustering rule.  \Cref{cor:benefit-per-price-proposal} records the
+corresponding proposal score exactly: after size-biasing by certified recursive
+price, a proposal law is useful precisely when its mean dual benefit per price
+is larger than one.  \Cref{lem:poisson-filter-cover-materialization} then
 rounds any finite feasible cover with only a logarithmic factor in the number of
 certified signatures.  The remaining geometric theorem is
 \cref{asm:weighted-dense-spherical-dichotomy}: every surplus dual obstruction

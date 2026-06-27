@@ -673,3 +673,5 @@
 - Updated the audit trail to record the clipped threshold as the current scalar no-layer-cake dense proposal screen.
 - Added the clipped exact-prefix density residual. If no exact-prefix dense repair exists, every hard or soft support proposal has average paid density at most \(\beta_i\Theta_i\) at its clipped scale; any violation materializes one deterministic top-prefix repair.
 - Updated the audit trail to make this density envelope the current residual inequality for no-layer-cake dense proposals.
+- Added the benefit-per-price proposal normal form. Fractional dense-filter proposal laws now have an exact size-biased reduced-gain interpretation: after biasing by certified recursive price, useful proposals are precisely those with mean dual benefit per price above one, clarifying why mass-only \(k\)-means++ seeding is only a heuristic unless it approximates the dual-priced separator.
+- Updated the audit trail to connect this benefit-per-price criterion to the fully fractional dense-overlap LP.
