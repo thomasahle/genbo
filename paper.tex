@@ -37061,6 +37061,69 @@ construction: a set of high-correlation co-load atoms whose paid neighborhood in
 the proposed smaller-radius templates is too small by a factor \(C_{\rm tr}\).
 This is the finite place where the next geometric argument has to operate.
 
+\begin{lemma}[Maximal Hall-cut marginal normal form]
+   \label{lem:maximal-hall-cut-marginal-normal-form}
+   Work in the setting of
+   \cref{lem:finite-signature-coload-hall-transport}.  For
+   \(A\subseteq\mathcal L\), write
+   \[
+      \ell(A)=\sum_{(\sigma_0,x)\in A}\tau_{\sigma_0}g_{\sigma_0,x},
+      \qquad
+      c(A)=\sum_{(p,\sigma_0)\in N(A)}\alpha_{p,\sigma_0},
+      \tag{MHC1}
+   \]
+   and
+   \[
+      \Phi(A)=\ell(A)-C_{\rm tr}c(A).
+      \tag{MHC2}
+   \]
+   If the Hall inequalities fail, then there is a cut
+   \(A^\star\subseteq\mathcal L\) with \(\Phi(A^\star)>0\) such that
+   \(A^\star\) maximizes \(\Phi\), and, among maximizers, is inclusion-maximal.
+   This cut satisfies the marginal closure condition
+   \[
+      \ell(B)
+      \le
+      C_{\rm tr}
+      \sum_{(p,\sigma_0)\in N(A^\star\cup B)\setminus N(A^\star)}
+      \alpha_{p,\sigma_0}
+      \qquad(B\subseteq\mathcal L\setminus A^\star).
+      \tag{MHC3}
+   \]
+   The inequality is strict for every nonempty \(B\) whose addition would
+   strictly enlarge \(A^\star\).
+
+   Equivalently, after passing to \(A^\star\), no remaining left co-load family
+   has positive Hall surplus against only the new paid shadow it would add.
+\end{lemma}
+
+\begin{proof}
+   Since the Hall inequalities fail, some cut has \(\Phi(A)>0\).  The left
+   universe is finite, so choose a maximizer \(A^\star\), inclusion-maximal
+   among all maximizers.  For \(B\subseteq\mathcal L\setminus A^\star\),
+   \[
+   \begin{aligned}
+      \Phi(A^\star\cup B)-\Phi(A^\star)
+      &=
+      \ell(B)
+      -
+      C_{\rm tr}
+      \sum_{(p,\sigma_0)\in N(A^\star\cup B)\setminus N(A^\star)}
+      \alpha_{p,\sigma_0}.
+   \end{aligned}
+   \]
+   Maximality of \(\Phi(A^\star)\) gives \((MHC3)\).  If equality held for a
+   nonempty \(B\) that enlarges the cut, then \(A^\star\cup B\) would be a
+   strictly larger maximizer, contradicting the chosen inclusion maximality.
+\end{proof}
+
+\Cref{lem:maximal-hall-cut-marginal-normal-form} is a useful hygiene step for
+the failed-cut branch.  A geometric repair theorem may assume the exposed cut
+has already absorbed every left atom whose co-load is cheap relative to its new
+paid shadow.  What remains is not another Hall-transport failure of the same
+kind; it is the cut-local shadow \(N(A^\star)\), which must be compressed into
+one or more lower-price dense templates.
+
 \begin{corollary}[Finite-signature Hall-cut repair endpoint]
    \label{cor:finite-signature-hall-cut-repair-endpoint}
    Work in the setting of
@@ -37631,6 +37694,108 @@ into query-dominated, storage-dominated, and balanced cases.
    \((FCH1)\)--\((FCH2)\) are exactly \((CHP3)\)--\((CHP4)\) for that record,
    and the same corollary applies.  The nonpositive-panel statement is the
    contrapositive.
+\end{proof}
+
+\begin{corollary}[Support-mass clipped Hall-shadow reporter]
+   \label{cor:support-mass-clipped-hall-shadow-reporter}
+   Work in the setting of
+   \cref{cor:fractional-clipped-hall-shadow-density-panel}.  A support-mass
+   record consists of a repair template \(y\), a subset \(U\subseteq W_y\), a
+   certified size bound \(s\ge |U|\), a certified lower shadow mass
+   \[
+      0\le X\le\sum_{p\in U}d_{A,y}(p),
+      \tag{SMC1}
+   \]
+   an available prefix cardinality \(K\in\mathcal K_y\), and a slack factor
+   \(a\ge1\) satisfying the clipped-scale condition \((FCH1)\) when
+   \(A_y\) and \(\zeta\) are not both zero.  Define the certified density lower
+   bound
+   \[
+      \widehat\Delta=\frac{X}{\max\{s,K\}},
+      \tag{SMC2}
+   \]
+   and define \(\Theta\) from \(y,K,a\) as in \((FCH2)\).
+
+   If a finite support-mass panel with nonnegative weights \(\lambda_i\)
+   satisfies
+   \[
+      \sum_i\lambda_iK_i(\widehat\Delta_i-\Theta_i)>0,
+      \tag{SMC3}
+   \]
+   then the same records satisfy the clipped Hall-shadow panel surplus
+   \((FCH3)\), and hence some record gives a one-record Hall-shadow merge.
+
+   Consequently a proposal routine does not need to materialize the exact
+   top-\(K_i\) prefix while searching.  It may certify only a support size and a
+   one-sided shadow mass; the exact top prefix is used only by the verifier
+   after the coarse surplus test is positive.
+\end{corollary}
+
+\begin{proof}
+   For one record, let \(D_A(y,K)\) be the top-\(K\) shadow mass from
+   \((NHE1)\).  If \(K\ge |U|\), then the top \(K\) points of \(W_y\) have
+   shadow mass at least \(\sum_{p\in U}d_{A,y}(p)\ge X\).  Since
+   \(\max\{s,K\}\ge K\), this gives
+   \[
+      \frac{D_A(y,K)}{K}\ge\frac{X}{K}\ge\frac{X}{\max\{s,K\}}.
+   \]
+   If \(K<|U|\), the top \(K\) points of \(W_y\) have average shadow mass at
+   least the average over \(U\), so
+   \[
+      D_A(y,K)
+      \ge
+      K\,\frac{\sum_{p\in U}d_{A,y}(p)}{|U|}
+      \ge
+      K\,\frac{X}{s}
+      =
+      K\,\frac{X}{\max\{s,K\}},
+   \]
+   where the last equality uses \(K<|U|\le s\).  Thus in all cases
+   \[
+      \Delta_A(y,K)=\frac{D_A(y,K)}K\ge\widehat\Delta .
+      \tag{SMC4}
+   \]
+   Summing \((SMC4)\) with weights \(\lambda_iK_i\) shows that \((SMC3)\)
+   implies \((FCH3)\).  The merge conclusion is
+   \cref{cor:fractional-clipped-hall-shadow-density-panel}.
+\end{proof}
+
+\begin{corollary}[Sampled support-mass clipped Hall-shadow search]
+   \label{cor:sampled-support-mass-clipped-hall-shadow-search}
+   In the setting of
+   \cref{cor:support-mass-clipped-hall-shadow-reporter}, suppose a randomized
+   build-time proposal routine returns a finite support-mass panel \(I_s\) on
+   seed \(s\), and define
+   \[
+      Z(s)=
+      \sum_{i\in I_s}
+      \lambda_{s,i}K_{s,i}
+      \bigl(\widehat\Delta_{s,i}-\Theta_{s,i}\bigr).
+      \tag{SSM1}
+   \]
+   If
+   \[
+      \E_sZ(s)\ge\Gamma>0,
+      \qquad
+      Z(s)_+\le M
+      \quad\text{almost surely},
+      \tag{SSM2}
+   \]
+   then \(B\) independent build-time seeds contain a valid one-record
+   Hall-shadow merge with probability at least
+   \[
+      1-\exp\left(-\frac{B\Gamma}{M}\right).
+      \tag{SSM3}
+   \]
+\end{corollary}
+
+\begin{proof}
+   As in \cref{cor:sampled-clipped-hall-shadow-density-search},
+   \((SSM2)\) gives \(\Pr[Z(s)>0]\ge\Gamma/M\).  A seed with \(Z(s)>0\) is a
+   positive support-mass panel by
+   \cref{cor:support-mass-clipped-hall-shadow-reporter}, hence verifies into a
+   deterministic one-record Hall-shadow merge.  The failure probability over
+   \(B\) independent seeds is at most \(\exp(-B\Gamma/M)\).
 \end{proof}
 
 \begin{corollary}[Fractional balanced Hall-shadow density panel]
@@ -50401,6 +50566,14 @@ sampled surplus forms.  The boundary-stable version is
 near the clipped minimizer of its recursive price density
 \(A_yK^{\rho_y-1}+\zeta K^{\rho_y}\), covering query-dominated,
 storage-dominated, and internally balanced regimes in one rule.  The
+support-mass bridge
+\cref{cor:support-mass-clipped-hall-shadow-reporter} and
+\cref{cor:sampled-support-mass-clipped-hall-shadow-search} further weakens the
+proposal requirement: a range-reporting, list-decoding, additive-quantization,
+or seeded facility routine may certify only a support size and a one-sided
+cut-shadow mass, and the verifier converts any positive coarse surplus into the
+exact top-prefix column.  The Hall cut itself can also be assumed marginally
+closed by \cref{lem:maximal-hall-cut-marginal-normal-form}.  The
 consolidated endpoint is
 \cref{cor:clipped-hall-shadow-separator-endpoint}, with
 \cref{cor:balanced-hall-shadow-separator-endpoint} as the internal stationary
