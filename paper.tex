@@ -32390,6 +32390,91 @@ they expose such prefixes; the proof does not depend on their sampling rule.
    \((TDS2)\) cannot hold.
 \end{proof}
 
+\begin{corollary}[Cardinality-net deficient-shadow reporter]
+   \label{cor:cardinality-net-deficient-shadow-reporter}
+   Work in the setting of \cref{cor:deficient-shadow-prefix-certificate}.  Let
+   \(W\) be an affordable certified ambient container with exponent
+   \(0<\rho_W<1\), price factor \(\psi_W\), and available cardinalities
+   \(\mathcal K_W\).  Assume that every top-\(k\) deficient-shadow prefix in
+   \(W\) is a certified subcontainer with inherited price parameters for
+   \(k\in\mathcal K_W\), and that \(\mathcal K_W\) is \(b\)-dense from below:
+   for every \(1\le h\le |W|\), some \(k\in\mathcal K_W\) satisfies
+   \[
+      h/b\le k\le h .
+      \tag{CSD1}
+   \]
+   Put
+   \[
+      A_+=\sum_{q\in\mathcal Q_+}\tau_qa_q,
+      \qquad
+      J(t)=1+\left\lceil\log_2\frac{2}{\min\{t,1\}}\right\rceil .
+      \tag{CSD2}
+   \]
+   For \(t>0\), let
+   \[
+      h=h_{W,t}=|\{p\in W:d_{G'}(p)\ge t\}|.
+   \]
+   If \(h>0\) and
+   \[
+      t>
+      4J(t)\psi_W
+      \left(
+         b^{1-\rho_W}A_+h^{\rho_W-1}
+         +\sigma h^{\rho_W}
+      \right),
+      \tag{CSD3}
+   \]
+   then the guarded residual closes.
+
+   Consequently, if \(\sigma>0\), it is enough that
+   \[
+      h>
+      b\left(
+         \frac{8J(t)\psi_WA_+}{t}
+      \right)^{1/(1-\rho_W)}
+      \quad\text{and}\quad
+      h<
+      \left(
+         \frac{t}{8J(t)\psi_W\sigma}
+      \right)^{1/\rho_W}.
+      \tag{CSD4}
+   \]
+   If \(\sigma=0\), it is enough that the first strict inequality in
+   \((CSD4)\) holds, with the harmless convention that its right hand side is
+   \(0\) when \(A_+=0\).
+\end{corollary}
+
+\begin{proof}
+   Choose \(k\in\mathcal K_W\) satisfying \((CSD1)\).  Since \(k\le h\), the
+   top-\(k\) deficient-shadow prefix \(U\subseteq W\) has every point of degree
+   at least \(t\).  Thus \(X=t k\) is a valid lower certificate for its
+   deficient-shadow mass.  For this certificate,
+   \[
+      1+\left\lceil\log_2\frac{2k}{\min\{t k,k\}}\right\rceil
+      =
+      J(t).
+   \]
+   Also, because \(k\ge h/b\) and \(k\le h\),
+   \[
+      A_+k^{\rho_W-1}+\sigma k^{\rho_W}
+      \le
+      b^{1-\rho_W}A_+h^{\rho_W-1}+\sigma h^{\rho_W}.
+   \]
+   Multiplying by \(\psi_Wk\) and using \((CSD3)\) gives
+   \[
+      \psi_W\left(A_+k^{\rho_W}+\sigma k^{1+\rho_W}\right)
+      <
+      \frac{t k}{4J(t)}.
+   \]
+   This is exactly \((DSP5)\) for the prefix \(U\), so
+   \cref{cor:deficient-shadow-prefix-certificate} closes the residual.
+
+   Under \((CSD4)\), the query-price summand and the storage-price summand in
+   \((CSD3)\) are each strictly less than \(t/(8J(t)\psi_W)\), so \((CSD3)\)
+   follows.  The case \(\sigma=0\) is the same argument with only the
+   query-price summand.
+\end{proof}
+
 \begin{corollary}[Deficient-shadow residual obstruction]
    \label{cor:deficient-shadow-residual-obstruction}
    Work in the setting of
@@ -32435,6 +32520,10 @@ superlevel whose mass beats its inherited recursive price.  The two-price screen
 or a storage-price bound at every exposed scale.  The forbidden-middle form
 \((FMS2)\)--\((FMS3)\) says that a residual layer can survive only by being small
 enough for query price or large enough for storage price.
+\Cref{cor:cardinality-net-deficient-shadow-reporter} removes the exact-size
+artifact from this target: with dyadic retained prefix sizes, an arbitrary
+reported superlevel in the forbidden interval is rounded down to a certified
+prefix at only constant loss.
 
 \begin{corollary}[Tuple-profile distinct-storage certificate]
    \label{cor:tuple-profile-distinct-storage}
@@ -32929,6 +33018,9 @@ proposal mechanisms.
 into a query-price or storage-price obstruction.
 \Cref{cor:forbidden-middle-deficient-shadow-scale} rewrites this as a scale gap:
 surviving layers are either query-small or storage-large.
+\Cref{cor:cardinality-net-deficient-shadow-reporter} shows that a reporter need
+only find an arbitrary superlevel in this forbidden gap; retained dyadic prefix
+sizes round it to a certified proposal.
 \Cref{cor:pair-compatible-hall-guarded-cover} assembles the chain back into the
 local LP: a half-shipment with sufficient layer-cake surplus supplies the
 guarded star-panel reporter and closes the residual.
@@ -46228,6 +46320,9 @@ such a failure: each threshold layer is blocked either by query price or by
 storage price.
 \Cref{cor:forbidden-middle-deficient-shadow-scale} turns that dichotomy into the
 explicit forbidden middle cardinality interval for every reported threshold.
+\Cref{cor:cardinality-net-deficient-shadow-reporter} removes exact cardinalities
+from the search: a reported superlevel is rounded down to a retained prefix and
+still closes if it lies in the constant-slack forbidden interval.
 \Cref{cor:pair-compatible-hall-guarded-cover} states the final local theorem
 target in this language: prove the Hall expansion and the resulting
 layer-cake price inequality for every guarded residual.
