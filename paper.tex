@@ -31590,6 +31590,100 @@ k-means++ centers, additive-quantization records, lattice/list decoders, or
 LP-range-reporting cells is successful exactly when it separates this
 fractional obstruction by producing a lower-certified guard-credit column.
 
+\begin{corollary}[Exact-load Hall closure profile]
+   \label{cor:exact-load-pair-compatible-hall-profile}
+   Work in the setting of
+   \cref{lem:fractional-pair-compatible-hall-obstruction}.  For
+   \(0\le\Lambda\le B_{\rm pc}\), define the exact-load paid-closure profile
+   \[
+      S_{\rm pc}(\Lambda)
+      =
+      \min_{\zeta,\omega}
+      C_{\rm pair}
+      \sum_{(p,q)\in\mathcal N}y_q\gamma_{p,q}r_{p,q}\,\omega_{p,q},
+      \tag{EHP1}
+   \]
+   where \((\zeta,\omega)\) satisfy \((FHG2)\)--\((FHG3)\) and the exact-load
+   constraint
+   \[
+      \sum_q\tau_qy_q\sum_{x\in G(q)}\zeta_{q,x}
+      =
+      \Lambda .
+      \tag{EHP2}
+   \]
+   Then a pair-compatible half-shipment exists if and only if
+   \[
+      S_{\rm pc}(\Lambda)\ge \Lambda-\frac{B_{\rm pc}}2
+      \qquad
+      \left(\frac{B_{\rm pc}}2<\Lambda\le B_{\rm pc}\right).
+      \tag{EHP3}
+   \]
+   Equivalently, half-shipment failure is exactly the existence of an
+   excess-load level \(\Lambda>B_{\rm pc}/2\) with
+   \[
+      S_{\rm pc}(\Lambda)<\Lambda-\frac{B_{\rm pc}}2 .
+      \tag{EHP4}
+   \]
+
+   Moreover \(S_{\rm pc}\) is the lower convex envelope of the integral
+   sublayer load-capacity pairs
+   \[
+      \left(
+      \sum_q\tau_qy_q|G'(q)|,\,
+      C_{\rm pair}
+      \sum_q\sum_{p\in N_{\rm hc}(G')(q)}
+      y_q\gamma_{p,q}r_{p,q}
+      \right),
+      \tag{EHP5}
+   \]
+   where \(G'(q)\subseteq G(q)\).  Hence any exact-load optimizer can be chosen
+   as a convex combination of at most two integral guard sublayers.
+\end{corollary}
+
+\begin{proof}
+   By \cref{lem:fractional-pair-compatible-hall-obstruction}, a half-shipment
+   exists if and only if every feasible fractional pair satisfies
+   \[
+      L(\zeta)-C(\omega)\le \frac{B_{\rm pc}}2 .
+      \tag{EHP6}
+   \]
+   Fixing \(L(\zeta)=\Lambda\), the largest possible value of
+   \(L(\zeta)-C(\omega)\) is \(\Lambda-S_{\rm pc}(\Lambda)\).  Therefore
+   \((EHP6)\) for all feasible pairs is equivalent to
+   \[
+      \Lambda-S_{\rm pc}(\Lambda)\le \frac{B_{\rm pc}}2
+   \]
+   for every \(\Lambda\).  For \(\Lambda\le B_{\rm pc}/2\) this inequality is
+   automatic because \(S_{\rm pc}(\Lambda)\ge0\).  For
+   \(\Lambda>B_{\rm pc}/2\) it is exactly \((EHP3)\).  This proves the
+   half-shipment equivalence and its negation \((EHP4)\).
+
+   The polytope \((FHG2)\)--\((FHG3)\) is integral by the total-unimodularity
+   argument in \cref{lem:fractional-pair-compatible-hall-obstruction}.  Project
+   this integral polytope to the two coordinates \(L(\zeta)\) and
+   \(C(\omega)\).  For any integral choice of guard sublayers, the cheapest
+   feasible paid closure is the indicator of
+   \(N_{\rm hc}(G')(q)\); adding redundant paid nodes can only increase the
+   projected \(C\)-coordinate, or leave it unchanged when their capacity is
+   zero.  Therefore the lower envelope of the projected feasible set is the
+   lower convex envelope of the integral pairs \((EHP5)\).  Minimizing \(C\) at
+   a fixed value of \(L=\Lambda\) takes a point on this planar lower envelope.
+   Every such point is either one projected vertex or lies on one edge between
+   two projected vertices, so an optimizer is a convex combination of at most
+   two integral sublayers.
+\end{proof}
+
+This exact-load profile is the cautious replacement for a scalar prefix rule.
+It removes the all-sublayer Hall quantifier but does not pretend that paid
+neighborhood closure is additive over guard incidences.  A build-time separator
+may now target the one-dimensional lower envelope
+\(\Lambda\mapsto S_{\rm pc}(\Lambda)\): either it proves \((EHP3)\), giving the
+half-shipment used by \cref{cor:pair-compatible-hall-guarded-cover}, or it finds
+an integral lower-hull pair whose excess load has too little paid
+high-correlation closure.  That lower-hull witness is the finite object that
+range reporting, list decoding, additive quantization, or seeded clustering
+must turn into a lower-certified guard-credit proposal.
+
 \begin{corollary}[Pair-compatible Hall separator closes guarded residuals]
    \label{cor:pair-compatible-hall-guarded-cover}
    Work in the setting of \cref{cor:guarded-star-panel-local-cover}.  Let
@@ -32116,6 +32210,9 @@ fractional bad-sublayer LP.  This is the exact dense-overlap obstruction at the
 frontier: guard incidences may be fractional, but their paid-neighborhood
 closure is charged by explicit variables and the relaxation has no integrality
 gap.
+\Cref{cor:exact-load-pair-compatible-hall-profile} turns the same obstruction
+into a one-parameter exact-load closure profile; every bad fractional layer is
+seen on the lower convex envelope of ordinary guard sublayers.
 \Cref{cor:pair-compatible-hall-guarded-cover} assembles the chain back into the
 local LP: a half-shipment with sufficient layer-cake surplus supplies the
 guarded star-panel reporter and closes the residual.
@@ -45384,6 +45481,9 @@ with small paid near-pair neighborhood.
 \Cref{lem:fractional-pair-compatible-hall-obstruction} gives the matching
 fractional LP for this bad object, with explicit variables for guard incidences
 and their paid-neighborhood closure and no integrality loss.
+\Cref{cor:exact-load-pair-compatible-hall-profile} reduces the same bad object
+to an exact-load lower convex envelope over ordinary guard sublayers, which is
+the build-time profile a proposal oracle must separate.
 \Cref{cor:pair-compatible-hall-guarded-cover} states the final local theorem
 target in this language: prove the Hall expansion and the resulting
 layer-cake price inequality for every guarded residual.
