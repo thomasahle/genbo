@@ -28712,6 +28712,91 @@ inequality \((QP3)\).
    \(\rho_{z,\kappa}\le1\).
 \end{proof}
 
+\begin{corollary}[Occurrence-discounted tuple storage congestion]
+   \label{cor:occurrence-discounted-tuple-storage}
+   Work in the setting of
+   \cref{cor:uniform-tuple-witness-packing-storage}, and suppose the decoded
+   panel contains occurrence records \(b\in\mathcal B_z\) pointing to the same
+   canonical child identifiers \(\kappa_{z,b}\).  Let
+   \[
+      m_z(\kappa)=|\{b\in\mathcal B_z:\kappa_{z,b}=\kappa\}|
+      \tag{ODT0}
+   \]
+   be the occurrence multiplicity of a distinct child.  For
+   \(k\in\mathcal K\) and \(\mathbf x\in\mathcal T_k(P,\delta)\), define
+   \[
+      \widehat W_z(k,\mathbf x)
+      =
+      \sum_{\substack{b\in\mathcal B_z:\\
+         k_{z,\kappa_{z,b}}=k,\
+         x_j\in A_{z,\kappa_{z,b}}\ \forall j}}
+      \frac{
+         u_{z,\kappa_{z,b}}
+      }{
+         m_z(\kappa_{z,b})\,|A_{z,\kappa_{z,b}}|^k
+      } .
+      \tag{ODT1}
+   \]
+   Suppose there are certified envelopes \(\widehat J_k(\mathbf x)\ge0\) with
+   \[
+      \E_z\widehat W_z(k,\mathbf x)\le\widehat J_k(\mathbf x)
+      \qquad(k\in\mathcal K,\ \mathbf x\in\mathcal T_k(P,\delta)).
+      \tag{ODT2}
+   \]
+   If \(\Sigma^+=\emptyset\), the cover is feasible.  Otherwise suppose \(a>0\),
+   the corresponding active first-moment condition holds, and
+   \[
+      \E_z\Gamma_z+
+      \sum_{k\in\mathcal K}
+      \sum_{\mathbf x\in\mathcal T_k(P,\delta)}\widehat J_k(\mathbf x)
+      \le aS .
+      \tag{ODT3}
+   \]
+   Then \((\mathsf{ESFC}_\Sigma)\) is feasible.
+
+   In particular, for the pair specialization \(k=2\) and
+   \(u_{z,\kappa}=\psi_{z,\kappa}|A_{z,\kappa}|^{1+\rho_{z,\kappa}}\), it is
+   enough to bound, for each \((x,y)\in\mathcal T_2(P,\delta)\), the expected
+   occurrence sum
+   \[
+      \sum_{\substack{b\in\mathcal B_z:\\ x,y\in A_{z,\kappa_{z,b}}}}
+      \frac{
+         \psi_{z,\kappa_{z,b}}|A_{z,\kappa_{z,b}}|^{\rho_{z,\kappa_{z,b}}-1}
+      }{
+         m_z(\kappa_{z,b})
+      },
+      \tag{ODT4}
+   \]
+   which is at most the same sum with the numerator
+   \(\psi_{z,\kappa_{z,b}}\).  Thus an occurrence-based decoder may prove the
+   shared-DAG storage bound by reciprocal-multiplicity-weighted pair congestion.
+\end{corollary}
+
+\begin{proof}
+   For a fixed tuple \((k,\mathbf x)\), group the occurrence sum \((ODT1)\) by
+   canonical child identifier.  A child \(\kappa\) with
+   \(k_{z,\kappa}=k\) and \(x_j\in A_{z,\kappa}\) for all \(j\) contributes
+   \[
+      m_z(\kappa)\cdot
+      \frac{u_{z,\kappa}}{m_z(\kappa)|A_{z,\kappa}|^k}
+      =
+      \frac{u_{z,\kappa}}{|A_{z,\kappa}|^k},
+   \]
+   and otherwise contributes zero.  Hence
+   \[
+      \widehat W_z(k,\mathbf x)=W_z(k,\mathbf x).
+      \tag{ODT5}
+   \]
+   Conditions \((ODT2)\)--\((ODT3)\) are therefore exactly the hypotheses
+   \((UTW2)\)--\((UTW3)\), and
+   \cref{cor:uniform-tuple-witness-packing-storage} gives feasibility.
+
+   The displayed pair specialization is \((ODT1)\) with \(k=2\) and the stated
+   storage price.  Since \(|A_{z,\kappa}|\ge1\) and
+   \(\rho_{z,\kappa}\le1\), each factor
+   \(|A_{z,\kappa}|^{\rho_{z,\kappa}-1}\) is at most one.
+\end{proof}
+
 \begin{corollary}[Tuple-profile distinct-storage certificate]
    \label{cor:tuple-profile-distinct-storage}
    Work in the setting of
@@ -29070,6 +29155,10 @@ price-weighted congestion of these witnesses.
 compressed nets by choosing a uniform ordered tuple inside each child; with
 two-tuples, the paid weight is at most the child price factor \(\psi\), leaving a
 plain pair-congestion target up to that factor.
+\Cref{cor:occurrence-discounted-tuple-storage} is the decoder-facing version:
+when many decoded records induce the same canonical child, each occurrence is
+weighted by the reciprocal of that child's multiplicity before pair congestion is
+measured.
 \Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} give the corresponding
 entropy-energy normal form: each large canonical child supplies many separated
@@ -42160,6 +42249,9 @@ storage theorem becomes a bound on price-weighted witness congestion.
 bucket nets: sample a uniform tuple from the child itself.  In the pair case this
 reduces the remaining theorem to bounding distinct-child pair congestion weighted
 by \(\psi |A|^{\rho-1}\le\psi\).
+\Cref{cor:occurrence-discounted-tuple-storage} converts this to the natural
+decoder statistic: reciprocal-multiplicity-weighted pair congestion over decoded
+occurrences.
 \Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} reduce each dyadic count to tuple
 incidence: a large separated child contains many ordered witness tuples, so the
