@@ -18094,6 +18094,142 @@ success-normalized bucket-net argument.
    universe, proving the claim.
 \end{proof}
 
+\begin{corollary}[Exact-prefix proposal-law separator]
+   \label{cor:exact-prefix-proposal-law-separator}
+   Work in the setting of
+   \cref{cor:sublist-closed-exact-prefix-separator}, and fix a cohort law
+   \(\eta\).  Let \(\zeta\) be a finite probability law over
+   \(\mathcal B_{\rm ex}\).  If
+   \[
+      \E_{B\sim\zeta}H_{\rm ex}(B,\eta)\ge0,
+      \tag{SEP0}
+   \]
+   then the support of \(\zeta\) contains a template \(B\) with
+   \(H_{\rm ex}(B,\eta)\ge0\).  Materializing a maximizing \(K_B\)-subset of this
+   \(B\) gives a valid exact-prefix separator output.
+
+   Conversely, if the exact no-column certificate
+   \[
+      \max_{B\in\mathcal B_{\rm ex}}H_{\rm ex}(B,\eta)<0
+      \tag{SEP1}
+   \]
+   holds, then every finite proposal law over \(\mathcal B_{\rm ex}\) satisfies
+   \[
+      \E_{B\sim\zeta}H_{\rm ex}(B,\eta)<0 .
+      \tag{SEP2}
+   \]
+
+   The same conclusion has a Las Vegas sampled form.  Suppose preprocessing has a
+   sampleable law \(\mathfrak B_\eta\) on \(\mathcal B_{\rm ex}\), the random
+   variable \(H_{\rm ex}(B,\eta)\) is integrable, and
+   \[
+      \E_{B\sim\mathfrak B_\eta}H_{\rm ex}(B,\eta)\ge0.
+      \tag{SEP3}
+   \]
+   Then
+   \[
+      \Pr_{B\sim\mathfrak B_\eta}[H_{\rm ex}(B,\eta)\ge0]>0.
+      \tag{SEP4}
+   \]
+   Repeated independent sampling from \(\mathfrak B_\eta\), followed by exact
+   top-\(K_B\) materialization and verification of \(H_{\rm ex}(B,\eta)\ge0\), is
+   therefore a Las Vegas separator for the current cohort law.  If the probability
+   in \((SEP4)\) is \(\pi_\eta\), the expected number of samples is
+   \(1/\pi_\eta\).  Only the accepted deterministic top-prefix record is retained.
+\end{corollary}
+
+\begin{proof}
+   If every support template had \(H_{\rm ex}(B,\eta)<0\), the finite average in
+   \((SEP0)\) would be negative.  Thus some support template has nonnegative
+   \(H_{\rm ex}\), and \cref{cor:sublist-closed-exact-prefix-separator} makes its
+   maximizing subset a valid exact-prefix separator output.
+
+   Under \((SEP1)\), every support template has strictly negative \(H_{\rm ex}\),
+   so every finite average is strictly negative, proving \((SEP2)\).
+
+   For the sampled statement, if the event in \((SEP4)\) had probability zero,
+   then \(H_{\rm ex}(B,\eta)<0\) almost surely.  Since \(H_{\rm ex}\) is
+   integrable, its expectation would be strictly negative, contradicting
+   \((SEP3)\).  The Las Vegas and expected-sample claims are the standard
+   geometric waiting-time calculation, and each successful sample is a valid
+   separator by the first paragraph.
+\end{proof}
+
+\begin{corollary}[Sampled soft exact-prefix proposal separator]
+   \label{cor:sampled-soft-exact-prefix-separator}
+   Work in the setting of \cref{cor:exact-prefix-proposal-law-separator}.  A soft
+   exact-prefix proposal for a cohort law \(\eta\) is a tuple
+   \[
+      R=(W_R,K_R,\theta_R,\pi_R,X_R)
+   \]
+   such that \(B_R=(W_R,K_R,\theta_R)\in\mathcal B_{\rm ex}\),
+   \[
+      0\le \pi_{R,p}\le1,\qquad
+      \sum_{p\in W_R}\pi_{R,p}\le K_R,
+      \tag{SEP5}
+   \]
+   and the proposal gives a one-sided value certificate
+   \[
+      0\le X_R\le
+      \sum_{p\in W_R}\pi_{R,p}d_\eta^{\theta_R}(p).
+      \tag{SEP6}
+   \]
+   Assume that whenever such a tuple is sampled, preprocessing can materialize a
+   \(K_R\)-point maximizer
+   \[
+      U_R^*\in
+      \arg\max_{\substack{U\subseteq W_R\\ |U|=K_R}}
+      \sum_{p\in U}d_\eta^{\theta_R}(p).
+      \tag{SEP7}
+   \]
+   If preprocessing has a sampleable law on soft exact-prefix proposals with
+   integrable surplus and
+   \[
+      \E\bigl[X_R-A\Lambda\bigr]\ge0,
+      \tag{SEP8}
+   \]
+   then repeated sampling, exact materialization of \(U_R^*\), and verification of
+   \(X_R\ge A\Lambda\) form a Las Vegas exact-prefix separator for the current
+   cohort law.
+
+   Thus a randomized \(k\)-means++, additive-quantization, range-reporting,
+   list-recovery, or learned panel may be analyzed through soft inclusion
+   responsibilities and a one-sided lower value certificate while staying on the
+   sharp \(A\Lambda\) threshold.  The retained index stores only the deterministic
+   exact-prefix record \((U_R^*,K_R,\theta_R)\), never the soft proposal itself.
+\end{corollary}
+
+\begin{proof}
+   For any admissible proposal, the exact top-\(K_R\) set dominates the soft
+   responsibility vector.  The polytope
+   \[
+      \left\{x\in[0,1]^{W_R}:\sum_{p\in W_R}x_p\le K_R\right\}
+   \]
+   has integral vertices, each the indicator of a subset of size at most \(K_R\).
+   Since \(d_\eta^{\theta_R}(p)\ge0\), the maximum of
+   \(\sum_p x_pd_\eta^{\theta_R}(p)\) over this polytope is attained by a
+   \(K_R\)-point top prefix.  Hence
+   \[
+      D_\eta^{\theta_R}(W_R,K_R)
+      =
+      \sum_{p\in U_R^*}d_\eta^{\theta_R}(p)
+      \ge
+      \sum_{p\in W_R}\pi_{R,p}d_\eta^{\theta_R}(p)
+      \ge X_R .
+      \tag{SEP9}
+   \]
+   Therefore \(X_R\ge A\Lambda\) implies
+   \(H_{\rm ex}(B_R,\eta)\ge0\).
+
+   Put \(\Psi_R=X_R-A\Lambda\).  If
+   \(\Pr[\Psi_R\ge0]=0\), then \(\Psi_R<0\) almost surely, and integrability
+   would force \(\E\Psi_R<0\), contradicting \((SEP8)\).  Thus a sample with
+   \(X_R\ge A\Lambda\) has positive probability.  Such a sample gives
+   \(H_{\rm ex}(B_R,\eta)\ge0\) by the previous paragraph, so
+   \cref{cor:sublist-closed-exact-prefix-separator} accepts the materialized
+   exact-prefix record.  Independent repetitions give the Las Vegas separator.
+\end{proof}
+
 \begin{corollary}[Cohort-law weak-type superlevel normal form]
    \label{cor:cohort-law-weak-type-superlevel}
    Work in the setting of
@@ -19321,7 +19457,12 @@ ordinary column generation closes the dominated-load certificate at threshold
 \(A\Lambda\), with no dyadic reporter loss.
 \Cref{cor:sublist-closed-exact-prefix-separator} compresses this separator for
 sublist-closed containers to the scalar objective
-\(D_\eta^\theta(W,K)-A\Lambda\).  In the weak-type form of
+\(D_\eta^\theta(W,K)-A\Lambda\).
+\Cref{cor:exact-prefix-proposal-law-separator} and
+\cref{cor:sampled-soft-exact-prefix-separator} are the randomized build-time
+forms of the same sharp separator: positive expected certified surplus exposes
+one deterministic top-prefix record, and only that record is retained.  In the
+weak-type form of
 \cref{cor:cohort-law-weak-type-superlevel}, the remaining range-reporting target
 is just to find one affordable scalar superlevel with \(\delta h\ge A\Lambda\).
 \Cref{cor:certified-cohort-law-superlevel-reporter} is the build-facing version:
@@ -19374,6 +19515,12 @@ that cannot materialize the exact cohort-degree prefix directly.
 interface for sublist-closed retained containers: the build oracle optimizes
 \(D_\eta^\theta(W,K)-A\Lambda\), materializes the maximizing \(K\)-subset, and
 stores only that verified subset.
+\Cref{cor:exact-prefix-proposal-law-separator} and
+\cref{cor:sampled-soft-exact-prefix-separator} make randomized proposal panels
+compatible with this sharp interface: it is enough to certify nonnegative
+expected surplus \(H_{\rm ex}\), or even a one-sided soft lower bound
+\(X-A\Lambda\), because preprocessing can sample until one verified top-prefix
+column appears.
 \Cref{cor:finite-prefix-template-separation-game} is the final finite
 column-generation form of this target: preprocessing may spend arbitrary time
 proposing \(W,\theta,h\) and candidate sublists, but the retained column is
@@ -35876,12 +36023,15 @@ itself spherical-pseudo-random enough to close the dichotomy.
    \cref{cor:exact-top-prefix-cohort-game},
    \cref{cor:exact-prefix-column-generation},
    \cref{cor:sublist-closed-exact-prefix-separator},
+   \cref{cor:exact-prefix-proposal-law-separator},
+   \cref{cor:sampled-soft-exact-prefix-separator},
    \cref{cor:finite-prefix-template-separation-game}, or
    \cref{cor:prefix-template-column-generation}.  In particular, a finite
    exact-prefix universe with nonnegative game value \((EPC3)\), a sublist-closed
-   template universe satisfying \((SCE2)\), or a weaker prefix-template proposal
-   universe with nonnegative value \((PTC3)\), at every node supplies the same
-   endpoint.
+   template universe satisfying \((SCE2)\), an exact proposal law satisfying
+   \((SEP0)\) or \((SEP3)\), a soft exact proposal law satisfying \((SEP8)\), or a
+   weaker prefix-template proposal universe with nonnegative value \((PTC3)\), at
+   every node supplies the same endpoint.
 \end{corollary}
 
 \begin{proof}
@@ -35899,7 +36049,8 @@ itself spherical-pseudo-random enough to close the dichotomy.
    The final statement uses the chain
    \[
       \begin{gathered}
-         \text{\((EPC3)\), \((SCE2)\), \((PTC3)\),}\\
+         \text{\((EPC3)\), \((SCE2)\), \((SEP0)\), \((SEP3)\),}\\
+         \text{\((SEP8)\), \((PTC3)\),}\\
          \text{or finite cohort separation}
       \end{gathered}
       \Longrightarrow
@@ -35913,6 +36064,8 @@ itself spherical-pseudo-random enough to close the dichotomy.
    \cref{cor:exact-top-prefix-cohort-game},
    \cref{cor:exact-prefix-column-generation},
    \cref{cor:sublist-closed-exact-prefix-separator},
+   \cref{cor:exact-prefix-proposal-law-separator},
+   \cref{cor:sampled-soft-exact-prefix-separator},
    \cref{cor:finite-prefix-template-separation-game} or
    \cref{cor:prefix-template-column-generation}; the exact-load cohort versions
    are \cref{lem:finite-dominated-load-proposal-game} and
@@ -47631,6 +47784,11 @@ and the accepted records only need surplus \(V_\eta(T)-A\Lambda\ge0\).
 of the same statement: for sublist-closed templates, the reduced-gain objective
 is exactly \(D_\eta^\theta(W,K)-A\Lambda\), and the retained record is just the
 maximizing \(K\)-subset.
+\Cref{cor:exact-prefix-proposal-law-separator} and
+\cref{cor:sampled-soft-exact-prefix-separator} put \(k\)-means++,
+additive-quantization, list-recovery, or learned proposal panels on this same
+no-log track: positive expected exact or one-sided soft surplus is only
+build-time evidence, and the stored column is the single verified top prefix.
 \Cref{cor:cohort-law-weak-type-superlevel} is the range-reporting version of the
 same target: a certified superlevel with height \(\delta\) and size \(h\) closes
 the cohort law once \(\delta h\ge A\Lambda\).
