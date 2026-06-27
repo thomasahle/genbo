@@ -44377,6 +44377,153 @@ certificate is the verified positive-gain column and the finite LP it augments.
    statement is the contrapositive.
 \end{proof}
 
+\begin{corollary}[Atomized high-correlation fixed-tail bound]
+   \label{cor:atomized-high-correlation-fixed-tail}
+   Work in the atomized high-correlation routing dual
+   \((AHR4)\) for one split profile \(\pi\).  Let
+   \(B_\pi^{\rm hi}=\sum_ab_a\).  Fix \(0<\varepsilon\le1\) and put
+   \[
+      J_\varepsilon=
+      1+\left\lceil\log_2\frac1\varepsilon\right\rceil .
+      \tag{AHF1}
+   \]
+   Assume that every atom with positive benefit is represented by an ordered
+   high-correlation pair \((c_a,p_a)\in P\times P\), and that, for every
+   dyadic threshold cut arising from the \(\varepsilon\)-truncation of any
+   feasible dual vector, the atomized record family contains the dyadic star
+   superlevels used in
+   \cref{cor:high-correlation-atom-cut-star-screen}.  Suppose these star
+   records have a common recursive price envelope \(P_0\), and that the
+   corresponding cut dynamic-range factors are all at most \(J_\star\).
+
+   Then every feasible dual vector \(y\) satisfies the dichotomy
+   \[
+      \sum_ab_ay_a
+      \le
+      \varepsilon B_\pi^{\rm hi}
+      +4|P|J_\varepsilon J_\star P_0,
+      \tag{AHF2}
+   \]
+   or some dyadic high-correlation atom-cut star record exposes a positive
+   smaller-radius dense prefix.
+   Consequently, if no such dense prefix is exposed, then
+   \[
+      \Phi_{\pi,{\rm at}}^{\rm hi}
+      \le
+      \varepsilon B_\pi^{\rm hi}
+      +4|P|J_\varepsilon J_\star P_0.
+      \tag{AHF3}
+   \]
+   If this atomized record family is included in the admissible routing
+   universe of \cref{cor:min-cost-split-profile-envelope}, then also
+   \[
+      \Phi_\pi^{\rm hi}
+      \le
+      \varepsilon B_\pi^{\rm hi}
+      +4|P|J_\varepsilon J_\star P_0
+      \tag{AHF4}
+   \]
+   unless a positive smaller-radius dense prefix has already been found.
+\end{corollary}
+
+\begin{proof}
+   Fix a feasible dual vector \(y\).  Define its
+   \(\varepsilon\)-truncation by
+   \[
+      y_a^{(\varepsilon)}=
+      y_a\,\mathbf 1\{y_a\ge\varepsilon\}.
+   \]
+   Since \(0\le y^{(\varepsilon)}\le y\) coordinatewise, it is feasible for
+   \((AHR4)\).  Moreover
+   \[
+      \sum_ab_ay_a
+      \le
+      \varepsilon B_\pi^{\rm hi}
+      +\sum_ab_ay_a^{(\varepsilon)} .
+      \tag{AHF5}
+   \]
+   If the second term in \((AHF5)\) is zero, then \((AHF2)\) follows.  Otherwise
+   all positive coordinates of \(y^{(\varepsilon)}\) lie in
+   \([\varepsilon,1]\).  Applying
+   \cref{cor:layer-cake-atom-cut-normal-form} to
+   \(y^{(\varepsilon)}\), some dyadic threshold \(t\) satisfies
+   \[
+      tB(t)
+      \ge
+      \frac{1}{2J_\varepsilon}
+      \sum_ab_ay_a^{(\varepsilon)} .
+      \tag{AHF6}
+   \]
+   For this cut, \cref{cor:high-correlation-atom-cut-star-screen} gives either
+   a positive dense prefix or
+   \[
+      tB(t)\le2|P|J_\star P_0 .
+      \tag{AHF7}
+   \]
+   Combining \((AHF5)\)--\((AHF7)\) proves \((AHF2)\).
+
+   Taking the supremum over feasible dual vectors in \((AHR4)\) gives
+   \((AHF3)\) by finite LP duality from
+   \cref{cor:atomized-high-correlation-routing-dual}.  Finally,
+   \((AHF4)\) follows from \((AHR8)\).
+\end{proof}
+
+\begin{corollary}[Explicit split-profile tail separator]
+   \label{cor:explicit-split-profile-tail-separator}
+   Work in the setting of
+   \cref{cor:min-cost-split-profile-envelope}.  Let \(\Pi\) be a finite
+   split-profile panel with panel weights \(\eta_\pi\ge0\).  For each
+   \(\pi\in\Pi\), suppose its high-correlation part has an atomized
+   representation satisfying
+   \cref{cor:atomized-high-correlation-fixed-tail} with parameters
+   \(\varepsilon_\pi,J_{\varepsilon,\pi},J_{\star,\pi},P_{0,\pi}\).  Define the
+   explicit high-correlation tail
+   \[
+      \Psi_\pi^{\rm hi}
+      =
+      \varepsilon_\pi B_\pi^{\rm hi}
+      +4|P|J_{\varepsilon,\pi}J_{\star,\pi}P_{0,\pi}.
+      \tag{EST1}
+   \]
+   If
+   \[
+      \sum_{\pi\in\Pi}\eta_\pi
+      \left(
+         B_\pi-C_\pi^{\rm lo}-\Psi_\pi^{\rm hi}
+      \right)>0,
+      \tag{EST2}
+   \]
+   then either some low-correlation profile record exposes positive
+   shared-panel gain, or a high-correlation atom-cut star record exposes a
+   positive smaller-radius dense prefix.
+
+   Hence a sufficient fully explicit replacement for \((MSP1)\) is: for every
+   normalized exact-signature dual, preprocessing can certify a finite panel
+   for which \((EST2)\) holds and whose low records and star-prefix records
+   belong to the certified shared-panel universe.  Under that replacement,
+   \cref{cor:min-cost-split-profile-separator-endpoint} gives the same
+   \(d\,n^{\rho_c}\polylog n\) query and
+   \(dn+n^{1+\rho_c}\polylog n\) storage bounds.
+\end{corollary}
+
+\begin{proof}
+   If a high-correlation atom-cut star record exposes a positive dense prefix,
+   we are done.  Otherwise \((AHF4)\) gives
+   \(\Phi_\pi^{\rm hi}\le\Psi_\pi^{\rm hi}\) for every profile in the panel.
+   Thus \((EST2)\) implies
+   \[
+      \sum_{\pi\in\Pi}\eta_\pi
+      \left(
+         B_\pi-C_\pi^{\rm lo}-\Phi_\pi^{\rm hi}
+      \right)>0 .
+   \]
+   Applying \cref{cor:min-cost-split-profile-envelope} exposes either a
+   low-correlation positive shared-panel record or a positive dense prefix.
+   The endpoint clause is exactly
+   \cref{cor:min-cost-split-profile-separator-endpoint} with this explicit
+   upper envelope for \(\Phi_\pi^{\rm hi}\).
+\end{proof}
+
 \begin{corollary}[Min-cost split-profile separator endpoint]
    \label{cor:min-cost-split-profile-separator-endpoint}
    In the setting of
@@ -58318,6 +58465,14 @@ obstruction.
 pair-star reporter to such a cut: if the scaled high-correlation incidence is
 larger than the fixed star price tail \(2|P|J_{\rm cut}P_0\), a
 smaller-radius dense prefix must fire.
+\Cref{cor:atomized-high-correlation-fixed-tail} aggregates this over the whole
+atomized routing dual: after \(\varepsilon\)-truncation, either a dense prefix
+fires or
+\(\Phi_\pi^{\rm hi}\le
+\varepsilon B_\pi^{\rm hi}+4|P|J_\varepsilon J_\star P_0\).
+\Cref{cor:explicit-split-profile-tail-separator} feeds this explicit tail into
+the split-profile panel separator, replacing the abstract min-cost
+high-correlation price by a checkable scalar envelope.
 \Cref{cor:min-cost-split-profile-separator-endpoint} turns this scalar envelope
 into an endpoint statement: if every normalized exact-signature dual violates
 the optimized envelope for some finite split-profile panel, and the resulting
