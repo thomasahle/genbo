@@ -679,3 +679,5 @@
 - Updated the audit trail to identify this as the centerwise/facility interface for the clipped exact-prefix residual.
 - Added the shared-canonical panel reduced-gain separator. A decoded bucket/list/AQ/facility panel can now be scored directly against the normalized exact-signature dual, with query load summed over records but canonical child storage charged once per retained panel.
 - Updated the audit trail to identify this as the dual-facing, fully fractional bucket analogue of the dense benefit-per-price score.
+- Added one-sided shared-panel column generation. Restricted profile covers can now be grown by verified positive-gain decoded panels; a no-positive certificate is sound only when it rules out the full finite panel universe.
+- Updated the compressed-bucket audit to identify the shared-panel oracle as the build-time search procedure behind the success-normalized bucket route.

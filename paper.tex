@@ -29622,6 +29622,93 @@ inequality \((QP3)\).
    \(\E_{\nu^R}B_z/R_z>1\).
 \end{proof}
 
+\begin{corollary}[One-sided shared-panel column generation]
+   \label{cor:one-sided-shared-panel-column-generation}
+   Work in the finite seed universe of
+   \cref{cor:shared-canonical-panel-reduced-gain}, and let
+   \(\mathcal Z_\star\) be the full set of certified decoded panels that
+   preprocessing is allowed to retain.  At a restricted active set
+   \(E\subseteq\mathcal Z_\star\), solve the local-error profile cover
+   \((\mathsf{LORPC}_\Sigma)\) using only the aggregate profiles
+   \(\{\Pi_z:z\in E\}\).  Suppose that whenever this restricted cover is
+   infeasible, preprocessing receives a normalized dual price system
+   \((\beta,\tau,\theta)\) for the restricted problem and an oracle either
+   returns an inactive seed \(z\in\mathcal Z_\star\setminus E\) with a
+   verifiable one-sided certificate
+   \[
+      0<X\le
+      \operatorname{PGain}_{\beta,\tau,\theta}(z),
+      \tag{OSPC1}
+   \]
+   or certifies the no-positive condition
+   \[
+      \operatorname{PGain}_{\beta,\tau,\theta}(z)\le0
+      \qquad(z\in\mathcal Z_\star\setminus E).
+      \tag{OSPC2}
+   \]
+   If the full profile cover over \(\mathcal Z_\star\) is feasible, then this
+   one-sided oracle reaches a feasible restricted profile cover after finitely
+   many successful additions; \((OSPC2)\) cannot occur before feasibility.
+   Consequently \((\mathsf{ESFC}_\Sigma)\) is feasible.
+
+   In particular, it is enough to prove the positive separator condition
+   \[
+      \max_{z\in\mathcal Z_\star}
+      \operatorname{PGain}_{\beta,\tau,\theta}(z)>0
+      \tag{OSPC3}
+   \]
+   for every normalized exact-signature price system satisfying \((ESNO1)\).
+   Under \((OSPC3)\), restricted column generation over decoded panels closes
+   the local exact-signature cover using only verified positive panels.
+
+   The same statement holds for randomized build-time proposals: if, at every
+   infeasible restricted solve for which a positive inactive panel exists, a
+   sampleable proposal law returns a seed with a verified certificate
+   \((OSPC1)\) with probability at least \(p_E\), then Las Vegas repetition
+   finds a valid augmentation after expected at most \(1/p_E\) proposals.
+   Failed proposals and unverifiable certificates are discarded and are never
+   charged to the retained index.
+\end{corollary}
+
+\begin{proof}
+   The restricted local-error profile cover is a finite LP.  If it is
+   infeasible, the Farkas certificate supplied by
+   \cref{cor:local-error-observable-profile-cover}, restricted to the active
+   profile family, is a normalized price system satisfying \((ESNO1)\) and
+   \[
+      \operatorname{PGain}_{\beta,\tau,\theta}(z)\le0
+      \qquad(z\in E).
+      \tag{OSPC4}
+   \]
+   A report satisfying \((OSPC1)\) therefore invalidates the current restricted
+   dual certificate, so adding that seed strictly enlarges the restricted pool
+   by a useful profile.
+
+   If the oracle instead certifies \((OSPC2)\), then \((OSPC4)\) on active
+   seeds and \((OSPC2)\) on inactive seeds combine to give
+   \[
+      \operatorname{PGain}_{\beta,\tau,\theta}(z)\le0
+      \qquad(z\in\mathcal Z_\star).
+   \]
+   By the converse direction of
+   \cref{cor:shared-canonical-panel-reduced-gain}, equivalently Farkas'
+   lemma for \((\mathsf{LORPC}_\Sigma)\), this proves infeasibility of the full
+   profile cover over \(\mathcal Z_\star\).  Thus, if the full profile cover is
+   feasible, a no-positive certificate cannot occur.  Since
+   \(\mathcal Z_\star\) is finite, repeated successful additions terminate only
+   after the restricted profile cover becomes feasible.  Feasibility of
+   \((\mathsf{ESFC}_\Sigma)\) then follows from
+   \cref{cor:local-error-observable-profile-cover}.
+
+   If \((OSPC3)\) holds for every normalized price system satisfying
+   \((ESNO1)\), then the full profile cover cannot be infeasible, again by the
+   converse Farkas certificate: an infeasible full cover would have nonpositive
+   panel gain for every \(z\in\mathcal Z_\star\).  Hence the preceding
+   paragraph applies.  The randomized statement is the same geometric waiting
+   argument as in \cref{lem:sampled-proposal-law-separation}, with exact
+   verification of \((OSPC1)\) before a seed is added.
+\end{proof}
+
 \begin{corollary}[Distinct-canonical bucket-net certificate]
    \label{cor:distinct-canonical-bucket-net}
    Work in the setting of \cref{cor:bucket-net-ratio-form}.  In addition to the
@@ -35991,6 +36078,10 @@ the current normalized prices, a whole decoded panel is accepted when its
 useful priced hit mass beats its active query load plus its shared canonical
 child-storage price.  This is the fully fractional bucket analogue of the
 benefit-per-price dense-filter score.
+\Cref{cor:one-sided-shared-panel-column-generation} makes the build-time role
+explicit: a proposal routine may add only panels with verified one-sided
+positive gain, while a no-positive certificate is sound only when it rules out
+the full finite panel universe.
 \Cref{cor:local-error-distinct-canonical-bucket-net},
 \cref{cor:local-error-dyadic-distinct-storage-bucket-net}, and
 \cref{cor:local-error-tuple-profile-distinct-storage} propagate this denominator
@@ -56564,6 +56655,10 @@ signature prices, a whole decoded panel is scored by useful hit mass minus
 active recursive query load and shared canonical child storage.  Thus
 success-normalized bucket compression is another reduced-gain column-generation
 interface, not a separate hard branching rule.
+\Cref{cor:one-sided-shared-panel-column-generation} is the corresponding
+offline search procedure: arbitrary preprocessing may sample or optimize over
+decoded panels, but only verified positive-gain panels enter the restricted
+profile cover.
 \Cref{cor:tuple-profile-compressed-bucket-storage}
 gives the direct
 low-correlation certificate for this target: first list moment plus two-point
