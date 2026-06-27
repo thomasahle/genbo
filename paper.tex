@@ -12310,6 +12310,81 @@ query-price overlap, storage price, and duplicate-incidence factor \(b_G\).
    same implication rewritten for the normalized child sizes.
 \end{proof}
 
+\begin{corollary}[Quotient spread gives packing entropy]
+   \label{cor:quotient-spread-packing-entropy}
+   Work in the setting of \cref{cor:low-spread-quotient-closure}.  Let
+   \(G=(U,a,T,S)\) be a positive reduced-gain quotient with parent radius price
+   \(\Psi(R)\).  Fix a smaller radius \(R_\star\).  Suppose the available child
+   universe has the following closure property: for every cover of \(U\) by
+   certified balls \(B_1,\ldots,B_J\) of radius \(R_\star\), assigning each
+   \(p\in U\) to one covering ball and activating every child on the captured
+   queries gives a demand-preserving quotient refinement whose child price
+   factors are at most \(\Psi(R_\star)\).
+
+   If none of these radius-\(R_\star\) children has positive reduced gain, then
+   every certified radius-\(R_\star\) ball cover of \(U\) has size
+   \[
+      J>
+      \left(\frac{\Psi(R)}{\Psi(R_\star)}\right)^{1/(1-\rho)} .
+      \tag{QSPE1}
+   \]
+   If, in addition, every point-centered ball \(B(x,R_\star)\) with \(x\in U\)
+   is an available certified child container, then \(U\) contains an
+   \(R_\star\)-separated subset \(E\) with
+   \[
+      |E|>
+      \left(\frac{\Psi(R)}{\Psi(R_\star)}\right)^{1/(1-\rho)} .
+      \tag{QSPE2}
+   \]
+   The uniform law \(\nu_E\) on \(E\) has exact Renyi effective support
+   \[
+      \left(\sum_{x\in E}\nu_E(x)^s\right)^{1/(1-s)}
+      =
+      |E|
+      \qquad(0\le s<1),
+      \tag{QSPE3}
+   \]
+   and the separated ordered-pair count at scale \(R_\star\) is at least
+   \[
+      |E|(|E|-1).
+      \tag{QSPE4}
+   \]
+   Thus a quotient residual that survives all smaller-radius children supplies
+   an explicit packing-entropy witness for the spherical/list-decoding
+   tuple-profile estimates.
+\end{corollary}
+
+\begin{proof}
+   Let \(B_1,\ldots,B_J\) be any certified radius-\(R_\star\) cover of \(U\).
+   Assign each point of \(U\) to one covering ball, and let \(K_i\) be the
+   nonzero assigned sizes.  By the closure hypothesis this is a
+   demand-preserving refinement with child price factors at most
+   \(\Psi(R_\star)\).  Since no child has positive reduced gain,
+   \cref{cor:renyi-spread-quotient-obstruction} gives
+   \[
+      \sum_iK_i^\rho>
+      \frac{\Psi(R)}{\Psi(R_\star)}K^\rho,
+      \qquad K=|U|.
+   \]
+   On the other hand, by Hölder,
+   \[
+      \sum_iK_i^\rho\le J^{1-\rho}K^\rho .
+   \]
+   Combining the two inequalities gives \((QSPE1)\).
+
+   For the packing consequence, let \(E\subseteq U\) be a maximal
+   \(R_\star\)-separated subset, where
+   separated means that distinct points have distance \(>R_\star\).  Maximality
+   implies that the radius-\(R_\star\) balls centered at points of \(E\) cover
+   \(U\).  By the point-centered certification hypothesis, this is an available
+   certified cover.  Applying \((QSPE1)\) to it gives \((QSPE2)\).
+
+   The Renyi identity \((QSPE3)\) is immediate from
+   \(\nu_E(x)=1/|E|\).  Since distinct points of \(E\) are
+   \(R_\star\)-separated, every ordered pair \((x,y)\in E^2\), \(x\ne y\), is a
+   separated pair at scale \(R_\star\), proving \((QSPE4)\).
+\end{proof}
+
 \Cref{lem:reduced-gain-quotient-refinement} is the finite-cover analogue of the
 Hall-shadow refinement lemma.  It says that once a quotient has positive
 reduced gain, any demand-preserving split whose radius discount pays the Renyi
@@ -12317,8 +12392,10 @@ query-price increase must contain a positive child quotient.  Therefore the
 high-spread condition in \cref{cor:low-spread-quotient-closure} is an actual
 dual residual certificate: if spherical buckets and all smaller-radius quotients
 fail, the remaining positive object must be diffuse across every certified
-radius-contracting refinement.  This is the precise place where the
-spherical/list-decoding side should use entropy rather than density.
+radius-contracting refinement.  \Cref{cor:quotient-spread-packing-entropy}
+turns that diffuse residual into a separated packing with explicit Renyi
+effective support.  This is the precise place where the spherical/list-decoding
+side should use entropy rather than density.
 
 \begin{corollary}[Residual dense-cover obstruction certificate]
    \label{cor:residual-dense-cover-obstruction}
@@ -63034,7 +63111,10 @@ refinement has radius-discounted Renyi spread at most
 \(\Psi(R)/\Psi(R_\star)\) already contains a positive child quotient.  Hence a
 surviving dense/spherical residual is forced to be high-spread under every
 certified radius-contracting quotient refinement, not merely hard to find by
-seeding.  Finally,
+seeding.  \Cref{cor:quotient-spread-packing-entropy} converts this residual
+spread into an \(R_\star\)-separated packing with Renyi effective support at
+least \((\Psi(R)/\Psi(R_\star))^{1/(1-\rho)}\), giving the
+spherical/list-decoding side an explicit entropy witness.  Finally,
 \cref{cor:residual-dense-cover-obstruction} packages the surviving dual
 certificate into the explicit inequalities \((RO1)\)--\((RO5)\).  The remaining
 geometric theorem is now exactly to rule out those inequalities for a rich enough
@@ -64722,6 +64802,9 @@ discounting.
 \cref{cor:low-spread-quotient-closure} prove the same statement directly for
 positive reduced-gain quotient columns in the finite dense/spherical LP, so the
 spread obstruction is not tied to one Hall-shadow normal form.
+\Cref{cor:quotient-spread-packing-entropy} then extracts a separated packing
+from any quotient that survives all smaller-radius children, giving the
+tuple-profile entropy side a concrete witness to charge.
 \Cref{cor:metric-entropy-hall-shadow-closure} and
 \cref{cor:low-doubling-hall-shadow-close} sharpen the remaining geometric
 obligation: any positive Hall shadow of certified covering number below
