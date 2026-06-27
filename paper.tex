@@ -12796,6 +12796,106 @@ query-price overlap, storage price, and duplicate-incidence factor \(b_G\).
    smaller-radius paid prefix has positive reduced gain.
 \end{proof}
 
+\begin{corollary}[Inherited-activation paid cover closure]
+   \label{cor:inherited-activation-paid-cover}
+   Let \(G\) be a parent quotient filter with update side \(U\), activation
+   \(a\), prices
+   \[
+      T=\psi K^\rho,\qquad S=\psi K^{1+\rho},\qquad K=|U|,
+   \]
+   and positive reduced gain
+   \[
+      A_G>
+      \psi\left(K^\rho\mathsf T_a+\sigma K^{1+\rho}\right),
+      \qquad
+      \mathsf T_a=\sum_q\tau_qa(q).
+      \tag{IAC1}
+   \]
+   The conclusion below is a reduced-gain statement for the finite demand
+   system.  If \(a\) is a retained routing-safe predicate for \(U\), then the
+   produced inherited-activation child is also a globally valid retained dense
+   filter; otherwise it is a local finite-demand column that must later be
+   replaced by a certified query wrapper.
+   Suppose \(U\) is assigned to smaller certified balls
+   \(W_x=P\cap B(x,R_x)\) by sets \(U_x\subseteq U\cap W_x\) forming a
+   partition of \(U\).  For each \(x\), let \(\psi_x,\rho_x\) be certified
+   child price parameters, and suppose the dense verifier may add every
+   inherited-activation prefix of \(U\cap W_x\): if \(H\subseteq U\cap W_x\)
+   has size \(h\), the column has update side \(H\), activation \(a\), and
+   prices
+   \[
+      T_{x,h}^{\uparrow}=\psi_xh^{\rho_x},
+      \qquad
+      S_{x,h}^{\uparrow}=\psi_xh^{1+\rho_x}.
+      \tag{IAC2}
+   \]
+   If
+   \[
+      \sum_x\psi_x
+      \left(
+         \mathsf T_a|U_x|^{\rho_x}
+         +
+         \sigma |U_x|^{1+\rho_x}
+      \right)
+      \le
+      \psi\left(K^\rho\mathsf T_a+\sigma K^{1+\rho}\right),
+      \tag{IAC3}
+   \]
+   then some inherited-activation smaller-radius prefix has positive reduced
+   gain.
+
+   In particular, if the children use the same exponent \(\rho\), the cover
+   closes whenever
+   \[
+      \sum_x\psi_x|U_x|^\rho\le\psi K^\rho,
+      \qquad
+      \sum_x\psi_x|U_x|^{1+\rho}\le\psi K^{1+\rho}.
+      \tag{IAC4}
+   \]
+\end{corollary}
+
+\begin{proof}
+   For \(p\in U\), use the parent paid degree
+   \[
+      b(p)=\sum_{q:\,(p,q)\in\mathcal N}\alpha_{p,q}a(q),
+      \qquad
+      A_G=\sum_{p\in U}b(p).
+   \]
+   If no inherited-activation prefix of \(U\cap W_x\) has positive reduced
+   gain, then after sorting \(U\cap W_x\) by decreasing \(b\), every prefix of
+   size \(h\) satisfies
+   \[
+      \sum_{i\le h}b(p_i)
+      \le
+      \psi_x\left(\mathsf T_a h^{\rho_x}+\sigma h^{1+\rho_x}\right).
+      \tag{IAC5}
+   \]
+   The top \(|U_x|\) prefix dominates the assigned subset \(U_x\), so
+   \[
+      \sum_{p\in U_x}b(p)
+      \le
+      \psi_x
+      \left(
+         \mathsf T_a|U_x|^{\rho_x}
+         +
+         \sigma |U_x|^{1+\rho_x}
+      \right).
+   \]
+   Summing over \(x\) gives
+   \[
+      A_G\le
+      \sum_x\psi_x
+      \left(
+         \mathsf T_a|U_x|^{\rho_x}
+         +
+         \sigma |U_x|^{1+\rho_x}
+      \right),
+   \]
+   contradicting \((IAC1)\) and \((IAC3)\).  Hence some prefix is positive.
+   The final statement is the special case of \((IAC3)\) obtained from
+   \((IAC4)\).
+\end{proof}
+
 \begin{corollary}[Paid Renyi-cover obstruction]
    \label{cor:paid-renyi-cover-obstruction}
    In the setting of \cref{cor:paid-cover-quotient-star-residual}, suppose
@@ -12997,8 +13097,14 @@ smaller-radius cover only when that cover's integrated paid Renyi price is at
 least the parent demand.  \Cref{cor:paid-renyi-cover-obstruction} sharpens this
 into the useful dichotomy: a surviving cover is either not query-compatible with
 the parent activation, or it has the same Renyi-spread excess as the older
-unpaid obstruction.  \Cref{cor:activation-inflation-assigned-cover} makes the
-first alternative quantitative: after Renyi-price compatibility is paid, a
+unpaid obstruction.  The clean retained version is
+\cref{cor:inherited-activation-paid-cover}: once the parent activation is itself
+a safe filter predicate, every smaller-radius child may inherit that activation,
+so low Renyi fanout closes with no extra activation term.  The
+ball-thickened-child analysis is needed only when the inherited activation is a
+finite-demand or analysis predicate that must be replaced by a standalone
+geometric wrapper.  \Cref{cor:activation-inflation-assigned-cover} makes exactly
+that replacement cost quantitative: after Renyi-price compatibility is paid, a
 surviving cover must create explicit query-activation inflation.  This is the
 precise place where the spherical/list-decoding side should use entropy rather
 than density.
