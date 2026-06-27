@@ -34283,6 +34283,9 @@ transport form: a bounded-congestion shipment into one certified subset is
 already a lower certificate for the corresponding prefix mass, so no dyadic
 degree extraction is needed when the geometric reporter can certify the
 shipment directly.
+\Cref{lem:restricted-deficient-shadow-transport-cut} supplies the matching
+localized min-cut form: a failed shipment into a proposed subset exposes a
+smaller Hall cut whose paid-pair capacity is measured only inside that subset.
 
 \begin{corollary}[Transported deficient-shadow certificate]
    \label{cor:transported-deficient-shadow-certificate}
@@ -34349,6 +34352,115 @@ shipment directly.
    mass at least \(M/C\) and would close by
    \cref{cor:deficient-shadow-prefix-certificate}.  This proves the residual
    statement by contrapositive.
+\end{proof}
+
+\begin{lemma}[Restricted deficient-shadow transport cut]
+   \label{lem:restricted-deficient-shadow-transport-cut}
+   Work in the setting of \cref{cor:transported-deficient-shadow-certificate},
+   and keep the integral Hall-deficit sublayer \(G'\).  Let
+   \(U\subseteq W\) be a certified subcontainer.  Define the guard-incidence
+   set
+   \[
+      \mathcal I_{G'}=
+      \{(q,x):q\in\mathcal Q_+,\ x\in G'(q)\},
+      \qquad
+      b_{q,x}=\tau_qa_q .
+      \tag{RDT1}
+   \]
+   For \(C>0\), let \(\Phi_U(C)\) be the maximum mass of a nonnegative flow
+   \(f_{q,x,p}\) supported on triples with
+   \[
+      (q,x)\in\mathcal I_{G'},\qquad
+      p\in U\cap W_x,\qquad
+      (x,p)\text{ certified high-correlation},\qquad
+      (p,q)\in\mathcal N,
+      \tag{RDT2}
+   \]
+   satisfying
+   \[
+      \sum_p f_{q,x,p}\le b_{q,x}
+      \qquad((q,x)\in\mathcal I_{G'}),
+      \tag{RDT3}
+   \]
+   and the pair-compatible paid capacities
+   \[
+      \sum_{x\in G'(q)} f_{q,x,p}
+      \le
+      C\,a_q\gamma_{p,q}r_{p,q}
+      \qquad(p\in U,\ q\in\mathcal Q_+,\ (p,q)\in\mathcal N).
+      \tag{RDT4}
+   \]
+   For \(\mathcal A\subseteq\mathcal I_{G'}\), let
+   \(N_U(\mathcal A)\) be the set of pairs \((p,q)\), \(p\in U\), that are
+   adjacent to some incidence in \(\mathcal A\) through \((RDT2)\).  Then
+   \[
+      \Phi_U(C)
+      =
+      \min_{\mathcal A\subseteq\mathcal I_{G'}}
+      \left\{
+         \sum_{i\in\mathcal I_{G'}\setminus\mathcal A}b_i
+         +
+         C\sum_{(p,q)\in N_U(\mathcal A)}a_q\gamma_{p,q}r_{p,q}
+      \right\}.
+      \tag{RDT5}
+   \]
+
+   Consequently, any feasible flow of mass \(M\) induces transported loads
+   \[
+      \ell_p=\sum_{q,x}f_{q,x,p}\qquad(p\in U)
+      \tag{RDT6}
+   \]
+   that satisfy \((TSC1)\).  In particular, if
+   \[
+      \frac{\Phi_U(C)}{C}>R_W(|U|),
+      \tag{RDT7}
+   \]
+   then the guarded residual closes.
+
+   Conversely, if the residual does not close and \(M/C>R_W(|U|)\), then there
+   is a cut \(\mathcal A\subseteq\mathcal I_{G'}\) with
+   \[
+      \sum_{i\in\mathcal A}b_i
+      >
+      C\sum_{(p,q)\in N_U(\mathcal A)}a_q\gamma_{p,q}r_{p,q}
+      +
+      \sum_{i\in\mathcal I_{G'}}b_i-M .
+      \tag{RDT8}
+   \]
+   Thus failure of a transported deficient-shadow repair inside \(U\) exposes a
+   smaller Hall cut localized to \(U\)'s paid shadow.
+\end{lemma}
+
+\begin{proof}
+   The identity \((RDT5)\) is the max-flow/min-cut theorem on the finite
+   bipartite network whose left nodes are incidences
+   \(i=(q,x)\in\mathcal I_{G'}\), whose right nodes are admissible paid pairs
+   \((p,q)\) with \(p\in U\), and whose finite sink capacities are
+   \(C a_q\gamma_{p,q}r_{p,q}\).  A finite cut is determined by the subset
+   \(\mathcal A\) of left nodes kept on the source side; every adjacent paid-pair
+   node must also be kept, and the cut capacity is exactly the expression in
+   \((RDT5)\).
+
+   Given a feasible flow of mass \(M\), define \(\ell_p\) by \((RDT6)\).  Then
+   \(\sum_p\ell_p=M\).  Summing \((RDT4)\) over \(q\) gives, for each
+   \(p\in U\),
+   \[
+      \ell_p
+      \le
+      C\sum_{\substack{q\in\mathcal Q_+\\p\in N_{\rm hc}(G')(q)}}
+      a_q\gamma_{p,q}r_{p,q}
+      =
+      C d_{G'}(p),
+   \]
+   because a positive flow to \((p,q)\) implies \(p\in N_{\rm hc}(G')(q)\).
+   Hence \((TSC1)\) holds.  If \((RDT7)\) holds, apply
+   \cref{cor:transported-deficient-shadow-certificate} with
+   \(M=\Phi_U(C)\).
+
+   Finally, if \(M/C>R_W(|U|)\) and every cut had value at least \(M\), then
+   \((RDT5)\) would give \(\Phi_U(C)\ge M\), and the transported certificate
+   would close the residual.  The contrapositive gives \((RDT8)\), after
+   rewriting the cut value inequality.
 \end{proof}
 
 \begin{corollary}[No-prefix deficient-shadow envelope]
@@ -35752,6 +35864,10 @@ enough for query price or large enough for storage price.
 threshold-free reporter form: if the geometry supplies one bounded-congestion
 shipment into a certified subset whose transported mass per congestion beats
 the direct mixed price, the same deficient-shadow prefix closes immediately.
+\Cref{lem:restricted-deficient-shadow-transport-cut} gives the exact residual
+for one proposed subset: if such a shipment cannot be certified at a price level
+that would close, the obstruction is a localized Hall cut with too much
+guard-incidence load for the paid shadow available inside that subset.
 \Cref{cor:cardinality-net-deficient-shadow-reporter} removes the exact-size
 artifact from this target: with dyadic retained prefix sizes, an arbitrary
 reported superlevel in the forbidden interval is rounded down to a certified
@@ -61665,6 +61781,9 @@ recursive price.
 \Cref{cor:transported-deficient-shadow-certificate} is the transport-facing
 variant: a bounded-congestion shipment into one certified subset gives the same
 lower mass certificate without exposing all deficient-shadow degrees.
+\Cref{lem:restricted-deficient-shadow-transport-cut} is its one-subset
+max-flow/min-cut normal form and turns failed shipment into a localized
+deficient-shadow Hall cut.
 \Cref{cor:no-prefix-deficient-shadow-envelope} and
 \cref{cor:deficient-shadow-residual-obstruction} state the exact residual if
 that search fails: the positive-excess Hall sublayer must satisfy a weak-type
