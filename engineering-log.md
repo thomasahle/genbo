@@ -661,3 +661,5 @@
 - Updated the audit trail to record that the retained object is again an exact top-prefix support, not a stochastic or fractional support.
 - Added the soft-support price envelope and panel screen. A finite or sampled soft proposal panel now closes when aggregate certified mass beats the scalar support-mass price \(\mathsf P_i^{\rm soft}\); the verifier then extracts one deterministic top-prefix report.
 - Updated the audit trail to make \((RSP3)\)--\((RSP5)\) the build-facing scalar target for soft dense proposals.
+- Added the soft-support no-relaxation residual. Failure of the scalar soft screen is now exactly recorded as the ordinary top-prefix envelope \((RSN2)\); every positive soft or sampled panel must contain one deterministic prefix violation.
+- Updated the audit trail to identify \((RSN2)\) as the current residual form behind the soft-support proposal interface.
