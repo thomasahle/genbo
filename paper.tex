@@ -30881,6 +30881,92 @@ inequality \((QP3)\).
    \((FGS2)\).
 \end{proof}
 
+\begin{corollary}[Scale-free guard-credit proposal test]
+   \label{cor:scale-free-guard-credit-proposal}
+   Work in the zero-demand-price specialization of
+   \cref{cor:one-template-guard-credit-separation}.  A raw proposal consists of
+   an affordable certified container \(W\), a size certificate \(|W|\le K\),
+   and a congestion parameter \(C>0\), but no credited-mass scale.  Define
+   \[
+      R(W,K,C)=
+      \psi_W
+      \left(
+         K^{\rho_W}\sum_q\tau_qy_q+\sigma K^{1+\rho_W}
+      \right),
+      \tag{SFG1}
+   \]
+   and
+   \[
+      D(W)=\sum_{p\in W}d_{W,y}^{\gamma}(p).
+      \tag{SFG2}
+   \]
+   Put \(v^\circ(W)=\min\{D(W),K\}\).  If \(v^\circ(W)>0\), let
+   \[
+      J^\circ(W,K)=
+      1+\left\lceil\log_2\frac{2K}{v^\circ(W)}\right\rceil .
+      \tag{SFG3}
+   \]
+   If \(v^\circ(W)=0\), set \(J^\circ(W,K)=\infty\) and interpret
+   \(D(W)/(4J^\circ(W,K))\) as zero.
+   If
+   \[
+      \frac{D(W)}{4J^\circ(W,K)}>R(W,K,C),
+      \tag{SFG4}
+   \]
+   then adjoining the single template with credited scale
+   \(v=v^\circ(W)\) makes the finite guard-credit LP have positive value.
+
+   If only dyadic credited scales of the form \(K2^{-j}\) are allowed, it is
+   enough to use
+   \[
+      J^\diamond(W,K)=
+      1+\left\lceil\log_2\frac{4K}{v^\circ(W)}\right\rceil .
+      \tag{SFG5}
+   \]
+   with the same zero-mass convention.
+   Namely, \((SFG4)\) with \(J^\circ\) replaced by \(J^\diamond\) implies that
+   some dyadic scale \(v\le v^\circ(W)\) produces a separating template.
+
+   Consequently, for any finite probability law \(\nu\) over raw proposals,
+   if
+   \[
+      \E_{W\sim\nu}
+      \left[
+         \frac{D(W)}{4J^\circ(W,K_W)}
+         -
+         R(W,K_W,C_W)
+      \right]>0,
+      \tag{SFG6}
+   \]
+   then some deterministic proposal in its support separates the
+   zero-objective guard-credit dual.  The same conclusion holds with
+   \(J^\diamond\) in place of \(J^\circ\) for dyadic-scale templates.
+\end{corollary}
+
+\begin{proof}
+   The exact-scale statement is \cref{cor:one-template-guard-credit-separation}
+   with \(v_B=v^\circ(W)\), \(K_B=K\), \(C_B=C\), and \(R_B=R(W,K,C)\).  The
+   choice \(v^\circ(W)\le D(W)\) and \(v^\circ(W)\le K\) makes it an admissible
+   credited scale, and \(J_B=J^\circ(W,K)\).  Thus \((SFG4)\) is exactly
+   \((FGS4)\).
+
+   For the dyadic version, choose \(j\) so that
+   \(v=K2^{-j}\le v^\circ(W)<2v\).  Then \(v\le D(W)\) and \(v\le K\), while
+   \[
+      1+\left\lceil\log_2\frac{2K}{v}\right\rceil
+      \le
+      1+\left\lceil\log_2\frac{4K}{v^\circ(W)}\right\rceil
+      =
+      J^\diamond(W,K).
+   \]
+   Hence the dyadic condition implies \((FGS4)\) for this dyadic template.
+
+   Finally, if the average in \((SFG6)\) is positive, at least one proposal in
+   the finite support has positive bracketed value.  Applying the exact-scale
+   statement to that proposal gives the deterministic separator.  The dyadic
+   version is identical with \(J^\diamond\).
+\end{proof}
+
 \begin{corollary}[Tuple-profile distinct-storage certificate]
    \label{cor:tuple-profile-distinct-storage}
    Work in the setting of
@@ -31316,6 +31402,9 @@ guard-credit edge at zero total priced guard demand.
 single-template search rule: a new affordable container separates the failed
 pool as soon as its active paid-shadow mass beats its recursive price after the
 one layer-cake logarithm.
+\Cref{cor:scale-free-guard-credit-proposal} removes the last scale parameter
+from that search: a proposal routine may output only a raw certified container;
+the credited scale is set from its paid-shadow mass, or rounded down dyadically.
 \Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} give the corresponding
 entropy-energy normal form: each large canonical child supplies many separated
@@ -31599,6 +31688,10 @@ dual obstruction.
 reduced objective for one additional proposal: after zero-load queries are
 removed, find a certified container whose reachable paid-shadow degree \(D_B\)
 satisfies \(D_B/(4J_B)>R_B\).
+\Cref{cor:scale-free-guard-credit-proposal} makes this a proposal-law
+criterion over raw containers: positive expected \(D/(4J)-R\) under any finite
+seed law already contains a deterministic separating container, with only a
+one-step dyadic loss if scales are pre-discretized.
 Conversely,
 \cref{cor:paid-prefix-residual-envelope} says that a failed dense separator has
 only one possible form: a paid residual whose every certified container obeys
@@ -44528,6 +44621,9 @@ per-template capacity/scale prices blocking every candidate edge.
 block for a new proposal: in the normalized zero-price obstruction, the only
 quantity to report is the paid-shadow mass reachable from positive guard-load
 queries, compared with the recursive price \(R_B\).
+\Cref{cor:scale-free-guard-credit-proposal} further says that exact mass-scale
+guessing is unnecessary; a raw container proposal law is useful exactly through
+the averaged scale-normalized surplus \(D/(4J)-R\).
 \Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} reduce each dyadic count to tuple
 incidence: a large separated child contains many ordered witness tuples, so the
