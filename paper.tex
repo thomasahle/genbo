@@ -1378,6 +1378,51 @@ The smooth product filter is not a replacement for \cref{lem:adaptive-continuati
    minus the supremum in \((GE1)\), proves \((GE2)\).
 \end{proof}
 
+\begin{lemma}[Two-point Gaussian cap energy]
+   \label{lem:two-point-gaussian-cap-energy}
+   In the setting of \cref{lem:gaussian-cap-intersection-energy}, take
+   \(k=2\), write \(x=x_1\), \(y=x_2\), and
+   \[
+      \theta=\ip{x}{y}>-1,
+      \qquad
+      b_x=T-\ip{\mu}{x},
+      \qquad
+      b_y=T-\ip{\mu}{y}.
+   \]
+   Then
+   \[
+      \mathcal I(K,b)
+      \ge
+      \frac{(b_x+b_y)_+^2}{4(1+\theta)}.
+      \tag{TGE1}
+   \]
+   In particular, if \(b_x,b_y\ge\beta\ge0\) and
+   \(\theta\le\theta_0\) for some \(-1<\theta_0<1\), then
+   \[
+      \Pr[x,y\in U_G]
+      \le
+      \exp\left(-\frac{\beta^2}{1+\theta_0}\right).
+      \tag{TGE2}
+   \]
+\end{lemma}
+
+\begin{proof}
+   In the variational formula \((GE1)\), restrict to
+   \(\lambda_1=\lambda_2=\lambda\ge0\).  Since
+   \[
+      (1,1)K(1,1)^\top=2(1+\theta),
+   \]
+   the objective is bounded below by
+   \[
+      \lambda(b_x+b_y)-\lambda^2(1+\theta).
+   \]
+   Maximizing this one-dimensional concave quadratic over \(\lambda\ge0\) gives
+   \((TGE1)\).  If \(b_x,b_y\ge\beta\), then
+   \((b_x+b_y)_+^2\ge4\beta^2\); if also \(\theta\le\theta_0\), then
+   \(1+\theta\le1+\theta_0\).  Combining this with
+   \cref{lem:gaussian-cap-intersection-energy} gives \((TGE2)\).
+\end{proof}
+
 \begin{corollary}[Finite tuple-profile Renyi certificate]
    \label{cor:tuple-profile-renyi-certificate}
    In the setting of \cref{lem:packing-list-tuple-moment}, suppose the labels
@@ -1416,6 +1461,50 @@ The smooth product filter is not a replacement for \cref{lem:adaptive-continuati
    fractional bounds are exactly \((TM2)\) and \((TM3)\).
 \end{proof}
 
+\begin{corollary}[Two-point tuple-profile Gaussian certificate]
+   \label{cor:two-point-tuple-profile-gaussian}
+   In the pair case \(k=2\) of
+   \cref{cor:tuple-profile-renyi-certificate}, suppose each pair profile
+   \(\pi\in\Pi_2\) has size \(M_\pi\), and there are parameters
+   \(-1<\theta_\pi<1\), \(\beta_\pi\ge0\) such that every
+   \((x,y)\in\pi\) satisfies
+   \[
+      \ip{x}{y}\le\theta_\pi,
+      \qquad
+      T-\ip{\mu}{x}\ge\beta_\pi,
+      \qquad
+      T-\ip{\mu}{y}\ge\beta_\pi .
+      \tag{TPG1}
+   \]
+   Then
+   \[
+      \E L_\delta(G)^2
+      \le
+      \sum_{\pi\in\Pi_2}
+      M_\pi
+      \exp\left(-\frac{\beta_\pi^2}{1+\theta_\pi}\right).
+      \tag{TPG2}
+   \]
+   More generally, it is enough to replace the two lower bounds in \((TPG1)\)
+   by
+   \[
+      T-\ip{\mu}{x}+T-\ip{\mu}{y}\ge s_\pi\ge0,
+      \tag{TPG3}
+   \]
+   in which case the exponential factor in \((TPG2)\) becomes
+   \[
+      \exp\left(-\frac{s_\pi^2}{4(1+\theta_\pi)}\right).
+      \tag{TPG4}
+   \]
+\end{corollary}
+
+\begin{proof}
+   By \cref{lem:two-point-gaussian-cap-energy}, every pair in profile \(\pi\)
+   has Gaussian cap-intersection energy at least
+   \(\beta_\pi^2/(1+\theta_\pi)\), or \(s_\pi^2/(4(1+\theta_\pi))\) under
+   \((TPG3)\).  Substitute these profile energies into \((TP1)\) for \(k=2\).
+\end{proof}
+
 \begin{remark}[The Renyi target is entropy minus energy]
    \label{rem:renyi-entropy-energy-target}
    \Cref{cor:tuple-profile-renyi-certificate} is the promised self-contained
@@ -1429,6 +1518,10 @@ The smooth product filter is not a replacement for \cref{lem:adaptive-continuati
       \le
       \text{recursive Renyi budget}+O_c(\log\log m).
    \]
+   For pair profiles, \cref{cor:two-point-tuple-profile-gaussian} makes this
+   completely explicit: if the profile has pair correlation at most \(\theta\)
+   and both shifted thresholds are at least \(\beta\), the energy term is at
+   least \(\beta^2/(1+\theta)\).
    By \cref{lem:first-moment-query-compression}, the query side needs only the
    success-normalized first moment of the queried bucket or net, relative to
    the near hit probability \(a_j(q,p)\).  The space side uses the exponent
@@ -28996,6 +29089,86 @@ inequality \((QP3)\).
    claim follows by substituting \((AMP4)\) into \((AMP3)\).
 \end{proof}
 
+\begin{corollary}[Gaussian aggregate profile-layer storage test]
+   \label{cor:gaussian-aggregate-profile-layer-storage}
+   Work in the setting of
+   \cref{cor:aggregate-multiplicity-profile-storage}.  Fix a profile
+   \(\pi\) and multiplicity layer \(\ell\).  Suppose the undiscounted layer
+   congestion admits the following certified expansion before the Gaussian cap
+   tests are evaluated:
+   \[
+      \mathcal V_z(\pi,\ell)
+      \le
+      \sum_{r\in\mathcal R_{\pi,\ell}}
+      w_r
+      \sum_{(x,y)\in E_r}
+      \mathbf 1\{x,y\in U_{G_r}\},
+      \tag{GAP1}
+   \]
+   where \(w_r\ge0\), \(E_r\subseteq\pi\), and
+   \(U_{G_r}=\{u:\ip{G_r}{u}\ge T_r\}\) with
+   \(G_r\sim N(\mu_r,I)\).  Assume that for every \(r\) and every
+   \((x,y)\in E_r\),
+   \[
+      -1<\theta_{\pi,\ell}<1,
+      \qquad
+      \ip{x}{y}\le\theta_{\pi,\ell},
+      \qquad
+      T_r-\ip{\mu_r}{x}\ge\beta_{\pi,\ell},
+      \qquad
+      T_r-\ip{\mu_r}{y}\ge\beta_{\pi,\ell},
+      \tag{GAP2}
+   \]
+   with \(\beta_{\pi,\ell}\ge0\).  Put
+   \[
+      W_{\pi,\ell}
+      =
+      \sum_{r\in\mathcal R_{\pi,\ell}}w_r|E_r|.
+      \tag{GAP3}
+   \]
+   Then \((AMP2)\) holds with
+   \[
+      \mathcal A_{\pi,\ell}
+      =
+      W_{\pi,\ell}
+      \exp\left(
+         -\frac{\beta_{\pi,\ell}^2}{1+\theta_{\pi,\ell}}
+      \right).
+      \tag{GAP4}
+   \]
+   Consequently, if
+   \[
+      W_{\pi,\ell}\le C_{\pi,\ell}e^{H_{\pi,\ell}},
+      \tag{GAP5}
+   \]
+   then \((AMP4)\) holds with
+   \[
+      I_{\pi,\ell}
+      =
+      \frac{\beta_{\pi,\ell}^2}{1+\theta_{\pi,\ell}} .
+      \tag{GAP6}
+   \]
+   Thus a Gaussian cap or list-decoding implementation only has to certify
+   three profile-layer quantities: weighted incidence entropy \(H_{\pi,\ell}\),
+   threshold margin \(\beta_{\pi,\ell}\), and maximum pair correlation
+   \(\theta_{\pi,\ell}\).
+\end{corollary}
+
+\begin{proof}
+   By \cref{lem:two-point-gaussian-cap-energy}, every summand in \((GAP1)\)
+   satisfies
+   \[
+      \Pr[x,y\in U_{G_r}]
+      \le
+      \exp\left(
+         -\frac{\beta_{\pi,\ell}^2}{1+\theta_{\pi,\ell}}
+      \right).
+   \]
+   Linearity of expectation in \((GAP1)\) gives \((GAP4)\).  If \((GAP5)\)
+   holds, substitute \(W_{\pi,\ell}\le C_{\pi,\ell}e^{H_{\pi,\ell}}\) into
+   \((GAP4)\) to obtain \((AMP4)\) with \((GAP6)\).
+\end{proof}
+
 \begin{corollary}[Tuple-profile distinct-storage certificate]
    \label{cor:tuple-profile-distinct-storage}
    Work in the setting of
@@ -29368,6 +29541,9 @@ only \(2^{-\ell}\) times its undiscounted cap/list-decoding energy.
 \Cref{cor:aggregate-multiplicity-profile-storage} removes the remaining
 worst-pair envelope inside a profile: the geometric proof may bound the
 aggregate profile-layer entropy-energy sum directly.
+\Cref{cor:gaussian-aggregate-profile-layer-storage} gives the corresponding
+Gaussian check: profile-layer storage is certified by weighted incidence
+entropy, shifted-threshold margin, and maximum pair correlation.
 \Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} give the corresponding
 entropy-energy normal form: each large canonical child supplies many separated
@@ -42472,6 +42648,18 @@ stratification, layer \(\ell\) receives a \(2^{-\ell}\) quotient discount.
 storage certificate: prove the discounted aggregate entropy-energy sum over
 profile layers, without first proving a uniform bound for every pair in the
 profile.
+\Cref{cor:gaussian-aggregate-profile-layer-storage} turns the Gaussian-cap
+instance of this target into the explicit inequality
+\[
+   \sum_{\pi,\ell}2^{-\ell}
+   C_{\pi,\ell}\exp\!\left(
+      H_{\pi,\ell}
+      -\frac{\beta_{\pi,\ell}^2}{1+\theta_{\pi,\ell}}
+   \right)
+   \le aS
+\]
+up to metadata, where \(H\) is weighted incidence entropy, \(\beta\) is the
+shifted-threshold margin, and \(\theta\) is the worst pair correlation.
 \Cref{lem:tuple-witness-distinct-child-tail} and
 \cref{cor:tuple-profile-distinct-storage} reduce each dyadic count to tuple
 incidence: a large separated child contains many ordered witness tuples, so the
