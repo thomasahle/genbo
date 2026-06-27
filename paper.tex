@@ -12667,6 +12667,135 @@ query-price overlap, storage price, and duplicate-incidence factor \(b_G\).
    \((PSSR6)\).  The final statement is the contrapositive.
 \end{proof}
 
+\begin{corollary}[Paid cover residual for quotient stars]
+   \label{cor:paid-cover-quotient-star-residual}
+   Work in a finite filter-cover dual with near-pair radius \(r\).  Let
+   \(G=(U,a,T,S)\) be a quotient column, and write its captured demand as
+   \[
+      A_G=\sum_{(p,q)\in\mathcal N}
+      \alpha_{p,q}\mathbf 1\{p\in U\}a(q).
+      \tag{PCQ1}
+   \]
+   Let \(\mathcal X\) be a finite set of candidate centers.  For each
+   \(x\in\mathcal X\), fix a radius \(R_x\), put
+   \[
+      W_x=P\cap B(x,R_x),
+      \qquad
+      a_x(q)=\mathbf 1\{\|q-x\|\le R_x+r\},
+      \qquad
+      A_x=\sum_q\tau_qa_x(q),
+      \tag{PCQ2}
+   \]
+   and let \(\psi_x,\rho_x\) be certified child price parameters.  Suppose
+   \(U\) is assigned to the centers by a map \(\kappa:U\to\mathcal X\) such
+   that
+   \[
+      p\in B(\kappa(p),R_{\kappa(p)})
+      \qquad(p\in U),
+      \tag{PCQ3}
+   \]
+   and write \(U_x=\{p\in U:\kappa(p)=x\}\).
+
+   Assume the dense verifier may add, for every \(x\) and every
+   \(1\le h\le |W_x|\), the best paid \(h\)-point prefix of \(W_x\), activated
+   by \(a_x\), with prices
+   \[
+      T_{x,h}=\psi_xh^{\rho_x},
+      \qquad
+      S_{x,h}=\psi_xh^{1+\rho_x}.
+      \tag{PCQ4}
+   \]
+   If no such prefix has positive reduced gain, then the quotient demand is
+   bounded by the integrated cover price
+   \[
+      A_G
+      \le
+      \sum_{x\in\mathcal X:U_x\ne\emptyset}
+      \psi_x
+      \left(
+         A_x|U_x|^{\rho_x}
+         +
+         \sigma |U_x|^{1+\rho_x}
+      \right).
+      \tag{PCQ5}
+   \]
+   Equivalently, if some assigned smaller-ball cover satisfies the strict
+   reverse inequality in \((PCQ5)\), then one of its paid prefixes is a positive
+   reduced-gain dense column.
+
+   In particular, if \(G\) has positive reduced gain with parent price
+   \(T=\psi K^\rho\), \(S=\psi K^{1+\rho}\), \(K=|U|\), and
+   \[
+      \sum_x
+      \psi_x
+      \left(
+         A_x|U_x|^{\rho_x}
+         +
+         \sigma |U_x|^{1+\rho_x}
+      \right)
+      \le
+      \psi\left(K^\rho\sum_q\tau_qa(q)+\sigma K^{1+\rho}\right),
+      \tag{PCQ6}
+   \]
+   then some smaller-radius paid prefix has positive reduced gain.
+\end{corollary}
+
+\begin{proof}
+   For \(p\in U\), define the parent paid degree
+   \[
+      b(p)=\sum_{q:\,(p,q)\in\mathcal N}\alpha_{p,q}a(q).
+   \]
+   Then \(A_G=\sum_{p\in U}b(p)\).  For \(x\in\mathcal X\), define the
+   ball-thickened paid degree
+   \[
+      d_x(p)=\sum_{q:\,(p,q)\in\mathcal N}\alpha_{p,q}a_x(q)
+      \qquad(p\in W_x).
+   \]
+   If \(p\in U_x\) and \(a(q)=1\) for a near pair \((p,q)\), then
+   \[
+      \|q-x\|\le\|q-p\|+\|p-x\|\le r+R_x,
+   \]
+   so \(a_x(q)=1\).  Hence
+   \[
+      b(p)\le d_x(p)\qquad(p\in U_x).
+      \tag{PCQ7}
+   \]
+
+   Since no \(h\)-point prefix of \(W_x\) has positive reduced gain, the best
+   \(h\)-prefix bound gives
+   \[
+      \sum_{i\le h}d_x(p_i)
+      \le
+      \psi_x\left(A_xh^{\rho_x}+\sigma h^{1+\rho_x}\right)
+      \tag{PCQ8}
+   \]
+   where \(p_1,p_2,\ldots\) are the points of \(W_x\) sorted by decreasing
+   \(d_x\).  The top \(|U_x|\) prefix dominates the particular subset \(U_x\).
+   Combining this with \((PCQ7)\) yields
+   \[
+      \sum_{p\in U_x}b(p)
+      \le
+      \sum_{p\in U_x}d_x(p)
+      \le
+      \psi_x
+      \left(
+         A_x|U_x|^{\rho_x}
+         +
+         \sigma |U_x|^{1+\rho_x}
+      \right).
+   \]
+   Summing over \(x\) proves \((PCQ5)\).  The strict reverse implication is its
+   contrapositive.
+
+   For the final claim, positive reduced gain of \(G\) says
+   \[
+      A_G>
+      \psi\left(K^\rho\sum_q\tau_qa(q)+\sigma K^{1+\rho}\right).
+   \]
+   Together with \((PCQ6)\), this gives the strict reverse of \((PCQ5)\), so a
+   smaller-radius paid prefix has positive reduced gain.
+\end{proof}
+
 \Cref{lem:reduced-gain-quotient-refinement} is the finite-cover analogue of the
 Hall-shadow refinement lemma.  It says that once a quotient has positive
 reduced gain, any demand-preserving split whose radius discount pays the Renyi
@@ -12685,8 +12814,13 @@ tested by the dense-column verifier.
 \Cref{cor:paid-integrated-spread-star-residual} gives the exact residual form:
 if the star multiplicities are paid responsibilities and all dense prefixes
 fail, then the high-correlation profile mass is bounded by the integrated Renyi
-price of those star superlevels.  This is the precise place where the
-spherical/list-decoding side should use entropy rather than density.
+price of those star superlevels.  \Cref{cor:paid-cover-quotient-star-residual}
+then removes the responsibility assumption for quotient covers: assigning the
+parent update side to smaller balls automatically dominates the parent paid
+demand by the ball-thickened paid degrees.  Thus a positive quotient survives a
+smaller-radius cover only when that cover's integrated paid Renyi price is at
+least the parent demand.  This is the precise place where the spherical/list-decoding
+side should use entropy rather than density.
 
 \begin{corollary}[Residual dense-cover obstruction certificate]
    \label{cor:residual-dense-cover-obstruction}
