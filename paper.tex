@@ -37489,6 +37489,150 @@ are active, a repair proposal does not need to search all prefix sizes: a
 template with enough cut-shadow density near \(K_y^\circ\) immediately violates
 the no-merge envelope.
 
+\begin{corollary}[Clipped Hall-shadow price-density screen]
+   \label{cor:clipped-hall-shadow-density-screen}
+   Work in the setting of \cref{cor:no-merge-hall-shadow-envelope}.  Fix a
+   repair template \(y\) with \(0<\rho_y<1\), and put
+   \(m_y=|W_y|\).  For \(1\le K\le m_y\), write the per-point price density as
+   \[
+      f_y(K)=A_yK^{\rho_y-1}+\zeta K^{\rho_y}.
+      \tag{CHP1}
+   \]
+   If \(A_y=\zeta=0\), then any available \(K\) with \(D_A(y,K)>0\) gives a
+   one-record Hall-shadow merge.
+
+   Otherwise define the clipped minimizer
+   \[
+      K_y^\natural=
+      \begin{cases}
+      1, & A_y=0,\\
+      m_y, & \zeta=0,\\
+      \min\!\left\{m_y,\max\!\left\{1,
+      \dfrac{(1-\rho_y)A_y}{\rho_y\zeta}\right\}\right\},
+         & A_y>0,\ \zeta>0 .
+      \end{cases}
+      \tag{CHP2}
+   \]
+   Let \(a\ge1\).  If an available cardinality \(K\in\mathcal K_y\) satisfies
+   \[
+      a^{-1}K_y^\natural\le K\le aK_y^\natural
+      \tag{CHP3}
+   \]
+   and
+   \[
+      \Delta_A(y,K)>
+      a\psi_y f_y(K_y^\natural),
+      \tag{CHP4}
+   \]
+   then \((y,K)\) satisfies \((NHE2)\), and hence gives a one-record
+   Hall-shadow merge.
+
+   Conversely, if no available Hall-shadow merge exists, then every available
+   prefix satisfying \((CHP3)\) obeys the reverse inequality in \((CHP4)\).
+\end{corollary}
+
+\begin{proof}
+   The case \(A_y=\zeta=0\) is immediate from \((NHE2)\).  Assume from now on
+   that at least one price is positive.  It is enough to prove
+   \[
+      f_y(K)\le a f_y(K_y^\natural)
+      \tag{CHP5}
+   \]
+   whenever \((CHP3)\) holds.  Then \((CHP4)\) implies
+   \[
+      D_A(y,K)
+      =
+      K\Delta_A(y,K)
+      >
+      \psi_yKf_y(K)
+      =
+      \psi_y\left(A_yK^{\rho_y}+\zeta K^{1+\rho_y}\right),
+   \]
+   which is \((NHE2)\).
+
+   If \(A_y>0\) and \(\zeta>0\) and the stationary point
+   \((1-\rho_y)A_y/(\rho_y\zeta)\) lies in \([1,m_y]\), then
+   \(K_y^\natural\) is that stationary point.  The same calculation as in
+   \cref{cor:balanced-hall-shadow-density-screen} gives \((CHP5)\).
+
+   If \(K_y^\natural=1\), then for \(1\le K\le a\),
+   \[
+      A_yK^{\rho_y-1}\le A_y,
+      \qquad
+      \zeta K^{\rho_y}\le a\zeta ,
+   \]
+   and hence \(f_y(K)\le a(A_y+\zeta)=a f_y(1)\).  This includes the case
+   \(A_y=0\).
+
+   If \(K_y^\natural=m_y\), then \(m_y/a\le K\le m_y\), and
+   \[
+      A_yK^{\rho_y-1}
+      \le
+      a^{1-\rho_y}A_ym_y^{\rho_y-1}
+      \le
+      aA_ym_y^{\rho_y-1},
+      \qquad
+      \zeta K^{\rho_y}\le a\zeta m_y^{\rho_y}.
+   \]
+   Thus \(f_y(K)\le a f_y(m_y)\).  This includes the case \(\zeta=0\).
+
+   The converse is again the contrapositive of the merge implication.
+\end{proof}
+
+\Cref{cor:clipped-hall-shadow-density-screen} removes the artificial internal
+balance assumption.  Each template now has one canonical proposal scale: the
+minimizer of the recursive price density clipped to the available prefix range.
+If query price dominates, the scale moves to the largest prefix; if storage
+price dominates, it moves to the smallest prefix.  Thus a build-time proposal
+routine can target a single clipped scale per template instead of splitting
+into query-dominated, storage-dominated, and balanced cases.
+
+\begin{corollary}[Fractional clipped Hall-shadow density panel]
+   \label{cor:fractional-clipped-hall-shadow-density-panel}
+   Work in the setting of
+   \cref{cor:clipped-hall-shadow-density-screen}.  Let \(i\in I\) range over a
+   finite panel of verified clipped Hall-shadow records with nonnegative
+   weights \(\lambda_i\).  Record \(i\) consists of a repair template \(y_i\),
+   an available prefix cardinality \(K_i\in\mathcal K_{y_i}\), and a slack
+   factor \(a_i\ge1\) such that, when
+   \(A_{y_i}\) and \(\zeta\) are not both zero,
+   \[
+      a_i^{-1}K_{y_i}^\natural\le K_i\le a_iK_{y_i}^\natural .
+      \tag{FCH1}
+   \]
+   Put
+   \[
+      \Delta_i=\Delta_A(y_i,K_i),
+      \qquad
+      \Theta_i=
+      \begin{cases}
+      0, & A_{y_i}=\zeta=0,\\
+      a_i\psi_{y_i}f_{y_i}(K_{y_i}^\natural),
+         & \text{otherwise}.
+      \end{cases}
+      \tag{FCH2}
+   \]
+   If
+   \[
+      \sum_i\lambda_iK_i(\Delta_i-\Theta_i)>0,
+      \tag{FCH3}
+   \]
+   then some record in the panel gives a one-record Hall-shadow merge.
+
+   Consequently, if no available Hall-shadow merge exists, every finite
+   nonnegative clipped panel has nonpositive surplus \((FCH3)\).
+\end{corollary}
+
+\begin{proof}
+   Positive total surplus implies that some record has
+   \(\Delta_i>\Theta_i\).  If \(A_{y_i}=\zeta=0\), then
+   \(D_A(y_i,K_i)=K_i\Delta_i>0\), so
+   \cref{cor:clipped-hall-shadow-density-screen} gives a merge.  Otherwise
+   \((FCH1)\)--\((FCH2)\) are exactly \((CHP3)\)--\((CHP4)\) for that record,
+   and the same corollary applies.  The nonpositive-panel statement is the
+   contrapositive.
+\end{proof}
+
 \begin{corollary}[Fractional balanced Hall-shadow density panel]
    \label{cor:fractional-balanced-hall-shadow-density-panel}
    Work in the setting of \cref{cor:balanced-hall-shadow-density-screen}.  Let
@@ -37573,6 +37717,102 @@ build-facing contracts for the Hall-shadow route.  A proposal mechanism may
 generate many balanced templates, but it is analyzed only through the scalar
 surplus \(K(\Delta-\Theta)\); any positive verified surplus collapses to one
 ordinary retained dense prefix.
+
+\begin{corollary}[Sampled clipped Hall-shadow density search]
+   \label{cor:sampled-clipped-hall-shadow-density-search}
+   Work in the setting of
+   \cref{cor:fractional-clipped-hall-shadow-density-panel}.  A randomized
+   build-time proposal routine, on seed \(s\), returns a finite verified
+   clipped panel \(I_s\) with nonnegative weights \(\lambda_{s,i}\).  Define
+   its certified clipped surplus by
+   \[
+      Z(s)=
+      \sum_{i\in I_s}
+      \lambda_{s,i}K_{s,i}\bigl(\Delta_{s,i}-\Theta_{s,i}\bigr).
+      \tag{SCH1}
+   \]
+   Suppose
+   \[
+      \E_s Z(s)\ge\Gamma>0,
+      \qquad
+      Z(s)_+\le M
+      \quad\text{almost surely}.
+      \tag{SCH2}
+   \]
+   Then \(B\) independent build-time seeds contain a valid one-record
+   Hall-shadow merge with probability at least
+   \[
+      1-\exp\left(-\frac{B\Gamma}{M}\right).
+      \tag{SCH3}
+   \]
+\end{corollary}
+
+\begin{proof}
+   The proof is identical to
+   \cref{cor:sampled-balanced-hall-shadow-density-search}, using
+   \cref{cor:fractional-clipped-hall-shadow-density-panel} in place of
+   \cref{cor:fractional-balanced-hall-shadow-density-panel}.  From \((SCH2)\),
+   \(\E Z_+\ge\Gamma\), and \(Z_+\le M\) gives
+   \(\Pr[Z(s)>0]\ge\Gamma/M\).  Thus \(B\) independent failed samples have
+   probability at most \(\exp(-B\Gamma/M)\).  A successful sample is verified
+   into one deterministic Hall-shadow merge, and failed samples are discarded.
+\end{proof}
+
+\begin{corollary}[Clipped Hall-shadow separator endpoint]
+   \label{cor:clipped-hall-shadow-separator-endpoint}
+   Work in the setting of
+   \cref{cor:finite-signature-hall-cut-repair-endpoint}.  Suppose that every
+   high-correlation co-load residual satisfying \((HCS1)\) admits an uncharged
+   clipped Hall-shadow separator with the following certified behavior.  The
+   separator chooses a finite template set \(\mathcal X\) and a loss
+   \(C_{\rm tr}\), runs the Hall transport test of
+   \cref{lem:finite-signature-coload-hall-transport}, and certifies one of two
+   alternatives.
+
+   First, the Hall-success alternative \((HCR1)\) holds.  Second, the Hall test
+   exposes a cut \(A\subseteq\mathcal L\) satisfying \((FHT5)\), and the
+   separator returns a finite clipped Hall-shadow density panel satisfying
+   \((FCH1)\)--\((FCH3)\) for that cut.  Then the structured completeness
+   condition \((HCS2)\) holds for every high-correlation co-load residual.
+   Consequently the dense/spherical separator condition \((DSF2)\) holds, and
+   the polylogarithmic ANN endpoint follows.
+
+   The same conclusion holds in Las Vegas build time if, in the second
+   alternative, a randomized proposal routine returns verified clipped panels
+   whose surplus \(Z(s)\) satisfies \((SCH2)\) with \(\Gamma>0\).  Repeating
+   \[
+      B\ge \frac{M}{\Gamma}\log\frac1\delta
+      \tag{CSE1}
+   \]
+   independent build-time seeds finds a deterministic Hall-shadow merge with
+   probability at least \(1-\delta\); failed samples are discarded.
+\end{corollary}
+
+\begin{proof}
+   Fix a surplus dual satisfying \((HCS1)\).  If \((HCR1)\) holds, the first
+   alternative of \cref{cor:finite-signature-hall-cut-repair-endpoint} applies.
+   Otherwise the clipped panel has positive surplus \((FCH3)\), so
+   \cref{cor:fractional-clipped-hall-shadow-density-panel} extracts a
+   one-record Hall-shadow merge.  By
+   \cref{cor:one-record-hall-shadow-merge}, this gives the Hall-shadow repair
+   criterion, and
+   \cref{cor:finite-signature-hall-shadow-repair} supplies the Hall-cut repair
+   alternative \((HCR2)\).  Thus every residual satisfies one of the two
+   alternatives of
+   \cref{cor:finite-signature-hall-cut-repair-endpoint}, giving \((HCS2)\), and
+   \cref{cor:high-correlation-coload-separator-endpoint} gives the
+   dense/spherical separator endpoint.
+
+   The sampled statement follows from
+   \cref{cor:sampled-clipped-hall-shadow-density-search} and \((CSE1)\).  Once
+   a successful seed is verified, the deterministic argument above applies.
+\end{proof}
+
+\Cref{cor:clipped-hall-shadow-separator-endpoint} is the boundary-stable
+version of the balanced endpoint.  The balanced test is still the clean
+stationary case, but the clipped endpoint is the one an implementation should
+use: it keeps the same fractional proof object while allowing the optimal
+prefix scale to sit at \(1\), at \(|W_y|\), or at the internal balance point.
 
 \begin{corollary}[Balanced Hall-shadow separator endpoint]
    \label{cor:balanced-hall-shadow-separator-endpoint}
@@ -50154,8 +50394,17 @@ screen \cref{cor:balanced-hall-shadow-density-screen} reduces the positive test
 to one density threshold near the stationary prefix size, while
 \cref{cor:fractional-balanced-hall-shadow-density-panel} and
 \cref{cor:sampled-balanced-hall-shadow-density-search} give the batched and
-sampled surplus forms.  The consolidated endpoint is
-\cref{cor:balanced-hall-shadow-separator-endpoint}.
+sampled surplus forms.  The boundary-stable version is
+\cref{cor:clipped-hall-shadow-density-screen},
+\cref{cor:fractional-clipped-hall-shadow-density-panel}, and
+\cref{cor:sampled-clipped-hall-shadow-density-search}: each template is tested
+near the clipped minimizer of its recursive price density
+\(A_yK^{\rho_y-1}+\zeta K^{\rho_y}\), covering query-dominated,
+storage-dominated, and internally balanced regimes in one rule.  The
+consolidated endpoint is
+\cref{cor:clipped-hall-shadow-separator-endpoint}, with
+\cref{cor:balanced-hall-shadow-separator-endpoint} as the internal stationary
+special case.
 \Cref{lem:weighted-spherical-reduced-gain} proves the spherical half of the
 dual dichotomy in the exact reduced-gain language: if ordinary spherical buckets
 do not violate a surplus dual certificate, then the dual must carry large
