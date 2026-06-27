@@ -17968,6 +17968,63 @@ success-normalized bucket-net argument.
    \(\max_BG(B,\eta)<0\), which is exactly \((FCM6)\).
 \end{proof}
 
+\begin{corollary}[Logarithmic top-prefix cohort separator]
+   \label{cor:logarithmic-top-prefix-cohort-separator}
+   Work in the setting of
+   \cref{cor:finite-capped-marginal-cohort-oracle}.  Let \(\mathcal T\) be a
+   finite family of retained prefix templates \(T=(W_T,K_T,\theta_T)\), with
+   \(1\le K_T\le |W_T|\), such that every sublist \(U\subseteq W_T\) with
+   \(|U|\le K_T\) is reportable with size certificate \(K_T\).  Put
+   \[
+      L_T
+      =
+      1+\left\lceil
+      \log_2\max\left\{2,\frac{2K_T}{A\Lambda}\right\}
+      \right\rceil .
+      \tag{LTP0}
+   \]
+   If every cohort law \(\eta\in\Delta_{\mathcal E_{\rm load}}\) admits a
+   template \(T\in\mathcal T\) satisfying
+   \[
+      D_\eta^{\theta_T}(W_T,K_T)
+      \ge
+      4A\Lambda L_T,
+      \tag{LTP1}
+   \]
+   then the averaged dominated-load certificate \((DPG3)\) holds.
+
+   Conversely, if \((DPG3)\) fails, then there is a cohort law \(\eta\) such
+   that every retained prefix template \(T\in\mathcal T\) satisfies
+   \[
+      D_\eta^{\theta_T}(W_T,K_T)
+      <
+      4A\Lambda L_T .
+      \tag{LTP2}
+   \]
+\end{corollary}
+
+\begin{proof}
+   Fix \(\eta\) and \(T=(W_T,K_T,\theta_T)\).  Let \(U_T\) be a maximizing
+   \(K_T\)-point subset in the definition of \(D_\eta^{\theta_T}(W_T,K_T)\).
+   Since \(K_T\le |W_T|\), this subset exists.  By the sublist-closure
+   hypothesis, the point-mass capped list law on \(U_T\) is reportable with size
+   certificate \(K_T\) and height certificate \(1\), using \((FCM0)\).  Its
+   marginal mass is exactly
+   \[
+      V_\eta(T)=D_\eta^{\theta_T}(W_T,K_T).
+   \]
+   Therefore \((LTP1)\) is the capped-marginal condition \((CMM2)\) for this
+   deterministic law, and
+   \cref{cor:capped-marginal-cohort-law-mass-reporter} gives \((DPG3)\) when
+   every cohort law has such a template.
+
+   Conversely, if \((DPG3)\) fails, then
+   \cref{cor:capped-marginal-cohort-law-mass-reporter} gives a cohort law
+   \(\eta\) for which every reportable capped list law satisfies \((CMM4)\).
+   Applying that envelope to the point-mass law on the maximizing prefix
+   \(U_T\) gives \((LTP2)\) for every \(T\in\mathcal T\).
+\end{proof}
+
 The lemma is the fractional version of the dominated-load endpoint.  It does not
 claim the remaining geometric theorem.  Rather, after terminal low-load levels
 and the \(A\)-boundary alternative have been dealt with by
@@ -18016,6 +18073,11 @@ beats every cohort law at the explicit logarithmic mass threshold, or one cohort
 law witnesses that every generated panel is below threshold.  Because the
 cohort degrees have unit height under \((GNR1)\), the logarithmic factor depends
 only on the size certificate \(K_B\).
+\Cref{cor:logarithmic-top-prefix-cohort-separator} removes the last soft
+artifact for sublist-closed retained containers: it is enough to find a
+top-\(K\) prefix whose cohort-degree mass beats
+\(4A\Lambda\bigl(1+\lceil\log_2\max\{2,2K/(A\Lambda)\}\rceil\bigr)\).  Failure
+leaves the same explicit prefix envelope for every retained template.
 Pools with different congestion guesses may be split into dyadic \(C\)-strata and
 tested by the same game within each stratum.
 
@@ -40210,6 +40272,10 @@ vector of total mass at most \(K\).
 such panels into an exact matrix game: either a randomized panel law beats every
 cohort law at the explicit mass threshold, or one cohort law certifies that all
 generated panels are below threshold.
+\Cref{cor:logarithmic-top-prefix-cohort-separator} is the final top-prefix
+specialization for sublist-closed retained containers: the separator only has to
+find a retained top-\(K\) prefix whose cohort degree beats the explicit
+logarithmic envelope.
 \Cref{cor:load-quantile-recycled-obstruction-profile} is the corresponding
 residual normal form: outside the \(A\)-boundary and terminal cases, the
 remaining obstruction is just strict positivity at that weighted quantile.
