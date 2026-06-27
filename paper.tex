@@ -17771,6 +17771,102 @@ success-normalized bucket-net argument.
    \(V<4A\Lambda J_{B,K,V}\le4A\Lambda L_{B,K}\), proving \((CME3)\).
 \end{proof}
 
+\begin{corollary}[Capped marginal cohort-law mass reporter]
+   \label{cor:capped-marginal-cohort-law-mass-reporter}
+   Work in the setting of \cref{cor:explicit-cohort-law-mass-envelope}.  Fix a
+   cohort law \(\eta\).  A reportable capped list law consists of a finite
+   probability law \(\zeta\) over subsets \(W_s\subseteq P\), together with
+   \(0\le\theta\le1\), an integer size certificate \(K\ge1\), and a height
+   certificate \(B>0\), such that every \(s\) in the support satisfies
+   \[
+      |W_s|\le K,
+      \qquad
+      d_\eta^\theta(p)\le B\quad(p\in W_s),
+      \tag{CMM0}
+   \]
+   and every nonempty dyadic degree superlevel of \(W_s\) can be retained with
+   size certificate \(K\), as required in \((CMR3)\).  Let
+   \[
+      \pi_p=\Pr_{s\sim\zeta}[p\in W_s],
+      \qquad
+      V_\pi=\sum_p\pi_p\,d_\eta^\theta(p).
+      \tag{CMM1}
+   \]
+   If every cohort law \(\eta\in\Delta_{\mathcal E_{\rm load}}\) admits a
+   reportable capped list law satisfying
+   \[
+      V_\pi\ge4A\Lambda L_{B,K},
+      \tag{CMM2}
+   \]
+   then the averaged dominated-load certificate \((DPG3)\) holds.  More
+   generally, it is enough to have a finite outer probability law over
+   reportable capped list laws with
+   \[
+      \E\frac{V_\pi}{4L_{B,K}}\ge A\Lambda .
+      \tag{CMM3}
+   \]
+
+   Conversely, if \((DPG3)\) fails, then there is a cohort law \(\eta\) for
+   which every reportable capped list law satisfies the marginal envelope
+   \[
+      V_\pi<4A\Lambda L_{B,K}.
+      \tag{CMM4}
+   \]
+
+   In particular, suppose a retained parent container \(W\) is closed under
+   all sublists of size at most \(K\) in the sense that every \(W_s\subseteq W\)
+   with \(|W_s|\le K\) satisfies the reportability condition above.  Then it is
+   enough to give soft responsibilities \(0\le\pi_p\le1\) on \(W\) with
+   \[
+      \sum_{p\in W}\pi_p\le K,
+      \qquad
+      d_\eta^\theta(p)\le B\quad(p\in W),
+      \qquad
+      \sum_{p\in W}\pi_p d_\eta^\theta(p)\ge4A\Lambda L_{B,K}.
+      \tag{CMM5}
+   \]
+\end{corollary}
+
+\begin{proof}
+   For an outcome \(s\), put
+   \[
+      V_s=\sum_{p\in W_s}d_\eta^\theta(p).
+   \]
+   Every outcome with \(V_s>0\) is an \(\eta\)-mass report
+   \((W_s,\theta,K,V_s,B)\), and all outcomes have the same \(B,K\).  Moreover
+   \[
+      \E_{s\sim\zeta}V_s=V_\pi .
+   \]
+   If \((CMM2)\) holds, then the conditional law on the positive-\(V_s\)
+   outcomes is a finite law over \(\eta\)-mass reports with
+   \[
+      \E\frac{V_s}{4L_{B,K}}\ge \frac{V_\pi}{4L_{B,K}}\ge A\Lambda .
+   \]
+   Applying \((CME2)\) gives \((DPG3)\).  The outer-law variant is the same
+   averaging argument after first sampling the capped list law and then its
+   list outcome.
+
+   Conversely, if \((DPG3)\) fails, take the cohort law from
+   \cref{cor:explicit-cohort-law-mass-envelope}.  Each positive-\(V_s\) outcome
+   is an \(\eta\)-mass report, so \((CME3)\) gives
+   \(V_s<4A\Lambda L_{B,K}\); zero outcomes also satisfy this strict bound.
+   Since the support is finite, averaging gives \((CMM4)\).
+
+   For the final claim, use the standard integral decomposition of the capped
+   hypersimplex.  The polytope
+   \[
+      \{x\in[0,1]^W:\sum_{p\in W}x_p\le K\}
+   \]
+   has only integral vertices: if two coordinates are fractional, one may
+   perturb them in opposite directions; if exactly one coordinate is fractional,
+   either the sum constraint is slack and that coordinate can be perturbed, or
+   the sum is the integer \(K\), which is impossible with all other coordinates
+   integral.  Thus any responsibility vector satisfying \(\sum_p\pi_p\le K\) is
+   a convex combination of indicators of subsets of size at most \(K\).  The
+   assumed sublist closure makes this a reportable capped list law with marginals
+   \(\pi\), and \((CMM5)\) is exactly \((CMM2)\).
+\end{proof}
+
 The lemma is the fractional version of the dominated-load endpoint.  It does not
 claim the remaining geometric theorem.  Rather, after terminal low-load levels
 and the \(A\)-boundary alternative have been dealt with by
@@ -17807,6 +17903,12 @@ level dependence: failure leaves one cohort law for which every retained mass
 certificate obeys \(V=O(A\Lambda\log(2BK/(A\Lambda)))\).  Thus the geometric
 theorem can target a direct mass violation rather than optimizing over
 thresholds.
+\Cref{cor:capped-marginal-cohort-law-mass-reporter} is the soft proposal
+interface: a \(k\)-means++, additive-quantization, or list-decoding panel may
+output a finite law over capped hard lists and be analyzed only through its
+inclusion marginals.  If the parent container is closed under sublists, even a
+responsibility vector with total mass at most \(K\) is enough, by integral
+decomposition of the capped hypersimplex.
 Pools with different congestion guesses may be split into dyadic \(C\)-strata and
 tested by the same game within each stratum.
 
@@ -39993,6 +40095,10 @@ and size bound \(K\) is enough after a dyadic \(O(\log(BK/V))\) loss.
 \Cref{cor:explicit-cohort-law-mass-envelope} makes this a direct logarithmic
 residual envelope: if no proposal closes the game, every retained mass report
 has \(V=O(A\Lambda\log(2BK/(A\Lambda)))\).
+\Cref{cor:capped-marginal-cohort-law-mass-reporter} adds the corresponding soft
+proposal interface: finite capped-list laws are analyzed only through inclusion
+marginals, and sublist-closed retained containers accept any responsibility
+vector of total mass at most \(K\).
 \Cref{cor:load-quantile-recycled-obstruction-profile} is the corresponding
 residual normal form: outside the \(A\)-boundary and terminal cases, the
 remaining obstruction is just strict positivity at that weighted quantile.
