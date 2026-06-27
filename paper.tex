@@ -18360,6 +18360,65 @@ success-normalized bucket-net argument.
    \cref{cor:prefix-template-column-generation}.
 \end{proof}
 
+\begin{corollary}[One-sided proposal-law prefix separator]
+   \label{cor:one-sided-proposal-law-prefix-separator}
+   Work in the setting of
+   \cref{cor:one-sided-prefix-value-column-generation}, and fix a cohort law
+   \(\eta\).  A finite \(\eta\)-proposal law is a finite probability law
+   \(\zeta\) over pairs \(R=(T_R,X_R)\) such that
+   \[
+      T_R\in\mathcal U_b,
+      \qquad
+      0\le X_R\le V_\eta(T_R).
+      \tag{OPL0}
+   \]
+   Define its certified surplus by
+   \[
+      \Psi_\eta(R)
+      =
+      X_R-\Theta_C L_b(h_{T_R}).
+      \tag{OPL1}
+   \]
+   If
+   \[
+      \E_{R\sim\zeta}\Psi_\eta(R)\ge0,
+      \tag{OPL2}
+   \]
+   then the support of \(\zeta\) contains a separating one-sided prefix-value
+   report.  Consequently the separator call in
+   \cref{cor:one-sided-prefix-value-column-generation} may be implemented by
+   any randomized, batched, or learned proposal generator whose realized finite
+   support is verified by \((OPL0)\) and whose certified average surplus
+   satisfies \((OPL2)\); only the exposed deterministic record \(T_R\) is added
+   to the retained pool.
+
+   Conversely, if the exact full-universe certificate \((OPV2)\) holds for
+   \(\eta\), then every finite \(\eta\)-proposal law satisfies
+   \[
+      \E_{R\sim\zeta}\Psi_\eta(R)<0 .
+      \tag{OPL3}
+   \]
+\end{corollary}
+
+\begin{proof}
+   If every support point had \(\Psi_\eta(R)<0\), the finite average would be
+   negative.  Hence \((OPL2)\) gives some \(R=(T_R,X_R)\) with
+   \(\Psi_\eta(R)\ge0\), which is exactly \((OPV1)\) together with
+   \((OPV0)\).
+
+   Conversely, if \((OPV2)\) holds, then for every report in the support,
+   \[
+      \Psi_\eta(R)
+      \le
+      V_\eta(T_R)-\Theta_C L_b(h_{T_R})
+      =
+      G(T_R,\eta)
+      <
+      0 .
+   \]
+   Averaging gives \((OPL3)\).
+\end{proof}
+
 \begin{corollary}[Cardinality-net cohort superlevel reporter]
    \label{cor:cardinality-net-cohort-superlevel-reporter}
    Work in the setting of
@@ -18555,6 +18614,11 @@ separator output further: the build oracle may return any retained record with a
 one-sided lower value certificate \(X\le V_\eta(T)\) beating
 \(\Theta_C L_b(h_T)\); later games still use the exact verified payoff of the
 record.
+\Cref{cor:one-sided-proposal-law-prefix-separator} makes this compatible with
+randomized proposal mechanisms: a finite \(k\)-means++, additive-quantization,
+range-reporting, or list-decoding batch is useful exactly when its verified
+average one-sided surplus is nonnegative, and then averaging exposes one
+deterministic column.
 \Cref{cor:cardinality-net-cohort-superlevel-reporter} removes the need for the
 separator to optimize an exact top prefix: any certified threshold list with
 one-sided value \(X\ge\Theta_C L_b(h)\) is already a valid column, and failure
@@ -40778,6 +40842,10 @@ the index.
 implementation interface: the oracle only has to certify a current lower bound
 on one retained record's value; the LP then reuses that record with its exact
 payoff against all later cohort laws.
+\Cref{cor:one-sided-proposal-law-prefix-separator} allows the proposed record to
+come from a finite randomized batch: if the verified average one-sided surplus
+is nonnegative, one support record is a valid deterministic column, while exact
+negative reduced gain rules out every such batch.
 \Cref{cor:cardinality-net-cohort-superlevel-reporter} is the corresponding
 one-sided reporter interface: a range-reporting, list-decoding, additive
 quantization, or seeded-clustering separator may return any certified
