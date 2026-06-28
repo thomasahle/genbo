@@ -65227,6 +65227,116 @@ certificate is the verified positive-gain column and the finite LP it augments.
    \((CRL7)\) contradicts \((CRL6)\) in an all-failed transcript.
 \end{proof}
 
+\begin{corollary}[LP-guided capped-flow exhaustion endpoint]
+   \label{cor:lp-guided-capped-flow-exhaustion-endpoint}
+   Work in the setting of
+   \cref{cor:fractional-opened-support-template-endpoint}.  Replace the
+   fractional-panel hypothesis \((FOT1)\) by the following capped residual-LP
+   exhaustion condition.
+
+   Whenever \(\Psi_{\mathcal B_y}(y)>D_\pi/4\) and
+   \cref{cor:template-complete-shared-cover-obstruction} supplies an exact
+   no-prefix dual obstruction \(u\), preprocessing uses the obstruction-sourced
+   measure
+   \[
+      I_0(u)=\{a\in\mathcal A_\pi:\ b_au_a>0\},
+      \qquad
+      \nu_a=b_au_a,
+      \qquad
+      V(u)=\sum_ab_au_a,
+      \tag{LGE1}
+   \]
+   and sets \(\Lambda_{\rm rem}=V(u)/2\).  It then runs a finite
+   LP-guided proposal rule.  Initially the transcript is empty and
+   \(r_a^{(0)}=1\).  At step \(t\), after the current failed transcript and cap
+   \(r^{(t-1)}\) have been certified, preprocessing solves the capped residual
+   LP and obtains an optimal primal vector \(z^{(t-1)}\).  If
+   \[
+      \mathfrak R_{t-1}(\nu;r^{(t-1)})<\Lambda_{\rm rem},
+      \tag{LGE2}
+   \]
+   it stops.  Otherwise it proposes a fractional opened-support source system
+   \((B_t,E_t,C_t)\) whose template top-prefix records lie in
+   \(\mathcal Z_\star\), whose left side is
+   \(I_{t-1}^+=\{a:z_a^{(t-1)}>0\}\), and whose normalized source loads are
+   \[
+      \frac{\mu_a^{(t)}}{C_t}=\nu_a z_a^{(t-1)}
+      \qquad(a\in I_{t-1}^+).
+      \tag{LGE3}
+   \]
+   Put
+   \[
+      K_t=K_{B_t}^\natural,
+      \qquad
+      \Theta_t=\Theta_{B_t}^{\rm net}.
+      \tag{LGE4}
+   \]
+   If the proposed screen fails, preprocessing appends it to the failed
+   transcript and updates the cap using the dual-price rule of
+   \cref{cor:capped-residual-lp-continuation}.  The rule is called
+   capped-value-complete if every possible all-failed terminal transcript
+   satisfies
+   \[
+      \sum_{t=1}^T4K_t\Theta_t\le\frac{V(u)}2
+      \tag{LGE5}
+   \]
+   and terminates only with the certified capped residual bound
+   \[
+      \mathfrak R_T(\nu;r^{(T)})<\frac{V(u)}2 .
+      \tag{LGE6}
+   \]
+
+   If such a capped-value-complete LP-guided proposal rule exists for every
+   exact no-prefix obstruction \(u\), then the positive shared-panel separator
+   \((SPP1)\) holds at every node, and hence
+   \[
+      Q(n,d)=d\,n^{\rho_c}\log^{O_c(1)}n,\qquad
+      S(n,d)=dn+n^{1+\rho_c}\log^{O_c(1)}n .
+   \]
+
+   Thus the remaining geometric theorem may be stated as an LP-guided
+   separator: every high-value no-prefix obstruction, when restricted to the
+   current capped residual-LP optimizer, must either produce a half-threshold
+   opened-support screen or force the capped residual LP below half the exposed
+   obstruction value before half that value has been spent on failed screens.
+\end{corollary}
+
+\begin{proof}
+   Fix a resident node and a feasible dual \(y\).  If
+   \(\Psi_{\mathcal B_y}(y)\le D_\pi/4\), then the cover outcome of
+   \cref{cor:template-search-shared-integrated-target} already holds.  Otherwise
+   let \(u\) be the exact obstruction returned by
+   \cref{cor:template-complete-shared-cover-obstruction}, and run the
+   LP-guided proposal rule above.
+
+   If at some step
+   \[
+      \widehat{\mathfrak S}_{B_t,E_t}(C_t)>2K_t\Theta_t,
+   \]
+   then \cref{cor:fractional-opened-support-flow-lp} exposes a positive shared
+   top-prefix column in \(\mathcal Z_\star\).  This is the second outcome
+   required by \cref{cor:template-search-shared-integrated-target}.
+
+   Suppose instead that every proposed screen fails.  By capped-value
+   completeness, the terminal transcript satisfies \((LGE5)\)--\((LGE6)\).
+   Applying \cref{cor:capped-residual-lp-continuation} with
+   \(V_0=\sum_a\nu_a=V(u)\) gives
+   \[
+      \mathfrak R_T(\nu;r^{(T)})
+      \ge
+      V(u)-\sum_{t=1}^T4K_t\Theta_t
+      \ge
+      \frac{V(u)}2,
+   \]
+   contradicting \((LGE6)\).  Hence not all proposed screens can fail, and a
+   positive shared top-prefix column is found.
+
+   Therefore every feasible dual \(y\) has one of the two outcomes required by
+   \cref{cor:template-search-shared-integrated-target}.  That corollary gives
+   \((SPP1)\), and \cref{cor:shared-panel-positive-separator-endpoint} gives the
+   displayed query and storage bounds.
+\end{proof}
+
 \begin{corollary}[Shared integrated cover-cost endpoint]
    \label{cor:shared-integrated-cover-cost-endpoint}
    Work in the setting of
@@ -81100,6 +81210,10 @@ vector is feasible for the same residual LP.
 LP-guided: solve the current capped residual LP, use its primal optimizer as
 the next source measure, and update the cap after a failed screen so previously
 paid source mass cannot reappear.
+\Cref{cor:lp-guided-capped-flow-exhaustion-endpoint} feeds this back into the
+ANN endpoint: it is enough to prove that the LP-guided loop either finds a
+half-threshold opened-support screen or drives the capped residual LP below
+half the exposed obstruction value before spending half that value.
 \Cref{cor:single-tail-shared-separator-endpoint} packages this into the
 current sharp proof target: every normalized exact-signature dual must either
 produce a materializable low-correlation profile record or force one certified
