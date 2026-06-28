@@ -41280,6 +41280,106 @@ query mass rather than producing a cost-effective dense filter.
    gives the stated packing version.
 \end{proof}
 
+\begin{corollary}[Average generated-cell separator for cap-overload layers]
+   \label{cor:average-generated-cell-cap-overload}
+   Work in the strong-cut, no-generated-prefix branch of
+   \cref{cor:unsponsored-cap-overload-generated-column}, and fix its dyadic
+   child-price layer
+   \[
+      L=\{\kappa\in\mathcal U:\theta\le u_\kappa<2\theta\}.
+   \]
+   Let \(\nu\) be any finite proposal law over materializable generated records.
+   A record \(R\) has a represented subset \(C_R\subseteq L\) and certified
+   one-time shared price \(P_R\), and it is valid in the sense that adding it
+   as an available generated-template subset would capture at least
+   \(\theta\) units of cut price from each \(\kappa\in C_R\).  If
+   \[
+      \E_{R\sim\nu}\bigl[\theta |C_R|-2P_R\bigr]>0,
+      \tag{AGC1}
+   \]
+   then some generated record has positive reduced cost and the no-prefix
+   residual is impossible.
+
+   Consequently every no-prefix residual obeys, for every such proposal law,
+   \[
+      \theta\sum_{\kappa\in L}h_\kappa
+      \le
+      2\E_{R\sim\nu}P_R,
+      \qquad
+      h_\kappa=\Pr_{R\sim\nu}[\kappa\in C_R].
+      \tag{AGC2}
+   \]
+   In particular, if the law covers the layer with marginal hit probability
+   \(h_\kappa\ge a_L\) for all \(\kappa\in L\), then
+   \[
+      a_L\theta |L|\le2\E_{R\sim\nu}P_R.
+      \tag{AGC3}
+   \]
+
+   Suppose additionally that each generated record has list size
+   \(H_R=|C_R|\) and certified price envelope
+   \[
+      P_R\le
+      \psi_\star\left(AH_R^\rho+\zeta H_R^{1+\rho}\right),
+      \qquad 0<\rho<1 .
+      \tag{AGC4}
+   \]
+   Then a no-prefix residual forces the average Renyi list-size obstruction
+   \[
+      a_L\theta |L|
+      \le
+      2\psi_\star
+      \left(
+         A\,\E H_R^\rho+\zeta\,\E H_R^{1+\rho}
+      \right).
+      \tag{AGC5}
+   \]
+   Equivalently, any tensorized spherical, range-reporting,
+   additive-quantization, facility, or list-decoding proposal law that violates
+   \((AGC5)\) is automatically converted by the finite verifier into one
+   deterministic positive generated merge.
+
+   Combining \((AGC3)\) with the strong-layer lower bound \((UOG6)\), every
+   surviving cap-overload layer satisfies
+   \[
+      \E_{R\sim\nu}P_R
+      \ge
+      \frac{a_L\,E^\beta(\mathcal U)}{4D(\mathcal U)}
+      \tag{AGC6}
+   \]
+   for every proposal law with marginal hit \(a_L\).  Thus the remaining
+   separator theorem may be stated as a normalized average-price/list-size
+   bound for this single layer: prove a proposal law with hit \(a_L\) and
+   expected price below the right side of \((AGC6)\), or accept that the
+   strong cut has a genuine average list-size obstruction.
+\end{corollary}
+
+\begin{proof}
+   If \((AGC1)\) holds, then at least one generated record \(R\) satisfies
+   \(\theta |C_R|>2P_R\).  Since \(R\) captures at least \(\theta\) from every
+   child in \(C_R\), the top prefix of the same generated template at
+   cardinality \(K=|C_R|\) captures at least \(\theta |C_R|\).  Therefore that
+   top prefix satisfies the positive-prefix inequality \((UCG3)\).  This
+   contradicts the no-generated-prefix branch and proves the first claim.
+
+   Taking the contrapositive, every no-prefix residual has
+   \(\E[\theta|C_R|-2P_R]\le0\).  Since
+   \[
+      \E|C_R|
+      =
+      \sum_{\kappa\in L}\Pr[\kappa\in C_R]
+      =
+      \sum_{\kappa\in L}h_\kappa,
+   \]
+   this is \((AGC2)\).  The marginal lower bound \(h_\kappa\ge a_L\) gives
+   \((AGC3)\), and substituting the price envelope \((AGC4)\) gives
+   \((AGC5)\).
+
+   Finally, \((UOG6)\) says
+   \(\theta |L|\ge E^\beta(\mathcal U)/(2D(\mathcal U))\).  Combining this
+   with \((AGC3)\) gives \((AGC6)\).
+\end{proof}
+
 \begin{corollary}[Shared-cover LP for the fractional sponsor tail]
    \label{cor:fractional-sponsor-tail-shared-cover}
    Work in the setting of
@@ -78145,6 +78245,13 @@ pays their shared storage, or a generated top prefix merges a strong
 child-price cut, or one dyadic layer survives with an explicit generated-cover
 entropy lower bound.  The remaining separator target is therefore a
 range/list/AQ/facility cover theorem for that one layer.
+\Cref{cor:average-generated-cell-cap-overload} gives the proposal-law version
+of the same target.  Any randomized generated cell law whose layer hit mass
+beats twice its expected one-time price contains a deterministic positive
+generated merge; hence a surviving strong layer forces an average
+Renyi/list-size lower bound for every tensor, range-reporting, AQ, facility, or
+list-decoding proposal law that covers the layer with nontrivial marginal
+probability.
 \Cref{cor:fractional-sponsor-tail-shared-cover} then removes duplicated large
 stars from that target by a finite shared-cover LP: either residual fractional
 star copies plus shared records have total price inside the storage allowance,
