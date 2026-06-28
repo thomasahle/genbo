@@ -64142,6 +64142,86 @@ certificate is the verified positive-gain column and the finite LP it augments.
    is immediate.
 \end{proof}
 
+\begin{corollary}[Adaptive retained residual for sequential failed screens]
+   \label{cor:adaptive-retained-failed-flow-sequence}
+   Let \(I_0\) be a finite source set with weights \(\nu_i\ge0\).  For
+   \(t=1,\ldots,T\), suppose that after seeing the previously retained set
+   \(I_{t-1}\), preprocessing chooses a fractional opened-support source system
+   \((B_t,E_t,C_t)\) whose left vertex set is \(I_{t-1}\), whose normalized
+   source loads are
+   \[
+      \frac{\mu_i^{(t)}}{C_t}=\nu_i
+      \qquad(i\in I_{t-1}),
+      \tag{ARF1}
+   \]
+   and whose degrees and clipped parameters are \(d_{t,p}\), \(K_t\), and
+   \(\Theta_t\).  Assume the chosen screen fails with
+   \[
+      \widehat{\mathfrak S}_{B_t,E_t}(C_t)\le L_t .
+      \tag{ARF2}
+   \]
+   Then, for every \(0<\eta_t<1\), the retained sets may be chosen
+   adaptively so that \(I_t\subseteq I_{t-1}\) and, for the final residual
+   \(I_T\),
+   \[
+      \sum_{i\in I_T}\nu_i
+      \ge
+      \sum_{i\in I_0}\nu_i
+      -
+      \sum_{t=1}^T\frac{L_t}{\eta_t}.
+      \tag{ARF3}
+   \]
+   Moreover every failed screen remains certified on the final residual:
+   \[
+      \sum_{\substack{p\in N_{E_t}(I_T):\\
+                      d_{t,p}>\Theta_t/(1-\eta_t)}}
+      \left(d_{t,p}-\frac{\Theta_t}{1-\eta_t}\right)
+      \le \frac{L_t}{1-\eta_t}
+      \qquad(t=1,\ldots,T).
+      \tag{ARF4}
+   \]
+
+   In the no-prefix half-threshold case \(L_t=2K_t\Theta_t\),
+   \(\eta_t=1/2\), this becomes
+   \[
+      \sum_{i\in I_T}\nu_i
+      \ge
+      \sum_{i\in I_0}\nu_i
+      -
+      \sum_{t=1}^T4K_t\Theta_t,
+      \tag{ARF5}
+   \]
+   and
+   \[
+      \sum_{\substack{p\in N_{E_t}(I_T):\\ d_{t,p}>2\Theta_t}}
+      (d_{t,p}-2\Theta_t)
+      \le4K_t\Theta_t
+      \qquad(t=1,\ldots,T).
+      \tag{ARF6}
+   \]
+
+   Thus the build phase may use failed fractional-flow screens as adaptive
+   advice.  If no positive screen fires, the only loss is the displayed
+   additive source budget, and the final source residual is simultaneously
+   clipped for every screen that was tried.
+\end{corollary}
+
+\begin{proof}
+   At step \(t\), apply
+   \cref{cor:source-retention-failed-fractional-flow} to the source system on
+   \(I_{t-1}\), and let \(I_t\) be the returned retained subset.  Then
+   \[
+      \sum_{i\in I_t}\nu_i
+      \ge
+      \sum_{i\in I_{t-1}}\nu_i-\frac{L_t}{\eta_t}.
+   \]
+   Summing these inequalities over \(t\) gives \((ARF3)\).  The same application
+   gives the raised clipped-tail bound on \(N_{E_t}(I_t)\).  Since
+   \(I_T\subseteq I_t\), the final neighborhood is smaller:
+   \(N_{E_t}(I_T)\subseteq N_{E_t}(I_t)\), so \((ARF4)\) follows.  The
+   half-threshold specialization is immediate.
+\end{proof}
+
 \begin{corollary}[Template-complete shared-cover obstruction]
    \label{cor:template-complete-shared-cover-obstruction}
    Work in the setting of
@@ -80316,6 +80396,9 @@ subsystem unless the explicit paid source term already accounts for it.
 failed source systems sharing the same normalized source measure delete source
 mass only additively, leaving one common residual that is tail-clipped for all
 of the failed proposal families.
+\Cref{cor:adaptive-retained-failed-flow-sequence} removes the last static
+restriction: the next proposal family may be chosen after seeing the previous
+failed screens, and the same additive source-deletion bound still holds.
 \Cref{cor:template-complete-shared-cover-obstruction} gives the exact finite
 LP normal form for the remaining shared-cover target: if the cover value at
 level \(D/4\) is too large, the obstruction is one dual \(u\) of value
