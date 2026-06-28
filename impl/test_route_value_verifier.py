@@ -104,6 +104,38 @@ def test_transition_density_bound_controls_waterfilled_defect():
     assert defect <= depth_bound * math.log(C) + 1e-12
 
 
+def test_balanced_full_prefix_tree_has_exponential_antichain_charge():
+    branch = 3
+    depth = 5
+    rho = 0.4
+    children = {}
+    charge = {}
+
+    frontier = [("r", 0)]
+    for level in range(depth):
+        next_frontier = []
+        for node, _ in frontier:
+            out = []
+            for i in range(branch):
+                child = f"{node}.{i}"
+                out.append((child, 1.0))
+                next_frontier.append((child, level + 1))
+            children[node] = out
+            charge[node] = branch ** (-rho * (level + 1))
+        frontier = next_frontier
+    for node, _ in frontier:
+        charge[node] = 0.0
+
+    phi = least_superharmonic_majorant(children, charge, root="r")
+    expected = max(
+        branch ** level * branch ** (-rho * (level + 1))
+        for level in range(depth)
+    )
+
+    assert np.isclose(phi["r"], expected)
+    assert phi["r"] > 1.0
+
+
 if __name__ == "__main__":
     test_saturated_value_matches_explicit_min_cut()
     test_superharmonic_majorant_is_exact_antichain_obstruction()
@@ -111,4 +143,5 @@ if __name__ == "__main__":
     test_waterfilled_allocation_has_zero_defect_when_charge_is_affordable()
     test_waterfilled_allocation_matches_scalar_threshold_formula()
     test_transition_density_bound_controls_waterfilled_defect()
+    test_balanced_full_prefix_tree_has_exponential_antichain_charge()
     print("route_value_verifier tests passed")
