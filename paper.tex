@@ -37985,6 +37985,107 @@ query mass rather than producing a cost-effective dense filter.
    cap labels.  This proves \((OCPT7)\).
 \end{proof}
 
+\begin{corollary}[Overload-cohort tail is a Hall cut]
+   \label{cor:overload-cohort-tail-hall-cut}
+   Work in the setting of
+   \cref{cor:overload-cohort-cap-prefix-tail}, and atomize the high-correlation
+   incidences of the canonical overload children as follows.  For every
+   \(\kappa\in\mathcal C\) and every
+   \[
+      (a,b)\in A_\kappa\times A_\kappa,
+      \qquad
+      \ip{a}{b}>\theta_m,
+   \]
+   create an atom \(i=(\kappa,a,b)\) with point \(p_i=b\), weight
+   \(b_i=\psi_\kappa\), and singleton admissible center set
+   \(\mathcal X_i=\{a\}\).  Use congestion \(C=1\) in
+   \cref{lem:cap-centered-transport-hall}.  Then the atom system satisfies the
+   cap-centered Hall hypotheses, and the atom subset
+   \[
+      \mathcal A_{\rm over}
+      =
+      \{(\kappa,a,b):a,b\in A_\kappa,\ \ip{a}{b}>\theta_m,
+        M_a(b)>d_a^+(b)\}
+      \tag{OCH1}
+   \]
+   has Hall excess exactly
+   \[
+      \sum_{i\in\mathcal A_{\rm over}}b_i
+      -
+      \sum_{(a,b,q)\in N(\mathcal A_{\rm over})}
+         \alpha_{b,q}a_a^+(q)
+      =
+      \mathcal W_{\rm over}.
+      \tag{OCH2}
+   \]
+   Consequently, for every \(0\le\Omega<\mathcal W_{\rm over}\), the Hall
+   condition \((COD1)\) fails with allowed tail \(\Omega\).
+
+   If the positive values of
+   \[
+      O_a(b):=\bigl(M_a(b)-d_a^+(b)\bigr)_+
+      \tag{OCH3}
+   \]
+   lie in a certified range \([O_{\min},O_{\max}]\), and
+   \[
+      J_{\rm over}
+      =
+      1+\left\lceil\log_2\frac{O_{\max}}{O_{\min}}\right\rceil ,
+      \tag{OCH4}
+   \]
+   then there are a center \(a\in P\) and dyadic level \(t\) such that the pure
+   overload star
+   \[
+      U_{a,t}^{\rm over}=\{b:O_a(b)\ge t\}
+      \tag{OCH5}
+   \]
+   is contained in \(W_a\) and obeys
+   \[
+      t|U_{a,t}^{\rm over}|
+      >
+      \frac{\Omega}{2mJ_{\rm over}} .
+      \tag{OCH6}
+   \]
+   If this star is canonicalized to one shared child, then
+   \cref{cor:cap-centered-overload-weighted-storage} applies to the selected
+   weighted atoms with no integer expansion: the cohort contributes one child
+   storage price to the reciprocal weighted tuple-congestion certificate.
+
+   Thus the \(\mathcal W_{\rm over}\) term in \((OCPT7)\) is not a new storage
+   phenomenon.  It is exactly the Hall-cut excess whose dyadic witnesses are the
+   pure overload stars already routed to the weighted shared-DAG storage
+   theorem.
+\end{corollary}
+
+\begin{proof}
+   If an atom \(i=(\kappa,a,b)\) is present, then \(M_a(b)>0\).  The proof of
+   \cref{cor:overload-cohort-cap-prefix-tail} shows that \(b\in W_a\), and
+   \(\ip{a}{b}>\theta_m\) is the required cap-centered correlation certificate
+   for \(\gamma=\theta_m\).  Hence \((CTH1)\) holds with
+   \(\mathcal X_i=\{a\}\).
+
+   For a fixed overloaded pair \((a,b)\), all atoms
+   \((\kappa,a,b)\in\mathcal A_{\rm over}\) have total weight \(M_a(b)\).  Their
+   neighboring capacity nodes are exactly the triples \((a,b,q)\) with
+   \((b,q)\in\mathcal N\) and \(a_a^+(q)>0\); their total capacity is
+   \[
+      \sum_{q:(b,q)\in\mathcal N}\alpha_{b,q}a_a^+(q)=d_a^+(b).
+   \]
+   Summing over overloaded pairs proves \((OCH2)\), because non-overloaded
+   pairs do not appear in \(\mathcal A_{\rm over}\).  If
+   \(\Omega<\mathcal W_{\rm over}\), then \((COD1)\) is violated by
+   \(\mathcal A_{\rm over}\).
+
+   Apply \cref{cor:cap-centered-overload-dichotomy} and then
+   \cref{cor:cap-centered-hall-overload-stars} to this failed Hall cut, with
+   the canonical selector \(s(i)=a\).  Since the available center set is
+   \(P\), \(|\mathcal X|\le m\), and the scaled overload \(O_x^s(p)\) in
+   \((COS2)\) is precisely \(O_a(b)\).  This gives \((OCH5)\)--\((OCH6)\).
+   The final storage statement is exactly
+   \cref{cor:cap-centered-overload-weighted-storage} for the resulting pure
+   overload star.
+\end{proof}
+
 \begin{lemma}[Certified star-panel separator]
    \label{lem:certified-star-panel-separator}
    Work in the setting of \cref{lem:star-prefix-weak-type-residual}, and assume
@@ -73695,6 +73796,12 @@ bounded by its explicit cap-centered overload plus a fixed tail
 \(2mJ_{\rm pay}\Lambda\).  Thus any surviving polynomial high-cohort storage
 obstruction must be concentrated in the same overload object already handled by
 the Hall transport and weighted shared-storage machinery.
+\Cref{cor:overload-cohort-tail-hall-cut} makes this identification exact:
+after atomizing each high-cohort incidence as a singleton-center Hall atom,
+\(\mathcal W_{\rm over}\) is precisely the Hall-cut excess of the overloaded
+pairs.  Therefore a large \(\mathcal W_{\rm over}\) automatically supplies a
+dyadic pure overload star, and after canonicalization that star is charged once
+by the weighted reciprocal-multiplicity storage theorem.
 \Cref{cor:dyadic-distinct-storage-bucket-net} rewrites that target as a dyadic
 large-child counting problem: for every recursive price scale, bound the number
 of distinct canonical bucket nets whose shared child index has that price.
