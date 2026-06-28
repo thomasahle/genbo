@@ -14156,15 +14156,27 @@ query-price overlap, storage price, and duplicate-incidence factor \(b_G\).
    \cref{cor:gaussian-paid-fiber-first-moment-closure}, and write
    \[
       A_G=
-      \frac1{m_X}\sum_{x\in X}\sum_{y\in Y}b(y)\kappa_{x,y},
-      \qquad
-      E_G=e^{-\Lambda}+\sqrt{\eta_X\eta_Y}.
+      \frac1{m_X}\sum_{x\in X}\sum_{y\in Y}b(y)\kappa_{x,y}.
       \tag{GPFS1}
    \]
-   Suppose the one-point active-load bounds \((GPFC4)\) hold.  If
+   For a margin split \(\gamma\in\mathbb R\), define
    \[
-      A_G>E_GB_Y+\mathsf P_{\rm hi},
+      E_G(\gamma)
+      =
+      e^{-\Lambda}
+      +
+      \bar p_X^{<\gamma}
+      +
+      \begin{cases}
+         B_Y^{-1}P_Y^{<s_\Lambda-\gamma},&B_Y>0,\\
+         0,&B_Y=0 .
+      \end{cases}
       \tag{GPFS2}
+   \]
+   If, for some \(\gamma\),
+   \[
+      A_G>E_G(\gamma)B_Y+\mathsf P_{\rm hi},
+      \tag{GPFS3}
    \]
    then some inherited-activation prefix from one of the radius-\(R_0\) star
    containers has positive reduced gain.
@@ -14175,31 +14187,126 @@ query-price overlap, storage price, and duplicate-incidence factor \(b_G\).
       \qquad
       \mathsf P_{\rm hi}\le \xi A_G,
       \qquad
-      E_G<(1-\xi)a .
-      \tag{GPFS3}
+      E_G(\gamma)<(1-\xi)a .
+      \tag{GPFS4}
    \]
    Then an inherited-activation prefix has positive reduced gain.
    Thus the Gaussian paid-fiber branch can be separated by three scalar
-   certificates: a paid-product lower bound \(A_G\ge aB_Y\), first-moment
-   active-load bounds making \(E_G\) inverse-polylogarithmic, and an inherited
-   prefix-price bound \(\mathsf P_{\rm hi}\le\xi A_G\).  No profile entropy or
-   layer-cake slack is part of this final separator test.
+   certificates: a paid-product lower bound \(A_G\ge aB_Y\), truncated
+   one-point margin loads making \(E_G(\gamma)\) inverse-polylogarithmic, and an
+   inherited prefix-price bound \(\mathsf P_{\rm hi}\le\xi A_G\).  No profile
+   entropy or layer-cake slack is part of this final separator test.
+
+   The total-load Cauchy bound \((GPFC3)\) is a closure estimate, not a useful
+   positive separator trigger: since
+   \(A_G\le\sqrt{B_Y\bar p_XP_Y}\), a criterion based only on the product
+   \(\bar p_XP_Y\) would be tautological.  The strict separator information is
+   exactly the margin truncation in \(E_G(\gamma)\).
 \end{corollary}
 
 \begin{proof}
    If no inherited-activation prefix has positive reduced gain, then
    \cref{cor:gaussian-paid-fiber-first-moment-closure} gives
-   \(A_G\le E_GB_Y+\mathsf P_{\rm hi}\), contradicting \((GPFS2)\).
+   \(A_G\le E_G(\gamma)B_Y+\mathsf P_{\rm hi}\), contradicting \((GPFS3)\).
 
-   Under \((GPFS3)\), \(B_Y\le A_G/a\), so
+   Under \((GPFS4)\), \(B_Y\le A_G/a\), so
    \[
-      E_GB_Y+\mathsf P_{\rm hi}
+      E_G(\gamma)B_Y+\mathsf P_{\rm hi}
       \le
-      \left(\frac{E_G}{a}+\xi\right)A_G
+      \left(\frac{E_G(\gamma)}{a}+\xi\right)A_G
       <
       A_G .
    \]
-   Hence \((GPFS2)\) holds, and the first part applies.
+   Hence \((GPFS3)\) holds, and the first part applies.
+\end{proof}
+
+\begin{corollary}[Margin-tail obstruction normal form]
+   \label{cor:margin-tail-obstruction-normal-form}
+   Work in the setting of
+   \cref{cor:gaussian-paid-fiber-separator-criterion}, and assume \(B_Y>0\).
+   Define the optimized margin-tail defect
+   \[
+      \mathsf M_G
+      =
+      \inf_{\gamma\in\mathbb R}
+      \left(
+         B_Y\bar p_X^{<\gamma}
+         +
+         P_Y^{<s_\Lambda-\gamma}
+      \right).
+      \tag{MTON1}
+   \]
+   If
+   \[
+      A_G>e^{-\Lambda}B_Y+\mathsf M_G+\mathsf P_{\rm hi},
+      \tag{MTON2}
+   \]
+   then some inherited-activation prefix from one of the radius-\(R_0\) star
+   containers has positive reduced gain.
+
+   Conversely, suppose no inherited-activation prefix has positive reduced gain,
+   and suppose
+   \[
+      A_G\ge aB_Y,
+      \qquad
+      \mathsf P_{\rm hi}\le\xi A_G
+      \qquad(a>0,\ 0\le\xi<1).
+      \tag{MTON3}
+   \]
+   Then the residual must satisfy the explicit margin-tail obstruction
+   \[
+      \mathsf M_G
+      \ge
+      \bigl((1-\xi)a-e^{-\Lambda}\bigr)B_Y .
+      \tag{MTON4}
+   \]
+   Thus after a paid-product lower bound and an inherited-price fractional bound
+   are known, the only way this Gaussian branch can survive is for every margin
+   split to leave polynomially nonnegligible active probability on one side.
+\end{corollary}
+
+\begin{proof}
+   Let
+   \[
+      \Delta=A_G-e^{-\Lambda}B_Y-\mathsf M_G-\mathsf P_{\rm hi}>0 .
+   \]
+   Choose \(\gamma\) with
+   \[
+      B_Y\bar p_X^{<\gamma}
+      +
+      P_Y^{<s_\Lambda-\gamma}
+      \le \mathsf M_G+\Delta/2 .
+   \]
+   Then
+   \[
+      A_G>
+      \left(e^{-\Lambda}
+      +\bar p_X^{<\gamma}
+      +B_Y^{-1}P_Y^{<s_\Lambda-\gamma}\right)B_Y
+      +\mathsf P_{\rm hi}
+      +
+      \Delta/2 .
+   \]
+   This gives the strict criterion \((GPFS3)\), so
+   \cref{cor:gaussian-paid-fiber-separator-criterion} applies.
+
+   For the converse, no positive prefix and
+   \cref{cor:gaussian-paid-fiber-first-moment-closure} imply, for every
+   \(\gamma\),
+   \[
+      A_G
+      \le
+      e^{-\Lambda}B_Y
+      +
+      B_Y\bar p_X^{<\gamma}
+      +
+      P_Y^{<s_\Lambda-\gamma}
+      +
+      \mathsf P_{\rm hi}.
+   \]
+   Taking the infimum over \(\gamma\), using
+   \(A_G-\mathsf P_{\rm hi}\ge(1-\xi)A_G\), and then \(A_G\ge aB_Y\), gives
+   \((MTON4)\).
 \end{proof}
 
 \begin{corollary}[Paid Renyi-cover obstruction]
@@ -14483,9 +14590,15 @@ inverse-polylogarithmic energy term, plus ordinary one-point active load, plus
 the inherited high-correlation recursive price.  This is the local algebraic
 form needed by the final dense/spherical separator.
 \Cref{cor:gaussian-paid-fiber-separator-criterion} states the contrapositive in
-the form the separator must prove: lower-bound the paid-product moment, keep the
-first moments inverse-polylogarithmic, and upper-bound the inherited prefix price
-by a strict fraction of the captured paid-product mass.
+the form the separator must prove: lower-bound the paid-product moment, keep one
+truncated margin split inverse-polylogarithmic, and upper-bound the inherited
+prefix price by a strict fraction of the captured paid-product mass.  The
+untruncated Cauchy first-moment estimate remains a closure bound, but by itself
+cannot separate because it also upper-bounds \(A_G\).
+\Cref{cor:margin-tail-obstruction-normal-form} removes the arbitrary split
+parameter: if the branch survives after paid-product mass and inherited price
+are controlled, it must exhibit a large optimized margin-tail convolution
+\(\mathsf M_G\).
 \Cref{cor:activation-inflation-assigned-cover} makes the standalone-wrapper
 replacement cost quantitative: after Renyi-price compatibility is paid, a
 surviving cover must create explicit query-activation inflation.  This is the
