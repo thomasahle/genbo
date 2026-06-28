@@ -12961,6 +12961,119 @@ query-price overlap, storage price, and duplicate-incidence factor \(b_G\).
    by assumption, so \((IACP1)\) gives \((IACP2)\).
 \end{proof}
 
+\begin{corollary}[Inherited-activation Renyi center law]
+   \label{cor:inherited-activation-renyi-center-law}
+   Work in the setting of
+   \cref{cor:inherited-activation-cover-spread-packing}.  Write \(K=|U|\).
+   Suppose no inherited-activation prefix at radius \(R_\star\) has positive
+   reduced gain.  Then every assigned certified point-centered cover
+   \[
+      U=\dot\bigcup_{x\in E}U_x,
+      \qquad
+      U_x\subseteq U\cap B(x,R_\star),
+      \qquad x\in U,
+      \tag{IACL1}
+   \]
+   with nonempty cells satisfies
+   \[
+      \sum_{x\in E}\left(\frac{|U_x|}{K}\right)^\rho
+      >
+      \frac{\psi}{\psi_\star}.
+      \tag{IACL2}
+   \]
+   In particular, if every point-centered ball \(B(x,R_\star)\), \(x\in U\), is
+   certified, \(E\) is a maximal \(R_\star\)-separated subset of \(U\), and
+   \(U_x\) are any induced nearest-center cells, the center law
+   \[
+      \lambda_x=\frac{|U_x|}{K}
+      \qquad(x\in E)
+      \tag{IACL3}
+   \]
+   is supported on an \(R_\star\)-separated set and has Renyi effective support
+   larger than \((\psi/\psi_\star)^{1/(1-\rho)}\).
+
+   Moreover, let the positive values of \(\lambda_x\) lie in
+   \([\lambda_{\min},\lambda_{\max}]\), set
+   \[
+      J_\lambda=
+      1+\left\lceil\log_2\frac{\lambda_{\max}}{\lambda_{\min}}\right\rceil,
+      \qquad
+      \theta_j=\lambda_{\min}2^j,
+      \tag{IACL4}
+   \]
+   and define dyadic center levels
+   \[
+      E_j=\{x\in E:\theta_j\le\lambda_x<2\theta_j\},
+      \qquad
+      M_j=\sum_{x\in E_j}\lambda_x .
+      \tag{IACL5}
+   \]
+   Some level \(j\) satisfies
+   \[
+      M_j^\rho |E_j|^{1-\rho}
+      >
+      \frac{1}{J_\lambda}\frac{\psi}{\psi_\star}.
+      \tag{IACL6}
+   \]
+   Since the cells are nonempty, \(J_\lambda\le1+\lceil\log_2K\rceil\).  Thus an
+   unclosed same-activation quotient supplies either the full weighted center law
+   \((\lambda_x)\), usable directly in paid-product screens with center weights,
+   or a single dyadic separated subpacking losing only a logarithmic factor in
+   the Renyi mass-entropy product.
+\end{corollary}
+
+\begin{proof}
+   Consider any assigned cover \((IACL1)\), and put \(K_x=|U_x|\).  If
+   \[
+      \sum_{x\in E}\psi_\star K_x^\rho\le\psi K^\rho,
+   \]
+   then the storage side is automatic:
+   \[
+      \sum_{x\in E}\psi_\star K_x^{1+\rho}
+      \le
+      \psi_\star K^{1+\rho}
+      \le
+      \psi K^{1+\rho}.
+   \]
+   Hence \((IAC4)\) would hold for this inherited-activation refinement, and
+   \cref{cor:inherited-activation-paid-cover} would produce a positive
+   radius-\(R_\star\) prefix, contrary to the hypothesis.  Therefore the displayed
+   query inequality fails for every assigned cover, and division by
+   \(\psi_\star K^\rho\) gives \((IACL2)\).
+
+   A maximal \(R_\star\)-separated set covers \(U\) by point-centered
+   radius-\(R_\star\) balls, so the first part applies to any induced cells.  The
+   Renyi effective-support statement is just the identity
+   \[
+      \left(\sum_{x\in E}\lambda_x^\rho\right)^{1/(1-\rho)}
+      >
+      \left(\frac{\psi}{\psi_\star}\right)^{1/(1-\rho)} .
+   \]
+
+   For the dyadic claim, the levels \(E_j\) partition the support of
+   \(\lambda\), and \((IACL2)\) gives
+   \[
+      \sum_j\sum_{x\in E_j}\lambda_x^\rho>\frac{\psi}{\psi_\star}.
+   \]
+   Thus some \(j\) has
+   \[
+      \sum_{x\in E_j}\lambda_x^\rho
+      >
+      \frac{1}{J_\lambda}\frac{\psi}{\psi_\star}.
+   \]
+   Jensen's inequality on \(E_j\) gives
+   \[
+      \sum_{x\in E_j}\lambda_x^\rho
+      \le
+      |E_j|^{1-\rho}
+      \left(\sum_{x\in E_j}\lambda_x\right)^\rho
+      =
+      |E_j|^{1-\rho}M_j^\rho ,
+   \]
+   proving \((IACL6)\).  Finally, nonempty assigned cells have
+   \(1/K\le\lambda_x\le1\), so the stated bound on \(J_\lambda\) follows.
+\end{proof}
+
 \begin{corollary}[Inherited-activation spread-star residual]
    \label{cor:inherited-activation-spread-star-residual}
    Work in a finite filter-cover dual with near-pair demands \(\mathcal N\), and
@@ -14678,6 +14791,12 @@ geometric wrapper.  \Cref{cor:inherited-activation-cover-spread-packing} then
 feeds a surviving same-activation quotient directly to the packing-entropy side:
 failure of all low-fanout certified-ball covers is exactly the separated-set
 witness required by \cref{cor:spread-packing-entropy-energy-screen}.
+\Cref{cor:inherited-activation-renyi-center-law} keeps the sharper unbalanced
+information: the Voronoi cell masses of any point-centered separated cover form
+a center law with large Renyi effective support, and one dyadic center level
+retains this mass-entropy product up to a logarithmic factor.  Thus the
+paid-product handoff below can use the natural center weights \(\lambda_x\)
+instead of first flattening the residual to a raw packing cardinality.
 \Cref{cor:inherited-activation-spread-star-residual} applies the same
 same-activation idea to entropy-energy failures: high-correlation pair mass
 dominated by the parent paid degree is paid by inherited star-prefix prices,
@@ -40001,10 +40120,11 @@ available proposal interfaces might suggest.  The lead route is now:
    \end{cases}
 \]
 The first branch is closed by the refinement and metric-entropy lemmas above.
-In the second branch, the separated packing must be fed to the
-entropy-energy/list-decoding screen and then to the total-load Gaussian
-paid-fiber separator; there the remaining obstruction is only total active
-load or a positive inherited prefix, not a new margin-splitting procedure.
+In the second branch, the separated packing should be kept as a weighted Renyi
+center law whenever possible; after an optional dyadic center-level extraction it
+feeds the entropy-energy/list-decoding screen and then the total-load Gaussian
+paid-fiber separator.  There the remaining obstruction is only total active load
+or a positive inherited prefix, not a new margin-splitting procedure.
 Thus additional clustering, quotient, sampled-center, or posterior wrappers are
 progress only if they prove one of these two facts: a positive finite-prefix
 repair, or a high-spread paid-fiber exposure bound that triggers
@@ -67360,6 +67480,11 @@ spread obstruction is not tied to one Hall-shadow normal form.
 \Cref{cor:quotient-spread-packing-entropy} then extracts a separated packing
 from any quotient that survives all smaller-radius children, giving the
 tuple-profile entropy side a concrete witness to charge.
+\Cref{cor:inherited-activation-renyi-center-law} is the same handoff in the
+same-activation branch with the unbalanced cell masses preserved: every failed
+point-centered cover yields a separated center law of large Renyi effective
+support, and one dyadic level gives a uniform subpacking with only logarithmic
+loss if the later screen needs uniform centers.
 \Cref{cor:spread-packing-entropy-energy-screen} records the corresponding
 charge: each separated-pair profile is harmless when its intersection energy
 dominates its entropy, and otherwise it is the high-correlation dense signal.
