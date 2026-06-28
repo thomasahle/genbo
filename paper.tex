@@ -11629,6 +11629,119 @@ partition ignores the bias coordinates that certify the list size.
    equivalence.
 \end{proof}
 
+\begin{corollary}[Priced residual-gap duality]
+   \label{cor:priced-residual-gap-duality}
+   Continue with the notation of \cref{cor:residual-hall-verifier}.  For a
+   nonnegative price table \(r\in\R_+^{bq}\), define the one-sided priced
+   distance from \(z\in P_u\) to the true codeword convex hull by
+   \[
+      D_u^+(z;r)
+      =
+      \inf_{x\in K_u}
+      \sum_{i=1}^b\sum_{a\in[q]}r_{i,a}(z_{i,a}-x_{i,a})_+ .
+      \tag{LNI1}
+   \]
+   Then
+   \[
+      D_u^+(z;r)
+      =
+      \sup_{0\le y\le r}
+      \left(
+         \ip{y}{z}
+         -
+         \max_{c\in C_u}\ip{y}{\iota(c)}
+      \right).
+      \tag{LNI2}
+   \]
+   Consequently,
+   \[
+      D_u^+(P_u;r)
+      :=
+      \sup_{z\in P_u}D_u^+(z;r)
+      =
+      \sup_{0\le y\le r}
+      \left(
+         \sup_{z\in P_u}\ip{y}{z}
+         -
+         \max_{c\in C_u}\ip{y}{\iota(c)}
+      \right).
+      \tag{LNI3}
+   \]
+
+   For an arbitrary objective \(Y\in\R^{bq}\), set
+   \[
+      r_Y(i,a)=Y(i,a)-\min_{a'\in[q]}Y(i,a')\ge0 .
+      \tag{LNI4}
+   \]
+   Since both \(z\) and \(K_u\) lie in the product of coordinate simplices,
+   \[
+      \sup_{z\in P_u}
+      \left(
+         \ip{Y}{z}
+         -
+         \max_{c\in C_u}\ip{Y}{\iota(c)}
+      \right)
+      \le
+      D_u^+(P_u;r_Y).
+      \tag{LNI5}
+   \]
+
+   Thus a direction-wise convex-hull gap can be certified without choosing a
+   global residual budget \(\mu\).  For the inverse-Gram selector objectives
+   \(Y_u(\theta)=-A_uG_u^+\theta\), the build-time separator only has to search
+   clipped nonnegative score tables \(0\le y\le r_{Y_u(\theta)}\) and compare
+   their relaxation optimum to their true-code optimum.
+\end{corollary}
+
+\begin{proof}
+   For a scalar \(t\), \(r\,t_+=\sup_{0\le y\le r}yt\).  Therefore, for fixed
+   \(z\),
+   \[
+      \sum_{i,a}r_{i,a}(z_{i,a}-x_{i,a})_+
+      =
+      \sup_{0\le y\le r}\ip{y}{z-x}.
+      \tag{LNI6}
+   \]
+   The sets \(K_u\) and \(\{y:0\le y\le r\}\) are polytopes, and the displayed
+   expression is a finite linear program in the variables \((x,t)\).  Its dual
+   has variables \(0\le y\le r\), so finite-dimensional LP duality gives
+   \[
+   \begin{aligned}
+      D_u^+(z;r)
+      &=
+      \inf_{x\in K_u}\sup_{0\le y\le r}\ip{y}{z-x}\\
+      &=
+      \sup_{0\le y\le r}
+      \left(
+         \ip{y}{z}-\sup_{x\in K_u}\ip{y}{x}
+      \right).
+   \end{aligned}
+      \tag{LNI7}
+   \]
+   A linear functional on \(K_u\) is maximized at a codeword vertex, proving
+   \((LNI2)\).  Taking the supremum over \(z\in P_u\) and exchanging the two
+   suprema gives \((LNI3)\).
+
+   For \((LNI5)\), fix \(z\in P_u\) and \(x\in K_u\).  Since each coordinate
+   block of \(z-x\) sums to zero,
+   \[
+      \ip{Y}{z-x}
+      =
+      \sum_{i,a}r_Y(i,a)(z_{i,a}-x_{i,a})
+      \le
+      \sum_{i,a}r_Y(i,a)(z_{i,a}-x_{i,a})_+ .
+      \tag{LNI8}
+   \]
+   Taking the infimum over \(x\in K_u\) gives
+   \[
+      \ip{Y}{z}-\max_{c\in C_u}\ip{Y}{\iota(c)}
+      \le
+      D_u^+(z;r_Y),
+      \tag{LNI9}
+   \]
+   and then taking the supremum over \(z\in P_u\) proves \((LNI5)\).
+\end{proof}
+
 \begin{corollary}[Anchor-fiber LP/SA certificate compiler]
    \label{cor:anchor-fiber-lp-sa-compiler}
    Continue with the notation of
@@ -12081,6 +12194,14 @@ partition ignores the bias coordinates that certify the list size.
    residual step can be certified by code maximization and relaxation
    maximization oracles, rather than by explicitly materializing
    \(\operatorname{conv}(C_u)\).
+
+   \Cref{cor:priced-residual-gap-duality} gives the sharper objective-wise
+   version.  Instead of fixing a coordinate budget \(\mu\) in advance, give
+   positive residual mass a price \(r\).  The exact minimum priced distance to
+   the true convex hull is dual to a clipped nonnegative score-table gap
+   \(0\le y\le r\).  For an inverse-Gram selector direction this means the
+   separator searches only the score tables that are actually visible to that
+   direction, reducing the overcharge from a single global residual envelope.
 
    \Cref{cor:well-conditioned-gram-coefficients} gives the first elementary
    path to such a theorem.  If the local subcode has a well-conditioned overlap
