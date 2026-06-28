@@ -15733,6 +15733,102 @@ query-price overlap, storage price, and duplicate-incidence factor \(b_G\).
    bound \(\overline\Phi(M)\le e^{-M^2/2}\).
 \end{proof}
 
+\begin{corollary}[Tail-rate screen for high-margin assigned residuals]
+   \label{cor:high-margin-tail-rate-screen}
+   Work in the setting of
+   \cref{cor:assigned-high-margin-endpoint-split}, and suppose the restricted
+   assigned transports on \(Y_{\rm cen}\) and \(Y_{\rm pay}\) satisfy the
+   hypotheses of \cref{cor:transport-gaussian-paid-fiber-separator} with the same
+   Gaussian filter \(U_G\), parameters \(\theta_0,\Lambda\), and inherited
+   star-prefix price model.  For
+   \[
+      Z\in\{Y_{\rm cen},Y_{\rm pay}\}
+   \]
+   let \(B_Z\), \(A_Z\), \(P_{X,Z}\), \(P_{Y,Z}\), and
+   \(\mathsf P_{{\rm hi},Z}\) denote \(B_w\), \(A_w\), \(P_X^w\), \(P_Y^w\), and
+   \(\mathsf P_{\rm hi}^w\) from
+   \cref{cor:transport-gaussian-paid-fiber-separator} after restricting to
+   \(w_{c(y),y}=b(y)\mathbf 1_{\{y\in Z\}}\).  If no inherited star prefix has
+   positive reduced gain, then every nonempty restricted side obeys
+   \[
+      A_Z
+      \le
+      \bigl(e^{-\Lambda}+\overline\Phi(M)\bigr)B_Z
+      +
+      \mathsf P_{{\rm hi},Z}.
+      \tag{HMTR1}
+   \]
+   Consequently, if
+   \[
+      \mathsf P_{{\rm hi},Z}\le \xi A_Z
+      \qquad(0\le\xi<1),
+      \tag{HMTR2}
+   \]
+   then
+   \[
+      \frac{A_Z}{B_Z}
+      \le
+      \frac{e^{-\Lambda}+\overline\Phi(M)}{1-\xi}.
+      \tag{HMTR3}
+   \]
+   Equivalently, any certified lower bound
+   \[
+      A_Z>aB_Z,
+      \qquad
+      a>\frac{e^{-\Lambda}+\overline\Phi(M)}{1-\xi},
+      \tag{HMTR4}
+   \]
+   together with \((HMTR2)\), forces a positive inherited star prefix.
+
+   Thus the high-margin residual has a sharp remaining form: after the
+   high-correlation inherited-prefix price is controlled, each endpoint side can
+   survive only with paid-product rate at the Gaussian tail scale
+   \(e^{-\Lambda}+\overline\Phi(M)\).  With
+   \(M^2,\Lambda=\Theta(\log\log n)\), this rate is inverse-polylogarithmic.
+\end{corollary}
+
+\begin{proof}
+   Restricting the assigned transport to \(Z\) preserves the domination
+   \(w_{x,y}\le b(y)\), the assigned form, and all hypotheses of
+   \cref{cor:transport-gaussian-paid-fiber-separator}.  If no inherited star
+   prefix is positive, \((TGFS10)\) gives
+   \[
+      A_Z
+      \le
+      e^{-\Lambda}B_Z+\min\{P_{X,Z},P_{Y,Z}\}
+      +\mathsf P_{{\rm hi},Z}.
+      \tag{HMTR5}
+   \]
+   If \(Z=Y_{\rm cen}\), then \(m_G(c(y))>M\) on \(Z\), and hence
+   \[
+      P_{X,Z}
+      =
+      \sum_{y\in Z}b(y)p_G(c(y))
+      \le
+      \overline\Phi(M)B_Z .
+      \tag{HMTR6}
+   \]
+   If \(Z=Y_{\rm pay}\), then \(m_G(y)>M\) on \(Z\), so
+   \[
+      P_{Y,Z}
+      =
+      \sum_{y\in Z}b(y)p_G(y)
+      \le
+      \overline\Phi(M)B_Z .
+      \tag{HMTR7}
+   \]
+   In either case
+   \(\min\{P_{X,Z},P_{Y,Z}\}\le\overline\Phi(M)B_Z\), and \((HMTR1)\) follows
+   from \((HMTR5)\).  If \(B_Z>0\) and \((HMTR2)\) holds, then
+   \[
+      (1-\xi)A_Z
+      \le
+      \bigl(e^{-\Lambda}+\overline\Phi(M)\bigr)B_Z,
+   \]
+   which is \((HMTR3)\).  The lower-bound alternative \((HMTR4)\) is the
+   contrapositive.
+\end{proof}
+
 \begin{corollary}[Gaussian paid-fiber separator criterion]
    \label{cor:gaussian-paid-fiber-separator-criterion}
    Work in the setting of
@@ -16272,6 +16368,11 @@ unaccounted memory.
 price by endpoint: paid-high mass has only \(\overline\Phi(M)\)-fraction
 one-point paid activity, while center-high mass has its Renyi query price
 activated only with the same Gaussian tail factor.
+\Cref{cor:high-margin-tail-rate-screen} composes this endpoint suppression with
+the transport Gaussian separator: after the inherited high-correlation price is
+controlled, a restricted high-margin side can survive only if its paid-product
+rate is at most \(e^{-\Lambda}+\overline\Phi(M)\), up to the controlled price
+fraction.
 \Cref{cor:gaussian-paid-fiber-separator-criterion} records the sharper
 split-optimized diagnostic form: lower-bound the paid-product moment, keep one
 truncated margin split inverse-polylogarithmic, and upper-bound the inherited
@@ -68930,9 +69031,14 @@ large Renyi query price.
 \Cref{cor:assigned-high-margin-endpoint-split} adds the endpoint accounting:
 the paid-high part is already a small one-point paid tail, and the center-high
 part carries only a Gaussian-tail fraction of its Renyi query price as active
-query load.  The remaining payment theorem therefore has to convert that
-tail-suppressed high-spread price into the existing list-decoding/entropy-energy
-certificate.
+query load.  \Cref{cor:high-margin-tail-rate-screen} turns this into the
+quantitative residual: once inherited high-correlation prefixes are priced, each
+restricted endpoint side either has only tail-scale paid-product rate
+\(e^{-\Lambda}+\overline\Phi(M)\), or a lower-bound certificate above that rate
+forces a positive prefix.  The remaining payment theorem therefore has to
+produce such a lower-bound certificate from the existing
+list-decoding/entropy-energy witness, or show that tail-rate activity is already
+budgeted.
 \Cref{cor:spread-packing-entropy-energy-screen} records the corresponding
 charge: each separated-pair profile is harmless when its intersection energy
 dominates its entropy, and otherwise it is the high-correlation dense signal.
