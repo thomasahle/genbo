@@ -38173,6 +38173,97 @@ query mass rather than producing a cost-effective dense filter.
    \cref{cor:weighted-occurrence-discounted-tuple-storage} proves feasibility.
 \end{proof}
 
+\begin{corollary}[Benefit-priced Hall-tail materialization]
+   \label{cor:benefit-priced-hall-tail-materialization}
+   Work in the setting of
+   \cref{cor:hall-tail-overload-exact-storage}.  For each seed \(z\), suppose
+   every materialized Hall-tail star \(s\in\mathcal S_z\) carries a finite
+   selected Hall-atom cohort \(\mathcal I_{z,s}\), with atom weights
+   \(b_{z,i}>0\), and points to its canonical child \(\kappa_{z,s}\).  Put
+   \[
+      \mu_{z,s}=\sum_{i\in\mathcal I_{z,s}}b_{z,i},
+      \qquad
+      M_z^{\rm tail}(\kappa)
+      =
+      \sum_{s:\,\kappa_{z,s}=\kappa}\mu_{z,s}.
+      \tag{HBP1}
+   \]
+   Suppose the canonicalizer materializes only benefit-priced children: for
+   some \(\beta\ge1\),
+   \[
+      u_{z,\kappa}\le \beta M_z^{\rm tail}(\kappa)
+      \qquad(\kappa\in\mathcal C_z^{\rm tail}).
+      \tag{HBP2}
+   \]
+   If
+   \[
+      \E_z\Gamma_z+
+      \beta\,\E_z\sum_{\kappa\in\mathcal C_z^{\rm tail}}
+         M_z^{\rm tail}(\kappa)
+      \le aS
+      \tag{HBP3}
+   \]
+   under the active first-moment hypotheses of
+   \cref{cor:weighted-occurrence-discounted-tuple-storage}, then the Hall-tail
+   overload stars satisfy the weighted tuple-storage certificate.
+
+   In particular, it is enough that every distinct child \(\kappa\) have a
+   sponsoring star \(s(\kappa)\) with \(\kappa_{z,s(\kappa)}=\kappa\) and
+   \[
+      u_{z,\kappa}\le \beta\mu_{z,s(\kappa)}.
+      \tag{HBP4}
+   \]
+   For a pure overload star supplied by
+   \cref{cor:cap-centered-overload-weighted-storage}, the checkable sufficient
+   condition
+   \[
+      u_{z,\kappa_{z,s}}\le
+      \beta\, C_s\,t_s\,|U_s|
+      \tag{HBP5}
+   \]
+   implies \((HBP4)\), where \(C_s,t_s,U_s\) are the congestion constant,
+   dyadic overload level, and star update set in \((COW2)\).
+
+   Finally, if the selected cohorts have overlap at most \(\chi_z\) against a
+   seedwise Hall-tail atom mass \(\mathsf H_z\),
+   \[
+      \sum_{\kappa\in\mathcal C_z^{\rm tail}}M_z^{\rm tail}(\kappa)
+      =
+      \sum_{s\in\mathcal S_z}\mu_{z,s}
+      \le \chi_z\mathsf H_z,
+      \tag{HBP6}
+   \]
+   then \((HBP3)\) follows from
+   \[
+      \E_z\Gamma_z+\beta\,\E_z[\chi_z\mathsf H_z]\le aS .
+      \tag{HBP7}
+   \]
+   Thus the Hall-tail storage target can be enforced by a build-time rule:
+   retain only stars whose recursive child price is sponsored by their own
+   Hall mass, and prove a bounded-overlap estimate for the retained cohorts.
+   Any remaining obstruction is an unsupported child with
+   \(u_{z,\kappa}>\beta M_z^{\rm tail}(\kappa)\), not an integer
+   materialization or pair-envelope failure.
+\end{corollary}
+
+\begin{proof}
+   By \((HBP2)\),
+   \[
+      \sum_{\kappa\in\mathcal C_z^{\rm tail}}u_{z,\kappa}
+      \le
+      \beta\sum_{\kappa\in\mathcal C_z^{\rm tail}}M_z^{\rm tail}(\kappa).
+   \]
+   Taking expectation and using \((HBP3)\) gives \((HTS4)\), so
+   \cref{cor:hall-tail-overload-exact-storage} applies.
+
+   If \((HBP4)\) holds, then
+   \(M_z^{\rm tail}(\kappa)\ge\mu_{z,s(\kappa)}\), so \((HBP2)\) follows.  For
+   a pure overload star, \((COW2)\) gives
+   \(\mu_{z,s}\ge C_s t_s|U_s|\); hence \((HBP5)\) implies \((HBP4)\).
+   The bounded-overlap implication is just the substitution of \((HBP6)\) into
+   \((HBP3)\).
+\end{proof}
+
 \begin{lemma}[Certified star-panel separator]
    \label{lem:certified-star-panel-separator}
    Work in the setting of \cref{lem:star-prefix-weak-type-residual}, and assume
@@ -73895,6 +73986,12 @@ sum exactly equal to the total distinct child storage price.  Thus the remaining
 Hall-tail theorem is not another materialization or pair-envelope problem; it is
 the geometric bound on
 \(\E_z\sum_{\kappa\in\mathcal C_z^{\rm tail}}u_{z,\kappa}\).
+\Cref{cor:benefit-priced-hall-tail-materialization} gives the matching
+build-time rule for this target: materialize only Hall-tail children whose
+recursive price is sponsored by the Hall atom mass that exposed them.  Then
+storage is paid by a bounded-overlap Hall-mass estimate; a surviving failure is
+an explicit unsupported child with too little Hall mass per unit recursive
+price.
 \Cref{cor:dyadic-distinct-storage-bucket-net} rewrites that target as a dyadic
 large-child counting problem: for every recursive price scale, bound the number
 of distinct canonical bucket nets whose shared child index has that price.
