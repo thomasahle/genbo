@@ -9376,6 +9376,99 @@ partition ignores the bias coordinates that certify the list size.
    which is \((LPT4)\).
 \end{proof}
 
+\begin{corollary}[Conditional Gaussian projection certificate]
+   \label{cor:conditional-gaussian-projection-certificate}
+   Work in the setting of
+   \cref{cor:conditional-tilted-excess-certificate}.  For a node \(u\), let
+   \[
+      L_u=\operatorname{span}\{\iota(c):c\in C_u\}\subseteq\R^{bq},
+      \tag{LPG1}
+   \]
+   and let \(\Pi_u\) and \(\Pi_u^\perp\) be the orthogonal projections onto
+   \(L_u\) and \(L_u^\perp\).  For the anchored excess set \(E_u\), define the
+   conditional projection bias
+   \[
+      B_u(w)=\sup_{h\in E_u}\ip{\Pi_u w}{\Pi_u h},
+      \tag{LPG2}
+   \]
+   and the orthogonal width/radius
+   \[
+      \omega_u^\perp
+      =
+      \E_g\sup_{h\in E_u}\ip{g}{\Pi_u^\perp h},
+      \qquad
+      r_u^\perp=\sup_{h\in E_u}\|\Pi_u^\perp h\|_2,
+      \tag{LPG3}
+   \]
+   where \(g\sim N(0,I_{bq})\).  If, almost surely for every \(u\in\mathcal T\),
+   \[
+      \exp\!\left(
+         \lambda B_u(w)
+         +\lambda\omega_u^\perp
+         +\frac{\lambda^2(r_u^\perp)^2}{2}
+      \right)
+      \le A_\lambda,
+      \tag{LPG4}
+   \]
+   then the conditional tilted-excess bound \((LPT2)\) holds with the same
+   \(A_\lambda\).  Hence, at the Gaussian tilt \(\lambda=T/b\), a
+   polylogarithmic bound in \((LPG4)\) is sufficient for the LP/SA decoder to
+   have polylogarithmic expected overhead.
+\end{corollary}
+
+\begin{proof}
+   Conditioning on \(\mathcal G_u\) is equivalent to conditioning on
+   \(\Pi_u w\): the linear functionals
+   \(\ip{w}{\iota(c)}\), \(c\in C_u\), determine the projection of \(w\) onto
+   their span \(L_u\).  The residual \(\Pi_u^\perp w\) remains an independent
+   standard Gaussian vector on \(L_u^\perp\).  Therefore, conditionally on
+   \(\mathcal G_u\),
+   \[
+      X_u(w)
+      =
+      \sup_{h\in E_u}
+      \left(
+         \ip{\Pi_u w}{\Pi_u h}
+         +
+         \ip{\Pi_u^\perp w}{\Pi_u^\perp h}
+      \right)
+      \le
+      B_u(w)+Y_u,
+      \tag{LPG5}
+   \]
+   where
+   \[
+      Y_u=\sup_{h\in E_u}\ip{g}{\Pi_u^\perp h},
+      \qquad
+      g\sim N(0,I_{bq})
+      \tag{LPG6}
+   \]
+   is independent of \(\mathcal G_u\), has expectation \(\omega_u^\perp\), and
+   is \(r_u^\perp\)-Lipschitz as a function of \(g\).  The Gaussian
+   concentration moment bound for Lipschitz functions gives
+   \[
+      \E\exp(\lambda Y_u)
+      \le
+      \exp\!\left(
+         \lambda\omega_u^\perp
+         +\frac{\lambda^2(r_u^\perp)^2}{2}
+      \right).
+      \tag{LPG7}
+   \]
+   Combining \((LPG5)\)--\((LPG7)\) yields
+   \[
+      \E[\exp(\lambda X_u(w))\mid\mathcal G_u]
+      \le
+      \exp\!\left(
+         \lambda B_u(w)
+         +\lambda\omega_u^\perp
+         +\frac{\lambda^2(r_u^\perp)^2}{2}
+      \right),
+   \]
+   so \((LPG4)\) implies \((LPT2)\).  The final sentence follows from
+   \cref{cor:conditional-tilted-excess-certificate}.
+\end{proof}
+
 \begin{remark}[LP and Sherali--Adams decoder target]
    \label{rem:lp-sa-soft-decoder-target}
    \Cref{cor:sharp-lp-soft-decoder} identifies the exact theorem needed from a
@@ -9461,6 +9554,16 @@ partition ignores the bias coordinates that certify the list size.
    makes the remaining LP/SA obstacle very specific: high pseudocodeword excess
    must not acquire more than polylogarithmic tilted moment after conditioning
    on the real codeword score process inside the same subproblem.
+
+   \Cref{cor:conditional-gaussian-projection-certificate} turns that obstacle
+   into a geometric decomposition of the anchored excess set.  After the true
+   codeword scores are revealed, only two quantities remain: the support
+   function of the excess set projected onto the real-codeword span, and the
+   Gaussian width/radius of its orthogonal projection.  This is the first point
+   where an actual Tanner/SA proof can aim at local polytope geometry: level-2
+   or level-3 constraints should make fractional excess nearly explainable by
+   nearby true codewords, shrinking the orthogonal radius, while low-rate
+   overlap should keep the projected bias from growing under the Gaussian tilt.
 \end{remark}
 
 \begin{proposition}[Sampled structured-panel compiler]
