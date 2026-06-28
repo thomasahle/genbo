@@ -42114,6 +42114,278 @@ query mass rather than producing a cost-effective dense filter.
    \cref{cor:generic-unsponsored-cut-packing-energy}.
 \end{proof}
 
+\begin{corollary}[Average generated-record screen for returned-star layers]
+   \label{cor:average-generated-record-returned-star-layer}
+   Work in the strong-cut, no-generated-prefix branch of
+   \cref{cor:returned-star-sponsor-cut-normal-form}, and fix the returned-star
+   child-price layer
+   \[
+      L_{\rm st}=\{r\in\mathcal U:\theta\le u_r<2\theta\}.
+   \]
+   Let \(\nu\) be any finite proposal law over materializable generated records
+   for this layer.  A proposed record \(R\) has represented subset
+   \(C_R\subseteq L_{\rm st}\) and certified one-time shared price \(P_R\).  It
+   is valid if adding \(R\) as a generated-template subset for the sponsor cut
+   would capture at least \(\theta\) units of cut price from every
+   \(r\in C_R\).  If
+   \[
+      \E_{R\sim\nu}\bigl[\theta |C_R|-2P_R\bigr]>0,
+      \tag{RGA1}
+   \]
+   then some generated record has positive reduced cost, so the no-prefix
+   branch is impossible.
+
+   Consequently every surviving no-prefix returned-star layer obeys, for every
+   such proposal law,
+   \[
+      \theta\sum_{r\in L_{\rm st}}h_r
+      \le
+      2\E_{R\sim\nu}P_R,
+      \qquad
+      h_r=\Pr_{R\sim\nu}[r\in C_R].
+      \tag{RGA2}
+   \]
+   In particular, if \(h_r\ge a_L\) for all \(r\in L_{\rm st}\), then
+   \[
+      a_L\theta |L_{\rm st}|
+      \le
+      2\E_{R\sim\nu}P_R .
+      \tag{RGA3}
+   \]
+
+   If each generated record has list size \(H_R=|C_R|\) and satisfies
+   \[
+      P_R\le
+      \psi_\star\left(AH_R^\rho+\zeta H_R^{1+\rho}\right),
+      \qquad 0<\rho<1 ,
+      \tag{RGA4}
+   \]
+   then a no-prefix residual with marginal hit \(a_L\) forces
+   \[
+      a_L\theta |L_{\rm st}|
+      \le
+      2\psi_\star
+      \left(A\,\E H_R^\rho+\zeta\,\E H_R^{1+\rho}\right).
+      \tag{RGA5}
+   \]
+   Combining \((RGA3)\) with \((RSF8)\), every surviving returned-star layer
+   satisfies
+   \[
+      \E_{R\sim\nu}P_R
+      \ge
+      \frac{a_L\,E^\beta_{\rm st}(\mathcal U)}
+           {4D(\mathcal U)}
+      \tag{RGA6}
+   \]
+   for every valid proposal law with marginal hit \(a_L\).
+
+   Thus a tensorized spherical, range-reporting, additive-quantization,
+   facility, list-decoding, lattice, or seeded-clustering proposal law closes
+   the returned-star layer as soon as its expected certified price is below the
+   normalized hit lower bound in \((RGA6)\).  Otherwise the layer has a genuine
+   average list-size obstruction.
+\end{corollary}
+
+\begin{proof}
+   If \((RGA1)\) holds, then at least one generated record \(R\) satisfies
+   \(\theta|C_R|>2P_R\).  Since \(R\) captures at least \(\theta\) from each
+   child in \(C_R\), the top prefix of the corresponding generated template at
+   cardinality \(|C_R|\) satisfies the positive-merge inequality \((UCG3)\).
+   This contradicts the no-generated-prefix branch.
+
+   Therefore every surviving no-prefix residual has
+   \(\E[\theta|C_R|-2P_R]\le0\).  Since
+   \[
+      \E|C_R|=\sum_{r\in L_{\rm st}}\Pr[r\in C_R]
+      =\sum_{r\in L_{\rm st}}h_r,
+   \]
+   this is \((RGA2)\).  The uniform marginal lower bound gives \((RGA3)\), and
+   substituting the price envelope \((RGA4)\) gives \((RGA5)\).  Finally,
+   \((RSF8)\) gives
+   \(\theta|L_{\rm st}|\ge
+   E^\beta_{\rm st}(\mathcal U)/(2D(\mathcal U))\), so \((RGA3)\) implies
+   \((RGA6)\).
+\end{proof}
+
+\begin{corollary}[Fractional generated cover for returned-star layers]
+   \label{cor:fractional-generated-cover-returned-star-layer}
+   Work in the setting of
+   \cref{cor:average-generated-record-returned-star-layer}, and let
+   \(\mathcal R_{\rm st,L}\) be a finite family of materializable generated
+   records for \(L_{\rm st}\).  Each \(R\in\mathcal R_{\rm st,L}\) has
+   represented subset \(C_R\subseteq L_{\rm st}\) and certified shared price
+   \(P_R\), and is valid in the sense of
+   \cref{cor:average-generated-record-returned-star-layer}.  Assume
+   \(\mathcal R_{\rm st,L}\) covers \(L_{\rm st}\).  Consider the finite
+   covering LP
+   \[
+   \begin{array}{ll}
+   \Phi_{\rm st,L}=\min
+      & \displaystyle\sum_{R\in\mathcal R_{\rm st,L}}P_R\lambda_R\\[0.8em]
+   \text{\rm subject to}
+      & \displaystyle
+        \sum_{R:\,r\in C_R}\lambda_R\ge1
+        \qquad(r\in L_{\rm st}),\\[0.8em]
+      & \lambda_R\ge0 .
+   \end{array}
+      \tag{RFG1}
+   \]
+   If
+   \[
+      \Phi_{\rm st,L}<\frac{\theta |L_{\rm st}|}{2},
+      \tag{RFG2}
+   \]
+   then some generated top prefix has positive reduced cost, so the no-prefix
+   residual is impossible.  Conversely, if the no-prefix residual survives,
+   then
+   \[
+      \Phi_{\rm st,L}\ge\frac{\theta |L_{\rm st}|}{2}
+      \ge
+      \frac{E^\beta_{\rm st}(\mathcal U)}{4D(\mathcal U)} .
+      \tag{RFG3}
+   \]
+   Equivalently, finite LP duality gives weights \(y_r\ge0\) on
+   \(r\in L_{\rm st}\) such that
+   \[
+      \sum_{r\in L_{\rm st}}y_r
+      \ge
+      \frac{\theta |L_{\rm st}|}{2},
+      \qquad
+      \sum_{r\in C_R}y_r\le P_R
+      \quad(R\in\mathcal R_{\rm st,L}).
+      \tag{RFG4}
+   \]
+
+   The weighted residual contains an almost-uniform heavy layer.  Let
+   \(W=\{r\in L_{\rm st}:y_r>0\}\).  If \(W\ne\emptyset\), put
+   \[
+      y_{\min}=\min_{r\in W}y_r,\qquad
+      y_{\max}=\max_{r\in W}y_r,\qquad
+      J_y=1+\left\lceil\log_2\frac{y_{\max}}{y_{\min}}\right\rceil .
+      \tag{RFG5}
+   \]
+   Then some dyadic layer
+   \[
+      L_0=\{r\in W:\delta\le y_r<2\delta\}
+      \tag{RFG6}
+   \]
+   satisfies
+   \[
+      \delta |L_0|
+      \ge
+      \frac{1}{2J_y}\sum_{r\in L_{\rm st}}y_r
+      \ge
+      \frac{\theta |L_{\rm st}|}{4J_y}.
+      \tag{RFG7}
+   \]
+
+   Finally suppose \(L_0\) has a certified generated cover by a partition
+   \(L_0=L_1\sqcup\cdots\sqcup L_J\) into nonempty parts.  For each \(i\) there
+   is \(R_i\in\mathcal R_{\rm st,L}\) with
+   \[
+      L_i\subseteq C_{R_i},\qquad
+      P_{R_i}\le
+      \psi_\star\left(A|L_i|^\rho+\zeta |L_i|^{1+\rho}\right),
+      \qquad 0<\rho<1 .
+      \tag{RFG8}
+   \]
+   Then every no-prefix residual obeys
+   \[
+      \delta |L_0|
+      \le
+      \psi_\star\left(AJ^{1-\rho}|L_0|^\rho
+      +\zeta |L_0|^{1+\rho}\right).
+      \tag{RFG9}
+   \]
+   Hence, if \(A>0\) and
+   \[
+      \delta>2\psi_\star\zeta |L_0|^\rho,
+      \tag{RFG10}
+   \]
+   every surviving residual has
+   \[
+      J
+      \ge
+      \left(
+         \frac{\delta |L_0|^{1-\rho}}{2\psi_\star A}
+      \right)^{1/(1-\rho)} .
+      \tag{RFG11}
+   \]
+   When \(\zeta=0\), the same conclusion holds with \(2\psi_\star A\) replaced
+   by \(\psi_\star A\).
+
+   Thus every unpaid returned-star sponsor layer has a deterministic
+   verifier-facing normal form: either a finite generated-cover LP has value
+   below \(\theta|L_{\rm st}|/2\) and a positive prefix fires, or a single
+   dyadic dual-heavy sublayer defeats all certified low-price generated covers
+   by the explicit lower bound \((RFG11)\).
+\end{corollary}
+
+\begin{proof}
+   For any feasible \(\lambda\) in \((RFG1)\),
+   \[
+      \sum_{R\in\mathcal R_{\rm st,L}}\lambda_R|C_R|
+      =
+      \sum_{r\in L_{\rm st}}\sum_{R:\,r\in C_R}\lambda_R
+      \ge |L_{\rm st}|.
+      \tag{RFG12}
+   \]
+   If \((RFG2)\) holds, choose a feasible \(\lambda\) with
+   \(\sum_RP_R\lambda_R<\theta|L_{\rm st}|/2\).  Combining with \((RFG12)\)
+   gives
+   \[
+      \sum_R\lambda_R(\theta|C_R|-2P_R)>0,
+   \]
+   so some record has \(\theta|C_R|>2P_R\).  By
+   \cref{cor:average-generated-record-returned-star-layer}, this is a positive
+   generated prefix.  Hence a surviving no-prefix residual must satisfy the
+   first inequality in \((RFG3)\), and the second is \((RSF8)\).
+
+   The primal is finite and feasible by assumption.  LP duality gives
+   \[
+   \begin{array}{ll}
+   \Phi_{\rm st,L}=\max
+      & \displaystyle\sum_{r\in L_{\rm st}}y_r\\[0.8em]
+   \text{\rm subject to}
+      & y_r\ge0,\\[0.6em]
+      & \displaystyle\sum_{r\in C_R}y_r\le P_R
+        \qquad(R\in\mathcal R_{\rm st,L}),
+   \end{array}
+      \tag{RFG13}
+   \]
+   and \((RFG3)\) supplies a dual solution satisfying \((RFG4)\).
+
+   The dyadic layers in \((RFG6)\) partition \(W\).  On a layer with parameter
+   \(\delta\), every element has \(y_r<2\delta\), so
+   \[
+      \sum_{\text{layers }L_j}\delta_j|L_j|
+      \ge
+      \frac12\sum_{r\in L_{\rm st}}y_r .
+   \]
+   One layer contributes at least the average over \(J_y\) layers, and
+   \((RFG4)\) gives \((RFG7)\).
+
+   For each cover part \(L_i\), the dual constraint in \((RFG4)\) and
+   \(L_i\subseteq C_{R_i}\) give
+   \[
+      \delta |L_i|
+      \le
+      \sum_{r\in L_i}y_r
+      \le
+      \sum_{r\in C_{R_i}}y_r
+      \le P_{R_i}.
+   \]
+   Summing over \(i\), applying \((RFG8)\), and using
+   \[
+      \sum_i|L_i|^\rho\le J^{1-\rho}|L_0|^\rho,
+      \qquad
+      \sum_i|L_i|^{1+\rho}\le |L_0|^{1+\rho},
+   \]
+   proves \((RFG9)\).  Under \((RFG10)\), the storage term is less than half
+   the left side, and rearranging gives \((RFG11)\).  If \(\zeta=0\), the
+   storage term is absent and the sharper constant follows.
+\end{proof}
+
 \begin{corollary}[Flattened panel-separator endpoint]
    \label{cor:flattened-panel-separator-endpoint}
    Work at a localized resident node with full certified panel universe
@@ -83937,6 +84209,13 @@ the explicit residual handed to the closure/sponsor separator.
 handoff: the returned-storage residual is either paid by a sponsor flow, fires
 a generated shared merge, or exposes one strong dyadic returned-star price
 layer with an explicit generated-cover/list-size lower bound.
+\Cref{cor:average-generated-record-returned-star-layer} is the proposal-facing
+form of that layer: any tensor/range/AQ/facility/list-decoding proposal with
+enough marginal hit per expected generated price is hardened to one positive
+merge.
+\Cref{cor:fractional-generated-cover-returned-star-layer} is the deterministic
+LP form: a surviving layer has one dual-heavy sublayer on which every certified
+low-price generated cover must be large.
 \Cref{cor:flattened-panel-separator-endpoint} packages this as the current
 conditional endpoint for the overload storage branch: every flattened closure
 must either be paid by its LP value or admit one such lower-capture panel; under
@@ -84162,6 +84441,11 @@ returned-storage price, instead of opening another recursive branch.
 \Cref{cor:returned-star-sponsor-cut-normal-form} then applies the sponsor-cut
 dichotomy directly to that price: weak cuts pay it after constant inflation,
 while strong cuts feed the ordinary generated-column and packing screens.
+\Cref{cor:average-generated-record-returned-star-layer} and
+\cref{cor:fractional-generated-cover-returned-star-layer} convert those strong
+cuts into the final finite separator target: prove a proposal law with
+normalized marginal hit beating expected generated price, or rule out the
+resulting dyadic dual-heavy low-cover obstruction.
 \Cref{cor:flattened-panel-separator-endpoint} turns this interface into the
 nodewise endpoint: if every flattened returned panel is either LP-paid or
 panel-separated, then the remaining child-panel residuals satisfy the positive
