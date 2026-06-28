@@ -21,6 +21,7 @@ from score_band_lp_stress import (
     local_overlap_score_band_gap,
     local_overlap_source_candidates,
     local_overlap_source_feasible,
+    local_overlap_vertex_sources,
     product_simplex_score_band_gap,
     run_local_combined_screen_trial,
     run_local_integral_trial,
@@ -510,6 +511,55 @@ def test_binary_overlap_projection_can_have_fractional_source():
     assert source_integrality_defect(source, blocks=3, alphabet=2) == 1.5
 
 
+def test_binary_overlap_vertex_enumerator_finds_fractional_triangle_source():
+    code = np.array([
+        [0, 0, 1],
+        [1, 0, 0],
+        [0, 1, 0],
+    ])
+    vertices = local_overlap_vertex_sources(
+        code,
+        local_check_scopes(3, 2),
+        random_objectives=0,
+    )
+    defects = [
+        source_integrality_defect(source, blocks=3, alphabet=2)
+        for source in vertices["sources"]
+    ]
+    all_half = np.full(6, 0.5)
+
+    assert vertices["certified"]
+    assert any(np.allclose(source, all_half) for source in vertices["sources"])
+    assert np.isclose(max(defects), 1.5)
+
+
+def test_binary_overlap_vertex_enumerator_certifies_integral_parity_projection():
+    blocks = 3
+    code = np.array([
+        word for word in itertools.product([0, 1], repeat=blocks)
+        if sum(word) % 2 == 0
+    ])
+    vertices = local_overlap_vertex_sources(
+        code,
+        local_check_scopes(blocks, blocks - 1),
+        random_objectives=0,
+    )
+    defects = [
+        source_integrality_defect(source, blocks=blocks, alphabet=2)
+        for source in vertices["sources"]
+    ]
+    code_set = {tuple(word) for word in code}
+    vertex_words = {
+        tuple(int(np.argmax(source.reshape(blocks, 2)[coord])) for coord in range(blocks))
+        for source in vertices["sources"]
+    }
+
+    assert vertices["certified"]
+    assert vertices["source_count"] == 2 ** blocks
+    assert max(defects) <= 1e-8
+    assert any(word not in code_set for word in vertex_words)
+
+
 def test_local_check_scopes_enumerates_subsets():
     assert local_check_scopes(3, 2) == [(0, 1), (0, 2), (1, 2)]
 
@@ -537,5 +587,7 @@ if __name__ == "__main__":
     test_ternary_overlap_projection_can_have_fractional_source()
     test_binary_overlap_projection_samples_integral_parity_sources()
     test_binary_overlap_projection_can_have_fractional_source()
+    test_binary_overlap_vertex_enumerator_finds_fractional_triangle_source()
+    test_binary_overlap_vertex_enumerator_certifies_integral_parity_projection()
     test_local_check_scopes_enumerates_subsets()
     print("score_band_lp_stress tests passed")

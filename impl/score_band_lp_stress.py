@@ -960,8 +960,7 @@ def local_overlap_source_candidates(
     if ambient_size <= max_integral_words:
         for word in _locally_consistent_words(code, checks):
             source = word_indicator(word, alphabet)
-            if local_overlap_source_feasible(code, checks, source, tol=tol)["feasible"]:
-                add_source(source)
+            add_source(source)
 
     for coord in range(blocks):
         for symbol in range(alphabet):
@@ -1055,6 +1054,37 @@ def _reduced_source_to_full(
     else:
         matrix[:, 0] = 1.0
     return matrix.reshape(-1)
+
+
+def _source_to_reduced(
+    source: np.ndarray,
+    blocks: int,
+    alphabet: int,
+) -> np.ndarray:
+    source = np.asarray(source, dtype=float)
+    if source.shape != (blocks * alphabet,):
+        raise ValueError("source must be a flattened block-symbol vector")
+    if alphabet == 1:
+        return np.zeros(0, dtype=float)
+    return source.reshape(blocks, alphabet)[:, :alphabet - 1].reshape(-1)
+
+
+def _reduced_objective_to_full(
+    objective: np.ndarray,
+    blocks: int,
+    alphabet: int,
+) -> np.ndarray:
+    objective = np.asarray(objective, dtype=float)
+    dim = blocks * (alphabet - 1)
+    if objective.shape != (dim,):
+        raise ValueError("reduced objective has the wrong dimension")
+    full = np.zeros(blocks * alphabet, dtype=float)
+    if alphabet > 1:
+        full.reshape(blocks, alphabet)[:, :alphabet - 1] = objective.reshape(
+            blocks,
+            alphabet - 1,
+        )
+    return full
 
 
 def _point_facets(points: np.ndarray, *, tol: float) -> list[tuple[np.ndarray, float]]:
@@ -1180,6 +1210,144 @@ def _dedupe_halfspaces(
         rows.append(normal)
         bounds.append(offset)
     return np.vstack(rows), np.array(bounds)
+
+
+def local_overlap_vertex_sources(
+    code: np.ndarray,
+    checks: list[tuple[int, ...]],
+    *,
+    random_objectives: int = 16,
+    seed: int = 0,
+    max_rounds: int = 16,
+    max_facets: int = 250_000,
+    max_integral_words: int = 100000,
+    tol: float = 1e-8,
+) -> dict[str, object]:
+    """Enumerate projected unary vertices of the overlap relaxation when tiny.
+
+    The overlap LP is used as a support-function oracle for the projected unary
+    source polytope.  Starting from a small set of oracle optima, we enumerate
+    facets of the currently found source hull and optimize each facet normal
+    over the true overlap relaxation.  If no facet is violated, the found hull
+    is exactly the projected source polytope.
+    """
+    code = np.asarray(code, dtype=int)
+    blocks = code.shape[1]
+    alphabet = int(np.max(code)) + 1
+    dim = blocks * (alphabet - 1)
+    if dim == 0:
+        source = np.ones(blocks, dtype=float)
+        return {
+            "sources": [source],
+            "source_count": 1,
+            "certified": True,
+            "round_count": 0,
+            "facet_count": 0,
+            "oracle_count": 0,
+            "max_violation": 0.0,
+            "affine_rank": 0,
+        }
+
+    sources: list[np.ndarray] = []
+    seen: set[tuple[int, ...]] = set()
+    oracle_count = 0
+    violation_tol = max(1e-7, 10.0 * tol)
+    overlap_lhs, overlap_rhs, overlap_source_matrix = _local_overlap_marginal_system(
+        code,
+        checks,
+    )
+
+    def add_source(source: np.ndarray) -> bool:
+        source = np.asarray(source, dtype=float).copy()
+        source[np.abs(source) <= tol] = 0.0
+        source[np.abs(source - 1.0) <= tol] = 1.0
+        key = _source_key(source, tol=tol)
+        if key in seen:
+            return False
+        seen.add(key)
+        sources.append(source)
+        return True
+
+    def optimize_reduced(objective: np.ndarray) -> tuple[float, np.ndarray]:
+        nonlocal oracle_count
+        full_objective = _reduced_objective_to_full(objective, blocks, alphabet)
+        _, solution = solve_equality_lp_max(
+            overlap_source_matrix.T @ full_objective,
+            overlap_lhs,
+            overlap_rhs,
+            tol=tol,
+        )
+        source = overlap_source_matrix @ solution
+        source[np.abs(source) <= tol] = 0.0
+        oracle_count += 1
+        reduced = _source_to_reduced(source, blocks, alphabet)
+        return float(objective @ reduced), source
+
+    ambient_size = alphabet ** blocks
+    if ambient_size <= max_integral_words:
+        for word in _locally_consistent_words(code, checks):
+            source = word_indicator(word, alphabet)
+            add_source(source)
+
+    _, source = optimize_reduced(np.zeros(dim, dtype=float))
+    add_source(source)
+
+    for idx in range(dim):
+        objective = np.zeros(dim, dtype=float)
+        objective[idx] = 1.0
+        _, source = optimize_reduced(objective)
+        add_source(source)
+        objective[idx] = -1.0
+        _, source = optimize_reduced(objective)
+        add_source(source)
+
+    rng = np.random.default_rng(seed)
+    for _ in range(random_objectives):
+        objective = rng.standard_normal(dim)
+        _, source = optimize_reduced(objective)
+        add_source(source)
+
+    certified = False
+    max_violation = math.inf
+    facet_count = 0
+    affine_rank = 0
+    round_count = 0
+    for round_count in range(1, max_rounds + 1):
+        reduced_points = np.vstack([
+            _source_to_reduced(source, blocks, alphabet)
+            for source in sources
+        ])
+        centered = reduced_points - reduced_points[0]
+        affine_rank = int(np.linalg.matrix_rank(centered, tol=tol))
+        facets = _point_facets(reduced_points, tol=tol)
+        facet_count = len(facets)
+        if facet_count > max_facets:
+            break
+
+        max_violation = 0.0
+        new_count = 0
+        for normal, offset in facets:
+            value, source = optimize_reduced(normal)
+            violation = value - offset
+            if violation > max_violation:
+                max_violation = float(violation)
+            if violation > violation_tol and add_source(source):
+                new_count += 1
+
+        if new_count == 0:
+            certified = max_violation <= violation_tol
+            break
+
+    return {
+        "sources": sources,
+        "source_count": len(sources),
+        "certified": certified,
+        "round_count": int(round_count),
+        "facet_count": int(facet_count),
+        "oracle_count": int(oracle_count),
+        "max_violation": float(max_violation),
+        "affine_rank": int(affine_rank),
+    }
 
 
 def _projected_local_marginal_vertex_sources(
@@ -1977,6 +2145,87 @@ def run_local_overlap_trial(
     }
 
 
+def run_local_overlap_exact_trial(
+    *,
+    n_words: int,
+    blocks: int,
+    alphabet: int,
+    seed: int,
+    xi: float,
+    checks: list[tuple[int, ...]],
+    lam: float | None = None,
+    random_objectives: int = 16,
+    max_rounds: int = 16,
+    max_facets: int = 250_000,
+) -> dict[str, float | int | tuple[int, ...] | None]:
+    if lam is None:
+        lam = math.sqrt(2.0 * math.log(n_words) / blocks)
+    code = make_balanced_code(n_words, blocks, alphabet, seed)
+    symbol_scores = centered_symbol_scores(blocks, alphabet, seed + 1009)
+    scores = codeword_scores(code, symbol_scores)
+    gaps = float(np.max(scores)) - scores
+    omega = np.exp(np.minimum(lam * gaps, 700.0)) + xi
+    vertex_data = local_overlap_vertex_sources(
+        code,
+        checks,
+        random_objectives=random_objectives,
+        seed=seed + 5000,
+        max_rounds=max_rounds,
+        max_facets=max_facets,
+    )
+    code_set = {tuple(int(symbol) for symbol in word) for word in code}
+    max_integrality_defect = 0.0
+    integral_pseudoword_count = 0
+    best_gap = -math.inf
+    best_source: np.ndarray | None = None
+    best_result: dict[str, object] | None = None
+    for source in vertex_data["sources"]:
+        source = np.asarray(source, dtype=float)
+        defect = source_integrality_defect(
+            source,
+            blocks=blocks,
+            alphabet=alphabet,
+        )
+        max_integrality_defect = max(max_integrality_defect, defect)
+        if defect <= 1e-8:
+            matrix = source.reshape(blocks, alphabet)
+            word = tuple(int(np.argmax(matrix[coord])) for coord in range(blocks))
+            if word not in code_set:
+                integral_pseudoword_count += 1
+        result = source_score_band_gap(code, omega, source=source)
+        gap = float(result["gap"])
+        if gap > best_gap:
+            best_gap = gap
+            best_source = source.copy()
+            best_result = result
+
+    if best_result is None:
+        best_gap = 0.0
+    min_chart = None
+    if isinstance(best_result, dict):
+        min_chart = best_result.get("min_chart")
+    return {
+        "seed": seed,
+        "n_words": n_words,
+        "blocks": blocks,
+        "alphabet": alphabet,
+        "lambda": float(lam),
+        "xi": float(xi),
+        "local_overlap_exact_certified": int(bool(vertex_data["certified"])),
+        "local_overlap_exact_gap": float(best_gap),
+        "local_overlap_exact_gap_over_xi": best_gap / xi if xi > 0 else math.inf,
+        "local_overlap_exact_source_count": int(vertex_data["source_count"]),
+        "local_overlap_exact_integrality_defect": float(max_integrality_defect),
+        "local_overlap_exact_integral_pseudoword_count": int(integral_pseudoword_count),
+        "local_overlap_exact_round_count": int(vertex_data["round_count"]),
+        "local_overlap_exact_facet_count": int(vertex_data["facet_count"]),
+        "local_overlap_exact_oracle_count": int(vertex_data["oracle_count"]),
+        "local_overlap_exact_max_violation": float(vertex_data["max_violation"]),
+        "local_overlap_exact_min_chart": min_chart,
+        "local_overlap_exact_source": best_source,
+    }
+
+
 def run_local_marginal_exact_trial(
     *,
     n_words: int,
@@ -2246,12 +2495,15 @@ def main() -> None:
     parser.add_argument("--local-check-size", type=int, default=None)
     parser.add_argument("--local-marginal", action="store_true")
     parser.add_argument("--local-overlap", action="store_true")
+    parser.add_argument("--local-overlap-exact", action="store_true")
     parser.add_argument("--local-marginal-exact", action="store_true")
     parser.add_argument("--local-dominance-screen", action="store_true")
     parser.add_argument("--local-residual-dominance-screen", action="store_true")
     parser.add_argument("--local-marginal-max-bases", type=int, default=1_000_000)
     parser.add_argument("--local-marginal-objectives", type=int, default=16)
     parser.add_argument("--local-marginal-closure-rounds", type=int, default=2)
+    parser.add_argument("--local-overlap-max-rounds", type=int, default=16)
+    parser.add_argument("--local-overlap-max-facets", type=int, default=250_000)
     parser.add_argument("--lambda", dest="lam", type=float, default=None)
     args = parser.parse_args()
     xi = args.xi
@@ -2403,6 +2655,64 @@ def main() -> None:
                 )
                 print(f"worst_local_overlap_clean_seed,{worst_clean['seed']}")
 
+        if args.local_overlap_exact:
+            overlap_exact_rows = [
+                run_local_overlap_exact_trial(
+                    n_words=args.n_words,
+                    blocks=args.blocks,
+                    alphabet=args.alphabet,
+                    seed=args.seed + trial,
+                    xi=xi,
+                    checks=checks,
+                    lam=args.lam,
+                    random_objectives=args.local_marginal_objectives,
+                    max_rounds=args.local_overlap_max_rounds,
+                    max_facets=args.local_overlap_max_facets,
+                )
+                for trial in range(args.trials)
+            ]
+            for key in [
+                "local_overlap_exact_certified",
+                "local_overlap_exact_gap",
+                "local_overlap_exact_gap_over_xi",
+                "local_overlap_exact_source_count",
+                "local_overlap_exact_integrality_defect",
+                "local_overlap_exact_integral_pseudoword_count",
+                "local_overlap_exact_facet_count",
+                "local_overlap_exact_oracle_count",
+            ]:
+                values = np.array([float(row[key]) for row in overlap_exact_rows])
+                print(f"{key}_mean,{float(np.mean(values))}")
+                print(f"{key}_max,{float(np.max(values))}")
+            worst_overlap_exact = max(
+                overlap_exact_rows,
+                key=lambda row: float(row["local_overlap_exact_gap_over_xi"]),
+            )
+            print(f"worst_local_overlap_exact_seed,{worst_overlap_exact['seed']}")
+            print(
+                "worst_local_overlap_exact_min_chart,"
+                f"{worst_overlap_exact['local_overlap_exact_min_chart']}"
+            )
+            clean_overlap_exact_rows = [
+                row for row, local_row in zip(overlap_exact_rows, local_rows)
+                if int(local_row["local_count"]) == 0
+            ]
+            print(f"local_overlap_exact_clean_count,{len(clean_overlap_exact_rows)}")
+            if clean_overlap_exact_rows:
+                clean_values = np.array([
+                    float(row["local_overlap_exact_gap_over_xi"])
+                    for row in clean_overlap_exact_rows
+                ])
+                print(f"local_overlap_exact_clean_gap_over_xi_mean,{float(np.mean(clean_values))}")
+                print(f"local_overlap_exact_clean_gap_over_xi_max,{float(np.max(clean_values))}")
+                clean_over_budget = int(np.sum(clean_values > 1.0 + 1e-8))
+                print(f"local_overlap_exact_clean_over_budget_count,{clean_over_budget}")
+                clean_defects = np.array([
+                    float(row["local_overlap_exact_integrality_defect"])
+                    for row in clean_overlap_exact_rows
+                ])
+                print(f"local_overlap_exact_clean_integrality_defect_max,{float(np.max(clean_defects))}")
+
         if (
             args.local_marginal_exact
             or args.local_dominance_screen
@@ -2541,13 +2851,14 @@ def main() -> None:
     elif (
         args.local_marginal
         or args.local_overlap
+        or args.local_overlap_exact
         or args.local_marginal_exact
         or args.local_dominance_screen
         or args.local_residual_dominance_screen
     ):
         parser.error(
             "--local-marginal, --local-marginal-exact, and "
-            "--local-overlap/--local-dominance-screen/"
+            "--local-overlap/--local-overlap-exact/--local-dominance-screen/"
             "--local-residual-dominance-screen "
             "require --local-check-size",
         )
