@@ -9965,6 +9965,118 @@ partition ignores the bias coordinates that certify the list size.
    \(\widehat J_u(w)\le R_u+\Delta_u\), and \((LPM5)\) implies \((LPM2)\).
 \end{proof}
 
+\begin{corollary}[Boltzmann negative-tail certificate]
+   \label{cor:boltzmann-negative-tail-certificate}
+   Continue with the notation of
+   \cref{cor:leader-shift-near-leader-certificate}, and assume
+   \[
+      \sum_j a_u(h)_j^-\le1
+      \qquad(h\in E_u)
+      \tag{LMQ1}
+   \]
+   for every branch-and-bound node \(u\).  For \(\lambda>0\), define the
+   internal negative-tail partition function
+   \[
+      \mathcal Z_{u,\lambda}(w)
+      =
+      \sup_{h\in E_u}
+      \exp\!\bigl(\lambda M(u)\kappa_u(h)\bigr)
+      \left(
+         1+
+         \sum_{j=1}^N
+         a_u(h)_j^-
+         \exp\!\bigl(\lambda(M(u)-W(c_j))\bigr)
+      \right).
+      \tag{LMQ2}
+   \]
+   If, almost surely for every node \(u\),
+   \[
+      \mathcal Z_{u,\lambda}(w)
+      \exp\!\left(
+         \lambda\omega_u^\perp
+         +\frac{\lambda^2(r_u^\perp)^2}{2}
+      \right)
+      \le A_\lambda ,
+      \tag{LMQ3}
+   \]
+   then the conditional tilted-excess bound \((LPT2)\) holds with
+   \(A_\lambda\).  Hence, at \(\lambda=T/b\), a polylogarithmic bound in
+   \((LMQ3)\) gives polylogarithmic expected overhead for the LP/SA decoder.
+
+   In particular, if for some \(R_u,\Xi_u\ge0\),
+   \[
+      M(u)\kappa_u(h)\le R_u,
+      \qquad
+      \sum_j
+      a_u(h)_j^-\exp\!\bigl(\lambda(M(u)-W(c_j))\bigr)
+      \le \Xi_u
+      \tag{LMQ4}
+   \]
+   for every \(h\in E_u\), then
+   \[
+      \mathcal Z_{u,\lambda}(w)\le e^{\lambda R_u}(1+\Xi_u).
+      \tag{LMQ5}
+   \]
+   The hard near-leader condition \((LPM4)\) is the special case
+   \(\Xi_u\le e^{\lambda\Delta_u}\).  Thus one does not need literal support
+   on near leaders; it is enough that the negative coefficient mass has small
+   Boltzmann tail under the internal gaps \(M(u)-W(c_j)\).
+\end{corollary}
+
+\begin{proof}
+   Fix \(h\in E_u\), and write
+   \[
+      b_j=a_u(h)_j^-,
+      \qquad
+      g_j=M(u)-W(c_j)\ge0,
+      \qquad
+      \beta=\sum_j b_j\le1 .
+      \tag{LMQ6}
+   \]
+   By convexity of the exponential, adding mass \(1-\beta\) at the zero gap
+   gives
+   \[
+      \exp\!\left(\lambda\sum_j b_jg_j\right)
+      \le
+      (1-\beta)+\sum_j b_j e^{\lambda g_j}
+      \le
+      1+\sum_j b_j e^{\lambda g_j}.
+      \tag{LMQ7}
+   \]
+   Therefore
+   \[
+   \begin{aligned}
+      \exp\!\left(
+         \lambda M(u)\kappa_u(h)
+         +\lambda\sum_j a_u(h)_j^-\bigl(M(u)-W(c_j)\bigr)
+      \right)
+      &\le
+      \exp\!\bigl(\lambda M(u)\kappa_u(h)\bigr)\\
+      &\quad\cdot
+      \left(
+         1+\sum_j
+         a_u(h)_j^-
+         e^{\lambda(M(u)-W(c_j))}
+      \right).
+   \end{aligned}
+      \tag{LMQ8}
+   \]
+   Taking the supremum over \(h\in E_u\) gives
+   \[
+      e^{\lambda\widehat J_u(w)}
+      \le
+      \mathcal Z_{u,\lambda}(w).
+      \tag{LMQ9}
+   \]
+   Thus \((LMQ3)\) implies \((LPM2)\), and the first claim follows from
+   \cref{cor:leader-shift-near-leader-certificate}.
+
+   The bound \((LMQ5)\) follows immediately from \((LMQ4)\).  If
+   \((LPM4)\) holds and \(\sum_j a_u(h)_j^-\le1\), then every term with
+   nonzero negative coefficient has \(g_j\le\Delta_u\), so the second
+   inequality in \((LMQ4)\) holds with \(\Xi_u=e^{\lambda\Delta_u}\).
+\end{proof}
+
 \begin{corollary}[Well-conditioned Gram coefficient bounds]
    \label{cor:well-conditioned-gram-coefficients}
    Continue with the notation of
@@ -10174,6 +10286,23 @@ partition ignores the bias coordinates that certify the list size.
    the local leader would close the projected-bias part of the LP/SA theorem
    up to the already separated orthogonal width and radius terms.  This is the
    most concrete current coding-theoretic target.
+
+   \Cref{cor:boltzmann-negative-tail-certificate} is a softer and probably
+   more realistic version of the same target.  The low-rate code theorem need
+   not prove literal zero negative mass below the near-leader window.  It is
+   enough to prove that the weighted partition function
+   \[
+      \sup_{h\in E_u}
+      e^{\lambda M(u)\kappa_u(h)}
+      \left(
+         1+\sum_j a_u(h)_j^- e^{\lambda(M(u)-W(c_j))}
+      \right)
+   \]
+   is polylogarithmic at the Gaussian tilt \(\lambda=T/b\), after the
+   orthogonal width/radius factors are included.  This turns the remaining
+   coding statement from a brittle support property into an internal
+   negative-tail estimate: far-below-leader codewords may receive negative
+   coefficient mass, but only in proportion to their exponential score gap.
 
    \Cref{cor:well-conditioned-gram-coefficients} gives the first elementary
    path to such a theorem.  If the local subcode has a well-conditioned overlap
