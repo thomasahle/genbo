@@ -39478,6 +39478,78 @@ smaller Hall cut whose paid-pair capacity is measured only inside that subset.
    so only the query Renyi cover price can fail.
 \end{proof}
 
+\begin{corollary}[Soft Renyi-cover assignment hardening]
+   \label{cor:soft-renyi-cover-assignment-hardening}
+   Work in the setting of
+   \cref{cor:renyi-cover-hall-shadow-closure}, and assume every child used by
+   the assignment law has \(\psi_i\le\psi\).  Let \(\kappa\) be any randomized
+   feasible assignment of \(L\) to the certified child family, so
+   \(p\in W_{\kappa(p)}\) almost surely for every \(p\in L\).  Put
+   \[
+      S_i=|\{p\in L:\kappa(p)=i\}|,
+      \qquad
+      \mu_i=\E S_i .
+   \]
+   If the marginal Renyi cover price satisfies
+   \[
+      \sum_i\psi_i\mu_i^\rho\le\psi K^\rho,
+      \tag{SRH1}
+   \]
+   then some deterministic assignment in the support of \(\kappa\) satisfies
+   \((RCH1)\).  Consequently some child list satisfies the positive child gain
+   condition \((PQR4)\), and the finite-prefix repair alternative holds.
+
+   In particular, a fractional feasible assignment
+   \(z_{p,i}\ge0\), supported only on pairs \(p\in W_i\), with
+   \(\sum_i z_{p,i}=1\) for every \(p\in L\), closes whenever
+   \[
+      \sum_i\psi_i
+      \left(\sum_{p\in L}z_{p,i}\right)^\rho
+      \le
+      \psi K^\rho .
+      \tag{SRH2}
+   \]
+   Thus a surviving Hall shadow must violate the marginal Renyi-cover
+   inequality for every certified soft assignment with child price factors at
+   most \(\psi\).
+\end{corollary}
+
+\begin{proof}
+   Since \(0<\rho<1\), Jensen's inequality gives
+   \[
+      \E S_i^\rho\le(\E S_i)^\rho=\mu_i^\rho
+   \]
+   for every \(i\).  Hence, for
+   \(Q(\kappa)=\sum_i\psi_iS_i^\rho\),
+   \[
+      \E Q(\kappa)
+      \le
+      \sum_i\psi_i\mu_i^\rho
+      \le
+      \psi K^\rho .
+   \]
+   Some deterministic outcome of \(\kappa\) therefore has
+   \(Q(\kappa)\le\psi K^\rho\).  For that outcome the storage inequality in
+   \((RCH1)\) is automatic, because \(\psi_i\le\psi\), the assigned parts are
+   disjoint, and
+   \[
+      \sum_i\psi_iS_i^{1+\rho}
+      \le
+      \psi\sum_iS_i^{1+\rho}
+      \le
+      \psi\left(\sum_iS_i\right)^{1+\rho}
+      =
+      \psi K^{1+\rho}.
+   \]
+   Thus the deterministic assignment satisfies \((RCH1)\), and
+   \cref{cor:renyi-cover-hall-shadow-closure} applies.
+
+   The fractional statement is obtained by independently assigning each
+   \(p\in L\) to child \(i\) with probability \(z_{p,i}\).  Then
+   \(\mu_i=\sum_{p\in L}z_{p,i}\), and the first part applies.  The residual
+   statement is the contrapositive.
+\end{proof}
+
 \begin{corollary}[Metric-entropy Hall-shadow closure]
    \label{cor:metric-entropy-hall-shadow-closure}
    Work in the setting of
@@ -39890,6 +39962,11 @@ overlapping certified cover closes as soon as some assignment of the Hall shadow
 has assigned Renyi price \(\sum_i\psi_iK_i^\rho\) and storage price below the
 parent prices.  Thus uneven cluster sizes are charged at their true concave
 cost, rather than through the worst-case fanout surrogate.
+\Cref{cor:soft-renyi-cover-assignment-hardening} removes the need to guess the
+hard assignment during proposal search: any soft membership law whose marginal
+loads have Renyi price below the parent hardens to one deterministic assigned
+cover.  This is the proof-native interpretation of \(k\)-means++,
+facility-location, or additive-quantization soft memberships.
 \Cref{cor:metric-entropy-hall-shadow-closure} turns this into a metric
 separator: any positive-gain Hall shadow with certified covering number below
 \((\Psi(R)/\Psi(R_\star))^{1/(1-\rho)}\) at radius \(R_\star\) already closes.
@@ -67272,6 +67349,10 @@ assigned-cover theorem: an overlapping cover may be used with any assignment
 whose radius-discounted Renyi query price and storage price fit below the
 parent.  The metric-entropy test is only the balanced Hölder corollary of this
 sharper objective.
+\Cref{cor:soft-renyi-cover-assignment-hardening} hardens this further from
+soft memberships to one deterministic assignment: if the marginal child loads of
+a certified soft cover have Renyi price at most the parent price, Jensen gives a
+hard assigned cover satisfying the same closure criterion.
 \Cref{lem:reduced-gain-quotient-refinement} and
 \cref{cor:low-spread-quotient-closure} prove the same statement directly for
 positive reduced-gain quotient columns in the finite dense/spherical LP, so the
