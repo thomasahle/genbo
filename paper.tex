@@ -9276,6 +9276,106 @@ partition ignores the bias coordinates that certify the list size.
    term is controlled by \((LPE3)\).
 \end{proof}
 
+\begin{corollary}[Conditional tilted-excess certificate]
+   \label{cor:conditional-tilted-excess-certificate}
+   Work in the setting of
+   \cref{cor:exponential-false-survivor-certificate}.  Let \(\mathcal T\) be
+   the full branch-and-bound node tree, and let
+   \[
+      \mathcal G_u=\sigma(W(c):c\in C_u)
+      \tag{LPT1}
+   \]
+   be the score information carried by the true codewords in node \(u\).  If
+   for some \(\lambda>0\) and \(A_\lambda\ge1\),
+   \[
+      \E\!\left[\exp(\lambda X_u(w))\mid\mathcal G_u\right]
+      \le A_\lambda
+      \qquad(u\in\mathcal T)
+      \tag{LPT2}
+   \]
+   almost surely, then
+   \[
+      \sum_u
+      \E\!\left[
+         \exp\!\bigl(\lambda(M(u)+X_u(w)-T)\bigr)
+         \mathbf 1_{\{M(u)<T-\gamma\}}
+      \right]
+      \le
+      A_\lambda(H+1)|C|\exp(-\lambda T+\lambda^2b/2).
+      \tag{LPT3}
+   \]
+   In particular, taking the Gaussian tilt \(\lambda=T/b\) gives
+   \[
+      \sum_u
+      \E\!\left[
+         \exp\!\bigl(\lambda(M(u)+X_u(w)-T)\bigr)
+         \mathbf 1_{\{M(u)<T-\gamma\}}
+      \right]
+      \le
+      O(1+\tau)\,A_\lambda(H+1)\,\E N_{\ge T},
+      \tag{LPT4}
+   \]
+   where \(T=\tau\sqrt b\).  Thus a polylogarithmic bound on
+   \(A_{T/b}\), together with \(H,B_{\rm lp}=\log^{O(1)}n\), implies the
+   polylogarithmic expected-overhead conclusion of
+   \cref{cor:exponential-false-survivor-certificate}.  This reduction uses only
+   the one-codeword marginal law \(W(c)\sim N(0,b)\), not independence among the
+   codeword scores.
+\end{corollary}
+
+\begin{proof}
+   Since \(M(u)\) and \(\mathbf 1_{\{M(u)<T-\gamma\}}\) are
+   \(\mathcal G_u\)-measurable, \((LPT2)\) gives
+   \[
+   \begin{aligned}
+      &\E\!\left[
+         \exp\!\bigl(\lambda(M(u)+X_u(w)-T)\bigr)
+         \mathbf 1_{\{M(u)<T-\gamma\}}
+      \right]\\
+      &\qquad\le
+      A_\lambda
+      \E\!\left[
+         \exp(\lambda(M(u)-T))
+         \mathbf 1_{\{M(u)<T-\gamma\}}
+      \right]\\
+      &\qquad\le
+      A_\lambda e^{-\lambda T}\E e^{\lambda M(u)} .
+   \end{aligned}
+      \tag{LPT5}
+   \]
+   Pointwise,
+   \[
+      e^{\lambda M(u)}
+      \le
+      \sum_{c\in C_u}e^{\lambda W(c)}.
+      \tag{LPT6}
+   \]
+   Summing over all nodes, each codeword appears in at most one node at each
+   depth and hence in at most \(H+1\) nodes.  Therefore
+   \[
+      \sum_u\E e^{\lambda M(u)}
+      \le
+      (H+1)\sum_{c\in C}\E e^{\lambda W(c)}
+      =
+      (H+1)|C|e^{\lambda^2b/2},
+      \tag{LPT7}
+   \]
+   proving \((LPT3)\).
+
+   For \(\lambda=T/b\), the right hand side of \((LPT3)\) becomes
+   \(A_\lambda(H+1)|C|e^{-T^2/(2b)}\).  With \(T=\tau\sqrt b\) and
+   \(Z\sim N(0,1)\), the elementary Gaussian lower tail used in
+   \cref{cor:sharp-lp-soft-decoder} gives
+   \[
+      |C|e^{-\tau^2/2}
+      \le
+      O(1+\tau)\,|C|\Pr[Z\ge\tau]
+      =
+      O(1+\tau)\,\E N_{\ge T},
+   \]
+   which is \((LPT4)\).
+\end{proof}
+
 \begin{remark}[LP and Sherali--Adams decoder target]
    \label{rem:lp-sa-soft-decoder-target}
    \Cref{cor:sharp-lp-soft-decoder} identifies the exact theorem needed from a
@@ -9347,6 +9447,20 @@ partition ignores the bias coordinates that certify the list size.
    conditioning behaves like a planted low-rate decoding problem, rather than
    like an independent extra codebook.  This is now the precise LP/SA analogue
    of the smooth-decoder theorem needed for a polylogarithmic terminal panel.
+
+   \Cref{cor:conditional-tilted-excess-certificate} isolates the most local
+   sufficient form.  The code theorem no longer has to count prefixes directly:
+   at the Gaussian tilt \(\lambda=T/b\), it is enough to prove the conditional
+   moment bound
+   \[
+      \E[\exp(\lambda X_u)\mid W(c),\,c\in C_u]\le\log^{O(1)}n
+   \]
+   for every branch subproblem that the certified decoder may expose.  The
+   ordinary true-codeword maximum is then paid by the exponential-moment
+   identity \(\sum_u e^{\lambda M(u)}\le(H+1)\sum_c e^{\lambda W(c)}\).  This
+   makes the remaining LP/SA obstacle very specific: high pseudocodeword excess
+   must not acquire more than polylogarithmic tilted moment after conditioning
+   on the real codeword score process inside the same subproblem.
 \end{remark}
 
 \begin{proposition}[Sampled structured-panel compiler]
