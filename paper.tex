@@ -12264,6 +12264,93 @@ partition ignores the bias coordinates that certify the list size.
    \cref{cor:residual-hall-verifier}.
 \end{proof}
 
+\begin{corollary}[Min-chart verifier for band-limited residuals]
+   \label{cor:min-chart-band-residual-verifier}
+   Continue with the notation of
+   \cref{cor:band-limited-residual-budget-compiler}.  Fix nonnegative prices
+   \(\omega\in\R_+^N\) on the true codewords \(c_1,\ldots,c_N\), and fix a
+   nonnegative residual budget \(\mu\in\R_+^{bq}\).  For a block-minimum chart
+   \(\tau=(\tau_1,\ldots,\tau_b)\in[q]^b\), let
+   \(\mathsf B_{u,\tau}(\mu,\omega)\) be the value of the linear program
+   \[
+      \sup_{Y\in L_u,\ m\in\R}
+      \sum_{i=1}^b\sum_{a\in[q]}
+      \mu_{i,a}\bigl(Y_{i,a}-Y_{i,\tau_i}\bigr)
+      \tag{LNP1}
+   \]
+   subject to
+   \[
+      Y_{i,a}\ge Y_{i,\tau_i}
+      \qquad(i\in[b],\ a\in[q]),
+      \tag{LNP2}
+   \]
+   and
+   \[
+      \ip{Y}{\iota(c_j)}\le m,
+      \qquad
+      m-\ip{Y}{\iota(c_j)}\le\omega_j
+      \qquad(j=1,\ldots,N).
+      \tag{LNP3}
+   \]
+   Then, with the convention that an unbounded chart has value \(+\infty\),
+   \[
+      \sup_{R\in\mathcal R_u^{\mathrm{gap}}(\omega)}\ip{R}{\mu}
+      =
+      \max_{\tau\in[q]^b}\mathsf B_{u,\tau}(\mu,\omega).
+      \tag{LNP4}
+   \]
+   Consequently, the band-mass condition \((LNO2)\) is equivalent to the finite
+   family of ordinary LP checks
+   \[
+      \mathsf B_{u,\tau}(\mu,\Omega_u)\le\Xi_u
+      \qquad(\tau\in[q]^b).
+      \tag{LNP5}
+   \]
+   A failed check is explicit: it returns a minimum chart \(\tau\), a
+   score-span table \(Y\in L_u\), and a scalar \(m\) whose block-minimum shift is
+   an \(\Omega_u\)-near-optimal score band placing more than \(\Xi_u\) mass on
+   the proposed residual budget.
+
+   This is only a build-time verifier.  In the logarithmic terminal regime
+   \(q=\log^{O(1)}n\) and \(b=\Theta(\log n/\log\log n)\), the number of charts
+   can be polynomial in \(n\), but it does not enter the retained query
+   algorithm once the residual certificate has passed.
+\end{corollary}
+
+\begin{proof}
+   First fix a chart \(\tau\) and a feasible pair \((Y,m)\) in
+   \((LNP1)\)--\((LNP3)\).  By \((LNP2)\), the block-minimum shift of \(Y\) is
+   the table
+   \[
+      R_{i,a}=Y_{i,a}-Y_{i,\tau_i}\ge0 .
+      \tag{LNP6}
+   \]
+   Since every codeword has exactly one symbol in each coordinate block,
+   replacing \(Y\) by \(R\) subtracts the same scalar
+   \(\sum_iY_{i,\tau_i}\) from every true-codeword score.  Therefore the deficit
+   profile is unchanged, and \((LNP3)\) gives
+   \[
+      \max_k\ip{R}{\iota(c_k)}-\ip{R}{\iota(c_j)}
+      \le \omega_j
+      \qquad(j=1,\ldots,N).
+      \tag{LNP7}
+   \]
+   Thus \(R\in\mathcal R_u^{\mathrm{gap}}(\omega)\), and the objective in
+   \((LNP1)\) is exactly \(\ip{R}{\mu}\).  Hence every chart value is at most the
+   left side of \((LNP4)\).
+
+   Conversely, take any \(R\in\mathcal R_u^{\mathrm{gap}}(\omega)\).  By
+   definition, \(R=Y^\circ\) for some \(Y\in L_u\).  Choose
+   \(\tau_i\in\arg\min_{a\in[q]}Y_{i,a}\) in every coordinate block, and set
+   \(m=\max_j\ip{Y}{\iota(c_j)}\).  Then \((Y,m)\) is feasible for the chart
+   \(\tau\): \((LNP2)\) holds by the choice of \(\tau\), and \((LNP3)\) is just
+   the bound \(\Delta_Y(c_j)=\Delta_R(c_j)\le\omega_j\).  Its objective equals
+   \(\ip{Y^\circ}{\mu}=\ip{R}{\mu}\).  Taking the supremum over \(R\) proves the
+   reverse inequality in \((LNP4)\).  Substituting
+   \(\omega=\Omega_u\) gives \((LNP5)\), and the failed-check statement is the
+   displayed optimizer of a violated chart LP.
+\end{proof}
+
 \begin{corollary}[Anchor-fiber LP/SA certificate compiler]
    \label{cor:anchor-fiber-lp-sa-compiler}
    Continue with the notation of
@@ -12592,6 +12679,11 @@ partition ignores the bias coordinates that certify the list size.
    \(\Omega\)-near-optimal score band \(R\).  This turns the LP/SA target into a
    residual localization theorem: fractional mass may remain, but it must avoid
    all score bands that are competitive with the current true-codeword frontier.
+   \Cref{cor:min-chart-band-residual-verifier} removes the remaining informal
+   quantifier in this statement: the worst competitive score band is found by a
+   finite block-minimum chart LP.  Thus a failed residual localization proof
+   returns an actual chart and score-span table, not just an abstract
+   pseudocodeword-spectrum obstruction.
 
    \Cref{cor:leader-shift-near-leader-certificate} gives the clean terminal
    version of this idea when scalar leakage is killed exactly, or otherwise
