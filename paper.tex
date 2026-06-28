@@ -16056,6 +16056,87 @@ query-price overlap, storage price, and duplicate-incidence factor \(b_G\).
    \(\eta\ge(\log n)^{-K}\).
 \end{proof}
 
+\begin{corollary}[High-margin margin ladder reduction]
+   \label{cor:high-margin-margin-ladder}
+   Work in the setting of \cref{cor:two-cutoff-high-margin-window}.  Let
+   \[
+      M=M_0<M_1<\cdots<M_J=U
+      \tag{HML1}
+   \]
+   be any finite margin ladder.  For \(1\le j\le J\), define the margin band
+   \[
+      Y_j=
+      \{y\in Y_{>M}:m_G(c(y))\le M_j,\ m_G(y)\le M_j,
+      \max\{m_G(c(y)),m_G(y)\}>M_{j-1}\},
+      \tag{HML2}
+   \]
+   and put \(B_j=\sum_{y\in Y_j}b(y)\).  Let
+   \[
+      Y_{>U}=\{y\in Y_{>M}:m_G(c(y))>U\ \text{or}\ m_G(y)>U\}.
+      \tag{HML3}
+   \]
+   Then
+   \[
+      B_{>M}=\sum_{j=1}^J B_j+B_{>U}.
+      \tag{HML4}
+   \]
+   For every nonempty band \(Y_j\), its restricted assigned transport has
+   transported hit moment
+   \[
+      A_j\ge
+      \frac14\overline\Phi\!\left(\frac{M_j}{\sqrt{\theta_-}}\right)B_j,
+      \tag{HML5}
+   \]
+   and success-normalized endpoint loads bounded by
+   \[
+      \frac{P_{X,j}}{A_j},\frac{P_{Y,j}}{A_j}
+      \le
+      \frac{4}{\overline\Phi(M_j/\sqrt{\theta_-})}.
+      \tag{HML6}
+   \]
+
+   Consequently, for any \(0<\eta<1/J\), either some band has
+   \(B_j\ge\eta B_{>M}\), in which case it gives hit mass at least
+   \[
+      \frac{\eta}{4}
+      \overline\Phi\!\left(\frac{M_j}{\sqrt{\theta_-}}\right)B_{>M}
+      \tag{HML7}
+   \]
+   with normalized endpoint load bounded by \((HML6)\), or else
+   \[
+      B_{>U}>(1-J\eta)B_{>M}.
+      \tag{HML8}
+   \]
+   In the second alternative, the residual \(Y_{>U}\), split at level \(U\),
+   satisfies the endpoint-tail and center-price estimates
+   \((HMW8)\)--\((HMW10)\) from
+   \cref{cor:two-cutoff-high-margin-window}.
+
+   In particular, if \(U^2\le C\log\log n\), \(J\le(\log n)^K\), and
+   \(\eta=1/(2J)\), then either some ladder band is an
+   inverse-polylogarithmic hit subtransport with polylogarithmic normalized
+   endpoint load, or at least half of the high-margin residual lies above the
+   final cutoff \(U\).
+\end{corollary}
+
+\begin{proof}
+   The sets \(Y_1,\ldots,Y_J,Y_{>U}\) are disjoint and partition \(Y_{>M}\) by
+   the value of \(\max\{m_G(c(y)),m_G(y)\}\), proving \((HML4)\).
+
+   On \(Y_j\), both assigned endpoint margins are at most \(M_j\), and the
+   correlation lower bound inherited from \((HMW1)\) holds.  Applying
+   \cref{cor:upper-margin-assigned-transport-load} with cutoff \(M_j\) gives
+   \((HML5)\)--\((HML6)\).
+
+   If no band has \(B_j\ge\eta B_{>M}\), then
+   \(\sum_jB_j<J\eta B_{>M}\).  Using \((HML4)\) gives \((HML8)\).  The tail
+   estimates for \(Y_{>U}\) are exactly the second part of
+   \cref{cor:two-cutoff-high-margin-window} at cutoff \(U\).
+
+   The final specialization follows from \((HML7)\), the Gaussian tail-ratio
+   estimate used in \((UATL4)\), and \(1/(2J)\ge(2\log^K n)^{-1}\).
+\end{proof}
+
 \begin{corollary}[Gaussian paid-fiber separator criterion]
    \label{cor:gaussian-paid-fiber-separator-criterion}
    Work in the setting of
@@ -16609,6 +16690,10 @@ high-margin exposure.
 any high-margin mass with both endpoints below a larger cutoff \(U\) is again an
 ordinary upper-margin assigned subtransport, while only the mass above \(U\)
 remains in the endpoint-tail residual.
+\Cref{cor:high-margin-margin-ladder} packages this into a finite scan over
+margin bands: either one band already carries inverse-polylogarithmic mass and
+is usable, or a constant fraction of the high-margin residual is pushed beyond
+the final cutoff.
 \Cref{cor:gaussian-paid-fiber-separator-criterion} records the sharper
 split-optimized diagnostic form: lower-bound the paid-product moment, keep one
 truncated margin split inverse-polylogarithmic, and upper-bound the inherited
@@ -69283,6 +69368,10 @@ bounded high-margin window \((M,U]\) is already a usable inverse-polylog
 subtransport when it carries inverse-polylog mass, so the genuine hard residual
 may be pushed to an arbitrarily chosen very-high cutoff \(U\) within the
 \(O(\sqrt{\log\log n})\) margin range.
+\Cref{cor:high-margin-margin-ladder} removes the remaining cutoff choice: a
+polylogarithmic-size ladder either finds such a bounded window or leaves a
+constant fraction of the residual above the final cutoff, where the same
+endpoint-tail suppression applies.
 \Cref{cor:spread-packing-entropy-energy-screen} records the corresponding
 charge: each separated-pair profile is harmless when its intersection energy
 dominates its entropy, and otherwise it is the high-correlation dense signal.
