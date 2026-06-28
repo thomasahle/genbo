@@ -12351,6 +12351,123 @@ partition ignores the bias coordinates that certify the list size.
    displayed optimizer of a violated chart LP.
 \end{proof}
 
+\begin{corollary}[Deficit-transport dual for min charts]
+   \label{cor:min-chart-deficit-transport-dual}
+   In the setting of \cref{cor:min-chart-band-residual-verifier}, define the
+   block-centered residual vector
+   \[
+      d_\tau(\mu)_{i,a}
+      =
+      \mu_{i,a}
+      -
+      \mathbf 1_{\{a=\tau_i\}}\sum_{\alpha\in[q]}\mu_{i,\alpha}.
+      \tag{LNQ1}
+   \]
+   Let
+   \[
+      K_\tau(\alpha)
+      =
+      \sum_{i=1}^b\sum_{a\in[q]}
+      \alpha_{i,a}\bigl(e_{i,a}-e_{i,\tau_i}\bigr),
+      \qquad
+      \alpha_{i,a}\ge0,
+      \tag{LNQ2}
+   \]
+   where \(e_{i,a}\) is the coordinate-symbol basis vector.  Then the chart
+   value in \((LNP1)\) equals
+   \[
+      \mathsf B_{u,\tau}(\mu,\omega)
+      =
+      \inf
+      \left\{
+         \sum_{j=1}^N\omega_j\theta_j^+:
+         \begin{array}{l}
+            \theta\in\R^N,\ \sum_j\theta_j=0,\ \alpha\ge0,\\
+            d_\tau(\mu)+K_\tau(\alpha)+A_u\theta\in L_u^\perp
+         \end{array}
+      \right\}.
+      \tag{LNQ3}
+   \]
+   Equivalently, after projecting onto the true-codeword span,
+   \[
+      \Pi_u\bigl(d_\tau(\mu)+K_\tau(\alpha)\bigr)
+      =
+      -A_u\theta .
+      \tag{LNQ4}
+   \]
+   Thus the condition
+   \(\mathsf B_{u,\tau}(\mu,\Omega_u)\le\Xi_u\) has a purely finite certificate:
+   the block-centered residual can be neutralized, modulo directions orthogonal
+   to all true codewords, by upward moves away from the chart minima and by a
+   zero-total signed combination of true codewords whose positive part costs at
+   most \(\Xi_u\) under the near-leader prices \(\Omega_u\).
+
+   Combining this with \cref{cor:min-chart-band-residual-verifier}, the
+   band-limited residual condition \((LNO2)\) is equivalent to the existence,
+   for every chart \(\tau\), of such \((\alpha,\theta)\) with
+   \[
+      \sum_j\Omega_{u,j}\theta_j^+\le\Xi_u .
+      \tag{LNQ5}
+   \]
+\end{corollary}
+
+\begin{proof}
+   Write the objective in \((LNP1)\) as \(\ip{d_\tau(\mu)}{Y}\).  Use the
+   inequality form
+   \[
+      Y_{i,\tau_i}-Y_{i,a}\le0,\qquad
+      \ip{Y}{\iota(c_j)}-m\le0,\qquad
+      m-\ip{Y}{\iota(c_j)}-\omega_j\le0 .
+      \tag{LNQ6}
+   \]
+   For a maximization problem, nonnegative multipliers
+   \(\alpha_{i,a},\beta_j,\gamma_j\) give the upper-bound Lagrangian
+   \[
+   \begin{aligned}
+      \ip{d_\tau(\mu)}{Y}
+      &-
+      \sum_{i,a}\alpha_{i,a}(Y_{i,\tau_i}-Y_{i,a})\\
+      &-
+      \sum_j\beta_j(\ip{Y}{\iota(c_j)}-m)
+      -
+      \sum_j\gamma_j(m-\ip{Y}{\iota(c_j)}-\omega_j).
+   \end{aligned}
+      \tag{LNQ7}
+   \]
+   The coefficient of \(m\) is \(\sum_j\beta_j-\sum_j\gamma_j\), so finite
+   supremum over \(m\in\R\) requires these sums to be equal.  The coefficient of
+   \(Y\), restricted to \(Y\in L_u\), is
+   \[
+      d_\tau(\mu)+K_\tau(\alpha)+A_u(\gamma-\beta).
+      \tag{LNQ8}
+   \]
+   Finite supremum over \(Y\in L_u\) is therefore equivalent to this vector
+   lying in \(L_u^\perp\).  Under these two equalities, the Lagrangian supremum
+   is \(\sum_j\omega_j\gamma_j\).  Linear-programming duality gives
+   \[
+      \mathsf B_{u,\tau}(\mu,\omega)
+      =
+      \inf
+      \left\{
+         \sum_j\omega_j\gamma_j:
+         \begin{array}{l}
+         \alpha,\beta,\gamma\ge0,\\
+         \sum_j\beta_j=\sum_j\gamma_j,\\
+         d_\tau(\mu)+K_\tau(\alpha)+A_u(\gamma-\beta)\in L_u^\perp
+         \end{array}
+      \right\}.
+      \tag{LNQ9}
+   \]
+   Set \(\theta=\gamma-\beta\).  The equality of the total masses gives
+   \(\sum_j\theta_j=0\).  Conversely, for any zero-sum \(\theta\), the cheapest
+   nonnegative decomposition is \(\gamma_j=\theta_j^+\) and
+   \(\beta_j=\theta_j^-\).  Substituting this in \((LNQ9)\) proves \((LNQ3)\).
+   Since \(A_u\theta\in L_u\), the orthogonality condition is equivalent to the
+   projected identity \((LNQ4)\).  Finally, applying \((LNQ3)\) with
+   \(\omega=\Omega_u\) in every chart and using
+   \cref{cor:min-chart-band-residual-verifier} proves the last assertion.
+\end{proof}
+
 \begin{corollary}[Anchor-fiber LP/SA certificate compiler]
    \label{cor:anchor-fiber-lp-sa-compiler}
    Continue with the notation of
@@ -12684,6 +12801,11 @@ partition ignores the bias coordinates that certify the list size.
    finite block-minimum chart LP.  Thus a failed residual localization proof
    returns an actual chart and score-span table, not just an abstract
    pseudocodeword-spectrum obstruction.
+   \Cref{cor:min-chart-deficit-transport-dual} gives the matching positive
+   certificate: for every chart, the block-centered residual must be neutralized
+   by free upward moves away from chart minima plus a zero-total signed
+   combination of true codewords whose positive part has small near-leader
+   price.  This is the finite transport form of the remaining code theorem.
 
    \Cref{cor:leader-shift-near-leader-certificate} gives the clean terminal
    version of this idea when scalar leakage is killed exactly, or otherwise
