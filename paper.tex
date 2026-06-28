@@ -10077,6 +10077,131 @@ partition ignores the bias coordinates that certify the list size.
    inequality in \((LMQ4)\) holds with \(\Xi_u=e^{\lambda\Delta_u}\).
 \end{proof}
 
+\begin{corollary}[Cumulative internal-tail certificate]
+   \label{cor:cumulative-internal-tail-certificate}
+   Continue with the notation of
+   \cref{cor:boltzmann-negative-tail-certificate}.  For \(h\in E_u\), define
+   the cumulative negative mass below the local leader by
+   \[
+      A_{u,h}(s)
+      =
+      \sum_{\substack{j:\\ M(u)-W(c_j)\ge s}} a_u(h)_j^-,
+      \qquad s\ge0 .
+      \tag{LMR1}
+   \]
+   Assume \(\sum_j a_u(h)_j^-\le1\).  Then
+   \[
+      \sum_j
+      a_u(h)_j^-\exp\!\bigl(\lambda(M(u)-W(c_j))\bigr)
+      \le
+      1+\lambda\int_0^\infty e^{\lambda s}A_{u,h}(s)\,ds .
+      \tag{LMR2}
+   \]
+   Consequently, if for every \(h\in E_u\),
+   \[
+      M(u)\kappa_u(h)\le R_u,
+      \qquad
+      \lambda\int_0^\infty e^{\lambda s}A_{u,h}(s)\,ds\le I_u ,
+      \tag{LMR3}
+   \]
+   then
+   \[
+      \mathcal Z_{u,\lambda}(w)
+      \le
+      e^{\lambda R_u}(2+I_u).
+      \tag{LMR4}
+   \]
+   In particular, the exponential tail condition
+   \[
+      A_{u,h}(s)\le C_u e^{-(\lambda+\eta_u)s}
+      \qquad(s\ge0,\ h\in E_u)
+      \tag{LMR5}
+   \]
+   gives
+   \[
+      \mathcal Z_{u,\lambda}(w)
+      \le
+      e^{\lambda R_u}\left(2+\frac{\lambda C_u}{\eta_u}\right).
+      \tag{LMR6}
+   \]
+
+   There is also a finite dyadic form.  For a mesh \(\delta>0\), set
+   \[
+      B_{u,h,k}
+      =
+      \sum_{\substack{j:\\ k\delta\le M(u)-W(c_j)<(k+1)\delta}}
+      a_u(h)_j^- .
+      \tag{LMR7}
+   \]
+   If
+   \[
+      M(u)\kappa_u(h)\le R_u,
+      \qquad
+      \sum_{k\ge0} e^{\lambda(k+1)\delta}B_{u,h,k}\le I_u
+      \tag{LMR8}
+   \]
+   for every \(h\in E_u\), then
+   \[
+      \mathcal Z_{u,\lambda}(w)\le e^{\lambda R_u}(1+I_u).
+      \tag{LMR9}
+   \]
+   Hence it is enough to prove the cumulative dyadic decay
+   \[
+      A_{u,h}(k\delta)\le C_u e^{-(\lambda+\eta_u)k\delta}
+      \qquad(k=0,1,\ldots)
+      \tag{LMR10}
+   \]
+   because then \((LMR8)\) holds with
+   \[
+      I_u=
+      \frac{e^{\lambda\delta}C_u}{1-e^{-\eta_u\delta}} .
+      \tag{LMR11}
+   \]
+\end{corollary}
+
+\begin{proof}
+   Put \(g_j=M(u)-W(c_j)\ge0\) and \(b_j=a_u(h)_j^-\).  The layer-cake identity
+   for the finite nonnegative family \(\{g_j\}\) gives
+   \[
+      e^{\lambda g_j}
+      =
+      1+\lambda\int_0^{g_j}e^{\lambda s}\,ds .
+      \tag{LMR12}
+   \]
+   Summing with weights \(b_j\) yields
+   \[
+      \sum_j b_j e^{\lambda g_j}
+      =
+      \sum_j b_j
+      +
+      \lambda\int_0^\infty
+      e^{\lambda s}
+      \sum_{j:g_j\ge s}b_j\,ds .
+      \tag{LMR13}
+   \]
+   Since \(\sum_j b_j\le1\), this is \((LMR2)\).  Combining \((LMR2)\) with
+   \((LMQ2)\) proves \((LMR4)\), and \((LMR6)\) follows by integrating
+   \(e^{-\eta_us}\).
+
+   For the dyadic statement,
+   \[
+      \sum_j b_je^{\lambda g_j}
+      \le
+      \sum_{k\ge0}e^{\lambda(k+1)\delta}B_{u,h,k}.
+      \tag{LMR14}
+   \]
+   Thus \((LMR8)\) implies \((LMR9)\).  Finally \(B_{u,h,k}\le A_{u,h}(k\delta)\),
+   so \((LMR10)\) gives
+   \[
+      \sum_{k\ge0}e^{\lambda(k+1)\delta}B_{u,h,k}
+      \le
+      e^{\lambda\delta}C_u\sum_{k\ge0}e^{-\eta_uk\delta}
+      =
+      \frac{e^{\lambda\delta}C_u}{1-e^{-\eta_u\delta}},
+   \]
+   proving \((LMR11)\).
+\end{proof}
+
 \begin{corollary}[Well-conditioned Gram coefficient bounds]
    \label{cor:well-conditioned-gram-coefficients}
    Continue with the notation of
@@ -10303,6 +10428,17 @@ partition ignores the bias coordinates that certify the list size.
    coding statement from a brittle support property into an internal
    negative-tail estimate: far-below-leader codewords may receive negative
    coefficient mass, but only in proportion to their exponential score gap.
+
+   \Cref{cor:cumulative-internal-tail-certificate} rewrites this estimate in
+   the form a code proof can realistically certify.  For each anchored excess
+   \(h\), let \(A_{u,h}(s)\) be the negative coefficient mass on true
+   codewords lying at least \(s\) below the local leader.  It is enough that
+   \(A_{u,h}(s)\) decay slightly faster than \(e^{-\lambda s}\) at the
+   Gaussian tilt, or equivalently that a dyadic shell sum of these cumulative
+   tails be polylogarithmic.  This is the current sharp target: prove an
+   exponential internal-tail decay theorem for negative Gram coefficients of
+   low-rate LP/SA pseudocodeword excesses, together with the already separated
+   scalar-leakage and orthogonal-residual bounds.
 
    \Cref{cor:well-conditioned-gram-coefficients} gives the first elementary
    path to such a theorem.  If the local subcode has a well-conditioned overlap
