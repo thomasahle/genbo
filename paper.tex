@@ -10764,6 +10764,103 @@ partition ignores the bias coordinates that certify the list size.
    \((LMY4)\Rightarrow(LMW1)\).
 \end{proof}
 
+\begin{corollary}[Aggregate mobility selector certificate]
+   \label{cor:aggregate-mobility-selector-certificate}
+   Continue with the notation of
+   \cref{cor:mobility-envelope-influence-compiler}.  For a nonnegative selector
+   \(\theta\in\R_+^N\), define the aggregate inverse-Gram objective
+   \[
+      Y_u(\theta)=-A_uG_u^+\theta
+      \tag{LMZ1}
+   \]
+   and the mobility support envelope
+   \[
+      \mathfrak M_{u,c}(\theta)
+      =
+      \sum_{i=1}^b\sum_{a\ne c_i}
+      \mu_{u,c}(i,a)
+      \bigl(Y_u(\theta)(i,a)-Y_u(\theta)(i,c_i)\bigr)_+ .
+      \tag{LMZ2}
+   \]
+   Then
+   \[
+      \Phi_{u,c}\!\left(-A_uG_u^+\theta\right)
+      \le
+      \mathfrak M_{u,c}(\theta)
+      \qquad(c\in C_u,\ \theta\ge0).
+      \tag{LMZ3}
+   \]
+
+   Consequently the dyadic selector certificate \((LMT6)\) follows if
+   \[
+      \sup_{\theta\in\mathcal R_u(k\delta)}
+      \mathfrak M_{u,c}(\theta)
+      \le
+      C_u e^{-(\lambda+\eta_u)k\delta}
+      \qquad(k\ge0,\ c\in C_u).
+      \tag{LMZ4}
+   \]
+
+   There is also a direct Boltzmann form.  Put
+   \[
+      w_j=\exp(\lambda(M(u)-W(c_j))).
+      \tag{LMZ5}
+   \]
+   If
+   \[
+      \sup_{0\le\theta_j\le w_j}
+      \mathfrak M_{u,c}(\theta)
+      \le \Xi_u
+      \qquad(c\in C_u),
+      \tag{LMZ6}
+   \]
+   then every anchored excess \(h\in E_u\) satisfies \((LMW2)\).  Hence, under
+   the scalar and orthogonal hypotheses \((LMW3)\)--\((LMW4)\), the conditional
+   tilted-excess bound \((LPT2)\) follows with \(A_\lambda\).
+
+   This is the aggregate version of the mobility route.  Since
+   \((x+y)_+\le x_++y_+\), the singleton mobility bound \((LMY4)\) implies
+   \((LMZ6)\).  The converse need not hold: \((LMZ6)\) keeps cancellations among
+   the columns of \(G_u^+\) before the positive part is taken.
+\end{corollary}
+
+\begin{proof}
+   Fix \(z\in P_{u,c}\).  The same block-simplex calculation as in \((LMY5)\),
+   with \(y_{u,j}\) replaced by the aggregate objective \(Y_u(\theta)\), gives
+   \[
+      \ip{Y_u(\theta)}{z-\iota(c)}
+      \le
+      \mathfrak M_{u,c}(\theta).
+      \tag{LMZ7}
+   \]
+   Taking the supremum over \(z\in P_{u,c}\) proves \((LMZ3)\).  Combining
+   \((LMZ3)\) with \cref{cor:anchor-fiber-internal-tail-certificate} gives the
+   dyadic implication \((LMZ4)\Rightarrow(LMT6)\).
+
+   For the Boltzmann form, fix \(h=z-\iota(c)\in E_u\).  By \((LMW5)\),
+   \[
+      \sum_jw_ja_u(h)_j^-
+      =
+      \sup_{0\le\theta_j\le w_j}
+      \ip{-A_uG_u^+\theta}{h}.
+      \tag{LMZ8}
+   \]
+   Applying \((LMZ3)\) inside this supremum and then \((LMZ6)\) gives
+   \((LMW2)\).  Together with \((LMW3)\)--\((LMW4)\), this is the same final
+   implication used in
+   \cref{cor:singleton-boltzmann-influence-certificate}.
+
+   Finally, by subadditivity of the positive part and the definition of
+   \(\Lambda_{u,c,j}\),
+   \[
+      \mathfrak M_{u,c}(\theta)
+      \le
+      \sum_j\theta_j\Lambda_{u,c,j}.
+      \tag{LMZ9}
+   \]
+   Thus \((LMY4)\) implies \((LMZ6)\).
+\end{proof}
+
 \begin{corollary}[Anchor-fiber LP/SA certificate compiler]
    \label{cor:anchor-fiber-lp-sa-compiler}
    Continue with the notation of
@@ -11141,6 +11238,13 @@ partition ignores the bias coordinates that certify the list size.
    anchor-fiber relaxation has small off-anchor mobility on the dangerous
    coordinates, or else return to the aggregate selector support-function
    condition where cancellations between many codewords are still visible.
+
+   \Cref{cor:aggregate-mobility-selector-certificate} makes the second option
+   finite.  Instead of bounding each singleton column of \(G_u^+\), it bounds
+   the support of the aggregate selector objective \(-A_uG_u^+\theta\) through
+   the same mobility constraints.  This is strictly the safer theorem target:
+   low-rate code geometry may cancel the dangerous inverse-Gram directions only
+   after the below-leader selector has been aggregated.
 
    \Cref{cor:well-conditioned-gram-coefficients} gives the first elementary
    path to such a theorem.  If the local subcode has a well-conditioned overlap
