@@ -42624,6 +42624,137 @@ query mass rather than producing a cost-effective dense filter.
    argument gives only the bounded fixed tail.
 \end{proof}
 
+\begin{corollary}[Returned-star tail shared-cover adapter]
+   \label{cor:returned-star-tail-shared-cover-adapter}
+   Work in the setting of
+   \cref{cor:returned-star-dual-packing-energy-handoff}, and write
+   \(\mathcal S=\mathcal S_{\rm st}^{\rm ret}\).  For
+   \(s=(r,t)\in\mathcal S\), put
+   \[
+      A_s^{\rm ret}=V_{r,t},
+      \qquad
+      u_s=u_s^{\rm ret}.
+      \tag{RTS1}
+   \]
+   Let \(\mathcal R^{\rm ret}\) be a finite family of candidate shared records
+   for this tail.  A record \(c\in\mathcal R^{\rm ret}\) has one-time recursive
+   storage price \(P_c\ge0\) and certified coverage coefficients
+   \(0\le g_{c,s}\le1\).  Define
+   \[
+   \begin{array}{ll}
+   \Phi^{\rm ret}=\min
+      & \displaystyle
+        \sum_{s\in\mathcal S}u_se_s
+        +\sum_{c\in\mathcal R^{\rm ret}}P_c\lambda_c\\[0.8em]
+   \text{\rm subject to}
+      & \displaystyle
+        e_s+\sum_{c\in\mathcal R^{\rm ret}}\lambda_c g_{c,s}\ge1
+        \qquad(s\in\mathcal S),\\[0.8em]
+      & e_s\ge0,\qquad \lambda_c\ge0 .
+   \end{array}
+      \tag{RTS2}
+   \]
+   Its dual is
+   \[
+   \begin{array}{ll}
+   \Phi^{\rm ret}=\max
+      & \displaystyle\sum_{s\in\mathcal S}y_s\\[0.8em]
+   \text{\rm subject to}
+      & 0\le y_s\le u_s
+        \qquad(s\in\mathcal S),\\[0.8em]
+      & \displaystyle
+        \sum_{s\in\mathcal S}g_{c,s}y_s\le P_c
+        \qquad(c\in\mathcal R^{\rm ret}).
+   \end{array}
+      \tag{RTS3}
+   \]
+
+   Consequently the storage-dominated term in \((RPE16)\) may be paid by the
+   shared-cover value.  For any desired allowance \(B_{\rm ret}\) and fixed
+   overhead \(\Gamma\ge0\), the returned-star high-correlation profile is paid
+   within
+   \[
+      2|E|J_\omega\omega_{\max}H_-^{\rm st}+B_{\rm ret}
+      \tag{RTS4}
+   \]
+   whenever
+   \[
+      \Gamma+\Phi^{\rm ret}\le\frac{\delta}{4}B_{\rm ret}.
+      \tag{RTS5}
+   \]
+   If \(\Phi^{\rm ret}>\Theta\), then there is a dual weighting satisfying
+   \[
+      \sum_{s\in\mathcal S}y_s>\Theta,\qquad
+      0\le y_s\le u_s,\qquad
+      \sum_sg_{c,s}y_s\le P_c
+      \quad(c\in\mathcal R^{\rm ret}).
+      \tag{RTS6}
+   \]
+
+   Finally suppose a generated template \(T\) has a search container
+   \(\mathcal S_T\subseteq\mathcal S\), capture weights
+   \(a_{T,s}\in[0,1]\), available cardinalities \(\mathcal K_T\), and certified
+   prices \(\overline P_T(K)\).  Assume every \(U\subseteq\mathcal S_T\) with
+   \(|U|=K\in\mathcal K_T\) can be materialized as a record \(c(T,U)\) with
+   \[
+      P_{c(T,U)}\le\overline P_T(K),
+      \qquad
+      g_{c(T,U),s}\ge a_{T,s}\mathbf 1_{\{s\in U\}} .
+      \tag{RTS7}
+   \]
+   In a dual residual \(y\), order \(\mathcal S_T=\{s_1,s_2,\ldots\}\) by
+   nonincreasing \(a_{T,s}y_s\).  If, for some \(K\in\mathcal K_T\),
+   \[
+      \sum_{j\le K}a_{T,s_j}y_{s_j}>\overline P_T(K),
+      \tag{RTS8}
+   \]
+   then \(c(T,\{s_1,\ldots,s_K\})\) is an improving shared-cover column.  If no
+   such prefix is improving, every \(K\)-subset \(U\subseteq\mathcal S_T\)
+   satisfies
+   \[
+      \sum_{s\in U}a_{T,s}y_s\le\overline P_T(K).
+      \tag{RTS9}
+   \]
+
+   Thus the second returned-star tail is not a new recursive branch.  It is an
+   ordinary finite priced child panel: either it is paid by one shared-cover LP,
+   or it exposes the same top-prefix dual obstruction already used by the
+   flattened closure.  In a build-time implementation, these tail records and
+   templates can be added to the flattened closure universe before the single
+   closure LP is solved.
+\end{corollary}
+
+\begin{proof}
+   The program \((RTS2)\) is finite and feasible by taking \(e_s=1\).  Assign a
+   dual variable \(y_s\ge0\) to each cover constraint.  The coefficients of
+   \(e_s\) and \(\lambda_c\) give \(y_s\le u_s\) and
+   \(\sum_sg_{c,s}y_s\le P_c\), respectively.  Finite LP duality proves
+   \((RTS3)\).
+
+   A feasible primal solution represents each storage-dominated returned star by
+   an \(e_s\)-fractional residual copy and by shared records covering it.  The
+   objective is the corresponding shared-canonical tail price.  Since
+   \((RPE16)\) charges the raw tail only through the coefficient \(4/\delta\),
+   replacing that tail by \(\Gamma+\Phi^{\rm ret}\) and using \((RTS5)\) gives
+   the payment bound \((RTS4)\).  The dual obstruction \((RTS6)\) is the
+   contrapositive of strong duality.
+
+   If \((RTS8)\) holds and \(U_K=\{s_1,\ldots,s_K\}\), then \((RTS7)\) gives
+   \[
+      \sum_sg_{c(T,U_K),s}y_s
+      \ge
+      \sum_{j\le K}a_{T,s_j}y_{s_j}
+      >
+      \overline P_T(K)
+      \ge
+      P_{c(T,U_K)} .
+   \]
+   Hence \(c(T,U_K)\) violates the dual constraint and is an improving column.
+   For a fixed \(K\), the top \(K\) elements in the order of \(a_{T,s}y_s\)
+   maximize the left side over all \(K\)-subsets, proving \((RTS9)\) when no
+   prefix improves.
+\end{proof}
+
 \begin{corollary}[Flattened panel-separator endpoint]
    \label{cor:flattened-panel-separator-endpoint}
    Work at a localized resident node with full certified panel universe
@@ -84458,6 +84589,10 @@ low-price generated cover must be large.
 through the same packing, entropy-energy, and high-correlation star screen used
 by the flattened and cap-overload duals, so the final returned-star obstruction
 is an explicit star-price tail rather than an undefined branching process.
+\Cref{cor:returned-star-tail-shared-cover-adapter} routes that tail back into
+the same finite shared-cover LP interface: it is either paid at its
+shared-canonical price or exposes a top-prefix dual obstruction inside the
+flattened closure universe.
 \Cref{cor:flattened-panel-separator-endpoint} packages this as the current
 conditional endpoint for the overload storage branch: every flattened closure
 must either be paid by its LP value or admit one such lower-capture panel; under
@@ -84693,6 +84828,10 @@ that obstruction: materializable generated balls yield a separated packing,
 entropy-energy pays low-correlation profiles, and any high-correlation survivor
 is a finite star whose price either violates the returned-star dual or becomes
 an explicit bounded/storage tail.
+\Cref{cor:returned-star-tail-shared-cover-adapter} then prevents that tail from
+starting a new recursion: after adding its records to the build-time closure, it
+is handled by the same shared-cover value/top-prefix dual dichotomy as the
+original returned panel.
 \Cref{cor:flattened-panel-separator-endpoint} turns this interface into the
 nodewise endpoint: if every flattened returned panel is either LP-paid or
 panel-separated, then the remaining child-panel residuals satisfy the positive
