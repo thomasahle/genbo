@@ -12125,6 +12125,90 @@ partition ignores the bias coordinates that certify the list size.
    \cref{cor:negative-coefficient-tail-dual}.
 \end{proof}
 
+\begin{corollary}[Finite score-band LP/SA compiler]
+   \label{cor:finite-score-band-lp-sa-compiler}
+   Work in the branch-and-bound setting of
+   \cref{cor:conditional-tilted-excess-certificate}, and keep the notation of
+   \cref{cor:direct-coefficient-projection-certificate} and
+   \cref{cor:near-optimal-score-gap-tail-verifier}.  Suppose \(P_u\) lies in the
+   product of the \(q\)-ary coordinate simplices.  Fix \(\lambda>0\) and
+   \(\Xi_u>0\), and define the combined internal-gap prices
+   \[
+      \Omega_{u,j}
+      =
+      \exp\!\bigl(\lambda(M(u)-W(c_j))\bigr)+\Xi_u .
+      \tag{LNN1}
+   \]
+   Assume the finite score-band gap condition
+   \[
+      \sup_{R\in\mathcal R_u^{\mathrm{gap}}(\Omega_u)}
+      \left(
+         \sup_{z\in P_u}\ip{R}{z}
+         -
+         \max_{j\in[N]}\ip{R}{\iota(c_j)}
+      \right)
+      \le \Xi_u .
+      \tag{LNN2}
+   \]
+   Also suppose there is a balance witness \(\ell_u\) with
+   \(A_u^\top\ell_u=\mathbf 1_N\) and \(\ip{\ell_u}{z}=1\) for all \(z\in P_u\),
+   and that, for some \(R_u\ge0\),
+   \[
+      |M(u)|\,\|\Pi_u^\perp\ell_u\|_2\,r_u^{P,\perp}\le R_u .
+      \tag{LNN3}
+   \]
+   If
+   \[
+      e^{\lambda R_u}(1+\Xi_u)
+      \exp\!\left(
+         \lambda\omega_u^{P,\perp}
+         +\frac{\lambda^2(r_u^{P,\perp})^2}{2}
+      \right)
+      \le A_\lambda ,
+      \tag{LNN4}
+   \]
+   then the conditional tilted-excess bound \((LPT2)\) holds with \(A_\lambda\).
+   Consequently, at the Gaussian tilt \(\lambda=T/b\), a polylogarithmic bound in
+   \((LNN4)\) gives the LP/SA threshold reporter polylogarithmic expected
+   overhead.
+
+   This is the direct finite theorem target for a low-rate LP or constant-level
+   Sherali--Adams decoder: for the random internal-gap prices \(\Omega_u\), every
+   nonnegative block-shifted score table whose true-codeword deficits are
+   \(\Omega_u\)-near-optimal must have relaxation optimum within \(\Xi_u\) of the
+   best true codeword; scalar leakage and orthogonal residuals are then the only
+   remaining terms.
+\end{corollary}
+
+\begin{proof}
+   By \cref{cor:near-optimal-score-gap-tail-verifier}, \((LNN2)\) implies
+   \[
+      \mathcal N_u(P_u;\Omega_u)\le\Xi_u .
+      \tag{LNN5}
+   \]
+   Since \(\Omega_u=\omega^\lambda+\Xi_u\mathbf 1_N\), where
+   \(\omega^\lambda_j=\exp(\lambda(M(u)-W(c_j)))\),
+   \cref{cor:negative-coefficient-tail-dual} gives, for every \(z\in P_u\), a
+   coefficient vector \(b_u(z)\) with \(A_ub_u(z)=\Pi_u z\) and
+   \[
+      \sum_j b_u(z)_j^-\le1,
+      \qquad
+      \sum_j b_u(z)_j^-\exp(\lambda(M(u)-W(c_j)))\le\Xi_u .
+      \tag{LNN6}
+   \]
+   The balance witness and \((LNN3)\), through
+   \cref{cor:coefficient-scalar-leakage-witness}, give
+   \[
+      M(u)(\kappa_u(z)-1)\le R_u
+      \qquad(z\in P_u)
+      \tag{LNN7}
+   \]
+   for the same coefficient vectors.  Thus the hypotheses \((LNJ4)\)--\((LNJ5)\)
+   of \cref{cor:direct-coefficient-projection-certificate} hold.  Applying that
+   corollary with \((LNN4)\) proves \((LPT2)\), and
+   \cref{cor:conditional-tilted-excess-certificate} gives the overhead statement.
+\end{proof}
+
 \begin{corollary}[Anchor-fiber LP/SA certificate compiler]
    \label{cor:anchor-fiber-lp-sa-compiler}
    Continue with the notation of
@@ -12436,6 +12520,15 @@ partition ignores the bias coordinates that certify the list size.
    polylogarithmically above the best true codeword.  This is a sharper
    code-theoretic target than controlling arbitrary signed pseudocodeword
    objectives.
+
+   \Cref{cor:finite-score-band-lp-sa-compiler} packages this into the actual
+   overhead criterion.  At each exposed branch node, use the combined prices
+   \(\Omega_j=e^{\lambda(M-W_j)}+\Xi\).  If every
+   \(\Omega\)-near-optimal nonnegative score band has LP/SA gap at most \(\Xi\),
+   and the coordinate-balance witness pays scalar leakage, then the conditional
+   tilted-excess moment is already polylogarithmic after multiplying by the
+   orthogonal Gaussian-width factor.  This is now the narrowest local code
+   theorem needed by the LP/SA route.
 
    \Cref{cor:leader-shift-near-leader-certificate} gives the clean terminal
    version of this idea when scalar leakage is killed exactly, or otherwise
