@@ -39829,6 +39829,107 @@ query mass rather than producing a cost-effective dense filter.
    \((\mathsf{ESFC}_\Sigma)\) under \((PELS5)\).
 \end{proof}
 
+\begin{corollary}[Dyadic prefix shared-capture compression screen]
+   \label{cor:dyadic-prefix-shared-capture-compression}
+   Work in the setting of
+   \cref{cor:dyadic-prefix-high-star-mass}.  Fix \(0\le a\le1\), and suppose
+   the low envelope of the dyadic prefix satisfies
+   \(L_k\le a\Theta_i^{\rm pref}\).  Let \(\mathcal C_k\) be a finite family of
+   lower-certified raw guard records, with lower paid-shadow certificates
+   \(Y_c\) and recursive prices \(P_c\).  A shared-capture certificate for the
+   reported star panel \(\mathcal B_k\) consists of nonnegative tail variables
+   \(e_b\) and nonnegative assignment variables \(z_{b,c}\) such that
+   \[
+      X_b\le e_b+\sum_{c\in\mathcal C_k}z_{b,c}
+      \qquad(b\in\mathcal B_k),
+      \tag{DMC1}
+   \]
+   and
+   \[
+      \sum_{b\in\mathcal B_k}z_{b,c}\le Y_c
+      \qquad(c\in\mathcal C_k).
+      \tag{DMC2}
+   \]
+   Define its explicit tail and shared recursive price by
+   \[
+      E_{\rm sh}=2\sum_{b\in\mathcal B_k}e_b,
+      \qquad
+      P_{\rm sh}=2\sum_{c\in\mathcal C_k}P_c .
+      \tag{DMC3}
+   \]
+   If
+   \[
+      E_{\rm sh}+P_{\rm sh}\le(1-a)\Theta_i^{\rm pref},
+      \tag{DMC4}
+   \]
+   then either the rank \(k\) satisfies the weak-type water envelope
+   \((TPW2)\), or a one-record guard-credit repair fires.
+
+   Equivalently, if \(k\) violates \((TPW2)\), the low envelope satisfies
+   \(L_k\le a\Theta_i^{\rm pref}\), and no one-record guard-credit repair
+   fires, then every shared-capture certificate satisfies
+   \[
+      E_{\rm sh}+P_{\rm sh}>(1-a)\Theta_i^{\rm pref}.
+      \tag{DMC5}
+   \]
+   In normalized form,
+   \[
+      \mathsf M_{i,k}^{\star}
+      \le
+      \frac{E_{\rm sh}+P_{\rm sh}}{\Theta_i^{\rm pref}}
+      \tag{DMC6}
+   \]
+   in every no-repair residual.
+
+   Consequently, the high-star branch may be attacked by a shared-cover
+   reporter.  It need not reproduce every original star record: it may leave
+   explicit tail \(E_{\rm sh}\), but any mass it assigns into a shared record
+   is charged once through that record's recursive price.  If this shared
+   tail-plus-price falls below the forced high-star mass from
+   \cref{cor:dyadic-prefix-high-star-mass}, the existing guard verifier already
+   materializes a repair.
+\end{corollary}
+
+\begin{proof}
+   Suppose no one-record guard-credit repair fires.  Since every
+   \(c\in\mathcal C_k\) is a lower-certified raw guard record, \(Y_c>P_c\)
+   would be a positive one-record panel in
+   \cref{cor:lower-certified-scale-free-guard-panel}.  Hence \(Y_c\le P_c\) for
+   every \(c\).  Summing \((DMC1)\) over \(b\), using \((DMC2)\), and then
+   using \(Y_c\le P_c\), gives
+   \[
+   \begin{aligned}
+      2\sum_{b\in\mathcal B_k}X_b
+      &\le
+      2\sum_{b\in\mathcal B_k}e_b
+      +2\sum_{c\in\mathcal C_k}\sum_{b\in\mathcal B_k}z_{b,c} \\
+      &\le
+      E_{\rm sh}+2\sum_{c\in\mathcal C_k}Y_c
+      \le
+      E_{\rm sh}+P_{\rm sh}.
+   \end{aligned}
+      \tag{DMC7}
+   \]
+   If \((DMC4)\) holds, then
+   \(2\sum_bX_b\le(1-a)\Theta_i^{\rm pref}\).  Together with
+   \(L_k\le a\Theta_i^{\rm pref}\) and \((DTR2)\)--\((DTR3)\), this gives
+   \[
+      \underline X_{i,k}
+      \le
+      L_k+H_k
+      \le
+      L_k+2\sum_bX_b
+      \le
+      \Theta_i^{\rm pref}.
+   \]
+   By \((DTR1)\), this is \((TPW2)\).  Therefore, if \((TPW2)\) fails under
+   \((DMC4)\), the no-repair assumption was false, and a one-record
+   guard-credit repair fires.
+
+   The contrapositive gives \((DMC5)\).  Finally, \((DMC6)\) is just
+   \((DMC7)\) divided by \(\Theta_i^{\rm pref}\).
+\end{proof}
+
 \begin{corollary}[Paid-responsibility high-correlation star compiler]
    \label{cor:paid-responsibility-high-correlation-star}
    Work in the setting of
@@ -45681,6 +45782,10 @@ one-time recursive star-price excess.
 low envelope is below its slack budget, a surviving prefix must carry a large
 lower-certified star-mass panel, and in a no-repair residual that panel is
 price-saturated record by record.
+\Cref{cor:dyadic-prefix-shared-capture-compression} then states the compression
+test for that panel: any shared capture whose explicit tail plus one-time shared
+price is below the forced high-star mass materializes a guard repair; otherwise
+the residual is an exact shared-cover obstruction.
 \Cref{lem:star-superlevel-column-verifier} and
 \cref{cor:pair-star-dense-column-generator} add the finite LP check: the star
 is retained only if its ball-thickened query side has positive reduced gain;
@@ -71313,6 +71418,10 @@ recursive star-price branch.
 low envelope, the recursive-price branch is backed by large certified star
 mass, so shared-prefix and integrated-cover reporters can be scored against
 actual paid mass rather than against price alone.
+\Cref{cor:dyadic-prefix-shared-capture-compression} gives the corresponding
+score: shared records may capture many original star records, but a no-repair
+residual must have explicit tail plus one-time shared price at least the forced
+dyadic high-star mass.
 \Cref{lem:star-superlevel-column-verifier} and
 \cref{cor:pair-star-dense-column-generator} turn such a superlevel into an
 ordinary fractional-cover column by using the certified query activation
@@ -71618,6 +71727,9 @@ failure or a recursive star-price failure.
 \Cref{cor:dyadic-prefix-high-star-mass} shows that the second branch is a
 large certified paid-mass star panel which becomes price-saturated only because
 no individual guard record is profitable.
+\Cref{cor:dyadic-prefix-shared-capture-compression} is the shared-record normal
+form of that branch: every surviving shared capture pays through explicit tail
+plus one-time shared recursive price.
 \Cref{cor:metric-entropy-hall-shadow-closure} and
 \cref{cor:low-doubling-hall-shadow-close} sharpen the remaining geometric
 obligation: any positive Hall shadow of certified covering number below
