@@ -35575,6 +35575,66 @@ query mass rather than producing a cost-effective dense filter.
    \(|A_{z,\kappa}|^{\rho_{z,\kappa}-1}\) is at most one.
 \end{proof}
 
+\begin{corollary}[Reciprocal-multiplicity pair-congestion certificate]
+   \label{cor:reciprocal-multiplicity-pair-congestion}
+   Work in the pair specialization \(k=2\) of
+   \cref{cor:occurrence-discounted-tuple-storage}, and assume
+   \[
+      u_{z,\kappa}=\psi_{z,\kappa}|A_{z,\kappa}|^{1+\rho_{z,\kappa}},
+      \qquad 0\le\rho_{z,\kappa}\le1,
+      \qquad |A_{z,\kappa}|\ge1 .
+      \tag{RMP0}
+   \]
+   Suppose there are certified envelopes \(J(x,y)\ge0\), indexed by
+   \((x,y)\in\mathcal T_2(P,\delta)\), such that
+   \[
+      \E_z
+      \sum_{\substack{b\in\mathcal B_z:\\
+         x,y\in A_{z,\kappa_{z,b}}}}
+      \frac{\psi_{z,\kappa_{z,b}}}{m_z(\kappa_{z,b})}
+      \le
+      J(x,y).
+      \tag{RMP1}
+   \]
+   If \(\Sigma^+=\emptyset\), the cover is feasible.  Otherwise suppose
+   \(a>0\), the corresponding active first-moment condition holds, and
+   \[
+      \E_z\Gamma_z+
+      \sum_{(x,y)\in\mathcal T_2(P,\delta)}J(x,y)
+      \le aS .
+      \tag{RMP2}
+   \]
+   Then \((\mathsf{ESFC}_\Sigma)\) is feasible.
+
+   Thus, after the ordinary success-normalized active candidate-load estimate
+   has paid the query side, the shared-storage side may be proved by a single
+   pair-congestion theorem: each decoded occurrence contributes only
+   \(1/m_z(\kappa)\) of the price factor of its canonical child to every
+   separated pair contained in that child.  The size factor
+   \(|A_{z,\kappa}|^{\rho_{z,\kappa}-1}\) from the exact storage price is
+   nonpositive in the exponent and only helps.
+\end{corollary}
+
+\begin{proof}
+   In the pair specialization, \((ODT4)\) shows that the actual
+   occurrence-discounted tuple congestion is
+   \[
+      \sum_{\substack{b\in\mathcal B_z:\\x,y\in A_{z,\kappa_{z,b}}}}
+      \frac{
+         \psi_{z,\kappa_{z,b}}
+         |A_{z,\kappa_{z,b}}|^{\rho_{z,\kappa_{z,b}}-1}
+      }{
+         m_z(\kappa_{z,b})
+      } .
+   \]
+   By \((RMP0)\), each factor
+   \(|A_{z,\kappa_{z,b}}|^{\rho_{z,\kappa_{z,b}}-1}\le1\).  Hence \((RMP1)\)
+   supplies the envelope \(\widehat J_2(x,y)=J(x,y)\) required by
+   \((ODT2)\).  Condition \((RMP2)\) is then \((ODT3)\) with
+   \(\mathcal K=\{2\}\), and
+   \cref{cor:occurrence-discounted-tuple-storage} gives feasibility.
+\end{proof}
+
 \begin{corollary}[Pair-profile occurrence-discounted storage certificate]
    \label{cor:pair-profile-occurrence-discounted-storage}
    Work in the pair specialization \(k=2\) of
@@ -43667,6 +43727,9 @@ plain pair-congestion target up to that factor.
 when many decoded records induce the same canonical child, each occurrence is
 weighted by the reciprocal of that child's multiplicity before pair congestion is
 measured.
+\Cref{cor:reciprocal-multiplicity-pair-congestion} isolates the pair case:
+bound that reciprocal-multiplicity pair congestion directly and the shared
+canonical storage condition follows.
 \Cref{cor:pair-profile-occurrence-discounted-storage} turns this into the finite
 entropy-energy target: partition separated pairs into profiles and prove that
 profile cardinality times reciprocal-multiplicity congestion energy sums to the
@@ -69187,9 +69250,13 @@ storage theorem becomes a bound on price-weighted witness congestion.
 bucket nets: sample a uniform tuple from the child itself.  In the pair case this
 reduces the remaining theorem to bounding distinct-child pair congestion weighted
 by \(\psi |A|^{\rho-1}\le\psi\).
-\Cref{cor:occurrence-discounted-tuple-storage} converts this to the natural
-decoder statistic: reciprocal-multiplicity-weighted pair congestion over decoded
-occurrences.
+\Cref{cor:reciprocal-multiplicity-pair-congestion} is the resulting simplest
+pair form: after the query first moment is paid, it is enough to bound, for each
+separated pair, the expected sum of child price factors over decoded occurrences
+whose canonical child contains the pair, with each occurrence divided by the
+child's multiplicity.
+\Cref{cor:occurrence-discounted-tuple-storage} gives the tuple-order version of
+the same decoder statistic.
 \Cref{cor:pair-profile-occurrence-discounted-storage} is the finite
 entropy-energy check for that statistic; it is now enough to show that each pair
 profile has small discounted congestion \(B_\pi\), with
