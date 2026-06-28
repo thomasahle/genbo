@@ -13389,6 +13389,97 @@ partition ignores the bias coordinates that certify the list size.
    \(B=\chi_u\Xi_u\).
 \end{proof}
 
+\begin{corollary}[Posterior mismatch form for localized residuals]
+   \label{cor:localized-residual-posterior-mismatch}
+   Continue with the notation of
+   \cref{cor:chart-majorant-lower-tail-dual}.  Let \(\mu\in\R_+^{bq}\) be any
+   residual budget, and put
+   \[
+      m_i^\mu=\sum_{a\in[q]}\mu_{i,a}.
+      \tag{LOB1}
+   \]
+   For a nonzero selector \(s\in\R_+^N\), define
+   \[
+      \pi_i^s(a)=\frac{s_i(a)}{S(s)},
+      \qquad S(s)=\sum_j s_j,
+      \tag{LOB2}
+   \]
+   and
+   \[
+      \Delta_\mu(s)
+      =
+      \sum_{i=1}^b
+      \left(
+         m_i^\mu\max_{a\in[q]}\pi_i^s(a)
+         -
+         \sum_{a\in[q]}\mu_{i,a}\pi_i^s(a)
+      \right).
+      \tag{LOB3}
+   \]
+   Then the full chart-majorant family
+   \[
+      \mathfrak L_{u,\tau}(\mu,\omega)\le B
+      \qquad(\tau\in[q]^b)
+      \tag{LOB4}
+   \]
+   is equivalent to
+   \[
+      \sup_{0\le s\le\omega}S(s)\Delta_\mu(s)\le B,
+      \tag{LOB5}
+   \]
+   with the convention that the term is \(0\) when \(S(s)=0\).
+
+   Equivalently, for coordinates with \(m_i^\mu>0\), let
+   \(r_i^\mu(a)=\mu_{i,a}/m_i^\mu\).  Then
+   \[
+      \Delta_\mu(s)
+      =
+      \sum_{i:m_i^\mu>0}
+      m_i^\mu
+      \left(
+         \max_a\pi_i^s(a)-\sum_a r_i^\mu(a)\pi_i^s(a)
+      \right).
+      \tag{LOB6}
+   \]
+   Thus a residual budget is cheap exactly when its coordinate distributions
+   place mass on the symbols favored by every high-price selector.  Uniform
+   budgets make \(r_i^\mu\) uniform and recover
+   \cref{cor:posterior-plurality-chart-shadow}; localized or anchor-fiber
+   budgets can instead make \(r_i^\mu\) follow the high-price posterior and
+   avoid the singleton obstruction of
+   \cref{cor:singleton-chart-shadow-obstruction}.
+\end{corollary}
+
+\begin{proof}
+   For a fixed chart \(\tau\), the dual objective in \((LNV3)\) is
+   \[
+      -\sum_js_jh_\tau(\mu)_j
+      =
+      \sum_{i=1}^b
+      \left(
+         m_i^\mu s_i(\tau_i)-\sum_a\mu_{i,a}s_i(a)
+      \right).
+      \tag{LOB7}
+   \]
+   If \(s\) is feasible for \(\tau\), then \(s_i(\tau_i)=\max_a s_i(a)\) for
+   each coordinate after changing \(\tau_i\) within the set of maximizers if
+   necessary.  Conversely, for every selector \(s\), choosing
+   \(\tau_i\in\arg\max_a s_i(a)\) makes the chart domination constraints
+   feasible.  Therefore maximizing over all charts and feasible selectors gives
+   \[
+      \sup_\tau\mathfrak L_{u,\tau}(\mu,\omega)
+      =
+      \sup_{0\le s\le\omega}
+      \sum_i
+      \left(
+         m_i^\mu\max_a s_i(a)-\sum_a\mu_{i,a}s_i(a)
+      \right).
+      \tag{LOB8}
+   \]
+   Dividing by \(S(s)\) for nonzero \(s\) gives \((LOB5)\), and \((LOB6)\) is
+   just the normalization of \(\mu\) inside each coordinate block.
+\end{proof}
+
 \begin{corollary}[Anchor-fiber LP/SA certificate compiler]
    \label{cor:anchor-fiber-lp-sa-compiler}
    Continue with the notation of
@@ -13770,6 +13861,11 @@ partition ignores the bias coordinates that certify the list size.
    therefore has to become localized, with off-codeword residual mass decaying
    around high-price codewords, or else the far internal-gap tail must be
    removed by a separate near-leader certificate.
+   \Cref{cor:localized-residual-posterior-mismatch} gives the exact localized
+   replacement: the obstruction is the mismatch between the coordinate
+   distribution of the residual budget and the posterior induced by the
+   price-capped selector.  This is the form in which anchor-fiber mobility
+   bounds should be plugged into the residual theorem.
 
    \Cref{cor:leader-shift-near-leader-certificate} gives the clean terminal
    version of this idea when scalar leakage is killed exactly, or otherwise
