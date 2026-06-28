@@ -38750,6 +38750,100 @@ query mass rather than producing a cost-effective dense filter.
    displayed constant \(2\).
 \end{proof}
 
+\begin{corollary}[Low-doubling sponsor layers close]
+   \label{cor:low-doubling-sponsor-layer-close}
+   Work in the setting of
+   \cref{cor:strong-sponsor-layer-generated-entropy}.  Suppose a generated
+   container family at scale \(\lambda\in(0,1]\) certifies
+   \[
+      N_{\rm gen}^{\rm sp}(L,\theta)
+      \le
+      C_{\rm sp}\lambda^{-\delta}.
+      \tag{SGD1}
+   \]
+   If
+   \[
+      \theta
+      >
+      2\psi_\star\left(
+         A C_{\rm sp}^{1-\rho}
+         \lambda^{-\delta(1-\rho)}K^{\rho-1}
+         +\zeta K^\rho
+      \right),
+      \tag{SGD2}
+   \]
+   then some generated top-prefix column is positive.  It is enough to verify
+   the stronger cut-excess condition
+   \[
+      \frac{E_z^\beta(\mathcal U)}{2D K}
+      >
+      2\psi_\star\left(
+         A C_{\rm sp}^{1-\rho}
+         \lambda^{-\delta(1-\rho)}K^{\rho-1}
+         +\zeta K^\rho
+      \right),
+      \tag{SGD3}
+   \]
+   since \((SCL9)\) gives \(\theta\ge E_z^\beta(\mathcal U)/(2DK)\).
+
+   Conversely, if no generated top-prefix column is positive, then every
+   certified low-doubling cover bound \((SGD1)\) must satisfy the density
+   envelope
+   \[
+      \theta
+      \le
+      2\psi_\star\left(
+         A C_{\rm sp}^{1-\rho}
+         \lambda^{-\delta(1-\rho)}K^{\rho-1}
+         +\zeta K^\rho
+      \right).
+      \tag{SGD4}
+   \]
+   In particular, when \(\zeta=0\) and \(\lambda<1\), any surviving layer with
+   positive numerator obeys the generated-dimension lower bound
+   \[
+      \delta
+      \ge
+      \frac{
+         \log\!\left(
+            E_z^\beta(\mathcal U)/
+            (4D\psi_\star A K^\rho)
+         \right)
+         -(1-\rho)\log C_{\rm sp}
+      }{
+         (1-\rho)\log(1/\lambda)
+      }.
+      \tag{SGD5}
+   \]
+   With \(\zeta>0\) and \(\lambda<1\), the same statement holds after replacing
+   \(E_z^\beta(\mathcal U)/(2DK)\) by
+   \(E_z^\beta(\mathcal U)/(2DK)-2\psi_\star\zeta K^\rho\), when this
+   quantity is positive.
+\end{corollary}
+
+\begin{proof}
+   Substitute \(J=C_{\rm sp}\lambda^{-\delta}\) into \((SGE3)\) and divide by
+   \(K\).  This gives \((SGD2)\Rightarrow(SGE3)\), so
+   \cref{cor:strong-sponsor-layer-generated-entropy} produces a positive
+   generated top-prefix column.  Condition \((SGD3)\) implies \((SGD2)\) by
+   \((SCL9)\).
+
+   The contrapositive gives \((SGD4)\): if a certified cover violated the
+   displayed envelope, then \((SGD2)\) would hold.  Combining \((SGD4)\) with
+   \(\theta\ge E_z^\beta(\mathcal U)/(2DK)\) gives
+   \[
+      \frac{E_z^\beta(\mathcal U)}{2DK}
+      \le
+      2\psi_\star A C_{\rm sp}^{1-\rho}
+      \lambda^{-\delta(1-\rho)}K^{\rho-1}
+      +2\psi_\star\zeta K^\rho .
+   \]
+   When \(\zeta=0\) and \(\lambda<1\), rearranging and taking logarithms gives
+   \((SGD5)\) if the numerator is positive.  With \(\zeta>0\), first subtract
+   the storage term and then apply the same rearrangement, again for
+   \(\lambda<1\).
+\end{proof}
+
 \begin{lemma}[Certified star-panel separator]
    \label{lem:certified-star-panel-separator}
    Work in the setting of \cref{lem:star-prefix-weak-type-residual}, and assume
@@ -74509,6 +74603,11 @@ exposed layer mass immediately produces a positive top-prefix column.  If no
 column appears and the storage term is not already dominant, the layer's
 certified generated-cover number is bounded below by the explicit
 \((SGE5)\) entropy expression, in terms of the sponsor-cut excess.
+\Cref{cor:low-doubling-sponsor-layer-close} rewrites this as a
+dimension-density screen: a low-doubling, range-reporting, additive-code, or
+list-decoded cover closes the sponsor layer whenever its growth exponent makes
+\((SGD2)\) or the cut-excess form \((SGD3)\) hold.  A surviving non-storage
+layer therefore has an explicit generated-dimension lower bound \((SGD5)\).
 \Cref{cor:dyadic-distinct-storage-bucket-net} rewrites that target as a dyadic
 large-child counting problem: for every recursive price scale, bound the number
 of distinct canonical bucket nets whose shared child index has that price.
