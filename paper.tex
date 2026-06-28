@@ -2203,6 +2203,78 @@ The first fact certifies the radius decrease obtained from a spherical cap.
    The final estimate follows from $\sqrt{1-x}=1-\Theta(x)$ for sufficiently small positive $x$.
 \end{proof}
 
+\begin{corollary}[Tiny-positive cap chains have polylogarithmic depth]
+   \label{cor:tiny-positive-cap-chain}
+   Let
+   \[
+      R_0\ge R_1\ge\cdots\ge R_h\ge r
+   \]
+   be a chain of certified spherical cap recenterings.  At step \(i\), suppose
+   the retained set is contained in a cap of margin \(\gamma_i\ge\gamma_0\),
+   where \(0<\gamma_0<1/2\), so that
+   \[
+      R_{i+1}\le R_i\sqrt{1-\gamma_i^2}.
+      \tag{TPC1}
+   \]
+   Then
+   \[
+      h\le \frac{4\log(R_0/r)}{\gamma_0^2}.
+      \tag{TPC2}
+   \]
+   In particular, on the localized instances of \cref{lem:localization}, if
+   \(R_0/r\le\log^C n\) and
+   \[
+      \gamma_0=K\,\frac{\log\log n}{\log n}
+      \tag{TPC3}
+   \]
+   with \(0<\gamma_0<1/2\), then every such recentering lineage has length at
+   most
+   \[
+      O_{C,K}\!\left(\frac{\log^2 n}{\log\log n}\right).
+      \tag{TPC4}
+   \]
+
+   Thus the positive-correlation branch left by
+   \cref{cor:polylog-low-correlation-coload} cannot force a superpolylogarithmic
+   number of genuine radius contractions.  A star superlevel with normalized
+   correlations \(\ip{x}{y}\ge\gamma_0\) may be submitted to the dense verifier
+   using the point-centered ball \(B(x,\sqrt{2(1-\gamma_0)})\), but for radius
+   progress it also lies in the cap-recentered ball from \cref{lem:cap}, whose
+   squared relative radius is \(1-\gamma_0^2\).
+\end{corollary}
+
+\begin{proof}
+   From \(0<\gamma_i<1\) and \((TPC1)\),
+   \[
+      \log\frac{R_i}{R_{i+1}}
+      \ge
+      -\frac12\log(1-\gamma_i^2)
+      \ge
+      \frac{\gamma_i^2}{2}
+      \ge
+      \frac{\gamma_0^2}{2}.
+   \]
+   Summing over \(i<h\) gives
+   \[
+      \log\frac{R_0}{r}
+      \ge
+      \log\frac{R_0}{R_h}
+      =
+      \sum_{i=0}^{h-1}\log\frac{R_i}{R_{i+1}}
+      \ge
+      \frac{h\gamma_0^2}{2}.
+   \]
+   This proves the stronger bound with constant \(2\); \((TPC2)\) leaves slack
+   for harmless shell-width and certification constants.  Substituting
+   \(R_0/r\le\log^C n\) and \((TPC3)\) gives \((TPC4)\).
+
+   Finally, if \(y\) satisfies \(\ip{x}{y}\ge\gamma_0\) on a unit sphere, then
+   the set of such \(y\)'s is exactly a cap in direction \(x\).  Applying
+   \cref{lem:cap} gives the cap-recentered ball with relative squared radius
+   \(1-\gamma_0^2\), while the point-centered inclusion follows from
+   \(\|x-y\|^2=2-2\ip{x}{y}\).
+\end{proof}
+
 \begin{figure}[t]\centering
 \begin{tikzpicture}[font=\small,>=stealth]
 \def\R{2.6}
@@ -72121,6 +72193,10 @@ critical spherical threshold: pair correlations up to
 \(O(\log\log m/\log m)\) contribute only a polylogarithmic factor, so any
 polynomial storage obstruction must be in the complementary positive-correlation
 branch.
+\Cref{cor:tiny-positive-cap-chain} records the matching radius fact for that
+branch: a cap margin as small as \(K\log\log n/\log n\) still permits only
+\(O_{K}(\log^2 n/\log\log n)\) consecutive recenterings inside the localized
+polylog-radius ball.
 \Cref{cor:dyadic-distinct-storage-bucket-net} rewrites that target as a dyadic
 large-child counting problem: for every recursive price scale, bound the number
 of distinct canonical bucket nets whose shared child index has that price.
