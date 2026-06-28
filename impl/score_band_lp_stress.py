@@ -788,7 +788,6 @@ def _enumerate_equality_polytope_vertices(
             f"exact vertex enumeration needs {basis_count} bases, "
             f"above max_bases={max_bases}",
         )
-
     vertices: list[np.ndarray] = []
     seen: set[tuple[int, ...]] = set()
     feasible_bases = 0
@@ -814,6 +813,182 @@ def _enumerate_equality_polytope_vertices(
     return vertices, basis_count, feasible_bases
 
 
+def _assignment_reduced_indicator(
+    assignment: tuple[int, ...],
+    alphabet: int,
+) -> np.ndarray:
+    vector = np.zeros(len(assignment) * (alphabet - 1), dtype=float)
+    for pos, symbol in enumerate(assignment):
+        if symbol < alphabet - 1:
+            vector[pos * (alphabet - 1) + symbol] = 1.0
+    return vector
+
+
+def _reduced_source_to_full(
+    reduced: np.ndarray,
+    blocks: int,
+    alphabet: int,
+) -> np.ndarray:
+    matrix = np.zeros((blocks, alphabet), dtype=float)
+    if alphabet > 1:
+        head = np.asarray(reduced, dtype=float).reshape(blocks, alphabet - 1)
+        matrix[:, :alphabet - 1] = head
+        matrix[:, alphabet - 1] = 1.0 - np.sum(head, axis=1)
+    else:
+        matrix[:, 0] = 1.0
+    return matrix.reshape(-1)
+
+
+def _point_facets(points: np.ndarray, *, tol: float) -> list[tuple[np.ndarray, float]]:
+    """Enumerate supporting halfspaces of a tiny full-dimensional point hull."""
+    points = np.asarray(points, dtype=float)
+    if points.ndim != 2:
+        raise ValueError("points must be a matrix")
+    n_points, dim = points.shape
+    if dim == 0:
+        return []
+    if n_points == 0:
+        raise ValueError("cannot build facets of an empty hull")
+    if n_points == 1:
+        if dim != 1:
+            raise ValueError("point hull is not full-dimensional")
+        value = float(points[0, 0])
+        return [(np.array([1.0]), value), (np.array([-1.0]), -value)]
+    affine_rank = int(np.linalg.matrix_rank(points[1:] - points[0], tol=tol))
+    if affine_rank < dim:
+        raise ValueError("point hull is not full-dimensional")
+
+    facets: list[tuple[np.ndarray, float]] = []
+    seen: set[tuple[int, ...]] = set()
+    for support in itertools.combinations(range(n_points), dim):
+        selected = points[list(support)]
+        if dim == 1:
+            normal = np.array([1.0])
+        else:
+            differences = selected[1:] - selected[0]
+            if np.linalg.matrix_rank(differences, tol=tol) < dim - 1:
+                continue
+            _, _, vt = np.linalg.svd(differences, full_matrices=True)
+            normal = vt[-1]
+        norm = float(np.linalg.norm(normal))
+        if norm <= tol:
+            continue
+        normal = normal / norm
+        offset = float(normal @ selected[0])
+        values = points @ normal - offset
+        if np.all(values <= tol):
+            pass
+        elif np.all(values >= -tol):
+            normal = -normal
+            offset = -offset
+        else:
+            continue
+        normal[np.abs(normal) <= tol] = 0.0
+        key = tuple(int(round(float(value) / tol)) for value in np.r_[normal, offset])
+        if key in seen:
+            continue
+        seen.add(key)
+        facets.append((normal.copy(), float(offset)))
+    return facets
+
+
+def _projected_local_marginal_vertex_sources(
+    code: np.ndarray,
+    checks: list[tuple[int, ...]],
+    *,
+    max_bases: int,
+    tol: float,
+) -> dict[str, object]:
+    """Enumerate vertices of the projected unary local-marginal polytope."""
+    code = np.asarray(code, dtype=int)
+    blocks = code.shape[1]
+    alphabet = int(np.max(code)) + 1
+    dim = blocks * (alphabet - 1)
+    if dim == 0:
+        source = np.ones(blocks, dtype=float)
+        return {
+            "sources": [source],
+            "source_count": 1,
+            "vertex_count": 1,
+            "basis_count": 1,
+            "feasible_basis_count": 1,
+        }
+
+    rows: list[np.ndarray] = []
+    rhs: list[float] = []
+
+    for coord in range(blocks):
+        block_slice = slice(coord * (alphabet - 1), (coord + 1) * (alphabet - 1))
+        for symbol in range(alphabet - 1):
+            row = np.zeros(dim, dtype=float)
+            row[coord * (alphabet - 1) + symbol] = -1.0
+            rows.append(row)
+            rhs.append(0.0)
+        row = np.zeros(dim, dtype=float)
+        row[block_slice] = 1.0
+        rows.append(row)
+        rhs.append(1.0)
+
+    for check, assignments in zip(checks, _local_projection_assignments(code, checks)):
+        local_points = np.array([
+            _assignment_reduced_indicator(assignment, alphabet)
+            for assignment in assignments
+        ])
+        facets = _point_facets(local_points, tol=tol)
+        for normal, offset in facets:
+            row = np.zeros(dim, dtype=float)
+            for local_pos, coord in enumerate(check):
+                local_base = local_pos * (alphabet - 1)
+                global_base = coord * (alphabet - 1)
+                row[global_base:global_base + alphabet - 1] += normal[
+                    local_base:local_base + alphabet - 1
+                ]
+            rows.append(row)
+            rhs.append(offset)
+
+    lhs = np.vstack(rows)
+    bounds = np.array(rhs)
+    basis_count = comb(lhs.shape[0], dim)
+    if basis_count > max_bases:
+        raise ValueError(
+            f"projected vertex enumeration needs {basis_count} active sets, "
+            f"above max_bases={max_bases}",
+        )
+
+    sources: list[np.ndarray] = []
+    seen: set[tuple[int, ...]] = set()
+    feasible_bases = 0
+    for active in itertools.combinations(range(lhs.shape[0]), dim):
+        active_lhs = lhs[list(active)]
+        if np.linalg.matrix_rank(active_lhs, tol=tol) < dim:
+            continue
+        try:
+            reduced = np.linalg.solve(active_lhs, bounds[list(active)])
+        except np.linalg.LinAlgError:
+            continue
+        if np.any(lhs @ reduced - bounds > 1e-7):
+            continue
+        source = _reduced_source_to_full(reduced, blocks, alphabet)
+        if np.min(source) < -1e-7:
+            continue
+        source[np.abs(source) <= tol] = 0.0
+        source[np.abs(source - 1.0) <= tol] = 1.0
+        feasible_bases += 1
+        key = _source_key(source, tol=tol)
+        if key in seen:
+            continue
+        seen.add(key)
+        sources.append(source)
+
+    return {
+        "sources": sources,
+        "source_count": len(sources),
+        "vertex_count": len(sources),
+        "basis_count": basis_count,
+        "feasible_basis_count": feasible_bases,
+    }
+
+
 def local_marginal_vertex_sources(
     code: np.ndarray,
     checks: list[tuple[int, ...]],
@@ -822,6 +997,18 @@ def local_marginal_vertex_sources(
     tol: float = 1e-8,
 ) -> dict[str, object]:
     """Enumerate projected local-marginal vertices for tiny panels."""
+    try:
+        return _projected_local_marginal_vertex_sources(
+            code,
+            checks,
+            max_bases=max_bases,
+            tol=tol,
+        )
+    except ValueError as exc:
+        if "above max_bases" in str(exc):
+            raise
+        pass
+
     lhs, rhs, source_matrix = _local_only_marginal_system(code, checks)
     vertices, basis_count, feasible_bases = _enumerate_equality_polytope_vertices(
         lhs,

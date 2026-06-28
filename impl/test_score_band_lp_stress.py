@@ -214,9 +214,9 @@ def test_exact_local_marginal_pairwise_parity_matches_integral_gap():
         max_bases=1000,
     )
 
-    assert sources["source_count"] == 9
+    assert sources["source_count"] == 8
     assert np.isclose(result["gap"], 0.5)
-    assert result["source_count"] == 9
+    assert result["source_count"] == 8
 
 
 def test_local_marginal_dominance_screen_bounds_exact_gap():

@@ -13728,12 +13728,13 @@ partition ignores the bias coordinates that certify the list size.
    local-marginal checks.  The sampled mode uses integral locally consistent
    words, random unary local-marginal vertices, and the vertices obtained by
    optimizing the score tables returned by the fixed-source band LP.  The exact
-   mode eliminates the shared unary variables, enumerates all basic feasible
-   local-check marginals subject to consistency, projects them to unary sources,
-   and evaluates the fixed-source band LP on every projected source.  This is
+   mode works directly in the projected unary source coordinates: for each
+   check it forms the convex hull of the allowed local assignments, converts
+   that tiny hull to facets, intersects these facet systems with the block
+   simplexes, and enumerates the resulting projected-source vertices.  This is
    valid because the fixed-source gap \(\Gamma_u(x;\omega)\) is a supremum of
-   linear functions of \(x\), hence attains its local-marginal maximum on a
-   projected vertex.
+   linear functions of \(x\), hence attains its maximum over the projected
+   local-marginal source polytope on a projected-source vertex.
 
    In the same \(N=8,b=4,q=2\) triple-projection regime, sampled sweeps with no
    integral local pseudowords had product-simplex gaps far above budget but
@@ -13742,11 +13743,14 @@ partition ignores the bias coordinates that certify the list size.
    seeds, no clean over-budget fractional case, and clean maximum
    \(\text{gap}/\Xi\simeq0.906\) at seed \(46\).  The overall sampled maximum
    was \(\text{gap}/\Xi\simeq1.17\), but it occurred on a seed with an integral
-   local pseudoword.  Exact enumeration for seed \(46\) checked \(646646\)
-   bases, found
-   \(145\) local vertices and \(37\) projected unary sources, and gave the same
-   \(\text{gap}/\Xi\simeq0.906\); the product-simplex ratio on that seed was
-   about \(6.87\), with no integral local pseudoword.  The convex-hull
+   local pseudoword.  Exact projected-source enumeration for seed \(46\) checked
+   \(58905\) active sets, found \(8\) projected-source vertices, and gave the
+   same \(\text{gap}/\Xi\simeq0.906\); the product-simplex ratio on that seed
+   was about \(6.87\), with no integral local pseudoword.  The earlier
+   local-check basis enumerator found \(145\) local vertices and \(37\)
+   projected images for the same panel, but the extra projected images are not
+   vertices of the unary source polytope and are unnecessary for maximizing the
+   convex fixed-source gap.  The convex-hull
    dominance screen isolates why the product-simplex number is too pessimistic
    but also why dominance mass alone is insufficient.  For the worst seed-\(46\)
    source
@@ -13769,12 +13773,14 @@ partition ignores the bias coordinates that certify the list size.
    deficit is not enough.
    Pairwise checks still
    fail exactly: on the \(N=8,b=3,q=2\) pairwise diagnostic, exact enumeration
-   has \(9\) projected sources and reproduces the integral/product-simplex
+   has \(8\) projected-source vertices and reproduces the integral/product-simplex
    gap.  On \(N=12,b=4,q=2\) with triple projections, a \(64\)-seed sampled scan
    found \(25\) clean seeds, no clean over-budget fractional case, and clean
-   maximum \(\text{gap}/\Xi\simeq0.533\).  The overall sampled maximum was
-   \(\text{gap}/\Xi\simeq1.62\), again on a seed with an integral local
-   pseudoword.
+   maximum \(\text{gap}/\Xi\simeq0.533\).  Exact projected-source enumeration
+   for that worst clean seed \(48\) checked \(73815\) active sets, found \(9\)
+   projected-source vertices, and gave the same ratio \(0.533\).  The overall
+   sampled maximum was \(\text{gap}/\Xi\simeq1.62\), again on a seed with an
+   integral local pseudoword.
 
    This is still not a proof of \((LNN2)\) for an asymptotic code family, but it
    makes the next finite barrier precise: after a local code actually removes
