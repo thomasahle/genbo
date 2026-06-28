@@ -65428,6 +65428,97 @@ certificate is the verified positive-gain column and the finite LP it augments.
    monotonicity and submodularity.
 \end{proof}
 
+\begin{corollary}[Fractional capped-capture threshold screen]
+   \label{cor:fractional-capped-capture-threshold-screen}
+   Work in the setting of
+   \cref{cor:capped-atom-capture-support-screen}.  Let
+   \(x=(x_p)_{p\in W_B}\in[0,1]^{W_B}\) be any finite fractional support
+   profile, and for \(\theta\in(0,1]\) put
+   \[
+      S_\theta(x)=\{p\in W_B:x_p\ge\theta\}.
+      \tag{CCT1}
+   \]
+   Define the layer-cake capped-capture value
+   \[
+      \mathcal L_B^{u^z}(x)
+      =
+      \int_0^1
+      \mathcal C_B^{u^z}(S_\theta(x))\,d\theta .
+      \tag{CCT2}
+   \]
+   Equivalently, if the positive coordinates of \(x\) take distinct values
+   \(1\ge\theta_1>\theta_2>\cdots>\theta_m>0\), and
+   \(\theta_{m+1}=0\), then
+   \[
+      \mathcal L_B^{u^z}(x)
+      =
+      \sum_{j=1}^m(\theta_j-\theta_{j+1})
+      \mathcal C_B^{u^z}(S_{\theta_j}(x)).
+      \tag{CCT3}
+   \]
+   If preprocessing certifies
+   \[
+      \mathcal L_B^{u^z}(x)>
+      \Theta_B^{\rm net}\sum_{p\in W_B}x_p
+      +
+      2K_B^\natural\Theta_B^{\rm net},
+      \tag{CCT4}
+   \]
+   then one threshold support \(S_{\theta_j}(x)\) satisfies \((CAS2)\), and
+   hence \(B\) contains a positive shared top-prefix column.
+
+   Conversely, if no top prefix of \(B\) has positive reduced cost against
+   \(u^z\), then every fractional support profile obeys
+   \[
+      \mathcal L_B^{u^z}(x)
+      \le
+      \Theta_B^{\rm net}\sum_{p\in W_B}x_p
+      +
+      2K_B^\natural\Theta_B^{\rm net}.
+      \tag{CCT5}
+   \]
+
+   Thus a proposal routine may be fully fractional.  It only has to provide a
+   lower certificate for the layer-cake surplus
+   \(\mathcal L_B^{u^z}(x)-\Theta_B^{\rm net}\sum_px_p\); the deterministic
+   threshold support with positive surplus is then found by scanning the
+   finitely many levels of \(x\).
+\end{corollary}
+
+\begin{proof}
+   The layer-cake identity for cardinality gives
+   \[
+      \int_0^1|S_\theta(x)|\,d\theta
+      =
+      \sum_{p\in W_B}x_p.
+      \tag{CCT6}
+   \]
+   If every threshold support violated \((CAS2)\), then
+   \[
+      \mathcal C_B^{u^z}(S_\theta(x))
+      \le
+      \bigl(|S_\theta(x)|+2K_B^\natural\bigr)\Theta_B^{\rm net}
+      \qquad(0<\theta\le1)
+   \]
+   outside the finitely many jump levels, and hence, after integration and
+   \((CCT6)\),
+   \[
+      \mathcal L_B^{u^z}(x)
+      \le
+      \Theta_B^{\rm net}\sum_px_p
+      +
+      2K_B^\natural\Theta_B^{\rm net}.
+   \]
+   Therefore \((CCT4)\) forces at least one threshold support to satisfy
+   \((CAS2)\), and
+   \cref{cor:capped-atom-capture-support-screen} gives the positive top prefix.
+
+   If no top prefix is positive, then \((CAS3)\) holds for every support
+   \(S_\theta(x)\).  Integrating those inequalities and using \((CCT6)\) gives
+   \((CCT5)\).  The discrete formula \((CCT3)\) is the same integral written
+   over the finitely many constant intervals of \(\theta\mapsto S_\theta(x)\).
+\end{proof}
+
 \begin{corollary}[LP-guided capped-flow exhaustion endpoint]
    \label{cor:lp-guided-capped-flow-exhaustion-endpoint}
    Work in the setting of
@@ -65472,7 +65563,10 @@ certificate is the verified positive-gain column and the finite LP it augments.
    cap-constrained optimizer \(z^{(t-1)}\).
    By \cref{cor:capped-atom-capture-support-screen}, one sufficient positive
    branch is a certified support whose capped atom-capture value beats the
-   affine clipped support price.
+   affine clipped support price.  By
+   \cref{cor:fractional-capped-capture-threshold-screen}, the same branch may
+   be proposed fractionally and then rounded by thresholding the layer-cake
+   surplus.
    Put
    \[
       K_t=K_{B_t}^\natural,
@@ -81431,6 +81525,10 @@ capped atom capture
 support price, a monotone-submodular coverage objective that facility,
 range-reporting, AQ, lattice, or list-decoding proposal routines can try to
 maximize in build time.
+\Cref{cor:fractional-capped-capture-threshold-screen} makes this proposal layer
+fully fractional: if a routine certifies layer-cake capped capture above the
+fractional support price, one deterministic threshold support gives the same
+positive branch.
 \Cref{cor:lp-guided-capped-flow-exhaustion-endpoint} feeds this back into the
 ANN endpoint: it is enough to prove that the LP-guided loop either finds a
 half-threshold opened-support screen or drives the capped residual LP below
