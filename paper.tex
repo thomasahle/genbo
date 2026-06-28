@@ -38365,7 +38365,8 @@ query mass rather than producing a cost-effective dense filter.
    repair fires.
 
    Equivalently, since \(X_{i,h}=W_{i,h}e^{-I_{i,h}}\), the low-correlation
-   storage theorem may be stated as the single log-sum-exp inequality
+   storage theorem may be stated as the single log-sum-exp inequality, with the
+   convention \(\log0=-\infty\) inside the exponential sum,
    \[
       \log C_{\nu_i}
       +\frac{\nu_i}{1+\nu_i}\log H_i
@@ -38422,6 +38423,77 @@ query mass rather than producing a cost-effective dense filter.
    conclusion follows from
    \cref{cor:positive-moment-entropy-deficit-screen}.  Formula \((RME3)\) is
    \((RME2)\) after substituting \(X_{i,h}=W_{i,h}e^{-I_{i,h}}\) and taking
+   logarithms.
+\end{proof}
+
+\begin{corollary}[Near-first-moment entropy-deficit screen]
+   \label{cor:near-first-moment-entropy-deficit-screen}
+   Work in the setting of
+   \cref{cor:renyi-moment-entropy-deficit-screen}.  For each active layer
+   \(i\), set
+   \[
+      L_i=\max\{1,\log H_i\},
+      \qquad
+      \nu_i=L_i^{-1},
+      \qquad
+      Z_i=\sum_{h\in\mathcal H_i}X_{i,h}^{1+\nu_i}.
+      \tag{NFM1}
+   \]
+   If, for every active layer \(i\),
+   \[
+      2^{-\ell_i}Z_i^{1/(1+\nu_i)}
+      \le
+      \frac{B_\star}{32M_{\mathcal I}},
+      \qquad B_\star=aS-\E_z\Gamma_z>0,
+      \tag{NFM2}
+   \]
+   and the high-correlation fixed-tail condition \((PELS5)\) holds, then
+   \((\mathsf{ESFC}_\Sigma)\) is feasible, provided no one-record guard-credit
+   repair fires.
+
+   Equivalently, with the same \(\log0=-\infty\) convention, the
+   low-correlation storage theorem may target
+   \[
+      \frac1{1+\nu_i}
+      \log\sum_{h\in\mathcal H_i}
+      \exp\!\left((1+\nu_i)(\log W_{i,h}-I_{i,h})\right)
+      -\ell_i\log2
+      \le
+      \log\frac{B_\star}{32M_{\mathcal I}} .
+      \tag{NFM3}
+   \]
+   This formulation has no explicit \(\log H_i\) loss in the budget.  If the
+   active refinement has \(H_i\le\log^{O(1)}n\), the required moment order is
+   only \(1+\Omega(1/\log\log n)\).
+\end{corollary}
+
+\begin{proof}
+   Let \(L=L_i\), \(\nu=\nu_i=1/L\), and \(H=H_i\).  Then
+   \[
+      H^{\nu/(1+\nu)}
+      =
+      \exp\!\left(\frac{\log H}{L+1}\right)
+      \le e .
+      \tag{NFM4}
+   \]
+   Also
+   \[
+      C_\nu=(1+\nu)\nu^{-\nu/(1+\nu)}
+      =
+      \left(1+\frac1L\right)L^{1/(L+1)}
+      \le
+      2e^{1/e}<4 .
+      \tag{NFM5}
+   \]
+   Therefore
+   \[
+      C_{\nu_i}H_i^{\nu_i/(1+\nu_i)}<16 .
+   \]
+   Condition \((NFM2)\) implies \((RME2)\), because multiplying its left side
+   by this universal factor is still at most
+   \(B_\star/(2M_{\mathcal I})\).  The conclusion follows from
+   \cref{cor:renyi-moment-entropy-deficit-screen}.  Formula \((NFM3)\) is
+   \((NFM2)\) after substituting \(X_{i,h}=W_{i,h}e^{-I_{i,h}}\) and taking
    logarithms.
 \end{proof}
 
@@ -44218,6 +44290,9 @@ the same storage check.
 \Cref{cor:renyi-moment-entropy-deficit-screen} optimizes out that cutoff, so
 the remaining low-correlation theorem can be stated directly as one
 \(L_{1+\nu}\) moment of \(W_he^{-I_h}\).
+\Cref{cor:near-first-moment-entropy-deficit-screen} chooses
+\(\nu=1/\max\{1,\log|\mathcal H|\}\), removing the explicit profile-count loss
+and leaving only a barely-superlinear moment target.
 \Cref{lem:star-superlevel-column-verifier} and
 \cref{cor:pair-star-dense-column-generator} add the finite LP check: the star
 is retained only if its ball-thickened query side has positive reduced gain;
@@ -69794,6 +69869,10 @@ positive-moment form that a tensorized spherical, lattice, or range/list-decoder
 estimate is more likely to prove directly.
 \Cref{cor:renyi-moment-entropy-deficit-screen} removes the auxiliary cutoff and
 makes the target a single Renyi list-size moment for each active layer.
+\Cref{cor:near-first-moment-entropy-deficit-screen} sharpens this again: with
+the exponent \(1+1/\log H_i\), the \(H_i\)-factor in the optimized bound is
+constant, so polylogarithmically many profiles do not require an additional
+\(\log H_i\) energy margin.
 \Cref{lem:star-superlevel-column-verifier} and
 \cref{cor:pair-star-dense-column-generator} turn such a superlevel into an
 ordinary fractional-cover column by using the certified query activation
@@ -70049,6 +70128,10 @@ the cutoff times the number of subprofiles.
 \Cref{cor:renyi-moment-entropy-deficit-screen} is the cutoff-free form: it asks
 for a raw \(L_{1+\nu}\) moment of the entropy-deficit weights, exactly the
 average Renyi list-decoding estimate suggested by the compressed-bucket route.
+\Cref{cor:near-first-moment-entropy-deficit-screen} is the minimal-moment
+version: the moment exponent may be taken as
+\(1+1/\max\{1,\log|\mathcal H|\}\), so the proof only needs a barely positive
+entropy-excess moment rather than a fixed higher moment.
 \Cref{cor:metric-entropy-hall-shadow-closure} and
 \cref{cor:low-doubling-hall-shadow-close} sharpen the remaining geometric
 obligation: any positive Hall shadow of certified covering number below
