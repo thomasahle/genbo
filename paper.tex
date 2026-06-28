@@ -13085,6 +13085,147 @@ partition ignores the bias coordinates that certify the list size.
    \cref{cor:band-limited-residual-budget-compiler}.
 \end{proof}
 
+\begin{corollary}[Posterior plurality form of soft chart shadows]
+   \label{cor:posterior-plurality-chart-shadow}
+   Continue with the notation of
+   \cref{cor:uniform-residual-chart-shadow}.  For a nonzero selector
+   \(s\in\R_+^N\), define the selector posterior on coordinate \(i\) by
+   \[
+      \pi_i^s(a)=\frac{s_i(a)}{S(s)},
+      \qquad
+      S(s)=\sum_j s_j,
+      \tag{LNY1}
+   \]
+   and put
+   \[
+      \Delta_\nu(s)
+      =
+      \sum_{i=1}^b\nu_i
+      \left(q\max_{a\in[q]}\pi_i^s(a)-1\right).
+      \tag{LNY2}
+   \]
+   Then the soft chart-shadow family \((LNX4)\) is equivalent to the single
+   posterior-plurality bound
+   \[
+      \sup_{0\le s\le\Omega_u}
+      S(s)\Delta_\nu(s)
+      \le
+      \chi_u\Xi_u ,
+      \tag{LNY3}
+   \]
+   with the convention that the term is \(0\) when \(S(s)=0\).
+
+   Moreover, let
+   \[
+      V_\nu=\sum_{i=1}^b\nu_i,
+      \qquad
+      \mathcal E_\nu(s)
+      =
+      \sum_{i=1}^b\nu_i
+      \left(
+         \sum_{a\in[q]}\pi_i^s(a)^2-\frac1q
+      \right).
+      \tag{LNY4}
+   \]
+   Then
+   \[
+      \Delta_\nu(s)
+      \le
+      \sqrt{q(q-1)V_\nu\,\mathcal E_\nu(s)} .
+      \tag{LNY5}
+   \]
+   Thus \((LNX4)\), and hence \((LNO2)\) in the balanced scalar setting, follows
+   from the collision-energy shadow bound
+   \[
+      \sup_{\substack{0\le s\le\Omega_u\\ S(s)>0}}
+      S(s)\sqrt{q(q-1)V_\nu\,\mathcal E_\nu(s)}
+      \le
+      \chi_u\Xi_u .
+      \tag{LNY6}
+   \]
+
+   Finally, if
+   \[
+      A^\nu_{j,k}
+      =
+      \sum_{i=1}^b\nu_i\,\mathbf1_{\{c_j(i)=c_k(i)\}},
+      \qquad
+      B^\nu=A^\nu-\frac{V_\nu}{q}\mathbf1_N\mathbf1_N^\top,
+      \tag{LNY7}
+   \]
+   then
+   \[
+      \mathcal E_\nu(s)
+      =
+      \frac1{S(s)^2}
+      s^\top B^\nu s .
+      \tag{LNY8}
+   \]
+   Equivalently, the sufficient collision-energy condition \((LNY6)\) is the
+   box-restricted quadratic-form bound
+   \[
+      \sup_{0\le s\le\Omega_u}s^\top B^\nu s
+      \le
+      \frac{(\chi_u\Xi_u)^2}{q(q-1)V_\nu}.
+      \tag{LNY9}
+   \]
+   Hence the chart-shadow theorem can be attacked as a restricted weighted
+   second-moment statement for all price-capped selector measures \(s\le
+   \Omega_u\).
+\end{corollary}
+
+\begin{proof}
+   Fix \(s\ne0\).  If a chart \(\tau\) satisfies the domination constraints in
+   \((LNX4)\), then \(\pi_i^s(\tau_i)=\max_a\pi_i^s(a)\) for every \(i\), and
+   the objective in \((LNX4)\) equals \(S(s)\Delta_\nu(s)\).  Conversely, for
+   any selector \(s\), choosing \(\tau_i\in\arg\max_a\pi_i^s(a)\) makes the
+   chart constraints feasible and gives the same value.  Taking suprema proves
+   the equivalence with \((LNY3)\).
+
+   For a probability vector \(p\) on \([q]\),
+   \[
+      \max_ap_a-\frac1q
+      \le
+      \sqrt{\frac{q-1}{q}}
+      \left(\sum_a\left(p_a-\frac1q\right)^2\right)^{1/2}.
+      \tag{LNY10}
+   \]
+   This is sharp for one raised coordinate and all others equal.  Multiplying
+   by \(q\), applying it to \(p=\pi_i^s\), and using Cauchy's inequality over
+   the weights \(\nu_i\) gives
+   \[
+   \begin{aligned}
+      \Delta_\nu(s)
+      &\le
+      \sqrt{q(q-1)}
+      \sum_i\nu_i
+      \left(
+         \sum_a\left(\pi_i^s(a)-\frac1q\right)^2
+      \right)^{1/2} \\
+      &\le
+      \sqrt{q(q-1)V_\nu
+      \sum_i\nu_i
+      \left(
+         \sum_a\pi_i^s(a)^2-\frac1q
+      \right)} ,
+   \end{aligned}
+      \tag{LNY11}
+   \]
+   which is \((LNY5)\).  Substituting this bound in \((LNY3)\) proves
+   \((LNY6)\).
+
+   The pair form follows by expanding
+   \[
+      \sum_a\pi_i^s(a)^2
+      =
+      \frac1{S(s)^2}
+      \sum_{j,k:\ c_j(i)=c_k(i)}s_js_k
+      \tag{LNY12}
+   \]
+   and summing over \(i\) with weights \(\nu_i\).  This proves \((LNY8)\), and
+   substituting \((LNY8)\) into \((LNY6)\) gives \((LNY9)\).
+\end{proof}
+
 \begin{corollary}[Anchor-fiber LP/SA certificate compiler]
    \label{cor:anchor-fiber-lp-sa-compiler}
    Continue with the notation of
@@ -13451,6 +13592,12 @@ partition ignores the bias coordinates that certify the list size.
    the soft chart excess
    \(\sum_i\nu_i(qs_i(\tau_i)-\sum_js_j)\), the exact weighted list-recovery
    quantity that must be polylogarithmically bounded.
+   \Cref{cor:posterior-plurality-chart-shadow} removes the chart notation from
+   this target: every price-capped selector induces coordinate posteriors
+   \(\pi_i^s\), and the obstruction is their weighted plurality bias.  A
+   Cauchy step bounds that bias by the centered overlap quadratic form
+   \(s^\top B^\nu s\).  Thus the random-code theorem can be stated as a
+   box-restricted second-moment bound for all \(0\le s\le\Omega_u\).
 
    \Cref{cor:leader-shift-near-leader-certificate} gives the clean terminal
    version of this idea when scalar leakage is killed exactly, or otherwise
