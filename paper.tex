@@ -64650,6 +64650,111 @@ certificate is the verified positive-gain column and the finite LP it augments.
    and the displayed bounds.
 \end{proof}
 
+\begin{corollary}[Adaptive fractional-flow exhaustion endpoint]
+   \label{cor:adaptive-fractional-flow-exhaustion-endpoint}
+   Work in the setting of
+   \cref{cor:fractional-opened-support-template-endpoint}.  Replace the
+   fractional-panel hypothesis \((FOT1)\) by the following adaptive
+   exhaustion condition.
+
+   Whenever \(\Psi_{\mathcal B_y}(y)>D_\pi/4\) and
+   \cref{cor:template-complete-shared-cover-obstruction} supplies an exact
+   no-prefix dual obstruction \(u\), preprocessing has a finite adaptive
+   proposal rule.  The rule starts from a finite source set \(I_0\) with weights
+   \(\nu_i\ge0\).  After a failed prefix has retained \(I_{t-1}\), it proposes a
+   fractional opened-support source system \((B_t,E_t,C_t)\), with left set
+   \(I_{t-1}\), whose normalized source loads satisfy
+   \[
+      \frac{\mu_i^{(t)}}{C_t}=\nu_i
+      \qquad(i\in I_{t-1}),
+      \tag{AFF1}
+   \]
+   and whose template top-prefix records all lie in \(\mathcal Z_\star\).  Put
+   \[
+      K_t=K_{B_t}^\natural,
+      \qquad
+      \Theta_t=\Theta_{B_t}^{\rm net}.
+      \tag{AFF2}
+   \]
+
+   The proposal rule is called value-complete if every possible all-failed
+   transcript has a certified target \(\Lambda_{\rm rem}\ge0\) such that, with
+   \[
+      V_0=\sum_{i\in I_0}\nu_i,
+      \qquad
+      \Delta_T=\sum_{t=1}^T4K_t\Theta_t,
+      \tag{AFF3}
+   \]
+   one has
+   \[
+      \Delta_T\le V_0-\Lambda_{\rm rem},
+      \tag{AFF4}
+   \]
+   and there is no subset \(J\subseteq I_0\) with
+   \[
+      \sum_{i\in J}\nu_i\ge\Lambda_{\rm rem}
+      \tag{AFF5}
+   \]
+   satisfying all transcript tail caps
+   \[
+      \sum_{\substack{p\in N_{E_t}(J\cap I_{t-1}):\\ d_{t,p}>2\Theta_t}}
+      (d_{t,p}-2\Theta_t)
+      \le4K_t\Theta_t
+      \qquad(t=1,\ldots,T).
+      \tag{AFF6}
+   \]
+
+   If such a value-complete adaptive proposal rule exists for every exact
+   obstruction \(u\), then the positive shared-panel separator \((SPP1)\) holds
+   at every node, and hence
+   \[
+      Q(n,d)=d\,n^{\rho_c}\log^{O_c(1)}n,\qquad
+      S(n,d)=dn+n^{1+\rho_c}\log^{O_c(1)}n .
+   \]
+
+   Equivalently, the remaining build-time theorem may be stated as finite
+   transcript exhaustion: for every high-value no-prefix obstruction, adaptive
+   proposal search must either find a half-threshold fractional flow screen or
+   prove that no high-value residual can satisfy all failed-screen caps.
+\end{corollary}
+
+\begin{proof}
+   Fix \(y\) and suppose first that
+   \(\Psi_{\mathcal B_y}(y)\le D_\pi/4\).  Then the first outcome of
+   \cref{cor:template-search-shared-integrated-target} holds.  Otherwise take
+   the exact obstruction \(u\) supplied by
+   \cref{cor:template-complete-shared-cover-obstruction}, and run the adaptive
+   proposal rule.
+
+   If some proposed screen has
+   \[
+      \widehat{\mathfrak S}_{B_t,E_t}(C_t)>2K_t\Theta_t,
+   \]
+   then \cref{cor:fractional-opened-support-flow-lp} exposes a positive shared
+   top-prefix column in \(\mathcal Z_\star\).  This is the second outcome
+   required by \cref{cor:template-search-shared-integrated-target}.
+
+   It remains to rule out the case in which every proposed screen fails:
+   \[
+      \widehat{\mathfrak S}_{B_t,E_t}(C_t)\le2K_t\Theta_t
+      \qquad(t=1,\ldots,T).
+   \]
+   Apply \cref{cor:value-retained-adaptive-failed-screen} with
+   \(L_t=2K_t\Theta_t\) and \(\eta_t=1/2\).  The value-completeness certificate
+   gives \((AFF4)\) and asserts that no subset satisfying \((AFF5)\)--\((AFF6)\)
+   exists.  But \cref{cor:value-retained-adaptive-failed-screen} says that, if
+   all screens failed, the final retained residual \(I_T\) would have value at
+   least \(\Lambda_{\rm rem}\) and would satisfy exactly the caps \((AFF6)\).
+   This contradiction shows that not all screens fail.  Therefore a positive
+   fractional opened-support screen exists.
+
+   Thus every feasible dual \(y\) has either a restricted cover of value at most
+   \(D_\pi/4\) or a verified positive top-prefix column in
+   \(\mathcal Z_\star\).  Applying
+   \cref{cor:template-search-shared-integrated-target} gives \((SPP1)\) and the
+   displayed query and storage bounds.
+\end{proof}
+
 \begin{corollary}[Shared integrated cover-cost endpoint]
    \label{cor:shared-integrated-cover-cost-endpoint}
    Work in the setting of
@@ -80504,6 +80609,10 @@ of one branching-score maximization.
 of the same target: preprocessing may solve the fractional opened-support LP
 and keep only a verified positive top-prefix column, while failed proposals
 leave finite dual prices rather than an unstructured failed support search.
+\Cref{cor:adaptive-fractional-flow-exhaustion-endpoint} is the finite
+build-time-complete version: adaptive proposal search may keep failing only if
+the declared failed-screen budgets have already paid for every high-value
+tail-capped residual.
 \Cref{cor:single-tail-shared-separator-endpoint} packages this into the
 current sharp proof target: every normalized exact-signature dual must either
 produce a materializable low-correlation profile record or force one certified
