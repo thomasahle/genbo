@@ -13498,9 +13498,13 @@ partition ignores the bias coordinates that certify the list size.
    panels needed about \(74\) anchors out of \(128\), \(172\) out of \(256\),
    and \(361\) out of \(512\).  Thus exact anchoring of the largest prices is
    not a near-leader list; it is almost the entire far-below-leader tail.  The
-   next proof attempt should therefore prove directly that residual or negative
-   coefficient mass avoids that far tail, or prove that such a tail-avoidance
-   theorem is impossible for the chosen code family.
+   clipped near-leader set itself was much smaller: about \(23\), \(34\), and
+   \(64\) codewords at those three sizes, consistent with
+   \cref{lem:gaussian-clipped-near-leader-size}.  However, the complementary
+   far tail carried more than \(0.9996\) of the Boltzmann price mass in all
+   three runs.  The next proof attempt should therefore prove directly that
+   residual or negative coefficient mass avoids that far tail, or prove that
+   such a tail-avoidance theorem is impossible for the chosen code family.
 \end{remark}
 
 \begin{corollary}[Posterior mismatch form for localized residuals]
@@ -13735,6 +13739,89 @@ partition ignores the bias coordinates that certify the list size.
    in \(A\), proving \((LOB14)\).  The last statement is the definition of the
    full internal-gap prices: \(\omega_j\) is largest when \(W(c_j)\) is far
    below the local maximum \(M\).
+\end{proof}
+
+\begin{lemma}[Gaussian clipped near-leader list size]
+   \label{lem:gaussian-clipped-near-leader-size}
+   Let \(W_1,\ldots,W_N\) be independent \(N(0,\sigma^2)\) variables, put
+   \(M=\max_jW_j\), \(L=\log N\), and
+   \[
+      \lambda_N=\frac{\sqrt{2L}}{\sigma}.
+      \tag{LOB15}
+   \]
+   For \(\Delta\ge0\), define the \(\Delta\)-near-leader list
+   \[
+      \mathcal L_\Delta=\{j:\ M-W_j\le\Delta\}.
+      \tag{LOB16}
+   \]
+   Then, for all sufficiently large \(N\),
+   \[
+      \E|\mathcal L_\Delta|
+      \le
+      2(\log N)^2\exp(\lambda_N\Delta).
+      \tag{LOB17}
+   \]
+   In particular, if a clipped price cap is \(K=\log^A N\) and
+   \(\Delta=(\log K)/\lambda_N\), then
+   \[
+      \E|\mathcal L_\Delta|\le 2\log^{A+2}N .
+      \tag{LOB18}
+   \]
+
+   Thus, in the independent Gaussian score model, clipping
+   \(e^{\lambda_N(M-W_j)}\) at a polylogarithmic cap leaves only a
+   polylogarithmic near-leader list.  The obstruction isolated above is not the
+   size of the clipped list; it is proving that the LP/SA negative coefficients
+   or residual budget do not see the complementary far-below-leader tail.
+\end{lemma}
+
+\begin{proof}
+   Write
+   \[
+      t_N=\sqrt{2L}-\frac{2\log L}{\sqrt{2L}},
+      \qquad m_N=\sigma t_N .
+      \tag{LOB19}
+   \]
+   The Gaussian Mills lower bound gives, for all large \(N\),
+   \[
+      \Pr[W_1\ge m_N]
+      \ge
+      \frac{1}{2t_N}\exp(-t_N^2/2)
+      \ge
+      \frac{L^{3/2}}{N}.
+      \tag{LOB20}
+   \]
+   Hence
+   \[
+      \Pr[M<m_N]
+      \le
+      \left(1-\frac{L^{3/2}}{N}\right)^N
+      \le e^{-L^{3/2}}.
+      \tag{LOB21}
+   \]
+   On the event \(M\ge m_N\),
+   \[
+      |\mathcal L_\Delta|
+      \le
+      e^{\lambda_N\Delta-\lambda_NM}
+      \sum_{j=1}^Ne^{\lambda_NW_j}
+      \le
+      e^{\lambda_N\Delta-\lambda_Nm_N}
+      \sum_{j=1}^Ne^{\lambda_NW_j}.
+      \tag{LOB22}
+   \]
+   Taking expectations and using
+   \(\E e^{\lambda_NW_1}=e^{\lambda_N^2\sigma^2/2}=e^L=N\), while
+   \(\lambda_Nm_N=2L-2\log L\), gives
+   \[
+      \E\bigl[|\mathcal L_\Delta|\mathbf1_{\{M\ge m_N\}}\bigr]
+      \le
+      e^{\lambda_N\Delta}L^2 .
+      \tag{LOB23}
+   \]
+   The bad event contributes at most \(Ne^{-L^{3/2}}\), which is at most
+   \(e^{\lambda_N\Delta}L^2\) for all large \(N\).  This proves \((LOB17)\).
+   Substituting \(\lambda_N\Delta=\log K=A\log\log N\) gives \((LOB18)\).
 \end{proof}
 
 \begin{corollary}[Finite dual for localized residual feasibility]

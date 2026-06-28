@@ -98,6 +98,9 @@ def test_run_trial_is_deterministic_and_clips_the_singleton_cost():
     assert row1["clipped_singleton_cost"] <= row1["uniform_singleton_cost"]
     assert 0.0 <= row1["full_diag_share"] <= 1.0
     assert 0.0 <= row1["clipped_diag_share"] <= 1.0
+    assert row1["near_leader_count"] + row1["far_tail_count"] == row1["n_words"]
+    assert row1["clipped_gap_cutoff"] > 0.0
+    assert 0.0 <= row1["far_tail_weight_fraction"] <= 1.0
 
 
 if __name__ == "__main__":

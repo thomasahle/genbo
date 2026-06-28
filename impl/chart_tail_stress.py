@@ -67,6 +67,11 @@ FIELDNAMES = [
     "top_anchor_remaining_cost",
     "top_anchor_remaining_max_price",
     "top_anchor_remaining_eff_count",
+    "clipped_gap_cutoff",
+    "near_leader_count",
+    "near_leader_fraction",
+    "far_tail_count",
+    "far_tail_weight_fraction",
 ]
 
 
@@ -266,6 +271,14 @@ def run_trial(
 
     omega_sum = float(np.sum(omega))
     omega_eff_count = omega_sum * omega_sum / float(np.sum(omega * omega))
+    if lam > 0:
+        clipped_gap_cutoff = math.log(price_cap) / lam
+    else:
+        clipped_gap_cutoff = float("inf")
+    near_mask = gaps <= clipped_gap_cutoff
+    near_leader_count = int(np.sum(near_mask))
+    far_tail_count = int(n_words - near_leader_count)
+    far_tail_weight = float(np.sum(omega[~near_mask]))
     uniform_singleton_cost = (alphabet - 1.0) * blocks * float(np.max(omega))
     clipped_singleton_cost = (alphabet - 1.0) * blocks * float(np.max(clipped))
     full_posterior = posterior_residual_metrics(code, omega, alphabet)
@@ -317,6 +330,11 @@ def run_trial(
         "top_anchor_remaining_cost": top_anchor["remaining_cost"],
         "top_anchor_remaining_max_price": top_anchor["remaining_max_price"],
         "top_anchor_remaining_eff_count": top_anchor["remaining_eff_count"],
+        "clipped_gap_cutoff": float(clipped_gap_cutoff),
+        "near_leader_count": near_leader_count,
+        "near_leader_fraction": float(near_leader_count / n_words),
+        "far_tail_count": far_tail_count,
+        "far_tail_weight_fraction": far_tail_weight / omega_sum,
     }
 
 
