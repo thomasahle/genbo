@@ -12281,42 +12281,44 @@ partition ignores the bias coordinates that certify the list size.
    displayed supremum is the maximum of finitely many ordinary LPs.
 \end{proof}
 
-\begin{corollary}[Local-marginal vertex score-band obstruction]
+\begin{corollary}[Projected-source vertex score-band obstruction]
    \label{cor:local-marginal-vertex-score-band-obstruction}
    Continue with the notation of
    \cref{cor:integral-score-band-obstruction}.  Let \(Q_u\) be any finite
    local-marginal relaxation whose variables are nonnegative local-check
    assignment weights satisfying affine consistency constraints, and let
    \(S_uQ_u\subseteq\Delta_q^b\) be its projected unary source polytope.  Let
-   \(\mathcal V_u\) be the set of projected unary sources obtained from the
-   vertices of \(Q_u\).  Then
+   \(\mathcal W_u=\operatorname{vert}(S_uQ_u)\) be the vertices of this
+   projected source polytope.  Then
    \[
       \sup_{x\in S_uQ_u}\Gamma_u(x;\Omega_u)
       =
-      \max_{v\in\mathcal V_u}\Gamma_u(v;\Omega_u).
+      \max_{w\in\mathcal W_u}\Gamma_u(w;\Omega_u).
       \tag{LNN12}
    \]
    Consequently, the finite score-band condition \((LNN2)\) holds for the
    local-marginal relaxation \(P_u=S_uQ_u\) if and only if
    \[
-      \Gamma_u(v;\Omega_u)\le\Xi_u
-      \qquad(v\in\mathcal V_u).
+      \Gamma_u(w;\Omega_u)\le\Xi_u
+      \qquad(w\in\mathcal W_u).
       \tag{LNN13}
    \]
-   In particular, any projected local-marginal vertex \(v\) with
+   In particular, any projected-source vertex \(w\) with
    \[
-      \Gamma_u(v;\Omega_u)>\Xi_u
+      \Gamma_u(w;\Omega_u)>\Xi_u
       \tag{LNN14}
    \]
    is a concrete fractional obstruction to the frozen finite score-band target.
 
    This is the exact finite verifier used by
-   \texttt{impl/score\_band\_lp\_stress.py}: eliminate explicit unary
-   variables, enumerate basic feasible local-check marginals under consistency,
-   project them to unary sources, and solve the fixed-source chart LP for each
-   projected source.  Integral pseudowords are just the integral vertices in
-   this list; after they disappear, any remaining failure of \((LNN2)\) must be
-   witnessed by one of the genuinely fractional projected vertices.
+   \texttt{impl/score\_band\_lp\_stress.py}: form the projected unary source
+   polytope \(S_uQ_u\), enumerate its vertices directly, and solve the
+   fixed-source chart LP for each projected-source vertex.  Projecting every
+   vertex of \(Q_u\) is a valid but larger check, since every vertex of
+   \(S_uQ_u\) is the image of a vertex of \(Q_u\).  Integral pseudowords are
+   just the integral projected-source vertices; after they disappear, any
+   remaining failure of \((LNN2)\) must be witnessed by one of the genuinely
+   fractional projected-source vertices.
 \end{corollary}
 
 \begin{proof}
@@ -12333,23 +12335,23 @@ partition ignores the bias coordinates that certify the list size.
       \right).
       \tag{LNN15}
    \]
-   Hence \(\Gamma_u(\cdot;\omega)\) is convex.  Since \(Q_u\) is a finite
-   polytope, every \(x\in S_uQ_u\) is a convex combination of projected vertex
-   sources \(v\in\mathcal V_u\).  Convexity gives
+   Hence \(\Gamma_u(\cdot;\omega)\) is convex.  Since \(S_uQ_u\) is a finite
+   polytope, every \(x\in S_uQ_u\) is a convex combination of projected-source
+   vertices \(w\in\mathcal W_u\).  Convexity gives
    \[
       \Gamma_u(x;\Omega_u)
       \le
-      \max_{v\in\mathcal V_u}\Gamma_u(v;\Omega_u),
+      \max_{w\in\mathcal W_u}\Gamma_u(w;\Omega_u),
       \tag{LNN16}
    \]
-   while the reverse inequality follows because every \(v\in\mathcal V_u\)
+   while the reverse inequality follows because every \(w\in\mathcal W_u\)
    lies in \(S_uQ_u\).  This proves \((LNN12)\).  Combining \((LNN12)\) with
    \cref{cor:integral-score-band-obstruction}, applied to
    \(P_u=S_uQ_u\), gives the equivalence \((LNN13)\) and the obstruction
    \((LNN14)\).
 \end{proof}
 
-\begin{corollary}[Convex-hull dominance screen for local vertices]
+\begin{corollary}[Convex-hull dominance screen for projected-source vertices]
    \label{cor:local-vertex-convex-hull-dominance-screen}
    Continue in the setting of
    \cref{cor:local-marginal-vertex-score-band-obstruction}.  For a projected
@@ -12369,7 +12371,7 @@ partition ignores the bias coordinates that certify the list size.
    \[
       \delta_u^{\mathrm{loc}}
       =
-      \max_{v\in\mathcal V_u}\delta_u(v),
+      \max_{w\in\mathcal W_u}\delta_u(w),
       \qquad
       \Gamma_u^{\Delta}(\Omega_u)
       =
@@ -12392,32 +12394,32 @@ partition ignores the bias coordinates that certify the list size.
 
    This is a sufficient condition, not a replacement for the exact vertex
    check.  It isolates a concrete structural theorem for the local code: every
-   projected local vertex should be mostly dominated by the true-code convex
+   projected-source vertex should be mostly dominated by the true-code convex
    hull.  If this dominance deficit is too large, the proof must use a sharper
    residual product-gap bound than the global product-simplex gap
    \(\Gamma_u^\Delta\).
 \end{corollary}
 
 \begin{proof}
-   Fix \(v\in\mathcal V_u\), and let
-   \(t=1-\delta_u(v)\).  If \(t=0\), the desired bound is immediate from the
-   definition of \(\Gamma_u^\Delta\).  If \(t=1\), then \(v\) lies in the true
-   codeword convex hull and \(\Gamma_u(v;\Omega_u)=0\).  Otherwise choose nonnegative
+   Fix \(w\in\mathcal W_u\), and let
+   \(t=1-\delta_u(w)\).  If \(t=0\), the desired bound is immediate from the
+   definition of \(\Gamma_u^\Delta\).  If \(t=1\), then \(w\) lies in the true
+   codeword convex hull and \(\Gamma_u(w;\Omega_u)=0\).  Otherwise choose nonnegative
    coefficients \(a_j\) with total mass arbitrarily close to \(t\) and
-   \(\sum_j a_j\iota(c_j)\le v\).  Put
+   \(\sum_j a_j\iota(c_j)\le w\).  Put
    \[
       h=t^{-1}\sum_j a_j\iota(c_j)
       \in\operatorname{conv}\{\iota(c_j):j\in[N]\}.
       \tag{LNN21}
    \]
-   Since \(v\) and \(h\) have unit mass in every coordinate block and
-   \(th\le v\), the residual
+   Since \(w\) and \(h\) have unit mass in every coordinate block and
+   \(th\le w\), the residual
    \[
-      z=\frac{v-th}{1-t}
+      z=\frac{w-th}{1-t}
       \tag{LNN22}
    \]
    lies in \(\Delta_q^b\) when \(t<1\).  Moreover
-   \(v=th+(1-t)z\).  For every \(R\),
+   \(w=th+(1-t)z\).  For every \(R\),
    \[
       \ip{R}{h}\le\max_j\ip{R}{\iota(c_j)},
       \tag{LNN23}
@@ -12426,14 +12428,14 @@ partition ignores the bias coordinates that certify the list size.
    \(\Gamma_u(\cdot;\Omega_u)\), proved in
    \cref{cor:local-marginal-vertex-score-band-obstruction}, gives
    \[
-      \Gamma_u(v;\Omega_u)
+      \Gamma_u(w;\Omega_u)
       \le
       (1-t)\Gamma_u(z;\Omega_u)
       \le
-      \delta_u(v)\Gamma_u^\Delta(\Omega_u).
+      \delta_u(w)\Gamma_u^\Delta(\Omega_u).
       \tag{LNN24}
    \]
-   Maximizing over \(v\in\mathcal V_u\) and using \((LNN12)\) proves
+   Maximizing over \(w\in\mathcal W_u\) and using \((LNN12)\) proves
    \((LNN19)\).  The sufficient condition \((LNN20)\) follows directly from
    \((LNN2)\).
 \end{proof}
