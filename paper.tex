@@ -63578,6 +63578,100 @@ certificate is the verified positive-gain column and the finite LP it augments.
    positive-surplus panel is handled by the deterministic part.
 \end{proof}
 
+\begin{lemma}[Flow-value clipped-tail screen]
+   \label{lem:flow-value-clipped-tail-screen}
+   Work in the setting of
+   \cref{cor:transported-clipped-tail-panel-separator}.  Fix one template
+   \(B\), a certified subset \(U\subseteq W_B\), a finite source set
+   \(\mathcal I\) with loads \(\mu_i\ge0\), and a finite adjacency relation
+   \(E_U\subseteq\mathcal I\times U\).  Assume
+   \((A_B,\zeta_B)\ne(0,0)\), so \(K_B^\natural\) and
+   \(\Theta_B^{\rm net}\) are defined.  For \(C>0\), let \(\Phi_{B,U}(C)\) be
+   the maximum mass of a nonnegative flow \(f_{i,p}\) supported on \(E_U\),
+   subject to
+   \[
+      \sum_{p:(i,p)\in E_U} f_{i,p}\le \mu_i
+      \qquad(i\in\mathcal I),
+      \tag{CTV1}
+   \]
+   \[
+      \sum_{i:(i,p)\in E_U} f_{i,p}\le C\,d_B^u(p)
+      \qquad(p\in U).
+      \tag{CTV2}
+   \]
+   For \(\mathcal A\subseteq\mathcal I\), let
+   \(N_U(\mathcal A)=\{p\in U:\exists i\in\mathcal A,\ (i,p)\in E_U\}\).  Then
+   \[
+      \Phi_{B,U}(C)=
+      \min_{\mathcal A\subseteq\mathcal I}
+      \left\{
+         \sum_{i\in\mathcal I\setminus\mathcal A}\mu_i
+         +
+         C\sum_{p\in N_U(\mathcal A)}d_B^u(p)
+      \right\}.
+      \tag{CTV3}
+   \]
+
+   Consequently, if
+   \[
+      \frac{\Phi_{B,U}(C)}{C}>
+      \bigl(|U|+2K_B^\natural\bigr)\Theta_B^{\rm net},
+      \tag{CTV4}
+   \]
+   then \(B\) contains a positive shared top-prefix column.  More generally, for
+   a finite panel of such flow records, positive aggregate flow surplus
+   \[
+      \sum_j\lambda_j
+      \left(
+         \frac{\Phi_{B_j,U_j}(C_j)}{C_j}
+         -
+         \bigl(|U_j|+2K_{B_j}^\natural\bigr)
+         \Theta_{B_j}^{\rm net}
+      \right)>0
+      \tag{CTV5}
+   \]
+   already exposes one positive shared top-prefix column.
+
+   Conversely, if no transported clipped-tail repair exists for this record and
+   \(M/C>(|U|+2K_B^\natural)\Theta_B^{\rm net}\), then there is a finite cut
+   \(\mathcal A\subseteq\mathcal I\) satisfying
+   \[
+      \sum_{i\in\mathcal A}\mu_i
+      >
+      C\sum_{p\in N_U(\mathcal A)}d_B^u(p)
+      +
+      \sum_{i\in\mathcal I}\mu_i
+      -M .
+      \tag{CTV6}
+   \]
+   Thus a failed flow proposal leaves an explicit localized source/capacity cut.
+\end{lemma}
+
+\begin{proof}
+   The identity \((CTV3)\) is the finite max-flow/min-cut theorem on the
+   bipartite network with source capacities \(\mu_i\), infinite-capacity edges
+   \((i,p)\in E_U\), and sink capacities \(C d_B^u(p)\).  A finite cut is
+   determined by the set \(\mathcal A\) of source-side left vertices; all
+   adjacent right vertices \(N_U(\mathcal A)\) must also remain source-side, and
+   the displayed expression is exactly the cut capacity.
+
+   Let \(f\) be an optimal flow of value \(\Phi_{B,U}(C)\), and define
+   \[
+      \ell_p=\sum_{i:(i,p)\in E_U}f_{i,p}.
+   \]
+   Then \(\sum_p\ell_p=\Phi_{B,U}(C)\), and \((CTV2)\) gives
+   \(\ell_p\le C d_B^u(p)\).  Hence \((CTV4)\) is exactly the transported
+   subset certificate \((CTS2)\), so
+   \cref{cor:transported-subset-clipped-tail-certificate} gives a positive
+   shared top-prefix column.  If the aggregate inequality \((CTV5)\) holds, one
+   panel record has positive bracketed surplus and the one-record conclusion
+   applies.
+
+   Finally, if \(M/C\) is above the affine threshold and no transported repair
+   exists, then \(\Phi_{B,U}(C)<M\).  By \((CTV3)\), some cut has value below
+   \(M\); rewriting that strict inequality gives \((CTV6)\).
+\end{proof}
+
 \begin{corollary}[Template-complete shared-cover obstruction]
    \label{cor:template-complete-shared-cover-obstruction}
    Work in the setting of
@@ -63789,6 +63883,51 @@ certificate is the verified positive-gain column and the finite LP it augments.
    template search has one of the two certified outcomes required by
    \cref{cor:template-search-shared-integrated-target}.  That corollary gives
    \((SPP1)\) at every node and the displayed bounds.
+\end{proof}
+
+\begin{corollary}[Flow-value form of the template obstruction target]
+   \label{cor:flow-value-template-obstruction-endpoint}
+   Work in the setting of
+   \cref{cor:transport-template-obstruction-endpoint}.  Replace the transported
+   panel hypothesis by the following max-flow hypothesis.  Whenever
+   \(\Psi_{\mathcal B_y}(y)>D_\pi/4\) and
+   \cref{cor:template-complete-shared-cover-obstruction} supplies an exact
+   no-prefix dual obstruction \(u\), preprocessing can certify a finite panel of
+   flow records of the form in
+   \cref{lem:flow-value-clipped-tail-screen}, with all template top-prefix
+   records contained in \(\mathcal Z_\star\), such that
+   \[
+      \sum_j\lambda_j
+      \left(
+         \frac{\Phi_{B_j,U_j}(C_j)}{C_j}
+         -
+         \bigl(|U_j|+2K_{B_j}^\natural\bigr)
+         \Theta_{B_j}^{\rm net}
+      \right)>0 .
+      \tag{FVO1}
+   \]
+   Then the positive shared-panel separator \((SPP1)\) holds at every node, and
+   hence
+   \[
+      Q(n,d)=d\,n^{\rho_c}\log^{O_c(1)}n,\qquad
+      S(n,d)=dn+n^{1+\rho_c}\log^{O_c(1)}n .
+   \]
+
+   Equivalently, if this max-flow condition fails for a proposed record, the
+   remaining obstruction is the explicit finite cut \((CTV6)\).  The geometric
+   proof target can therefore be phrased as: every high-value no-prefix dual has
+   one certified flow panel whose value beats the affine clipped-tail prices, or
+   it exposes a localized source/capacity cut to be merged by a richer template.
+\end{corollary}
+
+\begin{proof}
+   If the restricted cover value is at most \(D_\pi/4\), the template-search
+   outcome already holds.  Otherwise take the exact obstruction \(u\).  The
+   positive flow-value panel \((FVO1)\) and
+   \cref{lem:flow-value-clipped-tail-screen} expose a positive shared top-prefix
+   column in \(\mathcal Z_\star\).  Thus the hypotheses of
+   \cref{cor:transport-template-obstruction-endpoint} are satisfied, and that
+   corollary gives \((SPP1)\) and the displayed bounds.
 \end{proof}
 
 \begin{corollary}[Shared integrated cover-cost endpoint]
@@ -79590,6 +79729,9 @@ extra layer-cake dynamic-range loss.
 facility, AQ, range, list, lattice, or other proposal families may return a
 weighted collection of transported subsets, and positive aggregate transported
 surplus still hardens to one deterministic shared top-prefix column.
+\Cref{lem:flow-value-clipped-tail-screen} replaces explicit transported loads
+by finite max-flow values and gives the matching localized min-cut obstruction
+when a proposed flow panel fails.
 \Cref{cor:template-complete-shared-cover-obstruction} gives the exact finite
 LP normal form for the remaining shared-cover target: if the cover value at
 level \(D/4\) is too large, the obstruction is one dual \(u\) of value
@@ -79603,6 +79745,9 @@ container tail cap.
 normal form of that target: every high-value no-prefix dual must admit a
 bounded-congestion transported panel whose affine clipped-tail surplus is
 positive.
+\Cref{cor:flow-value-template-obstruction-endpoint} is the equivalent
+verifier-facing form in terms of max-flow values; a failed record leaves the
+explicit cut \((CTV6)\).
 \Cref{cor:single-tail-shared-separator-endpoint} packages this into the
 current sharp proof target: every normalized exact-signature dual must either
 produce a materializable low-correlation profile record or force one certified
