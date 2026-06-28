@@ -13567,27 +13567,42 @@ partition ignores the bias coordinates that certify the list size.
    product-simplex score-band gap remained.  Once the integral obstruction is
    gone, the next numerical target is the fractional local-marginal LP itself,
    not another integral missing-word search.
-   The current diagnostic therefore adds a small equality-form phase-I simplex
-   for local-marginal sources.  It samples integral locally consistent words,
-   random unary local-marginal vertices, and the vertices obtained by optimizing
-   the score tables returned by the fixed-source band LP.  In the same
-   \(N=8,b=4,q=2\) triple-projection regime, the four-seed sweep with no
-   integral local pseudowords had product-simplex worst
+   The current diagnostic therefore adds both sampled and exact tiny
+   local-marginal checks.  The sampled mode uses integral locally consistent
+   words, random unary local-marginal vertices, and the vertices obtained by
+   optimizing the score tables returned by the fixed-source band LP.  The exact
+   mode eliminates the shared unary variables, enumerates all basic feasible
+   local-check marginals subject to consistency, projects them to unary sources,
+   and evaluates the fixed-source band LP on every projected source.  This is
+   valid because the fixed-source gap \(\Gamma_u(x;\omega)\) is a supremum of
+   linear functions of \(x\), hence attains its local-marginal maximum on a
+   projected vertex.
+
+   In the same \(N=8,b=4,q=2\) triple-projection regime, the four-seed sampled
+   sweep with no integral local pseudowords had product-simplex worst
    \(\text{gap}/\Xi\simeq7.4\), but sampled local-marginal worst
    \(\text{gap}/\Xi\simeq0.68\).  Expanding to sixteen seeds kept the sampled
    local-marginal maximum below one, about \(0.91\), while the product-simplex
-   maximum stayed \(7.4\).  On \(N=12,b=4,q=2\) with triple projections, a scan
-   of seeds \(80\)--\(103\) found twelve seeds with no integral local
-   pseudowords; among those, the largest sampled fractional local-marginal ratio
-   was about \(0.41\).  The over-budget local-marginal cases in that scan were
-   exactly seeds with integral local pseudowords.  This is not a proof of
-   \((LNN2)\), because the local-marginal vertices are sampled rather than
-   exhaustively certified.  It does, however, redirect the next finite test:
-   after a local code actually removes the missing integral charts, a barrier
-   must exhibit an explicit fractional local-marginal source with
-   over-\(\Xi\) score-band gap.  Otherwise the finite score-band target is
-   consistent with strengthening the Tanner/SA constraints, not with another
-   reformulation of the same simplex obstruction.
+   maximum stayed \(7.4\).  The worst sampled clean seed in that run was
+   \(46\).  Exact enumeration for that seed checked \(646646\) bases, found
+   \(145\) local vertices and \(37\) projected unary sources, and gave the same
+   \(\text{gap}/\Xi\simeq0.906\); the product-simplex ratio on that seed was
+   about \(6.87\), with no integral local pseudoword.  Pairwise checks still
+   fail exactly: on the \(N=8,b=3,q=2\) pairwise diagnostic, exact enumeration
+   has \(9\) projected sources and reproduces the integral/product-simplex
+   gap.  On \(N=12,b=4,q=2\) with triple projections, a sampled scan of seeds
+   \(80\)--\(103\) found twelve seeds with no integral local pseudowords; among
+   those, the largest sampled fractional local-marginal ratio was about
+   \(0.41\).  The over-budget local-marginal cases in that scan were exactly
+   seeds with integral local pseudowords.
+
+   This is still not a proof of \((LNN2)\) for an asymptotic code family, but it
+   makes the next finite barrier precise: after a local code actually removes
+   the missing integral charts, a counterexample must exhibit an explicit
+   fractional local-marginal projected vertex with over-\(\Xi\) score-band gap.
+   Otherwise the finite score-band target is consistent with strengthening the
+   Tanner/SA constraints, not with another reformulation of the same simplex
+   obstruction.
 
    The tilted-overlap diagnostic is equally simple.  Generate a balanced
    \(q\)-ary panel, draw independent centered Gaussian symbol scores, set

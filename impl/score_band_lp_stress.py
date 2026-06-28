@@ -19,6 +19,7 @@ from __future__ import annotations
 import argparse
 import itertools
 import math
+from math import comb
 
 import numpy as np
 
@@ -634,6 +635,153 @@ def _local_marginal_system(
     return np.vstack(rows), np.array(rhs), z_offset
 
 
+def _local_only_marginal_system(
+    code: np.ndarray,
+    checks: list[tuple[int, ...]],
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Return A y = b for local check marginals and source = S y.
+
+    The larger equality system used by the LP optimizer carries explicit shared
+    unary variables.  For exact vertex enumeration those variables only inflate
+    the basis count, so this reduced system keeps local assignment marginals and
+    encodes unary consistency directly between checks.
+    """
+    code = np.asarray(code, dtype=int)
+    blocks = code.shape[1]
+    alphabet = int(np.max(code)) + 1
+    assignments_by_check = _local_projection_assignments(code, checks)
+
+    offsets = []
+    n_vars = 0
+    for assignments in assignments_by_check:
+        offsets.append(n_vars)
+        n_vars += len(assignments)
+
+    rows: list[np.ndarray] = []
+    rhs: list[float] = []
+    for offset, assignments in zip(offsets, assignments_by_check):
+        row = np.zeros(n_vars, dtype=float)
+        row[offset:offset + len(assignments)] = 1.0
+        rows.append(row)
+        rhs.append(1.0)
+
+    refs: dict[int, tuple[int, int]] = {}
+    for check_id, check in enumerate(checks):
+        base = offsets[check_id]
+        assignments = assignments_by_check[check_id]
+        for local_pos, coord in enumerate(check):
+            if coord not in refs:
+                refs[coord] = (check_id, local_pos)
+                continue
+            ref_check_id, ref_pos = refs[coord]
+            ref_base = offsets[ref_check_id]
+            ref_assignments = assignments_by_check[ref_check_id]
+            for symbol in range(alphabet):
+                row = np.zeros(n_vars, dtype=float)
+                for assignment_id, assignment in enumerate(assignments):
+                    if assignment[local_pos] == symbol:
+                        row[base + assignment_id] += 1.0
+                for assignment_id, assignment in enumerate(ref_assignments):
+                    if assignment[ref_pos] == symbol:
+                        row[ref_base + assignment_id] -= 1.0
+                rows.append(row)
+                rhs.append(0.0)
+
+    if set(refs) != set(range(blocks)):
+        missing = sorted(set(range(blocks)) - set(refs))
+        raise ValueError(f"checks do not cover coordinates {missing}")
+
+    source_matrix = np.zeros((blocks * alphabet, n_vars), dtype=float)
+    for coord in range(blocks):
+        ref_check_id, ref_pos = refs[coord]
+        ref_base = offsets[ref_check_id]
+        ref_assignments = assignments_by_check[ref_check_id]
+        for symbol in range(alphabet):
+            row = coord * alphabet + symbol
+            for assignment_id, assignment in enumerate(ref_assignments):
+                if assignment[ref_pos] == symbol:
+                    source_matrix[row, ref_base + assignment_id] = 1.0
+
+    return np.vstack(rows), np.array(rhs), source_matrix
+
+
+def _enumerate_equality_polytope_vertices(
+    lhs: np.ndarray,
+    rhs: np.ndarray,
+    *,
+    max_bases: int,
+    tol: float,
+) -> tuple[list[np.ndarray], int, int]:
+    lhs = np.asarray(lhs, dtype=float)
+    rhs = np.asarray(rhs, dtype=float)
+    lhs, rhs = _independent_equalities(lhs, rhs, tol=tol)
+    rank, n_vars = lhs.shape
+    basis_count = comb(n_vars, rank)
+    if basis_count > max_bases:
+        raise ValueError(
+            f"exact vertex enumeration needs {basis_count} bases, "
+            f"above max_bases={max_bases}",
+        )
+
+    vertices: list[np.ndarray] = []
+    seen: set[tuple[int, ...]] = set()
+    feasible_bases = 0
+    for basis in itertools.combinations(range(n_vars), rank):
+        basis_matrix = lhs[:, basis]
+        try:
+            values = np.linalg.solve(basis_matrix, rhs)
+        except np.linalg.LinAlgError:
+            continue
+        if np.any(values < -tol):
+            continue
+        point = np.zeros(n_vars, dtype=float)
+        point[list(basis)] = np.maximum(values, 0.0)
+        residual = lhs @ point - rhs
+        if np.linalg.norm(residual, ord=np.inf) > 1e-7:
+            continue
+        feasible_bases += 1
+        key = _source_key(point, tol=tol)
+        if key in seen:
+            continue
+        seen.add(key)
+        vertices.append(point)
+    return vertices, basis_count, feasible_bases
+
+
+def local_marginal_vertex_sources(
+    code: np.ndarray,
+    checks: list[tuple[int, ...]],
+    *,
+    max_bases: int = 1_000_000,
+    tol: float = 1e-8,
+) -> dict[str, object]:
+    """Enumerate projected local-marginal vertices for tiny panels."""
+    lhs, rhs, source_matrix = _local_only_marginal_system(code, checks)
+    vertices, basis_count, feasible_bases = _enumerate_equality_polytope_vertices(
+        lhs,
+        rhs,
+        max_bases=max_bases,
+        tol=tol,
+    )
+    sources: list[np.ndarray] = []
+    seen: set[tuple[int, ...]] = set()
+    for vertex in vertices:
+        source = source_matrix @ vertex
+        source[np.abs(source) <= tol] = 0.0
+        key = _source_key(source, tol=tol)
+        if key in seen:
+            continue
+        seen.add(key)
+        sources.append(source)
+    return {
+        "sources": sources,
+        "source_count": len(sources),
+        "vertex_count": len(vertices),
+        "basis_count": basis_count,
+        "feasible_basis_count": feasible_bases,
+    }
+
+
 def _local_marginal_optimize_source(
     code: np.ndarray,
     checks: list[tuple[int, ...]],
@@ -798,6 +946,53 @@ def local_marginal_score_band_gap(
     }
 
 
+def local_marginal_score_band_gap_exact(
+    code: np.ndarray,
+    omega: np.ndarray,
+    checks: list[tuple[int, ...]],
+    *,
+    max_bases: int = 1_000_000,
+    tol: float = 1e-8,
+) -> dict[str, object]:
+    """Exactly maximize the fixed-source score-band gap over tiny local marginals.
+
+    The fixed-source gap is convex as a function of the source vector because it
+    is a supremum of linear score-table objectives.  Therefore its maximum over
+    a local-marginal polytope is attained at a projected vertex.  Enumerating all
+    local vertices is only feasible for tiny panels, but it gives an exact check
+    where the sampled diagnostic would otherwise be ambiguous.
+    """
+    vertex_data = local_marginal_vertex_sources(
+        code,
+        checks,
+        max_bases=max_bases,
+        tol=tol,
+    )
+    sources = vertex_data["sources"]
+    best_gap = -math.inf
+    best_source: np.ndarray | None = None
+    best_result: dict[str, object] | None = None
+    for source in sources:
+        result = source_score_band_gap(code, omega, source=source, tol=tol)
+        gap = float(result["gap"])
+        if gap > best_gap:
+            best_gap = gap
+            best_source = np.asarray(source).copy()
+            best_result = result
+
+    if best_result is None:
+        best_gap = 0.0
+    return {
+        "gap": float(best_gap),
+        "source": best_source,
+        "source_count": int(vertex_data["source_count"]),
+        "vertex_count": int(vertex_data["vertex_count"]),
+        "basis_count": int(vertex_data["basis_count"]),
+        "feasible_basis_count": int(vertex_data["feasible_basis_count"]),
+        "source_result": best_result,
+    }
+
+
 def integral_local_pseudoword_gaps(
     code: np.ndarray,
     omega: np.ndarray,
@@ -919,6 +1114,59 @@ def run_local_marginal_trial(
     }
 
 
+def run_local_marginal_exact_trial(
+    *,
+    n_words: int,
+    blocks: int,
+    alphabet: int,
+    seed: int,
+    xi: float,
+    checks: list[tuple[int, ...]],
+    lam: float | None = None,
+    max_bases: int = 1_000_000,
+) -> dict[str, float | int | tuple[int, ...] | None]:
+    if lam is None:
+        lam = math.sqrt(2.0 * math.log(n_words) / blocks)
+    code = make_balanced_code(n_words, blocks, alphabet, seed)
+    symbol_scores = centered_symbol_scores(blocks, alphabet, seed + 1009)
+    scores = codeword_scores(code, symbol_scores)
+    gaps = float(np.max(scores)) - scores
+    omega = np.exp(np.minimum(lam * gaps, 700.0)) + xi
+    local = local_marginal_score_band_gap_exact(
+        code,
+        omega,
+        checks,
+        max_bases=max_bases,
+    )
+    gap = float(local["gap"])
+    source = local["source"]
+    if source is None:
+        integrality_defect = 0.0
+    else:
+        source_matrix = np.asarray(source).reshape(blocks, alphabet)
+        integrality_defect = float(np.sum(1.0 - np.max(source_matrix, axis=1)))
+    source_result = local["source_result"]
+    min_chart = None
+    if isinstance(source_result, dict):
+        min_chart = source_result.get("min_chart")
+    return {
+        "seed": seed,
+        "n_words": n_words,
+        "blocks": blocks,
+        "alphabet": alphabet,
+        "lambda": float(lam),
+        "xi": float(xi),
+        "local_marginal_exact_gap": gap,
+        "local_marginal_exact_gap_over_xi": gap / xi if xi > 0 else math.inf,
+        "local_marginal_exact_source_count": int(local["source_count"]),
+        "local_marginal_exact_vertex_count": int(local["vertex_count"]),
+        "local_marginal_exact_basis_count": int(local["basis_count"]),
+        "local_marginal_exact_feasible_basis_count": int(local["feasible_basis_count"]),
+        "local_marginal_exact_integrality_defect": integrality_defect,
+        "local_marginal_exact_min_chart": min_chart,
+    }
+
+
 def run_trial(
     *,
     n_words: int,
@@ -964,6 +1212,8 @@ def main() -> None:
     parser.add_argument("--cap-power", type=float, default=3.0)
     parser.add_argument("--local-check-size", type=int, default=None)
     parser.add_argument("--local-marginal", action="store_true")
+    parser.add_argument("--local-marginal-exact", action="store_true")
+    parser.add_argument("--local-marginal-max-bases", type=int, default=1_000_000)
     parser.add_argument("--local-marginal-objectives", type=int, default=16)
     parser.add_argument("--local-marginal-closure-rounds", type=int, default=2)
     parser.add_argument("--lambda", dest="lam", type=float, default=None)
@@ -1046,8 +1296,41 @@ def main() -> None:
             )
             print(f"worst_local_marginal_seed,{worst_marginal['seed']}")
             print(f"worst_local_marginal_min_chart,{worst_marginal['local_marginal_min_chart']}")
-    elif args.local_marginal:
-        parser.error("--local-marginal requires --local-check-size")
+
+        if args.local_marginal_exact:
+            exact_rows = [
+                run_local_marginal_exact_trial(
+                    n_words=args.n_words,
+                    blocks=args.blocks,
+                    alphabet=args.alphabet,
+                    seed=args.seed + trial,
+                    xi=xi,
+                    checks=checks,
+                    lam=args.lam,
+                    max_bases=args.local_marginal_max_bases,
+                )
+                for trial in range(args.trials)
+            ]
+            for key in [
+                "local_marginal_exact_gap",
+                "local_marginal_exact_gap_over_xi",
+                "local_marginal_exact_source_count",
+                "local_marginal_exact_vertex_count",
+                "local_marginal_exact_basis_count",
+                "local_marginal_exact_feasible_basis_count",
+                "local_marginal_exact_integrality_defect",
+            ]:
+                values = np.array([float(row[key]) for row in exact_rows])
+                print(f"{key}_mean,{float(np.mean(values))}")
+                print(f"{key}_max,{float(np.max(values))}")
+            worst_exact = max(
+                exact_rows,
+                key=lambda row: float(row["local_marginal_exact_gap_over_xi"]),
+            )
+            print(f"worst_local_marginal_exact_seed,{worst_exact['seed']}")
+            print(f"worst_local_marginal_exact_min_chart,{worst_exact['local_marginal_exact_min_chart']}")
+    elif args.local_marginal or args.local_marginal_exact:
+        parser.error("--local-marginal and --local-marginal-exact require --local-check-size")
 
 
 if __name__ == "__main__":

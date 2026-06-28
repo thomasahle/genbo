@@ -4,7 +4,9 @@ from score_band_lp_stress import (
     _simplex_max_nonnegative,
     integral_local_pseudoword_gaps,
     local_check_scopes,
+    local_marginal_score_band_gap_exact,
     local_marginal_score_band_gap,
+    local_marginal_vertex_sources,
     product_simplex_score_band_gap,
     solve_equality_lp_max,
     source_score_band_gap,
@@ -122,6 +124,25 @@ def test_local_marginal_full_check_collapses_to_true_hull():
     assert result["source_count"] > 0
 
 
+def test_exact_local_marginal_full_check_collapses_to_true_hull():
+    code = np.array([
+        [0, 0],
+        [0, 1],
+        [1, 0],
+    ])
+    omega = np.ones(len(code))
+    result = local_marginal_score_band_gap_exact(
+        code,
+        omega,
+        checks=[(0, 1)],
+        max_bases=100,
+    )
+
+    assert result["gap"] <= 1e-8
+    assert result["source_count"] == len(code)
+    assert result["basis_count"] <= 100
+
+
 def test_local_marginal_pairwise_parity_sees_integral_gap():
     code = np.array([
         [0, 0, 0],
@@ -142,6 +163,31 @@ def test_local_marginal_pairwise_parity_sees_integral_gap():
     assert result["source_count"] >= 8
 
 
+def test_exact_local_marginal_pairwise_parity_matches_integral_gap():
+    code = np.array([
+        [0, 0, 0],
+        [0, 1, 1],
+        [1, 0, 1],
+        [1, 1, 0],
+    ])
+    omega = np.ones(len(code))
+    sources = local_marginal_vertex_sources(
+        code,
+        checks=[(0, 1), (0, 2), (1, 2)],
+        max_bases=1000,
+    )
+    result = local_marginal_score_band_gap_exact(
+        code,
+        omega,
+        checks=[(0, 1), (0, 2), (1, 2)],
+        max_bases=1000,
+    )
+
+    assert sources["source_count"] == 9
+    assert np.isclose(result["gap"], 0.5)
+    assert result["source_count"] == 9
+
+
 def test_local_check_scopes_enumerates_subsets():
     assert local_check_scopes(3, 2) == [(0, 1), (0, 2), (1, 2)]
 
@@ -155,6 +201,8 @@ if __name__ == "__main__":
     test_fixed_missing_corner_matches_product_gap()
     test_pairwise_local_parity_pseudoword_is_detected()
     test_local_marginal_full_check_collapses_to_true_hull()
+    test_exact_local_marginal_full_check_collapses_to_true_hull()
     test_local_marginal_pairwise_parity_sees_integral_gap()
+    test_exact_local_marginal_pairwise_parity_matches_integral_gap()
     test_local_check_scopes_enumerates_subsets()
     print("score_band_lp_stress tests passed")
