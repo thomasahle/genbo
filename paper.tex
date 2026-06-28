@@ -63672,6 +63672,125 @@ certificate is the verified positive-gain column and the finite LP it augments.
    \(M\); rewriting that strict inequality gives \((CTV6)\).
 \end{proof}
 
+\begin{corollary}[Opened-support flow screen]
+   \label{cor:opened-support-flow-screen}
+   Work in the setting of
+   \cref{lem:flow-value-clipped-tail-screen}, but do not preselect the right
+   support.  Fix a template \(B\), a finite source set \(\mathcal I\) with loads
+   \(\mu_i\ge0\), an adjacency relation
+   \(E\subseteq\mathcal I\times W_B\), and \(C>0\).  Put
+   \[
+      \Theta=\Theta_B^{\rm net},
+      \qquad
+      K=K_B^\natural .
+      \tag{OSFS0}
+   \]
+   For \(S\subseteq W_B\), let \(\Phi_B(S;C)\) be the max-flow value defined as
+   in \((CTV1)\)--\((CTV2)\), using the right vertex set \(S\) and the restricted
+   edge set \(E\cap(\mathcal I\times S)\).  Define the opened-support surplus
+   \[
+      \mathfrak S_{B,E}(C)
+      =
+      \max_{S\subseteq W_B}
+      \left\{
+         \frac{\Phi_B(S;C)}{C}-|S|\Theta
+      \right\}.
+      \tag{OSFS1}
+   \]
+   If
+   \[
+      \mathfrak S_{B,E}(C)>2K\Theta ,
+      \tag{OSFS2}
+   \]
+   then \(B\) contains a positive shared top-prefix column.
+
+   More generally, for a finite panel of source systems
+   \((B_j,E_j,C_j)\) with nonnegative weights \(\lambda_j\), positive aggregate
+   opened-support surplus
+   \[
+      \sum_j\lambda_j
+      \left(
+         \mathfrak S_{B_j,E_j}(C_j)
+         -
+         2K_{B_j}^\natural\Theta_{B_j}^{\rm net}
+      \right)>0
+      \tag{OSFS3}
+   \]
+   exposes one positive shared top-prefix column.
+
+   This strictly subsumes the fixed-subset flow test: for every proposed
+   \(U\subseteq W_B\),
+   \[
+      \mathfrak S_{B,E}(C)
+      \ge
+      \frac{\Phi_{B,U}(C)}{C}-|U|\Theta .
+      \tag{OSFS4}
+   \]
+   Conversely, in any residual where no shared top-prefix column of \(B\) has
+   positive reduced cost,
+   \[
+      \mathfrak S_{B,E}(C)\le2K\Theta
+      \tag{OSFS5}
+   \]
+   for every source set, load vector, adjacency relation, and congestion \(C\).
+
+   Thus the flow verifier may score a branch by
+   \[
+      \text{transported mass}/C
+      -
+      \Theta\cdot\text{opened support size},
+   \]
+   leaving only the fixed clipped-tail overhead \(2K\Theta\).  A proposal does
+   not pay for the whole candidate container, only for the points that actually
+   receive flow.
+\end{corollary}
+
+\begin{proof}
+   Let \(S\) and an optimal flow \(f\) witness a value in \((OSFS1)\) larger than
+   \(2K\Theta\).  Let
+   \[
+      S_0=\left\{p\in S:\sum_i f_{i,p}>0\right\},
+      \qquad
+      M=\sum_{i,p}f_{i,p}.
+   \]
+   The same flow is feasible for the restricted support \(S_0\), and
+   \(|S_0|\le |S|\).  Hence
+   \[
+      \frac{M}{C}-|S_0|\Theta
+      \ge
+      \frac{M}{C}-|S|\Theta
+      >
+      2K\Theta .
+   \]
+   With
+   \[
+      \ell_p=\sum_i f_{i,p}\qquad(p\in S_0),
+   \]
+   the sink-capacity constraints give \(\ell_p\le C d_B^u(p)\), while the last
+   display says
+   \[
+      \frac{M}{C}>(|S_0|+2K)\Theta .
+   \]
+   This is exactly the transported subset clipped-tail certificate
+   \((CTS1)\)--\((CTS2)\), so
+   \cref{cor:transported-subset-clipped-tail-certificate} gives a positive
+   shared top-prefix column.  The aggregate statement follows because
+   \((OSFS3)\) makes at least one active bracket positive.
+
+   Inequality \((OSFS4)\) is immediate by taking \(S=U\) in the maximum
+   \((OSFS1)\).  Finally assume no shared top prefix of \(B\) is positive.  For
+   every \(S\subseteq W_B\), the total sink capacity bounds
+   \[
+      \frac{\Phi_B(S;C)}{C}\le\sum_{p\in S}d_B^u(p).
+   \]
+   Applying \cref{cor:subset-clipped-shared-tail-residual} to \(S\) gives
+   \[
+      \sum_{p\in S}d_B^u(p)\le(|S|+2K)\Theta .
+   \]
+   Therefore every bracket in \((OSFS1)\) is at most \(2K\Theta\), proving
+   \((OSFS5)\).
+\end{proof}
+
 \begin{corollary}[Template-complete shared-cover obstruction]
    \label{cor:template-complete-shared-cover-obstruction}
    Work in the setting of
@@ -63928,6 +64047,53 @@ certificate is the verified positive-gain column and the finite LP it augments.
    column in \(\mathcal Z_\star\).  Thus the hypotheses of
    \cref{cor:transport-template-obstruction-endpoint} are satisfied, and that
    corollary gives \((SPP1)\) and the displayed bounds.
+\end{proof}
+
+\begin{corollary}[Opened-support form of the template obstruction target]
+   \label{cor:opened-support-template-obstruction-endpoint}
+   Work in the setting of
+   \cref{cor:flow-value-template-obstruction-endpoint}.  Replace the fixed-subset
+   max-flow hypothesis \((FVO1)\) by the following support-penalized hypothesis.
+   Whenever \(\Psi_{\mathcal B_y}(y)>D_\pi/4\) and
+   \cref{cor:template-complete-shared-cover-obstruction} supplies an exact
+   no-prefix dual obstruction \(u\), preprocessing can certify a finite panel of
+   source systems with nonnegative weights \(\lambda_j\), of the form in
+   \cref{cor:opened-support-flow-screen}, with all template top-prefix records
+   contained in \(\mathcal Z_\star\), such that
+   \[
+      \sum_j\lambda_j
+      \left(
+         \mathfrak S_{B_j,E_j}(C_j)
+         -
+         2K_{B_j}^\natural\Theta_{B_j}^{\rm net}
+      \right)>0 .
+      \tag{OSFT1}
+   \]
+   Then the positive shared-panel separator \((SPP1)\) holds at every node, and
+   hence
+   \[
+      Q(n,d)=d\,n^{\rho_c}\log^{O_c(1)}n,\qquad
+      S(n,d)=dn+n^{1+\rho_c}\log^{O_c(1)}n .
+   \]
+
+   Equivalently, the branch-selection score may be taken to be opened-support
+   flow surplus.  The verifier can accept either an exact maximizer in
+   \((OSFS1)\) or any one-sided lower certificate consisting of a support \(S\)
+   and a feasible flow whose value makes the corresponding bracket in
+   \((OSFT1)\) positive.
+\end{corollary}
+
+\begin{proof}
+   If the restricted cover value is at most \(D_\pi/4\), the template-search
+   outcome of \cref{cor:template-search-shared-integrated-target} already holds.
+   Otherwise take the exact no-prefix obstruction \(u\).  The positive
+   opened-support panel \((OSFT1)\) and
+   \cref{cor:opened-support-flow-screen} expose a positive shared top-prefix
+   column in \(\mathcal Z_\star\).  Thus, for every feasible dual \(y\), the
+   template search either has a cover of value at most \(D_\pi/4\) or finds a
+   verified positive shared top-prefix column.  Applying
+   \cref{cor:template-search-shared-integrated-target} gives \((SPP1)\) and the
+   displayed query and storage bounds.
 \end{proof}
 
 \begin{corollary}[Shared integrated cover-cost endpoint]
@@ -79732,6 +79898,11 @@ surplus still hardens to one deterministic shared top-prefix column.
 \Cref{lem:flow-value-clipped-tail-screen} replaces explicit transported loads
 by finite max-flow values and gives the matching localized min-cut obstruction
 when a proposed flow panel fails.
+\Cref{cor:opened-support-flow-screen} removes the remaining fixed-container
+overcharge: the flow branch score is transported mass divided by congestion,
+minus the clipped baseline times the actually opened sink support.  Thus a
+large proposal set may be used as a search universe without paying for points
+that receive no flow.
 \Cref{cor:template-complete-shared-cover-obstruction} gives the exact finite
 LP normal form for the remaining shared-cover target: if the cover value at
 level \(D/4\) is too large, the obstruction is one dual \(u\) of value
@@ -79748,6 +79919,10 @@ positive.
 \Cref{cor:flow-value-template-obstruction-endpoint} is the equivalent
 verifier-facing form in terms of max-flow values; a failed record leaves the
 explicit cut \((CTV6)\).
+\Cref{cor:opened-support-template-obstruction-endpoint} is the sharper current
+form: it is enough to find positive opened-support flow surplus, so support
+selection, cohort materialization, and transported subset choice are all part
+of one branching-score maximization.
 \Cref{cor:single-tail-shared-separator-endpoint} packages this into the
 current sharp proof target: every normalized exact-signature dual must either
 produce a materializable low-correlation profile record or force one certified
