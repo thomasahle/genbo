@@ -64821,6 +64821,118 @@ certificate is the verified positive-gain column and the finite LP it augments.
    is the inequality \(V(u)>D_\pi/4\) from \((TCO3)\).
 \end{proof}
 
+\begin{corollary}[Failed-transcript residual LP certificate]
+   \label{cor:failed-transcript-residual-lp}
+   Fix one all-failed transcript in the setting of
+   \cref{cor:obstruction-sourced-flow-exhaustion}, with initial source set
+   \(I_0\), source weights \(\nu_i\ge0\), retained prefixes \(I_{t-1}\), and
+   screens \((B_t,E_t,C_t)\).  Put
+   \[
+      P_t^+=\{p\in W_{B_t}:\ d_{t,p}>2\Theta_t\},
+      \qquad
+      c_{t,p}=d_{t,p}-2\Theta_t\quad(p\in P_t^+),
+      \tag{TRL1}
+   \]
+   and
+   \[
+      B_t^{\rm tail}=4K_t\Theta_t .
+      \tag{TRL2}
+   \]
+   Define the fractional residual value of the transcript by the finite LP
+   \[
+   \begin{array}{ll}
+   \mathfrak R_{\rm tr}(\nu)=\max
+      & \displaystyle \sum_{i\in I_0}\nu_i z_i \\[0.8em]
+   \text{\rm subject to}
+      & 0\le z_i\le1\qquad(i\in I_0),\\[0.4em]
+      & y_{t,p}\ge0\qquad(t=1,\ldots,T,\ p\in P_t^+),\\[0.4em]
+      & z_i\le y_{t,p}
+        \qquad(i\in I_{t-1},\ (i,p)\in E_t,\ p\in P_t^+),\\[0.4em]
+      & \displaystyle
+        \sum_{p\in P_t^+}c_{t,p}y_{t,p}\le B_t^{\rm tail}
+        \qquad(t=1,\ldots,T).
+   \end{array}
+      \tag{TRL3}
+   \]
+   Every integral residual \(J\subseteq I_0\) satisfying all transcript caps
+   \[
+      \sum_{\substack{p\in N_{E_t}(J\cap I_{t-1}):\\ p\in P_t^+}}c_{t,p}
+      \le B_t^{\rm tail}
+      \qquad(t=1,\ldots,T)
+      \tag{TRL4}
+   \]
+   has value at most \(\mathfrak R_{\rm tr}(\nu)\).  Hence, if
+   \[
+      \mathfrak R_{\rm tr}(\nu)<\Lambda_{\rm rem},
+      \tag{TRL5}
+   \]
+   then no residual subset of source value at least \(\Lambda_{\rm rem}\)
+   satisfies the failed transcript caps.
+
+   Moreover finite LP duality gives the exact certificate
+   \[
+   \begin{array}{ll}
+   \mathfrak R_{\rm tr}(\nu)=\min
+      & \displaystyle
+        \sum_{t=1}^T B_t^{\rm tail}\lambda_t+\sum_{i\in I_0}\sigma_i\\[0.8em]
+   \text{\rm subject to}
+      & \displaystyle
+        \sigma_i+
+        \sum_{\substack{t:\ i\in I_{t-1}}}
+        \sum_{\substack{p\in P_t^+:\\ (i,p)\in E_t}}
+        \alpha_{t,i,p}
+        \ge \nu_i
+        \qquad(i\in I_0),\\[1.0em]
+      & \displaystyle
+        \sum_{\substack{i\in I_{t-1}:\\ (i,p)\in E_t}}
+        \alpha_{t,i,p}
+        \le \lambda_t c_{t,p}
+        \qquad(t=1,\ldots,T,\ p\in P_t^+),\\[1.0em]
+      & \lambda_t,\sigma_i,\alpha_{t,i,p}\ge0 .
+   \end{array}
+      \tag{TRL6}
+   \]
+   Thus a failed transcript may be exhausted by a finite weighted tail-budget
+   certificate: source value is either paid directly by \(\sigma_i\), or routed
+   through failed-screen neighborhoods into the priced tail capacities
+   \(\lambda_t c_{t,p}\).
+
+   In particular, in the obstruction-sourced setting of
+   \cref{cor:obstruction-sourced-flow-exhaustion}, condition \((OSX3)\)--\((OSX4)\)
+   follows from the checkable sufficient condition
+   \[
+      \mathfrak R_{\rm tr}\bigl((b_a u_a)_a\bigr)
+      <\frac12\sum_a b_a u_a .
+      \tag{TRL7}
+   \]
+\end{corollary}
+
+\begin{proof}
+   If \(J\subseteq I_0\) satisfies \((TRL4)\), set
+   \(z_i=\mathbf 1_{\{i\in J\}}\) and
+   \[
+      y_{t,p}=\mathbf 1_{\{p\in N_{E_t}(J\cap I_{t-1})\}}
+      \qquad(p\in P_t^+).
+   \]
+   The edge constraints in \((TRL3)\) hold by definition of the neighborhood,
+   and the tail constraints are exactly \((TRL4)\).  Therefore the integral
+   residual value \(\sum_{i\in J}\nu_i\) is bounded by
+   \(\mathfrak R_{\rm tr}(\nu)\), proving \((TRL5)\).
+
+   To derive the dual, assign multipliers \(\alpha_{t,i,p}\ge0\) to the
+   constraints \(z_i-y_{t,p}\le0\), multipliers \(\lambda_t\ge0\) to the tail
+   constraints, and multipliers \(\sigma_i\ge0\) to \(z_i\le1\).  The dual
+   objective is the first line of \((TRL6)\).  The coefficient of \(z_i\) gives
+   the source-cover constraint, and the coefficient of \(y_{t,p}\) gives
+   \[
+      \lambda_t c_{t,p}-
+      \sum_{i\in I_{t-1}:\ (i,p)\in E_t}\alpha_{t,i,p}\ge0 .
+   \]
+   This is exactly \((TRL6)\).  Strong duality applies because the finite primal
+   is feasible and bounded.  Finally, \((TRL7)\) is \((TRL5)\) with the
+   obstruction-sourced weights and \(\Lambda_{\rm rem}=V(u)/2\).
+\end{proof}
+
 \begin{corollary}[Shared integrated cover-cost endpoint]
    \label{cor:shared-integrated-cover-cost-endpoint}
    Work in the setting of
@@ -80683,6 +80795,9 @@ tail-capped residual.
 measure from that statement: for a no-prefix obstruction \(u\), sources are the
 atoms \(a\) with weights \(b_au_a\), and it is enough to rule out a residual
 carrying half of this exposed value.
+\Cref{cor:failed-transcript-residual-lp} makes that last residual test finite
+and dual: an all-failed transcript is exhausted once a weighted tail-budget LP
+has value below the target residual mass.
 \Cref{cor:single-tail-shared-separator-endpoint} packages this into the
 current sharp proof target: every normalized exact-signature dual must either
 produce a materializable low-correlation profile record or force one certified
