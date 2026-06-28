@@ -9031,6 +9031,102 @@ partition ignores the bias coordinates that certify the list size.
    \(\tau\delta=O(\log\log n)\), and \((LPS5)\) is polylogarithmic.
 \end{proof}
 
+\begin{corollary}[The LP gap scale is sharp]
+   \label{cor:lp-gap-scale-sharp}
+   In the Gaussian comparison of
+   \cref{cor:sharp-lp-soft-decoder}, let \(T=\tau\sqrt b\),
+   \(\Gamma=\delta\sqrt b\), and \(0\le\delta\le\tau/2\).  There are absolute
+   constants \(c,C>0\) such that, for \(\tau\ge1\),
+   \[
+      c\exp\!\left(\tau\delta-\frac{\delta^2}{2}\right)
+      \le
+      \frac{\E N_{\ge T-\Gamma}}{\E N_{\ge T}}
+      \le
+      C(1+\tau\delta)
+      \exp\!\left(\tau\delta-\frac{\delta^2}{2}\right).
+      \tag{LPS7}
+   \]
+   In particular, in the terminal logarithmic regime
+   \[
+      b=\Theta\!\left(\frac{\log n}{\log\log n}\right),
+      \qquad
+      \tau=\Theta(\sqrt{\log n}),
+      \tag{LPS8}
+   \]
+   the lowered-threshold list is inflated by
+   \[
+      \exp\!\bigl(\Theta(\Gamma\sqrt{\log\log n})\bigr)
+      \tag{LPS9}
+   \]
+   whenever \(\Gamma=o(\sqrt b)\).  Thus an
+   \(O(\sqrt{\log\log n})\) additive LP gap is not merely sufficient for
+   polylogarithmic overhead; in the random Gaussian tail model it is the
+   largest scale one can tolerate up to constants.
+\end{corollary}
+
+\begin{proof}
+   As in \cref{cor:sharp-lp-soft-decoder}, the expectation ratio is the
+   Gaussian tail ratio
+   \[
+      \frac{\Pr[Z\ge\tau-\delta]}{\Pr[Z\ge\tau]} .
+   \]
+   The upper bound in \((LPS7)\) is the estimate proved in \((LPS5)\), with
+   the harmless polynomial prefactor kept explicit.  For the lower bound, the
+   elementary Mills estimates
+   \[
+      \Pr[Z\ge x]\ge c_0(1+x)^{-1}\phi(x),
+      \qquad(x\ge0),
+   \]
+   and
+   \[
+      \Pr[Z\ge x]\le C_0x^{-1}\phi(x)
+      \qquad(x\ge1)
+   \]
+   give, using \(\delta\le\tau/2\),
+   \[
+      \frac{\Pr[Z\ge\tau-\delta]}{\Pr[Z\ge\tau]}
+      \ge
+      c_1
+      \frac{\tau}{1+\tau-\delta}
+      \frac{\phi(\tau-\delta)}{\phi(\tau)}
+      \ge
+      c\exp\!\left(\tau\delta-\frac{\delta^2}{2}\right).
+   \]
+   Finally, under \((LPS8)\),
+   \[
+      \tau\delta=\tau\Gamma/\sqrt b
+      =
+      \Theta(\Gamma\sqrt{\log\log n}),
+   \]
+   and \(\delta=o(1)\) when \(\Gamma=o(\sqrt b)\), proving \((LPS9)\).
+\end{proof}
+
+\begin{remark}[No-good cuts are an implementation detail]
+   \label{rem:no-good-lp-cuts}
+   The one-hot LP formulation also supports the usual repeated-enumeration
+   implementation.  After an integral word \(c\) is output, the linear cut
+   \[
+      \sum_{i=1}^b z_{i,c_i}\le b-1
+      \tag{LPS10}
+   \]
+   removes exactly that word, and the LP may be re-solved to expose the next
+   candidate.  This is a convenient way to implement a threshold reporter, but
+   it does not change the proof obligation.  For accounting, the run should be
+   unfolded into the same kind of certified decision tree used in
+   \cref{cor:sharp-lp-soft-decoder}: a no-good residual is simply the child
+   subproblem \(C_u\setminus\{c\}\), and fractional optima are ordinary branch
+   nodes.  Every surviving residual node still needs the same sharp upper
+   certificate, or the sharper false-survivor certificate of
+   \cref{cor:false-survivor-lp-accounting}.
+
+   Thus no-good cuts give duplicate-free enumeration, not a replacement for
+   the Gaussian pseudocodeword-spectrum theorem.  \Cref{cor:lp-gap-scale-sharp}
+   explains why this distinction matters: a relaxation whose fractional
+   optima exceed the true subproblem optimum by
+   \(\omega(\sqrt{\log\log n})\) creates a superpolylogarithmic lowered-tail
+   inflation even before any implementation overhead is counted.
+\end{remark}
+
 \begin{corollary}[Anchored Gaussian-width certificate for LP sharpness]
    \label{cor:anchored-lp-width-certificate}
    Let \(C\subseteq[q]^b\), and write
