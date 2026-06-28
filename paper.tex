@@ -1981,6 +1981,78 @@ The smooth product filter is not a replacement for \cref{lem:adaptive-continuati
    the deterministic \((CBK3)\) bound after absorbing that constant.
 \end{proof}
 
+\begin{corollary}[Diffuse compressed-cap rung certificate]
+   \label{cor:diffuse-compressed-cap-rung}
+   Work in one rung \(j\) of
+   \cref{cor:compressed-bucket-rung-checklist}, and let \(m=|P|\).  Suppose
+   the retained bucket occurrences are centered Gaussian caps satisfying
+   \((PLC1)\) in \cref{cor:polylog-low-correlation-coload} with
+   \(\rho=\rho_j\), and let \(N_i\subseteq P\cap U_{G_i}\) be the maximal
+   \((\alpha_j-1)r_j\)-separated bucket nets.  Put \(s=\rho_{j+1}\).
+
+   Assume the filter metadata and occurrence pointers have size
+   \(m^{1+\rho_j}\log^{O_c(1)}m\), and assume the query sampling law satisfies
+   the success-normalized hit and active-load conditions \((CBK1)\)--\((CBK2)\)
+   with \(L(m)=\log^{O_c(1)}m\).  If the cap-panel law is diffuse at the
+   low-correlation cutoff, in the sense that every retained realization obeys
+   \[
+      \ip{x}{y}\le\theta_m
+      \qquad
+      (i\le M,\ x,y\in N_i,\ x\ne y),
+      \tag{DCR1}
+   \]
+   then, after the usual verified Las Vegas resampling of the cap panel, all
+   hypotheses of \cref{prop:success-normalized-bucket-dag} hold at this rung
+   with polylogarithmic loss.
+
+   More generally, \((DCR1)\) may be replaced on an accepted realization by the
+   certified high-tail bound
+   \[
+      H_{\rm hi}
+      \le
+      m^{1+\rho_j}\log^{O_c(1)}m
+      \tag{DCR2}
+   \]
+   or by the corresponding expectation followed by verified resampling of both
+   the high tail and the left side of \((CBK3)\).
+
+   In particular, the diffuse case is already a complete polylogarithmic
+   compressed-bucket rung.  If the resident data themselves satisfy
+   \[
+      \max_{x\ne y\in P}\ip{x}{y}
+      \le K\frac{\log\log m}{\log m},
+      \tag{DCR3}
+   \]
+   then every bucket net automatically satisfies \((DCR1)\).  For independent
+   uniform resident directions, \((DCR3)\) holds with probability at least
+   \(1-m^{-2}\) when \(D\ge C_K\log^3m\).
+\end{corollary}
+
+\begin{proof}
+   Under \((DCR1)\), the high-correlation tail \(H_{\rm hi}\) in
+   \((LHS1)\) is zero.  Under \((DCR2)\), it is already within the desired
+   polylogarithmic storage allowance.  Therefore
+   \cref{cor:low-high-compressed-cap-storage}, with \(s=\rho_{j+1}\), gives
+   \[
+      \sum_A|A|^{1+\rho_{j+1}}
+      \le
+      m^{1+\rho_j}\log^{O_c(1)}m
+   \]
+   after verifying and resampling the randomized cap panel when the proof uses
+   an expectation.  This is exactly \((CBK3)\).  The assumed metadata bound and
+   \((CBK1)\)--\((CBK2)\) are the other two checklist items, so
+   \cref{cor:compressed-bucket-rung-checklist} applies, and hence
+   \cref{prop:success-normalized-bucket-dag} supplies the rung.
+
+   If \((DCR3)\) holds for all of \(P\), then each \(N_i\subseteq P\), so
+   \((DCR1)\) is immediate.  For the random-position statement, the standard
+   spherical cap bound gives
+   \(\Pr[\ip{X}{Y}>K\log\log m/\log m]\le
+   \exp(-\Omega_K(D\log^2\log m/\log^2m))\) for two independent uniform
+   directions.  A union bound over at most \(m^2\) pairs gives \((DCR3)\) with
+   probability at least \(1-m^{-2}\) after increasing \(C_K\).
+\end{proof}
+
 \begin{corollary}[Cap-prefix pricing of compressed-cap high tails]
    \label{cor:compressed-cap-high-tail-prefix-pricing}
    Work in the setting of
@@ -82392,6 +82464,12 @@ high-correlation ordered-pair tail.  The diagonal and
 \(O(\log\log m/\log m)\)-correlation pairs are already polylogarithmic, so any
 polynomial compressed-bucket storage survivor must be a high-correlation tail
 for the dense/star or sponsor verifier.
+\Cref{cor:diffuse-compressed-cap-rung} makes the contrapositive endpoint
+explicit: if the realized bucket nets contain no such high-correlation pairs,
+or if that tail is certified polylogarithmic, then the entire compressed-cap
+rung already satisfies the success-normalized polylogarithmic checklist.  Thus
+the random-position/diffuse case is closed before invoking dense-overlap
+machinery.
 \Cref{cor:compressed-cap-high-tail-prefix-pricing} sends that tail through the
 cap-centered paid-prefix verifier: the paid part is either a quadratic
 same-prefix repair or a fixed dyadic tail, leaving only the overload where cap
@@ -82817,6 +82895,10 @@ branch.
 \Cref{cor:low-high-compressed-cap-storage} packages the same fact directly for
 compressed bucket nets: after \(K^{1+s}\le K^2\), the only unpaid occurrence
 storage is the realized high-correlation ordered-pair tail.
+\Cref{cor:diffuse-compressed-cap-rung} records the immediate endpoint of this
+calculation: in random-position or otherwise pairwise-diffuse resident data,
+the high tail vanishes and the compressed-cap rung satisfies the full
+success-normalized checklist with only polylogarithmic overhead.
 \Cref{cor:compressed-cap-high-tail-prefix-pricing} clips that tail by the
 cap-centered paid degree; after prefix search, the only potentially polynomial
 survivor is the overload \(H_{\rm over}\), which is the Hall/sponsor object
