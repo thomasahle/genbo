@@ -35934,6 +35934,111 @@ query mass rather than producing a cost-effective dense filter.
    \(|A_{z,\kappa}|^{\rho_{z,\kappa}-1}\) is at most one.
 \end{proof}
 
+\begin{corollary}[Weighted occurrence-discounted tuple storage]
+   \label{cor:weighted-occurrence-discounted-tuple-storage}
+   Work in the setting of
+   \cref{cor:uniform-tuple-witness-packing-storage}.  For each seed \(z\), let
+   \(\mathcal B_z^w\) be a finite weighted occurrence family.  An occurrence
+   \(b\in\mathcal B_z^w\) has weight \(\omega_{z,b}>0\) and points to a
+   canonical child \(\kappa_{z,b}\).  Let
+   \[
+      \mathcal C_z^w=\{\kappa_{z,b}:b\in\mathcal B_z^w\},
+      \qquad
+      m_z^w(\kappa)
+      =
+      \sum_{b:\,\kappa_{z,b}=\kappa}\omega_{z,b}
+      \tag{WODT0}
+   \]
+   be the distinct weighted children and their weighted occurrence
+   multiplicities.  Each \(\kappa\in\mathcal C_z^w\) has the same certificates
+   as in \cref{cor:uniform-tuple-witness-packing-storage}: tuple order
+   \(k_{z,\kappa}\in\mathcal K\), witness net \(A_{z,\kappa}\), and storage
+   price \(u_{z,\kappa}\).
+
+   For \(k\in\mathcal K\) and
+   \(\mathbf x\in\mathcal T_k(P,\delta)\), define the weighted
+   occurrence-discounted congestion
+   \[
+      \widehat W_z^w(k,\mathbf x)
+      =
+      \sum_{\substack{b\in\mathcal B_z^w:\\
+         k_{z,\kappa_{z,b}}=k,\
+         x_j\in A_{z,\kappa_{z,b}}\ \forall j}}
+      \frac{
+         \omega_{z,b}u_{z,\kappa_{z,b}}
+      }{
+         m_z^w(\kappa_{z,b})\,|A_{z,\kappa_{z,b}}|^k
+      } .
+      \tag{WODT1}
+   \]
+   Suppose there are certified envelopes \(\widehat J_k^w(\mathbf x)\ge0\)
+   such that
+   \[
+      \E_z\widehat W_z^w(k,\mathbf x)\le\widehat J_k^w(\mathbf x)
+      \qquad(k\in\mathcal K,\ \mathbf x\in\mathcal T_k(P,\delta)).
+      \tag{WODT2}
+   \]
+   If \(\Sigma^+=\emptyset\), the cover is feasible.  Otherwise suppose
+   \(a>0\), the corresponding active first-moment condition from
+   \cref{cor:uniform-tuple-witness-packing-storage} holds, and
+   \[
+      \E_z\Gamma_z+
+      \sum_{k\in\mathcal K}
+      \sum_{\mathbf x\in\mathcal T_k(P,\delta)}
+      \widehat J_k^w(\mathbf x)
+      \le aS .
+      \tag{WODT3}
+   \]
+   Then \((\mathsf{ESFC}_\Sigma)\) is feasible.
+
+   In the pair specialization \(k=2\), if
+   \(u_{z,\kappa}=\psi_{z,\kappa}|A_{z,\kappa}|^{1+\rho_{z,\kappa}}\) with
+   \(0\le\rho_{z,\kappa}\le1\), it is enough to bound
+   \[
+      \E_z
+      \sum_{\substack{b\in\mathcal B_z^w:\\ x,y\in A_{z,\kappa_{z,b}}}}
+      \frac{\omega_{z,b}\psi_{z,\kappa_{z,b}}}
+           {m_z^w(\kappa_{z,b})}
+      \le J^w(x,y).
+      \tag{WODT4}
+   \]
+   and to have
+   \(\E_z\Gamma_z+\sum_{(x,y)\in\mathcal T_2(P,\delta)}J^w(x,y)\le aS\).
+   Thus weighted Hall atoms, fractional cohorts, and soft decoder records can
+   be used directly in the shared-storage theorem; the analysis divides by
+   their total weighted multiplicity instead of first expanding them into
+   integer unit occurrences.
+\end{corollary}
+
+\begin{proof}
+   For a fixed tuple \((k,\mathbf x)\), group the weighted occurrence sum
+   \((WODT1)\) by canonical child.  A child \(\kappa\) contributes only when
+   \(k_{z,\kappa}=k\) and \(x_j\in A_{z,\kappa}\) for every \(j\).  In that
+   case its total contribution is
+   \[
+      \sum_{b:\,\kappa_{z,b}=\kappa}
+      \frac{\omega_{z,b}u_{z,\kappa}}
+           {m_z^w(\kappa)|A_{z,\kappa}|^k}
+      =
+      \frac{u_{z,\kappa}}{|A_{z,\kappa}|^k}.
+   \]
+   Hence \(\widehat W_z^w(k,\mathbf x)\) is exactly the distinct-child tuple
+   congestion \(W_z(k,\mathbf x)\) from \((UTW1)\), with the distinct child set
+   \(\mathcal C_z^w\).  Conditions \((WODT2)\)--\((WODT3)\) are therefore the
+   hypotheses \((UTW2)\)--\((UTW3)\), and
+   \cref{cor:uniform-tuple-witness-packing-storage} gives feasibility.
+
+   In the pair specialization,
+   \[
+      \frac{u_{z,\kappa}}{|A_{z,\kappa}|^2}
+      =
+      \psi_{z,\kappa}|A_{z,\kappa}|^{\rho_{z,\kappa}-1}
+      \le \psi_{z,\kappa},
+   \]
+   because \(|A_{z,\kappa}|\ge1\) and \(\rho_{z,\kappa}\le1\).  Thus
+   \((WODT4)\) supplies the pair envelopes required by \((WODT2)\).
+\end{proof}
+
 \begin{corollary}[Reciprocal-multiplicity pair-congestion certificate]
    \label{cor:reciprocal-multiplicity-pair-congestion}
    Work in the pair specialization \(k=2\) of
@@ -37486,6 +37591,84 @@ query mass rather than producing a cost-effective dense filter.
    multiplicities \(O_x^s(p)\), using \((COS3)\) for their total mass and
    averaging over the at most \(|\mathcal X|\) selected centers.  This gives
    \((COS7)\), and the containment in \(W_x\) follows from \((COS4)\).
+\end{proof}
+
+\begin{corollary}[Cap-centered overload cohorts are weighted storage occurrences]
+   \label{cor:cap-centered-overload-weighted-storage}
+   Work in the setting of \cref{cor:cap-centered-hall-overload-stars}, and fix a
+   dyadic pure overload star \(U=U^{\rm over}_{x,t}\) supplied by that corollary.
+   Suppose preprocessing canonicalizes this star to one recursive child
+   \(\kappa=\kappa(x,U)\), with nonempty certified witness net
+   \(A_\kappa\subseteq U\), tuple order \(k_\kappa\ge1\), and storage price
+   \(u_\kappa\).  Let every selected atom \(i\in\mathcal A\) with
+   \(s(i)=x\) and \(p_i\in U\) be a weighted occurrence of this same child,
+   with occurrence weight \(b_i\).  Its weighted multiplicity is
+   \[
+      m_\kappa
+      =
+      \sum_{\substack{i\in\mathcal A:\\s(i)=x,\ p_i\in U}}b_i
+      =
+      \sum_{p\in U}B_x^s(p).
+      \tag{COW1}
+   \]
+   Then
+   \[
+      m_\kappa\ge C\,t|U|.
+      \tag{COW2}
+   \]
+   Moreover, for every tuple
+   \(\mathbf a=(a_1,\ldots,a_{k_\kappa})\), the total contribution of this
+   overload cohort to the weighted reciprocal-multiplicity witness congestion is
+   exactly
+   \[
+      \sum_{\substack{i\in\mathcal A:\\s(i)=x,\ p_i\in U}}
+      \frac{b_i\,u_\kappa}
+           {m_\kappa |A_\kappa|^{k_\kappa}}
+      \mathbf 1\{a_j\in A_\kappa\ \forall j\}
+      =
+      \frac{u_\kappa}{|A_\kappa|^{k_\kappa}}
+      \mathbf 1\{a_j\in A_\kappa\ \forall j\}.
+      \tag{COW3}
+   \]
+   In the pair case \(k_\kappa=2\), if
+   \(u_\kappa=\psi_\kappa|A_\kappa|^{1+\rho_\kappa}\) with
+   \(0\le\rho_\kappa\le1\), this contribution is
+   \[
+      \psi_\kappa |A_\kappa|^{\rho_\kappa-1}
+      \mathbf 1\{a_1,a_2\in A_\kappa\}
+      \le
+      \psi_\kappa\mathbf 1\{a_1,a_2\in A_\kappa\}.
+      \tag{COW4}
+   \]
+
+   Consequently a pure overload star need not be materialized as
+   \(m_\kappa\) integer recursive copies.  Once all such stars are
+   canonicalized to shared children, the overload branch is governed by the
+   weighted occurrence-discounted storage certificate of
+   \cref{cor:weighted-occurrence-discounted-tuple-storage}: prove the resulting
+   price-weighted tuple congestion envelopes, and the shared-DAG storage
+   accounting charges each overload child once.
+\end{corollary}
+
+\begin{proof}
+   If \(p\in U\), then \(O_x^s(p)\ge t\).  By the definition \((COS2)\),
+   \[
+      \frac{B_x^s(p)}{C}-d_x^+(p)\ge t,
+   \]
+   and \(d_x^+(p)\ge0\).  Hence \(B_x^s(p)\ge Ct\).  Summing over \(p\in U\)
+   gives \((COW2)\).
+
+   For \((COW3)\), all selected occurrences in the cohort point to the same
+   canonical child \(\kappa\).  Therefore the child, witness net, tuple order,
+   and storage price are common, and
+   \[
+      \sum_{\substack{i\in\mathcal A:\\s(i)=x,\ p_i\in U}}
+      \frac{b_i}{m_\kappa}=1.
+   \]
+   Multiplying by \(u_\kappa|A_\kappa|^{-k_\kappa}\) and by the common tuple
+   indicator proves \((COW3)\).  The pair specialization is the substitution
+   \(u_\kappa=\psi_\kappa|A_\kappa|^{1+\rho_\kappa}\); since
+   \(|A_\kappa|\ge1\) and \(\rho_\kappa\le1\), the final inequality follows.
 \end{proof}
 
 \begin{lemma}[Certified star-panel separator]
@@ -47492,6 +47675,10 @@ plain pair-congestion target up to that factor.
 when many decoded records induce the same canonical child, each occurrence is
 weighted by the reciprocal of that child's multiplicity before pair congestion is
 measured.
+\Cref{cor:weighted-occurrence-discounted-tuple-storage} removes the integer
+restriction from this statement: fractional Hall atoms, weighted cohorts, and
+soft decoder records are divided by their total weighted multiplicity and still
+group to one stored child.
 \Cref{cor:reciprocal-multiplicity-pair-congestion} isolates the pair case:
 bound that reciprocal-multiplicity pair congestion directly and the shared
 canonical storage condition follows.
@@ -73170,6 +73357,12 @@ dyadic cap-centered pure overload star where
 \((B_x/C-d_x^+)_+\) has large layer-cake mass.  Thus the remaining separator
 does not have to reason about arbitrary Hall set systems; it has to rule out or
 repair these pointwise overload stars.
+\Cref{cor:cap-centered-overload-weighted-storage} identifies the storage form
+of such a star: if the selected weighted atoms are canonicalized to one shared
+child, reciprocal weighted multiplicity charges exactly one child-storage price,
+not one price per atom.  The overload branch therefore becomes a weighted
+tuple-congestion theorem for shared canonical children, rather than an
+integer-cohort materialization problem.
 \Cref{cor:dyadic-distinct-storage-bucket-net} rewrites that target as a dyadic
 large-child counting problem: for every recursive price scale, bound the number
 of distinct canonical bucket nets whose shared child index has that price.
