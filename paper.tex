@@ -81545,6 +81545,83 @@ This certificate is the local form of the remaining problem. It is analogous in 
    \((RT2)\)--\((RT4)\), gives the stated work bound.
 \end{proof}
 
+\begin{proposition}[Accepted-route certificates imply aggregate value delivery]
+   \label{prop:accepted-route-certificates-imply-value}
+   Work in one localized budget-thinned query state with target
+   \(F=F_4(m,R)\).  After removing cap-free residual scans, suppose that for
+   every unresolved near pair the query has a finite successful-route trie, or
+   a compressed acyclic route graph whose unfolding is such a trie, satisfying
+   the hypotheses of either
+   \cref{cor:finite-accepted-route-trie-compiler},
+   \cref{cor:compressed-route-dag-verifier}, or
+   \cref{cor:prefix-moment-accepted-route-compiler}.  Use the same normalized
+   required-edge charges
+   \[
+      a_e=\frac{\Gamma_e}{(1-\kappa\eta^2)F}
+   \]
+   in the transition-aware water-filled allocation, and assume every terminal
+   route invokes a certified procedure that reaches the near witness or returns
+   a valid \(cr\)-neighbor.  If the route-edge bound \(H_0\), antichain
+   constant \(C\), and Fano parameter \(\beta=O_c(1)\) satisfy
+   \[
+      H_0\log C=O_c(\log\log n),
+      \qquad
+      L_m=\log^{O_c(1)}n,
+   \]
+   then the accepted trie has saturated route value
+   \[
+      U(\varnothing)\ge\log^{-O_c(1)}n
+   \]
+   and its Fano reporter has query work \(F\log^{O_c(1)}n\), up to the
+   already-accounted score work.  Consequently,
+   \cref{asm:aggregate-value-delivery} is discharged for any budget-thinned
+   construction that supplies such accepted route certificates at each
+   unresolved near state.
+\end{proposition}
+
+\begin{proof}
+   The accepted-route compilers are all routed through the same
+   superharmonic-antichain certificate.  In the explicit trie case,
+   \cref{cor:finite-accepted-route-trie-compiler} uses
+   \cref{cor:local-potential-antichain-fano}; the compressed-DAG compiler
+   applies the same argument to the path unfolding; the prefix-moment compiler
+   constructs the needed superharmonic potential from \((MD2)\).  In each
+   case the proof supplies a route law \(\Lambda\) and a transition-aware
+   water-filled allocation whose defect is at most
+   \[
+      B=H_0\log C .
+   \]
+   Applying \cref{cor:transition-waterfilled-allocation} gives
+   \[
+      U(\varnothing)\ge \frac12 e^{-2B}
+      \ge \log^{-O_c(1)}n .
+   \]
+
+   The same accepted-route compiler bounds the Fano reporter work by
+   \[
+      e^{2\beta H_0\log C}F L_m
+      =
+      F\log^{O_c(1)}n .
+   \]
+   The allocation has total normalized mass at most one, so the corresponding
+   geometric or fractional recursive calls are charged to the
+   budget-allocation thinning rule and
+   \cref{lem:fractional-value-budget}.  Terminal validity is one of the
+   accepted-trie hypotheses, hence every delivered route reaches the witness
+   or reports a valid neighbor.  These are exactly the saturated value, work,
+   and terminal-correctness requirements in
+   \cref{asm:aggregate-value-delivery}.
+\end{proof}
+
+\begin{remark}[Finite verifier for the frozen value target]
+   The diagnostic \texttt{impl/route\_value\_verifier.py} implements the finite
+   algebra used in \cref{prop:accepted-route-certificates-imply-value}: the
+   saturated Bellman recursion and route-cut min-cut, the least superharmonic
+   antichain majorant, the induced dominating route law, and the water-filled
+   allocation.  It is meant to test concrete accepted tries or compressed
+   decoder skeletons before adding further theory.
+\end{remark}
+
 \begin{lemma}[Finite convex-linear minimax]\label{lem:finite-convex-minimax}
    Let \(X\subset\R^d\) be compact and convex, and let
    \(\phi_i:X\to\R\), \(i\in I\), be finitely many continuous convex
@@ -83295,6 +83372,13 @@ This certificate is the local form of the remaining problem. It is analogous in 
    prove inverse-polylogarithmic harmonic value at the root of the tame-route
    trie. By \cref{lem:harmonic-saturated-comparison}, this is equivalent to
    the saturated min-cut target up to the polylogarithmic route depth.
+   \Cref{prop:accepted-route-certificates-imply-value} packages the finite
+   verifier version of the same target: an accepted route trie with a
+   superharmonic antichain potential and transition-aware water-filled
+   allocation gives the saturated value required by
+   \cref{asm:aggregate-value-delivery}.  The remaining theorem is therefore
+   the existence of such decoded route skeletons, or a counterexample to their
+   antichain charge bound, not another certificate normal form.
 \end{remark}
 
 \begin{remark}[The remaining aggregate value target]\label{rem:value-delivery-target}
@@ -92084,7 +92168,7 @@ For the randomized cap-thinning route, one remaining task is the branching first
    \le
    \log^{O_c(1)}n\,V(\varnothing)^2 .
 \]
-\Cref{lem:local-lca-energy} further reduces this to a local Bellman multiplier, and \cref{cor:square-nonexpansive-routes} shows that square-nonexpansive value branching costs only the polylogarithmic route depth. Equivalently, \cref{lem:energy-spine-toll} says that it is enough to prove only $O_c(\log\log n)$ positive square-energy toll along the energy-biased route spine. The capped-flow certificate \cref{lem:unit-capped-value-flow}, the Bellman recursion \cref{lem:saturated-value-recursion}, and the min-cut dual \cref{lem:saturated-value-mincut} give a still simpler sufficient formulation: prove that every route cut has inverse-polylogarithmic prefix-success mass. The equivalent dominated-law form in \cref{lem:dominated-route-law} says to construct a tilted law on tame routes whose prefix probabilities are dominated by activation prefix masses up to a polylogarithmic factor; by \cref{cor:typical-route-law-toll}, it is enough to prove only $O_c(\log\log n)$ expected positive domination toll under that route law and prune the bad tail. The cut-energy form \cref{lem:cut-energy-route-law} is closer to stopping-time proofs: it asks only for polylogarithmic $\sum_{u\in\mathcal C}\Lambda(u)^2/A(u)$ on each route cut $\mathcal C$. By \cref{lem:frontier-square-toll}, this is equivalent to bounding the positive square toll of the square-biased route spine up to each stopped frontier, with no all-prefix depth summation. The stronger all-prefix bound in \cref{cor:route-law-prefix-energy} remains an LCA-compatible sufficient condition. \Cref{lem:unit-success-skeleton-contraction} contracts ordinary score-only regions into additive harmonic resistance, so the remaining value theorem can be stated on the skeleton of genuinely thinned opportunities. Conditional on either aggregate value statement, \cref{prop:budget-thinned-polylog} gives the desired polylogarithmic ANN theorem. This is a fully non-channel route; the smooth product terminal filter can be used after localization and no longer contributes an inverse-polylogarithmic table-recall penalty. The structured posterior route replaces the cap-frontier obstacle by the tilted witness-list target \cref{asm:smoothed-witness-list}: prove a compact reporter whose verified candidate list contains the true near point with constant mass under the query-centered tilted Gaussian law. The rate-coverage panel \cref{asm:rate-coverage-panel} is the most concrete facility version of this target: a multi-assignment scheme is certified by the closed-form miss term \(\exp(-a_p\mu_p(B))\), the reported-load bound, and the total replication budget. The stronger max-tilted sampler \cref{asm:alpha-leader-sampler} and nearest-cell decoder \cref{asm:smoothed-nearest-cell} remain clean implementation normal forms, but k-means++-style or lattice/code buckets only need the rate-coverage certificates. The smoothed sampling route replaces both by \cref{asm:smoothed-gibbs} or \cref{asm:gumbel-mips}: prove either an optimal-exponent reporter that captures inverse-polylogarithmic Gaussian Gibbs mass, or a certified $O(\log\log n)$-additive Gumbel-MIPS primitive. Smoothed additive nearest neighbor is another stronger sufficient primitive. The detector-vote cohort-or-leaf route is a separate possible generalization to arbitrary certified child hierarchies, where the remaining issue is near-lineage coupling between ordinary continuation paths and detector activations.
+\Cref{lem:local-lca-energy} further reduces this to a local Bellman multiplier, and \cref{cor:square-nonexpansive-routes} shows that square-nonexpansive value branching costs only the polylogarithmic route depth. Equivalently, \cref{lem:energy-spine-toll} says that it is enough to prove only $O_c(\log\log n)$ positive square-energy toll along the energy-biased route spine. The capped-flow certificate \cref{lem:unit-capped-value-flow}, the Bellman recursion \cref{lem:saturated-value-recursion}, and the min-cut dual \cref{lem:saturated-value-mincut} give a still simpler sufficient formulation: prove that every route cut has inverse-polylogarithmic prefix-success mass. The equivalent dominated-law form in \cref{lem:dominated-route-law} says to construct a tilted law on tame routes whose prefix probabilities are dominated by activation prefix masses up to a polylogarithmic factor; by \cref{cor:typical-route-law-toll}, it is enough to prove only $O_c(\log\log n)$ expected positive domination toll under that route law and prune the bad tail. The cut-energy form \cref{lem:cut-energy-route-law} is closer to stopping-time proofs: it asks only for polylogarithmic $\sum_{u\in\mathcal C}\Lambda(u)^2/A(u)$ on each route cut $\mathcal C$. By \cref{lem:frontier-square-toll}, this is equivalent to bounding the positive square toll of the square-biased route spine up to each stopped frontier, with no all-prefix depth summation. The stronger all-prefix bound in \cref{cor:route-law-prefix-energy} remains an LCA-compatible sufficient condition. \Cref{lem:unit-success-skeleton-contraction} contracts ordinary score-only regions into additive harmonic resistance, so the remaining value theorem can be stated on the skeleton of genuinely thinned opportunities. The finite accepted-route certificate of \cref{prop:accepted-route-certificates-imply-value} is the computable version: a decoded route trie with a superharmonic antichain potential and transition-aware water-filled allocation already implies \cref{asm:aggregate-value-delivery}. Conditional on either aggregate value statement, \cref{prop:budget-thinned-polylog} gives the desired polylogarithmic ANN theorem. This is a fully non-channel route; the smooth product terminal filter can be used after localization and no longer contributes an inverse-polylogarithmic table-recall penalty. The structured posterior route replaces the cap-frontier obstacle by the tilted witness-list target \cref{asm:smoothed-witness-list}: prove a compact reporter whose verified candidate list contains the true near point with constant mass under the query-centered tilted Gaussian law. The rate-coverage panel \cref{asm:rate-coverage-panel} is the most concrete facility version of this target: a multi-assignment scheme is certified by the closed-form miss term \(\exp(-a_p\mu_p(B))\), the reported-load bound, and the total replication budget. The stronger max-tilted sampler \cref{asm:alpha-leader-sampler} and nearest-cell decoder \cref{asm:smoothed-nearest-cell} remain clean implementation normal forms, but k-means++-style or lattice/code buckets only need the rate-coverage certificates. The smoothed sampling route replaces both by \cref{asm:smoothed-gibbs} or \cref{asm:gumbel-mips}: prove either an optimal-exponent reporter that captures inverse-polylogarithmic Gaussian Gibbs mass, or a certified $O(\log\log n)$-additive Gumbel-MIPS primitive. Smoothed additive nearest neighbor is another stronger sufficient primitive. The detector-vote cohort-or-leaf route is a separate possible generalization to arbitrary certified child hierarchies, where the remaining issue is near-lineage coupling between ordinary continuation paths and detector activations.
 \Cref{cor:affinity-proportional-route-law} gives the cleanest current
 list-decoding interpretation of the posterior handoff: once the reporter
 decodes an outgoing port list, branch by local affinity and pay only the
