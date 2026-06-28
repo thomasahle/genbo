@@ -39233,6 +39233,89 @@ query mass rather than producing a cost-effective dense filter.
    \(\ell_1\) norm on nonnegative vectors.
 \end{proof}
 
+\begin{corollary}[Aggregate shared-cell water budget]
+   \label{cor:aggregate-shared-cell-water-budget}
+   Work in the setting of
+   \cref{cor:partition-local-gibbs-residual}.  For every active layer \(i\), let
+   \(\mathcal P_i\) be a finite partition of the positive profiles.  For every
+   nonempty class \(C\in\mathcal P_i\), suppose a reporter gives a shared-record
+   certificate as in \cref{cor:shared-record-partition-cell-compiler}, possibly
+   with class-dependent \(\chi_{i,C}\).  Write its certified class cost as
+   \[
+      \mathsf Y_{i,C}
+      =
+      L_{i,C}^{\rm sh}
+      +
+      \chi_{i,C}
+      \sum_{b\in\mathcal B_{i,C}}R_b .
+      \tag{ASCW1}
+   \]
+   If, for every active layer \(i\),
+   \[
+      \left(
+         \sum_{C\in\mathcal P_i}\mathsf Y_{i,C}^{p_i}
+      \right)^{1/p_i}
+      \le
+      \frac{2^{\ell_i}B_\star}{32M_{\mathcal I}},
+      \tag{ASCW2}
+   \]
+   and the high-correlation fixed-tail condition \((PELS5)\) holds, then
+   \((\mathsf{ESFC}_\Sigma)\) is feasible, provided no one-record guard-credit
+   repair fires.
+
+   Conversely, suppose no one-record guard-credit repair fires and \((GWL2)\)
+   fails for an active layer \(i\).  Then every collection of shared-record
+   certificates satisfying the profilewise decomposition and recordwise
+   aggregation hypotheses \((SRPC2)\)--\((SRPC3)\) must violate
+   \[
+      \left(
+         \sum_{C\in\mathcal P_i}\mathsf Y_{i,C}^{p_i}
+      \right)^{1/p_i}
+      >
+      \frac{2^{\ell_i}B_\star}{32M_{\mathcal I}} .
+      \tag{ASCW3}
+   \]
+
+   Thus the partition count \(J_i\) is not an inherent multiplicative toll.  The
+   uniform bound \((PLG2)\) is the special case
+   \(\mathsf Y_{i,C}\le2^{\ell_i}B_\star/(32M_{\mathcal I}J_i^{1/p_i})\) for
+   every class.  A reporter may instead spend the layer water budget only on the
+   cells that actually carry entropy-deficit mass, and may use a coarse partition
+   for low-dynamic-range certification without paying the worst-cell budget on
+   every cell.
+\end{corollary}
+
+\begin{proof}
+   Assume no one-record guard-credit repair fires.  The proof of
+   \cref{cor:shared-record-partition-cell-compiler}, applied to each class
+   \(C\), gives
+   \[
+      X_{i,C}^{(p)}
+      \le
+      \mathsf Y_{i,C}.
+      \tag{ASCW4}
+   \]
+   Therefore
+   \[
+   \begin{aligned}
+      \exp(p_i\Lambda_i^{\rm Gibbs})
+      &=
+      \sum_{C\in\mathcal P_i}
+      \left(X_{i,C}^{(p)}\right)^{p_i} \\
+      &\le
+      \sum_{C\in\mathcal P_i}\mathsf Y_{i,C}^{p_i}.
+   \end{aligned}
+   \]
+   If \((ASCW2)\) holds, taking \(p_i\)-th roots gives \((GWL2)\) for every
+   active layer.  Then \cref{cor:gibbs-water-level-storage-screen} gives
+   \((\mathsf{ESFC}_\Sigma)\) under \((PELS5)\).
+
+   Conversely, if \((GWL2)\) fails and no repair fires, then the displayed
+   inequality forces the aggregate certified costs to exceed the right side of
+   \((ASCW2)\), which is \((ASCW3)\).  The final paragraph is just the
+   comparison with the uniform budget used in \((PLG2)\).
+\end{proof}
+
 \begin{corollary}[Paid-responsibility high-correlation star compiler]
    \label{cor:paid-responsibility-high-correlation-star}
    Work in the setting of
@@ -45060,6 +45143,9 @@ profile count.
 interface: profile contributions to the same dense/star record are aggregated in
 \(\ell_p\), and that record's recursive price is charged only once in the cell
 water test.
+\Cref{cor:aggregate-shared-cell-water-budget} removes the artificial uniform
+partition split: the reporter only has to fit the \(\ell_p\)-aggregate of the
+certified cell costs inside the layer water budget.
 \Cref{lem:star-superlevel-column-verifier} and
 \cref{cor:pair-star-dense-column-generator} add the finite LP check: the star
 is retained only if its ball-thickened query side has positive reduced gain;
@@ -70670,6 +70756,8 @@ coarser reporter cells, replacing singleton profile accounting by a class
 \Cref{cor:shared-record-partition-cell-compiler} connects that cell certificate
 to shared dense records: a record helping many profiles contributes through its
 profile-allocation \(\ell_p\) norm but pays one recursive price.
+\Cref{cor:aggregate-shared-cell-water-budget} then replaces per-cell uniform
+thresholds by one layer-level \(\ell_p\) budget for those certified costs.
 \Cref{lem:star-superlevel-column-verifier} and
 \cref{cor:pair-star-dense-column-generator} turn such a superlevel into an
 ordinary fractional-cover column by using the certified query activation
@@ -70958,6 +71046,9 @@ guard repair.
 allowing the reported star records to be shared across all profiles in a cell;
 the remaining proof should therefore construct shared allocation certificates,
 not profilewise duplicate star copies.
+\Cref{cor:aggregate-shared-cell-water-budget} is the current storage target:
+prove the \(\ell_p\)-aggregate of those shared cell costs fits the layer budget,
+or produce a guard repair.
 \Cref{cor:metric-entropy-hall-shadow-closure} and
 \cref{cor:low-doubling-hall-shadow-close} sharpen the remaining geometric
 obligation: any positive Hall shadow of certified covering number below
