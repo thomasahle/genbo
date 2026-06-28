@@ -37236,6 +37236,161 @@ query mass rather than producing a cost-effective dense filter.
    which proves the transport statement.
 \end{proof}
 
+\begin{lemma}[Cap-centered transport Hall normal form]
+   \label{lem:cap-centered-transport-hall}
+   Work in the setting of
+   \cref{cor:cap-centered-responsibility-prefix-compiler}, and fix a
+   congestion \(C>0\).  Let \(\mathcal I\) be a finite set of
+   high-correlation atoms.  Each atom \(i\in\mathcal I\) has a point
+   \(p_i\in P\), a weight \(b_i\ge0\), and a finite admissible center set
+   \(\mathcal X_i\subseteq\mathcal X\), such that
+   \[
+      x\in\mathcal X_i
+      \quad\Longrightarrow\quad
+      p_i\in W_x
+      \quad\text{and}\quad
+      \ip{(x-o)/R}{(p_i-o)/R}\ge\gamma .
+      \tag{CTH1}
+   \]
+   Define the capacity nodes
+   \[
+      \mathcal J
+      =
+      \{(x,p,q):x\in\mathcal X,\ p\in P,\ (p,q)\in\mathcal N\},
+      \tag{CTH2}
+   \]
+   with capacities
+   \[
+      c_{x,p,q}=C\,\alpha_{p,q}a_x^+(q),
+      \tag{CTH3}
+   \]
+   and join atom \(i\) to \((x,p,q)\in\mathcal J\) when
+   \(p=p_i\), \(x\in\mathcal X_i\), and \(c_{x,p,q}>0\).  Let
+   \(\Phi_C\) be the maximum value of a nonnegative flow
+   \(h_{i,x,q}\) over these incidence edges satisfying
+   \[
+      \sum_{x,q}h_{i,x,q}\le b_i
+      \qquad(i\in\mathcal I),
+      \tag{CTH4}
+   \]
+   and
+   \[
+      \sum_{i:\,p_i=p,\ x\in\mathcal X_i}h_{i,x,q}
+      \le c_{x,p,q}
+      \qquad((x,p,q)\in\mathcal J).
+      \tag{CTH5}
+   \]
+   For \(\mathcal A\subseteq\mathcal I\), write \(N(\mathcal A)\) for the
+   adjacent capacity nodes.  Then
+   \[
+      \Phi_C
+      =
+      \min_{\mathcal A\subseteq\mathcal I}
+      \left\{
+         \sum_{i\in\mathcal I\setminus\mathcal A}b_i
+         +
+         \sum_{(x,p,q)\in N(\mathcal A)}
+            C\,\alpha_{p,q}a_x^+(q)
+      \right\}.
+      \tag{CTH6}
+   \]
+   Consequently, for any \(0\le M_0\le B:=\sum_i b_i\), a
+   cap-centered transport of mass at least \(M_0\) exists if and only if every
+   atom subset \(\mathcal A\) satisfies
+   \[
+      \sum_{i\in\mathcal A}b_i
+      \le
+      C\sum_{(x,p,q)\in N(\mathcal A)}\alpha_{p,q}a_x^+(q)
+      +
+      B-M_0 .
+      \tag{CTH7}
+   \]
+   Equivalently, if no transport of mass \(M_0\) exists, then some atom subset
+   has Hall overload
+   \[
+      \sum_{i\in\mathcal A}b_i
+      -
+      C\sum_{(x,p,q)\in N(\mathcal A)}\alpha_{p,q}a_x^+(q)
+      >
+      B-M_0 .
+      \tag{CTH8}
+   \]
+
+   Any feasible flow of value \(M\) aggregates to
+   \[
+      f_{x,p,q}
+      =
+      \sum_{i:\,p_i=p,\ x\in\mathcal X_i}h_{i,x,q},
+      \tag{CTH9}
+   \]
+   which satisfies \((CRP6)\).  Hence
+   \cref{cor:cap-centered-responsibility-prefix-compiler} converts the flow
+   into a cap-centered responsibility assignment of total mass \(M/C\).  Under
+   the dyadic and price hypotheses of that corollary, a sufficiently large
+   transport either gives a \((B_0+3)\)-quadratic repair or is paid by the
+   cap-centered child price envelope.
+\end{lemma}
+
+\begin{proof}
+   Build the finite network with a source edge of capacity \(b_i\) into each
+   atom \(i\), infinite-capacity edges from atoms to their adjacent capacity
+   nodes, and a sink edge of capacity \(c_{x,p,q}\) out of each capacity node.
+   A finite source--sink cut is determined by the atom set
+   \(\mathcal A\) left on the source side; all nodes in \(N(\mathcal A)\) must
+   also lie on the source side.  The cheapest such cut has capacity
+   \[
+      \sum_{i\notin\mathcal A}b_i+\sum_{j\in N(\mathcal A)}c_j,
+   \]
+   which is \((CTH6)\) by max-flow/min-cut.  Rewriting
+   \(\Phi_C\ge M_0\) with \(B=\sum_i b_i\) gives \((CTH7)\), and its negation
+   gives \((CTH8)\).
+
+   Finally, if \(h\) is feasible, then \((CTH5)\) gives
+   \(f_{x,p,q}\le C\alpha_{p,q}a_x^+(q)\).  The adjacency condition and
+   \((CTH1)\) give exactly the support required in
+   \cref{cor:cap-centered-responsibility-prefix-compiler}.  Applying that
+   corollary proves the responsibility and repair-envelope conclusions.
+\end{proof}
+
+\begin{corollary}[Cap-centered overload dichotomy]
+   \label{cor:cap-centered-overload-dichotomy}
+   In the setting of \cref{lem:cap-centered-transport-hall}, fix an allowed
+   unassigned tail \(0\le\Omega\le B\).  If every atom subset satisfies
+   \[
+      \sum_{i\in\mathcal A}b_i
+      \le
+      C\sum_{(x,p,q)\in N(\mathcal A)}\alpha_{p,q}a_x^+(q)
+      +\Omega,
+      \tag{COD1}
+   \]
+   then at least \(B-\Omega\) atom mass can be transported into cap-centered
+   paid degrees, and therefore at least \((B-\Omega)/C\) responsibility mass is
+   handled by the quadratic cap-prefix mechanism.  If \((COD1)\) fails, then
+   the surviving obstruction is the explicit finite Hall cut
+   \[
+      \sum_{i\in\mathcal A}b_i
+      >
+      C\sum_{(x,p,q)\in N(\mathcal A)}\alpha_{p,q}a_x^+(q)
+      +\Omega .
+      \tag{COD2}
+   \]
+
+   Thus the overload term in
+   \cref{cor:clipped-cap-centered-high-correlation-handoff} may be replaced by
+   a finite cut-separation problem: either a bounded-congestion transport feeds
+   the cap-centered paid-prefix verifier, or a particular atom subset has more
+   high-correlation mass than its cap-centered paid neighborhood plus the
+   permitted tail.
+\end{corollary}
+
+\begin{proof}
+   Apply \cref{lem:cap-centered-transport-hall} with \(M_0=B-\Omega\).  The
+   Hall condition \((CTH7)\) is exactly \((COD1)\), while its failure is
+   \((COD2)\).  The transported responsibility mass and the cap-prefix
+   conclusion are the final paragraph of
+   \cref{lem:cap-centered-transport-hall}.
+\end{proof}
+
 \begin{lemma}[Certified star-panel separator]
    \label{lem:certified-star-panel-separator}
    Work in the setting of \cref{lem:star-prefix-weak-type-residual}, and assume
@@ -72906,6 +73061,12 @@ positive certificate: any bounded-congestion assignment or transport of
 high-correlation mass into cap-centered paid degrees is already a valid
 same-prefix quadratic repair certificate.  The live obstruction is therefore
 the untransported overload, not geometric branching through the star itself.
+\Cref{lem:cap-centered-transport-hall} and
+\cref{cor:cap-centered-overload-dichotomy} make that overload finite: either
+the atom mass admits a bounded-congestion flow into cap-centered paid query
+capacities, or one explicit Hall cut has more high-correlation atom mass than
+its paid neighborhood plus the allowed tail.  This is the next geometric
+separator target.
 \Cref{cor:dyadic-distinct-storage-bucket-net} rewrites that target as a dyadic
 large-child counting problem: for every recursive price scale, bound the number
 of distinct canonical bucket nets whose shared child index has that price.
