@@ -40014,6 +40014,155 @@ query mass rather than producing a cost-effective dense filter.
    each profile contributes at most \(e^{-\Lambda}\), giving \((FPE5)\).
 \end{proof}
 
+\begin{corollary}[High-correlation fractional-tail profiles return to prefixes]
+   \label{cor:fractional-sponsor-tail-high-correlation-return}
+   Work in the setting of
+   \cref{cor:fractional-sponsor-tail-packing-energy-screen}, and keep the
+   fractional sponsor-tail dual \(y_s\).  Fix one profile
+   \(\pi\subseteq E_{\ne}^2\), assign nonnegative weights
+   \(\omega_{s,s'}\) to its ordered pairs, and split
+   \[
+      \pi=\pi_{\rm lo}\dot\cup\pi_{\rm hi}.
+   \]
+   Suppose the low part has certified weight
+   \[
+      \sum_{(s,s')\in\pi_{\rm lo}}\omega_{s,s'}\le B_{\rm lo},
+      \tag{FHR1}
+   \]
+   and every high edge has representative correlation at least
+   \[
+      \ip{x_s}{x_{s'}}\ge\underline\theta
+      \qquad((s,s')\in\pi_{\rm hi})
+      \tag{FHR2}
+   \]
+   for some \(-1<\underline\theta<1\).  Define
+   \[
+      M_s(s')=\omega_{s,s'}\mathbf 1_{\{(s,s')\in\pi_{\rm hi}\}},
+      \qquad
+      W_{\rm hi}=\sum_{s,s'\in E}M_s(s').
+      \tag{FHR3}
+   \]
+   If \(W_{\rm hi}=0\), set \(J_\omega=1\).  Otherwise assume the positive
+   values of \(M_s(s')\) lie in a certified dyadic range
+   \([\omega_{\min},\omega_{\max}]\), put
+   \[
+      J_\omega=
+      1+\left\lceil\log_2\frac{\omega_{\max}}{\omega_{\min}}\right\rceil,
+      \tag{FHR4}
+   \]
+   and define the high-correlation stars
+   \[
+      V_{s,t}=\{s'\in E:M_s(s')\ge t\},
+      \qquad
+      t\in\{\omega_{\min}2^j:0\le j<J_\omega\}.
+      \tag{FHR5}
+   \]
+   Then every nonempty \(V_{s,t}\) has representatives in the cap ball
+   \[
+      x_{s'}\in B\!\left(x_s,\sqrt{2(1-\underline\theta)}\right)
+      \qquad(s'\in V_{s,t}).
+      \tag{FHR6}
+   \]
+
+   Now let \(\chi>0\).  For every nonempty \(V_{s,t}\), suppose preprocessing
+   has a generated shared-record template \(T_{s,t}\) satisfying the
+   materialization hypothesis \((FSG1)\), with
+   \[
+      V_{s,t}\subseteq\mathcal S_{T_{s,t}},
+      \qquad
+      h_{s,t}=|V_{s,t}|\in\mathcal K_{T_{s,t}},
+      \tag{FHR7}
+   \]
+   and certified current dual capture
+   \[
+      a_{T_{s,t},s'}y_{s'}\ge\chi
+      \qquad(s'\in V_{s,t}).
+      \tag{FHR8}
+   \]
+   If, for some star,
+   \[
+      \chi h_{s,t}>\overline P_{T_{s,t}}(h_{s,t}),
+      \tag{FHR9}
+   \]
+   then \(T_{s,t}\) contains an improving generated prefix for the fractional
+   sponsor-tail shared-cover LP.  If no such improving prefix exists, then
+   \[
+      W_{\rm hi}
+      \le
+      \frac2\chi
+      \sum_{s\in E}\sum_t
+         t\,\overline P_{T_{s,t}}(h_{s,t}),
+      \tag{FHR10}
+   \]
+   and hence
+   \[
+      \sum_{(s,s')\in\pi}\omega_{s,s'}
+      \le
+      B_{\rm lo}
+      +
+      \frac2\chi
+      \sum_{s\in E}\sum_t
+         t\,\overline P_{T_{s,t}}(h_{s,t}).
+      \tag{FHR11}
+   \]
+
+   In particular, if all used templates satisfy the common envelope
+   \[
+      \overline P_{T_{s,t}}(h)
+      \le
+      \psi_\star\left(Ah^\rho+\zeta h^{1+\rho}\right),
+      \tag{FHR12}
+   \]
+   then every no-prefix residual satisfies
+   \[
+      W_{\rm hi}
+      \le
+      \frac{2\psi_\star}{\chi}
+      \sum_{s\in E}\sum_t
+      t\left(Ah_{s,t}^{\rho}+\zeta h_{s,t}^{1+\rho}\right).
+      \tag{FHR13}
+   \]
+   Thus an energy-deficient high-correlation fractional-tail profile either
+   returns immediately as a positive generated shared-cover prefix, or it is
+   paid by the integrated generated price of its dyadic cap stars.
+\end{corollary}
+
+\begin{proof}
+   If \(s'\in V_{s,t}\), then \(M_s(s')>0\), so \((s,s')\in\pi_{\rm hi}\).
+   By \((FHR2)\),
+   \[
+      \|x_s-x_{s'}\|^2
+      =
+      2-2\ip{x_s}{x_{s'}}
+      \le 2(1-\underline\theta),
+   \]
+   proving \((FHR6)\).
+
+   Fix a nonempty star \(V_{s,t}\).  If \((FHR9)\) holds, then the top
+   \(h_{s,t}\)-prefix of \(T_{s,t}\), ordered by \(a_{T_{s,t},u}y_u\), has
+   total degree at least \(\chi h_{s,t}\), by \((FHR8)\).  This is larger than
+   its certified price, so \cref{cor:fractional-sponsor-tail-generated-prefix}
+   gives an improving generated shared-cover column.  Therefore, in a
+   no-prefix residual,
+   \[
+      \chi h_{s,t}\le\overline P_{T_{s,t}}(h_{s,t})
+      \tag{FHR14}
+   \]
+   for every nonempty dyadic star.
+
+   If \(W_{\rm hi}=0\), then \((FHR10)\)--\((FHR11)\) are immediate.  Otherwise
+   the same dyadic layer-cake estimate as in
+   \cref{cor:sponsor-profile-star-signal} gives
+   \[
+      \frac12W_{\rm hi}
+      \le
+      \sum_{s\in E}\sum_t t\,h_{s,t}.
+   \]
+   Multiplying \((FHR14)\) by \(t/\chi\) and summing gives \((FHR10)\).  Adding
+   the low bound \((FHR1)\) proves \((FHR11)\), and substituting \((FHR12)\)
+   proves \((FHR13)\).
+\end{proof}
+
 \begin{lemma}[Certified star-panel separator]
    \label{lem:certified-star-panel-separator}
    Work in the setting of \cref{lem:star-prefix-weak-type-residual}, and assume
@@ -75841,6 +75990,12 @@ obstruction into a separated packing in any certified generated metric, and
 the usual spherical/list-decoding second-moment test.  Thus the fractional
 sponsor-tail branch now terminates at the same low-correlation energy versus
 high-correlation dense-star signal as the non-storage sponsor layers.
+\Cref{cor:fractional-sponsor-tail-high-correlation-return} makes the return
+path explicit: every energy-deficient high-correlation profile either contains
+a generated shared-cover prefix with positive reduced cost, or its dyadic cap
+stars are bounded by the integrated generated-price envelope.  This closes the
+formal loop between the fractional large-star tail and the existing
+generated-prefix verifier.
 \Cref{cor:dyadic-distinct-storage-bucket-net} rewrites that target as a dyadic
 large-child counting problem: for every recursive price scale, bound the number
 of distinct canonical bucket nets whose shared child index has that price.
