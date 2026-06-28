@@ -40217,6 +40217,110 @@ query mass rather than producing a cost-effective dense filter.
    \((DST7)\).
 \end{proof}
 
+\begin{corollary}[Generated-cell dyadic shared-cover dichotomy]
+   \label{cor:generated-cell-dyadic-shared-cover-dichotomy}
+   Work in the setting of
+   \cref{cor:dyadic-shared-capture-top-prefix-compiler}, and fix a finite
+   family of generated templates \(\mathcal T\).  Consider the surrogate
+   generated-cell cover LP
+   \[
+   \begin{array}{ll}
+   \Psi_k^{\rm gen}=\min
+      & \displaystyle
+        2\sum_{b\in\mathcal B_k}e_b
+        +2\sum_{T\in\mathcal T}
+          \sum_{K\in\mathcal K_T}
+          \sum_{\substack{U\subseteq\mathcal B_T\\ |U|=K}}
+          \lambda_{T,U}\overline P_T(K)\\[0.9em]
+   \text{\rm subject to}
+      & \displaystyle
+        e_b+
+        \sum_{T\in\mathcal T}
+        \sum_{K\in\mathcal K_T}
+        \sum_{\substack{U\subseteq\mathcal B_T\\ |U|=K}}
+        \lambda_{T,U}g_{T,b}\mathbf 1_{\{b\in U\}}
+        \ge X_b
+        \qquad(b\in\mathcal B_k),\\[0.9em]
+      & e_b\ge0,\qquad \lambda_{T,U}\ge0 .
+   \end{array}
+      \tag{DTC1}
+   \]
+   If
+   \[
+      \Psi_k^{\rm gen}\le(1-a)\Theta_i^{\rm pref},
+      \tag{DTC2}
+   \]
+   then either the dyadic rank \(k\) satisfies \((TPW2)\), or a one-record
+   guard-credit repair fires.
+
+   Conversely, if \(k\) violates \((TPW2)\), \(L_k\le a\Theta_i^{\rm pref}\),
+   no one-record guard-credit repair fires, and the generated-cell cover does
+   not close, meaning \((DTC2)\) fails, then the dual of \((DTC1)\) has a
+   feasible solution \(u\) with
+   \[
+      \sum_{b\in\mathcal B_k}X_bu_b>(1-a)\Theta_i^{\rm pref},
+      \qquad
+      0\le u_b\le2,
+      \tag{DTC3}
+   \]
+   and for every generated template and available cardinality,
+   \[
+      \sum_{j\le K}d_T^u(b_j)\le2\overline P_T(K),
+      \qquad
+      T\in\mathcal T,\ K\in\mathcal K_T,
+      \tag{DTC4}
+   \]
+   where \(b_1,b_2,\ldots\) are ordered inside \(\mathcal B_T\) by
+   nonincreasing \(d_T^u\).  In particular, every template in the generated
+   family satisfies the weak-type residual envelope \((DST7)\) whenever its
+   parameters satisfy \((DST5)\).
+
+   Thus generated cells now have an exact minimax role.  A fractional cover by
+   their materializable prefixes closes the dyadic high-star branch; otherwise
+   the surviving obstruction is a single dual weighting whose top-prefix tests
+   fail in every generated cell.  This is the residual that a geometric,
+   additive-quantization, range, or list-decoding theorem must rule out.
+\end{corollary}
+
+\begin{proof}
+   Any feasible solution of \((DTC1)\) materializes a feasible solution of the
+   full dyadic shared-capture LP \((DLP2)\): replace each active
+   \((T,U)\) by the admissible record \(c(T,U)\), use
+   \((DST1)\) to dominate the cover coefficients, and use
+   \(P_{c(T,U)}\le\overline P_T(|U|)\) to dominate the price.  Therefore
+   \(\Phi_k^{\rm sh}\le\Psi_k^{\rm gen}\), and \((DTC2)\) implies \((DLP4)\).
+   The closure statement follows from
+   \cref{cor:finite-dyadic-shared-capture-lp}.
+
+   The dual of \((DTC1)\) is
+   \[
+   \begin{array}{ll}
+   \Psi_k^{\rm gen}=\max
+      & \displaystyle \sum_{b\in\mathcal B_k}X_bu_b\\[0.8em]
+   \text{\rm subject to}
+      & 0\le u_b\le2,\\[0.6em]
+      & \displaystyle
+        \sum_{b\in U}g_{T,b}u_b
+        \le2\overline P_T(K)
+        \qquad
+        (T\in\mathcal T,\ K\in\mathcal K_T,\ U\subseteq\mathcal B_T,\ |U|=K).
+   \end{array}
+      \tag{DTC5}
+   \]
+   The primal is finite and feasible by taking \(e_b=X_b\), so finite LP
+   duality applies.  If the generated-cell cover does not close in the stated
+   no-repair bad-prefix situation, then \((DTC2)\) fails, so
+   \(\Psi_k^{\rm gen}>(1-a)\Theta_i^{\rm pref}\).  An optimal dual for
+   \((DTC5)\) gives \((DTC3)\).
+
+   For fixed \(T\) and \(K\), the \(K\)-element subset maximizing
+   \(\sum_{b\in U}g_{T,b}u_b\) is the top \(K\) prefix in the order of
+   \(d_T^u(b)=g_{T,b}u_b\).  Hence the subset constraints in \((DTC5)\) are
+   equivalent to \((DTC4)\).  Applying the weak-type part of
+   \cref{cor:dyadic-shared-capture-top-prefix-compiler} to each template gives
+   \((DST7)\) under \((DST5)\).
+\end{proof}
+
 \begin{corollary}[Paid-responsibility high-correlation star compiler]
    \label{cor:paid-responsibility-high-correlation-star}
    Work in the setting of
@@ -46080,6 +46184,10 @@ generation is complete for the dyadic high-star branch.
 \cref{cor:dyadic-shared-capture-top-prefix-compiler} give the corresponding
 verifier-facing build interface: a proposed cell is retained only if its
 current dual-weighted top prefix beats the one-time recursive price.
+\Cref{cor:generated-cell-dyadic-shared-cover-dichotomy} adds the exact
+minimax residual: a finite generated-cell family either fractionally covers the
+dyadic high-star mass at budget, or leaves one dual weighting obeying every
+cell's top-prefix envelope.
 \Cref{lem:star-superlevel-column-verifier} and
 \cref{cor:pair-star-dense-column-generator} add the finite LP check: the star
 is retained only if its ball-thickened query side has positive reduced gain;
@@ -71722,6 +71830,9 @@ oracle target.
 \Cref{cor:one-sided-dyadic-shared-capture-oracle} and
 \cref{cor:dyadic-shared-capture-top-prefix-compiler} specialize the target to
 certified top prefixes inside generated cells.
+\Cref{cor:generated-cell-dyadic-shared-cover-dichotomy} packages any finite
+cell family as an exact generated-cover LP, so a surviving residual has one
+dual whose top-prefix envelope fails nowhere in that family.
 \Cref{lem:star-superlevel-column-verifier} and
 \cref{cor:pair-star-dense-column-generator} turn such a superlevel into an
 ordinary fractional-cover column by using the certified query activation
@@ -72036,6 +72147,9 @@ attacked as an ordinary reduced-cost shared-cover problem.
 \Cref{cor:dyadic-shared-capture-top-prefix-compiler} is the concrete
 cell-search form of this attack: generated clusters, AQ cells, or decoded lists
 are useful exactly when their top dual prefix violates the price envelope.
+\Cref{cor:generated-cell-dyadic-shared-cover-dichotomy} is the corresponding
+global generated-cell dichotomy; the remaining geometry must rule out its
+no-cell-dual residual, not an informal branching process.
 \Cref{cor:metric-entropy-hall-shadow-closure} and
 \cref{cor:low-doubling-hall-shadow-close} sharpen the remaining geometric
 obligation: any positive Hall shadow of certified covering number below
