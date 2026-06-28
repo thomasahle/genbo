@@ -38544,6 +38544,116 @@ query mass rather than producing a cost-effective dense filter.
    \cref{cor:no-cell-metric-cover-screen}.
 \end{proof}
 
+\begin{corollary}[Sponsor cuts either inflate or expose one layer]
+   \label{cor:sponsor-cut-inflate-or-layer}
+   Work in the setting of \cref{cor:fractional-sponsor-hall-cut}.  For
+   \(\mathcal U\subseteq\mathcal C_z^{\rm tail}\), write
+   \[
+      P_z(\mathcal U)=\sum_{\kappa\in\mathcal U}u_{z,\kappa},
+      \qquad
+      B_z(\mathcal U)=\sum_{i\in N_z(\mathcal U)}b_{z,i},
+      \qquad
+      E_z^\beta(\mathcal U)=P_z(\mathcal U)-\beta B_z(\mathcal U).
+      \tag{SCL1}
+   \]
+   Fix \(0<\varepsilon<1\), and put
+   \[
+      \beta_\varepsilon=\frac{\beta}{1-\varepsilon}.
+      \tag{SCL2}
+   \]
+   If every child subset satisfies
+   \[
+      E_z^\beta(\mathcal U)\le\varepsilon P_z(\mathcal U),
+      \tag{SCL3}
+   \]
+   then the sponsor Hall inequalities hold with parameter
+   \(\beta_\varepsilon\):
+   \[
+      P_z(\mathcal U)\le\beta_\varepsilon B_z(\mathcal U)
+      \qquad(\mathcal U\subseteq\mathcal C_z^{\rm tail}).
+      \tag{SCL4}
+   \]
+   Consequently, if
+   \[
+      \E_z\Gamma_z+\beta_\varepsilon\,\E_z\mathsf H_z\le aS
+      \tag{SCL5}
+   \]
+   under the active first-moment hypotheses, the Hall-tail overload stars
+   satisfy the weighted tuple-storage certificate.
+
+   Otherwise there is a strong sponsor cut \(\mathcal U\) with
+   \[
+      E_z^\beta(\mathcal U)>\varepsilon P_z(\mathcal U)>0 .
+      \tag{SCL6}
+   \]
+   Let \(\mathcal U^+=\{\kappa\in\mathcal U:u_{z,\kappa}>0\}\), and define
+   \[
+      D_z(\mathcal U)
+      =
+      1+\left\lceil
+         \log_2
+         \frac{\max_{\kappa\in\mathcal U^+}u_{z,\kappa}}
+              {\min_{\kappa\in\mathcal U^+}u_{z,\kappa}}
+      \right\rceil .
+      \tag{SCL7}
+   \]
+   Then some dyadic child-price layer
+   \[
+      L=\{\kappa\in\mathcal U:
+         \theta\le u_{z,\kappa}<2\theta\}
+      \tag{SCL8}
+   \]
+   satisfies
+   \[
+      \theta |L|
+      \ge
+      \frac{P_z(\mathcal U)}{2D_z(\mathcal U)}
+      \ge
+      \frac{E_z^\beta(\mathcal U)}{2D_z(\mathcal U)} .
+      \tag{SCL9}
+   \]
+   Feeding this layer to \cref{cor:sponsor-cut-generated-column-screen} with
+   weights \(w_\kappa=\theta\) gives the following concrete alternative: either
+   a generated top-prefix column is positive, or every generated cover of this
+   layer obeys the metric-entropy bound \((SGC6)\).  Thus only strong sponsor
+   cuts with high generated-cover entropy remain after allowing the constant
+   inflation \(\beta\mapsto\beta_\varepsilon\).
+\end{corollary}
+
+\begin{proof}
+   If \((SCL3)\) holds, then
+   \[
+      P_z(\mathcal U)-\beta B_z(\mathcal U)
+      \le
+      \varepsilon P_z(\mathcal U),
+   \]
+   which rearranges to \((1-\varepsilon)P_z(\mathcal U)\le
+   \beta B_z(\mathcal U)\), proving \((SCL4)\).  But \((SCL4)\) is exactly the
+   Hall inequality \((FHC5)\) for the demand
+   \(d_{z,\kappa}=u_{z,\kappa}/\beta_\varepsilon\).  Hence
+   \cref{cor:fractional-sponsor-hall-cut} gives a fractional sponsor flow with
+   parameter \(\beta_\varepsilon\), and \((SCL5)\) gives the storage
+   certificate by the first part of that corollary.
+
+   If \((SCL3)\) fails, then \((SCL6)\) holds for some \(\mathcal U\).  In
+   particular \(P_z(\mathcal U)>0\), so \(\mathcal U^+\) is nonempty and
+   \(D_z(\mathcal U)\) is well-defined.  Partition \(\mathcal U^+\) into the
+   dyadic layers in \((SCL8)\), taking
+   \(\theta=2^j\min_{\mathcal U^+}u_{z,\kappa}\).  There are at most
+   \(D_z(\mathcal U)\) nonempty layers, and on each layer
+   \(\theta\ge u_{z,\kappa}/2\).  Therefore
+   \[
+      \sum_{\text{layers }L}\theta_L|L|
+      \ge
+      \frac12P_z(\mathcal U).
+   \]
+   One layer satisfies the first inequality in \((SCL9)\), while the second
+   follows from \(E_z^\beta(\mathcal U)\le P_z(\mathcal U)\).  Since
+   \(w_\kappa=\theta\le u_{z,\kappa}\) on \(L\), this layer is an admissible
+   input to \cref{cor:sponsor-cut-generated-column-screen}.  Its contrapositive
+   gives the final alternative.
+\end{proof}
+
 \begin{lemma}[Certified star-panel separator]
    \label{lem:certified-star-panel-separator}
    Work in the setting of \cref{lem:star-prefix-weak-type-residual}, and assume
@@ -74291,6 +74401,12 @@ the sponsor cut obeys the same metric-entropy lower bound as the no-cell
 residual.  Thus the remaining geometric proof target is no longer another Hall
 accounting statement; it is a low-price generated cover, or a spherical
 separator, for strong sponsor-cut layers.
+\Cref{cor:sponsor-cut-inflate-or-layer} removes weak failures from this target:
+if all sponsor cuts are small relative to their child price, a constant
+inflation \(\beta\mapsto\beta/(1-\varepsilon)\) restores the sponsor flow.
+Otherwise one strong cut contains a single dyadic child-price layer carrying a
+\(1/O(\log\operatorname{range})\) fraction of the cut price, and this is the
+only layer that the generated-cover or spherical separator must attack.
 \Cref{cor:dyadic-distinct-storage-bucket-net} rewrites that target as a dyadic
 large-child counting problem: for every recursive price scale, bound the number
 of distinct canonical bucket nets whose shared child index has that price.
