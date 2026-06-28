@@ -65227,6 +65227,92 @@ certificate is the verified positive-gain column and the finite LP it augments.
    \((CRL7)\) contradicts \((CRL6)\) in an all-failed transcript.
 \end{proof}
 
+\begin{corollary}[Downward residual normal form for LP-guided search]
+   \label{cor:downward-residual-lp-normal-form}
+   Work in the setting of
+   \cref{cor:template-complete-shared-cover-obstruction}.  Let \(u\) be an
+   exact no-prefix obstruction for a template family \(\mathcal B\), and let
+   \(0\le z_a\le1\) be any fractional residual intensity vector.  Define the
+   downward residual dual
+   \[
+      u_a^z=u_az_a,
+      \qquad
+      \nu_a^z=b_au_a^z,
+      \qquad
+      V_z=\sum_a\nu_a^z .
+      \tag{DRN1}
+   \]
+   Then \(u^z\) is itself a no-prefix obstruction for the same template family:
+   it satisfies \((TCO2)\), and for every \(B\in\mathcal B\) and every
+   available cardinality \(K\),
+   \[
+      \sum_{j\le K}d_B^{u^z}(p_j^z)\le2P_B(K),
+      \tag{DRN2}
+   \]
+   where \(p_1^z,p_2^z,\ldots\) are ordered by nonincreasing
+   \(d_B^{u^z}(p)\).  Consequently, under the price and cardinality-net
+   hypotheses of \cref{cor:template-complete-shared-cover-obstruction}, every
+   old template \(B\in\mathcal B\) also obeys its clipped tail cap for the
+   residual degrees \(d_B^{u^z}\).
+
+   If \(z\) is the primal source vector of an optimal capped residual LP
+   \(\mathfrak R_{\rm tr}(\nu;r)\), with \(\nu_a=b_au_a\), then
+   \[
+      V_z=\mathfrak R_{\rm tr}(\nu;r).
+      \tag{DRN3}
+   \]
+
+   Now let \(B'\) be any new certified template whose top-prefix records belong
+   to the admissible shared-panel universe, and form a fractional opened-support
+   source system on \(I^+=\{a:z_a>0\}\) with normalized source loads
+   \[
+      \frac{\mu_a}{C}=\nu_a^z
+      \qquad(a\in I^+),
+      \tag{DRN4}
+   \]
+   and with point degrees \(d_{B'}^{u^z}\).  If
+   \[
+      \widehat{\mathfrak S}_{B',E}^{\,u^z}(C)
+      >
+      2K_{B'}^\natural\Theta_{B'}^{\rm net},
+      \tag{DRN5}
+   \]
+   then \(B'\) contains a positive shared top-prefix column.  Conversely, if no
+   top prefix of \(B'\) has positive reduced cost against \(u^z\), then every
+   such source system satisfies the reverse inequality in \((DRN5)\).
+
+   Thus the geometric part of the LP-guided algorithm can be stated entirely on
+   the current downward residual dual \(u^z\).  The failed-transcript and cap
+   variables are only the finite mechanism for choosing \(z\) and preventing
+   source mass already paid by previous failed screens from reappearing.
+\end{corollary}
+
+\begin{proof}
+   The bound \(u^z_a\le u_a\le\ell_a^\Sigma(y)\) gives \((TCO2)\).  Fix
+   \(B\) and \(K\), and let \(U_z=\{p_1^z,\ldots,p_K^z\}\).  Since
+   \(d_B^{u^z}(p)\le d_B^u(p)\) pointwise,
+   \[
+      \sum_{p\in U_z}d_B^{u^z}(p)
+      \le
+      \sum_{p\in U_z}d_B^u(p)
+      \le
+      \sum_{j\le K}d_B^u(p_j)
+      \le2P_B(K),
+   \]
+   where \(p_1,p_2,\ldots\) is the ordering for \(u\), and the last inequality
+   is \((TCO4)\).  This proves \((DRN2)\).  The clipped-tail conclusion is the
+   final clause of
+   \cref{cor:template-complete-shared-cover-obstruction} applied to \(u^z\).
+
+   If \(z\) is an optimal primal vector of the capped residual LP, its objective
+   value is \(\sum_a\nu_az_a=\sum_ab_au_az_a=V_z\), proving \((DRN3)\).
+
+   The last assertions are exactly
+   \cref{cor:fractional-opened-support-flow-lp}, applied with the no-prefix dual
+   \(u^z\), point degrees \(d_{B'}^{u^z}\), and the source loads in
+   \((DRN4)\).
+\end{proof}
+
 \begin{corollary}[LP-guided capped-flow exhaustion endpoint]
    \label{cor:lp-guided-capped-flow-exhaustion-endpoint}
    Work in the setting of
@@ -65264,6 +65350,11 @@ certificate is the verified positive-gain column and the finite LP it augments.
       \qquad(a\in I_{t-1}^+).
       \tag{LGE3}
    \]
+   Equivalently, by
+   \cref{cor:downward-residual-lp-normal-form}, this step is a separator search
+   against the downward residual dual
+   \(u_a^{(t-1)}=u_az_a^{(t-1)}\); the failed transcript only determines the
+   cap-constrained optimizer \(z^{(t-1)}\).
    Put
    \[
       K_t=K_{B_t}^\natural,
@@ -65296,9 +65387,10 @@ certificate is the verified positive-gain column and the finite LP it augments.
 
    Thus the remaining geometric theorem may be stated as an LP-guided
    separator: every high-value no-prefix obstruction, when restricted to the
-   current capped residual-LP optimizer, must either produce a half-threshold
-   opened-support screen or force the capped residual LP below half the exposed
-   obstruction value before half that value has been spent on failed screens.
+   current capped residual-LP optimizer, equivalently every high-value downward
+   residual dual \(u^z\), must either produce a half-threshold opened-support
+   screen or force the capped residual LP below half the exposed obstruction
+   value before half that value has been spent on failed screens.
 \end{corollary}
 
 \begin{proof}
@@ -81210,6 +81302,9 @@ vector is feasible for the same residual LP.
 LP-guided: solve the current capped residual LP, use its primal optimizer as
 the next source measure, and update the cap after a failed screen so previously
 paid source mass cannot reappear.
+\Cref{cor:downward-residual-lp-normal-form} removes transcript history from the
+geometric side of that loop: the current optimizer \(z\) simply forms a smaller
+no-prefix dual \(u^z\), and separator search is against this downward residual.
 \Cref{cor:lp-guided-capped-flow-exhaustion-endpoint} feeds this back into the
 ANN endpoint: it is enough to prove that the LP-guided loop either finds a
 half-threshold opened-support screen or drives the capped residual LP below
