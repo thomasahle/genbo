@@ -37734,6 +37734,155 @@ query mass rather than producing a cost-effective dense filter.
    \(|A_\kappa|\ge1\) and \(\rho_\kappa\le1\), the final inequality follows.
 \end{proof}
 
+\begin{corollary}[Weighted overload-cohort correlation split]
+   \label{cor:weighted-overload-cohort-correlation-split}
+   Let \(m\ge3\), \(P\subset\mathbb S^{D-1}\) with \(|P|\le m\), and let
+   \(\mathcal C\) be a finite family of canonical overload children.  Fix
+   constants \(A\ge0\) and \(K>0\).  A child \(\kappa\in\mathcal C\) has a
+   fixed price weight \(\psi_\kappa\ge0\), a threshold \(T_\kappa\), a centered
+   Gaussian cap label
+   \(G_\kappa\sim N(0,I_D)\), and a retained witness set
+   \(A_\kappa\subseteq P\) satisfying
+   \[
+      A_\kappa\subseteq
+      U_\kappa:=\{x\in P:\ip{G_\kappa}{x}\ge T_\kappa\},
+      \qquad
+      T_\kappa^2\ge2\log m-A\log\log m .
+      \tag{WOCS1}
+   \]
+   The price weights and thresholds are fixed when the cap first-moment bound is
+   applied; random or adaptive prices are handled by first splitting into
+   dyadic price classes.  Assume
+   \[
+      \Psi:=\sum_{\kappa\in\mathcal C}\psi_\kappa
+      \le m^{1+\rho}\log^A m,
+      \qquad 0\le\rho\le1 .
+      \tag{WOCS2}
+   \]
+   Let
+   \[
+      \theta_m=K\frac{\log\log m}{\log m},
+      \qquad 0<\theta_m\le\frac12 .
+      \tag{WOCS3}
+   \]
+   For the pair-storage specialization of
+   \cref{cor:weighted-occurrence-discounted-tuple-storage}, the contribution of
+   these children is bounded by the price-weighted pair incidence
+   \[
+      \mathcal W_2
+      =
+      \sum_{\kappa\in\mathcal C}
+      \psi_\kappa
+      \sum_{a,b\in A_\kappa}1 .
+      \tag{WOCS4}
+   \]
+   Split this incidence into
+   \[
+      \mathcal W_{\rm lo}
+      =
+      \sum_{\kappa}
+      \psi_\kappa
+      \sum_{\substack{a,b\in A_\kappa:\\ \ip{a}{b}\le\theta_m}}1,
+      \qquad
+      \mathcal W_{\rm hi}=\mathcal W_2-\mathcal W_{\rm lo}.
+      \tag{WOCS5}
+   \]
+   Then
+   \[
+      \E\,\mathcal W_{\rm lo}
+      \le
+      m^{1+\rho}\log^{2A+2K+1}m .
+      \tag{WOCS6}
+   \]
+
+   For any fixed realized panel, define the high-correlation multiplicities
+   \[
+      M_a(b)
+      =
+      \sum_{\substack{\kappa\in\mathcal C:\\
+         a,b\in A_\kappa,\ \ip{a}{b}>\theta_m}}
+      \psi_\kappa ,
+      \qquad
+      \mathcal W_{\rm hi}=\sum_{a,b\in P}M_a(b).
+      \tag{WOCS7}
+   \]
+   If \(\mathcal W_{\rm hi}=0\), put \(J_{\rm hi}=1\).  Otherwise suppose the
+   positive values of \(M_a(b)\) lie in \([M_{\min},M_{\max}]\), and put
+   \[
+      J_{\rm hi}=
+      1+\left\lceil\log_2\frac{M_{\max}}{M_{\min}}\right\rceil .
+      \tag{WOCS8}
+   \]
+   For every scale \(\Lambda>0\), either
+   \[
+      \mathcal W_{\rm hi}\le2mJ_{\rm hi}\Lambda,
+      \tag{WOCS9}
+   \]
+   or there are a center \(a\in P\) and a dyadic level \(t\) such that
+   \[
+      V_{a,t}:=\{b\in P:M_a(b)\ge t\}
+      \subseteq
+      B\!\left(\theta_m a,\sqrt{1-\theta_m^2}\right)
+      \tag{WOCS10}
+   \]
+   and
+   \[
+      t|V_{a,t}|\ge\Lambda .
+      \tag{WOCS11}
+   \]
+
+   Consequently, after reciprocal weighted multiplicity has canonicalized each
+   overload cohort to one shared child as in
+   \cref{cor:cap-centered-overload-weighted-storage}, the storage proof has no
+   separate integer-materialization branch: low-correlation pair congestion is
+   paid by \((WOCS6)\), while any unbudgeted high-correlation congestion is a
+   cap-centered smaller-radius star \((WOCS10)\)--\((WOCS11)\) that must be
+   submitted to the paid-prefix verifier or to the shared-child tuple-congestion
+   certificate.
+\end{corollary}
+
+\begin{proof}
+   In the pair specialization, a canonical child with storage price
+   \(u_\kappa=\psi_\kappa|A_\kappa|^{1+\rho_\kappa}\) contributes at most
+   \(\psi_\kappa\mathbf 1\{a,b\in A_\kappa\}\) to any ordered pair
+   \((a,b)\), because \(|A_\kappa|^{\rho_\kappa-1}\le1\).  This is exactly the
+   reduction in \((COW4)\) and \((WODT4)\), giving \((WOCS4)\).
+
+   Let
+   \[
+      E_{\rm lo}=\{(a,b)\in P\times P:\ip{a}{b}\le\theta_m\}.
+   \]
+   Since \(A_\kappa\subseteq U_\kappa\),
+   \[
+      \mathcal W_{\rm lo}
+      \le
+      \sum_{\kappa\in\mathcal C}\psi_\kappa
+      \sum_{(a,b)\in E_{\rm lo}}
+      \mathbf 1\{a,b\in U_\kappa\}.
+   \]
+   Taking expectation over the cap labels and applying
+   \cref{cor:weighted-polylog-low-correlation-coload} with weights
+   \(w_\kappa=\psi_\kappa\) proves \((WOCS6)\).
+
+   If \(\mathcal W_{\rm hi}=0\), then \((WOCS9)\) is immediate.  Otherwise
+   apply
+   \cref{lem:high-correlation-pair-star-reporter} to the weighted edge family
+   whose records are the children \(\kappa\), whose edge set is
+   \[
+      E_\kappa^{\rm hi}
+      =
+      \{(a,b)\in A_\kappa\times A_\kappa:\ip{a}{b}>\theta_m\},
+   \]
+   and whose record weight is \(\psi_\kappa\).  The total incidence in
+   \((HPS2)\) is \(\mathcal W_{\rm hi}\), and every retained edge has
+   correlation at least \(\theta_m\).  If
+   \(\mathcal W_{\rm hi}>2mJ_{\rm hi}\Lambda\), \((HPS7)\) gives a dyadic
+   superlevel with \(t|V_{a,t}|>\Lambda\).  The cap-centered containment
+   \((WOCS10)\) is \((CPS1)\) from
+   \cref{cor:cap-centered-pair-star-reporter}.  The contrapositive gives
+   \((WOCS9)\).
+\end{proof}
+
 \begin{lemma}[Certified star-panel separator]
    \label{lem:certified-star-panel-separator}
    Work in the setting of \cref{lem:star-prefix-weak-type-residual}, and assume
@@ -73430,6 +73579,14 @@ child, reciprocal weighted multiplicity charges exactly one child-storage price,
 not one price per atom.  The overload branch therefore becomes a weighted
 tuple-congestion theorem for shared canonical children, rather than an
 integer-cohort materialization problem.
+\Cref{cor:weighted-overload-cohort-correlation-split} composes this handoff
+with the low-correlation cutoff: once canonical overload children carry a
+Gaussian or list-decoding cap certificate in a fixed price class, their
+price-weighted pair congestion splits into a proved polylogarithmic
+low-correlation term and explicit cap-centered high-correlation stars.  Thus
+the remaining overload theorem is no longer an integer-cohort or diffuse-pair
+problem; it is the finite task of sending those high stars to the paid-prefix
+verifier or to the shared-child tuple-congestion certificate.
 \Cref{cor:dyadic-distinct-storage-bucket-net} rewrites that target as a dyadic
 large-child counting problem: for every recursive price scale, bound the number
 of distinct canonical bucket nets whose shared child index has that price.
