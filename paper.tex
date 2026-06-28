@@ -38967,6 +38967,125 @@ query mass rather than producing a cost-effective dense filter.
    \((SPS5)\).
 \end{proof}
 
+\begin{corollary}[Energy-failing sponsor profiles expose stars]
+   \label{cor:sponsor-profile-star-signal}
+   Work in the setting of
+   \cref{cor:sponsor-packing-spherical-energy-screen}.  Fix one profile
+   \(\pi\subseteq E_{\ne}^2\), and assign nonnegative weights
+   \(\omega_{\kappa,\kappa'}\) to its ordered pairs.  Split
+   \[
+      \pi=\pi_{\rm lo}\dot\cup\pi_{\rm hi}.
+   \]
+   Suppose the low part has certified weight
+   \[
+      \sum_{(\kappa,\kappa')\in\pi_{\rm lo}}
+         \omega_{\kappa,\kappa'}
+      \le B_{\rm lo},
+      \tag{SEF1}
+   \]
+   and every high edge has representative correlation at least
+   \[
+      \ip{x_\kappa}{x_{\kappa'}}\ge\underline\theta
+      \qquad((\kappa,\kappa')\in\pi_{\rm hi})
+      \tag{SEF2}
+   \]
+   for some \(-1<\underline\theta<1\).  Define
+   \[
+      M_\kappa(\kappa')
+      =
+      \omega_{\kappa,\kappa'}
+      \mathbf 1_{\{(\kappa,\kappa')\in\pi_{\rm hi}\}},
+      \qquad
+      W_{\rm hi}=\sum_{\kappa,\kappa'\in E}M_\kappa(\kappa').
+      \tag{SEF3}
+   \]
+   If \(W_{\rm hi}=0\), set \(J_\omega=1\).  Otherwise assume the positive
+   values of \(M_\kappa(\kappa')\) lie in a certified dyadic range
+   \([\omega_{\min},\omega_{\max}]\), put
+   \[
+      J_\omega=
+      1+\left\lceil\log_2\frac{\omega_{\max}}{\omega_{\min}}\right\rceil,
+      \tag{SEF4}
+   \]
+   and define the sponsor-star superlevels
+   \[
+      V_{\kappa,t}
+      =
+      \{\kappa'\in E:M_\kappa(\kappa')\ge t\},
+      \qquad
+      t\in\{\omega_{\min}2^j:0\le j<J_\omega\}.
+      \tag{SEF5}
+   \]
+   Then every nonempty \(V_{\kappa,t}\) has representatives in the spherical
+   cap ball
+   \[
+      x_{\kappa'}\in
+      B\!\left(x_\kappa,\sqrt{2(1-\underline\theta)}\right)
+      \qquad(\kappa'\in V_{\kappa,t}).
+      \tag{SEF6}
+   \]
+   Moreover, for every \(\Lambda>0\), either
+   \[
+      W_{\rm hi}\le2|E|J_\omega\Lambda,
+      \tag{SEF7}
+   \]
+   or some sponsor star satisfies
+   \[
+      t|V_{\kappa,t}|\ge\Lambda .
+      \tag{SEF8}
+   \]
+   Consequently, if no such dyadic sponsor star has scale at least \(\Lambda\),
+   then the whole profile weight is bounded by
+   \[
+      \sum_{(\kappa,\kappa')\in\pi}\omega_{\kappa,\kappa'}
+      \le
+      B_{\rm lo}+2|E|J_\omega\Lambda .
+      \tag{SEF9}
+   \]
+   Taking
+   \(\omega_{\kappa,\kappa'}=\Pr_G[x_\kappa,x_{\kappa'}\in U_G]\) shows that
+   any sponsor profile whose spherical energy is not paid by the low part must
+   expose a concrete high-correlation star of retained children.  That star is
+   the object submitted to the existing generated-column, dense-star, or
+   shared-prefix verifier.
+\end{corollary}
+
+\begin{proof}
+   If \(\kappa'\in V_{\kappa,t}\), then
+   \(M_\kappa(\kappa')>0\), so \((\kappa,\kappa')\in\pi_{\rm hi}\).  By
+   \((SEF2)\),
+   \[
+      \|x_\kappa-x_{\kappa'}\|^2
+      =
+      2-2\ip{x_\kappa}{x_{\kappa'}}
+      \le2(1-\underline\theta),
+   \]
+   proving \((SEF6)\).
+
+   If \(W_{\rm hi}=0\), then \((SEF7)\) and \((SEF9)\) are immediate.  Assume
+   \(W_{\rm hi}>0\).  For fixed \(\kappa\), the dyadic layer-cake estimate gives
+   \[
+      \sum_{j=0}^{J_\omega-1}
+      \omega_{\min}2^j
+      |V_{\kappa,\omega_{\min}2^j}|
+      \ge
+      \frac12\sum_{\kappa'\in E}M_\kappa(\kappa').
+   \]
+   Summing over \(\kappa\in E\), if every dyadic sponsor star had
+   \(t|V_{\kappa,t}|<\Lambda\), then
+   \[
+      \frac12W_{\rm hi}
+      \le
+      \sum_{\kappa\in E}\sum_{j=0}^{J_\omega-1}
+      \omega_{\min}2^j
+      |V_{\kappa,\omega_{\min}2^j}|
+      <
+      |E|J_\omega\Lambda,
+   \]
+   which is \((SEF7)\).  The contrapositive gives \((SEF8)\), and adding
+   \((SEF1)\) proves \((SEF9)\).
+\end{proof}
+
 \begin{lemma}[Certified star-panel separator]
    \label{lem:certified-star-panel-separator}
    Work in the setting of \cref{lem:star-prefix-weak-type-residual}, and assume
@@ -74736,9 +74855,11 @@ geometric object needed by the spherical branch: for any certified generated
 metric, a surviving layer contains a separated packing of the same entropy
 scale.  \Cref{cor:sponsor-packing-spherical-energy-screen} then applies the
 ordinary second-moment entropy-energy test to representatives of that packing,
-so the remaining sponsor obstruction is now a concrete choice: prove the
-spherical/list-decoding energy bound for this separated witness, or route an
-energy-failing high-correlation profile back to the dense-star and
+and \cref{cor:sponsor-profile-star-signal} gives the contrapositive handoff:
+any weighted profile not paid by the low-correlation energy bound contains a
+dyadic high-correlation sponsor star.  The remaining sponsor obstruction is
+therefore no longer an unnamed high-entropy layer; it is a finite family of
+star superlevels to be certified by generated-column, dense-star, or
 shared-prefix verifiers.
 \Cref{cor:dyadic-distinct-storage-bucket-net} rewrites that target as a dyadic
 large-child counting problem: for every recursive price scale, bound the number
