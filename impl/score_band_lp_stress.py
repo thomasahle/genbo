@@ -631,6 +631,20 @@ def _source_key(source: np.ndarray, *, tol: float) -> tuple[int, ...]:
     return tuple(int(round(float(value) / tol)) for value in source)
 
 
+def source_integrality_defect(
+    source: np.ndarray,
+    *,
+    blocks: int,
+    alphabet: int,
+) -> float:
+    """Return total unary mass not assigned to each block's plurality symbol."""
+    source = np.asarray(source, dtype=float)
+    if source.shape != (blocks * alphabet,):
+        raise ValueError("source must be a flattened block-symbol vector")
+    matrix = source.reshape(blocks, alphabet)
+    return float(np.sum(1.0 - np.max(matrix, axis=1)))
+
+
 def _local_projection_assignments(
     code: np.ndarray,
     checks: list[tuple[int, ...]],
@@ -1881,8 +1895,11 @@ def run_local_marginal_trial(
     if source is None:
         integrality_defect = 0.0
     else:
-        source_matrix = np.asarray(source).reshape(blocks, alphabet)
-        integrality_defect = float(np.sum(1.0 - np.max(source_matrix, axis=1)))
+        integrality_defect = source_integrality_defect(
+            np.asarray(source),
+            blocks=blocks,
+            alphabet=alphabet,
+        )
     source_result = local["source_result"]
     min_chart = None
     if isinstance(source_result, dict):
@@ -1935,8 +1952,11 @@ def run_local_overlap_trial(
     if source is None:
         integrality_defect = 0.0
     else:
-        source_matrix = np.asarray(source).reshape(blocks, alphabet)
-        integrality_defect = float(np.sum(1.0 - np.max(source_matrix, axis=1)))
+        integrality_defect = source_integrality_defect(
+            np.asarray(source),
+            blocks=blocks,
+            alphabet=alphabet,
+        )
     source_result = local["source_result"]
     min_chart = None
     if isinstance(source_result, dict):
@@ -1986,8 +2006,11 @@ def run_local_marginal_exact_trial(
     if source is None:
         integrality_defect = 0.0
     else:
-        source_matrix = np.asarray(source).reshape(blocks, alphabet)
-        integrality_defect = float(np.sum(1.0 - np.max(source_matrix, axis=1)))
+        integrality_defect = source_integrality_defect(
+            np.asarray(source),
+            blocks=blocks,
+            alphabet=alphabet,
+        )
     source_result = local["source_result"]
     min_chart = None
     if isinstance(source_result, dict):
@@ -2126,8 +2149,11 @@ def run_local_combined_screen_trial(
     if exact_source is None:
         integrality_defect = 0.0
     else:
-        source_matrix = np.asarray(exact_source).reshape(blocks, alphabet)
-        integrality_defect = float(np.sum(1.0 - np.max(source_matrix, axis=1)))
+        integrality_defect = source_integrality_defect(
+            np.asarray(exact_source),
+            blocks=blocks,
+            alphabet=alphabet,
+        )
     exact_result = screen["exact_result"]
     min_chart = None
     if isinstance(exact_result, dict):

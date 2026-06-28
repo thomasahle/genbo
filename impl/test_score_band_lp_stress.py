@@ -1,3 +1,5 @@
+import itertools
+
 import numpy as np
 
 from chart_tail_stress import (
@@ -17,11 +19,13 @@ from score_band_lp_stress import (
     local_marginal_score_band_gap,
     local_marginal_vertex_sources,
     local_overlap_score_band_gap,
+    local_overlap_source_candidates,
     local_overlap_source_feasible,
     product_simplex_score_band_gap,
     run_local_combined_screen_trial,
     run_local_integral_trial,
     solve_equality_lp_max,
+    source_integrality_defect,
     source_score_band_gap,
     true_hull_dominance_decomposition,
 )
@@ -456,7 +460,33 @@ def test_ternary_overlap_projection_can_have_fractional_source():
     )
 
     assert result["feasible"]
-    assert np.sum(1.0 - np.max(source.reshape(4, 3), axis=1)) > 1.0
+    assert source_integrality_defect(source, blocks=4, alphabet=3) > 1.0
+
+
+def test_binary_overlap_projection_samples_integral_parity_sources():
+    blocks = 5
+    code = np.array([
+        word for word in itertools.product([0, 1], repeat=blocks)
+        if sum(word) % 2 == 0
+    ])
+    sources = local_overlap_source_candidates(
+        code,
+        local_check_scopes(blocks, blocks - 1),
+        random_objectives=32,
+        seed=0,
+    )
+    defects = [
+        source_integrality_defect(source, blocks=blocks, alphabet=2)
+        for source in sources
+    ]
+    code_set = {tuple(word) for word in code}
+    sampled_words = {
+        tuple(int(np.argmax(source.reshape(blocks, 2)[coord])) for coord in range(blocks))
+        for source in sources
+    }
+
+    assert max(defects) <= 1e-8
+    assert any(word not in code_set for word in sampled_words)
 
 
 def test_local_check_scopes_enumerates_subsets():
@@ -484,5 +514,6 @@ if __name__ == "__main__":
     test_clean_panel_can_fail_residual_dominance_certificate()
     test_b5_exact_projected_source_finds_clean_fractional_obstruction()
     test_ternary_overlap_projection_can_have_fractional_source()
+    test_binary_overlap_projection_samples_integral_parity_sources()
     test_local_check_scopes_enumerates_subsets()
     print("score_band_lp_stress tests passed")

@@ -12351,6 +12351,58 @@ partition ignores the bias coordinates that certify the list size.
    \((LNN14)\).
 \end{proof}
 
+\begin{corollary}[Projected-unary integrality reduction]
+   \label{cor:projected-unary-integrality-reduction}
+   Continue in the setting of
+   \cref{cor:local-marginal-vertex-score-band-obstruction}.  Suppose every
+   projected-source vertex is integral: for every \(w\in\mathcal W_u\) there is
+   a word \(a(w)\in[q]^b\) such that \(w=\iota(a(w))\).  Let
+   \[
+      \mathcal A_u
+      =
+      \{a(w):w\in\mathcal W_u\}.
+      \tag{LNN17}
+   \]
+   If
+   \[
+      \Gamma_u(\iota(a);\Omega_u)\le\Xi_u
+      \qquad(a\in\mathcal A_u),
+      \tag{LNN18}
+   \]
+   then the finite score-band condition \((LNN2)\) holds for
+   \(P_u=S_uQ_u\).  In particular, if every word in \(\mathcal A_u\) is an
+   actual codeword of the local panel, then
+   \[
+      \sup_{x\in S_uQ_u}\Gamma_u(x;\Omega_u)=0.
+      \tag{LNN19}
+   \]
+
+   Thus a full-overlap Tanner/SA route has a concrete finite target: prove that
+   the projected unary overlap polytope has only integral vertices, and prove
+   that the surviving integral words are either true codewords or satisfy the
+   integral score-band bound from
+   \cref{cor:integral-score-band-obstruction}.  This is stronger than merely
+   deleting integral pseudowords from a unary-glued relaxation, as shown by the
+   \(N=10,b=5,q=2\) fractional obstruction in
+   \cref{rem:frozen-score-band-target}.
+\end{corollary}
+
+\begin{proof}
+   By \cref{cor:local-marginal-vertex-score-band-obstruction},
+   \((LNN2)\) for \(S_uQ_u\) is equivalent to checking
+   \(\Gamma_u(w;\Omega_u)\le\Xi_u\) on all \(w\in\mathcal W_u\).  Under the
+   integrality hypothesis these checks are exactly \((LNN18)\).  If
+   \(a\in\mathcal A_u\) is a true codeword, then for every score table \(R\),
+   \[
+      \ip{R}{\iota(a)}
+      \le
+      \max_j\ip{R}{\iota(c_j)},
+      \tag{LNN20}
+   \]
+   so \(\Gamma_u(\iota(a);\Omega_u)=0\).  If every \(a\in\mathcal A_u\) is a
+   true codeword, \((LNN12)\) gives \((LNN19)\).
+\end{proof}
+
 \begin{corollary}[Convex-hull dominance screen for projected-source vertices]
    \label{cor:local-vertex-convex-hull-dominance-screen}
    Continue in the setting of
@@ -12365,7 +12417,7 @@ partition ignores the bias coordinates that certify the list size.
          a_j\ge0,
          \sum_{j=1}^N a_j\iota(c_j)\le x
       \right\},
-      \tag{LNN17}
+      \tag{LNN21}
    \]
    where the inequality is coordinatewise.  Let
    \[
@@ -12376,20 +12428,20 @@ partition ignores the bias coordinates that certify the list size.
       \Gamma_u^{\Delta}(\Omega_u)
       =
       \sup_{z\in\Delta_q^b}\Gamma_u(z;\Omega_u).
-      \tag{LNN18}
+      \tag{LNN22}
    \]
    Then
    \[
       \sup_{x\in S_uQ_u}\Gamma_u(x;\Omega_u)
       \le
       \delta_u^{\mathrm{loc}}\,\Gamma_u^{\Delta}(\Omega_u).
-      \tag{LNN19}
+      \tag{LNN23}
    \]
    Consequently, the finite score-band condition \((LNN2)\) holds for
    \(P_u=S_uQ_u\) whenever
    \[
       \delta_u^{\mathrm{loc}}\,\Gamma_u^{\Delta}(\Omega_u)\le\Xi_u.
-      \tag{LNN20}
+      \tag{LNN24}
    \]
 
    This is a sufficient condition, not a replacement for the exact vertex
@@ -12410,19 +12462,19 @@ partition ignores the bias coordinates that certify the list size.
    \[
       h=t^{-1}\sum_j a_j\iota(c_j)
       \in\operatorname{conv}\{\iota(c_j):j\in[N]\}.
-      \tag{LNN21}
+      \tag{LNN25}
    \]
    Since \(w\) and \(h\) have unit mass in every coordinate block and
    \(th\le w\), the residual
    \[
       z=\frac{w-th}{1-t}
-      \tag{LNN22}
+      \tag{LNN26}
    \]
    lies in \(\Delta_q^b\) when \(t<1\).  Moreover
    \(w=th+(1-t)z\).  For every \(R\),
    \[
       \ip{R}{h}\le\max_j\ip{R}{\iota(c_j)},
-      \tag{LNN23}
+      \tag{LNN27}
    \]
    and therefore \(\Gamma_u(h;\Omega_u)=0\).  Convexity of
    \(\Gamma_u(\cdot;\Omega_u)\), proved in
@@ -12433,10 +12485,10 @@ partition ignores the bias coordinates that certify the list size.
       (1-t)\Gamma_u(z;\Omega_u)
       \le
       \delta_u(w)\Gamma_u^\Delta(\Omega_u).
-      \tag{LNN24}
+      \tag{LNN28}
    \]
    Maximizing over \(w\in\mathcal W_u\) and using \((LNN12)\) proves
-   \((LNN19)\).  The sufficient condition \((LNN20)\) follows directly from
+   \((LNN23)\).  The sufficient condition \((LNN24)\) follows directly from
    \((LNN2)\).
 \end{proof}
 
@@ -13828,8 +13880,11 @@ partition ignores the bias coordinates that certify the list size.
    sampled overlap gap was \(0.293\Xi\) on the non-clean seed, where an integral
    local pseudoword remained.  Thus the next exact target is to prove, or find a
    counterexample to, integrality of the projected unary overlap polytope for a
-   concrete low-rate Tanner/SA construction.  The qualification is necessary:
-   unrestricted \(q\)-ary overlap consistency does not force unary integrality.
+   concrete low-rate Tanner/SA construction; by
+   \cref{cor:projected-unary-integrality-reduction}, projected integrality plus
+   integral-pseudoword exclusion would prove \((LNN2)\) for that finite panel.
+   The qualification is necessary: unrestricted \(q\)-ary overlap consistency
+   does not force unary integrality.
    A ternary \(b=4\) random panel already has a feasible overlap-consistent
    projected source with unary integrality defect \(4/3\).  The viable route is
    therefore binary, or otherwise construction-specific, overlap structure plus
