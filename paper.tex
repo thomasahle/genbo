@@ -2347,6 +2347,62 @@ The first fact certifies the radius decrease obtained from a spherical cap.
    least \(2^{2k}\gamma_0^2\) to the sum in \((QCB2)\), proving \((QCB6)\).
 \end{proof}
 
+\begin{definition}[Quadratic local repair]\label{def:quadratic-local-repair}
+   Fix a prefix of the cumulative score-and-ball process and a certified ball
+   of radius \(R\).  Suppose the unresolved positive-correlation obstruction at
+   this prefix is certified by a cap margin \(\gamma\) and is replaced by a
+   same-prefix finite family of filters, dense records, or recursive children.
+   The repair is \(A\)-quadratic if, relative to the parent potential charge at
+   the same prefix, its normalized query toll, storage toll, and inverse
+   near-lineage survival toll are all at most
+   \[
+      \exp(A\gamma^2).
+      \tag{QLR}
+   \]
+   The phrase ``same-prefix'' is part of the definition: the repair may inherit
+   the current score prefix and activation, but it may not pay for a fresh
+   independent score clock or a separate global restart.
+\end{definition}
+
+\begin{corollary}[Quadratic positive-correlation toll compiler]
+   \label{cor:quadratic-positive-toll-compiler}
+   On a localized instance with \(R_0/r\le\log^C n\), consider any successful
+   near-neighbor lineage whose positive-correlation repairs are certified by cap
+   margins \(\gamma_i\) and satisfy the radius certificates
+   \[
+      R_{i+1}\le R_i\sqrt{1-\gamma_i^2}.
+      \tag{QPT1}
+   \]
+   If each such repair is \(A\)-quadratic in the sense of
+   \cref{def:quadratic-local-repair}, then the total multiplicative toll of all
+   positive-correlation repairs on the lineage is only polylogarithmic:
+   \[
+      \prod_i \exp(A\gamma_i^2)
+      \le
+      \log^{O_{A,C}(1)} n.
+      \tag{QPT2}
+   \]
+   Equivalently, the remaining positive-correlation task is local: it is enough
+   to prove a same-prefix repair whose loss is proportional to the squared cap
+   margin.  A proof that charges one full constant factor per cap recentering
+   would only use \cref{cor:tiny-positive-cap-chain} and would still leave the
+   \(\exp(O(\log^2 n/\log\log n))\) tiny-margin overhead.
+\end{corollary}
+
+\begin{proof}
+   Taking logarithms of the product in \((QPT2)\) gives
+   \(A\sum_i\gamma_i^2\).  The radius certificates \((QPT1)\) are exactly the
+   hypotheses of \cref{cor:quadratic-cap-margin-budget}, hence
+   \[
+      A\sum_i\gamma_i^2
+      \le
+      O_A(\log(R_0/r))
+      \le
+      O_{A,C}(\log\log n).
+   \]
+   Exponentiating gives \((QPT2)\).
+\end{proof}
+
 \begin{figure}[t]\centering
 \begin{tikzpicture}[font=\small,>=stealth]
 \def\R{2.6}
@@ -72273,6 +72329,10 @@ polylog-radius ball.
 the squared margins along any such lineage sum to only \(O(\log\log n)\), so a
 positive-correlation repair that pays a local \(O(\gamma^2)\) toll has
 polylogarithmic total cost even when there are many tiny-margin recenterings.
+\Cref{cor:quadratic-positive-toll-compiler} packages this as the current
+positive-correlation proof target: the endpoint no longer needs a bound on the
+number of dense repairs, but it still needs a same-prefix dense/star or
+shared-prefix repair with local loss \(\exp(O(\gamma^2))\) at margin \(\gamma\).
 \Cref{cor:dyadic-distinct-storage-bucket-net} rewrites that target as a dyadic
 large-child counting problem: for every recursive price scale, bound the number
 of distinct canonical bucket nets whose shared child index has that price.
