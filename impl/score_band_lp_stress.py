@@ -494,6 +494,37 @@ def source_score_band_gap(
     }
 
 
+def convex_hull_dominance_deficit(
+    code: np.ndarray,
+    *,
+    source: np.ndarray | None = None,
+    source_word: tuple[int, ...] | list[int] | np.ndarray | None = None,
+    tol: float = 1e-8,
+) -> float:
+    """Minimum residual fraction after dominating a source by the true hull.
+
+    The returned value is the smallest eps for which
+    source = (1 - eps) h + eps z, where h is in the true codeword convex hull
+    and z is in the product simplex.
+    """
+    code = np.asarray(code, dtype=int)
+    blocks = code.shape[1]
+    alphabet = int(np.max(code)) + 1
+    if (source is None) == (source_word is None):
+        raise ValueError("provide exactly one of source or source_word")
+    if source_word is not None:
+        source = word_indicator(source_word, alphabet)
+    assert source is not None
+    source = np.asarray(source, dtype=float)
+    if source.shape != (blocks * alphabet,):
+        raise ValueError("source must be a flattened block-symbol vector")
+
+    indicators = code_indicator_matrix(code, alphabet)
+    objective = np.ones(indicators.shape[1], dtype=float)
+    value, _ = _simplex_max_nonnegative(objective, indicators, source, tol=tol)
+    return max(0.0, 1.0 - min(1.0, value))
+
+
 def product_simplex_score_band_gap(
     code: np.ndarray,
     omega: np.ndarray,
@@ -993,6 +1024,42 @@ def local_marginal_score_band_gap_exact(
     }
 
 
+def local_marginal_dominance_screen(
+    code: np.ndarray,
+    omega: np.ndarray,
+    checks: list[tuple[int, ...]],
+    *,
+    max_bases: int = 1_000_000,
+    tol: float = 1e-8,
+) -> dict[str, object]:
+    """Bound local-marginal score-band gaps by true-hull dominance deficits."""
+    vertex_data = local_marginal_vertex_sources(
+        code,
+        checks,
+        max_bases=max_bases,
+        tol=tol,
+    )
+    product = product_simplex_score_band_gap(code, omega, tol=tol)
+    product_gap = float(product["gap"])
+    max_deficit = 0.0
+    worst_source: np.ndarray | None = None
+    for source in vertex_data["sources"]:
+        deficit = convex_hull_dominance_deficit(code, source=source, tol=tol)
+        if deficit > max_deficit:
+            max_deficit = deficit
+            worst_source = np.asarray(source).copy()
+    return {
+        "max_deficit": float(max_deficit),
+        "gap_bound": float(max_deficit * product_gap),
+        "product_gap": product_gap,
+        "source": worst_source,
+        "source_count": int(vertex_data["source_count"]),
+        "vertex_count": int(vertex_data["vertex_count"]),
+        "basis_count": int(vertex_data["basis_count"]),
+        "feasible_basis_count": int(vertex_data["feasible_basis_count"]),
+    }
+
+
 def integral_local_pseudoword_gaps(
     code: np.ndarray,
     omega: np.ndarray,
@@ -1167,6 +1234,49 @@ def run_local_marginal_exact_trial(
     }
 
 
+def run_local_dominance_trial(
+    *,
+    n_words: int,
+    blocks: int,
+    alphabet: int,
+    seed: int,
+    xi: float,
+    checks: list[tuple[int, ...]],
+    lam: float | None = None,
+    max_bases: int = 1_000_000,
+) -> dict[str, float | int]:
+    if lam is None:
+        lam = math.sqrt(2.0 * math.log(n_words) / blocks)
+    code = make_balanced_code(n_words, blocks, alphabet, seed)
+    symbol_scores = centered_symbol_scores(blocks, alphabet, seed + 1009)
+    scores = codeword_scores(code, symbol_scores)
+    gaps = float(np.max(scores)) - scores
+    omega = np.exp(np.minimum(lam * gaps, 700.0)) + xi
+    screen = local_marginal_dominance_screen(
+        code,
+        omega,
+        checks,
+        max_bases=max_bases,
+    )
+    gap_bound = float(screen["gap_bound"])
+    return {
+        "seed": seed,
+        "n_words": n_words,
+        "blocks": blocks,
+        "alphabet": alphabet,
+        "lambda": float(lam),
+        "xi": float(xi),
+        "dominance_max_deficit": float(screen["max_deficit"]),
+        "dominance_gap_bound": gap_bound,
+        "dominance_gap_bound_over_xi": gap_bound / xi if xi > 0 else math.inf,
+        "dominance_product_gap": float(screen["product_gap"]),
+        "dominance_product_gap_over_xi": float(screen["product_gap"]) / xi if xi > 0 else math.inf,
+        "dominance_source_count": int(screen["source_count"]),
+        "dominance_vertex_count": int(screen["vertex_count"]),
+        "dominance_basis_count": int(screen["basis_count"]),
+    }
+
+
 def run_trial(
     *,
     n_words: int,
@@ -1213,6 +1323,7 @@ def main() -> None:
     parser.add_argument("--local-check-size", type=int, default=None)
     parser.add_argument("--local-marginal", action="store_true")
     parser.add_argument("--local-marginal-exact", action="store_true")
+    parser.add_argument("--local-dominance-screen", action="store_true")
     parser.add_argument("--local-marginal-max-bases", type=int, default=1_000_000)
     parser.add_argument("--local-marginal-objectives", type=int, default=16)
     parser.add_argument("--local-marginal-closure-rounds", type=int, default=2)
@@ -1329,8 +1440,44 @@ def main() -> None:
             )
             print(f"worst_local_marginal_exact_seed,{worst_exact['seed']}")
             print(f"worst_local_marginal_exact_min_chart,{worst_exact['local_marginal_exact_min_chart']}")
-    elif args.local_marginal or args.local_marginal_exact:
-        parser.error("--local-marginal and --local-marginal-exact require --local-check-size")
+
+        if args.local_dominance_screen:
+            dominance_rows = [
+                run_local_dominance_trial(
+                    n_words=args.n_words,
+                    blocks=args.blocks,
+                    alphabet=args.alphabet,
+                    seed=args.seed + trial,
+                    xi=xi,
+                    checks=checks,
+                    lam=args.lam,
+                    max_bases=args.local_marginal_max_bases,
+                )
+                for trial in range(args.trials)
+            ]
+            for key in [
+                "dominance_max_deficit",
+                "dominance_gap_bound",
+                "dominance_gap_bound_over_xi",
+                "dominance_product_gap",
+                "dominance_product_gap_over_xi",
+                "dominance_source_count",
+                "dominance_vertex_count",
+                "dominance_basis_count",
+            ]:
+                values = np.array([float(row[key]) for row in dominance_rows])
+                print(f"{key}_mean,{float(np.mean(values))}")
+                print(f"{key}_max,{float(np.max(values))}")
+            worst_dominance = max(
+                dominance_rows,
+                key=lambda row: float(row["dominance_gap_bound_over_xi"]),
+            )
+            print(f"worst_dominance_seed,{worst_dominance['seed']}")
+    elif args.local_marginal or args.local_marginal_exact or args.local_dominance_screen:
+        parser.error(
+            "--local-marginal, --local-marginal-exact, and "
+            "--local-dominance-screen require --local-check-size",
+        )
 
 
 if __name__ == "__main__":
