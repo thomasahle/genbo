@@ -2,7 +2,10 @@ import numpy as np
 
 from score_band_lp_stress import (
     _simplex_max_nonnegative,
+    integral_local_pseudoword_gaps,
+    local_check_scopes,
     product_simplex_score_band_gap,
+    source_score_band_gap,
 )
 
 
@@ -45,8 +48,59 @@ def test_missing_binary_corner_exposes_score_band_gap():
     assert result["max_chart"] == (1, 1)
 
 
+def test_fixed_true_codeword_has_zero_gap():
+    code = np.array([
+        [0, 0],
+        [0, 1],
+        [1, 0],
+    ])
+    omega = np.ones(len(code))
+    result = source_score_band_gap(code, omega, source_word=(0, 1))
+
+    assert result["gap"] <= 1e-8
+
+
+def test_fixed_missing_corner_matches_product_gap():
+    code = np.array([
+        [0, 0],
+        [0, 1],
+        [1, 0],
+    ])
+    omega = np.ones(len(code))
+    result = source_score_band_gap(code, omega, source_word=(1, 1))
+
+    assert np.isclose(result["gap"], 1.0)
+
+
+def test_pairwise_local_parity_pseudoword_is_detected():
+    code = np.array([
+        [0, 0, 0],
+        [0, 1, 1],
+        [1, 0, 1],
+        [1, 1, 0],
+    ])
+    omega = np.ones(len(code))
+    result = integral_local_pseudoword_gaps(
+        code,
+        omega,
+        checks=[(0, 1), (0, 2), (1, 2)],
+    )
+
+    assert result["count"] == 4
+    assert result["gap"] > 0.0
+    assert result["word"] in {(0, 0, 1), (0, 1, 0), (1, 0, 0), (1, 1, 1)}
+
+
+def test_local_check_scopes_enumerates_subsets():
+    assert local_check_scopes(3, 2) == [(0, 1), (0, 2), (1, 2)]
+
+
 if __name__ == "__main__":
     test_simplex_solves_small_lp()
     test_full_binary_cube_has_zero_product_simplex_gap()
     test_missing_binary_corner_exposes_score_band_gap()
+    test_fixed_true_codeword_has_zero_gap()
+    test_fixed_missing_corner_matches_product_gap()
+    test_pairwise_local_parity_pseudoword_is_detected()
+    test_local_check_scopes_enumerates_subsets()
     print("score_band_lp_stress tests passed")
