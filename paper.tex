@@ -9469,6 +9469,129 @@ partition ignores the bias coordinates that certify the list size.
    \cref{cor:conditional-tilted-excess-certificate}.
 \end{proof}
 
+\begin{corollary}[False-survivor projected-bias certificate]
+   \label{cor:false-survivor-projection-certificate}
+   Work in the setting of
+   \cref{cor:exponential-false-survivor-certificate}, and use the projection
+   notation of \cref{cor:conditional-gaussian-projection-certificate}.  It is
+   enough to control the projected bias on the false-survivor frontier.  More
+   precisely, if for some \(\lambda>0\) and \(\gamma>0\),
+   \[
+      \sum_u
+      \E\!\left[
+         \exp(\lambda(M(u)-T))
+         \mathbf 1_{\{M(u)<T-\gamma\}}
+         \exp\!\left(
+            \lambda B_u(w)
+            +\lambda\omega_u^\perp
+            +\frac{\lambda^2(r_u^\perp)^2}{2}
+         \right)
+      \right]
+      \le
+      \log^{O(1)}n\cdot \E N_{\ge T},
+      \tag{LPA1}
+   \]
+   then the tilted crossing bound \((LPE3)\) holds.  Consequently, under the
+   Gaussian terminal assumptions of
+   \cref{cor:exponential-false-survivor-certificate}, \((LPA1)\) implies the
+   same polylogarithmic expected-overhead conclusion.
+\end{corollary}
+
+\begin{proof}
+   For a fixed node \(u\), \(M(u)\) and
+   \(\mathbf 1_{\{M(u)<T-\gamma\}}\) are \(\mathcal G_u\)-measurable.  The
+   proof of \cref{cor:conditional-gaussian-projection-certificate} gives the
+   conditional estimate
+   \[
+      \E[\exp(\lambda X_u(w))\mid\mathcal G_u]
+      \le
+      \exp\!\left(
+         \lambda B_u(w)
+         +\lambda\omega_u^\perp
+         +\frac{\lambda^2(r_u^\perp)^2}{2}
+      \right).
+      \tag{LPA2}
+   \]
+   Multiplying \((LPA2)\) by
+   \(\exp(\lambda(M(u)-T))\mathbf 1_{\{M(u)<T-\gamma\}}\), taking expectation,
+   and summing over \(u\) shows that \((LPA1)\) implies \((LPE3)\).  The final
+   claim is then exactly
+   \cref{cor:exponential-false-survivor-certificate}.
+\end{proof}
+
+\begin{corollary}[Gram form of the projection certificate]
+   \label{cor:gram-projection-certificate}
+   Fix a node \(u\), and enumerate
+   \(C_u=\{c_1,\ldots,c_N\}\).  Let \(A_u\) be the \(bq\times N\) matrix with
+   columns \(\iota(c_j)\), let
+   \[
+      G_u=A_u^\top A_u,
+      \qquad
+      W_u=A_u^\top w=(W(c_1),\ldots,W(c_N)),
+      \tag{LPB1}
+   \]
+   and for \(h\in E_u\) write
+   \[
+      v_u(h)=A_u^\top h .
+      \tag{LPB2}
+   \]
+   Thus \(G_u(j,k)\) is the number of coordinates on which \(c_j\) and \(c_k\)
+   agree.  With \(G_u^+\) denoting the Moore--Penrose inverse,
+   \[
+      B_u(w)
+      =
+      \sup_{h\in E_u} W_u^\top G_u^+v_u(h),
+      \tag{LPB3}
+   \]
+   and
+   \[
+      (r_u^\perp)^2
+      =
+      \sup_{h\in E_u}
+      \left(
+         \|h\|_2^2-v_u(h)^\top G_u^+v_u(h)
+      \right),
+      \tag{LPB4}
+   \]
+   while
+   \[
+      \omega_u^\perp
+      =
+      \E_g
+      \sup_{h\in E_u}
+      \ip{g}{h-A_uG_u^+v_u(h)}.
+      \tag{LPB5}
+   \]
+   Therefore the projected-bias certificate is an exact statement about the
+   codeword overlap Gram matrix \(G_u\) and the overlap vectors \(v_u(h)\) of
+   the anchored pseudocodeword excesses.
+\end{corollary}
+
+\begin{proof}
+   The column span of \(A_u\) is \(L_u\), and
+   \(A_uG_u^+A_u^\top\) is the orthogonal projection onto that span.  Hence
+   \[
+      \Pi_u h=A_uG_u^+A_u^\top h=A_uG_u^+v_u(h).
+      \tag{LPB6}
+   \]
+   Since \(v_u(h)\in\operatorname{range}(G_u)\),
+   \[
+      \|\Pi_u h\|_2^2
+      =
+      v_u(h)^\top G_u^+v_u(h),
+   \]
+   which gives \((LPB4)\), and \((LPB5)\) is the definition of orthogonal
+   width applied to \(h-\Pi_u h\).  Finally,
+   \[
+      \ip{\Pi_u w}{\Pi_u h}
+      =
+      \ip{w}{\Pi_u h}
+      =
+      W_u^\top G_u^+v_u(h),
+   \]
+   and taking the supremum over \(h\in E_u\) proves \((LPB3)\).
+\end{proof}
+
 \begin{remark}[LP and Sherali--Adams decoder target]
    \label{rem:lp-sa-soft-decoder-target}
    \Cref{cor:sharp-lp-soft-decoder} identifies the exact theorem needed from a
@@ -9564,6 +9687,24 @@ partition ignores the bias coordinates that certify the list size.
    or level-3 constraints should make fractional excess nearly explainable by
    nearby true codewords, shrinking the orthogonal radius, while low-rate
    overlap should keep the projected bias from growing under the Gaussian tilt.
+
+   \Cref{cor:false-survivor-projection-certificate} is the sharper target for
+   this last sentence.  The projected bias need not be uniformly small on every
+   formal prefix.  It only has to be small after weighting by
+   \(\exp(\lambda(M(u)-T))\) on nodes whose true maximum is already below the
+   threshold frontier.  This matches the branch-and-bound process: nodes with
+   a near-threshold real codeword are paid by the ordinary lowered list, and
+   only false survivors need pseudocodeword control.
+
+   \Cref{cor:gram-projection-certificate} makes the Tanner/SA obligation
+   finite and checkable.  The projected bias is the support function of the
+   excess-overlap vectors \(v_u(h)\) through the inverse codeword-overlap Gram
+   matrix \(G_u^+\), while the remaining width and radius are those of the
+   orthogonal residual \(h-A_uG_u^+v_u(h)\).  Thus a useful low-rate code
+   theorem does not have to discuss arbitrary Gaussian projections: it must
+   prove that local LP or constant-level SA pseudocodewords have controlled
+   overlap coefficients and small orthogonal residuals under the tilted
+   false-survivor weighting.
 \end{remark}
 
 \begin{proposition}[Sampled structured-panel compiler]
