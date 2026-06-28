@@ -15434,6 +15434,117 @@ query-price overlap, storage price, and duplicate-incidence factor \(b_G\).
    contrapositive, and \((HMAP6)\) is the common-price specialization.
 \end{proof}
 
+\begin{corollary}[Assigned Gaussian transport trichotomy]
+   \label{cor:assigned-gaussian-transport-trichotomy}
+   Work in the assigned-transport setting of
+   \cref{cor:bounded-margin-assigned-truncation}.  Thus
+   \(w_{c(y),y}=b(y)\), \(w_{x,y}=0\) for \(x\ne c(y)\), \(B_w=\sum_yb(y)>0\),
+   and
+   \[
+      \ip{c(y)}{y}\ge\theta_-
+      \qquad(y\in Y,\ b(y)>0).
+      \tag{AGTC1}
+   \]
+   Fix \(0<\zeta<1\), \(M\ge0\), and let \(a\) be the inherited activation with
+   query price
+   \[
+      \mathsf T_a=\sum_q \tau_q a(q).
+      \tag{AGTC2}
+   \]
+   Assume that for every assigned center \(x\) the dense verifier may add
+   inherited-activation prefixes of a certified cell container
+   \(W_x\supseteq\{y\in Y:c(y)=x\}\), with prices
+   \[
+      T_{x,h}=\psi_xh^{\rho_x},
+      \qquad
+      S_{x,h}=\psi_xh^{1+\rho_x},
+      \qquad 0<\rho_x<1 .
+      \tag{AGTC3}
+   \]
+   On the unit sphere one may take
+   \(W_x=P\cap B(x,\sqrt{2(1-\theta_-)})\) whenever those point-centered
+   containers are certified.  Write
+   \(\overline\Phi(t)=\Pr[Z\ge t]\), \(Z\sim N(0,1)\).
+
+   Then at least one of the following alternatives holds.
+
+   \begin{enumerate}[label=(\roman*)]
+      \item The upper-margin subtransport
+      \[
+         Y_{\le M}=\{y:b(y)>0,\ m_G(c(y))\le M,\ m_G(y)\le M\}
+      \]
+      has \(B_{\le M}\ge\zeta B_w\).  In this case it supplies transported hit
+      mass
+      \[
+         A_{\le M}
+         \ge
+         \frac{\zeta}{4}
+         \overline\Phi\!\left(\frac{M}{\sqrt{\theta_-}}\right)B_w
+         \tag{AGTC4}
+      \]
+      and endpoint loads normalized by \(A_{\le M}\) at most
+      \(4/\overline\Phi(M/\sqrt{\theta_-})\).  In particular, if
+      \(M^2\le C\log\log n\) and \(\zeta\ge(\log n)^{-K}\), this is an
+      inverse-polylogarithmic hit subtransport with polylogarithmic normalized
+      endpoint load.
+
+      \item Some inherited-activation prefix inside one of the assigned
+      containers \(W_x\) has positive reduced gain.
+
+      \item The high-margin residual
+      \[
+         Y_{>M}=\{y:b(y)>0,\ m_G(c(y))>M\ \text{or}\ m_G(y)>M\}
+      \]
+      carries almost all paid mass,
+      \[
+         B_{>M}>(1-\zeta)B_w,
+         \tag{AGTC5}
+      \]
+      and is price dominated by its assigned cell profile:
+      \[
+         B_{>M}
+         \le
+         \sum_{x:h_x>0}
+         \psi_x
+         \left(
+            \mathsf T_a h_x^{\rho_x}
+            +
+            \sigma h_x^{1+\rho_x}
+         \right),
+         \qquad
+         h_x=|\{y\in Y_{>M}:c(y)=x\}|.
+         \tag{AGTC6}
+      \]
+   \end{enumerate}
+
+   Thus the assigned Gaussian branch has no fourth active-load case: after an
+   inverse-polylogarithmic upper-margin truncation is ruled out, the leftover
+   either already closes by a finite prefix or is an explicitly priced
+   high-margin Renyi-cover residual.
+\end{corollary}
+
+\begin{proof}
+   If \(B_{\le M}\ge\zeta B_w\), then
+   \cref{cor:bounded-margin-assigned-truncation} gives \((AGTC4)\) and the
+   stated normalized endpoint-load bound.  The inverse-polylogarithmic
+   specialization follows from the final estimate in
+   \cref{cor:upper-margin-assigned-transport-load}.
+
+   Otherwise \(B_{\le M}<\zeta B_w\), so the same truncation corollary gives
+   \(B_{>M}>(1-\zeta)B_w\).  Apply
+   \cref{cor:high-margin-assigned-prefix-spread} to the assigned high-margin
+   residual.  If one of its inherited prefixes is positive, alternative
+   \((ii)\) holds.  If none is positive, the bound \((AGTC6)\) is exactly
+   \((HMAP5)\).
+
+   Finally, if \(X\cup Y\subseteq\mathbb S^{D-1}\), then
+   \[
+      \|y-c(y)\|^2=2-2\ip{c(y)}{y}\le2(1-\theta_-),
+   \]
+   proving the advertised point-centered container choice whenever that ball is
+   among the certified children.
+\end{proof}
+
 \begin{corollary}[Gaussian paid-fiber separator criterion]
    \label{cor:gaussian-paid-fiber-separator-criterion}
    Work in the setting of
@@ -15958,10 +16069,12 @@ a high-margin center or paid endpoint.
 \Cref{cor:high-margin-assigned-prefix-spread} then handles that complement in
 the same finite-prefix language: high-margin assigned mass either produces one
 positive inherited prefix inside an assigned cell, or its assigned cell-size
-profile has enough Renyi spread to pay the inherited prices.  Thus the branch
-needs an upper-margin assigned transport with shared storage, or the surviving
-residual is the same Renyi-spread obstruction already used by the dense-cover
-side.
+profile has enough Renyi spread to pay the inherited prices.
+\Cref{cor:assigned-gaussian-transport-trichotomy} packages these facts as the
+retained branch rule: an assigned positive-correlation transport either gives an
+inverse-polylogarithmic upper-margin hit subtransport with polylog normalized
+loads, gives a positive inherited finite prefix, or leaves only the explicitly
+priced high-margin Renyi-cover residual.
 \Cref{cor:gaussian-paid-fiber-separator-criterion} records the sharper
 split-optimized diagnostic form: lower-bound the paid-product moment, keep one
 truncated margin split inverse-polylogarithmic, and upper-bound the inherited
@@ -68605,9 +68718,14 @@ a high-margin center or paid endpoint.
 \Cref{cor:high-margin-assigned-prefix-spread} removes the remaining ambiguity:
 that high-margin complement either contains a positive inherited finite-prefix
 repair inside one assigned cell, or it is a high-Renyi-spread assigned cover
-residual.  The unresolved content is therefore the geometric construction of
-upper-margin assigned transports with shared-storage certificates, plus the
-existing Renyi-spread/list-decoding payment for the complement.
+residual.
+\Cref{cor:assigned-gaussian-transport-trichotomy} makes this the formal branch
+rule: upper-margin assigned mass gives the desired inverse-polylogarithmic
+Gaussian handoff, a finite prefix closes immediately, and the only surviving
+case is the priced high-margin Renyi-cover residual.  The unresolved content is
+therefore the geometric construction of assigned transports with shared-storage
+certificates, plus the existing Renyi-spread/list-decoding payment for the
+priced complement.
 \Cref{cor:spread-packing-entropy-energy-screen} records the corresponding
 charge: each separated-pair profile is harmless when its intersection energy
 dominates its entropy, and otherwise it is the high-correlation dense signal.
