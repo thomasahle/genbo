@@ -11036,6 +11036,124 @@ partition ignores the bias coordinates that certify the list size.
    \cref{cor:box-dual-mobility-certificate} with these two choices of \(w\).
 \end{proof}
 
+\begin{corollary}[Balanced Gram form of mobility scores]
+   \label{cor:balanced-gram-mobility-scores}
+   Continue with the notation of
+   \cref{cor:laplace-tail-mobility-enumerator}.  For an off-anchor mobility
+   pattern \(\beta\), define the ambient block-balanced direction
+   \(d_{u,c,\beta}\in\R^{bq}\) by
+   \[
+      d_{u,c,\beta}(i,a)
+      =
+      \begin{cases}
+         \beta_{i,a}, & a\ne c_i,\\[2mm]
+         -\displaystyle\sum_{a'\ne c_i}\beta_{i,a'}, & a=c_i .
+      \end{cases}
+      \tag{LNC1}
+   \]
+   Then
+   \[
+      \sum_{a\in[q]}d_{u,c,\beta}(i,a)=0
+      \qquad(i=1,\ldots,b),
+      \tag{LNC2}
+   \]
+   and, writing
+   \[
+      \zeta_{u,c,\beta}=A_u^\top d_{u,c,\beta},
+      \qquad
+      s_{u,c,\beta}=G_u^+\zeta_{u,c,\beta},
+      \tag{LNC3}
+   \]
+   the mobility score from \((LNB1)\) has the exact Gram form
+   \[
+      L_{u,c,\beta}(j)=-s_{u,c,\beta}(j)
+      =
+      -\left(G_u^+A_u^\top d_{u,c,\beta}\right)_j .
+      \tag{LNC4}
+   \]
+   Equivalently,
+   \[
+      \zeta_{u,c,\beta}(j)
+      =
+      \sum_{i=1}^b\sum_{a\ne c_i}
+      \beta_{i,a}
+      \bigl(
+         \mathbf 1_{\{c_j(i)=a\}}
+         -
+         \mathbf 1_{\{c_j(i)=c_i\}}
+      \bigr).
+      \tag{LNC5}
+   \]
+   Therefore the Boltzmann aggregate mobility certificate \((LNA3)\) is exactly
+   \[
+      \sup_{0\le\beta\le\mu_{u,c}}
+      \sum_{j=1}^N
+      e^{\lambda(M(u)-W(c_j))}
+      \left(s_{u,c,\beta}(j)\right)^-
+      \le \Xi_u ,
+      \tag{LNC6}
+   \]
+   and the Laplace sufficient condition \((LNB6)\) is exactly
+   \[
+      \sup_{0\le\beta\le\mu_{u,c}}
+      \sum_{j=1}^N
+      w_j\exp\!\left(-\nu s_{u,c,\beta}(j)\right)
+      \le H_{u,c}.
+      \tag{LNC7}
+   \]
+   Finally, the projection of \(d_{u,c,\beta}\) onto the codeword span is
+   \(A_uG_u^+\zeta_{u,c,\beta}\), and
+   \[
+      \bigl\|A_uG_u^+\zeta_{u,c,\beta}\bigr\|_2^2
+      =
+      \zeta_{u,c,\beta}^\top G_u^+\zeta_{u,c,\beta}.
+      \tag{LNC8}
+   \]
+   Thus the remaining mobility theorem is a one-sided moment bound for
+   inverse-Gram coefficients of block-balanced directions, not a separate
+   pseudocodeword-support statement.
+\end{corollary}
+
+\begin{proof}
+   By the definition of \(d_{u,c,\beta}\), each coordinate block sums to zero,
+   proving \((LNC2)\).  Also
+   \[
+   \begin{aligned}
+      \ip{y_{u,j}}{d_{u,c,\beta}}
+      &=
+      \sum_{i=1}^b\sum_{a\ne c_i}
+      \beta_{i,a}\bigl(y_{u,j}(i,a)-y_{u,j}(i,c_i)\bigr)\\
+      &=
+      L_{u,c,\beta}(j).
+   \end{aligned}
+      \tag{LNC9}
+   \]
+   Since \(y_{u,j}=-A_uG_u^+e_j\) and \(G_u^+\) is symmetric,
+   \[
+      L_{u,c,\beta}(j)
+      =
+      \ip{-A_uG_u^+e_j}{d_{u,c,\beta}}
+      =
+      -e_j^\top G_u^+A_u^\top d_{u,c,\beta},
+   \]
+   which is \((LNC4)\).  Formula \((LNC5)\) is obtained by taking the inner
+   product of \(d_{u,c,\beta}\) with the \(j\)th one-hot codeword column
+   \(\iota(c_j)\).  Substituting \(L_{u,c,\beta}(j)=-s_{u,c,\beta}(j)\) into
+   \((LNA3)\) and \((LNB6)\) gives \((LNC6)\) and \((LNC7)\).
+
+   The last identity is the same projection identity used in
+   \cref{cor:gram-projection-certificate}: \(A_uG_u^+A_u^\top\) is the
+   orthogonal projection onto the column span of \(A_u\), and
+   \(\zeta_{u,c,\beta}\in\operatorname{range}(G_u)\).  Hence
+   \[
+      \|A_uG_u^+\zeta_{u,c,\beta}\|_2^2
+      =
+      \zeta_{u,c,\beta}^\top G_u^+G_uG_u^+\zeta_{u,c,\beta}
+      =
+      \zeta_{u,c,\beta}^\top G_u^+\zeta_{u,c,\beta}.
+   \]
+\end{proof}
+
 \begin{corollary}[Anchor-fiber LP/SA certificate compiler]
    \label{cor:anchor-fiber-lp-sa-compiler}
    Continue with the notation of
@@ -11436,6 +11554,15 @@ partition ignores the bias coordinates that certify the list size.
    target for low-rate Tanner/SA panels: under the planted Boltzmann weights,
    every certified off-anchor movement pattern should have only polylogarithmic
    positive tail.
+
+   \Cref{cor:balanced-gram-mobility-scores} removes the last notational
+   ambiguity from that target.  Each mobility pattern is an ambient direction
+   \(d_\beta\) whose entries sum to zero in every coordinate block, and the
+   scalar score is
+   \(L_\beta(j)=-(G_u^+A_u^\top d_\beta)_j\).  Thus the remaining theorem is a
+   one-sided Laplace or negative-part estimate for inverse-Gram coefficients of
+   balanced directions under the Boltzmann tilt.  This is the form in which a
+   low-rate Tanner, level-2 SA, or list-recovery proof should be attempted.
 
    \Cref{cor:well-conditioned-gram-coefficients} gives the first elementary
    path to such a theorem.  If the local subcode has a well-conditioned overlap
