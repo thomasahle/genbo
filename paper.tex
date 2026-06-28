@@ -40064,7 +40064,9 @@ query mass rather than producing a cost-effective dense filter.
    \cref{cor:fractional-child-panel-shared-cover-compiler} and in the
    distinct-storage certificates
    \cref{cor:price-weighted-witness-packing-storage} and
-   \cref{cor:weighted-occurrence-discounted-tuple-storage}.
+   \cref{cor:weighted-occurrence-discounted-tuple-storage}; equivalently, their
+   storage can be certified by the exact pair-witness identity in
+   \cref{cor:generic-child-panel-pair-witness-storage}.
 \end{corollary}
 
 \begin{proof}
@@ -40121,6 +40123,99 @@ query mass rather than producing a cost-effective dense filter.
    absorbing the dyadic intensity \(t\) into the price factor.  This is the
    input format required by the cited shared-cover and distinct-storage
    certificates.
+\end{proof}
+
+\begin{corollary}[Generic child-panel pair-witness storage identity]
+   \label{cor:generic-child-panel-pair-witness-storage}
+   Let \(P\) be a finite metric set and let
+   \(\mathcal T_2(P,\delta)\) be the ordered separated-pair universe from
+   \cref{lem:packing-list-tuple-moment}; repetitions are allowed.  Let
+   \(\mathcal C\) be a finite family of priced child records.  Each
+   \(g\in\mathcal C\) has a nonempty certified \(\delta\)-separated witness
+   set \(A_g\subseteq P\), a price factor \(\psi_g\ge0\), an exponent
+   \(0\le\rho_g\le1\), and storage price
+   \[
+      u_g=\psi_g|A_g|^{1+\rho_g}.
+      \tag{GPW1}
+   \]
+   Define the pair-congestion weight
+   \[
+      W(x,y)=
+      \sum_{\substack{g\in\mathcal C:\\ x,y\in A_g}}
+      \psi_g|A_g|^{\rho_g-1}
+      \qquad((x,y)\in\mathcal T_2(P,\delta)).
+      \tag{GPW2}
+   \]
+   Then
+   \[
+      \sum_{g\in\mathcal C}u_g
+      =
+      \sum_{(x,y)\in\mathcal T_2(P,\delta)}W(x,y).
+      \tag{GPW3}
+   \]
+   Consequently, if \(\mathcal T_2(P,\delta)\) is partitioned into profiles
+   \(\Pi\), and \(W(x,y)\le B_\pi\) for every \((x,y)\in\pi\), then
+   \[
+      \sum_{g\in\mathcal C}u_g
+      \le
+      \sum_{\pi\in\Pi}|\pi|B_\pi .
+      \tag{GPW4}
+   \]
+
+   More generally, suppose a finite weighted occurrence family
+   \(\mathcal B\) points to the same child records by a map
+   \(\kappa:\mathcal B\to\mathcal C\), with weights \(\omega_b>0\), and let
+   \[
+      m(g)=\sum_{b:\kappa(b)=g}\omega_b .
+      \tag{GPW5}
+   \]
+   For children with \(m(g)>0\), define
+   \[
+      \widehat W(x,y)=
+      \sum_{\substack{b\in\mathcal B:\\ x,y\in A_{\kappa(b)}}}
+      \frac{\omega_b\,\psi_{\kappa(b)}
+      |A_{\kappa(b)}|^{\rho_{\kappa(b)}-1}}
+           {m(\kappa(b))}.
+      \tag{GPW6}
+   \]
+   Then
+   \[
+      \sum_{g:\,m(g)>0}u_g
+      =
+      \sum_{(x,y)\in\mathcal T_2(P,\delta)}\widehat W(x,y).
+      \tag{GPW7}
+   \]
+
+   Thus the storage-dominated output of any generic child-panel return may be
+   checked without integer materialization: prove a pair-profile, range-report,
+   list-decoding, or low/high-correlation bound for the reciprocal-weighted
+   pair congestion \((GPW6)\), and the total shared child storage is certified
+   exactly.
+\end{corollary}
+
+\begin{proof}
+   Fix a child \(g\).  Since \(A_g\) is \(\delta\)-separated and repetitions
+   are allowed in \(\mathcal T_2(P,\delta)\), the ordered pairs
+   \((x,y)\in A_g^2\) contribute exactly \(|A_g|^2\) atoms to
+   \(\mathcal T_2(P,\delta)\).  Therefore the contribution of \(g\) to the
+   right side of \((GPW3)\) is
+   \[
+      |A_g|^2\psi_g|A_g|^{\rho_g-1}
+      =
+      \psi_g|A_g|^{1+\rho_g}
+      =
+      u_g .
+   \]
+   Summing over children proves \((GPW3)\), and \((GPW4)\) follows by summing
+   the profile envelopes.
+
+   For the weighted occurrence form, group the contribution of \((GPW6)\) by
+   the stored child \(g\).  The total occurrence weight pointing to \(g\) is
+   \(m(g)\), so the reciprocal factor makes those occurrences contribute
+   exactly the same pair weight
+   \(\psi_g|A_g|^{\rho_g-1}\) as in \((GPW2)\), for each pair contained in
+   \(A_g\).  Applying the preceding identity to the represented children gives
+   \((GPW7)\).
 \end{proof}
 
 \begin{corollary}[Shared-cover LP for the fractional sponsor tail]
@@ -76926,6 +77021,12 @@ cap-star loop generically: after generated-prefix search, no medium returned
 star survives, and the remaining high-correlation mass is a bounded fixed tail
 plus a storage-dominated priced child panel that reuses the same shared-cover
 and distinct-storage interfaces.
+\Cref{cor:generic-child-panel-pair-witness-storage} gives the exact storage
+identity for that generic child panel: distribute each stored child's price over
+ordered separated pairs in its witness set, with reciprocal weighted
+multiplicity when many decoded records point to the same child.  The remaining
+storage theorem is therefore a direct pair-profile congestion/list-decoding
+bound in child-panel notation, not a bucket-net-specific accounting statement.
 \Cref{cor:fractional-sponsor-tail-shared-cover} then removes duplicated large
 stars from that target by a finite shared-cover LP: either residual fractional
 star copies plus shared records have total price inside the storage allowance,
