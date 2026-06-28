@@ -39613,6 +39613,276 @@ query mass rather than producing a cost-effective dense filter.
    \(K^{\rho-1}\), and use \(K\le h\) in \(K^\rho\), obtaining \((FSG6)\).
 \end{proof}
 
+\begin{corollary}[Generated-cover dichotomy for the fractional sponsor tail]
+   \label{cor:fractional-sponsor-tail-generated-cover-dichotomy}
+   Work in the setting of
+   \cref{cor:fractional-sponsor-tail-shared-cover} for one seed \(z\), and
+   let \(\mathcal T\) be a finite family of generated shared-record templates
+   satisfying the materialization hypothesis \((FSG1)\), with finite available
+   cardinality sets.  Consider the surrogate generated-cover LP
+   \[
+   \begin{array}{ll}
+   \Psi_z^{\rm gen,st}=\min
+      & \displaystyle
+        \sum_{s\in\mathcal S}u_s e_s
+        +\sum_{T\in\mathcal T}
+         \sum_{K\in\mathcal K_T}
+         \sum_{\substack{U\subseteq\mathcal S_T\\ |U|=K}}
+         \lambda_{T,U}\overline P_T(K)\\[0.9em]
+   \text{\rm subject to}
+      & \displaystyle
+        e_s+
+        \sum_{T\in\mathcal T}
+        \sum_{K\in\mathcal K_T}
+        \sum_{\substack{U\subseteq\mathcal S_T\\ |U|=K}}
+        \lambda_{T,U}a_{T,s}\mathbf 1_{\{s\in U\}}
+        \ge1
+        \qquad(s\in\mathcal S),\\[0.9em]
+      & e_s\ge0,\qquad \lambda_{T,U}\ge0 .
+   \end{array}
+      \tag{FGD1}
+   \]
+   If \(\Psi_z^{\rm gen,st}\le\Theta_z\), then
+   \(\Phi_z^{\rm st}\le\Theta_z\); in particular the generated prefixes close
+   the fractional sponsor tail at that local storage allowance.  Consequently,
+   the global condition
+   \[
+      \E_z\Gamma_z+\E_z\Psi_z^{\rm gen,st}
+      \le
+      \frac\theta8B_{\rm st}
+      \tag{FGD2}
+   \]
+   is sufficient for the storage-dominated contribution in \((SFT2)\) to lie
+   inside \(B_{\rm st}\).
+
+   Conversely, if \(\Psi_z^{\rm gen,st}>\Theta_z\), then there is a dual
+   weighting \(y_s\) with
+   \[
+      \sum_{s\in\mathcal S}y_s>\Theta_z,
+      \qquad
+      0\le y_s\le u_s,
+      \tag{FGD3}
+   \]
+   such that every generated template satisfies all subset tests
+   \[
+      \sum_{s\in U}a_{T,s}y_s\le\overline P_T(K)
+      \qquad
+      (T\in\mathcal T,\ K\in\mathcal K_T,\ U\subseteq\mathcal S_T,\ |U|=K).
+      \tag{FGD4}
+   \]
+   Equivalently, after ordering \(\mathcal S_T\) by nonincreasing
+   \(a_{T,s}y_s\), every available top prefix satisfies the no-improvement
+   inequality \((FSG3)\).  Thus a failed generated-cover attempt exposes one
+   no-prefix dual residual for all templates in \(\mathcal T\), not a family of
+   unrelated local failures.
+\end{corollary}
+
+\begin{proof}
+   Any feasible solution of \((FGD1)\) gives a feasible solution of the
+   shared-cover LP \((STC1)\): replace each active pair \((T,U)\) by the
+   materialized shared record \(c(T,U)\), use the capture domination in
+   \((FSG1)\), and use
+   \(P_{c(T,U)}\le\overline P_T(|U|)\) to dominate the price.  Hence
+   \(\Phi_z^{\rm st}\le\Psi_z^{\rm gen,st}\).  The local closure and the
+   expected statement \((FGD2)\) then follow from
+   \cref{cor:fractional-sponsor-tail-shared-cover}.
+
+   The dual of \((FGD1)\) is
+   \[
+   \begin{array}{ll}
+   \Psi_z^{\rm gen,st}=\max
+      & \displaystyle \sum_{s\in\mathcal S}y_s\\[0.8em]
+   \text{\rm subject to}
+      & 0\le y_s\le u_s,\\[0.6em]
+      & \displaystyle
+        \sum_{s\in U}a_{T,s}y_s\le\overline P_T(K)
+        \qquad
+        (T\in\mathcal T,\ K\in\mathcal K_T,\ U\subseteq\mathcal S_T,\ |U|=K).
+   \end{array}
+      \tag{FGD5}
+   \]
+   The primal is finite and feasible by taking \(e_s=1\), so finite LP duality
+   applies.  If \(\Psi_z^{\rm gen,st}>\Theta_z\), an optimal dual gives
+   \((FGD3)\)--\((FGD4)\).  For fixed \(T\) and \(K\), the top \(K\) prefix in
+   the order of \(a_{T,s}y_s\) maximizes the left side of \((FGD4)\), giving
+   the equivalent top-prefix form.
+\end{proof}
+
+\begin{corollary}[Fractional sponsor-tail low-cover closure]
+   \label{cor:fractional-sponsor-tail-low-cover-closure}
+   Work in the no-generated-cover dual residual
+   \((FGD3)\)--\((FGD4)\) of
+   \cref{cor:fractional-sponsor-tail-generated-cover-dichotomy}.  Let
+   \(L\subseteq\mathcal S\) be nonempty, with \(K=|L|\).  Suppose \(L\) is
+   assigned to generated templates by a map \(\kappa:L\to\mathcal T\) such
+   that, for each nonempty part
+   \[
+      L_T=\{s\in L:\kappa(s)=T\},
+      \qquad K_T=|L_T|,
+      \tag{FLC1}
+   \]
+   one has \(K_T\in\mathcal K_T\), \(L_T\subseteq\mathcal S_T\), and certified
+   lower degrees \(w_s\) satisfying
+   \[
+      0\le w_s\le a_{\kappa(s),s}y_s
+      \qquad(s\in L).
+      \tag{FLC2}
+   \]
+   Then every no-generated-cover residual obeys
+   \[
+      \sum_{s\in L}w_s
+      \le
+      \sum_{T:\,K_T>0}\overline P_T(K_T).
+      \tag{FLC3}
+   \]
+
+   In particular, suppose \(w_s\ge\delta>0\) on \(L\), and all used templates
+   satisfy the common price envelope
+   \[
+      \overline P_T(h)
+      \le
+      \psi_\star\left(Ah^\rho+\zeta h^{1+\rho}\right),
+      \qquad 0<\rho<1 .
+      \tag{FLC4}
+   \]
+   If the assignment uses \(J\) nonempty template parts, then
+   \[
+      \delta K
+      \le
+      \psi_\star\left(AJ^{1-\rho}K^\rho+\zeta K^{1+\rho}\right).
+      \tag{FLC5}
+   \]
+   Consequently, when
+   \[
+      \delta>2\psi_\star\zeta K^\rho,
+      \tag{FLC6}
+   \]
+   every surviving residual has
+   \[
+      J
+      \ge
+      \left(
+         \frac{\delta K^{1-\rho}}{2\psi_\star A}
+      \right)^{1/(1-\rho)} .
+      \tag{FLC7}
+   \]
+   When \(\zeta=0\), the same conclusion holds with \(2\psi_\star A\) replaced
+   by \(\psi_\star A\) in \((FLC7)\).
+
+   Thus any low-price generated cover of a dual-heavy star layer is already a
+   positive shared-cover column.  A genuine residual must either be dominated
+   by the storage term in \((FLC5)\), or have large generated-cover entropy.
+\end{corollary}
+
+\begin{proof}
+   For a nonempty part \(L_T\), \((FLC2)\) gives
+   \[
+      \sum_{s\in L_T}w_s
+      \le
+      \sum_{s\in L_T}a_{T,s}y_s .
+   \]
+   Since \(L_T\subseteq\mathcal S_T\) and \(K_T\in\mathcal K_T\), the subset
+   test \((FGD4)\) gives
+   \[
+      \sum_{s\in L_T}a_{T,s}y_s\le\overline P_T(K_T).
+   \]
+   Summing over nonempty parts proves \((FLC3)\).
+
+   If \(w_s\ge\delta\), then \(\delta K\le\sum_{s\in L}w_s\).  Under
+   \((FLC4)\), Holder's inequality gives
+   \[
+      \sum_TK_T^\rho\le J^{1-\rho}K^\rho,
+      \qquad
+      \sum_TK_T^{1+\rho}\le K^{1+\rho}.
+   \]
+   Substituting in \((FLC3)\) proves \((FLC5)\).  If \((FLC6)\) holds, the
+   storage term in \((FLC5)\) is less than \(\delta K/2\), so
+   \[
+      \frac{\delta K}{2}
+      \le
+      \psi_\star A J^{1-\rho}K^\rho ,
+   \]
+   which rearranges to \((FLC7)\).  When \(\zeta=0\), the storage term is
+   absent and the same rearrangement starts from
+   \(\delta K\le\psi_\star A J^{1-\rho}K^\rho\).
+\end{proof}
+
+\begin{corollary}[Low-doubling fractional sponsor-tail screen]
+   \label{cor:low-doubling-fractional-sponsor-tail-screen}
+   Work in the setting of
+   \cref{cor:fractional-sponsor-tail-low-cover-closure}.  For a generated
+   container family at scale \(0<\lambda\le1\), let
+   \(N_{\rm gen}^{\rm st}(L,\delta,\lambda)\) be the least number of nonempty
+   template parts in an assignment satisfying \((FLC1)\)--\((FLC2)\) with
+   \(w_s\ge\delta\) on \(L\), and set it to \(\infty\) if no such assignment
+   exists.  If \(N_{\rm gen}^{\rm st}(L,\delta,\lambda)=J<\infty\), then every
+   no-generated-cover residual obeys
+   \[
+      \delta
+      \le
+      \psi_\star\left(
+         A J^{1-\rho}K^{\rho-1}
+         +\zeta K^\rho
+      \right).
+      \tag{FLD1}
+   \]
+   In particular, if a certified low-doubling or list-decoded family gives
+   \[
+      N_{\rm gen}^{\rm st}(L,\delta,\lambda)
+      \le C_{\rm st}\lambda^{-\Delta},
+      \tag{FLD2}
+   \]
+   then a surviving residual must satisfy
+   \[
+      \delta
+      \le
+      \psi_\star\left(
+         A C_{\rm st}^{1-\rho}
+         \lambda^{-\Delta(1-\rho)}K^{\rho-1}
+         +\zeta K^\rho
+      \right).
+      \tag{FLD3}
+   \]
+   Hence any layer whose dual density violates \((FLD3)\) contains a generated
+   top-prefix column improving the shared-cover LP.
+
+   Equivalently, when \(\zeta=0\) and \(0<\lambda<1\), every surviving layer
+   with positive numerator has generated dimension at least
+   \[
+      \Delta
+      \ge
+      \frac{
+         \log\!\left(\delta K^{1-\rho}/(\psi_\star A)\right)
+         -(1-\rho)\log C_{\rm st}
+      }{
+         (1-\rho)\log(1/\lambda)
+      }.
+      \tag{FLD4}
+   \]
+   With \(\zeta>0\), the same statement holds after replacing \(\delta\) by
+   \(\delta-\psi_\star\zeta K^\rho\), when this quantity is positive.
+\end{corollary}
+
+\begin{proof}
+   Apply \cref{cor:fractional-sponsor-tail-low-cover-closure} to an optimal
+   assignment with \(J=N_{\rm gen}^{\rm st}(L,\delta,\lambda)\), and divide
+   \((FLC5)\) by \(K\).  This proves \((FLD1)\).  Substituting the cover bound
+   \((FLD2)\) gives \((FLD3)\).  If \((FLD3)\) is violated, the contrapositive
+   of the same closure corollary gives a positive generated prefix, hence an
+   improving shared-cover column by
+   \cref{cor:fractional-sponsor-tail-generated-prefix}.
+
+   For \(\zeta=0\), rearrange \((FLD3)\) as
+   \[
+      \lambda^{-\Delta(1-\rho)}
+      \ge
+      \frac{\delta K^{1-\rho}}
+           {\psi_\star A C_{\rm st}^{1-\rho}},
+   \]
+   and take logarithms.  With \(\zeta>0\), first subtract the storage term in
+   \((FLD3)\), provided the resulting numerator is positive.
+\end{proof}
+
 \begin{lemma}[Certified star-panel separator]
    \label{lem:certified-star-panel-separator}
    Work in the setting of \cref{lem:star-prefix-weak-type-residual}, and assume
@@ -75424,6 +75694,16 @@ form of this dual: a generated range/list/AQ/facility template is useful exactly
 when its current \(y_s\)-weighted top prefix beats its certified shared-child
 price; otherwise the template satisfies the same weak-type envelope as the
 earlier shared-capture residuals.
+\Cref{cor:fractional-sponsor-tail-generated-cover-dichotomy} makes this a
+single finite generated-cover alternative: generated prefixes either cover the
+fractional sponsor tail within the storage allowance, or one dual \(y_s\) fails
+all top-prefix tests in the chosen generated family.  Then
+\cref{cor:fractional-sponsor-tail-low-cover-closure} and
+\cref{cor:low-doubling-fractional-sponsor-tail-screen} show that any
+dual-heavy layer with a low-Renyi-price generated cover would already fire as a
+shared-cover column.  The live fractional-tail residual is therefore the same
+generated entropy/list-decoding obstruction as the earlier dyadic shared-cover
+residual, not a separate large-star materialization problem.
 \Cref{cor:dyadic-distinct-storage-bucket-net} rewrites that target as a dyadic
 large-child counting problem: for every recursive price scale, bound the number
 of distinct canonical bucket nets whose shared child index has that price.
