@@ -13483,11 +13483,18 @@ partition ignores the bias coordinates that certify the list size.
    mean \(\max_j\Omega_j\approx5.8\cdot10^8\) and diagonal share
    \(0.99999\) for the full tail, while the off-diagonal normalized tail stayed
    near a constant.  Clipping prices at \((\log N)^3\) kept the off-diagonal
-   tail essentially unchanged.  This supports the barrier diagnosis: the first
-   obstruction is the singleton/diagonal full-price term, not an unexplained
-   random-code pair tail.  The next proof attempt should therefore be localized
-   residual matching around high-price posteriors, or a theorem showing that
-   such matching is impossible for the chosen code family.
+   tail essentially unchanged.  The same run tested the single shared
+   posterior residual of
+   \cref{cor:single-posterior-residual-barrier}: the mean full-price singleton
+   lower bound was still about \(1.2\cdot10^{10}\), and the aggregate
+   self-selector mismatch was about \(9.1\cdot10^9\), even though clipping
+   reduced the corresponding singleton cost to about \(6.8\cdot10^3\).
+   This supports the barrier diagnosis: the first obstruction is the
+   singleton/diagonal full-price term, not an unexplained random-code pair tail,
+   and one global posterior residual does not remove it.  The next proof
+   attempt should therefore be anchor/source-local residual matching around
+   high-price posteriors, or a theorem showing that such matching is impossible
+   for the chosen code family.
 \end{remark}
 
 \begin{corollary}[Posterior mismatch form for localized residuals]
@@ -13579,6 +13586,107 @@ partition ignores the bias coordinates that certify the list size.
    \]
    Dividing by \(S(s)\) for nonzero \(s\) gives \((LOB5)\), and \((LOB6)\) is
    just the normalization of \(\mu\) inside each coordinate block.
+\end{proof}
+
+\begin{corollary}[Single posterior residual barrier]
+   \label{cor:single-posterior-residual-barrier}
+   Continue with the notation of
+   \cref{cor:localized-residual-posterior-mismatch}.  Fix nonnegative prices
+   \(\omega\), let \(S=\sum_j\omega_j>0\), and consider the shared
+   posterior-matched residual budget
+   \[
+      \mu^\omega_{i,a}
+      =
+      \nu_i\frac{\sum_{k:c_k(i)=a}\omega_k}{S},
+      \qquad
+      V_\nu=\sum_i\nu_i .
+      \tag{LOB9}
+   \]
+   If the chart-majorant check
+   \[
+      \mathfrak L_{u,\tau}(\mu^\omega,\omega)\le B
+      \qquad(\tau\in[q]^b)
+      \tag{LOB10}
+   \]
+   holds, then
+   \[
+      B\ge
+      \max_j
+      \omega_j
+      \sum_{i=1}^b
+      \nu_i
+      \left(
+         1-
+         \frac{\sum_{k:c_k(i)=c_j(i)}\omega_k}{S}
+      \right).
+      \tag{LOB11}
+   \]
+   Moreover, the \(\omega\)-average of the off-codeword residual in
+   \((LOB11)\) is exactly
+   \[
+      \frac1S\sum_j\omega_j
+      \sum_i\nu_i
+      \left(
+         1-
+         \frac{\sum_{k:c_k(i)=c_j(i)}\omega_k}{S}
+      \right)
+      =
+      V_\nu\left(1-\frac1q\right)
+      -
+      \frac1{S^2}\sum_{j,k}\omega_j\omega_k b^\nu_{j,k},
+      \tag{LOB12}
+   \]
+   where \(b^\nu_{j,k}=A^\nu_{j,k}-V_\nu/q\) is the centered overlap from
+   \((LNZ1)\).
+
+   Thus matching one residual budget to the global Boltzmann posterior does not
+   by itself remove the singleton obstruction.  It is cheap only if every
+   high-price codeword sees almost all residual mass on its own symbols, or if
+   the price-weighted overlap energy almost saturates the random-overlap
+   deficit on the high-price support.  The remaining viable localized route is
+   therefore genuinely anchor/source dependent, as in
+   \cref{cor:localized-residual-feasibility-dual,cor:source-localized-residual-lp},
+   or else it must first truncate the far internal-gap prices by a separate
+   near-leader theorem.
+\end{corollary}
+
+\begin{proof}
+   Apply the singleton obstruction \((LOA3)\) to the budget
+   \(\mu^\omega\).  Its off-codeword mass at \(c_j\) is
+   \[
+      \operatorname{off}_{\mu^\omega}(j)
+      =
+      \sum_i\nu_i
+      \left(
+         1-
+         \frac{\sum_{k:c_k(i)=c_j(i)}\omega_k}{S}
+      \right),
+   \]
+   which proves \((LOB11)\).
+
+   For the average identity, expand
+   \[
+   \begin{aligned}
+      \frac1S\sum_j\omega_j\operatorname{off}_{\mu^\omega}(j)
+      &=
+      V_\nu
+      -
+      \frac1{S^2}
+      \sum_{j,k}\omega_j\omega_k
+      \sum_i\nu_i\mathbf1_{\{c_j(i)=c_k(i)\}}\\
+      &=
+      V_\nu
+      -
+      \frac1{S^2}\sum_{j,k}\omega_j\omega_kA^\nu_{j,k}\\
+      &=
+      V_\nu\left(1-\frac1q\right)
+      -
+      \frac1{S^2}\sum_{j,k}\omega_j\omega_kb^\nu_{j,k}.
+   \end{aligned}
+   \]
+   The final interpretation follows because a polylogarithmic budget \(B\)
+   forces the maximum in \((LOB11)\) to be polylogarithmic despite the full
+   internal-gap prices.
 \end{proof}
 
 \begin{corollary}[Finite dual for localized residual feasibility]

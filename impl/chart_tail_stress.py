@@ -53,6 +53,14 @@ FIELDNAMES = [
     "clipped_leader_overlap_excess",
     "uniform_singleton_cost",
     "clipped_singleton_cost",
+    "full_posterior_singleton_cost",
+    "clipped_posterior_singleton_cost",
+    "full_posterior_max_offmass",
+    "clipped_posterior_max_offmass",
+    "full_posterior_avg_offmass",
+    "clipped_posterior_avg_offmass",
+    "full_self_selector_mismatch",
+    "clipped_self_selector_mismatch",
 ]
 
 
@@ -126,6 +134,42 @@ def _leader_overlap_excess(code: np.ndarray, omega: np.ndarray, leader: int, alp
     return float(max(0.0, max(loads)))
 
 
+def posterior_residual_metrics(
+    code: np.ndarray,
+    prices: np.ndarray,
+    alphabet: int,
+) -> dict[str, float]:
+    """Singleton and aggregate costs for the posterior-matched residual budget.
+
+    The candidate residual has one unit of mass per coordinate and symbol law
+    r_i(a) = P_{j proportional to prices}[c_j(i)=a].  This is the cheapest
+    single shared distribution for the selector equal to the full price vector,
+    but singleton charts still test every individual high-price codeword.
+    """
+    total = float(np.sum(prices))
+    if total <= 0:
+        raise ValueError("prices must have positive total mass")
+
+    blocks = code.shape[1]
+    posterior = np.zeros((blocks, alphabet), dtype=float)
+    for i in range(blocks):
+        posterior[i] = np.bincount(code[:, i], weights=prices, minlength=alphabet) / total
+
+    offmass = np.empty(len(code), dtype=float)
+    for j, word in enumerate(code):
+        offmass[j] = sum(1.0 - posterior[i, int(a)] for i, a in enumerate(word))
+
+    singleton_costs = prices * offmass
+    avg_offmass = float(np.dot(prices, offmass) / total)
+    plurality_minus_collision = np.max(posterior, axis=1).sum() - np.sum(posterior * posterior)
+    return {
+        "singleton_cost": float(np.max(singleton_costs)),
+        "max_offmass": float(np.max(offmass)),
+        "avg_offmass": avg_offmass,
+        "self_selector_mismatch": float(total * plurality_minus_collision),
+    }
+
+
 def run_trial(
     *,
     n_words: int,
@@ -170,6 +214,8 @@ def run_trial(
     omega_eff_count = omega_sum * omega_sum / float(np.sum(omega * omega))
     uniform_singleton_cost = (alphabet - 1.0) * blocks * float(np.max(omega))
     clipped_singleton_cost = (alphabet - 1.0) * blocks * float(np.max(clipped))
+    full_posterior = posterior_residual_metrics(code, omega, alphabet)
+    clipped_posterior = posterior_residual_metrics(code, clipped, alphabet)
 
     return {
         "seed": seed,
@@ -201,6 +247,14 @@ def run_trial(
         "clipped_leader_overlap_excess": _leader_overlap_excess(code, clipped, leader, alphabet),
         "uniform_singleton_cost": float(uniform_singleton_cost),
         "clipped_singleton_cost": float(clipped_singleton_cost),
+        "full_posterior_singleton_cost": full_posterior["singleton_cost"],
+        "clipped_posterior_singleton_cost": clipped_posterior["singleton_cost"],
+        "full_posterior_max_offmass": full_posterior["max_offmass"],
+        "clipped_posterior_max_offmass": clipped_posterior["max_offmass"],
+        "full_posterior_avg_offmass": full_posterior["avg_offmass"],
+        "clipped_posterior_avg_offmass": clipped_posterior["avg_offmass"],
+        "full_self_selector_mismatch": full_posterior["self_selector_mismatch"],
+        "clipped_self_selector_mismatch": clipped_posterior["self_selector_mismatch"],
     }
 
 

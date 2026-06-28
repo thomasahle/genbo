@@ -4,6 +4,7 @@ from chart_tail_stress import (
     centered_overlap_matrix,
     codeword_scores,
     make_balanced_code,
+    posterior_residual_metrics,
     run_trial,
 )
 
@@ -45,6 +46,32 @@ def test_codeword_scores_are_additive_over_blocks():
     assert np.allclose(codeword_scores(code, symbol_scores), [13.0, 14.0])
 
 
+def test_posterior_residual_metrics_match_direct_costs():
+    code = np.array([
+        [0, 0],
+        [0, 1],
+        [1, 1],
+    ])
+    prices = np.array([6.0, 3.0, 1.0])
+    metrics = posterior_residual_metrics(code, prices, alphabet=2)
+
+    posterior = np.array([
+        [0.9, 0.1],
+        [0.6, 0.4],
+    ])
+    offmass = np.array([
+        (1 - 0.9) + (1 - 0.6),
+        (1 - 0.9) + (1 - 0.4),
+        (1 - 0.1) + (1 - 0.4),
+    ])
+    assert np.isclose(metrics["singleton_cost"], np.max(prices * offmass))
+    assert np.isclose(metrics["max_offmass"], np.max(offmass))
+    assert np.isclose(metrics["avg_offmass"], np.dot(prices, offmass) / prices.sum())
+
+    plurality_minus_collision = np.max(posterior, axis=1).sum() - np.sum(posterior * posterior)
+    assert np.isclose(metrics["self_selector_mismatch"], prices.sum() * plurality_minus_collision)
+
+
 def test_run_trial_is_deterministic_and_clips_the_singleton_cost():
     row1 = run_trial(n_words=40, blocks=10, alphabet=4, seed=3, price_cap=5.0)
     row2 = run_trial(n_words=40, blocks=10, alphabet=4, seed=3, price_cap=5.0)
@@ -59,5 +86,6 @@ if __name__ == "__main__":
     test_balanced_code_has_nearly_equal_coordinate_counts()
     test_centered_overlap_matches_direct_formula()
     test_codeword_scores_are_additive_over_blocks()
+    test_posterior_residual_metrics_match_direct_costs()
     test_run_trial_is_deterministic_and_clips_the_singleton_cost()
     print("chart_tail_stress tests passed")
