@@ -13589,6 +13589,117 @@ partition ignores the bias coordinates that certify the list size.
    \((LOC11)\) is the negation of \((LOC7)\).  This proves the equivalence.
 \end{proof}
 
+\begin{corollary}[Source-level localized residual LP]
+   \label{cor:source-localized-residual-lp}
+   Continue with the notation of
+   \cref{cor:localized-residual-feasibility-dual}, and put
+   \[
+      K_u=\operatorname{conv}\{\iota(c_j):j\in[N]\}.
+      \tag{LOD1}
+   \]
+   Let \(\mathcal Z\subseteq P_u\) be a finite set of relaxation sources and let
+   \(\mathcal S\subseteq\{s\in\R_+^N:0\le s\le\omega\}\) be a finite selector
+   family.  Define the best shared localized residual budget
+   \(\mathsf B_u(\mathcal Z,\mathcal S)\) as the optimum of
+   \[
+   \begin{array}{ll}
+      \text{\rm minimize} & B\\[1mm]
+      \text{\rm over} & B\in\R,\ \mu\in\R_+^{bq},\
+                        x_z\in K_u\ (z\in\mathcal Z)\\[1mm]
+      \text{\rm subject to}
+         & z-x_z\le\mu\qquad(z\in\mathcal Z),\\[1mm]
+         & \ip{D_s}{\mu}\le B\qquad(s\in\mathcal S),
+   \end{array}
+      \tag{LOD2}
+   \]
+   where \(D_s\) is the posterior-mismatch direction from \((LOC2)\).
+
+   Then finite LP duality gives the exact formula
+   \[
+      \mathsf B_u(\mathcal Z,\mathcal S)
+      =
+      \sup_{\substack{\beta\in\Delta(\mathcal S),\ y_z\in\R_+^{bq}\\
+             \sum_{z\in\mathcal Z}y_z\le D_\beta}}
+      \sum_{z\in\mathcal Z}
+      \left(
+         \ip{y_z}{z}
+         -
+         \max_{j\in[N]}\ip{y_z}{\iota(c_j)}
+      \right),
+      \qquad
+      D_\beta=\sum_{s\in\mathcal S}\beta_sD_s .
+      \tag{LOD3}
+   \]
+
+   Consequently, a budget \(B\) is sufficient for the finite source/selector
+   system if and only if every nonnegative source-local score assignment
+   \(z\mapsto y_z\), whose aggregate score table is dominated by a convex
+   combination of posterior-mismatch directions, has total source-local Hall
+   gap at most \(B\).  If \(\mathcal Z\) contains all vertices of \(P_u\), then
+   any feasible solution of \((LOD2)\) is residual-Hall valid for every
+   \(z\in P_u\); if, in addition, \(\mathcal S\) is the full finite selector
+   family used by the chart verifier, the same \(\mu\) is chart-cheap on that
+   family by \((LOC3)\).
+
+   This is the compact normal form for the localized-residual theorem: prove
+   that chart-mismatch directions have small one-sided distance to the true
+   codeword convex hull, uniformly over all shared source assignments.
+\end{corollary}
+
+\begin{proof}
+   The program \((LOD2)\) is feasible by taking \(\mu\) large enough and
+   \(x_z\in K_u\) arbitrarily, and its optimum is bounded below by \(0\).  Use
+   nonnegative multipliers \(\beta_s\) for the constraints
+   \(\ip{D_s}{\mu}-B\le0\), and \(y_z\in\R_+^{bq}\) for the constraints
+   \(z-x_z-\mu\le0\).  The Lagrangian is
+   \[
+   \begin{aligned}
+      L
+      &=
+      B+\sum_s\beta_s(\ip{D_s}{\mu}-B)
+      +\sum_z\ip{y_z}{z-x_z-\mu} \\
+      &=
+      B\left(1-\sum_s\beta_s\right)
+      +
+      \left\langle
+         \sum_s\beta_sD_s-\sum_zy_z,\mu
+      \right\rangle
+      +
+      \sum_z\left(\ip{y_z}{z}-\ip{y_z}{x_z}\right).
+   \end{aligned}
+      \tag{LOD4}
+   \]
+   Minimizing over the free scalar \(B\) forces
+   \(\sum_s\beta_s=1\).  Minimizing over \(\mu\ge0\) is finite exactly when
+   \[
+      \sum_zy_z\le\sum_s\beta_sD_s .
+      \tag{LOD5}
+   \]
+   Finally, for each \(z\),
+   \[
+      \inf_{x_z\in K_u}-\ip{y_z}{x_z}
+      =
+      -\max_{x\in K_u}\ip{y_z}{x}
+      =
+      -\max_{j\in[N]}\ip{y_z}{\iota(c_j)} .
+      \tag{LOD6}
+   \]
+   Substituting these conditions into the dual gives \((LOD3)\), and strong
+   duality holds because \((LOD2)\) is an ordinary finite LP with finite optimum.
+
+   If \(\mathcal Z\) contains every vertex of \(P_u\), take any
+   \(z=\sum_v\lambda_vv\in P_u\), choose the corresponding feasible witnesses
+   \(x_v\in K_u\), and set \(x=\sum_v\lambda_vx_v\in K_u\).  Since
+   \(v-x_v\le\mu\) for every vertex \(v\),
+   \[
+      z-x=\sum_v\lambda_v(v-x_v)\le\mu .
+      \tag{LOD7}
+   \]
+   Hence the residual-Hall witness condition of
+   \cref{cor:residual-hall-verifier} holds for all of \(P_u\).  The chart-cost
+   statement is exactly \((LOC3)\).
+\end{proof}
+
 \begin{corollary}[Anchor-fiber LP/SA certificate compiler]
    \label{cor:anchor-fiber-lp-sa-compiler}
    Continue with the notation of
@@ -13980,6 +14091,10 @@ partition ignores the bias coordinates that certify the list size.
    gap mixture dominated coordinatewise by chart-mismatch directions.  Thus the
    next theorem can be stated positively as ruling out those dominated mixtures,
    rather than as a global Gaussian pseudocodeword-spectrum assertion.
+   \Cref{cor:source-localized-residual-lp} gives the corresponding source-level
+   normal form: one shared residual budget is enough exactly when every
+   chart-dominated aggregate of source-local Hall gaps has small value.  This is
+   the current cleanest finite target for a Tanner, SA, or list-recovery proof.
 
    \Cref{cor:leader-shift-near-leader-certificate} gives the clean terminal
    version of this idea when scalar leakage is killed exactly, or otherwise
