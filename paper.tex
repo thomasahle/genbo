@@ -2893,6 +2893,69 @@ and keep $s=1-\rho$. On the bounded-diameter localized instances used for ANN, $
    for $\delta\le1/2$. Finally, $\Psi(R_h)\ge1$ and $\Psi(R_0)=\log^{O_c(1)}n$ on a bounded-diameter localized instance.
 \end{proof}
 
+\begin{corollary}[Padded radius reprice is quadratic]
+   \label{cor:padded-radius-quadratic-reprice}
+   Let \(0<\gamma\le1/2\) and
+   \[
+      R_+=R\sqrt{1-\gamma^2}.
+      \tag{PRQ1}
+   \]
+   For \(\Psi(R)=1+(R/r)^4\),
+   \[
+      1\le
+      \frac{\Psi(R)}{\Psi(R_+)}
+      \le
+      (1-\gamma^2)^{-2}
+      \le
+      \exp(3\gamma^2).
+      \tag{PRQ2}
+   \]
+   Hence, for every child size \(k\),
+   \[
+      F_4(k,R)\le e^{3\gamma^2}F_4(k,R_+),
+      \qquad
+      G_4(k,R)\le e^{3\gamma^2}G_4(k,R_+).
+      \tag{PRQ3}
+   \]
+
+   Consequently, if a same-prefix cap repair of margin \(\gamma\) is priced by
+   the ordinary inductive child potentials at the certified radius \(R_+\), and
+   its only geometric survival thinning is the factor \(\Psi(R_+)/\Psi(R)\),
+   then the radius-reprice and inverse-survival parts of the repair are
+   \(3\)-quadratic in the sense of
+   \cref{def:quadratic-local-repair}.  Any remaining verifier or materialization
+   loss bounded by \(\exp(B\gamma^2)\) makes the whole local repair
+   \((B+3)\)-quadratic.
+\end{corollary}
+
+\begin{proof}
+   Put \(u=(R/r)^4\).  Then
+   \[
+      \frac{\Psi(R)}{\Psi(R_+)}
+      =
+      \frac{1+u}{1+u(1-\gamma^2)^2}
+      \le
+      \frac1{(1-\gamma^2)^2}.
+   \]
+   For \(0\le x\le1/4\), \(-\log(1-x)\le x/(1-x)\le4x/3\).  With
+   \(x=\gamma^2\), this gives
+   \[
+      (1-\gamma^2)^{-2}
+      =
+      \exp(-2\log(1-\gamma^2))
+      \le
+      \exp(8\gamma^2/3)
+      \le
+      \exp(3\gamma^2).
+   \]
+   The bounds for \(F_4\) and \(G_4\) follow because their only radius-dependent
+   factor is \(\Psi\).  The final statement is just the interpretation of
+   \((PRQ2)\)--\((PRQ3)\) in
+   \cref{def:quadratic-local-repair}: the same-prefix child keeps the score
+   prefix, the query/storage reprice is at most \(e^{3\gamma^2}\), and the
+   inverse of the thinning probability \(\Psi(R_+)/\Psi(R)\) is the same ratio.
+\end{proof}
+
 \begin{assumption}[Prefix-slice lineage survival]\label{asm:prefix-slice-survival}
    In the cumulative score tree with prefix-conditioned recentering slices, fix a true near pair $(p,q)$. With probability at least $\log^{-O_c(1)}n$, there is one cumulative ordinary score path such that the following route succeeds:
    \begin{enumerate}
@@ -36298,6 +36361,55 @@ query mass rather than producing a cost-effective dense filter.
       \frac{W}{2|P|}.
    \]
    One of the \(J\) dyadic levels satisfies \((HPS7)\).
+\end{proof}
+
+\begin{corollary}[Cap-centered pair-star reporter]
+   \label{cor:cap-centered-pair-star-reporter}
+   In the setting of \cref{lem:high-correlation-pair-star-reporter}, assume in
+   addition that \(0<\underline\theta\le1/2\).  Then every reported star
+   superlevel also satisfies the cap-centered certificate
+   \[
+      U_{x,t}\subseteq B\!\left(\underline\theta x,\sqrt{1-\underline\theta^2}\right)
+      \qquad(P\subseteq\mathbb S^{D-1}).
+      \tag{CPS1}
+   \]
+   In the scaled form, if \(P\subseteq o+R\mathbb S^{D-1}\) and the correlation
+   condition is
+   \[
+      \ip{(x-o)/R}{(y-o)/R}\ge\underline\theta,
+      \tag{CPS2}
+   \]
+   then
+   \[
+      U_{x,t}
+      \subseteq
+      B\!\left(o+\underline\theta(x-o),\,R\sqrt{1-\underline\theta^2}\right).
+      \tag{CPS3}
+   \]
+
+   Therefore a positive-correlation pair-star should be submitted to the dense
+   verifier with the cap-centered child radius \(R\sqrt{1-\underline\theta^2}\),
+   not only with the point-centered guard ball from \((HPS4)\).  When the child
+   is priced by the padded potentials \(F_4,G_4\), the geometric reprice from
+   the parent radius to this cap-centered child is
+   \(\exp(O(\underline\theta^2))\) by
+   \cref{cor:padded-radius-quadratic-reprice}.  Thus the star reporter already
+   supplies the geometric part of the quadratic local-repair target; the
+   remaining local content is the paid-prefix reduced-gain inequality.
+\end{corollary}
+
+\begin{proof}
+   In the unit-sphere case, if \(y\in U_{x,t}\), then \(M_x(y)>0\), so some
+   retained edge \((x,y)\in E_r\) has positive weight.  By \((HPS1)\),
+   \(\ip{x}{y}\ge\underline\theta\).  Applying \cref{lem:cap} with center
+   \(o=0\), radius \(R=1\), direction \(w=x\), and margin
+   \(\gamma=\underline\theta\) proves \((CPS1)\).
+
+   The scaled statement is the same argument after normalizing
+   \(x\mapsto(x-o)/R\) and \(y\mapsto(y-o)/R\), then scaling back by \(R\).  The
+   final paragraph follows by substituting
+   \(\gamma=\underline\theta\) into
+   \cref{cor:padded-radius-quadratic-reprice}.
 \end{proof}
 
 \begin{corollary}[Dense-star alternative for Gaussian profile layers]
@@ -72333,6 +72445,13 @@ polylogarithmic total cost even when there are many tiny-margin recenterings.
 positive-correlation proof target: the endpoint no longer needs a bound on the
 number of dense repairs, but it still needs a same-prefix dense/star or
 shared-prefix repair with local loss \(\exp(O(\gamma^2))\) at margin \(\gamma\).
+\Cref{cor:padded-radius-quadratic-reprice} and
+\cref{cor:cap-centered-pair-star-reporter} isolate the geometric part of that
+target: a high-correlation star is a cap-centered child of radius
+\(R\sqrt{1-\gamma^2}\), and repricing the padded recursive potential from the
+parent radius to this child costs only \(\exp(O(\gamma^2))\).  What remains is
+therefore not another geometric depth issue, but the paid-prefix reduced-gain or
+shared-prefix inequality inside that cap-centered child.
 \Cref{cor:dyadic-distinct-storage-bucket-net} rewrites that target as a dyadic
 large-child counting problem: for every recursive price scale, bound the number
 of distinct canonical bucket nets whose shared child index has that price.
