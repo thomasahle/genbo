@@ -15326,6 +15326,114 @@ query-price overlap, storage price, and duplicate-incidence factor \(b_G\).
    \((BMAT7)\).
 \end{proof}
 
+\begin{corollary}[High-margin assigned residual is finite-prefix or spread]
+   \label{cor:high-margin-assigned-prefix-spread}
+   Work in a finite filter-cover dual.  Let \(Y\subseteq P\) carry paid degrees
+   \(b(y)\ge0\), let \(X\subseteq P\) be assigned centers, and let
+   \(c:Y\to X\).  Let \(a\) be the inherited activation whose query price is
+   \[
+      \mathsf T_a=\sum_q \tau_q a(q).
+      \tag{HMAP0}
+   \]
+   Fix \(M\ge0\) and a Gaussian cap margin \(m_G\).  Define the high-margin
+   assigned residual
+   \[
+      Y_{>M}
+      =
+      \{y\in Y:b(y)>0,\ m_G(c(y))>M\ \text{or}\ m_G(y)>M\},
+      \qquad
+      B_{>M}=\sum_{y\in Y_{>M}}b(y).
+      \tag{HMAP1}
+   \]
+   Suppose that for every \(x\in X\) the verifier may add every
+   inherited-activation prefix of a certified cell container \(W_x\supseteq
+   \{y\in Y:c(y)=x\}\), with prices
+   \[
+      T_{x,h}=\psi_xh^{\rho_x},
+      \qquad
+      S_{x,h}=\psi_xh^{1+\rho_x},
+      \qquad 0<\rho_x<1 .
+      \tag{HMAP2}
+   \]
+   A prefix \(U\subseteq W_x\) of size \(h\) has positive reduced gain when
+   \[
+      \sum_{y\in U}b(y)
+      >
+      \psi_x
+      \left(
+         \mathsf T_a h^{\rho_x}
+         +
+         \sigma h^{1+\rho_x}
+      \right).
+      \tag{HMAP3}
+   \]
+   Put
+   \[
+      H_x=\{y\in Y_{>M}:c(y)=x\},
+      \qquad
+      h_x=|H_x|.
+      \tag{HMAP4}
+   \]
+   If no such inherited-activation prefix has positive reduced gain, then
+   \[
+      B_{>M}
+      \le
+      \sum_{x:h_x>0}
+      \psi_x
+      \left(
+         \mathsf T_a h_x^{\rho_x}
+         +
+         \sigma h_x^{1+\rho_x}
+      \right).
+      \tag{HMAP5}
+   \]
+   Equivalently, a strict reverse inequality in \((HMAP5)\) exposes one
+   positive inherited finite-prefix repair.
+
+   In particular, if all high-margin cells use a common exponent \(\rho\) and
+   price factor at most \(\psi_\star\), and if
+   \[
+      B_{>M}
+      >
+      \psi_\star
+      \left(
+         \mathsf T_a\sum_xh_x^\rho
+         +
+         \sigma\sum_xh_x^{1+\rho}
+      \right),
+      \tag{HMAP6}
+   \]
+   then a positive inherited prefix exists.  Thus a surviving high-margin
+   assigned residual must have radius-discounted Renyi spread large enough to
+   pay for its own inherited prefixes; it is no longer a separate Gaussian
+   active-load obstruction.
+\end{corollary}
+
+\begin{proof}
+   For a fixed \(x\), sort the points of \(W_x\) by decreasing paid degree
+   \(b(y)\).  If no inherited-activation prefix in \(W_x\) is positive, then
+   every top \(h\)-prefix satisfies
+   \[
+      \sum_{i\le h}b(y_i)
+      \le
+      \psi_x\left(
+         \mathsf T_a h^{\rho_x}+\sigma h^{1+\rho_x}
+      \right).
+      \tag{HMAP7}
+   \]
+   The top \(h_x\)-prefix dominates the particular subset \(H_x\).  Hence
+   \[
+      \sum_{y\in H_x}b(y)
+      \le
+      \psi_x
+      \left(
+         \mathsf T_a h_x^{\rho_x}+\sigma h_x^{1+\rho_x}
+      \right).
+   \]
+   Summing over \(x\) proves \((HMAP5)\).  The reverse implication is its
+   contrapositive, and \((HMAP6)\) is the common-price specialization.
+\end{proof}
+
 \begin{corollary}[Gaussian paid-fiber separator criterion]
    \label{cor:gaussian-paid-fiber-separator-criterion}
    Work in the setting of
@@ -15846,9 +15954,14 @@ active loads divided by the transported hit mass only polylogarithmic.
 \Cref{cor:bounded-margin-assigned-truncation} records the corresponding
 alternative: either an inverse-polylogarithmic amount of assigned paid mass lies
 below this upper margin cutoff, or almost all of it is explicitly supported on
-a high-margin center or paid endpoint.  Thus the branch needs an upper-margin
-assigned transport whose shared storage can be charged, or a finite-prefix
-repair/high-margin argument when such a transport cannot be produced.
+a high-margin center or paid endpoint.
+\Cref{cor:high-margin-assigned-prefix-spread} then handles that complement in
+the same finite-prefix language: high-margin assigned mass either produces one
+positive inherited prefix inside an assigned cell, or its assigned cell-size
+profile has enough Renyi spread to pay the inherited prices.  Thus the branch
+needs an upper-margin assigned transport with shared storage, or the surviving
+residual is the same Renyi-spread obstruction already used by the dense-cover
+side.
 \Cref{cor:gaussian-paid-fiber-separator-criterion} records the sharper
 split-optimized diagnostic form: lower-bound the paid-product moment, keep one
 truncated margin split inverse-polylogarithmic, and upper-bound the inherited
@@ -68488,9 +68601,13 @@ matters for the retained filter cover: under an upper margin cutoff
 the assigned hit mass \(A_w\) are only \(\log^{O_c(1)}n\).
 \Cref{cor:bounded-margin-assigned-truncation} makes the residual explicit: if
 too little paid mass lies below that cutoff, then almost all assigned mass is on
-a high-margin center or paid endpoint.  The unresolved content is therefore the
-geometric construction of upper-margin assigned transports together with a
-shared-storage certificate, or a finite-prefix/high-margin repair.
+a high-margin center or paid endpoint.
+\Cref{cor:high-margin-assigned-prefix-spread} removes the remaining ambiguity:
+that high-margin complement either contains a positive inherited finite-prefix
+repair inside one assigned cell, or it is a high-Renyi-spread assigned cover
+residual.  The unresolved content is therefore the geometric construction of
+upper-margin assigned transports with shared-storage certificates, plus the
+existing Renyi-spread/list-decoding payment for the complement.
 \Cref{cor:spread-packing-entropy-energy-screen} records the corresponding
 charge: each separated-pair profile is harmless when its intersection energy
 dominates its entropy, and otherwise it is the high-correlation dense signal.
