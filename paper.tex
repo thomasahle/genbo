@@ -38695,6 +38695,97 @@ query mass rather than producing a cost-effective dense filter.
    applied to every finite Gibbs-weighted panel.
 \end{proof}
 
+\begin{corollary}[Partition-local Gibbs residual]
+   \label{cor:partition-local-gibbs-residual}
+   Work in the setting of
+   \cref{cor:gibbs-water-level-storage-screen}.  For every active layer \(i\),
+   let \(\mathcal P_i\) be a finite partition of
+   \(\{h\in\mathcal H_i:X_{i,h}>0\}\), and put
+   \(J_i=\max\{1,|\mathcal P_i|\}\).  For each nonempty class
+   \(C\in\mathcal P_i\), define its class water level
+   \[
+      \Lambda_{i,C}^{\rm part}
+      =
+      \frac1{p_i}\log\sum_{h\in C}X_{i,h}^{p_i}.
+      \tag{PLG1}
+   \]
+   If every active layer and every class satisfy
+   \[
+      \Lambda_{i,C}^{\rm part}-\ell_i\log2
+      \le
+      \log\frac{B_\star}
+               {32M_{\mathcal I}J_i^{1/p_i}},
+      \tag{PLG2}
+   \]
+   and the high-correlation fixed-tail condition \((PELS5)\) holds, then
+   \((\mathsf{ESFC}_\Sigma)\) is feasible, provided no one-record guard-credit
+   repair fires.
+
+   Conversely, if \((GWL2)\) fails for a layer \(i\), then some class
+   \(C\in\mathcal P_i\) violates \((PLG2)\).  For such a class, define the
+   conditional Gibbs law
+   \[
+      \mu_{i,C,h}^{\rm part}
+      =
+      \frac{X_{i,h}^{p_i}}{\sum_{g\in C}X_{i,g}^{p_i}}
+      \qquad(h\in C).
+      \tag{PLG3}
+   \]
+   If a build-time reporter supplies lower-certified raw guard proposals
+   \(a\in\mathcal R_h\) and finite nonnegative weights \(\lambda_{h,a}\) with
+   \[
+      \sum_{h\in C}\mu_{i,C,h}^{\rm part}
+      \sum_{a\in\mathcal R_h}\lambda_{h,a}(X_a-R_a)>0,
+      \tag{PLG4}
+   \]
+   then a one-record guard-credit repair fires.  If no such repair fires, every
+   violating class satisfies the reverse of \((PLG4)\) for every finite
+   certified proposal panel.
+
+   Thus the Gibbs obstruction may be localized before doing geometry.  A proof
+   may partition profiles into surprisal bands, tuple-profile classes,
+   range-report cells, or even singletons; the only analytic price for this
+   localization is the explicit factor \(J_i^{1/p_i}\), which is
+   polylogarithmic whenever the chosen partition has polylogarithmic size.
+\end{corollary}
+
+\begin{proof}
+   For a fixed active layer,
+   \[
+      \exp(p_i\Lambda_i^{\rm Gibbs})
+      =
+      \sum_{C\in\mathcal P_i}\exp(p_i\Lambda_{i,C}^{\rm part}).
+      \tag{PLG5}
+   \]
+   If \((PLG2)\) holds for every class, then
+   \[
+      \exp(p_i\Lambda_i^{\rm Gibbs})
+      \le
+      J_i
+      \left(
+         2^{\ell_i}\frac{B_\star}
+         {32M_{\mathcal I}J_i^{1/p_i}}
+      \right)^{p_i}
+      =
+      \left(
+         2^{\ell_i}\frac{B_\star}{32M_{\mathcal I}}
+      \right)^{p_i}.
+   \]
+   Taking \(p_i\)-th roots gives \((GWL2)\).  Therefore the first conclusion is
+   \cref{cor:gibbs-water-level-storage-screen}.  The same calculation read
+   contrapositively shows that if \((GWL2)\) fails, at least one class violates
+   \((PLG2)\).
+
+   For the repair statement, flatten the class-indexed proposal panel by
+   assigning multiplicity
+   \(\widetilde\lambda_{h,a}=\mu_{i,C,h}^{\rm part}\lambda_{h,a}\) to record
+   \(a\in\mathcal R_h\).  Then \((PLG4)\) is exactly the positive aggregate
+   surplus condition \((LCG4)\) of
+   \cref{cor:lower-certified-scale-free-guard-panel}, so that corollary gives a
+   deterministic one-record repair.  The no-repair residual is the
+   contrapositive applied to every finite class-local panel.
+\end{proof}
+
 \begin{corollary}[Paid-responsibility high-correlation star compiler]
    \label{cor:paid-responsibility-high-correlation-star}
    Work in the setting of
@@ -44500,6 +44591,10 @@ level to compare against the local budget.
 the guard-credit verifier: any positive Gibbs-average proposal surplus
 materializes as one deterministic dense/star repair, so a surviving obstruction
 must be both high-water and no-positive-panel.
+\Cref{cor:partition-local-gibbs-residual} localizes this obstruction to one
+class of any chosen finite profile partition, with only the explicit
+\(J^{1/p}\) loss; this is the finite-band form needed by range-reporting,
+tuple-profile, and list-decoding separators.
 \Cref{lem:star-superlevel-column-verifier} and
 \cref{cor:pair-star-dense-column-generator} add the finite LP check: the star
 is retained only if its ball-thickened query side has positive reduced gain;
@@ -70090,6 +70185,10 @@ failing layer.
 using that law: Gibbs weighting is only an analysis distribution over proposed
 repairs, while the retained index receives a single verified positive
 guard-credit record.
+\Cref{cor:partition-local-gibbs-residual} adds the class-local form: a failing
+layer has a failing partition cell unless all cells pass with the displayed
+\(J^{1/p}\) discount, and a positive cell-local proposal still hardens to one
+guard-credit record.
 \Cref{lem:star-superlevel-column-verifier} and
 \cref{cor:pair-star-dense-column-generator} turn such a superlevel into an
 ordinary fractional-cover column by using the certified query activation
@@ -70358,6 +70457,9 @@ water-level law of the entropy-deficit weights.
 \Cref{cor:gibbs-weighted-guard-repair} states the residual after all
 Gibbs-weighted dense proposals have been verified: the proof need only rule out
 a high-water low-correlation law with no positive guard-credit panel.
+\Cref{cor:partition-local-gibbs-residual} lets that proof choose a finite
+profile partition first, so the irreducible residual may be assumed to live in
+one cell after paying \(J^{1/p}\).
 \Cref{cor:metric-entropy-hall-shadow-closure} and
 \cref{cor:low-doubling-hall-shadow-close} sharpen the remaining geometric
 obligation: any positive Hall shadow of certified covering number below
