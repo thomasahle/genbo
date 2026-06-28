@@ -10958,6 +10958,84 @@ partition ignores the bias coordinates that certify the list size.
    \(w_j=\mathbf 1_{\{M(u)-W(c_j)\ge k\delta\}}\) gives \((LNA4)\).
 \end{proof}
 
+\begin{corollary}[Laplace-tail mobility enumerator compiler]
+   \label{cor:laplace-tail-mobility-enumerator}
+   Continue with the notation of
+   \cref{cor:box-dual-mobility-certificate}.  For an off-anchor mobility pattern
+   \(\beta\), write
+   \[
+      L_{u,c,\beta}(j)
+      =
+      \sum_{i=1}^b\sum_{a\ne c_i}
+      \beta_{i,a}\ell_{u,c,i,a}(j).
+      \tag{LNB1}
+   \]
+   For nonnegative weights \(w=(w_j)\), define the weighted positive-part
+   enumerator and its tail function by
+   \[
+      P_{u,c,w}(\beta)=\sum_{j=1}^Nw_j(L_{u,c,\beta}(j))_+,
+      \qquad
+      T_{u,c,w,\beta}(t)=\sum_{j:\ L_{u,c,\beta}(j)\ge t}w_j .
+      \tag{LNB2}
+   \]
+   Then
+   \[
+      P_{u,c,w}(\beta)
+      =
+      \int_0^\infty T_{u,c,w,\beta}(t)\,dt .
+      \tag{LNB3}
+   \]
+   In particular, if for some \(H_{u,c}\ge0\) and \(\nu>0\),
+   \[
+      T_{u,c,w,\beta}(t)\le H_{u,c}e^{-\nu t}
+      \qquad(t\ge0,\ 0\le\beta_{i,a}\le\mu_{u,c}(i,a)),
+      \tag{LNB4}
+   \]
+   then
+   \[
+      \sup_{0\le\beta\le\mu_{u,c}}P_{u,c,w}(\beta)
+      \le \frac{H_{u,c}}{\nu}.
+      \tag{LNB5}
+   \]
+   A convenient sufficient condition for \((LNB5)\) is the Laplace bound
+   \[
+      \sup_{0\le\beta\le\mu_{u,c}}
+      \sum_{j=1}^Nw_j\exp(\nu L_{u,c,\beta}(j))
+      \le H_{u,c},
+      \tag{LNB6}
+   \]
+   which also implies \((LNB5)\) with \(H_{u,c}/\nu\).
+
+   Therefore the Boltzmann aggregate certificate \((LNA3)\) follows by taking
+   \(w_j=\exp(\lambda(M(u)-W(c_j)))\) and proving either \((LNB4)\) or
+   \((LNB6)\) with \(H_{u,c}/\nu\le\Xi_u\).  The dyadic certificate \((LNA4)\)
+   follows by taking \(w_j=\mathbf 1_{\{M(u)-W(c_j)\ge k\delta\}}\) and
+   \(H_{u,c}/\nu\le C_u e^{-(\lambda+\eta_u)k\delta}\).
+
+   Thus the remaining code theorem may be stated in the standard language of
+   tilted tail bounds or tilted moment bounds for the scalar score
+   \(L_{u,c,\beta}(j)\).
+\end{corollary}
+
+\begin{proof}
+   For each real \(x\), \(x_+=\int_0^\infty\mathbf 1_{\{x\ge t\}}\,dt\).  Since
+   \(N<\infty\), summing this identity over \(j\) with weights \(w_j\) proves
+   \((LNB3)\).  The tail implication \((LNB4)\Rightarrow(LNB5)\) follows by
+   integrating \(H_{u,c}e^{-\nu t}\).
+
+   For the Laplace form, Markov's inequality gives
+   \[
+      T_{u,c,w,\beta}(t)
+      \le
+      e^{-\nu t}
+      \sum_{j=1}^Nw_j\exp(\nu L_{u,c,\beta}(j)).
+      \tag{LNB7}
+   \]
+   Hence \((LNB6)\) implies \((LNB4)\), and therefore \((LNB5)\).  The final
+   Boltzmann and dyadic statements are exactly
+   \cref{cor:box-dual-mobility-certificate} with these two choices of \(w\).
+\end{proof}
+
 \begin{corollary}[Anchor-fiber LP/SA certificate compiler]
    \label{cor:anchor-fiber-lp-sa-compiler}
    Continue with the notation of
@@ -11349,6 +11427,15 @@ partition ignores the bias coordinates that certify the list size.
    over true codewords with Boltzmann weights.  This is closer to a planted
    decoding theorem: every dangerous fractional movement pattern must have small
    tilted positive correlation with the low-scoring codeword population.
+
+   \Cref{cor:laplace-tail-mobility-enumerator} puts this last condition in the
+   most conventional probabilistic form.  For each mobility pattern \(\beta\),
+   one may prove either a tail bound for the weighted population with
+   \(L_{u,c,\beta}(j)\ge t\), or a Laplace bound for
+   \(\sum_jw_j\exp(\nu L_{u,c,\beta}(j))\).  This is the current clean proof
+   target for low-rate Tanner/SA panels: under the planted Boltzmann weights,
+   every certified off-anchor movement pattern should have only polylogarithmic
+   positive tail.
 
    \Cref{cor:well-conditioned-gram-coefficients} gives the first elementary
    path to such a theorem.  If the local subcode has a well-conditioned overlap
