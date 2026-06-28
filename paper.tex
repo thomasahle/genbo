@@ -14007,17 +14007,26 @@ query-price overlap, storage price, and duplicate-incidence factor \(b_G\).
       \sqrt{B_Y\bar p_XP_Y}.
       \tag{MDFM4}
    \]
+   More sharply in the one-sided regime,
+   \[
+      W_{\rm marg}
+      \le
+      \min\{B_Y\bar p_X,\ P_Y\}.
+      \tag{MDFM5}
+   \]
    In particular, if the one-point active loads obey
    \[
       \bar p_X\le\eta_X,
       \qquad
       P_Y\le\eta_YB_Y,
-      \tag{MDFM5}
+      \tag{MDFM6}
    \]
    then
    \[
-      W_{\rm marg}\le B_Y\sqrt{\eta_X\eta_Y}.
-      \tag{MDFM6}
+      W_{\rm marg}
+      \le
+      B_Y\min\{\eta_X,\eta_Y,\sqrt{\eta_X\eta_Y}\}.
+      \tag{MDFM7}
    \]
    Thus the margin defect left by
    \cref{cor:gaussian-margin-paid-fiber-screen} is paid by ordinary
@@ -14073,8 +14082,27 @@ query-price overlap, storage price, and duplicate-incidence factor \(b_G\).
       \sum_{y\in Y}b(y)\sqrt{p_G(y)}
       \le \sqrt{B_YP_Y},
    \]
-   proving \((MDFM4)\).  The final display is \((MDFM4)\) with
-   \((MDFM5)\) substituted.
+   proving \((MDFM4)\).
+
+   The one-sided bound follows by discarding the margin restriction and using
+   either endpoint of \(\kappa_{x,y}\):
+   \[
+      W_{\rm marg}
+      \le
+      \frac1{m_X}\sum_{x\in X}\sum_{y\in Y}b(y)p_G(x)
+      =
+      B_Y\bar p_X,
+   \]
+   and similarly
+   \[
+      W_{\rm marg}
+      \le
+      \frac1{m_X}\sum_{x\in X}\sum_{y\in Y}b(y)p_G(y)
+      =
+      P_Y .
+   \]
+   This proves \((MDFM5)\).  Combining \((MDFM4)\), \((MDFM5)\), and
+   \((MDFM6)\) proves \((MDFM7)\).
 \end{proof}
 
 \begin{corollary}[Gaussian paid-fiber first-moment closure]
@@ -14120,24 +14148,36 @@ query-price overlap, storage price, and duplicate-incidence factor \(b_G\).
       \mathsf P_{\rm hi}.
       \tag{GPFC3}
    \]
+   More sharply,
+   \[
+      \frac1{m_X}\sum_{x\in X}\sum_{y\in Y}b(y)\kappa_{x,y}
+      \le
+      e^{-\Lambda}B_Y
+      +
+      \min\{B_Y\bar p_X,\ P_Y\}
+      +
+      \mathsf P_{\rm hi}.
+      \tag{GPFC4}
+   \]
    Consequently, if
    \[
       \bar p_X\le\eta_X,
       \qquad
       P_Y\le\eta_YB_Y,
-      \tag{GPFC4}
+      \tag{GPFC5}
    \]
    then
    \[
       \frac1{m_X}\sum_{x\in X}\sum_{y\in Y}b(y)\kappa_{x,y}
       \le
-      B_Y\left(e^{-\Lambda}+\sqrt{\eta_X\eta_Y}\right)
+      B_Y\left(e^{-\Lambda}+\min\{\eta_X,\eta_Y,\sqrt{\eta_X\eta_Y}\}\right)
       +
       \mathsf P_{\rm hi}.
-      \tag{GPFC5}
+      \tag{GPFC6}
    \]
    In particular, taking \(\Lambda=A\log\log n\) and
-   \(\eta_X\eta_Y\le(\log n)^{-2A}\) makes the non-high-correlation part at most
+   \(\min\{\eta_X,\eta_Y,\sqrt{\eta_X\eta_Y}\}\le(\log n)^{-A}\)
+   makes the non-high-correlation part at most
    \(2B_Y(\log n)^{-A}\).  Thus this branch has no profile-entropy or
    layer-cake loss: after inherited dense-prefix prices are charged, it is closed
    by the same one-point active-load estimates already used for query work.
@@ -14145,8 +14185,10 @@ query-price overlap, storage price, and duplicate-incidence factor \(b_G\).
 
 \begin{proof}
    Combine \((GMPF8)\) with the truncated margin-defect bound \((MDFM3)\) to get
-   \((GPFC2)\), and with the Cauchy margin-defect bound \((MDFM4)\) to get
-   \((GPFC3)\).  Substituting \((GPFC4)\) into \((GPFC3)\) proves \((GPFC5)\).
+   \((GPFC2)\), with the Cauchy margin-defect bound \((MDFM4)\) to get
+   \((GPFC3)\), and with the one-sided margin-defect bound \((MDFM5)\) to get
+   \((GPFC4)\).  Substituting \((GPFC5)\) into \((GPFC3)\) and \((GPFC4)\)
+   proves \((GPFC6)\).
    The final statement is the displayed parameter choice.
 \end{proof}
 
@@ -14307,6 +14349,51 @@ query-price overlap, storage price, and duplicate-incidence factor \(b_G\).
    Taking the infimum over \(\gamma\), using
    \(A_G-\mathsf P_{\rm hi}\ge(1-\xi)A_G\), and then \(A_G\ge aB_Y\), gives
    \((MTON4)\).
+\end{proof}
+
+\begin{corollary}[Margin-tail obstruction is a one-point load obstruction]
+   \label{cor:margin-tail-total-load-dichotomy}
+   Work in the setting of
+   \cref{cor:margin-tail-obstruction-normal-form}.  Then
+   \[
+      \mathsf M_G
+      \le
+      \min\{B_Y\bar p_X,\ P_Y\}.
+      \tag{MTLD1}
+   \]
+   Consequently, suppose no inherited-activation prefix has positive reduced
+   gain and \((MTON3)\) holds.  If
+   \[
+      \delta=(1-\xi)a-e^{-\Lambda}>0,
+      \tag{MTLD2}
+   \]
+   then necessarily
+   \[
+      \bar p_X\ge\delta,
+      \qquad
+      P_Y\ge\delta B_Y .
+      \tag{MTLD3}
+   \]
+   Equivalently, if either endpoint total active load is below this threshold,
+   the Gaussian paid-fiber branch must already expose a positive inherited
+   prefix.  Thus the optimized split defect does not create a new geometric
+   branch under ordinary one-point active-load accounting; a surviving margin
+   tail is exactly a simultaneous load obstruction on both endpoints.
+\end{corollary}
+
+\begin{proof}
+   Since the sets are finite, choose \(\gamma\) larger than every margin
+   \(m_G(x)\) on \(X\) and also so large that \(s_\Lambda-\gamma\) is smaller
+   than every margin on \(Y\).  Then \(P_Y^{<s_\Lambda-\gamma}=0\), and
+   \((MTON1)\) gives \(\mathsf M_G\le B_Y\bar p_X\).  Choosing \(\gamma\)
+   smaller than every margin on \(X\) and also so small that
+   \(s_\Lambda-\gamma\) is larger than every margin on \(Y\), gives
+   \(\mathsf M_G\le P_Y\).  This proves \((MTLD1)\).
+
+   Under no positive inherited prefix and \((MTON3)\),
+   \cref{cor:margin-tail-obstruction-normal-form} gives
+   \(\mathsf M_G\ge\delta B_Y\).  Combining this with \((MTLD1)\) and \(B_Y>0\)
+   proves \((MTLD3)\).
 \end{proof}
 
 \begin{corollary}[Paid Renyi-cover obstruction]
@@ -14599,6 +14686,9 @@ cannot separate because it also upper-bounds \(A_G\).
 parameter: if the branch survives after paid-product mass and inherited price
 are controlled, it must exhibit a large optimized margin-tail convolution
 \(\mathsf M_G\).
+\Cref{cor:margin-tail-total-load-dichotomy} then collapses this convolution
+back to ordinary one-point load accounting: a surviving margin tail forces both
+the center-side active load and the paid-side active load to be large.
 \Cref{cor:activation-inflation-assigned-cover} makes the standalone-wrapper
 replacement cost quantitative: after Renyi-price compatibility is paid, a
 surviving cover must create explicit query-activation inflation.  This is the
