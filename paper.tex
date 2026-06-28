@@ -41475,6 +41475,149 @@ query mass rather than producing a cost-effective dense filter.
    and \((FGC3)\) supplies an optimal dual solution satisfying \((FGC4)\).
 \end{proof}
 
+\begin{corollary}[Cap-overload dual low-cover and packing screen]
+   \label{cor:cap-overload-dual-low-cover-screen}
+   Work in the no-prefix residual of
+   \cref{cor:fractional-generated-cover-cap-overload}, and fix a dual weighting
+   \(y_\kappa\) satisfying \((FGC4)\).  Let \(L_0\subseteq L\) be nonempty, put
+   \(K=|L_0|\), and suppose
+   \[
+      y_\kappa\ge\delta>0
+      \qquad(\kappa\in L_0).
+      \tag{FDL1}
+   \]
+   Assume \(L_0\) has a certified generated cover by a partition
+   \(L_0=L_1\sqcup\cdots\sqcup L_J\) into \(J\) nonempty parts: for every \(i\)
+   there is a materializable generated record \(R_i\in\mathcal R_L\) with
+   \[
+      L_i\subseteq C_{R_i},
+      \qquad
+      P_{R_i}\le
+      \psi_\star\left(A|L_i|^\rho+\zeta |L_i|^{1+\rho}\right),
+      \qquad 0<\rho<1 .
+      \tag{FDL2}
+   \]
+   Then every no-prefix residual obeys
+   \[
+      \delta K
+      \le
+      \psi_\star\left(AJ^{1-\rho}K^\rho+\zeta K^{1+\rho}\right).
+      \tag{FDL3}
+   \]
+   Hence, when \(A>0\) and
+   \[
+      \delta>2\psi_\star\zeta K^\rho,
+      \tag{FDL4}
+   \]
+   every surviving residual has
+   \[
+      J
+      \ge
+      \left(
+         \frac{\delta K^{1-\rho}}{2\psi_\star A}
+      \right)^{1/(1-\rho)} .
+      \tag{FDL5}
+   \]
+   When \(\zeta=0\), the same conclusion holds with \(2\psi_\star A\) replaced
+   by \(\psi_\star A\).
+
+   The same lower bound applies to packing witnesses.  If \(d_{\rm gen}\) is a
+   pseudometric on \(L_0\), \(E\subseteq L_0\) is maximal
+   \(\Delta_{\rm gen}\)-separated, and after assigning every \(\kappa\in L_0\)
+   to one covering ball \(B_{\rm gen}(e,\Delta_{\rm gen})\), \(e\in E\), each
+   assigned part has a generated record satisfying \((FDL2)\), then
+   \(|E|\) obeys \((FDL5)\) under \((FDL4)\) and the same \(\zeta=0\) sharpening.
+
+   Equivalently, if a range, list-decoding, additive-quantization, facility, or
+   tensor container family at scale \(\lambda\) gives such a certified cover with
+   \[
+      J\le C_{\rm gen}\lambda^{-\Delta},
+      \tag{FDL6}
+   \]
+   then any surviving layer satisfies
+   \[
+      \delta
+      \le
+      \psi_\star\left(
+         A C_{\rm gen}^{1-\rho}\lambda^{-\Delta(1-\rho)}K^{\rho-1}
+         +\zeta K^\rho
+      \right).
+      \tag{FDL7}
+   \]
+   Violation of \((FDL7)\) produces a generated record violating \((FGC4)\), and
+   therefore a positive generated prefix.
+
+   Finally, the dual obstruction contains a dyadic heavy layer.  If
+   \(W=\{\kappa\in L:y_\kappa>0\}\), \(y_{\min}=\min_W y_\kappa\), and
+   \(y_{\max}=\max_W y_\kappa\), then for
+   \[
+      J_y=1+\left\lceil\log_2\frac{y_{\max}}{y_{\min}}\right\rceil
+      \tag{FDL8}
+   \]
+   some dyadic layer \(L_j=\{\kappa:2^jy_{\min}\le y_\kappa<2^{j+1}y_{\min}\}\)
+   with \(\delta_j=2^jy_{\min}\) satisfies
+   \[
+      \delta_j|L_j|
+      \ge
+      \frac{1}{2J_y}\sum_{\kappa\in L}y_\kappa
+      \ge
+      \frac{\theta |L|}{4J_y}.
+      \tag{FDL9}
+   \]
+   Thus a surviving cap-overload obstruction is not an arbitrary weighted
+   object: after dyadic unweighting it is a dual-heavy layer on which every
+   certified low-cover, low-doubling, range, AQ, facility, tensor, or
+   list-decoding cover must have the lower bound \((FDL5)\), unless the
+   \(K^{1+\rho}\) storage term already dominates.
+\end{corollary}
+
+\begin{proof}
+   For each cover part, \((FDL1)\) and the dual constraint \((FGC4)\) give
+   \[
+      \delta |L_i|
+      \le
+      \sum_{\kappa\in L_i}y_\kappa
+      \le
+      \sum_{\kappa\in C_{R_i}}y_\kappa
+      \le P_{R_i}.
+   \]
+   Summing over \(i\) and using \((FDL2)\) gives
+   \[
+      \delta K
+      \le
+      \psi_\star
+      \left(
+         A\sum_i|L_i|^\rho+\zeta\sum_i|L_i|^{1+\rho}
+      \right).
+   \]
+   Holder's inequality and convexity give
+   \[
+      \sum_i|L_i|^\rho\le J^{1-\rho}K^\rho,
+      \qquad
+      \sum_i|L_i|^{1+\rho}\le K^{1+\rho},
+   \]
+   proving \((FDL3)\).  If \((FDL4)\) holds, the storage term in \((FDL3)\) is
+   smaller than \(\delta K/2\), and rearranging gives \((FDL5)\).  With
+   \(\zeta=0\), the storage term is absent and the sharper constant follows.
+   Substituting \((FDL6)\) in \((FDL3)\) and dividing by \(K\) gives \((FDL7)\).
+   Its violation contradicts the dual feasibility in \((FGC4)\); by
+   \cref{cor:fractional-generated-cover-cap-overload}, this is exactly the
+   positive-prefix alternative.
+   The packing statement follows because the balls centered at any maximal
+   \(\Delta_{\rm gen}\)-separated set cover \(L_0\); assigning points to covering
+   balls produces a certified generated cover with \(J=|E|\).
+
+   The dyadic layers in \((FDL8)\) partition \(W\).  On \(L_j\), one has
+   \(y_\kappa<2\delta_j\), hence
+   \[
+      \sum_j\delta_j|L_j|
+      \ge
+      \frac12\sum_{\kappa\in L}y_\kappa .
+   \]
+   One layer contributes at least the average over \(J_y\) layers, and
+   \((FGC4)\) gives \(\sum_{\kappa\in L}y_\kappa\ge\theta|L|/2\).
+\end{proof}
+
 \begin{corollary}[Shared-cover LP for the fractional sponsor tail]
    \label{cor:fractional-sponsor-tail-shared-cover}
    Work in the setting of
@@ -78353,6 +78496,11 @@ the exposed layer below half its cut mass, one record has positive reduced cost.
 Failure exposes a single dual weight \(y_\kappa\) on the layer for which every
 generated record captures at most its certified price.  This is the exact
 weighted range/list-decoding obstruction left by cap overload.
+\Cref{cor:cap-overload-dual-low-cover-screen} then dyadically unweights that
+obstruction: any dual-heavy layer with a certified low-Renyi-price generated
+cover would violate the same dual constraint and hence fire a positive prefix.
+The remaining cap-overload separator is therefore a high generated-cover entropy
+layer, modulo the explicit storage-dominated term.
 \Cref{cor:fractional-sponsor-tail-shared-cover} then removes duplicated large
 stars from that target by a finite shared-cover LP: either residual fractional
 star copies plus shared records have total price inside the storage allowance,
