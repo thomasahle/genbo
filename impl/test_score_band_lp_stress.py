@@ -12,6 +12,8 @@ from score_band_lp_stress import (
     local_marginal_score_band_gap,
     local_marginal_vertex_sources,
     product_simplex_score_band_gap,
+    run_local_combined_screen_trial,
+    run_local_integral_trial,
     solve_equality_lp_max,
     source_score_band_gap,
     true_hull_dominance_decomposition,
@@ -343,6 +345,33 @@ def test_local_marginal_combined_screen_matches_separate_screens():
     assert combined["source_count"] == exact["source_count"]
 
 
+def test_clean_panel_can_fail_residual_dominance_certificate():
+    n_words = 8
+    xi = np.log(n_words) ** 3
+    checks = local_check_scopes(4, 3)
+    local = run_local_integral_trial(
+        n_words=n_words,
+        blocks=4,
+        alphabet=2,
+        seed=3,
+        xi=xi,
+        checks=checks,
+    )
+    combined = run_local_combined_screen_trial(
+        n_words=n_words,
+        blocks=4,
+        alphabet=2,
+        seed=3,
+        xi=xi,
+        checks=checks,
+        max_bases=1_000_000,
+    )
+
+    assert local["local_count"] == 0
+    assert combined["local_marginal_exact_gap_over_xi"] < 1.0
+    assert combined["residual_dominance_gap_bound_over_xi"] > 1.0
+
+
 def test_local_check_scopes_enumerates_subsets():
     assert local_check_scopes(3, 2) == [(0, 1), (0, 2), (1, 2)]
 
@@ -365,5 +394,6 @@ if __name__ == "__main__":
     test_local_marginal_dominance_screen_bounds_exact_gap()
     test_local_marginal_residual_dominance_screen_bounds_exact_gap()
     test_local_marginal_combined_screen_matches_separate_screens()
+    test_clean_panel_can_fail_residual_dominance_certificate()
     test_local_check_scopes_enumerates_subsets()
     print("score_band_lp_stress tests passed")

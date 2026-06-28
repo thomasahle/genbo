@@ -2026,6 +2026,25 @@ def main() -> None:
                 key=lambda row: float(row["dominance_gap_bound_over_xi"]),
             )
             print(f"worst_dominance_seed,{worst_dominance['seed']}")
+            clean_dominance_rows = [
+                row for row, local_row in zip(combined_rows, local_rows)
+                if int(local_row["local_count"]) == 0
+            ]
+            print(f"dominance_clean_count,{len(clean_dominance_rows)}")
+            if clean_dominance_rows:
+                clean_values = np.array([
+                    float(row["dominance_gap_bound_over_xi"])
+                    for row in clean_dominance_rows
+                ])
+                print(f"dominance_clean_gap_bound_over_xi_mean,{float(np.mean(clean_values))}")
+                print(f"dominance_clean_gap_bound_over_xi_max,{float(np.max(clean_values))}")
+                clean_over_budget = int(np.sum(clean_values > 1.0 + 1e-8))
+                print(f"dominance_clean_over_budget_count,{clean_over_budget}")
+                worst_clean = max(
+                    clean_dominance_rows,
+                    key=lambda row: float(row["dominance_gap_bound_over_xi"]),
+                )
+                print(f"worst_dominance_clean_seed,{worst_clean['seed']}")
 
         if args.local_residual_dominance_screen:
             for key in [
@@ -2046,6 +2065,25 @@ def main() -> None:
                 key=lambda row: float(row["residual_dominance_gap_bound_over_xi"]),
             )
             print(f"worst_residual_dominance_seed,{worst_residual['seed']}")
+            clean_residual_rows = [
+                row for row, local_row in zip(combined_rows, local_rows)
+                if int(local_row["local_count"]) == 0
+            ]
+            print(f"residual_dominance_clean_count,{len(clean_residual_rows)}")
+            if clean_residual_rows:
+                clean_values = np.array([
+                    float(row["residual_dominance_gap_bound_over_xi"])
+                    for row in clean_residual_rows
+                ])
+                print(f"residual_dominance_clean_gap_bound_over_xi_mean,{float(np.mean(clean_values))}")
+                print(f"residual_dominance_clean_gap_bound_over_xi_max,{float(np.max(clean_values))}")
+                clean_over_budget = int(np.sum(clean_values > 1.0 + 1e-8))
+                print(f"residual_dominance_clean_over_budget_count,{clean_over_budget}")
+                worst_clean = max(
+                    clean_residual_rows,
+                    key=lambda row: float(row["residual_dominance_gap_bound_over_xi"]),
+                )
+                print(f"worst_residual_dominance_clean_seed,{worst_clean['seed']}")
     elif (
         args.local_marginal
         or args.local_marginal_exact
