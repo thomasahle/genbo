@@ -38104,6 +38104,91 @@ query mass rather than producing a cost-effective dense filter.
    which is the same inequality after multiplying by \(2^{-\ell_i}\).
 \end{proof}
 
+\begin{corollary}[Profile-entropy local storage screen]
+   \label{cor:profile-entropy-local-storage-screen}
+   Work in the setting of
+   \cref{cor:local-entropy-slack-reciprocal-storage}.  For each active layer
+   \(i\in\mathcal I\), suppose the low-correlation contribution has a finite
+   refinement \(\mathcal H_i\) with certified weights \(W_{i,h}\ge0\) and
+   certified two-point energies \(I_{i,h}\ge0\), such that the low envelope used
+   in \((LES1)\) may be sharpened to
+   \[
+      \widehat{\mathcal A}_i^{\rm lo}
+      =
+      \sum_{h\in\mathcal H_i}W_{i,h}e^{-I_{i,h}} .
+      \tag{PELS1}
+   \]
+   Put \(H_i=\max\{1,|\mathcal H_i|\}\), and let
+   \(B_\star=aS-\E_z\Gamma_z>0\).  Assume that for each \(h\in\mathcal H_i\),
+   \[
+      I_{i,h}\ge \log_+ W_{i,h}+\Lambda_i .
+      \tag{PELS2}
+   \]
+   Then
+   \[
+      \widehat{\mathcal A}_i^{\rm lo}\le H_ie^{-\Lambda_i}.
+      \tag{PELS3}
+   \]
+   Consequently, the low-correlation half of the local screen follows from
+   \[
+      \Lambda_i
+      \ge
+      \log_+
+      \frac{2M_{\mathcal I}H_i}{2^{\ell_i}B_\star}.
+      \tag{PELS4}
+   \]
+   If, in addition, every active layer satisfies the same high-correlation
+   fixed-tail condition as in \((LES1)\),
+   \[
+      2^{-\ell_i}4|P|J_i^{\rm hi}R_i
+      \le
+      \frac{B_\star}{2M_{\mathcal I}},
+      \tag{PELS5}
+   \]
+   and no one-record guard-credit repair fires, then
+   \((\mathsf{ESFC}_\Sigma)\) is feasible with
+   \(\mathcal A_i^{\rm lo}\) replaced by the sharper envelope
+   \(\widehat{\mathcal A}_i^{\rm lo}\).
+
+   In particular, when the refinement \(\mathcal H_i\) is the separated-pair
+   profile partition from
+   \cref{cor:spread-packing-entropy-energy-screen}, condition \((PELS2)\) is
+   exactly the profile entropy-energy inequality
+   \(I_{i,h}\ge\log W_{i,h}+\Lambda_i\).  A violation is therefore not a new
+   storage obstruction: after the usual low/high correlation split, it is the
+   star-signal alternative handled by
+   \cref{cor:spread-packing-star-signal} and the guard-credit verifier.
+   Thus the diffuse storage branch pays only the number of retained
+   low-correlation profiles, not the raw number of separated pairs in them.
+\end{corollary}
+
+\begin{proof}
+   If \(W_{i,h}=0\), its contribution to \((PELS1)\) is zero.  Otherwise
+   \((PELS2)\) gives
+   \[
+      W_{i,h}e^{-I_{i,h}}
+      \le
+      W_{i,h}e^{-\log_+W_{i,h}}e^{-\Lambda_i}
+      \le e^{-\Lambda_i}.
+   \]
+   Summing over \(h\in\mathcal H_i\) proves \((PELS3)\).
+
+   If the logarithm argument in \((PELS4)\) is at most one, then
+   \(2^{-\ell_i}H_ie^{-\Lambda_i}\le 2^{-\ell_i}H_i
+   \le B_\star/(2M_{\mathcal I})\).  Otherwise exponentiating \((PELS4)\) gives
+   the same inequality.  Hence
+   \[
+      2^{-\ell_i}\widehat{\mathcal A}_i^{\rm lo}
+      \le
+      \frac{B_\star}{2M_{\mathcal I}} .
+   \]
+   Together with \((PELS5)\), this is \((LES1)\) for the sharpened low envelope.
+   The proof of
+   \cref{cor:local-entropy-slack-reciprocal-storage} uses only that envelope as
+   an upper bound on the low-correlation contribution, so the same conclusion
+   follows.
+\end{proof}
+
 \begin{corollary}[Paid-responsibility high-correlation star compiler]
    \label{cor:paid-responsibility-high-correlation-star}
    Work in the setting of
@@ -43881,6 +43966,11 @@ Gaussian energy plus an explicit fixed high-correlation dense-repair tail.
 for polylogarithmically many active profile layers, an \(O(\log\log n)\)
 additive entropy-energy margin per low-correlation layer and a matching local
 fixed-tail bound are enough to close the aggregate storage sum.
+\Cref{cor:profile-entropy-local-storage-screen} sharpens the low-correlation
+side further: if the layer is refined into polylogarithmically many
+entropy-energy subprofiles, the storage charge depends on the number of
+subprofiles rather than on their raw pair mass; failures are exactly the
+spread-packing star-signal cases.
 \Cref{lem:star-superlevel-column-verifier} and
 \cref{cor:pair-star-dense-column-generator} add the finite LP check: the star
 is retained only if its ball-thickened query side has positive reduced gain;
@@ -69444,6 +69534,11 @@ smaller-radius dense/star repair.
 aggregate calculation when the active profile set is polylogarithmic: each
 low-correlation layer only needs the local entropy slack \((LES2)\), and each
 high-correlation layer only needs its fixed tail to fit its local budget.
+\Cref{cor:profile-entropy-local-storage-screen} replaces the raw
+low-correlation weight in that slack by a profile-count term whenever the
+spread-packing entropy-energy inequality holds profile-by-profile, so a
+polylogarithmic subprofile family costs only another \(O(\log\log n)\) energy
+margin.
 \Cref{lem:star-superlevel-column-verifier} and
 \cref{cor:pair-star-dense-column-generator} turn such a superlevel into an
 ordinary fractional-cover column by using the certified query activation
@@ -69685,6 +69780,10 @@ endpoint-tail suppression applies.
 \Cref{cor:spread-packing-entropy-energy-screen} records the corresponding
 charge: each separated-pair profile is harmless when its intersection energy
 dominates its entropy, and otherwise it is the high-correlation dense signal.
+\Cref{cor:profile-entropy-local-storage-screen} feeds this charge directly into
+the reciprocal-storage endpoint: after dyadic occurrence discounting, a
+polylogarithmic number of such harmless profiles closes the low-correlation
+storage budget with only an \(O(\log\log n)\) local margin.
 \Cref{cor:metric-entropy-hall-shadow-closure} and
 \cref{cor:low-doubling-hall-shadow-close} sharpen the remaining geometric
 obligation: any positive Hall shadow of certified covering number below
