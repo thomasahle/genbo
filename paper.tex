@@ -9108,6 +9108,118 @@ partition ignores the bias coordinates that certify the list size.
    Taking the supremum over \(z\in P_u\) proves \((LPC5)\).
 \end{proof}
 
+\begin{corollary}[False-survivor accounting for LP branch-and-bound]
+   \label{cor:false-survivor-lp-accounting}
+   Work in the branch-and-bound setting of
+   \cref{cor:sharp-lp-soft-decoder}, and write
+   \[
+      M(u)=\max_{c\in C_u}W(c),
+      \qquad
+      \Delta(u)=U(u)-M(u)\ge0 .
+      \tag{LPF1}
+   \]
+   Let
+   \(0<\gamma_0<\gamma_1<\cdots<\gamma_J\).  Define the false-survivor count
+   \[
+   \begin{aligned}
+      F(\gamma_0,\ldots,\gamma_J)
+      &=
+      \sum_{j=0}^{J-1}
+      \bigl|\{u:
+         T-\gamma_{j+1}\le M(u)<T-\gamma_j,\,
+         \Delta(u)\ge\gamma_j
+      \}\bigr| \\
+      &\quad+
+      \bigl|\{u:
+         M(u)<T-\gamma_J,\,
+         \Delta(u)\ge\gamma_J
+      \}\bigr| .
+   \end{aligned}
+      \tag{LPF2}
+   \]
+   Then the number of visited nodes is at most
+   \[
+      (H+1)N_{\ge T-\gamma_0}
+      +
+      F(\gamma_0,\ldots,\gamma_J).
+      \tag{LPF3}
+   \]
+   Hence, for random score tables,
+   \[
+      \E[\#\text{ visited nodes}]
+      \le
+      (H+1)\E N_{\ge T-\gamma_0}
+      +
+      \E F(\gamma_0,\ldots,\gamma_J).
+      \tag{LPF4}
+   \]
+   In particular, if the terminal Gaussian regime has
+   \(\gamma_0=O(\sqrt{\log\log n})\),
+   \(H,B_{\rm lp}=\log^{O(1)}n\), and
+   \[
+      \E F(\gamma_0,\ldots,\gamma_J)
+      \le
+      \log^{O(1)}n\cdot \E N_{\ge T},
+      \tag{LPF5}
+   \]
+   then the decoder is output-sensitive with only polylogarithmic overhead.
+
+   If, in addition, the LP upper bound is represented by anchored excess sets
+   as in \cref{cor:anchored-lp-width-certificate}, then
+   \[
+      \Delta(u)
+      \le
+      X_u(w):=\sup_{h\in E_u}\ip{w}{h},
+      \tag{LPF6}
+   \]
+   and it is enough to prove the joint false-survivor tail bound
+   \[
+   \begin{aligned}
+      &\sum_{j=0}^{J-1}\sum_u
+      \Prb\!\left[
+         T-\gamma_{j+1}\le M(u)<T-\gamma_j,\,
+         X_u(w)\ge\gamma_j
+      \right] \\
+      &\qquad+
+      \sum_u
+      \Prb\!\left[
+         M(u)<T-\gamma_J,\,
+         X_u(w)\ge\gamma_J
+      \right]
+      \le
+      \log^{O(1)}n\cdot \E N_{\ge T}.
+   \end{aligned}
+      \tag{LPF7}
+   \]
+\end{corollary}
+
+\begin{proof}
+   Consider a visited node \(u\).  If \(M(u)\ge T-\gamma_0\), then \(u\)
+   contains a codeword counted by \(N_{\ge T-\gamma_0}\).  As in the proof of
+   \cref{cor:sharp-lp-soft-decoder}, any fixed codeword belongs to at most
+   \(H+1\) nodes, so all such visited nodes contribute at most the first term
+   in \((LPF3)\).
+
+   It remains to consider a visited node with \(M(u)<T-\gamma_0\).  Since it is
+   visited, \(U(u)\ge T\), hence
+   \(\Delta(u)=U(u)-M(u)\ge T-M(u)\).  If
+   \(T-\gamma_{j+1}\le M(u)<T-\gamma_j\), then
+   \(T-M(u)>\gamma_j\), so \(u\) is counted in the \(j\)-th summand of
+   \((LPF2)\).  If \(M(u)<T-\gamma_J\), it is counted in the last summand.
+   This proves \((LPF3)\), and expectation gives \((LPF4)\).  The Gaussian
+   tail comparison \((LPS5)\) turns
+   \(\E N_{\ge T-\gamma_0}\) into a polylogarithmic multiple of
+   \(\E N_{\ge T}\) when
+   \(\gamma_0=O(\sqrt{\log\log n})\), proving the stated output-sensitive
+   consequence under \((LPF5)\).
+
+   Finally, \((LPF6)\) follows from the last display in the proof of
+   \cref{cor:anchored-lp-width-certificate}, without taking a high-probability
+   union bound.  Replacing \(\Delta(u)\) by the larger \(X_u(w)\) in
+   \((LPF2)\) and taking expectations gives \((LPF7)\) as a sufficient
+   condition for \((LPF5)\).
+\end{proof}
+
 \begin{remark}[LP and Sherali--Adams decoder target]
    \label{rem:lp-sa-soft-decoder-target}
    \Cref{cor:sharp-lp-soft-decoder} identifies the exact theorem needed from a
@@ -9156,6 +9268,18 @@ partition ignores the bias coordinates that certify the list size.
    \(O(\sqrt{\log\log n})\) sharpness directly on the near-threshold node
    process, make the anchored excess radius shrink, or restrict preprocessing
    to a build-certified node universe with summable failure budget.
+
+   The near-threshold alternative is made precise by
+   \cref{cor:false-survivor-lp-accounting}.  Uniform sharpness over every
+   possible prefix is stronger than needed.  A node with a real codeword within
+   \(O(\sqrt{\log\log n})\) of the threshold is already paid for by the ordinary
+   lowered-threshold list.  Only nodes whose true maximum is lower must be
+   controlled by a relaxation-gap tail.  Thus the natural low-rate code theorem
+   is the joint estimate \((LPF7)\): anchored pseudocodeword excess should be
+   unlikely exactly on subproblems whose real codeword maximum has fallen below
+   the relevant slack level.  This is a sharper target than a full union bound
+   over the prefix universe and matches the extreme-value nature of the
+   decoder.
 \end{remark}
 
 \begin{proposition}[Sampled structured-panel compiler]
