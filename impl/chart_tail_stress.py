@@ -72,6 +72,11 @@ FIELDNAMES = [
     "near_leader_fraction",
     "far_tail_count",
     "far_tail_weight_fraction",
+    "gap_q50",
+    "gap_q90",
+    "coeff_mass_allow_q50",
+    "coeff_mass_allow_q90",
+    "coeff_mass_allow_max",
 ]
 
 
@@ -229,6 +234,19 @@ def top_anchor_cover_metrics(
     raise AssertionError("anchoring all words should always satisfy the budget")
 
 
+def allowed_tail_mass(budget: float, lam: float, gap: float) -> float:
+    """Necessary upper bound on coefficient mass at gap >= gap.
+
+    If sum_j b_j exp(lam * gap_j) <= budget, then the cumulative mass at
+    gaps at least gap is at most budget * exp(-lam * gap).
+    """
+    if budget < 0:
+        raise ValueError("budget must be nonnegative")
+    if lam < 0:
+        raise ValueError("lambda must be nonnegative")
+    return min(1.0, float(budget * math.exp(-lam * gap)))
+
+
 def run_trial(
     *,
     n_words: int,
@@ -279,6 +297,8 @@ def run_trial(
     near_leader_count = int(np.sum(near_mask))
     far_tail_count = int(n_words - near_leader_count)
     far_tail_weight = float(np.sum(omega[~near_mask]))
+    gap_q50 = float(np.quantile(gaps, 0.5))
+    gap_q90 = float(np.quantile(gaps, 0.9))
     uniform_singleton_cost = (alphabet - 1.0) * blocks * float(np.max(omega))
     clipped_singleton_cost = (alphabet - 1.0) * blocks * float(np.max(clipped))
     full_posterior = posterior_residual_metrics(code, omega, alphabet)
@@ -335,6 +355,11 @@ def run_trial(
         "near_leader_fraction": float(near_leader_count / n_words),
         "far_tail_count": far_tail_count,
         "far_tail_weight_fraction": far_tail_weight / omega_sum,
+        "gap_q50": gap_q50,
+        "gap_q90": gap_q90,
+        "coeff_mass_allow_q50": allowed_tail_mass(price_cap, lam, gap_q50),
+        "coeff_mass_allow_q90": allowed_tail_mass(price_cap, lam, gap_q90),
+        "coeff_mass_allow_max": allowed_tail_mass(price_cap, lam, float(np.max(gaps))),
     }
 
 

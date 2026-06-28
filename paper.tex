@@ -13505,6 +13505,10 @@ partition ignores the bias coordinates that certify the list size.
    three runs.  The next proof attempt should therefore prove directly that
    residual or negative coefficient mass avoids that far tail, or prove that
    such a tail-avoidance theorem is impossible for the chosen code family.
+   \Cref{lem:necessary-boltzmann-tail-decay} makes this quantitative: in the
+   \(512\)-word run, a polylogarithmic Boltzmann tail budget allows only about
+   \(6.7\cdot10^{-4}\) total negative coefficient mass at the \(90\)th
+   percentile score gap and about \(2.7\cdot10^{-6}\) at the maximum gap.
 \end{remark}
 
 \begin{corollary}[Posterior mismatch form for localized residuals]
@@ -13822,6 +13826,52 @@ partition ignores the bias coordinates that certify the list size.
    The bad event contributes at most \(Ne^{-L^{3/2}}\), which is at most
    \(e^{\lambda_N\Delta}L^2\) for all large \(N\).  This proves \((LOB17)\).
    Substituting \(\lambda_N\Delta=\log K=A\log\log N\) gives \((LOB18)\).
+\end{proof}
+
+\begin{lemma}[Necessary Boltzmann tail decay]
+   \label{lem:necessary-boltzmann-tail-decay}
+   Let \(g_j\ge0\), \(b_j\ge0\), and \(\lambda,\Xi>0\).  If
+   \[
+      \sum_j b_j e^{\lambda g_j}\le \Xi ,
+      \tag{LOB24}
+   \]
+   then the cumulative tail
+   \[
+      A(s)=\sum_{j:g_j\ge s}b_j
+      \tag{LOB25}
+   \]
+   obeys
+   \[
+      A(s)\le \Xi e^{-\lambda s}
+      \qquad(s\ge0).
+      \tag{LOB26}
+   \]
+   In particular, if the near-leader price cap is \(K=e^{\lambda\Delta}\), then
+   for every \(r\ge0\),
+   \[
+      A(\Delta+r)\le \frac{\Xi}{K}e^{-\lambda r}.
+      \tag{LOB27}
+   \]
+
+   Applied to the LP/SA negative-tail certificate, this is a necessary
+   condition, not another sufficient reformulation: once prices are clipped at a
+   polylogarithmic cap, any negative coefficient mass that remains deeper than
+   the clipped window must decay exponentially at rate \(\lambda\) in the
+   additional gap.  Thus the unresolved theorem is exactly a tail-avoidance
+   theorem for the coefficients or residual sources.
+\end{lemma}
+
+\begin{proof}
+   For every \(s\ge0\),
+   \[
+      \sum_jb_je^{\lambda g_j}
+      \ge
+      \sum_{j:g_j\ge s}b_je^{\lambda g_j}
+      \ge
+      e^{\lambda s}A(s).
+   \]
+   Combining this with \((LOB24)\) gives \((LOB26)\).  Taking
+   \(s=\Delta+r\) and \(K=e^{\lambda\Delta}\) gives \((LOB27)\).
 \end{proof}
 
 \begin{corollary}[Finite dual for localized residual feasibility]
