@@ -41380,6 +41380,101 @@ query mass rather than producing a cost-effective dense filter.
    with \((AGC3)\) gives \((AGC6)\).
 \end{proof}
 
+\begin{corollary}[Fractional generated cover for cap-overload layers]
+   \label{cor:fractional-generated-cover-cap-overload}
+   Work in the setting of
+   \cref{cor:average-generated-cell-cap-overload}, and let \(\mathcal R_L\) be
+   a finite family of materializable generated records for the exposed layer
+   \(L\).  Each record \(R\in\mathcal R_L\) has represented subset
+   \(C_R\subseteq L\) and certified shared price \(P_R\).  Assume
+   \(\mathcal R_L\) covers \(L\), for example because singleton records are
+   available.  Consider the finite covering LP
+   \[
+   \begin{array}{ll}
+   \Phi_L=\min
+      & \displaystyle\sum_{R\in\mathcal R_L}P_R\lambda_R\\[0.8em]
+   \text{\rm subject to}
+      & \displaystyle
+        \sum_{R:\,\kappa\in C_R}\lambda_R\ge1
+        \qquad(\kappa\in L),\\[0.8em]
+      & \lambda_R\ge0 .
+   \end{array}
+      \tag{FGC1}
+   \]
+   If
+   \[
+      \Phi_L<\frac{\theta |L|}{2},
+      \tag{FGC2}
+   \]
+   then some generated top prefix has positive reduced cost, so the no-prefix
+   residual is impossible.
+
+   Conversely, if the no-prefix residual survives, then
+   \[
+      \Phi_L\ge\frac{\theta |L|}{2}
+      \ge
+      \frac{E^\beta(\mathcal U)}{4D(\mathcal U)} .
+      \tag{FGC3}
+   \]
+   Equivalently, finite LP duality gives a weighting \(y_\kappa\ge0\) on
+   \(\kappa\in L\) such that
+   \[
+      \sum_{\kappa\in L}y_\kappa
+      \ge
+      \frac{\theta |L|}{2},
+      \qquad
+      \sum_{\kappa\in C_R}y_\kappa\le P_R
+      \quad(R\in\mathcal R_L).
+      \tag{FGC4}
+   \]
+
+   Thus a surviving cap-overload layer has one normalized weighted
+   range/list-decoding obstruction: every materializable generated record
+   captures at most its certified price against the same dual weights \(y\).
+   A proposed tensor, range-reporting, additive-quantization, facility, or
+   list-decoding theorem only has to rule out such a dual weighting by finding
+   one record with \(\sum_{\kappa\in C_R}y_\kappa>P_R\), or by proving that no
+   such weighted layer can satisfy the geometric hypotheses.
+\end{corollary}
+
+\begin{proof}
+   Let \(\lambda\) be any feasible solution of \((FGC1)\).  The cover
+   constraints give
+   \[
+      \sum_{R\in\mathcal R_L}\lambda_R|C_R|
+      =
+      \sum_{\kappa\in L}\sum_{R:\,\kappa\in C_R}\lambda_R
+      \ge |L|.
+      \tag{FGC5}
+   \]
+   If \((FGC2)\) holds, choose a feasible \(\lambda\) with
+   \(\sum_RP_R\lambda_R<\theta|L|/2\).  Combining with \((FGC5)\),
+   \[
+      \sum_R\lambda_R(\theta|C_R|-2P_R)>0 .
+   \]
+   Hence some record has \(\theta|C_R|>2P_R\).  By
+   \cref{cor:average-generated-cell-cap-overload}, the corresponding generated
+   top prefix is a positive merge.
+
+   Therefore a no-prefix residual must satisfy the first inequality in
+   \((FGC3)\).  The second follows from \((UOG6)\).  Since \(\mathcal R_L\)
+   covers \(L\), the primal is finite, feasible, and bounded below.  LP duality
+   gives
+   \[
+   \begin{array}{ll}
+   \Phi_L=\max
+      & \displaystyle\sum_{\kappa\in L}y_\kappa\\[0.8em]
+   \text{\rm subject to}
+      & y_\kappa\ge0,\\[0.6em]
+      & \displaystyle
+        \sum_{\kappa\in C_R}y_\kappa\le P_R
+        \qquad(R\in\mathcal R_L),
+   \end{array}
+      \tag{FGC6}
+   \]
+   and \((FGC3)\) supplies an optimal dual solution satisfying \((FGC4)\).
+\end{proof}
+
 \begin{corollary}[Shared-cover LP for the fractional sponsor tail]
    \label{cor:fractional-sponsor-tail-shared-cover}
    Work in the setting of
@@ -78252,6 +78347,12 @@ generated merge; hence a surviving strong layer forces an average
 Renyi/list-size lower bound for every tensor, range-reporting, AQ, facility, or
 list-decoding proposal law that covers the layer with nontrivial marginal
 probability.
+\Cref{cor:fractional-generated-cover-cap-overload} removes the sampling
+notation altogether: if a finite generated-record family fractionally covers
+the exposed layer below half its cut mass, one record has positive reduced cost.
+Failure exposes a single dual weight \(y_\kappa\) on the layer for which every
+generated record captures at most its certified price.  This is the exact
+weighted range/list-decoding obstruction left by cap overload.
 \Cref{cor:fractional-sponsor-tail-shared-cover} then removes duplicated large
 stars from that target by a finite shared-cover LP: either residual fractional
 star copies plus shared records have total price inside the storage allowance,
