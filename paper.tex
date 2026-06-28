@@ -38189,6 +38189,81 @@ query mass rather than producing a cost-effective dense filter.
    follows.
 \end{proof}
 
+\begin{corollary}[Entropy-deficit tail screen for local storage]
+   \label{cor:entropy-deficit-tail-local-storage-screen}
+   Work in the setting of
+   \cref{cor:profile-entropy-local-storage-screen}.  For every active layer
+   \(i\) and low-correlation subprofile \(h\in\mathcal H_i\), put
+   \[
+      X_{i,h}=W_{i,h}e^{-I_{i,h}},
+      \qquad
+      N_i(t)=|\{h\in\mathcal H_i:X_{i,h}\ge t\}|
+      \qquad(t>0).
+      \tag{EDT1}
+   \]
+   Let \(B_\star=aS-\E_z\Gamma_z>0\).  If, for every active layer \(i\),
+   \[
+      2^{-\ell_i}\int_0^\infty N_i(t)\,dt
+      \le
+      \frac{B_\star}{2M_{\mathcal I}},
+      \tag{EDT2}
+   \]
+   and the high-correlation fixed-tail condition \((PELS5)\) holds, then
+   \((\mathsf{ESFC}_\Sigma)\) is feasible, provided no one-record guard-credit
+   repair fires.
+
+   Equivalently, define dyadic entropy-deficit bins
+   \[
+      \mathcal H_{i,j}
+      =
+      \{h\in\mathcal H_i:2^j\le X_{i,h}<2^{j+1}\},
+      \qquad j\in\mathbb Z .
+      \tag{EDT3}
+   \]
+   Since only finitely many bins are nonempty, the integral condition follows
+   from
+   \[
+      2^{-\ell_i}
+      \sum_{j:\mathcal H_{i,j}\ne\emptyset}
+      2^{j+1}|\mathcal H_{i,j}|
+      \le
+      \frac{B_\star}{2M_{\mathcal I}} .
+      \tag{EDT4}
+   \]
+
+   Thus the geometric/list-decoding theorem needed by the storage branch may
+   be stated as an exponential tail bound for the entropy deficits
+   \(\log W_{i,h}-I_{i,h}\).  The uniform profile-count condition
+   \((PELS2)\)--\((PELS4)\) is only the crude special case in which all bins lie
+   below the same threshold \(e^{-\Lambda_i}\).
+\end{corollary}
+
+\begin{proof}
+   By the layer-cake identity for a finite nonnegative family,
+   \[
+      \sum_{h\in\mathcal H_i}X_{i,h}
+      =
+      \int_0^\infty N_i(t)\,dt .
+   \]
+   Hence \((EDT2)\) is exactly the low-correlation half of \((LES1)\) with the
+   sharpened envelope \(\widehat{\mathcal A}_i^{\rm lo}=\sum_hX_{i,h}\).  The
+   high-correlation half is \((PELS5)\), so
+   \cref{cor:local-entropy-slack-reciprocal-storage} applies as in the proof of
+   \cref{cor:profile-entropy-local-storage-screen}.
+
+   The dyadic sufficient condition follows from
+   \[
+      \sum_{h\in\mathcal H_i}X_{i,h}
+      \le
+      \sum_{j:\mathcal H_{i,j}\ne\emptyset}
+      2^{j+1}|\mathcal H_{i,j}|.
+   \]
+   Finally, if \(I_{i,h}\ge\log_+W_{i,h}+\Lambda_i\), then
+   \(X_{i,h}\le e^{-\Lambda_i}\) for every positive \(W_{i,h}\), and the
+   profile-count screen is recovered by bounding the tail integral by
+   \(H_ie^{-\Lambda_i}\).
+\end{proof}
+
 \begin{corollary}[Paid-responsibility high-correlation star compiler]
    \label{cor:paid-responsibility-high-correlation-star}
    Work in the setting of
@@ -43971,6 +44046,10 @@ side further: if the layer is refined into polylogarithmically many
 entropy-energy subprofiles, the storage charge depends on the number of
 subprofiles rather than on their raw pair mass; failures are exactly the
 spread-packing star-signal cases.
+\Cref{cor:entropy-deficit-tail-local-storage-screen} gives the nonuniform form:
+it is enough to prove a dyadic tail bound for the actual quantities
+\(W_h e^{-I_h}\), or equivalently for the entropy deficits
+\(\log W_h-I_h\).
 \Cref{lem:star-superlevel-column-verifier} and
 \cref{cor:pair-star-dense-column-generator} add the finite LP check: the star
 is retained only if its ball-thickened query side has positive reduced gain;
@@ -69539,6 +69618,9 @@ low-correlation weight in that slack by a profile-count term whenever the
 spread-packing entropy-energy inequality holds profile-by-profile, so a
 polylogarithmic subprofile family costs only another \(O(\log\log n)\) energy
 margin.
+\Cref{cor:entropy-deficit-tail-local-storage-screen} records the sharper
+tail form: a few mildly bad profiles are harmless if the dyadic sum of
+\(W_h e^{-I_h}\) over all low-correlation profiles still fits the local budget.
 \Cref{lem:star-superlevel-column-verifier} and
 \cref{cor:pair-star-dense-column-generator} turn such a superlevel into an
 ordinary fractional-cover column by using the certified query activation
@@ -69784,6 +69866,10 @@ dominates its entropy, and otherwise it is the high-correlation dense signal.
 the reciprocal-storage endpoint: after dyadic occurrence discounting, a
 polylogarithmic number of such harmless profiles closes the low-correlation
 storage budget with only an \(O(\log\log n)\) local margin.
+\Cref{cor:entropy-deficit-tail-local-storage-screen} is the exact nonuniform
+version of the same requirement; the remaining list-decoding theorem can target
+an exponential tail for positive entropy deficits rather than a maximum deficit
+bound.
 \Cref{cor:metric-entropy-hall-shadow-closure} and
 \cref{cor:low-doubling-hall-shadow-close} sharpen the remaining geometric
 obligation: any positive Hall shadow of certified covering number below
