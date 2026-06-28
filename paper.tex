@@ -9220,6 +9220,62 @@ partition ignores the bias coordinates that certify the list size.
    condition for \((LPF5)\).
 \end{proof}
 
+\begin{corollary}[Exponential false-survivor certificate]
+   \label{cor:exponential-false-survivor-certificate}
+   Work in the setting of \cref{cor:false-survivor-lp-accounting}, and assume
+   the anchored excess domination \((LPF6)\).  For any \(\gamma>0\), put
+   \[
+      S_\gamma
+      =
+      \bigl|\{u:M(u)<T-\gamma,\ M(u)+X_u(w)\ge T\}\bigr|.
+      \tag{LPE1}
+   \]
+   Then the number of visited nodes is at most
+   \[
+      (H+1)N_{\ge T-\gamma}+S_\gamma .
+      \tag{LPE2}
+   \]
+   Consequently, if \(W(c)\sim N(0,b)\) for every fixed codeword, if
+   \(T=\tau\sqrt b\), and if
+   \(\gamma=O(\sqrt{\log\log n})\) in the logarithmic terminal regime, then the
+   decoder has polylogarithmic expected overhead whenever
+   \(H,B_{\rm lp}=\log^{O(1)}n\) and, for some \(\lambda>0\),
+   \[
+      \sum_u
+      \E\!\left[
+         \exp\!\bigl(\lambda(M(u)+X_u(w)-T)\bigr)
+         \mathbf 1_{\{M(u)<T-\gamma\}}
+      \right]
+      \le
+      \log^{O(1)}n\cdot \E N_{\ge T}.
+      \tag{LPE3}
+   \]
+\end{corollary}
+
+\begin{proof}
+   If a visited node \(u\) has \(M(u)\ge T-\gamma\), then it is charged to a
+   codeword in \(N_{\ge T-\gamma}\), with multiplicity at most \(H+1\) as
+   before.  If \(M(u)<T-\gamma\), then \(U(u)\ge T\), so
+   \[
+      T\le U(u)=M(u)+\Delta(u)\le M(u)+X_u(w).
+   \]
+   Hence \(u\) is counted by \(S_\gamma\).  This proves \((LPE2)\).
+
+   By Markov's inequality applied termwise,
+   \[
+      \E S_\gamma
+      \le
+      \sum_u
+      \E\!\left[
+         \exp\!\bigl(\lambda(M(u)+X_u(w)-T)\bigr)
+         \mathbf 1_{\{M(u)<T-\gamma\}}
+      \right].
+   \]
+   The first term in \((LPE2)\) is a polylogarithmic multiple of
+   \(\E N_{\ge T}\) by the Gaussian tail comparison \((LPS5)\), and the second
+   term is controlled by \((LPE3)\).
+\end{proof}
+
 \begin{remark}[LP and Sherali--Adams decoder target]
    \label{rem:lp-sa-soft-decoder-target}
    \Cref{cor:sharp-lp-soft-decoder} identifies the exact theorem needed from a
@@ -9280,6 +9336,17 @@ partition ignores the bias coordinates that certify the list size.
    the relevant slack level.  This is a sharper target than a full union bound
    over the prefix universe and matches the extreme-value nature of the
    decoder.
+
+   \Cref{cor:exponential-false-survivor-certificate} is the cleanest current
+   form of that target.  Instead of proving a high-probability LP gap bound for
+   every prefix, it asks for one tilted moment bound: below the ordinary
+   \(T-\gamma\) true-codeword frontier, the aggregate mass of
+   \(M(u)+X_u(w)\)-crossings must be comparable to the true \(T\)-tail list.
+   A natural proof would use the Gaussian tilt \(\lambda\simeq T/b\) and show
+   that a high anchored pseudocodeword excess under the no-true-codeword
+   conditioning behaves like a planted low-rate decoding problem, rather than
+   like an independent extra codebook.  This is now the precise LP/SA analogue
+   of the smooth-decoder theorem needed for a polylogarithmic terminal panel.
 \end{remark}
 
 \begin{proposition}[Sampled structured-panel compiler]
