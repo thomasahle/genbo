@@ -15159,84 +15159,171 @@ query-price overlap, storage price, and duplicate-incidence factor \(b_G\).
    \cref{cor:transport-gaussian-paid-fiber-separator} gives \((AGTL3)\).
 \end{proof}
 
-\begin{corollary}[Windowed assigned transport has polylog normalized load]
-   \label{cor:windowed-assigned-transport-load}
+\begin{corollary}[Upper-margin assigned transport has polylog normalized load]
+   \label{cor:upper-margin-assigned-transport-load}
    Work in the setting of
    \cref{cor:assigned-gaussian-transport-lower-bound}.  Write
    \[
       \overline\Phi(t)=\Pr[Z\ge t],
       \qquad Z\sim N(0,1).
    \]
-   Suppose that, for parameters \(0<\theta_-\le1\) and
-   \(0\le M_-\le M_+\), every assigned paid edge satisfies
+   Suppose that, for parameters \(0<\theta_-\le1\) and \(M\ge0\), every assigned
+   paid edge satisfies
    \[
       \ip{c(y)}{y}\ge\theta_-,
       \qquad
-      M_-\le m_G(c(y)),m_G(y)\le M_+
+      m_G(c(y)),m_G(y)\le M
       \qquad(y\in Y,\ b(y)>0).
-      \tag{WATL1}
+      \tag{UATL1}
    \]
    Then
    \[
-      A_w\ge a_{\theta_-,M_+}B_w,
+      A_w\ge a_{\theta_-,M}B_w,
       \qquad
-      a_{\theta_-,M_+}
+      a_{\theta_-,M}
       =
-      \frac14\overline\Phi\!\left(\frac{M_+}{\sqrt{\theta_-}}\right),
-      \tag{WATL2}
+      \frac14\overline\Phi\!\left(\frac{M}{\sqrt{\theta_-}}\right),
+      \tag{UATL2}
    \]
    while the transported endpoint active loads obey
    \[
-      P_X^w\le\overline\Phi(M_-)B_w,
+      P_X^w\le B_w,
       \qquad
-      P_Y^w\le\overline\Phi(M_-)B_w.
-      \tag{WATL3}
+      P_Y^w\le B_w.
+      \tag{UATL3}
    \]
    Hence the success-normalized endpoint loads satisfy
    \[
       \frac{P_X^w}{A_w},
       \frac{P_Y^w}{A_w}
       \le
-      4\,
-      \frac{\overline\Phi(M_-)}
-           {\overline\Phi(M_+/\sqrt{\theta_-})}.
-      \tag{WATL4}
-   \]
-   In the equal-window case \(M_-=M_+=M\),
-   \[
-      \frac{P_X^w}{A_w},
-      \frac{P_Y^w}{A_w}
+      \frac{4}{\overline\Phi(M/\sqrt{\theta_-})}
       \le
       C_{\theta_-}(1+M)
-      \exp\!\left(\frac{(1/\theta_- -1)M^2}{2}\right).
-      \tag{WATL5}
+      \exp\!\left(\frac{M^2}{2\theta_-}\right).
+      \tag{UATL4}
    \]
    In particular, if \(M^2\le C\log\log n\), the normalized endpoint loads are
    \(\log^{O_{\theta_-,C}(1)}n\).
 
-   Thus bounded margins should not be treated as a demand for absolutely small
-   one-point load.  A windowed assigned Gaussian cap with
-   \(M=O(\sqrt{\log\log n})\) may have inverse-polylogarithmic success, but
-   after success normalization its endpoint active-load overhead is still only
-   polylogarithmic.  The remaining geometric task is to produce such windowed
-   assigned transports, and to charge their shared storage or else expose a
-   finite-prefix dense repair.
+   If, more sharply, the same assigned edges also satisfy
+   \(m_G(c(y)),m_G(y)\ge M_-\) for some \(0\le M_-\le M\), then
+   \[
+      P_X^w,P_Y^w\le\overline\Phi(M_-)B_w,
+      \qquad
+      \frac{P_X^w}{A_w},\frac{P_Y^w}{A_w}
+      \le
+      4\frac{\overline\Phi(M_-)}
+              {\overline\Phi(M/\sqrt{\theta_-})}.
+      \tag{UATL5}
+   \]
+
+   Thus the assigned Gaussian branch only needs an upper margin cutoff, not a
+   genuine two-sided margin window, to obtain polylogarithmic
+   success-normalized query load.  The remaining geometric task is to produce
+   upper-margin assigned transports with chargeable shared storage, or else
+   expose a finite-prefix dense repair.
 \end{corollary}
 
 \begin{proof}
-   The upper margin bound in \((WATL1)\) gives \((WATL2)\) by
-   \cref{cor:assigned-gaussian-transport-lower-bound}.  For every assigned edge,
-   the lower margin bound gives
+   The upper margin bound in \((UATL1)\) gives \((UATL2)\) by
+   \cref{cor:assigned-gaussian-transport-lower-bound}.  Since one-point
+   probabilities are at most one, summing over assigned transport mass gives
+   \((UATL3)\).  Dividing \((UATL3)\) by \((UATL2)\) gives the first inequality
+   in \((UATL4)\).  The second inequality follows from
+   \cref{lem:gaussian-tail-ratio} with \(u=0\) and
+   \(v=M/\sqrt{\theta_-}\), absorbing universal constants into
+   \(C_{\theta_-}\).
+
+   Under the additional lower margin condition, monotonicity of
+   \(\overline\Phi\) gives, for every assigned edge,
    \[
       p_G(c(y))=\overline\Phi(m_G(c(y)))\le\overline\Phi(M_-),
       \qquad
       p_G(y)=\overline\Phi(m_G(y))\le\overline\Phi(M_-).
    \]
-   Since the assigned transport has total mass \(B_w=\sum_yb(y)\), summing
-   these inequalities proves \((WATL3)\).  Dividing \((WATL3)\) by
-   \((WATL2)\) gives \((WATL4)\).  Finally, \((WATL5)\) is \((GTR2)\) from
-   \cref{lem:gaussian-tail-ratio}, with the factor \(4\) absorbed into the
-   constant.
+   Summing and dividing by \((UATL2)\) proves \((UATL5)\).
+\end{proof}
+
+\begin{corollary}[Bounded-margin truncation alternative]
+   \label{cor:bounded-margin-assigned-truncation}
+   Work in the assigned-transport setting of
+   \cref{cor:transport-gaussian-paid-fiber-separator}.  Suppose the transport is
+   assigned by \(c:Y\to X\) and satisfies
+   \[
+      \ip{c(y)}{y}\ge\theta_-
+      \qquad(y\in Y,\ b(y)>0)
+      \tag{BMAT1}
+   \]
+   for some \(0<\theta_-\le1\).  For \(M\ge0\), define the upper-margin
+   subtransport
+   \[
+      Y_{\le M}
+      =
+      \{y\in Y:b(y)>0,\ m_G(c(y))\le M,\ m_G(y)\le M\},
+      \qquad
+      B_{\le M}=\sum_{y\in Y_{\le M}}b(y).
+      \tag{BMAT2}
+   \]
+   If \(B_{\le M}>0\), let \(A_{\le M}\), \(P_{X,\le M}\), and \(P_{Y,\le M}\)
+   denote the transported hit moment and endpoint active loads
+   \((TGFS2)\), \((TGFS7)\) computed after restricting \(w\) to
+   \(Y_{\le M}\).  Then
+   \[
+      A_{\le M}
+      \ge
+      \frac14\overline\Phi\!\left(\frac{M}{\sqrt{\theta_-}}\right)B_{\le M},
+      \tag{BMAT3}
+   \]
+   and
+   \[
+      \frac{P_{X,\le M}}{A_{\le M}},
+      \frac{P_{Y,\le M}}{A_{\le M}}
+      \le
+      \frac{4}{\overline\Phi(M/\sqrt{\theta_-})}.
+      \tag{BMAT4}
+   \]
+   Consequently, if \(M^2\le C\log\log n\) and
+   \(B_{\le M}\ge \zeta B_w\), then this restricted assigned transport supplies
+   hit mass at least
+   \[
+      \frac{\zeta}{4}
+      \overline\Phi\!\left(\frac{M}{\sqrt{\theta_-}}\right)B_w
+      \tag{BMAT5}
+   \]
+   with only \(\log^{O_{\theta_-,C}(1)}n\) success-normalized endpoint load.
+
+   Otherwise, if \(B_{\le M}<\zeta B_w\), then the complementary paid mass
+   \[
+      B_{>M}=B_w-B_{\le M}
+      \tag{BMAT6}
+   \]
+   is larger than \((1-\zeta)B_w\) and is supported on the explicit high-margin
+   obstruction
+   \[
+      m_G(c(y))>M
+      \quad\text{or}\quad
+      m_G(y)>M .
+      \tag{BMAT7}
+   \]
+   Thus failure to find an inverse-polylogarithmic amount of upper-margin
+   assigned transport is no longer an amorphous active-load obstruction: almost
+   all paid mass is certified to lie behind a high Gaussian margin on the center
+   side or on the paid side.
+\end{corollary}
+
+\begin{proof}
+   Restricting an assigned transport preserves the domination
+   \(w_{x,y}\le b(y)\), the assignment form, and the correlation lower bound.
+   Applying \cref{cor:upper-margin-assigned-transport-load} to the restricted
+   transport gives \((BMAT3)\)--\((BMAT4)\).  The displayed hit lower bound
+   \((BMAT5)\) follows from \(B_{\le M}\ge\zeta B_w\), and the polylogarithmic
+   load statement follows from \((UATL4)\).
+
+   If \(B_{\le M}<\zeta B_w\), then \(B_{>M}>(1-\zeta)B_w\) by definition.
+   The complement of \(Y_{\le M}\) is exactly the set of assigned paid edges for
+   which at least one of the two upper-margin inequalities fails, proving
+   \((BMAT7)\).
 \end{proof}
 
 \begin{corollary}[Gaussian paid-fiber separator criterion]
@@ -15753,13 +15840,15 @@ original paid degree \(b(y)\).
 \Cref{cor:assigned-gaussian-transport-lower-bound} makes the co-activation
 certificate explicit for positive-correlation assigned edges with bounded
 Gaussian margins.
-\Cref{cor:windowed-assigned-transport-load} adds the missing normalization
-point: if those assigned margins lie in a window
-\([M_-,M_+]\) with \(M_-=M_+=O(\sqrt{\log\log n})\), then the endpoint
-active loads divided by the transported hit mass are only polylogarithmic.
-Thus this branch does not need absolutely tiny one-point probabilities; it
-needs a windowed assigned transport whose shared storage can be charged, or a
-finite-prefix repair when such a transport cannot be produced.
+\Cref{cor:upper-margin-assigned-transport-load} adds the missing normalization
+point: an upper margin bound \(M=O(\sqrt{\log\log n})\) alone makes the endpoint
+active loads divided by the transported hit mass only polylogarithmic.
+\Cref{cor:bounded-margin-assigned-truncation} records the corresponding
+alternative: either an inverse-polylogarithmic amount of assigned paid mass lies
+below this upper margin cutoff, or almost all of it is explicitly supported on
+a high-margin center or paid endpoint.  Thus the branch needs an upper-margin
+assigned transport whose shared storage can be charged, or a finite-prefix
+repair/high-margin argument when such a transport cannot be produced.
 \Cref{cor:gaussian-paid-fiber-separator-criterion} records the sharper
 split-optimized diagnostic form: lower-bound the paid-product moment, keep one
 truncated margin split inverse-polylogarithmic, and upper-bound the inherited
@@ -68393,13 +68482,15 @@ co-activation lower bound on \((c(y),y)\).
 \Cref{cor:assigned-gaussian-transport-lower-bound} gives a concrete sufficient
 version of that pointwise condition from \(\ip{c(y)}{y}\ge\theta_->0\) and
 bounded margins.
-\Cref{cor:windowed-assigned-transport-load} then checks the quantity that
-matters for the retained filter cover: under a margin window of width
+\Cref{cor:upper-margin-assigned-transport-load} then checks the quantity that
+matters for the retained filter cover: under an upper margin cutoff
 \(M=O(\sqrt{\log\log n})\), the transported endpoint active loads normalized by
-the assigned hit mass \(A_w\) are only \(\log^{O_c(1)}n\).  The unresolved
-content is therefore not an absolute active-load obstruction, but the geometric
-construction of such windowed assigned transports together with a shared-storage
-certificate or finite-prefix repair.
+the assigned hit mass \(A_w\) are only \(\log^{O_c(1)}n\).
+\Cref{cor:bounded-margin-assigned-truncation} makes the residual explicit: if
+too little paid mass lies below that cutoff, then almost all assigned mass is on
+a high-margin center or paid endpoint.  The unresolved content is therefore the
+geometric construction of upper-margin assigned transports together with a
+shared-storage certificate, or a finite-prefix/high-margin repair.
 \Cref{cor:spread-packing-entropy-energy-screen} records the corresponding
 charge: each separated-pair profile is harmless when its intersection energy
 dominates its entropy, and otherwise it is the high-correlation dense signal.
