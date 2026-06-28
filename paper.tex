@@ -10861,6 +10861,103 @@ partition ignores the bias coordinates that certify the list size.
    Thus \((LMY4)\) implies \((LMZ6)\).
 \end{proof}
 
+\begin{corollary}[Box-dual mobility certificate]
+   \label{cor:box-dual-mobility-certificate}
+   Continue with the notation of
+   \cref{cor:aggregate-mobility-selector-certificate}.  For every off-anchor
+   coordinate-symbol pair \((i,a)\), \(a\ne c_i\), define
+   \[
+      \ell_{u,c,i,a}(j)
+      =
+      y_{u,j}(i,a)-y_{u,j}(i,c_i),
+      \qquad j\in[N].
+      \tag{LNA1}
+   \]
+   Then, for every nonnegative box \(0\le \theta_j\le w_j\),
+   \[
+      \sup_{0\le \theta_j\le w_j}
+      \mathfrak M_{u,c}(\theta)
+      =
+      \sup_{0\le \beta_{i,a}\le\mu_{u,c}(i,a)}
+      \sum_{j=1}^N
+      w_j
+      \left(
+         \sum_{i=1}^b\sum_{a\ne c_i}
+         \beta_{i,a}\ell_{u,c,i,a}(j)
+      \right)_+ .
+      \tag{LNA2}
+   \]
+   Consequently the Boltzmann aggregate condition \((LMZ6)\) is equivalent to
+   \[
+      \sup_{0\le \beta_{i,a}\le\mu_{u,c}(i,a)}
+      \sum_{j=1}^N
+      e^{\lambda(M(u)-W(c_j))}
+      \left(
+         \sum_{i=1}^b\sum_{a\ne c_i}
+         \beta_{i,a}\ell_{u,c,i,a}(j)
+      \right)_+
+      \le \Xi_u .
+      \tag{LNA3}
+   \]
+   Likewise, the dyadic aggregate condition \((LMZ4)\) is equivalent to
+   \[
+      \sup_{0\le \beta_{i,a}\le\mu_{u,c}(i,a)}
+      \sum_{j:\ M(u)-W(c_j)\ge k\delta}
+      \left(
+         \sum_{i=1}^b\sum_{a\ne c_i}
+         \beta_{i,a}\ell_{u,c,i,a}(j)
+      \right)_+
+      \le
+      C_u e^{-(\lambda+\eta_u)k\delta}.
+      \tag{LNA4}
+   \]
+
+   Thus a failed mobility certificate exposes a concrete off-anchor multiplier
+   pattern \(\beta\).  The remaining low-rate code theorem can be stated as a
+   tilted positive-part enumerator bound for every such pattern.
+\end{corollary}
+
+\begin{proof}
+   Since \(Y_u(\theta)=\sum_j\theta_jy_{u,j}\), for every off-anchor
+   \((i,a)\),
+   \[
+      Y_u(\theta)(i,a)-Y_u(\theta)(i,c_i)
+      =
+      \sum_{j=1}^N\theta_j\ell_{u,c,i,a}(j).
+      \tag{LNA5}
+   \]
+   Using \(\mu x_+=\sup_{0\le\beta\le\mu}\beta x\), we get
+   \[
+   \begin{aligned}
+      \mathfrak M_{u,c}(\theta)
+      &=
+      \sup_{0\le \beta_{i,a}\le\mu_{u,c}(i,a)}
+      \sum_{i=1}^b\sum_{a\ne c_i}
+      \beta_{i,a}
+      \sum_{j=1}^N\theta_j\ell_{u,c,i,a}(j)\\
+      &=
+      \sup_{0\le \beta_{i,a}\le\mu_{u,c}(i,a)}
+      \sum_{j=1}^N
+      \theta_j
+      \left(
+         \sum_{i=1}^b\sum_{a\ne c_i}
+         \beta_{i,a}\ell_{u,c,i,a}(j)
+      \right).
+   \end{aligned}
+      \tag{LNA6}
+   \]
+   Taking the supremum over the compact box \(0\le\theta_j\le w_j\) and exchanging
+   the two finite-dimensional suprema gives \((LNA2)\), because
+   \[
+      \sup_{0\le\theta_j\le w_j}\sum_j\theta_jv_j
+      =
+      \sum_jw_j(v_j)_+ .
+      \tag{LNA7}
+   \]
+   Taking \(w_j=e^{\lambda(M(u)-W(c_j))}\) gives \((LNA3)\).  Taking
+   \(w_j=\mathbf 1_{\{M(u)-W(c_j)\ge k\delta\}}\) gives \((LNA4)\).
+\end{proof}
+
 \begin{corollary}[Anchor-fiber LP/SA certificate compiler]
    \label{cor:anchor-fiber-lp-sa-compiler}
    Continue with the notation of
@@ -11245,6 +11342,13 @@ partition ignores the bias coordinates that certify the list size.
    the same mobility constraints.  This is strictly the safer theorem target:
    low-rate code geometry may cancel the dangerous inverse-Gram directions only
    after the below-leader selector has been aggregated.
+
+   \Cref{cor:box-dual-mobility-certificate} dualizes the remaining selector box.
+   The obstruction is now a mobility multiplier pattern \(\beta\) on off-anchor
+   coordinate-symbols, and the required estimate is a positive-part enumerator
+   over true codewords with Boltzmann weights.  This is closer to a planted
+   decoding theorem: every dangerous fractional movement pattern must have small
+   tilted positive correlation with the low-scoring codeword population.
 
    \Cref{cor:well-conditioned-gram-coefficients} gives the first elementary
    path to such a theorem.  If the local subcode has a well-conditioned overlap
