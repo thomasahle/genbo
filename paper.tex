@@ -12219,6 +12219,68 @@ partition ignores the bias coordinates that certify the list size.
    \cref{cor:conditional-tilted-excess-certificate} gives the overhead statement.
 \end{proof}
 
+\begin{corollary}[Integral score-band obstruction]
+   \label{cor:integral-score-band-obstruction}
+   Continue with the notation of
+   \cref{cor:finite-score-band-lp-sa-compiler}.  For any candidate point
+   \(x\in\Delta_q^b\), define its finite score-band gap by
+   \[
+      \Gamma_u(x;\omega)
+      =
+      \sup_{R\in\mathcal R_u^{\mathrm{gap}}(\omega)}
+      \left(
+         \ip{R}{x}
+         -
+         \max_{j\in[N]}\ip{R}{\iota(c_j)}
+      \right).
+      \tag{LNN8}
+   \]
+   If the score-band condition \((LNN2)\) holds for a relaxation \(P_u\), then
+   \[
+      \Gamma_u(x;\Omega_u)\le\Xi_u
+      \qquad(x\in P_u).
+      \tag{LNN9}
+   \]
+   Consequently, if a proposed LP, Sherali--Adams, Tanner, or local-projection
+   relaxation contains an integral pseudocodeword \(x=\iota(a)\notin
+   \operatorname{conv}\{\iota(c_j)\}\) with
+   \[
+      \Gamma_u(\iota(a);\Omega_u)>\Xi_u ,
+      \tag{LNN10}
+   \]
+   then that relaxation cannot satisfy the frozen finite score-band target.
+
+   For integral \(a\), \(\Gamma_u(\iota(a);\omega)\) is itself a finite
+   chart LP: choose the block-minimum chart of \(R\), impose the true-codeword
+   deficit bounds defining \(\mathcal R_u^{\mathrm{gap}}(\omega)\), and maximize
+   \(\ip{R}{\iota(a)}-\max_j\ip{R}{\iota(c_j)}\).  This is the direct
+   obstruction tested by \texttt{impl/score\_band\_lp\_stress.py}.  The
+   remaining code theorem must therefore prove not only that true codewords
+   decode, but that every high-score local pseudocodeword has been cut off by
+   the retained LP/SA or Tanner constraints.
+\end{corollary}
+
+\begin{proof}
+   Since \(x\in P_u\),
+   \[
+      \ip{R}{x}-\max_j\ip{R}{\iota(c_j)}
+      \le
+      \sup_{z\in P_u}\ip{R}{z}
+      -
+      \max_j\ip{R}{\iota(c_j)}
+      \tag{LNN11}
+   \]
+   for every \(R\in\mathcal R_u^{\mathrm{gap}}(\Omega_u)\).  Taking the
+   supremum over \(R\) and applying \((LNN2)\) proves \((LNN9)\).  The
+   contrapositive gives the obstruction \((LNN10)\).
+
+   For an integral \(a\), \(\ip{R}{\iota(a)}\) is the sum of one selected symbol
+   score per block.  Fixing a block-minimum chart linearizes the nonnegativity
+   of \(R=Y^\circ\), while the scalar \(\max_j\ip{R}{\iota(c_j)}\) is represented
+   by the same variable \(m\) used in \((LNP1)\)--\((LNP3)\).  Hence the
+   displayed supremum is the maximum of finitely many ordinary LPs.
+\end{proof}
+
 \begin{corollary}[Band-limited residual-budget compiler]
    \label{cor:band-limited-residual-budget-compiler}
    Continue with the notation of
@@ -13500,6 +13562,11 @@ partition ignores the bias coordinates that certify the list size.
    theorem must therefore be a local list-recovery or Tanner expansion
    statement strong enough to exclude the high-price missing charts, not just
    coordinate balance plus low-order projection consistency.
+   There is a useful distinction here: on an \(N=8,b=4,q=2\) toy sweep, all
+   triple projections eliminated integral local pseudowords, while the
+   product-simplex score-band gap remained.  Once the integral obstruction is
+   gone, the next numerical target is the fractional local-marginal LP itself,
+   not another integral missing-word search.
 
    The tilted-overlap diagnostic is equally simple.  Generate a balanced
    \(q\)-ary panel, draw independent centered Gaussian symbol scores, set
