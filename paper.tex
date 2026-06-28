@@ -38862,6 +38862,76 @@ query mass rather than producing a cost-effective dense filter.
    immediate from \((CEC2)\).
 \end{proof}
 
+\begin{corollary}[Singleton profile Gibbs residual]
+   \label{cor:singleton-profile-gibbs-residual}
+   Work in the setting of
+   \cref{cor:partition-local-gibbs-residual}.  Suppose every active layer uses
+   the singleton partition of the positive profiles.  If, for every active
+   layer \(i\) and every \(h\in\mathcal H_i\) with \(X_{i,h}>0\),
+   \[
+      \log W_{i,h}-I_{i,h}-\ell_i\log2
+      \le
+      \log\frac{B_\star}
+               {32M_{\mathcal I}H_i^{1/p_i}},
+      \tag{SPG1}
+   \]
+   and the high-correlation fixed-tail condition \((PELS5)\) holds, then
+   \((\mathsf{ESFC}_\Sigma)\) is feasible, provided no one-record guard-credit
+   repair fires.
+
+   Conversely, if \((GWL2)\) fails for a layer \(i\), then some positive profile
+   \(h\in\mathcal H_i\) satisfies
+   \[
+      \log W_{i,h}-I_{i,h}-\ell_i\log2
+      >
+      \log\frac{B_\star}
+               {32M_{\mathcal I}H_i^{1/p_i}}.
+      \tag{SPG2}
+   \]
+   For such a profile, any finite lower-certified raw guard proposal panel
+   \(a\in\mathcal R_h\) with nonnegative weights \(\lambda_a\) and
+   \[
+      \sum_{a\in\mathcal R_h}\lambda_a(X_a-R_a)>0
+      \tag{SPG3}
+   \]
+   fires a one-record guard-credit repair.  If no such repair fires, every
+   finite certified proposal panel for every violating singleton profile
+   satisfies the reverse inequality
+   \[
+      \sum_{a\in\mathcal R_h}\lambda_aX_a
+      \le
+      \sum_{a\in\mathcal R_h}\lambda_aR_a .
+      \tag{SPG4}
+   \]
+
+   Thus, when the active refinement has \(H_i=\log^{O(1)}n\), the residual
+   storage theorem can be stated without Gibbs notation: every bad layer must
+   expose one ordinary profile whose entropy-energy deficit beats the local
+   budget by only a polylogarithmic \(H_i^{1/p_i}\) toll, and that profile must
+   also evade all certified dense/star guard repairs.
+\end{corollary}
+
+\begin{proof}
+   Let \(\mathcal P_i\) be the singleton partition of
+   \(\{h:X_{i,h}>0\}\), and let \(J_i=|\mathcal P_i|\).  Then
+   \(J_i\le H_i\), and for the singleton class \(C=\{h\}\),
+   \[
+      \Lambda_{i,C}^{\rm part}
+      =
+      \log W_{i,h}-I_{i,h}.
+   \]
+   If \((SPG1)\) holds, then \((PLG2)\) holds for every singleton because
+   \(H_i^{1/p_i}\ge J_i^{1/p_i}\).  The first conclusion follows from
+   \cref{cor:partition-local-gibbs-residual}.
+
+   If \((GWL2)\) fails, \cref{cor:partition-local-gibbs-residual} gives a
+   singleton \(\{h\}\) violating \((PLG2)\) with \(J_i\).  Since
+   \(H_i^{1/p_i}\ge J_i^{1/p_i}\), this implies the stronger-looking violation
+   \((SPG2)\).  On a singleton, the conditional Gibbs law \((PLG3)\) is the
+   point mass at \(h\), so \((SPG3)\) is exactly the class-local surplus
+   condition \((PLG4)\), and \((SPG4)\) is its no-repair contrapositive.
+\end{proof}
+
 \begin{corollary}[Paid-responsibility high-correlation star compiler]
    \label{cor:paid-responsibility-high-correlation-star}
    Work in the setting of
@@ -44674,6 +44744,9 @@ tuple-profile, and list-decoding separators.
 \Cref{cor:count-energy-cell-screen} converts a bounded dynamic-range cell into
 the elementary statistic \(d^++p^{-1}\log|C|\), so the local target is again a
 count-energy excess rather than an opaque Gibbs sum.
+\Cref{cor:singleton-profile-gibbs-residual} takes the extreme finite partition:
+for a polylogarithmic profile refinement, the obstruction is one ordinary
+profile entropy-energy violation plus failure of all certified guard repairs.
 \Cref{lem:star-superlevel-column-verifier} and
 \cref{cor:pair-star-dense-column-generator} add the finite LP check: the star
 is retained only if its ball-thickened query side has positive reduced gain;
@@ -70271,6 +70344,9 @@ guard-credit record.
 \Cref{cor:count-energy-cell-screen} is the reporter-facing bounded-range
 version: if a cell's \(d=\log W-I\) values are nearly flat, water level is
 equivalent up to that range to a max-plus-count entropy-energy statistic.
+\Cref{cor:singleton-profile-gibbs-residual} records the resulting endpoint for
+polylogarithmic refinements: one bad profile must either feed the guard-credit
+verifier or be ruled out by the spread-packing entropy-energy estimate.
 \Cref{lem:star-superlevel-column-verifier} and
 \cref{cor:pair-star-dense-column-generator} turn such a superlevel into an
 ordinary fractional-cover column by using the certified query activation
@@ -70545,6 +70621,9 @@ one cell after paying \(J^{1/p}\).
 \Cref{cor:count-energy-cell-screen} shows that bounded-range cells reduce this
 again to a concrete count-energy violation, the form most compatible with
 tuple-profile and range-reporting certificates.
+\Cref{cor:singleton-profile-gibbs-residual} gives the most aggressive finite
+version: if \(H_i\) is polylogarithmic, the irreducible residual is a single
+high-deficit profile with no positive certified guard proposal.
 \Cref{cor:metric-entropy-hall-shadow-closure} and
 \cref{cor:low-doubling-hall-shadow-close} sharpen the remaining geometric
 obligation: any positive Hall shadow of certified covering number below
