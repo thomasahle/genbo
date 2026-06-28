@@ -13480,6 +13480,115 @@ partition ignores the bias coordinates that certify the list size.
    just the normalization of \(\mu\) inside each coordinate block.
 \end{proof}
 
+\begin{corollary}[Finite dual for localized residual feasibility]
+   \label{cor:localized-residual-feasibility-dual}
+   Work at a branch-and-bound node \(u\), with relaxation \(P_u\) and true
+   codewords \(c_1,\ldots,c_N\).  For a nonnegative score table \(y\), write
+   its residual-Hall gap as
+   \[
+      \mathcal H_u(y)
+      =
+      \sup_{z\in P_u}\ip{y}{z}
+      -
+      \max_{j\in[N]}\ip{y}{\iota(c_j)} .
+      \tag{LOC1}
+   \]
+   For a selector \(0\le s\le\omega\), define its posterior-mismatch direction
+   \(D_s\in\R_+^{bq}\) by
+   \[
+      D_s(i,a)=\max_{\alpha\in[q]}s_i(\alpha)-s_i(a).
+      \tag{LOC2}
+   \]
+   Then, for every residual budget \(\mu\ge0\),
+   \[
+      \ip{D_s}{\mu}=S(s)\Delta_\mu(s).
+      \tag{LOC3}
+   \]
+
+   Let \(\mathcal Y\subset\R_+^{bq}\) be a finite family of Hall score tables and
+   let \(\mathcal S\subseteq\{s\in\R_+^N:0\le s\le\omega\}\) be a finite family
+   of chart selectors.  There exists a residual budget \(\mu\ge0\) satisfying
+   \[
+      \ip{y}{\mu}\ge\mathcal H_u(y)
+      \qquad(y\in\mathcal Y),
+      \tag{LOC4}
+   \]
+   and
+   \[
+      \ip{D_s}{\mu}\le B
+      \qquad(s\in\mathcal S)
+      \tag{LOC5}
+   \]
+   if and only if every pair of nonnegative multipliers
+   \((\alpha_y)_{y\in\mathcal Y}\) and
+   \((\beta_s)_{s\in\mathcal S}\) obeying the coordinatewise domination
+   \[
+      \sum_{y\in\mathcal Y}\alpha_y y
+      \le
+      \sum_{s\in\mathcal S}\beta_sD_s
+      \tag{LOC6}
+   \]
+   also obeys
+   \[
+      \sum_{y\in\mathcal Y}\alpha_y\mathcal H_u(y)
+      \le
+      B\sum_{s\in\mathcal S}\beta_s .
+      \tag{LOC7}
+   \]
+
+   Hence the localized residual theorem has an exact finite obstruction.  If the
+   restricted residual LP is infeasible, preprocessing obtains a nonnegative
+   mixture of genuine relaxation gaps whose score table is dominated by a
+   mixture of posterior-mismatch directions, but whose Hall value is larger than
+   the allowed chart budget.  Conversely, ruling out all such dominated mixtures
+   gives a residual budget that is simultaneously Hall-valid on
+   \(\mathcal Y\) and chart-cheap on \(\mathcal S\).
+\end{corollary}
+
+\begin{proof}
+   Formula \((LOC3)\) is just the linearized form of
+   \((LOB5)\):
+   \[
+   \begin{aligned}
+      S(s)\Delta_\mu(s)
+      &=
+      \sum_i
+      \left(
+         m_i^\mu\max_a s_i(a)-\sum_a\mu_{i,a}s_i(a)
+      \right)\\
+      &=
+      \sum_{i,a}\mu_{i,a}
+      \left(\max_\alpha s_i(\alpha)-s_i(a)\right).
+   \end{aligned}
+      \tag{LOC8}
+   \]
+
+   The feasibility problem \((LOC4)\)--\((LOC5)\), together with \(\mu\ge0\), is
+   the finite linear system
+   \[
+      -\ip{y}{\mu}\le-\mathcal H_u(y),
+      \qquad
+      \ip{D_s}{\mu}\le B,
+      \qquad
+      -\mu_{i,a}\le0 .
+      \tag{LOC9}
+   \]
+   By Farkas' lemma, it is infeasible if and only if there are nonnegative
+   multipliers \(\alpha_y,\beta_s,\gamma_{i,a}\) such that
+   \[
+      -\sum_y\alpha_yy+\sum_s\beta_sD_s-\gamma=0
+      \tag{LOC10}
+   \]
+   and
+   \[
+      -\sum_y\alpha_y\mathcal H_u(y)+B\sum_s\beta_s<0.
+      \tag{LOC11}
+   \]
+   Eliminating \(\gamma\ge0\), the equality \((LOC10)\) is exactly the
+   coordinatewise domination \((LOC6)\).  The strict inequality
+   \((LOC11)\) is the negation of \((LOC7)\).  This proves the equivalence.
+\end{proof}
+
 \begin{corollary}[Anchor-fiber LP/SA certificate compiler]
    \label{cor:anchor-fiber-lp-sa-compiler}
    Continue with the notation of
@@ -13866,6 +13975,11 @@ partition ignores the bias coordinates that certify the list size.
    distribution of the residual budget and the posterior induced by the
    price-capped selector.  This is the form in which anchor-fiber mobility
    bounds should be plugged into the residual theorem.
+   \Cref{cor:localized-residual-feasibility-dual} then turns that plug-in step
+   into one finite LP dual: a failed localized residual budget produces a Hall
+   gap mixture dominated coordinatewise by chart-mismatch directions.  Thus the
+   next theorem can be stated positively as ruling out those dominated mixtures,
+   rather than as a global Gaussian pseudocodeword-spectrum assertion.
 
    \Cref{cor:leader-shift-near-leader-certificate} gives the clean terminal
    version of this idea when scalar leakage is killed exactly, or otherwise
