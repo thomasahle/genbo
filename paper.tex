@@ -63509,6 +63509,75 @@ certificate is the verified positive-gain column and the finite LP it augments.
    \cref{cor:subset-clipped-shared-tail-residual}.
 \end{proof}
 
+\begin{corollary}[Transported clipped-tail panel separator]
+   \label{cor:transported-clipped-tail-panel-separator}
+   Work in the setting of
+   \cref{cor:transported-subset-clipped-tail-certificate}, for a finite family
+   \(\mathcal B\) of shared prefix templates with prices
+   \(P_B(K)=\psi_B(A_BK^{\rho_B}+\zeta_BK^{1+\rho_B})\),
+   \(0<\rho_B<1\), and cardinality-net clipped scales
+   \(K_B^\natural,\Theta_B^{\rm net}\).  Fix a no-prefix dual \(u\) and its
+   shared degrees \(d_B^u\).  A transported panel consists of records \(i\in I\),
+   nonnegative weights \(\lambda_i\), templates \(B_i\in\mathcal B\), certified
+   smaller-radius subsets \(U_i\subseteq W_{B_i}\), transported loads
+   \(\ell_{i,p}\), masses \(M_i\), and congestions \(C_i>0\) such that
+   \[
+      \sum_{p\in U_i}\ell_{i,p}=M_i,
+      \qquad
+      \ell_{i,p}\le C_i\,d_{B_i}^u(p)
+      \quad(p\in U_i).
+      \tag{TSP1}
+   \]
+   Suppose every active template has nonzero clipped price
+   \((A_{B_i},\zeta_{B_i})\ne(0,0)\).  If the panel has positive transported
+   clipped-tail surplus
+   \[
+      \sum_{i\in I}\lambda_i
+      \left(
+         \frac{M_i}{C_i}
+         -
+         \bigl(|U_i|+2K_{B_i}^\natural\bigr)\Theta_{B_i}^{\rm net}
+      \right)>0,
+      \tag{TSP2}
+   \]
+   then some \(B_i\) violates its clipped shared-tail cap and therefore contains
+   a positive shared top-prefix column.
+
+   In particular, a randomized build-time proposal law that returns transported
+   panels with certified surplus \(Z(s)\), with
+   \[
+      \E_s Z(s)\ge\Gamma>0,
+      \qquad
+      Z(s)_+\le M_{\rm prop}
+      \quad\text{almost surely},
+      \tag{TSP3}
+   \]
+   finds a panel containing a positive shared top-prefix column after \(N\)
+   independent proposals with probability at least
+   \[
+      1-\exp\left(-\frac{N\Gamma}{M_{\rm prop}}\right).
+      \tag{TSP4}
+   \]
+\end{corollary}
+
+\begin{proof}
+   If \((TSP2)\) holds, then some active record \(i\) has
+   \[
+      \frac{M_i}{C_i}
+      >
+      \bigl(|U_i|+2K_{B_i}^\natural\bigr)\Theta_{B_i}^{\rm net}.
+   \]
+   Condition \((TSP1)\) is exactly \((CTS1)\) for \(B_i,U_i\), and the displayed
+   inequality is \((CTS2)\).  Hence
+   \cref{cor:transported-subset-clipped-tail-certificate} gives a clipped-tail
+   violation and a positive shared top-prefix column.
+
+   For the randomized statement, \(\E Z_+\ge\Gamma\) and \(Z_+\le M_{\rm prop}\)
+   imply that one proposal has positive surplus with probability at least
+   \(\Gamma/M_{\rm prop}\).  Independent repetition gives \((TSP4)\), and every
+   positive-surplus panel is handled by the deterministic part.
+\end{proof}
+
 \begin{corollary}[Template-complete shared-cover obstruction]
    \label{cor:template-complete-shared-cover-obstruction}
    Work in the setting of
@@ -63668,6 +63737,58 @@ certificate is the verified positive-gain column and the finite LP it augments.
    Since the node and price system were arbitrary,
    \cref{cor:shared-panel-positive-separator-endpoint} gives the displayed
    bounds.
+\end{proof}
+
+\begin{corollary}[Transport form of the template obstruction target]
+   \label{cor:transport-template-obstruction-endpoint}
+   Work in the setting of
+   \cref{cor:template-search-shared-integrated-target}, except replace the
+   asserted template-search outcome by the following obstruction-separation
+   condition.  For every feasible atomized high-correlation dual \(y\),
+   preprocessing may choose a finite template family \(\mathcal B_y\) whose
+   positive top-prefix records lie in \(\mathcal Z_\star\), whose available
+   cardinalities are dense from below, and whose prices have the form
+   \[
+      P_B(K)=\psi_B\left(A_BK^{\rho_B}+\zeta_BK^{1+\rho_B}\right),
+      \qquad 0<\rho_B<1 .
+      \tag{TOE1}
+   \]
+   If
+   \[
+      \Psi_{\mathcal B_y}(y)>D_\pi/4,
+      \tag{TOE2}
+   \]
+   then every exact no-prefix dual obstruction \(u\) supplied by
+   \cref{cor:template-complete-shared-cover-obstruction} admits a transported
+   clipped-tail panel satisfying \((TSP1)\)--\((TSP2)\), with all resulting
+   top-prefix records contained in \(\mathcal Z_\star\).
+
+   Then the positive shared-panel separator \((SPP1)\) holds at every node, and
+   hence
+   \[
+      Q(n,d)=d\,n^{\rho_c}\log^{O_c(1)}n,\qquad
+      S(n,d)=dn+n^{1+\rho_c}\log^{O_c(1)}n .
+   \]
+
+   Thus the remaining geometric theorem can be stated entirely in transport
+   form: a high-value no-prefix dual must move enough of its mass into one
+   certified smaller-radius subset, with bounded congestion, to beat the affine
+   clipped-tail threshold.
+\end{corollary}
+
+\begin{proof}
+   Fix \(y\).  If \(\Psi_{\mathcal B_y}(y)\le D_\pi/4\), the first outcome of
+   \cref{cor:template-search-shared-integrated-target} holds.  Otherwise
+   \(\Psi_{\mathcal B_y}(y)>D_\pi/4\), so
+   \cref{cor:template-complete-shared-cover-obstruction} gives an exact
+   no-prefix dual obstruction \(u\) satisfying \((TCO2)\)--\((TCO4)\) with value
+   \(>D_\pi/4\).  By hypothesis this obstruction has a transported clipped-tail
+   panel with positive surplus.  Applying
+   \cref{cor:transported-clipped-tail-panel-separator} yields a positive shared
+   top-prefix column in \(\mathcal Z_\star\).  Hence, for every \(y\), the
+   template search has one of the two certified outcomes required by
+   \cref{cor:template-search-shared-integrated-target}.  That corollary gives
+   \((SPP1)\) at every node and the displayed bounds.
 \end{proof}
 
 \begin{corollary}[Shared integrated cover-cost endpoint]
@@ -79465,6 +79586,10 @@ shared top-prefix column.
 form: a bounded-congestion shipment into one certified subset separates as soon
 as its transported mass beats this affine clipped-tail threshold, without an
 extra layer-cake dynamic-range loss.
+\Cref{cor:transported-clipped-tail-panel-separator} is the panel version:
+facility, AQ, range, list, lattice, or other proposal families may return a
+weighted collection of transported subsets, and positive aggregate transported
+surplus still hardens to one deterministic shared top-prefix column.
 \Cref{cor:template-complete-shared-cover-obstruction} gives the exact finite
 LP normal form for the remaining shared-cover target: if the cover value at
 level \(D/4\) is too large, the obstruction is one dual \(u\) of value
@@ -79474,6 +79599,10 @@ under cardinality-net closure, the clipped tail cap.
 current build-time target with arbitrary preprocessing: solve the finite
 template cover, or make the returned obstruction violate one certified
 container tail cap.
+\Cref{cor:transport-template-obstruction-endpoint} is the current transport
+normal form of that target: every high-value no-prefix dual must admit a
+bounded-congestion transported panel whose affine clipped-tail surplus is
+positive.
 \Cref{cor:single-tail-shared-separator-endpoint} packages this into the
 current sharp proof target: every normalized exact-signature dual must either
 produce a materializable low-correlation profile record or force one certified
