@@ -39131,6 +39131,108 @@ query mass rather than producing a cost-effective dense filter.
    pointwise bounds \(X_{i,h}\le L_h+H_h\).
 \end{proof}
 
+\begin{corollary}[Shared-record partition-cell compiler]
+   \label{cor:shared-record-partition-cell-compiler}
+   Work in the setting of
+   \cref{cor:partition-cell-spread-star-repair}.  Fix an active layer \(i\), a
+   nonempty partition class \(C\in\mathcal P_i\), and a finite shared family
+   \(\mathcal B_C\) of lower-certified raw guard records.  For each \(h\in C\)
+   let \(\ell_h\ge0\), and for each \(h\in C\), \(b\in\mathcal B_C\), let
+   \(z_{h,b}\ge0\).  For every record \(b\), let \(X_b\) and \(R_b\) denote its
+   lower paid-shadow certificate and recursive price, and put
+   \[
+      L_C^{\rm sh}
+      =
+      \left(\sum_{h\in C}\ell_h^{p_i}\right)^{1/p_i},
+      \qquad
+      Z_b^{(p)}
+      =
+      \left(\sum_{h\in C}z_{h,b}^{p_i}\right)^{1/p_i}.
+      \tag{SRPC1}
+   \]
+   Suppose the reporter certifies a profilewise shared decomposition
+   \[
+      X_{i,h}\le \ell_h+\sum_{b\in\mathcal B_C}z_{h,b}
+      \qquad(h\in C),
+      \tag{SRPC2}
+   \]
+   and, for some \(\chi\ge1\), the recordwise aggregation bounds
+   \[
+      Z_b^{(p)}\le \chi X_b
+      \qquad(b\in\mathcal B_C).
+      \tag{SRPC3}
+   \]
+   If the shared low envelope plus the one-time shared record prices fit the
+   cell water budget,
+   \[
+      L_C^{\rm sh}+\chi\sum_{b\in\mathcal B_C}R_b
+      \le
+      \Theta_{i,C},
+      \tag{SRPC4}
+   \]
+   then either \(C\) satisfies \((PLG2)\), or a one-record guard-credit repair
+   fires.
+
+   Equivalently, if \(C\) violates \((PLG2)\) and no one-record repair fires, then
+   every such shared decomposition must violate
+   \[
+      L_C^{\rm sh}+\chi\sum_{b\in\mathcal B_C}R_b
+      >
+      \Theta_{i,C}.
+      \tag{SRPC5}
+   \]
+   Consequently, if every active layer and positive partition class admits
+   certificates satisfying \((SRPC2)\)--\((SRPC4)\), and \((PELS5)\) holds, then
+   \((\mathsf{ESFC}_\Sigma)\) is feasible, provided no one-record guard-credit
+   repair fires.
+
+   In particular, it is enough to certify additive allocations with
+   \[
+      \sum_{h\in C}z_{h,b}\le \chi X_b
+      \qquad(b\in\mathcal B_C),
+      \tag{SRPC6}
+   \]
+   because \(Z_b^{(p)}\le\sum_h z_{h,b}\).  Thus a dense/star record shared by
+   many profiles is charged through the single quantity \(Z_b^{(p)}\) and the
+   one-time recursive price \(R_b\), rather than through a separate copy of the
+   price in every profile where it appears.
+\end{corollary}
+
+\begin{proof}
+   Suppose no one-record repair fires.  Since every \(b\in\mathcal B_C\) is a
+   lower-certified raw record, \(X_b>R_b\) would itself be a positive one-record
+   panel for \cref{cor:lower-certified-scale-free-guard-panel}.  Hence
+   \(X_b\le R_b\) for every \(b\).
+
+   Apply Minkowski's inequality in \(\ell_{p_i}(C)\) to \((SRPC2)\):
+   \[
+   \begin{aligned}
+      X_{i,C}^{(p)}
+      &=
+      \left(\sum_{h\in C}X_{i,h}^{p_i}\right)^{1/p_i}  \\
+      &\le
+      L_C^{\rm sh}
+      +
+      \sum_{b\in\mathcal B_C}
+      \left(\sum_{h\in C}z_{h,b}^{p_i}\right)^{1/p_i} \\
+      &=
+      L_C^{\rm sh}+\sum_{b\in\mathcal B_C}Z_b^{(p)}  \\
+      &\le
+      L_C^{\rm sh}+\chi\sum_{b\in\mathcal B_C}X_b
+      \le
+      L_C^{\rm sh}+\chi\sum_{b\in\mathcal B_C}R_b
+      \le
+      \Theta_{i,C}.
+   \end{aligned}
+   \]
+   Therefore \(C\) satisfies \((PLG2)\).  The contrapositive is \((SRPC5)\).
+   The feasibility claim follows from
+   \cref{cor:partition-local-gibbs-residual} as in
+   \cref{cor:partition-cell-spread-star-repair}.  Finally, \((SRPC6)\) implies
+   \((SRPC3)\) since \(p_i\ge1\) and the \(\ell_{p_i}\) norm is bounded by the
+   \(\ell_1\) norm on nonnegative vectors.
+\end{proof}
+
 \begin{corollary}[Paid-responsibility high-correlation star compiler]
    \label{cor:paid-responsibility-high-correlation-star}
    Work in the setting of
@@ -44954,6 +45056,10 @@ exceed its local water threshold.
 version: the same repair bridge may be applied after a finite reporter
 partition, so the threshold pays the chosen cell count \(J\) rather than the raw
 profile count.
+\Cref{cor:shared-record-partition-cell-compiler} adds the needed shared-record
+interface: profile contributions to the same dense/star record are aggregated in
+\(\ell_p\), and that record's recursive price is charged only once in the cell
+water test.
 \Cref{lem:star-superlevel-column-verifier} and
 \cref{cor:pair-star-dense-column-generator} add the finite LP check: the star
 is retained only if its ball-thickened query side has positive reduced gain;
@@ -70561,6 +70667,9 @@ threshold.
 \Cref{cor:partition-cell-spread-star-repair} lifts the same statement back to
 coarser reporter cells, replacing singleton profile accounting by a class
 \(\ell_p\) certificate and the partition-count toll \(J^{1/p}\).
+\Cref{cor:shared-record-partition-cell-compiler} connects that cell certificate
+to shared dense records: a record helping many profiles contributes through its
+profile-allocation \(\ell_p\) norm but pays one recursive price.
 \Cref{lem:star-superlevel-column-verifier} and
 \cref{cor:pair-star-dense-column-generator} turn such a superlevel into an
 ordinary fractional-cover column by using the certified query activation
@@ -70845,6 +70954,10 @@ failure of the inequality is now the named storage-side theorem to prove.
 same target: for a polylogarithmic reporter partition, prove the class low
 envelope plus reported star prices fit the cell water threshold, or obtain a
 guard repair.
+\Cref{cor:shared-record-partition-cell-compiler} sharpens the target further by
+allowing the reported star records to be shared across all profiles in a cell;
+the remaining proof should therefore construct shared allocation certificates,
+not profilewise duplicate star copies.
 \Cref{cor:metric-entropy-hall-shadow-closure} and
 \cref{cor:low-doubling-hall-shadow-close} sharpen the remaining geometric
 obligation: any positive Hall shadow of certified covering number below
