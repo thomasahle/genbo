@@ -840,7 +840,7 @@ def _reduced_source_to_full(
 
 
 def _point_facets(points: np.ndarray, *, tol: float) -> list[tuple[np.ndarray, float]]:
-    """Enumerate supporting halfspaces of a tiny full-dimensional point hull."""
+    """Enumerate halfspaces for a tiny point hull, including affine hull sides."""
     points = np.asarray(points, dtype=float)
     if points.ndim != 2:
         raise ValueError("points must be a matrix")
@@ -849,47 +849,78 @@ def _point_facets(points: np.ndarray, *, tol: float) -> list[tuple[np.ndarray, f
         return []
     if n_points == 0:
         raise ValueError("cannot build facets of an empty hull")
+    base = points[0]
+    centered = points - base
     if n_points == 1:
-        if dim != 1:
-            raise ValueError("point hull is not full-dimensional")
-        value = float(points[0, 0])
-        return [(np.array([1.0]), value), (np.array([-1.0]), -value)]
-    affine_rank = int(np.linalg.matrix_rank(points[1:] - points[0], tol=tol))
-    if affine_rank < dim:
-        raise ValueError("point hull is not full-dimensional")
+        affine_rank = 0
+        affine_basis = np.zeros((dim, 0), dtype=float)
+        nullspace = np.eye(dim, dtype=float)
+    else:
+        _, singular_values, vt = np.linalg.svd(centered, full_matrices=True)
+        affine_rank = int(np.sum(singular_values > tol))
+        affine_basis = vt[:affine_rank].T
+        nullspace = vt[affine_rank:].T
 
-    facets: list[tuple[np.ndarray, float]] = []
-    seen: set[tuple[int, ...]] = set()
-    for support in itertools.combinations(range(n_points), dim):
-        selected = points[list(support)]
-        if dim == 1:
-            normal = np.array([1.0])
-        else:
-            differences = selected[1:] - selected[0]
-            if np.linalg.matrix_rank(differences, tol=tol) < dim - 1:
+    halfspaces: list[tuple[np.ndarray, float]] = []
+
+    for null_idx in range(nullspace.shape[1]):
+        normal = nullspace[:, null_idx].copy()
+        normal[np.abs(normal) <= tol] = 0.0
+        offset = float(normal @ base)
+        halfspaces.append((normal.copy(), offset))
+        halfspaces.append((-normal.copy(), -offset))
+
+    if affine_rank == 0:
+        facets = []
+    else:
+        projected = centered @ affine_basis
+        facets: list[tuple[np.ndarray, float]] = []
+        for support in itertools.combinations(range(n_points), affine_rank):
+            selected = projected[list(support)]
+            if affine_rank == 1:
+                normal = np.array([1.0])
+            else:
+                differences = selected[1:] - selected[0]
+                if np.linalg.matrix_rank(differences, tol=tol) < affine_rank - 1:
+                    continue
+                _, _, vt = np.linalg.svd(differences, full_matrices=True)
+                normal = vt[-1]
+            norm = float(np.linalg.norm(normal))
+            if norm <= tol:
                 continue
-            _, _, vt = np.linalg.svd(differences, full_matrices=True)
-            normal = vt[-1]
+            normal = normal / norm
+            offset = float(normal @ selected[0])
+            values = projected @ normal - offset
+            if np.all(values <= tol):
+                pass
+            elif np.all(values >= -tol):
+                normal = -normal
+                offset = -offset
+            else:
+                continue
+            lifted = affine_basis @ normal
+            lifted[np.abs(lifted) <= tol] = 0.0
+            halfspaces.append((lifted.copy(), float(offset + lifted @ base)))
+
+    deduped: list[tuple[np.ndarray, float]] = []
+    seen: set[tuple[int, ...]] = set()
+    for normal, offset in halfspaces:
         norm = float(np.linalg.norm(normal))
         if norm <= tol:
             continue
-        normal = normal / norm
-        offset = float(normal @ selected[0])
-        values = points @ normal - offset
-        if np.all(values <= tol):
-            pass
-        elif np.all(values >= -tol):
-            normal = -normal
-            offset = -offset
+        if affine_rank == dim:
+            scale = norm
         else:
-            continue
+            scale = 1.0
+        normal = normal / scale
+        offset = float(offset / scale)
         normal[np.abs(normal) <= tol] = 0.0
         key = tuple(int(round(float(value) / tol)) for value in np.r_[normal, offset])
         if key in seen:
             continue
         seen.add(key)
-        facets.append((normal.copy(), float(offset)))
-    return facets
+        deduped.append((normal.copy(), offset))
+    return deduped
 
 
 def _projected_local_marginal_vertex_sources(
@@ -1956,6 +1987,25 @@ def main() -> None:
             )
             print(f"worst_local_marginal_exact_seed,{worst_exact['seed']}")
             print(f"worst_local_marginal_exact_min_chart,{worst_exact['local_marginal_exact_min_chart']}")
+            clean_exact_rows = [
+                row for row, local_row in zip(combined_rows, local_rows)
+                if int(local_row["local_count"]) == 0
+            ]
+            print(f"local_marginal_exact_clean_count,{len(clean_exact_rows)}")
+            if clean_exact_rows:
+                clean_values = np.array([
+                    float(row["local_marginal_exact_gap_over_xi"])
+                    for row in clean_exact_rows
+                ])
+                print(f"local_marginal_exact_clean_gap_over_xi_mean,{float(np.mean(clean_values))}")
+                print(f"local_marginal_exact_clean_gap_over_xi_max,{float(np.max(clean_values))}")
+                clean_over_budget = int(np.sum(clean_values > 1.0 + 1e-8))
+                print(f"local_marginal_exact_clean_over_budget_count,{clean_over_budget}")
+                worst_clean = max(
+                    clean_exact_rows,
+                    key=lambda row: float(row["local_marginal_exact_gap_over_xi"]),
+                )
+                print(f"worst_local_marginal_exact_clean_seed,{worst_clean['seed']}")
 
         if args.local_dominance_screen:
             for key in [

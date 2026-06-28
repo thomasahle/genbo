@@ -174,6 +174,29 @@ def test_exact_local_marginal_full_check_collapses_to_true_hull():
     assert result["basis_count"] <= 100
 
 
+def test_exact_local_marginal_handles_lower_dimensional_check_hull():
+    code = np.array([
+        [0, 0],
+        [1, 1],
+    ])
+    omega = np.ones(len(code))
+    sources = local_marginal_vertex_sources(
+        code,
+        checks=[(0, 1)],
+        max_bases=100,
+    )
+    result = local_marginal_score_band_gap_exact(
+        code,
+        omega,
+        checks=[(0, 1)],
+        max_bases=100,
+    )
+
+    assert sources["source_count"] == 2
+    assert sources["basis_count"] <= 100
+    assert result["gap"] <= 1e-8
+
+
 def test_local_marginal_pairwise_parity_sees_integral_gap():
     code = np.array([
         [0, 0, 0],
@@ -336,6 +359,7 @@ if __name__ == "__main__":
     test_pairwise_local_parity_pseudoword_is_detected()
     test_local_marginal_full_check_collapses_to_true_hull()
     test_exact_local_marginal_full_check_collapses_to_true_hull()
+    test_exact_local_marginal_handles_lower_dimensional_check_hull()
     test_local_marginal_pairwise_parity_sees_integral_gap()
     test_exact_local_marginal_pairwise_parity_matches_integral_gap()
     test_local_marginal_dominance_screen_bounds_exact_gap()
