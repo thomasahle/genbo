@@ -64,6 +64,20 @@ def saturated_values(children: ChildList, *, root: Node) -> dict[Node, float]:
     return values
 
 
+def harmonic_values(children: ChildList, *, root: Node) -> dict[Node, float]:
+    """Return the harmonic prefix-energy value W at every reachable node."""
+    _validate_probabilities(children)
+    values: dict[Node, float] = {}
+    for node in _postorder(children, root):
+        out = children.get(node, ())
+        if len(out) == 0:
+            values[node] = 1.0
+        else:
+            conductance = sum(gamma * values[child] for child, gamma in out)
+            values[node] = conductance / (1.0 + conductance)
+    return values
+
+
 def prefix_success_masses(children: ChildList, *, root: Node) -> dict[Node, float]:
     """Return A(u), the product of edge success probabilities to each prefix."""
     _validate_probabilities(children)

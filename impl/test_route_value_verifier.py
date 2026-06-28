@@ -4,6 +4,7 @@ import numpy as np
 
 from route_value_verifier import (
     all_route_cut_masses,
+    harmonic_values,
     least_superharmonic_majorant,
     prefix_masses_from_leaf_law,
     saturated_values,
@@ -26,6 +27,20 @@ def test_saturated_value_matches_explicit_min_cut():
     assert np.isclose(values["b"], 0.1)
     assert np.isclose(values["r"], 0.35)
     assert np.isclose(min(cut_masses), values["r"])
+
+
+def test_harmonic_value_stays_between_saturated_value_and_depth_loss():
+    children = {
+        "r": [("a", 0.4), ("b", 0.7)],
+        "a": [("a0", 0.5), ("a1", 0.2)],
+        "b": [("b0", 0.1)],
+    }
+
+    saturated = saturated_values(children, root="r")
+    harmonic = harmonic_values(children, root="r")
+
+    assert harmonic["r"] <= saturated["r"]
+    assert harmonic["r"] >= saturated["r"] / 3.0
 
 
 def test_superharmonic_majorant_is_exact_antichain_obstruction():
@@ -136,12 +151,31 @@ def test_balanced_full_prefix_tree_has_exponential_antichain_charge():
     assert phi["r"] > 1.0
 
 
+def test_boosted_single_leader_chain_has_inverse_depth_harmonic_value():
+    depth = 9
+    eps = (depth + 1) ** -2
+    gamma = 1.0 - eps
+    children = {
+        f"v{i}": [(f"v{i + 1}", gamma)]
+        for i in range(depth)
+    }
+
+    saturated = saturated_values(children, root="v0")
+    harmonic = harmonic_values(children, root="v0")
+
+    assert np.isclose(saturated["v0"], gamma ** depth)
+    assert saturated["v0"] >= 0.9
+    assert harmonic["v0"] >= saturated["v0"] / (depth + 1)
+
+
 if __name__ == "__main__":
     test_saturated_value_matches_explicit_min_cut()
+    test_harmonic_value_stays_between_saturated_value_and_depth_loss()
     test_superharmonic_majorant_is_exact_antichain_obstruction()
     test_superharmonic_route_law_dominates_prefix_demands()
     test_waterfilled_allocation_has_zero_defect_when_charge_is_affordable()
     test_waterfilled_allocation_matches_scalar_threshold_formula()
     test_transition_density_bound_controls_waterfilled_defect()
     test_balanced_full_prefix_tree_has_exponential_antichain_charge()
+    test_boosted_single_leader_chain_has_inverse_depth_harmonic_value()
     print("route_value_verifier tests passed")
