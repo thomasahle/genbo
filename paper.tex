@@ -10202,6 +10202,93 @@ partition ignores the bias coordinates that certify the list size.
    proving \((LMR11)\).
 \end{proof}
 
+\begin{corollary}[Support-function form of internal tails]
+   \label{cor:support-function-internal-tail-certificate}
+   Continue with the notation of
+   \cref{cor:gram-projection-certificate} and
+   \cref{cor:cumulative-internal-tail-certificate}.
+   For \(s\ge0\), let
+   \[
+      S_u(s)=\{j:\ M(u)-W(c_j)\ge s\},
+      \qquad
+      \mathcal R_u(s)=\{r\in[0,1]^N:\ r_j=0\text{ for }j\notin S_u(s)\}.
+      \tag{LMS1}
+   \]
+   Define the anchored-excess support function
+   \[
+      \Phi_u(y)=\sup_{h\in E_u}\ip{y}{h}.
+      \tag{LMS2}
+   \]
+   Then, for every \(s\ge0\),
+   \[
+      \sup_{h\in E_u}A_{u,h}(s)
+      =
+      \sup_{r\in\mathcal R_u(s)}
+      \Phi_u\!\left(-A_uG_u^+r\right).
+      \tag{LMS3}
+   \]
+   Consequently, the cumulative exponential tail condition \((LMR5)\) follows
+   from the finite support-function bounds
+   \[
+      \sup_{r\in\mathcal R_u(s)}
+      \Phi_u\!\left(-A_uG_u^+r\right)
+      \le
+      C_u e^{-(\lambda+\eta_u)s}
+      \qquad(s\ge0).
+      \tag{LMS4}
+   \]
+   Likewise, the dyadic condition \((LMR10)\) follows from the finite family of
+   bounds
+   \[
+      \sup_{r\in\mathcal R_u(k\delta)}
+      \Phi_u\!\left(-A_uG_u^+r\right)
+      \le
+      C_u e^{-(\lambda+\eta_u)k\delta}
+      \qquad(k=0,1,\ldots).
+      \tag{LMS5}
+   \]
+
+   Thus the remaining negative-tail theorem can be phrased without explicit
+   negative parts of \(G_u^+v_u(h)\): every low-score down-set \(S_u(s)\) and
+   every fractional selector \(r\) on it must have small support over the
+   anchored excess set in the direction \(-A_uG_u^+r\).  If such a bound
+   fails, the maximizing \(r\) is an explicit separating objective for the
+   local LP/SA relaxation.
+\end{corollary}
+
+\begin{proof}
+   For fixed \(h\in E_u\), write \(a=a_u(h)=G_u^+A_u^\top h\).  Since
+   \(a_j^-=\max\{-a_j,0\}\),
+   \[
+      A_{u,h}(s)
+      =
+      \sum_{j\in S_u(s)}a_j^-
+      =
+      \sup_{r\in\mathcal R_u(s)}\left(-\sum_j r_ja_j\right).
+      \tag{LMS6}
+   \]
+   Using the symmetry of \(G_u^+\),
+   \[
+      \sum_j r_ja_j
+      =
+      r^\top G_u^+A_u^\top h
+      =
+      \ip{A_uG_u^+r}{h}.
+      \tag{LMS7}
+   \]
+   Therefore
+   \[
+      A_{u,h}(s)
+      =
+      \sup_{r\in\mathcal R_u(s)}
+      \ip{-A_uG_u^+r}{h}.
+      \tag{LMS8}
+   \]
+   Taking the supremum over \(h\in E_u\) and exchanging the two suprema gives
+   \((LMS3)\).  The implications \((LMS4)\Rightarrow(LMR5)\) and
+   \((LMS5)\Rightarrow(LMR10)\) are immediate from \((LMS3)\).
+\end{proof}
+
 \begin{corollary}[Well-conditioned Gram coefficient bounds]
    \label{cor:well-conditioned-gram-coefficients}
    Continue with the notation of
@@ -10439,6 +10526,16 @@ partition ignores the bias coordinates that certify the list size.
    exponential internal-tail decay theorem for negative Gram coefficients of
    low-rate LP/SA pseudocodeword excesses, together with the already separated
    scalar-leakage and orthogonal-residual bounds.
+
+   \Cref{cor:support-function-internal-tail-certificate} removes one more
+   layer of coefficient bookkeeping.  The cumulative tail \(A_{u,h}(s)\) is
+   exactly the support function of the anchored excess set in directions
+   \(-A_uG_u^+r\), where \(r\) ranges over fractional selectors of true
+   codewords at least \(s\) below the leader.  Thus the low-rate theorem can be
+   stated as a separation theorem for the LP/SA relaxation: down-score
+   selectors should have exponentially small support over anchored excesses.
+   A failure is not vague; it returns an explicit selector \(r\) and objective
+   direction for the local relaxation.
 
    \Cref{cor:well-conditioned-gram-coefficients} gives the first elementary
    path to such a theorem.  If the local subcode has a well-conditioned overlap
