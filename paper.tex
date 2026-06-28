@@ -39562,6 +39562,109 @@ query mass rather than producing a cost-effective dense filter.
    \(\ell_i\log2\).
 \end{proof}
 
+\begin{corollary}[Dyadic prefix spread-star repair bridge]
+   \label{cor:dyadic-prefix-spread-star-repair}
+   Work in the setting of
+   \cref{cor:dyadic-top-prefix-water-screen}.  Fix an active layer \(i\), a
+   dyadic rank \(k\in\mathcal K_i\), and a tie-broken top prefix
+   \(P_k\subseteq\mathcal H_i\) of size \(k\).  Put
+   \[
+      \underline X_{i,k}
+      =
+      k^{1/p_i}\min_{h\in P_k}X_{i,h}
+      =
+      k^{1/p_i}x_k,
+      \qquad
+      \Theta_i^{\rm pref}
+      =
+      \frac{\Theta_i}{(J_i^{\rm pref})^{1/p_i}} .
+      \tag{DTR1}
+   \]
+   Suppose a build-time reporter certifies nonnegative numbers \(L_k,H_k\)
+   and a finite family \(\mathcal B_k\) of lower-certified raw guard records,
+   with lower paid-shadow certificates \(X_b\) and recursive prices \(R_b\),
+   such that
+   \[
+      \underline X_{i,k}\le L_k+H_k
+      \tag{DTR2}
+   \]
+   and
+   \[
+      H_k\le2\sum_{b\in\mathcal B_k}X_b .
+      \tag{DTR3}
+   \]
+   If the prefix low envelope plus reported recursive star price fits the
+   dyadic prefix budget,
+   \[
+      L_k+2\sum_{b\in\mathcal B_k}R_b
+      \le
+      \Theta_i^{\rm pref},
+      \tag{DTR4}
+   \]
+   then either the rank \(k\) satisfies the weak-type water envelope
+   \((TPW2)\), or a one-record guard-credit repair fires.
+
+   Equivalently, if \(k\) violates \((TPW2)\) and no one-record guard-credit
+   repair fires, then every such prefix certificate must violate
+   \[
+      L_k+2\sum_{b\in\mathcal B_k}R_b
+      >
+      \Theta_i^{\rm pref}.
+      \tag{DTR5}
+   \]
+   Consequently, if every active layer and every dyadic top prefix admits
+   certificates satisfying \((DTR2)\)--\((DTR4)\), and the high-correlation
+   fixed-tail condition \((PELS5)\) holds, then
+   \((\mathsf{ESFC}_\Sigma)\) is feasible, provided no one-record guard-credit
+   repair fires.
+
+   The statistic \(\underline X_{i,k}\) is the weak-type floor of the prefix,
+   not the whole prefix \(\ell_{p_i}\)-mass.  Thus a stronger certificate
+   \(X_{i,P_k}^{(p)}\le L_k+H_k\), with
+   \(X_{i,P_k}^{(p)}=(\sum_{h\in P_k}X_{i,h}^{p_i})^{1/p_i}\), is sufficient
+   for \((DTR2)\), but is not required.  This is the form in which an exact
+   prefix, range-reporting, list-decoding, facility, or seeded-clustering
+   reporter should be used: it only has to price the witnessed dyadic floor, or
+   expose a guard record already consumed by the existing verifier.
+\end{corollary}
+
+\begin{proof}
+   Suppose no one-record guard-credit repair fires.  Since each
+   \(b\in\mathcal B_k\) is a lower-certified raw guard record, \(X_b>R_b\)
+   would itself be a positive one-record panel for
+   \cref{cor:lower-certified-scale-free-guard-panel}.  Hence \(X_b\le R_b\)
+   for every \(b\).  Combining this with \((DTR2)\)--\((DTR4)\) gives
+   \[
+      \underline X_{i,k}
+      \le
+      L_k+H_k
+      \le
+      L_k+2\sum_bX_b
+      \le
+      L_k+2\sum_bR_b
+      \le
+      \Theta_i^{\rm pref}.
+   \]
+   By \((DTR1)\), this is exactly \((TPW2)\) for the rank \(k\).  The
+   contrapositive gives \((DTR5)\).
+
+   If every dyadic prefix has certificates satisfying \((DTR2)\)--\((DTR4)\)
+   and no repair fires, then every dyadic rank satisfies \((TPW2)\).  Therefore
+   \cref{cor:dyadic-top-prefix-water-screen} gives \((GWL2)\) in every active
+   layer, and \cref{cor:gibbs-water-level-storage-screen} gives
+   \((\mathsf{ESFC}_\Sigma)\) under \((PELS5)\).
+
+   Finally,
+   \[
+      \underline X_{i,k}^{p_i}
+      =
+      k\min_{h\in P_k}X_{i,h}^{p_i}
+      \le
+      \sum_{h\in P_k}X_{i,h}^{p_i},
+   \]
+   so any upper bound on \(X_{i,P_k}^{(p)}\) also supplies \((DTR2)\).
+\end{proof}
+
 \begin{corollary}[Paid-responsibility high-correlation star compiler]
    \label{cor:paid-responsibility-high-correlation-star}
    Work in the setting of
@@ -45403,6 +45506,10 @@ shared allocation can cost less than the Gibbs water level itself.
 the remaining direct water proof: a surviving high-water layer must contain a
 dyadic top prefix whose minimum profile weight times \(k^{1/p}\) exceeds the
 local budget up to a logarithmic rank-net toll.
+\Cref{cor:dyadic-prefix-spread-star-repair} feeds that prefix back into the
+same spread-star guard verifier: if the prefix low envelope and reported star
+prices fit the dyadic floor budget, the prefix is ruled out; otherwise the
+remaining obstruction is one explicit prefix-price overflow.
 \Cref{lem:star-superlevel-column-verifier} and
 \cref{cor:pair-star-dense-column-generator} add the finite LP check: the star
 is retained only if its ball-thickened query side has positive reduced gain;
@@ -71024,6 +71131,10 @@ allocation value is exactly the Gibbs water level.
 \Cref{cor:dyadic-top-prefix-water-screen} converts any remaining water failure
 into one sorted dyadic top-prefix excess, the form most compatible with exact
 prefix, range-reporting, list-decoding, and facility proposal oracles.
+\Cref{cor:dyadic-prefix-spread-star-repair} then states the corresponding
+repair interface: each such prefix either satisfies the existing spread-star
+price test, fires one lower-certified guard record, or remains as a concrete
+prefix-price overflow.
 \Cref{lem:star-superlevel-column-verifier} and
 \cref{cor:pair-star-dense-column-generator} turn such a superlevel into an
 ordinary fractional-cover column by using the certified query activation
@@ -71320,6 +71431,9 @@ current storage target is therefore sharper and simpler: by
 \cref{cor:dyadic-top-prefix-water-screen}, either every sorted dyadic prefix
 obeys the water envelope and \((GWL2)\) follows, or one materializable prefix
 has the count-energy excess that a geometric reporter must repair.
+\Cref{cor:dyadic-prefix-spread-star-repair} makes this repair target exact:
+absence of a guard repair forces any certified split of that prefix to exceed
+the dyadic floor budget through its low envelope plus reported star prices.
 \Cref{cor:metric-entropy-hall-shadow-closure} and
 \cref{cor:low-doubling-hall-shadow-close} sharpen the remaining geometric
 obligation: any positive Hall shadow of certified covering number below
