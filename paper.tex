@@ -9592,6 +9592,140 @@ partition ignores the bias coordinates that certify the list size.
    and taking the supremum over \(h\in E_u\) proves \((LPB3)\).
 \end{proof}
 
+\begin{corollary}[Shifted overlap-coefficient certificate]
+   \label{cor:shifted-overlap-coefficient-certificate}
+   Work in the setting of \cref{cor:gram-projection-certificate}.  For
+   \(h\in E_u\), define the coefficient vector
+   \[
+      a_u(h)=G_u^+v_u(h),
+      \qquad
+      \kappa_u(h)=\sum_{j=1}^N a_u(h)_j,
+      \qquad
+      a_u(h)_j^-=\max\{-a_u(h)_j,0\}.
+      \tag{LPD1}
+   \]
+   Let \(\Theta_u\) be any \(\mathcal G_u\)-measurable upper score satisfying
+   \[
+      \Theta_u\ge M(u)=\max_{c\in C_u}W(c).
+      \tag{LPD2}
+   \]
+   Then
+   \[
+      B_u(w)
+      \le
+      D_u(\Theta_u,w),
+      \tag{LPD3}
+   \]
+   where
+   \[
+      D_u(\Theta_u,w)
+      =
+      \sup_{h\in E_u}
+      \left[
+         \Theta_u\kappa_u(h)
+         +
+         \sum_{j=1}^N a_u(h)_j^-\bigl(\Theta_u-W(c_j)\bigr)
+      \right].
+      \tag{LPD4}
+   \]
+   Consequently, the false-survivor projected-bias condition \((LPA1)\) may be
+   replaced by the same condition with \(B_u(w)\) replaced by
+   \(D_u(\Theta_u,w)\).
+
+   In particular, on the false-survivor event \(M(u)<T-\gamma\), one may take
+   the deterministic frontier \(\Theta_u=T-\gamma\).  Thus the projected-bias
+   task reduces to controlling
+   \[
+      D_{u,\gamma}(w)
+      =
+      \sup_{h\in E_u}
+      \left[
+         (T-\gamma)\kappa_u(h)
+         +
+         \sum_{j=1}^N a_u(h)_j^-\bigl(T-\gamma-W(c_j)\bigr)
+      \right]
+      \tag{LPD5}
+   \]
+   under the tilted false-survivor weighting.
+\end{corollary}
+
+\begin{proof}
+   By \((LPB3)\), it suffices to upper-bound
+   \(a_u(h)^\top W_u\) for a fixed \(h\in E_u\).  Since
+   \(W(c_j)\le\Theta_u\) for every \(j\),
+   \[
+   \begin{aligned}
+      a_u(h)^\top W_u
+      &=
+      \Theta_u\kappa_u(h)
+      +
+      \sum_{j=1}^N a_u(h)_j\bigl(W(c_j)-\Theta_u\bigr)\\
+      &\le
+      \Theta_u\kappa_u(h)
+      +
+      \sum_{j=1}^N a_u(h)_j^-\bigl(\Theta_u-W(c_j)\bigr).
+   \end{aligned}
+      \tag{LPD6}
+   \]
+   Taking the supremum over \(h\in E_u\) proves \((LPD3)\).  Replacing \(B_u\)
+   by the larger \(D_u\) in \((LPA1)\) preserves the sufficient condition, and
+   the deterministic-frontier statement follows from
+   \(M(u)<T-\gamma\Rightarrow T-\gamma\ge M(u)\).
+\end{proof}
+
+\begin{corollary}[Well-conditioned Gram coefficient bounds]
+   \label{cor:well-conditioned-gram-coefficients}
+   Continue with the notation of
+   \cref{cor:gram-projection-certificate}.  Suppose the nonzero spectrum of
+   the codeword overlap Gram matrix satisfies
+   \[
+      G_u\succeq \sigma_u I
+      \quad\text{on }\operatorname{range}(G_u)
+      \tag{LPEO1}
+   \]
+   for some \(\sigma_u>0\).  Then, for every \(h\in E_u\),
+   \[
+      \|a_u(h)\|_2
+      \le
+      \frac{\|v_u(h)\|_2}{\sigma_u},
+      \qquad
+      \|\Pi_u h\|_2
+      \le
+      \frac{\|v_u(h)\|_2}{\sqrt{\sigma_u}},
+      \tag{LPEO2}
+   \]
+   and, if \(a_u(h)\) has support at most \(s_u(h)\),
+   \[
+      \sum_j a_u(h)_j^-
+      \le
+      \|a_u(h)\|_1
+      \le
+      \sqrt{s_u(h)}\,\frac{\|v_u(h)\|_2}{\sigma_u}.
+      \tag{LPEO3}
+   \]
+   Thus a low-rate code proof may certify the shifted coefficient target by
+   bounding three purely geometric quantities: scalar leakage
+   \(\kappa_u(h)\), excess overlap norm \(\|v_u(h)\|_2\), and coefficient
+   support \(s_u(h)\), together with the orthogonal residual geometry in
+   \((LPB4)\)--\((LPB5)\).
+\end{corollary}
+
+\begin{proof}
+   Since \(v_u(h)\in\operatorname{range}(G_u)\), the spectral assumption gives
+   \(\|G_u^+v_u(h)\|_2\le \|v_u(h)\|_2/\sigma_u\).  This proves the first
+   inequality in \((LPEO2)\).  Also,
+   \[
+      \|\Pi_u h\|_2^2
+      =
+      v_u(h)^\top G_u^+v_u(h)
+      \le
+      \frac{\|v_u(h)\|_2^2}{\sigma_u},
+   \]
+   using \((LPB4)\), proving the second inequality in \((LPEO2)\).  Finally,
+   the negative coefficient mass is at most \(\|a_u(h)\|_1\), and Cauchy's
+   inequality on the support of \(a_u(h)\) gives \((LPEO3)\).
+\end{proof}
+
 \begin{remark}[LP and Sherali--Adams decoder target]
    \label{rem:lp-sa-soft-decoder-target}
    \Cref{cor:sharp-lp-soft-decoder} identifies the exact theorem needed from a
@@ -9705,6 +9839,26 @@ partition ignores the bias coordinates that certify the list size.
    prove that local LP or constant-level SA pseudocodewords have controlled
    overlap coefficients and small orthogonal residuals under the tilted
    false-survivor weighting.
+
+   \Cref{cor:shifted-overlap-coefficient-certificate} further separates the
+   projected part into two interpretable failure modes.  On a false-survivor
+   node, take the shift \(\Theta=T-\gamma\).  Positive coefficient mass above
+   the shift cannot help, because every real codeword score is already below
+   the frontier.  What remains is scalar leakage
+   \((T-\gamma)\kappa_u(h)\) and negative coefficient mass multiplied by the
+   score gaps \(T-\gamma-W(c_j)\).  In a good low-rate relaxation, anchored
+   pseudocodeword excesses should have negligible scalar leakage and should not
+   place large negative coefficients on many real codewords far below the
+   frontier.
+
+   \Cref{cor:well-conditioned-gram-coefficients} gives the first elementary
+   path to such a theorem.  If the local subcode has a well-conditioned overlap
+   Gram matrix, then overlap vectors \(v_u(h)\) with small norm and sparse
+   coefficient support automatically have small projected radius and small
+   negative coefficient mass.  The remaining, genuinely coding-theoretic
+   statement is that level-2 or level-3 local constraints force precisely this
+   form of sparse, low-leakage overlap for every false-surviving fractional
+   pseudocodeword.
 \end{remark}
 
 \begin{proposition}[Sampled structured-panel compiler]
