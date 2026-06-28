@@ -64933,6 +64933,153 @@ certificate is the verified positive-gain column and the finite LP it augments.
    obstruction-sourced weights and \(\Lambda_{\rm rem}=V(u)/2\).
 \end{proof}
 
+\begin{corollary}[Fully fractional failed-transcript accounting]
+   \label{cor:fractional-failed-transcript-accounting}
+   The failed-transcript LP is not merely an integral residual relaxation; it is
+   also the direct accounting state for a fractional failed-screen process.  Let
+   \(I_0\) be a finite source set with weights \(\nu_i\ge0\), and start with
+   intensities \(z_i^{(0)}=1\).  At step \(t\), after the previous failed
+   screens have produced intensities \(0\le z_i^{(t-1)}\le1\), let
+   \(I_{t-1}^+=\{i:z_i^{(t-1)}>0\}\).  Suppose preprocessing proposes a
+   fractional opened-support source system \((B_t,E_t,C_t)\) with left set
+   \(I_{t-1}^+\), normalized source loads
+   \[
+      \frac{\mu_i^{(t)}}{C_t}=\nu_i z_i^{(t-1)}
+      \qquad(i\in I_{t-1}^+),
+      \tag{FFA1}
+   \]
+   degrees \(d_{t,p}\), and clipped parameters \(K_t,\Theta_t\).  If the screen
+   fails at the half-threshold value
+   \[
+      \widehat{\mathfrak S}_{B_t,E_t}(C_t)\le2K_t\Theta_t,
+      \tag{FFA2}
+   \]
+   then one may choose \(z^{(t)}\) with \(0\le z^{(t)}\le z^{(t-1)}\) such that
+   \[
+      \sum_i\nu_i\bigl(z_i^{(t-1)}-z_i^{(t)}\bigr)
+      \le4K_t\Theta_t ,
+      \tag{FFA3}
+   \]
+   and, writing
+   \[
+      P_t^+=\{p\in W_{B_t}:d_{t,p}>2\Theta_t\},
+      \qquad c_{t,p}=d_{t,p}-2\Theta_t,
+      \tag{FFA4}
+   \]
+   there are numbers \(y_{t,p}\ge0\) satisfying
+   \[
+      z_i^{(t)}\le y_{t,p}
+      \qquad(i\in I_{t-1}^+,\ (i,p)\in E_t,\ p\in P_t^+),
+      \tag{FFA5}
+   \]
+   and
+   \[
+      \sum_{p\in P_t^+}c_{t,p}y_{t,p}\le4K_t\Theta_t .
+      \tag{FFA6}
+   \]
+
+   Consequently, for any all-failed fractional transcript, the final intensity
+   vector \(z^{(T)}\) is feasible for the residual LP
+   \(\mathfrak R_{\rm tr}(\nu)\) of
+   \cref{cor:failed-transcript-residual-lp}, with retained prefixes
+   \(I_{t-1}=I_{t-1}^+\), and
+   \[
+      \mathfrak R_{\rm tr}(\nu)
+      \ge
+      \sum_i\nu_i z_i^{(T)}
+      \ge
+      \sum_i\nu_i-\sum_{t=1}^T4K_t\Theta_t .
+      \tag{FFA7}
+   \]
+   Hence, if a proposed all-failed transcript satisfies
+   \[
+      \sum_{t=1}^T4K_t\Theta_t
+      \le
+      \sum_i\nu_i-\Lambda_{\rm rem}
+      \quad\text{and}\quad
+      \mathfrak R_{\rm tr}(\nu)<\Lambda_{\rm rem},
+      \tag{FFA8}
+   \]
+   then not all screens in the transcript can fail.  Some screen has
+   \(\widehat{\mathfrak S}_{B_t,E_t}(C_t)>2K_t\Theta_t\), and
+   \cref{cor:fractional-opened-support-flow-lp} exposes a positive shared
+   top-prefix column.
+
+   Thus the adaptive branching score may be made fully fractional: failed
+   screens shrink source intensities by their own dual prices, while the
+   residual LP is the finite certificate that no high-value fractional source
+   state remains.
+\end{corollary}
+
+\begin{proof}
+   Fix one failed step and abbreviate
+   \(L=2K_t\Theta_t\), \(\Theta=\Theta_t\), \(K=K_t\).  By the dual formula
+   \((FOF3)\), choose feasible dual prices \(\alpha_i,\beta_p\ge0\) with
+   \[
+      \sum_i\nu_i z_i^{(t-1)}\alpha_i
+      +
+      \sum_{p\in W_{B_t}}(d_{t,p}\beta_p-\Theta)_+
+      \le L .
+      \tag{FFA9}
+   \]
+   Define the next source intensities by
+   \[
+      z_i^{(t)}=
+      z_i^{(t-1)}(1-2\alpha_i)_+
+      \qquad(i\in I_{t-1}^+),
+      \tag{FFA10}
+   \]
+   and \(z_i^{(t)}=0\) outside \(I_{t-1}^+\).  Since
+   \(1-(1-2\alpha_i)_+\le2\alpha_i\),
+   \[
+      \sum_i\nu_i(z_i^{(t-1)}-z_i^{(t)})
+      \le
+      2\sum_i\nu_i z_i^{(t-1)}\alpha_i
+      \le2L=4K\Theta ,
+   \]
+   proving \((FFA3)\).
+
+   If \(z_i^{(t)}>0\), then \(\alpha_i<1/2\).  For every adjacent point \(p\),
+   the dual constraint \(\alpha_i+\beta_p\ge1\) gives \(\beta_p>1/2\).  Hence,
+   on the neighborhood
+   \[
+      P_{\rm lo}=\{p:\exists i\in I_{t-1}^+,\ z_i^{(t)}>0,\ (i,p)\in E_t\},
+   \]
+   one has
+   \[
+      (d_{t,p}-2\Theta)_+
+      \le2(d_{t,p}\beta_p-\Theta)_+ .
+   \]
+   Therefore
+   \[
+      \sum_{\substack{p\in P_{\rm lo}:\\ d_{t,p}>2\Theta}}
+      (d_{t,p}-2\Theta)
+      \le
+      2\sum_{p\in W_{B_t}}(d_{t,p}\beta_p-\Theta)_+
+      \le2L=4K\Theta .
+      \tag{FFA11}
+   \]
+   Set
+   \[
+      y_{t,p}=
+      \max\{z_i^{(t)}:i\in I_{t-1}^+,\ (i,p)\in E_t\}
+      \qquad(p\in P_t^+),
+   \]
+   with the maximum interpreted as \(0\) when there is no incident source.
+   Then \(0\le y_{t,p}\le1\), \((FFA5)\) holds, and the support of \(y_t\) is
+   contained in \(P_{\rm lo}\).  Thus \((FFA6)\) follows from \((FFA11)\).
+
+   Iterate this construction over the failed transcript.  Since
+   \(z^{(T)}\le z^{(t)}\) for every \(t\), the same \(y_{t,p}\), or the smaller
+   maxima formed with \(z^{(T)}\), satisfy all edge constraints in
+   \((TRL3)\).  The tail bounds are \((FFA6)\), and \(0\le z_i^{(T)}\le1\), so
+   \(z^{(T)}\) is feasible for \(\mathfrak R_{\rm tr}(\nu)\).  Summing
+   \((FFA3)\) over \(t\) gives \((FFA7)\).  Finally, \((FFA8)\) contradicts
+   \((FFA7)\) if every screen fails; hence some screen has value above
+   \(2K_t\Theta_t\), and \cref{cor:fractional-opened-support-flow-lp} gives the
+   positive shared top-prefix column.
+\end{proof}
+
 \begin{corollary}[Shared integrated cover-cost endpoint]
    \label{cor:shared-integrated-cover-cost-endpoint}
    Work in the setting of
@@ -80798,6 +80945,10 @@ carrying half of this exposed value.
 \Cref{cor:failed-transcript-residual-lp} makes that last residual test finite
 and dual: an all-failed transcript is exhausted once a weighted tail-budget LP
 has value below the target residual mass.
+\Cref{cor:fractional-failed-transcript-accounting} strengthens this from an
+integral-retained-set relaxation to a fully fractional process: failed screens
+shrink source intensities by their own LP dual prices, and the final intensity
+vector is feasible for the same residual LP.
 \Cref{cor:single-tail-shared-separator-endpoint} packages this into the
 current sharp proof target: every normalized exact-signature dual must either
 produce a materializable low-correlation profile record or force one certified
