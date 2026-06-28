@@ -489,6 +489,27 @@ def test_binary_overlap_projection_samples_integral_parity_sources():
     assert any(word not in code_set for word in sampled_words)
 
 
+def test_binary_overlap_projection_can_have_fractional_source():
+    code = np.array([
+        [0, 0, 1],
+        [1, 0, 0],
+        [0, 1, 0],
+    ])
+    source = np.array([
+        [0.5, 0.5],
+        [0.5, 0.5],
+        [0.5, 0.5],
+    ]).reshape(-1)
+    result = local_overlap_source_feasible(
+        code,
+        local_check_scopes(3, 2),
+        source,
+    )
+
+    assert result["feasible"]
+    assert source_integrality_defect(source, blocks=3, alphabet=2) == 1.5
+
+
 def test_local_check_scopes_enumerates_subsets():
     assert local_check_scopes(3, 2) == [(0, 1), (0, 2), (1, 2)]
 
@@ -515,5 +536,6 @@ if __name__ == "__main__":
     test_b5_exact_projected_source_finds_clean_fractional_obstruction()
     test_ternary_overlap_projection_can_have_fractional_source()
     test_binary_overlap_projection_samples_integral_parity_sources()
+    test_binary_overlap_projection_can_have_fractional_source()
     test_local_check_scopes_enumerates_subsets()
     print("score_band_lp_stress tests passed")
