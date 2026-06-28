@@ -63509,6 +63509,167 @@ certificate is the verified positive-gain column and the finite LP it augments.
    \cref{cor:subset-clipped-shared-tail-residual}.
 \end{proof}
 
+\begin{corollary}[Template-complete shared-cover obstruction]
+   \label{cor:template-complete-shared-cover-obstruction}
+   Work in the setting of
+   \cref{cor:finite-shared-integrated-cover-dual} and
+   \cref{cor:shared-top-prefix-reduced-cost-compiler}.  Fix a feasible atomized
+   high-correlation dual \(y\), a target \(\Lambda\ge0\), and a finite family
+   \(\mathcal B\) of certified shared prefix templates.  Let
+   \(\mathcal R_{\mathcal B}\) be the finite record universe consisting of every
+   admissible prefix record
+   \[
+      h_{U,a}=\sum_{p\in U}h_{B,p,a},
+      \qquad
+      P_U=P_B(K),
+      \qquad
+      B\in\mathcal B,\ K\in\mathcal K_B,\ |U|=K,
+      \tag{TCO1}
+   \]
+   and let \(\Psi_{\mathcal B}(y)\) be the value of the shared-cover program
+   \((SIC2)\) restricted to \(\mathcal R_{\mathcal B}\).
+
+   If \(\Psi_{\mathcal B}(y)>\Lambda\), then there is a vector \(u\) such that
+   \[
+      0\le u_a\le\ell_a^\Sigma(y)
+      \qquad(a\in\mathcal A_\pi),
+      \tag{TCO2}
+   \]
+   \[
+      \sum_ab_au_a>\Lambda,
+      \tag{TCO3}
+   \]
+   and, for every \(B\in\mathcal B\) and \(K\in\mathcal K_B\), if
+   \(p_1,p_2,\ldots\) are ordered by the shared degree
+   \(d_B^u(p)=\sum_ah_{B,p,a}u_a\), then
+   \[
+      \sum_{j\le K}d_B^u(p_j)\le2P_B(K).
+      \tag{TCO4}
+   \]
+   Conversely, any \(u\) satisfying \((TCO2)\)--\((TCO4)\) is a feasible dual
+   certificate proving \(\Psi_{\mathcal B}(y)>\Lambda\).
+
+   Moreover, if the prices of each template have the form
+   \[
+      P_B(K)=\psi_B\left(A_BK^{\rho_B}+\zeta_BK^{1+\rho_B}\right),
+      \qquad 0<\rho_B<1,
+      \tag{TCO5}
+   \]
+   and the available cardinalities of \(B\) are \(b_B\)-dense from below, then
+   every obstruction \(u\) above satisfies the clipped tail cap of
+   \cref{cor:cardinality-net-clipped-shared-tail} for every \(B\in\mathcal B\).
+
+   Thus failure of a constant-fraction shared integrated cover has an exact
+   finite normal form: one no-prefix dual \(u\) with large value and with all
+   certified containers obeying their top-prefix, equivalently clipped-tail,
+   envelopes.
+\end{corollary}
+
+\begin{proof}
+   Apply finite LP duality to \((SIC2)\) with the record set
+   \(\mathcal R_{\mathcal B}\).  If
+   \(\Psi_{\mathcal B}(y)>\Lambda\), an optimal dual \(u\) satisfies
+   \((TCO2)\), has objective value \((TCO3)\), and obeys every record constraint
+   \[
+      \sum_ah_{U,a}u_a\le2P_U .
+      \tag{TCO6}
+   \]
+   For fixed \(B\) and \(K\), the top \(K\) points maximize
+   \(\sum_{p\in U}d_B^u(p)\) among all \(K\)-subsets of \(W_B\).  Applying
+   \((TCO6)\) to this top prefix gives \((TCO4)\).
+
+   Conversely, \((TCO4)\) implies \((TCO6)\) for every \(K\)-subset \(U\subseteq
+   W_B\), again by top-prefix maximality.  Together with \((TCO2)\), this makes
+   \(u\) feasible for the restricted dual \((SIC3)\).  Its objective value is
+   larger than \(\Lambda\), so weak duality gives
+   \(\Psi_{\mathcal B}(y)>\Lambda\).
+
+   Under \((TCO5)\) and cardinality-net closure, \((TCO4)\) says exactly that no
+   available shared top prefix of \(B\) has positive reduced cost.  Therefore
+   \cref{cor:cardinality-net-clipped-shared-tail} gives the clipped tail cap for
+   each template.
+\end{proof}
+
+\begin{corollary}[Template-search form of the shared-integrated target]
+   \label{cor:template-search-shared-integrated-target}
+   Work in the setting of
+   \cref{cor:child-panel-shared-integrated-endpoint}.  Suppose that, after the
+   sponsor/generated-prefix, low-correlation, and verified dense-prefix exits
+   fail, the surviving residual admits one split profile \(\pi\) with
+   \[
+      D_\pi=(B_\pi-C_\pi^{\rm lo})_+>0,
+      \qquad
+      B_\pi^{\rm hi}\le n^{K_{\rm dyn}}D_\pi .
+      \tag{TCE1}
+   \]
+   Put
+   \[
+      \varepsilon_\pi=\min\{1,1/(4n^{K_{\rm dyn}})\},
+      \tag{TCE2}
+   \]
+   and use the dyadic layer-cake cuts associated with this truncation.
+   For every feasible atomized high-correlation dual \(y\) for this profile,
+   suppose preprocessing may choose a finite template family
+   \(\mathcal B_y\), all of whose positive top-prefix records lie in
+   \(\mathcal Z_\star\), and run the template-complete shared-cover search of
+   \cref{cor:template-complete-shared-cover-obstruction} with target
+   \[
+      \Lambda_\pi=D_\pi/4 .
+      \tag{TCE3}
+   \]
+   Assume that the search always returns one of the following two certified
+   outcomes:
+   \[
+      \Psi_{\mathcal B_y}(y)\le D_\pi/4,
+      \tag{TCE4}
+   \]
+   or a verified positive shared top-prefix column in \(\mathcal Z_\star\).
+   Then the positive shared-panel separator \((SPP1)\) holds at every node, and
+   hence
+   \[
+      Q(n,d)=d\,n^{\rho_c}\log^{O_c(1)}n,\qquad
+      S(n,d)=dn+n^{1+\rho_c}\log^{O_c(1)}n .
+   \]
+
+   Equivalently, by
+   \cref{cor:template-complete-shared-cover-obstruction}, the remaining
+   geometric theorem may be stated as ruling out every obstruction
+   \((TCO2)\)--\((TCO4)\) of value \(>D_\pi/4\), or making one certified
+   container violate its clipped tail cap.
+\end{corollary}
+
+\begin{proof}
+   Fix a resident node and a normalized exact-signature price system.  If one of
+   the explicit exits fires, it gives \((SPP1)\) as in
+   \cref{cor:child-panel-shared-integrated-endpoint}.  Otherwise fix the profile
+   \(\pi\).  If the template search for some feasible dual \(y\) returns a
+   positive top-prefix column, this column belongs to \(\mathcal Z_\star\), so
+   \((SPP1)\) holds.
+
+   It remains to consider the case in which no such positive column fires.  Then
+   \((TCE4)\) holds for every feasible atomized high-correlation dual \(y\).
+   By \((TCE1)\),
+   \(\varepsilon_\pi B_\pi^{\rm hi}\le D_\pi/4\).  Applying
+   \cref{cor:finite-shared-integrated-cover-dual} to the feasible cover of value
+   at most \(D_\pi/4\) gives, for every feasible \(y\),
+   \[
+      \sum_ab_ay_a
+      \le
+      \varepsilon_\pi B_\pi^{\rm hi}+2(D_\pi/4)
+      \le 3D_\pi/4 .
+      \tag{TCE5}
+   \]
+   Taking the supremum over atomized high-correlation duals yields
+   \(\Phi_\pi^{\rm hi}<D_\pi\).  Hence
+   \(B_\pi-C_\pi^{\rm lo}-\Phi_\pi^{\rm hi}>0\), and
+   \cref{cor:min-cost-split-profile-envelope} exposes a positive
+   low-correlation shared-panel record or a positive dense prefix in
+   \(\mathcal Z_\star\).  Thus \((SPP1)\) holds for the fixed price system.
+   Since the node and price system were arbitrary,
+   \cref{cor:shared-panel-positive-separator-endpoint} gives the displayed
+   bounds.
+\end{proof}
+
 \begin{corollary}[Shared integrated cover-cost endpoint]
    \label{cor:shared-integrated-cover-cost-endpoint}
    Work in the setting of
@@ -63623,7 +63784,7 @@ certificate is the verified positive-gain column and the finite LP it augments.
       \tag{SID3}
    \]
    because then one may take
-   \(\varepsilon_\pi=\min\{1,1/(2n^{K_{\rm dyn}})\}\) outside the bounded-size
+   \(\varepsilon_\pi=\min\{1,1/(4n^{K_{\rm dyn}})\}\) outside the bounded-size
    scan base case.
 \end{corollary}
 
@@ -63650,9 +63811,10 @@ certificate is the verified positive-gain column and the finite LP it augments.
    displayed query and storage bounds.
 
    Under the sufficient conditions, the displayed choice of \(\varepsilon_\pi\)
-   gives \(\varepsilon_\pi B_\pi^{\rm hi}\le D_\pi/2\), while \((SID3)\) supplies
-   the other half of \((SID2)\).  Bounded-size nodes are handled by resident scan
-   and absorbed into the logarithmic constants.
+   gives \(\varepsilon_\pi B_\pi^{\rm hi}\le D_\pi/4\), while \((SID3)\) supplies
+   at most \(D_\pi/2\) more.  Hence the left side of \((SID2)\) is at most
+   \(3D_\pi/4<D_\pi\).  Bounded-size nodes are handled by resident scan and
+   absorbed into the logarithmic constants.
 \end{proof}
 
 \begin{corollary}[Single-tail shared separator endpoint]
@@ -65056,7 +65218,7 @@ certificate is the verified positive-gain column and the finite LP it augments.
       \tag{CSI3}
    \]
    because then one may take
-   \(\varepsilon_\pi=\min\{1,1/(2n^{K_{\rm dyn}})\}\) outside the resident scan
+   \(\varepsilon_\pi=\min\{1,1/(4n^{K_{\rm dyn}})\}\) outside the resident scan
    base case.
 
    Thus the strongest current child-panel target is an integrated shared-cover
@@ -65091,9 +65253,9 @@ certificate is the verified positive-gain column and the finite LP it augments.
 
    Under \((CSI3)\) and the displayed dynamic-range bound, the chosen
    \(\varepsilon_\pi\) gives
-   \(\varepsilon_\pi B_\pi^{\rm hi}\le D_\pi/2\), so \((CSI2)\) holds.  Bounded
-   resident nodes are handled by direct scan and absorbed into the logarithmic
-   constants.
+   \(\varepsilon_\pi B_\pi^{\rm hi}\le D_\pi/4\).  Together with \((CSI3)\), the
+   left side of \((CSI2)\) is at most \(3D_\pi/4<D_\pi\).  Bounded resident nodes
+   are handled by direct scan and absorbed into the logarithmic constants.
 \end{proof}
 
 The role of \cref{asm:weighted-dense-spherical-dichotomy} is now precise.  It is
@@ -79303,6 +79465,15 @@ shared top-prefix column.
 form: a bounded-congestion shipment into one certified subset separates as soon
 as its transported mass beats this affine clipped-tail threshold, without an
 extra layer-cake dynamic-range loss.
+\Cref{cor:template-complete-shared-cover-obstruction} gives the exact finite
+LP normal form for the remaining shared-cover target: if the cover value at
+level \(D/4\) is too large, the obstruction is one dual \(u\) of value
+\(>D/4\) whose every certified template obeys the top-prefix inequality and,
+under cardinality-net closure, the clipped tail cap.
+\Cref{cor:template-search-shared-integrated-target} packages this as the
+current build-time target with arbitrary preprocessing: solve the finite
+template cover, or make the returned obstruction violate one certified
+container tail cap.
 \Cref{cor:single-tail-shared-separator-endpoint} packages this into the
 current sharp proof target: every normalized exact-signature dual must either
 produce a materializable low-correlation profile record or force one certified
