@@ -41410,6 +41410,134 @@ query mass rather than producing a cost-effective dense filter.
    positive generated shared-cover column in the full closure LP.
 \end{proof}
 
+\begin{corollary}[Flattened dual dyadic low-cover screen]
+   \label{cor:flattened-dual-dyadic-low-cover}
+   Work in the no-prefix dual residual \((FCL1)\)--\((FCL2)\), and put
+   \(W=\{a\in\mathfrak A:y_a>0\}\).  By \((FCL1)\), \(W\ne\emptyset\).  Let
+   \(y_{\min}=\min_{a\in W}y_a\), \(y_{\max}=\max_{a\in W}y_a\), and
+   \[
+      J_y=1+\left\lceil\log_2\frac{y_{\max}}{y_{\min}}\right\rceil .
+      \tag{FDY1}
+   \]
+   Then some dyadic layer
+   \[
+      L=\{a\in W:\delta\le y_a<2\delta\},
+      \qquad \delta=2^jy_{\min},
+      \tag{FDY2}
+   \]
+   satisfies
+   \[
+      \delta |L|
+      \ge
+      \frac1{2J_y}\sum_{a\in\mathfrak A}y_a
+      >
+      \frac{\Theta}{2J_y}.
+      \tag{FDY3}
+   \]
+
+   Fix any such layer \(L\).  Suppose preprocessing certifies an assigned
+   generated cover \(L=L_1\sqcup\cdots\sqcup L_M\) with templates
+   \(T_i\in\mathfrak T\), available cardinalities
+   \(K_i\in\mathcal K_{T_i}\), and prices \(\overline P_i\ge
+   \overline P_{T_i}(K_i)\), such that
+   \[
+      L_i\subseteq\mathcal A_{T_i},\qquad
+      |L_i|\le K_i,\qquad
+      \alpha_{T_i,a}\ge\eta_i
+      \quad(a\in L_i),
+      \tag{FDY4}
+   \]
+   for some \(\eta_i\ge0\).  If
+   \[
+      \delta\sum_{i=1}^M\eta_i|L_i|
+      >
+      \sum_{i=1}^M\overline P_i,
+      \tag{FDY5}
+   \]
+   then some flattened generated top prefix violates \((FCL2)\), and hence
+   gives a positive shared-cover column.
+
+   Consequently every surviving no-prefix residual satisfies \((FDY5)\) with
+   the reverse inequality for every certified assigned cover.  In particular,
+   if \(\eta_i\ge\eta\) and
+   \[
+      \overline P_i
+      \le
+      \psi\left(A|L_i|^\rho+\zeta |L_i|^{1+\rho}\right),
+      \qquad 0<\rho<1,
+      \tag{FDY6}
+   \]
+   for all active parts, then the residual obeys
+   \[
+      \eta\delta |L|
+      \le
+      \psi\left(A M^{1-\rho}|L|^\rho+\zeta |L|^{1+\rho}\right).
+      \tag{FDY7}
+   \]
+   Hence, when \(A>0\) and
+   \[
+      \eta\delta>2\psi\zeta |L|^\rho,
+      \tag{FDY8}
+   \]
+   every such cover has
+   \[
+      M
+      \ge
+      \left(
+         \frac{\eta\delta |L|^{1-\rho}}{2\psi A}
+      \right)^{1/(1-\rho)} .
+      \tag{FDY9}
+   \]
+   If \(\zeta=0\), the same conclusion holds with \(2\psi A\) replaced by
+   \(\psi A\).
+
+   Thus the flattened separator may be attacked on one almost-uniform dual
+   layer: either a certified geometric cover violates \((FDY7)\) and hardens to
+   a positive generated prefix, or that layer supplies an explicit
+   cover-number/list-size obstruction.
+\end{corollary}
+
+\begin{proof}
+   The dyadic layers in \((FDY2)\) partition \(W\).  On a layer with parameter
+   \(\delta\), each element has \(y_a<2\delta\), so
+   \[
+      \sum_j\delta_j|L_j|
+      \ge
+      \frac12\sum_{a\in\mathfrak A}y_a .
+   \]
+   One layer contributes at least the average over \(J_y\) layers, and
+   \((FCL1)\) gives the strict lower bound by \(\Theta\).
+
+   For every cover part define lower capture weights
+   \[
+      w_{i,a}=\eta_i\delta\,\mathbf 1_{\{a\in L_i\}} .
+   \]
+   By \((FDY2)\) and \((FDY4)\),
+   \(w_{i,a}\le\alpha_{T_i,a}y_a\) on \(L_i\).  Taking
+   \(\underline M_i=\eta_i\delta |L_i|\) and panel weights
+   \(\lambda_i=1\), conditions \((FDP1)\)--\((FDP2)\) are exactly
+   \((FDY4)\) and the price certificates.  If \((FDY5)\) holds, then
+   \((FDP3)\) holds, so
+   \cref{cor:flattened-dual-panel-screen} produces a violating generated top
+   prefix.
+
+   The reverse inequality is the contrapositive in a surviving no-prefix
+   residual.  Under \((FDY6)\) and \(\eta_i\ge\eta\), this gives
+   \[
+      \eta\delta |L|
+      \le
+      \psi\left(A\sum_i|L_i|^\rho+\zeta\sum_i|L_i|^{1+\rho}\right).
+   \]
+   Since the \(L_i\)'s partition \(L\),
+   \[
+      \sum_i|L_i|^\rho\le M^{1-\rho}|L|^\rho,\qquad
+      \sum_i|L_i|^{1+\rho}\le |L|^{1+\rho},
+   \]
+   proving \((FDY7)\).  If \((FDY8)\) holds, the storage term in \((FDY7)\) is
+   less than half of the left-hand side, and rearranging gives \((FDY9)\).  With
+   \(\zeta=0\), the storage term is absent and the sharper constant follows.
+\end{proof}
+
 \begin{corollary}[Flattened panel-separator endpoint]
    \label{cor:flattened-panel-separator-endpoint}
    Work at a localized resident node with full certified panel universe
@@ -83210,6 +83338,10 @@ than by an adaptive sequence of returned panels.
 interface: any aggregate lower-certified capture panel against that one dual
 hardens to a deterministic generated top prefix, so range/list/AQ/facility or
 lattice proposals only have to prove positive panel surplus.
+\Cref{cor:flattened-dual-dyadic-low-cover} removes the arbitrary weighting from
+that target: a surviving flattened dual contains one dyadic heavy layer, and
+any certified assigned cover of that layer must obey the explicit
+cover-number/list-size lower bound \((FDY7)\)--\((FDY9)\).
 \Cref{cor:flattened-panel-separator-endpoint} packages this as the current
 conditional endpoint for the overload storage branch: every flattened closure
 must either be paid by its LP value or admit one such lower-capture panel; under
@@ -83413,6 +83545,11 @@ the geometric/list-decoding separator.
 separator: a weighted panel of lower-certified generated captures either obeys
 the closure dual budget or produces one positive top-prefix record in the
 flattened universe.
+\Cref{cor:flattened-dual-dyadic-low-cover} then extracts a single almost-uniform
+dual layer from any surviving flattened obstruction; on that layer, low-cover,
+low-doubling, range-reporting, AQ, facility, lattice, or list-decoding proposals
+must satisfy the precise lower bound \((FDY7)\), unless a positive generated
+prefix is already present.
 \Cref{cor:flattened-panel-separator-endpoint} turns this interface into the
 nodewise endpoint: if every flattened returned panel is either LP-paid or
 panel-separated, then the remaining child-panel residuals satisfy the positive
