@@ -38328,6 +38328,106 @@ query mass rather than producing a cost-effective dense filter.
    final displayed unsupported-child condition.
 \end{proof}
 
+\begin{corollary}[Fractional sponsor Hall cut]
+   \label{cor:fractional-sponsor-hall-cut}
+   Work in the setting of
+   \cref{cor:hall-tail-overload-exact-storage}.  For each seed \(z\), let
+   \(\mathcal I_z^{\rm tail}\) be a finite Hall-tail atom pool with weights
+   \(b_{z,i}>0\), and let
+   \[
+      \mathsf H_z=\sum_{i\in\mathcal I_z^{\rm tail}}b_{z,i}.
+      \tag{FHC1}
+   \]
+   Let \(\mathcal E_z\subseteq
+   \mathcal I_z^{\rm tail}\times\mathcal C_z^{\rm tail}\) be the certified
+   compatibility relation saying which Hall atoms may sponsor which retained
+   child.  Fix \(\beta\ge1\), and define the child sponsor demand
+   \[
+      d_{z,\kappa}=u_{z,\kappa}/\beta .
+      \tag{FHC2}
+   \]
+   The following are equivalent.
+
+   First, there is a fractional sponsor assignment
+   \(h_{z,i,\kappa}\ge0\), supported on \(\mathcal E_z\), such that
+   \[
+      \sum_{i:\,(i,\kappa)\in\mathcal E_z}h_{z,i,\kappa}
+      \ge d_{z,\kappa}
+      \qquad(\kappa\in\mathcal C_z^{\rm tail}),
+      \tag{FHC3}
+   \]
+   and
+   \[
+      \sum_{\kappa:\,(i,\kappa)\in\mathcal E_z}h_{z,i,\kappa}
+      \le b_{z,i}
+      \qquad(i\in\mathcal I_z^{\rm tail}).
+      \tag{FHC4}
+   \]
+   Second, every child subset \(\mathcal U\subseteq\mathcal C_z^{\rm tail}\)
+   satisfies the sponsor Hall inequality
+   \[
+      \sum_{\kappa\in\mathcal U}d_{z,\kappa}
+      \le
+      \sum_{i\in N_z(\mathcal U)}b_{z,i},
+      \qquad
+      N_z(\mathcal U)=
+      \{i:\exists\kappa\in\mathcal U,\ (i,\kappa)\in\mathcal E_z\}.
+      \tag{FHC5}
+   \]
+   If the equivalent conditions hold and
+   \[
+      \E_z\Gamma_z+\beta\,\E_z\mathsf H_z\le aS
+      \tag{FHC6}
+   \]
+   under the active first-moment hypotheses of
+   \cref{cor:weighted-occurrence-discounted-tuple-storage}, then the Hall-tail
+   overload stars satisfy the weighted tuple-storage certificate.
+
+   If the equivalent conditions fail, there is an explicit sponsor cut
+   \(\mathcal U\subseteq\mathcal C_z^{\rm tail}\) such that
+   \[
+      \sum_{\kappa\in\mathcal U}u_{z,\kappa}
+      >
+      \beta\sum_{i\in N_z(\mathcal U)}b_{z,i}.
+      \tag{FHC7}
+   \]
+   Thus failure of disjoint sponsorship is itself a finite Hall obstruction:
+   some retained child set has more recursive storage price than the total
+   compatible Hall mass available to sponsor it.  Since the atoms are weighted,
+   any feasible fractional assignment can be implemented by splitting atom
+   weights, with no integer materialization loss.
+\end{corollary}
+
+\begin{proof}
+   Build the finite network with a source edge of capacity \(b_{z,i}\) into each
+   atom \(i\), infinite-capacity edges from \(i\) to \(\kappa\) whenever
+   \((i,\kappa)\in\mathcal E_z\), and a sink edge of capacity
+   \(d_{z,\kappa}\) out of each child \(\kappa\).  A flow saturating all child
+   sink edges is exactly an assignment satisfying \((FHC3)\)--\((FHC4)\).
+
+   By max-flow/min-cut, such a flow exists iff every finite cut has capacity at
+   least \(\sum_\kappa d_{z,\kappa}\).  A finite cut is determined by the child
+   set \(\mathcal U\) left on the sink side; all atoms in \(N_z(\mathcal U)\)
+   must also lie on that side to avoid infinite crossing edges.  Rewriting the
+   cut inequality gives exactly \((FHC5)\).  Failure of \((FHC5)\), after
+   multiplying by \(\beta\), is \((FHC7)\).
+
+   If the assignment exists, then
+   \[
+      \sum_{\kappa\in\mathcal C_z^{\rm tail}}u_{z,\kappa}
+      =
+      \beta\sum_{\kappa}d_{z,\kappa}
+      \le
+      \beta\sum_i b_{z,i}
+      =
+      \beta\mathsf H_z .
+   \]
+   Taking expectation and using \((FHC6)\) gives \((HTS4)\), so
+   \cref{cor:hall-tail-overload-exact-storage} proves the storage certificate.
+   Splitting a weighted atom according to the finitely many positive outgoing
+   flow values realizes the fractional assignment as weighted sponsor records.
+\end{proof}
+
 \begin{lemma}[Certified star-panel separator]
    \label{lem:certified-star-panel-separator}
    Work in the setting of \cref{lem:star-prefix-weak-type-residual}, and assume
@@ -74061,6 +74161,11 @@ implementation: reserve disjoint Hall-atom sponsor cohorts for retained
 children.  The remaining geometric question is therefore whether this disjoint
 sponsored schedule captures enough of the Hall-tail obstruction, or whether the
 unreserved residue must feed a different dense/prefix repair.
+\Cref{cor:fractional-sponsor-hall-cut} makes this question finite: either a
+fractional sponsor flow pays every retained Hall-tail child from compatible
+Hall atom mass, or one explicit child set has recursive price larger than
+\(\beta\) times all compatible sponsor mass.  This is the new sharp residual
+object for the Hall-tail storage branch.
 \Cref{cor:dyadic-distinct-storage-bucket-net} rewrites that target as a dyadic
 large-child counting problem: for every recursive price scale, bound the number
 of distinct canonical bucket nets whose shared child index has that price.
