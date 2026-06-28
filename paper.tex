@@ -11558,6 +11558,77 @@ partition ignores the bias coordinates that certify the list size.
    \cref{cor:box-dual-mobility-certificate}.
 \end{proof}
 
+\begin{corollary}[Residual Hall verifier]
+   \label{cor:residual-hall-verifier}
+   Continue with the notation of
+   \cref{cor:convex-residual-mobility-certificate}.  Fix a nonnegative residual
+   budget \(\mu\in\R_+^{bq}\).  The witness assignment required in
+   \((LNG2)\)--\((LNG3)\) exists for every \(z\in P_u\) if and only if, for every
+   nonnegative symbol-score table \(y\in\R_+^{bq}\),
+   \[
+      \sup_{z\in P_u}\ip{y}{z}
+      -
+      \max_{c\in C_u}\ip{y}{\iota(c)}
+      \le
+      \ip{y}{\mu}.
+      \tag{LNH1}
+   \]
+   Equivalently, every failed residual budget exposes a concrete separator:
+   there are \(z\in P_u\) and \(y\ge0\) such that
+   \[
+      \ip{y}{z}
+      >
+      \max_{c\in C_u}\ip{y}{\iota(c)}
+      +
+      \ip{y}{\mu}.
+      \tag{LNH2}
+   \]
+
+   Thus the convex-hull residual hypothesis is not a black box.  It can be
+   checked by the same primitives used by a certified decoder: optimize the
+   nonnegative score table \(y\) over the relaxation \(P_u\), optimize it over
+   true codewords, and compare the gap to the residual price \(\ip{y}{\mu}\).
+   In the special case \(\mu=0\), \((LNH1)\) is exactly the assertion
+   \(P_u\subseteq K_u\).
+\end{corollary}
+
+\begin{proof}
+   Fix \(z\in P_u\).  The condition \(h(z)^+\le\mu\) for some
+   \(h(z)=z-x(z)\), \(x(z)\in K_u\), is equivalent to
+   \[
+      z-\mu\in K_u-\R_+^{bq}.
+      \tag{LNH3}
+   \]
+   Indeed, \(z-\mu\le x(z)\) coordinatewise is the same as
+   \(z-\mu=x(z)-s\) for some \(s\ge0\).
+
+   If \((LNH3)\) holds, then for every \(y\ge0\),
+   \[
+      \ip{y}{z-\mu}
+      \le
+      \max_{x\in K_u}\ip{y}{x}
+      =
+      \max_{c\in C_u}\ip{y}{\iota(c)}.
+      \tag{LNH4}
+   \]
+   This is \((LNH1)\) for the fixed \(z\), and taking the supremum over
+   \(z\in P_u\) preserves it.
+
+   Conversely, suppose \((LNH3)\) fails for some \(z\).  The set
+   \(K_u-\R_+^{bq}\) is a closed convex polyhedron, so the finite-dimensional
+   separation theorem gives a vector \(y\) such that
+   \[
+      \ip{y}{z-\mu}
+      >
+      \sup_{x\in K_u,\ s\ge0}\ip{y}{x-s}.
+      \tag{LNH5}
+   \]
+   The supremum on the right is finite only when \(y\ge0\); then it equals
+   \(\max_{x\in K_u}\ip{y}{x}\).  Since a linear functional on \(K_u\) is
+   maximized at a codeword vertex, \((LNH5)\) becomes \((LNH2)\).  This proves the
+   equivalence.
+\end{proof}
+
 \begin{corollary}[Anchor-fiber LP/SA certificate compiler]
    \label{cor:anchor-fiber-lp-sa-compiler}
    Continue with the notation of
@@ -12001,6 +12072,15 @@ partition ignores the bias coordinates that certify the list size.
    theorem is a transported balanced-direction tail bound for only the genuinely
    fractional mass.  This is the right target for a sharp LP, constant-level
    Sherali--Adams, or iterative-decoding proof.
+
+   \Cref{cor:residual-hall-verifier} makes that target finite.  A proposed
+   residual budget \(\mu\) is valid exactly when every nonnegative symbol-score
+   objective has relaxation advantage over true codewords at most
+   \(\ip{y}{\mu}\).  A failure returns the score table \(y\) and fractional point
+   \(z\) witnessing the pseudocodeword obstruction.  Thus the convex-hull
+   residual step can be certified by code maximization and relaxation
+   maximization oracles, rather than by explicitly materializing
+   \(\operatorname{conv}(C_u)\).
 
    \Cref{cor:well-conditioned-gram-coefficients} gives the first elementary
    path to such a theorem.  If the local subcode has a well-conditioned overlap
