@@ -9870,6 +9870,101 @@ partition ignores the bias coordinates that certify the list size.
    sufficient condition \((LPN5)\).
 \end{proof}
 
+\begin{corollary}[Leader-shift near-leader certificate]
+   \label{cor:leader-shift-near-leader-certificate}
+   Work in the setting of
+   \cref{cor:shifted-overlap-coefficient-certificate}.  For a nonempty branch
+   subcode \(C_u=\{c_1,\ldots,c_N\}\), put
+   \[
+      \widehat J_u(w)
+      =
+      \sup_{h\in E_u}
+      \left[
+         M(u)\kappa_u(h)
+         +
+         \sum_{j=1}^N a_u(h)_j^-\bigl(M(u)-W(c_j)\bigr)
+      \right].
+      \tag{LPM1}
+   \]
+   If, for some \(\lambda>0\) and \(A_\lambda\ge1\), almost surely for every
+   branch-and-bound node \(u\),
+   \[
+      \exp\!\left(
+         \lambda\widehat J_u(w)
+         +\lambda\omega_u^\perp
+         +\frac{\lambda^2(r_u^\perp)^2}{2}
+      \right)
+      \le A_\lambda,
+      \tag{LPM2}
+   \]
+   then the conditional tilted-excess bound \((LPT2)\) holds with this
+   \(A_\lambda\).  Consequently, at the Gaussian tilt \(\lambda=T/b\), a
+   polylogarithmic bound in \((LPM2)\) gives the LP/SA decoder
+   polylogarithmic expected overhead.
+
+   A concrete sufficient condition is the following.  Suppose that for each
+   node \(u\) there are bounds \(R_u,\Delta_u\ge0\) such that, for every
+   \(h\in E_u\),
+   \[
+      M(u)\kappa_u(h)\le R_u,
+      \qquad
+      \sum_j a_u(h)_j^-\le1,
+      \tag{LPM3}
+   \]
+   and all negative coefficient mass is supported on the \(\Delta_u\)-near
+   leaders,
+   \[
+      a_u(h)_j^->0
+      \quad\Longrightarrow\quad
+      W(c_j)\ge M(u)-\Delta_u .
+      \tag{LPM4}
+   \]
+   Then \(\widehat J_u(w)\le R_u+\Delta_u\).  Hence \((LPM2)\) follows from
+   \[
+      \exp\!\left(
+         \lambda(R_u+\Delta_u)
+         +\lambda\omega_u^\perp
+         +\frac{\lambda^2(r_u^\perp)^2}{2}
+      \right)
+      \le A_\lambda
+      \qquad(u\in\mathcal T).
+      \tag{LPM5}
+   \]
+   In the exact-balance case \(\kappa_u(h)=0\), this reduces the projected
+   part of the terminal LP/SA theorem to proving that negative Gram
+   coefficients of anchored pseudocodeword excesses are carried only by true
+   codewords whose scores are within \(\Delta_u\) of the local maximum.
+\end{corollary}
+
+\begin{proof}
+   In \cref{cor:shifted-overlap-coefficient-certificate}, take
+   \(\Theta_u=M(u)\).  Since \(M(u)\ge W(c_j)\) for every \(c_j\in C_u\), the
+   shifted bound gives
+   \[
+      B_u(w)
+      \le
+      \widehat J_u(w).
+      \tag{LPM6}
+   \]
+   Therefore \((LPM2)\) implies the projection certificate \((LPG4)\), and
+   \cref{cor:conditional-gaussian-projection-certificate} gives the
+   conditional tilted-excess bound.  The overhead conclusion follows from
+   \cref{cor:conditional-tilted-excess-certificate}.
+
+   Under \((LPM3)\)--\((LPM4)\), every nonzero term in the negative part
+   satisfies \(0\le M(u)-W(c_j)\le\Delta_u\), so
+   \[
+      \sum_j a_u(h)_j^-\bigl(M(u)-W(c_j)\bigr)
+      \le
+      \Delta_u\sum_j a_u(h)_j^-
+      \le
+      \Delta_u .
+      \tag{LPM7}
+   \]
+   Together with \(M(u)\kappa_u(h)\le R_u\), this proves
+   \(\widehat J_u(w)\le R_u+\Delta_u\), and \((LPM5)\) implies \((LPM2)\).
+\end{proof}
+
 \begin{corollary}[Well-conditioned Gram coefficient bounds]
    \label{cor:well-conditioned-gram-coefficients}
    Continue with the notation of
@@ -10066,6 +10161,19 @@ partition ignores the bias coordinates that certify the list size.
    \(M(u)-W(c_j)\).  Thus the low-rate code theorem should control
    pseudocodeword coefficients only against score differences inside the same
    subproblem, rather than against the absolute threshold deficit.
+
+   \Cref{cor:leader-shift-near-leader-certificate} gives the clean terminal
+   version of this idea when scalar leakage is killed exactly, or otherwise
+   bounded with the true local maximum \(M(u)\).  Shift at \(M(u)\), not at the
+   external frontier \(T-\gamma\).  Then the branch tree is still charged by
+   the ordinary true-codeword exponential moment
+   \(\sum_u e^{\lambda M(u)}\), while the projected pseudocodeword term is
+   only the negative coefficient mass against internal near-leader gaps.  In
+   particular, exact balance plus the condition that negative coefficients are
+   supported on codewords within \(O(\sqrt{\log\log n})\) unnormalized score of
+   the local leader would close the projected-bias part of the LP/SA theorem
+   up to the already separated orthogonal width and radius terms.  This is the
+   most concrete current coding-theoretic target.
 
    \Cref{cor:well-conditioned-gram-coefficients} gives the first elementary
    path to such a theorem.  If the local subcode has a well-conditioned overlap
