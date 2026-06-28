@@ -11395,6 +11395,169 @@ partition ignores the bias coordinates that certify the list size.
    \(\Lambda_i\le\Lambda_{\max}\).
 \end{proof}
 
+\begin{corollary}[Convex-hull residual mobility certificate]
+   \label{cor:convex-residual-mobility-certificate}
+   Work at a branch-and-bound node \(u\).  Let
+   \[
+      K_u=\operatorname{conv}\{\iota(c):c\in C_u\}
+      \tag{LNG1}
+   \]
+   be the true codeword convex hull inside the product of coordinate simplices.
+   Suppose that each \(z\in P_u\) is assigned a convex witness \(x(z)\in K_u\),
+   and put
+   \[
+      h(z)=z-x(z),
+      \qquad
+      E_u^{\rm res}=\{h(z):z\in P_u\}.
+      \tag{LNG2}
+   \]
+   Assume the positive residual mass has certified coordinate-symbol bounds
+   \[
+      h(z)_{i,a}^+\le\mu_u(i,a)
+      \qquad(z\in P_u,\ i\in[b],\ a\in[q]).
+      \tag{LNG3}
+   \]
+   Then the anchored excess domination \((LPF6)\) holds with \(E_u^{\rm res}\):
+   \[
+      U(u)-M(u)
+      \le
+      X_u^{\rm res}(w):=\sup_{h\in E_u^{\rm res}}\ip{w}{h}.
+      \tag{LNG4}
+   \]
+
+   For a nonnegative selector \(\theta\in\R_+^N\), write
+   \(Y_u(\theta)=-A_uG_u^+\theta\) as before and define
+   \[
+      \mathfrak R_u(\theta)
+      =
+      \sum_{i=1}^b\sum_{a\in[q]}
+      \mu_u(i,a)
+      \left(
+         Y_u(\theta)(i,a)-\min_{a'\in[q]}Y_u(\theta)(i,a')
+      \right)_+ .
+      \tag{LNG5}
+   \]
+   Then
+   \[
+      \sup_{h\in E_u^{\rm res}}\ip{Y_u(\theta)}{h}
+      \le
+      \mathfrak R_u(\theta)
+      \qquad(\theta\ge0).
+      \tag{LNG6}
+   \]
+   Consequently, with Boltzmann weights
+   \(w_j=\exp(\lambda(M(u)-W(c_j)))\), the residual version of the Boltzmann
+   negative-tail certificate follows from
+   \[
+      \sup_{0\le\theta_j\le w_j}
+      \mathfrak R_u(\theta)
+      \le \Xi_u .
+      \tag{LNG7}
+   \]
+
+   Equivalently, \((LNG7)\) is the transported balanced-direction bound
+   \[
+      \sup_{\substack{
+         0\le\beta_{i,a}\le\mu_u(i,a),\ \pi_{i,a}\ge0\\
+         \sum_a\pi_{i,a}=\sum_a\beta_{i,a}\ \forall i
+      }}
+      \sum_{j=1}^N
+      w_j
+      \left(
+         -\left(G_u^+A_u^\top d_{\beta,\pi}\right)_j
+      \right)_+
+      \le \Xi_u ,
+      \tag{LNG8}
+   \]
+   where
+   \[
+      d_{\beta,\pi}(i,a)=\beta_{i,a}-\pi_{i,a},
+      \qquad
+      \sum_a d_{\beta,\pi}(i,a)=0 .
+      \tag{LNG9}
+   \]
+
+   Thus the score-leader certificate can be replaced by a genuinely fractional
+   one: if \(z=\iota(c)\) is already a true codeword, choose \(x(z)=z\), so
+   \(h(z)=0\).  Integral low-scoring codewords are no longer charged as mobility;
+   only the residual displacement from the true convex hull has to satisfy the
+   inverse-Gram tail bound.
+\end{corollary}
+
+\begin{proof}
+   For \(z\in P_u\), the witness \(x(z)\in K_u\) is a convex combination of true
+   codewords in \(C_u\).  Hence
+   \[
+      \ip{w}{x(z)}
+      \le
+      M(u),
+      \tag{LNG10}
+   \]
+   and therefore
+   \[
+      \ip{w}{z}
+      =
+      \ip{w}{x(z)}+\ip{w}{h(z)}
+      \le
+      M(u)+X_u^{\rm res}(w).
+      \tag{LNG11}
+   \]
+   Taking the supremum over \(z\in P_u\) proves \((LNG4)\).
+
+   Fix \(h=h(z)\in E_u^{\rm res}\).  Since both \(z\) and \(x(z)\) lie in the
+   product of coordinate simplices, each coordinate block of \(h\) has sum zero.
+   For a fixed coordinate \(i\), write
+   \[
+      \beta_{i,a}=h_{i,a}^+,
+      \qquad
+      \pi_{i,a}=h_{i,a}^- .
+      \tag{LNG12}
+   \]
+   Then \(0\le\beta_{i,a}\le\mu_u(i,a)\), \(\pi_{i,a}\ge0\), and
+   \(\sum_a\pi_{i,a}=\sum_a\beta_{i,a}\).  Thus, for any vector \(Y\),
+   \[
+   \begin{aligned}
+      \sum_aY(i,a)h_{i,a}
+      &=
+      \sum_aY(i,a)(\beta_{i,a}-\pi_{i,a})\\
+      &\le
+      \sum_a\beta_{i,a}
+      \left(Y(i,a)-\min_{a'}Y(i,a')\right)\\
+      &\le
+      \sum_a\mu_u(i,a)
+      \left(Y(i,a)-\min_{a'}Y(i,a')\right)_+ .
+   \end{aligned}
+      \tag{LNG13}
+   \]
+   Summing \((LNG13)\) over \(i\) with \(Y=Y_u(\theta)\) proves \((LNG6)\).
+
+   The same support-function identity used in \((LMZ8)\), now with
+   \(E_u^{\rm res}\), gives
+   \[
+      \sum_jw_j a_u(h)_j^-
+      =
+      \sup_{0\le\theta_j\le w_j}\ip{-A_uG_u^+\theta}{h}.
+      \tag{LNG14}
+   \]
+   Combining \((LNG6)\) with \((LNG7)\) gives the residual Boltzmann negative-tail
+   bound.
+
+   Finally,
+   \[
+      \mathfrak R_u(\theta)
+      =
+      \sup_{\substack{
+         0\le\beta_{i,a}\le\mu_u(i,a),\ \pi_{i,a}\ge0\\
+         \sum_a\pi_{i,a}=\sum_a\beta_{i,a}\ \forall i
+      }}
+      \ip{-A_uG_u^+\theta}{d_{\beta,\pi}} .
+      \tag{LNG15}
+   \]
+   The feasible set is compact, so exchanging the two finite-dimensional suprema
+   over \(\theta\) and \((\beta,\pi)\) gives \((LNG8)\), exactly as in the proof of
+   \cref{cor:box-dual-mobility-certificate}.
+\end{proof}
+
 \begin{corollary}[Anchor-fiber LP/SA certificate compiler]
    \label{cor:anchor-fiber-lp-sa-compiler}
    Continue with the notation of
@@ -11828,6 +11991,16 @@ partition ignores the bias coordinates that certify the list size.
    of codewords sharing each leader coordinate.  The residual target is now
    explicit: small leader-coordinate overlap loads on mobile coordinates, plus
    a small inverse-Gram preconditioning error on balanced directions.
+
+   \Cref{cor:convex-residual-mobility-certificate} records the cleaner version
+   for an actual LP/SA theorem.  The score-leader bound is useful for diagnosing
+   which overlaps are dangerous, but it measures displacement from the leader and
+   can therefore charge ordinary low-scoring true codewords.  The convex-residual
+   certificate first compares each LP point to a point of the true codeword
+   convex hull.  Integral codewords then have zero residual, and the remaining
+   theorem is a transported balanced-direction tail bound for only the genuinely
+   fractional mass.  This is the right target for a sharp LP, constant-level
+   Sherali--Adams, or iterative-decoding proof.
 
    \Cref{cor:well-conditioned-gram-coefficients} gives the first elementary
    path to such a theorem.  If the local subcode has a well-conditioned overlap
