@@ -1429,6 +1429,48 @@ The smooth product filter is not a replacement for \cref{lem:adaptive-continuati
    \cref{lem:gaussian-cap-intersection-energy} gives \((TGE2)\).
 \end{proof}
 
+\begin{lemma}[Gaussian tail ratio]
+   \label{lem:gaussian-tail-ratio}
+   Let
+   \[
+      \overline\Phi(t)=\Pr[Z\ge t],
+      \qquad Z\sim N(0,1).
+   \]
+   There is a universal constant \(C\) such that, for all
+   \(0\le u\le v\),
+   \[
+      \frac{\overline\Phi(u)}{\overline\Phi(v)}
+      \le
+      C(1+v)\exp\!\left(\frac{v^2-u^2}{2}\right).
+      \tag{GTR1}
+   \]
+   Consequently, for \(0<\theta\le1\) and \(M\ge0\),
+   \[
+      \frac{\overline\Phi(M)}{\overline\Phi(M/\sqrt\theta)}
+      \le
+      C_\theta(1+M)
+      \exp\!\left(\frac{(1/\theta-1)M^2}{2}\right).
+      \tag{GTR2}
+   \]
+\end{lemma}
+
+\begin{proof}
+   The Chernoff bound gives
+   \(\overline\Phi(u)\le\exp(-u^2/2)\) for \(u\ge0\).  For the lower bound,
+   integrate the Gaussian density on the interval
+   \([v,v+(1+v)^{-1}]\):
+   \[
+      \overline\Phi(v)
+      \ge
+      \frac{1}{\sqrt{2\pi}(1+v)}
+      \exp\!\left(-\frac12\left(v+\frac1{1+v}\right)^2\right)
+      \ge
+      \frac{c}{1+v}e^{-v^2/2}
+   \]
+   with a universal constant \(c>0\).  Dividing the two estimates proves
+   \((GTR1)\).  Taking \(u=M\) and \(v=M/\sqrt\theta\) proves \((GTR2)\).
+\end{proof}
+
 \begin{lemma}[Positive-correlation Gaussian cap lower bound]
    \label{lem:positive-correlation-gaussian-cap-lower}
    Let \(G\sim N(\mu,I_D)\), let \(x,y\in\mathbb S^{D-1}\), and put
@@ -15117,6 +15159,86 @@ query-price overlap, storage price, and duplicate-incidence factor \(b_G\).
    \cref{cor:transport-gaussian-paid-fiber-separator} gives \((AGTL3)\).
 \end{proof}
 
+\begin{corollary}[Windowed assigned transport has polylog normalized load]
+   \label{cor:windowed-assigned-transport-load}
+   Work in the setting of
+   \cref{cor:assigned-gaussian-transport-lower-bound}.  Write
+   \[
+      \overline\Phi(t)=\Pr[Z\ge t],
+      \qquad Z\sim N(0,1).
+   \]
+   Suppose that, for parameters \(0<\theta_-\le1\) and
+   \(0\le M_-\le M_+\), every assigned paid edge satisfies
+   \[
+      \ip{c(y)}{y}\ge\theta_-,
+      \qquad
+      M_-\le m_G(c(y)),m_G(y)\le M_+
+      \qquad(y\in Y,\ b(y)>0).
+      \tag{WATL1}
+   \]
+   Then
+   \[
+      A_w\ge a_{\theta_-,M_+}B_w,
+      \qquad
+      a_{\theta_-,M_+}
+      =
+      \frac14\overline\Phi\!\left(\frac{M_+}{\sqrt{\theta_-}}\right),
+      \tag{WATL2}
+   \]
+   while the transported endpoint active loads obey
+   \[
+      P_X^w\le\overline\Phi(M_-)B_w,
+      \qquad
+      P_Y^w\le\overline\Phi(M_-)B_w.
+      \tag{WATL3}
+   \]
+   Hence the success-normalized endpoint loads satisfy
+   \[
+      \frac{P_X^w}{A_w},
+      \frac{P_Y^w}{A_w}
+      \le
+      4\,
+      \frac{\overline\Phi(M_-)}
+           {\overline\Phi(M_+/\sqrt{\theta_-})}.
+      \tag{WATL4}
+   \]
+   In the equal-window case \(M_-=M_+=M\),
+   \[
+      \frac{P_X^w}{A_w},
+      \frac{P_Y^w}{A_w}
+      \le
+      C_{\theta_-}(1+M)
+      \exp\!\left(\frac{(1/\theta_- -1)M^2}{2}\right).
+      \tag{WATL5}
+   \]
+   In particular, if \(M^2\le C\log\log n\), the normalized endpoint loads are
+   \(\log^{O_{\theta_-,C}(1)}n\).
+
+   Thus bounded margins should not be treated as a demand for absolutely small
+   one-point load.  A windowed assigned Gaussian cap with
+   \(M=O(\sqrt{\log\log n})\) may have inverse-polylogarithmic success, but
+   after success normalization its endpoint active-load overhead is still only
+   polylogarithmic.  The remaining geometric task is to produce such windowed
+   assigned transports, and to charge their shared storage or else expose a
+   finite-prefix dense repair.
+\end{corollary}
+
+\begin{proof}
+   The upper margin bound in \((WATL1)\) gives \((WATL2)\) by
+   \cref{cor:assigned-gaussian-transport-lower-bound}.  For every assigned edge,
+   the lower margin bound gives
+   \[
+      p_G(c(y))=\overline\Phi(m_G(c(y)))\le\overline\Phi(M_-),
+      \qquad
+      p_G(y)=\overline\Phi(m_G(y))\le\overline\Phi(M_-).
+   \]
+   Since the assigned transport has total mass \(B_w=\sum_yb(y)\), summing
+   these inequalities proves \((WATL3)\).  Dividing \((WATL3)\) by
+   \((WATL2)\) gives \((WATL4)\).  Finally, \((WATL5)\) is \((GTR2)\) from
+   \cref{lem:gaussian-tail-ratio}, with the factor \(4\) absorbed into the
+   constant.
+\end{proof}
+
 \begin{corollary}[Gaussian paid-fiber separator criterion]
    \label{cor:gaussian-paid-fiber-separator-criterion}
    Work in the setting of
@@ -15631,6 +15753,13 @@ original paid degree \(b(y)\).
 \Cref{cor:assigned-gaussian-transport-lower-bound} makes the co-activation
 certificate explicit for positive-correlation assigned edges with bounded
 Gaussian margins.
+\Cref{cor:windowed-assigned-transport-load} adds the missing normalization
+point: if those assigned margins lie in a window
+\([M_-,M_+]\) with \(M_-=M_+=O(\sqrt{\log\log n})\), then the endpoint
+active loads divided by the transported hit mass are only polylogarithmic.
+Thus this branch does not need absolutely tiny one-point probabilities; it
+needs a windowed assigned transport whose shared storage can be charged, or a
+finite-prefix repair when such a transport cannot be produced.
 \Cref{cor:gaussian-paid-fiber-separator-criterion} records the sharper
 split-optimized diagnostic form: lower-bound the paid-product moment, keep one
 truncated margin split inverse-polylogarithmic, and upper-bound the inherited
@@ -68264,6 +68393,13 @@ co-activation lower bound on \((c(y),y)\).
 \Cref{cor:assigned-gaussian-transport-lower-bound} gives a concrete sufficient
 version of that pointwise condition from \(\ip{c(y)}{y}\ge\theta_->0\) and
 bounded margins.
+\Cref{cor:windowed-assigned-transport-load} then checks the quantity that
+matters for the retained filter cover: under a margin window of width
+\(M=O(\sqrt{\log\log n})\), the transported endpoint active loads normalized by
+the assigned hit mass \(A_w\) are only \(\log^{O_c(1)}n\).  The unresolved
+content is therefore not an absolute active-load obstruction, but the geometric
+construction of such windowed assigned transports together with a shared-storage
+certificate or finite-prefix repair.
 \Cref{cor:spread-packing-entropy-energy-screen} records the corresponding
 charge: each separated-pair profile is harmless when its intersection energy
 dominates its entropy, and otherwise it is the high-correlation dense signal.
