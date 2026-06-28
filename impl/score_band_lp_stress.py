@@ -507,6 +507,23 @@ def convex_hull_dominance_deficit(
     source = (1 - eps) h + eps z, where h is in the true codeword convex hull
     and z is in the product simplex.
     """
+    result = true_hull_dominance_decomposition(
+        code,
+        source=source,
+        source_word=source_word,
+        tol=tol,
+    )
+    return float(result["deficit"])
+
+
+def true_hull_dominance_decomposition(
+    code: np.ndarray,
+    *,
+    source: np.ndarray | None = None,
+    source_word: tuple[int, ...] | list[int] | np.ndarray | None = None,
+    tol: float = 1e-8,
+) -> dict[str, object]:
+    """Decompose a source into true-code dominated mass plus residual mass."""
     code = np.asarray(code, dtype=int)
     blocks = code.shape[1]
     alphabet = int(np.max(code)) + 1
@@ -521,8 +538,26 @@ def convex_hull_dominance_deficit(
 
     indicators = code_indicator_matrix(code, alphabet)
     objective = np.ones(indicators.shape[1], dtype=float)
-    value, _ = _simplex_max_nonnegative(objective, indicators, source, tol=tol)
-    return max(0.0, 1.0 - min(1.0, value))
+    value, coefficients = _simplex_max_nonnegative(objective, indicators, source, tol=tol)
+    dominated_source = indicators @ coefficients
+    dominated_source[np.abs(dominated_source) <= tol] = 0.0
+    mass = max(0.0, min(1.0, float(value)))
+    deficit = max(0.0, 1.0 - mass)
+    if deficit <= tol:
+        residual_source = np.zeros_like(source)
+    else:
+        residual_source = (source - dominated_source) / deficit
+        residual_source[np.abs(residual_source) <= tol] = 0.0
+        if np.min(residual_source) < -1e-6:
+            raise RuntimeError("dominance residual has negative coordinates")
+        residual_source = np.maximum(residual_source, 0.0)
+    return {
+        "deficit": float(deficit),
+        "dominated_mass": float(mass),
+        "coefficients": coefficients,
+        "dominated_source": dominated_source,
+        "residual_source": residual_source,
+    }
 
 
 def product_simplex_score_band_gap(
@@ -1060,6 +1095,66 @@ def local_marginal_dominance_screen(
     }
 
 
+def local_marginal_residual_dominance_screen(
+    code: np.ndarray,
+    omega: np.ndarray,
+    checks: list[tuple[int, ...]],
+    *,
+    max_bases: int = 1_000_000,
+    tol: float = 1e-8,
+) -> dict[str, object]:
+    """Bound local vertices using their actual true-hull residual sources."""
+    vertex_data = local_marginal_vertex_sources(
+        code,
+        checks,
+        max_bases=max_bases,
+        tol=tol,
+    )
+    best_bound = 0.0
+    max_deficit = 0.0
+    best_source: np.ndarray | None = None
+    best_residual: np.ndarray | None = None
+    best_residual_gap = 0.0
+    best_residual_result: dict[str, object] | None = None
+    for source in vertex_data["sources"]:
+        decomp = true_hull_dominance_decomposition(code, source=source, tol=tol)
+        deficit = float(decomp["deficit"])
+        max_deficit = max(max_deficit, deficit)
+        if deficit <= tol:
+            bound = 0.0
+            residual_gap = 0.0
+            residual_result = None
+            residual = np.asarray(decomp["residual_source"], dtype=float)
+        else:
+            residual = np.asarray(decomp["residual_source"], dtype=float)
+            residual_result = source_score_band_gap(
+                code,
+                omega,
+                source=residual,
+                tol=tol,
+            )
+            residual_gap = float(residual_result["gap"])
+            bound = deficit * residual_gap
+        if bound > best_bound:
+            best_bound = bound
+            best_source = np.asarray(source).copy()
+            best_residual = residual.copy()
+            best_residual_gap = residual_gap
+            best_residual_result = residual_result
+    return {
+        "max_deficit": float(max_deficit),
+        "gap_bound": float(best_bound),
+        "residual_gap": float(best_residual_gap),
+        "source": best_source,
+        "residual_source": best_residual,
+        "residual_result": best_residual_result,
+        "source_count": int(vertex_data["source_count"]),
+        "vertex_count": int(vertex_data["vertex_count"]),
+        "basis_count": int(vertex_data["basis_count"]),
+        "feasible_basis_count": int(vertex_data["feasible_basis_count"]),
+    }
+
+
 def integral_local_pseudoword_gaps(
     code: np.ndarray,
     omega: np.ndarray,
@@ -1277,6 +1372,50 @@ def run_local_dominance_trial(
     }
 
 
+def run_local_residual_dominance_trial(
+    *,
+    n_words: int,
+    blocks: int,
+    alphabet: int,
+    seed: int,
+    xi: float,
+    checks: list[tuple[int, ...]],
+    lam: float | None = None,
+    max_bases: int = 1_000_000,
+) -> dict[str, float | int]:
+    if lam is None:
+        lam = math.sqrt(2.0 * math.log(n_words) / blocks)
+    code = make_balanced_code(n_words, blocks, alphabet, seed)
+    symbol_scores = centered_symbol_scores(blocks, alphabet, seed + 1009)
+    scores = codeword_scores(code, symbol_scores)
+    gaps = float(np.max(scores)) - scores
+    omega = np.exp(np.minimum(lam * gaps, 700.0)) + xi
+    screen = local_marginal_residual_dominance_screen(
+        code,
+        omega,
+        checks,
+        max_bases=max_bases,
+    )
+    gap_bound = float(screen["gap_bound"])
+    residual_gap = float(screen["residual_gap"])
+    return {
+        "seed": seed,
+        "n_words": n_words,
+        "blocks": blocks,
+        "alphabet": alphabet,
+        "lambda": float(lam),
+        "xi": float(xi),
+        "residual_dominance_max_deficit": float(screen["max_deficit"]),
+        "residual_dominance_gap_bound": gap_bound,
+        "residual_dominance_gap_bound_over_xi": gap_bound / xi if xi > 0 else math.inf,
+        "residual_dominance_residual_gap": residual_gap,
+        "residual_dominance_residual_gap_over_xi": residual_gap / xi if xi > 0 else math.inf,
+        "residual_dominance_source_count": int(screen["source_count"]),
+        "residual_dominance_vertex_count": int(screen["vertex_count"]),
+        "residual_dominance_basis_count": int(screen["basis_count"]),
+    }
+
+
 def run_trial(
     *,
     n_words: int,
@@ -1324,6 +1463,7 @@ def main() -> None:
     parser.add_argument("--local-marginal", action="store_true")
     parser.add_argument("--local-marginal-exact", action="store_true")
     parser.add_argument("--local-dominance-screen", action="store_true")
+    parser.add_argument("--local-residual-dominance-screen", action="store_true")
     parser.add_argument("--local-marginal-max-bases", type=int, default=1_000_000)
     parser.add_argument("--local-marginal-objectives", type=int, default=16)
     parser.add_argument("--local-marginal-closure-rounds", type=int, default=2)
@@ -1473,10 +1613,49 @@ def main() -> None:
                 key=lambda row: float(row["dominance_gap_bound_over_xi"]),
             )
             print(f"worst_dominance_seed,{worst_dominance['seed']}")
-    elif args.local_marginal or args.local_marginal_exact or args.local_dominance_screen:
+
+        if args.local_residual_dominance_screen:
+            residual_rows = [
+                run_local_residual_dominance_trial(
+                    n_words=args.n_words,
+                    blocks=args.blocks,
+                    alphabet=args.alphabet,
+                    seed=args.seed + trial,
+                    xi=xi,
+                    checks=checks,
+                    lam=args.lam,
+                    max_bases=args.local_marginal_max_bases,
+                )
+                for trial in range(args.trials)
+            ]
+            for key in [
+                "residual_dominance_max_deficit",
+                "residual_dominance_gap_bound",
+                "residual_dominance_gap_bound_over_xi",
+                "residual_dominance_residual_gap",
+                "residual_dominance_residual_gap_over_xi",
+                "residual_dominance_source_count",
+                "residual_dominance_vertex_count",
+                "residual_dominance_basis_count",
+            ]:
+                values = np.array([float(row[key]) for row in residual_rows])
+                print(f"{key}_mean,{float(np.mean(values))}")
+                print(f"{key}_max,{float(np.max(values))}")
+            worst_residual = max(
+                residual_rows,
+                key=lambda row: float(row["residual_dominance_gap_bound_over_xi"]),
+            )
+            print(f"worst_residual_dominance_seed,{worst_residual['seed']}")
+    elif (
+        args.local_marginal
+        or args.local_marginal_exact
+        or args.local_dominance_screen
+        or args.local_residual_dominance_screen
+    ):
         parser.error(
             "--local-marginal, --local-marginal-exact, and "
-            "--local-dominance-screen require --local-check-size",
+            "--local-dominance-screen/--local-residual-dominance-screen "
+            "require --local-check-size",
         )
 
 

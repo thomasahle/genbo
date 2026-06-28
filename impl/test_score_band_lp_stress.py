@@ -6,12 +6,14 @@ from score_band_lp_stress import (
     integral_local_pseudoword_gaps,
     local_check_scopes,
     local_marginal_dominance_screen,
+    local_marginal_residual_dominance_screen,
     local_marginal_score_band_gap_exact,
     local_marginal_score_band_gap,
     local_marginal_vertex_sources,
     product_simplex_score_band_gap,
     solve_equality_lp_max,
     source_score_band_gap,
+    true_hull_dominance_decomposition,
 )
 
 
@@ -96,6 +98,22 @@ def test_convex_hull_dominance_deficit_matches_simple_cases():
     ])
     assert convex_hull_dominance_deficit(code, source_word=(0, 1)) <= 1e-8
     assert np.isclose(convex_hull_dominance_deficit(code, source_word=(1, 1)), 1.0)
+
+
+def test_true_hull_dominance_decomposition_reconstructs_source():
+    code = np.array([
+        [0, 0],
+        [0, 1],
+        [1, 0],
+    ])
+    source = np.array([0.25, 0.75, 0.25, 0.75])
+    result = true_hull_dominance_decomposition(code, source=source)
+
+    assert np.isclose(result["deficit"], 0.5)
+    assert np.allclose(
+        source,
+        result["dominated_source"] + result["deficit"] * result["residual_source"],
+    )
 
 
 def test_pairwise_local_parity_pseudoword_is_detected():
@@ -226,6 +244,38 @@ def test_local_marginal_dominance_screen_bounds_exact_gap():
     assert exact["gap"] <= screen["gap_bound"] + 1e-8
 
 
+def test_local_marginal_residual_dominance_screen_bounds_exact_gap():
+    code = np.array([
+        [0, 0, 0],
+        [0, 1, 1],
+        [1, 0, 1],
+        [1, 1, 0],
+    ])
+    omega = np.ones(len(code))
+    checks = [(0, 1), (0, 2), (1, 2)]
+    exact = local_marginal_score_band_gap_exact(
+        code,
+        omega,
+        checks=checks,
+        max_bases=1000,
+    )
+    global_screen = local_marginal_dominance_screen(
+        code,
+        omega,
+        checks=checks,
+        max_bases=1000,
+    )
+    residual_screen = local_marginal_residual_dominance_screen(
+        code,
+        omega,
+        checks=checks,
+        max_bases=1000,
+    )
+
+    assert exact["gap"] <= residual_screen["gap_bound"] + 1e-8
+    assert residual_screen["gap_bound"] <= global_screen["gap_bound"] + 1e-8
+
+
 def test_local_check_scopes_enumerates_subsets():
     assert local_check_scopes(3, 2) == [(0, 1), (0, 2), (1, 2)]
 
@@ -238,11 +288,13 @@ if __name__ == "__main__":
     test_fixed_true_codeword_has_zero_gap()
     test_fixed_missing_corner_matches_product_gap()
     test_convex_hull_dominance_deficit_matches_simple_cases()
+    test_true_hull_dominance_decomposition_reconstructs_source()
     test_pairwise_local_parity_pseudoword_is_detected()
     test_local_marginal_full_check_collapses_to_true_hull()
     test_exact_local_marginal_full_check_collapses_to_true_hull()
     test_local_marginal_pairwise_parity_sees_integral_gap()
     test_exact_local_marginal_pairwise_parity_matches_integral_gap()
     test_local_marginal_dominance_screen_bounds_exact_gap()
+    test_local_marginal_residual_dominance_screen_bounds_exact_gap()
     test_local_check_scopes_enumerates_subsets()
     print("score_band_lp_stress tests passed")
