@@ -2096,6 +2096,113 @@ The smooth product filter is not a replacement for \cref{lem:adaptive-continuati
    \cref{cor:low-high-compressed-cap-storage}.
 \end{proof}
 
+\begin{corollary}[Compressed-cap overload is a Hall-tail object]
+   \label{cor:compressed-cap-overload-hall-tail}
+   Work in the no-repair residual of
+   \cref{cor:compressed-cap-high-tail-prefix-pricing}.  Atomize the
+   high-correlation compressed-cap incidences by creating, for every ordered
+   pair \((x,y)\) with \(M_x(y)>0\), one atom \(i=(x,y)\) with point
+   \(p_i=y\), weight \(b_i=M_x(y)\), and singleton admissible center set
+   \(\mathcal X_i=\{x\}\).  Interpret
+   \cref{lem:cap-centered-transport-hall} with congestion \(C=1\), the
+   cap-centered children \(W_x\), and the paid degrees \(d_x^+(y)\) from
+   \((CHT1)\).
+
+   Let
+   \[
+      \mathcal A_{\rm over}
+      =
+      \{(x,y):M_x(y)>d_x^+(y)\}.
+      \tag{CHO1}
+   \]
+   Then \(\mathcal A_{\rm over}\) has Hall excess exactly
+   \[
+      \sum_{(x,y)\in\mathcal A_{\rm over}}M_x(y)
+      -
+      \sum_{(x,y,q)\in N(\mathcal A_{\rm over})}
+         \alpha_{y,q}a_x^+(q)
+      =
+      H_{\rm over}.
+      \tag{CHO2}
+   \]
+   Consequently, for every \(0\le\Omega<H_{\rm over}\), the cap-centered Hall
+   condition \((COD1)\) fails with allowed tail \(\Omega\).
+
+   If the positive overload values
+   \[
+      O_x(y)=\bigl(M_x(y)-d_x^+(y)\bigr)_+
+      \tag{CHO3}
+   \]
+   lie in a certified dyadic range \([O_{\min},O_{\max}]\), and
+   \[
+      J_{\rm over}
+      =
+      1+\left\lceil\log_2\frac{O_{\max}}{O_{\min}}\right\rceil ,
+      \tag{CHO4}
+   \]
+   then there are a center \(x\in P\) and dyadic level \(t\) such that the pure
+   overload star
+   \[
+      U_{x,t}^{\rm over}=\{y:O_x(y)\ge t\}
+      \tag{CHO5}
+   \]
+   is contained in \(W_x\) and satisfies
+   \[
+      t|U_{x,t}^{\rm over}|
+      >
+      \frac{\Omega}{2mJ_{\rm over}} .
+      \tag{CHO6}
+   \]
+
+   Suppose such a pure overload star is canonicalized to one shared child
+   \(\kappa\) with witness net \(A_\kappa\subseteq U_{x,t}^{\rm over}\), tuple
+   order \(k_\kappa\), and storage price \(u_\kappa\).  Treat every atom
+   \((x,y)\in\mathcal A_{\rm over}\) with \(y\in U_{x,t}^{\rm over}\) as a
+   weighted occurrence of this same child, with occurrence weight \(M_x(y)\).
+   Then the reciprocal weighted-multiplicity identity of
+   \cref{cor:cap-centered-overload-weighted-storage} charges this overload
+   cohort by one copy of \(u_\kappa\), not by one copy per compressed-cap
+   incidence.
+
+   Thus \(H_{\rm over}\) is the standard Hall/sponsor residual used later in
+   the proof.  Either it admits bounded-congestion transport into paid
+   cap-centered degrees, or it exposes a dyadic pure overload star that enters
+   the shared-child storage, sponsor-flow, and generated-column interfaces.
+\end{corollary}
+
+\begin{proof}
+   If atom \((x,y)\) is present, then \(M_x(y)>0\), so the proof of
+   \cref{cor:compressed-cap-high-tail-prefix-pricing} gives \(y\in W_x\) and
+   \(\ip{x}{y}>\theta_m\).  Hence the cap-centered Hall support hypothesis
+   \((CTH1)\) holds with admissible center set \(\{x\}\).
+
+   For a fixed overloaded pair \((x,y)\), the neighboring capacity nodes are
+   exactly the triples \((x,y,q)\) with \((y,q)\in\mathcal N\) and
+   \(a_x^+(q)>0\).  Their total capacity is
+   \[
+      \sum_{q:(y,q)\in\mathcal N}\alpha_{y,q}a_x^+(q)
+      =
+      d_x^+(y).
+   \]
+   Summing over \(\mathcal A_{\rm over}\) gives \((CHO2)\).  If
+   \(\Omega<H_{\rm over}\), this subset violates \((COD1)\), so the Hall
+   condition fails with allowed tail \(\Omega\).
+
+   Apply \cref{cor:cap-centered-overload-dichotomy} and then
+   \cref{cor:cap-centered-hall-overload-stars} to this failed Hall cut, using
+   the canonical selector \(s(x,y)=x\) and \(C=1\).  For the selected atoms,
+   \(B_x^s(y)=M_x(y)\), so the overload multiplicity \((COS2)\) is precisely
+   \(O_x(y)\) from \((CHO3)\).  Since the center set has size at most \(m\),
+   the dyadic layer-cake conclusion gives \((CHO5)\)--\((CHO6)\) and the
+   containment \(U_{x,t}^{\rm over}\subseteq W_x\).
+
+   The final storage statement is exactly
+   \cref{cor:cap-centered-overload-weighted-storage} applied to this pure
+   overload star and to the selected overloaded atoms.  That corollary is stated
+   for weighted atom occurrences, so the integer compressed-cap multiplicity
+   \(M_x(y)\) is used only as the occurrence weight.
+\end{proof}
+
 \begin{corollary}[Weighted polylogarithmic low-correlation co-load cutoff]
    \label{cor:weighted-polylog-low-correlation-coload}
    Let \(m\ge3\), \(P\subset\mathbb S^{D-1}\) with \(|P|\le m\), and let
@@ -81590,6 +81697,10 @@ for the dense/star or sponsor verifier.
 cap-centered paid-prefix verifier: the paid part is either a quadratic
 same-prefix repair or a fixed dyadic tail, leaving only the overload where cap
 incidence exceeds paid near-pair degree.
+\Cref{cor:compressed-cap-overload-hall-tail} identifies that overload with the
+standard cap-centered Hall residual: bounded transport sends it back to the
+paid-prefix mechanism, while failed transport exposes a pure overload star that
+is charged once by shared-child storage.
 \Cref{cor:distinct-canonical-bucket-net} further sharpens the storage target:
 the recursive child index is charged once per distinct canonical bucket net, not
 once per decoded occurrence, with only occurrence pointers left in the metadata
@@ -81995,6 +82106,10 @@ storage is the realized high-correlation ordered-pair tail.
 cap-centered paid degree; after prefix search, the only potentially polynomial
 survivor is the overload \(H_{\rm over}\), which is the Hall/sponsor object
 handled by the later overload machinery.
+\Cref{cor:compressed-cap-overload-hall-tail} makes that statement exact for
+compressed buckets: \(H_{\rm over}\) is the excess of one cap-centered Hall cut,
+and any failed transport contains a dyadic pure overload star whose weighted
+occurrences are charged by one shared child price.
 \Cref{cor:weighted-polylog-low-correlation-coload} makes the same low branch
 homogeneous in cap multiplicity: fractional or weighted cap panels obey the
 same bound with the integer occurrence count replaced by total weight.  This is
