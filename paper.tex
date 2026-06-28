@@ -39436,13 +39436,192 @@ query mass rather than producing a cost-effective dense filter.
    Condition \((SFT4)\) is the corresponding integrated storage bound.
 \end{proof}
 
+\begin{corollary}[Generic fractional child-panel shared-cover compiler]
+   \label{cor:fractional-child-panel-shared-cover-compiler}
+   Let \(\mathcal A\) be a finite family of fractional child records.  Each
+   \(a\in\mathcal A\) has residual storage price \(u_a\ge0\).  Let
+   \(\mathcal R\) be a finite family of candidate shared records.  A record
+   \(c\in\mathcal R\) has one-time recursive storage price \(P_c\ge0\) and
+   certified cover coefficients \(0\le g_{c,a}\le1\).  Define
+   \[
+   \begin{array}{ll}
+   \Phi=\min
+      & \displaystyle
+        \sum_{a\in\mathcal A}u_ae_a
+        +\sum_{c\in\mathcal R}P_c\lambda_c\\[0.8em]
+   \text{\rm subject to}
+      & \displaystyle
+        e_a+\sum_{c\in\mathcal R}\lambda_cg_{c,a}\ge1
+        \qquad(a\in\mathcal A),\\[0.8em]
+      & e_a\ge0,\qquad \lambda_c\ge0 .
+   \end{array}
+      \tag{FCP1}
+   \]
+   Its dual is
+   \[
+   \begin{array}{ll}
+   \Phi=\max
+      & \displaystyle \sum_{a\in\mathcal A}y_a\\[0.8em]
+   \text{\rm subject to}
+      & 0\le y_a\le u_a
+        \qquad(a\in\mathcal A),\\[0.8em]
+      & \displaystyle
+        \sum_{a\in\mathcal A}g_{c,a}y_a\le P_c
+        \qquad(c\in\mathcal R).
+   \end{array}
+      \tag{FCP2}
+   \]
+
+   Now let \(\mathcal T\) be a finite family of generated shared-record
+   templates.  A template \(T\) has a search container
+   \(\mathcal A_T\subseteq\mathcal A\), certified capture weights
+   \(\alpha_{T,a}\in[0,1]\), finite available cardinalities
+   \(\mathcal K_T\), and certified prices \(\overline P_T(K)\).  Assume
+   materialization: for every \(K\in\mathcal K_T\) and every
+   \(U\subseteq\mathcal A_T\) with \(|U|=K\), preprocessing can create a shared
+   record \(c(T,U)\in\mathcal R\) satisfying
+   \[
+      P_{c(T,U)}\le\overline P_T(K),
+      \qquad
+      g_{c(T,U),a}\ge
+      \alpha_{T,a}\mathbf 1_{\{a\in U\}}
+      \quad(a\in\mathcal A).
+      \tag{FCP3}
+   \]
+   For any vector \(y\) with \(0\le y_a\le u_a\), for instance the dual of a
+   restricted shared-cover LP, order \(\mathcal A_T=\{a_1,a_2,\ldots\}\) by
+   nonincreasing \(\alpha_{T,a}y_a\).  If, for some available \(K\),
+   \[
+      \sum_{j\le K}\alpha_{T,a_j}y_{a_j}>\overline P_T(K),
+      \tag{FCP4}
+   \]
+   then \(c(T,\{a_1,\ldots,a_K\})\) violates the corresponding shared-record
+   dual constraint and is an improving shared-cover column.
+   Conversely, if no available top prefix for \(T\) is improving, then every
+   \(K\)-subset \(U\subseteq\mathcal A_T\) satisfies
+   \[
+      \sum_{a\in U}\alpha_{T,a}y_a\le\overline P_T(K).
+      \tag{FCP5}
+   \]
+
+   The generated-cover relaxation
+   \[
+   \begin{array}{ll}
+   \Psi^{\rm gen}=\min
+      & \displaystyle
+        \sum_{a\in\mathcal A}u_ae_a
+        +\sum_{T\in\mathcal T}
+         \sum_{K\in\mathcal K_T}
+         \sum_{\substack{U\subseteq\mathcal A_T\\ |U|=K}}
+         \lambda_{T,U}\overline P_T(K)\\[0.9em]
+   \text{\rm subject to}
+      & \displaystyle
+        e_a+
+        \sum_{T\in\mathcal T}
+        \sum_{K\in\mathcal K_T}
+        \sum_{\substack{U\subseteq\mathcal A_T\\ |U|=K}}
+        \lambda_{T,U}\alpha_{T,a}\mathbf 1_{\{a\in U\}}
+        \ge1
+        \qquad(a\in\mathcal A),\\[0.9em]
+      & e_a\ge0,\qquad \lambda_{T,U}\ge0
+   \end{array}
+      \tag{FCP6}
+   \]
+   satisfies \(\Phi\le\Psi^{\rm gen}\).  Hence if
+   \(\Psi^{\rm gen}\le\Theta\), the generated prefixes close the child panel
+   at allowance \(\Theta\).  Conversely, if \(\Psi^{\rm gen}>\Theta\), then
+   there is one dual weighting \(y_a\) with
+   \[
+      \sum_{a\in\mathcal A}y_a>\Theta,\qquad
+      0\le y_a\le u_a,
+      \tag{FCP7}
+   \]
+   such that every generated template satisfies all subset tests \((FCP5)\).
+
+   Finally, suppose a template \(T\) has \(b_T\)-dense available
+   cardinalities and prices of the form
+   \[
+      \overline P_T(K)
+      =
+      \psi_T(A_TK^\rho+\zeta_TK^{1+\rho}),
+      \qquad 0<\rho<1 .
+      \tag{FCP8}
+   \]
+   If no available top prefix for \(T\) is improving, then every nonempty
+   degree superlevel
+   \[
+      H_{T,\delta}=\{a\in\mathcal A_T:\alpha_{T,a}y_a\ge\delta\},
+      \qquad h=|H_{T,\delta}|,
+      \tag{FCP9}
+   \]
+   obeys
+   \[
+      \delta
+      \le
+      \psi_T\left(
+         b_T^{1-\rho}A_Th^{\rho-1}
+         +\zeta_Th^\rho
+      \right).
+      \tag{FCP10}
+   \]
+   Thus every storage tail that has been reduced to priced fractional child
+   records has the same algorithmic interface: solve one finite shared-cover
+   LP, add a positive generated prefix, or expose one no-prefix dual residual
+   for the geometric/list-decoding separator.
+\end{corollary}
+
+\begin{proof}
+   The primal \((FCP1)\) is finite and feasible by taking \(e_a=1\).  Assign a
+   dual variable \(y_a\ge0\) to each cover constraint.  The coefficient of
+   \(e_a\) gives \(y_a\le u_a\), and the coefficient of \(\lambda_c\) gives
+   \(\sum_{a\in\mathcal A}g_{c,a}y_a\le P_c\).  Finite LP duality proves
+   \((FCP2)\).
+
+   If \((FCP4)\) holds, then by \((FCP3)\)
+   \[
+      \sum_{a\in\mathcal A}g_{c(T,U_K),a}y_a
+      \ge
+      \sum_{j\le K}\alpha_{T,a_j}y_{a_j}
+      >
+      \overline P_T(K)
+      \ge
+      P_{c(T,U_K)} ,
+   \]
+   where \(U_K=\{a_1,\ldots,a_K\}\).  Hence this record violates the current
+   dual constraint and is an improving column.  For fixed \(K\), the top
+   \(K\)-prefix maximizes \(\sum_{a\in U}\alpha_{T,a}y_a\), proving the
+   converse \((FCP5)\).
+
+   Any feasible solution of \((FCP6)\) materializes a feasible solution of
+   \((FCP1)\) by replacing each active \((T,U)\) with \(c(T,U)\), using
+   \((FCP3)\) for coverage and \(P_{c(T,U)}\le\overline P_T(|U|)\) for price.
+   Therefore \(\Phi\le\Psi^{\rm gen}\).  The dual of \((FCP6)\) is obtained
+   from \((FCP7)\) plus all subset constraints \((FCP5)\), so finite LP duality
+   gives the no-prefix residual when \(\Psi^{\rm gen}>\Theta\).
+
+   For the weak-type envelope, choose \(K\in\mathcal K_T\) with
+   \(h/b_T\le K\le h\).  The top \(K\)-prefix has total degree at least
+   \(K\delta\).  Since no prefix is improving,
+   \[
+      K\delta\le\overline P_T(K)
+      =
+      \psi_T(A_TK^\rho+\zeta_TK^{1+\rho}).
+   \]
+   Divide by \(K\), use \(K\ge h/b_T\) in the negative exponent
+   \(K^{\rho-1}\), and use \(K\le h\) in \(K^\rho\), giving \((FCP10)\).
+\end{proof}
+
 \begin{corollary}[Shared-cover LP for the fractional sponsor tail]
    \label{cor:fractional-sponsor-tail-shared-cover}
    Work in the setting of
    \cref{cor:storage-dominated-sponsor-stars-fractional-tail} for one build
    seed \(z\), and write \(\mathcal S=\mathcal S_{{\rm st},z}\).  Each
    \(s\in\mathcal S\) has fractional price \(u_s=u_s^{\rm frac}\).  Let
-   \(\mathcal R_z\) be a finite family of candidate shared records.  A record
+   \(\mathcal R_z\) be a finite family of candidate shared records.  This is
+   the specialization of
+   \cref{cor:fractional-child-panel-shared-cover-compiler} with
+   \(\mathcal A=\mathcal S\); the local notation below is kept because later
+   fractional-tail corollaries use the labels \((STC1)\)--\((STC4)\).  A record
    \(c\in\mathcal R_z\) has one-time recursive storage price \(P_c\ge0\) and
    certified coverage coefficients \(0\le g_{c,s}\le1\) for
    \(s\in\mathcal S\).  Consider the finite cover LP
@@ -40348,6 +40527,10 @@ query mass rather than producing a cost-effective dense filter.
    \end{array}
       \tag{FCS4}
    \]
+   Equations \((FCS3)\)--\((FCS4)\) are the specialization of
+   \cref{cor:fractional-child-panel-shared-cover-compiler} with
+   \(\mathcal A=\mathcal S_{\rm cap}\) and
+   \(u_r=u_r^{\rm cap}\).
 
    Thus the cap-star return has exactly the same shared-cover interface as the
    fractional sponsor tail: a feasible solution of \((FCS3)\) replaces
@@ -76198,6 +76381,10 @@ one integrated fractional storage tail
 part remains the fixed tail \(2|E|J_\omega\omega_{\max}H_-\).  Thus the live
 sponsor-star target is a distinct-storage certificate for these fractional
 star children, not another dense-branching materialization rule.
+\Cref{cor:fractional-child-panel-shared-cover-compiler} abstracts the finite
+object used from here on: any priced fractional child panel may be attacked by
+one shared-cover LP, generated top-prefix columns, and a single no-prefix dual
+residual.
 \Cref{cor:fractional-sponsor-tail-shared-cover} then removes duplicated large
 stars from that target by a finite shared-cover LP: either residual fractional
 star copies plus shared records have total price inside the storage allowance,
@@ -76237,9 +76424,9 @@ plus a storage-dominated fractional subtail.  Thus the fractional-tail
 high-correlation loop has the same normal form as the original sponsor-star
 loop.
 \Cref{cor:fractional-tail-cap-star-storage-interface} routes that
-storage-dominated cap-star subtail into the same finite shared-cover LP and
-dual-prefix interface as the fractional sponsor tail, after absorbing the
-dyadic cap intensity into the child price factor.  The returned
+storage-dominated cap-star subtail into the same generic child-panel interface
+as the fractional sponsor tail, after absorbing the dyadic cap intensity into
+the child price factor.  The returned
 high-correlation branch therefore rejoins the existing shared-canonical
 distinct-storage target rather than introducing a cap-specific recursion.
 \Cref{cor:dyadic-distinct-storage-bucket-net} rewrites that target as a dyadic
