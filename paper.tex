@@ -38264,6 +38264,79 @@ query mass rather than producing a cost-effective dense filter.
    \(H_ie^{-\Lambda_i}\).
 \end{proof}
 
+\begin{corollary}[Positive-moment entropy-deficit screen]
+   \label{cor:positive-moment-entropy-deficit-screen}
+   Work in the setting of
+   \cref{cor:entropy-deficit-tail-local-storage-screen}.  For each active layer
+   \(i\), choose a cutoff \(\tau_i>0\) and an exponent \(\nu_i>0\), and define
+   the positive entropy-deficit moment
+   \[
+      \mathfrak M_i(\tau_i,\nu_i)
+      =
+      \sum_{h\in\mathcal H_i}
+      \left[
+         \left(\frac{X_{i,h}}{\tau_i}\right)^{1+\nu_i}-1
+      \right]_+ .
+      \tag{PME1}
+   \]
+   If, for every active layer \(i\),
+   \[
+      2^{-\ell_i}\tau_i
+      \left(
+         H_i+\mathfrak M_i(\tau_i,\nu_i)
+      \right)
+      \le
+      \frac{B_\star}{2M_{\mathcal I}},
+      \qquad B_\star=aS-\E_z\Gamma_z>0,
+      \tag{PME2}
+   \]
+   and the high-correlation fixed-tail condition \((PELS5)\) holds, then
+   \((\mathsf{ESFC}_\Sigma)\) is feasible, provided no one-record guard-credit
+   repair fires.
+
+   Equivalently, writing the normalized entropy deficit as
+   \[
+      D_{i,h}=\log X_{i,h}-\log\tau_i,
+      \tag{PME3}
+   \]
+   the remaining low-correlation storage theorem may certify only
+   \[
+      \sum_{h\in\mathcal H_i}
+      \left(e^{(1+\nu_i)D_{i,h}}-1\right)_+,
+      \tag{PME4}
+   \]
+   together with the trivial baseline \(\tau_iH_i\).  Thus a small positive
+   moment of entropy excess is sufficient; the proof does not require a
+   worst-profile inequality and does not require choosing every dyadic
+   entropy-deficit bin explicitly.
+\end{corollary}
+
+\begin{proof}
+   For every \(X\ge0\),
+   \[
+      X
+      \le
+      \tau_i\left(1+\left[\left(\frac X{\tau_i}\right)^{1+\nu_i}-1\right]_+\right).
+      \tag{PME5}
+   \]
+   Indeed, if \(X\le\tau_i\), the right side is \(\tau_i\ge X\).  If
+   \(X>\tau_i\), the bracket is \((X/\tau_i)^{1+\nu_i}-1\), and the right side
+   is
+   \[
+      \tau_i\left(\frac X{\tau_i}\right)^{1+\nu_i}\ge X .
+   \]
+   Summing \((PME5)\) over \(h\in\mathcal H_i\) gives
+   \[
+      \sum_hX_{i,h}
+      \le
+      \tau_i\left(H_i+\mathfrak M_i(\tau_i,\nu_i)\right).
+   \]
+   Hence \((PME2)\) implies the low-correlation tail condition \((EDT2)\).
+   The conclusion follows from
+   \cref{cor:entropy-deficit-tail-local-storage-screen}.  Formula \((PME4)\) is
+   just \((PME1)\) after substituting \(X_{i,h}/\tau_i=e^{D_{i,h}}\).
+\end{proof}
+
 \begin{corollary}[Paid-responsibility high-correlation star compiler]
    \label{cor:paid-responsibility-high-correlation-star}
    Work in the setting of
@@ -44050,6 +44123,10 @@ spread-packing star-signal cases.
 it is enough to prove a dyadic tail bound for the actual quantities
 \(W_h e^{-I_h}\), or equivalently for the entropy deficits
 \(\log W_h-I_h\).
+\Cref{cor:positive-moment-entropy-deficit-screen} gives a still more compact
+target: after choosing a cutoff \(\tau\), a positive moment of the excess
+\((W_he^{-I_h}/\tau)^{1+\nu}\) plus the baseline \(\tau|\mathcal H|\) closes
+the same storage check.
 \Cref{lem:star-superlevel-column-verifier} and
 \cref{cor:pair-star-dense-column-generator} add the finite LP check: the star
 is retained only if its ball-thickened query side has positive reduced gain;
@@ -69621,6 +69698,9 @@ margin.
 \Cref{cor:entropy-deficit-tail-local-storage-screen} records the sharper
 tail form: a few mildly bad profiles are harmless if the dyadic sum of
 \(W_h e^{-I_h}\) over all low-correlation profiles still fits the local budget.
+\Cref{cor:positive-moment-entropy-deficit-screen} converts this into the
+positive-moment form that a tensorized spherical, lattice, or range/list-decoder
+estimate is more likely to prove directly.
 \Cref{lem:star-superlevel-column-verifier} and
 \cref{cor:pair-star-dense-column-generator} turn such a superlevel into an
 ordinary fractional-cover column by using the certified query activation
@@ -69870,6 +69950,9 @@ storage budget with only an \(O(\log\log n)\) local margin.
 version of the same requirement; the remaining list-decoding theorem can target
 an exponential tail for positive entropy deficits rather than a maximum deficit
 bound.
+\Cref{cor:positive-moment-entropy-deficit-screen} is the averaged version of
+that target: bound a positive moment of the normalized entropy excess and pay
+the cutoff times the number of subprofiles.
 \Cref{cor:metric-entropy-hall-shadow-closure} and
 \cref{cor:low-doubling-hall-shadow-close} sharpen the remaining geometric
 obligation: any positive Hall shadow of certified covering number below
