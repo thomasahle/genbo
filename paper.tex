@@ -40921,6 +40921,129 @@ query mass rather than producing a cost-effective dense filter.
    \((UPL12)\) gives \((UPL14)\).
 \end{proof}
 
+\begin{corollary}[Cap-prefix tail for unsponsored-cut cap stars]
+   \label{cor:unsponsored-cut-cap-prefix-tail}
+   Work in the setting of
+   \cref{cor:unsponsored-cut-low-correlation-cap-closure}, and assume
+   \(0<\theta_m\le1/2\).  Suppose the indexed representative family
+   \((x_g)_{g\in E}\subseteq\mathbb S^{D-1}\) is a local finite
+   filter-cover instance to which
+   \cref{cor:cap-centered-paid-prefix-quadratic} applies with
+   \(o=0\), \(R=1\), \(\gamma=\theta_m\), and all centers \(g\in E\)
+   available.  Thus
+   \[
+      c_g=\theta_m x_g,
+      \qquad
+      R_+=\sqrt{1-\theta_m^2},
+      \qquad
+      W_g=\{g'\in E:\|x_{g'}-c_g\|\le R_+\},
+      \tag{UPT1}
+   \]
+   with activation \(a_g^+\), paid degree \(d_g^+(g')\), and query price
+   \(A_g^+\) as in \((CPQ3)\)--\((CPQ5)\), interpreted on the indexed
+   family.
+
+   Let \(\omega_{g,g'}\) and \(W_{\rm hi}\) be the high-correlation cap-panel
+   weights from \((UPL8)\).  Split them by cap-centered paid degree:
+   \[
+      \omega^{\rm pay}_{g,g'}
+      =
+      \min\{\omega_{g,g'},d_g^+(g')\},
+      \qquad
+      \omega^{\rm over}_{g,g'}
+      =
+      \bigl(\omega_{g,g'}-d_g^+(g')\bigr)_+,
+      \tag{UPT2}
+   \]
+   and put
+   \[
+      W_{\rm over}=\sum_{g,g'\in E}\omega^{\rm over}_{g,g'} .
+      \tag{UPT3}
+   \]
+   If \(\omega^{\rm pay}\equiv0\), set \(J_{\rm pay}=1\).  Otherwise assume
+   the positive values of \(\omega^{\rm pay}_{g,g'}\) lie in a certified
+   dyadic range with dynamic-range factor \(J_{\rm pay}\).  For dyadic levels
+   \(t\), define
+   \[
+      U^{\rm pay}_{g,t}
+      =
+      \{g'\in E:\omega^{\rm pay}_{g,g'}\ge t\}.
+      \tag{UPT4}
+   \]
+   Fix \(\Lambda>0\).  Suppose every paid-clipped dyadic level with
+   \(t|U^{\rm pay}_{g,t}|\ge\Lambda\) has cap-centered child price below
+   \(\Lambda\):
+   \[
+      e^{B_0\theta_m^2}\Psi(R_+)
+      \left(
+         A_g^+|U^{\rm pay}_{g,t}|^\rho
+         +\sigma |U^{\rm pay}_{g,t}|^{1+\rho}
+      \right)
+      <\Lambda .
+      \tag{UPT5}
+   \]
+   Then either a \((B_0+3)\)-quadratic cap-centered paid-prefix repair fires,
+   or
+   \[
+      W_{\rm hi}
+      \le
+      W_{\rm over}+2|E|J_{\rm pay}\Lambda .
+      \tag{UPT6}
+   \]
+   Consequently, in a no-repair residual satisfying \((UPT5)\),
+   \[
+      \sum_{r\in\mathcal R}w_r\,\E X_E(U_r)^2
+      \le
+      m^{1+\rho_{\rm cap}}
+      \left(
+         \log^{3A_{\rm cap}/2}m
+         +
+         \log^{2A_{\rm cap}+2K_{\rm corr}+1}m
+      \right)
+      +
+      W_{\rm over}+2|E|J_{\rm pay}\Lambda .
+      \tag{UPT7}
+   \]
+
+   Thus the high-correlation output of the unsponsored-cut cap screen is no
+   longer an unpriced star family.  Its cap-paid part is either a same-prefix
+   quadratic repair or a fixed dyadic tail, and the only potentially polynomial
+   survivor is the explicit cap-centered overload \(W_{\rm over}\), the same
+   object handled by the Hall/sponsor and shared-child storage interfaces.
+\end{corollary}
+
+\begin{proof}
+   If \(\omega_{g,g'}>0\), then by \((UPL8)\) we have
+   \((g,g')\in E_{\rm hi}\).  Hence \(\ip{x_g}{x_{g'}}>\theta_m\), and
+   directly
+   \[
+      \|x_{g'}-\theta_m x_g\|^2
+      =
+      1+\theta_m^2-2\theta_m\ip{x_g}{x_{g'}}
+      <
+      1-\theta_m^2=R_+^2 .
+   \]
+   Thus \(g'\in W_g\), and the support condition \((CCH1)\) holds for the
+   high-correlation multiplicities \(M_g(g')=\omega_{g,g'}\).
+
+   Apply \cref{cor:clipped-cap-centered-high-correlation-handoff} to this
+   multiplicity family with margin \(\gamma=\theta_m\).  Its threshold form
+   \((CCH7)\), together with the price condition \((UPT5)\), gives exactly:
+   either a \((B_0+3)\)-quadratic cap-centered paid-prefix repair fires, or
+   \[
+      W_{\rm hi}
+      \le
+      W_{\rm over}+2|E|J_{\rm pay}\Lambda .
+   \]
+   This is \((UPT6)\).
+
+   Finally expand the weighted second moment as in the proof of
+   \cref{cor:unsponsored-cut-low-correlation-cap-closure}.  The diagonal and
+   low-correlation terms are bounded by \((UPL6)\)--\((UPL7)\), and the
+   high-correlation term is \(W_{\rm hi}\).  Substituting \((UPT6)\) in a
+   no-repair residual proves \((UPT7)\).
+\end{proof}
+
 \begin{corollary}[Shared-cover LP for the fractional sponsor tail]
    \label{cor:fractional-sponsor-tail-shared-cover}
    Work in the setting of
@@ -77765,6 +77888,14 @@ first list moment and all pairs with correlation
 cap-panel residual cannot hide in diffuse low-correlation co-load; it must
 contain one dyadic high-correlation cap star, which is exactly the finite
 object already routed to generated-merge and dense-prefix tests.
+\Cref{cor:unsponsored-cut-cap-prefix-tail} performs that routing at the
+cap-centered paid-prefix scale.  After clipping the exposed high-correlation
+cap-panel weights by the local paid degree, the paid part either fires a
+same-prefix quadratic repair or contributes only a fixed dyadic tail.  The only
+potentially polynomial survivor is the explicit overload
+\((\omega_{g,g'}-d_g^+(g'))_+\), so the unsponsored-cut cap branch rejoins the
+Hall/sponsor-flow and shared-child storage interfaces instead of spawning a new
+high-correlation recursion.
 \Cref{cor:fractional-sponsor-tail-shared-cover} then removes duplicated large
 stars from that target by a finite shared-cover LP: either residual fractional
 star copies plus shared records have total price inside the storage allowance,
