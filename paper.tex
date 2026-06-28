@@ -1429,6 +1429,67 @@ The smooth product filter is not a replacement for \cref{lem:adaptive-continuati
    \cref{lem:gaussian-cap-intersection-energy} gives \((TGE2)\).
 \end{proof}
 
+\begin{lemma}[Positive-correlation Gaussian cap lower bound]
+   \label{lem:positive-correlation-gaussian-cap-lower}
+   Let \(G\sim N(\mu,I_D)\), let \(x,y\in\mathbb S^{D-1}\), and put
+   \[
+      U_G=\{u:\ip{G}{u}\ge T\},
+      \qquad
+      m_x=T-\ip{\mu}{x},
+      \qquad
+      m_y=T-\ip{\mu}{y}.
+   \]
+   Let
+   \[
+      \overline\Phi(t)=\Pr[Z\ge t],
+      \qquad Z\sim N(0,1).
+   \]
+   If \(0<\theta_-\le\ip{x}{y}\le1\) and \(m_x,m_y\le M\) for some
+   \(M\ge0\), then
+   \[
+      \Pr[x,y\in U_G]
+      \ge
+      \frac14\,
+      \overline\Phi\!\left(\frac{M}{\sqrt{\theta_-}}\right).
+      \tag{PGL1}
+   \]
+\end{lemma}
+
+\begin{proof}
+   Write \(\theta=\ip{x}{y}\).  If \(\theta<1\), the centered pair
+   \[
+      X=\ip{G-\mu}{x},
+      \qquad
+      Y=\ip{G-\mu}{y}
+   \]
+   has the representation
+   \[
+      X=\sqrt\theta Z_0+\sqrt{1-\theta}Z_1,
+      \qquad
+      Y=\sqrt\theta Z_0+\sqrt{1-\theta}Z_2,
+   \]
+   with \(Z_0,Z_1,Z_2\) independent standard Gaussians.  On the event
+   \[
+      Z_0\ge\frac{M}{\sqrt\theta},
+      \qquad
+      Z_1\ge0,
+      \qquad
+      Z_2\ge0,
+   \]
+   both \(X\) and \(Y\) are at least \(M\), hence at least \(m_x\) and \(m_y\).
+   This event has probability
+   \[
+      \frac14\,\overline\Phi\!\left(\frac{M}{\sqrt\theta}\right)
+      \ge
+      \frac14\,\overline\Phi\!\left(\frac{M}{\sqrt{\theta_-}}\right).
+   \]
+   If \(\theta=1\), then \(X=Y\), so
+   \[
+      \Pr[X\ge m_x,\ Y\ge m_y]\ge\overline\Phi(M),
+   \]
+   which is even larger than the right-hand side of \((PGL1)\).
+\end{proof}
+
 \begin{corollary}[Finite tuple-profile Renyi certificate]
    \label{cor:tuple-profile-renyi-certificate}
    In the setting of \cref{lem:packing-list-tuple-moment}, suppose the labels
@@ -15011,6 +15072,51 @@ query-price overlap, storage price, and duplicate-incidence factor \(b_G\).
    \]
 \end{proof}
 
+\begin{corollary}[Assigned Gaussian transport lower bound]
+   \label{cor:assigned-gaussian-transport-lower-bound}
+   Work in the setting of
+   \cref{cor:transport-gaussian-paid-fiber-separator}.  Suppose the transport is
+   assigned by a map \(c:Y\to X\):
+   \[
+      w_{c(y),y}=b(y),
+      \qquad
+      w_{x,y}=0\quad(x\ne c(y)).
+      \tag{AGTL1}
+   \]
+   If, for parameters \(0<\theta_-\le1\) and \(M\ge0\),
+   \[
+      \ip{c(y)}{y}\ge\theta_-,
+      \qquad
+      m_G(c(y))\le M,
+      \qquad
+      m_G(y)\le M
+      \qquad(y\in Y,\ b(y)>0),
+      \tag{AGTL2}
+   \]
+   then
+   \[
+      A_w\ge a_{\theta_-,M}B_w,
+      \qquad
+      a_{\theta_-,M}
+      =
+      \frac14\,
+      \overline\Phi\!\left(\frac{M}{\sqrt{\theta_-}}\right).
+      \tag{AGTL3}
+   \]
+   Consequently this assigned cover supplies the paid-product lower-bound
+   hypothesis \((TGFS11)\) with \(a=a_{\theta_-,M}\).
+\end{corollary}
+
+\begin{proof}
+   By \cref{lem:positive-correlation-gaussian-cap-lower}, every assigned edge
+   with \(b(y)>0\) satisfies
+   \[
+      \kappa_{c(y),y}\ge a_{\theta_-,M}.
+   \]
+   The final assigned-transport clause of
+   \cref{cor:transport-gaussian-paid-fiber-separator} gives \((AGTL3)\).
+\end{proof}
+
 \begin{corollary}[Gaussian paid-fiber separator criterion]
    \label{cor:gaussian-paid-fiber-separator-criterion}
    Work in the setting of
@@ -15522,6 +15628,9 @@ nearby certified center; if the assigned edge has Gaussian co-activation at leas
 \(a\), then \(A_w\ge aB_w\) directly, while the high-correlation prefix
 accounting remains valid because each transported edge is dominated by the
 original paid degree \(b(y)\).
+\Cref{cor:assigned-gaussian-transport-lower-bound} makes the co-activation
+certificate explicit for positive-correlation assigned edges with bounded
+Gaussian margins.
 \Cref{cor:gaussian-paid-fiber-separator-criterion} records the sharper
 split-optimized diagnostic form: lower-bound the paid-product moment, keep one
 truncated margin split inverse-polylogarithmic, and upper-bound the inherited
@@ -68152,6 +68261,9 @@ variant needed to avoid a false product-law bottleneck: transported weights
 \(w_{x,y}\le b(y)\) preserve the same inherited-prefix charging, and an assigned
 near-center map \(c(y)\) supplies \(A_w\ge aB_w\) from the pointwise
 co-activation lower bound on \((c(y),y)\).
+\Cref{cor:assigned-gaussian-transport-lower-bound} gives a concrete sufficient
+version of that pointwise condition from \(\ip{c(y)}{y}\ge\theta_->0\) and
+bounded margins.
 \Cref{cor:spread-packing-entropy-energy-screen} records the corresponding
 charge: each separated-pair profile is harmless when its intersection energy
 dominates its entropy, and otherwise it is the high-correlation dense signal.
