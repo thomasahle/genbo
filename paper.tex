@@ -64222,6 +64222,83 @@ certificate is the verified positive-gain column and the finite LP it augments.
    half-threshold specialization is immediate.
 \end{proof}
 
+\begin{corollary}[Value-retained adaptive failed-screen normal form]
+   \label{cor:value-retained-adaptive-failed-screen}
+   Work in the setting of
+   \cref{cor:adaptive-retained-failed-flow-sequence}, and write
+   \[
+      V_0=\sum_{i\in I_0}\nu_i,
+      \qquad
+      \Delta_T=\sum_{t=1}^T\frac{L_t}{\eta_t}.
+      \tag{VAF1}
+   \]
+   If all \(T\) screens fail, then the final retained residual satisfies
+   \[
+      \sum_{i\in I_T}\nu_i\ge V_0-\Delta_T .
+      \tag{VAF2}
+   \]
+   In particular, if \(\Delta_T\le\varepsilon V_0\), then \(I_T\) retains
+   at least a \((1-\varepsilon)\)-fraction of the initial source value, while
+   still satisfying every raised tail cap \((ARF4)\).
+
+   More generally, fix a target residual value \(\Lambda_{\rm rem}\ge0\).  For
+   a concrete failed transcript, interpret \(N_{E_t}(J)\) for an arbitrary
+   \(J\subseteq I_0\) as \(N_{E_t}(J\cap I_{t-1})\), since screen \(t\) is only
+   defined on the left set \(I_{t-1}\).  If
+   \[
+      \Delta_T\le V_0-\Lambda_{\rm rem},
+      \tag{VAF3}
+   \]
+   and no subset \(J\subseteq I_0\) with
+   \(\sum_{i\in J}\nu_i\ge\Lambda_{\rm rem}\) satisfies all of the transcript
+   caps
+   \[
+      \sum_{\substack{p\in N_{E_t}(J):\\
+                      d_{t,p}>\Theta_t/(1-\eta_t)}}
+      \left(d_{t,p}-\frac{\Theta_t}{1-\eta_t}\right)
+      \le \frac{L_t}{1-\eta_t}
+      \qquad(t=1,\ldots,T),
+      \tag{VAF4}
+   \]
+   then not all \(T\) screens can have failed.
+
+   In the no-prefix half-threshold specialization \(L_t=2K_t\Theta_t\) and
+   \(\eta_t=1/2\), the value loss is
+   \[
+      \Delta_T=\sum_{t=1}^T4K_t\Theta_t .
+      \tag{VAF5}
+   \]
+   If a transcript-exhaustion certificate forces some screen not to fail in
+   this specialization, then
+   \(\widehat{\mathfrak S}_{B_t,E_t}(C_t)>2K_t\Theta_t\), so
+   \cref{cor:fractional-opened-support-flow-lp} exposes a positive shared
+   top-prefix column.
+
+   Thus an adaptive build-time proposal search may spend only this declared
+   value budget on failed fractional-flow screens.  Unless that budget has paid
+   for the obstruction value, a high-value residual remains and is
+   simultaneously clipped for every screen in the failed transcript.
+\end{corollary}
+
+\begin{proof}
+   The retained value bound \((VAF2)\) is exactly \((ARF3)\).  The
+   \((1-\varepsilon)\)-statement follows by substituting
+   \(\Delta_T\le\varepsilon V_0\), and the inherited tail caps are \((ARF4)\).
+
+   For the transcript-exhaustion statement, assume for contradiction that all
+   screens fail.  Then
+   \cref{cor:adaptive-retained-failed-flow-sequence} returns a nested final
+   residual \(I_T\).  Since \(I_T\subseteq I_{t-1}\) for every \(t\), the
+   convention for \(N_{E_t}(J)\) agrees with the actual neighborhoods when
+   \(J=I_T\).  By \((VAF2)\) and \((VAF3)\),
+   \[
+      \sum_{i\in I_T}\nu_i\ge\Lambda_{\rm rem},
+   \]
+   while \((ARF4)\) gives all inequalities in \((VAF4)\).  This contradicts the
+   claimed absence of such a subset \(J\).  The half-threshold formula is
+   \((ARF5)\) written as a value loss.
+\end{proof}
+
 \begin{corollary}[Template-complete shared-cover obstruction]
    \label{cor:template-complete-shared-cover-obstruction}
    Work in the setting of
@@ -80399,6 +80476,10 @@ of the failed proposal families.
 \Cref{cor:adaptive-retained-failed-flow-sequence} removes the last static
 restriction: the next proposal family may be chosen after seeing the previous
 failed screens, and the same additive source-deletion bound still holds.
+\Cref{cor:value-retained-adaptive-failed-screen} translates this into the
+dual-obstruction language: failed screens consume an explicit amount of source
+value, so unless that budget pays for the obstruction, a high-value residual
+survives with all transcript tail caps.
 \Cref{cor:template-complete-shared-cover-obstruction} gives the exact finite
 LP normal form for the remaining shared-cover target: if the cover value at
 level \(D/4\) is too large, the obstruction is one dual \(u\) of value
