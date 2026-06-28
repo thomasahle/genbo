@@ -771,6 +771,153 @@ def _local_only_marginal_system(
     return np.vstack(rows), np.array(rhs), source_matrix
 
 
+def _local_overlap_marginal_system(
+    code: np.ndarray,
+    checks: list[tuple[int, ...]],
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Return local-check marginals with full pairwise-overlap consistency."""
+    code = np.asarray(code, dtype=int)
+    blocks = code.shape[1]
+    alphabet = int(np.max(code)) + 1
+    assignments_by_check = _local_projection_assignments(code, checks)
+
+    offsets = []
+    n_vars = 0
+    for assignments in assignments_by_check:
+        offsets.append(n_vars)
+        n_vars += len(assignments)
+
+    rows: list[np.ndarray] = []
+    rhs: list[float] = []
+    for offset, assignments in zip(offsets, assignments_by_check):
+        row = np.zeros(n_vars, dtype=float)
+        row[offset:offset + len(assignments)] = 1.0
+        rows.append(row)
+        rhs.append(1.0)
+
+    for left_id, right_id in itertools.combinations(range(len(checks)), 2):
+        left_check = checks[left_id]
+        right_check = checks[right_id]
+        overlap = tuple(coord for coord in left_check if coord in right_check)
+        if not overlap:
+            continue
+        left_positions = [left_check.index(coord) for coord in overlap]
+        right_positions = [right_check.index(coord) for coord in overlap]
+        left_assignments = assignments_by_check[left_id]
+        right_assignments = assignments_by_check[right_id]
+        patterns = sorted(
+            {tuple(assignment[pos] for pos in left_positions)
+             for assignment in left_assignments}
+            |
+            {tuple(assignment[pos] for pos in right_positions)
+             for assignment in right_assignments}
+        )
+        for pattern in patterns:
+            row = np.zeros(n_vars, dtype=float)
+            for assignment_id, assignment in enumerate(left_assignments):
+                if tuple(assignment[pos] for pos in left_positions) == pattern:
+                    row[offsets[left_id] + assignment_id] += 1.0
+            for assignment_id, assignment in enumerate(right_assignments):
+                if tuple(assignment[pos] for pos in right_positions) == pattern:
+                    row[offsets[right_id] + assignment_id] -= 1.0
+            rows.append(row)
+            rhs.append(0.0)
+
+    refs: dict[int, tuple[int, int]] = {}
+    for check_id, check in enumerate(checks):
+        for local_pos, coord in enumerate(check):
+            refs.setdefault(coord, (check_id, local_pos))
+    if set(refs) != set(range(blocks)):
+        missing = sorted(set(range(blocks)) - set(refs))
+        raise ValueError(f"checks do not cover coordinates {missing}")
+
+    source_matrix = np.zeros((blocks * alphabet, n_vars), dtype=float)
+    for coord, (check_id, local_pos) in refs.items():
+        base = offsets[check_id]
+        assignments = assignments_by_check[check_id]
+        for symbol in range(alphabet):
+            row = coord * alphabet + symbol
+            for assignment_id, assignment in enumerate(assignments):
+                if assignment[local_pos] == symbol:
+                    source_matrix[row, base + assignment_id] = 1.0
+
+    return np.vstack(rows), np.array(rhs), source_matrix
+
+
+def local_overlap_source_feasible(
+    code: np.ndarray,
+    checks: list[tuple[int, ...]],
+    source: np.ndarray,
+    *,
+    tol: float = 1e-8,
+) -> dict[str, object]:
+    """Check whether a unary source extends to overlap-consistent local marginals."""
+    code = np.asarray(code, dtype=int)
+    blocks = code.shape[1]
+    alphabet = int(np.max(code)) + 1
+    source = np.asarray(source, dtype=float)
+    if source.shape != (blocks * alphabet,):
+        raise ValueError("source must be a flattened block-symbol vector")
+
+    lhs, rhs, source_matrix = _local_overlap_marginal_system(code, checks)
+    source_lhs = []
+    source_rhs = []
+    for idx, value in enumerate(source):
+        source_lhs.append(source_matrix[idx].copy())
+        source_rhs.append(float(value))
+    augmented_lhs = np.vstack([lhs, np.vstack(source_lhs)])
+    augmented_rhs = np.concatenate([rhs, np.array(source_rhs)])
+    try:
+        _, solution = solve_equality_lp_max(
+            np.zeros(augmented_lhs.shape[1], dtype=float),
+            augmented_lhs,
+            augmented_rhs,
+            tol=tol,
+        )
+    except LPInfeasible:
+        return {
+            "feasible": False,
+            "row_count": int(lhs.shape[0]),
+            "variable_count": int(lhs.shape[1]),
+            "rank": int(np.linalg.matrix_rank(lhs, tol=tol)),
+            "solution": None,
+        }
+    return {
+        "feasible": True,
+        "row_count": int(lhs.shape[0]),
+        "variable_count": int(lhs.shape[1]),
+        "rank": int(np.linalg.matrix_rank(lhs, tol=tol)),
+        "solution": solution,
+    }
+
+
+def local_overlap_optimize_source(
+    code: np.ndarray,
+    checks: list[tuple[int, ...]],
+    objective_on_source: np.ndarray,
+    *,
+    tol: float = 1e-8,
+) -> tuple[float, np.ndarray]:
+    """Optimize a unary objective over overlap-consistent local marginals."""
+    code = np.asarray(code, dtype=int)
+    blocks = code.shape[1]
+    alphabet = int(np.max(code)) + 1
+    objective_on_source = np.asarray(objective_on_source, dtype=float)
+    if objective_on_source.shape != (blocks * alphabet,):
+        raise ValueError("source objective must have one entry per block-symbol")
+
+    lhs, rhs, source_matrix = _local_overlap_marginal_system(code, checks)
+    value, solution = solve_equality_lp_max(
+        source_matrix.T @ objective_on_source,
+        lhs,
+        rhs,
+        tol=tol,
+    )
+    source = source_matrix @ solution
+    source[np.abs(source) <= tol] = 0.0
+    return value, source
+
+
 def _enumerate_equality_polytope_vertices(
     lhs: np.ndarray,
     rhs: np.ndarray,
