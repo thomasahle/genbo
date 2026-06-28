@@ -11154,6 +11154,140 @@ partition ignores the bias coordinates that certify the list size.
    \]
 \end{proof}
 
+\begin{corollary}[Score-leader anchoring]
+   \label{cor:score-leader-anchoring}
+   Work at a branch-and-bound node \(u\), and let
+   \[
+      c_\star=c_{j_\star}\in\operatorname*{arg\,max}_{c_j\in C_u}W(c_j),
+      \qquad
+      M(u)=W(c_\star),
+      \tag{LND1}
+   \]
+   with deterministic tie-breaking.  Define the score-measurable anchor map
+   \[
+      \alpha_u(z)=c_\star\qquad(z\in P_u),
+      \tag{LND2}
+   \]
+   so the only nonempty anchor fiber is \(P_{u,c_\star}=P_u\), and
+   \[
+      E_u^\star=\{z-\iota(c_\star):z\in P_u\}.
+      \tag{LND3}
+   \]
+   Then the anchored excess domination \((LPF6)\) holds with \(E_u^\star\):
+   \[
+      U(u)-M(u)
+      \le
+      X_u^\star(w):=\sup_{h\in E_u^\star}\ip{w}{h}.
+      \tag{LND4}
+   \]
+   Moreover the conditional projection, Boltzmann negative-tail, anchor-fiber,
+   mobility, box-dual, Laplace-tail, and balanced-Gram certificates above remain
+   valid with this single random fiber, provided their hypotheses are verified
+   almost surely after conditioning on \(\mathcal G_u=\sigma(W(c):c\in C_u)\).
+
+   In particular, in the Boltzmann mobility certificate \((LNC6)\), the anchor
+   column has weight
+   \[
+      e^{\lambda(M(u)-W(c_\star))}=1 .
+      \tag{LND5}
+   \]
+   Thus the diagonal self-mobility of the anchor is not multiplied by the
+   potentially large Boltzmann penalty attached to a low-scoring anchor.
+\end{corollary}
+
+\begin{proof}
+   For every \(z\in P_u\),
+   \[
+      \ip{w}{z}
+      =
+      W(c_\star)+\ip{w}{z-\iota(c_\star)}
+      \le
+      M(u)+X_u^\star(w).
+   \]
+   Taking the supremum over \(z\in P_u\) proves \((LND4)\).
+
+   The remaining certificates use the anchor set only through the realized
+   excess set and through quantities measurable with respect to
+   \(\mathcal G_u\).  The leader \(c_\star\), the fiber \(P_{u,c_\star}\), and
+   the mobility bounds for that fiber are \(\mathcal G_u\)-measurable once the
+   true codeword scores in the node are revealed.  Conditioning on
+   \(\mathcal G_u\), the orthogonal Gaussian residual in
+   \cref{cor:conditional-gaussian-projection-certificate} is still independent,
+   and all support-function, box-duality, and Laplace steps are deterministic
+   finite-dimensional inequalities for the realized fiber.  Hence the proofs
+   apply verbatim with this score-measurable anchor.  Finally, \((LND5)\) is
+   immediate from \(M(u)=W(c_\star)\).
+\end{proof}
+
+\begin{corollary}[Diagonal-preconditioned leader-mobility split]
+   \label{cor:diagonal-preconditioned-leader-mobility}
+   Continue with the score-leader anchor of
+   \cref{cor:score-leader-anchoring} and the balanced Gram notation of
+   \cref{cor:balanced-gram-mobility-scores}.  For an off-anchor mobility pattern
+   \(\beta\), put
+   \[
+      B_\beta=\sum_{i=1}^b\sum_{a\ne c_\star(i)}\beta_{i,a},
+      \qquad
+      \zeta_\beta=A_u^\top d_{u,c_\star,\beta},
+      \tag{LNE1}
+   \]
+   and write the inverse-Gram coefficient vector as
+   \[
+      s_\beta=G_u^+\zeta_\beta
+      =
+      \frac1b\,\zeta_\beta+r_\beta,
+      \qquad
+      r_\beta=\left(G_u^+-\frac1b I\right)\zeta_\beta .
+      \tag{LNE2}
+   \]
+   Then
+   \[
+      \zeta_\beta(j_\star)=-B_\beta,
+      \tag{LNE3}
+   \]
+   and, for the Boltzmann weights
+   \(w_j=e^{\lambda(M(u)-W(c_j))}\),
+   \[
+   \begin{aligned}
+      \sum_{j=1}^N w_j(s_\beta(j))^-
+      &\le
+      \frac{B_\beta}{b}
+      +
+      \frac1b\sum_{j\ne j_\star}w_j(\zeta_\beta(j))^-\\
+      &\qquad+
+      \sum_{j=1}^Nw_j|r_\beta(j)|.
+   \end{aligned}
+      \tag{LNE4}
+   \]
+   Consequently the leader-anchored Boltzmann mobility certificate \((LNC6)\)
+   follows if the three quantities on the right-hand side of \((LNE4)\) have
+   total supremum at most \(\Xi_u\) over \(0\le\beta\le\mu_{u,c_\star}\).
+
+   In the ideal diagonal model \(G_u=bI\), the residual term \(r_\beta\) vanishes,
+   and the remaining theorem is exactly an off-anchor planted enumerator bound
+   for \((\zeta_\beta(j))^-\), plus the explicit self-mobility budget
+   \(B_\beta/b\).
+\end{corollary}
+
+\begin{proof}
+   Formula \((LNE3)\) follows from \((LNC5)\): for \(j=j_\star\), every
+   coordinate has \(c_j(i)=c_\star(i)\), so each off-anchor symbol contributes
+   the second indicator and not the first.
+
+   Since \(s_\beta=b^{-1}\zeta_\beta+r_\beta\), the scalar inequality
+   \((x+y)^-\le x^-+|y|\) gives
+   \[
+      (s_\beta(j))^-
+      \le
+      \frac1b(\zeta_\beta(j))^-+|r_\beta(j)|.
+      \tag{LNE5}
+   \]
+   Multiplying by \(w_j\) and summing proves \((LNE4)\), using
+   \(w_{j_\star}=1\) from \((LND5)\) and
+   \((\zeta_\beta(j_\star))^-=B_\beta\).  The certificate implication is exactly
+   \((LNC6)\).  If \(G_u=bI\), then \(G_u^+-b^{-1}I=0\), so \(r_\beta=0\).
+\end{proof}
+
 \begin{corollary}[Anchor-fiber LP/SA certificate compiler]
    \label{cor:anchor-fiber-lp-sa-compiler}
    Continue with the notation of
@@ -11563,6 +11697,22 @@ partition ignores the bias coordinates that certify the list size.
    one-sided Laplace or negative-part estimate for inverse-Gram coefficients of
    balanced directions under the Boltzmann tilt.  This is the form in which a
    low-rate Tanner, level-2 SA, or list-recovery proof should be attempted.
+
+   \Cref{cor:score-leader-anchoring} removes a diagonal nuisance from that
+   target.  Instead of assigning fractional points to arbitrary anchor codewords,
+   one may anchor the whole node at its current score leader.  The conditional
+   certificates are unchanged, because the leader is measurable after the true
+   codeword scores in the node are revealed.  The important consequence is that
+   the anchor's self-column has Boltzmann weight one, not
+   \(e^{\lambda(M-W(c))}\) for a possibly low-scoring anchor.
+
+   \Cref{cor:diagonal-preconditioned-leader-mobility} then isolates the random
+   code-like part of the problem.  After expanding \(G_u^+\) around the diagonal
+   preconditioner \(b^{-1}I\), the leader-anchored mobility certificate splits
+   into the explicit self-mobility budget \(B_\beta/b\), an off-anchor planted
+   enumerator for \((\zeta_\beta(j))^-\), and a residual term measuring how
+   far the inverse overlap Gram is from \(b^{-1}I\) on balanced directions.  This
+   is the sharpened target for random-code, Tanner, or list-recovery panels.
 
    \Cref{cor:well-conditioned-gram-coefficients} gives the first elementary
    path to such a theorem.  If the local subcode has a well-conditioned overlap
