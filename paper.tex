@@ -39414,6 +39414,70 @@ smaller Hall cut whose paid-pair capacity is measured only inside that subset.
    just a monotone reparameterization.
 \end{proof}
 
+\begin{corollary}[Renyi-cover Hall-shadow closure]
+   \label{cor:renyi-cover-hall-shadow-closure}
+   Work in the setting of
+   \cref{cor:price-compatible-query-free-refinement}.  Let \(L\subseteq W\) be
+   a positive-gain parent list satisfying \((PQR3)\), with size \(K\), price
+   factor \(\psi\), and exponent \(0<\rho<1\).  Let
+   \(\mathcal W_\star=\{W_i:i\in I\}\) be a finite family of certified child
+   containers, where \(W_i\) has price factor \(\psi_i\), the same exponent
+   \(\rho\), and \(b_0\)-dense retained cardinalities.  Suppose there is an
+   assignment \(\kappa:L\to I\) with \(p\in W_{\kappa(p)}\) for every \(p\in L\).
+   Put
+   \[
+      L_i=\{p\in L:\kappa(p)=i\},
+      \qquad K_i=|L_i|,
+   \]
+   discarding empty parts.  If the assigned Renyi cover is price-compatible,
+   \[
+      \sum_i\psi_iK_i^\rho\le\psi K^\rho,
+      \qquad
+      \sum_i\psi_iK_i^{1+\rho}\le\psi K^{1+\rho},
+      \tag{RCH1}
+   \]
+   then some assigned child \(L_i\subseteq W_i\) satisfies the positive child
+   gain condition \((PQR4)\), and hence the finite-prefix repair alternative
+   holds.
+
+   Conversely, if no child in the certified family satisfies \((PQR4)\), every
+   assignment of \(L\) to that family violates at least one inequality in
+   \((RCH1)\).  In particular, if every used child has \(\psi_i\le\psi\), then
+   the storage inequality in \((RCH1)\) is automatic for every assignment, and a
+   surviving residual must satisfy
+   \[
+      \sum_i\psi_iK_i^\rho>\psi K^\rho
+      \tag{RCH2}
+   \]
+   for every certified assignment.
+
+   Thus the compactification objective is the assigned Renyi cover price
+   \(\sum_i\psi_iK_i^\rho\), not the raw number of clusters.  The bounded-fanout
+   and metric-entropy tests below are balanced sufficient conditions for this
+   sharper unbalanced cover condition.
+\end{corollary}
+
+\begin{proof}
+   The assignment partitions \(L\) into the nonempty certified lists
+   \(L_i\subseteq W_i\).  The two inequalities in \((RCH1)\) are exactly the
+   price-compatibility hypotheses \((PQR2)\).  Therefore
+   \cref{cor:price-compatible-query-free-refinement} gives a child satisfying
+   \((PQR4)\), and that corollary supplies the finite-prefix repair.
+
+   The residual statement is the contrapositive.  If no child satisfies
+   \((PQR4)\) but some assignment obeyed both inequalities in \((RCH1)\), the
+   first part would produce such a child.  Finally, when \(\psi_i\le\psi\),
+   disjointness of the assigned pieces gives
+   \[
+      \sum_i\psi_iK_i^{1+\rho}
+      \le
+      \psi\sum_iK_i^{1+\rho}
+      \le
+      \psi K^{1+\rho},
+   \]
+   so only the query Renyi cover price can fail.
+\end{proof}
+
 \begin{corollary}[Metric-entropy Hall-shadow closure]
    \label{cor:metric-entropy-hall-shadow-closure}
    Work in the setting of
@@ -39457,7 +39521,9 @@ smaller Hall cut whose paid-pair capacity is measured only inside that subset.
    \]
    Thus an unclosed Hall shadow is forced to have large certified covering
    number at every radius whose potential discount is large enough to pay the
-   \(J^{1-\rho}\) fanout surcharge.
+   \(J^{1-\rho}\) fanout surcharge.  This is the balanced specialization of
+   \cref{cor:renyi-cover-hall-shadow-closure}, obtained by upper-bounding the
+   assigned Renyi cover price with Hölder.
 \end{corollary}
 
 \begin{proof}
@@ -39819,6 +39885,11 @@ form: if no child closes, the list mass cannot merely be covered by many cells;
 it must have large Renyi-effective support across the child partition.  This is
 the distribution-sensitive quantity a facility or additive-quantization cover
 should minimize.
+\Cref{cor:renyi-cover-hall-shadow-closure} states the positive version: an
+overlapping certified cover closes as soon as some assignment of the Hall shadow
+has assigned Renyi price \(\sum_i\psi_iK_i^\rho\) and storage price below the
+parent prices.  Thus uneven cluster sizes are charged at their true concave
+cost, rather than through the worst-case fanout surrogate.
 \Cref{cor:metric-entropy-hall-shadow-closure} turns this into a metric
 separator: any positive-gain Hall shadow with certified covering number below
 \((\Psi(R)/\Psi(R_\star))^{1/(1-\rho)}\) at radius \(R_\star\) already closes.
@@ -67196,6 +67267,11 @@ positive child, then the normalized child sizes \(z_i\) must satisfy
 \(\sum_i z_i^\rho>\Psi(R)/\Psi(R_\star)\).  Thus the right clustering objective
 is not just small fanout but small Renyi-effective fanout after radius
 discounting.
+\Cref{cor:renyi-cover-hall-shadow-closure} gives the corresponding positive
+assigned-cover theorem: an overlapping cover may be used with any assignment
+whose radius-discounted Renyi query price and storage price fit below the
+parent.  The metric-entropy test is only the balanced Hölder corollary of this
+sharper objective.
 \Cref{lem:reduced-gain-quotient-refinement} and
 \cref{cor:low-spread-quotient-closure} prove the same statement directly for
 positive reduced-gain quotient columns in the finite dense/spherical LP, so the
