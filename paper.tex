@@ -36918,6 +36918,122 @@ query mass rather than producing a cost-effective dense filter.
    \(b\)-dense cardinality family.  This is exactly \((CPQ9)\).
 \end{proof}
 
+\begin{corollary}[High-correlation stars feed cap-centered paid prefixes]
+   \label{cor:high-correlation-stars-feed-cap-prefix}
+   Work in the setting of
+   \cref{cor:cap-centered-paid-prefix-quadratic}.  Let
+   \((\mathcal R,w_r,E_r)\) be a weighted high-correlation edge family with
+   \(E_r\subseteq\mathcal X\times P\), whose normalized correlations are at
+   least the same margin \(\gamma\):
+   \[
+      (x,p)\in E_r
+      \quad\Longrightarrow\quad
+      \ip{(x-o)/R}{(p-o)/R}\ge\gamma .
+      \tag{HCP1}
+   \]
+   Let
+   \[
+      M_x(p)=\sum_{r:\,(x,p)\in E_r}w_r,
+      \qquad
+      U_{x,t}=\{p\in P:M_x(p)\ge t\}.
+      \tag{HCP2}
+   \]
+   Assume the high-correlation multiplicity is lower-certified by the
+   cap-centered paid degree:
+   \[
+      M_x(p)\le d_x^+(p)
+      \qquad(x\in\mathcal X,\ p\in P).
+      \tag{HCP3}
+   \]
+   Then each nonempty \(U_{x,t}\) is contained in the cap-centered child
+   \(W_x\), and if
+   \[
+      t|U_{x,t}|
+      >
+      e^{B_0\gamma^2}\Psi(R_+)
+      \left(
+         A_x^+|U_{x,t}|^\rho
+         +\sigma |U_{x,t}|^{1+\rho}
+      \right),
+      \tag{HCP4}
+   \]
+   the finite-cover verifier exposes a \((B_0+3)\)-quadratic local repair.
+
+   Conversely, in a residual where no cap-centered paid prefix has positive
+   reduced gain, every reported level satisfies the reverse inequality
+   \[
+      t|U_{x,t}|
+      \le
+      e^{B_0\gamma^2}\Psi(R_+)
+      \left(
+         A_x^+|U_{x,t}|^\rho
+         +\sigma |U_{x,t}|^{1+\rho}
+      \right).
+      \tag{HCP5}
+   \]
+
+   In particular, suppose all positive multiplicities \(M_x(p)\) lie in
+   \([M_{\min},M_{\max}]\), and let \(J\) be the dyadic dynamic range from
+   \((HPS6)\).  Put
+   \[
+      W_{\rm hi}=\sum_{x\in\mathcal X}\sum_pM_x(p).
+      \tag{HCP6}
+   \]
+   If no cap-centered paid prefix fires, then there are a dyadic level \(t\)
+   and center \(x\) for which
+   \[
+      W_{\rm hi}
+      \le
+      2|P|J\,e^{B_0\gamma^2}\Psi(R_+)
+      \left(
+         A_x^+|U_{x,t}|^\rho
+         +\sigma |U_{x,t}|^{1+\rho}
+      \right).
+      \tag{HCP7}
+   \]
+   Equivalently, if every dyadic level whose layer-cake mass is at least
+   \(\Lambda\) has cap-centered child price below \(\Lambda\), then either a
+   quadratic repair fires or
+   \[
+      W_{\rm hi}\le2|P|J\Lambda .
+      \tag{HCP8}
+   \]
+
+   Thus the high-correlation star layer-cake is now priced against the
+   cap-centered child itself.  The residual obstruction is no longer an
+   unpriced geometric star; it is the explicit price envelope \((HCP5)\) for all
+   cap-centered paid levels.
+\end{corollary}
+
+\begin{proof}
+   The containment \(U_{x,t}\subseteq W_x\) is exactly the scaled cap-centered
+   certificate \((CPS3)\) from
+   \cref{cor:cap-centered-pair-star-reporter}, with
+   \(\underline\theta=\gamma\).  If \(p\in U_{x,t}\), then
+   \(d_x^+(p)\ge M_x(p)\ge t\) by \((HCP3)\).  Therefore, for
+   \(K=|U_{x,t}|\), the top \(K\) points of \(W_x\) in the order of
+   \(d_x^+\) have total paid degree at least \(t|U_{x,t}|\).  Inequality
+   \((HCP4)\) is precisely the positive-prefix condition \((CPQ6)\), so
+   \cref{cor:cap-centered-paid-prefix-quadratic} gives the quadratic repair.
+
+   If no cap-centered paid prefix has positive reduced gain, then the top
+   \(K=|U_{x,t}|\) paid-degree prefix has total degree at most its
+   \(K\)-point price in \((CPQ6)\).  Since \(U_{x,t}\) has total paid degree at
+   least \(t|U_{x,t}|\), \((HCP5)\) follows.
+
+   For the dyadic statement, apply
+   \cref{lem:high-correlation-pair-star-reporter} to the normalized edge family.
+   It gives a dyadic center and level with
+   \[
+      t|U_{x,t}|\ge\frac{W_{\rm hi}}{2|P|J}.
+   \]
+   Combining this lower bound with \((HCP5)\) gives \((HCP7)\).  Finally, if
+   \(W_{\rm hi}>2|P|J\Lambda\), the selected dyadic level has
+   \(t|U_{x,t}|>\Lambda\); by the assumed price bound below \(\Lambda\),
+   \((HCP4)\) holds and a quadratic repair fires.  The contrapositive is
+   \((HCP8)\).
+\end{proof}
+
 \begin{lemma}[Certified star-panel separator]
    \label{lem:certified-star-panel-separator}
    Work in the setting of \cref{lem:star-prefix-weak-type-residual}, and assume
@@ -72572,6 +72688,12 @@ criterion: a cap-centered paid prefix whose degree mass beats its
 \(e^{O(\gamma^2)}\)-padded child price is already a quadratic local repair; if
 no such prefix exists, every cap-centered paid superlevel satisfies the
 weak-type envelope \((CPQ9)\).
+\Cref{cor:high-correlation-stars-feed-cap-prefix} connects this criterion back
+to the high-correlation layer-cake: whenever the reported star multiplicity is
+dominated by the cap-centered paid degree, a large dyadic star either fires as a
+quadratic repair or contributes only the cap-centered child price in
+\((HCP5)\).  Thus positive-correlation mass is paid at the same cap-centered
+scale that gives the quadratic radius toll.
 \Cref{cor:dyadic-distinct-storage-bucket-net} rewrites that target as a dyadic
 large-child counting problem: for every recursive price scale, bound the number
 of distinct canonical bucket nets whose shared child index has that price.
