@@ -9031,6 +9031,83 @@ partition ignores the bias coordinates that certify the list size.
    \(\tau\delta=O(\log\log n)\), and \((LPS5)\) is polylogarithmic.
 \end{proof}
 
+\begin{corollary}[Anchored Gaussian-width certificate for LP sharpness]
+   \label{cor:anchored-lp-width-certificate}
+   Let \(C\subseteq[q]^b\), and write
+   \(\iota(c)\in\{0,1\}^{bq}\) for the one-hot encoding of \(c\).  Let
+   \(\mathcal U\) be a finite family of possible branch-and-bound nodes.  Each
+   \(u\in\mathcal U\) has a subcode \(C_u\subseteq C\) and a certified
+   relaxation \(P_u\subseteq\R^{bq}\) with
+   \(\iota(C_u)\subseteq P_u\).  The LP upper bound at \(u\) is
+   \[
+      U(u)=\sup_{z\in P_u}\ip{w}{z},
+      \qquad
+      W(c)=\ip{w}{\iota(c)} .
+      \tag{LPC1}
+   \]
+   Suppose that, for every \(u\), there is an anchor map
+   \(a_u:P_u\to C_u\).  Define the anchored excess set
+   \[
+      E_u=\{z-\iota(a_u(z)):z\in P_u\},
+      \qquad
+      r_u=\sup_{h\in E_u}\|h\|_2,
+      \tag{LPC2}
+   \]
+   and its Gaussian width
+   \[
+      \omega_u
+      =
+      \E_g\sup_{h\in E_u}\ip{g}{h},
+      \qquad
+      g\sim N(0,I_{bq}).
+      \tag{LPC3}
+   \]
+   Let \((\eta_u)_{u\in\mathcal U}\) be positive numbers with
+   \(\sum_u\eta_u\le\eta\).  If
+   \[
+      \omega_u+r_u\sqrt{2\log(1/\eta_u)}
+      \le \Gamma
+      \qquad(u\in\mathcal U),
+      \tag{LPC4}
+   \]
+   then, with probability at least \(1-\eta\) over the Gaussian score table
+   \(w\), every \(u\in\mathcal U\) satisfies
+   \[
+      U(u)\le \max_{c\in C_u}W(c)+\Gamma .
+      \tag{LPC5}
+   \]
+   Consequently, on this event, any branch-and-bound decoder whose node tree is
+   contained in \(\mathcal U\) satisfies the sharpness hypothesis \((LPS1)\) of
+   \cref{cor:sharp-lp-soft-decoder}.
+\end{corollary}
+
+\begin{proof}
+   Fix a node \(u\), and put
+   \(X_u(g)=\sup_{h\in E_u}\ip{g}{h}\).  The map \(g\mapsto X_u(g)\) is
+   \(r_u\)-Lipschitz, so the standard Gaussian concentration inequality for
+   Lipschitz suprema gives
+   \[
+      \Prb[X_u(g)>\omega_u+t]\le \exp(-t^2/(2r_u^2))
+      \tag{LPC6}
+   \]
+   with the evident deterministic interpretation when \(r_u=0\).  Taking
+   \(t=r_u\sqrt{2\log(1/\eta_u)}\) and applying a union bound over
+   \(\mathcal U\) shows that, with probability at least \(1-\eta\),
+   \(X_u(w)\le\Gamma\) for every \(u\).
+
+   On this event, for any \(z\in P_u\),
+   \[
+      \ip{w}{z}
+      =
+      W(a_u(z))+\ip{w}{z-\iota(a_u(z))}
+      \le
+      \max_{c\in C_u}W(c)+X_u(w)
+      \le
+      \max_{c\in C_u}W(c)+\Gamma .
+   \]
+   Taking the supremum over \(z\in P_u\) proves \((LPC5)\).
+\end{proof}
+
 \begin{remark}[LP and Sherali--Adams decoder target]
    \label{rem:lp-sa-soft-decoder-target}
    \Cref{cor:sharp-lp-soft-decoder} identifies the exact theorem needed from a
@@ -9063,6 +9140,22 @@ partition ignores the bias coordinates that certify the list size.
    clean proof route is the certified threshold reporter above: prove the
    Gaussian LP/SA sharpness bound first, then feed the output-sensitive decoded
    panel into the existing generated-cover and shared-panel separators.
+
+   \Cref{cor:anchored-lp-width-certificate} gives a concrete sufficient form
+   of the pseudocodeword theorem.  It is enough to anchor every fractional
+   pseudocodeword to a true codeword in the same branch subcode so that the
+   excess directions have Gaussian width \(O(\sqrt{\log\log n})\), with
+   summable concentration losses.  This is the place where level-two or
+   level-three Sherali--Adams could matter: if the relaxation forces every
+   pseudocodeword to decompose around nearby true codewords with only small
+   pair-overlap excess, then the anchored width is the right quantity to bound.
+   The union term in \((LPC4)\) is also a warning.  If one insists on certifying
+   a full polynomial-size prefix universe with constant-radius excess sets,
+   \((LPC4)\) gives a \(\Theta(\sqrt{\log n})\) loss, which is too large.
+   A successful low-rate code proof must therefore either prove the
+   \(O(\sqrt{\log\log n})\) sharpness directly on the near-threshold node
+   process, make the anchored excess radius shrink, or restrict preprocessing
+   to a build-certified node universe with summable failure budget.
 \end{remark}
 
 \begin{proposition}[Sampled structured-panel compiler]
