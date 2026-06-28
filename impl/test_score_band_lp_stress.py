@@ -416,6 +416,49 @@ def test_b5_exact_projected_source_finds_clean_fractional_obstruction():
     assert overlap_gap["gap"] <= xi
 
 
+def test_ternary_overlap_projection_can_have_fractional_source():
+    code = np.array([
+        [0, 1, 0, 1],
+        [1, 2, 1, 2],
+        [0, 2, 2, 2],
+        [0, 1, 0, 0],
+        [2, 2, 1, 0],
+        [0, 0, 2, 1],
+        [1, 0, 1, 1],
+        [0, 0, 0, 0],
+        [1, 2, 1, 2],
+        [2, 0, 0, 1],
+        [2, 1, 2, 1],
+        [1, 1, 0, 1],
+        [1, 1, 1, 2],
+        [1, 0, 1, 2],
+        [1, 2, 2, 0],
+        [0, 1, 2, 0],
+        [1, 2, 2, 0],
+        [2, 1, 1, 2],
+        [2, 1, 0, 1],
+        [2, 0, 0, 1],
+        [2, 0, 0, 0],
+        [0, 2, 2, 2],
+        [0, 0, 1, 0],
+        [2, 2, 2, 2],
+    ])
+    source = np.array([
+        [1.0 / 3.0, 0.0, 2.0 / 3.0],
+        [2.0 / 3.0, 0.0, 1.0 / 3.0],
+        [1.0 / 3.0, 0.0, 2.0 / 3.0],
+        [2.0 / 3.0, 1.0 / 3.0, 0.0],
+    ]).reshape(-1)
+    result = local_overlap_source_feasible(
+        code,
+        local_check_scopes(4, 3),
+        source,
+    )
+
+    assert result["feasible"]
+    assert np.sum(1.0 - np.max(source.reshape(4, 3), axis=1)) > 1.0
+
+
 def test_local_check_scopes_enumerates_subsets():
     assert local_check_scopes(3, 2) == [(0, 1), (0, 2), (1, 2)]
 
@@ -440,5 +483,6 @@ if __name__ == "__main__":
     test_local_marginal_combined_screen_matches_separate_screens()
     test_clean_panel_can_fail_residual_dominance_certificate()
     test_b5_exact_projected_source_finds_clean_fractional_obstruction()
+    test_ternary_overlap_projection_can_have_fractional_source()
     test_local_check_scopes_enumerates_subsets()
     print("score_band_lp_stress tests passed")
