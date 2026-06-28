@@ -41947,6 +41947,131 @@ query mass rather than producing a cost-effective dense filter.
    materialization rule is needed.
 \end{proof}
 
+\begin{corollary}[Shared-cover reduction for cap-overload storage tails]
+   \label{cor:cap-overload-storage-tail-shared-cover}
+   Work in the setting of
+   \cref{cor:cap-overload-dual-cap-star-storage-split} for one no-prefix
+   residual, and write \(\mathcal S=\mathcal S_{\rm over}\).  For
+   \(s\in\mathcal S\), put \(u_s=u_s^{\rm over}\).  Let
+   \(\mathcal R^{\rm over}\) be a finite family of candidate shared records.
+   A record \(c\in\mathcal R^{\rm over}\) has one-time recursive storage price
+   \(P_c\ge0\) and certified coverage coefficients \(0\le g_{c,s}\le1\).  Define
+   \[
+   \begin{array}{ll}
+   \Phi^{\rm over}=\min
+      & \displaystyle
+        \sum_{s\in\mathcal S}u_se_s
+        +\sum_{c\in\mathcal R^{\rm over}}P_c\lambda_c\\[0.8em]
+   \text{\rm subject to}
+      & \displaystyle
+        e_s+\sum_{c\in\mathcal R^{\rm over}}\lambda_c g_{c,s}\ge1
+        \qquad(s\in\mathcal S),\\[0.8em]
+      & e_s\ge0,\qquad \lambda_c\ge0 .
+   \end{array}
+      \tag{FOS1}
+   \]
+   Its dual is
+   \[
+   \begin{array}{ll}
+   \Phi^{\rm over}=\max
+      & \displaystyle \sum_{s\in\mathcal S}y_s\\[0.8em]
+   \text{\rm subject to}
+      & 0\le y_s\le u_s
+        \qquad(s\in\mathcal S),\\[0.8em]
+      & \displaystyle
+        \sum_{s\in\mathcal S}g_{c,s}y_s\le P_c
+        \qquad(c\in\mathcal R^{\rm over}).
+   \end{array}
+      \tag{FOS2}
+   \]
+
+   Consequently the storage-dominated term in \((FDS9)\) may be replaced by
+   \(\Phi^{\rm over}\): for any desired allowance \(B_{\rm over}\) and
+   nonnegative fixed overhead \(\Gamma\), the cap-overload high-correlation
+   return is bounded by
+   \[
+      W_{\rm hi}
+      \le
+      2|E|J_\omega\omega_{\max}H_-^{\rm over}
+      +B_{\rm over}
+      \tag{FOS3}
+   \]
+   whenever
+   \[
+      \Gamma+\Phi^{\rm over}\le\frac{\delta}{4}B_{\rm over}.
+      \tag{FOS4}
+   \]
+   If \(\Phi^{\rm over}>\Theta\), then there is a dual weighting \(y_s\) with
+   \[
+      \sum_{s\in\mathcal S}y_s>\Theta,\qquad
+      0\le y_s\le u_s,\qquad
+      \sum_sg_{c,s}y_s\le P_c
+      \quad(c\in\mathcal R^{\rm over}).
+      \tag{FOS5}
+   \]
+
+   Finally suppose a generated template \(T\) has a search container
+   \(\mathcal S_T\subseteq\mathcal S\), capture weights \(a_{T,s}\in[0,1]\),
+   available cardinalities \(\mathcal K_T\), and certified prices
+   \(\overline P_T(K)\), and that every \(U\subseteq\mathcal S_T\) with
+   \(|U|=K\in\mathcal K_T\) can be materialized as a record \(c(T,U)\) with
+   \[
+      P_{c(T,U)}\le\overline P_T(K),
+      \qquad
+      g_{c(T,U),s}\ge a_{T,s}\mathbf 1_{\{s\in U\}} .
+      \tag{FOS6}
+   \]
+   In a dual residual \(y\), order \(\mathcal S_T=\{s_1,s_2,\ldots\}\) by
+   nonincreasing \(a_{T,s}y_s\).  If, for some \(K\in\mathcal K_T\),
+   \[
+      \sum_{j\le K}a_{T,s_j}y_{s_j}>\overline P_T(K),
+      \tag{FOS7}
+   \]
+   then \(c(T,\{s_1,\ldots,s_K\})\) is an improving shared-cover column.
+   Conversely, if no generated prefix is improving for \(T\), then every
+   \(K\)-subset \(U\subseteq\mathcal S_T\) satisfies
+   \[
+      \sum_{s\in U}a_{T,s}y_s\le\overline P_T(K).
+      \tag{FOS8}
+   \]
+
+   Thus the cap-overload storage tail has exactly the same algorithmic
+   interface as the fractional sponsor tail: solve one finite shared-cover LP,
+   add any positive generated top-prefix column, or expose a single weighted
+   no-prefix residual for the range/list/AQ/facility separator.
+\end{corollary}
+
+\begin{proof}
+   The program \((FOS1)\) is finite and feasible by taking \(e_s=1\).  Assign a
+   dual variable \(y_s\ge0\) to each coverage constraint.  The coefficients of
+   \(e_s\) and \(\lambda_c\) give respectively \(y_s\le u_s\) and
+   \(\sum_sg_{c,s}y_s\le P_c\), proving \((FOS2)\) by finite LP duality.
+
+   A feasible primal solution represents each storage-dominated overload star
+   \(s\) by an \(e_s\)-fractional residual copy and by the shared records
+   covering it.  The coverage constraints say this representation covers the
+   original unit copy of \(s\), and the objective is the resulting
+   shared-canonical storage price.  Since \((FDS9)\) uses the raw sum
+   \(\sum_su_s\) only through the coefficient \(4/\delta\), replacing that sum
+   by \(\Gamma+\Phi^{\rm over}\) and using \((FOS4)\) gives \((FOS3)\).  The
+   dual obstruction \((FOS5)\) is the contrapositive of strong duality.
+
+   If \((FOS7)\) holds and \(U_K=\{s_1,\ldots,s_K\}\), then \((FOS6)\) gives
+   \[
+      \sum_sg_{c(T,U_K),s}y_s
+      \ge
+      \sum_{j\le K}a_{T,s_j}y_{s_j}
+      >
+      \overline P_T(K)
+      \ge
+      P_{c(T,U_K)} .
+   \]
+   Hence the dual constraint for \(c(T,U_K)\) is violated, so adding that
+   record is an improving column.  For fixed \(K\), the top \(K\) elements in
+   the order of \(a_{T,s}y_s\) maximize the left side over all \(K\)-subsets,
+   proving the no-prefix subset test \((FOS8)\).
+\end{proof}
+
 \begin{corollary}[Shared-cover LP for the fractional sponsor tail]
    \label{cor:fractional-sponsor-tail-shared-cover}
    Work in the setting of
@@ -78843,6 +78968,10 @@ medium-cardinality high-correlation star survives: the return is a bounded fixed
 tail plus a storage-dominated priced child panel with dyadic intensity absorbed
 into its price.  This sends the cap-overload high-correlation branch back to the
 generic shared-cover and distinct-storage interfaces.
+\Cref{cor:cap-overload-storage-tail-shared-cover} makes that routing explicit:
+the storage-dominated overload stars have one finite shared-cover LP, one exact
+dual, and the same generated top-prefix column rule as the sponsor-tail
+pipeline.
 \Cref{cor:fractional-sponsor-tail-shared-cover} then removes duplicated large
 stars from that target by a finite shared-cover LP: either residual fractional
 star copies plus shared records have total price inside the storage allowance,
