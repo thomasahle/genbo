@@ -560,6 +560,35 @@ def test_binary_overlap_vertex_enumerator_certifies_integral_parity_projection()
     assert any(word not in code_set for word in vertex_words)
 
 
+def test_leave_one_out_overlap_collapses_for_two_deletion_injective_code():
+    blocks = 5
+    code = np.array([
+        [0, 0, 0, 0, 0],
+        [1, 1, 1, 0, 0],
+        [1, 0, 0, 1, 1],
+        [0, 1, 1, 1, 1],
+    ])
+    vertices = local_overlap_vertex_sources(
+        code,
+        local_check_scopes(blocks, blocks - 1),
+        random_objectives=0,
+    )
+    defects = [
+        source_integrality_defect(source, blocks=blocks, alphabet=2)
+        for source in vertices["sources"]
+    ]
+    code_set = {tuple(word) for word in code}
+    vertex_words = {
+        tuple(int(np.argmax(source.reshape(blocks, 2)[coord])) for coord in range(blocks))
+        for source in vertices["sources"]
+    }
+
+    assert vertices["certified"]
+    assert vertices["source_count"] == len(code)
+    assert max(defects) <= 1e-8
+    assert vertex_words == code_set
+
+
 def test_local_check_scopes_enumerates_subsets():
     assert local_check_scopes(3, 2) == [(0, 1), (0, 2), (1, 2)]
 
@@ -589,5 +618,6 @@ if __name__ == "__main__":
     test_binary_overlap_projection_can_have_fractional_source()
     test_binary_overlap_vertex_enumerator_finds_fractional_triangle_source()
     test_binary_overlap_vertex_enumerator_certifies_integral_parity_projection()
+    test_leave_one_out_overlap_collapses_for_two_deletion_injective_code()
     test_local_check_scopes_enumerates_subsets()
     print("score_band_lp_stress tests passed")

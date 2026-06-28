@@ -12403,6 +12403,57 @@ partition ignores the bias coordinates that certify the list size.
    true codeword, \((LNN12)\) gives \((LNN19)\).
 \end{proof}
 
+\begin{corollary}[Two-deletion-injective overlap closure]
+   \label{cor:two-deletion-injective-overlap-closure}
+   Let \(C_u=\{c_1,\ldots,c_N\}\subseteq[q]^b\), and suppose that for every
+   \(T\subseteq[b]\) with \(|T|=b-2\), the projection
+   \(c\mapsto c|_T\) is injective on \(C_u\).  Equivalently, the local panel
+   has minimum Hamming distance at least \(3\).  Let \(Q_u^{\mathrm{loo}}\) be
+   the leave-one-out full-overlap relaxation: for each
+   \(i\in[b]\) it has a probability distribution on the punctured assignments
+   \(c_j|_{[b]\setminus\{i\}}\), and for every pair \(i\ne k\) these
+   distributions agree after marginalizing to
+   \([b]\setminus\{i,k\}\).  Then its projected unary source polytope is exactly
+   the true codeword hull,
+   \[
+      S_uQ_u^{\mathrm{loo}}
+      =
+      \operatorname{conv}\{\iota(c_j):j\in[N]\}.
+   \]
+   Consequently every projected unary vertex is a true codeword and
+   \[
+      \sup_{x\in S_uQ_u^{\mathrm{loo}}}\Gamma_u(x;\Omega_u)=0.
+   \]
+
+   Thus one concrete way to discharge the finite low-rate panel obligation is
+   not another score-band certificate: use a leave-one-out Tanner/SA overlap
+   lift of a low-rate panel whose two-coordinate deletions are injective.  The
+   overlap lift then has neither fractional projected vertices nor integral
+   pseudowords.
+\end{corollary}
+
+\begin{proof}
+   The two-deletion injectivity assumption also makes every one-coordinate
+   deletion \(c\mapsto c|_{[b]\setminus\{i\}}\) injective, so each local
+   assignment can be labeled by its unique codeword \(c_j\).  Write
+   \(\mu_i(j)\) for the mass of \(c_j|_{[b]\setminus\{i\}}\) in the \(i\)th
+   leave-one-out view.  Fix \(i\ne k\).  Since
+   \(c\mapsto c|_{[b]\setminus\{i,k\}}\) is injective, the marginal mass of the
+   overlap pattern \(c_j|_{[b]\setminus\{i,k\}}\) in the \(i\)th view is exactly
+   \(\mu_i(j)\), and in the \(k\)th view it is exactly \(\mu_k(j)\).  Pairwise
+   overlap consistency therefore gives \(\mu_i(j)=\mu_k(j)\) for all
+   \(i,k,j\).  Hence all local views share one distribution
+   \(\lambda_j\ge0\), \(\sum_j\lambda_j=1\).
+
+   The projected unary source of such a feasible point is then
+   \(\sum_j\lambda_j\iota(c_j)\).  Conversely, any distribution
+   \((\lambda_j)\) on the true codewords defines consistent leave-one-out local
+   marginals by assigning mass \(\lambda_j\) to each punctured codeword
+   \(c_j|_{[b]\setminus\{i\}}\).  This proves the displayed hull equality.
+   The zero score-band gap follows from
+   \cref{cor:projected-unary-integrality-reduction}.
+\end{proof}
+
 \begin{corollary}[Convex-hull dominance screen for projected-source vertices]
    \label{cor:local-vertex-convex-hull-dominance-screen}
    Continue in the setting of
@@ -13902,7 +13953,10 @@ partition ignores the bias coordinates that certify the list size.
    not a proof, but it makes the remaining theorem sharply construction
    specific: prove projected-unary integrality and integral-pseudoword exclusion
    for the leave-one-out overlap/Tanner panel, or find a certified fractional
-   projected vertex in that exact model.
+   projected vertex in that exact model.  \Cref{cor:two-deletion-injective-overlap-closure}
+   gives a first positive theorem in that exact model: if the chosen low-rate
+   panel has minimum distance at least \(3\), then the leave-one-out overlap
+   lift is already the true codeword hull, so the local score-band gap is zero.
    The qualification is necessary: unrestricted overlap consistency does not
    force unary integrality.  Even in the binary case, the \(b=3\) panel
    \(\{001,100,010\}\) has the all-half projected unary vertex under
