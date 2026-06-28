@@ -5,6 +5,7 @@ from score_band_lp_stress import (
     convex_hull_dominance_deficit,
     integral_local_pseudoword_gaps,
     local_check_scopes,
+    local_marginal_combined_screen,
     local_marginal_dominance_screen,
     local_marginal_residual_dominance_screen,
     local_marginal_score_band_gap_exact,
@@ -276,6 +277,49 @@ def test_local_marginal_residual_dominance_screen_bounds_exact_gap():
     assert residual_screen["gap_bound"] <= global_screen["gap_bound"] + 1e-8
 
 
+def test_local_marginal_combined_screen_matches_separate_screens():
+    code = np.array([
+        [0, 0, 0],
+        [0, 1, 1],
+        [1, 0, 1],
+        [1, 1, 0],
+    ])
+    omega = np.ones(len(code))
+    checks = [(0, 1), (0, 2), (1, 2)]
+    exact = local_marginal_score_band_gap_exact(
+        code,
+        omega,
+        checks=checks,
+        max_bases=1000,
+    )
+    global_screen = local_marginal_dominance_screen(
+        code,
+        omega,
+        checks=checks,
+        max_bases=1000,
+    )
+    residual_screen = local_marginal_residual_dominance_screen(
+        code,
+        omega,
+        checks=checks,
+        max_bases=1000,
+    )
+    combined = local_marginal_combined_screen(
+        code,
+        omega,
+        checks=checks,
+        max_bases=1000,
+    )
+
+    assert np.isclose(combined["exact_gap"], exact["gap"])
+    assert np.isclose(combined["dominance_gap_bound"], global_screen["gap_bound"])
+    assert np.isclose(
+        combined["residual_dominance_gap_bound"],
+        residual_screen["gap_bound"],
+    )
+    assert combined["source_count"] == exact["source_count"]
+
+
 def test_local_check_scopes_enumerates_subsets():
     assert local_check_scopes(3, 2) == [(0, 1), (0, 2), (1, 2)]
 
@@ -296,5 +340,6 @@ if __name__ == "__main__":
     test_exact_local_marginal_pairwise_parity_matches_integral_gap()
     test_local_marginal_dominance_screen_bounds_exact_gap()
     test_local_marginal_residual_dominance_screen_bounds_exact_gap()
+    test_local_marginal_combined_screen_matches_separate_screens()
     test_local_check_scopes_enumerates_subsets()
     print("score_band_lp_stress tests passed")
