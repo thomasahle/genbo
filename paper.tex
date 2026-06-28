@@ -11899,6 +11899,143 @@ partition ignores the bias coordinates that certify the list size.
    \cref{cor:conditional-tilted-excess-certificate}.
 \end{proof}
 
+\begin{corollary}[Negative coefficient tail dual verifier]
+   \label{cor:negative-coefficient-tail-dual}
+   Continue with the notation of
+   \cref{cor:direct-coefficient-projection-certificate}.  For nonnegative
+   coefficient prices \(\omega\in\R_+^N\), define
+   \[
+      \mathcal N_u(z;\omega)
+      =
+      \inf_{\substack{b\in\R^N\\ A_ub=\Pi_u z}}
+      \sum_{j=1}^N\omega_j b_j^-,
+      \qquad
+      \mathcal N_u(P_u;\omega)=\sup_{z\in P_u}\mathcal N_u(z;\omega).
+      \tag{LNK1}
+   \]
+   Then
+   \[
+      \mathcal N_u(P_u;\omega)
+      =
+      \sup_{\substack{y\in L_u\\ -\omega_j\le \ip{y}{\iota(c_j)}\le0\ \forall j}}
+      \sup_{z\in P_u}\ip{y}{z}.
+      \tag{LNK2}
+   \]
+   Consequently, for \(\Xi_u>0\), the two negative-tail hypotheses in
+   \cref{cor:direct-coefficient-projection-certificate} follow from the single
+   finite check
+   \[
+      \mathcal N_u(P_u;\omega^\lambda+\Xi_u\mathbf 1_N)\le\Xi_u,
+      \qquad
+      \omega^\lambda_j=\exp(\lambda(M(u)-W(c_j))).
+      \tag{LNK3}
+   \]
+
+   A failed check is a concrete separator: a vector \(y\in L_u\) whose score on
+   every true codeword lies in the interval \([-\omega_j,0]\), and a fractional
+   point \(z\in P_u\) with \(\ip{y}{z}\) too large.  Thus the negative coefficient
+   theorem can be attacked by finite-dimensional relaxation maximization under
+   clipped true-codeword score constraints.
+\end{corollary}
+
+\begin{proof}
+   Fix \(z\).  The primal LP for \(\mathcal N_u(z;\omega)\) is
+   \[
+      \min \sum_j\omega_jt_j
+      \quad\text{subject to}\quad
+      A_ub=\Pi_u z,\quad t_j\ge -b_j,\quad t_j\ge0 .
+      \tag{LNK4}
+   \]
+   Its dual has an ambient vector \(y\) for the equality constraint and is
+   \[
+      \max \ip{y}{\Pi_u z}
+      \quad\text{subject to}\quad
+      -\omega_j\le \ip{y}{\iota(c_j)}\le0
+      \quad(j=1,\ldots,N).
+      \tag{LNK5}
+   \]
+   This is the elementary conjugate identity for the scalar function
+   \(\omega_j(-b_j)_+\): its dual slope lies in \([-\omega_j,0]\).  Since the
+   objective and constraints depend on \(y\) only through its projection onto
+   \(L_u\), we may take \(y\in L_u\).  Then
+   \(\ip{y}{\Pi_u z}=\ip{y}{z}\).  Strong duality gives \((LNK2)\) after taking
+   the supremum over \(z\in P_u\) and exchanging the two suprema.
+
+   If \((LNK3)\) holds, then for every \(z\in P_u\) the LP optimum is attained by
+   a single coefficient vector satisfying \(A_ub=\Pi_u z\) and
+   \[
+      \sum_j\omega^\lambda_jb_j^-+\Xi_u\sum_jb_j^-\le\Xi_u .
+      \tag{LNK6}
+   \]
+   Hence \(\sum_jb_j^-\le1\) and
+   \(\sum_j\omega^\lambda_jb_j^-\le\Xi_u\), which are exactly the two
+   negative-tail hypotheses of
+   \cref{cor:direct-coefficient-projection-certificate}.
+\end{proof}
+
+\begin{corollary}[Coefficient scalar-leakage witness]
+   \label{cor:coefficient-scalar-leakage-witness}
+   Continue with the notation of
+   \cref{cor:direct-coefficient-projection-certificate}.  Suppose there is a
+   vector \(\ell_u\in\R^{bq}\) and a scalar \(\sigma_u\) such that
+   \[
+      A_u^\top\ell_u=\mathbf 1_N,
+      \qquad
+      \ip{\ell_u}{z}=\sigma_u\quad(z\in P_u).
+      \tag{LNL1}
+   \]
+   Then every coefficient representation \(A_ub=\Pi_u z\) satisfies
+   \[
+      \kappa_u(z)-\sigma_u
+      =
+      -\ip{\Pi_u^\perp\ell_u}{\Pi_u^\perp z}.
+      \tag{LNL2}
+   \]
+   Hence
+   \[
+      |\kappa_u(z)-\sigma_u|
+      \le
+      \|\Pi_u^\perp\ell_u\|_2\, r_u^{P,\perp}
+      \qquad(z\in P_u).
+      \tag{LNL3}
+   \]
+   In particular, if \(\sigma_u=1\) and
+   \[
+      |M(u)|\,\|\Pi_u^\perp\ell_u\|_2\, r_u^{P,\perp}\le R_u,
+      \tag{LNL4}
+   \]
+   then the scalar leakage condition \(M(u)(\kappa_u(z)-1)\le R_u\) in
+   \((LNJ4)\) holds for every \(z\in P_u\).  If \(\ell_u\in L_u\), the leakage is
+   zero.
+
+   For ordinary \(q\)-ary simplex relaxations, one may take
+   \(\ell_u=\mathbf 1_{B_i}\), the indicator of any coordinate block \(B_i\),
+   because \(A_u^\top \mathbf 1_{B_i}=\mathbf 1_N\) and
+   \(\ip{\mathbf 1_{B_i}}{z}=1\) on the simplex.  Thus scalar leakage is again
+   either exact zero or paid by the already present orthogonal radius.
+\end{corollary}
+
+\begin{proof}
+   Let \(A_ub=\Pi_u z\).  Since \(A_u^\top\ell_u=\mathbf 1_N\),
+   \[
+      \kappa_u(z)=\mathbf 1_N^\top b=\ip{\ell_u}{A_ub}
+      =\ip{\ell_u}{\Pi_u z}.
+      \tag{LNL5}
+   \]
+   By \((LNL1)\), \(\sigma_u=\ip{\ell_u}{z}\).  Subtracting gives
+   \[
+      \kappa_u(z)-\sigma_u
+      =
+      \ip{\ell_u}{\Pi_u z-z}
+      =
+      -\ip{\Pi_u^\perp\ell_u}{\Pi_u^\perp z},
+   \]
+   proving \((LNL2)\).  Cauchy's inequality gives \((LNL3)\), and \((LNL4)\)
+   gives the required scalar leakage bound.  The coordinate-block claim follows
+   because every codeword and every point of the product-simplex relaxation has
+   exactly one unit of mass in coordinate block \(i\).
+\end{proof}
+
 \begin{corollary}[Anchor-fiber LP/SA certificate compiler]
    \label{cor:anchor-fiber-lp-sa-compiler}
    Continue with the notation of
@@ -12190,6 +12327,17 @@ partition ignores the bias coordinates that certify the list size.
    \(M(u)-W(c_j)\), while the orthogonal width of \(P_u\) remains
    \(O(\sqrt{b\log q})\).  This avoids both the score-leader overcharge and the
    need to materialize a convex-hull witness.
+
+   \Cref{cor:negative-coefficient-tail-dual} makes the negative-tail part
+   finite-dimensional: the minimum weighted negative coefficient mass is dual to
+   maximizing a score-span separator \(y\) over \(P_u\), under clipped constraints
+   \(-\omega_j\le\ip{y}{\iota(c_j)}\le0\) on every true codeword.  With the
+   combined price \(\omega^\lambda+\Xi_u\mathbf1\), one LP check gives a single
+   coefficient representation with both small total negative mass and small
+   Boltzmann negative tail.  \Cref{cor:coefficient-scalar-leakage-witness}
+   handles the remaining scalar term by the coordinate-block balance witness,
+   paying only the orthogonal residual when the witness is not exactly in the
+   local span.
 
    \Cref{cor:leader-shift-near-leader-certificate} gives the clean terminal
    version of this idea when scalar leakage is killed exactly, or otherwise
