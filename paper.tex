@@ -40218,6 +40218,151 @@ query mass rather than producing a cost-effective dense filter.
    \((GPW7)\).
 \end{proof}
 
+\begin{corollary}[Generic sponsor flow for child-panel storage]
+   \label{cor:generic-child-panel-sponsor-flow}
+   Work in the setting of
+   \cref{cor:generic-child-panel-pair-witness-storage}, and write
+   \(u_g=\psi_g|A_g|^{1+\rho_g}\).  Let \(\mathcal I\) be a finite pool of
+   sponsor atoms with weights \(b_i>0\), let
+   \(\mathcal E\subseteq\mathcal I\times\mathcal C\) be a certified
+   compatibility relation, and fix \(\beta\ge1\).  Put
+   \[
+      H=\sum_{i\in\mathcal I}b_i,
+      \qquad
+      d_g=u_g/\beta .
+      \tag{GCF1}
+   \]
+   The following are equivalent.
+
+   First, there is a fractional sponsor assignment \(h_{i,g}\ge0\), supported
+   on \(\mathcal E\), such that
+   \[
+      \sum_{i:\,(i,g)\in\mathcal E}h_{i,g}\ge d_g
+      \qquad(g\in\mathcal C),
+      \tag{GCF2}
+   \]
+   and
+   \[
+      \sum_{g:\,(i,g)\in\mathcal E}h_{i,g}\le b_i
+      \qquad(i\in\mathcal I).
+      \tag{GCF3}
+   \]
+   Second, every child subset \(\mathcal U\subseteq\mathcal C\) satisfies
+   \[
+      \sum_{g\in\mathcal U}u_g
+      \le
+      \beta\sum_{i\in N(\mathcal U)}b_i,
+      \qquad
+      N(\mathcal U)=
+      \{i:\exists g\in\mathcal U,\ (i,g)\in\mathcal E\}.
+      \tag{GCF4}
+   \]
+   If these equivalent conditions hold, then
+   \[
+      \sum_{g\in\mathcal C}u_g\le\beta H .
+      \tag{GCF5}
+   \]
+   Consequently, in any seeded child-panel storage argument, the bound
+   \[
+      \E_z\Gamma_z+\beta\,\E_z H_z\le aS
+      \tag{GCF6}
+   \]
+   is a sufficient replacement for a direct pair-congestion estimate: by
+   \cref{cor:generic-child-panel-pair-witness-storage}, the pair-witness storage
+   sum of the represented children is at most the sponsored atom mass.
+
+   If the conditions fail, there is an explicit unsponsored child cut
+   \(\mathcal U\subseteq\mathcal C\) with
+   \[
+      \sum_{g\in\mathcal U}u_g
+      >
+      \beta\sum_{i\in N(\mathcal U)}b_i .
+      \tag{GCF7}
+   \]
+   Thus the remaining storage theorem should not be stated as an unqualified
+   geometry-only pair bound.  It must either produce compatible sponsor mass,
+   merge the cut by a shared generated column, or route the cut to a different
+   dense/spherical separator.
+\end{corollary}
+
+\begin{proof}
+   Build the finite flow network with a source edge of capacity \(b_i\) into
+   each sponsor atom \(i\), infinite-capacity edges from \(i\) to \(g\) for
+   \((i,g)\in\mathcal E\), and a sink edge of capacity \(d_g\) out of each
+   child \(g\).  A flow saturating all child sink edges is exactly an
+   assignment satisfying \((GCF2)\)--\((GCF3)\).
+
+   By max-flow/min-cut, such a flow exists iff every finite cut has capacity at
+   least \(\sum_g d_g\).  A finite cut is determined by the child set
+   \(\mathcal U\) left on the sink side; all atoms in \(N(\mathcal U)\) must
+   also lie on that side to avoid infinite crossing edges.  Rewriting the cut
+   inequality gives
+   \[
+      \sum_{g\in\mathcal U}d_g\le\sum_{i\in N(\mathcal U)}b_i,
+   \]
+   which is \((GCF4)\) after multiplying by \(\beta\).  Failure of the cut
+   inequality gives \((GCF7)\).
+
+   If the sponsor flow exists, then
+   \[
+      \sum_{g\in\mathcal C}u_g
+      =
+      \beta\sum_gd_g
+      \le
+      \beta\sum_i b_i
+      =
+      \beta H,
+   \]
+   proving \((GCF5)\).  Taking expectations gives the sufficient storage bound
+   in \((GCF6)\), while
+   \cref{cor:generic-child-panel-pair-witness-storage} identifies this storage
+   total with the exact pair-witness congestion sum.
+\end{proof}
+
+\begin{lemma}[Unsponsored child panels have no geometry-only storage bound]
+   \label{lem:unsponsored-child-panel-obstruction}
+   Let \(P\) be any \(\delta\)-separated set of size \(m\ge1\), let
+   \(0\le\rho\le1\), and let \(M\ge1\).  Form a child panel
+   \(\mathcal C=\{1,\ldots,M\}\) in which every child has the same witness set
+   \(A_g=P\), price factor \(\psi_g=1\), exponent \(\rho_g=\rho\), and storage
+   price \(u_g=m^{1+\rho}\).  Then
+   \[
+      W(x,y)=M\,m^{\rho-1}
+      \qquad((x,y)\in\mathcal T_2(P,\delta)),
+      \tag{UCP1}
+   \]
+   and
+   \[
+      \sum_{g\in\mathcal C}u_g
+      =
+      \sum_{(x,y)\in\mathcal T_2(P,\delta)}W(x,y)
+      =
+      M\,m^{1+\rho}.
+      \tag{UCP2}
+   \]
+   Hence, for any proposed allowance \(m^{1+\rho}L\), choosing \(M>L\) violates
+   the storage bound even though all children have identical witness geometry
+   and identical pair profiles.
+
+   Therefore a worst-case child-panel storage theorem cannot depend only on the
+   metric geometry or pair-profile shape of the witness sets.  It needs an
+   additional multiplicity mechanism: canonical merging, a sponsor flow as in
+   \cref{cor:generic-child-panel-sponsor-flow}, or a generated-column separator
+   that makes the duplicated children one retained shared record.
+\end{lemma}
+
+\begin{proof}
+   Since \(P\) is \(\delta\)-separated and repetitions are allowed, each child
+   contributes all \(m^2\) ordered pairs to \(\mathcal T_2(P,\delta)\).  For
+   each pair, the contribution of one child is
+   \[
+      \psi_g|A_g|^{\rho_g-1}=m^{\rho-1}.
+   \]
+   Summing over the \(M\) children gives \((UCP1)\), and summing over the
+   \(m^2\) ordered pairs gives \((UCP2)\).  The final conclusion follows by
+   taking \(M>L\).
+\end{proof}
+
 \begin{corollary}[Shared-cover LP for the fractional sponsor tail]
    \label{cor:fractional-sponsor-tail-shared-cover}
    Work in the setting of
@@ -77027,6 +77172,15 @@ ordered separated pairs in its witness set, with reciprocal weighted
 multiplicity when many decoded records point to the same child.  The remaining
 storage theorem is therefore a direct pair-profile congestion/list-decoding
 bound in child-panel notation, not a bucket-net-specific accounting statement.
+\Cref{cor:generic-child-panel-sponsor-flow} then states the exact positive
+condition under which that pair-congestion storage is paid by exposed Hall,
+guard, or detector atom mass: a fractional sponsor flow is equivalent to all
+child-price Hall cuts being affordable.  \Cref{lem:unsponsored-child-panel-obstruction}
+is the corresponding warning.  Pair geometry alone cannot bound storage,
+because arbitrarily many unsponsored canonical children may have the same
+witness set and identical pair profiles.  The live theorem must therefore
+produce sponsor mass, a shared generated merge, or a dense/spherical separator
+for every unsponsored child-price cut.
 \Cref{cor:fractional-sponsor-tail-shared-cover} then removes duplicated large
 stars from that target by a finite shared-cover LP: either residual fractional
 star copies plus shared records have total price inside the storage allowance,
