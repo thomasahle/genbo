@@ -39436,6 +39436,183 @@ query mass rather than producing a cost-effective dense filter.
    Condition \((SFT4)\) is the corresponding integrated storage bound.
 \end{proof}
 
+\begin{corollary}[Shared-cover LP for the fractional sponsor tail]
+   \label{cor:fractional-sponsor-tail-shared-cover}
+   Work in the setting of
+   \cref{cor:storage-dominated-sponsor-stars-fractional-tail} for one build
+   seed \(z\), and write \(\mathcal S=\mathcal S_{{\rm st},z}\).  Each
+   \(s\in\mathcal S\) has fractional price \(u_s=u_s^{\rm frac}\).  Let
+   \(\mathcal R_z\) be a finite family of candidate shared records.  A record
+   \(c\in\mathcal R_z\) has one-time recursive storage price \(P_c\ge0\) and
+   certified coverage coefficients \(0\le g_{c,s}\le1\) for
+   \(s\in\mathcal S\).  Consider the finite cover LP
+   \[
+   \begin{array}{ll}
+   \Phi_z^{\rm st}=\min
+      & \displaystyle
+        \sum_{s\in\mathcal S}u_s e_s
+        +\sum_{c\in\mathcal R_z}P_c\lambda_c\\[0.8em]
+   \text{\rm subject to}
+      & \displaystyle
+        e_s+\sum_{c\in\mathcal R_z}\lambda_c g_{c,s}\ge1
+        \qquad(s\in\mathcal S),\\[0.8em]
+      & e_s\ge0,\qquad \lambda_c\ge0 .
+   \end{array}
+      \tag{STC1}
+   \]
+   Its dual is
+   \[
+   \begin{array}{ll}
+   \Phi_z^{\rm st}=\max
+      & \displaystyle \sum_{s\in\mathcal S}y_s\\[0.8em]
+   \text{\rm subject to}
+      & 0\le y_s\le u_s
+        \qquad(s\in\mathcal S),\\[0.8em]
+      & \displaystyle
+        \sum_{s\in\mathcal S}g_{c,s}y_s\le P_c
+        \qquad(c\in\mathcal R_z).
+   \end{array}
+      \tag{STC2}
+   \]
+   If, for a desired storage-dominated allowance \(B_{\rm st}\),
+   \[
+      \E_z\Gamma_z+\E_z\Phi_z^{\rm st}
+      \le
+      \frac\theta8B_{\rm st},
+      \tag{STC3}
+   \]
+   then the storage-dominated contribution in \((SFT2)\) is inside
+   \(B_{\rm st}\).  More precisely, every feasible solution of \((STC1)\)
+   replaces the individual fractional star children by residual fractional
+   copies of price \(u_se_s\) and shared records of total price
+   \(\sum_cP_c\lambda_c\).  Thus \(\Phi_z^{\rm st}\) is a shared-canonical
+   storage price, and \((STC3)\) is a stronger shared version of \((SFT4)\).
+
+   Conversely, if a seed has \(\Phi_z^{\rm st}>\Theta_z\), then there is a dual
+   weighting \(y_s\) with
+   \[
+      \sum_{s\in\mathcal S}y_s>\Theta_z,\qquad
+      0\le y_s\le u_s,\qquad
+      \sum_sg_{c,s}y_s\le P_c\quad(c\in\mathcal R_z).
+      \tag{STC4}
+   \]
+   This is the exact no-shared-cover obstruction for the fractional sponsor
+   tail: every retained shared record captures at most its one-time recursive
+   price against the dual mass.
+\end{corollary}
+
+\begin{proof}
+   The primal is finite, feasible by taking \(e_s=1\), and bounded below.
+   Assign a dual variable \(y_s\ge0\) to each coverage constraint.  The
+   coefficient of \(e_s\) gives \(y_s\le u_s\), and the coefficient of
+   \(\lambda_c\) gives \(\sum_sg_{c,s}y_s\le P_c\).  Finite LP duality proves
+   \((STC2)\).
+
+   Given a feasible primal solution, keep an \(e_s\)-fractional copy of the
+   original star child \(s\) and a \(\lambda_c\)-fractional copy of each shared
+   record \(c\).  The coverage inequalities say every original fractional star
+   is fully represented by residual plus shared copies.  The total storage
+   price of this representation is exactly the objective in \((STC1)\), and
+   the price-weighted storage certificates cited in
+   \cref{cor:storage-dominated-sponsor-stars-fractional-tail} are linear in
+   such fractional copies.  Therefore \(\Phi_z^{\rm st}\) is a valid
+   shared-canonical replacement for \(\sum_su_s\) in \((SFT4)\), proving
+   \((STC3)\Rightarrow(SFT4)\) with allowance \(B_{\rm st}\).  The final
+   statement is the contrapositive of LP strong duality.
+\end{proof}
+
+\begin{corollary}[Generated-prefix oracle for the fractional sponsor tail]
+   \label{cor:fractional-sponsor-tail-generated-prefix}
+   Work in the dual residual \((STC4)\) of
+   \cref{cor:fractional-sponsor-tail-shared-cover}.  Let \(T\) be a generated
+   shared-record template with search container
+   \(\mathcal S_T\subseteq\mathcal S\), certified capture weights
+   \(a_{T,s}\in[0,1]\), available cardinalities \(\mathcal K_T\), and certified
+   prices \(\overline P_T(K)\).  Suppose that for every
+   \(K\in\mathcal K_T\) and \(U\subseteq\mathcal S_T\) with \(|U|=K\),
+   preprocessing can materialize a shared record \(c(T,U)\in\mathcal R_z\)
+   satisfying
+   \[
+      P_{c(T,U)}\le\overline P_T(K),
+      \qquad
+      g_{c(T,U),s}\ge a_{T,s}\mathbf 1_{\{s\in U\}}
+      \quad(s\in\mathcal S).
+      \tag{FSG1}
+   \]
+   Order \(\mathcal S_T=\{s_1,s_2,\ldots\}\) by nonincreasing
+   \(a_{T,s}y_s\).  If, for some available \(K\),
+   \[
+      \sum_{j\le K}a_{T,s_j}y_{s_j}>\overline P_T(K),
+      \tag{FSG2}
+   \]
+   then \(c(T,\{s_1,\ldots,s_K\})\) is an improving shared-cover column for
+   \((STC1)\).  Conversely, if no generated prefix is improving for \(T\), then
+   every \(K\)-subset \(U\subseteq\mathcal S_T\) satisfies
+   \[
+      \sum_{s\in U}a_{T,s}y_s\le\overline P_T(K).
+      \tag{FSG3}
+   \]
+
+   If, additionally, the prices have the common sponsor form
+   \[
+      \overline P_T(K)
+      =
+      \psi_T\left(A_TK^\rho+\zeta_TK^{1+\rho}\right),
+      \qquad 0<\rho<1,
+      \tag{FSG4}
+   \]
+   and the available cardinalities are \(b_T\)-dense from below, then every
+   nonempty dual-degree superlevel
+   \[
+      H_{T,\delta}=\{s\in\mathcal S_T:a_{T,s}y_s\ge\delta\},
+      \qquad h=|H_{T,\delta}|
+      \tag{FSG5}
+   \]
+   in a no-prefix residual obeys
+   \[
+      \delta
+      \le
+      \psi_T\left(
+         b_T^{1-\rho}A_Th^{\rho-1}
+         +\zeta_Th^\rho
+      \right).
+      \tag{FSG6}
+   \]
+   Hence the remaining geometric task for the fractional sponsor tail is a
+   standard generated-cell separation problem: find a range/list/AQ/facility
+   template whose current dual-weighted prefix beats its certified one-time
+   price, or prove that every generated cell satisfies the weak-type envelope
+   \((FSG6)\).
+\end{corollary}
+
+\begin{proof}
+   If \((FSG2)\) holds, then by \((FSG1)\)
+   \[
+      \sum_sg_{c(T,U_K),s}y_s
+      \ge
+      \sum_{j\le K}a_{T,s_j}y_{s_j}
+      >
+      \overline P_T(K)
+      \ge
+      P_{c(T,U_K)} .
+   \]
+   Thus the dual constraint of \((STC2)\) for this shared record is violated,
+   so column generation may add it as an improving record.  For fixed \(K\),
+   the top \(K\) elements maximize \(\sum_{s\in U}a_{T,s}y_s\), proving the
+   converse \((FSG3)\).
+
+   For the weak-type statement, choose \(K\in\mathcal K_T\) with
+   \(h/b_T\le K\le h\).  The top \(K\) prefix has total degree at least
+   \(K\delta\).  Since no prefix is improving,
+   \[
+      K\delta\le\overline P_T(K)
+      =
+      \psi_T(A_TK^\rho+\zeta_TK^{1+\rho}).
+   \]
+   Divide by \(K\), use \(K\ge h/b_T\) in the negative exponent
+   \(K^{\rho-1}\), and use \(K\le h\) in \(K^\rho\), obtaining \((FSG6)\).
+\end{proof}
+
 \begin{lemma}[Certified star-panel separator]
    \label{lem:certified-star-panel-separator}
    Work in the setting of \cref{lem:star-prefix-weak-type-residual}, and assume
@@ -75237,6 +75414,16 @@ one integrated fractional storage tail
 part remains the fixed tail \(2|E|J_\omega\omega_{\max}H_-\).  Thus the live
 sponsor-star target is a distinct-storage certificate for these fractional
 star children, not another dense-branching materialization rule.
+\Cref{cor:fractional-sponsor-tail-shared-cover} then removes duplicated large
+stars from that target by a finite shared-cover LP: either residual fractional
+star copies plus shared records have total price inside the storage allowance,
+or the LP dual gives one weighting \(y_s\le u_s^{\rm frac}\) that every
+retained shared record fails to capture above its price.
+\Cref{cor:fractional-sponsor-tail-generated-prefix} gives the verifier-facing
+form of this dual: a generated range/list/AQ/facility template is useful exactly
+when its current \(y_s\)-weighted top prefix beats its certified shared-child
+price; otherwise the template satisfies the same weak-type envelope as the
+earlier shared-capture residuals.
 \Cref{cor:dyadic-distinct-storage-bucket-net} rewrites that target as a dyadic
 large-child counting problem: for every recursive price scale, bound the number
 of distinct canonical bucket nets whose shared child index has that price.
