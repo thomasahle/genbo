@@ -38428,6 +38428,122 @@ query mass rather than producing a cost-effective dense filter.
    flow values realizes the fractional assignment as weighted sponsor records.
 \end{proof}
 
+\begin{corollary}[Sponsor-cut generated-column screen]
+   \label{cor:sponsor-cut-generated-column-screen}
+   Work with a failed sponsor cut
+   \(\mathcal U\subseteq\mathcal C_z^{\rm tail}\) from
+   \cref{cor:fractional-sponsor-hall-cut}, and write its excess as
+   \[
+      E_z(\mathcal U)
+      =
+      \sum_{\kappa\in\mathcal U}u_{z,\kappa}
+      -
+      \beta\sum_{i\in N_z(\mathcal U)}b_{z,i}
+      >0 .
+      \tag{SGC1}
+   \]
+   Let \(\mathcal T\) be any finite family of generated compression templates
+   for these retained children.  A template \(T\in\mathcal T\) has a finite
+   child container \(\mathcal C_T\subseteq\mathcal C_z^{\rm tail}\),
+   nonnegative capture weights \(g_{T,\kappa}\le u_{z,\kappa}\), available
+   cardinalities \(\mathcal K_T\), and certified prices
+   \(\overline P_T(K)\).  Assume that for every
+   \(K\in\mathcal K_T\) and \(V\subseteq\mathcal C_T\) with \(|V|=K\),
+   preprocessing can materialize a generated retained column \(A(T,V)\) whose
+   one-time recursive storage price is at most \(\overline P_T(K)\) and whose
+   capture of the cut is at least
+   \[
+      G_T(V;\mathcal U)
+      =
+      \sum_{\kappa\in V\cap\mathcal U}g_{T,\kappa}.
+      \tag{SGC2}
+   \]
+   Order \(\mathcal C_T\) by nonincreasing
+   \(g_{T,\kappa}\mathbf 1_{\{\kappa\in\mathcal U\}}\).  If for some \(T\) and
+   \(K\in\mathcal K_T\) the top prefix \(V_K\) satisfies
+   \[
+      G_T(V_K;\mathcal U)>2\overline P_T(K),
+      \tag{SGC3}
+   \]
+   then \(A(T,V_K)\) is a positive generated column for the sponsor-cut
+   residual: it removes more than twice its retained recursive price from the
+   left side of the cut.  Equivalently, after paying for this column once, the
+   cut excess drops by at least
+   \(G_T(V_K;\mathcal U)-\overline P_T(K)>0\).
+
+   Conversely, if no generated prefix satisfies \((SGC3)\), then every
+   compatible assigned cover \(L=\bigsqcup_jL_j\) of any child subset
+   \(L\subseteq\mathcal U\) by template copies \(T_j\), with
+   \(L_j\subseteq\mathcal C_{T_j}\), \(|L_j|\in\mathcal K_{T_j}\), and
+   \(g_{T_j,\kappa}\ge w_\kappa\) on \(L_j\), obeys
+   \[
+      \sum_{\kappa\in L}w_\kappa
+      \le
+      2\sum_j\overline P_{T_j}(|L_j|).
+      \tag{SGC4}
+   \]
+   In particular, suppose all used templates satisfy the common price envelope
+   \[
+      \overline P_T(K)
+      \le
+      \psi_\star\left(AK^\rho+\zeta K^{1+\rho}\right),
+      \qquad 0<\rho<1,
+      \tag{SGC5}
+   \]
+   and a layer \(L\subseteq\mathcal U\) has weights
+   \(w_\kappa\ge\theta>0\).  If \(L\) is coverable by \(J\) such generated
+   template copies, then every no-generated-column sponsor residual satisfies
+   \[
+      \theta |L|
+      \le
+      2\psi_\star\left(AJ^{1-\rho}|L|^\rho+\zeta |L|^{1+\rho}\right).
+      \tag{SGC6}
+   \]
+   Hence a sponsor cut can survive generated-column search only through the
+   same metric-entropy obstruction as
+   \cref{cor:no-cell-metric-cover-screen}: any dyadic child-price layer whose
+   generated cover violates \((SGC6)\) already contains a verified positive
+   top-prefix column.  The remaining geometric task is therefore to prove that
+   strong sponsor cuts always have such a low-price generated cover, or else
+   that their high-entropy residual is separated by the spherical branch.
+\end{corollary}
+
+\begin{proof}
+   For fixed \(T\) and \(K\), the top \(K\) prefix maximizes
+   \(G_T(V;\mathcal U)\) over all \(K\)-subsets of \(\mathcal C_T\).  If
+   \((SGC3)\) holds, the materialized column captures cut
+   demand \(G_T(V_K;\mathcal U)\) and costs at most \(\overline P_T(K)\).
+   Replacing that captured portion by the generated column changes the cut
+   balance by at most
+   \[
+      -G_T(V_K;\mathcal U)+\overline P_T(K)<0,
+   \]
+   so the column has positive reduced gain against the cut residual.  The
+   stronger factor \(2\) is kept to match the one-sided shared-capture screens.
+
+   If no prefix satisfies \((SGC3)\), then for each assigned part \(L_j\) the
+   top \(|L_j|\) prefix of \(T_j\) has capture at least
+   \(\sum_{\kappa\in L_j}w_\kappa\).  Since \((SGC3)\) fails for that prefix,
+   \[
+      \sum_{\kappa\in L_j}w_\kappa
+      \le
+      2\overline P_{T_j}(|L_j|).
+   \]
+   Summing over \(j\) gives \((SGC4)\).  Under \((SGC5)\), Hölder's inequality
+   gives
+   \[
+      \sum_j |L_j|^\rho\le J^{1-\rho}|L|^\rho,
+      \qquad
+      \sum_j |L_j|^{1+\rho}\le |L|^{1+\rho}.
+   \]
+   If \(w_\kappa\ge\theta\) on \(L\), then
+   \(\theta|L|\le\sum_{\kappa\in L}w_\kappa\).  Substitution in \((SGC4)\)
+   proves \((SGC6)\).  The final sentence is the contrapositive and is the
+   sponsor-cut specialization of
+   \cref{cor:dyadic-shared-capture-top-prefix-compiler} and
+   \cref{cor:no-cell-metric-cover-screen}.
+\end{proof}
+
 \begin{lemma}[Certified star-panel separator]
    \label{lem:certified-star-panel-separator}
    Work in the setting of \cref{lem:star-prefix-weak-type-residual}, and assume
@@ -74166,6 +74282,15 @@ fractional sponsor flow pays every retained Hall-tail child from compatible
 Hall atom mass, or one explicit child set has recursive price larger than
 \(\beta\) times all compatible sponsor mass.  This is the new sharp residual
 object for the Hall-tail storage branch.
+\Cref{cor:sponsor-cut-generated-column-screen} connects that residual to the
+ordinary generated-column machinery: a generated cell, range/list-decoded
+container, additive-code bucket, or seeded cluster is useful exactly when its
+top child-price prefix captures more cut price than its one-time retained
+recursive price.  If no such prefix exists, every dyadic child-price layer in
+the sponsor cut obeys the same metric-entropy lower bound as the no-cell
+residual.  Thus the remaining geometric proof target is no longer another Hall
+accounting statement; it is a low-price generated cover, or a spherical
+separator, for strong sponsor-cut layers.
 \Cref{cor:dyadic-distinct-storage-bucket-net} rewrites that target as a dyadic
 large-child counting problem: for every recursive price scale, bound the number
 of distinct canonical bucket nets whose shared child index has that price.
