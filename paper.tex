@@ -39086,6 +39086,90 @@ query mass rather than producing a cost-effective dense filter.
    \((SEF1)\) proves \((SEF9)\).
 \end{proof}
 
+\begin{corollary}[Generated sponsor-star envelope]
+   \label{cor:generated-sponsor-star-envelope}
+   Work in the setting of \cref{cor:sponsor-profile-star-signal}, and assume
+   that no generated top-prefix column is positive for the underlying sponsor
+   cut \(\mathcal U\).  Thus \(E\subseteq\mathcal U\).  If \(W_{\rm hi}=0\),
+   interpret the sums below as empty.  Otherwise, for every nonempty dyadic
+   sponsor star \(V_{\kappa,t}\) in \((SEF5)\), suppose preprocessing has a
+   generated template copy \(T_{\kappa,t}\) such that
+   \[
+      V_{\kappa,t}\subseteq\mathcal C_{T_{\kappa,t}},
+      \qquad
+      g_{T_{\kappa,t},\kappa'}\ge\theta
+      \quad(\kappa'\in V_{\kappa,t}),
+      \tag{GSE1}
+   \]
+   the cardinality \(h_{\kappa,t}=|V_{\kappa,t}|\) is available, and the
+   certified one-time price is \(\overline P_{\kappa,t}(h_{\kappa,t})\).
+   Then every such star satisfies
+   \[
+      \theta h_{\kappa,t}
+      \le
+      2\overline P_{\kappa,t}(h_{\kappa,t}),
+      \tag{GSE2}
+   \]
+   and the high-correlation profile mass obeys
+   \[
+      W_{\rm hi}
+      \le
+      \frac4\theta
+      \sum_{\kappa\in E}\sum_t
+      t\,\overline P_{\kappa,t}(h_{\kappa,t}).
+      \tag{GSE3}
+   \]
+   In particular, if all used sponsor-star templates satisfy the common
+   envelope
+   \[
+      \overline P_{\kappa,t}(h)
+      \le
+      \psi_\star\left(Ah^\rho+\zeta h^{1+\rho}\right),
+      \qquad 0<\rho<1,
+      \tag{GSE4}
+   \]
+   then every no-column residual satisfies
+   \[
+      W_{\rm hi}
+      \le
+      \frac{4\psi_\star}{\theta}
+      \sum_{\kappa\in E}\sum_t
+      t\left(Ah_{\kappa,t}^{\rho}
+      +\zeta h_{\kappa,t}^{1+\rho}\right).
+      \tag{GSE5}
+   \]
+   Equivalently, violation of \((GSE3)\), or of \((GSE5)\) under
+   \((GSE4)\), exposes a positive generated top-prefix column.  Thus a
+   high-correlation sponsor profile is either paid by the integrated generated
+   price of its dyadic stars, or one of those stars is materialized immediately
+   as a sponsor-cut column.
+\end{corollary}
+
+\begin{proof}
+   The case \(W_{\rm hi}=0\) is immediate, so assume \(W_{\rm hi}>0\).  Fix a
+   nonempty star \(V_{\kappa,t}\) and write \(h=h_{\kappa,t}\).  If
+   \(\theta h>2\overline P_{\kappa,t}(h)\), then the top \(h\)-prefix of
+   \(T_{\kappa,t}\), ordered by
+   \(g_{T_{\kappa,t},\cdot}\mathbf 1_{\{\cdot\in\mathcal U\}}\), has
+   sponsor-cut capture at least \(\theta h\), because
+   \(V_{\kappa,t}\subseteq E\subseteq\mathcal U\) and \((GSE1)\) holds on
+   \(V_{\kappa,t}\).  This violates
+   \((SGC3)\), so
+   \cref{cor:sponsor-cut-generated-column-screen} would produce a positive
+   generated column.  Since no such column is positive, \((GSE2)\) holds.
+
+   The layer-cake estimate in the proof of
+   \cref{cor:sponsor-profile-star-signal} gives
+   \[
+      \frac12W_{\rm hi}
+      \le
+      \sum_{\kappa\in E}\sum_t t\,h_{\kappa,t}.
+   \]
+   Multiplying \((GSE2)\) by \(t/\theta\) and summing over the dyadic stars
+   gives \((GSE3)\).  Substituting \((GSE4)\) gives \((GSE5)\), and the final
+   statement is the contrapositive.
+\end{proof}
+
 \begin{lemma}[Certified star-panel separator]
    \label{lem:certified-star-panel-separator}
    Work in the setting of \cref{lem:star-prefix-weak-type-residual}, and assume
@@ -74860,7 +74944,11 @@ any weighted profile not paid by the low-correlation energy bound contains a
 dyadic high-correlation sponsor star.  The remaining sponsor obstruction is
 therefore no longer an unnamed high-entropy layer; it is a finite family of
 star superlevels to be certified by generated-column, dense-star, or
-shared-prefix verifiers.
+\Cref{cor:generated-sponsor-star-envelope} feeds those superlevels back into
+the sponsor-cut column generator: if a star's layer-price mass beats its
+one-time generated price, it fires immediately; if none fires, the whole
+high-correlation profile is bounded by the integrated generated-price envelope
+\((GSE3)\)--\((GSE5)\).
 \Cref{cor:dyadic-distinct-storage-bucket-net} rewrites that target as a dyadic
 large-child counting problem: for every recursive price scale, bound the number
 of distinct canonical bucket nets whose shared child index has that price.
