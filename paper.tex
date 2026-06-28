@@ -145,6 +145,16 @@ What is not yet a theorem is the global work bound for all cap-discovery stoppin
 
 We also record a fractional certified-cover formulation because it is the cleanest way to reason about dense overlap.  Dense balls, score caps, facility buckets, additive-quantization buckets, and ordinary spherical filters are all columns in one near-pair LP.  A failed cover gives demand prices, query-load prices, and a storage price; the remaining theorem is a weighted dense/spherical separator saying that every such dual obstruction either exposes a cheaper radius-contracting child or is pseudo-random enough for a large-range spherical filter.  This makes dense merging a reduced-gain separation problem rather than a hard recursive decomposition.
 
+For the LP/SA structured-panel route we now freeze the target at the finite
+score-band condition \((LNN2)\), with the chart-incidence tail
+\((LNP5)\)--\((LNZ4)\) as its diagonal random-code diagnostic.  The uniform
+full-price version is not a theorem to chase: the singleton chart obstruction
+forces the cost to scale with \(\max_j e^{\lambda(M-W(c_j))}\).  Thus the
+remaining work is to prove a localized residual budget for a concrete low-rate
+code or to turn that obstruction into a formal impossibility result.  A small
+numerical stress test in \texttt{impl/chart\_tail\_stress.py} checks exactly
+this frozen tail target before further reformulation.
+
 Finally, we record posterior formulations because they are useful routes to more general certified child hierarchies. The finite-channel version is a coarse explicit-enumeration special case; the structured version is the sharper target suggested by the negative-moment accounting. The older cohort route still has a route-level cohort-or-leaf coupling condition, while the almost-total cap-thinning route isolates a narrower mixed-operator condition.
 
 \section{Preliminaries}
@@ -13388,6 +13398,97 @@ partition ignores the bias coordinates that certify the list size.
    from the definition of the uniform budget, and \((LOA5)\) follows by taking
    \(B=\chi_u\Xi_u\).
 \end{proof}
+
+\begin{corollary}[Uniform full-price chart-shadow barrier]
+   \label{cor:uniform-full-price-chart-shadow-barrier}
+   Continue with the notation of
+   \cref{cor:singleton-chart-shadow-obstruction}, and use the full
+   internal-gap prices
+   \[
+      \Omega_{u,j}
+      =
+      \exp\!\bigl(\lambda(M(u)-W(c_j))\bigr)+\Xi_u .
+      \tag{LOA7}
+   \]
+   For the uniform residual budget \(\mu^\nu_{i,a}=\nu_i\), any scalar
+   chart-shadow certificate
+   \[
+      \mathfrak L_{u,\tau}(\mu^\nu,\Omega_u)\le \chi_u\Xi_u
+      \qquad(\tau\in[q]^b)
+      \tag{LOA8}
+   \]
+   must satisfy
+   \[
+      \chi_u\Xi_u
+      \ge
+      (q-1)V_\nu
+      \left(
+         \exp\!\bigl(\lambda(M(u)-\min_jW(c_j))\bigr)+\Xi_u
+      \right).
+      \tag{LOA9}
+   \]
+   Hence a uniform-budget proof of the full chart-incidence tail is impossible
+   at polylogarithmic cost unless the internal score range obeys
+   \[
+      \lambda(M(u)-\min_jW(c_j))
+      \le
+      O\!\left(\log\frac{\chi_u\Xi_u}{(q-1)V_\nu}\right).
+      \tag{LOA10}
+   \]
+
+   Thus the frozen LP/SA target is not the uniform diagonal model
+   \((LNX4)\)--\((LNZ4)\) with the full prices.  The target is
+   \((LNN2)\) together with a residual budget localized around high-price
+   codewords, as in
+   \cref{cor:localized-residual-posterior-mismatch,cor:localized-residual-feasibility-dual,cor:source-localized-residual-lp}.
+   Equivalently, one may first prove a separate near-leader certificate that
+   removes the far internal-gap tail and then apply the uniform chart-shadow
+   bound only to the truncated price universe.
+\end{corollary}
+
+\begin{proof}
+   Apply \((LOA5)\) with \(B=\chi_u\Xi_u\) and
+   \(\omega=\Omega_u\).  Since the maximum price is attained by a lowest-scoring
+   true codeword,
+   \[
+      \max_j\Omega_{u,j}
+      =
+      \exp\!\bigl(\lambda(M(u)-\min_jW(c_j))\bigr)+\Xi_u ,
+   \]
+   which gives \((LOA9)\).  Rearranging gives the range condition
+   \((LOA10)\).  The final statement is the contrapositive interpretation:
+   when the full internal-gap price range is larger than the allowed
+   polylogarithmic budget, the singleton chart already violates the uniform
+   residual certificate, so any successful proof must localize the residual
+   budget or truncate and pay the far score tail separately.
+\end{proof}
+
+\begin{remark}[Frozen target and numerical checkpoint]
+   \label{rem:frozen-score-band-target}
+   We stop the LP/SA route at the finite score-band condition \((LNN2)\) and
+   its chart-incidence lower-tail interface
+   \((LNP5)\)--\((LNZ4)\).  Later normal forms are useful only as
+   implementation views of the same obligation; they should not be treated as
+   progress unless they either prove \((LNN2)\) for a concrete low-rate panel or
+   expose a barrier like
+   \cref{cor:uniform-full-price-chart-shadow-barrier}.
+
+   The diagnostic experiment is correspondingly simple.  Generate a balanced
+   \(q\)-ary panel, draw independent centered Gaussian symbol scores, set
+   \(\lambda\simeq\sqrt{2\log N/b}\), form
+   \(\Omega_j=e^{\lambda(M-W_j)}\), and measure the weighted positive-overlap
+   tail in \((LNZ4)\), separating diagonal and off-diagonal pairs.  The script
+   \texttt{impl/chart\_tail\_stress.py} implements exactly this check.  On
+   balanced random panels with \(N=512\), \(b=32\), \(q=8\), eight seeds gave
+   mean \(\max_j\Omega_j\approx5.8\cdot10^8\) and diagonal share
+   \(0.99999\) for the full tail, while the off-diagonal normalized tail stayed
+   near a constant.  Clipping prices at \((\log N)^3\) kept the off-diagonal
+   tail essentially unchanged.  This supports the barrier diagnosis: the first
+   obstruction is the singleton/diagonal full-price term, not an unexplained
+   random-code pair tail.  The next proof attempt should therefore be localized
+   residual matching around high-price posteriors, or a theorem showing that
+   such matching is impossible for the chosen code family.
+\end{remark}
 
 \begin{corollary}[Posterior mismatch form for localized residuals]
    \label{cor:localized-residual-posterior-mismatch}
