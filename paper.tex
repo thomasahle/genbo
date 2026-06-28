@@ -11742,6 +11742,163 @@ partition ignores the bias coordinates that certify the list size.
    and then taking the supremum over \(z\in P_u\) proves \((LNI5)\).
 \end{proof}
 
+\begin{corollary}[Direct coefficient projection certificate]
+   \label{cor:direct-coefficient-projection-certificate}
+   Work in the branch-and-bound setting of
+   \cref{cor:conditional-tilted-excess-certificate}.  At a node \(u\), enumerate
+   \(C_u=\{c_1,\ldots,c_N\}\), let \(A_u\) and \(G_u=A_u^\top A_u\) be as in
+   \cref{cor:gram-projection-certificate}, and put \(W_j=W(c_j)\),
+   \(M=M(u)=\max_jW_j\).  For each \(z\in P_u\), suppose we have selected a
+   score-span coefficient vector \(b_u(z)\in\R^N\) satisfying
+   \[
+      A_ub_u(z)=\Pi_u z
+      \qquad
+      \text{equivalently}\qquad
+      G_ub_u(z)=A_u^\top z,
+      \tag{LNJ1}
+   \]
+   and define
+   \[
+      \kappa_u(z)=\sum_{j=1}^Nb_u(z)_j .
+      \tag{LNJ2}
+   \]
+   Let
+   \[
+      \omega_u^{P,\perp}
+      =
+      \E_g\sup_{z\in P_u}\ip{g}{\Pi_u^\perp z},
+      \qquad
+      r_u^{P,\perp}
+      =
+      \sup_{z\in P_u}\|\Pi_u^\perp z\|_2 ,
+      \tag{LNJ3}
+   \]
+   where \(g\sim N(0,I_{bq})\).  Suppose that, almost surely after conditioning
+   on the true codeword scores in \(u\), every \(z\in P_u\) satisfies
+   \[
+      \sum_{j=1}^Nb_u(z)_j^-\le1,
+      \qquad
+      M(\kappa_u(z)-1)\le R_u,
+      \tag{LNJ4}
+   \]
+   and
+   \[
+      \sum_{j=1}^N
+      b_u(z)_j^-\exp\!\bigl(\lambda(M-W_j)\bigr)
+      \le \Xi_u .
+      \tag{LNJ5}
+   \]
+   If
+   \[
+      e^{\lambda R_u}(1+\Xi_u)
+      \exp\!\left(
+         \lambda\omega_u^{P,\perp}
+         +\frac{\lambda^2(r_u^{P,\perp})^2}{2}
+      \right)
+      \le A_\lambda ,
+      \tag{LNJ6}
+   \]
+   then the conditional tilted-excess bound \((LPT2)\) holds with \(A_\lambda\).
+   Hence, at the Gaussian tilt \(\lambda=T/b\), a polylogarithmic bound in
+   \((LNJ6)\) gives the LP/SA threshold reporter polylogarithmic expected
+   overhead.
+
+   This certificate avoids choosing an anchor or convex witness.  A true
+   codeword \(z=\iota(c_k)\) may choose \(b_u(z)=e_k\), and a convex combination
+   of true codewords may choose the same convex coefficients.  The only
+   projection obstruction is therefore negative score-span coefficient mass of
+   genuinely fractional pseudocodewords, weighted by the internal score gaps
+   below the local maximum.  The canonical Moore--Penrose choice
+   \(G_u^+A_u^\top z\) is allowed when it has the desired tail, but it is not
+   forced in linearly dependent subcodes.
+\end{corollary}
+
+\begin{proof}
+   Let \(L_u=\operatorname{span}\{\iota(c_j):j\in[N]\}\).  Conditioning on
+   \(\mathcal G_u=\sigma(W_j:j\in[N])\), the projection of the Gaussian score
+   table onto \(L_u\) is \(A_uG_u^+W_u\), where \(W_u=(W_1,\ldots,W_N)\), and the
+   orthogonal residual remains an independent standard Gaussian vector on
+   \(L_u^\perp\).  For \(z\in P_u\),
+   \[
+      \ip{\Pi_u w}{z}
+      =
+      \ip{w}{A_ub_u(z)}
+      =
+      \sum_{j=1}^Nb_u(z)_jW_j .
+      \tag{LNJ7}
+   \]
+   Therefore
+   \[
+   \begin{aligned}
+      \ip{\Pi_u w}{z}-M
+      &=
+      M(\kappa_u(z)-1)
+      +
+      \sum_{j=1}^Nb_u(z)_j(W_j-M)\\
+      &\le
+      R_u+
+      \sum_{j=1}^Nb_u(z)_j^-(M-W_j).
+   \end{aligned}
+      \tag{LNJ8}
+   \]
+   The inequality uses \(W_j\le M\), so positive coefficients cannot increase the
+   second term, and then \((LNJ4)\).
+
+   Put \(g_j=M-W_j\ge0\) and \(\beta(z)=\sum_jb_u(z)_j^-\le1\).  As in
+   \((LMQ7)\), convexity of the exponential and the unused mass \(1-\beta(z)\)
+   at gap zero give
+   \[
+      \exp\!\left(
+         \lambda\sum_jb_u(z)_j^-g_j
+      \right)
+      \le
+      1+\sum_jb_u(z)_j^-e^{\lambda g_j}
+      \le
+      1+\Xi_u .
+      \tag{LNJ9}
+   \]
+   Combining \((LNJ8)\)--\((LNJ9)\),
+   \[
+      \sup_{z\in P_u}
+      \exp\!\left(\lambda(\ip{\Pi_u w}{z}-M)\right)
+      \le e^{\lambda R_u}(1+\Xi_u).
+      \tag{LNJ10}
+   \]
+
+   Now
+   \[
+      U(u)-M
+      =
+      \sup_{z\in P_u}\bigl(\ip{\Pi_u w}{z}-M+\ip{\Pi_u^\perp w}{z}\bigr)
+      \le
+      B_u+Y_u^\perp,
+      \tag{LNJ11}
+   \]
+   where \(e^{\lambda B_u}\le e^{\lambda R_u}(1+\Xi_u)\) by \((LNJ10)\), and
+   \[
+      Y_u^\perp=\sup_{z\in P_u}\ip{g}{\Pi_u^\perp z},
+      \qquad g\sim N(0,I_{bq}),
+      \tag{LNJ12}
+   \]
+   is independent of \(\mathcal G_u\), has expectation \(\omega_u^{P,\perp}\),
+   and is \(r_u^{P,\perp}\)-Lipschitz.  The Gaussian moment bound gives
+   \[
+      \E\exp(\lambda Y_u^\perp)
+      \le
+      \exp\!\left(
+         \lambda\omega_u^{P,\perp}
+         +\frac{\lambda^2(r_u^{P,\perp})^2}{2}
+      \right).
+      \tag{LNJ13}
+   \]
+   Multiplying this with \((LNJ10)\) proves
+   \[
+      \E[\exp(\lambda(U(u)-M(u)))\mid\mathcal G_u]\le A_\lambda,
+   \]
+   which is \((LPT2)\) with \(X_u=U(u)-M(u)\).  The overhead conclusion is
+   \cref{cor:conditional-tilted-excess-certificate}.
+\end{proof}
+
 \begin{corollary}[Anchor-fiber LP/SA certificate compiler]
    \label{cor:anchor-fiber-lp-sa-compiler}
    Continue with the notation of
@@ -12021,6 +12178,18 @@ partition ignores the bias coordinates that certify the list size.
    \(M(u)-W(c_j)\).  Thus the low-rate code theorem should control
    pseudocodeword coefficients only against score differences inside the same
    subproblem, rather than against the absolute threshold deficit.
+
+   \Cref{cor:direct-coefficient-projection-certificate} gives a cleaner
+   anchor-free variant of the same idea.  Instead of comparing a relaxation point
+   to a leader or to an explicit convex witness, represent its projection onto
+   the true-codeword span by coefficients \(b\) with \(A_ub=\Pi_u z\).  True
+   codewords and true convex combinations can choose nonnegative coefficients,
+   so they have no negative tail.  The sufficient LP/SA theorem becomes: every
+   relaxation point admits a score-span coefficient representation whose
+   negative mass has polylogarithmic Boltzmann tail under the internal gaps
+   \(M(u)-W(c_j)\), while the orthogonal width of \(P_u\) remains
+   \(O(\sqrt{b\log q})\).  This avoids both the score-leader overcharge and the
+   need to materialize a convex-hull witness.
 
    \Cref{cor:leader-shift-near-leader-certificate} gives the clean terminal
    version of this idea when scalar leakage is killed exactly, or otherwise
