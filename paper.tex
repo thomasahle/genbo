@@ -65313,6 +65313,121 @@ certificate is the verified positive-gain column and the finite LP it augments.
    \((DRN4)\).
 \end{proof}
 
+\begin{corollary}[Capped atom-capture support screen]
+   \label{cor:capped-atom-capture-support-screen}
+   Work in the setting of
+   \cref{cor:downward-residual-lp-normal-form}.  Fix a downward residual dual
+   \(u^z\) and a certified template \(B\) whose top-prefix records belong to the
+   admissible shared-panel universe.  For a support \(S\subseteq W_B\), define
+   the atom load and capped atom-capture value
+   \[
+      H_{B,S,a}=\sum_{p\in S}h_{B,p,a},
+      \qquad
+      \mathcal C_B^{u^z}(S)
+      =
+      \sum_a u_a^z\min\{b_a,H_{B,S,a}\}.
+      \tag{CAS1}
+   \]
+   Suppose at least one of \(A_B,\zeta_B\) is nonzero, so that
+   \(K_B^\natural\) and \(\Theta_B^{\rm net}\) are defined.  If preprocessing
+   certifies a support \(S\) with
+   \[
+      \mathcal C_B^{u^z}(S)>
+      \bigl(|S|+2K_B^\natural\bigr)\Theta_B^{\rm net},
+      \tag{CAS2}
+   \]
+   then \(B\) contains a positive shared top-prefix column.
+
+   Conversely, if no top prefix of \(B\) has positive reduced cost against
+   \(u^z\), then every support \(S\subseteq W_B\) satisfies
+   \[
+      \mathcal C_B^{u^z}(S)
+      \le
+      \bigl(|S|+2K_B^\natural\bigr)\Theta_B^{\rm net}.
+      \tag{CAS3}
+   \]
+
+   The set function \(S\mapsto\mathcal C_B^{u^z}(S)\) is monotone submodular.
+   Thus a facility, range-reporting, additive-quantization, lattice, or
+   list-decoding proposal does not have to solve the opened-support flow LP
+   directly: it may return any support with a one-sided lower certificate for
+   the capped atom-capture surplus
+   \(\mathcal C_B^{u^z}(S)-|S|\Theta_B^{\rm net}\).  A positive certificate is
+   immediately hardened to one deterministic shared top-prefix column; a
+   no-prefix residual obeys the explicit capped-coverage inequality \((CAS3)\)
+   for every materializable support.
+\end{corollary}
+
+\begin{proof}
+   Let \(I^+=\{a:u_a^z>0\}\), and form the fractional opened-support LP for
+   \(B\) with right support contained in \(S\), normalized source capacities
+   \(\mu_a/C=b_au_a^z\), degrees \(d_B^{u^z}(p)\), and adjacency
+   \[
+      E_S=\{(a,p):a\in I^+,\ p\in S,\ h_{B,p,a}>0\}.
+   \]
+   For each atom put
+   \[
+      \lambda_a=
+      \begin{cases}
+      \min\{1,b_a/H_{B,S,a}\}, & H_{B,S,a}>0,\\
+      0, & H_{B,S,a}=0 .
+      \end{cases}
+      \tag{CAS4}
+   \]
+   Define
+   \[
+      x_{a,p}=\lambda_a h_{B,p,a}u_a^z
+      \quad(a\in I^+,\ p\in S),
+      \qquad
+      z_p=\mathbf 1_{\{p\in S\}} .
+      \tag{CAS5}
+   \]
+   Then
+   \[
+      \sum_{p\in S}x_{a,p}
+      =
+      u_a^z\min\{H_{B,S,a},b_a\}
+      \le b_au_a^z,
+      \tag{CAS6}
+   \]
+   so the source constraints of \((FOF1)\) hold.  Also
+   \[
+      \sum_a x_{a,p}
+      \le
+      \sum_a h_{B,p,a}u_a^z
+      =
+      d_B^{u^z}(p)
+      =
+      d_B^{u^z}(p)z_p
+      \qquad(p\in S),
+      \tag{CAS7}
+   \]
+   and the point constraints hold, with zero flow outside \(S\).  The feasible
+   objective value is
+   \[
+      \sum_{a,p}x_{a,p}-\Theta_B^{\rm net}|S|
+      =
+      \mathcal C_B^{u^z}(S)-\Theta_B^{\rm net}|S|.
+      \tag{CAS8}
+   \]
+   If \((CAS2)\) holds, this value is larger than
+   \(2K_B^\natural\Theta_B^{\rm net}\), so
+   \cref{cor:fractional-opened-support-flow-lp} exposes a positive shared
+   top-prefix column.
+
+   Conversely, if no top prefix of \(B\) is positive, then
+   \cref{cor:fractional-opened-support-flow-lp} gives
+   \(\widehat{\mathfrak S}_{B,E}(C)\le2K_B^\natural\Theta_B^{\rm net}\) for
+   every source system.  Applying this to the feasible solution above yields
+   \((CAS3)\).
+
+   Finally, \(H_{B,S,a}\) is a nonnegative modular function of \(S\), and the
+   truncation \(t\mapsto\min\{b_a,t\}\) is nondecreasing concave on
+   \(\mathbb R_{\ge0}\).  A nondecreasing concave function applied to a
+   nonnegative modular function is submodular; nonnegative sums preserve
+   monotonicity and submodularity.
+\end{proof}
+
 \begin{corollary}[LP-guided capped-flow exhaustion endpoint]
    \label{cor:lp-guided-capped-flow-exhaustion-endpoint}
    Work in the setting of
@@ -65355,6 +65470,9 @@ certificate is the verified positive-gain column and the finite LP it augments.
    against the downward residual dual
    \(u_a^{(t-1)}=u_az_a^{(t-1)}\); the failed transcript only determines the
    cap-constrained optimizer \(z^{(t-1)}\).
+   By \cref{cor:capped-atom-capture-support-screen}, one sufficient positive
+   branch is a certified support whose capped atom-capture value beats the
+   affine clipped support price.
    Put
    \[
       K_t=K_{B_t}^\natural,
@@ -65389,8 +65507,9 @@ certificate is the verified positive-gain column and the finite LP it augments.
    separator: every high-value no-prefix obstruction, when restricted to the
    current capped residual-LP optimizer, equivalently every high-value downward
    residual dual \(u^z\), must either produce a half-threshold opened-support
-   screen or force the capped residual LP below half the exposed obstruction
-   value before half that value has been spent on failed screens.
+   screen---for instance by a capped atom-capture support surplus---or force the
+   capped residual LP below half the exposed obstruction value before half that
+   value has been spent on failed screens.
 \end{corollary}
 
 \begin{proof}
@@ -81305,6 +81424,13 @@ paid source mass cannot reappear.
 \Cref{cor:downward-residual-lp-normal-form} removes transcript history from the
 geometric side of that loop: the current optimizer \(z\) simply forms a smaller
 no-prefix dual \(u^z\), and separator search is against this downward residual.
+\Cref{cor:capped-atom-capture-support-screen} gives the preferred support-level
+certificate for such a separator: a proposed container only has to lower-certify
+capped atom capture
+\(\sum_a u_a^z\min\{b_a,\sum_{p\in S}h_{B,p,a}\}\) above the affine clipped
+support price, a monotone-submodular coverage objective that facility,
+range-reporting, AQ, lattice, or list-decoding proposal routines can try to
+maximize in build time.
 \Cref{cor:lp-guided-capped-flow-exhaustion-endpoint} feeds this back into the
 ANN endpoint: it is enough to prove that the LP-guided loop either finds a
 half-threshold opened-support screen or drives the capped residual LP below
