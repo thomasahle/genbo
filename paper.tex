@@ -41605,6 +41605,141 @@ query mass rather than producing a cost-effective dense filter.
    generated top prefix.  The contrapositive is the claimed packing witness.
 \end{proof}
 
+\begin{corollary}[Flattened dyadic entropy-energy handoff]
+   \label{cor:flattened-dyadic-entropy-energy-handoff}
+   Work with a separated witness \(E\subseteq L\) supplied by
+   \cref{cor:flattened-dyadic-packing-witness}.  Suppose every
+   \(a\in E\) has a representative \(x_a\in\mathbb S^{d-1}\).  Let \(U_G\) be a
+   spherical, Gaussian-cap, code, range/list-decoded, or other certified bucket
+   drawn from a law \(G\), and partition the ordered distinct pairs
+   \(E_{\ne}^2\) into finitely many profiles \(\Pi_E\).  Assume each profile
+   \(\pi\in\Pi_E\) has a certified pair-intersection energy
+   \[
+      \Pr_G[x_a,x_{a'}\in U_G]\le e^{-I_\pi}
+      \qquad((a,a')\in\pi).
+      \tag{FEE1}
+   \]
+   Put
+   \[
+      X_E(G)=\sum_{a\in E}\mathbf 1\{x_a\in U_G\}.
+      \tag{FEE2}
+   \]
+   Then
+   \[
+      \E_GX_E(G)^2
+      \le
+      \sum_{a\in E}\Pr_G[x_a\in U_G]
+      +
+      \sum_{\pi\in\Pi_E}|\pi|e^{-I_\pi}.
+      \tag{FEE3}
+   \]
+   In particular, if
+   \[
+      I_\pi\ge\log|\pi|+\Lambda
+      \qquad(\pi\in\Pi_E),
+      \tag{FEE4}
+   \]
+   then the distinct-pair contribution of the flattened packing is at most
+   \[
+      |\Pi_E|e^{-\Lambda}.
+      \tag{FEE5}
+   \]
+
+   Finally, fix one profile \(\pi\subseteq E_{\ne}^2\), assign nonnegative
+   weights \(\omega_{a,a'}\) to its ordered pairs, and split
+   \(\pi=\pi_{\rm lo}\dot\cup\pi_{\rm hi}\).  Suppose
+   \[
+      \sum_{(a,a')\in\pi_{\rm lo}}\omega_{a,a'}\le B_{\rm lo},
+      \tag{FEE6}
+   \]
+   and every high edge has representative correlation at least
+   \[
+      \ip{x_a}{x_{a'}}\ge\underline\theta
+      \qquad((a,a')\in\pi_{\rm hi})
+      \tag{FEE7}
+   \]
+   for some \(-1<\underline\theta<1\).  Define
+   \[
+      M_a(a')=\omega_{a,a'}\mathbf 1_{\{(a,a')\in\pi_{\rm hi}\}},
+      \qquad
+      W_{\rm hi}=\sum_{a,a'\in E}M_a(a').
+      \tag{FEE8}
+   \]
+   If \(W_{\rm hi}=0\), set \(J_\omega=1\).  Otherwise suppose the positive
+   values of \(M_a(a')\) lie in a certified dyadic range
+   \([\omega_{\min},\omega_{\max}]\), and put
+   \[
+      J_\omega=
+      1+\left\lceil\log_2\frac{\omega_{\max}}{\omega_{\min}}\right\rceil .
+      \tag{FEE9}
+   \]
+   For dyadic levels \(t=\omega_{\min}2^j\), define
+   \[
+      V_{a,t}=\{a'\in E:M_a(a')\ge t\}.
+      \tag{FEE10}
+   \]
+   Then every nonempty \(V_{a,t}\) has representatives in the cap ball
+   \[
+      x_{a'}\in B\!\left(x_a,\sqrt{2(1-\underline\theta)}\right),
+      \tag{FEE11}
+   \]
+   and for every \(\Lambda_\star>0\), either
+   \[
+      W_{\rm hi}\le2|E|J_\omega\Lambda_\star,
+      \tag{FEE12}
+   \]
+   or some dyadic high-correlation star satisfies
+   \[
+      t|V_{a,t}|\ge\Lambda_\star .
+      \tag{FEE13}
+   \]
+   Consequently, if no exposed star has scale at least \(\Lambda_\star\), then
+   the whole profile weight is bounded by
+   \[
+      \sum_{(a,a')\in\pi}\omega_{a,a'}
+      \le
+      B_{\rm lo}+2|E|J_\omega\Lambda_\star .
+      \tag{FEE14}
+   \]
+
+   Thus a flattened no-prefix residual has reached the common terminal proof
+   object: low generated cover closes it, entropy-energy pays the separated
+   packing, or one finite high-correlation star is exposed for the generated
+   prefix and smaller-radius dense verifiers.
+\end{corollary}
+
+\begin{proof}
+   Expanding the second moment gives
+   \[
+      \E_GX_E(G)^2
+      =
+      \sum_{a\in E}\Pr_G[x_a\in U_G]
+      +
+      \sum_{\substack{a,a'\in E\\a\ne a'}}
+         \Pr_G[x_a,x_{a'}\in U_G].
+   \]
+   Summing \((FEE1)\) over the profile partition proves \((FEE3)\).  Under
+   \((FEE4)\), each profile contributes at most \(e^{-\Lambda}\), giving
+   \((FEE5)\).
+
+   For the star statement, if \(a'\in V_{a,t}\), then \(M_a(a')>0\), so
+   \((a,a')\in\pi_{\rm hi}\).  By \((FEE7)\),
+   \[
+      \|x_a-x_{a'}\|^2=2-2\ip{x_a}{x_{a'}}\le2(1-\underline\theta),
+   \]
+   proving \((FEE11)\).
+
+   If \(W_{\rm hi}=0\), then \((FEE12)\) and \((FEE14)\) are immediate.  Assume
+   \(W_{\rm hi}>0\).  The dyadic layer-cake estimate gives
+   \[
+      W_{\rm hi}\le2\sum_{a\in E}\sum_j t_j|V_{a,t_j}|,
+      \qquad t_j=\omega_{\min}2^j.
+   \]
+   If every dyadic star has \(t_j|V_{a,t_j}|<\Lambda_\star\), then
+   \(W_{\rm hi}\le2|E|J_\omega\Lambda_\star\).  Otherwise \((FEE13)\) holds.
+   Adding the low contribution \((FEE6)\) gives \((FEE14)\).
+\end{proof}
+
 \begin{corollary}[Flattened panel-separator endpoint]
    \label{cor:flattened-panel-separator-endpoint}
    Work at a localized resident node with full certified panel universe
@@ -83412,6 +83547,10 @@ cover-number/list-size lower bound \((FDY7)\)--\((FDY9)\).
 \Cref{cor:flattened-dyadic-packing-witness} gives the corresponding metric
 form: if generated-metric balls are materializable, a surviving layer contains a
 separated packing at that same entropy scale.
+\Cref{cor:flattened-dyadic-entropy-energy-handoff} feeds that packing into the
+standard second-moment screen: either the spherical/list-decoding energy pays
+the packing or an explicit high-correlation star is exposed for the dense
+verifiers.
 \Cref{cor:flattened-panel-separator-endpoint} packages this as the current
 conditional endpoint for the overload storage branch: every flattened closure
 must either be paid by its LP value or admit one such lower-capture panel; under
@@ -83624,6 +83763,9 @@ prefix is already present.
 a separated packing witness whenever the proposal geometry supplies
 materializable generated balls, which is the input expected by the
 spherical/list-decoding energy screens.
+\Cref{cor:flattened-dyadic-entropy-energy-handoff} records the exact endpoint
+of that handoff: low cover, entropy-energy payment, or one returned
+high-correlation star.
 \Cref{cor:flattened-panel-separator-endpoint} turns this interface into the
 nodewise endpoint: if every flattened returned panel is either LP-paid or
 panel-separated, then the remaining child-panel residuals satisfy the positive
