@@ -40050,6 +40050,173 @@ query mass rather than producing a cost-effective dense filter.
    equality of the restricted and full optima.
 \end{proof}
 
+\begin{corollary}[One-sided dyadic shared-capture oracle]
+   \label{cor:one-sided-dyadic-shared-capture-oracle}
+   Work in the setting of \cref{cor:finite-dyadic-shared-capture-lp}.  Let
+   \(E\subseteq\mathcal R_k\) be the active record set, and let \(u^E\) be an
+   optimal dual for the restriction of \((DLP2)\) to \(E\).  A one-sided
+   dyadic shared-capture oracle takes \(u^E\) and either returns an inactive
+   record \(c\in\mathcal R_k\setminus E\) with a verifiable certificate
+   \[
+      \underline H_c>2\overline P_c,
+      \qquad
+      0\le \underline H_c
+      \le
+      \sum_{b\in\mathcal B_k}h_{c,b}u_b^E,
+      \qquad
+      P_c\le\overline P_c,
+      \tag{DSO1}
+   \]
+   or correctly certifies that every inactive record satisfies
+   \[
+      \sum_{b\in\mathcal B_k}h_{c,b}u_b^E\le2P_c .
+      \tag{DSO2}
+   \]
+   Then the oracle is complete for the dyadic shared-capture LP: every
+   successful output is a valid improving column, and a no-record certificate
+   proves that the restricted optimum is the full optimum \(\Phi_k^{\rm sh}\).
+
+   The positive branch may be implemented in uncharged Las Vegas build time.
+   If a randomized proposal routine returns a verified certificate satisfying
+   \((DSO1)\) with probability at least \(p_E>0\) whenever some inactive record
+   violates \((DLP7)\), repeat until a certificate is accepted; unverifiable
+   proposals are discarded and never enter the retained structure.
+\end{corollary}
+
+\begin{proof}
+   A certificate \((DSO1)\) implies
+   \[
+      \sum_bh_{c,b}u_b^E
+      \ge
+      \underline H_c
+      >
+      2\overline P_c
+      \ge
+      2P_c .
+   \]
+   Hence \((DLP7)\) holds, so
+   \cref{cor:finite-dyadic-shared-capture-lp} may add \(c\) as an improving
+   column.  If the oracle certifies \((DSO2)\) for all inactive records, then no
+   inactive record satisfies \((DLP7)\), and the same corollary proves full
+   optimality of the restricted LP.  For the Las Vegas branch, independent
+   repetitions fail \(B\) times with probability at most \((1-p_E)^B\), and only
+   verified records are retained.
+\end{proof}
+
+\begin{corollary}[Dyadic shared-capture top-prefix compiler]
+   \label{cor:dyadic-shared-capture-top-prefix-compiler}
+   Work in the setting of
+   \cref{cor:one-sided-dyadic-shared-capture-oracle}.  A dyadic shared-capture
+   prefix template \(T\) consists of a finite search container
+   \(\mathcal B_T\subseteq\mathcal B_k\), nonnegative certified capture weights
+   \(g_{T,b}\) for \(b\in\mathcal B_T\), extended by \(g_{T,b}=0\) outside
+   \(\mathcal B_T\), available cardinalities \(\mathcal K_T\), and upper prices
+   \(\overline P_T(K)\).  Assume that for every \(K\in\mathcal K_T\) and every
+   \(U\subseteq\mathcal B_T\) with \(|U|=K\), preprocessing can materialize an
+   admissible shared record
+   \(c(T,U)\in\mathcal R_k\) satisfying
+   \[
+      P_{c(T,U)}\le\overline P_T(K),
+      \qquad
+      h_{c(T,U),b}\ge g_{T,b}\mathbf 1_{\{b\in U\}}
+      \quad(b\in\mathcal B_k).
+      \tag{DST1}
+   \]
+   For a restricted dyadic dual \(u\), define the template degree
+   \[
+      d_T^u(b)=g_{T,b}u_b
+      \qquad(b\in\mathcal B_T),
+      \tag{DST2}
+   \]
+   and order \(\mathcal B_T=\{b_1,b_2,\ldots\}\) by nonincreasing
+   \(d_T^u(b)\).
+
+   If, for some \(K\in\mathcal K_T\),
+   \[
+      \sum_{j\le K}d_T^u(b_j)>2\overline P_T(K),
+      \tag{DST3}
+   \]
+   then the top prefix \(U_K=\{b_1,\ldots,b_K\}\) materializes a valid positive
+   dyadic shared-capture column.  Conversely, if \((DST3)\) fails for every
+   available \(K\), then no \(K\)-subset of this template beats its certified
+   lower profile:
+   \[
+      \sum_{b\in U}g_{T,b}u_b
+      \le
+      2\overline P_T(K)
+      \qquad
+      (K\in\mathcal K_T,\ U\subseteq\mathcal B_T,\ |U|=K).
+      \tag{DST4}
+   \]
+
+   Suppose in addition that \(0<\rho_T<1\), the available cardinalities are
+   \(b_T\)-dense from below, and
+   \[
+      \overline P_T(K)
+      =
+      \psi_T\left(A_TK^{\rho_T}+\zeta_TK^{1+\rho_T}\right).
+      \tag{DST5}
+   \]
+   If no available top prefix has positive dyadic shared surplus, then every
+   nonempty degree superlevel
+   \[
+      H_{T,\delta}=\{b\in\mathcal B_T:d_T^u(b)\ge\delta\},
+      \qquad h=|H_{T,\delta}|,
+      \tag{DST6}
+   \]
+   obeys
+   \[
+      \delta
+      \le
+      2\psi_T\left(
+         b_T^{1-\rho_T}A_Th^{\rho_T-1}
+         +\zeta_Th^{\rho_T}
+      \right).
+      \tag{DST7}
+   \]
+   Thus a seeded cluster, additive-quantization cell, range-reporting cell, or
+   list/lattice-decoded cell is useful exactly when its current dual-weighted
+   top prefix beats the one-time recursive price.  The build step may spend
+   arbitrary computation proposing templates, but the retained certificate is
+   just the deterministic shared record \(c(T,U_K)\) verified by \((DST1)\) and
+   \((DST3)\).
+\end{corollary}
+
+\begin{proof}
+   For a prefix \(U_K\), \((DST1)\) and \((DST3)\) give
+   \[
+      \sum_bh_{c(T,U_K),b}u_b
+      \ge
+      \sum_{b\in U_K}g_{T,b}u_b
+      =
+      \sum_{j\le K}d_T^u(b_j)
+      >
+      2\overline P_T(K)
+      \ge
+      2P_{c(T,U_K)} .
+   \]
+   Hence \((DLP7)\) holds, and
+   \cref{cor:finite-dyadic-shared-capture-lp} may add \(c(T,U_K)\).  For fixed
+   \(K\), the top \(K\) elements by \(d_T^u\) maximize
+   \(\sum_{b\in U}g_{T,b}u_b\) over all \(K\)-subsets, so failure of
+   \((DST3)\) for that \(K\) gives \((DST4)\).
+
+   For the weak-type residual, let \(h>0\) and choose
+   \(K\in\mathcal K_T\) with \(h/b_T\le K\le h\).  The top \(K\) prefix has
+   total template degree at least \(K\delta\).  Since no available top prefix is
+   positive, \((DST3)\) fails, and
+   \[
+      K\delta
+      \le
+      2\overline P_T(K)
+      =
+      2\psi_T\left(A_TK^{\rho_T}+\zeta_TK^{1+\rho_T}\right).
+   \]
+   Dividing by \(K\), using \(K\ge h/b_T\) in the negative exponent
+   \(K^{\rho_T-1}\), and using \(K\le h\) in \(K^{\rho_T}\), gives
+   \((DST7)\).
+\end{proof}
+
 \begin{corollary}[Paid-responsibility high-correlation star compiler]
    \label{cor:paid-responsibility-high-correlation-star}
    Work in the setting of
@@ -45909,6 +46076,10 @@ the residual is an exact shared-cover obstruction.
 \Cref{cor:finite-dyadic-shared-capture-lp} makes this obstruction algorithmic:
 the shared captures form a finite covering LP, and ordinary reduced-cost column
 generation is complete for the dyadic high-star branch.
+\Cref{cor:one-sided-dyadic-shared-capture-oracle} and
+\cref{cor:dyadic-shared-capture-top-prefix-compiler} give the corresponding
+verifier-facing build interface: a proposed cell is retained only if its
+current dual-weighted top prefix beats the one-time recursive price.
 \Cref{lem:star-superlevel-column-verifier} and
 \cref{cor:pair-star-dense-column-generator} add the finite LP check: the star
 is retained only if its ball-thickened query side has positive reduced gain;
@@ -71548,6 +71719,9 @@ dyadic high-star mass.
 \Cref{cor:finite-dyadic-shared-capture-lp} is the exact finite-dual form of
 that residual, with a positive-dual-surplus shared record as the build-time
 oracle target.
+\Cref{cor:one-sided-dyadic-shared-capture-oracle} and
+\cref{cor:dyadic-shared-capture-top-prefix-compiler} specialize the target to
+certified top prefixes inside generated cells.
 \Cref{lem:star-superlevel-column-verifier} and
 \cref{cor:pair-star-dense-column-generator} turn such a superlevel into an
 ordinary fractional-cover column by using the certified query activation
@@ -71859,6 +72033,9 @@ plus one-time shared recursive price.
 \Cref{cor:finite-dyadic-shared-capture-lp} supplies the matching finite
 minimax certificate and column-generation oracle, so the high branch can now be
 attacked as an ordinary reduced-cost shared-cover problem.
+\Cref{cor:dyadic-shared-capture-top-prefix-compiler} is the concrete
+cell-search form of this attack: generated clusters, AQ cells, or decoded lists
+are useful exactly when their top dual prefix violates the price envelope.
 \Cref{cor:metric-entropy-hall-shadow-closure} and
 \cref{cor:low-doubling-hall-shadow-close} sharpen the remaining geometric
 obligation: any positive Hall shadow of certified covering number below
