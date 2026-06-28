@@ -38497,6 +38497,81 @@ query mass rather than producing a cost-effective dense filter.
    logarithms.
 \end{proof}
 
+\begin{corollary}[Variational near-first-moment obstruction]
+   \label{cor:variational-near-first-moment-obstruction}
+   Work in the setting of
+   \cref{cor:near-first-moment-entropy-deficit-screen}.  Fix an active layer
+   \(i\), put \(p_i=1+\nu_i\), and write
+   \[
+      d_{i,h}=\log W_{i,h}-I_{i,h}
+      \qquad(h\in\mathcal H_i),
+      \tag{VNF1}
+   \]
+   with the convention \(d_{i,h}=-\infty\) when \(W_{i,h}=0\).  For a
+   probability law \(\mu\) on \(\mathcal H_i\), let
+   \[
+      \mathsf h(\mu)=\sum_{h\in\mathcal H_i}\mu_h\log\frac1{\mu_h}
+      \tag{VNF2}
+   \]
+   be its Shannon entropy.  Laws that place positive mass on
+   \(d_{i,h}=-\infty\) have value \(-\infty\) below.  Then the local
+   near-first-moment condition \((NFM3)\) is equivalent to
+   \[
+      \sup_{\mu\in\Delta(\mathcal H_i)}
+      \left\{
+         \sum_{h\in\mathcal H_i}\mu_h d_{i,h}
+         +
+         \frac{\mathsf h(\mu)}{p_i}
+      \right\}
+      -\ell_i\log2
+      \le
+      \log\frac{B_\star}{32M_{\mathcal I}} .
+      \tag{VNF3}
+   \]
+   Consequently, if \((NFM3)\) fails, then the Gibbs law
+   \[
+      \mu_h^\star
+      =
+      \frac{X_{i,h}^{p_i}}{\sum_{g\in\mathcal H_i}X_{i,g}^{p_i}}
+      \tag{VNF4}
+   \]
+   on the positive \(X_{i,h}\)'s violates \((VNF3)\).
+
+   Thus the remaining low-correlation storage theorem may be proved in the
+   following dual form: for every tilted profile law \(\mu\), either the
+   \(\mu\)-average cap-intersection energy dominates the \(\mu\)-average
+   profile entropy and weight in \((VNF3)\), or that tilted law supplies the
+   dense/star repair already handled by the guard-credit verifier.
+\end{corollary}
+
+\begin{proof}
+   The finite Gibbs variational identity says that for real numbers \(a_h\),
+   \[
+      \log\sum_h e^{a_h}
+      =
+      \sup_{\mu\in\Delta(\mathcal H_i)}
+      \left\{
+         \sum_h\mu_ha_h+\mathsf h(\mu)
+      \right\},
+      \tag{VNF5}
+   \]
+   with the usual restriction to indices where \(a_h>-\infty\).  Apply this
+   with \(a_h=p_id_{i,h}\) and divide by \(p_i\).  This gives
+   \[
+      \frac1{p_i}\log\sum_h e^{p_id_{i,h}}
+      =
+      \sup_{\mu\in\Delta(\mathcal H_i)}
+      \left\{
+         \sum_h\mu_hd_{i,h}+\frac{\mathsf h(\mu)}{p_i}
+      \right\}.
+   \]
+   Since \(e^{d_{i,h}}=X_{i,h}\), this is exactly the left side of \((NFM3)\)
+   before subtracting \(\ell_i\log2\).  Hence \((NFM3)\) and \((VNF3)\) are
+   equivalent.  If the left side is finite, equality in \((VNF5)\) is attained
+   by the Gibbs law \((VNF4)\); if all \(X_{i,h}\) vanish, \((NFM3)\) is
+   trivially true and there is no obstruction.
+\end{proof}
+
 \begin{corollary}[Paid-responsibility high-correlation star compiler]
    \label{cor:paid-responsibility-high-correlation-star}
    Work in the setting of
@@ -44293,6 +44368,8 @@ the remaining low-correlation theorem can be stated directly as one
 \Cref{cor:near-first-moment-entropy-deficit-screen} chooses
 \(\nu=1/\max\{1,\log|\mathcal H|\}\), removing the explicit profile-count loss
 and leaving only a barely-superlinear moment target.
+\Cref{cor:variational-near-first-moment-obstruction} rewrites failure of that
+target as one tilted entropy-energy law over the low-correlation profiles.
 \Cref{lem:star-superlevel-column-verifier} and
 \cref{cor:pair-star-dense-column-generator} add the finite LP check: the star
 is retained only if its ball-thickened query side has positive reduced gain;
@@ -69873,6 +69950,9 @@ makes the target a single Renyi list-size moment for each active layer.
 the exponent \(1+1/\log H_i\), the \(H_i\)-factor in the optimized bound is
 constant, so polylogarithmically many profiles do not require an additional
 \(\log H_i\) energy margin.
+\Cref{cor:variational-near-first-moment-obstruction} gives the exact dual
+object left by failure: a Gibbs-weighted profile law whose entropy plus average
+weight beats its average Gaussian energy after the multiplicity discount.
 \Cref{lem:star-superlevel-column-verifier} and
 \cref{cor:pair-star-dense-column-generator} turn such a superlevel into an
 ordinary fractional-cover column by using the certified query activation
@@ -70132,6 +70212,9 @@ average Renyi list-decoding estimate suggested by the compressed-bucket route.
 version: the moment exponent may be taken as
 \(1+1/\max\{1,\log|\mathcal H|\}\), so the proof only needs a barely positive
 entropy-excess moment rather than a fixed higher moment.
+\Cref{cor:variational-near-first-moment-obstruction} is the corresponding
+entropy-energy normal form: every failure produces a tilted law on profiles,
+and the remaining geometric theorem only has to dominate or repair those laws.
 \Cref{cor:metric-entropy-hall-shadow-closure} and
 \cref{cor:low-doubling-hall-shadow-close} sharpen the remaining geometric
 obligation: any positive Hall shadow of certified covering number below
