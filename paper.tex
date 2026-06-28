@@ -806,22 +806,21 @@ The smooth product filter is not a replacement for \cref{lem:adaptive-continuati
    A possible worst-case extension is therefore a success-normalized
    bucket-compression recursion.  For a split parameter \(1<\alpha<c\), replace
    a filter bucket by an \((\alpha-1)r\)-net \(N_F\) and recurse on
-   approximation \(c/\alpha\).  Writing
-   \[
-      a_F(q,p)=\Prb[p\in U_F\mid q\in Q_F],
-      \qquad
-      \rho'=\rho_{c/\alpha},
-   \]
-   the query recurrence would follow from the average list-size inequality
+   approximation \(c/\alpha\).  Writing \(\rho'=\rho_{c/\alpha}\), the query
+   recurrence does not need a new Renyi list-decoding theorem: since
+   \(N_F\subseteq B_F\) and \(\rho'\le1\), the usual success-normalized
+   expected candidate-load estimate already implies
    \[
       \E\!\left[
          |N_F|^{\rho'}\mid q\in Q_F
       \right]
       \le
-      a_F(q,p)\,m^{\rho_c}\polylog m .
+      \E\!\left[
+         |B_F|\mid q\in Q_F
+      \right] .
    \]
-   Space would need the corresponding shared-DAG version for canonicalized
-   bucket nets, roughly
+   The genuinely new storage condition is the shared-DAG version for
+   canonicalized bucket nets,
    \[
       \sum_A |A|^{1+\rho'}
       \le
@@ -1893,6 +1892,93 @@ The smooth product filter is not a replacement for \cref{lem:adaptive-continuati
    Gaussian-charged profiles are all contained in \(E_{\rm lo}\),
    \((PLC3)\)--\((PLC4)\) supply \((TPS1)\)--\((TPS2)\) with
    \(B=m^{1+\rho}\log^{O_{A,K}(1)}m\).
+\end{proof}
+
+\begin{corollary}[Low/high storage screen for compressed cap buckets]
+   \label{cor:low-high-compressed-cap-storage}
+   Work in the setting of
+   \cref{cor:polylog-low-correlation-coload}.  Let
+   \(0\le s\le1\), and for every retained cap occurrence \(i\le M\), let
+   \(N_i\subseteq P\cap U_{G_i}\) be any \(\delta\)-separated bucket net.  Let
+   \(\mathcal A\) be the set of distinct canonical nets represented among the
+   \(N_i\)'s.  Define the realized high-correlation ordered pair tail
+   \[
+      H_{\rm hi}
+      =
+      \sum_{i=1}^M
+      \left|
+      \{(x,y)\in N_i^2:\ x\ne y,\ \ip{x}{y}>\theta_m\}
+      \right|.
+      \tag{LHS1}
+   \]
+   Then
+   \[
+      \E\sum_{A\in\mathcal A}|A|^{1+s}
+      \le
+      m^{1+\rho}\log^{O_{A,K}(1)}m
+      +
+      \E H_{\rm hi}.
+      \tag{LHS2}
+   \]
+   In particular, if the high-correlation tail is itself paid by dense/star,
+   sponsor, or shared-prefix certificates so that
+   \[
+      \E H_{\rm hi}\le m^{1+\rho}\log^{O_{A,K}(1)}m,
+      \tag{LHS3}
+   \]
+   then the expected form of the shared-DAG storage hypothesis \((CBK3)\) of
+   \cref{cor:compressed-bucket-rung-checklist} holds, with the cap-panel
+   exponent \(\rho=\rho_j\) and \(s=\rho_{j+1}\).  If preprocessing verifies
+   the realized value of the left side of \((CBK3)\), Markov's inequality gives
+   a Las Vegas build-time realization satisfying the deterministic bound after
+   only constant expected resampling, with the usual constant-factor slack.
+
+   Thus centered cap buckets at the large-range threshold have an exact
+   storage split: the diagonal and all pairs of correlation
+   \(O(\log\log m/\log m)\) are already polylogarithmic, and any polynomial
+   storage survivor must be visible as the high-correlation pair tail
+   \(H_{\rm hi}\).  The dense separator only has to repair or sponsor this
+   tail; it does not have to reprove the diffuse cap co-load estimate.
+\end{corollary}
+
+\begin{proof}
+   For an integer \(K\ge0\) and \(0\le s\le1\),
+   \(K^{1+s}\le K^2\).  Hence, for each occurrence,
+   \[
+      |N_i|^{1+s}
+      \le
+      |N_i|^2
+      =
+      |N_i|
+      +
+      \left|\{(x,y)\in N_i^2:\ x\ne y\}\right|.
+      \tag{LHS4}
+   \]
+   Split the ordered distinct pairs in \((LHS4)\) into
+   \(\ip{x}{y}\le\theta_m\) and \(\ip{x}{y}>\theta_m\).  Since
+   \(N_i\subseteq P\cap U_{G_i}\), the first moment and the low-correlation
+   pair count are bounded pointwise by the corresponding cap-incidence sums.
+   Taking expectations and applying \((PLC3)\)--\((PLC4)\) gives
+   \[
+      \E\sum_i |N_i|^{1+s}
+      \le
+      m^{1+\rho}\log^{O_{A,K}(1)}m+\E H_{\rm hi}.
+      \tag{LHS5}
+   \]
+   Finally, selecting one occurrence representative for each distinct canonical
+   net gives
+   \[
+      \sum_{A\in\mathcal A}|A|^{1+s}
+      \le
+      \sum_i|N_i|^{1+s}
+   \]
+   pointwise, as in
+   \cref{lem:occurrence-moments-dominate-dag}.  Combining this with
+   \((LHS5)\) proves \((LHS2)\), and \((LHS3)\) gives the expected storage
+   bound.  If the realized storage exceeds a fixed constant times this
+   expectation, preprocessing discards the sampled panel and resamples; Markov's
+   inequality gives constant acceptance probability, and accepted panels satisfy
+   the deterministic \((CBK3)\) bound after absorbing that constant.
 \end{proof}
 
 \begin{corollary}[Weighted polylogarithmic low-correlation co-load cutoff]
@@ -81378,6 +81464,13 @@ with false active buckets included in the active layer.
 minimal rung test: ordinary success-normalized candidate load plus distinct
 canonical-net storage.  Thus the remaining list-decoding theorem for compressed
 buckets is a storage/canonicalization theorem, not a query theorem.
+\Cref{cor:low-high-compressed-cap-storage} sharpens that storage target for
+large-range centered cap buckets: \(K^{1+s}\le K^2\) reduces the distinct-child
+moment to the diagonal, low-correlation pair co-load, and one explicit
+high-correlation ordered-pair tail.  The diagonal and
+\(O(\log\log m/\log m)\)-correlation pairs are already polylogarithmic, so any
+polynomial compressed-bucket storage survivor must be a high-correlation tail
+for the dense/star or sponsor verifier.
 \Cref{cor:distinct-canonical-bucket-net} further sharpens the storage target:
 the recursive child index is charged once per distinct canonical bucket net, not
 once per decoded occurrence, with only occurrence pointers left in the metadata
@@ -81776,6 +81869,9 @@ critical spherical threshold: pair correlations up to
 \(O(\log\log m/\log m)\) contribute only a polylogarithmic factor, so any
 polynomial storage obstruction must be in the complementary positive-correlation
 branch.
+\Cref{cor:low-high-compressed-cap-storage} packages the same fact directly for
+compressed bucket nets: after \(K^{1+s}\le K^2\), the only unpaid occurrence
+storage is the realized high-correlation ordered-pair tail.
 \Cref{cor:weighted-polylog-low-correlation-coload} makes the same low branch
 homogeneous in cap multiplicity: fractional or weighted cap panels obey the
 same bound with the integer occurrence count replaced by total weight.  This is
