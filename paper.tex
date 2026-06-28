@@ -12454,6 +12454,47 @@ partition ignores the bias coordinates that certify the list size.
    \cref{cor:projected-unary-integrality-reduction}.
 \end{proof}
 
+\begin{corollary}[Polylogarithmic cost of two-deletion injectivity]
+   \label{cor:polylog-cost-two-deletion-injective-panel}
+   Fix \(q\ge2\).  For every \(b\) there is a code
+   \(C\subseteq[q]^b\) with minimum Hamming distance at least \(3\) and
+   \[
+      |C|
+      \ge
+      \frac{q^b}
+      {1+b(q-1)+\binom b2(q-1)^2}.
+   \]
+   Consequently, for every requested local list size \(N\), one can choose a
+   two-deletion-injective \(q\)-ary panel of size at least \(N\) with
+   \[
+      q^b \le N\cdot \operatorname{poly}_q(\log N).
+   \]
+   For constant \(q\), this is only a polylogarithmic ambient-size loss.
+   Combining this panel with
+   \cref{cor:two-deletion-injective-overlap-closure} discharges the frozen
+   finite leave-one-out overlap obligation \((LNN2)\) with zero local
+   score-band gap and only polylogarithmic code-selection slack.
+\end{corollary}
+
+\begin{proof}
+   Greedily build \(C\).  Each selected word rules out only words at Hamming
+   distance at most \(2\), at most
+   \[
+      B_{q,b}(2)
+      =
+      1+b(q-1)+\binom b2(q-1)^2
+   \]
+   words including itself.  The greedy process therefore selects at least
+   \(q^b/B_{q,b}(2)\) words, and the selected words are pairwise at distance at
+   least \(3\).
+
+   Given \(N\), take the least \(b\) with \(q^b\ge N B_{q,b}(2)\).  Since
+   \(B_{q,b}(2)=O_q(b^2)\), this least \(b\) satisfies
+   \(b=\log_q N+O_q(\log\log N)\).  Hence
+   \(q^b\le N\operatorname{poly}_q(\log N)\).  The final sentence follows from
+   \cref{cor:two-deletion-injective-overlap-closure}.
+\end{proof}
+
 \begin{corollary}[Convex-hull dominance screen for projected-source vertices]
    \label{cor:local-vertex-convex-hull-dominance-screen}
    Continue in the setting of
@@ -13957,6 +13998,12 @@ partition ignores the bias coordinates that certify the list size.
    gives a first positive theorem in that exact model: if the chosen low-rate
    panel has minimum distance at least \(3\), then the leave-one-out overlap
    lift is already the true codeword hull, so the local score-band gap is zero.
+   By \cref{cor:polylog-cost-two-deletion-injective-panel}, imposing this
+   distance condition costs only a polylogarithmic ambient-size slack for fixed
+   alphabet.  Thus the low-rate code separator itself is no longer a
+   subpolynomial-loss source in the leave-one-out overlap model; any remaining
+   overhead must come from the score-tail truncation or routing/tree layer, not
+   from projected local pseudowords.
    The qualification is necessary: unrestricted overlap consistency does not
    force unary integrality.  Even in the binary case, the \(b=3\) panel
    \(\{001,100,010\}\) has the all-half projected unary vertex under
