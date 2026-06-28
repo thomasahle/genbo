@@ -63791,6 +63791,140 @@ certificate is the verified positive-gain column and the finite LP it augments.
    \((OSFS5)\).
 \end{proof}
 
+\begin{corollary}[Fractional opened-support flow LP]
+   \label{cor:fractional-opened-support-flow-lp}
+   Work in the setting of \cref{cor:opened-support-flow-screen}.  Write
+   \(d_p=d_B^u(p)\), and define the fractional opened-support value
+   \(\widehat{\mathfrak S}_{B,E}(C)\) as the optimum of the finite linear
+   program
+   \[
+   \begin{array}{ll}
+   \text{\rm maximize} &
+      \displaystyle
+      \sum_{(i,p)\in E}x_{i,p}-\Theta\sum_{p\in W_B}z_p \\[0.8em]
+   \text{\rm subject to} &
+      \displaystyle
+      \sum_{p:(i,p)\in E}x_{i,p}\le \mu_i/C
+      \qquad(i\in\mathcal I), \\[0.8em]
+   &
+      \displaystyle
+      \sum_{i:(i,p)\in E}x_{i,p}\le d_pz_p
+      \qquad(p\in W_B), \\[0.8em]
+   &
+      x_{i,p}\ge0,\qquad 0\le z_p\le1 .
+   \end{array}
+      \tag{FOF1}
+   \]
+   Then
+   \[
+      \mathfrak S_{B,E}(C)\le \widehat{\mathfrak S}_{B,E}(C).
+      \tag{FOF2}
+   \]
+   Moreover finite LP duality gives the exact dual formula
+   \[
+      \widehat{\mathfrak S}_{B,E}(C)
+      =
+      \min_{\substack{\alpha_i,\beta_p\ge0\\
+                      \alpha_i+\beta_p\ge1\ ((i,p)\in E)}}
+      \left\{
+         \sum_i\frac{\mu_i}{C}\alpha_i
+         +
+         \sum_{p\in W_B}(d_p\beta_p-\Theta)_+
+      \right\}.
+      \tag{FOF3}
+   \]
+
+   If
+   \[
+      \widehat{\mathfrak S}_{B,E}(C)>2K\Theta ,
+      \tag{FOF4}
+   \]
+   then \(B\) contains a positive shared top-prefix column.  Conversely, in any
+   residual where no shared top-prefix column of \(B\) has positive reduced
+   cost,
+   \[
+      \widehat{\mathfrak S}_{B,E}(C)\le2K\Theta
+      \tag{FOF5}
+   \]
+   for every source set, load vector, adjacency relation, and congestion \(C\).
+
+   More generally, for a finite panel of such fractional source systems with
+   nonnegative weights \(\lambda_j\), positive aggregate fractional surplus
+   \[
+      \sum_j\lambda_j
+      \left(
+         \widehat{\mathfrak S}_{B_j,E_j}(C_j)
+         -
+         2K_{B_j}^\natural\Theta_{B_j}^{\rm net}
+      \right)>0
+      \tag{FOF6}
+   \]
+   exposes one positive shared top-prefix column.
+
+   Thus the nonconvex support choice in \((OSFS1)\) may be replaced, for
+   separation purposes, by one ordinary finite LP.  If the LP fails to beat the
+   clipped-tail overhead, its dual prices \((\alpha,\beta)\) are the exact
+   finite obstruction: source mass is either paid directly by \(\alpha\), or any
+   remaining incident point mass is charged through the clipped point price
+   \((d_p\beta_p-\Theta)_+\).
+\end{corollary}
+
+\begin{proof}
+   Given an integral support \(S\) and a feasible flow \(f\) for
+   \(\Phi_B(S;C)\), set \(x_{i,p}=f_{i,p}/C\) and
+   \(z_p=\mathbf 1_{\{p\in S\}}\).  This is feasible for \((FOF1)\), with
+   objective \(\sum f_{i,p}/C-\Theta |S|\).  Maximizing over \(S\) and \(f\)
+   proves \((FOF2)\).
+
+   To derive \((FOF3)\), assign dual variables \(\alpha_i\ge0\) to the source
+   constraints, \(\beta_p\ge0\) to the sink-capacity constraints, and
+   \(\gamma_p\ge0\) to the bounds \(z_p\le1\).  The dual is
+   \[
+   \begin{array}{ll}
+   \text{\rm minimize} &
+      \displaystyle
+      \sum_i(\mu_i/C)\alpha_i+\sum_p\gamma_p \\[0.6em]
+   \text{\rm subject to} &
+      \alpha_i+\beta_p\ge1\qquad((i,p)\in E),\\
+   &
+      \gamma_p\ge d_p\beta_p-\Theta,\qquad
+      \alpha_i,\beta_p,\gamma_p\ge0 .
+   \end{array}
+   \]
+   For fixed \(\alpha,\beta\), the best choice is
+   \(\gamma_p=(d_p\beta_p-\Theta)_+\), giving \((FOF3)\).
+
+   Now suppose \((x,z)\) is feasible for \((FOF1)\).  Since
+   \(\sum_i x_{i,p}\le d_pz_p\),
+   \[
+      \sum_{(i,p)\in E}x_{i,p}-\Theta\sum_pz_p
+      \le
+      \sum_pz_p(d_p-\Theta)
+      \le
+      \sum_{\substack{p\in W_B:\\ d_p>\Theta}}(d_p-\Theta).
+      \tag{FOF7}
+   \]
+   If the optimum is larger than \(2K\Theta\), the tail
+   \(T=\{p\in W_B:d_p>\Theta\}\) satisfies
+   \[
+      \sum_{p\in T}d_p>(|T|+2K)\Theta .
+   \]
+   This is the subset clipped-tail violation \((CST3)\), and
+   \cref{cor:subset-clipped-shared-tail-residual} gives a positive shared
+   top-prefix column.
+
+   Conversely, if no shared top prefix of \(B\) is positive, the same corollary
+   applied to the tail \(T\) gives
+   \[
+      \sum_{p\in T}d_p\le(|T|+2K)\Theta .
+   \]
+   Inequality \((FOF7)\) then bounds every feasible fractional objective by
+   \(2K\Theta\), proving \((FOF5)\).  Finally, if \((FOF6)\) holds, one active
+   panel record has \(\widehat{\mathfrak S}_{B_j,E_j}(C_j)>
+   2K_{B_j}^\natural\Theta_{B_j}^{\rm net}\), so the one-record conclusion
+   applies.
+\end{proof}
+
 \begin{corollary}[Template-complete shared-cover obstruction]
    \label{cor:template-complete-shared-cover-obstruction}
    Work in the setting of
@@ -64094,6 +64228,52 @@ certificate is the verified positive-gain column and the finite LP it augments.
    verified positive shared top-prefix column.  Applying
    \cref{cor:template-search-shared-integrated-target} gives \((SPP1)\) and the
    displayed query and storage bounds.
+\end{proof}
+
+\begin{corollary}[Fractional opened-support template obstruction endpoint]
+   \label{cor:fractional-opened-support-template-endpoint}
+   Work in the setting of
+   \cref{cor:opened-support-template-obstruction-endpoint}.  Replace the
+   opened-support hypothesis \((OSFT1)\) by the following fractional LP
+   hypothesis.  Whenever \(\Psi_{\mathcal B_y}(y)>D_\pi/4\) and
+   \cref{cor:template-complete-shared-cover-obstruction} supplies an exact
+   no-prefix dual obstruction \(u\), preprocessing can certify a finite panel of
+   fractional source systems with nonnegative weights \(\lambda_j\), of the form
+   in \cref{cor:fractional-opened-support-flow-lp}, with all template
+   top-prefix records contained in \(\mathcal Z_\star\), such that
+   \[
+      \sum_j\lambda_j
+      \left(
+         \widehat{\mathfrak S}_{B_j,E_j}(C_j)
+         -
+         2K_{B_j}^\natural\Theta_{B_j}^{\rm net}
+      \right)>0 .
+      \tag{FOT1}
+   \]
+   Then the positive shared-panel separator \((SPP1)\) holds at every node, and
+   hence
+   \[
+      Q(n,d)=d\,n^{\rho_c}\log^{O_c(1)}n,\qquad
+      S(n,d)=dn+n^{1+\rho_c}\log^{O_c(1)}n .
+   \]
+
+   In particular, the current verifier-facing obstruction target may be stated
+   as a finite LP separation problem: either the fractional opened-support LP
+   has positive surplus above the clipped-tail overhead, or its dual
+   \((FOF3)\) is an explicit source/point price certificate blocking that
+   proposed source system.
+\end{corollary}
+
+\begin{proof}
+   If the restricted cover value is at most \(D_\pi/4\), the template-search
+   outcome of \cref{cor:template-search-shared-integrated-target} already holds.
+   Otherwise take the exact no-prefix obstruction \(u\).  The positive
+   fractional panel \((FOT1)\) and
+   \cref{cor:fractional-opened-support-flow-lp} expose a positive shared
+   top-prefix column in \(\mathcal Z_\star\).  Hence every feasible dual \(y\)
+   has one of the two outcomes required by
+   \cref{cor:template-search-shared-integrated-target}, which gives \((SPP1)\)
+   and the displayed bounds.
 \end{proof}
 
 \begin{corollary}[Shared integrated cover-cost endpoint]
@@ -79903,6 +80083,11 @@ overcharge: the flow branch score is transported mass divided by congestion,
 minus the clipped baseline times the actually opened sink support.  Thus a
 large proposal set may be used as a search universe without paying for points
 that receive no flow.
+\Cref{cor:fractional-opened-support-flow-lp} replaces even this nonconvex
+support maximization by a finite fractional opening LP.  The relaxation is
+still sound in the no-prefix residual: if its value beats the clipped overhead,
+the positive degree tail itself violates the clipped subset cap; if it does
+not, the LP dual is an explicit source/point price obstruction.
 \Cref{cor:template-complete-shared-cover-obstruction} gives the exact finite
 LP normal form for the remaining shared-cover target: if the cover value at
 level \(D/4\) is too large, the obstruction is one dual \(u\) of value
@@ -79923,6 +80108,10 @@ explicit cut \((CTV6)\).
 form: it is enough to find positive opened-support flow surplus, so support
 selection, cohort materialization, and transported subset choice are all part
 of one branching-score maximization.
+\Cref{cor:fractional-opened-support-template-endpoint} is the LP-facing version
+of the same target: preprocessing may solve the fractional opened-support LP
+and keep only a verified positive top-prefix column, while failed proposals
+leave finite dual prices rather than an unstructured failed support search.
 \Cref{cor:single-tail-shared-separator-endpoint} packages this into the
 current sharp proof target: every normalized exact-signature dual must either
 produce a materializable low-correlation profile record or force one certified
