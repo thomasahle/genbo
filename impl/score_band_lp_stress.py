@@ -918,6 +918,63 @@ def local_overlap_optimize_source(
     return value, source
 
 
+def local_overlap_source_candidates(
+    code: np.ndarray,
+    checks: list[tuple[int, ...]],
+    *,
+    random_objectives: int = 16,
+    seed: int = 0,
+    max_integral_words: int = 100000,
+    tol: float = 1e-8,
+) -> list[np.ndarray]:
+    """Return source candidates from the overlap-consistent local relaxation."""
+    code = np.asarray(code, dtype=int)
+    blocks = code.shape[1]
+    alphabet = int(np.max(code)) + 1
+    sources: list[np.ndarray] = []
+    seen: set[tuple[int, ...]] = set()
+
+    def add_source(source: np.ndarray) -> None:
+        source = np.asarray(source, dtype=float)
+        key = _source_key(source, tol=tol)
+        if key in seen:
+            return
+        seen.add(key)
+        sources.append(source.copy())
+
+    ambient_size = alphabet ** blocks
+    if ambient_size <= max_integral_words:
+        for word in _locally_consistent_words(code, checks):
+            source = word_indicator(word, alphabet)
+            if local_overlap_source_feasible(code, checks, source, tol=tol)["feasible"]:
+                add_source(source)
+
+    for coord in range(blocks):
+        for symbol in range(alphabet):
+            objective = np.zeros(blocks * alphabet, dtype=float)
+            objective[coord * alphabet + symbol] = 1.0
+            _, source = local_overlap_optimize_source(
+                code,
+                checks,
+                objective,
+                tol=tol,
+            )
+            add_source(source)
+
+    rng = np.random.default_rng(seed)
+    for _ in range(random_objectives):
+        objective = rng.standard_normal(blocks * alphabet)
+        _, source = local_overlap_optimize_source(
+            code,
+            checks,
+            objective,
+            tol=tol,
+        )
+        add_source(source)
+
+    return sources
+
+
 def _enumerate_equality_polytope_vertices(
     lhs: np.ndarray,
     rhs: np.ndarray,
@@ -1420,6 +1477,81 @@ def local_marginal_score_band_gap(
     }
 
 
+def local_overlap_score_band_gap(
+    code: np.ndarray,
+    omega: np.ndarray,
+    checks: list[tuple[int, ...]],
+    *,
+    random_objectives: int = 16,
+    seed: int = 0,
+    closure_rounds: int = 2,
+    max_integral_words: int = 100000,
+    tol: float = 1e-8,
+) -> dict[str, object]:
+    """Stress the score-band gap on the overlap-consistent local relaxation."""
+    code = np.asarray(code, dtype=int)
+    sources = local_overlap_source_candidates(
+        code,
+        checks,
+        random_objectives=random_objectives,
+        seed=seed,
+        max_integral_words=max_integral_words,
+        tol=tol,
+    )
+    queue = list(sources)
+    seen = {_source_key(source, tol=tol) for source in sources}
+    evaluated: set[tuple[int, ...]] = set()
+    best_gap = -math.inf
+    best_source: np.ndarray | None = None
+    best_result: dict[str, object] | None = None
+
+    for _ in range(closure_rounds + 1):
+        current = queue
+        queue = []
+        if not current:
+            break
+        for source in current:
+            key = _source_key(source, tol=tol)
+            if key in evaluated:
+                continue
+            evaluated.add(key)
+            result = source_score_band_gap(code, omega, source=source, tol=tol)
+            gap = float(result["gap"])
+            if gap > best_gap:
+                best_gap = gap
+                best_source = source.copy()
+                best_result = result
+
+            solution = result.get("solution")
+            if solution is None:
+                continue
+            score_table = _score_table_from_solution(code, np.asarray(solution))
+            try:
+                _, next_source = local_overlap_optimize_source(
+                    code,
+                    checks,
+                    score_table,
+                    tol=tol,
+                )
+            except (LPInfeasible, LPUnbounded):
+                continue
+            next_key = _source_key(next_source, tol=tol)
+            if next_key not in seen:
+                seen.add(next_key)
+                sources.append(next_source.copy())
+                queue.append(next_source.copy())
+
+    if best_result is None:
+        best_gap = 0.0
+    return {
+        "gap": float(best_gap),
+        "source": best_source,
+        "source_count": len(sources),
+        "evaluated_count": len(evaluated),
+        "source_result": best_result,
+    }
+
+
 def local_marginal_score_band_gap_exact(
     code: np.ndarray,
     omega: np.ndarray,
@@ -1771,6 +1903,60 @@ def run_local_marginal_trial(
     }
 
 
+def run_local_overlap_trial(
+    *,
+    n_words: int,
+    blocks: int,
+    alphabet: int,
+    seed: int,
+    xi: float,
+    checks: list[tuple[int, ...]],
+    lam: float | None = None,
+    random_objectives: int = 16,
+    closure_rounds: int = 2,
+) -> dict[str, float | int | tuple[int, ...] | None]:
+    if lam is None:
+        lam = math.sqrt(2.0 * math.log(n_words) / blocks)
+    code = make_balanced_code(n_words, blocks, alphabet, seed)
+    symbol_scores = centered_symbol_scores(blocks, alphabet, seed + 1009)
+    scores = codeword_scores(code, symbol_scores)
+    gaps = float(np.max(scores)) - scores
+    omega = np.exp(np.minimum(lam * gaps, 700.0)) + xi
+    local = local_overlap_score_band_gap(
+        code,
+        omega,
+        checks,
+        random_objectives=random_objectives,
+        seed=seed + 3001,
+        closure_rounds=closure_rounds,
+    )
+    gap = float(local["gap"])
+    source = local["source"]
+    if source is None:
+        integrality_defect = 0.0
+    else:
+        source_matrix = np.asarray(source).reshape(blocks, alphabet)
+        integrality_defect = float(np.sum(1.0 - np.max(source_matrix, axis=1)))
+    source_result = local["source_result"]
+    min_chart = None
+    if isinstance(source_result, dict):
+        min_chart = source_result.get("min_chart")
+    return {
+        "seed": seed,
+        "n_words": n_words,
+        "blocks": blocks,
+        "alphabet": alphabet,
+        "lambda": float(lam),
+        "xi": float(xi),
+        "local_overlap_gap": gap,
+        "local_overlap_gap_over_xi": gap / xi if xi > 0 else math.inf,
+        "local_overlap_source_count": int(local["source_count"]),
+        "local_overlap_evaluated_count": int(local["evaluated_count"]),
+        "local_overlap_integrality_defect": integrality_defect,
+        "local_overlap_min_chart": min_chart,
+    }
+
+
 def run_local_marginal_exact_trial(
     *,
     n_words: int,
@@ -2033,6 +2219,7 @@ def main() -> None:
     parser.add_argument("--cap-power", type=float, default=3.0)
     parser.add_argument("--local-check-size", type=int, default=None)
     parser.add_argument("--local-marginal", action="store_true")
+    parser.add_argument("--local-overlap", action="store_true")
     parser.add_argument("--local-marginal-exact", action="store_true")
     parser.add_argument("--local-dominance-screen", action="store_true")
     parser.add_argument("--local-residual-dominance-screen", action="store_true")
@@ -2138,6 +2325,57 @@ def main() -> None:
                     key=lambda row: float(row["local_marginal_gap_over_xi"]),
                 )
                 print(f"worst_local_marginal_clean_seed,{worst_clean['seed']}")
+
+        if args.local_overlap:
+            overlap_rows = [
+                run_local_overlap_trial(
+                    n_words=args.n_words,
+                    blocks=args.blocks,
+                    alphabet=args.alphabet,
+                    seed=args.seed + trial,
+                    xi=xi,
+                    checks=checks,
+                    lam=args.lam,
+                    random_objectives=args.local_marginal_objectives,
+                    closure_rounds=args.local_marginal_closure_rounds,
+                )
+                for trial in range(args.trials)
+            ]
+            for key in [
+                "local_overlap_gap",
+                "local_overlap_gap_over_xi",
+                "local_overlap_source_count",
+                "local_overlap_evaluated_count",
+                "local_overlap_integrality_defect",
+            ]:
+                values = np.array([float(row[key]) for row in overlap_rows])
+                print(f"{key}_mean,{float(np.mean(values))}")
+                print(f"{key}_max,{float(np.max(values))}")
+            worst_overlap = max(
+                overlap_rows,
+                key=lambda row: float(row["local_overlap_gap_over_xi"]),
+            )
+            print(f"worst_local_overlap_seed,{worst_overlap['seed']}")
+            print(f"worst_local_overlap_min_chart,{worst_overlap['local_overlap_min_chart']}")
+            clean_overlap_rows = [
+                row for row, local_row in zip(overlap_rows, local_rows)
+                if int(local_row["local_count"]) == 0
+            ]
+            print(f"local_overlap_clean_count,{len(clean_overlap_rows)}")
+            if clean_overlap_rows:
+                clean_values = np.array([
+                    float(row["local_overlap_gap_over_xi"])
+                    for row in clean_overlap_rows
+                ])
+                print(f"local_overlap_clean_gap_over_xi_mean,{float(np.mean(clean_values))}")
+                print(f"local_overlap_clean_gap_over_xi_max,{float(np.max(clean_values))}")
+                clean_over_budget = int(np.sum(clean_values > 1.0 + 1e-8))
+                print(f"local_overlap_clean_over_budget_count,{clean_over_budget}")
+                worst_clean = max(
+                    clean_overlap_rows,
+                    key=lambda row: float(row["local_overlap_gap_over_xi"]),
+                )
+                print(f"worst_local_overlap_clean_seed,{worst_clean['seed']}")
 
         if (
             args.local_marginal_exact
@@ -2276,13 +2514,15 @@ def main() -> None:
                 print(f"worst_residual_dominance_clean_seed,{worst_clean['seed']}")
     elif (
         args.local_marginal
+        or args.local_overlap
         or args.local_marginal_exact
         or args.local_dominance_screen
         or args.local_residual_dominance_screen
     ):
         parser.error(
             "--local-marginal, --local-marginal-exact, and "
-            "--local-dominance-screen/--local-residual-dominance-screen "
+            "--local-overlap/--local-dominance-screen/"
+            "--local-residual-dominance-screen "
             "require --local-check-size",
         )
 

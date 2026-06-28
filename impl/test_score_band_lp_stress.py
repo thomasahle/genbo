@@ -16,6 +16,7 @@ from score_band_lp_stress import (
     local_marginal_score_band_gap_exact,
     local_marginal_score_band_gap,
     local_marginal_vertex_sources,
+    local_overlap_score_band_gap,
     local_overlap_source_feasible,
     product_simplex_score_band_gap,
     run_local_combined_screen_trial,
@@ -404,6 +405,15 @@ def test_b5_exact_projected_source_finds_clean_fractional_obstruction():
     assert exact["gap"] > 10.0 * xi
     overlap = local_overlap_source_feasible(code, checks, exact["source"])
     assert not overlap["feasible"]
+    overlap_gap = local_overlap_score_band_gap(
+        code,
+        omega,
+        checks,
+        random_objectives=16,
+        seed=0,
+        closure_rounds=4,
+    )
+    assert overlap_gap["gap"] <= xi
 
 
 def test_local_check_scopes_enumerates_subsets():
