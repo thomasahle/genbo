@@ -40363,6 +40363,201 @@ query mass rather than producing a cost-effective dense filter.
    taking \(M>L\).
 \end{proof}
 
+\begin{corollary}[Generic unsponsored-cut generated-column screen]
+   \label{cor:generic-unsponsored-cut-generated-column}
+   Work with a child panel \(\mathcal C\), child prices \(u_g\), sponsor atoms
+   \(\mathcal I\), compatibility relation \(\mathcal E\), and parameter
+   \(\beta\) as in
+   \cref{cor:generic-child-panel-sponsor-flow}.  For
+   \(\mathcal U\subseteq\mathcal C\), write
+   \[
+      P(\mathcal U)=\sum_{g\in\mathcal U}u_g,\qquad
+      B(\mathcal U)=\sum_{i\in N(\mathcal U)}b_i,\qquad
+      E^\beta(\mathcal U)=P(\mathcal U)-\beta B(\mathcal U).
+      \tag{UCG1}
+   \]
+   Let \(\mathcal T\) be a finite generated-merge template family.  A template
+   \(T\in\mathcal T\) has a child container
+   \(\mathcal C_T\subseteq\mathcal C\), capture weights
+   \(0\le g_{T,g}\le u_g\), available cardinalities \(\mathcal K_T\), and
+   certified prices \(\overline P_T(K)\).  Assume that for every
+   \(K\in\mathcal K_T\) and \(V\subseteq\mathcal C_T\) with \(|V|=K\), the
+   builder can materialize one shared child record with storage price at most
+   \(\overline P_T(K)\) and cut capture at least
+   \[
+      G_T(V;\mathcal U)=
+      \sum_{g\in V\cap\mathcal U}g_{T,g}.
+      \tag{UCG2}
+   \]
+
+   Order each \(\mathcal C_T\) by nonincreasing
+   \(g_{T,g}\mathbf 1_{\{g\in\mathcal U\}}\).  If, for some \(T\) and
+   \(K\in\mathcal K_T\), the top prefix \(V_K\) satisfies
+   \[
+      G_T(V_K;\mathcal U)>2\overline P_T(K),
+      \tag{UCG3}
+   \]
+   then this generated record is a positive merge for the unsponsored cut: it
+   decreases the cut imbalance by at least
+   \(G_T(V_K;\mathcal U)-\overline P_T(K)>0\).
+
+   Conversely, if no generated prefix satisfies \((UCG3)\), then every
+   compatible assigned cover \(L=\bigsqcup_jL_j\) of any
+   \(L\subseteq\mathcal U\), with
+   \(L_j\subseteq\mathcal C_{T_j}\), \(|L_j|\in\mathcal K_{T_j}\), and
+   \(g_{T_j,g}\ge w_g\) on \(L_j\), obeys
+   \[
+      \sum_{g\in L}w_g
+      \le
+      2\sum_j\overline P_{T_j}(|L_j|).
+      \tag{UCG4}
+   \]
+
+   Suppose all templates used by such a cover satisfy
+   \[
+      \overline P_T(h)
+      \le
+      \psi_\star\left(Ah^\rho+\zeta h^{1+\rho}\right),
+      \qquad 0<\rho<1 .
+      \tag{UCG5}
+   \]
+   If \(w_g\ge\theta>0\) on \(L\), \(K=|L|\), and the cover uses \(J\)
+   nonempty template parts, then every no-generated-merge residual satisfies
+   \[
+      \theta K
+      \le
+      2\psi_\star\left(AJ^{1-\rho}K^\rho+\zeta K^{1+\rho}\right).
+      \tag{UCG6}
+   \]
+
+   Finally fix \(0<\varepsilon<1\).  If every child subset satisfies
+   \[
+      E^\beta(\mathcal U)\le\varepsilon P(\mathcal U),
+      \tag{UCG7}
+   \]
+   then the sponsor Hall inequalities hold with
+   \[
+      \beta_\varepsilon=\frac{\beta}{1-\varepsilon}.
+      \tag{UCG8}
+   \]
+   Otherwise there is a strong unsponsored cut \(\mathcal U\) with
+   \(E^\beta(\mathcal U)>\varepsilon P(\mathcal U)>0\).  Let
+   \[
+      D(\mathcal U)=
+      1+\left\lceil
+         \log_2
+         \frac{\max_{g\in\mathcal U^+}u_g}
+              {\min_{g\in\mathcal U^+}u_g}
+      \right\rceil,
+      \qquad
+      \mathcal U^+=\{g\in\mathcal U:u_g>0\}.
+      \tag{UCG9}
+   \]
+   Then some dyadic child-price layer
+   \[
+      L=\{g\in\mathcal U:\theta\le u_g<2\theta\}
+      \tag{UCG10}
+   \]
+   satisfies
+   \[
+      \theta |L|
+      \ge
+      \frac{P(\mathcal U)}{2D(\mathcal U)}
+      \ge
+      \frac{E^\beta(\mathcal U)}{2D(\mathcal U)} .
+      \tag{UCG11}
+   \]
+   For this layer, absence of a generated merge implies the generated-cover
+   lower bound
+   \[
+      N_{\rm gen}(L,\theta)
+      \ge
+      \left(
+         \frac{\theta |L|^{1-\rho}}{4\psi_\star A}
+      \right)^{1/(1-\rho)}
+      \ge
+      \left(
+         \frac{E^\beta(\mathcal U)}
+              {8D(\mathcal U)\psi_\star A\,|L|^\rho}
+      \right)^{1/(1-\rho)}
+      \tag{UCG12}
+   \]
+   whenever \(A>0\) and the layer is not storage-dominated,
+   \[
+      \theta>4\psi_\star\zeta |L|^\rho .
+      \tag{UCG13}
+   \]
+   Here \(N_{\rm gen}(L,\theta)\) is the least number of generated template
+   parts needed to cover \(L\) with \(g_{T,g}\ge\theta\) on each assigned part.
+   When \(\zeta=0\), the first denominator \(4\psi_\star A\) in \((UCG12)\)
+   may be replaced by \(2\psi_\star A\).
+
+   Thus the generic sponsor obstruction has a single normal form: either a
+   constant inflation of \(\beta\) sponsors all children, a generated merge
+   decreases a strong cut, or one dyadic child-price layer has high generated
+   cover entropy and must be handled by the spherical/list-decoding separator.
+\end{corollary}
+
+\begin{proof}
+   For fixed \(T\) and \(K\), the top \(K\)-prefix maximizes
+   \(G_T(V;\mathcal U)\) over all \(K\)-subsets of \(\mathcal C_T\).  If
+   \((UCG3)\) holds, replacing the captured child price in the cut by the one
+   generated record changes the cut balance by at most
+   \[
+      -G_T(V_K;\mathcal U)+\overline P_T(K)<0,
+   \]
+   and hence gives a positive merge.  If no prefix satisfies \((UCG3)\), then
+   for an assigned part \(L_j\) the top \(|L_j|\)-prefix has capture at least
+   \(\sum_{g\in L_j}w_g\), so
+   \[
+      \sum_{g\in L_j}w_g\le2\overline P_{T_j}(|L_j|).
+   \]
+   Summing over \(j\) gives \((UCG4)\).  Under \((UCG5)\), Holder's inequality
+   gives
+   \[
+      \sum_j|L_j|^\rho\le J^{1-\rho}K^\rho,\qquad
+      \sum_j|L_j|^{1+\rho}\le K^{1+\rho},
+   \]
+   and \(\theta K\le\sum_{g\in L}w_g\), proving \((UCG6)\).
+
+   If \((UCG7)\) holds for every \(\mathcal U\), then
+   \(P(\mathcal U)-\beta B(\mathcal U)\le\varepsilon P(\mathcal U)\), so
+   \[
+      P(\mathcal U)\le\frac{\beta}{1-\varepsilon}B(\mathcal U)
+      =
+      \beta_\varepsilon B(\mathcal U).
+   \]
+   These are exactly the Hall inequalities \((GCF4)\) with parameter
+   \(\beta_\varepsilon\).  Therefore
+   \cref{cor:generic-child-panel-sponsor-flow} gives the inflated sponsor flow.
+
+   If \((UCG7)\) fails, then \(P(\mathcal U)>0\), so
+   \(\mathcal U^+\) is nonempty.  Partition \(\mathcal U^+\) into dyadic
+   layers as in \((UCG10)\).  There are at most \(D(\mathcal U)\) nonempty
+   layers, and on each layer \(\theta\ge u_g/2\).  Hence
+   \[
+      \sum_{\text{layers }L}\theta_L|L|
+      \ge
+      \frac12P(\mathcal U),
+   \]
+   so one layer satisfies the first inequality in \((UCG11)\); the second
+   follows from \(E^\beta(\mathcal U)\le P(\mathcal U)\).
+
+   Apply \((UCG6)\) to a minimum generated cover of that layer with
+   \(w_g=\theta\).  If \((UCG13)\) holds, the storage term contributes less
+   than \(\theta |L|/2\), so
+   \[
+      \frac{\theta |L|}{2}
+      \le
+      2\psi_\star A\,N_{\rm gen}(L,\theta)^{1-\rho}|L|^\rho .
+   \]
+   Rearranging gives the first lower bound in \((UCG12)\), and substituting
+   \((UCG11)\) gives the second.  When \(\zeta=0\), the storage term is absent
+   and the same argument starts from
+   \(\theta |L|\le2\psi_\star A\,N_{\rm gen}(L,\theta)^{1-\rho}|L|^\rho\),
+   giving the stated constant.
+\end{proof}
+
 \begin{corollary}[Shared-cover LP for the fractional sponsor tail]
    \label{cor:fractional-sponsor-tail-shared-cover}
    Work in the setting of
@@ -77181,6 +77376,15 @@ because arbitrarily many unsponsored canonical children may have the same
 witness set and identical pair profiles.  The live theorem must therefore
 produce sponsor mass, a shared generated merge, or a dense/spherical separator
 for every unsponsored child-price cut.
+\Cref{cor:generic-unsponsored-cut-generated-column} is the corresponding
+cut-local normal form: if all cuts are only weakly unsupported, a constant
+inflation of the sponsor parameter closes them; otherwise a strong cut exposes
+one dyadic child-price layer.  A generated template whose top prefix captures
+more layer price than its one-time recursive cost is an immediate positive
+merge.  If no such merge exists, that layer has the explicit generated-cover
+entropy lower bound \((UCG12)\) unless it is already storage-dominated.  This
+is the precise input expected from range-reporting, additive-quantization,
+facility, lattice, or list-decoding separators.
 \Cref{cor:fractional-sponsor-tail-shared-cover} then removes duplicated large
 stars from that target by a finite shared-cover LP: either residual fractional
 star copies plus shared records have total price inside the storage allowance,
