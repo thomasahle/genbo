@@ -38337,6 +38337,94 @@ query mass rather than producing a cost-effective dense filter.
    just \((PME1)\) after substituting \(X_{i,h}/\tau_i=e^{D_{i,h}}\).
 \end{proof}
 
+\begin{corollary}[Renyi-moment entropy-deficit screen]
+   \label{cor:renyi-moment-entropy-deficit-screen}
+   Work in the setting of
+   \cref{cor:positive-moment-entropy-deficit-screen}.  For each active layer
+   \(i\), choose an exponent \(\nu_i>0\) and put
+   \[
+      Z_i(\nu_i)
+      =
+      \sum_{h\in\mathcal H_i}X_{i,h}^{1+\nu_i},
+      \qquad
+      C_{\nu_i}=(1+\nu_i)\nu_i^{-\nu_i/(1+\nu_i)} .
+      \tag{RME1}
+   \]
+   If, for every active layer \(i\),
+   \[
+      2^{-\ell_i}C_{\nu_i}
+      H_i^{\nu_i/(1+\nu_i)}
+      Z_i(\nu_i)^{1/(1+\nu_i)}
+      \le
+      \frac{B_\star}{2M_{\mathcal I}},
+      \qquad B_\star=aS-\E_z\Gamma_z>0,
+      \tag{RME2}
+   \]
+   and the high-correlation fixed-tail condition \((PELS5)\) holds, then
+   \((\mathsf{ESFC}_\Sigma)\) is feasible, provided no one-record guard-credit
+   repair fires.
+
+   Equivalently, since \(X_{i,h}=W_{i,h}e^{-I_{i,h}}\), the low-correlation
+   storage theorem may be stated as the single log-sum-exp inequality
+   \[
+      \log C_{\nu_i}
+      +\frac{\nu_i}{1+\nu_i}\log H_i
+      +\frac1{1+\nu_i}
+       \log\sum_{h\in\mathcal H_i}
+       \exp\!\left((1+\nu_i)(\log W_{i,h}-I_{i,h})\right)
+      -\ell_i\log2
+      \le
+      \log\frac{B_\star}{2M_{\mathcal I}} .
+      \tag{RME3}
+   \]
+   Thus the remaining diffuse storage certificate is an averaged Renyi
+   list-size bound, not a maximum-profile entropy-margin bound and not a
+   dyadic-tail enumeration.
+\end{corollary}
+
+\begin{proof}
+   For any cutoff \(\tau_i>0\), the proof of
+   \cref{cor:positive-moment-entropy-deficit-screen} gives
+   \[
+      \sum_h X_{i,h}
+      \le
+      \tau_i\left(H_i+\mathfrak M_i(\tau_i,\nu_i)\right).
+   \]
+   Since
+   \[
+      \left[
+         \left(\frac{X_{i,h}}{\tau_i}\right)^{1+\nu_i}-1
+      \right]_+
+      \le
+      \left(\frac{X_{i,h}}{\tau_i}\right)^{1+\nu_i},
+   \]
+   we have the deterministic bound
+   \[
+      \tau_i\left(H_i+\mathfrak M_i(\tau_i,\nu_i)\right)
+      \le
+      \tau_iH_i+\tau_i^{-\nu_i}Z_i(\nu_i).
+      \tag{RME4}
+   \]
+   If \(Z_i(\nu_i)=0\), the left side of \((RME2)\) is zero and the low
+   envelope is zero.  Otherwise choose
+   \[
+      \tau_i=\left(\frac{\nu_iZ_i(\nu_i)}{H_i}\right)^{1/(1+\nu_i)} .
+      \tag{RME5}
+   \]
+   Substituting \((RME5)\) into \((RME4)\) gives
+   \[
+      \tau_iH_i+\tau_i^{-\nu_i}Z_i(\nu_i)
+      =
+      C_{\nu_i}H_i^{\nu_i/(1+\nu_i)}
+      Z_i(\nu_i)^{1/(1+\nu_i)} .
+   \]
+   Hence \((RME2)\) implies \((PME2)\) for this optimized cutoff.  The
+   conclusion follows from
+   \cref{cor:positive-moment-entropy-deficit-screen}.  Formula \((RME3)\) is
+   \((RME2)\) after substituting \(X_{i,h}=W_{i,h}e^{-I_{i,h}}\) and taking
+   logarithms.
+\end{proof}
+
 \begin{corollary}[Paid-responsibility high-correlation star compiler]
    \label{cor:paid-responsibility-high-correlation-star}
    Work in the setting of
@@ -44127,6 +44215,9 @@ it is enough to prove a dyadic tail bound for the actual quantities
 target: after choosing a cutoff \(\tau\), a positive moment of the excess
 \((W_he^{-I_h}/\tau)^{1+\nu}\) plus the baseline \(\tau|\mathcal H|\) closes
 the same storage check.
+\Cref{cor:renyi-moment-entropy-deficit-screen} optimizes out that cutoff, so
+the remaining low-correlation theorem can be stated directly as one
+\(L_{1+\nu}\) moment of \(W_he^{-I_h}\).
 \Cref{lem:star-superlevel-column-verifier} and
 \cref{cor:pair-star-dense-column-generator} add the finite LP check: the star
 is retained only if its ball-thickened query side has positive reduced gain;
@@ -69701,6 +69792,8 @@ tail form: a few mildly bad profiles are harmless if the dyadic sum of
 \Cref{cor:positive-moment-entropy-deficit-screen} converts this into the
 positive-moment form that a tensorized spherical, lattice, or range/list-decoder
 estimate is more likely to prove directly.
+\Cref{cor:renyi-moment-entropy-deficit-screen} removes the auxiliary cutoff and
+makes the target a single Renyi list-size moment for each active layer.
 \Cref{lem:star-superlevel-column-verifier} and
 \cref{cor:pair-star-dense-column-generator} turn such a superlevel into an
 ordinary fractional-cover column by using the certified query activation
@@ -69953,6 +70046,9 @@ bound.
 \Cref{cor:positive-moment-entropy-deficit-screen} is the averaged version of
 that target: bound a positive moment of the normalized entropy excess and pay
 the cutoff times the number of subprofiles.
+\Cref{cor:renyi-moment-entropy-deficit-screen} is the cutoff-free form: it asks
+for a raw \(L_{1+\nu}\) moment of the entropy-deficit weights, exactly the
+average Renyi list-decoding estimate suggested by the compressed-bucket route.
 \Cref{cor:metric-entropy-hall-shadow-closure} and
 \cref{cor:low-doubling-hall-shadow-close} sharpen the remaining geometric
 obligation: any positive Hall shadow of certified covering number below
