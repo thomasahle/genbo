@@ -65487,6 +65487,98 @@ certificate is the verified positive-gain column and the finite LP it augments.
    reverse inequality for every routed certificate.
 \end{proof}
 
+\begin{corollary}[Averaged routed capped-capture proposals]
+   \label{cor:averaged-routed-capped-capture-proposals}
+   Work in the setting of
+   \cref{cor:routed-capped-capture-support-screen}.  Let \(\omega\sim\nu\) be a
+   finite proposal law.  Proposal \(\omega\) returns a support
+   \(S_\omega\subseteq W_B\), routed loads \(r^\omega_{a,p}\) satisfying
+   \((RAS1)\), and a certified lower routed mass \(\underline R_\omega\) with
+   \[
+      0\le \underline R_\omega
+      \le
+      \mathcal R_B^{u^z}(S_\omega,r^\omega).
+      \tag{ARCS1}
+   \]
+   Define its certified routed surplus
+   \[
+      Z_\omega=
+      \underline R_\omega
+      -
+      \bigl(|S_\omega|+2K_B^\natural\bigr)\Theta_B^{\rm net}.
+      \tag{ARCS2}
+   \]
+   If
+   \[
+      \E_{\omega\sim\nu} Z_\omega>0,
+      \tag{ARCS3}
+   \]
+   then some proposal in the support of \(\nu\) satisfies \((RAS3)\), and hence
+   \(B\) contains a positive shared top-prefix column.
+
+   Conversely, if no top prefix of \(B\) has positive reduced cost against
+   \(u^z\), then every finite one-sided routed proposal law has
+   \[
+      \E_{\omega\sim\nu} Z_\omega\le0.
+      \tag{ARCS4}
+   \]
+
+   The positive branch has a Las Vegas sampled form.  If
+   \[
+      \E Z_\omega\ge\Gamma>0,
+      \qquad
+      Z_\omega^+\le M_{\rm prop}
+      \quad\text{almost surely},
+      \tag{ARCS5}
+   \]
+   then \(N\) independent proposal draws contain a valid positive routed
+   certificate with probability at least
+   \[
+      1-\exp\left(-\frac{N\Gamma}{M_{\rm prop}}\right).
+      \tag{ARCS6}
+   \]
+
+   Thus a \(k\)-means++, facility, range-reporting, AQ, lattice, or
+   list-decoding analysis may be purely averaged: it suffices to lower-bound
+   expected routed captured mass minus the exact affine support price.  The
+   retained data structure still materializes only the first verified
+   deterministic top-prefix column.
+\end{corollary}
+
+\begin{proof}
+   If \((ARCS3)\) holds, then some \(\omega\) has \(Z_\omega>0\).  By
+   \((ARCS1)\)--\((ARCS2)\),
+   \[
+      \mathcal R_B^{u^z}(S_\omega,r^\omega)
+      >
+      \bigl(|S_\omega|+2K_B^\natural\bigr)\Theta_B^{\rm net}.
+   \]
+   This is \((RAS3)\), so
+   \cref{cor:routed-capped-capture-support-screen} gives the positive top
+   prefix.
+
+   If no top prefix is positive, then the converse part of
+   \cref{cor:routed-capped-capture-support-screen} gives
+   \[
+      \mathcal R_B^{u^z}(S_\omega,r^\omega)
+      \le
+      \bigl(|S_\omega|+2K_B^\natural\bigr)\Theta_B^{\rm net}
+   \]
+   for every proposal.  Together with \((ARCS1)\), this gives
+   \(Z_\omega\le0\) pointwise, and hence \((ARCS4)\).
+
+   Under \((ARCS5)\), \(\E Z_\omega^+\ge\Gamma\).  Since
+   \(Z_\omega^+\le M_{\rm prop}\), one proposal has positive surplus with
+   probability at least \(\Gamma/M_{\rm prop}\).  Independent repetition gives
+   \[
+      \Pr[\text{no positive proposal in }N\text{ draws}]
+      \le
+      \left(1-\frac{\Gamma}{M_{\rm prop}}\right)^N
+      \le
+      \exp\left(-\frac{N\Gamma}{M_{\rm prop}}\right).
+   \]
+\end{proof}
+
 \begin{corollary}[Fractional capped-capture threshold screen]
    \label{cor:fractional-capped-capture-threshold-screen}
    Work in the setting of
@@ -65625,6 +65717,9 @@ certificate is the verified positive-gain column and the finite LP it augments.
    affine clipped support price.  By
    \cref{cor:routed-capped-capture-support-screen}, it is enough to lower-certify
    any feasible atom-to-support routing with that surplus.  By
+   \cref{cor:averaged-routed-capped-capture-proposals}, an averaged routed
+   proposal law with positive certified surplus can be sampled Las Vegas until
+   one deterministic certificate verifies.  By
    \cref{cor:fractional-capped-capture-threshold-screen}, the same branch may
    be proposed fractionally and then rounded by thresholding the layer-cake
    surplus.
@@ -81589,6 +81684,9 @@ maximize in build time.
 \Cref{cor:routed-capped-capture-support-screen} gives the lower-certified
 interface for such routines: they may route atom mass into a support under the
 same atom caps instead of evaluating the full capped capture objective.
+\Cref{cor:averaged-routed-capped-capture-proposals} adds the sampled proposal
+form: positive expected one-sided routed surplus is enough, because verification
+hardens the first positive sample to a deterministic prefix.
 \Cref{cor:fractional-capped-capture-threshold-screen} makes this proposal layer
 fully fractional: if a routine certifies layer-cake capped capture above the
 fractional support price, one deterministic threshold support gives the same
