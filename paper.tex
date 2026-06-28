@@ -10473,6 +10473,62 @@ partition ignores the bias coordinates that certify the list size.
    proved over \(\widetilde P_{u,c}\) also hold over \(P_{u,c}\).
 \end{proof}
 
+\begin{corollary}[Singleton down-influence certificate]
+   \label{cor:singleton-down-influence-certificate}
+   Continue with the notation of
+   \cref{cor:anchor-fiber-internal-tail-certificate}.  Let
+   \(e_j\in\mathbb R^N\) be the \(j\)-th standard basis vector and define the
+   influence of the true codeword \(c_j\) on the anchor fiber of \(c\) by
+   \[
+      I_{u,c,j}
+      =
+      \left(
+      \sup_{z\in P_{u,c}}
+      \ip{-A_uG_u^+e_j}{z-\iota(c)}
+      \right)_+ .
+      \tag{LMV1}
+   \]
+   If, for every dyadic level \(k\ge0\) and every anchor \(c\in C_u\),
+   \[
+      \sum_{j:\ M(u)-W(c_j)\ge k\delta} I_{u,c,j}
+      \le
+      C_u e^{-(\lambda+\eta_u)k\delta},
+      \tag{LMV2}
+   \]
+   then the anchor-fiber selector bound \((LMT6)\) holds, and hence the
+   dyadic cumulative-tail condition \((LMR10)\) follows.
+
+   Thus it is not necessary to certify every fractional down-score selector
+   \(r\) directly.  It is enough to prove an exponential tail for the
+   singleton influence profile \(j\mapsto I_{u,c,j}\) below the local leader,
+   uniformly over anchor fibers.
+\end{corollary}
+
+\begin{proof}
+   Fix \(k\), \(c\), and \(r\in\mathcal R_u(k\delta)\).  Put
+   \(y_j=-A_uG_u^+e_j\).  Since \(r_j=0\) outside
+   \(S_u(k\delta)\),
+   \[
+      -A_uG_u^+r=\sum_{j\in S_u(k\delta)}r_jy_j .
+   \]
+   The support function of any set is subadditive and positively homogeneous
+   for nonnegative scalars, so
+   \[
+   \begin{aligned}
+      \Phi_{u,c}(-A_uG_u^+r)
+      &\le
+      \sum_{j\in S_u(k\delta)}r_j\Phi_{u,c}(y_j)\\
+      &\le
+      \sum_{j\in S_u(k\delta)} I_{u,c,j}\\
+      &\le
+      C_u e^{-(\lambda+\eta_u)k\delta}.
+   \end{aligned}
+      \tag{LMV3}
+   \]
+   This is exactly \((LMT6)\).  The final implication is
+   \cref{cor:anchor-fiber-internal-tail-certificate}.
+\end{proof}
+
 \begin{corollary}[Anchor-fiber LP/SA certificate compiler]
    \label{cor:anchor-fiber-lp-sa-compiler}
    Continue with the notation of
@@ -10521,6 +10577,13 @@ partition ignores the bias coordinates that certify the list size.
    the anchor-fiber separation LPs in \((LMU2)\), and bound the orthogonal
    residual in \((LMU3)\).  No global pseudocodeword-spectrum statement remains
    hidden inside the branch-and-bound analysis.
+
+   The selector LPs in \((LMU2)\) may be replaced by the singleton influence
+   tail \((LMV2)\) of
+   \cref{cor:singleton-down-influence-certificate}.  This is often the more
+   realistic route for a code proof: prove that each low-scoring true
+   codeword has small down-influence on every anchor fiber, and sum those
+   influences over score shells.
 \end{corollary}
 
 \begin{proof}
@@ -10805,6 +10868,14 @@ partition ignores the bias coordinates that certify the list size.
    and an orthogonal residual bound.  Once these local checks have
    polylogarithmic slack at the Gaussian tilt, the branch-and-bound overhead
    follows from the existing false-survivor accounting automatically.
+
+   \Cref{cor:singleton-down-influence-certificate} simplifies the most
+   expensive line in that checklist.  The selector \(r\) need not be handled as
+   an arbitrary point of a high-dimensional cube: by subadditivity of support
+   functions, it suffices to bound the singleton down-influences
+   \(I_{u,c,j}\) and prove their cumulative exponential decay over true
+   codewords below the local leader.  This is a smaller and more code-like
+   theorem target.
 
    \Cref{cor:well-conditioned-gram-coefficients} gives the first elementary
    path to such a theorem.  If the local subcode has a well-conditioned overlap
