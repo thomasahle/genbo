@@ -12395,6 +12395,32 @@ partition ignores the bias coordinates that certify the list size.
       -A_u\theta .
       \tag{LNQ4}
    \]
+   Equivalently, define the chart score map
+   \[
+      h_\tau(\eta)_j
+      =
+      \sum_{i=1}^b\sum_{a\in[q]}
+      \eta_{i,a}
+      \left(
+         \mathbf 1_{\{c_j(i)=a\}}
+         -
+         \mathbf 1_{\{c_j(i)=\tau_i\}}
+      \right)
+      \qquad(\eta\in\R_+^{bq}).
+      \tag{LNQ5}
+   \]
+   Then \((LNQ3)\) is the same as the codeword-score system
+   \[
+      h_\tau(\mu)+h_\tau(\alpha)+G_u\theta=0,
+      \qquad
+      \sum_j\theta_j=0,
+      \qquad
+      \alpha\ge0,
+      \tag{LNQ6}
+   \]
+   with objective \(\sum_j\omega_j\theta_j^+\).  This form involves only the
+   true-codeword Gram matrix and the chart-incidence scores.
+
    Thus the condition
    \(\mathsf B_{u,\tau}(\mu,\Omega_u)\le\Xi_u\) has a purely finite certificate:
    the block-centered residual can be neutralized, modulo directions orthogonal
@@ -12407,7 +12433,7 @@ partition ignores the bias coordinates that certify the list size.
    for every chart \(\tau\), of such \((\alpha,\theta)\) with
    \[
       \sum_j\Omega_{u,j}\theta_j^+\le\Xi_u .
-      \tag{LNQ5}
+      \tag{LNQ7}
    \]
 \end{corollary}
 
@@ -12418,7 +12444,7 @@ partition ignores the bias coordinates that certify the list size.
       Y_{i,\tau_i}-Y_{i,a}\le0,\qquad
       \ip{Y}{\iota(c_j)}-m\le0,\qquad
       m-\ip{Y}{\iota(c_j)}-\omega_j\le0 .
-      \tag{LNQ6}
+      \tag{LNQ8}
    \]
    For a maximization problem, nonnegative multipliers
    \(\alpha_{i,a},\beta_j,\gamma_j\) give the upper-bound Lagrangian
@@ -12432,14 +12458,14 @@ partition ignores the bias coordinates that certify the list size.
       -
       \sum_j\gamma_j(m-\ip{Y}{\iota(c_j)}-\omega_j).
    \end{aligned}
-      \tag{LNQ7}
+      \tag{LNQ9}
    \]
    The coefficient of \(m\) is \(\sum_j\beta_j-\sum_j\gamma_j\), so finite
    supremum over \(m\in\R\) requires these sums to be equal.  The coefficient of
    \(Y\), restricted to \(Y\in L_u\), is
    \[
       d_\tau(\mu)+K_\tau(\alpha)+A_u(\gamma-\beta).
-      \tag{LNQ8}
+      \tag{LNQ10}
    \]
    Finite supremum over \(Y\in L_u\) is therefore equivalent to this vector
    lying in \(L_u^\perp\).  Under these two equalities, the Lagrangian supremum
@@ -12456,14 +12482,29 @@ partition ignores the bias coordinates that certify the list size.
          d_\tau(\mu)+K_\tau(\alpha)+A_u(\gamma-\beta)\in L_u^\perp
          \end{array}
       \right\}.
-      \tag{LNQ9}
+      \tag{LNQ11}
    \]
    Set \(\theta=\gamma-\beta\).  The equality of the total masses gives
    \(\sum_j\theta_j=0\).  Conversely, for any zero-sum \(\theta\), the cheapest
    nonnegative decomposition is \(\gamma_j=\theta_j^+\) and
-   \(\beta_j=\theta_j^-\).  Substituting this in \((LNQ9)\) proves \((LNQ3)\).
+   \(\beta_j=\theta_j^-\).  Substituting this in \((LNQ11)\) proves \((LNQ3)\).
    Since \(A_u\theta\in L_u\), the orthogonality condition is equivalent to the
-   projected identity \((LNQ4)\).  Finally, applying \((LNQ3)\) with
+   projected identity \((LNQ4)\).
+
+   Applying \(A_u^\top\) to \((LNQ4)\) gives
+   \[
+      A_u^\top d_\tau(\mu)+A_u^\top K_\tau(\alpha)+G_u\theta=0.
+      \tag{LNQ12}
+   \]
+   By the definitions of \(d_\tau\), \(K_\tau\), and \(h_\tau\),
+   \(A_u^\top d_\tau(\mu)=h_\tau(\mu)\) and
+   \(A_u^\top K_\tau(\alpha)=h_\tau(\alpha)\), proving \((LNQ6)\).  Conversely,
+   if \((LNQ6)\) holds, then
+   \(A_u^\top(d_\tau(\mu)+K_\tau(\alpha)+A_u\theta)=0\), which is equivalent to
+   membership in \(L_u^\perp\).  Thus the Gram-system form is equivalent to
+   \((LNQ3)\).
+
+   Finally, applying \((LNQ3)\) with
    \(\omega=\Omega_u\) in every chart and using
    \cref{cor:min-chart-band-residual-verifier} proves the last assertion.
 \end{proof}
@@ -12805,7 +12846,9 @@ partition ignores the bias coordinates that certify the list size.
    certificate: for every chart, the block-centered residual must be neutralized
    by free upward moves away from chart minima plus a zero-total signed
    combination of true codewords whose positive part has small near-leader
-   price.  This is the finite transport form of the remaining code theorem.
+   price.  Equivalently, it must solve the finite Gram system
+   \(h_\tau(\mu)+h_\tau(\alpha)+G_u\theta=0\).  This is the finite transport
+   form of the remaining code theorem.
 
    \Cref{cor:leader-shift-near-leader-certificate} gives the clean terminal
    version of this idea when scalar leakage is killed exactly, or otherwise
