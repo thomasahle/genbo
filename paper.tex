@@ -15631,6 +15631,108 @@ query-price overlap, storage price, and duplicate-incidence factor \(b_G\).
    gives \((AGSS6)\).
 \end{proof}
 
+\begin{corollary}[Endpoint split for high-margin assigned residuals]
+   \label{cor:assigned-high-margin-endpoint-split}
+   Work in the setting of
+   \cref{cor:assigned-high-margin-storage-split}.  Let
+   \(p_G(u)=\Pr[u\in U_G]=\overline\Phi(m_G(u))\), and split the high-margin
+   residual disjointly as
+   \[
+      Y_{\rm cen}=\{y\in Y_{>M}:m_G(c(y))>M\},
+      \qquad
+      Y_{\rm pay}=Y_{>M}\setminus Y_{\rm cen}.
+      \tag{AGHS1}
+   \]
+   Then every \(y\in Y_{\rm pay}\) has \(m_G(y)>M\).  Put
+   \[
+      B_{\rm cen}=\sum_{y\in Y_{\rm cen}}b(y),
+      \qquad
+      B_{\rm pay}=\sum_{y\in Y_{\rm pay}}b(y),
+      \tag{AGHS2}
+   \]
+   and
+   \[
+      h_x^{\rm cen}=|\{y\in Y_{\rm cen}:c(y)=x\}|,
+      \qquad
+      Q_{\rm cen}=\sum_x\psi_x(h_x^{\rm cen})^\rho,
+      \qquad
+      S_{\rm cen}=\sum_x\psi_x(h_x^{\rm cen})^{1+\rho}.
+      \tag{AGHS3}
+   \]
+   If no inherited prefix is positive, then the center-high part satisfies
+   \[
+      B_{\rm cen}
+      \le
+      \mathsf T_aQ_{\rm cen}+\sigma S_{\rm cen}.
+      \tag{AGHS4}
+   \]
+   If all used child price factors satisfy \(\psi_x\le\psi_\star\), then
+   \[
+      S_{\rm cen}\le\psi_\star |Y_{\rm cen}|^{1+\rho}.
+      \tag{AGHS5}
+   \]
+   The paid-high part has one-point paid active load
+   \[
+      P_{\rm pay}
+      =
+      \sum_{y\in Y_{\rm pay}}b(y)p_G(y)
+      \le
+      \overline\Phi(M)B_{\rm pay},
+      \tag{AGHS6}
+   \]
+   while the center-high Renyi query price has Gaussian active load
+   \[
+      Q_{\rm cen}^{G}
+      =
+      \sum_x\psi_x(h_x^{\rm cen})^\rho p_G(x)
+      \le
+      \overline\Phi(M)Q_{\rm cen}.
+      \tag{AGHS7}
+   \]
+
+   Consequently, for every \(0<\eta<1\), either
+   \(B_{\rm pay}\ge\eta B_{>M}\), in which case an \(\eta\)-fraction of the
+   high-margin residual is a paid-endpoint first-moment tail by \((AGHS6)\), or
+   \(B_{\rm cen}>(1-\eta)B_{>M}\), in which case almost all high-margin mass is
+   controlled by the center-high Renyi price \((AGHS4)\), whose actual Gaussian
+   active query load is suppressed by the tail factor \(\overline\Phi(M)\) in
+   \((AGHS7)\).  If \(M^2\ge C\log\log n\), this suppression is
+   \((\log n)^{-\Omega_C(1)}\).
+\end{corollary}
+
+\begin{proof}
+   Since \(Y_{>M}\) is defined by
+   \(m_G(c(y))>M\) or \(m_G(y)>M\), every point not placed in \(Y_{\rm cen}\)
+   must satisfy \(m_G(y)>M\).  The partition gives
+   \(B_{\rm cen}+B_{\rm pay}=B_{>M}\).
+
+   Apply the sorting argument from
+   \cref{cor:high-margin-assigned-prefix-spread} to the subcollection
+   \(Y_{\rm cen}\).  The top \(h_x^{\rm cen}\)-prefix of \(W_x\) dominates
+   the assigned subset \(\{y\in Y_{\rm cen}:c(y)=x\}\), so if no inherited
+   prefix is positive,
+   \[
+      \sum_{y\in Y_{\rm cen}:c(y)=x}b(y)
+      \le
+      \psi_x\left(
+         \mathsf T_a(h_x^{\rm cen})^\rho
+         +
+         \sigma(h_x^{\rm cen})^{1+\rho}
+      \right).
+   \]
+   Summing over \(x\) gives \((AGHS4)\).  Inequality \((AGHS5)\) follows from
+   \(\sum_xh_x^{\rm cen}=|Y_{\rm cen}|\), disjointness, and convexity of
+   \(t^{1+\rho}\).
+
+   For \(y\in Y_{\rm pay}\), \(p_G(y)=\overline\Phi(m_G(y))\le
+   \overline\Phi(M)\), proving \((AGHS6)\).  If \(h_x^{\rm cen}>0\), then
+   some assigned point in \(Y_{\rm cen}\) has center \(x\), so
+   \(m_G(x)>M\) and \(p_G(x)\le\overline\Phi(M)\).  Summing these inequalities
+   proves \((AGHS7)\).  The final dichotomy is the disjoint mass split, and the
+   displayed inverse-polylogarithmic tail estimate follows from the Chernoff
+   bound \(\overline\Phi(M)\le e^{-M^2/2}\).
+\end{proof}
+
 \begin{corollary}[Gaussian paid-fiber separator criterion]
    \label{cor:gaussian-paid-fiber-separator-criterion}
    Work in the setting of
@@ -16166,6 +16268,10 @@ residual into its two prices: deterministic assigned cells have automatic
 shared storage by \(\sum_xh_x^{1+\rho}\le(\sum_xh_x)^{1+\rho}\), so any
 surviving high-margin branch must be large in Renyi query price rather than in
 unaccounted memory.
+\Cref{cor:assigned-high-margin-endpoint-split} further separates that query
+price by endpoint: paid-high mass has only \(\overline\Phi(M)\)-fraction
+one-point paid activity, while center-high mass has its Renyi query price
+activated only with the same Gaussian tail factor.
 \Cref{cor:gaussian-paid-fiber-separator-criterion} records the sharper
 split-optimized diagnostic form: lower-bound the paid-product moment, keep one
 truncated margin split inverse-polylogarithmic, and upper-bound the inherited
@@ -68821,6 +68927,12 @@ priced complement.
 obligation: once the high-margin cells are deterministically assigned, their
 recursive storage is subadditive and the surviving residual must appear as
 large Renyi query price.
+\Cref{cor:assigned-high-margin-endpoint-split} adds the endpoint accounting:
+the paid-high part is already a small one-point paid tail, and the center-high
+part carries only a Gaussian-tail fraction of its Renyi query price as active
+query load.  The remaining payment theorem therefore has to convert that
+tail-suppressed high-spread price into the existing list-decoding/entropy-energy
+certificate.
 \Cref{cor:spread-packing-entropy-energy-screen} records the corresponding
 charge: each separated-pair profile is harmless when its intersection energy
 dominates its entropy, and otherwise it is the high-correlation dense signal.
