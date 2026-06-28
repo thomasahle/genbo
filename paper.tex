@@ -15919,6 +15919,143 @@ query-price overlap, storage price, and duplicate-incidence factor \(b_G\).
    for all sufficiently large \(n\).
 \end{proof}
 
+\begin{corollary}[Two-cutoff high-margin window reduction]
+   \label{cor:two-cutoff-high-margin-window}
+   Work in the setting of
+   \cref{cor:assigned-high-margin-endpoint-split}, and assume the assigned edges
+   satisfy
+   \[
+      \ip{c(y)}{y}\ge\theta_-
+      \qquad(y\in Y_{>M},\ b(y)>0)
+      \tag{HMW1}
+   \]
+   for some \(0<\theta_-\le1\).  Let \(U>M\), and split
+   \[
+      Y_{(M,U]}
+      =
+      \{y\in Y_{>M}:m_G(c(y))\le U,\ m_G(y)\le U\},
+      \qquad
+      Y_{>U}=Y_{>M}\setminus Y_{(M,U]} .
+      \tag{HMW2}
+   \]
+   Write \(B_{(M,U]}=\sum_{y\in Y_{(M,U]}}b(y)\).  If \(B_{(M,U]}>0\), and
+   \(A_{(M,U]}\), \(P_{X,(M,U]}\), and \(P_{Y,(M,U]}\) denote the transported hit
+   moment and endpoint active loads after restricting to \(Y_{(M,U]}\), then
+   \[
+      A_{(M,U]}
+      \ge
+      \frac14\overline\Phi\!\left(\frac{U}{\sqrt{\theta_-}}\right)
+      B_{(M,U]},
+      \tag{HMW3}
+   \]
+   and
+   \[
+      \frac{P_{X,(M,U]}}{A_{(M,U]}},
+      \frac{P_{Y,(M,U]}}{A_{(M,U]}}
+      \le
+      \frac{4}{\overline\Phi(U/\sqrt{\theta_-})}.
+      \tag{HMW4}
+   \]
+
+   For the very-high residual, define the endpoint split at level \(U\)
+   \[
+      Y_{{\rm cen},>U}=\{y\in Y_{>U}:m_G(c(y))>U\},
+      \qquad
+      Y_{{\rm pay},>U}=Y_{>U}\setminus Y_{{\rm cen},>U}.
+      \tag{HMW5}
+   \]
+   Then every \(y\in Y_{{\rm pay},>U}\) has \(m_G(y)>U\).  Put
+   \[
+      B_{{\rm cen},>U}=\sum_{y\in Y_{{\rm cen},>U}}b(y),
+      \qquad
+      B_{{\rm pay},>U}=\sum_{y\in Y_{{\rm pay},>U}}b(y),
+      \tag{HMW6}
+   \]
+   and
+   \[
+      h_x^{>U}=|\{y\in Y_{{\rm cen},>U}:c(y)=x\}|,
+      \qquad
+      Q_{{\rm cen},>U}=\sum_x\psi_x(h_x^{>U})^\rho,
+      \qquad
+      S_{{\rm cen},>U}=\sum_x\psi_x(h_x^{>U})^{1+\rho}.
+      \tag{HMW7}
+   \]
+   If no inherited prefix is positive, then
+   \[
+      B_{{\rm cen},>U}
+      \le
+      \mathsf T_aQ_{{\rm cen},>U}+\sigma S_{{\rm cen},>U}.
+      \tag{HMW8}
+   \]
+   The paid-side endpoint tail and the center-side active Renyi price obey
+   \[
+      \sum_{y\in Y_{{\rm pay},>U}}b(y)p_G(y)
+      \le
+      \overline\Phi(U)B_{{\rm pay},>U},
+      \tag{HMW9}
+   \]
+   and
+   \[
+      \sum_x\psi_x(h_x^{>U})^\rho p_G(x)
+      \le
+      \overline\Phi(U)Q_{{\rm cen},>U}.
+      \tag{HMW10}
+   \]
+
+   Consequently, for every \(0<\eta<1\), either
+   \(B_{(M,U]}\ge\eta B_{>M}\), in which case the bounded high-margin window
+   supplies transported hit mass at least
+   \[
+      \frac{\eta}{4}
+      \overline\Phi\!\left(\frac{U}{\sqrt{\theta_-}}\right)B_{>M}
+      \tag{HMW11}
+   \]
+   with success-normalized endpoint load bounded by \((HMW4)\), or
+   \(B_{>U}>(1-\eta)B_{>M}\), in which case almost all of the high-margin
+   residual has moved to the stronger endpoint-tail level \(U\) and is governed by
+   \((HMW8)\)--\((HMW10)\).
+
+   In particular, if \(U^2\le C\log\log n\) and
+   \(\eta\ge(\log n)^{-K}\), the first alternative is an inverse-polylogarithmic
+   hit subtransport with polylogarithmic normalized endpoint load.
+\end{corollary}
+
+\begin{proof}
+   On \(Y_{(M,U]}\), both assigned endpoint margins are at most \(U\), and the
+   correlation lower bound \((HMW1)\) holds.  Applying
+   \cref{cor:upper-margin-assigned-transport-load} with cutoff \(U\) gives
+   \((HMW3)\)--\((HMW4)\).
+
+   Since \(Y_{>U}\) is the complement of \(Y_{(M,U]}\) inside \(Y_{>M}\), every
+   point in \(Y_{>U}\) has \(m_G(c(y))>U\) or \(m_G(y)>U\).  Therefore every point
+   not placed in \(Y_{{\rm cen},>U}\) satisfies \(m_G(y)>U\).
+
+   The proof of \((HMW8)\) is the same sorting argument as in
+   \cref{cor:assigned-high-margin-endpoint-split}, applied to the subcollection
+   \(Y_{{\rm cen},>U}\): the top \(h_x^{>U}\)-prefix of \(W_x\) dominates the
+   assigned subset with center \(x\), and no positive inherited prefix gives
+   \[
+      \sum_{y\in Y_{{\rm cen},>U}:c(y)=x}b(y)
+      \le
+      \psi_x\left(
+         \mathsf T_a(h_x^{>U})^\rho+\sigma(h_x^{>U})^{1+\rho}
+      \right).
+   \]
+   Summing over \(x\) proves \((HMW8)\).
+
+   For \(y\in Y_{{\rm pay},>U}\),
+   \(p_G(y)=\overline\Phi(m_G(y))\le\overline\Phi(U)\), proving \((HMW9)\).  If
+   \(h_x^{>U}>0\), then some assigned point in \(Y_{{\rm cen},>U}\) has center
+   \(x\), so \(m_G(x)>U\) and \(p_G(x)\le\overline\Phi(U)\).  Summing gives
+   \((HMW10)\).
+
+   The final dichotomy is the disjoint mass split
+   \(B_{>M}=B_{(M,U]}+B_{>U}\), together with \((HMW3)\)--\((HMW4)\).  The
+   inverse-polylogarithmic specialization follows from the Gaussian tail-ratio
+   bound in \((UATL4)\), with \(U^2\le C\log\log n\), and the assumed
+   \(\eta\ge(\log n)^{-K}\).
+\end{proof}
+
 \begin{corollary}[Gaussian paid-fiber separator criterion]
    \label{cor:gaussian-paid-fiber-separator-criterion}
    Work in the setting of
@@ -16468,6 +16605,10 @@ after high-correlation prices are bounded, any inverse-polylogarithmic
 paid-product exposure above the explicit tail floor already forces a positive
 inherited prefix.  Thus the list-decoding side need not prove a constant-rate
 high-margin exposure.
+\Cref{cor:two-cutoff-high-margin-window} adds the iterative cutoff form:
+any high-margin mass with both endpoints below a larger cutoff \(U\) is again an
+ordinary upper-margin assigned subtransport, while only the mass above \(U\)
+remains in the endpoint-tail residual.
 \Cref{cor:gaussian-paid-fiber-separator-criterion} records the sharper
 split-optimized diagnostic form: lower-bound the paid-product moment, keep one
 truncated margin split inverse-polylogarithmic, and upper-bound the inherited
@@ -69137,6 +69278,11 @@ paid-product lower bound on the high-margin residual suffices.  The remaining
 payment theorem therefore has to produce only that inverse-polylog lower-bound
 certificate from the existing list-decoding/entropy-energy witness, or show that
 tail-rate activity is already budgeted.
+\Cref{cor:two-cutoff-high-margin-window} further localizes this target: a
+bounded high-margin window \((M,U]\) is already a usable inverse-polylog
+subtransport when it carries inverse-polylog mass, so the genuine hard residual
+may be pushed to an arbitrarily chosen very-high cutoff \(U\) within the
+\(O(\sqrt{\log\log n})\) margin range.
 \Cref{cor:spread-packing-entropy-energy-screen} records the corresponding
 charge: each separated-pair profile is harmless when its intersection energy
 dominates its entropy, and otherwise it is the high-correlation dense signal.
