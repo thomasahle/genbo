@@ -12209,6 +12209,61 @@ partition ignores the bias coordinates that certify the list size.
    \cref{cor:conditional-tilted-excess-certificate} gives the overhead statement.
 \end{proof}
 
+\begin{corollary}[Band-limited residual-budget compiler]
+   \label{cor:band-limited-residual-budget-compiler}
+   Continue with the notation of
+   \cref{cor:finite-score-band-lp-sa-compiler}.  Let \(\mu_u\in\R_+^{bq}\) be a
+   residual budget valid in the sense of \cref{cor:residual-hall-verifier}:
+   for every nonnegative score table \(Y\),
+   \[
+      \sup_{z\in P_u}\ip{Y}{z}
+      -
+      \max_{j\in[N]}\ip{Y}{\iota(c_j)}
+      \le
+      \ip{Y}{\mu_u}.
+      \tag{LNO1}
+   \]
+   If the same budget has small mass against every combined-price score band,
+   \[
+      \sup_{R\in\mathcal R_u^{\mathrm{gap}}(\Omega_u)}
+      \ip{R}{\mu_u}
+      \le
+      \Xi_u ,
+      \tag{LNO2}
+   \]
+   then the finite score-band gap condition \((LNN2)\) holds.  Consequently, if
+   the balance-witness and orthogonal conditions \((LNN3)\)--\((LNN4)\) also
+   hold, then the conditional tilted-excess bound \((LPT2)\) holds with
+   \(A_\lambda\), and the LP/SA threshold reporter has polylogarithmic expected
+   overhead whenever \(A_\lambda=\log^{O(1)}n\) at \(\lambda=T/b\).
+
+   A failed residual route is again finite: either \((LNO1)\) fails and
+   \cref{cor:residual-hall-verifier} exposes a nonnegative score table separating
+   \(P_u\) from the true codeword hull plus \(\mu_u\), or \((LNO2)\) fails and
+   returns a near-optimal band score table \(R\) that places too much mass on the
+   proposed residual coordinates.
+\end{corollary}
+
+\begin{proof}
+   Apply \((LNO1)\) to any
+   \(R\in\mathcal R_u^{\mathrm{gap}}(\Omega_u)\).  Since \(R\ge0\),
+   \[
+      \sup_{z\in P_u}\ip{R}{z}
+      -
+      \max_{j\in[N]}\ip{R}{\iota(c_j)}
+      \le
+      \ip{R}{\mu_u}
+      \le
+      \Xi_u ,
+      \tag{LNO3}
+   \]
+   where the last inequality is \((LNO2)\).  Taking the supremum over all such
+   \(R\) proves \((LNN2)\).  The overhead statement is then exactly
+   \cref{cor:finite-score-band-lp-sa-compiler}.  The failure alternatives are
+   the negations of \((LNO1)\) and \((LNO2)\), with the first certified by
+   \cref{cor:residual-hall-verifier}.
+\end{proof}
+
 \begin{corollary}[Anchor-fiber LP/SA certificate compiler]
    \label{cor:anchor-fiber-lp-sa-compiler}
    Continue with the notation of
@@ -12529,6 +12584,14 @@ partition ignores the bias coordinates that certify the list size.
    tilted-excess moment is already polylogarithmic after multiplying by the
    orthogonal Gaussian-width factor.  This is now the narrowest local code
    theorem needed by the LP/SA route.
+
+   \Cref{cor:band-limited-residual-budget-compiler} gives an even more
+   geometric sufficient form.  It is enough to find a one-sided residual budget
+   \(\mu_u\) that Hall-covers every relaxation point by the true codeword convex
+   hull, and whose mass \(\ip{R}{\mu_u}\) is at most \(\Xi\) for every
+   \(\Omega\)-near-optimal score band \(R\).  This turns the LP/SA target into a
+   residual localization theorem: fractional mass may remain, but it must avoid
+   all score bands that are competitive with the current true-codeword frontier.
 
    \Cref{cor:leader-shift-near-leader-certificate} gives the clean terminal
    version of this idea when scalar leakage is killed exactly, or otherwise
