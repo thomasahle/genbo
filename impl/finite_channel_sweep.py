@@ -67,6 +67,11 @@ FIELDNAMES = [
     "support_median",
     "hessian_cond_median",
     "hessian_cond_q90",
+    "route_depth",
+    "leader_eps",
+    "leader_boost_overhead_q50",
+    "leader_boost_overhead_q90",
+    "leader_boost_overhead_q99",
 ]
 
 
@@ -97,6 +102,30 @@ def _finite_or_inf(values: np.ndarray, q: float) -> float:
     return _q(finite, q)
 
 
+def _upper_quantile(values: np.ndarray, q: float) -> float:
+    if not (0.0 <= q <= 1.0):
+        raise ValueError("quantile must lie in [0, 1]")
+    if len(values) == 0:
+        return float("nan")
+    ordered = np.sort(values)
+    index = int(math.ceil(q * (len(ordered) - 1)))
+    return float(ordered[index])
+
+
+def leader_boost_overhead(h_values: np.ndarray, route_depth: int) -> tuple[float, np.ndarray]:
+    if route_depth < 1:
+        raise ValueError("route_depth must be positive")
+    leader_eps = (route_depth + 1) ** -2
+    log_boost = math.log(1.0 / leader_eps)
+    overhead = np.divide(
+        log_boost,
+        h_values,
+        out=np.full_like(h_values, float("inf"), dtype=float),
+        where=h_values > 0,
+    )
+    return leader_eps, overhead
+
+
 def run_trial(
     *,
     n: int,
@@ -109,6 +138,7 @@ def run_trial(
     b_count: int,
     balance_iters: int,
     near_correlation: float | None = None,
+    route_depth: int | None = None,
 ) -> dict[str, object]:
     if scale <= 0:
         raise ValueError("scale must be positive")
@@ -129,6 +159,9 @@ def run_trial(
     support = effective_support(k_z)
     cond = softmax_hessian_condition(panel, k_z)
     target = np.full(b_count, 1.0 / b_count)
+    if route_depth is None:
+        route_depth = max(1, int(math.ceil(math.log(max(n, 3)))))
+    leader_eps, boost_overhead = leader_boost_overhead(result.h_eta, route_depth)
 
     return {
         "n": n,
@@ -167,6 +200,11 @@ def run_trial(
         "support_median": float(np.median(support)),
         "hessian_cond_median": _finite_or_inf(cond, 0.5),
         "hessian_cond_q90": _finite_or_inf(cond, 0.9),
+        "route_depth": route_depth,
+        "leader_eps": leader_eps,
+        "leader_boost_overhead_q50": _upper_quantile(boost_overhead, 0.5),
+        "leader_boost_overhead_q90": _upper_quantile(boost_overhead, 0.9),
+        "leader_boost_overhead_q99": _upper_quantile(boost_overhead, 0.99),
     }
 
 
@@ -196,6 +234,8 @@ def main() -> None:
     parser.add_argument("--B", type=int, default=0, help="fixed outcome count; overrides --B-mult")
     parser.add_argument("--B-mult", type=float, default=1.0, help="multiply ceil(n^(1/(2c^2))) by this factor")
     parser.add_argument("--balance-iters", type=int, default=200)
+    parser.add_argument("--route-depth", type=int, default=0,
+                        help="depth H for boosted-leader epsilon=(H+1)^-2; default is ceil(log n)")
     parser.add_argument("--csv", default=None, help="optional output CSV path")
     args = parser.parse_args()
 
@@ -226,6 +266,7 @@ def main() -> None:
                         b_count=b_count,
                         balance_iters=args.balance_iters,
                         near_correlation=args.near_corr,
+                        route_depth=args.route_depth or None,
                     ))
     write_rows(rows, args.csv)
 
