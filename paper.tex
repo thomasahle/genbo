@@ -2275,6 +2275,78 @@ The first fact certifies the radius decrease obtained from a spherical cap.
    \(\|x-y\|^2=2-2\ip{x}{y}\).
 \end{proof}
 
+\begin{corollary}[Quadratic cap-margin budget]
+   \label{cor:quadratic-cap-margin-budget}
+   In the setting of \cref{cor:tiny-positive-cap-chain}, but allowing the
+   margins \(\gamma_i\) to vary, suppose \(0<\gamma_i<1/2\) and
+   \[
+      R_{i+1}\le R_i\sqrt{1-\gamma_i^2}
+      \qquad(0\le i<h).
+      \tag{QCB1}
+   \]
+   Then
+   \[
+      \sum_{i=0}^{h-1}\gamma_i^2
+      \le
+      4\log(R_0/r).
+      \tag{QCB2}
+   \]
+   Consequently, on the localized instances of \cref{lem:localization}, where
+   \(R_0/r\le\log^C n\), any nonnegative lineage tolls \(\xi_i\) satisfying
+   \[
+      \xi_i\le A\gamma_i^2
+      \tag{QCB3}
+   \]
+   have
+   \[
+      \sum_i\xi_i=O_{A,C}(\log\log n),
+      \qquad
+      \prod_i e^{\xi_i}\le \log^{O_{A,C}(1)}n .
+      \tag{QCB4}
+   \]
+   Moreover, for any base margin \(\gamma_0>0\), the dyadic band
+   \[
+      I_k=\{i:2^k\gamma_0\le\gamma_i<2^{k+1}\gamma_0\}
+      \tag{QCB5}
+   \]
+   obeys
+   \[
+      |I_k|
+      \le
+      \frac{4\log(R_0/r)}{2^{2k}\gamma_0^2}.
+      \tag{QCB6}
+   \]
+
+   Thus the positive-correlation branch should be charged by margin-squared
+   local surplus, not by a unit toll per dense star.  A unit toll only gives the
+   depth bound in \cref{cor:tiny-positive-cap-chain}; a quadratic toll sums to
+   \(O(\log\log n)\) inside the localized polylogarithmic radius ball.
+\end{corollary}
+
+\begin{proof}
+   As in the proof of \cref{cor:tiny-positive-cap-chain},
+   \[
+      \log\frac{R_i}{R_{i+1}}
+      \ge
+      -\frac12\log(1-\gamma_i^2)
+      \ge
+      \frac{\gamma_i^2}{2}.
+   \]
+   Summing over \(i<h\) gives
+   \[
+      \frac12\sum_{i<h}\gamma_i^2
+      \le
+      \log\frac{R_0}{R_h}
+      \le
+      \log\frac{R_0}{r}.
+   \]
+   This proves \((QCB2)\) with constant \(2\); the displayed constant \(4\)
+   leaves slack for the same shell-width and certification constants as above.
+   The localized toll statement follows by multiplying \((QCB2)\) by \(A\) and
+   using \(R_0/r\le\log^C n\).  Finally, every \(i\in I_k\) contributes at
+   least \(2^{2k}\gamma_0^2\) to the sum in \((QCB2)\), proving \((QCB6)\).
+\end{proof}
+
 \begin{figure}[t]\centering
 \begin{tikzpicture}[font=\small,>=stealth]
 \def\R{2.6}
@@ -72197,6 +72269,10 @@ branch.
 branch: a cap margin as small as \(K\log\log n/\log n\) still permits only
 \(O_{K}(\log^2 n/\log\log n)\) consecutive recenterings inside the localized
 polylog-radius ball.
+\Cref{cor:quadratic-cap-margin-budget} gives the sharper accounting form:
+the squared margins along any such lineage sum to only \(O(\log\log n)\), so a
+positive-correlation repair that pays a local \(O(\gamma^2)\) toll has
+polylogarithmic total cost even when there are many tiny-margin recenterings.
 \Cref{cor:dyadic-distinct-storage-bucket-net} rewrites that target as a dyadic
 large-child counting problem: for every recursive price scale, bound the number
 of distinct canonical bucket nets whose shared child index has that price.
