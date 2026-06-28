@@ -1799,6 +1799,102 @@ The smooth product filter is not a replacement for \cref{lem:adaptive-continuati
    Taking expectations completes the proof.
 \end{proof}
 
+\begin{corollary}[Polylogarithmic low-correlation co-load cutoff]
+   \label{cor:polylog-low-correlation-coload}
+   Let \(m\ge3\), \(P\subset\mathbb S^{D-1}\), and let
+   \(G_1,\ldots,G_M\) be independent centered Gaussian cap labels
+   \(G_i\sim N(0,I_D)\) with
+   \[
+      U_G=\{x:\ip{G}{x}\ge T\}.
+   \]
+   Fix constants \(A,K\ge0\), \(0\le\rho\le1\), and assume
+   \[
+      M\le m^{1+\rho}\log^A m,
+      \qquad
+      T^2\ge 2\log m-A\log\log m.
+      \tag{PLC1}
+   \]
+   Put
+   \[
+      \theta_m=K\,\frac{\log\log m}{\log m},
+      \tag{PLC2}
+   \]
+   and assume \(\theta_m<1\).  Let
+   \(E_{\rm lo}\subseteq P\times P\) be any set of ordered pairs with
+   \(|E_{\rm lo}|\le m^2\) and \(\ip{x}{y}\le\theta_m\) for every
+   \((x,y)\in E_{\rm lo}\).  Then
+   \[
+      M\sum_{x\in P}\Pr[x\in U_G]
+      \le
+      m^{1+\rho}\log^{3A/2}m
+      \tag{PLC3}
+   \]
+   and
+   \[
+      M\sum_{(x,y)\in E_{\rm lo}}
+      \Pr[x,y\in U_G]
+      \le
+      m^{1+\rho}\log^{2A+2K+1}m .
+      \tag{PLC4}
+   \]
+   Consequently, if all distinct separated pair profiles charged to the
+   Gaussian storage term are contained in \(E_{\rm lo}\), then the hypotheses
+   \((TPS1)\)--\((TPS2)\) of
+   \cref{cor:tuple-profile-compressed-bucket-storage} with
+   \(B=m^{1+\rho}\log^{O_{A,K}(1)}m\) hold.  Thus centered spherical cap
+   buckets have only polylogarithmic shared-storage co-load from all pairs of
+   correlation at most \(O(\log\log m/\log m)\); any polynomial storage
+   obstruction must lie in the complementary tiny positive-correlation branch
+   and be routed to the dense/star or quotient separator.
+\end{corollary}
+
+\begin{proof}
+   The one-point Chernoff bound gives
+   \[
+      \Pr[x\in U_G]\le e^{-T^2/2}
+      \le m^{-1}\log^{A/2}m .
+   \]
+   Since \(|P|\le m\) and \(M\le m^{1+\rho}\log^A m\), this proves
+   \((PLC3)\).
+
+   For \((x,y)\in E_{\rm lo}\), \cref{lem:two-point-gaussian-cap-energy} with
+   \(\mu=0\), \(\beta=T\), and \(\theta_0=\theta_m\) gives
+   \[
+      \Pr[x,y\in U_G]
+      \le
+      \exp\!\left(-\frac{T^2}{1+\theta_m}\right).
+   \]
+   Writing \(L=\log m\) and \(\ell=\log\log m\), and using
+   \(\theta_m=K\ell/L\), we have
+   \[
+   \begin{aligned}
+      2L-\frac{T^2}{1+\theta_m}
+      &\le
+      2L-\frac{2L-A\ell}{1+\theta_m}  \\
+      &=
+      \frac{2L\theta_m+A\ell}{1+\theta_m}
+      \le (2K+A)\ell ,
+   \end{aligned}
+   \]
+   where the last inequality uses \(1+\theta_m\ge1\).  Hence
+   \[
+      |E_{\rm lo}|
+      \exp\!\left(-\frac{T^2}{1+\theta_m}\right)
+      \le
+      \log^{A+2K}m .
+   \]
+   Multiplying by \(M\le m^{1+\rho}\log^A m\) proves \((PLC4)\), with the
+   harmless extra logarithmic power absorbing small values of \(m\) and the
+   integer rounding of constants.
+
+   Taking one pair profile equal to \(E_{\rm lo}\), with energy
+   \(T^2/(1+\theta_m)\), and refining it arbitrarily into subprofiles only
+   decreases the displayed upper bound after summation.  Thus, whenever the
+   Gaussian-charged profiles are all contained in \(E_{\rm lo}\),
+   \((PLC3)\)--\((PLC4)\) supply \((TPS1)\)--\((TPS2)\) with
+   \(B=m^{1+\rho}\log^{O_{A,K}(1)}m\).
+\end{proof}
+
 \begin{remark}[The Renyi target is entropy minus energy]
    \label{rem:renyi-entropy-energy-target}
    \Cref{cor:tuple-profile-renyi-certificate} is the promised self-contained
@@ -72020,6 +72116,11 @@ gives the direct
 low-correlation certificate for this target: first list moment plus two-point
 Gaussian tuple-profile energy imply the needed occurrence moment, and the
 shared-DAG distinct-net sum is smaller.
+\Cref{cor:polylog-low-correlation-coload} instantiates that certificate at the
+critical spherical threshold: pair correlations up to
+\(O(\log\log m/\log m)\) contribute only a polylogarithmic factor, so any
+polynomial storage obstruction must be in the complementary positive-correlation
+branch.
 \Cref{cor:dyadic-distinct-storage-bucket-net} rewrites that target as a dyadic
 large-child counting problem: for every recursive price scale, bound the number
 of distinct canonical bucket nets whose shared child index has that price.
