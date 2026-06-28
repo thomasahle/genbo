@@ -4,7 +4,9 @@ from chart_tail_stress import (
     allowed_tail_mass,
     centered_overlap_matrix,
     codeword_scores,
+    coefficient_decay_budget,
     make_balanced_code,
+    min_decay_ratio_for_budget,
     posterior_residual_metrics,
     run_trial,
     top_anchor_cover_metrics,
@@ -102,6 +104,20 @@ def test_allowed_tail_mass_matches_boltzmann_necessity():
         raise AssertionError("negative budget was accepted")
 
 
+def test_coefficient_decay_budget_has_lambda_threshold():
+    gaps = np.array([0.0, 1.0, 2.0])
+    lam = 1.0
+    uniform_budget = coefficient_decay_budget(gaps, lam, 0.0)
+    lambda_budget = coefficient_decay_budget(gaps, lam, lam)
+    steep_budget = coefficient_decay_budget(gaps, lam, 2.0 * lam)
+
+    assert np.isclose(uniform_budget, np.mean(np.exp(gaps)))
+    assert np.isclose(lambda_budget, 3.0 / np.sum(np.exp(-gaps)))
+    assert uniform_budget > lambda_budget > steep_budget >= 1.0
+    assert np.isclose(min_decay_ratio_for_budget(gaps, lam, lambda_budget), 1.0)
+    assert min_decay_ratio_for_budget(gaps, lam, 0.5) == np.inf
+
+
 def test_run_trial_is_deterministic_and_clips_the_singleton_cost():
     row1 = run_trial(n_words=40, blocks=10, alphabet=4, seed=3, price_cap=5.0)
     row2 = run_trial(n_words=40, blocks=10, alphabet=4, seed=3, price_cap=5.0)
@@ -116,6 +132,11 @@ def test_run_trial_is_deterministic_and_clips_the_singleton_cost():
     assert 0.0 <= row1["coeff_mass_allow_q50"] <= 1.0
     assert row1["coeff_mass_allow_max"] <= row1["coeff_mass_allow_q90"]
     assert row1["coeff_mass_allow_q90"] <= row1["coeff_mass_allow_q50"]
+    assert row1["coeff_decay_budget_uniform"] >= row1["coeff_decay_budget_half_lambda"]
+    assert row1["coeff_decay_budget_half_lambda"] >= row1["coeff_decay_budget_lambda"]
+    assert row1["coeff_decay_budget_lambda"] >= row1["coeff_decay_budget_3half_lambda"]
+    assert row1["coeff_decay_budget_3half_lambda"] >= 1.0
+    assert row1["coeff_decay_min_ratio_for_cap"] >= 0.0
 
 
 if __name__ == "__main__":
@@ -125,5 +146,6 @@ if __name__ == "__main__":
     test_posterior_residual_metrics_match_direct_costs()
     test_top_anchor_cover_metrics_removes_large_singleton()
     test_allowed_tail_mass_matches_boltzmann_necessity()
+    test_coefficient_decay_budget_has_lambda_threshold()
     test_run_trial_is_deterministic_and_clips_the_singleton_cost()
     print("chart_tail_stress tests passed")

@@ -13509,6 +13509,14 @@ partition ignores the bias coordinates that certify the list size.
    \(512\)-word run, a polylogarithmic Boltzmann tail budget allows only about
    \(6.7\cdot10^{-4}\) total negative coefficient mass at the \(90\)th
    percentile score gap and about \(2.7\cdot10^{-6}\) at the maximum gap.
+   \Cref{lem:finite-range-boltzmann-threshold} gives the matching finite-window
+   threshold.  In the same run, normalized toy coefficient profiles
+   \(b_j\propto e^{-\alpha(M-W_j)}\) had mean Boltzmann budgets about
+   \(4.4\cdot10^6\), \(2.7\cdot10^4\), \(1.3\cdot10^2\), and \(6.7\) at
+   \(\alpha/\lambda=0,1/2,1,3/2\), and the mean ratio needed to meet the
+   \(\log^3N\) cap was \(0.90\).  This is a diagnostic only, but it says the
+   missing theorem must create nearly \(\lambda\)-tilted coefficient decay,
+   with any subcritical exponent paid explicitly out of the finite score range.
 \end{remark}
 
 \begin{corollary}[Posterior mismatch form for localized residuals]
@@ -13872,6 +13880,74 @@ partition ignores the bias coordinates that certify the list size.
    \]
    Combining this with \((LOB24)\) gives \((LOB26)\).  Taking
    \(s=\Delta+r\) and \(K=e^{\lambda\Delta}\) gives \((LOB27)\).
+\end{proof}
+
+\begin{lemma}[Finite-range Boltzmann tail threshold]
+   \label{lem:finite-range-boltzmann-threshold}
+   Let \(0\le g_j\le G\), \(b_j\ge0\), and define
+   \(A(s)=\sum_{j:g_j\ge s}b_j\).  Then
+   \[
+      \sum_j b_je^{\lambda g_j}
+      =
+      A(0)+\lambda\int_0^G e^{\lambda s}A(s)\,ds .
+      \tag{LOB28}
+   \]
+   Consequently, if \(\sum_jb_j\le1\) and
+   \[
+      A(s)\le C e^{-\alpha s}
+      \qquad(0\le s\le G),
+      \tag{LOB29}
+   \]
+   then
+   \[
+      \sum_j b_je^{\lambda g_j}
+      \le
+      1+\lambda C\,\Psi_{\lambda,\alpha}(G),
+      \tag{LOB30}
+   \]
+   where
+   \[
+      \Psi_{\lambda,\alpha}(G)=
+      \begin{cases}
+      \dfrac{1-e^{-(\alpha-\lambda)G}}{\alpha-\lambda},
+         & \alpha>\lambda,\\[1.2ex]
+      G, & \alpha=\lambda,\\[0.8ex]
+      \dfrac{e^{(\lambda-\alpha)G}-1}{\lambda-\alpha},
+         & \alpha<\lambda.
+      \end{cases}
+      \tag{LOB31}
+   \]
+
+   Thus the slope \(\lambda\) is the critical finite-window threshold for the
+   frozen negative-tail target.  Supercritical decay \(\alpha>\lambda\) gives a
+   range-free budget, critical decay \(\alpha=\lambda\) pays only the score
+   window length \(G\), and subcritical decay \(\alpha<\lambda\) is viable only
+   if the finite score range supplies the missing factor
+   \(e^{(\lambda-\alpha)G}\).  Combined with
+   \cref{lem:necessary-boltzmann-tail-decay}, this is the exact proof-or-barrier
+   shape for the coefficient tail: any successful LP/SA theorem must either
+   prove this near-\(\lambda\) cumulative decay or identify a structural reason
+   why the relevant coefficients never enter the far score window.
+\end{lemma}
+
+\begin{proof}
+   For each \(j\),
+   \[
+      e^{\lambda g_j}
+      =
+      1+\lambda\int_0^{g_j}e^{\lambda s}\,ds .
+      \tag{LOB32}
+   \]
+   Multiplying by \(b_j\), summing over the finite family, and exchanging the
+   sum with the integral gives \((LOB28)\).  Under \((LOB29)\),
+   \[
+      \lambda\int_0^G e^{\lambda s}A(s)\,ds
+      \le
+      \lambda C\int_0^G e^{(\lambda-\alpha)s}\,ds ,
+      \tag{LOB33}
+   \]
+   and the three cases in \((LOB31)\) are exactly this elementary integral.
+   The additive \(1\) in \((LOB30)\) is the assumption \(A(0)=\sum_jb_j\le1\).
 \end{proof}
 
 \begin{corollary}[Finite dual for localized residual feasibility]

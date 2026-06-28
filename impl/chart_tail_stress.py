@@ -9,7 +9,9 @@ code panels, draws Gaussian symbol scores, forms the internal-gap prices
 and compares the full weighted pair tail with the same statistic after clipping
 omega to a polylog-sized cap.  A large full-price diagonal share is evidence for
 the singleton/localized-residual barrier rather than for another certificate
-reformulation.
+reformulation.  The script also reports toy coefficient-tail budgets for
+profiles b_j proportional to exp(-alpha * (M - W_j)); these are diagnostics for
+the finite-range lambda-threshold, not proposed LP/SA coefficients.
 """
 
 from __future__ import annotations
@@ -77,6 +79,11 @@ FIELDNAMES = [
     "coeff_mass_allow_q50",
     "coeff_mass_allow_q90",
     "coeff_mass_allow_max",
+    "coeff_decay_budget_uniform",
+    "coeff_decay_budget_half_lambda",
+    "coeff_decay_budget_lambda",
+    "coeff_decay_budget_3half_lambda",
+    "coeff_decay_min_ratio_for_cap",
 ]
 
 
@@ -247,6 +254,52 @@ def allowed_tail_mass(budget: float, lam: float, gap: float) -> float:
     return min(1.0, float(budget * math.exp(-lam * gap)))
 
 
+def _logsumexp(values: np.ndarray) -> float:
+    values = np.asarray(values, dtype=float)
+    max_value = float(np.max(values))
+    return max_value + math.log(float(np.sum(np.exp(values - max_value))))
+
+
+def coefficient_decay_budget(gaps: np.ndarray, lam: float, alpha: float) -> float:
+    """Boltzmann budget for normalized toy coefficients b_j proportional to exp(-alpha gap_j)."""
+    gaps = np.asarray(gaps, dtype=float)
+    if gaps.size == 0:
+        raise ValueError("gaps must be nonempty")
+    if np.min(gaps) < 0:
+        raise ValueError("gaps must be nonnegative")
+    if lam < 0:
+        raise ValueError("lambda must be nonnegative")
+    if alpha < 0:
+        raise ValueError("alpha must be nonnegative")
+    log_num = _logsumexp((lam - alpha) * gaps)
+    log_den = _logsumexp(-alpha * gaps)
+    return float(math.exp(log_num - log_den))
+
+
+def min_decay_ratio_for_budget(gaps: np.ndarray, lam: float, budget: float) -> float:
+    """Smallest alpha/lambda for the toy decay profile to meet a target budget."""
+    if budget < 1.0:
+        return math.inf
+    if lam == 0:
+        return 0.0
+    if coefficient_decay_budget(gaps, lam, 0.0) <= budget:
+        return 0.0
+
+    hi = 1.0
+    while coefficient_decay_budget(gaps, lam, hi * lam) > budget:
+        hi *= 2.0
+        if hi > 1024.0:
+            return math.inf
+    lo = 0.0
+    for _ in range(80):
+        mid = 0.5 * (lo + hi)
+        if coefficient_decay_budget(gaps, lam, mid * lam) <= budget:
+            hi = mid
+        else:
+            lo = mid
+    return float(hi)
+
+
 def run_trial(
     *,
     n_words: int,
@@ -360,6 +413,11 @@ def run_trial(
         "coeff_mass_allow_q50": allowed_tail_mass(price_cap, lam, gap_q50),
         "coeff_mass_allow_q90": allowed_tail_mass(price_cap, lam, gap_q90),
         "coeff_mass_allow_max": allowed_tail_mass(price_cap, lam, float(np.max(gaps))),
+        "coeff_decay_budget_uniform": coefficient_decay_budget(gaps, lam, 0.0),
+        "coeff_decay_budget_half_lambda": coefficient_decay_budget(gaps, lam, 0.5 * lam),
+        "coeff_decay_budget_lambda": coefficient_decay_budget(gaps, lam, lam),
+        "coeff_decay_budget_3half_lambda": coefficient_decay_budget(gaps, lam, 1.5 * lam),
+        "coeff_decay_min_ratio_for_cap": min_decay_ratio_for_budget(gaps, lam, price_cap),
     }
 
 
