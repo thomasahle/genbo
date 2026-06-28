@@ -10699,6 +10699,71 @@ partition ignores the bias coordinates that certify the list size.
    sum over \(j\) grouped by \(B\in\mathcal B_{u,c}\).
 \end{proof}
 
+\begin{corollary}[Mobility-envelope influence compiler]
+   \label{cor:mobility-envelope-influence-compiler}
+   Continue with the notation of
+   \cref{cor:simplex-envelope-influence-compiler}.  Suppose that for every
+   anchor fiber \(P_{u,c}\) we have certified off-anchor mobility bounds
+   \[
+      z_{i,a}\le \mu_{u,c}(i,a)
+      \qquad
+      (z\in P_{u,c},\ a\ne c_i),
+      \tag{LMY1}
+   \]
+   in addition to the simplex constraints \((LMX1)\).  Define
+   \[
+      \Lambda_{u,c,j}
+      =
+      \sum_{i=1}^b\sum_{a\ne c_i}
+      \mu_{u,c}(i,a)
+      \bigl(y_{u,j}(i,a)-y_{u,j}(i,c_i)\bigr)_+ ,
+      \tag{LMY2}
+   \]
+   where \(y_{u,j}=-A_uG_u^+e_j\).  Then
+   \[
+      I_{u,c,j}\le \Lambda_{u,c,j}
+      \qquad(c\in C_u,\ j\in[N]).
+      \tag{LMY3}
+   \]
+   Consequently \((LMW1)\) follows from
+   \[
+      \sum_{j=1}^N
+      e^{\lambda(M(u)-W(c_j))}\Lambda_{u,c,j}
+      \le \Xi_u
+      \qquad(c\in C_u).
+      \tag{LMY4}
+   \]
+
+   The mobility form is the version meant for an actual LP/SA proof.  The
+   unrestricted product-simplex envelope \((LMX3)\) is useful for diagnostics,
+   but a polylogarithmic theorem should normally certify that, inside each
+   anchor fiber, only a small set of off-anchor symbols can move by a nonnegligible
+   amount.
+\end{corollary}
+
+\begin{proof}
+   Fix \(c\in C_u\), \(j\in[N]\), and \(z\in P_{u,c}\).  Since
+   \(z_{i,c_i}=1-\sum_{a\ne c_i}z_{i,a}\), we have
+   \[
+   \begin{aligned}
+      \ip{y_{u,j}}{z-\iota(c)}
+      &=
+      \sum_{i=1}^b\sum_{a\ne c_i}
+      \bigl(y_{u,j}(i,a)-y_{u,j}(i,c_i)\bigr)z_{i,a}\\
+      &\le
+      \sum_{i=1}^b\sum_{a\ne c_i}
+      \mu_{u,c}(i,a)
+      \bigl(y_{u,j}(i,a)-y_{u,j}(i,c_i)\bigr)_+
+      =
+      \Lambda_{u,c,j}.
+   \end{aligned}
+      \tag{LMY5}
+   \]
+   Taking the supremum over \(z\in P_{u,c}\) and the positive part proves
+   \((LMY3)\).  Multiplying by the Boltzmann weights and summing gives
+   \((LMY4)\Rightarrow(LMW1)\).
+\end{proof}
+
 \begin{corollary}[Anchor-fiber LP/SA certificate compiler]
    \label{cor:anchor-fiber-lp-sa-compiler}
    Continue with the notation of
@@ -11067,6 +11132,15 @@ partition ignores the bias coordinates that certify the list size.
    the remaining theorem can be attacked by distance or overlap shells: prove
    that the envelope decays with separation from \(c\), and prove a planted
    tilted enumerator bound for the corresponding score shells.
+
+   \Cref{cor:mobility-envelope-influence-compiler} records the more plausible
+   contracted-fiber form.  The full product-simplex envelope usually leaves a
+   diagonal inverse-Gram contribution for every true codeword overlapping the
+   anchor, which is too large once it is multiplied by the Boltzmann gap weights.
+   A successful singleton-influence proof should therefore show that the
+   anchor-fiber relaxation has small off-anchor mobility on the dangerous
+   coordinates, or else return to the aggregate selector support-function
+   condition where cancellations between many codewords are still visible.
 
    \Cref{cor:well-conditioned-gram-coefficients} gives the first elementary
    path to such a theorem.  If the local subcode has a well-conditioned overlap
