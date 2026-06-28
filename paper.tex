@@ -11288,6 +11288,113 @@ partition ignores the bias coordinates that certify the list size.
    \((LNC6)\).  If \(G_u=bI\), then \(G_u^+-b^{-1}I=0\), so \(r_\beta=0\).
 \end{proof}
 
+\begin{corollary}[Coordinate-overlap load closure]
+   \label{cor:coordinate-overlap-load-closure}
+   Continue with the notation of
+   \cref{cor:diagonal-preconditioned-leader-mobility}.  For a mobility pattern
+   \(\beta\), define its per-coordinate mass
+   \[
+      B_{\beta,i}=\sum_{a\ne c_\star(i)}\beta_{i,a},
+      \qquad
+      B_\beta=\sum_{i=1}^bB_{\beta,i}.
+      \tag{LNF1}
+   \]
+   Define the Boltzmann coordinate-overlap loads of the score leader by
+   \[
+      \Lambda_i
+      =
+      \sum_{\substack{j\ne j_\star\\ c_j(i)=c_\star(i)}}
+      e^{\lambda(M(u)-W(c_j))}
+      \qquad(i=1,\ldots,b),
+      \tag{LNF2}
+   \]
+   and the preconditioning residual envelope
+   \[
+      \mathfrak E_u^{\rm gram}(\mu)
+      =
+      \sup_{0\le\beta\le\mu_{u,c_\star}}
+      \sum_{j=1}^N
+      e^{\lambda(M(u)-W(c_j))}
+      \left|
+         \left(
+            \left(G_u^+-\frac1bI\right)A_u^\top d_{u,c_\star,\beta}
+         \right)_j
+      \right|.
+      \tag{LNF3}
+   \]
+   Then, for every \(0\le\beta\le\mu_{u,c_\star}\),
+   \[
+      \sum_{j=1}^N
+      e^{\lambda(M(u)-W(c_j))}
+      (s_\beta(j))^-
+      \le
+      \frac1b\sum_{i=1}^bB_{\beta,i}(1+\Lambda_i)
+      +
+      \mathfrak E_u^{\rm gram}(\mu).
+      \tag{LNF4}
+   \]
+   Consequently the leader-anchored Boltzmann mobility certificate \((LNC6)\)
+   follows from the deterministic check
+   \[
+      \sup_{0\le\beta\le\mu_{u,c_\star}}
+      \frac1b\sum_{i=1}^bB_{\beta,i}(1+\Lambda_i)
+      +
+      \mathfrak E_u^{\rm gram}(\mu)
+      \le \Xi_u .
+      \tag{LNF5}
+   \]
+   A coarser but simpler sufficient condition is
+   \[
+      \frac{1+\Lambda_{\max}}{b}
+      \sum_{i=1}^b\sum_{a\ne c_\star(i)}\mu_{u,c_\star}(i,a)
+      +
+      \mathfrak E_u^{\rm gram}(\mu)
+      \le \Xi_u,
+      \qquad
+      \Lambda_{\max}=\max_i\Lambda_i .
+      \tag{LNF6}
+   \]
+
+   Thus the off-anchor planted enumerator is a weighted list-recovery load:
+   low-rate code geometry only has to prevent large Boltzmann mass from sharing
+   many still-mobile coordinates with the current score leader, up to the
+   separate inverse-Gram residual \(\mathfrak E_u^{\rm gram}(\mu)\).
+\end{corollary}
+
+\begin{proof}
+   From \((LNC5)\), with \(c=c_\star\),
+   \[
+      \zeta_\beta(j)
+      =
+      \sum_{i:\ c_j(i)\ne c_\star(i)}
+      \beta_{i,c_j(i)}
+      -
+      \sum_{i:\ c_j(i)=c_\star(i)}B_{\beta,i}.
+      \tag{LNF7}
+   \]
+   The first sum is nonnegative.  Hence
+   \[
+      (\zeta_\beta(j))^-
+      \le
+      \sum_{i:\ c_j(i)=c_\star(i)}B_{\beta,i}.
+      \tag{LNF8}
+   \]
+   Multiplying \((LNF8)\) by the Boltzmann weights and summing over
+   \(j\ne j_\star\) gives
+   \[
+      \sum_{j\ne j_\star}
+      e^{\lambda(M(u)-W(c_j))}(\zeta_\beta(j))^-
+      \le
+      \sum_{i=1}^bB_{\beta,i}\Lambda_i .
+      \tag{LNF9}
+   \]
+   Combining this with \((LNE4)\), \((LNE3)\), and the definition of
+   \(\mathfrak E_u^{\rm gram}(\mu)\) proves \((LNF4)\).  Taking the supremum over
+   \(0\le\beta\le\mu_{u,c_\star}\) proves \((LNF5)\), and \((LNF6)\) follows from
+   \(B_{\beta,i}\le\sum_{a\ne c_\star(i)}\mu_{u,c_\star}(i,a)\) and
+   \(\Lambda_i\le\Lambda_{\max}\).
+\end{proof}
+
 \begin{corollary}[Anchor-fiber LP/SA certificate compiler]
    \label{cor:anchor-fiber-lp-sa-compiler}
    Continue with the notation of
@@ -11713,6 +11820,14 @@ partition ignores the bias coordinates that certify the list size.
    enumerator for \((\zeta_\beta(j))^-\), and a residual term measuring how
    far the inverse overlap Gram is from \(b^{-1}I\) on balanced directions.  This
    is the sharpened target for random-code, Tanner, or list-recovery panels.
+
+   \Cref{cor:coordinate-overlap-load-closure} turns the off-anchor enumerator
+   into an even more concrete weighted list-recovery load.  Since
+   \(\zeta_\beta(j)\) can be negative only when \(c_j\) agrees with the score
+   leader on still-mobile coordinates, it is enough to bound the Boltzmann mass
+   of codewords sharing each leader coordinate.  The residual target is now
+   explicit: small leader-coordinate overlap loads on mobile coordinates, plus
+   a small inverse-Gram preconditioning error on balanced directions.
 
    \Cref{cor:well-conditioned-gram-coefficients} gives the first elementary
    path to such a theorem.  If the local subcode has a well-conditioned overlap
