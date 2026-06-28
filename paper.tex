@@ -8925,6 +8925,146 @@ partition ignores the bias coordinates that certify the list size.
    sampler with an explicit state-DAG envelope and the same cut certificate.
 \end{remark}
 
+\begin{corollary}[Sharp LP bounds give output-sensitive soft decoding]
+   \label{cor:sharp-lp-soft-decoder}
+   Let \(C\subseteq[q]^b\) be a finite code, and let
+   \[
+      W(c)=\sum_{i=1}^b w_{i,c_i}
+   \]
+   be a query-dependent soft score.  Fix a threshold \(T\).  Suppose a
+   branch-and-bound decoder uses a rooted partition tree of depth \(H\) whose
+   nodes \(u\) carry disjoint subcodes \(C_u\subseteq C\), with leaves singleton
+   codewords.  At node \(u\), the decoder computes a certified upper bound
+   \(U(u)\ge\max_{c\in C_u}W(c)\), prunes when \(U(u)<T\), branches otherwise,
+   and verifies every singleton leaf it reaches.
+
+   Assume the relaxation upper bound is \(\Gamma\)-sharp on this tree:
+   \[
+      U(u)
+      \le
+      \max_{c\in C_u}W(c)+\Gamma
+      \qquad(u\text{ in the partition tree}).
+      \tag{LPS1}
+   \]
+   Put
+   \[
+      N_{\ge s}=\bigl|\{c\in C:W(c)\ge s\}\bigr|.
+      \tag{LPS2}
+   \]
+   Then the number of visited nodes is at most
+   \[
+      (H+1)N_{\ge T-\Gamma}.
+      \tag{LPS3}
+   \]
+   In particular, if each LP, Sherali--Adams, dynamic-programming, or other
+   certified relaxation solve costs \(B_{\rm lp}\), then the query work is
+   \[
+      O\!\left(B_{\rm lp}(H+1)N_{\ge T-\Gamma}\right)
+      \tag{LPS4}
+   \]
+   plus the final metric-verification cost for the reported codewords.
+
+   Now assume additionally that, for every fixed codeword \(c\), the random
+   panel construction makes \(W(c)\sim N(0,b)\).  Write
+   \(T=\tau\sqrt b\) and \(\Gamma=\delta\sqrt b\), with
+   \(\tau\ge1\) and \(0\le\delta\le\tau/2\).  Then
+   \[
+      \E N_{\ge T-\Gamma}
+      \le
+      \exp\!\bigl(O(1+\tau\delta)\bigr)\,\E N_{\ge T}.
+      \tag{LPS5}
+   \]
+   Consequently, in the logarithmic terminal regime
+   \[
+      b=\Theta\!\left(\frac{\log n}{\log\log n}\right),
+      \qquad
+      \tau=\Theta(\sqrt{\log n}),
+      \qquad
+      \Gamma=O(\sqrt{\log\log n}),
+      \tag{LPS6}
+   \]
+   the expected lowered-threshold list is only a \(\log^{O(1)}n\) factor larger
+   than the true threshold list.  A relaxation satisfying \((LPS1)\) with
+   \(\Gamma=O(\sqrt{\log\log n})\), together with
+   \(H,B_{\rm lp}=\log^{O(1)}n\), is therefore an output-sensitive Gaussian soft
+   decoder with only polylogarithmic overhead.
+\end{corollary}
+
+\begin{proof}
+   If a node \(u\) is visited, then \(U(u)\ge T\).  By \((LPS1)\), there is a
+   codeword \(c\in C_u\) with \(W(c)\ge T-\Gamma\).  Hence every visited node
+   contains at least one codeword counted by \(N_{\ge T-\Gamma}\).  Since the
+   node sets form a partition tree, any fixed codeword belongs to at most one
+   node at each depth and therefore to at most \(H+1\) nodes total.  Counting
+   pairs \((u,c)\) with \(u\) visited, \(c\in C_u\), and
+   \(W(c)\ge T-\Gamma\) gives \((LPS3)\).  Multiplying by the per-node certified
+   solve cost gives \((LPS4)\).
+
+   For the Gaussian comparison let \(Z\sim N(0,1)\).  By linearity of
+   expectation,
+   \[
+      \frac{\E N_{\ge T-\Gamma}}{\E N_{\ge T}}
+      =
+      \frac{\Pr[Z\ge\tau-\delta]}{\Pr[Z\ge\tau]} .
+   \]
+   Since \(\delta\le\tau/2\),
+   \[
+      \Pr[Z\ge\tau-\delta]
+      \le
+      \Pr[Z\ge\tau]+\delta\sup_{x\in[\tau-\delta,\tau]}\phi(x)
+      \le
+      \Pr[Z\ge\tau]+\delta\,\phi(\tau-\delta),
+   \]
+   where \(\phi\) is the standard Gaussian density.  The elementary lower
+   bound
+   \(\Pr[Z\ge\tau]\ge c(1+\tau)^{-1}\phi(\tau)\) for \(\tau\ge1\) gives
+   \[
+      \frac{\Pr[Z\ge\tau-\delta]}{\Pr[Z\ge\tau]}
+      \le
+      1+C(1+\tau)\delta
+      \exp\!\left(\tau\delta-\frac{\delta^2}{2}\right)
+      \le
+      \exp\!\bigl(O(1+\tau\delta)\bigr).
+   \]
+   This is \((LPS5)\).  In \((LPS6)\),
+   \(\delta=\Gamma/\sqrt b=O(\log\log n/\sqrt{\log n})\), so
+   \(\tau\delta=O(\log\log n)\), and \((LPS5)\) is polylogarithmic.
+\end{proof}
+
+\begin{remark}[LP and Sherali--Adams decoder target]
+   \label{rem:lp-sa-soft-decoder-target}
+   \Cref{cor:sharp-lp-soft-decoder} identifies the exact theorem needed from a
+   convex or iterative code decoder.  It is not enough to find one good
+   codeword.  The relaxation must give a branch-and-bound upper certificate
+   whose excess over the best true codeword in every surviving subproblem is
+   only
+   \[
+      O(\sqrt{\log\log n})
+   \]
+   in unnormalized Gaussian score.  Equivalently, the normalized score gap is
+   \(O(\log\log n/\sqrt{\log n})\), which is the largest loss whose Gaussian
+   tail inflation remains polylogarithmic.
+
+   This makes low-rate Tanner or expander codes a plausible structured-panel
+   target.  Take \(q=\log^{O(1)}n\) and
+   \(b=\Theta(\log n/\log\log n)\), so a fixed-level local LP or
+   Sherali--Adams relaxation has \(\log^{O(1)}n\) variables and constraints.
+   The missing self-contained theorem is a Gaussian pseudocodeword-spectrum
+   bound: with high probability over the panel scores, every subproblem reached
+   by the certified branch-and-bound search satisfies \((LPS1)\) with
+   \(\Gamma=O(\sqrt{\log\log n})\).  If such a bound holds, the decoder becomes
+   one of the finite proposal laws allowed by
+   \cref{lem:proposal-law-filter-separator}: its reported codewords are verified
+   deterministic columns, and failed LP nodes are discarded by certificate
+   rather than retained in the index.
+
+   The same MAP oracle could later be used for perturb-and-MAP sampling, but
+   that would need a separate domination theorem for the perturbations.  The
+   clean proof route is the certified threshold reporter above: prove the
+   Gaussian LP/SA sharpness bound first, then feed the output-sensitive decoded
+   panel into the existing generated-cover and shared-panel separators.
+\end{remark}
+
 \begin{proposition}[Sampled structured-panel compiler]
    \label{prop:sampled-structured-panel}
    Fix a terminal localized ANN subproblem of size \(m\), approximation \(c\),
