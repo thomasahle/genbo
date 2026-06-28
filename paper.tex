@@ -38572,6 +38572,75 @@ query mass rather than producing a cost-effective dense filter.
    trivially true and there is no obstruction.
 \end{proof}
 
+\begin{corollary}[Gibbs water-level storage screen]
+   \label{cor:gibbs-water-level-storage-screen}
+   Work in the setting of
+   \cref{cor:variational-near-first-moment-obstruction}.  For each active
+   layer \(i\), define the water level
+   \[
+      \Lambda_i^{\rm Gibbs}
+      =
+      \frac1{p_i}
+      \log\sum_{h\in\mathcal H_i}X_{i,h}^{p_i},
+      \qquad p_i=1+\nu_i,
+      \tag{GWL1}
+   \]
+   with value \(-\infty\) if all \(X_{i,h}\) vanish.  If, for every active
+   layer \(i\),
+   \[
+      \Lambda_i^{\rm Gibbs}-\ell_i\log2
+      \le
+      \log\frac{B_\star}{32M_{\mathcal I}},
+      \tag{GWL2}
+   \]
+   and the high-correlation fixed-tail condition \((PELS5)\) holds, then
+   \((\mathsf{ESFC}_\Sigma)\) is feasible, provided no one-record guard-credit
+   repair fires.
+
+   If \((GWL2)\) fails for a layer with positive \(X_{i,h}\), the unique Gibbs
+   law
+   \[
+      \mu_{i,h}^{\rm Gibbs}
+      =
+      \frac{X_{i,h}^{p_i}}{\sum_{g\in\mathcal H_i}X_{i,g}^{p_i}}
+      \tag{GWL3}
+   \]
+   satisfies the exact water-level identity
+   \[
+      d_{i,h}
+      +
+      \frac1{p_i}\log\frac1{\mu_{i,h}^{\rm Gibbs}}
+      =
+      \Lambda_i^{\rm Gibbs}
+      \qquad
+      (\mu_{i,h}^{\rm Gibbs}>0).
+      \tag{GWL4}
+   \]
+   Thus a build-time geometric separator only has to repair this one tilted
+   law per failing active layer: either certify that its entropy-energy value is
+   below the local budget, or convert the weighted profile law
+   \(\mu_i^{\rm Gibbs}\) into one of the dense/star records already accepted by
+   the guard-credit verifier.
+\end{corollary}
+
+\begin{proof}
+   Since \(X_{i,h}=e^{d_{i,h}}\), condition \((GWL2)\) is exactly \((NFM3)\).
+   Hence feasibility follows from
+   \cref{cor:near-first-moment-entropy-deficit-screen}.  If some \(X_{i,h}\) is
+   positive, \((GWL3)\) is the optimizer from
+   \cref{cor:variational-near-first-moment-obstruction}.  For every point in
+   its support,
+   \[
+      \log\frac1{\mu_{i,h}^{\rm Gibbs}}
+      =
+      \log\sum_gX_{i,g}^{p_i}-p_i\log X_{i,h}.
+   \]
+   Dividing by \(p_i\) and adding \(d_{i,h}=\log X_{i,h}\) gives \((GWL4)\).
+   The final sentence is the contrapositive of the first conclusion together
+   with the optimizer statement in
+   \cref{cor:variational-near-first-moment-obstruction}.
+\end{proof}
+
 \begin{corollary}[Paid-responsibility high-correlation star compiler]
    \label{cor:paid-responsibility-high-correlation-star}
    Work in the setting of
@@ -44370,6 +44439,9 @@ the remaining low-correlation theorem can be stated directly as one
 and leaving only a barely-superlinear moment target.
 \Cref{cor:variational-near-first-moment-obstruction} rewrites failure of that
 target as one tilted entropy-energy law over the low-correlation profiles.
+\Cref{cor:gibbs-water-level-storage-screen} identifies the actual failing law:
+the Gibbs law proportional to \((W_he^{-I_h})^{1+\nu}\), with one scalar water
+level to compare against the local budget.
 \Cref{lem:star-superlevel-column-verifier} and
 \cref{cor:pair-star-dense-column-generator} add the finite LP check: the star
 is retained only if its ball-thickened query side has positive reduced gain;
@@ -69953,6 +70025,9 @@ constant, so polylogarithmically many profiles do not require an additional
 \Cref{cor:variational-near-first-moment-obstruction} gives the exact dual
 object left by failure: a Gibbs-weighted profile law whose entropy plus average
 weight beats its average Gaussian energy after the multiplicity discount.
+\Cref{cor:gibbs-water-level-storage-screen} packages the same object as a
+water-level test, so a build-time separator can focus on one weighted law per
+failing layer.
 \Cref{lem:star-superlevel-column-verifier} and
 \cref{cor:pair-star-dense-column-generator} turn such a superlevel into an
 ordinary fractional-cover column by using the certified query activation
@@ -70215,6 +70290,9 @@ entropy-excess moment rather than a fixed higher moment.
 \Cref{cor:variational-near-first-moment-obstruction} is the corresponding
 entropy-energy normal form: every failure produces a tilted law on profiles,
 and the remaining geometric theorem only has to dominate or repair those laws.
+\Cref{cor:gibbs-water-level-storage-screen} removes even that universal
+quantifier for a concrete layer: the only law needing attention is the Gibbs
+water-level law of the entropy-deficit weights.
 \Cref{cor:metric-entropy-hall-shadow-closure} and
 \cref{cor:low-doubling-hall-shadow-close} sharpen the remaining geometric
 obligation: any positive Hall shadow of certified covering number below
