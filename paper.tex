@@ -42072,6 +42072,184 @@ query mass rather than producing a cost-effective dense filter.
    proving the no-prefix subset test \((FOS8)\).
 \end{proof}
 
+\begin{corollary}[Generated-cover handoff for cap-overload storage tails]
+   \label{cor:cap-overload-storage-tail-generated-cover}
+   Work in the setting of
+   \cref{cor:cap-overload-storage-tail-shared-cover}.  Let \(\mathcal T^{\rm over}\)
+   be a finite family of generated shared-record templates satisfying the
+   materialization hypothesis \((FOS6)\), with finite available cardinality
+   sets.  Consider the generated-cover relaxation
+   \[
+   \begin{array}{ll}
+   \Psi^{\rm gen,over}=\min
+      & \displaystyle
+        \sum_{s\in\mathcal S}u_se_s
+        +\sum_{T\in\mathcal T^{\rm over}}
+         \sum_{K\in\mathcal K_T}
+         \sum_{\substack{U\subseteq\mathcal S_T\\ |U|=K}}
+         \lambda_{T,U}\overline P_T(K)\\[0.9em]
+   \text{\rm subject to}
+      & \displaystyle
+        e_s+
+        \sum_{T\in\mathcal T^{\rm over}}
+        \sum_{K\in\mathcal K_T}
+        \sum_{\substack{U\subseteq\mathcal S_T\\ |U|=K}}
+        \lambda_{T,U}a_{T,s}\mathbf 1_{\{s\in U\}}
+        \ge1
+        \qquad(s\in\mathcal S),\\[0.9em]
+      & e_s\ge0,\qquad \lambda_{T,U}\ge0 .
+   \end{array}
+      \tag{FOG1}
+   \]
+   If \(\Psi^{\rm gen,over}\le\Theta\), then
+   \(\Phi^{\rm over}\le\Theta\).  In particular the storage-tail bound
+   \((FOS3)\) holds whenever
+   \[
+      \Gamma+\Psi^{\rm gen,over}\le\frac{\delta}{4}B_{\rm over}.
+      \tag{FOG2}
+   \]
+
+   Conversely, if \(\Psi^{\rm gen,over}>\Theta\), then there is a dual
+   weighting \(y_s\) with
+   \[
+      \sum_{s\in\mathcal S}y_s>\Theta,
+      \qquad
+      0\le y_s\le u_s,
+      \tag{FOG3}
+   \]
+   such that every generated template satisfies all subset tests
+   \[
+      \sum_{s\in U}a_{T,s}y_s\le\overline P_T(K)
+      \qquad
+      (T\in\mathcal T^{\rm over},\ K\in\mathcal K_T,\
+       U\subseteq\mathcal S_T,\ |U|=K).
+      \tag{FOG4}
+   \]
+
+   Now work in such a no-generated-cover residual.  Let
+   \(L\subseteq\mathcal S\) be nonempty, with \(K_L=|L|\), and suppose \(L\) is
+   assigned to generated templates by a map \(\kappa:L\to\mathcal T^{\rm over}\)
+   so that the nonempty parts
+   \[
+      L_T=\{s\in L:\kappa(s)=T\},
+      \qquad K_T=|L_T|
+      \tag{FOG5}
+   \]
+   satisfy \(K_T\in\mathcal K_T\), \(L_T\subseteq\mathcal S_T\), and certified
+   lower degrees
+   \[
+      0\le w_s\le a_{\kappa(s),s}y_s
+      \qquad(s\in L).
+      \tag{FOG6}
+   \]
+   If \(w_s\ge\xi>0\) on \(L\), and all used templates satisfy
+   \[
+      \overline P_T(h)
+      \le
+      \psi_\star\left(Ah^\rho+\zeta h^{1+\rho}\right),
+      \qquad 0<\rho<1 ,
+      \tag{FOG7}
+   \]
+   while the assignment uses \(J\) nonempty parts, then
+   \[
+      \xi K_L
+      \le
+      \psi_\star\left(AJ^{1-\rho}K_L^\rho+\zeta K_L^{1+\rho}\right).
+      \tag{FOG8}
+   \]
+   Hence, if \(A>0\) and
+   \[
+      \xi>2\psi_\star\zeta K_L^\rho,
+      \tag{FOG9}
+   \]
+   every surviving residual has
+   \[
+      J
+      \ge
+      \left(
+         \frac{\xi K_L^{1-\rho}}{2\psi_\star A}
+      \right)^{1/(1-\rho)} .
+      \tag{FOG10}
+   \]
+   When \(\zeta=0\), the same bound holds with \(2\psi_\star A\) replaced by
+   \(\psi_\star A\).
+
+   Finally, let \(d_{\rm gen}\) be any pseudometric on \(L\).  Suppose that for
+   every \(s_0\in L\), the ball
+   \[
+      B_{\rm gen}(s_0,\Delta_{\rm gen})
+      =
+      \{s\in L:d_{\rm gen}(s,s_0)\le\Delta_{\rm gen}\}
+      \tag{FOG11}
+   \]
+   has a generated template copy \(T_{s_0}\in\mathcal T^{\rm over}\) with
+   \[
+      B_{\rm gen}(s_0,\Delta_{\rm gen})\subseteq\mathcal S_{T_{s_0}},
+      \qquad
+      |B_{\rm gen}(s_0,\Delta_{\rm gen})|\in\mathcal K_{T_{s_0}},
+      \tag{FOG12}
+   \]
+   and certified current capture
+   \[
+      a_{T_{s_0},s}y_s\ge\xi
+      \qquad(s\in B_{\rm gen}(s_0,\Delta_{\rm gen})).
+      \tag{FOG13}
+   \]
+   If \(E\subseteq L\) is maximal \(\Delta_{\rm gen}\)-separated, then under
+   \(A>0\) and \((FOG9)\)
+   \[
+      |E|
+      \ge
+      \left(
+         \frac{\xi K_L^{1-\rho}}{2\psi_\star A}
+      \right)^{1/(1-\rho)}
+      \tag{FOG14}
+   \]
+   with the same \(\zeta=0\) sharpening.  Thus a cap-overload storage tail that
+   survives shared-cover and generated-prefix search is not a new recursion
+   branch: unless its storage term already dominates, it exposes a separated
+   packing in the chosen generated metric for the common spherical/list-decoding
+   energy screen.
+\end{corollary}
+
+\begin{proof}
+   Any feasible solution of \((FOG1)\) gives a feasible solution of
+   \((FOS1)\): replace each active pair \((T,U)\) by the materialized shared
+   record \(c(T,U)\), use \((FOS6)\) for coverage, and use
+   \(P_{c(T,U)}\le\overline P_T(|U|)\) for price.  Hence
+   \(\Phi^{\rm over}\le\Psi^{\rm gen,over}\), and \((FOG2)\) implies the
+   storage-tail bound by \cref{cor:cap-overload-storage-tail-shared-cover}.
+
+   The dual of \((FOG1)\) is exactly \((FOG3)\) plus all subset constraints
+   \((FOG4)\).  The primal is finite and feasible by taking \(e_s=1\), so finite
+   LP duality gives the stated no-generated-cover residual when
+   \(\Psi^{\rm gen,over}>\Theta\).
+
+   For a nonempty part \(L_T\), \((FOG6)\) and the subset test \((FOG4)\) give
+   \[
+      \sum_{s\in L_T}w_s
+      \le
+      \sum_{s\in L_T}a_{T,s}y_s
+      \le
+      \overline P_T(K_T).
+   \]
+   Summing over the \(J\) parts, using \(w_s\ge\xi\), the price envelope
+   \((FOG7)\), and Holder's inequality,
+   \[
+      \sum_TK_T^\rho\le J^{1-\rho}K_L^\rho,\qquad
+      \sum_TK_T^{1+\rho}\le K_L^{1+\rho},
+   \]
+   proves \((FOG8)\).  Under \((FOG9)\), the storage term in \((FOG8)\) is less
+   than \(\xi K_L/2\), and rearranging gives \((FOG10)\).  When \(\zeta=0\),
+   that storage term is absent, giving the sharper constant.
+
+   If \(E\) is maximal \(\Delta_{\rm gen}\)-separated, then the balls
+   \(B_{\rm gen}(s,\Delta_{\rm gen})\), \(s\in E\), cover \(L\).  Assign every
+   \(s\in L\) to one covering ball.  By \((FOG12)\)--\((FOG13)\), this cover
+   satisfies \((FOG5)\)--\((FOG6)\) with \(w_s=\xi\).  Applying the preceding
+   cover lower bound gives \((FOG14)\).
+\end{proof}
+
 \begin{corollary}[Shared-cover LP for the fractional sponsor tail]
    \label{cor:fractional-sponsor-tail-shared-cover}
    Work in the setting of
@@ -78972,6 +79150,10 @@ generic shared-cover and distinct-storage interfaces.
 the storage-dominated overload stars have one finite shared-cover LP, one exact
 dual, and the same generated top-prefix column rule as the sponsor-tail
 pipeline.
+\Cref{cor:cap-overload-storage-tail-generated-cover} then gives the matching
+generated-cover handoff: a failed cover exposes one dual-heavy layer, and any
+low-cover certified generated metric yields the same separated packing witness
+as the generic child-panel residual.
 \Cref{cor:fractional-sponsor-tail-shared-cover} then removes duplicated large
 stars from that target by a finite shared-cover LP: either residual fractional
 star copies plus shared records have total price inside the storage allowance,
