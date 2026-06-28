@@ -37034,6 +37034,208 @@ query mass rather than producing a cost-effective dense filter.
    \((HCP8)\).
 \end{proof}
 
+\begin{corollary}[Clipped cap-centered high-correlation handoff]
+   \label{cor:clipped-cap-centered-high-correlation-handoff}
+   Work in the setting of
+   \cref{cor:cap-centered-paid-prefix-quadratic}.  Let \(M_x(p)\ge0\) be any
+   finite high-correlation star multiplicity supported on pairs satisfying
+   \[
+      M_x(p)>0
+      \quad\Longrightarrow\quad
+      \ip{(x-o)/R}{(p-o)/R}\ge\gamma .
+      \tag{CCH1}
+   \]
+   Split it into the part already paid by the cap-centered near-pair degree and
+   the overload
+   \[
+      M_x^{\rm pay}(p)=\min\{M_x(p),d_x^+(p)\},
+      \qquad
+      M_x^{\rm over}(p)=\bigl(M_x(p)-d_x^+(p)\bigr)_+ .
+      \tag{CCH2}
+   \]
+   For \(t>0\), put
+   \[
+      U^{\rm pay}_{x,t}=\{p:M_x^{\rm pay}(p)\ge t\}.
+      \tag{CCH3}
+   \]
+   Then each nonempty \(U^{\rm pay}_{x,t}\) is contained in the cap-centered
+   child \(W_x\).  If
+   \[
+      t|U^{\rm pay}_{x,t}|
+      >
+      e^{B_0\gamma^2}\Psi(R_+)
+      \left(
+         A_x^+|U^{\rm pay}_{x,t}|^\rho
+         +\sigma |U^{\rm pay}_{x,t}|^{1+\rho}
+      \right),
+      \tag{CCH4}
+   \]
+   then the finite-cover verifier exposes a \((B_0+3)\)-quadratic local repair.
+   Conversely, if no cap-centered paid prefix has positive reduced gain, then
+   every paid-clipped superlevel satisfies the reverse inequality in
+   \((CCH4)\).
+
+   In particular, let
+   \[
+      W_{\rm pay}=\sum_{x,p}M_x^{\rm pay}(p),
+      \qquad
+      W_{\rm over}=\sum_{x,p}M_x^{\rm over}(p),
+      \qquad
+      W_{\rm hi}=\sum_{x,p}M_x(p).
+      \tag{CCH5}
+   \]
+   If all positive values of \(M_x^{\rm pay}(p)\) lie in
+   \([M_{\min},M_{\max}]\), let
+   \(J=1+\lceil\log_2(M_{\max}/M_{\min})\rceil\).  In a residual with no
+   cap-centered paid-prefix repair, either \(W_{\rm pay}=0\), or there are a
+   center \(x\) and dyadic level \(t\) for which
+   \[
+      W_{\rm pay}
+      \le
+      2|P|J\,e^{B_0\gamma^2}\Psi(R_+)
+      \left(
+         A_x^+|U^{\rm pay}_{x,t}|^\rho
+         +\sigma |U^{\rm pay}_{x,t}|^{1+\rho}
+      \right).
+      \tag{CCH6}
+   \]
+   Equivalently, if every paid-clipped dyadic level with
+   \(t|U^{\rm pay}_{x,t}|\ge\Lambda\) has cap-centered child price below
+   \(\Lambda\), then either a quadratic repair fires or
+   \[
+      W_{\rm hi}\le W_{\rm over}+2|P|J\Lambda .
+      \tag{CCH7}
+   \]
+
+   Thus the domination hypothesis in
+   \cref{cor:high-correlation-stars-feed-cap-prefix} is not an all-or-nothing
+   assumption: the dominated part of any high-correlation layer is automatically
+   charged at the cap-centered child scale, and the only unpriced residue is the
+   explicit overload \(W_{\rm over}\).
+\end{corollary}
+
+\begin{proof}
+   Form a weighted edge family whose records are the pairs \((x,p)\) with
+   \(M_x^{\rm pay}(p)>0\), with edge set \(\{(x,p)\}\) and weight
+   \(M_x^{\rm pay}(p)\).  Because \(M_x^{\rm pay}(p)>0\) implies \(M_x(p)>0\),
+   the support condition \((CCH1)\) gives the high-correlation hypothesis
+   \((HCP1)\).  The induced star multiplicity is exactly
+   \(M_x^{\rm pay}(p)\), and by construction it is dominated by
+   \(d_x^+(p)\).  Applying
+   \cref{cor:high-correlation-stars-feed-cap-prefix} to this clipped family
+   gives the containment, the repair criterion \((CCH4)\), and the no-repair
+   reverse inequality.
+
+   The dyadic statement is the final part of
+   \cref{cor:high-correlation-stars-feed-cap-prefix} applied to the clipped
+   multiplicities.  Finally
+   \[
+      W_{\rm hi}
+      =
+      \sum_{x,p}\min\{M_x(p),d_x^+(p)\}
+      +
+      \sum_{x,p}(M_x(p)-d_x^+(p))_+
+      =
+      W_{\rm pay}+W_{\rm over},
+   \]
+   so the threshold form gives \((CCH7)\).
+\end{proof}
+
+\begin{corollary}[Cap-centered responsibility-to-prefix compiler]
+   \label{cor:cap-centered-responsibility-prefix-compiler}
+   Work in the setting of
+   \cref{cor:clipped-cap-centered-high-correlation-handoff}.  Suppose a reporter
+   supplies coefficients
+   \[
+      0\le\eta_{x,p,q}\le1
+      \qquad(x\in\mathcal X,\ (p,q)\in\mathcal N)
+      \tag{CRP1}
+   \]
+   supported only when \(p\in W_x\) and \((x,p)\) satisfies the
+   high-correlation condition \((CCH1)\).  Define
+   \[
+      M_x^\eta(p)
+      =
+      \sum_{q:\,(p,q)\in\mathcal N}
+         \eta_{x,p,q}\,\alpha_{p,q}a_x^+(q).
+      \tag{CRP2}
+   \]
+   Then \(M^\eta\) has zero overload:
+   \[
+      M_x^\eta(p)\le d_x^+(p)
+      \qquad(x\in\mathcal X,\ p\in P).
+      \tag{CRP3}
+   \]
+   Consequently every conclusion of
+   \cref{cor:high-correlation-stars-feed-cap-prefix} applies to
+   \(M^\eta\).  In particular, if the positive values of \(M_x^\eta(p)\) have
+   dyadic range \(J_\eta\), then in a no-repair residual the total assigned
+   high-correlation responsibility
+   \[
+      W_\eta=\sum_{x,p}M_x^\eta(p)
+      \tag{CRP4}
+   \]
+   is either zero or is bounded by the cap-centered child price envelope
+   \[
+      W_\eta
+      \le
+      2|P|J_\eta\,e^{B_0\gamma^2}\Psi(R_+)
+      \left(
+         A_x^+|U^\eta_{x,t}|^\rho
+         +\sigma |U^\eta_{x,t}|^{1+\rho}
+      \right)
+      \tag{CRP5}
+   \]
+   for some reported dyadic superlevel
+   \(U^\eta_{x,t}=\{p:M_x^\eta(p)\ge t\}\).  If that price is below the
+   selected layer mass, the same layer is a \((B_0+3)\)-quadratic repair.
+
+   More generally, any nonnegative transport \(f_{x,p,q}\) supported on the
+   same triples and satisfying, for some \(C>0\),
+   \[
+      f_{x,p,q}\le C\,\alpha_{p,q}a_x^+(q)
+      \tag{CRP6}
+   \]
+   induces such responsibilities by
+   \[
+      \eta_{x,p,q}=
+      \begin{cases}
+      f_{x,p,q}/(C\,\alpha_{p,q}a_x^+(q)),
+         &\alpha_{p,q}a_x^+(q)>0,\\
+      0, &\alpha_{p,q}a_x^+(q)=0,
+      \end{cases}
+      \tag{CRP7}
+   \]
+   and the assigned responsibility mass is \(C^{-1}\sum_{x,p,q}f_{x,p,q}\).
+   Hence a bounded-congestion high-correlation transport is already a
+   cap-centered paid-prefix certificate; only the untransported overload remains
+   outside the quadratic toll accounting.
+\end{corollary}
+
+\begin{proof}
+   Since \(0\le\eta_{x,p,q}\le1\),
+   \[
+      M_x^\eta(p)
+      \le
+      \sum_{q:\,(p,q)\in\mathcal N}\alpha_{p,q}a_x^+(q)
+      =
+      d_x^+(p),
+   \]
+   proving \((CRP3)\).  The support condition supplies \((CCH1)\), so
+   \cref{cor:high-correlation-stars-feed-cap-prefix} applies directly to the
+   multiplicities \(M^\eta\), giving \((CRP5)\) and the repair statement.
+
+   If \(f\) satisfies \((CRP6)\), then the definition \((CRP7)\) gives
+   \(0\le\eta_{x,p,q}\le1\) on every positive-capacity triple and zero
+   otherwise.  Substituting \((CRP7)\) into \((CRP2)\) shows that
+   \[
+      \sum_{x,p}M_x^\eta(p)
+      =
+      \frac1C\sum_{x,p,q}f_{x,p,q},
+   \]
+   which proves the transport statement.
+\end{proof}
+
 \begin{lemma}[Certified star-panel separator]
    \label{lem:certified-star-panel-separator}
    Work in the setting of \cref{lem:star-prefix-weak-type-residual}, and assume
@@ -72694,6 +72896,16 @@ dominated by the cap-centered paid degree, a large dyadic star either fires as a
 quadratic repair or contributes only the cap-centered child price in
 \((HCP5)\).  Thus positive-correlation mass is paid at the same cap-centered
 scale that gives the quadratic radius toll.
+\Cref{cor:clipped-cap-centered-high-correlation-handoff} removes the
+all-or-nothing domination assumption from this statement: every
+high-correlation layer splits into a cap-paid part, which satisfies the same
+quadratic price envelope after clipping to \(d_x^+\), and an explicit overload
+\(\sum_{x,p}(M_x(p)-d_x^+(p))_+\).
+\Cref{cor:cap-centered-responsibility-prefix-compiler} gives the matching
+positive certificate: any bounded-congestion assignment or transport of
+high-correlation mass into cap-centered paid degrees is already a valid
+same-prefix quadratic repair certificate.  The live obstruction is therefore
+the untransported overload, not geometric branching through the star itself.
 \Cref{cor:dyadic-distinct-storage-bucket-net} rewrites that target as a dyadic
 large-child counting problem: for every recursive price scale, bound the number
 of distinct canonical bucket nets whose shared child index has that price.
