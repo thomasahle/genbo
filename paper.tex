@@ -1981,6 +1981,121 @@ The smooth product filter is not a replacement for \cref{lem:adaptive-continuati
    the deterministic \((CBK3)\) bound after absorbing that constant.
 \end{proof}
 
+\begin{corollary}[Cap-prefix pricing of compressed-cap high tails]
+   \label{cor:compressed-cap-high-tail-prefix-pricing}
+   Work in the setting of
+   \cref{cor:low-high-compressed-cap-storage}, and assume in addition that
+   \(0<\theta_m\le1/2\) and that the current local filter-cover instance is the
+   unit-sphere case of
+   \cref{cor:cap-centered-paid-prefix-quadratic}, with \(o=0\), \(R=1\),
+   \(\gamma=\theta_m\), child exponent \(0\le\rho_+\le1\), and all centers
+   \(x\in P\) available.  Thus
+   \[
+      c_x=\theta_m x,
+      \qquad
+      R_+=\sqrt{1-\theta_m^2},
+      \qquad
+      W_x=P\cap B(c_x,R_+),
+      \tag{CHT1}
+   \]
+   with activation \(a_x^+\), paid degree \(d_x^+(y)\), and query price
+   \(A_x^+\) as in \((CPQ3)\)--\((CPQ5)\).
+
+   For a realized cap panel and bucket nets \(N_i\), define the
+   high-correlation tail multiplicity
+   \[
+      M_x(y)
+      =
+      \left|
+      \{i:\ x,y\in N_i,\ x\ne y,\ \ip{x}{y}>\theta_m\}
+      \right|,
+      \qquad
+      H_{\rm hi}=\sum_{x,y\in P}M_x(y).
+      \tag{CHT2}
+   \]
+   Split it by the cap-centered paid degree:
+   \[
+      M_x^{\rm pay}(y)=\min\{M_x(y),d_x^+(y)\},
+      \qquad
+      M_x^{\rm over}(y)=\bigl(M_x(y)-d_x^+(y)\bigr)_+ ,
+      \tag{CHT3}
+   \]
+   and put
+   \[
+      H_{\rm over}=\sum_{x,y}M_x^{\rm over}(y).
+      \tag{CHT4}
+   \]
+   If \(M^{\rm pay}\equiv0\), set \(J_{\rm pay}=1\).  Otherwise suppose the
+   positive values of \(M_x^{\rm pay}(y)\) lie in a certified dyadic range with
+   dynamic-range factor \(J_{\rm pay}\).  Fix \(\Lambda>0\), and suppose every
+   paid-clipped dyadic superlevel
+   \[
+      U_{x,t}^{\rm pay}=\{y:M_x^{\rm pay}(y)\ge t\}
+      \tag{CHT5}
+   \]
+   with \(t|U_{x,t}^{\rm pay}|\ge\Lambda\) has cap-centered child price below
+   \(\Lambda\):
+   \[
+      e^{B_0\theta_m^2}\Psi(R_+)
+      \left(
+         A_x^+|U_{x,t}^{\rm pay}|^{\rho_+}
+         +\sigma |U_{x,t}^{\rm pay}|^{1+\rho_+}
+      \right)
+      <\Lambda .
+      \tag{CHT6}
+   \]
+   Then either a \((B_0+3)\)-quadratic cap-centered paid-prefix repair fires, or
+   \[
+      H_{\rm hi}\le H_{\rm over}+2mJ_{\rm pay}\Lambda .
+      \tag{CHT7}
+   \]
+   Consequently, in a no-repair residual satisfying \((CHT6)\),
+   \[
+      \E\sum_{A\in\mathcal A}|A|^{1+s}
+      \le
+      m^{1+\rho}\log^{O_{A,K}(1)}m
+      +
+      \E H_{\rm over}
+      +
+      2mJ_{\rm pay}\Lambda .
+      \tag{CHT8}
+   \]
+   If \(H_{\rm over}\) and the fixed dyadic tail in \((CHT8)\) are
+   \(m^{1+\rho}\polylog m\), then the shared-DAG storage hypothesis \((CBK3)\)
+   follows after the same verified resampling step as in
+   \cref{cor:low-high-compressed-cap-storage}.
+
+   Thus the high-correlation output of compressed cap buckets is not a
+   free-standing Renyi storage problem.  Its paid part is either a
+   same-prefix quadratic dense repair or a fixed dyadic tail, and the only
+   potentially polynomial survivor is the explicit overload
+   \(H_{\rm over}\), where cap incidence exceeds the cap-centered paid
+   near-pair degree.
+\end{corollary}
+
+\begin{proof}
+   If \(M_x(y)>0\), then \(\ip{x}{y}>\theta_m\).  By
+   \cref{cor:cap-centered-pair-star-reporter}, this implies
+   \(y\in W_x\), so the support condition \((CCH1)\) holds for the
+   multiplicity family \(M_x(y)\).
+
+   Apply \cref{cor:clipped-cap-centered-high-correlation-handoff} with
+   \(\gamma=\theta_m\).  Its threshold form \((CCH7)\), together with the
+   price assumption \((CHT6)\), gives exactly the alternative: either a
+   \((B_0+3)\)-quadratic cap-centered paid-prefix repair fires, or
+   \[
+      H_{\rm hi}\le H_{\rm over}+2|P|J_{\rm pay}\Lambda .
+   \]
+   Since \(|P|\le m\), this proves \((CHT7)\).
+
+   In a no-repair residual satisfying \((CHT6)\), substitute \((CHT7)\) into
+   \((LHS2)\).  The term \(2mJ_{\rm pay}\Lambda\) is deterministic under the
+   certified dynamic-range bound, so taking expectation gives \((CHT8)\).  The
+   final deterministic storage statement is the same Markov-and-verification
+   resampling argument used at the end of
+   \cref{cor:low-high-compressed-cap-storage}.
+\end{proof}
+
 \begin{corollary}[Weighted polylogarithmic low-correlation co-load cutoff]
    \label{cor:weighted-polylog-low-correlation-coload}
    Let \(m\ge3\), \(P\subset\mathbb S^{D-1}\) with \(|P|\le m\), and let
@@ -81471,6 +81586,10 @@ high-correlation ordered-pair tail.  The diagonal and
 \(O(\log\log m/\log m)\)-correlation pairs are already polylogarithmic, so any
 polynomial compressed-bucket storage survivor must be a high-correlation tail
 for the dense/star or sponsor verifier.
+\Cref{cor:compressed-cap-high-tail-prefix-pricing} sends that tail through the
+cap-centered paid-prefix verifier: the paid part is either a quadratic
+same-prefix repair or a fixed dyadic tail, leaving only the overload where cap
+incidence exceeds paid near-pair degree.
 \Cref{cor:distinct-canonical-bucket-net} further sharpens the storage target:
 the recursive child index is charged once per distinct canonical bucket net, not
 once per decoded occurrence, with only occurrence pointers left in the metadata
@@ -81872,6 +81991,10 @@ branch.
 \Cref{cor:low-high-compressed-cap-storage} packages the same fact directly for
 compressed bucket nets: after \(K^{1+s}\le K^2\), the only unpaid occurrence
 storage is the realized high-correlation ordered-pair tail.
+\Cref{cor:compressed-cap-high-tail-prefix-pricing} clips that tail by the
+cap-centered paid degree; after prefix search, the only potentially polynomial
+survivor is the overload \(H_{\rm over}\), which is the Hall/sponsor object
+handled by the later overload machinery.
 \Cref{cor:weighted-polylog-low-correlation-coload} makes the same low branch
 homogeneous in cap multiplicity: fractional or weighted cap panels obey the
 same bound with the integer occurrence count replaced by total weight.  This is
