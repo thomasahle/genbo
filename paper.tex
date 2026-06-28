@@ -1937,7 +1937,9 @@ The smooth product filter is not a replacement for \cref{lem:adaptive-continuati
    multiplicity.  Fractional panels, weighted Hall atoms, and soft decoder
    cohorts may be analyzed without rounding them to an integer number of
    identical cap occurrences; only their total certified weight \(W\) enters
-   the low-correlation co-load bound.
+   the low-correlation co-load bound.  The same statement holds verbatim when
+   \(P\) is an indexed family of unit vectors, possibly with repeated
+   representatives, with all sums taken over indices.
 \end{corollary}
 
 \begin{proof}
@@ -40748,6 +40750,177 @@ query mass rather than producing a cost-effective dense filter.
    the low part \((UPE8)\) gives \((UPE16)\).
 \end{proof}
 
+\begin{corollary}[Centered-cap closure for unsponsored-cut packings]
+   \label{cor:unsponsored-cut-low-correlation-cap-closure}
+   Work in the setting of
+   \cref{cor:generic-unsponsored-cut-packing-energy}, and suppose
+   \(|E|\le m\) with \(m\ge3\).  Let \(\mathcal R\) be a finite weighted
+   centered Gaussian cap panel.  For each \(r\in\mathcal R\), let
+   \(w_r\ge0\), let \(G_r\sim N(0,I_D)\), and put
+   \[
+      U_r=\{x:\ip{G_r}{x}\ge T_r\}.
+      \tag{UPL1}
+   \]
+   Fix constants \(A_{\rm cap},K_{\rm corr}\ge0\) and
+   \(0\le\rho_{\rm cap}\le1\), and assume
+   \[
+      T_r^2\ge2\log m-A_{\rm cap}\log\log m
+      \qquad(r\in\mathcal R),
+      \tag{UPL2}
+   \]
+   and
+   \[
+      W_{\mathcal R}:=\sum_{r\in\mathcal R}w_r
+      \le m^{1+\rho_{\rm cap}}\log^{A_{\rm cap}}m .
+      \tag{UPL3}
+   \]
+   Put
+   \[
+      \theta_m=K_{\rm corr}\frac{\log\log m}{\log m}<1,
+      \tag{UPL4}
+   \]
+   and split the ordered distinct pairs of \(E\) into
+   \[
+      E_{\rm lo}=\{(g,g')\in E_{\ne}^2:\ip{x_g}{x_{g'}}\le\theta_m\},
+      \qquad
+      E_{\rm hi}=E_{\ne}^2\setminus E_{\rm lo}.
+      \tag{UPL5}
+   \]
+   Then the first list moment and low-correlation co-load obey
+   \[
+      \sum_{r\in\mathcal R}w_r
+      \sum_{g\in E}\Pr[x_g\in U_r]
+      \le
+      m^{1+\rho_{\rm cap}}\log^{3A_{\rm cap}/2}m,
+      \tag{UPL6}
+   \]
+   and
+   \[
+      \sum_{r\in\mathcal R}w_r
+      \sum_{(g,g')\in E_{\rm lo}}
+         \Pr[x_g,x_{g'}\in U_r]
+      \le
+      m^{1+\rho_{\rm cap}}
+      \log^{2A_{\rm cap}+2K_{\rm corr}+1}m .
+      \tag{UPL7}
+   \]
+
+   Define the high-correlation weighted pair mass
+   \[
+      \omega_{g,g'}
+      =
+      \mathbf 1_{\{(g,g')\in E_{\rm hi}\}}
+      \sum_{r\in\mathcal R}w_r\Pr[x_g,x_{g'}\in U_r],
+      \qquad
+      W_{\rm hi}=\sum_{g,g'\in E}\omega_{g,g'} .
+      \tag{UPL8}
+   \]
+   If \(W_{\rm hi}=0\), set \(J_{\omega}=1\).  Otherwise suppose the positive
+   values of \(\omega_{g,g'}\) lie in a certified dyadic range
+   \([\omega_{\min},\omega_{\max}]\), and put
+   \[
+      J_{\omega}
+      =
+      1+\left\lceil\log_2\frac{\omega_{\max}}{\omega_{\min}}\right\rceil .
+      \tag{UPL9}
+   \]
+   For dyadic levels \(t=\omega_{\min}2^j\), let
+   \[
+      V_{g,t}=\{g'\in E:\omega_{g,g'}\ge t\}.
+      \tag{UPL10}
+   \]
+   Then every nonempty \(V_{g,t}\) is contained in the cap ball
+   \[
+      x_{g'}\in B\!\left(x_g,\sqrt{2(1-\theta_m)}\right),
+      \tag{UPL11}
+   \]
+   and for every \(\Lambda_\star>0\), either
+   \[
+      W_{\rm hi}\le2|E|J_\omega\Lambda_\star,
+      \tag{UPL12}
+   \]
+   or some high-correlation star satisfies
+   \[
+      t|V_{g,t}|\ge\Lambda_\star .
+      \tag{UPL13}
+   \]
+   Consequently, if no exposed high-correlation star has scale at least
+   \(\Lambda_\star\), then the whole weighted second moment of the cap panel on
+   the unsponsored packing is bounded by
+   \[
+      \sum_{r\in\mathcal R}w_r\,\E X_E(U_r)^2
+      \le
+      m^{1+\rho_{\rm cap}}
+      \left(
+         \log^{3A_{\rm cap}/2}m
+         +
+         \log^{2A_{\rm cap}+2K_{\rm corr}+1}m
+      \right)
+      +
+      2|E|J_\omega\Lambda_\star ,
+      \tag{UPL14}
+   \]
+   where \(X_E(U_r)=\sum_{g\in E}\mathbf 1\{x_g\in U_r\}\).
+
+   Thus, for centered cap panels at the large-range threshold, the
+   low-correlation part of an exposed unsponsored-cut packing is already paid
+   with only polylogarithmic overhead.  Any polynomial residual must be a
+   high-correlation cap star, which is the finite object returned to the
+   generated-merge or dense-prefix verifier.
+\end{corollary}
+
+\begin{proof}
+   Apply
+   \cref{cor:weighted-polylog-low-correlation-coload} to the indexed family
+   \((x_g)_{g\in E}\subseteq\mathbb S^{D-1}\), the weighted cap panel
+   \(\mathcal R\), and the low-correlation edge set \(E_{\rm lo}\).  The proof
+   of that corollary is indexwise and uses only the cardinality bound
+   \(|E|\le m\), so possible repeated representatives cause no change.  The
+   hypotheses \((UPL2)\)--\((UPL4)\) are exactly \((WPLC1)\)--\((WPLC2)\) and
+   the cutoff definition there.  This gives \((UPL6)\)--\((UPL7)\).
+
+   If \(g'\in V_{g,t}\), then \(\omega_{g,g'}>0\), so
+   \((g,g')\in E_{\rm hi}\).  By \((UPL5)\),
+   \(\ip{x_g}{x_{g'}}>\theta_m\), and hence
+   \[
+      \|x_g-x_{g'}\|^2=2-2\ip{x_g}{x_{g'}}
+      \le2(1-\theta_m),
+   \]
+   proving \((UPL11)\).
+
+   If \(W_{\rm hi}=0\), then \((UPL12)\) is immediate.  Otherwise the same
+   dyadic layer-cake estimate used in
+   \cref{cor:generic-unsponsored-cut-packing-energy} gives
+   \[
+      \frac12W_{\rm hi}
+      \le
+      \sum_{g\in E}\sum_{j=0}^{J_\omega-1}
+      \omega_{\min}2^j
+      |V_{g,\omega_{\min}2^j}|.
+      \tag{UPL15}
+   \]
+   If every dyadic star had \(t|V_{g,t}|<\Lambda_\star\), then the right-hand
+   side of \((UPL15)\) would be less than
+   \(|E|J_\omega\Lambda_\star\), proving \((UPL12)\).  Its contrapositive
+   gives \((UPL13)\).
+
+   Finally,
+   \[
+      \sum_{r\in\mathcal R}w_r\,\E X_E(U_r)^2
+      =
+      \sum_{r\in\mathcal R}w_r
+      \sum_{g\in E}\Pr[x_g\in U_r]
+      +
+      \sum_{r\in\mathcal R}w_r
+      \sum_{(g,g')\in E_{\ne}^2}
+      \Pr[x_g,x_{g'}\in U_r].
+   \]
+   Split the distinct-pair sum into \(E_{\rm lo}\) and \(E_{\rm hi}\).  The
+   first two terms are bounded by \((UPL6)\)--\((UPL7)\), while the high part
+   is \(W_{\rm hi}\) by definition.  Under the no-large-star hypothesis,
+   \((UPL12)\) gives \((UPL14)\).
+\end{proof}
+
 \begin{corollary}[Shared-cover LP for the fractional sponsor tail]
    \label{cor:fractional-sponsor-tail-shared-cover}
    Work in the setting of
@@ -77584,6 +77757,14 @@ second-moment energy, or a dyadic high-correlation star is exposed and sent
 back to the generated-merge/dense-prefix verifier.  Thus the unsponsored
 storage obstruction has the same terminal object as the generic child-panel
 packing residual, rather than a separate materialization problem.
+\Cref{cor:unsponsored-cut-low-correlation-cap-closure} instantiates this
+terminal object for large-range centered Gaussian caps: an exposed packing's
+first list moment and all pairs with correlation
+\(O(\log\log m/\log m)\) are automatically bounded by
+\(m^{1+\rho}\operatorname{polylog}m\).  Therefore a polynomial unsponsored-cut
+cap-panel residual cannot hide in diffuse low-correlation co-load; it must
+contain one dyadic high-correlation cap star, which is exactly the finite
+object already routed to generated-merge and dense-prefix tests.
 \Cref{cor:fractional-sponsor-tail-shared-cover} then removes duplicated large
 stars from that target by a finite shared-cover LP: either residual fractional
 star copies plus shared records have total price inside the storage allowance,
