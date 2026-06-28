@@ -830,16 +830,45 @@ The smooth product filter is not a replacement for \cref{lem:adaptive-continuati
    The occurrence multiplicities are still charged as filter metadata and
    through the query sampling law, but the recursive child index is stored once
    per distinct canonical net.
-   These are Renyi average list-decoding statements for separated spherical
-   codes only after the dense part has been quotiented out.  In worst-case
-   tangent-cap configurations the correct proof target is split: low-correlation
-   tuple profiles should be paid by Gaussian cap-intersection energy, while
+   The query inequality is only a success-normalized first-moment statement:
+   since \(N_F\subseteq B_F\) and \(\rho'\le1\), ordinary candidate-load control
+   implies the recursive query moment.  The genuinely Renyi list-decoding part
+   is the shared storage inequality for distinct canonical bucket nets, after
+   the dense part has been quotiented out.  In worst-case tangent-cap
+   configurations the correct proof target is split: low-correlation tuple
+   profiles should be paid by Gaussian cap-intersection energy, while
    high-correlation tuple mass should be reported as smaller-radius star
-   containers and charged through the dense-cover LP.  They hold in the
-   random-position tensor calculation above, but the corresponding
-   low-correlation/dense-star dichotomy is not yet proved for arbitrary dense
-   tangent-cap configurations.
+   containers and charged through the dense-cover LP.  These storage
+   certificates hold in the random-position tensor calculation above, but the
+   corresponding low-correlation/dense-star dichotomy is not yet proved for
+   arbitrary dense tangent-cap configurations.
 \end{remark}
+
+\begin{lemma}[Bucket-net recursion geometry]
+   \label{lem:bucket-net-recursion-geometry}
+   Let \(P\) be a metric subproblem, let \(B\subseteq P\), and let
+   \(N\subseteq B\) be a \(\Delta\)-cover of \(B\): every point of \(B\) is
+   within distance \(\Delta\) of some point of \(N\).  Fix \(1<\alpha<c\) and
+   put \(\Delta=(\alpha-1)r\).  If a query \(q\) has a near witness
+   \(p\in B\) with \(\|p-q\|\le r\), then \(N\) contains a point \(t\) with
+   \[
+      \|t-q\|\le\alpha r .
+      \tag{BNG1}
+   \]
+   Consequently, a \((c/\alpha,\alpha r)\)-ANN child built on \(N\), followed
+   by verification in the parent metric, is a valid recursive replacement for
+   scanning \(B\): any successful child answer is within \(cr\) of \(q\).
+\end{lemma}
+
+\begin{proof}
+   Since \(p\in B\) and \(N\) \(\Delta\)-covers \(B\), choose \(t\in N\) with
+   \(\|t-p\|\le\Delta=(\alpha-1)r\).  The triangle inequality gives
+   \[
+      \|t-q\|\le\|t-p\|+\|p-q\|\le\alpha r.
+   \]
+   If the child returns a point \(x\in N\) within
+   \((c/\alpha)(\alpha r)=cr\) of \(q\), the parent verifier accepts it.
+\end{proof}
 
 \begin{proposition}[Success-normalized compressed-bucket compiler]
    \label{prop:success-normalized-bucket-dag}
@@ -938,12 +967,8 @@ The smooth product filter is not a replacement for \cref{lem:adaptive-continuati
    neighbor is found, and cap the resulting expected algorithm as in the
    preliminaries.  Consider a true near witness \(p\).  If a sampled filter
    \(F\) contains \(p\), then maximality of \(N_F\) gives a net point
-   \(t\in N_F\) with
-   \[
-      \|t-p\|\le(\alpha_j-1)r_j,
-      \qquad
-      \|t-q\|\le\alpha_jr_j=r_{j+1}.
-   \]
+   \(t\in N_F\) satisfying \(\|t-q\|\le\alpha_jr_j=r_{j+1}\), by
+   \cref{lem:bucket-net-recursion-geometry}.
    Therefore the child on \(N_F\) is a valid \((c_{j+1},r_{j+1})\)-ANN
    instance, and a successful child answer is within
    \[
@@ -1140,6 +1165,74 @@ The smooth product filter is not a replacement for \cref{lem:adaptive-continuati
    \]
    Substituting the two displayed bounds on \(S_1,S_2\) gives \((CB2)\), after
    absorbing \(L(m)\) into the polylogarithmic factor.
+\end{proof}
+
+\begin{corollary}[Compressed-bucket rung checklist]
+   \label{cor:compressed-bucket-rung-checklist}
+   In one rung \(j\) of
+   \cref{prop:success-normalized-bucket-dag}, it is enough to verify the
+   following three certificates.
+
+   First, the retained filter metadata and occurrence pointers use at most
+   \(m^{1+\rho_j}L(m)\) space, and each bucket net \(N_F\subseteq B_F\) is a
+   maximal \((\alpha_j-1)r_j\)-separated net of \(B_F\).
+
+   Second, for every promised query \(q\) and near witness \(p\), the sampling
+   law \(\mu_q\) has hit probability
+   \[
+      a_j(q,p)=\Pr_{F\sim\mu_q}[p\in B_F],
+      \qquad
+      a_j(q,p)^{-1}\le m^{\rho_j}L(m),
+      \tag{CBK1}
+   \]
+   and satisfies the ordinary success-normalized candidate-load bound
+   \[
+      \E_{F\sim\mu_q}|B_F|
+      \le
+      a_j(q,p)\,m^{\rho_j}L(m).
+      \tag{CBK2}
+   \]
+
+   Third, the distinct canonical child nets obey the shared storage bound
+   \[
+      \sum_A |A|^{1+\rho_{j+1}}
+      \le
+      m^{1+\rho_j}L(m).
+      \tag{CBK3}
+   \]
+   Then all hypotheses of
+   \cref{prop:success-normalized-bucket-dag} hold at rung \(j\).
+
+   If \((CBK3)\) is not proved directly, it is enough to prove the occurrence
+   moment bounds
+   \[
+      \sum_F|N_F|\le m^{1+\rho_j}L(m),
+      \qquad
+      \sum_F|N_F|^2\le m^{1+\rho_j}L(m),
+      \tag{CBK4}
+   \]
+   or any sharper tuple-profile certificate implying them.
+
+   Thus the compressed-bucket route has only one genuinely nonstandard
+   query/storage obstruction: shared canonical-net storage.  The query side
+   uses the usual LSF first moment; no separate query-side Renyi list-decoding
+   theorem is needed.
+\end{corollary}
+
+\begin{proof}
+   A maximal separated net is a cover of its bucket, so recursive correctness is
+   exactly \cref{lem:bucket-net-recursion-geometry}.  The lower bound on
+   \(a_j(q,p)\) is \((CB0)\).  Since \(N_F\subseteq B_F\) and
+   \(0\le\rho_{j+1}\le1\),
+   \[
+      |N_F|^{\rho_{j+1}}\le |N_F|\le |B_F|.
+   \]
+   Averaging and using \((CBK2)\) gives \((CB1)\).  The distinct-net storage
+   condition \((CBK3)\) is \((CB2)\), so
+   \cref{prop:success-normalized-bucket-dag} applies.  Finally, \((CBK4)\)
+   implies \((CBK3)\) by
+   \cref{lem:occurrence-moments-dominate-dag}, with
+   \(r=\rho_{j+1}\).
 \end{proof}
 
 \begin{lemma}[Positive-correlation occurrence-moment obstruction]
@@ -68792,6 +68885,9 @@ The compressed-bucket route from \cref{prop:success-normalized-bucket-dag} is
 now separated just as cleanly.  The recursion accounting is finished: a finite
 approximation ladder gives \(n^{\rho_c}\polylog n\) query time once each rung
 has a cost-normalized fractional probing law and a shared-DAG storage moment.
+\Cref{lem:bucket-net-recursion-geometry} is the deterministic geometric core:
+replacing a bucket by an \((\alpha-1)r\)-net changes the child problem to
+\((c/\alpha,\alpha r)\)-ANN and preserves parent verification.
 \Cref{cor:fractional-probe-compressed-bucket} folds the old near-hit lower bound
 and query Renyi moment into one invariant: recursive one-probe price divided by
 near-witness coverage.  The query moment is therefore no longer a separate
@@ -68799,6 +68895,10 @@ list-decoding problem; by \cref{lem:first-moment-query-compression}, the usual
 success-normalized expected bucket load implies the Renyi child-work bound, and
 \cref{cor:first-moment-active-load-query} is the exact finite-profile version
 with false active buckets included in the active layer.
+\Cref{cor:compressed-bucket-rung-checklist} packages this into the current
+minimal rung test: ordinary success-normalized candidate load plus distinct
+canonical-net storage.  Thus the remaining list-decoding theorem for compressed
+buckets is a storage/canonicalization theorem, not a query theorem.
 \Cref{cor:distinct-canonical-bucket-net} further sharpens the storage target:
 the recursive child index is charged once per distinct canonical bucket net, not
 once per decoded occurrence, with only occurrence pointers left in the metadata
