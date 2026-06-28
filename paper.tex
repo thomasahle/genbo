@@ -9777,6 +9777,99 @@ partition ignores the bias coordinates that certify the list size.
    \((LPL9)\).
 \end{proof}
 
+\begin{corollary}[Frontier-gap cancellation for negative coefficients]
+   \label{cor:frontier-gap-negative-coefficients}
+   Work in the setting of
+   \cref{cor:shifted-overlap-coefficient-certificate}, and put
+   \[
+      \beta_u(h)=\sum_{j=1}^Na_u(h)_j^- .
+      \tag{LPN1}
+   \]
+   Assume that
+   \[
+      \beta_u(h)\le1
+      \qquad(h\in E_u)
+      \tag{LPN2}
+   \]
+   for every branch-and-bound node \(u\).  Define the internal-gap functional
+   \[
+      J_{u,\gamma}(w)
+      =
+      \sup_{h\in E_u}
+      \left[
+         (T-\gamma)\kappa_u(h)
+         +
+         \sum_{j=1}^N a_u(h)_j^-\bigl(M(u)-W(c_j)\bigr)
+      \right].
+      \tag{LPN3}
+   \]
+   Then, on the false-survivor event \(M(u)<T-\gamma\),
+   \[
+      \exp(\lambda(M(u)-T))
+      \exp\!\left(\lambda D_{u,\gamma}(w)\right)
+      \le
+      e^{-\lambda\gamma}\exp\!\left(\lambda J_{u,\gamma}(w)\right).
+      \tag{LPN4}
+   \]
+   Consequently, the projected-bias condition \((LPA1)\) follows from
+   \[
+      e^{-\lambda\gamma}
+      \sum_u
+      \E\!\left[
+         \mathbf 1_{\{M(u)<T-\gamma\}}
+         \exp\!\left(
+            \lambda J_{u,\gamma}(w)
+            +\lambda\omega_u^\perp
+            +\frac{\lambda^2(r_u^\perp)^2}{2}
+         \right)
+      \right]
+      \le
+      \log^{O(1)}n\cdot \E N_{\ge T}.
+      \tag{LPN5}
+   \]
+   If scalar leakage is killed or absorbed using
+   \cref{cor:balance-witness-scalar-leakage}, the only projected-bias term
+   left in \(J_{u,\gamma}\) is the negative coefficient mass against the
+   \emph{internal} gaps \(M(u)-W(c_j)\) within the same branch subcode.
+\end{corollary}
+
+\begin{proof}
+   On the event \(M(u)<T-\gamma\), write
+   \[
+      \theta_u=T-\gamma-M(u)>0.
+      \tag{LPN6}
+   \]
+   For every \(h\in E_u\),
+   \[
+      T-\gamma-W(c_j)=\theta_u+M(u)-W(c_j),
+      \tag{LPN7}
+   \]
+   so
+   \[
+   \begin{aligned}
+      &M(u)-T+
+      \left[
+         (T-\gamma)\kappa_u(h)
+         +\beta_u(h)\theta_u
+         +\sum_{j=1}^Na_u(h)_j^-\bigl(M(u)-W(c_j)\bigr)
+      \right]\\
+      &\qquad=
+      -\gamma
+      +(\beta_u(h)-1)\theta_u
+      +(T-\gamma)\kappa_u(h)
+      +\sum_{j=1}^Na_u(h)_j^-\bigl(M(u)-W(c_j)\bigr)\\
+      &\qquad\le
+      -\gamma+J_{u,\gamma}(w),
+   \end{aligned}
+      \tag{LPN8}
+   \]
+   where the last line uses \((LPN2)\).  Taking the supremum over
+   \(h\in E_u\) and exponentiating gives \((LPN4)\).
+   Finally, \cref{cor:shifted-overlap-coefficient-certificate} lets us replace
+   \(B_u\) by \(D_{u,\gamma}\) in \((LPA1)\), and then \((LPN4)\) gives the
+   sufficient condition \((LPN5)\).
+\end{proof}
+
 \begin{corollary}[Well-conditioned Gram coefficient bounds]
    \label{cor:well-conditioned-gram-coefficients}
    Continue with the notation of
@@ -9964,6 +10057,15 @@ partition ignores the bias coordinates that certify the list size.
    projection certificate.  Thus the real projected-bias problem is the
    negative coefficient mass against below-frontier score gaps, not an
    additional scalar shift defect.
+
+   \Cref{cor:frontier-gap-negative-coefficients} removes another artificial
+   loss.  If the negative coefficient mass is at most one, the gap from the
+   true subcode maximum \(M(u)\) to the false-survivor frontier \(T-\gamma\) is
+   paid exactly by the factor \(\exp(\lambda(M(u)-T))\) already present in the
+   false-survivor moment.  The remaining gap term is internal:
+   \(M(u)-W(c_j)\).  Thus the low-rate code theorem should control
+   pseudocodeword coefficients only against score differences inside the same
+   subproblem, rather than against the absolute threshold deficit.
 
    \Cref{cor:well-conditioned-gram-coefficients} gives the first elementary
    path to such a theorem.  If the local subcode has a well-conditioned overlap
