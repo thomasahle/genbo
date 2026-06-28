@@ -39028,6 +39028,109 @@ query mass rather than producing a cost-effective dense filter.
    \cref{cor:high-correlation-stars-feed-guard-credit}.
 \end{proof}
 
+\begin{corollary}[Partition-cell spread-star repair dichotomy]
+   \label{cor:partition-cell-spread-star-repair}
+   Work in the setting of
+   \cref{cor:partition-local-gibbs-residual}.  Fix an active layer \(i\), a
+   nonempty partition class \(C\in\mathcal P_i\), and write
+   \[
+      X_{i,h}=W_{i,h}e^{-I_{i,h}},
+      \qquad
+      X_{i,C}^{(p)}
+      =
+      \left(\sum_{h\in C}X_{i,h}^{p_i}\right)^{1/p_i},
+      \tag{PCS0}
+   \]
+   \[
+      \Theta_{i,C}
+      =
+      \frac{2^{\ell_i}B_\star}
+           {32M_{\mathcal I}J_i^{1/p_i}} .
+      \tag{PCS1}
+   \]
+   Suppose a build-time reporter certifies nonnegative numbers \(L_C,H_C\) and
+   a finite family \(\mathcal B_C\) of lower-certified raw guard records, with
+   lower paid-shadow certificates \(X_b\) and recursive prices \(R_b\), such
+   that
+   \[
+      X_{i,C}^{(p)}\le L_C+H_C
+      \tag{PCS2}
+   \]
+   and
+   \[
+      H_C\le2\sum_{b\in\mathcal B_C}X_b .
+      \tag{PCS3}
+   \]
+   If the class low envelope plus reported recursive star price fits the local
+   water budget,
+   \[
+      L_C+2\sum_{b\in\mathcal B_C}R_b
+      \le
+      \Theta_{i,C},
+      \tag{PCS4}
+   \]
+   then either \(C\) satisfies the partition-local water bound \((PLG2)\), or a
+   one-record guard-credit repair fires.
+
+   Equivalently, if \(C\) violates \((PLG2)\) and no one-record guard-credit
+   repair fires, then the same class certificates must violate
+   \[
+      L_C+2\sum_{b\in\mathcal B_C}R_b
+      >
+      \Theta_{i,C}.
+      \tag{PCS5}
+   \]
+   Consequently, if every active layer and every positive partition class
+   admits certificates satisfying \((PCS2)\)--\((PCS4)\), and the
+   high-correlation fixed-tail condition \((PELS5)\) holds, then
+   \((\mathsf{ESFC}_\Sigma)\) is feasible, provided no one-record guard-credit
+   repair fires.
+
+   Thus the spread-star repair bridge does not require singletonizing the
+   entire profile refinement.  One may first group profiles into
+   bounded-dynamic-range cells, surprisal bands, tuple-profile cells, or
+   reporter cells; only the chosen partition count \(J_i\), not the raw profile
+   count \(H_i\), appears in the water threshold.  For example, if each
+   \(h\in C\) has a certified split \(X_{i,h}\le L_h+H_h\), then Minkowski's
+   inequality permits the class certificates
+   \[
+      L_C=\left(\sum_{h\in C}L_h^{p_i}\right)^{1/p_i},
+      \qquad
+      H_C=\left(\sum_{h\in C}H_h^{p_i}\right)^{1/p_i},
+      \tag{PCS6}
+   \]
+   after which the high-correlation part need only be reported well enough to
+   certify \((PCS3)\).
+\end{corollary}
+
+\begin{proof}
+   The partition-local condition \((PLG2)\) is exactly
+   \(X_{i,C}^{(p)}\le\Theta_{i,C}\).  Suppose no one-record guard-credit repair
+   fires.  As in the proof of
+   \cref{cor:singleton-spread-star-repair}, every lower-certified raw record in
+   \(\mathcal B_C\) must satisfy \(X_b\le R_b\); otherwise that single record is
+   a positive panel for
+   \cref{cor:lower-certified-scale-free-guard-panel}.  Hence
+   \[
+      X_{i,C}^{(p)}
+      \le
+      L_C+H_C
+      \le
+      L_C+2\sum_bX_b
+      \le
+      L_C+2\sum_bR_b
+      \le
+      \Theta_{i,C},
+   \]
+   proving \((PLG2)\).  The contrapositive is \((PCS5)\).
+
+   If every positive class satisfies \((PLG2)\), then
+   \cref{cor:partition-local-gibbs-residual} gives
+   \((\mathsf{ESFC}_\Sigma)\) under \((PELS5)\) and no guard repair.  Finally,
+   \((PCS6)\) is the triangle inequality in \(\ell_{p_i}(C)\), applied to the
+   pointwise bounds \(X_{i,h}\le L_h+H_h\).
+\end{proof}
+
 \begin{corollary}[Paid-responsibility high-correlation star compiler]
    \label{cor:paid-responsibility-high-correlation-star}
    Work in the setting of
@@ -44847,6 +44950,10 @@ profile entropy-energy violation plus failure of all certified guard repairs.
 spread/star layer-cake: a violating singleton must either fire the guard
 verifier or make the certified low envelope plus twice the reported star prices
 exceed its local water threshold.
+\Cref{cor:partition-cell-spread-star-repair} is the corresponding coarse-cell
+version: the same repair bridge may be applied after a finite reporter
+partition, so the threshold pays the chosen cell count \(J\) rather than the raw
+profile count.
 \Cref{lem:star-superlevel-column-verifier} and
 \cref{cor:pair-star-dense-column-generator} add the finite LP check: the star
 is retained only if its ball-thickened query side has positive reduced gain;
@@ -70451,6 +70558,9 @@ verifier or be ruled out by the spread-packing entropy-energy estimate.
 the high-correlation star layer-cake is reported, absence of a guard repair
 forces \(X_h\) below the threshold whenever \(L_h+2\sum R_b\) fits that
 threshold.
+\Cref{cor:partition-cell-spread-star-repair} lifts the same statement back to
+coarser reporter cells, replacing singleton profile accounting by a class
+\(\ell_p\) certificate and the partition-count toll \(J^{1/p}\).
 \Cref{lem:star-superlevel-column-verifier} and
 \cref{cor:pair-star-dense-column-generator} turn such a superlevel into an
 ordinary fractional-cover column by using the certified query activation
@@ -70731,6 +70841,10 @@ high-deficit profile with no positive certified guard proposal.
 \Cref{cor:singleton-spread-star-repair} reduces that residual to one concrete
 price inequality for the profile's certified low part and reported star panel;
 failure of the inequality is now the named storage-side theorem to prove.
+\Cref{cor:partition-cell-spread-star-repair} gives the non-singleton form of the
+same target: for a polylogarithmic reporter partition, prove the class low
+envelope plus reported star prices fit the cell water threshold, or obtain a
+guard repair.
 \Cref{cor:metric-entropy-hall-shadow-closure} and
 \cref{cor:low-doubling-hall-shadow-close} sharpen the remaining geometric
 obligation: any positive Hall shadow of certified covering number below
