@@ -13226,6 +13226,94 @@ partition ignores the bias coordinates that certify the list size.
    substituting \((LNY8)\) into \((LNY6)\) gives \((LNY9)\).
 \end{proof}
 
+\begin{corollary}[Positive-overlap tail certificate for chart shadows]
+   \label{cor:positive-overlap-chart-shadow-tail}
+   Continue with the notation of
+   \cref{cor:posterior-plurality-chart-shadow}, and write
+   \[
+      b^\nu_{j,k}=A^\nu_{j,k}-\frac{V_\nu}{q}
+      \qquad(j,k\in[N]).
+      \tag{LNZ1}
+   \]
+   For nonnegative prices \(\omega\in\R_+^N\), define the weighted positive
+   overlap tail
+   \[
+      \mathcal C_{\nu,\omega}(t)
+      =
+      \sum_{j,k=1}^N
+      \omega_j\omega_k\,\mathbf1_{\{b^\nu_{j,k}\ge t\}}
+      \qquad(t\ge0).
+      \tag{LNZ2}
+   \]
+   If
+   \[
+      \int_0^\infty \mathcal C_{\nu,\Omega_u}(t)\,dt
+      \le
+      \frac{(\chi_u\Xi_u)^2}{q(q-1)V_\nu},
+      \tag{LNZ3}
+   \]
+   then the box-restricted quadratic condition \((LNY9)\) holds, hence the
+   soft chart-shadow bounds \((LNX4)\) hold in the balanced scalar setting.
+
+   A Laplace sufficient condition is the following: for any \(\eta>0\), if
+   \[
+      \sum_{j,k=1}^N
+      \Omega_{u,j}\Omega_{u,k}
+      \mathbf1_{\{b^\nu_{j,k}\ge0\}}
+      \exp\!\left(\eta b^\nu_{j,k}\right)
+      \le
+      \frac{\eta(\chi_u\Xi_u)^2}{q(q-1)V_\nu},
+      \tag{LNZ4}
+   \]
+   then \((LNZ3)\) holds.
+
+   Thus the uniform-budget chart-shadow theorem can be reduced to a weighted
+   pair-enumerator estimate: under the internal-gap prices \(\Omega_u\), pairs
+   of true codewords with above-random coordinate overlap must have only
+   polylogarithmic total tail mass.
+\end{corollary}
+
+\begin{proof}
+   For any selector \(0\le s\le\Omega_u\),
+   \[
+      s^\top B^\nu s
+      =
+      \sum_{j,k}s_js_k b^\nu_{j,k}
+      \le
+      \sum_{j,k}s_js_k(b^\nu_{j,k})_+ .
+      \tag{LNZ5}
+   \]
+   Since all coefficients \(s_js_k\) are nonnegative and \(s\le\Omega_u\),
+   layer cake gives
+   \[
+   \begin{aligned}
+      \sum_{j,k}s_js_k(b^\nu_{j,k})_+
+      &=
+      \int_0^\infty
+      \sum_{j,k}s_js_k\,\mathbf1_{\{b^\nu_{j,k}\ge t\}}\,dt \\
+      &\le
+      \int_0^\infty \mathcal C_{\nu,\Omega_u}(t)\,dt .
+   \end{aligned}
+      \tag{LNZ6}
+   \]
+   Therefore \((LNZ3)\) implies \((LNY9)\), and
+   \cref{cor:posterior-plurality-chart-shadow} gives the chart-shadow
+   conclusion.
+
+   For the Laplace form, Markov's inequality gives
+   \[
+      \mathcal C_{\nu,\Omega_u}(t)
+      \le
+      e^{-\eta t}
+      \sum_{j,k}
+      \Omega_{u,j}\Omega_{u,k}
+      \mathbf1_{\{b^\nu_{j,k}\ge0\}}
+      \exp\!\left(\eta b^\nu_{j,k}\right).
+      \tag{LNZ7}
+   \]
+   Integrating over \(t\ge0\) proves that \((LNZ4)\) implies \((LNZ3)\).
+\end{proof}
+
 \begin{corollary}[Anchor-fiber LP/SA certificate compiler]
    \label{cor:anchor-fiber-lp-sa-compiler}
    Continue with the notation of
@@ -13598,6 +13686,9 @@ partition ignores the bias coordinates that certify the list size.
    Cauchy step bounds that bias by the centered overlap quadratic form
    \(s^\top B^\nu s\).  Thus the random-code theorem can be stated as a
    box-restricted second-moment bound for all \(0\le s\le\Omega_u\).
+   \Cref{cor:positive-overlap-chart-shadow-tail} weakens this further to a
+   weighted positive-overlap pair tail, or equivalently a tilted pair
+   enumerator under the same internal-gap prices.
 
    \Cref{cor:leader-shift-near-leader-certificate} gives the clean terminal
    version of this idea when scalar leakage is killed exactly, or otherwise
