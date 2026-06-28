@@ -38086,6 +38086,93 @@ query mass rather than producing a cost-effective dense filter.
    overload star.
 \end{proof}
 
+\begin{corollary}[Exact storage closure for Hall-tail overload stars]
+   \label{cor:hall-tail-overload-exact-storage}
+   Work in the pair specialization of
+   \cref{cor:weighted-occurrence-discounted-tuple-storage} and in the setting of
+   \cref{cor:overload-cohort-tail-hall-cut}.  For each build seed \(z\), let
+   \(\mathcal S_z\) be a finite family of dyadic pure overload stars produced
+   by the Hall-tail separator and canonicalized to shared children.  A star
+   \(s\in\mathcal S_z\) has a canonical child \(\kappa_{z,s}\).  Each
+   distinct child \(\kappa\in\mathcal C_z^{\rm tail}\) has a nonempty witness
+   net \(A_{z,\kappa}\subseteq P\) and storage price
+   \[
+      u_{z,\kappa}
+      =
+      \psi_{z,\kappa}|A_{z,\kappa}|^{1+\rho_{z,\kappa}},
+      \qquad 0\le\rho_{z,\kappa}\le1 .
+      \tag{HTS1}
+   \]
+   The Hall atoms selected by \(s\) are weighted occurrences of
+   \(\kappa_{z,s}\), with their Hall weights as occurrence weights, exactly as
+   in \cref{cor:cap-centered-overload-weighted-storage}.  Let
+   \(\mathcal C_z^{\rm tail}\) be the distinct canonical children that occur
+   after grouping all these weighted occurrences.
+
+   Define the exact Hall-tail pair load
+   \[
+      L_z^{\rm tail}(x,y)
+      =
+      \sum_{\substack{\kappa\in\mathcal C_z^{\rm tail}:\\
+         x,y\in A_{z,\kappa}}}
+      \psi_{z,\kappa}|A_{z,\kappa}|^{\rho_{z,\kappa}-1}.
+      \tag{HTS2}
+   \]
+   Then the weighted occurrence-discounted pair congestion of all Hall-tail
+   stars is exactly \(L_z^{\rm tail}(x,y)\).  In particular,
+   \[
+      \sum_{x,y\in P}L_z^{\rm tail}(x,y)
+      =
+      \sum_{\kappa\in\mathcal C_z^{\rm tail}}u_{z,\kappa}.
+      \tag{HTS3}
+   \]
+   Hence, if
+   \[
+      \E_z\Gamma_z+
+      \E_z\sum_{\kappa\in\mathcal C_z^{\rm tail}}u_{z,\kappa}
+      \le aS
+      \tag{HTS4}
+   \]
+   under the active first-moment hypotheses of
+   \cref{cor:weighted-occurrence-discounted-tuple-storage}, then the Hall-tail
+   overload stars satisfy the weighted tuple-storage certificate.  Equivalently,
+   the remaining Hall-tail storage theorem is only the distinct-child price
+   bound \((HTS4)\): reciprocal weighted multiplicity and uniform pair witnesses
+   already supply all pair envelopes.
+\end{corollary}
+
+\begin{proof}
+   Fix \(z\) and a tuple \((x,y)\).  By
+   \cref{cor:cap-centered-overload-weighted-storage}, every weighted occurrence
+   belonging to a pure overload star contributes to the weighted
+   occurrence-discounted pair congestion exactly as an occurrence of its
+   canonical child, divided by that child's total weighted multiplicity.  After
+   grouping occurrences by canonical child, the total contribution of any
+   \(\kappa\in\mathcal C_z^{\rm tail}\) containing \(x,y\) is therefore
+   \[
+      \frac{u_{z,\kappa}}{|A_{z,\kappa}|^2}
+      =
+      \psi_{z,\kappa}|A_{z,\kappa}|^{\rho_{z,\kappa}-1},
+   \]
+   and it is zero if \(x\) or \(y\) is not in \(A_{z,\kappa}\).  This proves
+   \((HTS2)\) as the exact congestion envelope.
+
+   Summing \((HTS2)\) over ordered pairs gives
+   \[
+      \sum_{x,y\in P}L_z^{\rm tail}(x,y)
+      =
+      \sum_{\kappa\in\mathcal C_z^{\rm tail}}
+      \psi_{z,\kappa}|A_{z,\kappa}|^{\rho_{z,\kappa}-1}
+      |A_{z,\kappa}|^2
+      =
+      \sum_{\kappa\in\mathcal C_z^{\rm tail}}u_{z,\kappa},
+   \]
+   proving \((HTS3)\).  Taking
+   \(J^{\rm tail}(x,y)=\E_zL_z^{\rm tail}(x,y)\), condition \((HTS4)\) is
+   exactly \((WODT3)\), and the first paragraph supplies \((WODT2)\).  Thus
+   \cref{cor:weighted-occurrence-discounted-tuple-storage} proves feasibility.
+\end{proof}
+
 \begin{lemma}[Certified star-panel separator]
    \label{lem:certified-star-panel-separator}
    Work in the setting of \cref{lem:star-prefix-weak-type-residual}, and assume
@@ -73802,6 +73889,12 @@ after atomizing each high-cohort incidence as a singleton-center Hall atom,
 pairs.  Therefore a large \(\mathcal W_{\rm over}\) automatically supplies a
 dyadic pure overload star, and after canonicalization that star is charged once
 by the weighted reciprocal-multiplicity storage theorem.
+\Cref{cor:hall-tail-overload-exact-storage} closes the bookkeeping for these
+stars: reciprocal weighted multiplicity makes their pair-congestion witness
+sum exactly equal to the total distinct child storage price.  Thus the remaining
+Hall-tail theorem is not another materialization or pair-envelope problem; it is
+the geometric bound on
+\(\E_z\sum_{\kappa\in\mathcal C_z^{\rm tail}}u_{z,\kappa}\).
 \Cref{cor:dyadic-distinct-storage-bucket-net} rewrites that target as a dyadic
 large-child counting problem: for every recursive price scale, bound the number
 of distinct canonical bucket nets whose shared child index has that price.
