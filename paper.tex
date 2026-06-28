@@ -13700,6 +13700,87 @@ partition ignores the bias coordinates that certify the list size.
    statement is exactly \((LOC3)\).
 \end{proof}
 
+\begin{corollary}[Shared-envelope distance form]
+   \label{cor:shared-envelope-distance-form}
+   Continue with the notation of
+   \cref{cor:source-localized-residual-lp}.  For a nonnegative coordinate weight
+   \(D\in\R_+^{bq}\), define
+   \[
+      \mathsf d_u(\mathcal Z;D)
+      =
+      \inf_{\substack{\mu\in\R_+^{bq},\ x_z\in K_u\\
+                      z-x_z\le\mu\ (z\in\mathcal Z)}}
+      \ip{D}{\mu}.
+      \tag{LOE1}
+   \]
+   Then
+   \[
+      \mathsf d_u(\mathcal Z;D)
+      =
+      \inf_{x_z\in K_u}
+      \sum_{i=1}^b\sum_{a\in[q]}
+      D_{i,a}
+      \left(
+         \max_{z\in\mathcal Z}(z_{i,a}-x_z(i,a))
+      \right)_+ ,
+      \tag{LOE2}
+   \]
+   and finite LP duality gives
+   \[
+      \mathsf d_u(\mathcal Z;D)
+      =
+      \sup_{\substack{y_z\in\R_+^{bq}\\
+                      \sum_{z\in\mathcal Z}y_z\le D}}
+      \sum_{z\in\mathcal Z}
+      \left(
+         \ip{y_z}{z}
+         -
+         \max_{j\in[N]}\ip{y_z}{\iota(c_j)}
+      \right).
+      \tag{LOE3}
+   \]
+   Consequently, for the finite selector family \(\mathcal S\),
+   \[
+      \mathsf B_u(\mathcal Z,\mathcal S)
+      =
+      \max_{\beta\in\Delta(\mathcal S)}
+      \mathsf d_u(\mathcal Z;D_\beta),
+      \qquad
+      D_\beta=\sum_{s\in\mathcal S}\beta_sD_s .
+      \tag{LOE4}
+   \]
+
+   Thus the localized residual problem may be stated without Hall score tables:
+   every convex combination of posterior-mismatch directions must have small
+   shared positive-envelope distance from the exposed relaxation sources to the
+   true codeword convex hull.
+\end{corollary}
+
+\begin{proof}
+   For fixed witnesses \(x_z\), the least feasible \(\mu\) in \((LOE1)\) is
+   coordinatewise
+   \[
+      \mu_{i,a}
+      =
+      \left(
+         \max_{z\in\mathcal Z}(z_{i,a}-x_z(i,a))
+      \right)_+ ,
+      \tag{LOE5}
+   \]
+   because \(D\ge0\).  This proves \((LOE2)\).
+
+   The dual formula \((LOE3)\) is the fixed-\(D\) version of the Lagrange-dual
+   calculation in \cref{cor:source-localized-residual-lp}: remove the epigraph
+   variable \(B\) and replace the condition
+   \(\sum_zy_z\le\sum_s\beta_sD_s\) by \(\sum_zy_z\le D\).  Strong duality
+   again holds because this is a finite LP with finite optimum.
+
+   Finally, substituting \(D=D_\beta\) in \((LOE3)\) and maximizing over
+   \(\beta\in\Delta(\mathcal S)\) gives exactly the dual expression
+   \((LOD3)\) for \(\mathsf B_u(\mathcal Z,\mathcal S)\).  This proves
+   \((LOE4)\).
+\end{proof}
+
 \begin{corollary}[Anchor-fiber LP/SA certificate compiler]
    \label{cor:anchor-fiber-lp-sa-compiler}
    Continue with the notation of
@@ -14095,6 +14176,10 @@ partition ignores the bias coordinates that certify the list size.
    normal form: one shared residual budget is enough exactly when every
    chart-dominated aggregate of source-local Hall gaps has small value.  This is
    the current cleanest finite target for a Tanner, SA, or list-recovery proof.
+   \Cref{cor:shared-envelope-distance-form} removes the score tables from that
+   target: for each convex combination of chart-mismatch directions, project the
+   exposed relaxation sources to the true codeword hull while keeping the
+   coordinatewise positive envelope small in that direction.
 
    \Cref{cor:leader-shift-near-leader-certificate} gives the clean terminal
    version of this idea when scalar leakage is killed exactly, or otherwise
