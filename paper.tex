@@ -41270,6 +41270,71 @@ query mass rather than producing a cost-effective dense filter.
    certificates.
 \end{proof}
 
+\begin{corollary}[Flattened closure for returned child panels]
+   \label{cor:flattened-child-panel-closure}
+   Let \(\mathfrak A\) be any finite universe of priced fractional child
+   records, with prices \(u_a\ge0\).  Think of \(\mathfrak A\) as the build-time
+   closure of an initial child panel under all materializable storage-dominated
+   high-correlation returns of
+   \cref{cor:fractional-child-panel-cap-star-storage-split}.  Let
+   \(\mathfrak T\) be a finite universe of generated shared-record templates
+   over \(\mathfrak A\), satisfying the materialization hypothesis \((FCP3)\)
+   with template prices \(\overline P_T(K)\).  Run the generated-cover
+   relaxation \((FCP6)\) once on the full universe
+   \((\mathfrak A,\mathfrak T)\), and call its value
+   \(\Psi_{\mathfrak A}^{\rm gen}\).
+
+   If \(\Psi_{\mathfrak A}^{\rm gen}\le\Theta\), then every initial panel whose
+   returned storage records lie in \(\mathfrak A\) is represented by residual
+   fractional copies plus shared generated records of total price at most
+   \(\Theta\), in addition to the explicit bounded fixed tails from
+   \cref{cor:fractional-child-panel-cap-star-storage-split}.
+
+   If \(\Psi_{\mathfrak A}^{\rm gen}>\Theta\), then there is a single dual
+   weighting \(y_a\) on all returned records satisfying
+   \[
+      \sum_{a\in\mathfrak A}y_a>\Theta,\qquad
+      0\le y_a\le u_a,
+      \tag{FCL1}
+   \]
+   and for every generated template \(T\in\mathfrak T\), every available
+   cardinality \(K\in\mathcal K_T\), and every
+   \(U\subseteq\mathcal A_T\) with \(|U|=K\),
+   \[
+      \sum_{a\in U}\alpha_{T,a}y_a\le\overline P_T(K).
+      \tag{FCL2}
+   \]
+   Equivalently, every available top prefix in every reachable returned panel
+   has nonpositive reduced cost against the same dual \(y\).
+
+   Consequently repeated high-correlation returns do not create a multiplicative
+   recursion overhead.  They may be flattened at build time into one finite
+   generated-cover LP over the closure universe.  After flattening, the only
+   remaining geometric task is to separate the single no-prefix dual
+   \((FCL1)\)--\((FCL2)\), rather than to coordinate an adaptive sequence of
+   child-panel failures.
+\end{corollary}
+
+\begin{proof}
+   Apply \cref{cor:fractional-child-panel-shared-cover-compiler} with
+   \(\mathcal A=\mathfrak A\) and \(\mathcal T=\mathfrak T\).  If the full
+   generated-cover value is at most \(\Theta\), the feasible solution of
+   \((FCP6)\) materializes a feasible shared-cover solution of price at most
+   \(\Theta\).  Since every returned storage-dominated record from the initial
+   panel belongs to \(\mathfrak A\), this single solution covers the whole
+   returned closure; the bounded-cardinality terms were already separated as
+   explicit fixed tails in
+   \cref{cor:fractional-child-panel-cap-star-storage-split}.
+
+   If the value is larger than \(\Theta\), finite LP duality in the same
+   corollary gives \((FCP7)\) and all subset tests \((FCP5)\) for the full
+   universe.  These are exactly \((FCL1)\)--\((FCL2)\).  Because
+   \(\mathfrak A\) and \(\mathfrak T\) contain the returned records and
+   templates by construction, any later top-prefix generated from a returned
+   panel is one of the tested subsets, and therefore cannot be an improving
+   column against this dual.
+\end{proof}
+
 \begin{corollary}[Generic child-panel pair-witness storage identity]
    \label{cor:generic-child-panel-pair-witness-storage}
    Let \(P\) be a finite metric set and let
@@ -82994,6 +83059,11 @@ dyadic high-correlation star whose generated-record price blocks merging.
 star-specific branch: the nonmergeable high-correlation stars contribute a
 bounded fixed tail plus a storage-dominated priced child panel for the generic
 shared-cover/distinct-storage interfaces.
+\Cref{cor:flattened-child-panel-closure} then removes the last accounting
+ambiguity in this handoff: all storage-dominated panels reachable from such
+returns may be included in one finite build-time closure LP, so a surviving
+compressed-cap overload is represented by one no-prefix dual obstruction rather
+than by an adaptive sequence of returned panels.
 \Cref{cor:weighted-polylog-low-correlation-coload} makes the same low branch
 homogeneous in cap multiplicity: fractional or weighted cap panels obey the
 same bound with the integer occurrence count replaced by total weight.  This is
@@ -83184,6 +83254,11 @@ cap-star loop generically: after generated-prefix search, no medium returned
 star survives, and the remaining high-correlation mass is a bounded fixed tail
 plus a storage-dominated priced child panel that reuses the same shared-cover
 and distinct-storage interfaces.
+\Cref{cor:flattened-child-panel-closure} flattens all such returned
+storage-dominated panels into one finite generated-cover closure.  Thus heavy
+build-time search can enumerate the reachable returned records, solve one LP,
+and either pay them collectively or expose a single exact no-prefix dual for
+the geometric/list-decoding separator.
 \Cref{cor:generic-child-panel-pair-witness-storage} gives the exact storage
 identity for that generic child panel: distribute each stored child's price over
 ordered separated pairs in its witness set, with reciprocal weighted
