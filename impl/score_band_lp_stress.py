@@ -923,6 +923,47 @@ def _point_facets(points: np.ndarray, *, tol: float) -> list[tuple[np.ndarray, f
     return deduped
 
 
+def _dedupe_halfspaces(
+    lhs: np.ndarray,
+    rhs: np.ndarray,
+    *,
+    tol: float,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Remove duplicate halfspaces, keeping the tightest right-hand side."""
+    lhs = np.asarray(lhs, dtype=float)
+    rhs = np.asarray(rhs, dtype=float)
+    if lhs.ndim != 2:
+        raise ValueError("lhs must be a matrix")
+    if rhs.shape != (lhs.shape[0],):
+        raise ValueError("rhs must have one entry per halfspace")
+
+    kept: dict[tuple[int, ...], tuple[np.ndarray, float]] = {}
+    for row, bound in zip(lhs, rhs):
+        norm = float(np.linalg.norm(row))
+        if norm <= tol:
+            if bound < -tol:
+                raise LPInfeasible("inconsistent zero halfspace")
+            continue
+        normal = row / norm
+        offset = float(bound / norm)
+        normal[np.abs(normal) <= tol] = 0.0
+        if abs(offset) <= tol:
+            offset = 0.0
+        key = tuple(int(round(float(value) / tol)) for value in normal)
+        previous = kept.get(key)
+        if previous is None or offset < previous[1]:
+            kept[key] = (normal.copy(), offset)
+
+    if not kept:
+        return np.zeros((0, lhs.shape[1]), dtype=float), np.zeros(0, dtype=float)
+    rows = []
+    bounds = []
+    for normal, offset in kept.values():
+        rows.append(normal)
+        bounds.append(offset)
+    return np.vstack(rows), np.array(bounds)
+
+
 def _projected_local_marginal_vertex_sources(
     code: np.ndarray,
     checks: list[tuple[int, ...]],
@@ -977,8 +1018,8 @@ def _projected_local_marginal_vertex_sources(
             rows.append(row)
             rhs.append(offset)
 
-    lhs = np.vstack(rows)
-    bounds = np.array(rhs)
+    raw_halfspace_count = len(rows)
+    lhs, bounds = _dedupe_halfspaces(np.vstack(rows), np.array(rhs), tol=tol)
     basis_count = comb(lhs.shape[0], dim)
     if basis_count > max_bases:
         raise ValueError(
@@ -1017,6 +1058,8 @@ def _projected_local_marginal_vertex_sources(
         "vertex_count": len(sources),
         "basis_count": basis_count,
         "feasible_basis_count": feasible_bases,
+        "halfspace_count": int(lhs.shape[0]),
+        "raw_halfspace_count": int(raw_halfspace_count),
     }
 
 

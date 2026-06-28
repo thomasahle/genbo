@@ -1,5 +1,10 @@
 import numpy as np
 
+from chart_tail_stress import (
+    centered_symbol_scores,
+    codeword_scores,
+    make_balanced_code,
+)
 from score_band_lp_stress import (
     _simplex_max_nonnegative,
     convex_hull_dominance_deficit,
@@ -372,6 +377,32 @@ def test_clean_panel_can_fail_residual_dominance_certificate():
     assert combined["residual_dominance_gap_bound_over_xi"] > 1.0
 
 
+def test_b5_exact_projected_source_finds_clean_fractional_obstruction():
+    n_words = 10
+    blocks = 5
+    alphabet = 2
+    seed = 3
+    xi = np.log(n_words) ** 3
+    checks = local_check_scopes(blocks, 4)
+    code = make_balanced_code(n_words, blocks, alphabet, seed)
+    symbol_scores = centered_symbol_scores(blocks, alphabet, seed + 1009)
+    scores = codeword_scores(code, symbol_scores)
+    lam = np.sqrt(2.0 * np.log(n_words) / blocks)
+    omega = np.exp(np.minimum(lam * (float(np.max(scores)) - scores), 700.0)) + xi
+    local = integral_local_pseudoword_gaps(code, omega, checks=checks)
+    exact = local_marginal_score_band_gap_exact(
+        code,
+        omega,
+        checks=checks,
+        max_bases=1_000_000,
+    )
+
+    assert local["count"] == 0
+    assert exact["basis_count"] < 100_000
+    assert exact["source_count"] == 16
+    assert exact["gap"] > 10.0 * xi
+
+
 def test_local_check_scopes_enumerates_subsets():
     assert local_check_scopes(3, 2) == [(0, 1), (0, 2), (1, 2)]
 
@@ -395,5 +426,6 @@ if __name__ == "__main__":
     test_local_marginal_residual_dominance_screen_bounds_exact_gap()
     test_local_marginal_combined_screen_matches_separate_screens()
     test_clean_panel_can_fail_residual_dominance_certificate()
+    test_b5_exact_projected_source_finds_clean_fractional_obstruction()
     test_local_check_scopes_enumerates_subsets()
     print("score_band_lp_stress tests passed")
