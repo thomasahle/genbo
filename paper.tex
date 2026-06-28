@@ -39483,6 +39483,85 @@ query mass rather than producing a cost-effective dense filter.
    \((NDW3)\) and the equality of the optimum with the Gibbs water level.
 \end{proof}
 
+\begin{corollary}[Dyadic top-prefix water screen]
+   \label{cor:dyadic-top-prefix-water-screen}
+   Work in the setting of
+   \cref{cor:gibbs-water-level-storage-screen}, and fix an active layer \(i\).
+   Let \(x_1\ge x_2\ge\cdots\ge x_m>0\) be the positive values among
+   \(\{X_{i,h}:h\in\mathcal H_i\}\), in nonincreasing order.  If \(m=0\), then
+   \((GWL2)\) is automatic.  Otherwise put
+   \[
+      \Theta_i=\frac{2^{\ell_i}B_\star}{32M_{\mathcal I}},
+      \qquad
+      \mathcal K_i=\{2^s:0\le s\le\lfloor\log_2m\rfloor\},
+      \qquad
+      J_i^{\rm pref}=|\mathcal K_i|.
+      \tag{TPW1}
+   \]
+   If every dyadic rank \(k\in\mathcal K_i\) satisfies the weak-type envelope
+   \[
+      x_k k^{1/p_i}
+      \le
+      \frac{\Theta_i}{(J_i^{\rm pref})^{1/p_i}},
+      \tag{TPW2}
+   \]
+   then layer \(i\) satisfies \((GWL2)\).
+
+   Conversely, if \((GWL2)\) fails for layer \(i\), then some dyadic rank
+   \(k\in\mathcal K_i\) violates \((TPW2)\).  For that rank, any tie-broken top
+   \(k\) profiles \(P_k\) certify the lower count-energy excess
+   \[
+      \log x_k+\frac1{p_i}\log k-\ell_i\log2
+      >
+      \log\frac{B_\star}
+               {32M_{\mathcal I}(J_i^{\rm pref})^{1/p_i}}.
+      \tag{TPW3}
+   \]
+
+   Thus, after the no-discount correction of
+   \cref{cor:no-discount-layer-global-water}, the remaining high-water residual
+   can be searched as a dyadic top-prefix problem.  A range-reporting,
+   list-decoding, facility, additive-quantization, or seeded-clustering routine
+   need not approximate the whole Gibbs law: if it rules out every dyadic
+   prefix envelope \((TPW2)\), the layer water inequality follows; if not, it
+   receives one concrete prefix whose minimum entropy-deficit weight and
+   cardinality already exceed the local budget by only the logarithmic
+   \(J_i^{\rm pref}\) toll.
+\end{corollary}
+
+\begin{proof}
+   For \(k\in\mathcal K_i\), define the dyadic rank block
+   \[
+      B_k=\{j:k\le j\le \min\{2k-1,m\}\}.
+   \]
+   These blocks partition \(\{1,\ldots,m\}\), each has size at most \(k\), and
+   every \(j\in B_k\) has \(x_j\le x_k\).  Therefore
+   \[
+      \sum_{j=1}^m x_j^{p_i}
+      \le
+      \sum_{k\in\mathcal K_i} kx_k^{p_i}.
+      \tag{TPW4}
+   \]
+   If \((TPW2)\) holds for every dyadic \(k\), then every summand in
+   \((TPW4)\) is at most \(\Theta_i^{p_i}/J_i^{\rm pref}\), and hence
+   \[
+      \sum_{h\in\mathcal H_i}X_{i,h}^{p_i}
+      =
+      \sum_{j=1}^m x_j^{p_i}
+      \le
+      \Theta_i^{p_i}.
+   \]
+   Taking \(p_i\)-th roots gives \((GWL2)\).
+
+   The converse is the contrapositive of the same calculation.  If \((GWL2)\)
+   fails, then \(\sum_jx_j^{p_i}>\Theta_i^{p_i}\), so not all dyadic summands
+   \(kx_k^{p_i}\) can be at most \(\Theta_i^{p_i}/J_i^{\rm pref}\).  This gives
+   a violating rank \(k\).  Since every point in the tie-broken top \(k\)
+   prefix has \(X_{i,h}\ge x_k\), the displayed violation of \((TPW2)\) is
+   exactly \((TPW3)\) after taking logarithms and subtracting
+   \(\ell_i\log2\).
+\end{proof}
+
 \begin{corollary}[Paid-responsibility high-correlation star compiler]
    \label{cor:paid-responsibility-high-correlation-star}
    Work in the setting of
@@ -45320,6 +45399,10 @@ once in each reporter cell where it appears.
 \Cref{cor:no-discount-layer-global-water} records the corresponding limitation:
 after all positive guard-credit records have been materialized, no fractional
 shared allocation can cost less than the Gibbs water level itself.
+\Cref{cor:dyadic-top-prefix-water-screen} then gives the finite normal form for
+the remaining direct water proof: a surviving high-water layer must contain a
+dyadic top prefix whose minimum profile weight times \(k^{1/p}\) exceeds the
+local budget up to a logarithmic rank-net toll.
 \Cref{lem:star-superlevel-column-verifier} and
 \cref{cor:pair-star-dense-column-generator} add the finite LP check: the star
 is retained only if its ball-thickened query side has positive reduced gain;
@@ -70938,6 +71021,9 @@ allocation norm, so partitions remain only a certification device.
 \Cref{cor:no-discount-layer-global-water} then prevents a false optimization
 target: once positive guard-credit records are absent, the optimal global
 allocation value is exactly the Gibbs water level.
+\Cref{cor:dyadic-top-prefix-water-screen} converts any remaining water failure
+into one sorted dyadic top-prefix excess, the form most compatible with exact
+prefix, range-reporting, list-decoding, and facility proposal oracles.
 \Cref{lem:star-superlevel-column-verifier} and
 \cref{cor:pair-star-dense-column-generator} turn such a superlevel into an
 ordinary fractional-cover column by using the certified query activation
@@ -71230,8 +71316,10 @@ not profilewise duplicate star copies.
 per-cell budget split.  \Cref{cor:layer-global-shared-record-water} is the
 cross-cell charging form, but \cref{cor:no-discount-layer-global-water} shows
 that this cannot beat the Gibbs water level in a no-repair residual.  The
-current storage target is therefore sharper and simpler: prove \((GWL2)\)
-directly for the surviving layer, or produce a guard repair.
+current storage target is therefore sharper and simpler: by
+\cref{cor:dyadic-top-prefix-water-screen}, either every sorted dyadic prefix
+obeys the water envelope and \((GWL2)\) follows, or one materializable prefix
+has the count-energy excess that a geometric reporter must repair.
 \Cref{cor:metric-entropy-hall-shadow-closure} and
 \cref{cor:low-doubling-hall-shadow-close} sharpen the remaining geometric
 obligation: any positive Hall shadow of certified covering number below
