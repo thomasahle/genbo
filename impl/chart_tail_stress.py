@@ -61,6 +61,12 @@ FIELDNAMES = [
     "clipped_posterior_avg_offmass",
     "full_self_selector_mismatch",
     "clipped_self_selector_mismatch",
+    "top_anchor_budget",
+    "top_anchor_count",
+    "top_anchor_weight_fraction",
+    "top_anchor_remaining_cost",
+    "top_anchor_remaining_max_price",
+    "top_anchor_remaining_eff_count",
 ]
 
 
@@ -170,6 +176,54 @@ def posterior_residual_metrics(
     }
 
 
+def top_anchor_cover_metrics(
+    code: np.ndarray,
+    prices: np.ndarray,
+    alphabet: int,
+    budget: float,
+) -> dict[str, float]:
+    """Exact-anchor the largest prices until the shared remainder is cheap.
+
+    Top anchored words are treated as source-local residuals supported exactly
+    on their own symbols, so they have zero singleton mismatch.  The remaining
+    words use one posterior-matched residual budget.  This is a diagnostic for
+    whether exact anchoring can pay the large internal-gap price tail.  In the
+    current Gaussian model the answer is usually no: the largest prices are
+    far-below-leader codewords, so the count should be read as a barrier.
+    """
+    if budget < 0:
+        raise ValueError("budget must be nonnegative")
+    total = float(np.sum(prices))
+    if total <= 0:
+        raise ValueError("prices must have positive total mass")
+
+    order = np.argsort(-prices)
+    n_words = len(prices)
+    for k in range(n_words + 1):
+        remaining = order[k:]
+        if len(remaining) == 0:
+            cost = 0.0
+            max_price = 0.0
+            eff_count = 0.0
+        else:
+            rem_prices = prices[remaining]
+            rem_metrics = posterior_residual_metrics(code[remaining], rem_prices, alphabet)
+            cost = rem_metrics["singleton_cost"]
+            max_price = float(np.max(rem_prices))
+            rem_sum = float(np.sum(rem_prices))
+            eff_count = rem_sum * rem_sum / float(np.sum(rem_prices * rem_prices))
+        if cost <= budget:
+            anchored_weight = float(np.sum(prices[order[:k]]))
+            return {
+                "count": float(k),
+                "weight_fraction": anchored_weight / total,
+                "remaining_cost": float(cost),
+                "remaining_max_price": float(max_price),
+                "remaining_eff_count": float(eff_count),
+            }
+    raise AssertionError("anchoring all words should always satisfy the budget")
+
+
 def run_trial(
     *,
     n_words: int,
@@ -216,6 +270,8 @@ def run_trial(
     clipped_singleton_cost = (alphabet - 1.0) * blocks * float(np.max(clipped))
     full_posterior = posterior_residual_metrics(code, omega, alphabet)
     clipped_posterior = posterior_residual_metrics(code, clipped, alphabet)
+    top_anchor_budget = clipped_singleton_cost
+    top_anchor = top_anchor_cover_metrics(code, omega, alphabet, top_anchor_budget)
 
     return {
         "seed": seed,
@@ -255,6 +311,12 @@ def run_trial(
         "clipped_posterior_avg_offmass": clipped_posterior["avg_offmass"],
         "full_self_selector_mismatch": full_posterior["self_selector_mismatch"],
         "clipped_self_selector_mismatch": clipped_posterior["self_selector_mismatch"],
+        "top_anchor_budget": float(top_anchor_budget),
+        "top_anchor_count": top_anchor["count"],
+        "top_anchor_weight_fraction": top_anchor["weight_fraction"],
+        "top_anchor_remaining_cost": top_anchor["remaining_cost"],
+        "top_anchor_remaining_max_price": top_anchor["remaining_max_price"],
+        "top_anchor_remaining_eff_count": top_anchor["remaining_eff_count"],
     }
 
 

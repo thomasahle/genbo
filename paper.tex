@@ -13491,10 +13491,16 @@ partition ignores the bias coordinates that certify the list size.
    reduced the corresponding singleton cost to about \(6.8\cdot10^3\).
    This supports the barrier diagnosis: the first obstruction is the
    singleton/diagonal full-price term, not an unexplained random-code pair tail,
-   and one global posterior residual does not remove it.  The next proof
-   attempt should therefore be anchor/source-local residual matching around
-   high-price posteriors, or a theorem showing that such matching is impossible
-   for the chosen code family.
+   and one global posterior residual does not remove it.  The script also tests
+   the tempting exact-anchor truncation of
+   \cref{cor:exact-anchor-truncation-barrier}.  To reduce the remaining
+   posterior singleton cost to the clipped polylog budget, the balanced random
+   panels needed about \(74\) anchors out of \(128\), \(172\) out of \(256\),
+   and \(361\) out of \(512\).  Thus exact anchoring of the largest prices is
+   not a near-leader list; it is almost the entire far-below-leader tail.  The
+   next proof attempt should therefore prove directly that residual or negative
+   coefficient mass avoids that far tail, or prove that such a tail-avoidance
+   theorem is impossible for the chosen code family.
 \end{remark}
 
 \begin{corollary}[Posterior mismatch form for localized residuals]
@@ -13687,6 +13693,48 @@ partition ignores the bias coordinates that certify the list size.
    The final interpretation follows because a polylogarithmic budget \(B\)
    forces the maximum in \((LOB11)\) to be polylogarithmic despite the full
    internal-gap prices.
+\end{proof}
+
+\begin{corollary}[Exact-anchor truncation barrier]
+   \label{cor:exact-anchor-truncation-barrier}
+   In the setting of
+   \cref{cor:single-posterior-residual-barrier}, suppose a set
+   \(A\subseteq[N]\) of codewords is handled by exact source-local anchors, so
+   singleton selectors supported on \(A\) have zero residual mismatch.  Let
+   \(\mu^{\rm rem}\) be any residual budget used for the unanchored codewords.
+   If the remaining chart-majorant check has budget \(B\), then every
+   unanchored codeword obeys
+   \[
+      \omega_j\,\operatorname{off}_{\mu^{\rm rem}}(j)\le B
+      \qquad(j\notin A).
+      \tag{LOB13}
+   \]
+   Consequently, for any lower bounds
+   \(a_j\le\operatorname{off}_{\mu^{\rm rem}}(j)\), the exact-anchor set must
+   contain the whole high-price tail
+   \[
+      \{j:\ \omega_j a_j>B\}\subseteq A .
+      \tag{LOB14}
+   \]
+
+   With the full internal-gap prices
+   \(\omega_j=\exp(\lambda(M-W(c_j)))+\Xi\), this is a far-below-leader tail,
+   not a near-leader list.  Exact anchoring therefore removes the singleton
+   obstruction only after another theorem has already shown that the residual or
+   negative coefficient mass ignores this far tail.  A proof that merely
+   ``anchors the large prices'' is paying for the wrong side of the score
+   distribution.
+\end{corollary}
+
+\begin{proof}
+   Apply the singleton obstruction \((LOA3)\) to the residual budget used on the
+   unanchored part.  Exact anchors eliminate the singleton cost only for
+   \(j\in A\); for every \(j\notin A\), the same feasible singleton selector
+   gives \((LOB13)\).  If \(a_j\le\operatorname{off}_{\mu^{\rm rem}}(j)\) and
+   \(\omega_j a_j>B\), then \((LOB13)\) is impossible unless \(j\) was placed
+   in \(A\), proving \((LOB14)\).  The last statement is the definition of the
+   full internal-gap prices: \(\omega_j\) is largest when \(W(c_j)\) is far
+   below the local maximum \(M\).
 \end{proof}
 
 \begin{corollary}[Finite dual for localized residual feasibility]
