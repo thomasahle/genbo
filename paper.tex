@@ -15829,6 +15829,96 @@ query-price overlap, storage price, and duplicate-incidence factor \(b_G\).
    contrapositive.
 \end{proof}
 
+\begin{corollary}[Inverse-polylog exposure threshold for high-margin residuals]
+   \label{cor:high-margin-polylog-exposure-threshold}
+   Work in the setting of \cref{cor:high-margin-tail-rate-screen}.  Define the
+   combined high-margin quantities
+   \[
+      B_{\rm hm}=B_{\rm cen}+B_{\rm pay},
+      \qquad
+      A_{\rm hm}=A_{Y_{\rm cen}}+A_{Y_{\rm pay}},
+      \qquad
+      \mathsf P_{{\rm hi},{\rm hm}}
+      =
+      \mathsf P_{{\rm hi},Y_{\rm cen}}
+      +
+      \mathsf P_{{\rm hi},Y_{\rm pay}} .
+      \tag{HMPE1}
+   \]
+   If no inherited star prefix has positive reduced gain, then
+   \[
+      A_{\rm hm}
+      \le
+      \bigl(e^{-\Lambda}+\overline\Phi(M)\bigr)B_{\rm hm}
+      +
+      \mathsf P_{{\rm hi},{\rm hm}} .
+      \tag{HMPE2}
+   \]
+   Consequently, if \(B_{\rm hm}>0\) and
+   \[
+      \mathsf P_{{\rm hi},{\rm hm}}\le\xi A_{\rm hm}
+      \qquad(0\le\xi<1),
+      \tag{HMPE3}
+   \]
+   then
+   \[
+      \frac{A_{\rm hm}}{B_{\rm hm}}
+      \le
+      \frac{e^{-\Lambda}+\overline\Phi(M)}{1-\xi}.
+      \tag{HMPE4}
+   \]
+   Equivalently, for any exposure target \(\chi>0\), the three conditions
+   \[
+      A_{\rm hm}\ge\chi B_{\rm hm},
+      \qquad
+      \mathsf P_{{\rm hi},{\rm hm}}\le\xi A_{\rm hm},
+      \qquad
+      e^{-\Lambda}+\overline\Phi(M)<(1-\xi)\chi
+      \tag{HMPE5}
+   \]
+   force a positive inherited star prefix.
+
+   In particular, fix \(K>0\) and \(\xi\le1/2\).  If
+   \[
+      \chi=(\log n)^{-K},
+      \qquad
+      \Lambda\ge(K+3)\log\log n,
+      \qquad
+      M^2\ge2(K+3)\log\log n,
+      \tag{HMPE6}
+   \]
+   then \((HMPE5)\)'s tail inequality holds for all sufficiently large \(n\).
+   Thus the remaining high-margin theorem only has to certify an
+   inverse-polylogarithmic paid-product exposure \(A_{\rm hm}\ge\chi B_{\rm hm}\)
+   after inherited high-correlation prices are controlled; no constant-rate
+   exposure is needed.
+\end{corollary}
+
+\begin{proof}
+   Apply \((HMTR1)\) to the two restricted sides \(Y_{\rm cen}\) and
+   \(Y_{\rm pay}\), omitting an empty side.  Summing the two inequalities gives
+   \((HMPE2)\).  Under \((HMPE3)\),
+   \[
+      (1-\xi)A_{\rm hm}
+      \le
+      \bigl(e^{-\Lambda}+\overline\Phi(M)\bigr)B_{\rm hm},
+   \]
+   and division by \(B_{\rm hm}>0\) gives \((HMPE4)\).  The forcing statement
+   \((HMPE5)\) is the contrapositive of \((HMPE4)\).
+
+   Finally, \(\overline\Phi(M)\le e^{-M^2/2}\), so \((HMPE6)\) gives
+   \[
+      e^{-\Lambda}+\overline\Phi(M)
+      \le
+      2(\log n)^{-(K+3)}
+      <
+      \frac12(\log n)^{-K}
+      \le
+      (1-\xi)\chi
+   \]
+   for all sufficiently large \(n\).
+\end{proof}
+
 \begin{corollary}[Gaussian paid-fiber separator criterion]
    \label{cor:gaussian-paid-fiber-separator-criterion}
    Work in the setting of
@@ -16373,6 +16463,11 @@ the transport Gaussian separator: after the inherited high-correlation price is
 controlled, a restricted high-margin side can survive only if its paid-product
 rate is at most \(e^{-\Lambda}+\overline\Phi(M)\), up to the controlled price
 fraction.
+\Cref{cor:high-margin-polylog-exposure-threshold} sums the two endpoint sides:
+after high-correlation prices are bounded, any inverse-polylogarithmic
+paid-product exposure above the explicit tail floor already forces a positive
+inherited prefix.  Thus the list-decoding side need not prove a constant-rate
+high-margin exposure.
 \Cref{cor:gaussian-paid-fiber-separator-criterion} records the sharper
 split-optimized diagnostic form: lower-bound the paid-product moment, keep one
 truncated margin split inverse-polylogarithmic, and upper-bound the inherited
@@ -69035,10 +69130,13 @@ query load.  \Cref{cor:high-margin-tail-rate-screen} turns this into the
 quantitative residual: once inherited high-correlation prefixes are priced, each
 restricted endpoint side either has only tail-scale paid-product rate
 \(e^{-\Lambda}+\overline\Phi(M)\), or a lower-bound certificate above that rate
-forces a positive prefix.  The remaining payment theorem therefore has to
-produce such a lower-bound certificate from the existing
-list-decoding/entropy-energy witness, or show that tail-rate activity is already
-budgeted.
+forces a positive prefix.
+\Cref{cor:high-margin-polylog-exposure-threshold} records the exact scale: for
+\(M^2,\Lambda=\Theta(\log\log n)\), an inverse-polylogarithmic combined
+paid-product lower bound on the high-margin residual suffices.  The remaining
+payment theorem therefore has to produce only that inverse-polylog lower-bound
+certificate from the existing list-decoding/entropy-energy witness, or show that
+tail-rate activity is already budgeted.
 \Cref{cor:spread-packing-entropy-energy-screen} records the corresponding
 charge: each separated-pair profile is harmless when its intersection energy
 dominates its entropy, and otherwise it is the high-correlation dense signal.
