@@ -41884,6 +41884,74 @@ query mass rather than producing a cost-effective dense filter.
    \((FHS10)\).
 \end{proof}
 
+\begin{corollary}[Budgeted flattened star closure]
+   \label{cor:budgeted-flattened-star-closure}
+   Work in the setting of
+   \cref{cor:flattened-high-correlation-star-screen} for one weighted profile
+   \(\pi\subseteq E_{\ne}^2\).  Assume the low part has certified weight
+   \(B_{\rm lo}\) as in \((FEE6)\), and write
+   \[
+      U_{\rm st}=\sum_{r\in\mathcal R_{\rm st}}u_r
+      \tag{BFS1}
+   \]
+   for the total price of the storage-dominated returned star records from
+   \((FHS9)\).  If no flattened generated top prefix violates \((FCL2)\), then
+   \[
+      \sum_{(a,a')\in\pi}\omega_{a,a'}
+      \le
+      B_{\rm lo}
+      +2|E|J_\omega\omega_{\max}H_-
+      +\frac4\chi U_{\rm st}.
+      \tag{BFS2}
+   \]
+   Consequently a local proof budget \(B_\pi^{\rm bud}\) pays the whole
+   profile whenever
+   \[
+      B_{\rm lo}
+      +2|E|J_\omega\omega_{\max}H_-
+      +\frac4\chi U_{\rm st}
+      \le B_\pi^{\rm bud}.
+      \tag{BFS3}
+   \]
+   Conversely, if no prefix fires and the profile is not paid by a budget
+   \(B_\pi^{\rm bud}\), then the returned storage panel has certified price
+   \[
+      U_{\rm st}
+      \ge
+      \frac{\chi}{4}
+      \left(
+         B_\pi^{\rm bud}
+         -B_{\rm lo}
+         -2|E|J_\omega\omega_{\max}H_-
+      \right)_+ .
+      \tag{BFS4}
+   \]
+
+   Thus the flattened high-correlation return has an explicit scalar
+   normal form.  After prefix search, an unpaid profile is not another adaptive
+   branch: it is a bounded fixed tail plus one priced storage-dominated
+   returned panel in the closure universe.
+\end{corollary}
+
+\begin{proof}
+   By \((FEE6)\), the low part contributes at most \(B_{\rm lo}\).  The high
+   part is exactly \(W_{\rm hi}\).  If a generated top prefix fires, there is
+   nothing to prove, so assume no prefix violates \((FCL2)\).  Then
+   \cref{cor:flattened-high-correlation-star-screen} gives
+   \[
+      W_{\rm hi}
+      \le
+      2|E|J_\omega\omega_{\max}H_-
+      +\frac4\chi U_{\rm st}.
+   \]
+   Adding the low contribution proves \((BFS2)\), and \((BFS3)\) is immediate.
+   If the profile is not paid by \(B_\pi^{\rm bud}\), then its weight is larger
+   than \(B_\pi^{\rm bud}\).  Combining this strict inequality with
+   \((BFS2)\) and rearranging gives \((BFS4)\), with the non-strict inequality
+   and positive part covering
+   the case in which the fixed terms already exceed the budget.
+\end{proof}
+
 \begin{corollary}[Flattened panel-separator endpoint]
    \label{cor:flattened-panel-separator-endpoint}
    Work at a localized resident node with full certified panel universe
@@ -83699,6 +83767,10 @@ verifiers.
 flattened column-generation interface: it either gives a one-record
 lower-certified panel, a bounded fixed tail, or a storage-dominated returned
 child record for the closure LP.
+\Cref{cor:budgeted-flattened-star-closure} records the scalar budget at this
+last step: after prefix search, a high-correlation profile is paid by its low
+part, bounded star tail, and returned-storage price, or that returned price is
+the explicit residual handed to the closure/sponsor separator.
 \Cref{cor:flattened-panel-separator-endpoint} packages this as the current
 conditional endpoint for the overload storage branch: every flattened closure
 must either be paid by its LP value or admit one such lower-capture panel; under
@@ -83918,6 +83990,9 @@ high-correlation star.
 positive scale is already a lower-certified generated prefix, while failed
 stars contribute only a bounded tail plus storage-dominated child records for
 the flattened closure.
+\Cref{cor:budgeted-flattened-star-closure} gives the exact arithmetic form:
+any remaining unpaid high-correlation profile certifies proportional
+returned-storage price, instead of opening another recursive branch.
 \Cref{cor:flattened-panel-separator-endpoint} turns this interface into the
 nodewise endpoint: if every flattened returned panel is either LP-paid or
 panel-separated, then the remaining child-panel residuals satisfy the positive
