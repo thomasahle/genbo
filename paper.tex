@@ -10473,6 +10473,76 @@ partition ignores the bias coordinates that certify the list size.
    proved over \(\widetilde P_{u,c}\) also hold over \(P_{u,c}\).
 \end{proof}
 
+\begin{corollary}[Anchor-fiber LP/SA certificate compiler]
+   \label{cor:anchor-fiber-lp-sa-compiler}
+   Continue with the notation of
+   \cref{cor:anchor-fiber-internal-tail-certificate} and
+   \cref{cor:conditional-gaussian-projection-certificate}.  Fix
+   \(\lambda>0\) and a mesh \(\delta>0\).  Suppose that every branch node
+   \(u\) satisfies the following finite certificates.
+
+   First, for every \(h\in E_u\),
+   \[
+      \sum_j a_u(h)_j^-\le1,
+      \qquad
+      M(u)\kappa_u(h)\le R_u .
+      \tag{LMU1}
+   \]
+   Second, for some \(C_u,\eta_u>0\), every dyadic level \(k\ge0\), every
+   selector \(r\in\mathcal R_u(k\delta)\), and every anchor \(c\in C_u\),
+   \[
+      \sup_{z\in P_{u,c}}
+      \ip{-A_uG_u^+r}{z-\iota(c)}
+      \le
+      C_u e^{-(\lambda+\eta_u)k\delta}.
+      \tag{LMU2}
+   \]
+   Finally the orthogonal residual term obeys
+   \[
+      e^{\lambda R_u}
+      \left(
+         1+\frac{e^{\lambda\delta}C_u}{1-e^{-\eta_u\delta}}
+      \right)
+      \exp\!\left(
+         \lambda\omega_u^\perp
+         +\frac{\lambda^2(r_u^\perp)^2}{2}
+      \right)
+      \le A_\lambda .
+      \tag{LMU3}
+   \]
+   Then the conditional tilted-excess bound \((LPT2)\) holds with this
+   \(A_\lambda\).  Consequently, at the Gaussian tilt \(\lambda=T/b\), if
+   \(A_\lambda=\log^{O(1)}n\) and the per-node relaxation solve is
+   polylogarithmic, the LP/SA threshold reporter has only polylogarithmic
+   expected overhead.
+
+   Thus a fixed-level LP or Sherali--Adams proof can be made completely local:
+   verify scalar balance and negative-mass normalization in \((LMU1)\), solve
+   the anchor-fiber separation LPs in \((LMU2)\), and bound the orthogonal
+   residual in \((LMU3)\).  No global pseudocodeword-spectrum statement remains
+   hidden inside the branch-and-bound analysis.
+\end{corollary}
+
+\begin{proof}
+   By \cref{cor:anchor-fiber-internal-tail-certificate}, \((LMU2)\) implies
+   the dyadic cumulative tail condition \((LMR10)\).  Then
+   \cref{cor:cumulative-internal-tail-certificate}, using \((LMU1)\), gives
+   \[
+      \mathcal Z_{u,\lambda}(w)
+      \le
+      e^{\lambda R_u}
+      \left(
+         1+\frac{e^{\lambda\delta}C_u}{1-e^{-\eta_u\delta}}
+      \right).
+      \tag{LMU4}
+   \]
+   Multiplying by the orthogonal residual factor and applying \((LMU3)\)
+   proves the Boltzmann certificate \((LMQ3)\).  Hence
+   \cref{cor:boltzmann-negative-tail-certificate} gives the conditional
+   tilted-excess bound.  The final overhead statement is exactly
+   \cref{cor:conditional-tilted-excess-certificate}.
+\end{proof}
+
 \begin{corollary}[Well-conditioned Gram coefficient bounds]
    \label{cor:well-conditioned-gram-coefficients}
    Continue with the notation of
@@ -10728,6 +10798,13 @@ partition ignores the bias coordinates that certify the list size.
    \(-A_uG_u^+r\) over the fiber relaxation and compare against the anchored
    codeword \(c\).  Thus a failure of the negative-tail theorem is an explicit
    fractional point in one anchor fiber, not a global pseudocodeword mystery.
+
+   \Cref{cor:anchor-fiber-lp-sa-compiler} packages the preceding reductions
+   into the checklist form needed for an actual Tanner or Sherali--Adams proof:
+   scalar balance and negative-mass normalization, anchor-fiber separation LPs,
+   and an orthogonal residual bound.  Once these local checks have
+   polylogarithmic slack at the Gaussian tilt, the branch-and-bound overhead
+   follows from the existing false-survivor accounting automatically.
 
    \Cref{cor:well-conditioned-gram-coefficients} gives the first elementary
    path to such a theorem.  If the local subcode has a well-conditioned overlap
