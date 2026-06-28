@@ -36803,6 +36803,121 @@ query mass rather than producing a cost-effective dense filter.
    \((HPS4)\), \((SPW4)\) gives \((PWN3)\).
 \end{proof}
 
+\begin{corollary}[Cap-centered paid-prefix quadratic criterion]
+   \label{cor:cap-centered-paid-prefix-quadratic}
+   Work in a finite local filter-cover instance as in
+   \cref{lem:finite-filter-cover-dual}.  Suppose the current resident set lies
+   on a certified sphere
+   \[
+      P\subseteq o+R\mathbb S^{D-1},
+      \qquad R\ge r,
+      \tag{CPQ1}
+   \]
+   and fix a cap margin \(0<\gamma\le1/2\).  Let \(\mathcal X\subseteq P\) be a
+   finite family of reported high-correlation centers, and for \(x\in\mathcal X\)
+   put
+   \[
+      c_x=o+\gamma(x-o),
+      \qquad
+      R_+=R\sqrt{1-\gamma^2},
+      \qquad
+      W_x=P\cap B(c_x,R_+),
+      \tag{CPQ2}
+   \]
+   with query activation
+   \[
+      a_x^+(q)=\mathbf 1\{\|q-c_x\|\le R_++r\}.
+      \tag{CPQ3}
+   \]
+   Let \(B_0\ge0\), and price every \(K\)-point prefix of \(W_x\) by the
+   same-prefix padded child potentials
+   \[
+      T_{x,K}=e^{B_0\gamma^2}\Psi(R_+)K^\rho,
+      \qquad
+      S_{x,K}=e^{B_0\gamma^2}\Psi(R_+)K^{1+\rho}.
+      \tag{CPQ4}
+   \]
+   Define the cap-centered paid degrees and query price
+   \[
+      d_x^+(p)=
+      \sum_{q:\,(p,q)\in\mathcal N}\alpha_{p,q}a_x^+(q),
+      \qquad
+      A_x^+=\sum_q\tau_qa_x^+(q).
+      \tag{CPQ5}
+   \]
+   Order \(W_x=\{p_1,p_2,\ldots\}\) by nonincreasing \(d_x^+(p)\).  If, for
+   some \(x\) and \(K\),
+   \[
+      \sum_{i\le K}d_x^+(p_i)
+      >
+      e^{B_0\gamma^2}\Psi(R_+)
+      \left(A_x^+K^\rho+\sigma K^{1+\rho}\right),
+      \tag{CPQ6}
+   \]
+   then the top prefix \(U=\{p_1,\ldots,p_K\}\) is a valid positive
+   same-prefix dense column.  Its geometric query, storage, and inverse-survival
+   tolls are bounded by
+   \[
+      \exp((B_0+3)\gamma^2)
+      \tag{CPQ7}
+   \]
+   relative to the parent padded potential scale, so this retained prefix is a
+   \((B_0+3)\)-quadratic local repair in the sense of
+   \cref{def:quadratic-local-repair}.
+
+   Conversely, if no such cap-centered paid prefix has positive reduced gain and
+   the available cardinalities are \(b\)-dense from below, then every cap-centered
+   paid-degree superlevel
+   \[
+      H_{x,\delta}^+=\{p\in W_x:d_x^+(p)\ge\delta\},
+      \qquad h=|H_{x,\delta}^+|>0,
+      \tag{CPQ8}
+   \]
+   obeys
+   \[
+      \delta
+      \le
+      e^{B_0\gamma^2}\Psi(R_+)
+      \left(
+         b^{1-\rho}A_x^+h^{\rho-1}
+         +\sigma h^\rho
+      \right).
+      \tag{CPQ9}
+   \]
+
+   Thus the remaining positive-correlation theorem can be stated without any
+   extra geometric loss: a residual must either violate the explicit
+   cap-centered weak-type bound \((CPQ9)\), producing a quadratic repair, or be
+   handled by the diffuse low-correlation/list-decoding certificate.
+\end{corollary}
+
+\begin{proof}
+   For any \(p\in W_x\) and any near query \(q\) with \(\|p-q\|\le r\),
+   \[
+      \|q-c_x\|\le\|q-p\|+\|p-c_x\|\le r+R_+,
+   \]
+   so \(a_x^+(q)=1\).  Hence every prefix of \(W_x\) with activation \(a_x^+\)
+   is a valid dense-filter column by
+   \cref{lem:star-superlevel-column-verifier}.  Its reduced gain is exactly the
+   left side of \((CPQ6)\) minus the right side, so \((CPQ6)\) gives a positive
+   same-prefix column.
+
+   The child prices in \((CPQ4)\) are
+   \(e^{B_0\gamma^2}F_4(K,R_+)\) and
+   \(e^{B_0\gamma^2}G_4(K,R_+)\).  By
+   \cref{cor:padded-radius-quadratic-reprice}, the parent-radius and child-radius
+   padded scales differ by at most \(e^{3\gamma^2}\), and the inverse of the
+   geometric thinning factor \(\Psi(R_+)/\Psi(R)\) is the same ratio.  Therefore
+   the radius normalization and survival parts together contribute at most the
+   factor in \((CPQ7)\), while the prefix is retained in the same score prefix.
+
+   If no positive prefix exists, apply
+   \cref{lem:star-prefix-weak-type-residual} with centers \(c_x\), radii
+   \(R_+\), activations \(a_x^+\),
+   \(\psi_x=e^{B_0\gamma^2}\Psi(R_+)\), \(\rho_x=\rho\), and the given
+   \(b\)-dense cardinality family.  This is exactly \((CPQ9)\).
+\end{proof}
+
 \begin{lemma}[Certified star-panel separator]
    \label{lem:certified-star-panel-separator}
    Work in the setting of \cref{lem:star-prefix-weak-type-residual}, and assume
@@ -72452,6 +72567,11 @@ target: a high-correlation star is a cap-centered child of radius
 parent radius to this child costs only \(\exp(O(\gamma^2))\).  What remains is
 therefore not another geometric depth issue, but the paid-prefix reduced-gain or
 shared-prefix inequality inside that cap-centered child.
+\Cref{cor:cap-centered-paid-prefix-quadratic} gives the explicit finite
+criterion: a cap-centered paid prefix whose degree mass beats its
+\(e^{O(\gamma^2)}\)-padded child price is already a quadratic local repair; if
+no such prefix exists, every cap-centered paid superlevel satisfies the
+weak-type envelope \((CPQ9)\).
 \Cref{cor:dyadic-distinct-storage-bucket-net} rewrites that target as a dyadic
 large-child counting problem: for every recursive price scale, bound the number
 of distinct canonical bucket nets whose shared child index has that price.
