@@ -12281,6 +12281,74 @@ partition ignores the bias coordinates that certify the list size.
    displayed supremum is the maximum of finitely many ordinary LPs.
 \end{proof}
 
+\begin{corollary}[Local-marginal vertex score-band obstruction]
+   \label{cor:local-marginal-vertex-score-band-obstruction}
+   Continue with the notation of
+   \cref{cor:integral-score-band-obstruction}.  Let \(Q_u\) be any finite
+   local-marginal relaxation whose variables are nonnegative local-check
+   assignment weights satisfying affine consistency constraints, and let
+   \(S_uQ_u\subseteq\Delta_q^b\) be its projected unary source polytope.  Let
+   \(\mathcal V_u\) be the set of projected unary sources obtained from the
+   vertices of \(Q_u\).  Then
+   \[
+      \sup_{x\in S_uQ_u}\Gamma_u(x;\Omega_u)
+      =
+      \max_{v\in\mathcal V_u}\Gamma_u(v;\Omega_u).
+      \tag{LNN12}
+   \]
+   Consequently, the finite score-band condition \((LNN2)\) holds for the
+   local-marginal relaxation \(P_u=S_uQ_u\) if and only if
+   \[
+      \Gamma_u(v;\Omega_u)\le\Xi_u
+      \qquad(v\in\mathcal V_u).
+      \tag{LNN13}
+   \]
+   In particular, any projected local-marginal vertex \(v\) with
+   \[
+      \Gamma_u(v;\Omega_u)>\Xi_u
+      \tag{LNN14}
+   \]
+   is a concrete fractional obstruction to the frozen finite score-band target.
+
+   This is the exact finite verifier used by
+   \texttt{impl/score\_band\_lp\_stress.py}: eliminate explicit unary
+   variables, enumerate basic feasible local-check marginals under consistency,
+   project them to unary sources, and solve the fixed-source chart LP for each
+   projected source.  Integral pseudowords are just the integral vertices in
+   this list; after they disappear, any remaining failure of \((LNN2)\) must be
+   witnessed by one of the genuinely fractional projected vertices.
+\end{corollary}
+
+\begin{proof}
+   For fixed \(\omega\), \(\Gamma_u(x;\omega)\) is a supremum of affine
+   functions of \(x\):
+   \[
+      \Gamma_u(x;\omega)
+      =
+      \sup_{R\in\mathcal R_u^{\mathrm{gap}}(\omega)}
+      \left(
+         \ip{R}{x}
+         -
+         \max_j\ip{R}{\iota(c_j)}
+      \right).
+      \tag{LNN15}
+   \]
+   Hence \(\Gamma_u(\cdot;\omega)\) is convex.  Since \(Q_u\) is a finite
+   polytope, every \(x\in S_uQ_u\) is a convex combination of projected vertex
+   sources \(v\in\mathcal V_u\).  Convexity gives
+   \[
+      \Gamma_u(x;\Omega_u)
+      \le
+      \max_{v\in\mathcal V_u}\Gamma_u(v;\Omega_u),
+      \tag{LNN16}
+   \]
+   while the reverse inequality follows because every \(v\in\mathcal V_u\)
+   lies in \(S_uQ_u\).  This proves \((LNN12)\).  Combining \((LNN12)\) with
+   \cref{cor:integral-score-band-obstruction}, applied to
+   \(P_u=S_uQ_u\), gives the equivalence \((LNN13)\) and the obstruction
+   \((LNN14)\).
+\end{proof}
+
 \begin{corollary}[Band-limited residual-budget compiler]
    \label{cor:band-limited-residual-budget-compiler}
    Continue with the notation of
