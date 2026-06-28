@@ -39316,6 +39316,113 @@ query mass rather than producing a cost-effective dense filter.
    comparison with the uniform budget used in \((PLG2)\).
 \end{proof}
 
+\begin{corollary}[Layer-global shared-record water compiler]
+   \label{cor:layer-global-shared-record-water}
+   Work in the setting of
+   \cref{cor:gibbs-water-level-storage-screen}.  For every active layer \(i\),
+   suppose a reporter gives a finite layer-global family \(\mathcal B_i\) of
+   lower-certified raw guard records.  For each profile
+   \(h\in\mathcal H_i\) let \(\ell_h\ge0\), and for each
+   \(h\in\mathcal H_i\), \(b\in\mathcal B_i\), let \(z_{h,b}\ge0\).  For every
+   record \(b\), let \(X_b\) and \(R_b\) denote its lower paid-shadow
+   certificate and recursive price, and put
+   \[
+      L_i^{\rm sh}
+      =
+      \left(\sum_{h\in\mathcal H_i}\ell_h^{p_i}\right)^{1/p_i},
+      \qquad
+      Z_{i,b}^{(p)}
+      =
+      \left(\sum_{h\in\mathcal H_i}z_{h,b}^{p_i}\right)^{1/p_i}.
+      \tag{LGW1}
+   \]
+   Suppose the reporter certifies the layerwise shared decomposition
+   \[
+      X_{i,h}\le \ell_h+\sum_{b\in\mathcal B_i}z_{h,b}
+      \qquad(h\in\mathcal H_i),
+      \tag{LGW2}
+   \]
+   and, for some \(\chi_{i,b}\ge1\), the global record aggregation bounds
+   \[
+      Z_{i,b}^{(p)}\le \chi_{i,b}X_b
+      \qquad(b\in\mathcal B_i).
+      \tag{LGW3}
+   \]
+   If, for every active layer \(i\),
+   \[
+      L_i^{\rm sh}
+      +
+      \sum_{b\in\mathcal B_i}\chi_{i,b}R_b
+      \le
+      \frac{2^{\ell_i}B_\star}{32M_{\mathcal I}},
+      \tag{LGW4}
+   \]
+   and the high-correlation fixed-tail condition \((PELS5)\) holds, then
+   \((\mathsf{ESFC}_\Sigma)\) is feasible, provided no one-record guard-credit
+   repair fires.
+
+   Conversely, suppose no one-record guard-credit repair fires and \((GWL2)\)
+   fails for an active layer \(i\).  Then every layer-global shared
+   decomposition satisfying \((LGW2)\)--\((LGW3)\) must violate
+   \[
+      L_i^{\rm sh}
+      +
+      \sum_{b\in\mathcal B_i}\chi_{i,b}R_b
+      >
+      \frac{2^{\ell_i}B_\star}{32M_{\mathcal I}} .
+      \tag{LGW5}
+   \]
+
+   In particular, it is enough to certify additive record capacities
+   \[
+      \sum_{h\in\mathcal H_i}z_{h,b}\le\chi_{i,b}X_b
+      \qquad(b\in\mathcal B_i),
+      \tag{LGW6}
+   \]
+   because \(Z_{i,b}^{(p)}\le\sum_hz_{h,b}\).  Thus the reporter partition is
+   only a way to find or certify allocations; it need not be part of the final
+   water accounting.  A dense/star record that helps profiles in many cells is
+   charged once at the layer level, through its global allocation norm, rather
+   than once per cell where it appears.
+\end{corollary}
+
+\begin{proof}
+   Assume no one-record guard-credit repair fires.  Since every
+   \(b\in\mathcal B_i\) is a lower-certified raw guard record, \(X_b>R_b\)
+   would itself be a positive one-record panel for
+   \cref{cor:lower-certified-scale-free-guard-panel}.  Hence \(X_b\le R_b\) for
+   every \(b\).
+
+   Apply Minkowski's inequality in \(\ell_{p_i}(\mathcal H_i)\) to \((LGW2)\):
+   \[
+   \begin{aligned}
+      \exp(\Lambda_i^{\rm Gibbs})
+      &=
+      \left(\sum_{h\in\mathcal H_i}X_{i,h}^{p_i}\right)^{1/p_i} \\
+      &\le
+      L_i^{\rm sh}
+      +
+      \sum_{b\in\mathcal B_i}
+      \left(\sum_{h\in\mathcal H_i}z_{h,b}^{p_i}\right)^{1/p_i} \\
+      &=
+      L_i^{\rm sh}+\sum_{b\in\mathcal B_i}Z_{i,b}^{(p)} \\
+      &\le
+      L_i^{\rm sh}+\sum_{b\in\mathcal B_i}\chi_{i,b}X_b \\
+      &\le
+      L_i^{\rm sh}+\sum_{b\in\mathcal B_i}\chi_{i,b}R_b .
+   \end{aligned}
+   \]
+   If \((LGW4)\) holds, this gives \((GWL2)\) for every active layer.  Then
+   \cref{cor:gibbs-water-level-storage-screen} gives
+   \((\mathsf{ESFC}_\Sigma)\) under \((PELS5)\).
+
+   Conversely, if \((GWL2)\) fails and no repair fires, the displayed inequality
+   forces every certified layer-global shared decomposition to violate
+   \((LGW4)\), which is \((LGW5)\).  Finally, \((LGW6)\) implies \((LGW3)\)
+   because \(p_i\ge1\) and the \(\ell_{p_i}\) norm is bounded by the
+   \(\ell_1\) norm on nonnegative vectors.
+\end{proof}
+
 \begin{corollary}[Paid-responsibility high-correlation star compiler]
    \label{cor:paid-responsibility-high-correlation-star}
    Work in the setting of
@@ -45146,6 +45253,10 @@ water test.
 \Cref{cor:aggregate-shared-cell-water-budget} removes the artificial uniform
 partition split: the reporter only has to fit the \(\ell_p\)-aggregate of the
 certified cell costs inside the layer water budget.
+\Cref{cor:layer-global-shared-record-water} removes one more bookkeeping
+artifact: if the allocations to a dense/star record can be certified over the
+whole active layer, that record's recursive price is charged once globally, not
+once in each reporter cell where it appears.
 \Cref{lem:star-superlevel-column-verifier} and
 \cref{cor:pair-star-dense-column-generator} add the finite LP check: the star
 is retained only if its ball-thickened query side has positive reduced gain;
@@ -70758,6 +70869,9 @@ to shared dense records: a record helping many profiles contributes through its
 profile-allocation \(\ell_p\) norm but pays one recursive price.
 \Cref{cor:aggregate-shared-cell-water-budget} then replaces per-cell uniform
 thresholds by one layer-level \(\ell_p\) budget for those certified costs.
+\Cref{cor:layer-global-shared-record-water} is the cross-cell version: a
+record shared by several reporter cells is charged through one layer-global
+allocation norm, so partitions remain only a certification device.
 \Cref{lem:star-superlevel-column-verifier} and
 \cref{cor:pair-star-dense-column-generator} turn such a superlevel into an
 ordinary fractional-cover column by using the certified query activation
@@ -71046,9 +71160,11 @@ guard repair.
 allowing the reported star records to be shared across all profiles in a cell;
 the remaining proof should therefore construct shared allocation certificates,
 not profilewise duplicate star copies.
-\Cref{cor:aggregate-shared-cell-water-budget} is the current storage target:
-prove the \(\ell_p\)-aggregate of those shared cell costs fits the layer budget,
-or produce a guard repair.
+\Cref{cor:aggregate-shared-cell-water-budget} first removes the uniform
+per-cell budget split.  \Cref{cor:layer-global-shared-record-water} is the
+sharper current storage target: prove a layer-global shared allocation whose
+low envelope plus one-time record prices fit the layer budget, or produce a
+guard repair.
 \Cref{cor:metric-entropy-hall-shadow-closure} and
 \cref{cor:low-doubling-hall-shadow-close} sharpen the remaining geometric
 obligation: any positive Hall shadow of certified covering number below
