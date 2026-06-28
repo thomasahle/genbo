@@ -39930,6 +39930,126 @@ query mass rather than producing a cost-effective dense filter.
    \((DMC7)\) divided by \(\Theta_i^{\rm pref}\).
 \end{proof}
 
+\begin{corollary}[Finite dyadic shared-capture LP]
+   \label{cor:finite-dyadic-shared-capture-lp}
+   Work in the setting of
+   \cref{cor:dyadic-prefix-shared-capture-compression}.  Let
+   \(\mathcal R_k\) be a finite universe of candidate shared records.  Record
+   \(c\in\mathcal R_k\) is a lower-certified raw guard record with recursive
+   price \(P_c\), lower paid-shadow certificate \(Y_c\), and nonnegative
+   capture profile \(h_{c,b}\) over \(b\in\mathcal B_k\), satisfying
+   \[
+      \sum_{b\in\mathcal B_k}h_{c,b}\le Y_c .
+      \tag{DLP1}
+   \]
+   Consider the finite shared-capture cover
+   \[
+   \begin{array}{ll}
+   \Phi_k^{\rm sh}=\min
+      & \displaystyle
+        2\sum_{b\in\mathcal B_k}e_b
+        +2\sum_{c\in\mathcal R_k}\lambda_cP_c\\[0.8em]
+   \text{\rm subject to}
+      & \displaystyle
+        e_b+\sum_{c\in\mathcal R_k}\lambda_ch_{c,b}\ge X_b
+        \qquad(b\in\mathcal B_k),\\[0.8em]
+      & e_b\ge0,\qquad \lambda_c\ge0 .
+   \end{array}
+      \tag{DLP2}
+   \]
+   Its dual is
+   \[
+   \begin{array}{ll}
+   \Phi_k^{\rm sh}=\max
+      & \displaystyle
+        \sum_{b\in\mathcal B_k}X_bu_b\\[0.8em]
+   \text{\rm subject to}
+      & 0\le u_b\le2
+        \qquad(b\in\mathcal B_k),\\[0.8em]
+      & \displaystyle
+        \sum_{b\in\mathcal B_k}h_{c,b}u_b\le2P_c
+        \qquad(c\in\mathcal R_k).
+   \end{array}
+      \tag{DLP3}
+   \]
+
+   If, for the chosen slack \(a\),
+   \[
+      \Phi_k^{\rm sh}\le(1-a)\Theta_i^{\rm pref},
+      \tag{DLP4}
+   \]
+   then either the rank \(k\) satisfies \((TPW2)\), or a one-record
+   guard-credit repair fires.  Conversely, if \(k\) violates \((TPW2)\),
+   \(L_k\le a\Theta_i^{\rm pref}\), and no one-record repair fires, then
+   \[
+      \Phi_k^{\rm sh}>(1-a)\Theta_i^{\rm pref}.
+      \tag{DLP5}
+   \]
+   Thus an optimal dual \(u\) of \((DLP3)\) is an exact finite
+   no-shared-capture obstruction:
+   \[
+      \sum_bX_bu_b>(1-a)\Theta_i^{\rm pref},
+      \qquad
+      \sum_bh_{c,b}u_b\le2P_c
+      \quad(c\in\mathcal R_k).
+      \tag{DLP6}
+   \]
+
+   Moreover, restricted column generation is exact.  If \(E\subseteq\mathcal
+   R_k\) is an active record set and \(u^E\) is an optimal dual for the
+   restriction of \((DLP2)\) to \(E\), then any inactive record \(c\notin E\)
+   with
+   \[
+      \sum_bh_{c,b}u_b^E>2P_c
+      \tag{DLP7}
+   \]
+   is a valid improving column.  If no inactive record satisfies \((DLP7)\),
+   then the restricted optimum equals the full optimum \(\Phi_k^{\rm sh}\).
+
+   Therefore the high-star dyadic residual has a concrete build-time target:
+   solve this finite shared-cover LP, or find a shared record with positive
+   dual surplus against its current dual.  Expensive preprocessing may search
+   for such records by range reporting, facility, additive quantization,
+   list/lattice decoding, or seeded clustering; only verified columns are
+   retained.
+\end{corollary}
+
+\begin{proof}
+   The primal \((DLP2)\) is feasible by taking \(e_b=X_b\) and all
+   \(\lambda_c=0\), and it is bounded below.  Assign a dual variable \(u_b\ge0\)
+   to each cover constraint.  The coefficient of \(e_b\) gives \(u_b\le2\), and
+   the coefficient of \(\lambda_c\) gives
+   \(\sum_bh_{c,b}u_b\le2P_c\).  Finite LP duality proves \((DLP3)\).
+
+   Let \((e,\lambda)\) be feasible for \((DLP2)\).  For each \(c\), replace the
+   record by a scaled copy of multiplicity \(\lambda_c\), lower certificate
+   \(\lambda_cY_c\), and price \(\lambda_cP_c\), and set
+   \(z_{b,c}=\lambda_ch_{c,b}\).  By \((DLP1)\),
+   \[
+      \sum_bz_{b,c}
+      =
+      \lambda_c\sum_bh_{c,b}
+      \le
+      \lambda_cY_c .
+   \]
+   Thus the feasible LP solution is exactly a shared-capture certificate of the
+   form \((DMC1)\)--\((DMC3)\), with
+   \(E_{\rm sh}+P_{\rm sh}\) equal to the objective value in \((DLP2)\).  Hence
+   \((DLP4)\) implies the closure alternative of
+   \cref{cor:dyadic-prefix-shared-capture-compression}.  The contrapositive
+   gives \((DLP5)\), and \((DLP6)\) is \((DLP5)\) read through the dual
+   equality \((DLP3)\).
+
+   For column generation, the restricted primal and dual are the same finite
+   programs with \(\mathcal R_k\) replaced by \(E\).  If \((DLP7)\) holds, then
+   \(u^E\) violates the dual constraint for the enlarged active set and hence
+   cannot certify the enlarged optimum.  If no inactive record violates
+   \((DLP7)\), then \(u^E\) is feasible for the full dual.  The full primal is
+   a relaxation of the restricted primal, while the full-dual feasible solution
+   \(u^E\) has value equal to the restricted optimum; weak duality gives
+   equality of the restricted and full optima.
+\end{proof}
+
 \begin{corollary}[Paid-responsibility high-correlation star compiler]
    \label{cor:paid-responsibility-high-correlation-star}
    Work in the setting of
@@ -45786,6 +45906,9 @@ price-saturated record by record.
 test for that panel: any shared capture whose explicit tail plus one-time shared
 price is below the forced high-star mass materializes a guard repair; otherwise
 the residual is an exact shared-cover obstruction.
+\Cref{cor:finite-dyadic-shared-capture-lp} makes this obstruction algorithmic:
+the shared captures form a finite covering LP, and ordinary reduced-cost column
+generation is complete for the dyadic high-star branch.
 \Cref{lem:star-superlevel-column-verifier} and
 \cref{cor:pair-star-dense-column-generator} add the finite LP check: the star
 is retained only if its ball-thickened query side has positive reduced gain;
@@ -54945,7 +55068,7 @@ certificate is the verified positive-gain column and the finite LP it augments.
 
    If no inactive record violates \((SCG2)\), then \(u^E\) satisfies every dual
    constraint for every record in \(\mathcal R\), so it is feasible for the full
-   dual.  Since the restricted primal is a relaxation of the full primal,
+   dual.  Since the full primal is a relaxation of the restricted primal,
    \[
       \Psi_\Sigma^E(y)\ge\Psi_\Sigma(y).
    \]
@@ -71422,6 +71545,9 @@ actual paid mass rather than against price alone.
 score: shared records may capture many original star records, but a no-repair
 residual must have explicit tail plus one-time shared price at least the forced
 dyadic high-star mass.
+\Cref{cor:finite-dyadic-shared-capture-lp} is the exact finite-dual form of
+that residual, with a positive-dual-surplus shared record as the build-time
+oracle target.
 \Cref{lem:star-superlevel-column-verifier} and
 \cref{cor:pair-star-dense-column-generator} turn such a superlevel into an
 ordinary fractional-cover column by using the certified query activation
@@ -71730,6 +71856,9 @@ no individual guard record is profitable.
 \Cref{cor:dyadic-prefix-shared-capture-compression} is the shared-record normal
 form of that branch: every surviving shared capture pays through explicit tail
 plus one-time shared recursive price.
+\Cref{cor:finite-dyadic-shared-capture-lp} supplies the matching finite
+minimax certificate and column-generation oracle, so the high branch can now be
+attacked as an ordinary reduced-cost shared-cover problem.
 \Cref{cor:metric-entropy-hall-shadow-closure} and
 \cref{cor:low-doubling-hall-shadow-close} sharpen the remaining geometric
 obligation: any positive Hall shadow of certified covering number below
