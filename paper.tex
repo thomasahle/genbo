@@ -13526,6 +13526,137 @@ query-price overlap, storage price, and duplicate-incidence factor \(b_G\).
    proves the displayed inequality.
 \end{proof}
 
+\begin{corollary}[Bipartite paid-transport spread handoff]
+   \label{cor:bipartite-paid-transport-spread-handoff}
+   Work in the same finite dual setting as
+   \cref{cor:bipartite-paid-product-spread-handoff}.  Let \(X\subseteq U\) be
+   a finite set of centers, let \(Y\subseteq U\) be a finite paid side, and let
+   \[
+      0\le w_{x,y}\le b(y)
+      \qquad(x\in X,\ y\in Y)
+      \tag{BTSH1}
+   \]
+   be arbitrary transport weights.  For a profile \(\pi\subseteq X\times Y\),
+   choose pair weights \(0\le\kappa_{x,y}\le1\), split
+   \(\pi=\pi_{\rm lo}\dot\cup\pi_{\rm hi}\), and suppose the high edges satisfy
+   \[
+      (x,y)\in\pi_{\rm hi}
+      \quad\Longrightarrow\quad
+      \ip{x}{y}\ge\underline\theta
+      \qquad(-1<\underline\theta<1).
+      \tag{BTSH2}
+   \]
+   Put \(R_\star=\sqrt{2(1-\underline\theta)}\), and suppose the dense verifier
+   may add every inherited-activation prefix of \(U\cap B(x,R_\star)\),
+   \(x\in X\), with prices
+   \[
+      T_{x,h}=\psi_xh^{\rho_x},
+      \qquad
+      S_{x,h}=\psi_xh^{1+\rho_x},
+      \qquad 0<\rho_x<1.
+      \tag{BTSH3}
+   \]
+   Define high-correlation multiplicities
+   \[
+      M_x(y)=w_{x,y}\kappa_{x,y}
+      \mathbf 1\{(x,y)\in\pi_{\rm hi}\},
+      \qquad
+      W_{\rm hi}=\sum_{x\in X}\sum_{y\in Y}M_x(y).
+      \tag{BTSH4}
+   \]
+   If \(W_{\rm hi}>0\), let the positive values of \(M_x(y)\) define dyadic
+   levels \(t_j\) and superlevels
+   \[
+      U_{x,t_j}=\{y\in Y:M_x(y)\ge t_j\}
+      \tag{BTSH5}
+   \]
+   as in \((BPSH4)\)--\((BPSH5)\).  If \(W_{\rm hi}=0\), interpret the sum over
+   \(j\) below as empty.
+
+   If the low part is certified by
+   \[
+      B_{\rm lo}\ge
+      \sum_{(x,y)\in\pi_{\rm lo}}w_{x,y}\kappa_{x,y},
+      \tag{BTSH6}
+   \]
+   and no inherited-activation prefix from these star containers has positive
+   reduced gain, then
+   \[
+      \sum_{(x,y)\in\pi}w_{x,y}\kappa_{x,y}
+      \le
+      B_{\rm lo}
+      +
+      2\sum_{x\in X}\sum_j
+      \psi_x
+      \left(
+         \mathsf T_a|U_{x,t_j}|^{\rho_x}
+         +
+         \sigma |U_{x,t_j}|^{1+\rho_x}
+      \right).
+      \tag{BTSH7}
+   \]
+
+   Thus the high-correlation handoff does not require a product law
+   \(\lambda_xb(y)\).  It is enough that the routed weight of every
+   center--paid-point edge is pointwise dominated by the original paid degree.
+   In particular, an assigned paid transport \(w_{c(y),y}=b(y)\) and
+   \(w_{x,y}=0\) for \(x\ne c(y)\) is admissible whenever \(c(y)\in X\).
+\end{corollary}
+
+\begin{proof}
+   If \(y\in U_{x,t_j}\), then \(M_x(y)>0\), so \((x,y)\in\pi_{\rm hi}\).  Hence
+   \((BTSH2)\) gives
+   \[
+      \|x-y\|^2=2-2\ip{x}{y}\le2(1-\underline\theta)=R_\star^2,
+   \]
+   and therefore \(U_{x,t_j}\subseteq U\cap B(x,R_\star)\).
+
+   Since no inherited-activation prefix in this container has positive gain, the
+   top-prefix bound gives, for every \(x,j\),
+   \[
+      \sum_{y\in U_{x,t_j}}b(y)
+      \le
+      \psi_x
+      \left(
+         \mathsf T_a|U_{x,t_j}|^{\rho_x}
+         +
+         \sigma |U_{x,t_j}|^{1+\rho_x}
+      \right).
+      \tag{BTSH8}
+   \]
+   Since \(0\le\kappa_{x,y}\le1\), \((BTSH1)\) gives
+   \(M_x(y)\le b(y)\) for every \(x,y\).  Hence
+   \[
+      t_j|U_{x,t_j}|
+      \le
+      \sum_{y\in U_{x,t_j}}M_x(y)
+      \le
+      \sum_{y\in U_{x,t_j}}b(y).
+      \tag{BTSH9}
+   \]
+   The dyadic layer-cake inequality gives
+   \[
+      \frac12W_{\rm hi}
+      \le
+      \sum_{x\in X}\sum_jt_j|U_{x,t_j}|.
+   \]
+   Combining this with \((BTSH8)\)--\((BTSH9)\) gives
+   \[
+      W_{\rm hi}
+      \le
+      2\sum_{x\in X}\sum_j
+      \psi_x
+      \left(
+         \mathsf T_a|U_{x,t_j}|^{\rho_x}
+         +
+         \sigma |U_{x,t_j}|^{1+\rho_x}
+      \right)
+   \]
+   whenever no inherited prefix is positive.  Adding the low contribution
+   \((BTSH6)\) proves \((BTSH7)\).  The assigned-transport statement is immediate
+   from \(w_{c(y),y}=b(y)\) and all other routed weights equal to zero.
+\end{proof}
+
 \begin{corollary}[Paid level-set spread packing]
    \label{cor:paid-level-set-spread-packing}
    Work in the setting of
@@ -14673,6 +14804,213 @@ query-price overlap, storage price, and duplicate-incidence factor \(b_G\).
    \((WMTO4)\), \((WMTO5)\), and \(B_Y>0\) proves \((WMTO6)\).
 \end{proof}
 
+\begin{corollary}[Transport Gaussian paid-fiber separator]
+   \label{cor:transport-gaussian-paid-fiber-separator}
+   Work in the setting of
+   \cref{cor:bipartite-paid-transport-spread-handoff}, and assume
+   \(X\cup Y\subseteq\mathbb S^{D-1}\).  Let \(w_{x,y}\ge0\) be paid transport
+   weights satisfying \(w_{x,y}\le b(y)\), and put
+   \[
+      B_w=\sum_{x\in X}\sum_{y\in Y}w_{x,y}.
+      \tag{TGFS1}
+   \]
+   Assume \(B_w>0\).  Let
+   \[
+      U_G=\{u:\ip{G}{u}\ge T\},
+      \qquad
+      G\sim N(\mu,I_D),
+      \qquad
+      \kappa_{x,y}=\Pr[x,y\in U_G],
+   \]
+   and define the transported paid-product moment
+   \[
+      A_w=\sum_{x\in X}\sum_{y\in Y}w_{x,y}\kappa_{x,y}.
+      \tag{TGFS2}
+   \]
+   Fix \(-1<\theta_0<1\) and \(\Lambda\ge0\), and put
+   \[
+      s_\Lambda=2\sqrt{(1+\theta_0)\Lambda},
+      \qquad
+      m_G(u)=T-\ip{\mu}{u},
+      \qquad
+      R_0=\sqrt{2(1-\theta_0)} .
+      \tag{TGFS3}
+   \]
+   Suppose the dense verifier may add inherited-activation prefixes of
+   \(U\cap B(x,R_0)\), \(x\in X\), with common prices
+   \[
+      T_{x,h}=\psi_0h^{\rho_0},
+      \qquad
+      S_{x,h}=\psi_0h^{1+\rho_0},
+      \qquad 0<\rho_0<1.
+      \tag{TGFS4}
+   \]
+   For high nondefective transported pairs define
+   \[
+      M_x^w(y)=
+      w_{x,y}\kappa_{x,y}
+      \mathbf 1\{m_G(x)+m_G(y)\ge s_\Lambda,\ \ip{x}{y}>\theta_0\}.
+      \tag{TGFS5}
+   \]
+   Let \(U^w_{x,j}\) be the dyadic superlevels of the positive values of
+   \(M_x^w(y)\), and interpret the sum over \(j\) as empty when no positive
+   values occur.  Put
+   \[
+      \mathsf P_{\rm hi}^w
+      =
+      2\sum_{x\in X}\sum_j
+      \psi_0
+      \left(
+         \mathsf T_a|U^w_{x,j}|^{\rho_0}
+         +
+         \sigma |U^w_{x,j}|^{1+\rho_0}
+      \right).
+      \tag{TGFS6}
+   \]
+   Finally define transported one-point active loads
+   \[
+      p_G(u)=\Pr[u\in U_G],
+      \qquad
+      P_X^w=\sum_{x,y}w_{x,y}p_G(x),
+      \qquad
+      P_Y^w=\sum_{x,y}w_{x,y}p_G(y),
+      \tag{TGFS7}
+   \]
+   and, for \(\gamma\in\mathbb R\),
+   \[
+      P_X^{w,<\gamma}
+      =
+      \sum_{\substack{x,y\\m_G(x)<\gamma}}w_{x,y}p_G(x),
+      \qquad
+      P_Y^{w,<\gamma}
+      =
+      \sum_{\substack{x,y\\m_G(y)<\gamma}}w_{x,y}p_G(y).
+      \tag{TGFS8}
+   \]
+
+   If no inherited-activation prefix from the radius-\(R_0\) star containers has
+   positive reduced gain, then, for every \(\gamma\in\mathbb R\),
+   \[
+      A_w
+      \le
+      e^{-\Lambda}B_w
+      +
+      P_X^{w,<\gamma}
+      +
+      P_Y^{w,<s_\Lambda-\gamma}
+      +
+      \mathsf P_{\rm hi}^w ,
+      \tag{TGFS9}
+   \]
+   and in particular
+   \[
+      A_w
+      \le
+      e^{-\Lambda}B_w
+      +
+      \min\{P_X^w,\ P_Y^w\}
+      +
+      \mathsf P_{\rm hi}^w .
+      \tag{TGFS10}
+   \]
+
+   Consequently, suppose
+   \[
+      A_w\ge aB_w,
+      \qquad
+      \mathsf P_{\rm hi}^w\le\xi A_w
+      \qquad(a>0,\ 0\le\xi<1),
+      \tag{TGFS11}
+   \]
+   and put \(\delta=(1-\xi)a-e^{-\Lambda}\).  If \(\delta>0\) and either
+   \[
+      P_X^w<\delta B_w
+      \qquad\text{or}\qquad
+      P_Y^w<\delta B_w,
+      \tag{TGFS12}
+   \]
+   then an inherited-activation prefix has positive reduced gain.
+
+   Finally, if the transport is assigned by a map \(c:Y\to X\),
+   \(w_{c(y),y}=b(y)\), \(w_{x,y}=0\) for \(x\ne c(y)\), and
+   \[
+      \kappa_{c(y),y}\ge a
+      \qquad(y\in Y,\ b(y)>0),
+      \tag{TGFS13}
+   \]
+   then \(A_w\ge aB_w\).  Thus the paid-product lower bound can be supplied by a
+   local assigned-cover geometry, without first forcing the center and paid
+   measures into an independent product law.
+\end{corollary}
+
+\begin{proof}
+   Define the transported margin-defect contribution
+   \[
+      W_{\rm marg}^w
+      =
+      \sum_{\substack{x,y\\m_G(x)+m_G(y)<s_\Lambda}}
+      w_{x,y}\kappa_{x,y}.
+      \tag{TGFS14}
+   \]
+   On the nondefective profile
+   \[
+      \pi=\{(x,y):m_G(x)+m_G(y)\ge s_\Lambda\},
+   \]
+   split into low and high parts by the threshold \(\ip{x}{y}\le\theta_0\).  On
+   the low part, the same two-point Gaussian certificate used in \((WGFS14)\)
+   gives \(\kappa_{x,y}\le e^{-\Lambda}\).  Applying
+   \cref{cor:bipartite-paid-transport-spread-handoff} to the high part with
+   transport weights \(w_{x,y}\), pair weights \(\kappa_{x,y}\), threshold
+   \(\theta_0\), and prices \((TGFS4)\), we get, if no inherited prefix is
+   positive,
+   \[
+      A_w
+      \le
+      W_{\rm marg}^w+e^{-\Lambda}B_w+\mathsf P_{\rm hi}^w .
+      \tag{TGFS15}
+   \]
+
+   For a split \(\gamma\), the defect set is contained in the union of
+   \[
+      \{(x,y):m_G(x)<\gamma\}
+      \quad\text{and}\quad
+      \{(x,y):m_G(y)<s_\Lambda-\gamma\}.
+   \]
+   Using \(\kappa_{x,y}\le p_G(x)\) on the first set and
+   \(\kappa_{x,y}\le p_G(y)\) on the second gives
+   \[
+      W_{\rm marg}^w
+      \le
+      P_X^{w,<\gamma}+P_Y^{w,<s_\Lambda-\gamma}.
+   \]
+   Substituting into \((TGFS15)\) proves \((TGFS9)\).  Discarding the margin
+   restrictions and using either endpoint gives
+   \(W_{\rm marg}^w\le P_X^w\) and \(W_{\rm marg}^w\le P_Y^w\), proving
+   \((TGFS10)\).
+
+   Under \((TGFS11)\), if \((TGFS12)\) holds then
+   \[
+      e^{-\Lambda}B_w+\min\{P_X^w,\ P_Y^w\}+\mathsf P_{\rm hi}^w
+      <
+      \bigl(e^{-\Lambda}+\delta\bigr)B_w+\xi A_w
+      =
+      (1-\xi)aB_w+\xi A_w
+      \le A_w .
+   \]
+   This violates \((TGFS10)\) unless a positive inherited prefix exists.
+
+   The assigned-transport lower bound is immediate:
+   \[
+      A_w
+      =
+      \sum_{y\in Y}b(y)\kappa_{c(y),y}
+      \ge
+      a\sum_{y\in Y}b(y)
+      =
+      aB_w .
+   \]
+\end{proof}
+
 \begin{corollary}[Gaussian paid-fiber separator criterion]
    \label{cor:gaussian-paid-fiber-separator-criterion}
    Work in the setting of
@@ -15177,6 +15515,13 @@ require uniform centers.
 certificate: after the weighted paid-product lower bound and inherited-prefix
 price are controlled, any surviving branch has large total active load both on
 the Renyi center law and on the paid side.
+\Cref{cor:bipartite-paid-transport-spread-handoff} and
+\cref{cor:transport-gaussian-paid-fiber-separator} remove the independence
+requirement from that lower-bound step.  A paid point may be transported to one
+nearby certified center; if the assigned edge has Gaussian co-activation at least
+\(a\), then \(A_w\ge aB_w\) directly, while the high-correlation prefix
+accounting remains valid because each transported edge is dominated by the
+original paid degree \(b(y)\).
 \Cref{cor:gaussian-paid-fiber-separator-criterion} records the sharper
 split-optimized diagnostic form: lower-bound the paid-product moment, keep one
 truncated margin split inverse-polylogarithmic, and upper-bound the inherited
@@ -67801,6 +68146,12 @@ law directly.
 normal form.  Once \(A_\lambda\) is a constant fraction of paid mass and inherited
 high-correlation price is a strict fraction of \(A_\lambda\), survival forces
 both \(\bar p_\lambda\) and \(P_Y/B_Y\) to be large.
+\Cref{cor:bipartite-paid-transport-spread-handoff} and
+\cref{cor:transport-gaussian-paid-fiber-separator} give the assigned-cover
+variant needed to avoid a false product-law bottleneck: transported weights
+\(w_{x,y}\le b(y)\) preserve the same inherited-prefix charging, and an assigned
+near-center map \(c(y)\) supplies \(A_w\ge aB_w\) from the pointwise
+co-activation lower bound on \((c(y),y)\).
 \Cref{cor:spread-packing-entropy-energy-screen} records the corresponding
 charge: each separated-pair profile is harmless when its intersection energy
 dominates its entropy, and otherwise it is the high-correlation dense signal.
