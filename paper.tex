@@ -12036,6 +12036,95 @@ partition ignores the bias coordinates that certify the list size.
    exactly one unit of mass in coordinate block \(i\).
 \end{proof}
 
+\begin{corollary}[Near-optimal score-gap form of the tail verifier]
+   \label{cor:near-optimal-score-gap-tail-verifier}
+   Continue with the notation of
+   \cref{cor:negative-coefficient-tail-dual}, and suppose \(P_u\) lies in the
+   product of the \(q\)-ary coordinate simplices.  For a table
+   \(Y\in\R^{bq}\), define its block-minimum shift
+   \[
+      Y^\circ_{i,a}=Y_{i,a}-\min_{\alpha\in[q]}Y_{i,\alpha}\ge0,
+      \tag{LNM1}
+   \]
+   and its true-codeword deficit profile
+   \[
+      \Delta_Y(c_j)
+      =
+      \max_{k\in[N]}\ip{Y^\circ}{\iota(c_k)}
+      -
+      \ip{Y^\circ}{\iota(c_j)} .
+      \tag{LNM2}
+   \]
+   Let
+   \[
+      \mathcal R_u^{\mathrm{gap}}(\omega)
+      =
+      \left\{
+         Y^\circ:\ Y\in L_u,\ \Delta_Y(c_j)\le\omega_j\ \forall j
+      \right\}.
+      \tag{LNM3}
+   \]
+   If
+   \[
+      \sup_{R\in\mathcal R_u^{\mathrm{gap}}(\omega)}
+      \left(
+         \sup_{z\in P_u}\ip{R}{z}
+         -
+         \max_{j\in[N]}\ip{R}{\iota(c_j)}
+      \right)
+      \le B_u ,
+      \tag{LNM4}
+   \]
+   then
+   \[
+      \mathcal N_u(P_u;\omega)\le B_u .
+      \tag{LNM5}
+   \]
+   In particular, \((LNK3)\) follows from \((LNM4)\) with
+   \(B_u=\Xi_u\) and \(\omega=\omega^\lambda+\Xi_u\mathbf1_N\).
+
+   Thus the negative coefficient tail can be certified by an ordinary
+   nonnegative score-table gap: every table whose near-optimal true codewords are
+   clipped by the prices \(\omega_j\) must have relaxation optimum within
+   \(B_u\) of its best true codeword.  The signed separator of
+   \cref{cor:negative-coefficient-tail-dual} has disappeared; only the
+   block-shifted score gaps matter.
+\end{corollary}
+
+\begin{proof}
+   Fix a feasible separator \(y\in L_u\) in \((LNK2)\), and write
+   \(s_j=\ip{y}{\iota(c_j)}\in[-\omega_j,0]\).  Put
+   \(m=\max_j s_j\le0\), and let \(R=y^\circ\).  Since every point of \(P_u\) and
+   every codeword has one unit of mass in each coordinate block, the block shift
+   subtracts the same constant from all their scores.  Hence
+   \[
+      \max_k\ip{R}{\iota(c_k)}-\ip{R}{\iota(c_j)}
+      =
+      m-s_j
+      \le \omega_j ,
+      \tag{LNM6}
+   \]
+   so \(R\in\mathcal R_u^{\mathrm{gap}}(\omega)\).  For every \(z\in P_u\),
+   \[
+   \begin{aligned}
+      \ip{y}{z}
+      &=
+      \ip{R}{z}
+      -
+      \max_k\ip{R}{\iota(c_k)}
+      +m\\
+      &\le
+      \ip{R}{z}
+      -
+      \max_k\ip{R}{\iota(c_k)},
+   \end{aligned}
+      \tag{LNM7}
+   \]
+   because \(m\le0\).  Taking the supremum over \(z\in P_u\) and then over all
+   feasible \(y\) in \((LNK2)\) proves \((LNM5)\).  The final statement is
+   \cref{cor:negative-coefficient-tail-dual}.
+\end{proof}
+
 \begin{corollary}[Anchor-fiber LP/SA certificate compiler]
    \label{cor:anchor-fiber-lp-sa-compiler}
    Continue with the notation of
@@ -12338,6 +12427,15 @@ partition ignores the bias coordinates that certify the list size.
    handles the remaining scalar term by the coordinate-block balance witness,
    paying only the orthogonal residual when the witness is not exactly in the
    local span.
+
+   \Cref{cor:near-optimal-score-gap-tail-verifier} turns the same check into a
+   more standard LP-decoding statement.  After subtracting block minima, a signed
+   clipped separator becomes a nonnegative score table whose true codeword
+   deficits are bounded by the same prices \(\omega_j\).  Therefore it is enough
+   to prove that every such near-optimal score band has relaxation optimum only
+   polylogarithmically above the best true codeword.  This is a sharper
+   code-theoretic target than controlling arbitrary signed pseudocodeword
+   objectives.
 
    \Cref{cor:leader-shift-near-leader-certificate} gives the clean terminal
    version of this idea when scalar leakage is killed exactly, or otherwise
