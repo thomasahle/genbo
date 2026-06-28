@@ -65080,6 +65080,153 @@ certificate is the verified positive-gain column and the finite LP it augments.
    positive shared top-prefix column.
 \end{proof}
 
+\begin{corollary}[Capped residual LP continuation]
+   \label{cor:capped-residual-lp-continuation}
+   The fractional failed transcript can be driven by the residual LP itself,
+   provided already-paid source mass is kept as an explicit cap.  For a cap
+   vector \(0\le r_i\le1\), let
+   \(\mathfrak R_{\rm tr}(\nu;r)\) be the capped variant of \((TRL3)\), obtained
+   by replacing \(0\le z_i\le1\) with
+   \[
+      0\le z_i\le r_i\qquad(i\in I_0).
+      \tag{CRL1}
+   \]
+   Its finite dual is the capped version of \((TRL6)\):
+   \[
+   \begin{array}{ll}
+   \mathfrak R_{\rm tr}(\nu;r)=\min
+      & \displaystyle
+        \sum_{t=1}^T B_t^{\rm tail}\lambda_t
+        +\sum_{i\in I_0}r_i\sigma_i\\[0.8em]
+   \text{\rm subject to}
+      & \displaystyle
+        \sigma_i+
+        \sum_{\substack{t:\ i\in I_{t-1}}}
+        \sum_{\substack{p\in P_t^+:\\ (i,p)\in E_t}}
+        \alpha_{t,i,p}
+        \ge \nu_i
+        \qquad(i\in I_0),\\[1.0em]
+      & \displaystyle
+        \sum_{\substack{i\in I_{t-1}:\\ (i,p)\in E_t}}
+        \alpha_{t,i,p}
+        \le \lambda_t c_{t,p}
+        \qquad(t=1,\ldots,T,\ p\in P_t^+),\\[1.0em]
+      & \lambda_t,\sigma_i,\alpha_{t,i,p}\ge0 .
+   \end{array}
+      \tag{CRL2}
+   \]
+
+   Now fix a partial failed transcript, a cap vector \(r\), and an optimal
+   primal solution \(z^\star,y^\star\) for
+   \(\mathfrak R_{\rm tr}(\nu;r)\).  Let
+   \(I^+=\{i:z_i^\star>0\}\).  Suppose preprocessing proposes one more
+   fractional opened-support screen \((B,E,C)\) with left set \(I^+\),
+   normalized source loads
+   \[
+      \frac{\mu_i}{C}=\nu_i z_i^\star\qquad(i\in I^+),
+      \tag{CRL3}
+   \]
+   degrees \(d_p\), and clipped parameters \(K,\Theta\).  If this proposed
+   screen fails,
+   \[
+      \widehat{\mathfrak S}_{B,E}(C)\le2K\Theta,
+      \tag{CRL4}
+   \]
+   then, after appending this screen to the transcript with tail set
+   \(P^+=\{p:d_p>2\Theta\}\), there is a new cap vector \(r^+\) satisfying
+   \(0\le r_i^+\le z_i^\star\le r_i\) and
+   \[
+      \mathfrak R_{\rm tr}^{+}(\nu;r^+)
+      \ge
+      \mathfrak R_{\rm tr}(\nu;r)-4K\Theta .
+      \tag{CRL5}
+   \]
+   If instead \((CRL4)\) fails, then
+   \cref{cor:fractional-opened-support-flow-lp} exposes a positive shared
+   top-prefix column.
+
+   Consequently, an adaptive rule may repeat the following entirely finite
+   step: solve the current capped residual LP, use its optimal \(z^\star\) as
+   the next source measure, and either materialize a positive screen or update
+   the cap.  After an all-failed transcript with caps \(r^{(T)}\),
+   \[
+      \mathfrak R_T(\nu;r^{(T)})
+      \ge
+      \sum_i\nu_i-\sum_{t=1}^T4K_t\Theta_t .
+      \tag{CRL6}
+   \]
+   Therefore, if the terminal capped dual certificate proves
+   \[
+      \mathfrak R_T(\nu;r^{(T)})<\Lambda_{\rm rem}
+      \quad\text{while}\quad
+      \sum_{t=1}^T4K_t\Theta_t
+      \le
+      \sum_i\nu_i-\Lambda_{\rm rem},
+      \tag{CRL7}
+   \]
+   not all screens could have failed.
+
+   The cap is essential: it prevents later residual LPs from resurrecting source
+   mass that an earlier failed-screen dual has already paid for.
+\end{corollary}
+
+\begin{proof}
+   The capped dual \((CRL2)\) is the same calculation as \((TRL6)\), except
+   that the multiplier \(\sigma_i\) for \(z_i\le r_i\) contributes
+   \(r_i\sigma_i\) to the objective.
+
+   Assume the new screen fails and choose feasible dual prices
+   \(\alpha_i,\beta_p\) for its opened-support LP satisfying
+   \[
+      \sum_i\nu_i z_i^\star\alpha_i+
+      \sum_{p\in W_B}(d_p\beta_p-\Theta)_+
+      \le2K\Theta .
+      \tag{CRL8}
+   \]
+   Define
+   \[
+      r_i^+=z_i^\star(1-2\alpha_i)_+
+      \qquad(i\in I^+),
+      \tag{CRL9}
+   \]
+   and \(r_i^+=0\) for \(i\notin I^+\).  Then \(0\le r_i^+\le z_i^\star\le r_i\),
+   and
+   \[
+      \sum_i\nu_i(z_i^\star-r_i^+)
+      \le
+      2\sum_i\nu_i z_i^\star\alpha_i
+      \le4K\Theta .
+      \tag{CRL10}
+   \]
+
+   The old transcript constraints remain feasible because \(r^+\le z^\star\):
+   keep the old \(y^\star\) variables, or decrease them if desired.  For the new
+   screen, the same argument as in
+   \cref{cor:fractional-failed-transcript-accounting} gives variables
+   \[
+      y_p^+=\max\{r_i^+:(i,p)\in E\}
+      \qquad(p\in P^+)
+   \]
+   satisfying the new edge constraints and
+   \[
+      \sum_{p\in P^+}(d_p-2\Theta)y_p^+\le4K\Theta .
+   \]
+   Thus \(z=r^+\), together with the old variables and \(y^+\), is feasible for
+   the appended capped LP.  Its objective is at least
+   \[
+      \sum_i\nu_i z_i^\star-4K\Theta
+      =
+      \mathfrak R_{\rm tr}(\nu;r)-4K\Theta,
+   \]
+   which proves \((CRL5)\).  If the screen does not fail, then its value is
+   above \(2K\Theta\), and the positive-column conclusion is exactly
+   \cref{cor:fractional-opened-support-flow-lp}.
+
+   Starting from the empty transcript with cap \(r_i^{(0)}=1\), the residual LP
+   value is \(\sum_i\nu_i\).  Iterating \((CRL5)\) proves \((CRL6)\), and
+   \((CRL7)\) contradicts \((CRL6)\) in an all-failed transcript.
+\end{proof}
+
 \begin{corollary}[Shared integrated cover-cost endpoint]
    \label{cor:shared-integrated-cover-cost-endpoint}
    Work in the setting of
@@ -80949,6 +81096,10 @@ has value below the target residual mass.
 integral-retained-set relaxation to a fully fractional process: failed screens
 shrink source intensities by their own LP dual prices, and the final intensity
 vector is feasible for the same residual LP.
+\Cref{cor:capped-residual-lp-continuation} makes the build-time loop
+LP-guided: solve the current capped residual LP, use its primal optimizer as
+the next source measure, and update the cap after a failed screen so previously
+paid source mass cannot reappear.
 \Cref{cor:single-tail-shared-separator-endpoint} packages this into the
 current sharp proof target: every normalized exact-signature dual must either
 produce a materializable low-correlation profile record or force one certified
