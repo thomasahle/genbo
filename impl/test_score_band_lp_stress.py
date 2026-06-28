@@ -4,7 +4,9 @@ from score_band_lp_stress import (
     _simplex_max_nonnegative,
     integral_local_pseudoword_gaps,
     local_check_scopes,
+    local_marginal_score_band_gap,
     product_simplex_score_band_gap,
+    solve_equality_lp_max,
     source_score_band_gap,
 )
 
@@ -20,6 +22,16 @@ def test_simplex_solves_small_lp():
 
     assert np.isclose(value, 10.0 / 3.0)
     assert np.allclose(solution, [8.0 / 3.0, 2.0 / 3.0])
+
+
+def test_equality_lp_solves_nonzero_rhs_simplex():
+    objective = np.array([2.0, 1.0])
+    lhs = np.array([[1.0, 1.0]])
+    rhs = np.array([1.0])
+    value, solution = solve_equality_lp_max(objective, lhs, rhs)
+
+    assert np.isclose(value, 2.0)
+    assert np.allclose(solution, [1.0, 0.0])
 
 
 def test_full_binary_cube_has_zero_product_simplex_gap():
@@ -91,16 +103,58 @@ def test_pairwise_local_parity_pseudoword_is_detected():
     assert result["word"] in {(0, 0, 1), (0, 1, 0), (1, 0, 0), (1, 1, 1)}
 
 
+def test_local_marginal_full_check_collapses_to_true_hull():
+    code = np.array([
+        [0, 0],
+        [0, 1],
+        [1, 0],
+    ])
+    omega = np.ones(len(code))
+    result = local_marginal_score_band_gap(
+        code,
+        omega,
+        checks=[(0, 1)],
+        random_objectives=4,
+        seed=0,
+    )
+
+    assert result["gap"] <= 1e-8
+    assert result["source_count"] > 0
+
+
+def test_local_marginal_pairwise_parity_sees_integral_gap():
+    code = np.array([
+        [0, 0, 0],
+        [0, 1, 1],
+        [1, 0, 1],
+        [1, 1, 0],
+    ])
+    omega = np.ones(len(code))
+    result = local_marginal_score_band_gap(
+        code,
+        omega,
+        checks=[(0, 1), (0, 2), (1, 2)],
+        random_objectives=4,
+        seed=0,
+    )
+
+    assert result["gap"] >= 0.5 - 1e-8
+    assert result["source_count"] >= 8
+
+
 def test_local_check_scopes_enumerates_subsets():
     assert local_check_scopes(3, 2) == [(0, 1), (0, 2), (1, 2)]
 
 
 if __name__ == "__main__":
     test_simplex_solves_small_lp()
+    test_equality_lp_solves_nonzero_rhs_simplex()
     test_full_binary_cube_has_zero_product_simplex_gap()
     test_missing_binary_corner_exposes_score_band_gap()
     test_fixed_true_codeword_has_zero_gap()
     test_fixed_missing_corner_matches_product_gap()
     test_pairwise_local_parity_pseudoword_is_detected()
+    test_local_marginal_full_check_collapses_to_true_hull()
+    test_local_marginal_pairwise_parity_sees_integral_gap()
     test_local_check_scopes_enumerates_subsets()
     print("score_band_lp_stress tests passed")

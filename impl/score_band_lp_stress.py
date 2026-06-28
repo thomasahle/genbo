@@ -5,7 +5,9 @@ paper.tex, restricted to tiny relaxations.  For the product-simplex relaxation i
 fixes a block-minimum chart and a block-maximum chart, then solves the resulting
 ordinary LP with a small dependency-free simplex routine.  It can also fix one
 candidate source word and test whether that integral pseudoword already violates
-the same score-band condition.
+the same score-band condition.  Finally, it can sample vertices of a toy
+local-marginal relaxation using a small equality-form phase-I simplex solver and
+evaluate the same fixed-source score-band gap there.
 
 The script is intentionally for toy instances.  It is meant to distinguish
 actual score-band violations from coefficient-tail surrogates before more
@@ -29,6 +31,31 @@ from chart_tail_stress import (
 
 class LPUnbounded(RuntimeError):
     pass
+
+
+class LPInfeasible(RuntimeError):
+    pass
+
+
+def _pivot_tableau(
+    tableau: np.ndarray,
+    basis: list[int],
+    leaving_row: int,
+    entering: int,
+    *,
+    tol: float,
+) -> None:
+    pivot = tableau[leaving_row, entering]
+    if abs(pivot) <= tol:
+        raise RuntimeError("attempted to pivot on a zero entry")
+    tableau[leaving_row, :] /= pivot
+    for row in range(tableau.shape[0]):
+        if row == leaving_row:
+            continue
+        factor = tableau[row, entering]
+        if abs(factor) > tol:
+            tableau[row, :] -= factor * tableau[leaving_row, :]
+    basis[leaving_row] = entering
 
 
 def _simplex_max_nonnegative(
@@ -82,17 +109,173 @@ def _simplex_max_nonnegative(
         tied = positive[np.flatnonzero(ratios <= min_ratio + tol)]
         leaving_row = int(tied[np.argmin([basis[i] for i in tied])])
 
-        pivot = tableau[leaving_row, entering]
-        tableau[leaving_row, :] /= pivot
-        for row in range(rows + 1):
-            if row == leaving_row:
-                continue
-            factor = tableau[row, entering]
-            if abs(factor) > tol:
-                tableau[row, :] -= factor * tableau[leaving_row, :]
-        basis[leaving_row] = entering
+        _pivot_tableau(tableau, basis, leaving_row, entering, tol=tol)
 
     raise RuntimeError("simplex iteration limit exceeded")
+
+
+def _simplex_max_with_basis(
+    objective: np.ndarray,
+    lhs: np.ndarray,
+    rhs: np.ndarray,
+    basis: list[int],
+    *,
+    tol: float = 1e-9,
+    max_iter: int = 10000,
+) -> tuple[float, np.ndarray, list[int], np.ndarray]:
+    """Maximize objective @ x over lhs @ x = rhs, x >= 0 from a feasible basis."""
+    objective = np.asarray(objective, dtype=float)
+    lhs = np.asarray(lhs, dtype=float)
+    rhs = np.asarray(rhs, dtype=float)
+    if lhs.ndim != 2:
+        raise ValueError("lhs must be a matrix")
+    rows, cols = lhs.shape
+    if objective.shape != (cols,):
+        raise ValueError("objective dimension does not match lhs")
+    if rhs.shape != (rows,):
+        raise ValueError("rhs dimension does not match lhs")
+    if len(basis) != rows:
+        raise ValueError("basis must contain one variable per equality")
+
+    tableau = np.zeros((rows + 1, cols + 1), dtype=float)
+    tableau[:rows, :cols] = lhs
+    tableau[:rows, -1] = rhs
+    tableau[-1, :cols] = -objective
+    basis = list(basis)
+    for row, basic in enumerate(basis):
+        coefficient = objective[basic]
+        if abs(coefficient) > tol:
+            tableau[-1, :] += coefficient * tableau[row, :]
+
+    for _ in range(max_iter):
+        entering_candidates = np.flatnonzero(tableau[-1, :-1] < -tol)
+        if len(entering_candidates) == 0:
+            solution = np.zeros(cols, dtype=float)
+            for row, basic in enumerate(basis):
+                solution[basic] = max(0.0, tableau[row, -1])
+            return float(tableau[-1, -1]), solution, basis, tableau
+
+        entering = int(entering_candidates[0])
+        column = tableau[:rows, entering]
+        positive = np.flatnonzero(column > tol)
+        if len(positive) == 0:
+            raise LPUnbounded("LP is unbounded")
+
+        ratios = tableau[positive, -1] / column[positive]
+        min_ratio = float(np.min(ratios))
+        tied = positive[np.flatnonzero(ratios <= min_ratio + tol)]
+        leaving_row = int(tied[np.argmin([basis[i] for i in tied])])
+        _pivot_tableau(tableau, basis, leaving_row, entering, tol=tol)
+
+    raise RuntimeError("simplex iteration limit exceeded")
+
+
+def _independent_equalities(
+    lhs: np.ndarray,
+    rhs: np.ndarray,
+    *,
+    tol: float,
+) -> tuple[np.ndarray, np.ndarray]:
+    selected: list[int] = []
+    rank = 0
+    for row in range(lhs.shape[0]):
+        if np.linalg.norm(lhs[row]) <= tol:
+            if abs(rhs[row]) > tol:
+                raise LPInfeasible("inconsistent zero equality")
+            continue
+        trial = lhs[selected + [row]]
+        trial_rank = int(np.linalg.matrix_rank(trial, tol=tol))
+        if trial_rank > rank:
+            selected.append(row)
+            rank = trial_rank
+    if not selected:
+        return np.zeros((0, lhs.shape[1]), dtype=float), np.zeros(0, dtype=float)
+    return lhs[selected].copy(), rhs[selected].copy()
+
+
+def solve_equality_lp_max(
+    objective: np.ndarray,
+    lhs: np.ndarray,
+    rhs: np.ndarray,
+    *,
+    tol: float = 1e-9,
+) -> tuple[float, np.ndarray]:
+    """Maximize objective @ x subject to lhs @ x = rhs and x >= 0.
+
+    This is a tiny phase-I simplex for local-marginal diagnostics.  It is not a
+    production LP solver, but it handles the nonzero right-hand sides that arise
+    from check-normalization constraints.
+    """
+    objective = np.asarray(objective, dtype=float)
+    lhs = np.asarray(lhs, dtype=float)
+    rhs = np.asarray(rhs, dtype=float)
+    if lhs.ndim != 2:
+        raise ValueError("lhs must be a matrix")
+    if objective.shape != (lhs.shape[1],):
+        raise ValueError("objective dimension does not match lhs")
+    if rhs.shape != (lhs.shape[0],):
+        raise ValueError("rhs dimension does not match lhs")
+
+    original_lhs = lhs.copy()
+    original_rhs = rhs.copy()
+    lhs, rhs = _independent_equalities(lhs, rhs, tol=tol)
+    rows, cols = lhs.shape
+    if rows == 0:
+        if np.any(objective > tol):
+            raise LPUnbounded("LP is unbounded")
+        return 0.0, np.zeros(cols, dtype=float)
+
+    for row in range(rows):
+        if rhs[row] < -tol:
+            lhs[row, :] *= -1.0
+            rhs[row] *= -1.0
+        elif rhs[row] < 0.0:
+            rhs[row] = 0.0
+
+    phase_lhs = np.concatenate([lhs, np.eye(rows)], axis=1)
+    phase_objective = np.concatenate([np.zeros(cols), -np.ones(rows)])
+    phase_basis = list(range(cols, cols + rows))
+    phase_value, _, phase_basis, tableau = _simplex_max_with_basis(
+        phase_objective,
+        phase_lhs,
+        rhs,
+        phase_basis,
+        tol=tol,
+    )
+    if phase_value < -tol:
+        raise LPInfeasible("equality LP is infeasible")
+
+    row = 0
+    while row < len(phase_basis):
+        if phase_basis[row] < cols:
+            row += 1
+            continue
+        candidates = [
+            col for col in range(cols)
+            if col not in phase_basis and abs(tableau[row, col]) > tol
+        ]
+        if candidates:
+            _pivot_tableau(tableau, phase_basis, row, candidates[0], tol=tol)
+            row += 1
+            continue
+        if abs(tableau[row, -1]) > tol:
+            raise LPInfeasible("artificial variable remained positive")
+        tableau = np.delete(tableau, row, axis=0)
+        phase_basis.pop(row)
+
+    active_rows = len(phase_basis)
+    canonical_lhs = tableau[:active_rows, :cols]
+    canonical_rhs = tableau[:active_rows, -1]
+    value, solution, _, _ = _simplex_max_with_basis(
+        objective,
+        canonical_lhs,
+        canonical_rhs,
+        phase_basis,
+        tol=tol,
+    )
+    if np.linalg.norm(original_lhs @ solution - original_rhs, ord=np.inf) > 1e-6:
+        raise LPInfeasible("solution violates redundant equalities")
+    return value, solution
 
 
 def solve_free_lp_max(
@@ -377,6 +560,244 @@ def _locally_consistent_words(
     return out
 
 
+def _source_key(source: np.ndarray, *, tol: float) -> tuple[int, ...]:
+    return tuple(int(round(float(value) / tol)) for value in source)
+
+
+def _local_projection_assignments(
+    code: np.ndarray,
+    checks: list[tuple[int, ...]],
+) -> list[list[tuple[int, ...]]]:
+    return [
+        sorted({tuple(int(word[i]) for i in check) for word in code})
+        for check in checks
+    ]
+
+
+def _local_marginal_system(
+    code: np.ndarray,
+    checks: list[tuple[int, ...]],
+) -> tuple[np.ndarray, np.ndarray, int]:
+    code = np.asarray(code, dtype=int)
+    blocks = code.shape[1]
+    alphabet = int(np.max(code)) + 1
+    if not checks:
+        raise ValueError("at least one local check is required")
+    for check in checks:
+        if not check:
+            raise ValueError("checks must be nonempty")
+        if len(set(check)) != len(check):
+            raise ValueError("checks cannot repeat a coordinate")
+        if min(check) < 0 or max(check) >= blocks:
+            raise ValueError("check coordinate is out of range")
+
+    assignments_by_check = _local_projection_assignments(code, checks)
+    local_count = sum(len(assignments) for assignments in assignments_by_check)
+    z_offset = local_count
+    n_vars = local_count + blocks * alphabet
+    rows: list[np.ndarray] = []
+    rhs: list[float] = []
+
+    offset = 0
+    check_offsets = []
+    for assignments in assignments_by_check:
+        check_offsets.append(offset)
+        row = np.zeros(n_vars, dtype=float)
+        row[offset:offset + len(assignments)] = 1.0
+        rows.append(row)
+        rhs.append(1.0)
+        offset += len(assignments)
+
+    covered = set()
+    for check_id, check in enumerate(checks):
+        assignments = assignments_by_check[check_id]
+        base = check_offsets[check_id]
+        for local_pos, coord in enumerate(check):
+            covered.add(coord)
+            for symbol in range(alphabet):
+                row = np.zeros(n_vars, dtype=float)
+                row[z_offset + coord * alphabet + symbol] = 1.0
+                for assignment_id, assignment in enumerate(assignments):
+                    if assignment[local_pos] == symbol:
+                        row[base + assignment_id] -= 1.0
+                rows.append(row)
+                rhs.append(0.0)
+
+    for coord in range(blocks):
+        if coord in covered:
+            continue
+        row = np.zeros(n_vars, dtype=float)
+        row[z_offset + coord * alphabet:z_offset + (coord + 1) * alphabet] = 1.0
+        rows.append(row)
+        rhs.append(1.0)
+
+    return np.vstack(rows), np.array(rhs), z_offset
+
+
+def _local_marginal_optimize_source(
+    code: np.ndarray,
+    checks: list[tuple[int, ...]],
+    objective_on_source: np.ndarray,
+    *,
+    tol: float = 1e-8,
+) -> tuple[float, np.ndarray]:
+    lhs, rhs, z_offset = _local_marginal_system(code, checks)
+    objective_on_source = np.asarray(objective_on_source, dtype=float)
+    blocks = code.shape[1]
+    alphabet = int(np.max(code)) + 1
+    if objective_on_source.shape != (blocks * alphabet,):
+        raise ValueError("source objective must have one entry per block-symbol")
+    objective = np.zeros(lhs.shape[1], dtype=float)
+    objective[z_offset:z_offset + blocks * alphabet] = objective_on_source
+    value, solution = solve_equality_lp_max(objective, lhs, rhs, tol=tol)
+    source = solution[z_offset:z_offset + blocks * alphabet]
+    source[np.abs(source) <= tol] = 0.0
+    return value, source
+
+
+def local_marginal_source_candidates(
+    code: np.ndarray,
+    checks: list[tuple[int, ...]],
+    *,
+    random_objectives: int = 16,
+    seed: int = 0,
+    max_integral_words: int = 100000,
+    tol: float = 1e-8,
+) -> list[np.ndarray]:
+    """Return toy local-marginal source candidates.
+
+    Integral locally consistent words are included when the ambient cube is
+    small enough.  Additional candidates come from optimizing random unary
+    objectives over the local-marginal equality LP.
+    """
+    code = np.asarray(code, dtype=int)
+    blocks = code.shape[1]
+    alphabet = int(np.max(code)) + 1
+    sources: list[np.ndarray] = []
+    seen: set[tuple[int, ...]] = set()
+
+    def add_source(source: np.ndarray) -> None:
+        source = np.asarray(source, dtype=float)
+        key = _source_key(source, tol=tol)
+        if key in seen:
+            return
+        seen.add(key)
+        sources.append(source.copy())
+
+    ambient_size = alphabet ** blocks
+    if ambient_size <= max_integral_words:
+        for word in _locally_consistent_words(code, checks):
+            add_source(word_indicator(word, alphabet))
+
+    for coord in range(blocks):
+        for symbol in range(alphabet):
+            objective = np.zeros(blocks * alphabet, dtype=float)
+            objective[coord * alphabet + symbol] = 1.0
+            _, source = _local_marginal_optimize_source(
+                code,
+                checks,
+                objective,
+                tol=tol,
+            )
+            add_source(source)
+
+    rng = np.random.default_rng(seed)
+    for _ in range(random_objectives):
+        objective = rng.standard_normal(blocks * alphabet)
+        _, source = _local_marginal_optimize_source(
+            code,
+            checks,
+            objective,
+            tol=tol,
+        )
+        add_source(source)
+
+    return sources
+
+
+def _score_table_from_solution(code: np.ndarray, solution: np.ndarray) -> np.ndarray:
+    alphabet = int(np.max(code)) + 1
+    indicators = code_indicator_matrix(code, alphabet)
+    basis = span_basis(indicators)
+    coeffs = np.asarray(solution, dtype=float)[:basis.shape[1]]
+    return basis @ coeffs
+
+
+def local_marginal_score_band_gap(
+    code: np.ndarray,
+    omega: np.ndarray,
+    checks: list[tuple[int, ...]],
+    *,
+    random_objectives: int = 16,
+    seed: int = 0,
+    closure_rounds: int = 2,
+    max_integral_words: int = 100000,
+    tol: float = 1e-8,
+) -> dict[str, object]:
+    """Stress the score-band gap on sampled vertices of a local-marginal LP."""
+    code = np.asarray(code, dtype=int)
+    sources = local_marginal_source_candidates(
+        code,
+        checks,
+        random_objectives=random_objectives,
+        seed=seed,
+        max_integral_words=max_integral_words,
+        tol=tol,
+    )
+    queue = list(sources)
+    seen = {_source_key(source, tol=tol) for source in sources}
+    evaluated: set[tuple[int, ...]] = set()
+    best_gap = -math.inf
+    best_source: np.ndarray | None = None
+    best_result: dict[str, object] | None = None
+
+    for _ in range(closure_rounds + 1):
+        current = queue
+        queue = []
+        if not current:
+            break
+        for source in current:
+            key = _source_key(source, tol=tol)
+            if key in evaluated:
+                continue
+            evaluated.add(key)
+            result = source_score_band_gap(code, omega, source=source, tol=tol)
+            gap = float(result["gap"])
+            if gap > best_gap:
+                best_gap = gap
+                best_source = source.copy()
+                best_result = result
+
+            solution = result.get("solution")
+            if solution is None:
+                continue
+            score_table = _score_table_from_solution(code, np.asarray(solution))
+            try:
+                _, next_source = _local_marginal_optimize_source(
+                    code,
+                    checks,
+                    score_table,
+                    tol=tol,
+                )
+            except (LPInfeasible, LPUnbounded):
+                continue
+            next_key = _source_key(next_source, tol=tol)
+            if next_key not in seen:
+                seen.add(next_key)
+                sources.append(next_source.copy())
+                queue.append(next_source.copy())
+
+    if best_result is None:
+        best_gap = 0.0
+    return {
+        "gap": float(best_gap),
+        "source": best_source,
+        "source_count": len(sources),
+        "evaluated_count": len(evaluated),
+        "source_result": best_result,
+    }
+
+
 def integral_local_pseudoword_gaps(
     code: np.ndarray,
     omega: np.ndarray,
@@ -444,6 +865,60 @@ def run_local_integral_trial(
     }
 
 
+def run_local_marginal_trial(
+    *,
+    n_words: int,
+    blocks: int,
+    alphabet: int,
+    seed: int,
+    xi: float,
+    checks: list[tuple[int, ...]],
+    lam: float | None = None,
+    random_objectives: int = 16,
+    closure_rounds: int = 2,
+) -> dict[str, float | int | tuple[int, ...] | None]:
+    if lam is None:
+        lam = math.sqrt(2.0 * math.log(n_words) / blocks)
+    code = make_balanced_code(n_words, blocks, alphabet, seed)
+    symbol_scores = centered_symbol_scores(blocks, alphabet, seed + 1009)
+    scores = codeword_scores(code, symbol_scores)
+    gaps = float(np.max(scores)) - scores
+    omega = np.exp(np.minimum(lam * gaps, 700.0)) + xi
+    local = local_marginal_score_band_gap(
+        code,
+        omega,
+        checks,
+        random_objectives=random_objectives,
+        seed=seed + 2003,
+        closure_rounds=closure_rounds,
+    )
+    gap = float(local["gap"])
+    source = local["source"]
+    if source is None:
+        integrality_defect = 0.0
+    else:
+        source_matrix = np.asarray(source).reshape(blocks, alphabet)
+        integrality_defect = float(np.sum(1.0 - np.max(source_matrix, axis=1)))
+    source_result = local["source_result"]
+    min_chart = None
+    if isinstance(source_result, dict):
+        min_chart = source_result.get("min_chart")
+    return {
+        "seed": seed,
+        "n_words": n_words,
+        "blocks": blocks,
+        "alphabet": alphabet,
+        "lambda": float(lam),
+        "xi": float(xi),
+        "local_marginal_gap": gap,
+        "local_marginal_gap_over_xi": gap / xi if xi > 0 else math.inf,
+        "local_marginal_source_count": int(local["source_count"]),
+        "local_marginal_evaluated_count": int(local["evaluated_count"]),
+        "local_marginal_integrality_defect": integrality_defect,
+        "local_marginal_min_chart": min_chart,
+    }
+
+
 def run_trial(
     *,
     n_words: int,
@@ -488,6 +963,9 @@ def main() -> None:
     parser.add_argument("--xi", type=float, default=None)
     parser.add_argument("--cap-power", type=float, default=3.0)
     parser.add_argument("--local-check-size", type=int, default=None)
+    parser.add_argument("--local-marginal", action="store_true")
+    parser.add_argument("--local-marginal-objectives", type=int, default=16)
+    parser.add_argument("--local-marginal-closure-rounds", type=int, default=2)
     parser.add_argument("--lambda", dest="lam", type=float, default=None)
     args = parser.parse_args()
     xi = args.xi
@@ -536,6 +1014,40 @@ def main() -> None:
         worst_local = max(local_rows, key=lambda row: float(row["local_gap_over_xi"]))
         print(f"worst_local_seed,{worst_local['seed']}")
         print(f"worst_local_word,{worst_local['local_word']}")
+
+        if args.local_marginal:
+            marginal_rows = [
+                run_local_marginal_trial(
+                    n_words=args.n_words,
+                    blocks=args.blocks,
+                    alphabet=args.alphabet,
+                    seed=args.seed + trial,
+                    xi=xi,
+                    checks=checks,
+                    lam=args.lam,
+                    random_objectives=args.local_marginal_objectives,
+                    closure_rounds=args.local_marginal_closure_rounds,
+                )
+                for trial in range(args.trials)
+            ]
+            for key in [
+                "local_marginal_gap",
+                "local_marginal_gap_over_xi",
+                "local_marginal_source_count",
+                "local_marginal_evaluated_count",
+                "local_marginal_integrality_defect",
+            ]:
+                values = np.array([float(row[key]) for row in marginal_rows])
+                print(f"{key}_mean,{float(np.mean(values))}")
+                print(f"{key}_max,{float(np.max(values))}")
+            worst_marginal = max(
+                marginal_rows,
+                key=lambda row: float(row["local_marginal_gap_over_xi"]),
+            )
+            print(f"worst_local_marginal_seed,{worst_marginal['seed']}")
+            print(f"worst_local_marginal_min_chart,{worst_marginal['local_marginal_min_chart']}")
+    elif args.local_marginal:
+        parser.error("--local-marginal requires --local-check-size")
 
 
 if __name__ == "__main__":
