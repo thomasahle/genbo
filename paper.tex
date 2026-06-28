@@ -10607,6 +10607,98 @@ partition ignores the bias coordinates that certify the list size.
    \cref{cor:conditional-tilted-excess-certificate}.
 \end{proof}
 
+\begin{corollary}[Simplex-envelope influence compiler]
+   \label{cor:simplex-envelope-influence-compiler}
+   Continue with the notation of
+   \cref{cor:singleton-boltzmann-influence-certificate}.  Suppose that every
+   certified anchor fiber is contained in the \(q\)-ary product simplex,
+   \[
+      z_{i,a}\ge0,
+      \qquad
+      \sum_{a\in[q]}z_{i,a}=1
+      \qquad(i=1,\ldots,b).
+      \tag{LMX1}
+   \]
+   For \(j\in[N]\), define the inverse-Gram objective table
+   \[
+      y_{u,j}=-A_uG_u^+e_j\in\R^{bq},
+      \tag{LMX2}
+   \]
+   and its coordinate envelope around an anchor \(c\in C_u\) by
+   \[
+      \Delta_{u,c,j}
+      =
+      \sum_{i=1}^b
+      \left(
+         \max_{a\in[q]}y_{u,j}(i,a)-y_{u,j}(i,c_i)
+      \right).
+      \tag{LMX3}
+   \]
+   Then
+   \[
+      I_{u,c,j}\le \Delta_{u,c,j}
+      \qquad(c\in C_u,\ j\in[N]).
+      \tag{LMX4}
+   \]
+   Hence the Boltzmann singleton condition \((LMW1)\) follows from the purely
+   coordinatewise bound
+   \[
+      \sum_{j=1}^N
+      e^{\lambda(M(u)-W(c_j))}\Delta_{u,c,j}
+      \le \Xi_u
+      \qquad(c\in C_u).
+      \tag{LMX5}
+   \]
+
+   More generally, let \(\mathcal B_{u,c}\) be any partition of \(C_u\), for
+   instance distance or overlap shells around \(c\).  If
+   \[
+      \Delta_{u,c,j}\le D_{u,c}(B)
+      \qquad(j\in B,\ B\in\mathcal B_{u,c})
+      \tag{LMX6}
+   \]
+   and
+   \[
+      \sum_{B\in\mathcal B_{u,c}}
+      D_{u,c}(B)
+      \sum_{j\in B}e^{\lambda(M(u)-W(c_j))}
+      \le \Xi_u ,
+      \tag{LMX7}
+   \]
+   then \((LMW1)\) holds for the anchor \(c\).  Thus an LP/SA proof may be split
+   into two code-theoretic tasks: bound the inverse-Gram envelope
+   \(\Delta_{u,c,j}\) by distance or overlap, and bound the corresponding
+   planted tilted score enumerator.
+\end{corollary}
+
+\begin{proof}
+   Fix \(c\in C_u\), \(j\in[N]\), and \(z\in P_{u,c}\).  By \((LMX1)\),
+   \[
+   \begin{aligned}
+      \ip{y_{u,j}}{z-\iota(c)}
+      &=
+      \sum_{i=1}^b
+      \left(
+         \sum_{a\in[q]}y_{u,j}(i,a)z_{i,a}
+         -y_{u,j}(i,c_i)
+      \right)\\
+      &\le
+      \sum_{i=1}^b
+      \left(
+         \max_{a\in[q]}y_{u,j}(i,a)-y_{u,j}(i,c_i)
+      \right)
+      =
+      \Delta_{u,c,j}.
+   \end{aligned}
+      \tag{LMX8}
+   \]
+   Taking the supremum over \(z\in P_{u,c}\), the positive part, and recalling
+   \(y_{u,j}=-A_uG_u^+e_j\), proves \((LMX4)\).  Multiplying \((LMX4)\) by
+   \(e^{\lambda(M(u)-W(c_j))}\) and summing gives \((LMX5)\Rightarrow(LMW1)\).
+   The partitioned form \((LMX6)\)--\((LMX7)\) is the same inequality with the
+   sum over \(j\) grouped by \(B\in\mathcal B_{u,c}\).
+\end{proof}
+
 \begin{corollary}[Anchor-fiber LP/SA certificate compiler]
    \label{cor:anchor-fiber-lp-sa-compiler}
    Continue with the notation of
@@ -10967,6 +11059,14 @@ partition ignores the bias coordinates that certify the list size.
    anchor fiber.  This is probably the cleanest statement for an LP/SA proof
    based on Gaussian tilting: the hard object is a singleton influence
    partition function, not a family of selector LPs.
+
+   \Cref{cor:simplex-envelope-influence-compiler} translates this influence
+   partition function into ordinary \(q\)-ary code geometry.  For product-simplex
+   relaxations, \(I_{u,c,j}\) is bounded by the coordinate envelope of the
+   inverse-Gram objective \(-A_uG_u^+e_j\) around the anchor \(c\).  Therefore
+   the remaining theorem can be attacked by distance or overlap shells: prove
+   that the envelope decays with separation from \(c\), and prove a planted
+   tilted enumerator bound for the corresponding score shells.
 
    \Cref{cor:well-conditioned-gram-coefficients} gives the first elementary
    path to such a theorem.  If the local subcode has a well-conditioned overlap
