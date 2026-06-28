@@ -39423,6 +39423,66 @@ query mass rather than producing a cost-effective dense filter.
    \(\ell_1\) norm on nonnegative vectors.
 \end{proof}
 
+\begin{corollary}[No-discount form of layer-global water]
+   \label{cor:no-discount-layer-global-water}
+   Work in the setting of
+   \cref{cor:layer-global-shared-record-water}, and fix one active layer \(i\).
+   For any layer-global shared decomposition \((\ell,z,\mathcal B_i)\), define
+   its certified water cost
+   \[
+      \mathsf C_i(\ell,z,\mathcal B_i)
+      =
+      L_i^{\rm sh}
+      +
+      \sum_{b\in\mathcal B_i}\chi_{i,b}R_b .
+      \tag{NDW1}
+   \]
+   If no one-record guard-credit repair fires, then every such decomposition
+   satisfies
+   \[
+      \exp(\Lambda_i^{\rm Gibbs})
+      \le
+      \mathsf C_i(\ell,z,\mathcal B_i).
+      \tag{NDW2}
+   \]
+   Conversely, the empty-record decomposition \(\ell_h=X_{i,h}\) gives
+   \[
+      \mathsf C_i=
+      \left(\sum_{h\in\mathcal H_i}X_{i,h}^{p_i}\right)^{1/p_i}
+      =
+      \exp(\Lambda_i^{\rm Gibbs}).
+      \tag{NDW3}
+   \]
+   Hence the best possible no-repair layer-global shared water certificate has
+   value exactly \(\exp(\Lambda_i^{\rm Gibbs})\).
+
+   Thus global sharing removes duplicate bookkeeping across reporter cells, but
+   it does not create slack below the Gibbs water level.  Any strict improvement
+   over direct water control must come from a positive guard-credit repair, or
+   from a geometric estimate proving the water level itself small.  The
+   remaining storage theorem should therefore target \((GWL2)\) directly after
+   all profitable records have been materialized, rather than search for a
+   fractional allocation whose priced value is below \(\exp(\Lambda_i^{\rm
+   Gibbs})\).
+\end{corollary}
+
+\begin{proof}
+   The proof of \cref{cor:layer-global-shared-record-water} already showed that,
+   under no one-record repair,
+   \[
+      \exp(\Lambda_i^{\rm Gibbs})
+      \le
+      L_i^{\rm sh}
+      +
+      \sum_{b\in\mathcal B_i}\chi_{i,b}R_b,
+   \]
+   which is \((NDW2)\).  For the converse, take \(\mathcal B_i=\emptyset\) and
+   \(\ell_h=X_{i,h}\).  Then \(L_i^{\rm sh}\) is exactly the
+   \(\ell_{p_i}\)-norm of the profile weights, namely
+   \(\exp(\Lambda_i^{\rm Gibbs})\), and there is no record price.  This proves
+   \((NDW3)\) and the equality of the optimum with the Gibbs water level.
+\end{proof}
+
 \begin{corollary}[Paid-responsibility high-correlation star compiler]
    \label{cor:paid-responsibility-high-correlation-star}
    Work in the setting of
@@ -45257,6 +45317,9 @@ certified cell costs inside the layer water budget.
 artifact: if the allocations to a dense/star record can be certified over the
 whole active layer, that record's recursive price is charged once globally, not
 once in each reporter cell where it appears.
+\Cref{cor:no-discount-layer-global-water} records the corresponding limitation:
+after all positive guard-credit records have been materialized, no fractional
+shared allocation can cost less than the Gibbs water level itself.
 \Cref{lem:star-superlevel-column-verifier} and
 \cref{cor:pair-star-dense-column-generator} add the finite LP check: the star
 is retained only if its ball-thickened query side has positive reduced gain;
@@ -70872,6 +70935,9 @@ thresholds by one layer-level \(\ell_p\) budget for those certified costs.
 \Cref{cor:layer-global-shared-record-water} is the cross-cell version: a
 record shared by several reporter cells is charged through one layer-global
 allocation norm, so partitions remain only a certification device.
+\Cref{cor:no-discount-layer-global-water} then prevents a false optimization
+target: once positive guard-credit records are absent, the optimal global
+allocation value is exactly the Gibbs water level.
 \Cref{lem:star-superlevel-column-verifier} and
 \cref{cor:pair-star-dense-column-generator} turn such a superlevel into an
 ordinary fractional-cover column by using the certified query activation
@@ -71162,9 +71228,10 @@ the remaining proof should therefore construct shared allocation certificates,
 not profilewise duplicate star copies.
 \Cref{cor:aggregate-shared-cell-water-budget} first removes the uniform
 per-cell budget split.  \Cref{cor:layer-global-shared-record-water} is the
-sharper current storage target: prove a layer-global shared allocation whose
-low envelope plus one-time record prices fit the layer budget, or produce a
-guard repair.
+cross-cell charging form, but \cref{cor:no-discount-layer-global-water} shows
+that this cannot beat the Gibbs water level in a no-repair residual.  The
+current storage target is therefore sharper and simpler: prove \((GWL2)\)
+directly for the surviving layer, or produce a guard repair.
 \Cref{cor:metric-entropy-hall-shadow-closure} and
 \cref{cor:low-doubling-hall-shadow-close} sharpen the remaining geometric
 obligation: any positive Hall shadow of certified covering number below
