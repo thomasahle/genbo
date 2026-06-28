@@ -12742,6 +12742,158 @@ partition ignores the bias coordinates that certify the list size.
    \(G_u\) is symmetric this is equivalent to \(Z_N\) being invariant.
 \end{proof}
 
+\begin{corollary}[Range-restricted zero-sum inverse certificate]
+   \label{cor:range-restricted-zero-sum-min-chart}
+   Continue with the notation of
+   \cref{cor:canonical-zero-sum-min-chart}.  Let
+   \(\mathcal V_u\subseteq Z_N\cap\mathcal L_{u,0}\) be a set of admissible
+   chart-score vectors.  Suppose that, for every \(v\in\mathcal V_u\), we have
+   selected a zero-sum right inverse \(P_u(v)\in Z_N\) satisfying
+   \[
+      G_uP_u(v)=v,
+      \qquad
+      \left\|P_u(v)-\chi_u^{-1}v\right\|_2
+      \le \varepsilon_u\|v\|_2
+      \tag{LNU1}
+   \]
+   for some \(\chi_u>0\) and \(\varepsilon_u\ge0\).  If, for every chart
+   \(\tau\), there is a nonnegative off-chart majorant
+   \(\zeta^\tau\ge_\tau\mu_u\) such that \(v^\tau=h_\tau(\zeta^\tau)\in
+   \mathcal V_u\) and
+   \[
+      \frac1{\chi_u}\sum_j\Omega_{u,j}(v^\tau_j)^-
+      +
+      \varepsilon_u\|\Omega_u\|_2\,\|v^\tau\|_2
+      \le \Xi_u ,
+      \tag{LNU2}
+   \]
+   then the band-limited residual condition \((LNO2)\) holds.
+
+   This is the form needed for large code panels.  It does not require
+   \(G_u\) to be invertible, or close to scalar, on all of \(Z_N\); it only asks
+   for a controlled right inverse on the chart-score vectors actually used by
+   the residual certificate.
+\end{corollary}
+
+\begin{proof}
+   For a chart \(\tau\), set
+   \[
+      \theta^\tau=-P_u(v^\tau).
+      \tag{LNU3}
+   \]
+   Then \(\theta^\tau\in Z_N\) and
+   \(G_u\theta^\tau=-v^\tau=-h_\tau(\zeta^\tau)\), so the Gram equation in
+   \((LNR3)\) holds.  Write
+   \(P_u(v^\tau)=\chi_u^{-1}v^\tau+e^\tau\), where
+   \(\|e^\tau\|_2\le\varepsilon_u\|v^\tau\|_2\).  Since
+   \((a+b)^+\le a^+ + |b|\),
+   \[
+   \begin{aligned}
+      \sum_j\Omega_{u,j}(\theta^\tau_j)^+
+      &=
+      \sum_j\Omega_{u,j}\bigl(-\chi_u^{-1}v^\tau_j-e^\tau_j\bigr)^+ \\
+      &\le
+      \frac1{\chi_u}\sum_j\Omega_{u,j}(v^\tau_j)^-
+      +
+      \|\Omega_u\|_2\|e^\tau\|_2 \\
+      &\le \Xi_u .
+   \end{aligned}
+      \tag{LNU4}
+   \]
+   Hence \((LNR3)\) holds for every chart, and
+   \cref{cor:off-chart-majorant-min-chart} proves \((LNO2)\).
+\end{proof}
+
+\begin{corollary}[Dual form of the chart-majorant lower tail]
+   \label{cor:chart-majorant-lower-tail-dual}
+   Continue with the notation of
+   \cref{cor:canonical-zero-sum-min-chart}.  For a chart \(\tau\), a
+   nonnegative residual budget \(\mu\), and nonnegative prices
+   \(\omega\in\R_+^N\), define
+   \[
+      \mathfrak L_{u,\tau}(\mu,\omega)
+      =
+      \inf_{\zeta\ge_\tau\mu}
+      \sum_{j=1}^N\omega_j\bigl(h_\tau(\zeta)_j\bigr)^- .
+      \tag{LNV1}
+   \]
+   For a nonnegative selector \(s\in\R_+^N\), write
+   \[
+      s_i(a)=\sum_{j:\ c_j(i)=a}s_j .
+      \tag{LNV2}
+   \]
+   Then
+   \[
+      \mathfrak L_{u,\tau}(\mu,\omega)
+      =
+      \sup
+      \left\{
+         -\sum_{j=1}^Ns_jh_\tau(\mu)_j:
+         \begin{array}{l}
+            0\le s_j\le\omega_j\quad(j=1,\ldots,N),\\
+            s_i(a)\le s_i(\tau_i)\quad(i\in[b],\ a\ne\tau_i)
+         \end{array}
+      \right\}.
+      \tag{LNV3}
+   \]
+   Thus the optimal lower-tail majorant has an explicit dual obstruction: a
+   price-capped submeasure on true codewords for which the chart symbol is at
+   least as heavy as every competing symbol in every coordinate.
+
+   In the balanced scalar setting \((LNS4)\)--\((LNS5)\), the scalar lower-tail
+   check \((LNS6)\) is equivalent to
+   \[
+      \mathfrak L_{u,\tau}(\mu_u,\Omega_u)\le \chi_u\Xi_u
+      \qquad(\tau\in[q]^b).
+      \tag{LNV4}
+   \]
+   Hence a failed scalar residual certificate returns a concrete
+   chart-dominated selector \(s\), not an unspecified bad score table.
+\end{corollary}
+
+\begin{proof}
+   The chart-minimum coordinates of \(\zeta\) do not affect \(h_\tau(\zeta)\),
+   so write the off-chart variables as
+   \[
+      \zeta_{i,a}=\mu_{i,a}+\alpha_{i,a},
+      \qquad a\ne\tau_i,\quad \alpha_{i,a}\ge0 .
+      \tag{LNV5}
+   \]
+   Let \(g_{i,a}\in\R^N\) be the column
+   \[
+      g_{i,a}(j)=\mathbf1_{\{c_j(i)=a\}}-\mathbf1_{\{c_j(i)=\tau_i\}} .
+      \tag{LNV6}
+   \]
+   Then
+   \[
+      h_\tau(\zeta)
+      =
+      h_\tau(\mu)+\sum_{i,a\ne\tau_i}\alpha_{i,a}g_{i,a}.
+      \tag{LNV7}
+   \]
+   Introducing variables \(t_j\ge0\) for the negative parts, the primal LP in
+   \((LNV1)\) is
+   \[
+      \min\sum_j\omega_jt_j
+      \quad\text{subject to}\quad
+      t+h_\tau(\mu)+\sum_{i,a\ne\tau_i}\alpha_{i,a}g_{i,a}\ge0,
+      \quad t\ge0,\quad\alpha\ge0 .
+      \tag{LNV8}
+   \]
+   Its dual has a nonnegative multiplier \(s_j\) for the displayed lower-bound
+   constraints.  The variables \(t_j\ge0\) impose \(s_j\le\omega_j\), while
+   the variables \(\alpha_{i,a}\ge0\) impose
+   \[
+      \sum_js_jg_{i,a}(j)\le0,
+      \tag{LNV9}
+   \]
+   which is exactly \(s_i(a)\le s_i(\tau_i)\).  The dual objective is
+   \(-\sum_js_jh_\tau(\mu)_j\).  Linear-programming duality gives \((LNV3)\).
+   Finally, in the scalar balanced setting, \((LNS6)\) asks precisely for a
+   majorant whose objective in \((LNV1)\) is at most \(\chi_u\Xi_u\), proving
+   \((LNV4)\).
+\end{proof}
+
 \begin{corollary}[Anchor-fiber LP/SA certificate compiler]
    \label{cor:anchor-fiber-lp-sa-compiler}
    Continue with the notation of
@@ -13093,6 +13245,14 @@ partition ignores the bias coordinates that certify the list size.
    under the Gram errors expected for finite balanced code panels: it suffices
    to add an explicit spectral-error term
    \(\delta_u\|\Omega_u\|_2\|h_\tau(\zeta)\|_2/(\chi_u(1-\delta_u))\).
+   \Cref{cor:range-restricted-zero-sum-min-chart} removes the unnecessary
+   full-rank idealization: for large panels, it is enough to build a
+   scalar-like right inverse only on the selected chart-score vectors.
+   \Cref{cor:chart-majorant-lower-tail-dual} then optimizes the majorant
+   \(\zeta\) itself.  Its dual obstruction is a price-capped selector whose
+   coordinate histograms are dominated by the chart symbols.  Thus the
+   remaining random-code/Tanner-code theorem has a concrete list-recovery
+   shape: rule out heavy chart-dominated shadows under the internal-gap prices.
 
    \Cref{cor:leader-shift-near-leader-certificate} gives the clean terminal
    version of this idea when scalar leakage is killed exactly, or otherwise
