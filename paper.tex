@@ -9673,6 +9673,110 @@ partition ignores the bias coordinates that certify the list size.
    \(M(u)<T-\gamma\Rightarrow T-\gamma\ge M(u)\).
 \end{proof}
 
+\begin{corollary}[Balance witness for scalar leakage]
+   \label{cor:balance-witness-scalar-leakage}
+   Continue with the notation of
+   \cref{cor:shifted-overlap-coefficient-certificate}.  Suppose there is a
+   vector \(\ell_u\in\R^{bq}\) such that
+   \[
+      A_u^\top\ell_u=\mathbf 1_N,
+      \qquad
+      \ip{\ell_u}{h}=0\quad(h\in E_u),
+      \tag{LPL1}
+   \]
+   where \(\mathbf 1_N\) is the all-ones vector in \(\R^N\).  Then
+   \[
+      \kappa_u(h)
+      =
+      -\ip{\Pi_u^\perp\ell_u}{\Pi_u^\perp h}
+      \qquad(h\in E_u),
+      \tag{LPL2}
+   \]
+   and hence, with
+   \[
+      \epsilon_u(\ell_u)=\|\Pi_u^\perp\ell_u\|_2,
+      \tag{LPL3}
+   \]
+   one has
+   \[
+      |\kappa_u(h)|
+      \le
+      \epsilon_u(\ell_u)\|\Pi_u^\perp h\|_2
+      \le
+      \epsilon_u(\ell_u)r_u^\perp .
+      \tag{LPL4}
+   \]
+   In particular, if \(\ell_u\in L_u\), then
+   \[
+      \kappa_u(h)=0
+      \qquad(h\in E_u).
+      \tag{LPL5}
+   \]
+
+   If \(P_u\) is contained in the coordinate simplex constraints
+   \[
+      \sum_{a\in[q]}z_{i,a}=1
+      \qquad(i=1,\ldots,b),
+      \tag{LPL6}
+   \]
+   then every coordinate-block indicator
+   \[
+      e_i=\mathbf 1_{\{(i,a):a\in[q]\}}
+      \tag{LPL7}
+   \]
+   is a valid balance witness.  Thus the scalar leakage in \((LPD5)\) is
+   bounded above by
+   \[
+      (T-\gamma)\,
+      \Bigl(\min_{1\le i\le b}\|\Pi_u^\perp e_i\|_2\Bigr) r_u^\perp
+      \tag{LPL8}
+   \]
+   whenever \(T\ge\gamma\).  Equivalently one may use the averaged witness
+   \(b^{-1}\mathbf 1_{bq}\), giving the bound
+   \[
+      (T-\gamma)\frac{\|\Pi_u^\perp\mathbf 1_{bq}\|_2}{b}\,r_u^\perp .
+      \tag{LPL9}
+   \]
+\end{corollary}
+
+\begin{proof}
+   Let \(a=a_u(h)=G_u^+v_u(h)\).  Since \(A_u^\top\ell_u=\mathbf 1_N\),
+   \[
+      \kappa_u(h)=\mathbf 1_N^\top a
+      =
+      \ip{\ell_u}{A_ua}
+      =
+      \ip{\ell_u}{\Pi_u h}.
+      \tag{LPL10}
+   \]
+   By the balance assumption \(\ip{\ell_u}{h}=0\), and
+   \(h=\Pi_u h+\Pi_u^\perp h\), this equals
+   \[
+      \kappa_u(h)
+      =
+      -\ip{\ell_u}{\Pi_u^\perp h}
+      =
+      -\ip{\Pi_u^\perp\ell_u}{\Pi_u^\perp h},
+   \]
+   proving \((LPL2)\).  Cauchy's inequality gives \((LPL4)\), and
+   \((LPL5)\) follows when \(\Pi_u^\perp\ell_u=0\).
+
+   If \(P_u\) satisfies \((LPL6)\), then for any
+   \(h=z-\iota(a_u(z))\in E_u\),
+   \[
+      \ip{e_i}{h}
+      =
+      \sum_a z_{i,a}-1
+      =
+      0.
+   \]
+   Also every codeword has exactly one symbol in coordinate \(i\), so
+   \(A_u^\top e_i=\mathbf 1_N\).  Hence each \(e_i\) satisfies \((LPL1)\), and
+   \((LPL8)\) follows from \((LPL4)\).  The averaged witness
+   \(b^{-1}\mathbf 1_{bq}=b^{-1}\sum_i e_i\) also satisfies \((LPL1)\), giving
+   \((LPL9)\).
+\end{proof}
+
 \begin{corollary}[Well-conditioned Gram coefficient bounds]
    \label{cor:well-conditioned-gram-coefficients}
    Continue with the notation of
@@ -9850,6 +9954,16 @@ partition ignores the bias coordinates that certify the list size.
    pseudocodeword excesses should have negligible scalar leakage and should not
    place large negative coefficients on many real codewords far below the
    frontier.
+
+   \Cref{cor:balance-witness-scalar-leakage} shows that scalar leakage is not
+   an independent obstruction for ordinary q-ary LP relaxations.  Every
+   coordinate simplex constraint supplies a balance witness \(e_i\).  If a
+   coordinate witness lies in the local codeword span, then \(\kappa_u(h)=0\)
+   exactly.  If it is only close to that span, the leakage is paid by the
+   orthogonal residual \(r_u^\perp\), which is already present in the Gaussian
+   projection certificate.  Thus the real projected-bias problem is the
+   negative coefficient mass against below-frontier score gaps, not an
+   additional scalar shift defect.
 
    \Cref{cor:well-conditioned-gram-coefficients} gives the first elementary
    path to such a theorem.  If the local subcode has a well-conditioned overlap
