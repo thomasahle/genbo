@@ -37883,6 +37883,108 @@ query mass rather than producing a cost-effective dense filter.
    \((WOCS9)\).
 \end{proof}
 
+\begin{corollary}[Cap-prefix pricing of overload-cohort high stars]
+   \label{cor:overload-cohort-cap-prefix-tail}
+   Work in the setting of
+   \cref{cor:weighted-overload-cohort-correlation-split}.  Assume in addition
+   that the local filter-cover instance satisfies
+   \cref{cor:cap-centered-paid-prefix-quadratic} with \(o=0\), \(R=1\),
+   \(\gamma=\theta_m\), and with all centers \(a\in P\) available.  Thus
+   \[
+      c_a=\theta_m a,
+      \qquad
+      R_+=\sqrt{1-\theta_m^2},
+      \qquad
+      W_a=P\cap B(c_a,R_+),
+      \tag{OCPT1}
+   \]
+   with activation \(a_a^+\), paid degree \(d_a^+(b)\), and query price
+   \(A_a^+\) as in \((CPQ3)\)--\((CPQ5)\).
+
+   Let \(M_a(b)\) be the high-correlation multiplicity from \((WOCS7)\), and
+   split it by the cap-centered paid degree:
+   \[
+      M_a^{\rm pay}(b)=\min\{M_a(b),d_a^+(b)\},
+      \qquad
+      M_a^{\rm over}(b)=\bigl(M_a(b)-d_a^+(b)\bigr)_+ .
+      \tag{OCPT2}
+   \]
+   Put
+   \[
+      \mathcal W_{\rm over}=\sum_{a,b}M_a^{\rm over}(b).
+      \tag{OCPT3}
+   \]
+   If \(M^{\rm pay}\equiv0\), put \(J_{\rm pay}=1\).  Otherwise assume the
+   positive values of \(M_a^{\rm pay}(b)\) lie in a certified dyadic range with
+   dynamic-range factor \(J_{\rm pay}\).  Fix a scale \(\Lambda>0\).  Suppose
+   that every paid-clipped dyadic level
+   \[
+      U_{a,t}^{\rm pay}=\{b:M_a^{\rm pay}(b)\ge t\}
+      \tag{OCPT4}
+   \]
+   with \(t|U_{a,t}^{\rm pay}|\ge\Lambda\) has cap-centered child price below
+   \(\Lambda\):
+   \[
+      e^{B_0\theta_m^2}\Psi(R_+)
+      \left(
+         A_a^+|U_{a,t}^{\rm pay}|^\rho
+         +\sigma |U_{a,t}^{\rm pay}|^{1+\rho}
+      \right)
+      <\Lambda .
+      \tag{OCPT5}
+   \]
+   Then either a \((B_0+3)\)-quadratic cap-centered paid-prefix repair fires, or
+   the realized high-correlation pair congestion obeys
+   \[
+      \mathcal W_{\rm hi}
+      \le
+      \mathcal W_{\rm over}+2mJ_{\rm pay}\Lambda .
+      \tag{OCPT6}
+   \]
+   Consequently, in a no-repair residual satisfying \((OCPT5)\),
+   \[
+      \E\,\mathcal W_2
+      \le
+      m^{1+\rho}\log^{2A+2K+1}m
+      +
+      \E\,\mathcal W_{\rm over}
+      +
+      2mJ_{\rm pay}\Lambda .
+      \tag{OCPT7}
+   \]
+
+   Thus the high-correlation side of a certified overload cohort has only one
+   unpaid component after cap-prefix verification: the explicit cap-centered
+   overload \(\mathcal W_{\rm over}\).  That is the same object routed by
+   \cref{lem:cap-centered-transport-hall} and
+   \cref{cor:cap-centered-overload-weighted-storage}; the low and cap-paid
+   parts no longer require a separate branching analysis.
+\end{corollary}
+
+\begin{proof}
+   If \(M_a(b)>0\), then \((a,b)\) appears in the high-correlation edge set of
+   some overload child, so \(\ip{a}{b}>\theta_m\).  By
+   \cref{cor:cap-centered-pair-star-reporter} with
+   \(\underline\theta=\theta_m\), this implies \(b\in W_a\).  Hence the support
+   condition \((CCH1)\) holds for the multiplicities \(M_a(b)\).
+
+   Apply \cref{cor:clipped-cap-centered-high-correlation-handoff} to these
+   multiplicities with margin \(\gamma=\theta_m\).  Its threshold form
+   \((CCH7)\), together with the price condition \((OCPT5)\), says exactly that
+   either a \((B_0+3)\)-quadratic repair fires or
+   \[
+      \mathcal W_{\rm hi}
+      \le
+      \mathcal W_{\rm over}+2|P|J_{\rm pay}\Lambda .
+   \]
+   Since \(|P|\le m\), this gives \((OCPT6)\).
+
+   Finally \(\mathcal W_2=\mathcal W_{\rm lo}+\mathcal W_{\rm hi}\).  In a
+   no-repair residual satisfying \((OCPT5)\), combine \((OCPT6)\) with the
+   low-correlation expectation bound \((WOCS6)\) and take expectation over the
+   cap labels.  This proves \((OCPT7)\).
+\end{proof}
+
 \begin{lemma}[Certified star-panel separator]
    \label{lem:certified-star-panel-separator}
    Work in the setting of \cref{lem:star-prefix-weak-type-residual}, and assume
@@ -73587,6 +73689,12 @@ low-correlation term and explicit cap-centered high-correlation stars.  Thus
 the remaining overload theorem is no longer an integer-cohort or diffuse-pair
 problem; it is the finite task of sending those high stars to the paid-prefix
 verifier or to the shared-child tuple-congestion certificate.
+\Cref{cor:overload-cohort-cap-prefix-tail} performs the paid-prefix part of
+that task: in a no-repair residual, the high-correlation cohort congestion is
+bounded by its explicit cap-centered overload plus a fixed tail
+\(2mJ_{\rm pay}\Lambda\).  Thus any surviving polynomial high-cohort storage
+obstruction must be concentrated in the same overload object already handled by
+the Hall transport and weighted shared-storage machinery.
 \Cref{cor:dyadic-distinct-storage-bucket-net} rewrites that target as a dyadic
 large-child counting problem: for every recursive price scale, bound the number
 of distinct canonical bucket nets whose shared child index has that price.
