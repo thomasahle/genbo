@@ -65428,6 +65428,65 @@ certificate is the verified positive-gain column and the finite LP it augments.
    monotonicity and submodularity.
 \end{proof}
 
+\begin{corollary}[Routed capped-capture support screen]
+   \label{cor:routed-capped-capture-support-screen}
+   Work in the setting of
+   \cref{cor:capped-atom-capture-support-screen}.  Let \(S\subseteq W_B\), and
+   suppose preprocessing certifies nonnegative routed atom loads
+   \(r_{a,p}\) for \(p\in S\) such that
+   \[
+      0\le r_{a,p}\le h_{B,p,a},
+      \qquad
+      \sum_{p\in S}r_{a,p}\le b_a
+      \qquad\text{for every atom }a.
+      \tag{RAS1}
+   \]
+   Define the routed captured value
+   \[
+      \mathcal R_B^{u^z}(S,r)
+      =
+      \sum_a u_a^z\sum_{p\in S}r_{a,p}.
+      \tag{RAS2}
+   \]
+   If
+   \[
+      \mathcal R_B^{u^z}(S,r)>
+      \bigl(|S|+2K_B^\natural\bigr)\Theta_B^{\rm net},
+      \tag{RAS3}
+   \]
+   then \(B\) contains a positive shared top-prefix column.
+
+   Conversely, if no top prefix of \(B\) has positive reduced cost against
+   \(u^z\), then every such routed certificate satisfies the reverse inequality
+   in \((RAS3)\).
+
+   Thus a geometric proposal does not have to evaluate the full capped
+   submodular objective.  It may lower-certify any feasible atom-to-support
+   routing; the verifier compares the routed mass to the same affine support
+   price.
+\end{corollary}
+
+\begin{proof}
+   By \((RAS1)\),
+   \[
+      \sum_{p\in S}r_{a,p}
+      \le
+      \min\left\{b_a,\sum_{p\in S}h_{B,p,a}\right\}
+      =
+      \min\{b_a,H_{B,S,a}\}.
+      \tag{RAS4}
+   \]
+   Multiplying by \(u_a^z\), summing over \(a\), and using \((CAS1)\) gives
+   \[
+      \mathcal R_B^{u^z}(S,r)\le\mathcal C_B^{u^z}(S).
+      \tag{RAS5}
+   \]
+   Hence \((RAS3)\) implies \((CAS2)\), and
+   \cref{cor:capped-atom-capture-support-screen} gives the positive top prefix.
+   If no top prefix is positive, then \((CAS3)\) and \((RAS5)\) give the
+   reverse inequality for every routed certificate.
+\end{proof}
+
 \begin{corollary}[Fractional capped-capture threshold screen]
    \label{cor:fractional-capped-capture-threshold-screen}
    Work in the setting of
@@ -65564,6 +65623,8 @@ certificate is the verified positive-gain column and the finite LP it augments.
    By \cref{cor:capped-atom-capture-support-screen}, one sufficient positive
    branch is a certified support whose capped atom-capture value beats the
    affine clipped support price.  By
+   \cref{cor:routed-capped-capture-support-screen}, it is enough to lower-certify
+   any feasible atom-to-support routing with that surplus.  By
    \cref{cor:fractional-capped-capture-threshold-screen}, the same branch may
    be proposed fractionally and then rounded by thresholding the layer-cake
    surplus.
@@ -81525,6 +81586,9 @@ capped atom capture
 support price, a monotone-submodular coverage objective that facility,
 range-reporting, AQ, lattice, or list-decoding proposal routines can try to
 maximize in build time.
+\Cref{cor:routed-capped-capture-support-screen} gives the lower-certified
+interface for such routines: they may route atom mass into a support under the
+same atom caps instead of evaluating the full capped capture objective.
 \Cref{cor:fractional-capped-capture-threshold-screen} makes this proposal layer
 fully fractional: if a routine certifies layer-cake capped capture above the
 fractional support price, one deterministic threshold support gives the same
