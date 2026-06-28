@@ -38844,6 +38844,129 @@ query mass rather than producing a cost-effective dense filter.
    \(\lambda<1\).
 \end{proof}
 
+\begin{corollary}[Sponsor entropy gives a packing witness]
+   \label{cor:sponsor-layer-packing-witness}
+   Work in the setting of
+   \cref{cor:strong-sponsor-layer-generated-entropy}, and assume no generated
+   top-prefix column is positive.  Let \(d_{\rm gen}\) be any pseudometric on
+   the exposed layer \(L\), and fix a scale \(\Delta>0\).  Suppose that for
+   every \(\kappa_0\in L\), the \(d_{\rm gen}\)-ball
+   \[
+      B_{\rm gen}(\kappa_0,\Delta)
+      =
+      \{\kappa\in L:d_{\rm gen}(\kappa,\kappa_0)\le\Delta\}
+      \tag{SPW1}
+   \]
+   is certified by a generated template copy satisfying \((SGE2)\), with all
+   realized cardinalities available and with the common price envelope
+   \((SGE1)\).  If \(A>0\) and the layer is not storage-dominated,
+   \[
+      \theta>4\psi_\star\zeta K^\rho ,
+      \tag{SPW2}
+   \]
+   then every cover of \(L\) by \(d_{\rm gen}\)-balls of radius \(\Delta\) has
+   size at least
+   \[
+      \left(
+         \frac{\theta K^{1-\rho}}{4\psi_\star A}
+      \right)^{1/(1-\rho)} .
+      \tag{SPW3}
+   \]
+   Consequently every maximal \(\Delta\)-separated subset
+   \(E\subseteq L\) satisfies the same lower bound.  In terms of the strong cut
+   excess,
+   \[
+      |E|
+      \ge
+      \left(
+         \frac{E_z^\beta(\mathcal U)}
+              {8D\,\psi_\star A\,K^\rho}
+      \right)^{1/(1-\rho)} .
+      \tag{SPW4}
+   \]
+   When \(\zeta=0\), the constants \(4\) and \(8\) in \((SPW3)\)--\((SPW4)\)
+   may be replaced by \(2\) and \(4\), respectively.
+\end{corollary}
+
+\begin{proof}
+   Let \(C_1,\ldots,C_J\) be any cover of \(L\) by radius-\(\Delta\)
+   \(d_{\rm gen}\)-balls.  Assign each \(\kappa\in L\) to one covering ball.
+   By the certification hypothesis, this is an admissible generated cover in
+   the definition of \(N_{\rm gen}^{\rm sp}(L,\theta)\).  Since no generated
+   top-prefix column is positive and \((SPW2)\) rules out the storage-dominated
+   alternative, \((SGE5)\) gives \((SPW3)\).
+
+   If \(E\) is maximal \(\Delta\)-separated, then the balls
+   \(B_{\rm gen}(\kappa,\Delta)\), \(\kappa\in E\), cover \(L\); otherwise one
+   could add an uncovered point of \(L\) to \(E\).  Applying \((SPW3)\) to this
+   cover gives the same lower bound for \(|E|\).  Finally \((SCL9)\) gives
+   \(\theta K\ge E_z^\beta(\mathcal U)/(2D)\), which turns \((SPW3)\) into
+   \((SPW4)\).  When \(\zeta=0\), use the sharper constant in the final
+   sentence of \cref{cor:strong-sponsor-layer-generated-entropy}.
+\end{proof}
+
+\begin{corollary}[Sponsor packing feeds the spherical energy screen]
+   \label{cor:sponsor-packing-spherical-energy-screen}
+   Work in the setting of
+   \cref{cor:sponsor-layer-packing-witness}, and let
+   \(E\subseteq L\) be a separated witness.  Suppose every
+   \(\kappa\in E\) has a representative \(x_\kappa\in\mathbb S^{d-1}\).  Let
+   \(U_G\) be any spherical, Gaussian-cap, code, or list-decoded bucket drawn
+   from a law \(G\), and partition the ordered distinct pairs
+   \(E_{\ne}^2\) into finitely many profiles \(\Pi_E\).  Assume each profile
+   \(\pi\in\Pi_E\) has a certified pair-intersection energy
+   \[
+      \Pr_G[x_\kappa,x_{\kappa'}\in U_G]\le e^{-I_\pi}
+      \qquad((\kappa,\kappa')\in\pi),
+      \tag{SPS1}
+   \]
+   Put
+   \[
+      X_E(G)=\sum_{\kappa\in E}\mathbf 1\{x_\kappa\in U_G\}.
+      \tag{SPS2}
+   \]
+   Then
+   \[
+      \E_G X_E(G)^2
+      \le
+      \sum_{\kappa\in E}\Pr_G[x_\kappa\in U_G]
+      +
+      \sum_{\pi\in\Pi_E}|\pi|e^{-I_\pi}.
+      \tag{SPS3}
+   \]
+   In particular, if
+   \[
+      I_\pi\ge\log|\pi|+\Lambda
+      \qquad(\pi\in\Pi_E),
+      \tag{SPS4}
+   \]
+   then the distinct-pair contribution of the sponsor packing is at most
+   \[
+      |\Pi_E|e^{-\Lambda}.
+      \tag{SPS5}
+   \]
+   Thus a strong sponsor layer that survives generated columns has been reduced
+   to the standard spherical/list-decoding entropy-energy target: either the
+   bucket law pays the separated packing by \((SPS5)\), or a profile violating
+   \((SPS4)\) is the high-correlation signal to feed back into the existing
+   dense-star and shared-prefix verifiers.
+\end{corollary}
+
+\begin{proof}
+   Expand the second moment:
+   \[
+      \E_G X_E(G)^2
+      =
+      \sum_{\kappa\in E}\Pr_G[x_\kappa\in U_G]
+      +
+      \sum_{\substack{\kappa,\kappa'\in E\\ \kappa\ne\kappa'}}
+         \Pr_G[x_\kappa,x_{\kappa'}\in U_G].
+   \]
+   Summing \((SPS1)\) over the profile partition proves \((SPS3)\).  Under
+   \((SPS4)\), each profile contributes at most \(e^{-\Lambda}\), giving
+   \((SPS5)\).
+\end{proof}
+
 \begin{lemma}[Certified star-panel separator]
    \label{lem:certified-star-panel-separator}
    Work in the setting of \cref{lem:star-prefix-weak-type-residual}, and assume
@@ -74608,6 +74731,15 @@ dimension-density screen: a low-doubling, range-reporting, additive-code, or
 list-decoded cover closes the sponsor layer whenever its growth exponent makes
 \((SGD2)\) or the cut-excess form \((SGD3)\) hold.  A surviving non-storage
 layer therefore has an explicit generated-dimension lower bound \((SGD5)\).
+\Cref{cor:sponsor-layer-packing-witness} turns that lower bound into the
+geometric object needed by the spherical branch: for any certified generated
+metric, a surviving layer contains a separated packing of the same entropy
+scale.  \Cref{cor:sponsor-packing-spherical-energy-screen} then applies the
+ordinary second-moment entropy-energy test to representatives of that packing,
+so the remaining sponsor obstruction is now a concrete choice: prove the
+spherical/list-decoding energy bound for this separated witness, or route an
+energy-failing high-correlation profile back to the dense-star and
+shared-prefix verifiers.
 \Cref{cor:dyadic-distinct-storage-bucket-net} rewrites that target as a dyadic
 large-child counting problem: for every recursive price scale, bound the number
 of distinct canonical bucket nets whose shared child index has that price.
