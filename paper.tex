@@ -38264,6 +38264,70 @@ query mass rather than producing a cost-effective dense filter.
    \((HBP3)\).
 \end{proof}
 
+\begin{corollary}[Disjoint sponsored Hall-tail schedule]
+   \label{cor:disjoint-sponsored-hall-tail-schedule}
+   Work in the setting of
+   \cref{cor:benefit-priced-hall-tail-materialization}.  For each seed \(z\),
+   let \(\mathcal I_z^{\rm tail}\) be the Hall-tail atom pool with weights
+   \(b_{z,i}\), and write
+   \[
+      \mathsf H_z=\sum_{i\in\mathcal I_z^{\rm tail}}b_{z,i}.
+      \tag{DHS1}
+   \]
+   Suppose the materializer assigns to every retained star \(s\in\mathcal S_z\)
+   a sponsor cohort
+   \[
+      \mathcal I_{z,s}\subseteq\mathcal I_z^{\rm tail},
+      \qquad
+      \mu_{z,s}=\sum_{i\in\mathcal I_{z,s}}b_{z,i},
+      \tag{DHS2}
+   \]
+   and these cohorts are pairwise disjoint.  Suppose also that every distinct
+   retained child is benefit-sponsored by the retained cohorts,
+   \[
+      u_{z,\kappa}\le
+      \beta\sum_{s:\,\kappa_{z,s}=\kappa}\mu_{z,s}
+      \qquad(\kappa\in\mathcal C_z^{\rm tail}).
+      \tag{DHS3}
+   \]
+   If
+   \[
+      \E_z\Gamma_z+\beta\,\E_z\mathsf H_z\le aS
+      \tag{DHS4}
+   \]
+   under the active first-moment hypotheses of
+   \cref{cor:weighted-occurrence-discounted-tuple-storage}, then the Hall-tail
+   overload stars satisfy the weighted tuple-storage certificate.
+
+   Equivalently, a build may use the following safe rule.  Maintain unused
+   Hall-tail atoms.  Retain a candidate star only when it can reserve an unused
+   sponsor cohort whose mass certifies \((DHS3)\) for its canonical child, and
+   then remove that cohort from the unused pool.  This rule has overlap one.
+   If it cannot retain a candidate child, the residual obstruction is explicit:
+   that child has recursive price larger than \(\beta\) times its available
+   unused Hall sponsor mass.
+\end{corollary}
+
+\begin{proof}
+   Pairwise disjointness gives
+   \[
+      \sum_{\kappa\in\mathcal C_z^{\rm tail}}M_z^{\rm tail}(\kappa)
+      =
+      \sum_{s\in\mathcal S_z}\mu_{z,s}
+      \le
+      \mathsf H_z .
+   \]
+   Thus \((HBP6)\) holds with \(\chi_z=1\).  Condition \((DHS3)\) is exactly
+   \((HBP2)\), and \((DHS4)\) is \((HBP7)\) with \(\chi_z=1\).  Applying
+   \cref{cor:benefit-priced-hall-tail-materialization} proves the storage
+   certificate.
+
+   The greedy rule constructs pairwise disjoint cohorts by removing every
+   reserved sponsor cohort from the unused pool.  If a candidate child cannot be
+   retained by this rule, the negation of its retention test is precisely the
+   final displayed unsupported-child condition.
+\end{proof}
+
 \begin{lemma}[Certified star-panel separator]
    \label{lem:certified-star-panel-separator}
    Work in the setting of \cref{lem:star-prefix-weak-type-residual}, and assume
@@ -73992,6 +74056,11 @@ recursive price is sponsored by the Hall atom mass that exposed them.  Then
 storage is paid by a bounded-overlap Hall-mass estimate; a surviving failure is
 an explicit unsupported child with too little Hall mass per unit recursive
 price.
+\Cref{cor:disjoint-sponsored-hall-tail-schedule} records the overlap-one
+implementation: reserve disjoint Hall-atom sponsor cohorts for retained
+children.  The remaining geometric question is therefore whether this disjoint
+sponsored schedule captures enough of the Hall-tail obstruction, or whether the
+unreserved residue must feed a different dense/prefix repair.
 \Cref{cor:dyadic-distinct-storage-bucket-net} rewrites that target as a dyadic
 large-child counting problem: for every recursive price scale, bound the number
 of distinct canonical bucket nets whose shared child index has that price.
