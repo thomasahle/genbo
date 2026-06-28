@@ -38035,6 +38035,75 @@ query mass rather than producing a cost-effective dense filter.
    is therefore \((NFT4)\), and feasibility follows.
 \end{proof}
 
+\begin{corollary}[Local entropy-slack screen for reciprocal storage]
+   \label{cor:local-entropy-slack-reciprocal-storage}
+   Work in the setting of
+   \cref{cor:reciprocal-multiplicity-fixed-tail-storage}, and let
+   \(\mathcal I\) be the finite set of active profile layers
+   \(i=(\pi,\ell_i)\).  Put \(M_{\mathcal I}=\max\{1,|\mathcal I|\}\).  Suppose
+   no layer produces the one-record guard-credit repair.  If
+   \(\Sigma^+=\emptyset\), feasibility is automatic.  Otherwise assume \(a>0\),
+   the corresponding active first-moment condition holds, and for every
+   \(i\in\mathcal I\),
+   \[
+      2^{-\ell_i}\mathcal A_i^{\rm lo}
+      \le
+      \frac{aS-\E_z\Gamma_z}{2M_{\mathcal I}},
+      \qquad
+      2^{-\ell_i}4|P|J_i^{\rm hi}R_i
+      \le
+      \frac{aS-\E_z\Gamma_z}{2M_{\mathcal I}},
+      \tag{LES1}
+   \]
+   with \(aS>\E_z\Gamma_z\).  Then \((\mathsf{ESFC}_\Sigma)\) is feasible.
+
+   In particular, if \(\mathcal A_i^{\rm lo}=W_i^{\rm lo}
+   \exp(-\beta_i^2/(1+\theta_i))\), the first inequality in \((LES1)\) follows
+   from the local entropy-slack condition
+   \[
+      \frac{\beta_i^2}{1+\theta_i}
+      \ge
+      \log_+
+      \frac{
+         2M_{\mathcal I}W_i^{\rm lo}
+      }{
+         2^{\ell_i}(aS-\E_z\Gamma_z)
+      } .
+      \tag{LES2}
+   \]
+   Thus, when the number of active profile layers and the metadata term are
+   \(\log^{O(1)}n\), the aggregate low-correlation storage check loses only an
+   \(O(\log\log n)\) additive energy margin per layer.  The high-correlation
+   side is similarly local: each layer only has to make its fixed dense-repair
+   tail fit the second inequality of \((LES1)\), or else expose the corresponding
+   smaller-radius repair.
+\end{corollary}
+
+\begin{proof}
+   Summing \((LES1)\) over \(i\in\mathcal I\) gives
+   \[
+      \sum_i2^{-\ell_i}
+      \left(
+         \mathcal A_i^{\rm lo}+4|P|J_i^{\rm hi}R_i
+      \right)
+      \le
+      aS-\E_z\Gamma_z .
+   \]
+   This is exactly \((RMF2)\), so
+   \cref{cor:reciprocal-multiplicity-fixed-tail-storage} applies.
+
+   For the displayed entropy condition, if the logarithm argument is at most
+   one then the right side of \((LES2)\) is zero and the first inequality in
+   \((LES1)\) is immediate.  Otherwise exponentiating \((LES2)\) gives
+   \[
+      W_i^{\rm lo}
+      \exp\!\left(-\frac{\beta_i^2}{1+\theta_i}\right)
+      \le
+      \frac{2^{\ell_i}(aS-\E_z\Gamma_z)}{2M_{\mathcal I}},
+   \]
+   which is the same inequality after multiplying by \(2^{-\ell_i}\).
+\end{proof}
+
 \begin{corollary}[Paid-responsibility high-correlation star compiler]
    \label{cor:paid-responsibility-high-correlation-star}
    Work in the setting of
@@ -43808,6 +43877,10 @@ star superlevel is a certified smaller-radius dense proposal.
 correlation split with the reciprocal-multiplicity discount: after dyadic
 occurrence layering, the surviving storage endpoint is exactly low-correlation
 Gaussian energy plus an explicit fixed high-correlation dense-repair tail.
+\Cref{cor:local-entropy-slack-reciprocal-storage} makes this endpoint local:
+for polylogarithmically many active profile layers, an \(O(\log\log n)\)
+additive entropy-energy margin per low-correlation layer and a matching local
+fixed-tail bound are enough to close the aggregate storage sum.
 \Cref{lem:star-superlevel-column-verifier} and
 \cref{cor:pair-star-dense-column-generator} add the finite LP check: the star
 is retained only if its ball-thickened query side has positive reduced gain;
@@ -69367,6 +69440,10 @@ endpoint form of this statement: reciprocal occurrence multiplicity supplies the
 \(2^{-\ell}\) layer discount, low-correlation layers are paid by Gaussian
 entropy-energy, and any unpaid high-correlation layer must expose a verified
 smaller-radius dense/star repair.
+\Cref{cor:local-entropy-slack-reciprocal-storage} removes the need for a global
+aggregate calculation when the active profile set is polylogarithmic: each
+low-correlation layer only needs the local entropy slack \((LES2)\), and each
+high-correlation layer only needs its fixed tail to fit its local budget.
 \Cref{lem:star-superlevel-column-verifier} and
 \cref{cor:pair-star-dense-column-generator} turn such a superlevel into an
 ordinary fractional-cover column by using the certified query activation
