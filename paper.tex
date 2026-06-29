@@ -92232,6 +92232,89 @@ amplified in the next proposition.
    \cref{cor:sketched-responsibility-lister}, this gives the final statement.
 \end{proof}
 
+\begin{corollary}[Sparse terminal lists initialize responsibility sketches]
+   \label{cor:sparse-terminal-sketch-initialization}
+   Work in the setting of
+   \cref{cor:trellis-sketch-responsibility-aggregation}.  Let
+   \(\mathcal T_\ell=\{t:\lambda(t)=\ell\}\) be the terminals in the sampled
+   quotient class, and suppose preprocessing stores the terminal posting lists
+   \[
+      C_t=\{x\in S:U_x(t)=1\}.
+      \tag{STI1}
+   \]
+   For the heavy-responsibility sketch of
+   \cref{lem:linear-sketch-heavy-responsibilities}, let \(D\) be the number of
+   sketch rows, \(W\) the row width, and \(b_0=\lceil\log_2m\rceil\) the
+   identifier length.  Put
+   \[
+      I(\ell)=\sum_{t\in\mathcal T_\ell}|C_t|.
+      \tag{STI2}
+   \]
+   Then all terminal rewards needed for the total counters
+   \(c_x=\mathbf1\{h_s(x)=a\}\) and bit counters
+   \(c_x=\mathbf1\{h_s(x)=a,\ {\rm bit}_k(x)=1\}\) can be initialized from the
+   posting lists in time
+   \[
+      O\!\left(D(b_0+1)I(\ell)\right),
+      \tag{STI3}
+   \]
+   using sparse terminal-reward maps.  In particular, if
+   \[
+      D,b_0=\log^{O(1)}m,\qquad
+      |E|=\log^{O(1)}m,\qquad
+      \E_{\ell\sim\Pi_Y}I(\ell)\le d\,m^\rho\log^{O_c(1)}m,
+      \tag{STI4}
+   \]
+   then the trellis aggregation cost in \((SRL2)\) is
+   \(d\,m^\rho\log^{O_c(1)}m\).  Hence the sketched heavy-responsibility
+   lister of
+   \cref{cor:sketched-responsibility-lister} is fully implementable under
+   \((STI4)\).
+
+   Conversely, in a raw terminal-list access model with no precomputed
+   terminal sketch summaries and no factorization of \(U_x(t)\), exact
+   initialization of arbitrary requested rewards \(g_c(t)=\sum_xc_xU_x(t)\)
+   has worst-case cost \(\Omega(I(\ell))\).  Therefore a quotient class with
+   \(I(\ell)=m^\rho\log^{\omega(1)}m\) cannot be made into a
+   polylog-overhead responsibility sketch merely by running the BCJR recursion;
+   it needs precomputed sketch histograms, a factorized incidence law, or a
+   separate code/lattice list-recovery reporter that avoids scanning the raw
+   terminal incidences.
+\end{corollary}
+
+\begin{proof}
+   For each terminal \(t\in\mathcal T_\ell\), scan its posting list \(C_t\).
+   When resident \(x\in C_t\) is encountered and sketch row \(s\) is fixed, it
+   contributes one unit to the total counter \(a=h_s(x)\), namely to the
+   terminal reward for \(c_x=\mathbf1\{h_s(x)=a\}\).  It also contributes one
+   unit to the bit counter \((s,a,k)\) for every identifier bit \(k\) that is
+   one in \(x\).  Thus one incidence \((t,x)\) creates at most
+   \(D(b_0+1)\) sparse reward updates, and all incidences in the sampled
+   quotient create at most \(D(b_0+1)I(\ell)\) updates.  Counters not created
+   by the scan have terminal reward identically zero and need not be
+   materialized.
+
+   After these terminal rewards have been initialized,
+   \cref{cor:trellis-sketch-responsibility-aggregation} computes each nonzero
+   counter by one backward pass over the acyclic graph.  Under \((STI4)\), the
+   expected initialization work is \(d\,m^\rho\log^{O_c(1)}m\), and the
+   number of nonzero counters is at most the number of sparse updates.  Since
+   \(|E|=\log^{O(1)}m\), the expected dynamic-programming work is also
+   \(d\,m^\rho\log^{O_c(1)}m\).  This is exactly the aggregation bound
+   \((SRL2)\).
+
+   For the lower bound, suppose an algorithm in the raw-list model does not
+   inspect an incidence position \((t,x)\) in the active quotient.  Consider
+   two terminal-incidence inputs that agree everywhere the algorithm reads and
+   differ only in whether \(U_x(t)=1\).  For the requested coefficient vector
+   \(c=e_x\), the correct reward \(g_c(t)\) differs by one on the two inputs,
+   while the algorithm has the same transcript on both.  Thus a correct exact
+   initializer for arbitrary requested rewards must inspect every active
+   incidence unless the missing information has already been compressed into a
+   precomputed summary or supplied by additional structure.  This proves the
+   \(\Omega(I(\ell))\) raw-access barrier and the final conclusion.
+\end{proof}
+
 \begin{remark}[What this shortcut does and does not prove]\label{rem:score-max-shortcut}
    \Cref{lem:smoothed-max-score-margin} is the $\alpha=0$ endpoint of the
    likelihood-ball geometry: if one can approximately maximize the smoothed
