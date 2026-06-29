@@ -5,6 +5,7 @@ import numpy as np
 from finite_channel_diagnostic import product_sign_labels
 from product_sign_transfer_stress import (
     FIELDNAMES,
+    covariance_spectral_summary,
     exact_tilted_good_mass,
     gaussian_row_pair_parameters,
     run_trial,
@@ -47,6 +48,24 @@ def test_exact_tilted_good_mass_matches_manual_enumeration():
     scores = labels @ up[0] - np.sum(np.logaddexp(up[0], -up[0]) - math.log(2.0))
     manual = np.sum(weights * (scores >= thresholds + margin))
     assert np.allclose(mass, [manual])
+
+
+def test_covariance_spectral_summary_detects_scalar_and_anisotropic_cases():
+    scalar = np.array([
+        [1.0, 0.0],
+        [-1.0, 0.0],
+        [0.0, 1.0],
+        [0.0, -1.0],
+    ])
+    rel_op, rel_min, rel_max = covariance_spectral_summary(scalar)
+    assert rel_op < 1e-12
+    assert abs(rel_min - 1.0) < 1e-12
+    assert abs(rel_max - 1.0) < 1e-12
+
+    stretched = scalar * np.array([2.0, 1.0])
+    rel_op2, rel_min2, rel_max2 = covariance_spectral_summary(stretched)
+    assert rel_op2 > 0.5
+    assert rel_min2 < 1.0 < rel_max2
 
 
 def test_gaussian_row_pair_parameters_match_monte_carlo_rows():
@@ -100,6 +119,8 @@ def test_transfer_trial_produces_complete_row():
     assert row["enumerated_thresholds"] == 1.0
     assert row["bit_sigma_fit"] > 0.0
     assert row["bit_var_q05"] <= row["bit_var_q95"] + 1e-12
+    assert row["ref_cov_rel_op"] >= 0.0
+    assert row["ref_cov_lambda_min_rel"] <= 1.0 <= row["ref_cov_lambda_max_rel"]
     assert row["metric_sigma_near_mean"] > 0.0
     assert row["metric_sigma_query_mean"] > 0.0
     assert row["metric_pair_corr_q05"] <= row["metric_pair_corr_mean"] + 1e-12
@@ -117,6 +138,7 @@ def test_transfer_trial_produces_complete_row():
 if __name__ == "__main__":
     test_upper_tail_thresholds_use_top_eta_order_statistic()
     test_exact_tilted_good_mass_matches_manual_enumeration()
+    test_covariance_spectral_summary_detects_scalar_and_anisotropic_cases()
     test_gaussian_row_pair_parameters_match_monte_carlo_rows()
     test_transfer_trial_produces_complete_row()
     print("product_sign_transfer_stress tests passed")

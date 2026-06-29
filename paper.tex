@@ -89818,6 +89818,49 @@ top-\(k\) backup.
    and the hypothesis \(\kappa\log2<1\).
 \end{proof}
 
+\begin{lemma}[Whitening-metric calibration]
+   \label{lem:whitening-metric-calibration}
+   Let \(p,q\in S^{d-1}\), let \(a=\ip{p}{q}\), and let \(H\) be a
+   deterministic linear map satisfying
+   \[
+      \left\|d^{-1}H^\top H-I_d\right\|_{\rm op}\le\delta<1 .
+      \tag{WMC1}
+   \]
+   Then
+   \[
+      \lambda^2(1-\delta)
+      \le
+      \lambda^2\frac{\|Hp\|^2}{d},
+      \lambda^2\frac{\|Hq\|^2}{d}
+      \le
+      \lambda^2(1+\delta),
+      \tag{WMC2}
+   \]
+   and the whitened-metric near-pair correlation
+   \[
+      a_H=\frac{\ip{Hp}{Hq}}{\|Hp\|\,\|Hq\|}
+   \]
+   obeys
+   \[
+      |a_H-a|\le \frac{(1+|a|)\delta}{1-\delta}
+      \le \frac{2\delta}{1-\delta}.
+      \tag{WMC3}
+   \]
+\end{lemma}
+
+\begin{proof}
+   Write \(d^{-1}H^\top H=I+E\) with \(\|E\|_{\rm op}\le\delta\).  Then
+   \(d^{-1}\|Hp\|^2=1+\ip{p}{Ep}\) and similarly for \(q\), proving
+   \((WMC2)\).  Also
+   \[
+      a_H=\frac{a+\ip{p}{Eq}}
+      {\sqrt{(1+\ip{p}{Ep})(1+\ip{q}{Eq})}}.
+   \]
+   The denominator is at least \(1-\delta\), and its reciprocal differs from
+   one by at most \(\delta/(1-\delta)\).  Since
+   \(|\ip{p}{Eq}|\le\delta\), \((WMC3)\) follows.
+\end{proof}
+
 \begin{lemma}[Whitened Gaussian-row product-sign transfer]
    \label{lem:whitened-product-sign-row-law}
    Let \(H:\R^d\to\R^d\) be a deterministic whitening map, let
@@ -89898,6 +89941,118 @@ top-\(k\) backup.
    \(1-O_{\mathcal K,\varepsilon}(1/r)\) tilted good mass above
    \(rt+\Delta_0\).  The label-count statement is the same calculation as in
    \cref{cor:cramer-product-sign-closure}.
+\end{proof}
+
+\begin{lemma}[Reference product-sign threshold from scalar covariance]
+   \label{lem:product-sign-reference-covariance-transfer}
+   For \(s\in\{\pm1\}^r\), put
+   \[
+      \Phi_s(z)=\sum_{a=1}^r(s_az_a-\log\cosh z_a).
+   \]
+   Let \(Z\sim N(0,\Sigma)\), let \(Z_0\sim N(0,\sigma^2I_r)\), and assume
+   \[
+      \left\|\sigma^{-2}\Sigma-I_r\right\|_{\rm op}\le\varepsilon\le1.
+      \tag{RCT1}
+   \]
+   Then for every \(A\ge1\), every \(t\in\R\), and every label \(s\),
+   \[
+      \Prb\{\Phi_s(Z)\ge r(t+2A\sigma\varepsilon)\}
+      \le
+      \Prb\{\Phi_s(Z_0)\ge rt\}
+      +
+      \Prb\{\|G\|_2>A\sqrt r\},
+      \tag{RCT2}
+   \]
+   where \(G\sim N(0,I_r)\).  In particular,
+   \[
+      \Prb\{\|G\|_2>A\sqrt r\}
+      \le
+      \exp\left\{
+        -\frac r2(A^2-1-\log A^2)
+      \right\}
+      \qquad(A\ge1).
+      \tag{RCT3}
+   \]
+\end{lemma}
+
+\begin{proof}
+   Couple \(Z\) and \(Z_0\) by writing
+   \(Z=\Sigma^{1/2}G\) and \(Z_0=\sigma G\), with
+   \(G\sim N(0,I_r)\).  From \((RCT1)\),
+   \[
+      \|\Sigma^{1/2}-\sigma I_r\|_{\rm op}\le\sigma\varepsilon .
+   \]
+   Also
+   \[
+      \|\nabla\Phi_s(z)\|_2^2
+      =
+      \sum_a(s_a-\tanh z_a)^2
+      \le 4r,
+   \]
+   so \(\Phi_s\) is \(2\sqrt r\)-Lipschitz.  On
+   \(\{\|G\|_2\le A\sqrt r\}\),
+   \[
+      |\Phi_s(Z)-\Phi_s(Z_0)|
+      \le
+      2\sqrt r\,\|\Sigma^{1/2}-\sigma I_r\|_{\rm op}\,\|G\|_2
+      \le
+      2A\sigma\varepsilon r .
+   \]
+   This proves \((RCT2)\).  The final bound is the standard Chernoff bound
+   for the upper tail of \(\chi^2_r\).
+\end{proof}
+
+\begin{corollary}[Random-row reference threshold transfer]
+   \label{cor:random-row-reference-threshold-transfer}
+   Suppose the whitened reference distribution is Gaussian with covariance
+   \(I_d\), and use product-sign rows
+   \(u_a(x)=\lambda d^{-1/2}\ip{g_a}{x}\), with independent
+   \(g_a\sim N(0,I_d)\).  Let \(r=\lceil\kappa\log m\rceil\) and
+   \(\eta=m^{-\gamma}\).  If the \(r\times r\) row Gram matrix satisfies
+   \[
+      \left\|d^{-1}GG^\top-I_r\right\|_{\rm op}\le\varepsilon ,
+      \tag{RRT1}
+   \]
+   and if
+   \[
+      \Prb_{Z\sim N(0,\lambda^2)}
+      \left[
+        \sum_{a=1}^r(Z_a-\log\cosh Z_a)\ge rt
+      \right]
+      \le \eta/2,
+      \tag{RRT2}
+   \]
+   while \(\Prb\{\|N(0,I_r)\|_2>A\sqrt r\}\le\eta/2\), then the common
+   reference threshold
+   \[
+      Q^{\rm ref}=r(t+2A\lambda\varepsilon)
+      \tag{RRT3}
+   \]
+   satisfies
+   \[
+      \Prb_X\{\Psi_s(X)\ge Q^{\rm ref}\}\le\eta
+      \qquad\text{for every }s\in\{\pm1\}^r .
+   \]
+   Moreover, the Gram event \((RRT1)\) holds with probability at least
+   \(1-2e^{-u}\) whenever
+   \[
+      \varepsilon
+      \ge
+      C\left(\sqrt{\frac{r+u}{d}}+\frac{r+u}{d}\right)
+      \tag{RRT4}
+   \]
+   for a universal constant \(C\).
+\end{corollary}
+
+\begin{proof}
+   Conditional on \(G\), the reference bit vector
+   \((u_1(X),\ldots,u_r(X))\) is centered Gaussian with covariance
+   \(\lambda^2d^{-1}GG^\top\).  Apply
+   \cref{lem:product-sign-reference-covariance-transfer} with
+   \(\sigma=\lambda\).  The iid term is \((RRT2)\), and the Gaussian norm
+   tail is at most \(\eta/2\), so \((RRT3)\) is a simultaneous valid
+   threshold for all labels.  The last display is the standard Gaussian
+   singular-value concentration bound for \(G/\sqrt d\).
 \end{proof}
 
 \begin{lemma}[Uniform empirical product-sign threshold transfer]
@@ -90290,10 +90445,19 @@ One should also separate the resident-guard regime from the genuine finite-chann
    part is also standard in the iid-node model by
    \cref{lem:product-sign-empirical-quantile-transfer}: since
    \(\eta=m^{-\gamma}\) has \(\gamma<1/2\) for every \(c>1\), the union bound
-   over \(B\le m^{O(1)}\) labels is negligible.  The remaining theorem is
-   therefore the reference all-label \(\Psi_s\)-threshold bound and the
-   whitening-metric calibration needed to invoke
-   \cref{lem:product-sign-transfer-check}.
+   over \(B\le m^{O(1)}\) labels is negligible.  The near-pair metric
+   calibration is the elementary spectral statement
+   \cref{lem:whitening-metric-calibration}.  The Gaussian-reference all-label
+   threshold is now also reduced to a standard row-Gram event:
+   \cref{lem:product-sign-reference-covariance-transfer} and
+   \cref{cor:random-row-reference-threshold-transfer}
+   compare the implemented \(\Psi_s\) tail with the iid Cramer tail whenever
+   the reference bit covariance is close to scalar.  The remaining theorem is
+   therefore no longer a certificate reformulation: it is to prove these
+   spectral calibration events for the actual localized node/reference model,
+   together with the usual Gaussian-to-spherical/local-shell replacement if
+   the node model is stated on the sphere rather than under the Gaussian
+   reference law.
 
    The frozen product-sign target is therefore not another certificate form:
    it is the same distributional bounded-margin posterior-rank lower tail for

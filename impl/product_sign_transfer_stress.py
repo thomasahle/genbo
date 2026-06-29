@@ -60,6 +60,9 @@ FIELDNAMES = [
     "bit_var_q05",
     "bit_var_q95",
     "bit_sigma_fit",
+    "ref_cov_rel_op",
+    "ref_cov_lambda_min_rel",
+    "ref_cov_lambda_max_rel",
     "cross_corr_abs_q95",
     "cross_corr_abs_max",
     "metric_sigma_near_mean",
@@ -160,6 +163,23 @@ def _abs_offdiag_correlations(bit_logits: np.ndarray) -> np.ndarray:
     corr = cov / np.sqrt(var[:, None] * var[None, :])
     mask = ~np.eye(corr.shape[0], dtype=bool)
     return np.abs(corr[mask])
+
+
+def covariance_spectral_summary(bit_logits: np.ndarray) -> tuple[float, float, float]:
+    """Return relative operator deviation and extremal eigenvalue ratios."""
+    bit_logits = np.asarray(bit_logits, dtype=float)
+    if bit_logits.ndim != 2 or bit_logits.shape[1] < 1:
+        raise ValueError("bit_logits must be a nonempty two-dimensional array")
+    centered = bit_logits - np.mean(bit_logits, axis=0, keepdims=True)
+    cov = centered.T @ centered / max(len(centered), 1)
+    target = float(np.trace(cov) / cov.shape[0])
+    if target <= 0.0:
+        return 0.0, 1.0, 1.0
+    vals = np.linalg.eigvalsh(cov)
+    rel_min = float(vals[0] / target)
+    rel_max = float(vals[-1] / target)
+    rel_op = max(abs(rel_min - 1.0), abs(rel_max - 1.0))
+    return rel_op, rel_min, rel_max
 
 
 def _column_correlations(left: np.ndarray, right: np.ndarray) -> np.ndarray:
@@ -356,6 +376,8 @@ def run_trial(
     bit_means = np.mean(ref_bits, axis=0)
     bit_vars = np.var(ref_bits, axis=0)
     bit_sigma_fit = math.sqrt(float(np.mean(bit_vars)))
+    ref_cov_rel_op, ref_cov_lambda_min_rel, ref_cov_lambda_max_rel = (
+        covariance_spectral_summary(ref_bits))
     offdiag_corr = _abs_offdiag_correlations(ref_bits)
     pair_corr = _column_correlations(near_bits, query_bits)
     metric_sigma_near, metric_sigma_query, metric_pair_corr = gaussian_row_pair_parameters(
@@ -443,6 +465,9 @@ def run_trial(
         "bit_var_q05": _q(bit_vars, 0.05),
         "bit_var_q95": _q(bit_vars, 0.95),
         "bit_sigma_fit": bit_sigma_fit,
+        "ref_cov_rel_op": ref_cov_rel_op,
+        "ref_cov_lambda_min_rel": ref_cov_lambda_min_rel,
+        "ref_cov_lambda_max_rel": ref_cov_lambda_max_rel,
         "cross_corr_abs_q95": _q(offdiag_corr, 0.95),
         "cross_corr_abs_max": float(np.max(offdiag_corr)),
         "metric_sigma_near_mean": float(np.mean(metric_sigma_near)),
