@@ -89799,6 +89799,83 @@ top-\(k\) backup.
    which is \((OQB1)\).  Rearranging gives \((OQB2)\).
 \end{proof}
 
+\begin{corollary}[Aggregate-responsibility product-sign rate obstruction]
+   \label{cor:aggregate-responsibility-product-sign-obstruction}
+   Consider the ideal iid Gaussian product-sign panel with \(r=\kappa\log m\),
+   but now give the quotient the strongest possible storage aggregation: all
+   hidden labels may be represented by one bucket, and the query may emit a
+   point \(x\) with probability \(\theta_q(x)\) comparable to its hidden
+   product-sign responsibility
+   \[
+      h_q(x)=
+      \Pr_{s\sim K_q}\!\left[\Psi_s(x)\ge rt\right],
+      \qquad
+      h_q(x)\le\theta_q(x)\le \log^{O_c(1)}m\,h_q(x).
+      \tag{ARP1}
+   \]
+   Assume zero-correlation far points and near pairs whose per-bit product-sign
+   logit correlation is \(a\in(0,1)\).  Let
+   \[
+      \mu_{\sigma,a}
+      =
+      \E[Z-\log\cosh Z]
+      +
+      a\sigma^2\E[\operatorname{sech}^2 Z],
+      \qquad Z\sim N(0,\sigma^2),
+      \tag{ARP2}
+   \]
+   be the near per-bit mean of \(\Psi_s(p)\) under \(s\sim K_q\), and let
+   \(I_\sigma\) be the fixed-label rate from
+   \cref{lem:sampled-product-sign-rate-obstruction}.  If the aggregate
+   responsibility sampler has far emitted load \(m^\rho\log^{O_c(1)}m\) and
+   emits every near witness with probability at least \(\log^{-O_c(1)}m\), then
+   necessarily
+   \[
+      \frac{I_\sigma(\mu_{\sigma,a})}{\log2}
+      \ge
+      1-\rho-o(1).
+      \tag{ARP3}
+   \]
+   Therefore, if \(I_\sigma(\mu_{\sigma,a})/\log2<1-\rho\), even a perfect
+   aggregate bucket with responsibility-thinned output cannot turn this
+   product-sign threshold panel into a sampled terminal ANN panel.
+\end{corollary}
+
+\begin{proof}
+   For a zero-correlation far point \(x\), the query signs are independent of
+   the data logits, so
+   \[
+      h_q(x)
+      =
+      \Pr\!\left[
+         \sum_{b=1}^r
+         (Z_b-\log\cosh Z_b)\ge rt
+      \right]
+      =
+      m^{-\kappa I_\sigma(t)+o(1)} .
+   \]
+   Since \(\theta_q(x)\ge h_q(x)\), the far-load bound over \(m\) possible far
+   points forces
+   \[
+      \kappa I_\sigma(t)\ge1-\rho-o(1).
+      \tag{ARP4}
+   \]
+
+   For a near pair \(p,q\), the per-bit summands of \(\Psi_s(p)\) under
+   \(s\sim K_q\) are iid with mean \(\mu_{\sigma,a}\).  If
+   \(t\ge\mu_{\sigma,a}+\varepsilon\) for some fixed \(\varepsilon>0\), the
+   Cramer upper tail under the near law is \(m^{-\Omega_{\varepsilon}(1)}\).
+   The upper comparison in \((ARP1)\) would then give
+   \(\theta_q(p)=m^{-\Omega_{\varepsilon}(1)}\), contradicting the required
+   inverse-polylogarithmic near emission probability.  Hence
+   \(t\le\mu_{\sigma,a}+o(1)\).  The fixed-label upper-tail rate is continuous
+   and nondecreasing on the upper-tail side, so
+   \[
+      I_\sigma(t)\le I_\sigma(\mu_{\sigma,a})+o(1).
+   \]
+   Combining this inequality with \((ARP4)\) proves \((ARP3)\).
+\end{proof}
+
 \begin{lemma}[Posterior-rank margin certificate]\label{lem:posterior-rank-margin}
    Let
    \[
@@ -90914,6 +90991,12 @@ One should also separate the resident-guard regime from the genuine finite-chann
    \(1.325,1.121,1.492\) for \(a=0.9\).  Thus the quotient would need to merge
    more than \(m\) hidden labels in all these rows; even the least-bad
    \(a=0.9,\sigma=3.5\) row exceeds the minimum all-label exponent by \(0.811\).
+   Nor is the issue only the ordinary union storage charge:
+   \cref{cor:aggregate-responsibility-product-sign-obstruction} gives the
+   one-bucket responsibility-thinned obstruction.  At the actual near tilted
+   mean, the fixed-label rate fractions are only \(0.262,0.270,0.226\) for
+   \(a=0.75\), \(\sigma=2.5,3.5,5.0\), and \(0.445,0.464,0.378\) for
+   \(a=0.9\), still far below the required \(6/7\).
    The remaining work is therefore not another threshold certificate: it is
    either a genuinely compressed all-outcome storage/evaluation scheme whose
    bucket quotient changes the storage/far-load arithmetic, a construction whose
@@ -90994,9 +91077,11 @@ One should also separate the resident-guard regime from the genuine finite-chann
    with only polylogarithmic hidden labels per bucket class inherit that same
    obstruction, and \cref{cor:ordinary-product-sign-quotient-class-size} shows
    that ordinary union quotients need polynomial hidden class sizes at the
-   observed rate points.  The clean endpoint now hinges on compressing the
-   growing output layer by a nonordinary aggregate/responsibility sampler,
-   changing the channel so the tilted entropy is only \(O(\log\log m)\), or
+   observed rate points.  Even the one-bucket responsibility version is blocked
+   by \cref{cor:aggregate-responsibility-product-sign-obstruction} for the same
+   constants.  The clean endpoint now hinges on changing the channel so the
+   tilted entropy is only \(O(\log\log m)\), switching to a different structured
+   Gaussian/code/lattice sampler whose far rate reaches the near mean, or
    accepting this as a barrier to the product-sign branch.
 \end{remark}
 

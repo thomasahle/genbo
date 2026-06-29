@@ -65,6 +65,10 @@ RATE_FIELDNAMES = [
     "level_slack",
     "fixed_score_mean",
     "tilted_mean_limit",
+    "near_mean_chernoff_rate",
+    "near_mean_theta_star",
+    "near_mean_rate_fraction",
+    "near_mean_rate_gap",
     "score_level",
     "chernoff_rate",
     "theta_star",
@@ -211,6 +215,13 @@ def gaussian_rate_gap_summary(
         raise ValueError("level_slack must be positive")
     fixed_mean, sech2_mean = fixed_score_mean_and_sech2(sigma, quadrature=quadrature)
     tilted_mean = fixed_mean + corr * sigma * sigma * sech2_mean
+    near_mean_rate, near_mean_theta = fixed_score_rate_with_theta(
+        tilted_mean,
+        sigma=sigma,
+        quadrature=quadrature,
+        theta_max=theta_max,
+        theta_grid=theta_grid,
+    )
     score_level = tilted_mean - level_slack
     rate, theta_star = fixed_score_rate_with_theta(
         score_level,
@@ -226,6 +237,8 @@ def gaussian_rate_gap_summary(
     mode_deficit = product_sign_mode_deficit(sigma, quadrature=quadrature)
     min_topk_mass_exponent = min_kappa * mode_deficit
     sampled_required_rate_fraction = 1.0 - rho
+    near_mean_rate_fraction = near_mean_rate / math.log(2.0)
+    near_mean_rate_gap = near_mean_rate_fraction - sampled_required_rate_fraction
     sampled_rate_fraction = rate / math.log(2.0)
     sampled_rate_gap = sampled_rate_fraction - sampled_required_rate_fraction
     if sampled_rate_fraction <= 0.0:
@@ -246,6 +259,10 @@ def gaussian_rate_gap_summary(
         "level_slack": level_slack,
         "fixed_score_mean": fixed_mean,
         "tilted_mean_limit": tilted_mean,
+        "near_mean_chernoff_rate": near_mean_rate,
+        "near_mean_theta_star": near_mean_theta,
+        "near_mean_rate_fraction": near_mean_rate_fraction,
+        "near_mean_rate_gap": near_mean_rate_gap,
         "score_level": score_level,
         "chernoff_rate": rate,
         "theta_star": theta_star,

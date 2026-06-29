@@ -65,6 +65,9 @@ def test_gaussian_rate_gap_summary_has_positive_gap_and_rate():
     assert summary["tilted_mean_limit"] > summary["fixed_score_mean"]
     assert summary["score_level"] < summary["tilted_mean_limit"]
     assert summary["chernoff_rate"] > 0.0
+    assert summary["near_mean_chernoff_rate"] > summary["chernoff_rate"]
+    assert summary["near_mean_rate_fraction"] > summary["sampled_rate_fraction"]
+    assert summary["near_mean_rate_gap"] < 0.0
     assert summary["min_log_b_exponent"] < float("inf")
     assert summary["mode_deficit"] > 0.0
     assert summary["min_topk_mass_exponent"] > 0.0
