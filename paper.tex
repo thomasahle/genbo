@@ -5834,6 +5834,104 @@ partition ignores the bias coordinates that certify the list size.
    \(|A|=\Omega(|\mathbb F|)\).
 \end{proof}
 
+\begin{corollary}[Oversampled product witnesses support polylog syndrome thinning]
+   \label{cor:oversampled-product-syndrome-thinning}
+   Work in the smooth product terminal filter of
+   \cref{thm:smooth-product-terminal}, with fixed \(k\), threshold \(t\), and
+   block threshold \(u=t/\sqrt k\).  Let \(K=\log^{O_{a,b}(1)}m\), let \(G\)
+   be a finite abelian group of size \(K\), and replace the block count by
+   \[
+      B'
+      =
+      \left\lceil A\,K^{1/k}J_a(u)^{-1}\right\rceil
+      \tag{OPT1}
+   \]
+   for a sufficiently large constant \(A=A_{a,b,k}\).  Choose independent
+   pairwise-independent block hashes \(h_i:[B']\to G\), retain only tuples with
+   \[
+      h_1(j_1)+\cdots+h_k(j_k)=\sigma,
+      \tag{OPT2}
+   \]
+   and use the corresponding syndrome-state, affine lookup, or residue-frontier
+   decoder to enumerate the retained active tuples.
+
+   Then one table still has constant success probability for every near pair
+   of correlation at least \(a\).  Its expected retained query leaves, retained
+   update leaves per point, ordinary far candidates, and storage are
+   \[
+      m^{\rho(a,b)}\log^{O_{a,b}(1)}m,
+      \qquad
+      m^{1+\rho(a,b)}\log^{O_{a,b}(1)}m
+      \tag{OPT3}
+   \]
+   respectively, with the first bound applying to the three per-query,
+   per-update, and far-candidate quantities and the second to storage, and
+   with the same exponents as \cref{thm:smooth-product-terminal}.  The
+   additional decoder overhead is polylogarithmic whenever the chosen
+   syndrome-state or residue-frontier implementation has polylogarithmic
+   overhead for \(|G|=K\).
+\end{corollary}
+
+\begin{proof}
+   The number of oversampled tuples is
+   \[
+      (B')^k
+      =
+      A^kK\,J_a(u)^{-k}\log^{O_{a,b}(1)}m .
+   \]
+   Since each fixed tuple has retained syndrome with probability \(K^{-1}\),
+   independently of the Gaussian columns, the expected retained query leaves
+   and retained update leaves are
+   \[
+      A^kJ_a(u)^{-k}\overline\Phi(t)\log^{O_{a,b}(1)}m
+      =
+      m^{\rho(a,b)}\log^{O_{a,b}(1)}m,
+   \]
+   by the same Gaussian-tail calculation as in
+   \cref{thm:smooth-product-terminal}.  The same thinning applies to every
+   fixed far pair, giving expected far candidates
+   \[
+      m\cdot A^kJ_a(u)^{-k}J_b(t)\log^{O_{a,b}(1)}m
+      =
+      m^{\rho(a,b)}\log^{O_{a,b}(1)}m .
+   \]
+   Storage is the retained update-leaf bound summed over \(m\) points.  Also
+   \(B'=K^{1/k}J_a(u)^{-1}\log^{O_{a,b}(1)}m\), and the condition
+   \(k\ge2/(1-a)\) from \cref{thm:smooth-product-terminal} gives
+   \(J_a(u)^{-1}\le m^{\rho(a,b)}\log^{O_{a,b}(1)}m\).  Thus block sorting and
+   any \(|G|=K\) state factor remain polylogarithmic multiples of the target
+   work.
+
+   It remains to check near success.  For a near pair \((p,q)\), let \(N_i\)
+   be the number of columns in block \(i\) satisfying
+   \[
+      \ip{g_{i,j},p}\ge u,\qquad \ip{g_{i,j},q}\ge u .
+   \]
+   Since the correlation is at least \(a\),
+   \[
+      \E N_i\ge A K^{1/k}.
+   \]
+   By Chernoff bounds, after choosing \(A\) large enough, with probability
+   bounded below by a positive constant depending only on \(a,b,k\), every
+   block has
+   \[
+      N_i\ge (A/2)K^{1/k}.
+   \]
+   On this event the set \(W(p,q)\) of all common-good tuples has size at least
+   \[
+      |W(p,q)|\ge (A/2)^kK .
+   \]
+   Conditional on the Gaussian columns, \(W(p,q)\) is fixed and independent of
+   the hash seed.  By \cref{lem:pairwise-independent-syndrome-thinning}, the
+   retained syndrome hits \(W(p,q)\) with probability at least
+   \[
+      \frac{(A/2)^k}{1+(A/2)^k}.
+   \]
+   Choosing \(A\) large enough gives a positive constant.  Any retained tuple
+   in \(W(p,q)\) is accepted by both \(p\) and \(q\), exactly as in the proof of
+   \cref{thm:smooth-product-terminal}.
+\end{proof}
+
 \begin{lemma}[Superset product-panel decoder]
    \label{lem:superset-product-panel-decoder}
    Work in the setting of \cref{lem:additive-product-panel-decoder}, but
