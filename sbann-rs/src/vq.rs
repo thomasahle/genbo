@@ -466,13 +466,18 @@ impl HierRouter {
         // centroids jointly as means of their assigned points (leaf-id ÷ fan-product gives each ancestor).
         // Attacks the greedy boundary problem by letting upper and lower levels co-adapt.
         let em_rounds: usize = std::env::var("SBANN_TREEEM").ok().and_then(|s| s.parse().ok()).unwrap_or(0);
+        // E-step beam CAP (SBANN_TREEEM_BEAM, default 8): finding a point's single nearest LEAF needs only
+        // a few probes (the nearest leaf is ~always under the nearest coarse cell), so the assignment uses
+        // a MUCH smaller beam than a query — this is the structure accelerating its own EM (~10-50x cheaper
+        // E-step vs using the full query beams, with negligible assignment loss the M-step averages out).
+        let em_beam: usize = std::env::var("SBANN_TREEEM_BEAM").ok().and_then(|s| s.parse().ok()).unwrap_or(8);
         for r in 0..em_rounds {
             let t_em = std::time::Instant::now();
-            // E-step: nearest leaf via beam descent over current float centroids
+            // E-step: nearest leaf via SMALL-beam descent over current float centroids
             let leaf: Vec<u32> = (0..smp).into_par_iter().map(|i| {
                 let x = &xn[i * d..i * d + d];
                 let mut cd: Vec<(f32, u32)> = (0..counts[0]).map(|c| (simd::l2_f32(x, &centf_lv[0][c * d..c * d + d]), c as u32)).collect();
-                let b = beams[0].min(cd.len());
+                let b = beams[0].min(em_beam).min(cd.len());
                 if b > 0 && b < cd.len() { cd.select_nth_unstable_by(b - 1, |a, b| a.0.total_cmp(&b.0)); cd.truncate(b); }
                 let mut sel: Vec<u32> = cd.iter().map(|&(_, c)| c).collect();
                 for l in 1..levels {
@@ -480,7 +485,7 @@ impl HierRouter {
                     let mut nd: Vec<(f32, u32)> = Vec::with_capacity(sel.len() * fan);
                     for &p in &sel { for c in (p as usize * fan)..((p as usize + 1) * fan) { nd.push((simd::l2_f32(x, &centf_lv[l][c * d..c * d + d]), c as u32)); } }
                     if l == levels - 1 { return nd.iter().min_by(|a, b| a.0.total_cmp(&b.0)).map(|&(_, c)| c).unwrap_or(0); }
-                    let b = beams[l].min(nd.len());
+                    let b = beams[l].min(em_beam).min(nd.len());
                     if b > 0 && b < nd.len() { nd.select_nth_unstable_by(b - 1, |a, b| a.0.total_cmp(&b.0)); nd.truncate(b); }
                     sel = nd.iter().map(|&(_, c)| c).collect();
                 }
