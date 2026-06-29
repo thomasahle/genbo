@@ -6020,6 +6020,65 @@ partition ignores the bias coordinates that certify the list size.
    coordinate, the reporter overheads, and the emitted pairs.
 \end{proof}
 
+\begin{corollary}[Random residues thin pair prefixes by partner counts]
+   \label{cor:random-residue-pair-prefix-bound}
+   Consider a two-block product query with fixed scores
+   \(\phi_1(q,a)\), \(\phi_2(q,b)\), independent of the hash seed.  Let
+   \(G\) be a finite group of size \(K\), choose a target residue
+   \(\sigma\) uniformly from \(G\), and retain pairs satisfying
+   \[
+      h_1(a)+h_2(b)=\sigma .
+      \tag{RRP1}
+   \]
+   For a threshold \(\Theta\), put
+   \[
+      N_2(\theta)=|\{b\in\mathcal C_2:\phi_2(q,b)\ge\theta\}|.
+   \]
+   A residue-bucket lookup decoder scans a first coordinate \(a\) only if its
+   forced second-coordinate bucket contains a symbol with score at least
+   \(\Theta-\phi_1(q,a)\).  The expected number of scanned first coordinates
+   is at most
+   \[
+      \sum_{a\in\mathcal C_1}
+      \min\left\{1,\frac{N_2(\Theta-\phi_1(q,a))}{K}\right\}.
+      \tag{RRP2}
+   \]
+   If, in addition, every fixed pair has retained probability \(K^{-1}\), then
+   the expected number of emitted retained pairs above threshold is
+   \[
+      K^{-1}
+      |\{(a,b):\phi_1(q,a)+\phi_2(q,b)\ge\Theta\}|.
+      \tag{RRP3}
+   \]
+
+   Thus the useful algebraic gain of a syndrome hash is a partner-count
+   prefix screen: it gives a \(K\)-fold saving only on first coordinates whose
+   compatible high-score suffix set has size \(O(K)\).  When the suffix set is
+   already much larger than \(K\), the prefix remains live with constant
+   probability and the remaining cost must be paid by output, bucket
+   reporting, or a sharper residue-aware bound.
+\end{corollary}
+
+\begin{proof}
+   Fix \(a\), and condition on all hash values except the target
+   \(\sigma\).  The forced residue
+   \(\sigma-h_1(a)\) is uniform in \(G\).  Conditional on \(h_2\), the set
+   \[
+      R_a=\{h_2(b):\phi_2(q,b)\ge\Theta-\phi_1(q,a)\}
+   \]
+   has size at most \(N_2(\Theta-\phi_1(q,a))\).  Hence
+   \[
+      \Prb[a\ {\rm is\ live}\mid h_1,h_2]
+      =
+      \frac{|R_a|}{K}
+      \le
+      \min\left\{1,\frac{N_2(\Theta-\phi_1(q,a))}{K}\right\}.
+   \]
+   Summing over \(a\) proves \((RRP2)\).  The terminal identity
+   \((RRP3)\) follows by linearity of expectation from the fixed-pair
+   retention probability \(K^{-1}\).
+\end{proof}
+
 \begin{corollary}[Oversampled product witnesses support polylog syndrome thinning]
    \label{cor:oversampled-product-syndrome-thinning}
    Work in the smooth product terminal filter of
