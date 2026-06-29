@@ -96034,6 +96034,123 @@ amplified in the next proposition.
    \(c=2\), \(\rho_c=1/7\), gives \((BAL5)\).
 \end{proof}
 
+\begin{corollary}[Rare balanced residue directions are too rare]
+   \label{cor:rare-balanced-residue-direction-barrier}
+   Work in the setting of
+   \cref{lem:balanced-gaussian-residue-list-bound}, but let the query-side
+   reporter be active only on a query-visible event
+   \(E=E(S,Y)\).  Put \(p=\Prb[E]\).  On \(E\) the reporter outputs a list
+   \(\mathcal L_S(Y)\subseteq\Gamma\) of size at most \(L\), and outside \(E\)
+   it outputs the empty list.  If
+   \[
+      \delta_E
+      =
+      \Prb[f_S(X)\in\mathcal L_S(Y)\mid E]
+      \tag{RBR1}
+   \]
+   is the conditional hit probability, then, whenever \(p>0\),
+   \[
+      \delta_E
+      \le
+      \lambda^{1/(1+\chi)}
+      L^{1/(1+\chi)}
+      p^{-\chi/(1+\chi)}
+      M^{-(1-\chi)/(1+\chi)} .
+      \tag{RBR2}
+   \]
+   Consequently, at the aligned residue scale
+   \[
+      M=m^{1-\rho}\log^{O(1)}m,\qquad
+      \lambda,L=\log^{O(1)}m,
+      \tag{RBR3}
+   \]
+   any inverse-polylogarithmic conditional hit,
+   \[
+      \delta_E\ge\log^{-O(1)}m,
+      \tag{RBR4}
+   \]
+   forces
+   \[
+      p\le
+      m^{-(1-\rho)(1-\chi)/\chi+o(1)} .
+      \tag{RBR5}
+   \]
+   At the native critical Euclidean parameters
+   \[
+      \rho=\rho_c=\frac1{2c^2-1},
+      \qquad
+      \chi=a_0=1-\frac1{c^2},
+      \tag{RBR6}
+   \]
+   this becomes
+   \[
+      p\le m^{-2\rho_c+o(1)}.
+      \tag{RBR7}
+   \]
+
+   Thus the ``rare informative score direction'' escape is not compatible
+   with the aligned balanced residue-list route.  To see one such event with
+   constant probability would require \(m^{2\rho_c-o(1)}\) independent trials
+   at the native critical point, already larger than the local
+   \(m^{\rho_c}\polylog m\) query budget before any bucket or candidate work is
+   charged.  For \(c=2\), the event probability must be at most
+   \(m^{-2/7+o(1)}\).
+\end{corollary}
+
+\begin{proof}
+   Repeat the proof of
+   \cref{lem:balanced-gaussian-residue-list-bound}, but include the activity
+   event in the query-side sets:
+   \[
+      B_\alpha=\{y:E(s,y)\ {\rm holds\ and}\ \alpha\in\mathcal L_s(y)\}.
+   \]
+   Conditional on a fixed seed and the reporter randomness,
+   \[
+      \sum_{\alpha\in\Gamma}\mu(B_\alpha)
+      =
+      \E\bigl[|\mathcal L_s(Y)|\mathbf1_E\bigr]
+      \le
+      L\,p_s,
+      \tag{RBR8}
+   \]
+   where \(p_s=\Prb[E\mid S=s]\).  With
+   \(r=1/(1+\chi)\), the same hypercontractive calculation gives the
+   conditional hit probability
+   \[
+      \Prb[f_s(X)\in\mathcal L_s(Y),E\mid S=s]
+      \le
+      \lambda^r L^r p_s^r M^{-(1-\chi)/(1+\chi)} .
+      \tag{RBR9}
+   \]
+   Averaging over \(S\) and using the concavity of \(u^r\) gives
+   \[
+      \Prb[f_S(X)\in\mathcal L_S(Y),E]
+      \le
+      \lambda^rL^r p^r M^{-(1-\chi)/(1+\chi)}.
+      \tag{RBR10}
+   \]
+   Dividing by \(p\) proves \((RBR2)\).
+
+   If \((RBR4)\) holds, then raising \((RBR2)\) to the power \(1+\chi\) and
+   rearranging gives
+   \[
+      p^\chi
+      \le
+      \lambda L\,\delta_E^{-(1+\chi)}M^{-(1-\chi)}.
+   \]
+   Under \((RBR3)\)--\((RBR4)\), this is exactly \((RBR5)\).  Finally,
+   \[
+      (1-\rho_c)\frac{1-a_0}{a_0}
+      =
+      \frac{2(c^2-1)}{2c^2-1}\cdot\frac1{c^2-1}
+      =
+      \frac2{2c^2-1}
+      =
+      2\rho_c,
+   \]
+   proving \((RBR7)\) and the displayed \(c=2\) value.
+\end{proof}
+
 \begin{lemma}[Residue-list hit probability forces far load]
    \label{lem:residue-list-hit-load-tradeoff}
    Let \(0<\chi<1\), and let \((X,Y)\) be standard Gaussian blocks with
