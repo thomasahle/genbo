@@ -92757,6 +92757,132 @@ amplified in the next proposition.
    \(\min\{\lambda m/M,W\}\).
 \end{proof}
 
+\begin{corollary}[Affine active residues are the positive structured case]
+   \label{cor:affine-active-residue-budget}
+   In the setting of
+   \cref{cor:balanced-residue-histogram-budget}, assume that for every sampled
+   quotient class \(\ell\) the active residue set \(G_\ell\subseteq G\) is
+   contained in a union of \(B_\ell\) affine subspaces of
+   \(G=\mathbb F_q^r\), each of dimension at most \(s_\ell\).  Put
+   \[
+      Q_\ell=B_\ell q^{s_\ell}.
+      \tag{AAR1}
+   \]
+   Then \(R_G(\ell)\le Q_\ell\), and the responsibility-sketch aggregation is
+   certified whenever
+   \[
+      \E_{\ell\sim\Pi_Y}Q_\ell\min\{\lambda m/|G|,W\}
+      \le m^\rho\log^{O_c(1)}m
+      \tag{AAR2}
+   \]
+   together with the storage condition \((BRH6)\) and the same polylogarithmic
+   sketch/graph-size hypothesis as in
+   \cref{cor:balanced-residue-histogram-budget}.
+
+   Thus the useful code/lattice residue structure is not generic
+   pseudorandomness of the active terminal residues.  It is low algebraic
+   entropy after the quotient has been sampled: a Tanner, polar,
+   convolutional, Construction-A, or recursive-lattice decoder may activate
+   many hidden terminal paths, but their resident signatures must collapse to
+   a few affine residue degrees of freedom, or to an equivalent factorized
+   reporter, before the shared-histogram route removes the overhead.
+\end{corollary}
+
+\begin{proof}
+   An affine subspace of dimension \(s_\ell\) over \(\mathbb F_q\) contains
+   \(q^{s_\ell}\) residues, so the union bound gives
+   \(R_G(\ell)\le B_\ell q^{s_\ell}=Q_\ell\).  Substituting this bound into
+   \((BRH5)\) gives \((AAR2)\).  The storage and graph/sketch assumptions are
+   unchanged from \cref{cor:balanced-residue-histogram-budget}.
+\end{proof}
+
+\begin{corollary}[Random active residues saturate the residue budget]
+   \label{cor:random-active-residue-barrier}
+   Consider the balanced-residue setting with \(M=|G|\), and assume for
+   simplicity that each residue class has exactly \(n_0=m/M\) residents.  Let
+   one sampled quotient class activate \(H\) terminal residues
+   \(\alpha_1,\ldots,\alpha_H\), sampled independently and uniformly from
+   \(G\), independently of the resident sketch hashes.  Let
+   \(G_\ell=\{\alpha_1,\ldots,\alpha_H\}\).  Then
+   \[
+      \E R_G(\ell)
+      =
+      M\left(1-\left(1-\frac1M\right)^H\right)
+      =
+      \Theta(\min\{H,M\}).
+      \tag{RAR1}
+   \]
+   If the fixed histogram rows are sampled as fully random uniform hashes
+   \(S\to[W]\), or from any sufficiently independent family with the same
+   occupancy estimates, then there are absolute constants
+   \(0<c<C<\infty\) such that
+   \[
+      c\,D\,\min\{H,M\}\min\{n_0,W\}
+      \le
+      \E J_W^G(\ell)
+      \le
+      C\,D(b_0+1)\min\{H,M\}\min\{n_0,W\}.
+      \tag{RAR2}
+   \]
+   The same upper bound applies to
+   \(\E[J_W^G(\ell)+K_W^G(\ell)|E|]\) after multiplying by \(1+|E|\).
+
+   Consequently, in the full-width regime \(W\ge m/M\), a random-looking
+   active residue set can satisfy the balanced query budget only if
+   \[
+      \min\{H,M\}
+      \le
+      (M/m)m^\rho\log^{O_c(1)}m
+      \tag{RAR3}
+   \]
+   up to the graph and sketch polylogarithmic factors.  In the capped regime
+   \(W<m/M\), the corresponding necessary scale is
+   \[
+      \min\{H,M\}W
+      \le
+      m^\rho\log^{O_c(1)}m.
+      \tag{RAR4}
+   \]
+   Thus an iid-looking code or lattice terminal-residue process does not close
+   the subpolynomial overhead: it pays for the number of occupied residues.
+   Any positive construction must prove affine/subspace collapse as in
+   \cref{cor:affine-active-residue-budget}, nonuniform concentration on a
+   small residue dictionary, or a different output-sensitive reporter that
+   avoids initializing one shared histogram per occupied residue.
+\end{corollary}
+
+\begin{proof}
+   A residue \(\alpha\in G\) is occupied with probability
+   \(1-(1-1/M)^H\), and summing over \(\alpha\) gives the identity in
+   \((RAR1)\).  The displayed \(\Theta(\min\{H,M\})\) bound follows from
+   \(1-e^{-x}\asymp\min\{x,1\}\) for \(x\ge0\), with the standard comparison
+   between \((1-1/M)^H\) and \(e^{-H/M}\).
+
+   For one occupied residue class and one sketch row, the support of the total
+   histogram has expectation
+   \[
+      W\left(1-\left(1-\frac1W\right)^{n_0}\right)
+      =
+      \Theta(\min\{n_0,W\}).
+      \tag{RAR5}
+   \]
+   The active-residue event is independent of the resident sketch hashes, so
+   multiplying \((RAR5)\) by the expected number of occupied residues and by
+   \(D\) gives the lower bound in \((RAR2)\), using only the total counters.
+   For the upper bound, each total or bit histogram support has size at most
+   \(\min\{n_0,W\}\).  Summing this deterministic bound over the
+   \(D(b_0+1)\) histograms and then taking the expectation of \(R_G(\ell)\)
+   gives the upper bound in \((RAR2)\).  Since \(K_W^G(\ell)\le J_W^G(\ell)\),
+   the same estimate controls the added backward-recursion term after the
+   factor \(1+|E|\).
+
+   The necessary scales \((RAR3)\)--\((RAR4)\) are just the lower bound in
+   \((RAR2)\) compared against the target query budget, with
+   \(\min\{n_0,W\}=m/M\) in the full-width case and \(=W\) in the capped case,
+   suppressing the same polylogarithmic sketch and graph factors used
+   throughout this section.
+\end{proof}
+
 \begin{remark}[What this shortcut does and does not prove]\label{rem:score-max-shortcut}
    \Cref{lem:smoothed-max-score-margin} is the $\alpha=0$ endpoint of the
    likelihood-ball geometry: if one can approximately maximize the smoothed
