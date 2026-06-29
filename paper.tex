@@ -89224,6 +89224,71 @@ top-\(k\) backup.
    is an implementation problem rather than a hidden-witness problem.
 \end{proof}
 
+\begin{proposition}[Query-top-\(k\) finite-channel compiler]
+   \label{prop:query-top-k-channel-compiler}
+   Fix a localized node of size \(m\), a scale \(\xi\in[1/m,1]\), and a finite
+   channel with \(B\le\xi^{-1}\log^{O_c(1)}m\) outcomes.  For every outcome
+   store the top-\(\xi\) posterior child \(C_j^\xi\) with the Poisson intensity
+   used in the coarse finite-channel construction above.  Suppose that a
+   retained query routine reports \(Q_k(q)\), the top \(k=\log^{O_c(1)}m\)
+   outcomes of \(K_q\), in \(d\log^{O_c(1)}m\) time without enumerating all
+   \(B\) outcomes.  Suppose also that for every near pair not handled by the
+   resident guard,
+   \[
+      \mathcal H_{\xi,k}^{\rm qry}(p,q)
+      :=
+      \sum_{j\in Q_k(q)}
+      \mu_j^\beta K_q(j)^{1-\beta}
+      \left(R_j(p)^\beta-\tau_j^\beta\right)_+
+      \ge h_m
+      \tag{QTK}
+   \]
+   with \(h_m=\log^{-O_c(1)}m\).  Then the local finite-channel step can be
+   implemented with
+   \[
+      d\,\xi^{-\rho}h_m^{-1}\log^{O_c(1)}m
+   \]
+   query work, expected \(k\,\xi^{-\rho}h_m^{-1}\log^{O_c(1)}m\) reported
+   children, and \(m^{1+\rho}\log^{O_c(1)}m\) retained child space.  In
+   particular, for any \(\xi\ge1/m\) this fits the \(d\,m^\rho\log^{O_c(1)}m\)
+   local query budget after charging recursive calls to the reported children.
+\end{proposition}
+
+\begin{proof}
+   For a reported outcome \(j\), the Poissonized stored child and query
+   activation have expected useful intensity at least
+   \[
+      \xi^\rho
+      \mu_j^\beta K_q(j)^{1-\beta}
+      \left(R_j(p)^\beta-\tau_j^\beta\right)_+ .
+   \]
+   Summing over \(Q_k(q)\) and using \((QTK)\), one group has useful intensity
+   at least \(\xi^\rho h_m\).  Therefore
+   \(O(\xi^{-\rho}h_m^{-1})\) independent groups give constant probability of
+   activating a child containing the true near point and contained in
+   \(\Ball(q,cr)\).  The query routine is called once per group and reports
+   only \(k\) labels, giving the displayed local work and output count.
+
+   The retained space is unchanged from the explicit finite-channel
+   construction: over all repetitions and all \(B\) outcomes,
+   \[
+      \xi^{-\rho}h_m^{-1}\cdot B\cdot(\xi m)^{1+\rho}
+      \le
+      m^{1+\rho}\log^{O_c(1)}m ,
+   \]
+   using \(B\le\xi^{-1}\log^{O_c(1)}m\).  If the recursive child bound is
+   \(Q(\xi m)\le d(\xi m)^\rho\log^{O_c(1)}m\), then the total recursive work
+   from the reported children is
+   \[
+      k\,\xi^{-\rho}h_m^{-1}\,Q(\xi m)
+      \le
+      d\,m^\rho\log^{O_c(1)}m .
+   \]
+   Since \(\xi\ge1/m\), the nonrecursive reporting work also satisfies
+   \(d\,\xi^{-\rho}h_m^{-1}\log^{O_c(1)}m
+     \le d\,m^\rho\log^{O_c(1)}m\).
+\end{proof}
+
 \begin{lemma}[Posterior-rank margin certificate]\label{lem:posterior-rank-margin}
    Let
    \[
@@ -89340,6 +89405,13 @@ One should also separate the resident-guard regime from the genuine finite-chann
    witness-dependent decoder; it is an output-sensitive top-\(k\) softmax
    outcome reporter for the retained panel, plus a uniform proof of the
    query-prefix lower tail.
+   A larger check at \(m=10000,30000\) preserved the same signal: at whitened
+   scales \(8,12\), query top four captured lower \(5\%\) contribution
+   fraction \(0.963\)--\(0.999\), query top eight captured all measured value,
+   and the boosted-overhead \(90\%\) proxy stayed in \(12.21\)--\(17.56\).
+   \Cref{prop:query-top-k-channel-compiler} records the resulting arithmetic:
+   once those top labels are reported output-sensitively, the query no longer
+   pays the \(B\simeq\xi^{-1}\) enumeration factor.
 \end{remark}
 
 \begin{proposition}[Conditional finite-channel polylog endpoint]\label{prop:finite-channel-polylog}
