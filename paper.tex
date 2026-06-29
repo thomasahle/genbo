@@ -98055,6 +98055,91 @@ amplified in the next proposition.
    throughout this section.
 \end{proof}
 
+\begin{corollary}[Random residues fail the route-local aligned window]
+   \label{cor:random-active-residue-route-barrier}
+   Consider the route-local aligned-residue reporter of
+   \cref{cor:aligned-residue-route-heavy-reporter}, implemented through the
+   shared residue histograms of
+   \cref{cor:balanced-residue-histogram-budget}.  At a route-occupied state
+   \(s\), assume for simplicity that the residue classes are exactly balanced,
+   so every class has \(m/M_s\) residents, and that the sketch is in the
+   full-width regime \(W_s\ge m/M_s\).  Suppose one sampled quotient activates
+   \(H_s\) terminal residues that are iid uniform in \(G_s\), independently of
+   the resident sketch hashes, and put
+   \[
+      \mathcal H_s
+      =
+      \E\min\{H_s,M_s\}.
+      \tag{RRR1}
+   \]
+   Then the shared-histogram part of one local trial has expected work at
+   least
+   \[
+      \Omega\!\left(D_s\,\frac{m}{M_s}\,\mathcal H_s\right).
+      \tag{RRR2}
+   \]
+   Hence the route-local boosted implementation of
+   \cref{cor:route-local-heavy-reporter-boosting} has histogram work at least
+   \[
+      \Omega\!\left(
+      \sum_s\pi_s
+      D_s\,\frac{m}{M_s}\,
+      \mathcal H_s\,
+      \underline\mu_s^{-1}
+      \log\frac1{\varepsilon_s}
+      \right),
+      \tag{RRR3}
+   \]
+   up to the lower-order one-trial term.
+
+   Consequently, at the aligned design point
+   \[
+      M_s=m^{1-\rho}\log^{O_c(1)}m,
+      \qquad
+      \underline\mu_s^{-1}=\log^{O_c(1)}m,
+      \qquad
+      D_s=\log^{O_c(1)}m,
+      \tag{RRR4}
+   \]
+   fitting the clean route-local budget forces
+   \[
+      \sum_s\pi_s\mathcal H_s\log\frac1{\varepsilon_s}
+      \le
+      \log^{O_c(1)}m.
+      \tag{RRR5}
+   \]
+   Thus a pairwise-independent affine, tabulation, or carry-less-multiply
+   syndrome supplies the right subset randomness but still fails the aligned
+   route when the decoded active residues look iid at polynomial scale.  The
+   positive construction must prove that the route-occupied quotient leaves
+   only polylogarithmically many active residue degrees of freedom, as in
+   row-span alignment, or else replace shared residue initialization by a
+   point-indexed heavy-responsibility, leader, or aggregate sampler whose cost
+   is not proportional to occupied residue count.
+\end{corollary}
+
+\begin{proof}
+   Apply \cref{cor:random-active-residue-barrier} at state \(s\) with
+   \(M=M_s\), \(n_0=m/M_s\), and \(W=W_s\).  In the full-width regime,
+   \(\min\{n_0,W_s\}=m/M_s\), so \((RAR2)\) gives the lower bound
+   \((RRR2)\) for the total-counter support alone.  Bit counters and graph
+   recursions can only add work.
+
+   The boosted reporter uses
+   \(R_s=\lceil2\underline\mu_s^{-1}\log(1/\varepsilon_s)\rceil\) independent
+   local trials at state \(s\).  Multiplying \((RRR2)\) by \(R_s\) and
+   averaging over route occupation gives \((RRR3)\), after absorbing absolute
+   constants into the \(\Omega(\cdot)\) notation.
+
+   Under \((RRR4)\), the factor \(D_sm/M_s\) is
+   \(m^\rho\log^{O_c(1)}m\).  Comparing \((RRR3)\) with the allowed
+   \(m^\rho\log^{O_c(1)}m\) route-local budget gives \((RRR5)\).  The final
+   paragraph is the contrapositive interpretation of this necessary condition:
+   iid-looking active residues make \(\mathcal H_s\) polynomial unless
+   \(H_s\) is already polylogarithmic or the group itself is only
+   polylogarithmic.
+\end{proof}
+
 \begin{remark}[What this shortcut does and does not prove]\label{rem:score-max-shortcut}
    \Cref{lem:smoothed-max-score-margin} is the $\alpha=0$ endpoint of the
    likelihood-ball geometry: if one can approximately maximize the smoothed
