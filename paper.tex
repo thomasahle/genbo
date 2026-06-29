@@ -89032,6 +89032,22 @@ amplified in the next proposition.
    implementation of \cref{asm:smoothed-score-max}; the score-max branch needs
    a genuinely additive nearest-neighbor/MIPS primitive or a different
    structured reporter.
+
+   A more promising diagnostic is facility-style IVF over the same smoothed
+   scores.  The accompanying IVF stress script assigns data points to
+   \(m^{1-\rho}\)-scale cosine centroid buckets, routes the perturbed center
+   \(y\) to the best few centroids, and then exact-reranks by \(A_Y\).  Random
+   sampled centers fail for the expected reason: an isolated witness is often
+   not represented by a query-visible bucket.  Lloyd or \(k\)-means++-style
+   facility centers are much stronger in the planted spherical diagnostic,
+   frequently putting the planted score maximizer in the first reported bucket
+   with \(O(m^\rho)\) scanned points.  This is still not a proof of
+   \cref{asm:smoothed-score-max}, because the diagnostic scores all
+   \(m^{1-\rho}\)-scale centroids explicitly and does not prove worst-case
+   stability of the facility cover.  It does, however, isolate a concrete
+   positive target: a compact centroid decoder whose top few facility buckets
+   contain the smoothed score maximizer with inverse-polylogarithmic failure
+   probability and \(m^\rho\polylog m\) scan load.
 \end{remark}
 
 \begin{remark}[Why ordinary ANN does not implement the score-max target]\label{rem:score-max-ordinary-ann}
