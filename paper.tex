@@ -5799,6 +5799,100 @@ partition ignores the bias coordinates that certify the list size.
    \cref{cor:critical-scalar-mask-log-tax}.
 \end{proof}
 
+\begin{corollary}[Additive top sets have a singleton-overlap tax]
+   \label{cor:additive-top-set-overlap-tax}
+   Let \(\mathcal C_1=\cdots=\mathcal C_k=[B]\), and let
+   \(W_{j,a}\), \(j\in[k]\), \(a\in[B]\), be independent standard Gaussians.
+   For a threshold \(T\ge1\), put
+   \[
+      A_T=\left\{i\in[B]^k:\sum_{j=1}^kW_{j,i_j}\ge T\right\},
+      \qquad
+      q_T=\Prb[N(0,k)\ge T].
+   \]
+   Let \(p=A/(B^kq_T)\), so a genuinely independent \(p\)-subset would hit
+   \(A_T\) with expected count \(A\).  For \(1\le r<k\), the expected
+   \(r\)-overlap contribution appearing in \((AMO3)\), normalized by this
+   squared expected count, is bounded above and below by
+   \[
+      B^{r(k-r)/(k+r)}
+      A^{-2r/(k+r)}
+      T^{-C_k}
+      \le
+      \frac{\E_W N_r(A_T)\,p^{2k/(k+r)}}{A^2}
+      \le
+      B^{r(k-r)/(k+r)}
+      A^{-2r/(k+r)}
+      T^{C_k}
+      \tag{ATS1}
+   \]
+   for a constant \(C_k\) depending only on \(k\).
+   In particular, the one-coordinate overlap term \(r=1\) is
+   \[
+      B^{(k-1)/(k+1)}
+      A^{-2/(k+1)}
+      T^{\pm C_k}.
+      \tag{ATS2}
+   \]
+   Therefore the overlap-spectrum certificate for a scalar auxiliary Gaussian
+   mask cannot certify critical one-hit thinning \(A=O(\polylog B)\) on these
+   additive top sets when \(B\) is superpolylogarithmic.  To make the
+   \(r=1\) term polylogarithmic by density or independent repetitions alone
+   requires
+   \[
+      A\ge B^{(k-1)/2}\,T^{-O_k(1)}
+      \tag{ATS3}
+   \]
+   up to polylogarithmic factors.
+
+   Thus a second additive score is not the missing proof-safe random subset
+   for broad product alphabets.  It is useful when the block alphabet is
+   already polylogarithmic, or when the query construction supplies a stronger
+   overlap-spread certificate than a raw additive Gaussian top set has.
+   Otherwise one should use a syndrome/tabulation mask, or a quotient/leader
+   reporter that changes the charged overlap object.
+\end{corollary}
+
+\begin{proof}
+   For ordered pairs with exactly \(r\) equal coordinates,
+   \[
+      \E_WN_r(A_T)
+      =
+      \binom{k}{r}B^k(B-1)^{k-r}q_{r,T},
+      \tag{ATS4}
+   \]
+   where \(q_{r,T}\) is the joint upper-tail probability for two centered
+   Gaussians of variance \(k\) and covariance \(r\).  Standard fixed-correlation
+   bivariate Gaussian tail bounds give
+   \[
+      q_T^{2k/(k+r)}T^{-C_k}
+      \le
+      q_{r,T}
+      \le
+      q_T^{2k/(k+r)}T^{C_k}
+      \tag{ATS5}
+   \]
+   uniformly for \(0\le r<k\).  Substituting \((ATS4)\), \((ATS5)\), and
+   \(p=A/(B^kq_T)\) gives
+   \[
+   \begin{aligned}
+      \frac{\E_WN_r(A_T)p^{2k/(k+r)}}{A^2}
+      &=
+      \binom{k}{r}B^k(B-1)^{k-r}
+      q_T^{2k/(k+r)}T^{\pm O_k(1)}
+      \frac{A^{2k/(k+r)}}{B^{2k^2/(k+r)}
+      q_T^{2k/(k+r)}A^2}  \\
+      &=
+      B^{r(k-r)/(k+r)}
+      A^{-2r/(k+r)}
+      T^{\pm C_k},
+   \end{aligned}
+   \]
+   after absorbing constants and powers of \(1-1/B\) into \(T^{\pm C_k}\)
+   when \(B\ge2\).  The specialization \(r=1\) gives \((ATS2)\).  Requiring
+   this term to be at most polylogarithmic rearranges to \((ATS3)\), up to the
+   displayed polynomial-in-\(T\) slack.
+\end{proof}
+
 \begin{lemma}[Lagrange decoding for scalar-masked product thresholds]
    \label{lem:scalar-mask-lagrange-decoder}
    Let \(\mathcal C=\mathcal C_1\times\cdots\times\mathcal C_k\), and give
@@ -6385,6 +6479,13 @@ partition ignores the bias coordinates that certify the list size.
    with a certified overlap-spread condition.  Without that condition, a
    syndrome or tabulation mask is the right abstraction: pairwise independence
    removes the overlap spectrum from the second moment entirely.
+   \Cref{cor:additive-top-set-overlap-tax} applies the audit to the raw
+   additive Gaussian top sets themselves and finds a singleton-overlap tax:
+   at critical one-hit density, scalar masking needs a
+   \(B^{(k-1)/2}\)-scale density or repetition increase, up to logarithmic
+   factors.  Thus scalar masking is plausible only for already-small block
+   alphabets or for top sets whose overlap spectrum has been flattened by a
+   separate construction.
 
    A better decodable pseudorandom mask is a decomposable syndrome or
    tabulation hash.  Let \(G\) be a finite abelian group, choose independent
