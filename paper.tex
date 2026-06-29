@@ -89904,6 +89904,40 @@ amplified in the next proposition.
    \(r^{-1}\log K=o(1)\), so it cannot close the constant rate gap.
 \end{proof}
 
+\begin{corollary}[Raw-label Fano prices do not change the charge]
+   \label{cor:raw-label-fano-price-no-rescue}
+   Work in the setting of
+   \cref{cor:polylog-raw-list-entropy-barrier}.  Attach to every reported
+   position and label a deterministic nonnegative price \(\pi_{j,a}\), and
+   replace the storage score by the priced score
+   \[
+      \widetilde\Phi_{j,a}(U)=\Phi_a(U)-\pi_{j,a}.
+      \tag{RFP1}
+   \]
+   Let \(\widetilde m_{j,a}=r^{-1}\E[\widetilde\Phi_{j,a}(U)\mid A_j=a]\),
+   and calibrate the fixed-label far threshold for
+   \(\widetilde\Phi_{j,a}\) at the ordinary raw-label rate
+   \(C_r\ge R-o(1)\).  Then that far threshold still cannot lie below
+   \(\widetilde m_{j,a}\) for all sufficiently large \(r\).
+
+   Thus a Fano or pruning price attached to raw labels is not by itself an
+   escape from the Gaussian information barrier.  The price becomes useful only
+   when the retained certificate changes the charged object: the charged rate
+   must be the prefix/list work moment, quotient bucket entropy, aggregate
+   sampler entropy, or rate-coverage load, not the full raw label entropy.
+\end{corollary}
+
+\begin{proof}
+   For the priced score, the conditional near law \(P_{U\mid A_j=a}\) is still
+   an admissible far witness, now at mean \(\widetilde m_{j,a}\).  Its
+   divergence from the far law is unchanged by subtracting the deterministic
+   price.  By the proof of
+   \cref{cor:polylog-raw-list-entropy-barrier}, that divergence rate is at
+   most \(\chi^2R+o(1)\), which is strictly below \(C_r\ge R-o(1)\).  Applying
+   \cref{lem:information-charge-survivor-test} to the priced score gives the
+   claim.
+\end{proof}
+
 \begin{remark}[How a deep code or lattice construction can pass the test]
    \label{rem:code-lattice-survivor-map}
    \Cref{lem:information-charge-survivor-test} is the falsification test for
@@ -89916,7 +89950,11 @@ amplified in the next proposition.
    beat the full-rate far threshold.  \Cref{cor:polylog-raw-list-entropy-barrier}
    gives the same conclusion for any equivariant top-\(\polylog m\) raw list:
    the list changes only lower-order query work unless the storage or bucket
-   charge is also changed.
+   charge is also changed.  Even a deterministic Fano price on the raw labels
+   does not change this conclusion by
+   \cref{cor:raw-label-fano-price-no-rescue}; the price has to be part of a
+   different charged certificate, not a cosmetic shift of the same full-rate
+   label score.
 
    The surviving uses of coding and lattice algorithms are therefore more
    specific.
@@ -93104,6 +93142,9 @@ near data block retains about that transcript, up to polylogarithmic slack.
 quantitative, \(I(T;U)\le\chi^2 I(T;Q)\), and
 \cref{cor:polylog-raw-list-entropy-barrier} applies it to rule out
 equivariant top-\(\polylog m\) raw codeword lists at full label charge.
+\Cref{cor:raw-label-fano-price-no-rescue} adds that deterministic pruning
+prices on the same raw labels do not help unless they change the charged
+certificate itself.
 \Cref{lem:min-entropy-information-set} identifies the best chart for a linear
 block: assign each coordinate its soft local entropy
 \(\lambda_i=\log\sum_a\exp(\beta(\omega_i(a)-m_i))\), then choose a
