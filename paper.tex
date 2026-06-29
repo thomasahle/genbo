@@ -18703,6 +18703,109 @@ partition ignores the bias coordinates that certify the list size.
    \(A=40\).
 \end{proof}
 
+\begin{corollary}[Sign-symmetric raw product grids have a storage/near dichotomy]
+   \label{cor:sign-symmetric-product-grid-dichotomy}
+   Fix any approximation factor \(c>1\), and put
+   \[
+      \rho_c=\frac1{2c^2-1},
+      \qquad
+      a_0=1-\frac1{c^2}.
+      \tag{SPD1}
+   \]
+   Consider a near-linear raw product grid \(M=A^d=m^{1+o(1)}\) with a
+   sign-symmetric uniform alphabet multiset \(\mathcal A\), one bucket per
+   product label, threshold
+   \[
+      T^2=2(1-\rho_c)\log m,
+      \qquad
+      \theta_A=\frac{T}{\sqrt d}
+      =
+      \sqrt{2(1-\rho_c)\log A}+o(1),
+      \tag{SPD2}
+   \]
+   and scalar nonnegative query tilts
+   \(\pi_q(g)\propto\exp(\beta(q)\ip{g}{q})\).  Then the grid cannot
+   simultaneously have
+   \[
+      A^d\Pr_{\mathcal A^d}\{\ip{g}{p}\ge T\}
+      \le m^{\rho_c}\polylog m
+      \tag{SPD3}
+   \]
+   for the flat resident \(p=d^{-1/2}\mathbf1\), and
+   inverse-polylogarithmic sampled near mass for every unit query
+   \(q\) with \(\ip{p}{q}=a_0+o(1)\).
+
+   Equivalently, the sign-symmetric raw product-grid escape is closed at the
+   native critical exponent: a low peak fails the mixed near query of
+   \cref{cor:low-peak-sign-symmetric-product-grid-barrier}, while a high peak
+   creates too many stored labels for the flat resident.  Any product-grid
+   construction that survives this test must break sign symmetry by a
+   certified query/data signature, change the charged bucket object by
+   quotient or responsibility aggregation, or leave the raw one-bucket-per-
+   label model.
+\end{corollary}
+
+\begin{proof}
+   Let \(a_*=\max_{a\in\mathcal A}a\).  Since the alphabet is
+   sign-symmetric, its base mean is zero and \(a_*\ge0\).  We use the
+   dichotomy at the normalized height \(\theta_A\).
+
+   If \(a_*<\theta_A/a_0^2-o(1)\), then
+   \cref{cor:low-peak-sign-symmetric-product-grid-barrier} gives a valid
+   two-point near-query profile for which every nonnegative scalar tilt has
+   normalized mean below \(\theta_A-\Omega(1)\).  The sampled near mass is
+   \(m^{-\Omega(1)}\), contradicting the near requirement.
+
+   It remains to consider \(a_*\ge\theta_A/a_0^2-o(1)\).  The critical
+   exponents satisfy
+   \[
+      a_0^2<1-\rho_c,
+      \tag{SPD4}
+   \]
+   because, with \(z=c^2>1\),
+   \[
+      1-\rho_c-a_0^2
+      =
+      \frac{(z-1)(3z-1)}{z^2(2z-1)}
+      >0 .
+   \]
+   Choose a constant \(r\) such that
+   \[
+      \frac{\theta_A}{a_*}+o(1)<r<1-\rho_c
+      \tag{SPD5}
+   \]
+   for all sufficiently large \(m\).  Let \(k=\lceil rd\rceil\).  Under the
+   base product law, force the first \(k\) coordinates to equal the top atom
+   \(a_*\).  This has probability at least \(A^{-k}\).  Conditional on this
+   event, the remaining coordinates are still iid from the original
+   mean-zero bounded alphabet, and their required contribution to the storage
+   event is
+   \[
+      T\sqrt d-k a_*
+      =
+      \theta_A d-k a_*
+      \le
+      -\Omega(d).
+   \]
+   Hence, by the law of large numbers, the remaining coordinates meet this
+   lower bound with probability \(1-o(1)\).  Therefore
+   \[
+      \Pr_{\mathcal A^d}\{\ip{g}{p}\ge T\}
+      \ge
+      A^{-rd-o(d)} .
+   \]
+   Multiplying by \(M=A^d=m^{1+o(1)}\) gives flat-resident incidence at least
+   \[
+      A^{(1-r)d-o(d)}
+      =
+      m^{1-r-o(1)}
+      >
+      m^{\rho_c+\Omega(1)} ,
+   \]
+   contradicting \((SPD3)\).  Thus both sides of the peak dichotomy are
+   impossible.
+\end{proof}
+
 \begin{corollary}[Bucket-quotient weighted quadrature]
    \label{cor:bucket-quotient-quadrature}
    Fix the terminal setting of \cref{prop:sampled-structured-panel}.  Let
