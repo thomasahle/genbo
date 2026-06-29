@@ -1856,6 +1856,23 @@ P118. (HierRouter generalized to arbitrary depth L -- hierk4/5… for 100M/1B; h
     correctly. At 1M, 4-level is overkill (slightly lower recall); the payoff is build/routing scaling at
     100M/1B. All hyperparameters now tunable as lists. (commit e94c767 on engine-stack branch.)
 
+P119. (*** tree-Lloyd EM joint-level optimization STACKS with SOAR ~additively -- new lever; + build-cost model confirmed ***)
+    User Q: would jointly optimizing all hierarchy levels (AVQ-style coordinate descent) beat greedy
+    top-down? Implemented tree-Lloyd EM (SBANN_TREEEM=rounds): E-step reassign every sample point to
+    nearest LEAF via the beam descent (objective = query-time search), M-step recompute EVERY level's
+    centroids jointly (ancestor = leaf/fan-prod). 1M matched-probe recall (load-independent, em_battery.log):
+    greedy p64 0.8686; +SOAR(0.5) 0.8855 (+1.7pt); +EM(2) 0.8813 (+1.3pt); +EM+SOAR 0.9007 (+3.2pt).
+    => EM and SOAR are NOT redundant: SOAR(+1.7)+EM(+1.3)~+3.0 predicted, measured +3.2 = ~ADDITIVE.
+    (My prediction of redundancy was WRONG.) They fix DIFFERENT things: SOAR the ASSIGNMENT (multi-cover
+    residual dirs), EM the PARTITION (centroids co-adapt across levels so the descent lands better). So
+    joint optimization is a genuine ADDITIONAL lever ~+1pt / ~1.15-1.2x QPS on top of SOAR. COST: each EM
+    round ≈ a full-tree pass (build ×~(1+rounds)); fine at 10M, a tradeoff at 100M/1B. SOAR TOP-K speedup
+    VALIDATED: capped SOAR preserves the +1.6pt gain (0.8919->0.9081 @p96) at ~40x less proj cost.
+    BUILD-COST MODEL CONFIRMED (SBANN_BUILDPROF): per-level-s=[8.6,0.5,0.7] for fanout=[256,16,16] -- cost
+    ≈ I·smp·fan·d per level, so EQUAL per level ONLY with UNIFORM fan-out; the lopsided C0=256 makes level
+    0 dominate (8.6 vs 0.6s). Implication: uniform fan-out (C0≈Kf^(1/L)) balances/speeds the build -- a
+    100M/1B build lever. 10M EM+SOAR validation running (em_soar_10m.log) to see if it widens the lead.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
