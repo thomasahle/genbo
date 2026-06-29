@@ -92877,6 +92877,115 @@ amplified in the next proposition.
    \cref{cor:balanced-residue-histogram-budget}.
 \end{proof}
 
+\begin{corollary}[Residue collapse is row-span alignment]
+   \label{cor:residue-row-span-alignment}
+   In one linear chart of
+   \cref{cor:linear-quotient-rank-active-residues}, write
+   \(U=\operatorname{row}(B)\) and \(V=\operatorname{row}(C)\) as subspaces of
+   \((\mathbb F_q^N)^*\).  The residual observed rank is
+   \[
+      r_{\rm res}
+      =
+      \operatorname{rank}
+      \begin{pmatrix}B\\ C\end{pmatrix}
+      -
+      \operatorname{rank}B
+      =
+      \dim\frac{U+V}{U}.
+      \tag{RSA1}
+   \]
+   Equivalently, \(r_{\rm res}\le s\) if and only if there is a matrix \(L\)
+   such that
+   \[
+      \operatorname{rank}(C-LB)\le s.
+      \tag{RSA2}
+   \]
+   In that case the residue \(\sigma(t)\) is determined by the quotient
+   equations \(Bz=b\), plus at most \(s\) independent linear coordinates.
+
+   Thus the low active-residue condition is not a generic consequence of using
+   linear codes or lattices.  It is an alignment condition: most rows of the
+   resident-signature observer must already be implied by the sampled quotient
+   constraints, up to the few residual directions affordable in
+   \((LRK4)\).
+\end{corollary}
+
+\begin{proof}
+   The first identity is the definition of quotient dimension for row spaces:
+   adding the rows of \(C\) to the rows of \(B\) increases rank by
+   \(\dim((U+V)/U)\).  If \(r_{\rm res}\le s\), choose \(s\) rows
+   \(e_1,\ldots,e_s\) whose span, together with \(U\), contains \(V\).  Each
+   row of \(C\) is then a linear combination of rows of \(B\) and of the
+   \(e_i\)'s, so \(C=LB+E\) with \(\operatorname{row}(E)\subseteq
+   \operatorname{span}\{e_1,\ldots,e_s\}\), proving \((RSA2)\).  Conversely,
+   if \(C=LB+E\) and \(\operatorname{rank}E\le s\), then the row space of
+   \(C\) modulo \(U\) is contained in the image of \(\operatorname{row}(E)\),
+   so \(r_{\rm res}\le s\).  On the affine solution set \(Bz=b\), the term
+   \(LBz=Lb\) is fixed, and only the \(E z\) component can vary.
+\end{proof}
+
+\begin{corollary}[Generic linear residue observers do not collapse]
+   \label{cor:generic-linear-observer-rank-barrier}
+   Fix a linear quotient chart \(Bz=b\) in
+   \(\mathbb F_q^N\), let \(b_*= \operatorname{rank}B\), and put
+   \(d_*=N-b_*=\dim\ker B\).  Let \(G=\mathbb F_q^r\), and choose
+   \(C:\mathbb F_q^N\to G\) uniformly at random, independently of \(B\).  Then
+   the residual observed rank
+   \[
+      R=\operatorname{rank}
+      \begin{pmatrix}B\\ C\end{pmatrix}
+      -\operatorname{rank}B
+   \]
+   has the same law as the rank of a random \(r\times d_*\) matrix over
+   \(\mathbb F_q\).  In particular, for every
+   \(0\le s\le \min\{r,d_*\}\),
+   \[
+      \Prb[R\le s]
+      \le
+      4q^{-(r-s)(d_*-s)}.
+      \tag{GLR1}
+   \]
+
+   Suppose moreover that the chart realizes all solutions of \(Bz=b\), or at
+   least one terminal for each residue in
+   \(\gamma+Cz_0+C(\ker B)\).  Then the number of active residues contributed
+   by the chart is exactly \(q^R\).  Hence, with high probability, a generic
+   residue observer contributes about \(q^{\min\{r,d_*\}}\) active signatures.
+   In the balanced full-width regime \(W\ge\lambda m/|G|\), if \(d_*\ge r\)
+   this gives shared-histogram mass of order \(m\) per such chart, up to
+   constant and polylogarithmic factors, rather than the required
+   \(m^\rho\polylog m\).
+
+   Therefore a random linear syndrome, Construction-A residue, or lattice
+   quotient observer is not by itself the missing theorem.  A successful
+   construction must make the observer row-span aligned with the quotient
+   constraints as in \cref{cor:residue-row-span-alignment}, restrict the active
+   terminals to a much smaller residue dictionary, or use a reporter that does
+   not initialize one shared histogram per occupied residue.
+\end{corollary}
+
+\begin{proof}
+   Restrict \(C\) to \(\ker B\).  After choosing a basis of \(\ker B\), this
+   restriction is an \(r\times d_*\) matrix whose entries are independent and
+   uniform in \(\mathbb F_q\), because \(C\) is a uniform linear map
+   independent of \(B\).  The rank of this restriction is exactly
+   \(\operatorname{rank}\binom{B}{C}-\operatorname{rank}B\), proving the
+   distributional statement.
+
+   To prove \((GLR1)\), fix an \(s\)-dimensional subspace
+   \(U\subseteq\mathbb F_q^r\).  The probability that all \(d_*\) columns of a
+   random \(r\times d_*\) matrix lie in \(U\) is \(q^{-(r-s)d_*}\).  The
+   number of \(s\)-dimensional subspaces is at most \(4q^{s(r-s)}\) for
+   \(q\ge2\), so the probability that the column span has dimension at most
+   \(s\) is at most
+   \(4q^{s(r-s)}q^{-(r-s)d_*}=4q^{-(r-s)(d_*-s)}\).
+
+   If the chart realizes every residue in the affine image, then its active
+   residue set is \(\gamma+Cz_0+C(\ker B)\), whose size is \(q^R\).  The
+   final full-width statement substitutes \(q^R\simeq |G|\) into
+   \((BRH2)\), where \(\min\{\lambda m/|G|,W\}=\lambda m/|G|\).
+\end{proof}
+
 \begin{corollary}[Random active residues saturate the residue budget]
    \label{cor:random-active-residue-barrier}
    Consider the balanced-residue setting with \(M=|G|\), and assume for
