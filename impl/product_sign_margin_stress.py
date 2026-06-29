@@ -75,6 +75,9 @@ RATE_FIELDNAMES = [
     "sampled_required_rate_fraction",
     "sampled_rate_fraction",
     "sampled_rate_gap",
+    "ordinary_quotient_required_class_exponent",
+    "ordinary_quotient_unit_budget_gap",
+    "ordinary_quotient_min_label_budget_gap",
 ]
 
 
@@ -225,6 +228,16 @@ def gaussian_rate_gap_summary(
     sampled_required_rate_fraction = 1.0 - rho
     sampled_rate_fraction = rate / math.log(2.0)
     sampled_rate_gap = sampled_rate_fraction - sampled_required_rate_fraction
+    if sampled_rate_fraction <= 0.0:
+        quotient_required_class_exponent = float("inf")
+    else:
+        quotient_required_class_exponent = (
+            sampled_required_rate_fraction / sampled_rate_fraction
+        ) - 1.0
+    quotient_unit_budget_gap = quotient_required_class_exponent - 1.0
+    quotient_min_label_budget_gap = (
+        quotient_required_class_exponent - min_log_b_exponent
+    )
     return {
         "sigma": sigma,
         "corr": corr,
@@ -243,6 +256,9 @@ def gaussian_rate_gap_summary(
         "sampled_required_rate_fraction": sampled_required_rate_fraction,
         "sampled_rate_fraction": sampled_rate_fraction,
         "sampled_rate_gap": sampled_rate_gap,
+        "ordinary_quotient_required_class_exponent": quotient_required_class_exponent,
+        "ordinary_quotient_unit_budget_gap": quotient_unit_budget_gap,
+        "ordinary_quotient_min_label_budget_gap": quotient_min_label_budget_gap,
     }
 
 

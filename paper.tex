@@ -89720,6 +89720,85 @@ top-\(k\) backup.
    yields \((PSQ3)\).
 \end{proof}
 
+\begin{corollary}[Ordinary product-sign quotient class-size lower bound]
+   \label{cor:ordinary-product-sign-quotient-class-size}
+   Work in the same ideal iid Gaussian product-sign model, and let the sign
+   labels be partitioned into ordinary union buckets \(C_\ell\) as in
+   \cref{cor:stable-small-quotient-product-sign-obstruction}.  Put
+   \[
+      M_m=\max_\ell |A_\ell|,
+      \qquad
+      \delta_m=\frac{\log M_m}{\log m}.
+   \]
+   Suppose that the quotient has expected per-point bucket storage
+   \(m^{\rho+o(1)}\), and that for a zero-correlation far point the quotient
+   sampled bucket probability is at most \(m^{-(1-\rho)+o(1)}\).  If
+   \(I_\sigma(t)>0\), then necessarily
+   \[
+      \delta_m
+      \ge
+      \frac{(1-\rho)\log2}{I_\sigma(t)}-1-o(1).
+      \tag{OQB1}
+   \]
+   Equivalently, if all quotient classes have size \(m^{\delta+o(1)}\), then
+   \[
+      \frac{I_\sigma(t)}{\log2}
+      \ge
+      \frac{1-\rho}{1+\delta}-o(1).
+      \tag{OQB2}
+   \]
+   Thus an ordinary union quotient at a threshold whose fixed-label rate
+   fraction is \(\zeta=I_\sigma(t)/\log2<1-\rho\) must merge at least
+   \(m^{(1-\rho)/\zeta-1-o(1)}\) hidden product-sign labels in some stored
+   bucket class before storage and far-load can both hold.
+\end{corollary}
+
+\begin{proof}
+   Let \(U_x(s)=\mathbf 1_{\{\Psi_s(x)\ge rt\}}\).  For a fixed data point,
+   the hidden product-sign incidence count has expectation
+   \[
+      \E\sum_sU_x(s)
+      =
+      \exp\{r(\log2-I_\sigma(t)+o(1))\}
+      =
+      m^{\kappa(\log2-I_\sigma(t))+o(1)}.
+      \tag{OQB3}
+   \]
+   Since every hidden label belongs to one quotient class and each class has
+   size at most \(M_m\),
+   \[
+      \sum_sU_x(s)
+      \le
+      M_m\sum_\ell\mathbf 1_{\{x\in C_\ell\}} .
+   \]
+   The quotient storage bound therefore gives
+   \[
+      \kappa(\log2-I_\sigma(t))
+      \le \rho+\delta_m+o(1).
+      \tag{OQB4}
+   \]
+   For a zero-correlation far point,
+   \[
+      \sum_sK_q(s)U_x(s)=m^{-\kappa I_\sigma(t)+o(1)}
+   \]
+   in the ideal iid model, and this hidden sampled incidence is no larger than
+   the quotient sampled incidence.  The quotient far-load bound implies
+   \[
+      \kappa I_\sigma(t)\ge1-\rho-o(1).
+      \tag{OQB5}
+   \]
+   Combining \((OQB4)\) with the lower bound on \(\kappa\) from \((OQB5)\)
+   gives
+   \[
+      \delta_m
+      \ge
+      (1-\rho)\left(\frac{\log2-I_\sigma(t)}{I_\sigma(t)}\right)-\rho-o(1)
+      =
+      \frac{(1-\rho)\log2}{I_\sigma(t)}-1-o(1),
+   \]
+   which is \((OQB1)\).  Rearranging gives \((OQB2)\).
+\end{proof}
+
 \begin{lemma}[Posterior-rank margin certificate]\label{lem:posterior-rank-margin}
    Let
    \[
@@ -90827,6 +90906,14 @@ One should also separate the resident-guard regime from the genuine finite-chann
    exponents, contradicting the same rate test.  Therefore a quotient rescue
    would have to merge superpolylogarithmically many hidden labels, use
    responsibility-thinned output, or sample aggregate bucket mass directly.
+   In fact, \cref{cor:ordinary-product-sign-quotient-class-size} shows that
+   ordinary union quotienting needs polynomially large hidden classes before
+   even storage and far-load can both hold at these thresholds.  The required
+   class-size exponents \( (1-\rho)/(I_\sigma(t)/\log2)-1\) are
+   \(2.956,2.638,3.158\) for \(a=0.75\), \(\sigma=2.5,3.5,5.0\), and
+   \(1.325,1.121,1.492\) for \(a=0.9\).  Thus the quotient would need to merge
+   more than \(m\) hidden labels in all these rows; even the least-bad
+   \(a=0.9,\sigma=3.5\) row exceeds the minimum all-label exponent by \(0.811\).
    The remaining work is therefore not another threshold certificate: it is
    either a genuinely compressed all-outcome storage/evaluation scheme whose
    bucket quotient changes the storage/far-load arithmetic, a construction whose
@@ -90905,10 +90992,12 @@ One should also separate the resident-guard regime from the genuine finite-chann
    of the same labels violates the sampled storage/far-load rate test.  By
    \cref{cor:stable-small-quotient-product-sign-obstruction}, stable quotients
    with only polylogarithmic hidden labels per bucket class inherit that same
-   obstruction.  The clean endpoint now hinges on compressing the growing output
-   layer in a way that changes bucket storage through large aggregate classes
-   and an aggregate sampler, changing the channel so the tilted entropy is only
-   \(O(\log\log m)\), or accepting this as a barrier to the product-sign branch.
+   obstruction, and \cref{cor:ordinary-product-sign-quotient-class-size} shows
+   that ordinary union quotients need polynomial hidden class sizes at the
+   observed rate points.  The clean endpoint now hinges on compressing the
+   growing output layer by a nonordinary aggregate/responsibility sampler,
+   changing the channel so the tilted entropy is only \(O(\log\log m)\), or
+   accepting this as a barrier to the product-sign branch.
 \end{remark}
 
 \begin{proposition}[Conditional finite-channel polylog endpoint]\label{prop:finite-channel-polylog}

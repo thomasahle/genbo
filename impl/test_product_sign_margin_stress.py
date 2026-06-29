@@ -71,6 +71,12 @@ def test_gaussian_rate_gap_summary_has_positive_gap_and_rate():
     assert summary["sampled_rate_fraction"] > 0.0
     assert summary["sampled_required_rate_fraction"] > 0.0
     assert summary["sampled_rate_gap"] < 0.0
+    assert summary["ordinary_quotient_required_class_exponent"] > 0.0
+    assert summary["ordinary_quotient_unit_budget_gap"] > 0.0
+    assert (
+        summary["ordinary_quotient_min_label_budget_gap"]
+        > summary["ordinary_quotient_unit_budget_gap"]
+    )
 
     mean_rate = fixed_score_rate(
         summary["fixed_score_mean"],
