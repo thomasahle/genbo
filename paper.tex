@@ -96124,6 +96124,130 @@ amplified in the next proposition.
    \(u_\alpha(B)>0\), hence \(L_B=\sum_\alpha c_\alpha u_\alpha(B)\ge U_B\).
 \end{proof}
 
+\begin{corollary}[Resident-support conditioning removes empty-signature leakage]
+   \label{cor:resident-support-conditioned-raw-expansion}
+   Work in the setting of \cref{cor:raw-expansion-resident-load}.  Let
+   \[
+      \Sigma^+=\{\alpha\in\Sigma:c_\alpha>0\},
+      \qquad
+      U_B^+=\sum_{\alpha\in\Sigma^+}u_\alpha(B),
+      \qquad
+      L_B=\sum_{\alpha\in\Sigma^+}c_\alpha u_\alpha(B).
+      \tag{RSPX1}
+   \]
+   Suppose the query sampler can compute \(U_B^+\) and, when \(U_B^+>0\), draw
+   independent signatures from the resident-support-conditioned law
+   \[
+      \Pr[\alpha\mid B,\alpha\in\Sigma^+]
+      =
+      \frac{u_\alpha(B)}{U_B^+}
+      \qquad(\alpha\in\Sigma^+).
+      \tag{RSPX2}
+   \]
+   Draw
+   \[
+      N_B^+=
+      \left\lceil
+      8\,\frac{U_B^+}{\theta}
+      \log\!\left(2m+2U_B^+/\theta\right)
+      \right\rceil
+      \tag{RSPX3}
+   \]
+   such signatures and expand the sampled resident classes.  Then, conditional
+   on \(B\), every point with \(b_x(B)\ge\theta\) is output except with
+   probability \(O(m^{-2})\), and the conditional expected expansion scan is
+   \[
+      O\!\left(
+         \frac{L_B}{\theta}
+         \log\!\left(2m+2U_B^+/\theta\right)
+      \right).
+      \tag{RSPX4}
+   \]
+
+   If the signatures are terminals of an acyclic aggregate sampler, this
+   conditional law is implemented by using the binary terminal boundary
+   \[
+      H_B(t)=\mathbf1\{c_{\alpha(t)}>0\}
+      \tag{RSPX5}
+   \]
+   in the backward recursion and then running the usual top-down sampler.  If
+   that support-conditioned backward pass costs \(T_{\rm back}^+(B)\), and one
+   top-down path sample plus class expansion has unit-cost factors bounded by
+   \(\tau_B\) and the scanned residents respectively, then the conditional
+   expected online work is
+   \[
+      T_{\rm back}^+(B)
+      +
+      O\!\left(
+         \frac{(\tau_B+1)L_B}{\theta}
+         \log\!\left(2m+2L_B/\theta\right)
+      \right).
+      \tag{RSPX6}
+   \]
+   Hence, under \((PMR1)\)--\((PMR2)\), the reporter implements the smoothed
+   witness-list endpoint whenever
+   \[
+      \E_Z T_{\rm back}^+(B(q,Z))
+      \le Dm^\rho\log^{O_c(1)}m,
+      \qquad
+      \tau_{B(q,Z)}\le\log^{O_c(1)}m
+      \tag{RSPX7}
+   \]
+   in the usual polynomial envelope.
+
+   This is the minimal raw-sampler repair for empty buckets.  It does not
+   require the full resident-size boundary \(c_{\alpha(t)}\) of
+   \cref{cor:acyclic-resident-size-biased-sampler}, only the one-bit predicate
+   that the terminal signature has at least one resident.  In linear
+   code/lattice panels this predicate is often just membership in the affine
+   image of the resident source under the residue observer; when that image is
+   exposed in the trellis or quotient state, empty-signature leakage disappears
+   without proving any two-sided balance.
+\end{corollary}
+
+\begin{proof}
+   If \(U_B^+=0\), then every resident signature has zero active mass, so
+   \(b_x(B)=0\) for all \(x\).  Otherwise, any heavy point \(x\) has
+   \(\alpha(x)\in\Sigma^+\) and
+   \(u_{\alpha(x)}(B)=b_x(B)\ge\theta\).  One support-conditioned draw samples
+   \(\alpha(x)\) with probability at least \(\theta/U_B^+\), so
+   \[
+      \Pr[\alpha(x)\ {\rm is\ never sampled}\mid B]
+      \le
+      \left(2m+2U_B^+/\theta\right)^{-8}.
+   \]
+   A union bound over the at most \(U_B^+/\theta\) support signatures with
+   \(u_\alpha(B)\ge\theta\) gives \(O(m^{-2})\), and expansion of the sampled
+   class outputs the point.
+
+   The expected expansion scan is
+   \[
+      N_B^+\sum_{\alpha\in\Sigma^+}\frac{u_\alpha(B)}{U_B^+}c_\alpha
+      =
+      N_B^+\frac{L_B}{U_B^+},
+   \]
+   which proves \((RSPX4)\).  The binary terminal boundary makes the backward
+   partition function equal to \(U_B^+\), and the top-down sampler therefore
+   draws terminals with law \((RSPX2)\).  Since \(c_\alpha\ge1\) on
+   \(\Sigma^+\),
+   \[
+      U_B^+
+      =
+      \sum_{\alpha\in\Sigma^+}u_\alpha(B)
+      \le
+      \sum_{\alpha\in\Sigma^+}c_\alpha u_\alpha(B)
+      =
+      L_B.
+   \]
+   Substituting this in the number of top-down samples and in the logarithm
+   gives \((RSPX6)\).  Averaging \((RSPX6)\), using \((RSPX7)\), the
+   polylogarithmic assumptions on \(\theta^{-1}\), \(\tau_B\), and the
+   logarithm, and finally \((PMR2)\), gives the access work bound.  The near
+   miss is handled exactly as in
+   \cref{cor:raw-expansion-resident-load}: the only additional failure after
+   \(b_p(B(q,Z))\ge\theta\) is the conditional sampler miss.
+\end{proof}
+
 \begin{corollary}[Two-sided balance charges sampler mass to rate load]
    \label{cor:two-sided-balance-sampler-load}
    Work in the shared-signature setting above and put
