@@ -33,6 +33,9 @@ class DiagnosticResult:
     soft_surplus: np.ndarray
     tilted_top_mass: np.ndarray
     top_contribution_fraction: np.ndarray
+    top2_contribution_fraction: np.ndarray
+    top4_contribution_fraction: np.ndarray
+    top8_contribution_fraction: np.ndarray
     margin_mass: np.ndarray
     margin_bound: np.ndarray
     pi: np.ndarray
@@ -57,6 +60,9 @@ class DiagnosticResult:
             "soft_surplus_mean": float(self.soft_surplus.mean()),
             "tilted_top_mass_mean": float(self.tilted_top_mass.mean()),
             "top_contribution_fraction_mean": float(self.top_contribution_fraction.mean()),
+            "top2_contribution_fraction_mean": float(self.top2_contribution_fraction.mean()),
+            "top4_contribution_fraction_mean": float(self.top4_contribution_fraction.mean()),
+            "top8_contribution_fraction_mean": float(self.top8_contribution_fraction.mean()),
             "margin_delta": float(self.margin_delta),
             "margin_mass_mean": float(self.margin_mass.mean()),
             "margin_bound_mean": float(self.margin_bound.mean()),
@@ -69,6 +75,12 @@ class DiagnosticResult:
             out[f"tilted_top_mass_q{q:g}"] = float(np.quantile(self.tilted_top_mass, q))
             out[f"top_contribution_fraction_q{q:g}"] = float(
                 np.quantile(self.top_contribution_fraction, q))
+            out[f"top2_contribution_fraction_q{q:g}"] = float(
+                np.quantile(self.top2_contribution_fraction, q))
+            out[f"top4_contribution_fraction_q{q:g}"] = float(
+                np.quantile(self.top4_contribution_fraction, q))
+            out[f"top8_contribution_fraction_q{q:g}"] = float(
+                np.quantile(self.top8_contribution_fraction, q))
             out[f"margin_mass_q{q:g}"] = float(np.quantile(self.margin_mass, q))
             out[f"margin_bound_q{q:g}"] = float(np.quantile(self.margin_bound, q))
         return out
@@ -228,8 +240,8 @@ def tilted_surplus_statistics(
     tau: np.ndarray,
     *,
     alpha: float,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Return affinity, average surplus, top tilted mass, and top contribution.
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, dict[int, np.ndarray]]:
+    """Return affinity, average surplus, and top-k contribution statistics.
 
     The identity
 
@@ -252,8 +264,9 @@ def tilted_surplus_statistics(
     h_eta = np.sum(contributions, axis=1)
     soft_surplus = np.divide(h_eta, affinity, out=np.zeros_like(h_eta), where=affinity > 0)
 
-    top = np.argmax(affinity_terms, axis=1)
-    rows = np.arange(len(top))
+    order = np.argsort(-affinity_terms, axis=1)
+    rows = np.arange(len(order))
+    top = order[:, 0]
     tilted_top_mass = np.divide(
         affinity_terms[rows, top],
         affinity,
@@ -266,7 +279,18 @@ def tilted_surplus_statistics(
         out=np.zeros_like(h_eta),
         where=h_eta > 0,
     )
-    return affinity, soft_surplus, tilted_top_mass, top_contribution_fraction
+    topk_contribution = {}
+    for k in (2, 4, 8):
+        kk = min(k, affinity_terms.shape[1])
+        chosen = order[:, :kk]
+        cumulative = np.sum(np.take_along_axis(contributions, chosen, axis=1), axis=1)
+        topk_contribution[k] = np.divide(
+            cumulative,
+            h_eta,
+            out=np.zeros_like(h_eta),
+            where=h_eta > 0,
+        )
+    return affinity, soft_surplus, tilted_top_mass, top_contribution_fraction, topk_contribution
 
 
 def guard_density(data: np.ndarray, queries: np.ndarray, *, c: float, r: float) -> np.ndarray:
@@ -298,7 +322,13 @@ def diagnose_channel(
     h_eta, pi, tau = h_eta_for_pairs(k_data, k_query, near_indices, eta=eta, alpha=alpha)
     if margin_delta is None:
         margin_delta = 1.0 / alpha
-    affinity2, soft_surplus, tilted_top_mass, top_contribution_fraction = tilted_surplus_statistics(
+    (
+        affinity2,
+        soft_surplus,
+        tilted_top_mass,
+        top_contribution_fraction,
+        topk_contribution,
+    ) = tilted_surplus_statistics(
         k_data, k_query, near_indices, pi, tau, alpha=alpha)
     affinity, margin_mass, margin_bound = posterior_margin_certificate(
         k_data, k_query, near_indices, pi, tau, alpha=alpha, margin_delta=margin_delta)
@@ -309,6 +339,9 @@ def diagnose_channel(
                             affinity=affinity, soft_surplus=soft_surplus,
                             tilted_top_mass=tilted_top_mass,
                             top_contribution_fraction=top_contribution_fraction,
+                            top2_contribution_fraction=topk_contribution[2],
+                            top4_contribution_fraction=topk_contribution[4],
+                            top8_contribution_fraction=topk_contribution[8],
                             margin_mass=margin_mass, margin_bound=margin_bound, pi=pi, tau=tau,
                             eta=eta, alpha=alpha, margin_delta=margin_delta)
 

@@ -89166,6 +89166,39 @@ The conjecture predicts that the lower quantiles of $g(q)+\mathcal H_\xi(p,q)$ s
    The final statement is the same softmax interpolation identity used below.
 \end{proof}
 
+\begin{corollary}[Top-\(k\) tilted backup certificate]
+   \label{cor:top-k-tilted-backup}
+   In the setting of \cref{lem:soft-surplus-decomposition}, let \(T_k(p,q)\)
+   be the \(k\) largest outcomes under the tilted weights
+   \(K_p(j)^\beta K_q(j)^{1-\beta}\), and define
+   \[
+      \theta_k(p,q)=
+      \frac{\sum_{j\in T_k(p,q)}W_{p,q}(j)\sigma_j(p)}
+           {\E_{j\sim W_{p,q}}\sigma_j(p)}
+   \]
+   when the denominator is nonzero, and \(\theta_k=0\) otherwise.  If
+   \(\mathcal H_\xi(p,q)\ge h\) and \(\theta_k(p,q)\ge\gamma\), then the
+   top-\(\xi\) posterior children indexed by \(T_k(p,q)\) carry restricted
+   value at least \(\gamma h\).  For a balanced-softmax channel, \(T_k(p,q)\)
+   is exactly the set of top \(k\) outcomes under \(K_z\), where
+   \(z=\beta p+(1-\beta)q\).
+\end{corollary}
+
+\begin{proof}
+   This is \((SSD)\) with the expectation restricted to \(T_k(p,q)\).  The
+   balanced-softmax statement follows from the same interpolation identity as
+   before.
+\end{proof}
+
+The set \(T_k(p,q)\) is not a query-facing object, because it contains the
+unknown witness \(p\).  Its role is diagnostic and contractual: it says exactly
+what a hidden-label leader reporter must recover.  If a retained reporter can
+materialize these \(k\) labels, or labels with comparable restricted value, in
+output-sensitive time, then the captured value pays only the \(k\)-label work
+rather than the full \(B\)-outcome enumeration cost.  The residual
+\((1-\theta_k)\mathcal H_\xi\) is the concrete lower-tail gap left by a
+top-\(k\) backup.
+
 \begin{lemma}[Posterior-rank margin certificate]\label{lem:posterior-rank-margin}
    Let
    \[
@@ -89266,6 +89299,14 @@ One should also separate the resident-guard regime from the genuine finite-chann
    \(5\%\) top-outcome contribution fraction was only \(0.441\)--\(0.632\).
    The typical state is therefore almost winner-led, but a uniform theorem
    still needs a lower-tail backup rather than only an argmax reporter.
+   Measuring the prefix in \cref{cor:top-k-tilted-backup} gives the more useful
+   target: on the same isolated \(m=1000,3000\) whitened scale \(8,12\) sweep,
+   top two tilted outcomes captured lower \(5\%\) contribution fraction
+   \(0.724\)--\(0.962\), while top four captured \(0.988\)--\(1.000\) and top
+   eight captured all of the measured value.  This points to a constant-size
+   hidden prefix reporter as the next constructive object.  It is not yet a
+   proof, because the query algorithm must recover this witness-dependent
+   tilted prefix without being given \(p\).
 \end{remark}
 
 \begin{proposition}[Conditional finite-channel polylog endpoint]\label{prop:finite-channel-polylog}
