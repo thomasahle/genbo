@@ -89018,6 +89018,20 @@ amplified in the next proposition.
    optimal-exponent, output-sensitive implementation. Without such an
    implementation, \cref{asm:smoothed-score-max} should be viewed as a clean
    alternative target, not as a proof of the polylogarithmic endpoint.
+
+   A useful diagnostic is to try to reuse the smooth cumulative-score product
+   filter as that implementation by querying it at the perturbed center
+   \(y=Y/t\).  This does not currently look like the right proof path.  The
+   script \texttt{impl/smoothed\_scoremax\_stress.py} separates the oracle score
+   gap from candidate generation: on planted spherical instances the planted
+   point is the exact smoothed-score maximizer once \(t=\Theta(\log m/r^2)\) is
+   large enough, but a work-safe smooth-filter threshold can return no
+   candidates, while lowering the threshold enough to capture the score leader
+   produces storage and candidate counts far above \(m^\rho\) in the small
+   sweeps.  Thus the existing smooth leaf filter should not be treated as an
+   implementation of \cref{asm:smoothed-score-max}; the score-max branch needs
+   a genuinely additive nearest-neighbor/MIPS primitive or a different
+   structured reporter.
 \end{remark}
 
 \begin{remark}[Why ordinary ANN does not implement the score-max target]\label{rem:score-max-ordinary-ann}
