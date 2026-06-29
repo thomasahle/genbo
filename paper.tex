@@ -93131,6 +93131,116 @@ amplified in the next proposition.
    \(d_{\rm TV}(\bar\nu_\ell,u)\ge1-|S|/M\ge1-Q_\ell/M\).
 \end{proof}
 
+\begin{corollary}[Balanced aligned residues implement the responsibility lister]
+   \label{cor:balanced-aligned-residue-lister}
+   Work in the responsibility-quotient setting of
+   \cref{cor:sketched-responsibility-lister}, and suppose the quotient is an
+   acyclic terminal trellis as in
+   \cref{cor:trellis-sketch-responsibility-aggregation}.  Assume the terminal
+   incidences are native linear residues as in
+   \cref{cor:linear-residue-signature-histograms}, with
+   \(G=\mathbb F_q^r\), \(M=|G|\), and \(\lambda\)-balanced resident classes
+   \[
+      |C_\alpha|\le \lambda m/M
+      \qquad(\alpha\in G).
+      \tag{BAR1}
+   \]
+   Suppose also that the sketch and trellis side factors satisfy
+   \[
+      D(b_0+1)(1+|E|)\le \log^{O_c(1)}m.
+      \tag{BAR2}
+   \]
+   For each good score direction \(Y\) and sampled quotient class \(\ell\), let
+   the active terminals be covered by linear charts as in
+   \cref{cor:linear-quotient-rank-active-residues}, and put
+   \[
+      Q_\ell=\sum_a q^{r_{\ell,a}}.
+      \tag{BAR3}
+   \]
+   If
+   \[
+      \E_{\ell\sim\Pi_Y}Q_\ell\cdot\frac{\lambda m}{M}
+      \le m^\rho\log^{O_c(1)}m,
+      \tag{BAR4}
+   \]
+   then, for every fixed heavy-hitter sketch width \(W\), the residue-histogram
+   aggregation cost satisfies \((SRL2)\).  The corresponding shared-histogram
+   preprocessing storage is at most
+   \[
+      \lambda m\log^{O_c(1)}m
+      \le m^{1+\rho}\log^{O_c(1)}m,
+      \tag{BAR5}
+   \]
+   and storing all dyadic sketch widths used by
+   \cref{lem:linear-sketch-heavy-responsibilities} costs only another logarithmic
+   factor.
+
+   Consequently, if the mass hypothesis \((RQS1)\) also holds for this \(Y\),
+   the residue trellis supplies the output-sensitive lister required in
+   \((RQS3)\), including exact responsibility filtering of the decoded
+   candidates, within expected work \(d\,m^\rho\log^{O_c(1)}m\).
+
+   In particular, the positive code/lattice target left by the previous
+   barriers is concrete: with \(\lambda=\log^{O_c(1)}m\),
+   \(\E Q_\ell=\log^{O_c(1)}m\), and
+   \[
+      |G|\ge m^{1-\rho}\log^{-O_c(1)}m,
+      \tag{BAR6}
+   \]
+   the responsibility-sketch implementation is no longer the source of a
+   subpolynomial overhead.  What remains to prove is the geometric part:
+   enough near responsibility mass \((RQS2)\), the global load bound \((RQS1)\),
+   residue balance, and the row-span-aligned residual-rank condition that gives
+   \(Q_\ell=\polylog m\).
+\end{corollary}
+
+\begin{proof}
+   By \cref{cor:linear-quotient-rank-active-residues}, the active residue count
+   in the sampled quotient is at most \(Q_\ell\).  Therefore
+   \cref{cor:balanced-residue-histogram-budget} gives
+   \[
+      J_W^G(\ell)
+      \le
+      D(b_0+1)Q_\ell\min\{\lambda m/M,W\}
+      \le
+      D(b_0+1)Q_\ell\lambda m/M.
+   \]
+   Since \(K_W^G(\ell)\le J_W^G(\ell)\), \((BAR2)\)--\((BAR4)\) imply
+   \[
+      \E_{\ell\sim\Pi_Y}
+      \bigl[J_W^G(\ell)+K_W^G(\ell)|E|\bigr]
+      \le m^\rho\log^{O_c(1)}m,
+   \]
+   which is exactly \((SRL2)\) through
+   \cref{cor:linear-residue-signature-histograms}.  The storage bound follows
+   from
+   \[
+      D(b_0+1)M\min\{\lambda m/M,W\}
+      \le D(b_0+1)\lambda m
+   \]
+   and \((BAR2)\), with another \(O(\log m)\) factor for the dyadic widths.
+
+   It remains only to account for exact filtering, since the sketch decoder of
+   \cref{lem:linear-sketch-heavy-responsibilities} returns candidate identifiers
+   before applying the threshold test.  For a decoded candidate \(x\), the exact
+   responsibility numerator is another terminal-reward recursion with
+   coefficient vector \(c=e_x\):
+   \[
+      g_{e_x}(t)=U_x(t)=\mathbf1\{A\phi(x)=\sigma(t)\}.
+   \]
+   This reward is initialized by the terminal residue already present in the
+   trellis, and one backward pass computes the numerator.  The number of decoded
+   candidates is
+   \(O(M_{Y,\ell}L_m\log m)\) by \((LHH4)\) with
+   \(\tau=(2L_m)^{-1}\).  Averaging over \(\ell\sim\Pi_Y\) and using
+   \((SRL3)\) together with \((RQS1)\) charges these extra backward passes and
+   exact score evaluations to \(d\,m^\rho\log^{O_c(1)}m\).  Hence the lister of
+   \((RQS3)\) is implemented.
+
+   The final displayed sufficient condition is just \((BAR4)\) with
+   \(\lambda\) and \(\E Q_\ell\) polylogarithmic.
+\end{proof}
+
 \begin{corollary}[Random active residues saturate the residue budget]
    \label{cor:random-active-residue-barrier}
    Consider the balanced-residue setting with \(M=|G|\), and assume for
