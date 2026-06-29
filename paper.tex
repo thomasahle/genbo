@@ -16531,6 +16531,97 @@ partition ignores the bias coordinates that certify the list size.
    the fixed-path far threshold from lying below the selected near mean.
 \end{proof}
 
+\begin{lemma}[Marked trellis responsibility verifier]
+   \label{lem:marked-trellis-responsibility-verifier}
+   Work in the marked trellis setting of
+   \cref{lem:marked-trellis-spectrum-verifier}, but allow a designed bucket
+   map \(\lambda:\mathcal P\to\Lambda\) in place of equality of raw stored
+   sets.  For a query \(q\), put
+   \[
+      Z_{q,\ell}
+      =
+      \sum_{\pi:\lambda(\pi)=\ell}W_q(\pi),
+      \qquad
+      \Pi_q(\ell)=\frac{Z_{q,\ell}}{Z_q},
+   \]
+   and define the bucket-marked partition function
+   \[
+      Z_{q,x,\ell}^{\ge T}
+      =
+      \sum_{\substack{\pi:\lambda(\pi)=\ell\\ S_x(\pi)\ge T}}W_q(\pi).
+      \tag{MTR1}
+   \]
+   The exact hidden responsibility of \(x\) inside a sampled bucket \(\ell\) is
+   \[
+      r_{q,x,\ell}
+      =
+      \begin{cases}
+      Z_{q,x,\ell}^{\ge T}/Z_{q,\ell},& Z_{q,\ell}>0,\\
+      0,& Z_{q,\ell}=0 .
+      \end{cases}
+      \tag{MTR2}
+   \]
+   Suppose that, after sampling \(\ell\sim\Pi_q\), an output-sensitive reporter
+   emits \(x\) with conditional probability \(\theta_{q,x,\ell}\) satisfying
+   \[
+      r_{q,x,\ell}\le\theta_{q,x,\ell}
+      \le\min\{1,K r_{q,x,\ell}\}
+      \tag{MTR3}
+   \]
+   for all promised query/load pairs.  Then every promised query satisfies
+   \[
+      \sum_{\substack{x\in P\\ \|x-q\|>cr}}
+      \sum_{\ell\in\Lambda}\Pi_q(\ell)\theta_{q,x,\ell}
+      \le
+      K
+      \sum_{\substack{x\in P\\ \|x-q\|>cr}}
+      \frac{Z_{q,x}^{\ge T}}{Z_q},
+      \tag{MTR4}
+   \]
+   and every near pair \((p,q)\) satisfies
+   \[
+      \sum_{\ell\in\Lambda}\Pi_q(\ell)\theta_{q,p,\ell}
+      \ge
+      \frac{Z_{q,p}^{\ge T}}{Z_q}.
+      \tag{MTR5}
+   \]
+
+   If the scores lie in \(\delta\mathbb Z\) and the bucket map is
+   terminal-measurable, \(\lambda(\pi)=\lambda(t)\) for the terminal \(t\) of
+   \(\pi\), then \(Z_{q,x,\ell}^{\ge T}\) is computed by the marked recursion
+   \((MTS7)\) with the final sum restricted to terminals \(t\) with
+   \(\lambda(t)=\ell\).  Thus a code or lattice trellis with
+   \(K\le\log^{O_c(1)}m\), polylogarithmic sampled reporter work, and the
+   marked bounds \((MTS4)\)--\((MTS5)\) supplies the sampled far-load and
+   near-hit parts of the terminal ANN certificate without scanning whole
+   quotient buckets.
+\end{lemma}
+
+\begin{proof}
+   Apply \cref{lem:responsibility-thinned-quotient} to the hidden path family
+   \(\mathcal T=\mathcal P\), quotient map \(\lambda\), hidden law
+   \(\pi_q(\pi)=W_q(\pi)/Z_q\), and predicate
+   \(U_x(\pi)=\mathbf 1\{S_x(\pi)\ge T\}\).  For this specialization,
+   \[
+      h_{q,x,\ell}
+      =
+      \sum_{\pi:\lambda(\pi)=\ell}\pi_q(\pi)U_x(\pi)
+      =
+      \frac{Z_{q,x,\ell}^{\ge T}}{Z_q},
+   \]
+   while
+   \[
+      \Pi_q(\ell)=Z_{q,\ell}/Z_q.
+   \]
+   Therefore the conditional responsibility
+   \(h_{q,x,\ell}/\Pi_q(\ell)\) is exactly \((MTR2)\).  The hypotheses
+   \((MTR3)\) are the hypotheses \((RTQ0)\), so \((MTR4)\)--\((MTR5)\) are
+   \((RTQ1)\)--\((RTQ2)\) after summing
+   \(Z_{q,x,\ell}^{\ge T}\) over \(\ell\).  The final recursion statement is
+   the proof of \((MTS7)\)--\((MTS8)\) with the terminal sum restricted to the
+   chosen bucket.
+\end{proof}
+
 \begin{remark}[Trellis target for codes and lattices]
    \label{rem:trellis-quotient-target}
    \Cref{lem:compressed-aggregate-sampler} is the sampled analogue of the
@@ -16550,6 +16641,10 @@ partition ignores the bias coordinates that certify the list size.
    \cref{cor:randomized-aggregate-sampler-information-screen} still requires
    the charged transcript to be the quotient bucket or responsibility object
    rather than a full-entropy hidden path.
+   \Cref{lem:marked-trellis-responsibility-verifier} is the responsibility
+   version of the same calculation: the quantity a reporter must approximate
+   for point \(x\) in sampled bucket \(\ell\) is exactly the marked partition
+   ratio \(Z_{q,x,\ell}^{\ge T}/Z_{q,\ell}\).
 \end{remark}
 
 \begin{lemma}[Tilted weight feasibility is linear]
@@ -94199,6 +94294,11 @@ near mass reduce to three Perron--Frobenius spectral inequalities against
 negative screen: exact path sampling at full raw path entropy still fails the
 Gaussian information-charge test, so a trellis success must charge a quotient,
 responsibility law, or Fano/list-work prefix object.
+\Cref{lem:marked-trellis-responsibility-verifier} makes the responsibility
+option checkable: inside a sampled trellis bucket, the exact emission
+responsibility of point \(x\) is the marked partition ratio
+\(Z_{q,x,\ell}^{\ge T}/Z_{q,\ell}\), and reporting within a polylogarithmic
+factor preserves the far and near spectrum.
 \Cref{lem:tilted-weight-linear-feasibility} shows that, for a fixed retained
 pool, choosing those weights is just a linear feasibility problem after
 clearing the tilted partition functions.  Failure has a concrete dual
