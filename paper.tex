@@ -7530,6 +7530,67 @@ partition ignores the bias coordinates that certify the list size.
    reporter can be certified only by replacing this charged operation.
 \end{proof}
 
+\begin{corollary}[Materialized residue summaries reintroduce the range]
+   \label{cor:materialized-residue-summary-barrier}
+   Work in the setting of \cref{lem:syndrome-prefix-occupancy}, and fix a
+   prefix \(u\) with high-scoring suffix set \(A_u\).  Suppose the suffix
+   syndromes of fixed suffixes are uniform in \(G\) and pairwise independent,
+   with \(|G|=K\).  Any exact suffix-residue summary that explicitly lists all
+   completable residues
+   \[
+      \operatorname{Res}(A_u)
+      =
+      \left\{\sum_{j>|u|}h_j(v_j):v\in A_u\right\}
+   \]
+   has expected output size at least
+   \[
+      \E_h|\operatorname{Res}(A_u)|
+      \ge
+      K\,\frac{|A_u|}{K+|A_u|}.
+      \tag{MRS1}
+   \]
+   Hence if \(|A_u|\ge K\), such a materialized summary has expected size at
+   least \(K/2\).  More generally, for any prefix family \(\mathcal P\) with
+   \(|A_u|\ge K\) for every \(u\in\mathcal P\), constructing exact
+   materialized residue summaries for all prefixes in \(\mathcal P\) costs
+   \[
+      \Omega(K|\mathcal P|)
+      \tag{MRS2}
+   \]
+   in expectation, before any terminal bucket scan.
+
+   Therefore a superpolylogarithmic syndrome range cannot be hidden inside a
+   nonterminal branch-and-bound proof by explicitly materializing occupied
+   residual classes.  Such a range is useful for the clean endpoint only if
+   the construction supplies an implicit reporter: a polylog-state trellis or
+   junction tree, a max-plus or meet-in-the-middle data structure with
+   certified smaller frontier, a bucket-local heavy-responsibility lister, or
+   a leader/quotient rule that changes the charged object.
+\end{corollary}
+
+\begin{proof}
+   For each residue \(g\in G\), let
+   \[
+      X_g=
+      |\{v\in A_u:\sum_{j>|u|}h_j(v_j)=g\}|.
+   \]
+   As in the proof of \cref{lem:syndrome-prefix-occupancy},
+   \[
+      \E X_g=\mu:=|A_u|/K,
+      \qquad
+      \E X_g^2\le\mu+\mu^2 .
+   \]
+   Paley--Zygmund gives
+   \[
+      \Prb[X_g>0]\ge\frac{\mu}{1+\mu}.
+   \]
+   Summing this lower bound over \(g\in G\) proves \((MRS1)\).  If
+   \(|A_u|\ge K\), then \(\mu\ge1\), so the expected occupied-residue count is
+   at least \(K/2\).  Summing over the prefix family gives \((MRS2)\).  The
+   final paragraph is the contrapositive interpretation for any proof that
+   charges the explicit summary size as query work.
+\end{proof}
+
 \begin{corollary}[Retained terminals dominate residue live prefixes]
    \label{cor:retained-terminals-dominate-prefixes}
    In the setting of \cref{cor:syndrome-residual-entropy-audit}, let
