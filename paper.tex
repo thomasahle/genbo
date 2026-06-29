@@ -18457,6 +18457,101 @@ partition ignores the bias coordinates that certify the list size.
    orientations.
 \end{proof}
 
+\begin{corollary}[The signed sparse seven grid fails a native mixed query]
+   \label{cor:signed-sparse-seven-mixed-query-barrier}
+   The candidate in \cref{cor:signed-sparse-seven-flat-audit} does not satisfy
+   the full near-query condition at \(c=2\).  Let
+   \(p=d^{-1/2}(1,\ldots,1)\), assume \(23\mid d\), and define a unit query
+   \(q\) by taking
+   \[
+      \sqrt d\,q_i=-\frac14
+      \quad\text{on } \frac7{23}d \text{ coordinates},
+      \qquad
+      \sqrt d\,q_i=\frac{19}{16}
+      \quad\text{on } \frac{16}{23}d \text{ coordinates}.
+      \tag{SSM1}
+   \]
+   Then
+   \[
+      \ip{p}{q}
+      =
+      \frac7{23}\left(-\frac14\right)
+      +
+      \frac{16}{23}\left(\frac{19}{16}\right)
+      =
+      \frac34,
+      \qquad
+      \|q\|=1.
+      \tag{SSM2}
+   \]
+   Thus \(q\) is a native \(c=2\) near query for \(p\).  However, for the
+   limiting signed sparse seven-symbol law \(\mathcal S_0\), and for every
+   nonnegative query temperature \(\beta\), the expected normalized storage
+   score under the product tilted law
+   \(\pi_q(g)\propto\exp(\beta\ip{g}{q})\) is at most
+   \[
+      \frac{16}{23}\sqrt{\frac72}
+      =
+      1.301\ldots
+      <
+      \theta_7
+      =
+      \sqrt{\frac{12}{7}\log7}
+      =
+      1.826\ldots .
+      \tag{SSM3}
+   \]
+   Consequently the sampled near mass of \(p\) is
+   \[
+      \pi_q\{\ip{g}{p}\ge T\}
+      \le e^{-\Omega(d)}
+      =
+      m^{-\Omega(1)},
+      \tag{SSM4}
+   \]
+   not inverse-polylogarithmic.  The same conclusion is stable under
+   sufficiently small sign-symmetric perturbations of \(\mathcal S_0\).
+
+   Hence the signed sparse seven-symbol grid is also not the missing raw
+   product-grid construction.  It passes all-flat and sign-orientation tests,
+   but fails once the valid near query has a mixed coordinate profile.  The
+   remaining product-grid escape would need a richer alphabet whose tilted
+   mean is uniformly large for every query profile with mean \(3/4\) and
+   second moment \(1\), or a query signature / quotient mechanism that adapts
+   to that profile.
+\end{corollary}
+
+\begin{proof}
+   The identities in \((SSM2)\) are direct:
+   \[
+      \frac7{23}\frac1{16}
+      +
+      \frac{16}{23}\frac{361}{256}
+      =
+      \frac7{368}+\frac{361}{368}=1 .
+   \]
+   On a coordinate with \(q_i<0\), sign symmetry of \(\mathcal S_0\) implies
+   that the tilted one-coordinate mean is nonpositive.  On a coordinate with
+   \(q_i>0\), the tilted mean is at most the largest atom
+   \(a_7=\sqrt{7/2}\).  Therefore the normalized expected storage score is at
+   most \((16/23)a_7\), giving \((SSM3)\).
+
+   The coordinates remain independent under the product tilted law and are
+   bounded in \([-a_7,a_7]\).  Since the mean of
+   \(d^{-1}\sum_i g_i\) is separated from \(\theta_7\) by a fixed positive
+   constant, Hoeffding's inequality gives
+   \[
+      \Pr_{\pi_q}\!\left[
+         \frac1d\sum_i g_i\ge\theta_7
+      \right]
+      \le e^{-c d}
+   \]
+   for some absolute \(c>0\).  This is exactly \((SSM4)\), because
+   \(d=(1/\log7+o(1))\log m\).  The strict gap in \((SSM3)\) leaves the same
+   argument valid after a sufficiently small sign-symmetric perturbation and
+   variance renormalization of the alphabet.
+\end{proof}
+
 \begin{corollary}[Bucket-quotient weighted quadrature]
    \label{cor:bucket-quotient-quadrature}
    Fix the terminal setting of \cref{prop:sampled-structured-panel}.  Let
