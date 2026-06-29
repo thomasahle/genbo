@@ -5560,20 +5560,79 @@ partition ignores the bias coordinates that certify the list size.
    by Paley--Zygmund.
 \end{proof}
 
+\begin{corollary}[Difference-universal syndromes suffice with a random bucket]
+   \label{cor:difference-universal-syndrome-thinning}
+   Let \(G\) be a finite abelian group and let
+   \(\mathcal T=\mathcal C_1\times\cdots\times\mathcal C_k\).  For each
+   coordinate \(j\), choose \(h_j:\mathcal C_j\to G\) independently from a
+   family satisfying the difference-universal bound
+   \[
+      \Prb[h_j(a)-h_j(b)=\tau]\le \frac{C_\Delta}{|G|}
+      \tag{DUS1}
+   \]
+   for all distinct \(a,b\in\mathcal C_j\) and all \(\tau\in G\).  Choose the
+   target syndrome \(\sigma\) uniformly from \(G\), independently of the
+   hashes, and retain
+   \[
+      R_\sigma=\{(i_1,\ldots,i_k): h_1(i_1)+\cdots+h_k(i_k)=\sigma\}.
+      \tag{DUS2}
+   \]
+   Then, for every fixed \(A\subseteq\mathcal T\), with
+   \(X_A=|A\cap R_\sigma|\) and \(\mu=|A|/|G|\),
+   \[
+      \E X_A=\mu,
+      \qquad
+      \E X_A^2\le \mu+C_\Delta\mu^2,
+      \qquad
+      \Prb[X_A>0]\ge \frac{\mu}{1+C_\Delta\mu}.
+      \tag{DUS3}
+   \]
+\end{corollary}
+
+\begin{proof}
+   Conditional on the hashes, a fixed tuple lands in the random target bucket
+   with probability \(|G|^{-1}\), giving \(\E X_A=\mu\).  For two distinct
+   tuples \(i,i'\), write \(S_i=\sum_j h_j(i_j)\).  Since \(\sigma\) is
+   uniform and independent,
+   \[
+      \Prb[i,i'\in R_\sigma]
+      =
+      |G|^{-1}\Prb[S_i=S_{i'}].
+   \]
+   Choose a coordinate \(j\) with \(i_j\ne i'_j\) and condition on all hash
+   functions outside coordinate \(j\).  The event \(S_i=S_{i'}\) becomes
+   \(h_j(i_j)-h_j(i'_j)=\tau\) for a fixed \(\tau\in G\), so \((DUS1)\) gives
+   \[
+      \Prb[i,i'\in R_\sigma]\le C_\Delta |G|^{-2}.
+   \]
+   Summing the diagonal and off-diagonal terms gives
+   \(\E X_A^2\le\mu+C_\Delta\mu^2\), and Paley--Zygmund gives the displayed
+   hit bound.
+\end{proof}
+
 \begin{remark}[Multiply-shift style masks]
    \label{rem:multiply-shift-syndrome-masks}
    \Cref{lem:pairwise-independent-syndrome-thinning} says that the randomness
-   required for the subset itself is modest.  A practical instantiation should
-   use an affine two-universal family over a machine-sized group or field.  For
+   required for the subset itself is modest, and
+   \cref{cor:difference-universal-syndrome-thinning} shows that exact
+   pairwise independence is more than the proof needs when the target syndrome
+   is sampled as part of the seed.  A practical proof primitive should satisfy
+   the difference bound \((DUS1)\), or the stronger affine pairwise
+   independence used in \cref{lem:pairwise-independent-syndrome-thinning}.  For
    example, after encoding block symbols as field elements, take
    \[
       h_j(a)=\alpha_j a+\beta_j\in\mathbb F
    \]
    with \(\alpha_j,\beta_j\) uniform and independent.  This is exactly
-   pairwise independent.  Multiply-add-shift variants give the same
-   word-RAM flavor; plain multiplication without the additive shift is usually
-   only collision-universal, so it should be checked against the variance
-   calculation before being used as a proof primitive.
+   pairwise independent.  For \(G\simeq\mathbb F_2^r\), a word-RAM variant
+   with the same algebra is to use carry-less multiplication in
+   \(\mathbb F_{2^w}\) followed by a full-rank linear projection to \(r\)
+   output bits; for distinct symbols the projected difference is uniform in
+   \(G\).  Ordinary integer multiply-shift is a useful engineering heuristic
+   but is not automatically this object: high-bit truncation over
+   \(\mathbb Z/2^w\) can expose large two-adic common factors in \(a-b\).  If
+   it is used in the proof, the required check is \((DUS1)\), not just a
+   marginal load test.
 
    This separates the randomness question from the decoding question.  For a
    fixed query score set \(A(q)\), independent of the hash seed after
@@ -5608,6 +5667,18 @@ partition ignores the bias coordinates that certify the list size.
    state cost: a syndrome range of size \(|G|\) gives thinning \(|G|^{-1}\)
    and also introduces either a \(|G|\)-state decoding object or the
    corresponding residue-list frontier.
+
+   There is one important distinction between full affine syndromes and
+   projected multiply-shift-style syndromes.  If \(G\simeq\mathbb F_2^r\) and
+   \(h_j(c)=\pi(\alpha_jc)+\beta_j\) with a linear projection
+   \(\pi:\mathbb F_{2^w}\to G\) and
+   \(|G|\) is smaller than the block alphabet, then fixing \(k-1\) coordinates
+   does not force a unique last symbol.  It forces the last symbol into one
+   affine coset of \(\ker\pi\), or into the corresponding dictionary bucket.
+   Under balance this bucket has expected size \(|\mathcal C_h|/|G|\).
+   Unique-coordinate forcing is the full-syndrome regime; projected syndromes
+   are still algebraic, but the decoder must charge the bucket or
+   meet-in-the-middle frontier.
 \end{remark}
 
 \begin{lemma}[Syndrome-state product decoder]
