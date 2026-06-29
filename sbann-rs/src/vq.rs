@@ -1324,7 +1324,9 @@ impl Index {
         let mr = rpq.m;
         let mut keyed: Vec<(f32, u32)> = if refine {
             let qf: Vec<f32> = q.iter().map(|&v| v as f32).collect();
-            let lut = rpq.query_lut_f32(&qf);
+            // IP mode (OOD/MIPS): refine by approx INNER PRODUCT (-<q,decode>), matching the IP exact
+            // rerank below; L2 otherwise. Same 8-bit codes, just a different query LUT.
+            let lut = if IP_MODE.load(std::sync::atomic::Ordering::Relaxed) { rpq.query_lut_f32_ip(&qf) } else { rpq.query_lut_f32(&qf) };
             pool.iter().map(|&(_, slot)| {
                 let code = &self.resid_codes[slot as usize * mr..slot as usize * mr + mr];
                 (rpq.adc(code, &lut), slot)

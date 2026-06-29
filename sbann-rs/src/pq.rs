@@ -506,6 +506,25 @@ impl ResidPq {
         lut
     }
 
+    /// IP refine LUT: per-subspace -<q_sub, cent[c]> so adc() sums to -<q, decode8(code)> (smaller =
+    /// larger inner product). For OOD/MIPS: the 8-bit refine re-ranks IP candidates by APPROX IP, so it
+    /// can shrink the exact raw-IP rerank depth the same way the L2 LUT does for msspacev.
+    pub fn query_lut_f32_ip(&self, q: &[f32]) -> Vec<f32> {
+        let nc = 256usize;
+        let mut lut = vec![0f32; self.m * nc];
+        for sub in 0..self.m {
+            let off = sub * self.dpb;
+            let qs = &q[off..off + self.dpb];
+            for c in 0..nc {
+                let ct = &self.cent[(sub * nc + c) * self.dpb..(sub * nc + c) * self.dpb + self.dpb];
+                let mut dot = 0f32;
+                for k in 0..self.dpb { dot += qs[k] * ct[k]; }
+                lut[sub * nc + c] = -dot;
+            }
+        }
+        lut
+    }
+
     /// Refined approx distance ||q - decode8(code)||^2 from the precomputed query LUT.
     #[inline]
     pub fn adc(&self, code: &[u8], lut: &[f32]) -> f32 {
