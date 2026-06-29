@@ -89145,6 +89145,53 @@ amplified in the next proposition.
    \cref{lem:compressed-aggregate-sampler}.
 \end{remark}
 
+\begin{remark}[Exact coded product-sign stress test]
+   \label{rem:coded-product-sign-stress}
+   The first finite test of the preceding route replaces the full product-sign
+   cube by an exactly enumerated binary linear code and keeps the same
+   threshold storage rule.  For a code \(C\subseteq\{\pm1\}^r\), the query
+   reports the top \(L\) codewords by \(\langle s,u(q)\rangle\), while a point
+   \(x\) is stored in a reported label when
+   \(\Psi_s(x)=\langle s,u(x)\rangle-\sum_a\log\cosh u_a(x)\) exceeds the far
+   threshold whose per-reported-label tail is \(m^{\rho-1}/L\).  The script
+   \texttt{impl/coded\_product\_sign\_panel\_stress.py} compares Reed--Muller,
+   polar-weight, random-linear, and full-cube panels in this exact normal form.
+
+   The \(r=16\) rows are already diagnostic.  With \(m=8192\), \(c=2\),
+   \(\sigma=3.5\), near bit correlation \(0.95\), and \(L=8\), \(RM(2,4)\)
+   has label exponent \(11/13=0.846\), close to the target \(1-\rho=6/7\),
+   and the query decoder is not the bottleneck: the reported list has median
+   query mass about \(0.997\) and lower \(5\%\) tilted mass \(0.79\)--\(0.84\).
+   Nevertheless the near hit rate is only \(0.107\)--\(0.126\), essentially
+   equal to the oracle over all codewords.  The sparse code simply does not
+   contain a stored high-score near label often enough at the calibrated far
+   threshold.  A random \([16,11]\) code behaves similarly; the polar-weight
+   row selection coincides with the same RM panel at this dimension.
+
+   The most promising finite signal is instead the one-label mode.  For the
+   same \(RM(2,4)\) panel with \(L=1\), storage is still linear
+   (\(0.908\) stored labels per point in the local panel), far load remains at
+   the \(m^\rho\) budget, and the top label hits with probability
+   \(0.324\)--\(0.436\) while the oracle hit probability is \(0.626\)--\(0.730\).
+   The next RM size gives a comparable but weaker constant: \(RM(2,5)\) at
+   \(m=2^{19}\), \(L=1\), and the same bit parameters has label exponent
+   \(16/19=0.842\), storage \(0.852\) labels per point, and hit probability
+   \(0.242\)--\(0.258\); a random \([32,16]\) code is indistinguishable.  At
+   bit correlation \(0.99\), the \(RM(2,5)\) hit probability rises to
+   \(0.375\)--\(0.425\), close to its oracle \(0.433\)--\(0.450\).
+
+   Thus the coded product-sign experiment does not yet identify a special
+   Reed--Muller or polar theorem.  It does show that a sparse
+   \(m^{1-\rho}\)-label code can remove the full-cube top-\(k\) entropy
+   obstruction and give a constant-probability top-one reporter with only
+   linear storage, which could in principle be boosted over independent panels.
+   The missing theorem is sharper: prove such a constant uniformly at the
+   required bit correlation and growing blocklength, or prove that the observed
+   constant decays.  Larger lists do not help in the tested regime, because the
+   higher threshold needed to keep the same far load erases the extra query
+   mass.
+\end{remark}
+
 \begin{remark}[Why ordinary ANN does not implement the score-max target]\label{rem:score-max-ordinary-ann}
    One can force the perturbed center $y=Y/t$ to be close to $q$ by taking
    $t$ large. In dimension $D$, if
