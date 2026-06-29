@@ -19095,6 +19095,110 @@ partition ignores the bias coordinates that certify the list size.
    \((RGA4)\) gives \(\bar a_m=\theta_m+O_c(\eta_m)\).
 \end{proof}
 
+\begin{corollary}[Regular scalar product grids fail sign-balanced residents]
+   \label{cor:regular-product-grid-sign-balanced-barrier}
+   Let \(d\) be even.  In the setting of
+   \cref{lem:regular-growing-product-alphabet-knife-edge}, suppose a raw
+   one-bucket-per-label scalar product grid is required to satisfy the storage
+   cap and inverse-polylogarithmic near mass not only for the all-positive flat
+   resident, but also for the sign-balanced resident
+   \[
+      p_\pm=d^{-1/2}(1,\ldots,1,-1,\ldots,-1),
+   \]
+   and for every two-point near-query profile in the correlation cone of
+   \(p_\pm\).  If
+   \[
+      R_m\sqrt{\frac{\log L_m}{d}}=o(1),
+      \tag{RSB1}
+   \]
+   then the product grid cannot satisfy these requirements.
+
+   Consequently, after the preprocessing rotation has made resident vectors
+   flat but with arbitrary coordinate signs, no regular growing scalar
+   alphabet can be the missing near-linear raw product-grid construction.  The
+   only remaining scalar product-grid escapes are nonregular alphabets with
+   range beyond the bounded-difference scale, or mechanisms that change the
+   model: query/data signatures, quotient buckets, or point-indexed
+   responsibility aggregation.
+\end{corollary}
+
+\begin{proof}
+   Pair the first \(d/2\) positive coordinates of \(p_\pm\) with the last
+   \(d/2\) negative coordinates, and write \(n=d/2\).  For a product label
+   \(g\in\mathcal A_m^d\), define the paired block label
+   \[
+      Y_j=\frac{g_j-g_{j+n}}{\sqrt2},
+      \qquad j=1,\ldots,n .
+   \]
+   Then \(Y_j\) are iid from the uniform difference multiset
+   \[
+      \mathcal B_m
+      =
+      \left\{\frac{a-b}{\sqrt2}:a,b\in\mathcal A_m\right\},
+   \]
+   with \(|\mathcal B_m|=A_m^2\) as a multiset, and
+   \[
+      \ip{g}{p_\pm}
+      =
+      \frac1{\sqrt n}\sum_{j=1}^nY_j .
+      \tag{RSB2}
+   \]
+   The label count is unchanged:
+   \[
+      |\mathcal B_m|^n=A_m^{2n}=A_m^d=m^{1+o(1)}.
+   \]
+   The block alphabet has mean
+   \[
+      \E Y_j=0,
+      \tag{RSB3}
+   \]
+   and range \(\sqrt2R_m\).  Its concentration scale is therefore
+   \[
+      \sqrt2R_m\sqrt{\frac{\log L_m}{n}}
+      =
+      2R_m\sqrt{\frac{\log L_m}{d}}
+      =
+      o(1).
+      \tag{RSB4}
+   \]
+
+   A two-point block query profile \(U_j\) with
+   \(n^{-1}\sum_jU_j=a_0+o(1)\) and \(n^{-1}\sum_jU_j^2=1+o(1)\)
+   corresponds to the original unit query
+   \[
+      q_j=\frac{U_j}{\sqrt d},
+      \qquad
+      q_{j+n}=-\frac{U_j}{\sqrt d}.
+   \]
+   This query has \(\ip{p_\pm}{q}=a_0+o(1)\), and its product tilt is exactly
+   the scalar block tilt for the labels \(Y_j\):
+   \[
+      \beta\ip{g}{q}
+      =
+      \frac{\beta}{\sqrt n}\sum_{j=1}^nU_jY_j .
+      \tag{RSB5}
+   \]
+   Thus the assumed storage and near-mass requirements for \(p_\pm\) imply the
+   hypotheses of
+   \cref{lem:regular-growing-product-alphabet-knife-edge} for the block
+   alphabet \(\mathcal B_m\).
+
+   But the normalized critical threshold for the block panel is
+   \[
+      \frac{T}{\sqrt n}
+      =
+      \sqrt{2(1-\rho_c)\log(A_m^2)}+o(1)
+      =
+      2\sqrt{(1-\rho_c)\log A_m}+o(1),
+      \tag{RSB6}
+   \]
+   which is bounded away from zero because \(A_m\ge2\).  The conclusion of
+   \cref{lem:regular-growing-product-alphabet-knife-edge} would force the
+   block mean \(\E Y_j\) to equal this positive threshold up to \(o(1)\),
+   contradicting \((RSB3)\).  Therefore the assumed product grid cannot
+   exist.
+\end{proof}
+
 \begin{corollary}[Bucket-quotient weighted quadrature]
    \label{cor:bucket-quotient-quadrature}
    Fix the terminal setting of \cref{prop:sampled-structured-panel}.  Let
