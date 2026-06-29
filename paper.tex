@@ -5590,6 +5590,90 @@ partition ignores the bias coordinates that certify the list size.
    \(\sum_jY_{j,L}>s_p\).  This proves \((SME8)\).
 \end{proof}
 
+\begin{corollary}[Critical scalar thinning pays a logarithmic balance tax]
+   \label{cor:critical-scalar-mask-log-tax}
+   In the setting of \cref{lem:scalar-mask-entropy-profile}, put
+   \(K=e^L=p^{-1}\) and suppose the product witness is balanced:
+   \[
+      |A_{1,L}|=\cdots=|A_{k,L}|
+      =
+      \left\lceil K^{1/k}L^\alpha\right\rceil .
+      \tag{CSM1}
+   \]
+   Then
+   \[
+      \Prb[A_L\cap R_p\ne\emptyset]\to0
+      \quad\text{if}\quad
+      \alpha<\frac{k-1}{2k},
+      \tag{CSM2}
+   \]
+   while
+   \[
+      \Prb[A_L\cap R_p\ne\emptyset]\to1
+      \quad\text{if}\quad
+      \alpha>\frac{k-1}{2k}.
+      \tag{CSM3}
+   \]
+
+   Thus the scalar auxiliary score is usable in the balanced product case, but
+   the critical density \(K^{-1}\) is not constant-tight.  It needs about
+   \[
+      L^{(k-1)/(2k)}
+      \tag{CSM4}
+   \]
+   extra choices per coordinate, or \(L^{(k-1)/2}\) extra product witnesses, to
+   clear the Gaussian maximum correction.  This is still only polylogarithmic
+   in the thinning range, but it is a real tax compared with a genuine
+   syndrome or tabulation mask, which hits a fixed set of \(\Theta(K)\)
+   witnesses by the second moment without this balanced-extreme-value
+   correction.
+\end{corollary}
+
+\begin{proof}
+   Let \(q_N\) denote the upper \(1/N\) standard Gaussian quantile,
+   \(\Prb[N(0,1)\ge q_N]=N^{-1}\).  We use the standard expansion
+   \[
+      q_N
+      =
+      \sqrt{2\log N}
+      -
+      \frac{\log\log N+\log(4\pi)}
+           {2\sqrt{2\log N}}
+      +
+      O\!\left(\frac{(\log\log N)^2}{(\log N)^{3/2}}\right).
+      \tag{CSM5}
+   \]
+   If \(H=\lceil K^{1/k}L^\alpha\rceil\) and
+   \(Y_H=\max_{1\le a\le H}N_a\), then
+   \[
+      Y_H=q_H+O_{\Prb}(1/q_H),
+      \tag{CSM6}
+   \]
+   by the usual Gumbel concentration for Gaussian maxima.  Since the \(k\)
+   blocks are independent and \(k\) is fixed,
+   \[
+      \max_{i\in A_L}\sum_{j=1}^kM_{j,i_j}
+      =
+      kq_H+O_{\Prb}(L^{-1/2}).
+      \tag{CSM7}
+   \]
+   The scalar threshold is \(s_p=\sqrt k\,q_K\).  Substituting
+   \(\log H=L/k+\alpha\log L+O(1)\) into \((CSM5)\) gives
+   \[
+      kq_H-\sqrt k\,q_K
+      =
+      \frac{\sqrt k}{\sqrt{2L}}
+      \left(k\alpha-\frac{k-1}{2}\right)\log L
+      +
+      O(L^{-1/2}).
+      \tag{CSM8}
+   \]
+   If \(\alpha<(k-1)/(2k)\), the right-hand side is negative with magnitude
+   \(\gg L^{-1/2}\), so \((CSM7)\) lies below \(s_p\) with probability tending
+   to one.  If \(\alpha>(k-1)/(2k)\), it lies above \(s_p\) with probability
+   tending to one.  This proves \((CSM2)\)--\((CSM3)\).
+\end{proof}
+
 \begin{remark}[Decodable pseudorandom subsets need conditional entropy]
    \label{rem:decodable-pseudorandom-tuple-subsets}
    \Cref{lem:additive-mask-star-obstruction} explains why selecting tuples by
@@ -5608,7 +5692,9 @@ partition ignores the bias coordinates that certify the list size.
    about \(p^{-1}\) is visible to a scalar auxiliary score only in the balanced
    borderline case where the witness entropy is spread nearly evenly across the
    \(k\) coordinates.  Any substantial entropy collapse requires extra
-   oversampling or a different mask.
+   oversampling or a different mask.  Even at the balanced boundary,
+   \cref{cor:critical-scalar-mask-log-tax} shows a logarithmic extreme-value
+   tax for scalar Gaussian masks.
 
    A better decodable pseudorandom mask is a decomposable syndrome or
    tabulation hash.  Let \(G\) be a finite abelian group, choose independent
