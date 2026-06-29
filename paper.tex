@@ -7636,6 +7636,114 @@ partition ignores the bias coordinates that certify the list size.
    m^{\rho(a,b)}\log^{O_{a,b}(1)}m\) and \(h=k\) is fixed.
 \end{proof}
 
+\begin{corollary}[Checkpoint syndromes keep only local state]
+   \label{cor:checkpoint-syndrome-local-state}
+   Let
+   \[
+      \mathcal C=\mathcal C_1\times\cdots\times\mathcal C_h
+   \]
+   be split into consecutive chunks
+   \[
+      0=t_0<t_1<\cdots<t_r=h,
+      \qquad
+      I_s=\{t_{s-1}+1,\ldots,t_s\}.
+   \]
+   For every chunk \(s\), let \(G_s\) be a finite abelian group of size
+   \(K_s\), choose a target \(\sigma_s\in G_s\), and define a decomposable
+   chunk syndrome
+   \[
+      H_s(c_{I_s})=\sum_{j\in I_s}h_{s,j}(c_j)\in G_s .
+      \tag{CPS1}
+   \]
+   Retain a terminal tuple \(c\) when
+   \[
+      H_s(c_{I_s})=\sigma_s
+      \qquad (s=1,\ldots,r).
+      \tag{CPS2}
+   \]
+   Suppose the hash families for different chunks are independent and, inside
+   each chunk, satisfy the pairwise-independent syndrome hypothesis of
+   \cref{lem:pairwise-independent-syndrome-thinning}.
+
+   Then every fixed terminal set \(A\subseteq\mathcal C\) has expected retained
+   size
+   \[
+      \E |A\cap R|
+      =
+      |A|\prod_{s=1}^r K_s^{-1}.
+      \tag{CPS3}
+   \]
+   More importantly, let \(W_s\) be a tree of acceptable stage prefixes, with
+   \(W_0=\{\emptyset\}\) and
+   \(W_s\subseteq\mathcal C_{I_1}\times\cdots\times\mathcal C_{I_s}\).  Assume
+   that every \(u\in W_{s-1}\) has a continuation set
+   \[
+      \mathcal B_s(u)
+      =
+      \{d\in\mathcal C_{I_s}: (u,d)\in W_s\}
+      \tag{CPS4}
+   \]
+   of size at least \(\eta_sK_s\).  Then
+   \[
+      \Prb[W_r\cap R\ne\emptyset]
+      \ge
+      \prod_{s=1}^r\frac{\eta_s}{1+\eta_s}.
+      \tag{CPS5}
+   \]
+
+   The membership test \((CPS2)\) is recognized by an acyclic automaton whose
+   extra state at levels in chunk \(s\) is only the current partial syndrome in
+   \(G_s\).  At the boundary \(t_s\), paths with partial syndrome
+   \(\sigma_s\) either reset to the zero state of \(G_{s+1}\) when \(s<r\), or
+   are accepted when \(s=r\); all other paths are discarded.  Hence a BCJR,
+   Viterbi, \(A^*\), or threshold prefix decoder pays local state width
+   \[
+      \max_s K_s
+      \quad\text{or}\quad
+      \sum_s K_s(t_s-t_{s-1})
+      \tag{CPS6}
+   \]
+   across the path, not the product \(\prod_sK_s\).
+
+   Thus large total thinning can be distributed over checkpoints only when the
+   near witness set keeps enough conditional entropy at each checkpoint.  If
+   \(r=O(\log\log m)\) and the \(\eta_s\)'s are bounded below by constants,
+   the recall loss in \((CPS5)\) is inverse-polylogarithmic, while each local
+   syndrome range may remain polylogarithmic.  This is the constructive
+   counterpart to \cref{cor:random-quotient-trellis-width-barrier}: randomness
+   should be refreshed after a chunk has been discharged, not carried as one
+   fresh global quotient through every merged state of a long trellis.
+\end{corollary}
+
+\begin{proof}
+   For a fixed terminal \(c\), each chunk syndrome is uniform on its group and
+   the chunks are independent, so \(c\) is retained with probability
+   \(\prod_sK_s^{-1}\).  Linearity of expectation proves \((CPS3)\).
+
+   For the hit bound, expose the chunks in order.  Suppose a retained prefix in
+   \(W_{s-1}\) has survived the first \(s-1\) chunks, and choose one such prefix
+   \(u\) by any deterministic rule from the exposed information.  The next
+   chunk hashes are still fresh, and \(\mathcal B_s(u)\) is fixed with respect
+   to them.  By \cref{lem:pairwise-independent-syndrome-thinning}, the
+   probability that some continuation \(d\in\mathcal B_s(u)\) has
+   \(H_s(d)=\sigma_s\) is at least
+   \[
+      \frac{|\mathcal B_s(u)|/K_s}{1+|\mathcal B_s(u)|/K_s}
+      \ge
+      \frac{\eta_s}{1+\eta_s}.
+   \]
+   When this occurs, a retained prefix in \(W_s\) survives.  Multiplying the
+   conditional lower bounds over \(s=1,\ldots,r\) gives \((CPS5)\).
+
+   The automaton statement is immediate from the chunk-local definition
+   \((CPS1)\).  While scanning coordinates in chunk \(s\), the only syndrome
+   information needed is the partial sum in \(G_s\).  Once level \(t_s\) is
+   reached, the future constraints depend only on later chunk hashes, so the
+   old syndrome can be checked against \(\sigma_s\) and then forgotten.  Thus
+   augmenting a native acyclic graph copies states by at most \(K_s\) inside
+   chunk \(s\), and never by the product of the previous checkpoint ranges.
+\end{proof}
+
 \begin{corollary}[Oversampled product witnesses support polylog syndrome thinning]
    \label{cor:oversampled-product-syndrome-thinning}
    Work in the smooth product terminal filter of
