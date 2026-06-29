@@ -16485,7 +16485,11 @@ partition ignores the bias coordinates that certify the list size.
    they pass but raw storage is too large, then the only remaining issue is a
    designed bucket canonicalization theorem; by
    \cref{lem:random-sparse-bucket-no-quotient}, random sparse bucket equality
-   will not supply that theorem.
+   will not supply that theorem.  The information screen in
+   \cref{cor:randomized-aggregate-sampler-information-screen} gives the
+   complementary charge test: exact BCJR sampling of hidden paths is useful
+   only when the certified bucket charge is the quotient or responsibility
+   charge, not the full raw path entropy.
 \end{remark}
 
 \begin{remark}[Trellis target for codes and lattices]
@@ -16503,7 +16507,10 @@ partition ignores the bias coordinates that certify the list size.
    genuine distinct-bucket canonicalization theorem.  \Cref{cor:bcjr-trellis-quotient-sampler}
    records the standard BCJR/sum-product instance of this target: exact
    partition-function decoding is already the right query algorithm whenever
-   the retained code or lattice quotient has a compact acyclic state graph.
+   the retained code or lattice quotient has a compact acyclic state graph, but
+   \cref{cor:randomized-aggregate-sampler-information-screen} still requires
+   the charged transcript to be the quotient bucket or responsibility object
+   rather than a full-entropy hidden path.
 \end{remark}
 
 \begin{lemma}[Tilted weight feasibility is linear]
@@ -90117,9 +90124,10 @@ amplified in the next proposition.
    \label{lem:information-charge-survivor-test}
    Fix a block of length \(r\).  Let \(Q\) be the query block, let \(U\) be the
    corresponding near data block, and let \(P_U\) be the far data law.  Suppose
-   a query-facing reporter exposes a finite transcript or label
-   \(T=f(Q)\).  For each transcript \(t\), let \(\Phi_t(U)\) be the storage or
-   bucket score that the retained index charges to that transcript, and define
+   a query-facing reporter exposes a finite transcript or label \(T\), possibly
+   by a randomized kernel depending on \(Q\).  For each transcript \(t\), let
+   \(\Phi_t(U)\) be the storage or bucket score that the retained index charges
+   to that transcript, and define
    the fixed-transcript far rate
    \[
       J_t(a)
@@ -90155,10 +90163,10 @@ amplified in the next proposition.
       \tag{ICT4}
    \]
    on the successful transcripts.  In a transitive symmetric panel,
-   \(i_t=r^{-1}I(T;U)\) for every \(t\), and data processing gives
-   \(I(T;U)\le I(T;Q)\le H(T)\), with strict inequality for a nondegenerate
-   noisy Gaussian near channel whenever \(T\) is not already determined by
-   \(U\).
+   \(i_t=r^{-1}I(T;U)\) for every \(t\), and data processing for the Markov
+   chain \(T-Q-U\) gives \(I(T;U)\le I(T;Q)\le H(T)\), with strict inequality
+   for a nondegenerate noisy Gaussian near channel whenever \(T\) is not
+   already determined by \(U\).
 \end{lemma}
 
 \begin{proof}
@@ -90169,7 +90177,7 @@ amplified in the next proposition.
    \(C_t>i_t\), no threshold level below \(m_t\) can have far rate at least
    \(C_t\); therefore \(a_t\ge m_t\).  The symmetric statement follows by
    averaging \(D(P_{U\mid T=t}\|P_U)\) over \(t\), and the final inequalities
-   are data processing along \(T\to Q\to U\).
+   are data processing for the Markov chain \(T-Q-U\).
 \end{proof}
 
 \begin{lemma}[Gaussian information-charge contraction]
@@ -90183,7 +90191,8 @@ amplified in the next proposition.
       \tag{GIC1}
    \]
    where \(Q,G\) are independent centered Gaussian blocks with the same
-   covariance.  Then every finite query transcript \(T=f(Q)\) satisfies
+   covariance.  Then every finite query transcript \(T\) generated from \(Q\)
+   by a Markov kernel satisfies
    \[
       I(T;U)\le \chi^2 I(T;Q)\le\chi^2 H(T).
       \tag{GIC2}
@@ -90236,6 +90245,51 @@ amplified in the next proposition.
    \(D(P_{U\mid T=t}\|P_U)\) is independent of \(t\), and its average over
    \(t\) is \(I(T;U)\).  Therefore \(i_t=r^{-1}I(T;U)\le\chi^2R_T\).  The
    final claim is \cref{lem:information-charge-survivor-test}.
+\end{proof}
+
+\begin{corollary}[Randomized aggregate samplers obey the information screen]
+   \label{cor:randomized-aggregate-sampler-information-screen}
+   Work in the Gaussian near-block setting of
+   \cref{lem:gaussian-information-charge-contraction}.  Let \(T\) be the
+   transcript sampled by any query kernel: a reported codeword, a BCJR trellis
+   path, a Construction-A residue, a discrete-Gaussian lattice point, or a
+   bucket identifier.  For each transcript \(t\), let \(C_t\) be the
+   fixed-transcript far-tail rate at which the retained certificate charges
+   the storage score \(\Phi_t\), and let \(m_t,i_t\) be as in \((ICT2)\).
+   Any law-of-large-numbers proof that transcript \(t\) succeeds by putting
+   its far threshold below the selected near mean must satisfy
+   \[
+      C_t\le i_t+o(1).
+      \tag{RAS1}
+   \]
+   Moreover the conditional information available to the sampled transcript is
+   bounded on average by
+   \[
+      \sum_t\Pr[T=t]\,i_t
+      =
+      \frac1r I(T;U)
+      \le
+      \chi^2\frac1r I(T;Q)
+      \le
+      \chi^2\frac1r H(T).
+      \tag{RAS2}
+   \]
+   In particular, in a transitive equivariant raw-path panel whose sampled
+   transcript is marginally uniform on \(\exp\{rR+o(r)\}\) hidden paths and
+   whose raw buckets are charged at \(C_t\ge R-o(1)\), no such threshold proof
+   can succeed for any fixed \(\chi<1\).
+\end{corollary}
+
+\begin{proof}
+   The transcriptwise condition \((RAS1)\) is the contrapositive of
+   \cref{lem:information-charge-survivor-test}.  Averaging the conditional
+   divergences \(D(P_{U\mid T=t}\|P_U)\) over \(t\) gives \(I(T;U)\), and
+   \cref{lem:gaussian-information-charge-contraction} gives \((RAS2)\).
+   In the transitive equivariant case, \(i_t\) is independent of \(t\), while
+   \(H(T)=rR+o(r)\).  Hence \(i_t\le\chi^2R+o(1)\).  Since \(\chi<1\), a raw
+   charge \(C_t\ge R-o(1)\) eventually exceeds \(i_t\), and
+   \cref{lem:information-charge-survivor-test} prevents the far threshold from
+   lying below the selected near mean.
 \end{proof}
 
 \begin{corollary}[Polylog raw-list entropy barrier]
@@ -90421,9 +90475,13 @@ amplified in the next proposition.
    \cref{lem:compressed-aggregate-sampler} and
    \cref{cor:bcjr-trellis-quotient-sampler}, so that the charged object is the
    quotient bucket law rather than the number of hidden lattice or code paths.
-   Small ordinary quotient classes are not enough; a genuine aggregate sampler
-   or responsibility certificate is needed to lower the charge below the
-   conditional information budget in \((ICT4)\).
+   \Cref{cor:randomized-aggregate-sampler-information-screen} shows that
+   query randomization itself is not an escape: a sampled hidden path or
+   lattice point still carries only \(I(T;U)\le\chi^2 I(T;Q)\) nats through the
+   noisy near channel.  Small ordinary quotient classes are not enough; a
+   genuine aggregate sampler or responsibility certificate is needed to lower
+   the charge below the conditional information budget in \((ICT4)\) and
+   \((RAS1)\).
 \end{remark}
 
 \begin{remark}[Audit of deep code and lattice candidates]
@@ -90464,7 +90522,11 @@ amplified in the next proposition.
       code so that theta reliabilities can be summed or sampled compactly, then
       verify the induced storage, far sampled co-load, and near sampled mass.
       Integer-lift enumeration is a local finishing step; it should not be the
-      main charged entropy.
+      main charged entropy.  By
+      \cref{cor:randomized-aggregate-sampler-information-screen}, sampling an
+      integer lift or residue from the exact discrete-Gaussian law still does
+      not rescue full raw-residue bucket charge; the residue/bucket quotient
+      must be the object whose spectrum is certified.
 
       \item Barnes--Wall, Barnes--Sloane, and other recursive lattices are
       useful if the recursion is retained as a small state graph with aggregate
@@ -93810,6 +93872,9 @@ reported transcript must be no larger than the conditional information that the
 near data block retains about that transcript, up to polylogarithmic slack.
 \Cref{lem:gaussian-information-charge-contraction} makes the Gaussian version
 quantitative, \(I(T;U)\le\chi^2 I(T;Q)\), and
+\cref{cor:randomized-aggregate-sampler-information-screen} extends the same
+screen to randomized transcripts such as BCJR paths, Construction-A residues,
+and discrete-Gaussian lattice samples.
 \cref{cor:polylog-raw-list-entropy-barrier} applies it to rule out
 equivariant top-\(\polylog m\) raw codeword lists at full label charge.
 \Cref{cor:raw-list-rate-lower-bound} gives the corresponding exponential-list
