@@ -94597,6 +94597,188 @@ amplified in the next proposition.
    \(c=2\) gives \(5/14\).
 \end{proof}
 
+\begin{lemma}[Multi-label coverage needs effective label entropy]
+   \label{lem:multilabel-effective-hit-load-tradeoff}
+   Let \(0<\chi<1\), and let
+   \(Y=\chi X+\sqrt{1-\chi^2}Z\) be correlated standard Gaussian blocks.  Let
+   \(\Lambda\) be a finite label set.  Preprocessing assigns each source block
+   nonnegative label intensities \(b_\alpha(x)\), \(\alpha\in\Lambda\).  A query
+   reports a label set \(B(Y)\subseteq\Lambda\), possibly randomized using \(Y\).
+   Let \(X'\) be an independent standard Gaussian block, and define the
+   Poisson-union near hit and independent far load
+   \[
+      \pi
+      =
+      \E\!\left[
+         1-\exp\!\left(-\sum_{\alpha\in B(Y)}b_\alpha(X)\right)
+      \right],
+      \tag{MLH1}
+   \]
+   \[
+      \beta
+      =
+      \E\sum_{\alpha\in B(Y)}b_\alpha(X').
+      \tag{MLH2}
+   \]
+   For the conditioned reporter law, put
+   \[
+      A_\alpha=\E b_\alpha(X),\qquad
+      q_\alpha=\Prb[\alpha\in B(Y)],\qquad
+      z_\alpha=A_\alpha q_\alpha,
+      \tag{MLH3}
+   \]
+   so that \(\beta=\sum_\alpha z_\alpha\).  With
+   \(r=1/(1+\chi)\), define the order-\(r\) effective label count
+   \[
+      N_r(z)
+      =
+      \begin{cases}
+      \left(\sum_\alpha (z_\alpha/\beta)^r\right)^{1/(1-r)},
+      &\beta>0,\\
+      1,&\beta=0 .
+      \end{cases}
+      \tag{MLH4}
+   \]
+   Then
+   \[
+      \pi
+      \le
+      N_r(z)^{1-r}\beta^r .
+      \tag{MLH5}
+   \]
+   In particular, if an independent preprocessing seed and reporter randomness
+   are present and the conditioned effective count is always at most \(N_*\),
+   then the unconditional quantities satisfy
+   \[
+      \pi\le N_*^{\chi/(1+\chi)}\beta^{1/(1+\chi)},
+      \qquad
+      \beta\ge \pi^{1+\chi}N_*^{-\chi}.
+      \tag{MLH6}
+   \]
+\end{lemma}
+
+\begin{proof}
+   Condition on any preprocessing seed and on the reporter randomness.  For each
+   label write \(B_\alpha=\{y:\alpha\in B(y)\}\) and
+   \(g_\alpha(x)=1-\exp(-b_\alpha(x))\).  The union bound and Gaussian
+   hypercontractivity give
+   \[
+   \begin{aligned}
+      \pi
+      &\le
+      \sum_{\alpha\in\Lambda}
+      \E[g_\alpha(X)\mathbf1_{B_\alpha}(Y)]                                      \\
+      &\le
+      \sum_{\alpha\in\Lambda}
+      \|g_\alpha\|_{1+\chi}\,\mu(B_\alpha)^r .
+   \end{aligned}
+   \tag{MLH7}
+   \]
+   Since \((1-e^{-u})^{1+\chi}\le u\) for \(u\ge0\),
+   \[
+      \|g_\alpha\|_{1+\chi}
+      \le
+      \left(\int b_\alpha\,d\mu\right)^r
+      =
+      A_\alpha^r .
+      \tag{MLH8}
+   \]
+   Therefore
+   \[
+      \pi
+      \le
+      \sum_\alpha (A_\alpha q_\alpha)^r
+      =
+      \sum_\alpha z_\alpha^r
+      =
+      N_r(z)^{1-r}\beta^r,
+      \tag{MLH9}
+   \]
+   which proves \((MLH5)\).  If the conditioned effective count is bounded by
+   \(N_*\), averaging \((MLH5)\) and using concavity of \(u^r\) yields
+   \[
+      \pi\le N_*^{1-r}\E\beta_s^r\le N_*^{1-r}\beta^r .
+   \]
+   Substituting \(1-r=\chi/(1+\chi)\) gives \((MLH6)\).
+\end{proof}
+
+\begin{corollary}[Native multi-label coverage needs storage-scale entropy]
+   \label{cor:multilabel-effective-entropy-budget}
+   In the setting of
+   \cref{lem:multilabel-effective-hit-load-tradeoff}, suppose the conditioned
+   effective label count satisfies
+   \[
+      N_r(z)\le m^\eta\log^{O(1)}m
+      \tag{MEB1}
+   \]
+   and the Poisson-union near hit is inverse-polylogarithmic:
+   \[
+      \pi\ge\log^{-O(1)}m .
+      \tag{MEB2}
+   \]
+   Then the independent far scan load obeys
+   \[
+      m\beta\ge m^{1-\chi\eta-o(1)} .
+      \tag{MEB3}
+   \]
+   Hence achieving the target local load \(m^\rho\polylog m\) requires
+   \[
+      \eta\ge\frac{1-\rho}{\chi}-o(1).
+      \tag{MEB4}
+   \]
+   At the native critical Euclidean parameters
+   \[
+      \rho=\rho_c=\frac1{2c^2-1},
+      \qquad
+      \chi=a_0=1-\frac1{c^2},
+      \tag{MEB5}
+   \]
+   this lower bound is
+   \[
+      \eta\ge
+      \frac{1-\rho_c}{a_0}-o(1)
+      =
+      1+\rho_c-o(1).
+      \tag{MEB6}
+   \]
+   For \(c=2\), a multi-label rate-coverage implementation whose reported
+   far-load weights have effective support at most \(m^{8/7-\epsilon}\) still
+   has scan load at least
+   \[
+      m^{1/7+(3/4)\epsilon-o(1)} .
+      \tag{MEB7}
+   \]
+
+   Thus the single-residue obstruction is not merely an artifact of assigning
+   one label to each point.  A genuine multi-label escape must spread the
+   reported far-load weights over essentially the full
+   \(m^{1+\rho_c}\) storage-scale label entropy, or avoid paying the union of
+   reported labels by using a point-indexed responsibility, leader, or aggregate
+   sampler.  An \(m^{1-\rho_c}\)-scale residue dictionary, even with arbitrary
+   nonuniform point-label intensities, remains in the polynomial-load regime.
+\end{corollary}
+
+\begin{proof}
+   From \((MLH6)\),
+   \[
+      \beta\ge\pi^{1+\chi}N_*^{-\chi}.
+   \]
+   Taking \(N_*=m^\eta\log^{O(1)}m\) and using \((MEB2)\) gives
+   \(\beta\ge m^{-\chi\eta-o(1)}\), hence \((MEB3)\).  If
+   \(m\beta\le m^\rho\log^{O(1)}m\), then \((MEB3)\) forces \((MEB4)\).
+   Finally,
+   \[
+      \frac{1-\rho_c}{a_0}
+      =
+      \frac{2(c^2-1)/(2c^2-1)}{(c^2-1)/c^2}
+      =
+      \frac{2c^2}{2c^2-1}
+      =
+      1+\rho_c ,
+   \]
+   and for \(c=2\), \(a_0=3/4\) and \(\rho_c=1/7\), giving \((MEB7)\).
+\end{proof}
+
 \begin{corollary}[Random active residues saturate the residue budget]
    \label{cor:random-active-residue-barrier}
    Consider the balanced-residue setting with \(M=|G|\), and assume for
