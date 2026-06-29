@@ -93328,6 +93328,69 @@ amplified in the next proposition.
    lands in that set with probability at most \(L_m/M\), giving \((BRP6)\).
 \end{proof}
 
+\begin{corollary}[Near-residue prediction has a list-Fano information cost]
+   \label{cor:near-residue-list-fano-cost}
+   Let \(\alpha_*\in G\), \(M=|G|\), be the residue of the near or score-max
+   point, and let \(Y\) be the query-visible observation from which the terminal
+   posterior \(p_Y\) is computed.  Suppose that the conditional law of
+   \(\alpha_*\) on the score directions under consideration is
+   \(\lambda_*\)-balanced:
+   \[
+      \Prb[\alpha_*=\alpha]\le \lambda_*/M
+      \qquad(\alpha\in G).
+      \tag{NRF1}
+   \]
+   Let \(L\ge1\), and assume that the residue predictor succeeds with
+   probability
+   \[
+      \Prb[p_Y(\alpha_*)\ge L^{-1}]\ge\delta.
+      \tag{NRF2}
+   \]
+   Then
+   \[
+      I(\alpha_*;Y)
+      \ge
+      \delta\log(M/L)-\log\lambda_* - \log2.
+      \tag{NRF3}
+   \]
+   In particular, if \(\alpha_*\) is uniform on \(G\), the \(\log\lambda_*\)
+   loss is absent.
+
+   Thus the near-residue condition in
+   \cref{cor:balanced-residue-near-prediction} is not a free consequence of
+   choosing a large balanced residue group.  At the aligned endpoint
+   \(M=m^{1-\rho}\polylog m\) and \(L=\polylog m\), any construction that
+   succeeds on a conditionally balanced family of score directions with
+   probability \(\delta\) must transmit roughly
+   \(\delta(1-\rho)\log m\) nats of information about the near residue, up to
+   the displayed entropy and balance losses.  A proposed code or lattice block
+   can therefore be audited by comparing this required residue information with
+   the information actually available through its noisy query channel and soft
+   decoder.
+\end{corollary}
+
+\begin{proof}
+   For each \(Y\), define the reported residue list
+   \[
+      S_Y=\{\alpha\in G:p_Y(\alpha)\ge L^{-1}\}.
+   \]
+   Since \(p_Y\) is a probability distribution, \(|S_Y|\le L\).  Let
+   \(E=\mathbf1\{\alpha_*\in S_Y\}\).  By \((NRF2)\), \(\Prb[E=1]\ge\delta\).
+   Put \(s=\Prb[E=1]\).
+   Conditioning on \(Y\) and \(E\), the residue has at most \(L\) possibilities
+   on the event \(E=1\), and at most \(M\) possibilities on \(E=0\).  Hence
+   \[
+      H(\alpha_*\mid Y)
+      \le
+      \log2+s\log L+(1-s)\log M .
+   \]
+   The balance assumption \((NRF1)\) gives
+   \(H(\alpha_*)\ge\log(M/\lambda_*)\).  Subtracting the conditional entropy
+   bound from \(H(\alpha_*)\), and using \(s\ge\delta\), proves \((NRF3)\).
+   If \(\alpha_*\) is uniform, then \(H(\alpha_*)=\log M\), which removes the
+   balance loss.
+\end{proof}
+
 \begin{corollary}[Random active residues saturate the residue budget]
    \label{cor:random-active-residue-barrier}
    Consider the balanced-residue setting with \(M=|G|\), and assume for
