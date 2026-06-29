@@ -92422,6 +92422,84 @@ amplified in the next proposition.
    statement just repeats this construction for each admissible width.
 \end{proof}
 
+\begin{corollary}[Random sparse terminal histograms do not compress at the heavy width]
+   \label{cor:random-sparse-terminal-histogram-barrier}
+   Consider the random sparse aggregate model of
+   \cref{lem:random-sparse-aggregate-responsibility-barrier} for one sampled
+   quotient class: \(H\) terminals, \(m\) residents, and independent
+   terminal incidences \(U_x(t)\sim{\rm Bernoulli}(s)\).  Put
+   \(\mu=ms\).  Choose the fixed sketch hashes independently of these
+   incidences.  For the active histogram size \(J_W\) of
+   \cref{cor:fixed-terminal-sketch-histograms}, there are universal constants
+   \(0<c<C<\infty\) such that
+   \[
+      c\,D H\min\{\mu,W\}
+      \le
+      \E J_W
+      \le
+      C\,D(b_0+1)H\min\{\mu,W\}.
+      \tag{RTH1}
+   \]
+   The same upper bound holds for
+   \(\E[J_W+K_W|E|]\) after multiplying by \(1+|E|\).
+
+   In particular, at responsibility threshold \(\tau=K^{-1}\), the
+   heavy-hitter sketch of
+   \cref{lem:linear-sketch-heavy-responsibilities} requires width
+   \(W\ge 32M/\tau\), where \(M=\sum_x r_x=H^{-1}\sum_t|C_t|\).  On the
+   typical event \(M=\Theta(\mu)\), every admissible dyadic width has
+   \(W\ge\mu\) for \(K\ge1\).  For every fixed stored width in this regime,
+   \[
+      \E J_W
+      =
+      \Theta(DH\mu)
+      \tag{RTH2}
+   \]
+   up to the identifier-bit factor.  Thus fixed terminal histograms do not
+   reduce the query-time active mass of an iid sparse aggregate at the width
+   needed to list inverse-polylogarithmic responsibilities.  In the ANN sparse
+   scale \(\mu=m^\rho\log^{O(1)}m\), any aggregate size
+   \(H=\log^{\omega(1)}m\) still gives superpolylogarithmic overhead over the
+   \(m^\rho\) target, unless the terminal incidences have additional
+   factorization, deterministic sharing, or a code/lattice reporter stronger
+   than these point-hash histograms.
+\end{corollary}
+
+\begin{proof}
+   It suffices to compute one terminal and one sketch row.  For the total
+   histogram \(B_{t,s}\), a bucket \(a\in[W]\) is occupied with probability
+   \[
+      1-(1-s/W)^m,
+   \]
+   because each resident independently lands in that bucket and in terminal
+   \(t\) with probability \(s/W\).  Hence
+   \[
+      \E|\operatorname{supp}B_{t,s}|
+      =
+      W\bigl(1-(1-s/W)^m\bigr)
+      =
+      \Theta(\min\{\mu,W\}).
+      \tag{RTH3}
+   \]
+   Summing \((RTH3)\) over \(D\) rows and \(H\) terminals gives the lower
+   bound in \((RTH1)\), since the total counters alone are part of \(J_W\).
+
+   For the upper bound, every total or bit histogram support is at most
+   \(\min\{|C_t|,W\}\).  Taking expectations and using
+   \[
+      \E\min\{|C_t|,W\}\le\min\{\E|C_t|,W\}=\min\{\mu,W\}
+   \]
+   gives at most \(D(b_0+1)H\min\{\mu,W\}\) active entries.  The bound for
+   \(J_W+K_W|E|\) follows from \(K_W\le J_W\).
+
+   Finally, in this random aggregate
+   \(M=H^{-1}\sum_t|C_t|\), so \(M=\Theta(\mu)\) on the usual Chernoff event
+   whenever \(H\mu\) is large.  The width requirement
+   \(W\ge32M/\tau=32KM\) then implies \(W\ge\mu\) for \(K\ge1\), up to fixed
+   constants.  For any fixed stored width with \(W\ge\mu\), substituting into
+   \((RTH1)\) gives \((RTH2)\) and the ANN-scale conclusion.
+\end{proof}
+
 \begin{remark}[What this shortcut does and does not prove]\label{rem:score-max-shortcut}
    \Cref{lem:smoothed-max-score-margin} is the $\alpha=0$ endpoint of the
    likelihood-ball geometry: if one can approximately maximize the smoothed
