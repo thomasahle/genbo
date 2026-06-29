@@ -89234,7 +89234,10 @@ top-\(k\) backup.
    Let \(Q_k(q)\) be the top \(k\) labels under \(K_q\), and let
    \(g_k(q)\) be the gap between the \(k\)-th and \((k+1)\)-st largest values
    of \(\log K_q(j)\), with \(g_k(q)=+\infty\) if there are at most \(k\)
-   labels.  Define the centered tilt radius
+   labels.  More generally, for \(L\ge k\), let \(g_{k,L}(q)\) be the gap
+   between the \(k\)-th and \((L+1)\)-st largest values of \(\log K_q(j)\),
+   with \(g_{k,L}(q)=+\infty\) if there are at most \(L\) labels.  Define the
+   centered tilt radius
    \[
       \Delta_{p,q}
       =
@@ -89247,12 +89250,14 @@ top-\(k\) backup.
       \tag{QTS}
    \]
    If \(g_k(q)>2\Delta_{p,q}\), then the hidden tilted top \(k\) labels are
-   exactly \(Q_k(q)\).  Consequently, if
+   exactly \(Q_k(q)\).  More generally, if \(g_{k,L}(q)>2\Delta_{p,q}\), then
+   the hidden tilted top \(k\) labels are contained in \(Q_L(q)\).  Consequently, if
    \(\mathcal H_\xi(p,q)\ge h\) and the hidden tilted top \(k\) labels carry
    a \(\gamma\) fraction of the soft-surplus value, then the query-visible
-   labels \(Q_k(q)\) carry at least \(\gamma h\) restricted value.  Conversely,
+   labels \(Q_L(q)\) carry at least \(\gamma h\) restricted value.  Conversely,
    if a hidden tilted top-\(k\) label lies outside \(Q_k(q)\), then
-   \(g_k(q)\le2\Delta_{p,q}\).
+   \(g_k(q)\le2\Delta_{p,q}\), and if such a label lies outside \(Q_L(q)\),
+   then \(g_{k,L}(q)\le2\Delta_{p,q}\).
 \end{lemma}
 
 \begin{proof}
@@ -89270,10 +89275,14 @@ top-\(k\) backup.
    Under the tilted perturbation this difference can decrease by at most
    \(2\Delta_{p,q}\).  Hence \(g_k(q)>2\Delta_{p,q}\) makes every label in
    \(Q_k(q)\) beat every label outside \(Q_k(q)\) in the hidden tilted order.
+   The containment statement is identical: if \(j\notin Q_L(q)\), then every
+   one of the \(k\) labels in \(Q_k(q)\) beats \(j\) after the perturbation
+   whenever \(g_{k,L}(q)>2\Delta_{p,q}\), so \(j\) cannot be among the hidden
+   tilted top \(k\).
    The value statement follows by applying
    \cref{cor:top-k-tilted-backup} and
-   \cref{cor:query-top-k-backup} to the same label set.  The contrapositive
-   gives the final claim.
+   \cref{cor:query-top-k-backup} with the containing query label set.  The
+   contrapositives give the final claims.
 \end{proof}
 
 \begin{proposition}[Query-top-\(k\) finite-channel compiler]
@@ -89478,9 +89487,23 @@ One should also separate the resident-guard regime from the genuine finite-chann
    while the top-four stability margin lower tail was still negative
    \((-1.44\) to \(-0.70)\) and the stable fraction was only
    \(55.0\%\)--\(68.1\%\).  Thus the observed lower tail is not explained by
-   worst-case top-\(k\) order invariance; the proof must use weighted surplus
-   concentration, a larger query backup, or additional structure of the
-   retained panel.
+   worst-case top-\(k\) order invariance.
+
+   The same lemma also gives a useful positive route after enlarging the query
+   backup.  It suffices for the query rank-four to rank-nine gap
+   \(g_{4,8}(q)\) to dominate \(2\Delta_{p,q}\), because then the hidden tilted
+   top four labels are contained in the query top eight labels.  This
+   condition matches the data much better.  On the compact
+   \(m=1000,3000\) sweep, the certified containment fraction for
+   \(T_4(p,q)\subseteq Q_8(q)\) was \(100\%\) in every tuned whitened run,
+   with lower \(5\%\) containment margin \(g_{4,8}-2\Delta\) between
+   \(2.83\) and \(7.60\) at scales \(8,12\).  On the larger
+   \(m=10000,30000\) sweep, the same fraction was \(99.4\%\)--\(100\%\), with
+   lower \(5\%\) margin \(2.23\)--\(4.30\).  Since the hidden top-four prefix
+   already carried lower \(5\%\) contribution fraction \(0.970\)--\(0.999\)
+   in the large tuned runs, this gives a concrete proof target for the
+   query-visible top-eight backup: prove a uniform lower tail for
+   \(g_{4,8}(q)-2\Delta_{p,q}\) and for the hidden top-four surplus capture.
 \end{remark}
 
 \begin{proposition}[Conditional finite-channel polylog endpoint]\label{prop:finite-channel-polylog}

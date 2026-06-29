@@ -75,6 +75,12 @@ FIELDNAMES = [
     "query_top8_gap_q05",
     "query_top8_stability_margin_q05",
     "query_top8_stable_fraction",
+    "query_top2_to_top4_gap_q05",
+    "query_top2_to_top4_containment_margin_q05",
+    "query_top2_to_top4_containment_fraction",
+    "query_top4_to_top8_gap_q05",
+    "query_top4_to_top8_containment_margin_q05",
+    "query_top4_to_top8_containment_fraction",
     "margin_mass_mean",
     "margin_mass_q05",
     "margin_bound_mean",
@@ -241,6 +247,16 @@ def run_trial(
         "query_top8_stability_margin_q05": _finite_or_inf(
             result.query_top8_stability_margin, 0.05),
         "query_top8_stable_fraction": float(np.mean(result.query_top8_stability_margin > 0)),
+        "query_top2_to_top4_gap_q05": _finite_or_inf(result.query_top2_to_top4_gap, 0.05),
+        "query_top2_to_top4_containment_margin_q05": _finite_or_inf(
+            result.query_top2_to_top4_containment_margin, 0.05),
+        "query_top2_to_top4_containment_fraction": float(
+            np.mean(result.query_top2_to_top4_containment_margin > 0)),
+        "query_top4_to_top8_gap_q05": _finite_or_inf(result.query_top4_to_top8_gap, 0.05),
+        "query_top4_to_top8_containment_margin_q05": _finite_or_inf(
+            result.query_top4_to_top8_containment_margin, 0.05),
+        "query_top4_to_top8_containment_fraction": float(
+            np.mean(result.query_top4_to_top8_containment_margin > 0)),
         "margin_mass_mean": float(result.margin_mass.mean()),
         "margin_mass_q05": _q(result.margin_mass, 0.05),
         "margin_bound_mean": float(result.margin_bound.mean()),
