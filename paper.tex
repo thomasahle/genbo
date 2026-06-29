@@ -92081,6 +92081,87 @@ amplified in the next proposition.
    data-access problem left by the responsibility normal form.
 \end{remark}
 
+\begin{corollary}[Acyclic trellises aggregate responsibility sketches]
+   \label{cor:trellis-sketch-responsibility-aggregation}
+   Work in the quotient setting of
+   \cref{cor:sketched-responsibility-lister}.  Suppose the hidden labels are
+   source-to-terminal paths \(\pi\) in a finite acyclic graph, with path weight
+   \(W_Y(\pi)=\prod_{e\in\pi}r_e(Y)\), and that both the quotient class and the
+   resident incidences are terminal-measurable:
+   \[
+      \lambda(\pi)=\lambda(t(\pi)),
+      \qquad
+      U_x(\pi)=U_x(t(\pi)).
+      \tag{TSA1}
+   \]
+   Fix a sampled quotient \(\ell\).  For any sketch coefficient vector
+   \(c=(c_x)_{x\in S}\), define the terminal reward
+   \[
+      g_c(t)=\sum_{x\in S}c_xU_x(t).
+      \tag{TSA2}
+   \]
+   Then the numerator of the corresponding responsibility counter is computed
+   by the ordinary backward recursion
+   \[
+      H_c(t)=\mathbf1_{\{\lambda(t)=\ell\}}g_c(t)
+      \quad(t\ {\rm terminal}),
+      \qquad
+      H_c(u)=\sum_{(u,v)}r_{(u,v)}(Y)H_c(v),
+      \tag{TSA3}
+   \]
+   because
+   \[
+      H_c(s)
+      =
+      \sum_{\pi:\lambda(\pi)=\ell}W_Y(\pi)
+      \sum_xc_xU_x(\pi).
+      \tag{TSA4}
+   \]
+   The denominator \(Z_{Y,\ell}\) is the same recursion with terminal reward
+   \(\mathbf1_{\{\lambda(t)=\ell\}}\).  Hence each sketch counter in
+   \((LHH1)\)--\((LHH2)\) is exactly \(H_c(s)/Z_{Y,\ell}\), with \(c_x\) the
+   bucket or bucket-and-bit indicator of the resident identifier.
+
+   Consequently, if \(K_{\rm sk}(Y,\ell)\) such terminal rewards can be
+   initialized from the stored terminal resident lists and the \(K_{\rm sk}\)
+   backward recursions are evaluated in time
+   \[
+      T_{\rm init}(Y,\ell)+O(K_{\rm sk}(Y,\ell)|E|),
+      \tag{TSA5}
+   \]
+   then \((SRL1)\) holds with this aggregation cost.  In particular, when
+   \(|E|=\log^{O_c(1)}m\) and the terminal reward initialization is
+   output-sensitive in the number of nonzero terminal sketch entries, the
+   trellis implements the responsibility lister of
+   \cref{cor:sketched-responsibility-lister} at the \(m^\rho\polylog m\) scale
+   whenever the expected number of requested sketch counters is
+   \(m^\rho\polylog m\).
+\end{corollary}
+
+\begin{proof}
+   The recursion \((TSA3)\) is the standard suffix partition-function
+   recursion with a terminal reward.  Induction over a reverse topological
+   order gives
+   \[
+      H_c(u)=
+      \sum_{\pi:u\leadsto t}
+      \left(\prod_{e\in\pi}r_e(Y)\right)
+      \mathbf1_{\{\lambda(t)=\ell\}}g_c(t).
+   \]
+   Taking \(u=s\), using terminal measurability \((TSA1)\), and substituting
+   \(g_c\) from \((TSA2)\) proves \((TSA4)\).  The denominator is the special
+   case \(g_c(t)\equiv1\).
+
+   For a hash-bucket total counter, take
+   \(c_x=\mathbf1\{h_s(x)=a\}\).  For a bit counter, take
+   \(c_x=\mathbf1\{h_s(x)=a,\ {\rm bit}_k(x)=1\}\).  Dividing the corresponding
+   numerator by \(Z_{Y,\ell}\) gives the exact linear measurements required by
+   \cref{lem:linear-sketch-heavy-responsibilities}.  The work bound is just
+   the cost of initializing the terminal reward vectors and running one
+   backward pass per requested counter; combined with
+   \cref{cor:sketched-responsibility-lister}, this gives the final statement.
+\end{proof}
+
 \begin{remark}[What this shortcut does and does not prove]\label{rem:score-max-shortcut}
    \Cref{lem:smoothed-max-score-margin} is the $\alpha=0$ endpoint of the
    likelihood-ball geometry: if one can approximately maximize the smoothed
