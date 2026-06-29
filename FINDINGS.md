@@ -1953,6 +1953,21 @@ P125. (residual quant IMPLEMENTED + validated: real but MODEST OOD win, routing-
     but NOT a 2x-closer alone. 10M test pending (memory-bound rerank should amplify: shallower survivor
     pool -> less of the 920KB/q wall).
 
+P126. (10M residq = only +0.2pt recall -> OOD is ROUTING-COVERAGE-limited, not scan-accuracy-limited)
+    10M OOD RESIDQ+FASTSCAN vs baseline same-window (residq_10m.log): recall +0.18-0.26pt at matched p
+    (p288 0.8891->0.8917, p352 0.8973->0.8996, p448 0.9057->0.9075). MUCH smaller than 1M (+0.4-1.6pt, P125)
+    -> the gain SHRINKS with scale. QPS looked 2.2x but LOAD-CONFOUNDED (baseline ran first at high load
+    ~2700, residq later ~5500; don't trust -- P110 trap). KEY INSIGHT: at 10M with 262144 cells probing
+    ~300-450, the candidate pool is a tiny fraction of base, so ROUTING COVERAGE (which cells hold the OOD
+    neighbors) is the DOMINANT limiter; RESIDQ improves within-cell scan ranking but recall is capped by
+    the routing-coverage CEILING it can't exceed. So OOD recall is gated PRIMARILY by routing pool-recall,
+    NOT scan accuracy -> scan-accuracy levers (RESIDQ +0.2pt, and likely RaBitQ) give diminishing returns
+    at scale; the bigger half is ROUTING (getting OOD neighbors into probed cells -- ScaNN's partitioning
+    edge). RESIDQ stays as a clean small positive (kept, SBANN_RESIDQ) but is NOT the OOD closer. NEXT
+    OOD lever = routing pool-recall (measure the ceiling first; query-aware routing failed P96/98 so needs
+    a sounder approach -- e.g. more cells, OOD-distribution-trained centroids, or spill). Honest: OOD ~2x
+    is routing-coverage + scan-throughput, both of which our scan-accuracy work doesn't move much.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
