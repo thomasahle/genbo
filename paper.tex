@@ -18949,6 +18949,152 @@ partition ignores the bias coordinates that certify the list size.
    way the simultaneous storage and near requirements fail.
 \end{proof}
 
+\begin{lemma}[Regular growing alphabets collapse to a knife edge]
+   \label{lem:regular-growing-product-alphabet-knife-edge}
+   Fix \(c>1\), and put
+   \[
+      \rho_c=\frac1{2c^2-1},
+      \qquad
+      a_0=1-\frac1{c^2}.
+   \]
+   Let a near-linear raw product grid use alphabets
+   \(\mathcal A_m\) that may grow with \(m\), with
+   \(A_m=|\mathcal A_m|\), \(A_m^d=m^{1+o(1)}\), and \(d\to\infty\).
+   Let \(X_m\) be uniform on \(\mathcal A_m\), and write
+   \[
+      \bar a_m=\E X_m,\qquad
+      a_{+,m}=\max\mathcal A_m,\qquad
+      a_{-,m}=\min\mathcal A_m,\qquad
+      R_m=a_{+,m}-a_{-,m}.
+   \]
+   Let the critical threshold be
+   \[
+      T=\theta_m\sqrt d,
+      \qquad
+      \theta_m=\sqrt{2(1-\rho_c)\log A_m}+o(1),
+   \]
+   and let \(L_m=\log^{O_c(1)}m\).  Define the concentration scale
+   \[
+      \eta_m=R_m\sqrt{\frac{\log L_m}{d}}.
+   \]
+   Suppose \(\eta_m=o(1)\), the flat resident
+   \(p=d^{-1/2}\mathbf1\) satisfies the storage cap
+   \[
+      A_m^d\Pr_{\mathcal A_m^d}\{\ip{g}{p}\ge T\}
+      \le m^{\rho_c}L_m,
+      \tag{RGA1}
+   \]
+   and every two-point near-query profile from \((MPG1)\)--\((MPG3)\) has
+   sampled near mass at least \(L_m^{-1}\) under its scalar nonnegative query
+   tilt.  Then
+   \[
+      a_{+,m}-\bar a_m=O_c(\eta_m),
+      \qquad
+      \bar a_m=\theta_m+O_c(\eta_m).
+      \tag{RGA2}
+   \]
+   Thus every regular growing-alphabet escape is forced into a knife-edge
+   regime: the alphabet mean, top atom, and storage threshold agree up to the
+   bounded-difference concentration scale.  If either
+   \(a_{+,m}-\bar a_m\) or \(|\bar a_m-\theta_m|\) stays larger than a fixed
+   multiple of \(\eta_m\), the raw one-bucket-per-label product grid fails
+   storage or full mixed near-query recall.
+\end{lemma}
+
+\begin{proof}
+   We first repeat the mixed-profile argument with explicit concentration
+   loss.  Let
+   \[
+      \psi_m(t)=\log\E e^{tX_m},
+      \qquad
+      \mu_m(t)=\psi'_m(t).
+   \]
+   For the two-point profile in \((MPG1)\)--\((MPG3)\), the tilted normalized
+   storage mean is
+   \[
+      (1-\gamma_x)\mu_m(sx)+\gamma_x\mu_m(sy_x)+o(1),
+      \qquad s=\beta/\sqrt d .
+   \]
+   If \(x<0\), convexity gives \(\mu_m(sx)\le\mu_m(0)=\bar a_m\), and
+   bounded support gives \(\mu_m(sy_x)\le a_{+,m}\).  Choose
+   \(x=x_m<0\) close enough to zero that
+   \[
+      |\gamma_x-a_0^2|R_m\le \eta_m .
+   \]
+   If
+   \[
+      (1-a_0^2)\bar a_m+a_0^2a_{+,m}
+      \le
+      \theta_m-C\eta_m
+      \tag{RGA3}
+   \]
+   with \(C\) a sufficiently large constant depending only on the hidden
+   polylogarithmic power in \(L_m\), then every scalar tilt has mean at most
+   \(\theta_m-(C-1)\eta_m+o(1)\).  Hoeffding's inequality for variables in an
+   interval of length \(R_m\) gives
+   \[
+      \Pr_{\pi_q}\{\ip{g}{p}\ge T\}
+      \le
+      \exp\!\left(-\Omega(C^2\log L_m)\right)
+      <
+      L_m^{-1},
+   \]
+   contradicting the near-mass hypothesis.  Therefore
+   \[
+      (1-a_0^2)\bar a_m+a_0^2a_{+,m}
+      \ge
+      \theta_m-O_c(\eta_m).
+      \tag{RGA4}
+   \]
+
+   Next use storage.  Set
+   \[
+      r_0=\frac12\left(a_0^2+1-\rho_c\right).
+   \]
+   Since \(a_0^2<1-\rho_c\), we have
+   \(a_0^2<r_0<1-\rho_c\).  Suppose
+   \[
+      (1-r_0)\bar a_m+r_0a_{+,m}
+      \ge
+      \theta_m+C'\frac{R_m}{\sqrt d}
+      \tag{RGA5}
+   \]
+   for a sufficiently large constant \(C'\).  Force the first
+   \(k=\lceil r_0d\rceil\) coordinates of \(g\) to equal \(a_{+,m}\).  This
+   event has probability \(A_m^{-r_0d-o(d)}\).  Conditional on it, the
+   remaining coordinates have mean \(\bar a_m\), and by \((RGA5)\) their
+   required average is below \(\bar a_m-\Omega(R_m/\sqrt d)\).  Chebyshev's
+   inequality, using variance at most \(R_m^2\), gives a positive constant
+   lower bound on the conditional probability of meeting the storage
+   threshold.  Hence
+   \[
+      \Pr_{\mathcal A_m^d}\{\ip{g}{p}\ge T\}
+      \ge
+      A_m^{-r_0d-o(d)} .
+   \]
+   Multiplying by \(A_m^d=m^{1+o(1)}\) gives flat-resident incidence
+   \(m^{1-r_0-o(1)}\), which is larger than \(m^{\rho_c}L_m\) because
+   \(r_0<1-\rho_c\).  Thus
+   \[
+      (1-r_0)\bar a_m+r_0a_{+,m}
+      \le
+      \theta_m+O_c\!\left(\frac{R_m}{\sqrt d}\right)
+      \le
+      \theta_m+O_c(\eta_m).
+      \tag{RGA6}
+   \]
+
+   Subtracting \((RGA4)\) from \((RGA6)\) yields
+   \[
+      (r_0-a_0^2)(a_{+,m}-\bar a_m)
+      \le
+      O_c(\eta_m).
+   \]
+   Since \(r_0-a_0^2>0\), this proves
+   \(a_{+,m}-\bar a_m=O_c(\eta_m)\).  Substituting that back into
+   \((RGA4)\) gives \(\bar a_m=\theta_m+O_c(\eta_m)\).
+\end{proof}
+
 \begin{corollary}[Bucket-quotient weighted quadrature]
    \label{cor:bucket-quotient-quadrature}
    Fix the terminal setting of \cref{prop:sampled-structured-panel}.  Let
