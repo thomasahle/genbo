@@ -16721,6 +16721,72 @@ partition ignores the bias coordinates that certify the list size.
    \(r_{q,p,\ell}\ge K^{-1}\), the exact filter emits \(p\).
 \end{proof}
 
+\begin{corollary}[Marked spectrum plus a heavy lister closes the trellis branch]
+   \label{cor:marked-heavy-lister-closes-trellis}
+   Work in the setting of
+   \cref{lem:marked-trellis-responsibility-verifier}.  Let \(L_m\ge1\).  Assume
+   the marked spectrum satisfies, for every promised query \(q\),
+   \[
+      \sum_{\substack{x\in P\\ \|x-q\|>cr}}
+      \frac{Z_{q,x}^{\ge T}}{Z_q}
+      \le m^\rho L_m,
+      \tag{MHL1}
+   \]
+   and, for every near witness \(\|p-q\|\le r\),
+   \[
+      \frac{Z_{q,p}^{\ge T}}{Z_q}\ge L_m^{-1}.
+      \tag{MHL2}
+   \]
+   Suppose that after sampling \(\ell\sim\Pi_q\), the query has a
+   polylogarithmic-overhead, output-sensitive lister containing every point
+   with
+   \[
+      r_{q,x,\ell}
+      =
+      \frac{Z_{q,x,\ell}^{\ge T}}{Z_{q,\ell}}
+      \ge (2L_m)^{-1},
+      \tag{MHL3}
+   \]
+   followed by exact ratio filtering at the same threshold.  Then one sampled
+   panel emits far points in expected number at most \(2m^\rho L_m^2\), and
+   emits every near witness with probability at least \((2L_m)^{-1}\).
+   Hence \(O(L_m\log m)\) independent panels give the terminal sampled ANN
+   bounds with only a polylogarithmic loss whenever \(L_m=\log^{O_c(1)}m\).
+\end{corollary}
+
+\begin{proof}
+   Apply \cref{cor:heavy-responsibility-trellis-reporter} with
+   \(K=2L_m\).  The far-load bound \((HRT2)\), together with \((MHL1)\), gives
+   the expected far output bound \(2m^\rho L_m^2\).
+
+   For the near point \(p\), draw \(\ell\sim\Pi_q\) and put
+   \(R_\ell=r_{q,p,\ell}\).  Then \(0\le R_\ell\le1\) and
+   \[
+      \E_{\ell\sim\Pi_q}R_\ell
+      =
+      \frac{Z_{q,p}^{\ge T}}{Z_q}
+      \ge L_m^{-1}.
+   \]
+   With \(\tau=(2L_m)^{-1}\),
+   \[
+      \E R_\ell
+      \le
+      \tau+\Pr[R_\ell\ge\tau],
+   \]
+   because light buckets contribute less than \(\tau\) and every bucket
+   contributes at most one.  Therefore
+   \[
+      \Pr[R_\ell\ge(2L_m)^{-1}]
+      \ge L_m^{-1}-(2L_m)^{-1}
+      =
+      (2L_m)^{-1}.
+   \]
+   The heavy lister emits \(p\) on all such sampled buckets.  Repeating
+   \(O(L_m\log m)\) times gives high constant success probability for each
+   promised query, while multiplying the far output by only the same
+   polylogarithmic factor.
+\end{proof}
+
 \begin{lemma}[Random sparse aggregate buckets overcharge full scans]
    \label{lem:random-sparse-aggregate-responsibility-barrier}
    Let one quotient bucket aggregate \(H\) hidden labels with equal conditional
@@ -16871,6 +16937,10 @@ partition ignores the bias coordinates that certify the list size.
    positive target: a code or lattice decoder only has to list the points whose
    bucket-local marked posterior is at least inverse-polylogarithmic, and the
    exact ratio filter charges the remaining far load to the marked spectrum.
+   \Cref{cor:marked-heavy-lister-closes-trellis} removes the last separate
+   near-heavy hypothesis: once the marked near mass is inverse-polylogarithmic,
+   at least inverse-polylogarithmic sampled bucket mass has the witness above
+   the matching responsibility threshold.
    \Cref{lem:random-sparse-aggregate-responsibility-barrier} shows that this is
    not a pathological edge case: aggregating \(H\) independent sparse hidden
    filters into one bucket inflates union-scan load by
@@ -94598,6 +94668,11 @@ that remains after this barrier: list and exact-filter the points with
 bucket-local marked responsibility at least inverse-polylogarithmic.  Far load
 then loses only that polylogarithmic factor, and near recall is exactly the
 mass of buckets where the true witness is heavy.
+\Cref{cor:marked-heavy-lister-closes-trellis} shows that this heavy near mass
+is automatic at the right threshold: marked near mass \(L_m^{-1}\) implies
+sampled mass at least \((2L_m)^{-1}\) on buckets where the witness
+responsibility is at least \((2L_m)^{-1}\).  Therefore the marked spectrum plus
+a heavy lister is already the clean trellis/code/lattice endpoint.
 \Cref{lem:random-sparse-aggregate-responsibility-barrier} instantiates that
 barrier in the random sparse model: merging \(H\) hidden filters inflates the
 expected union scan by \((1-(1-s)^H)/s=\Theta(\min\{H,s^{-1}\})\).
