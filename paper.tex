@@ -95569,6 +95569,150 @@ amplified in the next proposition.
    sketch decoder itself.
 \end{proof}
 
+\begin{corollary}[Shared signatures compute rate-coverage sketches]
+   \label{cor:shared-signature-rate-coverage-sketch}
+   Work in the setting of
+   \cref{cor:sketched-rate-coverage-point-mass}.  Suppose the label universe
+   has a signature map \(\sigma:\mathcal A\to\Sigma\), nonnegative label
+   weights \(\omega_a\), and a resident partition
+   \(S=\bigsqcup_{\alpha\in\Sigma}C_\alpha\) such that the point-label
+   intensities factor as
+   \[
+      b_{x,a}=\omega_a\mathbf1\{x\in C_{\sigma(a)}\}.
+      \tag{SSI1}
+   \]
+   For a reported label set \(B\), write
+   \[
+      u_\alpha(B)=\sum_{\substack{a\in B\\ \sigma(a)=\alpha}}\omega_a,
+      \qquad
+      \Sigma_B=\{\alpha:u_\alpha(B)>0\}.
+      \tag{SSI2}
+   \]
+   Choose the pairwise-independent sketch rows during preprocessing.  For each
+   admissible dyadic sketch width \(W\), each signature \(\alpha\), each row
+   \(s\), and each identifier bit \(k\), store the sparse histograms
+   \[
+      H_{\alpha,s}(j)=|\{x\in C_\alpha:h_s(x)=j\}|,
+      \tag{SSI3}
+   \]
+   and
+   \[
+      H_{\alpha,s,k}(j)=
+      |\{x\in C_\alpha:h_s(x)=j,\ {\rm bit}_k(x)=1\}|.
+      \tag{SSI4}
+   \]
+   Over all polynomially bounded dyadic widths used by the heavy-hitter
+   sketch, these histograms take
+   \[
+      m\log^{O(1)}m
+      \tag{SSI4S}
+   \]
+   stored entries, because the \(C_\alpha\)'s partition \(S\).
+   Then, for the width \(W_B=\max\{1,\lceil32M_B/\theta\rceil\}\) chosen in
+   \cref{cor:sketched-rate-coverage-point-mass}, the required point-mass
+   sketch counters are
+   \[
+      T_{s,j}(B)=
+      \sum_{\alpha\in\Sigma_B}u_\alpha(B)H_{\alpha,s}(j),
+      \tag{SSI5}
+   \]
+   and
+   \[
+      T_{s,j,k}(B)=
+      \sum_{\alpha\in\Sigma_B}u_\alpha(B)H_{\alpha,s,k}(j).
+      \tag{SSI6}
+   \]
+
+   Let \(T_{\rm sig}(B)\) be the time needed by the query decoder to compute
+   the sparse weighted signature list
+   \(\{(\alpha,u_\alpha(B)):\alpha\in\Sigma_B\}\), and put
+   \[
+      J_{W_B}^{\Sigma}(B)=
+      \sum_{\alpha\in\Sigma_B}\sum_s
+      \left(
+         |\operatorname{supp}H_{\alpha,s}|
+         +
+         \sum_{k=1}^{b_0}|\operatorname{supp}H_{\alpha,s,k}|
+      \right)
+      \tag{SSI7}
+   \]
+   at the selected width.  If
+   \[
+      \E_Z\left[T_{\rm sig}(B(q,Z))+J_{W_B}^{\Sigma}(B(q,Z))\right]
+      \le D\,m^\rho\log^{O_c(1)}m,
+      \tag{SSI8}
+   \]
+   then the aggregation hypothesis \((PMHS4)\) holds.  Consequently, under
+   the miss and load assumptions \((PMR1)\)--\((PMR2)\), this shared-signature
+   panel implements the point-mass reporter and the posterior ANN endpoint.
+
+   In particular, if \(|\Sigma|=M\) and the partition is
+   \(\lambda\)-balanced,
+   \[
+      |C_\alpha|\le \lambda m/M
+      \qquad(\alpha\in\Sigma),
+      \tag{SSI9}
+   \]
+   then
+   \[
+      J_{W_B}^{\Sigma}(B)
+      \le
+      O(\log^2m)\,|\Sigma_B|\min\{\lambda m/M,W_B\}.
+      \tag{SSI10}
+   \]
+   Thus the aligned-residue parameter test for this rate-coverage branch is
+   concrete: at \(M\gtrsim\lambda m^{1-\rho}\log^{-O_c(1)}m\), a decoder
+   whose weighted active signature support is polylogarithmic computes the
+   heavy point-mass sketches within the \(m^\rho\polylog m\) budget.  A
+   decoder whose active signatures are iid-looking at polynomial scale falls
+   back to the union-scan entropy barrier.
+\end{corollary}
+
+\begin{proof}
+   Under \((SSI1)\),
+   \[
+      b_x(B)=\sum_{a\in B}b_{x,a}
+      =
+      u_{\alpha(x)}(B),
+   \]
+   where \(\alpha(x)\) is the unique signature with \(x\in C_{\alpha(x)}\).
+   Therefore
+   \[
+      \sum_{x:h_s(x)=j}b_x(B)
+      =
+      \sum_{\alpha\in\Sigma_B}u_\alpha(B)
+      |\{x\in C_\alpha:h_s(x)=j\}|,
+   \]
+   which is \((SSI5)\).  The bit-counter identity \((SSI6)\) is identical
+   with the additional bit restriction.
+
+   Once the sparse signature weights \(u_\alpha(B)\) are known, initializing
+   all nonzero total and bit counters requires only reading the stored
+   histogram entries for active signatures at the selected width, and adding
+   them with multiplier \(u_\alpha(B)\).  This costs
+   \(O(J_{W_B}^{\Sigma}(B))\), up to the fixed arithmetic cost of the real
+   weights.  Exact evaluation of a decoded candidate is \(b_x(B)=
+   u_{\alpha(x)}(B)\), after a table lookup in the active signature map.
+   Hence \((SSI8)\) implies the counter-aggregation bound \((PMHS4)\), and
+   \cref{cor:sketched-rate-coverage-point-mass} gives the endpoint.
+
+   For storage, fix a width, row, and bit-or-total choice.  The supports over
+   all signatures have total size at most
+   \(\sum_\alpha |C_\alpha|=m\).  Multiplying by \(O(\log m)\) rows,
+   \(O(\log m)\) bit-or-total choices, and \(O(\log m)\) dyadic widths proves
+   \((SSI4S)\), which is within the \(m^{1+\rho}\polylog m\) local space
+   allowance.
+
+   For \((SSI10)\), each histogram support for an active signature has size at
+   most \(\min\{|C_\alpha|,W_B\}\), which is at most
+   \(\min\{\lambda m/M,W_B\}\) by \((SSI9)\).  There are
+   \(O(\log m)\) sketch rows and \(b_0+1=O(\log m)\) total and bit histogram
+   families, giving the displayed bound.  The final paragraph substitutes
+   \(M\gtrsim\lambda m^{1-\rho}\log^{-O_c(1)}m\) into \((SSI10)\) and compares
+   the iid-looking alternative with
+   \cref{cor:route-local-union-effective-entropy-barrier}.
+\end{proof}
+
 \begin{remark}[What the sketch has to aggregate]
    \label{rem:sketched-responsibility-aggregation}
    The sketch in \cref{lem:linear-sketch-heavy-responsibilities} is linear in
