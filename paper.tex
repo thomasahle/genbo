@@ -5932,6 +5932,57 @@ partition ignores the bias coordinates that certify the list size.
    \cref{thm:smooth-product-terminal}.
 \end{proof}
 
+\begin{corollary}[The oversampling scale is necessary for blind thinning]
+   \label{cor:no-free-terminal-syndrome-thinning}
+   In the smooth product terminal filter of \cref{thm:smooth-product-terminal},
+   take the original block count
+   \[
+      B=A_0J_a(u)^{-1}
+   \]
+   with \(A_0=O_{a,b,k}(1)\).  Let \(R\subseteq[B]^k\) be any random retained
+   tuple set, independent of the Gaussian columns and of the near pair, such
+   that every fixed tuple is retained with probability at most \(K^{-1}\).
+   For a near pair of correlation at least \(a\), let \(W(p,q)\) be the set of
+   tuples whose every block column is common-good for \(p\) and \(q\), i.e.
+   \[
+      \ip{g_{i,j_i},p}\ge u,\qquad
+      \ip{g_{i,j_i},q}\ge u
+      \quad\text{for all }i\in[k].
+   \]
+   Then
+   \[
+      \Prb[R\cap W(p,q)\ne\emptyset]
+      \le
+      A_0^k K^{-1}.
+      \tag{NFT1}
+   \]
+   Thus a density-\(K^{-1}\) pseudorandom subset with \(K\to\infty\) cannot be
+   inserted into the original constant-recall product filter without losing
+   the same factor in recall.  To keep constant one-table recall under blind
+   thinning, the expected number of common-good tuples must first be raised to
+   \(\Omega(K)\), which is exactly the \(K^{1/k}\)-per-block oversampling in
+   \cref{cor:oversampled-product-syndrome-thinning}, up to constants.
+\end{corollary}
+
+\begin{proof}
+   Conditional on the near pair, each block has expected number
+   \(BJ_a(u)=A_0\) of common-good columns.  The blocks are independent, so
+   \[
+      \E |W(p,q)|=(BJ_a(u))^k=A_0^k .
+   \]
+   Since \(R\) is independent of the Gaussian columns and every fixed tuple has
+   retention probability at most \(K^{-1}\),
+   \[
+      \E |R\cap W(p,q)|
+      \le
+      K^{-1}\E |W(p,q)|
+      =
+      A_0^kK^{-1}.
+   \]
+   Markov's inequality gives \((NFT1)\).  The final statement is the
+   contrapositive of this first-moment bound.
+\end{proof}
+
 \begin{lemma}[Superset product-panel decoder]
    \label{lem:superset-product-panel-decoder}
    Work in the setting of \cref{lem:additive-product-panel-decoder}, but
