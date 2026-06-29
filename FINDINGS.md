@@ -1889,6 +1889,15 @@ P120. (OOD stays ~2x behind ScaNN -- msspacev levers DON'T convert; OOD is reran
     HONEST: msspacev BEATS ScaNN (~1.5-2x @QPS90, P117); OOD STILL ~2x behind (rerank wall, needs the
     residual lever, not routing/scan). The two tracks have DIFFERENT bottlenecks.
 
+P121. (*** ANN-accelerated EM CONFIRMED: small-beam E-step = 3.4x faster EM, recall preserved ***)
+    User Q: use the ANN structure to do EM faster? YES -- the E-step IS an ANN query against the tree's
+    own centroids; a point's nearest LEAF needs ~8 probes not the full query beam (200). SBANN_TREEEM_BEAM
+    (default 8) caps the E-step beam. 1M (cheapem.log) EM(2)+SOAR: beam=8 -> 2 EM rounds 13.2s, recall
+    0.8979/0.9195/0.9307/0.9384/0.9483; beam=200 -> 44.7s, recall 0.9007/0.9204/0.9315/0.9393/0.9491.
+    => 3.4x FASTER EM, recall within 0.001-0.003 (cheap-EM keeps +1.2pt of full-EM's +1.5pt over SOAR-only).
+    The structure accelerates its OWN EM (Pelleg-Moore/Elkan/Hamerly family). Makes EM+SOAR practical at
+    OOD/100M (the 47-min OOD EM build -> minutes). Further: warm-start across rounds + triangle-ineq skips.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
