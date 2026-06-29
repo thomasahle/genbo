@@ -1898,6 +1898,20 @@ P121. (*** ANN-accelerated EM CONFIRMED: small-beam E-step = 3.4x faster EM, rec
     The structure accelerates its OWN EM (Pelleg-Moore/Elkan/Hamerly family). Makes EM+SOAR practical at
     OOD/100M (the 47-min OOD EM build -> minutes). Further: warm-start across rounds + triangle-ineq skips.
 
+P122. (OOD residual-IP refine = NET LOSS; OOD gap is FUNDAMENTAL quantization accuracy, not rerank depth)
+    Built IP refine variant (pq::ResidPq::query_lut_f32_ip, -<q,decode>) so the 8-bit refine re-ranks IP
+    candidates. 10M OOD (ood_resid.log, t_surv=5000): refine reaches recall 0.886 at rr=100 EXACT raw
+    reads vs plain needs rr~1600-3000 (30x fewer raw reads -- mechanism WORKS). BUT net LOSS: refine
+    reads the 100B 8-bit code for ALL t_surv=5000 survivors = 500KB > the raw it saves; QPS HALVED
+    (4013 vs plain 7117 @ ~recall 0.895). Refine only wins if t_surv is SMALL, but OOD needs a LARGE pool
+    (t_surv=5000) because the 4-bit IP scan is coarse -> the refine pass over the whole pool is the cost.
+    ROOT CAUSE (final OOD verdict): ScaNN's anisotropic AH quant is accurate enough to rerank only ~200;
+    our 4-bit/8-bit PQ needs THOUSANDS of exact reranks -> the OOD ~2x gap is the QUANTIZATION-ACCURACY
+    gap (better recall-per-candidate), NOT rerank-depth or scan-speed. The residual, fast-scan, AVX-512,
+    SOAR all attack the wrong thing for OOD. To close OOD we'd need ScaNN-class score-aware quant that
+    makes the pool small enough -- the additive-quant attempt (idea #8) already lost to apq4. OOD stays
+    ~2x; this is now well-characterized as fundamental on this engine. msspacev WIN (P117) stands.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
