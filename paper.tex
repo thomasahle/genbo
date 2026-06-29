@@ -89285,6 +89285,41 @@ top-\(k\) backup.
    contrapositives give the final claims.
 \end{proof}
 
+\begin{lemma}[Product-sign top-\(k\) softmax reporter]\label{lem:product-sign-top-k-reporter}
+   Let \(B=2^r\).  A product-sign finite channel has labels
+   \(s\in\{\pm1\}^r\) and query logits of the additive form
+   \[
+      L_q(s)=\sum_{a=1}^r s_a u_a(q),
+      \qquad
+      u_a(q)=\lambda\ip{v_a}{q}+b_a ,
+   \]
+   where the \(b_a\) are optional bit offsets.  Then the exact top \(k\)
+   outcomes of \(K_q(s)\propto\exp L_q(s)\) can be reported after computing
+   the \(r\) numbers \(u_a(q)\), using \(O(r\log r+k\log k)\) additional
+   arithmetic and \(O(k+r)\) memory.  In particular, when
+   \(r=\log B\le\log^{O_c(1)}m\) and \(k=\log^{O_c(1)}m\), this is a
+   \(d\log^{O_c(1)}m\)-work reporter for
+   \cref{prop:query-top-k-channel-compiler}.
+\end{lemma}
+
+\begin{proof}
+   Let \(s^\star_a=\operatorname{sign}u_a(q)\), with a fixed deterministic
+   tie rule.  If \(F\subseteq[r]\) is the set of bits flipped away from
+   \(s^\star\), then
+   \[
+      L_q(s^F)=L_q(s^\star)-\sum_{a\in F}2|u_a(q)|.
+   \]
+   Thus the top \(k\) labels are exactly the \(k\) smallest subset sums of the
+   nonnegative weights \(w_a=2|u_a(q)|\).  After sorting the weights, the
+   standard best-first subset-sum enumerator starts from the empty subset and,
+   for a popped subset whose largest sorted index is \(i\), pushes the two
+   children obtained by adding \(i+1\) and by replacing \(i\) with \(i+1\),
+   suppressing duplicates.  This heap enumerates subset sums in nondecreasing
+   order, so translating each subset back to flipped signs gives the exact
+   top \(k\) labels.  Computing the \(u_a(q)\)'s costs \(dr\), sorting costs
+   \(O(r\log r)\), and the heap performs \(O(k)\) pushes and pops.
+\end{proof}
+
 \begin{proposition}[Query-top-\(k\) finite-channel compiler]
    \label{prop:query-top-k-channel-compiler}
    Fix a localized node of size \(m\), a scale \(\xi\in[1/m,1]\), and a finite
@@ -89504,6 +89539,25 @@ One should also separate the resident-guard regime from the genuine finite-chann
    in the large tuned runs, this gives a concrete proof target for the
    query-visible top-eight backup: prove a uniform lower tail for
    \(g_{4,8}(q)-2\Delta_{p,q}\) and for the hidden top-four surplus capture.
+
+   A structured product-sign panel gives a concrete reporter rather than only
+   an existence target.  Labels are sign vectors and
+   \cref{lem:product-sign-top-k-reporter} reports the exact query top eight
+   from the \(r=\log B\) bit logits.  In fixed-\(B=16\) isolated planted-pair
+   diagnostics, the unwhitened product-sign panel was a real barrier:
+   \(\mathcal H_\eta\) lower \(5\%\) quantiles were only \(0.041\)--\(0.159\)
+   at scales \(8,12\) for \(m=1000,3000\), with boosted-overhead \(90\%\)
+   proxies \(33.5\)--\(117.4\).  Whitening the bit directions changed the
+   picture.  For \(m=10000,30000\), whitened product-sign panels at scales
+   \(8,12\) had \(\mathcal H_\eta\) lower \(5\%\) quantiles
+   \(0.212\)--\(0.333\), query top-eight contribution lower \(5\%\)
+   \(0.997\)--\(1.000\), hidden top-four contribution lower \(5\%\)
+   \(0.908\)--\(0.994\), and certified \(T_4(p,q)\subseteq Q_8(q)\) on
+   \(99.4\%\)--\(100\%\) of rows.  This is weaker than the fully balanced
+   whitened Gaussian panel but is now implementable: the remaining theorem for
+   this branch is to prove the same hidden top-four and containment lower
+   tails for a whitened product-sign construction with only bit-additive
+   offsets.
 \end{remark}
 
 \begin{proposition}[Conditional finite-channel polylog endpoint]\label{prop:finite-channel-polylog}

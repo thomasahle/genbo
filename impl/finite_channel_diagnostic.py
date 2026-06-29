@@ -21,7 +21,16 @@ import numpy as np
 
 
 _EPS = 1e-300
-PANEL_KINDS = ("gaussian", "whitened_gaussian", "cross_polytope", "pca", "landmark")
+PANEL_KINDS = (
+    "gaussian",
+    "whitened_gaussian",
+    "product_sign",
+    "whitened_product_sign",
+    "cross_polytope",
+    "pca",
+    "landmark",
+)
+PRODUCT_SIGN_KINDS = {"product_sign", "whitened_product_sign"}
 
 
 def _finite_or_inf_quantile(values: np.ndarray, q: float) -> float:
@@ -167,6 +176,102 @@ def stable_softmax(logits: np.ndarray) -> np.ndarray:
     return exp / exp.sum(axis=1, keepdims=True)
 
 
+def is_power_of_two(value: int) -> bool:
+    return value > 0 and (value & (value - 1)) == 0
+
+
+def is_product_sign_kind(kind: str) -> bool:
+    return kind in PRODUCT_SIGN_KINDS
+
+
+def product_sign_labels(b_count: int) -> np.ndarray:
+    if not is_power_of_two(b_count):
+        raise ValueError("product-sign panels require a power-of-two outcome count")
+    bits = int(math.log2(b_count))
+    labels = np.arange(b_count, dtype=np.uint64)[:, None]
+    bit_positions = np.arange(bits, dtype=np.uint64)[None, :]
+    return np.where(((labels >> bit_positions) & 1) == 1, 1.0, -1.0)
+
+
+def _data_whitening(data: np.ndarray) -> np.ndarray:
+    centered = data - data.mean(axis=0, keepdims=True)
+    cov = centered.T @ centered / max(len(centered), 1)
+    vals, vecs = np.linalg.eigh(cov + 1e-6 * np.eye(data.shape[1]))
+    return vecs @ np.diag(1.0 / np.sqrt(vals)) @ vecs.T
+
+
+def make_product_sign_basis(
+    d: int,
+    b_count: int,
+    *,
+    seed: int = 0,
+    data: np.ndarray | None = None,
+    whitened: bool = False,
+) -> np.ndarray:
+    if not is_power_of_two(b_count):
+        raise ValueError("product-sign panels require a power-of-two outcome count")
+    if whitened and data is None:
+        raise ValueError("whitened product-sign panels require data")
+    rng = np.random.default_rng(seed)
+    bits = int(math.log2(b_count))
+    basis = rng.standard_normal((bits, d)) / math.sqrt(d)
+    if whitened:
+        basis = basis @ _data_whitening(data)
+    return basis
+
+
+def product_sign_panel_from_basis(basis: np.ndarray) -> np.ndarray:
+    labels = product_sign_labels(1 << len(basis))
+    return (labels @ basis) / math.sqrt(len(basis))
+
+
+def product_sign_topk_indices(bit_logits: np.ndarray, k: int) -> np.ndarray:
+    """Return exact top-k product-sign labels without enumerating all labels."""
+    if k < 1:
+        raise ValueError("k must be positive")
+    bit_logits = np.asarray(bit_logits, dtype=float)
+    bits = len(bit_logits)
+    if bits == 0:
+        return np.array([0], dtype=int)
+
+    penalties = 2.0 * np.abs(bit_logits)
+    order = np.argsort(penalties)
+    sorted_penalties = penalties[order]
+    best_bits = np.where(bit_logits >= 0.0, 1, 0).astype(np.uint64)
+    best_index = int(np.sum(best_bits << np.arange(bits, dtype=np.uint64)))
+
+    import heapq
+
+    out_masks: list[int] = [0]
+    seen = {0}
+    heap: list[tuple[float, int, int]] = [(float(sorted_penalties[0]), 0, 1)]
+    seen.add(1)
+    while heap and len(out_masks) < k:
+        cost, last, mask = heapq.heappop(heap)
+        out_masks.append(mask)
+        next_last = last + 1
+        if next_last < bits:
+            add_mask = mask | (1 << next_last)
+            if add_mask not in seen:
+                seen.add(add_mask)
+                heapq.heappush(heap, (float(cost + sorted_penalties[next_last]),
+                                      next_last, add_mask))
+            replace_mask = (mask & ~(1 << last)) | (1 << next_last)
+            if replace_mask not in seen:
+                seen.add(replace_mask)
+                heapq.heappush(heap, (float(cost - sorted_penalties[last] + sorted_penalties[next_last]),
+                                      next_last, replace_mask))
+
+    indices = []
+    for mask in out_masks:
+        index = best_index
+        for sorted_pos, original_bit in enumerate(order):
+            if mask & (1 << sorted_pos):
+                index ^= 1 << int(original_bit)
+        indices.append(index)
+    return np.asarray(indices, dtype=int)
+
+
 def balance_softmax_offsets(
     scores: np.ndarray,
     *,
@@ -208,11 +313,14 @@ def make_panel(
     if kind == "whitened_gaussian":
         if data is None:
             raise ValueError("whitened_gaussian requires data")
-        centered = data - data.mean(axis=0, keepdims=True)
-        cov = centered.T @ centered / max(len(centered), 1)
-        vals, vecs = np.linalg.eigh(cov + 1e-6 * np.eye(d))
-        whitening = vecs @ np.diag(1.0 / np.sqrt(vals)) @ vecs.T
+        whitening = _data_whitening(data)
         return (rng.standard_normal((b_count, d)) @ whitening) / math.sqrt(d)
+    if kind == "product_sign":
+        basis = make_product_sign_basis(d, b_count, seed=seed)
+        return product_sign_panel_from_basis(basis)
+    if kind == "whitened_product_sign":
+        basis = make_product_sign_basis(d, b_count, seed=seed, data=data, whitened=True)
+        return product_sign_panel_from_basis(basis)
     if kind == "cross_polytope":
         panel = np.zeros((b_count, d))
         coords = np.arange(b_count) % d
@@ -602,7 +710,8 @@ def main() -> None:
 
     panel = args.scale * make_panel(args.d, b_count, kind=args.panel, seed=args.seed + 1, data=data)
     scores = data @ panel.T
-    offsets = balance_softmax_offsets(scores, max_iter=args.balance_iters)
+    offsets = np.zeros(b_count) if is_product_sign_kind(args.panel) else balance_softmax_offsets(
+        scores, max_iter=args.balance_iters)
     k_data = stable_softmax(scores + offsets)
     k_query = softmax_channel(queries, panel, offsets)
     result = diagnose_channel(data, queries, near_indices, k_data, k_query, c=args.c, r=r, eta=eta)

@@ -22,6 +22,7 @@ from finite_channel_diagnostic import (
     balance_softmax_offsets,
     diagnose_channel,
     effective_support,
+    is_product_sign_kind,
     make_panel,
     softmax_channel,
     softmax_hessian_condition,
@@ -182,7 +183,10 @@ def run_trial(
 
     panel = scale * make_panel(d, b_count, kind=panel_kind, seed=seed + 1, data=data)
     scores = data @ panel.T
-    offsets = balance_softmax_offsets(scores, max_iter=balance_iters)
+    if is_product_sign_kind(panel_kind):
+        offsets = np.zeros(b_count)
+    else:
+        offsets = balance_softmax_offsets(scores, max_iter=balance_iters)
     k_data = stable_softmax(scores + offsets)
     k_query = softmax_channel(query_points, panel, offsets)
     result = diagnose_channel(data, query_points, near_indices, k_data, k_query, c=c, r=r, eta=eta)

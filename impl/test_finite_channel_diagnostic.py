@@ -5,9 +5,13 @@ from finite_channel_diagnostic import (
     balance_softmax_offsets,
     diagnose_channel,
     h_eta_for_pairs,
+    is_product_sign_kind,
     make_panel,
+    make_product_sign_basis,
     posterior_margin_certificate,
     posterior_thresholds,
+    product_sign_panel_from_basis,
+    product_sign_topk_indices,
     query_tilt_stability_statistics,
     stable_softmax,
     synthetic_near_pairs,
@@ -145,11 +149,24 @@ def test_panel_variants_have_expected_shape_and_unit_adaptive_rows():
     rng = np.random.default_rng(1)
     data = rng.normal(size=(30, 4))
     for kind in PANEL_KINDS:
-        panel = make_panel(4, 6, kind=kind, seed=2, data=data)
-        assert panel.shape == (6, 4)
+        b_count = 8 if is_product_sign_kind(kind) else 6
+        panel = make_panel(4, b_count, kind=kind, seed=2, data=data)
+        assert panel.shape == (b_count, 4)
         assert np.all(np.isfinite(panel))
         if kind in {"cross_polytope", "pca", "landmark"}:
             assert np.allclose(np.linalg.norm(panel, axis=1), 1.0)
+
+
+def test_product_sign_topk_matches_explicit_scores():
+    rng = np.random.default_rng(4)
+    basis = make_product_sign_basis(5, 16, seed=5)
+    panel = product_sign_panel_from_basis(basis)
+    query = rng.normal(size=5)
+    bit_logits = basis @ query / np.sqrt(len(basis))
+    exact_scores = panel @ query
+    expected = np.argsort(-exact_scores)[:8]
+    reported = product_sign_topk_indices(bit_logits, 8)
+    assert np.array_equal(reported, expected)
 
 
 def test_synthetic_near_pairs_honors_requested_correlation():
@@ -165,5 +182,6 @@ if __name__ == "__main__":
     test_query_tilt_margins_certify_topk_order_and_containment()
     test_softmax_balancing_reduces_column_mass_error()
     test_panel_variants_have_expected_shape_and_unit_adaptive_rows()
+    test_product_sign_topk_matches_explicit_scores()
     test_synthetic_near_pairs_honors_requested_correlation()
     print("finite_channel_diagnostic tests passed")
