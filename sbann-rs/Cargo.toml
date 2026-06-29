@@ -1,0 +1,21 @@
+[package]
+name = "sbann"
+version = "0.1.0"
+edition = "2021"
+description = "Streaming int8 IVF-PQ ANN build/query for billion-scale (score-and-ball)"
+
+[[bin]]
+name = "sbann"
+path = "src/main.rs"
+
+[dependencies]
+memmap2 = "0.9"      # mmap the 1TB i8bin base + index (no RAM materialization)
+rayon = "1"          # data-parallel chunks, GIL-free
+bytemuck = "1"       # zero-copy reinterpret int8/u64 slices
+nalgebra = "0.33"    # small SVD for the OPQ rotation update (orthogonal Procrustes)
+matrixmultiply = "0.3"  # blocked SIMD f32 GEMM for batched routing (Q @ C^T)
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
