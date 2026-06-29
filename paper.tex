@@ -95863,6 +95863,127 @@ amplified in the next proposition.
    Combining this with \((ALC11)\) gives \((ALC9)\).
 \end{proof}
 
+\begin{lemma}[Sparse Fourier active weights have a point-mass uncertainty cost]
+   \label{lem:sparse-fourier-point-mass-uncertainty}
+   Let \(G\) be a finite abelian group of size \(M\), with character group
+   \(\widehat G\).  Let \(u:G\to\mathbb R_+\) be nonzero, and use the
+   normalization
+   \[
+      \widehat u(\xi)=\frac1M\sum_{\alpha\in G}u_\alpha\overline{\xi(\alpha)},
+      \qquad
+      u_\alpha=\sum_{\xi\in\widehat G}\widehat u(\xi)\xi(\alpha).
+   \]
+   If
+   \[
+      R=|\operatorname{supp}\widehat u|,
+      \qquad
+      U=\sum_{\alpha\in G}u_\alpha,
+      \qquad
+      H=\max_{\alpha\in G}u_\alpha,
+   \]
+   then
+   \[
+      H\le \frac{R}{M}U .
+      \tag{SFU1}
+   \]
+   Equivalently, if \(u\) assigns weight at least \(\theta\) to some residue,
+   then
+   \[
+      \sum_{\alpha\in G}u_\alpha\ge \frac{M\theta}{R}.
+      \tag{SFU2}
+   \]
+\end{lemma}
+
+\begin{proof}
+   By Fourier inversion and Cauchy's inequality,
+   \[
+      H
+      \le
+      \sum_{\xi\in\operatorname{supp}\widehat u}|\widehat u(\xi)|
+      \le
+      R^{1/2}\left(\sum_{\xi\in\widehat G}|\widehat u(\xi)|^2\right)^{1/2}.
+   \]
+   Parseval's identity gives
+   \[
+      \sum_{\xi\in\widehat G}|\widehat u(\xi)|^2
+      =
+      \frac1M\sum_{\alpha\in G}u_\alpha^2
+      \le
+      \frac{UH}{M},
+   \]
+   because \(0\le u_\alpha\le H\).  Since \(H>0\), the two inequalities imply
+   \(H\le R U/M\).
+\end{proof}
+
+\begin{corollary}[Sparse Fourier aggregation is not a point-mass escape]
+   \label{cor:sparse-fourier-rate-coverage-barrier}
+   Work in the shared-signature model of
+   \cref{cor:shared-signature-rate-coverage-sketch}, with
+   \(\Sigma=G\) a finite abelian group of size \(M\).  Suppose the resident
+   partition is two-sided \(\lambda\)-regular,
+   \[
+      |C_\alpha|\ge\frac{m}{\lambda M}
+      \qquad(\alpha\in G),
+      \tag{SFB1}
+   \]
+   and consider one query outcome with nonnegative active signature weights
+   \(u_\alpha(B)\).  If the point-mass reporter is to list a resident in a
+   residue \(\alpha_*\) with
+   \[
+      u_{\alpha_*}(B)\ge\theta,
+      \tag{SFB2}
+   \]
+   while the total point-mass load is
+   \[
+      M_B=\sum_{x\in S}u_{\alpha(x)}(B),
+      \tag{SFB3}
+   \]
+   and the Fourier support of \(u(B)\) has size \(R_B\), then
+   \[
+      M_B\ge \frac{m\theta}{\lambda R_B}.
+      \tag{SFB4}
+   \]
+   Consequently, under the target load condition
+   \[
+      M_B\le m^\rho\log^{O_c(1)}m,
+      \qquad
+      \theta^{-1},\lambda\le\log^{O_c(1)}m,
+      \tag{SFB5}
+   \]
+   any such Fourier-described active law must satisfy
+   \[
+      R_B\ge m^{1-\rho}\log^{-O_c(1)}m.
+      \tag{SFB6}
+   \]
+
+   Thus one cannot replace the sparse active-residue list in
+   \cref{cor:shared-signature-rate-coverage-sketch} by a polylogarithmic
+   Fourier, Walsh, or character expansion while keeping nonnegative
+   point-mass rate coverage.  A transform representation is useful for
+   computing broad aggregate weights, but a broad nonnegative law either gives
+   every residue subthreshold point mass or pays the same storage-scale
+   entropy in Fourier support.  At the aligned residue scale
+   \(M\simeq m^{1-\rho}\polylog m\), the required Fourier support is therefore
+   essentially the whole residue group, up to polylogarithmic factors.
+\end{corollary}
+
+\begin{proof}
+   Let \(U_B=\sum_{\alpha\in G}u_\alpha(B)\).  By
+   \cref{lem:sparse-fourier-point-mass-uncertainty} and \((SFB2)\),
+   \(U_B\ge M\theta/R_B\).  The two-sided lower regularity gives
+   \[
+      M_B
+      =
+      \sum_{\alpha\in G}|C_\alpha|u_\alpha(B)
+      \ge
+      \frac{m}{\lambda M}U_B
+      \ge
+      \frac{m\theta}{\lambda R_B},
+   \]
+   proving \((SFB4)\).  Rearranging \((SFB4)\) under \((SFB5)\) gives
+   \((SFB6)\).
+\end{proof}
+
 \begin{corollary}[Random signatures cannot be materialized sparsely]
    \label{cor:random-active-signature-support-barrier}
    Work in the shared-signature setting of
