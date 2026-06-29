@@ -24,6 +24,7 @@ from finite_channel_diagnostic import (
     effective_support,
     is_product_sign_kind,
     make_panel,
+    posterior_margin_certificate,
     softmax_channel,
     softmax_hessian_condition,
     stable_softmax,
@@ -86,6 +87,14 @@ FIELDNAMES = [
     "query_top4_to_top8_gap_q05",
     "query_top4_to_top8_containment_margin_q05",
     "query_top4_to_top8_containment_fraction",
+    "margin025_mass_q01",
+    "margin025_mass_q05",
+    "margin025_bound_q01",
+    "margin025_bound_q05",
+    "margin050_mass_q01",
+    "margin050_mass_q05",
+    "margin050_bound_q01",
+    "margin050_bound_q05",
     "margin_mass_mean",
     "margin_mass_q05",
     "margin_bound_mean",
@@ -205,6 +214,12 @@ def run_trial(
     leader_eps, boost_overhead = leader_boost_overhead(result.h_eta, route_depth)
     top4_value = result.h_eta * result.top4_contribution_fraction
     query_top8_value = result.h_eta * result.query_top8_contribution_fraction
+    _, margin025_mass, margin025_bound = posterior_margin_certificate(
+        k_data, k_query, near_indices, result.pi, result.tau,
+        alpha=result.alpha, margin_delta=0.25 / result.alpha)
+    _, margin050_mass, margin050_bound = posterior_margin_certificate(
+        k_data, k_query, near_indices, result.pi, result.tau,
+        alpha=result.alpha, margin_delta=0.50 / result.alpha)
 
     return {
         "n": n,
@@ -271,6 +286,14 @@ def run_trial(
             result.query_top4_to_top8_containment_margin, 0.05),
         "query_top4_to_top8_containment_fraction": float(
             np.mean(result.query_top4_to_top8_containment_margin > 0)),
+        "margin025_mass_q01": _q(margin025_mass, 0.01),
+        "margin025_mass_q05": _q(margin025_mass, 0.05),
+        "margin025_bound_q01": _q(margin025_bound, 0.01),
+        "margin025_bound_q05": _q(margin025_bound, 0.05),
+        "margin050_mass_q01": _q(margin050_mass, 0.01),
+        "margin050_mass_q05": _q(margin050_mass, 0.05),
+        "margin050_bound_q01": _q(margin050_bound, 0.01),
+        "margin050_bound_q05": _q(margin050_bound, 0.05),
         "margin_mass_mean": float(result.margin_mass.mean()),
         "margin_mass_q05": _q(result.margin_mass, 0.05),
         "margin_bound_mean": float(result.margin_bound.mean()),

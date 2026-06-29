@@ -42,6 +42,16 @@ def test_run_trial_produces_complete_finite_row():
     assert abs(row["near_corr"] - 0.9) < 1e-12
     assert 0 <= row["top4_value_q05"] <= row["h_q05"] + 1e-12
     assert 0 <= row["query_top8_value_q05"] <= row["h_q05"] + 1e-12
+    assert 0 <= row["margin025_mass_q05"] <= 1
+    assert 0 <= row["margin050_mass_q05"] <= 1
+    assert 0 <= row["margin025_mass_q01"] <= 1
+    assert 0 <= row["margin050_mass_q01"] <= 1
+    assert row["margin025_mass_q01"] <= row["margin025_mass_q05"] + 1e-12
+    assert row["margin050_mass_q01"] <= row["margin050_mass_q05"] + 1e-12
+    assert 0 <= row["margin025_bound_q01"] <= row["margin025_bound_q05"] + 1e-12
+    assert 0 <= row["margin050_bound_q01"] <= row["margin050_bound_q05"] + 1e-12
+    assert 0 <= row["margin025_bound_q05"] <= row["h_q05"] + 1e-12
+    assert 0 <= row["margin050_bound_q05"] <= row["h_q05"] + 1e-12
     for key in FIELDNAMES:
         if key == "panel":
             continue
