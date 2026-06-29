@@ -33,6 +33,11 @@ pub static RESIDQ: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool
 /// late dedup in rerank_contig (heap size k*4) gets crowded out by those duplicates, collapsing recall
 /// as a0 grows. This dedup measures the TRUE coverage of a multi-store routing (and shrinks the pool).
 pub static POOLDEDUP: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+/// SBANN_DEDUP_A0: smallest a0 at which scan_rerank dedups the pool by orig BEFORE the t_surv cap.
+/// a0 < this uses only the cheap dedup-in-rerank (after-cap) path -- negligible recall loss at low a0
+/// (1M OOD a0=3 = -0.003) but avoids the per-query dedup cost on the QPS@90% / msspacev champion configs.
+/// a0 >= this uses the correct before-cap dedup (needed at heavy duplication, e.g. a0>=6). Default 4.
+pub static DEDUP_A0: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(4);
 
 thread_local! {
     // reused open-addressing table for the per-query pool dedup (a0>1). Entries: (orig_key, best_approx,
@@ -1383,7 +1388,7 @@ impl Index {
         // SOAR multi-store (a0>1): dedup the pool by orig id BEFORE the cap so distinct survivors enter
         // rerank (deduping after the cap loses recall at high a0). a0==1 has no dups -> skip. The fast
         // reused open-addressing table replaces the per-query SipHash HashMap (the gap-widener, P134).
-        if self.a0 > 1 || POOLDEDUP.load(std::sync::atomic::Ordering::Relaxed) {
+        if self.a0 >= DEDUP_A0.load(std::sync::atomic::Ordering::Relaxed) || POOLDEDUP.load(std::sync::atomic::Ordering::Relaxed) {
             dedup_pool_by_orig(&mut pool, &self.slot_orig);
         }
         let tt = t.min(pool.len());
