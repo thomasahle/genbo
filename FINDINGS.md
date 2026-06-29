@@ -1790,6 +1790,19 @@ P114. (*** FAST-SCAN extends to OOD: int16-accurate IP selection at i8 speed -> 
     here (~9782). The +1.24x engine win is real but ScaNN's OOD lead (200-dim AH scan throughput) is ~2x
     and the fast-scan doesn't close it. HONEST: OOD stays ~2x behind ScaNN, same-window.
 
+P115. (cell-inverted BATCHED scan = DEAD END for hierk3; scan is COMPUTE-bound, fast-scan was the ceiling)
+    Prototyped search_batch_inverted (query-partition + cell-first ordering to amortize code loads across
+    co-probing queries; subagent, worktree commit 2e33d4a). Recall IDENTICAL but 26-39% SLOWER (p128 0.74x,
+    p320 0.61x). WHY: hierk3 has 262144 cells; at nq=10000 the queries-per-cell-per-chunk is <2 -> ZERO
+    cache amortization (each cell's ~800B loaded once regardless of order; tiny ~400B blocks already fit
+    L1), and the sort is pure overhead. The scan is COMPUTE-bound (vpshufb throughput), not memory-bound,
+    for fine-cell IVF. CONSEQUENCE: confirms fast-scan (P113, 1 vpshufb/subspace) was the RIGHT and LAST
+    scan lever -- it cut vpshufb count, the actual bottleneck; batching can't help. AVX-512 vpermw also
+    dead (downclock). So the AVX2 scan is at its compute ceiling. Batching would only help a FLAT IVF
+    (small nc, many queries/cell) -- not our design. Code not kept (worktree only). Remaining gaps
+    (msspacev recall>=0.95 ~1.4x, OOD ~2x) are NOT closable by more scan-kernel work on this hardware;
+    they're ScaNN's mature-implementation edge + the OOD rerank-memory wall.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
