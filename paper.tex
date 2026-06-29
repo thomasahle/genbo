@@ -5610,6 +5610,43 @@ partition ignores the bias coordinates that certify the list size.
    hit bound.
 \end{proof}
 
+\begin{lemma}[Two-adic obstruction for cyclic multiply masks]
+   \label{lem:two-adic-multiply-mask-obstruction}
+   Let \(G=\mathbb Z/2^r\mathbb Z\), and let
+   \(h_a(x)=ax\bmod 2^r\).  Fix two residues \(x\ne y\bmod 2^r\), put
+   \(d=x-y\), and let \(v=\nu_2(d)<r\).  If \(a\) is uniform in \(G\), then
+   \[
+      \Prb[h_a(x)-h_a(y)=\tau]
+      =
+      \begin{cases}
+      2^v/2^r,& 2^v\mid \tau,\\
+      0,& 2^v\nmid \tau .
+      \end{cases}
+      \tag{TAM1}
+   \]
+   If \(a\) is uniform over the odd residues, then
+   \(h_a(x)-h_a(y)\) is uniform over the residues with exact 2-adic valuation
+   \(v\), and the largest atom is \(2^{v+1}/2^r\).
+
+   Consequently integer modular multiplication into \(2^r\) residues has
+   difference-universal constant at least \(2^v\), or \(2^{v+1}\) with an odd
+   multiplier, for this pair.  It satisfies the proof interface
+   \((DUS1)\) with an absolute constant only on symbol encodings whose
+   relevant differences have bounded 2-adic valuation.  Otherwise the proof
+   should use a field or carry-less multiplication model, or explicitly pay
+   the resulting \(C_\Delta\) loss.
+\end{lemma}
+
+\begin{proof}
+   Multiplication by \(d=2^vd'\), with \(d'\) odd, maps
+   \(\mathbb Z/2^r\mathbb Z\) onto the subgroup of multiples of \(2^v\), and
+   every element of that subgroup has exactly \(2^v\) preimages.  This proves
+   \((TAM1)\).  If \(a\) is restricted to odd residues, then \(ad'\) ranges
+   uniformly over the odd residues modulo \(2^{r-v}\).  Multiplying by
+   \(2^v\) gives exactly the residues modulo \(2^r\) with valuation \(v\),
+   each with probability \(1/2^{r-v-1}=2^{v+1}/2^r\).
+\end{proof}
+
 \begin{remark}[Multiply-shift style masks]
    \label{rem:multiply-shift-syndrome-masks}
    \Cref{lem:pairwise-independent-syndrome-thinning} says that the randomness
@@ -5630,9 +5667,11 @@ partition ignores the bias coordinates that certify the list size.
    output bits; for distinct symbols the projected difference is uniform in
    \(G\).  Ordinary integer multiply-shift is a useful engineering heuristic
    but is not automatically this object: high-bit truncation over
-   \(\mathbb Z/2^w\) can expose large two-adic common factors in \(a-b\).  If
-   it is used in the proof, the required check is \((DUS1)\), not just a
-   marginal load test.
+   \(\mathbb Z/2^w\) is not a group homomorphism for the retained syndrome,
+   while low-bit modular multiplication has the two-adic bias of
+   \cref{lem:two-adic-multiply-mask-obstruction}.  If an integer
+   multiply-shift family is used in the proof, the required check is
+   \((DUS1)\), not just a marginal load test.
 
    This separates the randomness question from the decoding question.  For a
    fixed query score set \(A(q)\), independent of the hash seed after
@@ -5903,6 +5942,82 @@ partition ignores the bias coordinates that certify the list size.
    hit probability at most its expected retained size \(|A|/|\mathbb F|\), and
    has constant hit probability from the second-moment lemma only once
    \(|A|=\Omega(|\mathbb F|)\).
+\end{proof}
+
+\begin{corollary}[Projected affine residues give bucket lookup, not magic]
+   \label{cor:projected-affine-residue-compiler}
+   Let \(\mathbb F\) be a finite field, let
+   \(\pi:\mathbb F\to G\) be a surjective homomorphism of additive groups, and
+   retain tuples satisfying the projected affine syndrome
+   \[
+      \sum_{j=1}^h\bigl(\pi(\alpha_jc_j)+\beta_j\bigr)=\sigma,
+      \qquad \alpha_h\ne0.
+      \tag{PAR1}
+   \]
+   For a prefix \(u=(c_1,\ldots,c_{h-1})\), define
+   \[
+      \tau(u)
+      =
+      \sigma-\sum_{j=1}^h\beta_j-\sum_{j<h}\pi(\alpha_jc_j).
+      \tag{PAR2}
+   \]
+   Then the possible last coordinates are exactly the dictionary bucket
+   \[
+      B_h(\tau(u))
+      =
+      \{c\in\mathcal C_h:\pi(\alpha_h c)=\tau(u)\}.
+      \tag{PAR3}
+   \]
+   In particular, for \(h=2\), if
+   \[
+      M_h(q,\tau)=\max_{c\in B_h(\tau)}\phi_h(q,c),
+      \qquad \max\emptyset=-\infty,
+   \]
+   and a bucket reporter lists
+   \[
+      \{c\in B_h(\tau):\phi_h(q,c)\ge\theta\}
+   \]
+   in work \(D_h(q,\tau)\) plus a constant per listed symbol, then all
+   retained pairs with score at least \(\Theta\) are listed by scanning exactly
+   the live first coordinates
+   \[
+      \mathcal L_q
+      =
+      \{c_1:\phi_1(q,c_1)+M_h(q,\tau(c_1))\ge\Theta\},
+      \tag{PAR4}
+   \]
+   and calling the reporter at threshold
+   \(\Theta-\phi_1(q,c_1)\).  The work is
+   \[
+      O\!\left(
+        |\mathcal L_q|
+        +\sum_{c_1\in\mathcal L_q}D_h(q,\tau(c_1))
+        +L
+      \right),
+      \tag{PAR5}
+   \]
+   where \(L\) is the number of emitted retained pairs.
+
+   Thus a projected multiply-add or carry-less multiply mask can remove the
+   explicit \(|G|\)-state dynamic program when good residue dictionaries are
+   available.  The price is the bucket/frontier term in \((PAR5)\).  If
+   \(\pi\) has a large kernel, fixing the previous coordinates does not force
+   a unique last symbol; it only forces a projected residue class.
+\end{corollary}
+
+\begin{proof}
+   Since \(\alpha_h\ne0\), multiplication by \(\alpha_h\) is a bijection of
+   \(\mathbb F\).  Rearranging \((PAR1)\) after the prefix is fixed gives
+   \[
+      \pi(\alpha_hc_h)=\tau(u),
+   \]
+   which is exactly membership in \(B_h(\tau(u))\).  For \(h=2\), a first
+   coordinate can participate in a retained pair of score at least \(\Theta\)
+   if and only if the best symbol in its forced bucket can complete it, namely
+   if \((PAR4)\) holds.  Calling the bucket reporter at threshold
+   \(\Theta-\phi_1(q,c_1)\) lists precisely the completing symbols in that
+   bucket.  The displayed work bound counts one unit per live first
+   coordinate, the reporter overheads, and the emitted pairs.
 \end{proof}
 
 \begin{corollary}[Oversampled product witnesses support polylog syndrome thinning]
