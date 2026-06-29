@@ -89320,6 +89320,78 @@ top-\(k\) backup.
    \(O(r\log r)\), and the heap performs \(O(k)\) pushes and pops.
 \end{proof}
 
+\begin{lemma}[Fixed-width product-sign containment tail]
+   \label{lem:product-sign-containment-tail}
+   In the product-sign channel, write
+   \(u_x=(u_1(x),\ldots,u_r(x))\).  For \(v\in\R^r\), let
+   \(A_1(v)\le\cdots\le A_{2^r}(v)\) be the sorted list of subset sums
+   \[
+      \sum_{a\in F}2|v_a|,
+      \qquad F\subseteq[r].
+   \]
+   Then the query rank-\(k\) to rank-\((L+1)\) log-probability gap is
+   \[
+      g_{k,L}(q)=A_{L+1}(u_q)-A_k(u_q),
+   \]
+   and the centered tilt radius in \((QTS)\) is exactly
+   \[
+      \Delta_{p,q}=\beta\|u_p-u_q\|_1 .
+   \]
+   Hence
+   \[
+      A_{L+1}(u_q)-A_k(u_q)>2\beta\|u_p-u_q\|_1
+      \tag{PSG}
+   \]
+   implies that the hidden tilted top \(k\) labels are contained in the query
+   top \(L\) labels.
+
+   Moreover, suppose the bit logits \(u_a(q)\) are independent and
+   \(|u_a(q)|\) have densities bounded by \(M\).  If
+   \(\|u_p-u_q\|_1\le T\) except on an event of probability \(\varepsilon\),
+   then
+   \[
+      \Prb[T_k(p,q)\not\subseteq Q_L(q)]
+      \le
+      \varepsilon+C\,2^{2r}M\beta T
+      \tag{PST}
+   \]
+   for a universal constant \(C\).  In particular, for fixed \(r\), Gaussian
+   bit directions of nondegenerate variance at \(q\), constant inverse
+   temperature, and \(\beta=\Theta_c(1/\log m)\), the containment failure
+   probability is \(\log^{-\Omega_c(1)}m\) for every fixed near pair.
+\end{lemma}
+
+\begin{proof}
+   The first identity is the same subset-sum ordering as in
+   \cref{lem:product-sign-top-k-reporter}: query log-probabilities differ
+   only by the flip penalties \(2|u_a(q)|\).  Also
+   \[
+      \log\frac{K_p(s)}{K_q(s)}
+      =
+      \sum_{a=1}^r s_a(u_a(p)-u_a(q))+\text{constant}(p,q),
+   \]
+   so its range over \(s\in\{\pm1\}^r\) is
+   \(2\|u_p-u_q\|_1\).  The definition \((QTS)\) gives
+   \(\Delta_{p,q}=\beta\|u_p-u_q\|_1\), and \((PSG)\) is exactly the
+   containment hypothesis of \cref{lem:query-tilted-prefix-stability}.
+
+   For the probability bound, condition on the event
+   \(\|u_p-u_q\|_1\le T\).  If \(A_{L+1}(u_q)-A_k(u_q)\le2\beta T\), then two
+   distinct subset sums of the \(2|u_a(q)|\)'s differ by at most \(2\beta T\).
+   For a fixed pair of distinct subsets, the difference is
+   \(\sum_a c_a|u_a(q)|\), with \(c_a\in\{-2,0,2\}\) and at least one nonzero
+   coefficient.  Conditioning on all other coordinates, the remaining
+   one-dimensional variable has density \(O(M)\), so this pair falls in an
+   interval of length \(O(\beta T)\) with probability \(O(M\beta T)\).  A
+   union bound over at most \(2^{2r}\) subset pairs gives \((PST)\).
+
+   In the Gaussian fixed-width case, the absolute bit logits have bounded
+   densities, while \(\|u_p-u_q\|_1=O_{c,r}(\sqrt{\log m})\) except with
+   probability \(m^{-O_c(1)}\).  Substituting
+   \(\beta=\Theta_c(1/\log m)\) gives the stated inverse-polylogarithmic
+   failure probability.
+\end{proof}
+
 \begin{proposition}[Query-top-\(k\) finite-channel compiler]
    \label{prop:query-top-k-channel-compiler}
    Fix a localized node of size \(m\), a scale \(\xi\in[1/m,1]\), and a finite
@@ -89553,11 +89625,31 @@ One should also separate the resident-guard regime from the genuine finite-chann
    \(0.212\)--\(0.333\), query top-eight contribution lower \(5\%\)
    \(0.997\)--\(1.000\), hidden top-four contribution lower \(5\%\)
    \(0.908\)--\(0.994\), and certified \(T_4(p,q)\subseteq Q_8(q)\) on
-   \(99.4\%\)--\(100\%\) of rows.  This is weaker than the fully balanced
-   whitened Gaussian panel but is now implementable: the remaining theorem for
-   this branch is to prove the same hidden top-four and containment lower
-   tails for a whitened product-sign construction with only bit-additive
-   offsets.
+   \(99.4\%\)--\(100\%\) of rows.  \Cref{lem:product-sign-containment-tail}
+   explains why the containment part is not the main fixed-width obstruction:
+   for nondegenerate random bit directions, the query top-eight containment
+   failure is only an inverse-polylogarithmic small-gap event.
+
+   A width sweep reinforces the fixed-small-\(B\) choice rather than suggesting
+   another certificate form.  In four runs of
+   \texttt{python impl/finite\_channel\_sweep.py --n 10000,30000 --d 32
+   --queries 200 --panels whitened\_product\_sign --scales 8,12 --seeds
+   0,1,2 --B B0 --near-corr 0.95 --route-depth 16} with
+   \(B\in\{8,16,32,64\}\), \(B=16\) kept
+   \(\mathcal H_\eta\) lower \(5\%\) quantiles \(0.237\)--\(0.394\), hidden
+   top-four contribution \(0.921\)--\(0.998\), query top-eight contribution
+   \(0.999\)--\(1.000\), and certified containment in every row.  \(B=32\)
+   improved \(\mathcal H_\eta\) to \(0.299\)--\(0.467\), while hidden top-four
+   and query top-eight lower tails remained \(0.821\)--\(0.954\) and
+   \(0.973\)--\(0.999\), with containment \(98.5\%\)--\(100\%\).  By \(B=64\),
+   \(\mathcal H_\eta\) rose further to \(0.354\)--\(0.501\), but fixed top
+   eight began to leak: hidden top-four contribution fell to
+   \(0.700\)--\(0.882\), query top-eight to \(0.896\)--\(0.986\), and
+   containment to \(95.5\%\)--\(99.0\%\).  Thus the constructive branch should
+   either keep a fixed small product-sign width, such as \(B=16\) or \(32\),
+   or let \(k\) grow with \(B\).  For the fixed top-eight endpoint, the real
+   unresolved theorem is now the posterior-surplus lower tail for the hidden
+   top-four labels of the whitened product-sign panel.
 \end{remark}
 
 \begin{proposition}[Conditional finite-channel polylog endpoint]\label{prop:finite-channel-polylog}
