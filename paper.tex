@@ -89544,12 +89544,111 @@ amplified in the next proposition.
    Thus \((OSS6)\) fails throughout the small-width regime for every fixed
    near correlation \(\chi<1\).
 
-   This is a genuine barrier, but only to sparse width.  It does not rule out
-   a fixed moderate active fraction \(\lambda\), where the denominator
-   occupancy and the active-coordinate large deviation are no longer separated
-   by the leading small-\(\lambda\) expansion.  It also explains why finite
-   rows such as \(w=4\) or \(8\) can look positive before the
-   \(\exp(-rR_\lambda)\) far threshold is resolved accurately.
+   This argument is a genuine barrier, but only to sparse width.  A fixed
+   moderate active fraction \(\lambda\) needs a separate obstruction, because
+   the denominator occupancy and the active-coordinate large deviation are no
+   longer separated by the leading small-\(\lambda\) expansion.  The next
+   remark supplies that obstruction.  The small-width calculation also
+   explains why finite rows such as \(w=4\) or \(8\) can look positive before
+   the \(\exp(-rR_\lambda)\) far threshold is resolved accurately.
+\end{remark}
+
+\begin{remark}[Mutual-information barrier for exact OSD sparse subsets]
+   \label{rem:sparse-subset-mutual-information-barrier}
+   In fact, the exact coordinatewise OSD sparse-subset channel is blocked for
+   every fixed \(0<\lambda<1\) and every fixed \(\chi<1\).  The obstruction is
+   not the small-\(\lambda\) expansion; it is that the OSD near law itself is
+   a far Sanov witness whose cost is strictly below the label entropy.
+
+   Let \((Q,U)\) be centered jointly Gaussian with
+   \(\operatorname{Var}Q=\operatorname{Var}U=\sigma^2\) and
+   \(\operatorname{Corr}(Q,U)=\chi\).  Let \(z_\lambda\) be as in
+   \cref{rem:sparse-subset-asymptotic-normal-form}, and define the ternary
+   query decision
+   \[
+      L(Q)=
+      \begin{cases}
+         +,& Q\ge \sigma z_\lambda,\\
+         -,& Q\le -\sigma z_\lambda,\\
+         0,& |Q|<\sigma z_\lambda.
+      \end{cases}
+   \]
+   Then \(\Prb[L=+]=\Prb[L=-]=\lambda/2\), so
+   \(H(L)=R_\lambda\).  Write \(\nu_+\) for the law of \(U\) conditioned on
+   \(L=+\), and \(\nu_0\) for the law of \(U\) conditioned on \(L=0\).
+   In the far variational problem \((OSS3)\), use \(\mu_1=\nu_+\) on the
+   active coordinates and \(\mu_0=\nu_0\) on the inactive coordinates.
+
+   This witness has exactly the OSD near numerator:
+   \[
+      \lambda\int z\,d\nu_+(z)
+      =
+      \lambda\,\E[U\mid Q\ge\sigma z_\lambda]
+      =
+      2\chi\sigma\varphi(z_\lambda).
+      \tag{OSS12}
+   \]
+   It also has exactly the typical denominator.  Indeed, for every even
+   measurable \(h\),
+   \[
+      \lambda\int h\,d\nu_+
+      +(1-\lambda)\int h\,d\nu_0
+      =
+      \E h(U),
+      \tag{OSS13}
+   \]
+   because the \(L=-\) conditional law is the reflection of \(\nu_+\).  Since
+   the integrand in \((OSS1)\) is an even function of \(z\), \((OSS13)\)
+   implies
+   \[
+      \mathcal F_\lambda(\lambda\nu_++(1-\lambda)\nu_0)
+      =
+      \mathcal F_\lambda(\gamma_\sigma).
+      \tag{OSS14}
+   \]
+   Combining \((OSS12)\) and \((OSS14)\), this far witness has score
+   precisely \(M_{\lambda,\sigma,\chi}\).
+
+   Its Sanov cost is
+   \[
+   \begin{aligned}
+      C_{\lambda,\sigma,\chi}
+      &=
+      \lambda D(\nu_+\|\gamma_\sigma)
+      +(1-\lambda)D(\nu_0\|\gamma_\sigma) \\
+      &=
+      I(L;U).
+   \end{aligned}
+      \tag{OSS15}
+   \]
+   Since \(L\) is a deterministic function of \(Q\), the Markov chain
+   \(L\to Q\to U\) and data processing give
+   \[
+      C_{\lambda,\sigma,\chi}=I(L;U)
+      < I(L;Q)=H(L)=R_\lambda
+      \tag{OSS16}
+   \]
+   whenever \(0<\lambda<1\) and \(\chi<1\).  The inequality is strict because
+   the Gaussian channel from \(Q\) to \(U\) has nonzero noise, so \(L\) is not
+   determined by \(U\).
+
+   Therefore
+   \[
+      \mathcal J_{\lambda,\sigma}(M_{\lambda,\sigma,\chi})
+      \le C_{\lambda,\sigma,\chi}<R_\lambda.
+      \tag{OSS17}
+   \]
+   The far threshold solving \((OSS4)\) cannot be below the near OSD mean:
+   \(t_{\lambda,\sigma}\ge M_{\lambda,\sigma,\chi}\).  Thus the strict gap
+   \((OSS6)\) is impossible for the exact signed width-\(\lambda r\)
+   coordinate-subset panel.
+
+   This closes the raw OSS channel as a positive route.  A useful code or
+   lattice construction must change one of the ingredients used above: reduce
+   the charged label entropy by quotienting or aggregation, alter the far
+   variational problem by a noncoordinate spectrum, or add an external
+   Fano/decoder bias that is not equivalent to the ternary query decision
+   \(L\).
 \end{remark}
 
 \begin{remark}[Why ordinary ANN does not implement the score-max target]\label{rem:score-max-ordinary-ann}
@@ -92680,15 +92779,18 @@ online branch count is the ordered-statistics discrepancy list rather than the
 full ambiguity product.
 \Cref{rem:sparse-subset-channel-stress} and
 \cref{rem:sparse-subset-asymptotic-normal-form} isolate the corresponding
-constant-weight signed-subset channel.  The remaining theorem is no longer a
-new certificate form: prove the quenched coefficient/Sanov far threshold
-\((OSS3)\)--\((OSS4)\), compute the reliability-ordered near mean \((OSS5)\),
-and show the strict gap \((OSS6)\) for a width \(\lambda r\) whose label
-entropy is \(1-\rho\).  \Cref{rem:sparse-subset-small-width-barrier} shows
-that this cannot be done by sending \(\lambda\) to zero: the far active-tilt
-cost at the OSD near mean is only \(\chi^2\) of the required label entropy.
-Any positive OSS theorem must therefore use a fixed moderate active fraction
-or a construction that changes the far variational threshold.
+constant-weight signed-subset channel.  This route is now resolved as a
+barrier for the raw coordinatewise OSD panel.  The frozen normal form reduces
+the question to the quenched coefficient/Sanov far threshold
+\((OSS3)\)--\((OSS4)\) and the reliability-ordered near mean \((OSS5)\).
+\Cref{rem:sparse-subset-small-width-barrier} rules out the sparse
+\(\lambda\downarrow0\) limit, and
+\cref{rem:sparse-subset-mutual-information-barrier} rules out every fixed
+\(0<\lambda<1\): the OSD near law itself is a far Sanov witness of cost
+\(I(L;U)<H(L)=R_\lambda\), so the far threshold cannot lie below the near
+mean.  A positive code/lattice theorem must therefore change the charged
+label entropy, the far spectrum, or the decoder bias rather than reuse the raw
+ternary OSD decision.
 \Cref{lem:min-entropy-information-set} identifies the best chart for a linear
 block: assign each coordinate its soft local entropy
 \(\lambda_i=\log\sum_a\exp(\beta(\omega_i(a)-m_i))\), then choose a
