@@ -93391,6 +93391,66 @@ amplified in the next proposition.
    balance loss.
 \end{proof}
 
+\begin{corollary}[Gaussian contraction caps near-residue prediction]
+   \label{cor:gaussian-residue-prediction-cap}
+   In the setting of \cref{cor:near-residue-list-fano-cost}, assume moreover
+   that the near residue \(\alpha_*\) is a finite transcript generated from a
+   query Gaussian block \(Q\), and the query-visible observation \(Y\) is
+   generated from the noisy near block
+   \[
+      U=\chi Q+\sqrt{1-\chi^2}\,G,
+      \qquad 0\le\chi<1,
+      \tag{GRP1}
+   \]
+   possibly followed by any additional randomized postprocessing.  Then
+   \[
+      I(\alpha_*;Y)\le\chi^2 H(\alpha_*)\le \chi^2\log M .
+      \tag{GRP2}
+   \]
+   Consequently any posterior predictor satisfying
+   \((NRF1)\)--\((NRF2)\) must obey
+   \[
+      \delta
+      \le
+      \frac{\chi^2\log M+\log\lambda_*+\log2}{\log(M/L)}.
+      \tag{GRP3}
+   \]
+   In particular, for a uniform near residue and \(L=\polylog M\),
+   \[
+      \delta\le \chi^2+o(1).
+      \tag{GRP4}
+   \]
+
+   Thus a balanced aligned residue construction cannot get typical
+   near-residue prediction from a noisy Gaussian block unless the near channel
+   leaves enough information about the residue.  At the clean endpoint, the
+   viable options are now sharply separated: either use only an
+   inverse-polylogarithmic set of very informative score directions, make the
+   near residue distribution substantially nonuniform on the conditioned
+   family, or design the code/lattice block so the residue is a low-entropy
+   transcript after the relevant quotienting.  Generic balanced residue masks do
+   none of these.
+\end{corollary}
+
+\begin{proof}
+   Since \(\alpha_*\) is generated from \(Q\), and \(Y\) is generated from \(U\),
+   the variables form the Markov chain
+   \[
+      \alpha_* \to Q \to U \to Y .
+   \]
+   Applying \cref{lem:gaussian-information-charge-contraction} with
+   \(T=\alpha_*\), followed by data processing from \(U\) to \(Y\), gives
+   \[
+      I(\alpha_*;Y)\le I(\alpha_*;U)
+      \le \chi^2 I(\alpha_*;Q)
+      \le \chi^2 H(\alpha_*).
+   \]
+   The last entropy is at most \(\log M\), proving \((GRP2)\).  Combining
+   \((GRP2)\) with the lower bound \((NRF3)\) gives \((GRP3)\).  If
+   \(\alpha_*\) is uniform, then \(\lambda_*=1\); with \(L=\polylog M\),
+   \(\log(M/L)=\log M-o(\log M)\), yielding \((GRP4)\).
+\end{proof}
+
 \begin{corollary}[Random active residues saturate the residue budget]
    \label{cor:random-active-residue-barrier}
    Consider the balanced-residue setting with \(M=|G|\), and assume for
