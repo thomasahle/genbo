@@ -6100,6 +6100,118 @@ partition ignores the bias coordinates that certify the list size.
    \((EMD3)\).
 \end{proof}
 
+\begin{lemma}[Weibull scalar masks have one critical tail scale]
+   \label{lem:weibull-scalar-mask-trichotomy}
+   Fix \(k\ge2\) and \(a>0\).  Let \(X\ge0\) have Weibull tail
+   \[
+      \Prb[X\ge t]=\exp(-t^a+o(t^a)).
+      \tag{WSM1}
+   \]
+   Let \(X_{j,b}\), \(j\in[k]\), be independent copies of \(X\), and put
+   \[
+      M(i_1,\ldots,i_k)=\sum_{j=1}^kX_{j,i_j}.
+   \]
+   For \(K\to\infty\), write \(L=\log K\), and let \(s_K\) satisfy
+   \[
+      \Prb\!\left[\sum_{j=1}^kX_j\ge s_K\right]=K^{-1}.
+      \tag{WSM2}
+   \]
+   Define
+   \[
+      I_a(k)=
+      \inf_{\substack{z_j\ge0\\ \sum_jz_j\ge1}}
+      \sum_{j=1}^kz_j^a
+      =
+      \begin{cases}
+      1,&0<a\le1,\\
+      k^{1-a},&a>1.
+      \end{cases}
+      \tag{WSM3}
+   \]
+   Then
+   \[
+      s_K=I_a(k)^{-1/a}L^{1/a}+o(L^{1/a}).
+      \tag{WSM4}
+   \]
+   Moreover, for every product witness
+   \(A_K=A_{1,K}\times\cdots\times A_{k,K}\) with
+   \[
+      |A_{j,K}|=\exp((\theta_j+o(1))L),
+      \qquad
+      \theta_j\ge0,
+      \qquad
+      \sum_j\theta_j=1,
+      \tag{WSM5}
+   \]
+   one has
+   \[
+      \max_{i\in A_K}M(i)
+      =
+      L^{1/a}\sum_{j=1}^k\theta_j^{1/a}
+      +o_{\Prb}(L^{1/a}),
+      \tag{WSM6}
+   \]
+   with \(0^{1/a}=0\).
+
+   Consequently a Weibull scalar mask with \(a>1\), including Gaussian-type
+   masks, misses a one-coordinate star of total size \(K\) with high probability
+   at density \(K^{-1}\).  A Weibull scalar mask with \(0<a<1\), including
+   heavier-than-exponential stretched tails, misses the balanced product witness
+   \(|A_j|=K^{1/k+o(1)}\) with high probability at density \(K^{-1}\).  The
+   exponential scale \(a=1\) is the only Weibull leading-order law that is not
+   already blocked by either stars or balanced products; the second-order tax at
+   this critical scale is the logarithmic tax of
+   \cref{lem:exponential-mask-profile-tax}.
+\end{lemma}
+
+\begin{proof}
+   We first record the fixed-\(k\) large-deviation estimate
+   \[
+      -\log\Prb\!\left[\sum_{j=1}^kX_j\ge s\right]
+      =
+      I_a(k)s^a+o(s^a).
+      \tag{WSM7}
+   \]
+   Indeed, the lower bound follows by requiring
+   \(X_j\ge z_js\) for a vector \(z\) whose coordinates sum to at least one and
+   whose cost is within \(\epsilon\) of the infimum in \((WSM3)\), ignoring
+   zero coordinates.  For the upper bound, use \((WSM1)\) uniformly for large
+   arguments and cover the compact set
+   \[
+      \left\{z\in[0,1]^k:\sum_jz_j\ge1\right\}
+   \]
+   by a fixed mesh of side \(\epsilon\).  If \(\sum_jX_j\ge s\), then
+   \(z_j=\min\{X_j/s,1\}\) lies in this compact set, so the event is contained in
+   one of \(O_{\epsilon,k}(1)\) mesh boxes with exponent at least
+   \(I_a(k)-o_\epsilon(1)\).  Letting \(\epsilon\downarrow0\) proves
+   \((WSM7)\).  The displayed value of \(I_a(k)\) is the elementary minimization:
+   for \(a\le1\) the cost is minimized by one nonzero coordinate, while for
+   \(a>1\) convexity makes the minimizer \(z_1=\cdots=z_k=1/k\).
+   Solving \((WSM7)=L\) gives \((WSM4)\).
+
+   For \(H=\exp((\theta+o(1))L)\), the maximum \(Y_H\) of \(H\) independent
+   copies of \(X\) satisfies
+   \[
+      Y_H=\theta^{1/a}L^{1/a}+o_{\Prb}(L^{1/a}),
+      \tag{WSM8}
+   \]
+   again with the convention \(0^{1/a}=0\).  This is the usual one-dimensional
+   quantile estimate from \((WSM1)\): the upper tail at
+   \((\theta^{1/a}+\epsilon)L^{1/a}\) has expected count tending to zero, and
+   the lower tail at \((\theta^{1/a}-\epsilon)_+L^{1/a}\) has expected count
+   tending to infinity when \(\theta>0\).  Since \(A_K\) is a product, the
+   maximum of \(M\) over \(A_K\) is the sum of the coordinate maxima, which proves
+   \((WSM6)\).
+
+   If \(a>1\), a star has profile \((1,0,\ldots,0)\), so \((WSM6)\) gives
+   maximum \(L^{1/a}+o_{\Prb}(L^{1/a})\), whereas \((WSM4)\) gives threshold
+   \(k^{1-1/a}L^{1/a}+o(L^{1/a})\), strictly larger.  If \(0<a<1\), the balanced
+   profile has maximum
+   \(k^{1-1/a}L^{1/a}+o_{\Prb}(L^{1/a})\), whereas the threshold is
+   \(L^{1/a}+o(L^{1/a})\), again strictly larger.  These constant leading gaps
+   prove the two high-probability misses.
+\end{proof}
+
 \begin{remark}[Decodable pseudorandom subsets need conditional entropy]
    \label{rem:decodable-pseudorandom-tuple-subsets}
    \Cref{lem:additive-mask-star-obstruction} explains why selecting tuples by
@@ -6121,6 +6233,13 @@ partition ignores the bias coordinates that certify the list size.
    oversampling or a different mask.  Even at the balanced boundary,
    \cref{cor:critical-scalar-mask-log-tax} shows a logarithmic extreme-value
    tax for scalar Gaussian masks.
+
+   This is not only a Gaussian artifact.
+   \Cref{lem:weibull-scalar-mask-trichotomy} classifies the usual Weibull
+   scalar tails.  Lighter-than-exponential masks are balanced-product objects
+   and fail stars; heavier-than-exponential masks are one-big-jump objects and
+   fail balanced products.  The exponential tail is the unique leading-order
+   scalar compromise.
 
    \Cref{lem:exponential-mask-profile-tax} and
    \cref{cor:exponential-mask-terminal-decoder} record one such different mask.
