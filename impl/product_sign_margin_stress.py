@@ -72,6 +72,9 @@ RATE_FIELDNAMES = [
     "min_log_b_exponent",
     "mode_deficit",
     "min_topk_mass_exponent",
+    "sampled_required_rate_fraction",
+    "sampled_rate_fraction",
+    "sampled_rate_gap",
 ]
 
 
@@ -214,10 +217,14 @@ def gaussian_rate_gap_summary(
         theta_grid=theta_grid,
     )
     gamma = 1.0 / (2.0 * c * c)
+    rho = 1.0 / (2.0 * c * c - 1.0)
     min_kappa = float("inf") if rate <= 0.0 else gamma / rate
     min_log_b_exponent = min_kappa * math.log(2.0)
     mode_deficit = product_sign_mode_deficit(sigma, quadrature=quadrature)
     min_topk_mass_exponent = min_kappa * mode_deficit
+    sampled_required_rate_fraction = 1.0 - rho
+    sampled_rate_fraction = rate / math.log(2.0)
+    sampled_rate_gap = sampled_rate_fraction - sampled_required_rate_fraction
     return {
         "sigma": sigma,
         "corr": corr,
@@ -233,6 +240,9 @@ def gaussian_rate_gap_summary(
         "min_log_b_exponent": min_log_b_exponent,
         "mode_deficit": mode_deficit,
         "min_topk_mass_exponent": min_topk_mass_exponent,
+        "sampled_required_rate_fraction": sampled_required_rate_fraction,
+        "sampled_rate_fraction": sampled_rate_fraction,
+        "sampled_rate_gap": sampled_rate_gap,
     }
 
 

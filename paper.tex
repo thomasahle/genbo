@@ -89581,6 +89581,64 @@ top-\(k\) backup.
    substituting \(r=\kappa\log m\) and \(|Q|\le\log^C m\) gives \((GTK4)\).
 \end{proof}
 
+\begin{lemma}[Sampled product-sign storage/far-load obstruction]
+   \label{lem:sampled-product-sign-rate-obstruction}
+   Consider the ideal iid Gaussian product-sign panel with \(r=\kappa\log m\)
+   bits and \(B=2^r\) labels.  Store \(x\) in label \(s\) when
+   \[
+      \Psi_s(x)\ge rt,
+   \]
+   and on query \(q\) sample \(s\) from the product-sign query law \(K_q\).
+   Let
+   \[
+      I_\sigma(t)=
+      \sup_{\theta\ge0}
+      \left\{\theta t-\log\E e^{\theta(Z-\log\cosh Z)}\right\},
+      \qquad Z\sim N(0,\sigma^2),
+   \]
+   be the fixed-label upper-tail rate.  If this sampled panel has expected
+   per-point storage \(m^{\rho+o(1)}\) and sampled far-bucket probability
+   \(m^{-(1-\rho)+o(1)}\), then necessarily
+   \[
+      \frac{I_\sigma(t)}{\log2}\ge1-\rho-o(1).
+      \tag{SPR1}
+   \]
+   In particular, if near success requires \(t<\mu_0\) and
+   \[
+      \sup_{t<\mu_0}\frac{I_\sigma(t)}{\log2}<1-\rho
+      \tag{SPR2}
+   \]
+   for the chosen bit law, then query-Gibbs sampling of the same growing
+   product-sign panel cannot satisfy \cref{prop:sampled-structured-panel}.
+\end{lemma}
+
+\begin{proof}
+   For a fixed data point, symmetry gives
+   \[
+      \E[\#\{s:\Psi_s(x)\ge rt\}]
+      =
+      2^r\Pr\!\left[\sum_{a=1}^r
+      (Z_a-\log\cosh Z_a)\ge rt\right]
+      =
+      \exp\{r(\log2-I_\sigma(t)+o(1))\}.
+   \]
+   The storage bound therefore implies
+   \[
+      \kappa(\log2-I_\sigma(t))\le\rho+o(1).
+      \tag{SPR3}
+   \]
+   For a far point with zero query correlation, the query-sampled signs have the
+   same unconditional fixed-label tail for \(\Psi_s(x)\), so the sampled far
+   probability is \(\exp\{-r(I_\sigma(t)+o(1))\}\).  The far-load target implies
+   \[
+      \kappa I_\sigma(t)\ge1-\rho-o(1).
+      \tag{SPR4}
+   \]
+   Adding \((SPR3)\) and \((SPR4)\), or equivalently eliminating \(\kappa\),
+   gives \((SPR1)\).  If \((SPR2)\) holds, no threshold below the near mean can
+   satisfy this necessary storage/far-load condition.
+\end{proof}
+
 \begin{lemma}[Posterior-rank margin certificate]\label{lem:posterior-rank-margin}
    Let
    \[
@@ -90669,11 +90727,22 @@ One should also separate the resident-guard regime from the genuine finite-chann
    \(m^{-0.096},m^{-0.059},m^{-0.040+o(1)}\) in the \(a=0.75\) case, and at
    most \(m^{-0.057},m^{-0.035},m^{-0.024+o(1)}\) in the \(a=0.9\) case.  This
    is polynomially smaller than the inverse-polylogarithmic value required by
-   \cref{prop:query-top-k-channel-compiler}.  The remaining work is therefore
-   not another threshold certificate: it is either a compressed all-outcome
-   storage/evaluation scheme for the growing product-sign panel, a construction
-   whose tilted output entropy is \(O(\log\log m)\), or a proof that this
-   entropy barrier rules out the product-sign route to the endpoint.
+   \cref{prop:query-top-k-channel-compiler}.
+
+   The most natural sampled escape hatch also fails for this same panel.
+   \Cref{lem:sampled-product-sign-rate-obstruction} shows that query-Gibbs
+   sampling of product-sign labels must have
+   \(I_\sigma(t)/\log2\ge1-\rho\) to meet storage and sampled far-load
+   simultaneously.  For \(c=2\), this threshold is \(6/7\).  At the same
+   deterministic \(a=0.75\), \(\sigma=2.5,3.5,5.0\) points above, the sampled
+   rate fractions are only \(0.217,0.236,0.206\); at \(a=0.9\) they are
+   \(0.369,0.404,0.344\).  Thus neither polylog top-\(k\) reporting nor direct
+   query-Gibbs sampling rescues the fixed-entropy growing product-sign branch.
+   The remaining work is therefore not another threshold certificate: it is
+   either a genuinely compressed all-outcome storage/evaluation scheme whose
+   bucket quotient changes the storage/far-load arithmetic, a construction whose
+   tilted output entropy is \(O(\log\log m)\), or a proof that this entropy/rate
+   barrier rules out the product-sign route to the endpoint.
 
    The first transfer stress test keeps exactly this normal form.  The script
    \texttt{impl/product\_sign\_transfer\_stress.py} measures the concrete bit
@@ -90742,10 +90811,13 @@ One should also separate the resident-guard regime from the genuine finite-chann
    prefix is not solved by this all-label theorem: by
    \cref{lem:growing-product-sign-top-k-barrier}, a polylogarithmic query
    top-\(k\) reporter cannot capture enough value in the fixed-entropy
-   growing-width product-sign model.  The clean endpoint now hinges on
-   compressing the growing output layer, changing the channel so the tilted
-   entropy is only \(O(\log\log m)\), or accepting this as a barrier to the
-   product-sign branch.
+   growing-width product-sign model, and by
+   \cref{lem:sampled-product-sign-rate-obstruction} direct query-Gibbs sampling
+   of the same labels violates the sampled storage/far-load rate test.  The
+   clean endpoint now hinges on compressing the growing output layer in a way
+   that changes bucket storage, changing the channel so the tilted entropy is
+   only \(O(\log\log m)\), or accepting this as a barrier to the product-sign
+   branch.
 \end{remark}
 
 \begin{proposition}[Conditional finite-channel polylog endpoint]\label{prop:finite-channel-polylog}

@@ -68,6 +68,9 @@ def test_gaussian_rate_gap_summary_has_positive_gap_and_rate():
     assert summary["min_log_b_exponent"] < float("inf")
     assert summary["mode_deficit"] > 0.0
     assert summary["min_topk_mass_exponent"] > 0.0
+    assert summary["sampled_rate_fraction"] > 0.0
+    assert summary["sampled_required_rate_fraction"] > 0.0
+    assert summary["sampled_rate_gap"] < 0.0
 
     mean_rate = fixed_score_rate(
         summary["fixed_score_mean"],
