@@ -83372,6 +83372,80 @@ This certificate is the local form of the remaining problem. It is analogous in 
    Backward induction proves the claim.
 \end{proof}
 
+\begin{lemma}[Level mass does not certify saturated value]
+   \label{lem:level-mass-mincut-barrier}
+   For every integer \(H\ge2\) and every \(0<\varepsilon\le1\), there is a
+   finite route trie whose leaves all have depth \(H\), whose edge success
+   probabilities lie in \([0,1]\), and whose saturated value satisfies
+   \[
+      U(\varnothing)=\varepsilon,
+      \tag{LMB1}
+   \]
+   while every deterministic level has large total prefix mass:
+   \[
+      \sum_{|u|=\ell}A(u)\ge H-1
+      \qquad(1\le\ell\le H).
+      \tag{LMB2}
+   \]
+   In particular, the total leaf prefix mass can be arbitrarily larger than
+   the saturated value.
+
+   Thus aggregate value delivery cannot be proved by checking only terminal
+   mass, expected complete-route count, or the mass of the fixed depth
+   frontiers.  The min-cut condition in
+   \cref{lem:saturated-value-mincut} is genuinely a statement about all route
+   cuts, including stopping frontiers that follow different branches to their
+   first bottleneck.
+\end{lemma}
+
+\begin{proof}
+   Put \(\delta=\varepsilon/H\) and choose an integer
+   \(B\ge\delta^{-1}\).  The trie consists of \(H\) disjoint cohorts below the
+   root, indexed by \(j=1,\ldots,H\).  In cohort \(j\), take a single chain
+   from the root to a bottleneck node \(b_j\) at depth \(j\).  The first
+   \(j-1\) edges on this chain have success probability \(1\), and the edge
+   entering \(b_j\) has success probability \(\delta\).  Below \(b_j\), attach
+   a complete \(B\)-ary tree of remaining depth \(H-j\), with all edges of
+   success probability \(1\).  If \(j=H\), the bottleneck node is itself a
+   leaf.
+
+   The set \(\mathcal C=\{b_1,\ldots,b_H\}\) is an antichain meeting every
+   root-to-leaf route, and
+   \[
+      \sum_{j=1}^H A(b_j)=H\delta=\varepsilon.
+   \]
+   Hence \cref{lem:saturated-value-mincut} already gives
+   \(U(\varnothing)\le\varepsilon\).  Conversely, the subtree below every
+   \(b_j\) has saturated value \(1\), since all remaining edges have success
+   probability \(1\) and the leaves have value \(1\).  Moving upward along the
+   unit-probability part of the cohort chain leaves the value equal to
+   \(\delta\), while the bottleneck edge contributes exactly \(\delta\).  The
+   root receives contribution \(\delta\) from each of the \(H\) cohorts, so
+   \[
+      U(\varnothing)
+      =
+      \min\{1,H\delta\}
+      =
+      \varepsilon,
+   \]
+   because \(\varepsilon\le1\).  This proves \((LMB1)\).
+
+   It remains to count level mass.  Fix \(1\le\ell\le H\).  A cohort with
+   \(j>\ell\) has not yet reached its bottleneck and contributes one node of
+   prefix mass \(1\) at level \(\ell\).  The cohort with \(j=\ell\) contributes
+   its bottleneck mass \(\delta\).  A cohort with \(j<\ell\) has already passed
+   its bottleneck and contributes \(B^{\ell-j}\) nodes, each of prefix mass
+   \(\delta\), for total \(\delta B^{\ell-j}\ge1\).  Therefore
+   \[
+      \sum_{|u|=\ell}A(u)
+      \ge
+      (H-\ell)+\delta+(\ell-1)
+      =
+      H-1+\delta,
+   \]
+   which implies \((LMB2)\).
+\end{proof}
+
 \begin{lemma}[Dominated route-law certificate]\label{lem:dominated-route-law}
    Work in the setting of \cref{lem:saturated-value-recursion}, and write
    $A(u)$ for the prefix-success mass from
