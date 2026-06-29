@@ -16666,6 +16666,61 @@ partition ignores the bias coordinates that certify the list size.
    \(Z_{q,x,\ell}^{\ge T}/Z_q\).
 \end{proof}
 
+\begin{corollary}[Heavy-responsibility reporting is the concrete escape]
+   \label{cor:heavy-responsibility-trellis-reporter}
+   Work in the setting of
+   \cref{lem:marked-trellis-responsibility-verifier}.  Fix \(K\ge1\).  Suppose
+   that, after a query samples \(\ell\sim\Pi_q\) (so \(Z_{q,\ell}>0\)), a
+   reporter lists a candidate set \(H(q,\ell)\) containing every point with
+   \[
+      r_{q,x,\ell}
+      =
+      \frac{Z_{q,x,\ell}^{\ge T}}{Z_{q,\ell}}
+      \ge K^{-1},
+      \tag{HRT1}
+   \]
+   and that the reporter then computes the exact marked ratio for the listed
+   candidates and emits exactly those satisfying \((HRT1)\).  Then every
+   promised query \(q\) has emitted far load
+   \[
+      \sum_{\substack{x\in P\\ \|x-q\|>cr}}
+      \sum_{\ell}\Pi_q(\ell)\mathbf 1\{x\ {\rm emitted\ from}\ \ell\}
+      \le
+      K
+      \sum_{\substack{x\in P\\ \|x-q\|>cr}}
+      \frac{Z_{q,x}^{\ge T}}{Z_q}.
+      \tag{HRT2}
+   \]
+   Moreover, if every near pair \(\|p-q\|\le r\) has heavy responsibility mass
+   \[
+      \sum_{\ell:\ r_{q,p,\ell}\ge K^{-1}}\Pi_q(\ell)\ge \eta,
+      \tag{HRT3}
+   \]
+   then the query emits \(p\) with probability at least \(\eta\).
+
+   Consequently, when \(K,\eta^{-1}\le\log^{O_c(1)}m\), the marked far
+   spectrum \((MTS4)\)--\((MTS5)\) gives the desired sampled far-load and
+   near-hit bounds without scanning whole quotient buckets, provided the
+   heavy-responsibility candidate lister itself has polylogarithmic overhead
+   plus output-sensitive work.
+\end{corollary}
+
+\begin{proof}
+   If \(x\) is emitted from \(\ell\), then \(r_{q,x,\ell}\ge K^{-1}\).  Hence
+   \[
+      \Pi_q(\ell)\mathbf 1\{x\ {\rm emitted\ from}\ \ell\}
+      \le
+      K\Pi_q(\ell)r_{q,x,\ell}
+      =
+      K\frac{Z_{q,x,\ell}^{\ge T}}{Z_q}.
+   \]
+   Summing over invalid far points and over \(\ell\) proves \((HRT2)\), since
+   \(\sum_\ell Z_{q,x,\ell}^{\ge T}=Z_{q,x}^{\ge T}\).
+   The near statement is immediate from the assumed completeness of
+   \(H(q,\ell)\) on the heavy set: whenever a sampled bucket satisfies
+   \(r_{q,p,\ell}\ge K^{-1}\), the exact filter emits \(p\).
+\end{proof}
+
 \begin{lemma}[Random sparse aggregate buckets overcharge full scans]
    \label{lem:random-sparse-aggregate-responsibility-barrier}
    Let one quotient bucket aggregate \(H\) hidden labels with equal conditional
@@ -16751,10 +16806,69 @@ partition ignores the bias coordinates that certify the list size.
    \Cref{cor:full-bucket-scan-responsibility-barrier} records the matching
    obstruction to ordinary union scanning: its pointwise overcharge is the
    inverse of this marked responsibility.
+   \Cref{cor:heavy-responsibility-trellis-reporter} is the corresponding
+   positive target: a code or lattice decoder only has to list the points whose
+   bucket-local marked posterior is at least inverse-polylogarithmic, and the
+   exact ratio filter charges the remaining far load to the marked spectrum.
    \Cref{lem:random-sparse-aggregate-responsibility-barrier} shows that this is
    not a pathological edge case: aggregating \(H\) independent sparse hidden
    filters into one bucket inflates union-scan load by
    \(\Theta(\min\{H,s^{-1}\})\) in expectation.
+\end{remark}
+
+\begin{remark}[Which coding and lattice tools can address the responsibility target]
+   \label{rem:code-lattice-responsibility-audit}
+   The responsibility normal form now fixes the role of deeper coding and
+   lattice constructions.  They are useful only if they implement the heavy
+   lister in \cref{cor:heavy-responsibility-trellis-reporter}, or prove that
+   the near mass \((HRT3)\) is absent for the proposed family.
+
+   For a Construction-A or Construction-D block,
+   \cref{lem:construction-a-theta-quotient} turns the lattice partition
+   function into residue-code theta reliabilities.  The heavy test is therefore
+   the soft list-recovery inequality
+   \[
+      \log Z_{q,x,\ell}^{\ge T}
+      \ge
+      \log Z_{q,\ell}-\log K,
+   \]
+   not a nearest-lattice-point condition.  Koetter--Vardy, expander-code,
+   folded-Reed--Solomon, or polar-style list recovery can help exactly when
+   those residue reliabilities give an output-sensitive list of data signatures
+   passing this inequality.
+
+   GMD and Chase decoders are the high-margin special case.  The certificates
+   in \cref{lem:reliability-erasure-sweep},
+   \cref{cor:gmd-block-certificate}, and
+   \cref{cor:chase-gmd-block-certificate} are valuable when the sampled bucket
+   makes one symbol per coordinate dominant, or when a polylogarithmic branch
+   set covers the low-confidence coordinates.  They do not solve a diffuse
+   posterior bucket: if the mass in \((HRT3)\) is spread over
+   superpolylogarithmically many low-responsibility points, a GMD list is simply
+   the wrong object.
+
+   Ordered-statistics and information-set decoding are the most concrete
+   fallback for linear residue codes.  By
+   \cref{lem:min-entropy-information-set} and
+   \cref{cor:osd-superset-block-reporter}, the candidate count is controlled by
+   \[
+      \exp\bigl(\beta\Delta(q,\Theta)+\Lambda_*(q)\bigr),
+   \]
+   where \(\Lambda_*(q)\) is the minimum soft entropy of an information set.
+   Thus an OSD-based Construction-A panel has a clean pass/fail test: after
+   translating \((HRT1)\) to its residue-score threshold, the minimum
+   information-set entropy must be \(O(\log\log m)\) at the critical
+   threshold, while the marked spectrum still satisfies \((MTS4)\)--\((MTS5)\).
+
+   Tanner, LDPC, polar, BCJR, and recursive Barnes--Wall/Barnes--Sloane
+   decoders supply compact partition-function or threshold-enumeration
+   algorithms.  That is not yet enough.  Sum-product computes bucket weights
+   and local beliefs; the ANN index needs a reverse, point-indexed heavy
+   posterior list over the resident data.  A trellis path sampler, a
+   discrete-Gaussian lattice sampler, or a nearest-cell decoder that returns
+   only hidden labels is therefore blocked by the information-charge and
+   full-scan barriers above unless it is coupled to this heavy-responsibility
+   data lister.
 \end{remark}
 
 \begin{lemma}[Tilted weight feasibility is linear]
@@ -94412,9 +94526,19 @@ factor preserves the far and near spectrum.
 \Cref{cor:full-bucket-scan-responsibility-barrier} gives the corresponding
 barrier for ordinary full-bucket scanning: its overcharge on \(x,\ell\) is
 exactly the inverse marked responsibility.
+\Cref{cor:heavy-responsibility-trellis-reporter} records the positive target
+that remains after this barrier: list and exact-filter the points with
+bucket-local marked responsibility at least inverse-polylogarithmic.  Far load
+then loses only that polylogarithmic factor, and near recall is exactly the
+mass of buckets where the true witness is heavy.
 \Cref{lem:random-sparse-aggregate-responsibility-barrier} instantiates that
 barrier in the random sparse model: merging \(H\) hidden filters inflates the
 expected union scan by \((1-(1-s)^H)/s=\Theta(\min\{H,s^{-1}\})\).
+\Cref{rem:code-lattice-responsibility-audit} translates this target back into
+coding language: Construction-A theta quotients, GMD/Chase, OSD information
+sets, Tanner/polar/BCJR decoders, and recursive lattice decoders are useful
+only insofar as they provide this point-indexed heavy posterior lister or
+expose a failure of the heavy near-mass condition.
 \Cref{lem:tilted-weight-linear-feasibility} shows that, for a fixed retained
 pool, choosing those weights is just a linear feasibility problem after
 clearing the tilted partition functions.  Failure has a concrete dual
