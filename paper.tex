@@ -96591,6 +96591,94 @@ amplified in the next proposition.
    after increasing \(r\) by a fixed \(O_{\rho,A}(1)\) amount.
 \end{proof}
 
+\begin{lemma}[Linear-source residents give exact residue balance]
+   \label{lem:linear-source-resident-balance}
+   Let \(V\) be a vector space over \(\mathbb F_q\), let
+   \(W\le V\) have dimension \(d\), and let \(z_0\in V\).  Suppose the
+   resident multiset consists of every element of the affine source
+   \(z_0+W\), each with the same multiplicity \(\nu\), so
+   \[
+      m=\nu q^d .
+      \tag{LSB1}
+   \]
+   Let \(G=\mathbb F_q^r\), and let \(A:V\to G\) be linear with
+   \[
+      A(W)=G .
+      \tag{LSB2}
+   \]
+   Define the residue classes
+   \[
+      C_\alpha=\{x\in z_0+W:A x=\alpha\},
+      \qquad \alpha\in G,
+      \tag{LSB3}
+   \]
+   counting multiplicity.  Then every residue class is nonempty and has exact
+   size
+   \[
+      |C_\alpha|=\nu q^{d-r}=\frac{m}{|G|}.
+      \tag{LSB4}
+   \]
+   Moreover, after storing one solution \(w_\alpha\in W\) of
+   \(Aw_\alpha=\alpha-Az_0\), a uniform resident in \(C_\alpha\) is obtained by
+   drawing a uniform element of \(\ker(A|_W)\) and returning
+   \(z_0+w_\alpha+k\).
+
+   Thus affine or carry-less linear residues are perfectly compatible with the
+   resident-size and rejection samplers when the stored residents form a
+   complete linear-source cloud, or a union of such clouds handled separately.
+   This is the clean positive case for code and Construction-A style panels:
+   the same linear observer can be part of the trellis state, the class counts
+   are exact, and uniform resident sampling is just kernel sampling.
+\end{lemma}
+
+\begin{proof}
+   For any \(\alpha\in G\), condition \((LSB2)\) gives a solution
+   \(w_\alpha\in W\) to \(Aw_\alpha=\alpha-Az_0\).  The residents in
+   \(C_\alpha\) are exactly
+   \[
+      z_0+w_\alpha+\ker(A|_W).
+   \]
+   Since \(A|_W\) has rank \(r\), the kernel has dimension \(d-r\), so this
+   affine fiber contains \(q^{d-r}\) source elements.  Multiplying by the
+   common multiplicity \(\nu\) proves \((LSB4)\).  The sampling statement is
+   the same affine-fiber description with a uniformly sampled kernel element.
+\end{proof}
+
+\begin{corollary}[Low resident rank blocks linear residue balance]
+   \label{cor:low-rank-linear-resident-balance-barrier}
+   Let \(V\) be a vector space over \(\mathbb F_q\), let
+   \(G=\mathbb F_q^r\), and suppose the resident residues \(\phi(S)\subseteq V\)
+   lie in an affine subspace \(z_0+W\) with \(\dim W=d\).  For every linear
+   observer \(A:V\to G\), the number of nonempty resident classes
+   \[
+      C_\alpha=\{x\in S:A\phi(x)=\alpha\}
+   \]
+   is at most \(q^{\min\{d,r\}}\).  In particular, if \(d<r\), at least
+   \(q^r-q^d\) residue classes are empty, and no two-sided balance condition
+   over all \(M=|G|=q^r\) classes can hold.
+
+   Therefore a linear residue quotient at the aligned scale
+   \(M\gtrsim m^{1-\rho}\polylog^{-1}m\) needs resident affine rank
+   \[
+      d\ge (1-\rho)\log_q m-O_c(\log\log m)
+      \tag{LRB1}
+   \]
+   before it can even expose enough nonempty residue classes.  If the resident
+   cloud has smaller linear rank, the construction must either lower the
+   effective residue group, use non-linear or data-dependent balancing, or
+   rely on the resident-size weighted sampler with an explicitly computable
+   terminal count boundary rather than on raw-signature rejection.
+\end{corollary}
+
+\begin{proof}
+   The image \(A(z_0+W)\) is the affine subspace
+   \(Az_0+A(W)\), whose size is at most \(q^{\min\{d,r\}}\).  Only residues in
+   this image can have nonempty resident classes.  If \(d<r\), this leaves at
+   least \(q^r-q^d\) empty classes, contradicting any positive lower bound on
+   all class sizes.  The displayed rank requirement is the rearrangement of
+   \(q^d\ge M\gtrsim m^{1-\rho}\polylog^{-1}m\).
+\end{proof}
+
 \begin{corollary}[Aligned linear charts compute rate-coverage sketches]
    \label{cor:aligned-linear-chart-rate-coverage-sketch}
    Work in the setting of
