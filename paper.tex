@@ -16903,6 +16903,66 @@ partition ignores the bias coordinates that certify the list size.
    Multiplying by \(N\) proves \((CHS5)\).
 \end{proof}
 
+\begin{corollary}[Conditional hidden sampling tests the raw hidden spectrum]
+   \label{cor:conditional-hidden-sampling-unquotiented-test}
+   In the setting of
+   \cref{cor:conditional-hidden-sampling-heavy-lister}, define the
+   unquotiented resident and far loads
+   \[
+      \mathcal R_q^{\rm raw}
+      =
+      \sum_{x\in P}\frac{Z_{q,x}^{\ge T}}{Z_q},
+      \qquad
+      \mathcal F_q^{\rm raw}
+      =
+      \sum_{\substack{x\in P\\\|x-q\|>cr}}
+      \frac{Z_{q,x}^{\ge T}}{Z_q}.
+      \tag{CHS6}
+   \]
+   Any online implementation that, after sampling a quotient bucket \(\ell\),
+   finds heavy residents by enumerating \(N\) conditional hidden raw subbuckets
+   has expected resident-enumeration work
+   \[
+      N\mathcal R_q^{\rm raw},
+      \tag{CHS7}
+   \]
+   counted before duplicate suppression and before the exact ratio filter.
+   This quantity is independent of the quotient map \(\lambda\).
+
+   Consequently, conditional hidden-path sampling can close the sampled ANN
+   bound with polylogarithmic overhead only on constructions whose
+   unquotiented hidden spectrum already satisfies
+   \[
+      \mathcal R_q^{\rm raw}
+      \le
+      m^\rho\log^{O_c(1)}m
+      \tag{CHS8}
+   \]
+   for every promised query.  In particular, if
+   \(\mathcal F_q^{\rm raw}\ge m^\rho\log^{\omega(1)}m\) for some promised
+   query, then no choice of quotient map, conditional hidden sampler, and exact
+   marked-ratio filter can make this raw-subbucket implementation
+   \(m^\rho\polylog m\)-time.  Such a construction must instead use a stable
+   quotient scan, a point-indexed heavy-responsibility lister, or a
+   Fano/list-work prefix certificate that avoids raw subbucket enumeration as
+   the charged operation.
+\end{corollary}
+
+\begin{proof}
+   Equation \((CHS7)\) is exactly \((CHS5)\).  The sum
+   \(\sum_xZ_{q,x}^{\ge T}/Z_q\) is taken over hidden paths before they are
+   grouped by \(\lambda\), so changing the quotient map only changes the
+   conditioning used to draw the paths, not the averaged raw enumeration
+   count.  If this count is to be bounded by
+   \(m^\rho\log^{O_c(1)}m\) with \(N=\log^{O_c(1)}m\), then
+   \((CHS8)\) is necessary.  Since
+   \(\mathcal F_q^{\rm raw}\le\mathcal R_q^{\rm raw}\), a
+   superpolylogarithmic violation of the far part alone already rules out the
+   desired raw-enumeration work bound.  The listed alternatives are precisely
+   the cases in which the paid resident reporter is no longer enumeration of
+   conditional hidden raw subbuckets.
+\end{proof}
+
 \begin{lemma}[Random sparse aggregate buckets overcharge full scans]
    \label{lem:random-sparse-aggregate-responsibility-barrier}
    Let one quotient bucket aggregate \(H\) hidden labels with equal conditional
@@ -17064,6 +17124,11 @@ partition ignores the bias coordinates that certify the list size.
    marked responsibility, while its work is exactly the conditional raw-scan
    load \(\sum_x Z_{q,x}^{\ge T}/Z_q\) times the inverse responsibility
    threshold.
+   \Cref{cor:conditional-hidden-sampling-unquotiented-test} records the
+   resulting decision point: this direct implementation is useful only when
+   the unquotiented hidden spectrum already has \(m^\rho\polylog m\)
+   all-resident raw load; otherwise the construction must supply a genuine
+   quotient scan or point-indexed heavy lister.
    \Cref{lem:random-sparse-aggregate-responsibility-barrier} shows that this is
    not a pathological edge case: aggregating \(H\) independent sparse hidden
    filters into one bucket inflates union-scan load by
@@ -94873,6 +94938,11 @@ can be sampled and scanned cheaply: \(O(L_m)\) conditional paths find a
 heavy witness with constant probability on each heavy bucket, and the expected
 raw-scan work is the all-resident marked load
 \(\sum_x Z_{q,x}^{\ge T}/Z_q\) times \(O(L_m)\).
+\Cref{cor:conditional-hidden-sampling-unquotiented-test} makes this a
+pass/fail test rather than a new proof layer: if that all-resident hidden load
+is superpolylogarithmically above \(m^\rho\), conditional hidden sampling has
+not used the quotient in a helpful way and the construction must move to a
+stable quotient scan, a point-indexed heavy lister, or a Fano-prefix reporter.
 \Cref{lem:random-sparse-aggregate-responsibility-barrier} instantiates that
 barrier in the random sparse model: merging \(H\) hidden filters inflates the
 expected union scan by \((1-(1-s)^H)/s=\Theta(\min\{H,s^{-1}\})\).
