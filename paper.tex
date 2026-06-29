@@ -5610,6 +5610,67 @@ partition ignores the bias coordinates that certify the list size.
    hit bound.
 \end{proof}
 
+\begin{corollary}[Difference bias is only a repetition loss]
+   \label{cor:difference-bias-repetition-loss}
+   In the setting of
+   \cref{cor:difference-universal-syndrome-thinning}, fix a set
+   \(A\subseteq\mathcal T\) before the hash seed is exposed and suppose
+   \(|A|\ge\eta |G|\).  One sampled syndrome bucket hits \(A\) with
+   probability at least
+   \[
+      p_{\rm hit}
+      \ge
+      \frac{\eta}{1+C_\Delta\eta}.
+      \tag{DBR1}
+   \]
+   Consequently \(R\) independent syndrome panels miss \(A\) with probability
+   at most
+   \[
+      \exp\!\left(
+         -\frac{R\eta}{1+C_\Delta\eta}
+      \right).
+      \tag{DBR2}
+   \]
+   Thus any product-filter or tuple-decoder application whose one-panel
+   retained work is \(W\) and whose conditioned near-witness set has
+   \(|A|\ge\eta |G|\) can replace exact pairwise independence by the
+   difference-universal bound \((DUS1)\) at total work
+   \[
+      O\!\left(
+        W\,(C_\Delta+\eta^{-1})\log(1/\delta)
+      \right)
+      \tag{DBR3}
+   \]
+   to get failure probability at most \(\delta\).
+
+   In particular, a multiply-shift-style mask with
+   \(C_\Delta=\log^{O(1)}m\) on the actually charged symbol pairs is harmless
+   for the polylogarithmic endpoint.  A family with
+   \(C_\Delta=m^{\Omega(1)}\), or even with a superpolylogarithmic worst-case
+   \(C_\Delta\) on the relevant alphabet, cannot be justified by black-box
+   syndrome thinning without paying the same superpolylogarithmic repetition
+   factor.
+\end{corollary}
+
+\begin{proof}
+   Since \(\mu=|A|/|G|\ge\eta\), \((DUS3)\) gives
+   \[
+      \Prb[A\cap R_\sigma\ne\emptyset]
+      \ge
+      \frac{\mu}{1+C_\Delta\mu}.
+   \]
+   The right-hand side is increasing in \(\mu\), so
+   \[
+      \frac{\mu}{1+C_\Delta\mu}
+      \ge
+      \frac{\eta}{1+C_\Delta\eta}
+   \]
+   for \(C_\Delta\ge1\).  Independent repetitions give \((DBR2)\).  Choosing
+   \(R=\Theta((C_\Delta+\eta^{-1})\log(1/\delta))\) makes the exponent
+   \(\Omega(\log(1/\delta))\), and the retained work is multiplied by the
+   same number of panels.
+\end{proof}
+
 \begin{lemma}[Two-adic obstruction for cyclic multiply masks]
    \label{lem:two-adic-multiply-mask-obstruction}
    Let \(G=\mathbb Z/2^r\mathbb Z\), and let
@@ -5754,6 +5815,15 @@ partition ignores the bias coordinates that certify the list size.
    or stronger limited independence.  The syndrome construction is therefore a
    good per-query thinning primitive, not a blanket derandomization of every
    possible top-tuple family.
+
+   The exact amount of non-universality that may be tolerated is quantified by
+   \cref{cor:difference-bias-repetition-loss}.  If the chosen word hash has
+   \(C_\Delta=\polylog m\) on the symbol pairs that actually enter the
+   certificate, the bias can be absorbed by polylogarithmically many
+   independent panels.  The obstruction lemmas below are therefore not saying
+   that every biased machine hash is unusable; they say that ordinary
+   power-of-two multiplication has no uniform proof when the relevant
+   \(C_\Delta\) is as large as the alphabet or the retained syndrome range.
 
    The algebraic form is useful for decoding.  The retained tuples satisfy one
    random linear parity equation
