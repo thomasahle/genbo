@@ -95804,8 +95804,9 @@ amplified in the next proposition.
    it can sample that law and its total-mass log moment is only
    polylogarithmic.  The surviving geometric obligation is then the same sharp
    one: the near signature must have inverse-polylogarithmic mass under
-   \(u(B)\), and the sampler must be an exact or certified aggregate sampler
-   rather than a raw hidden-label generator with no point-mass evaluation.
+   \(u(B)\).  Exact point-mass evaluation suppresses false positives; the next
+   corollary records the weaker witness-list variant when those false positives
+   can simply be expanded.
 \end{corollary}
 
 \begin{proof}
@@ -95844,6 +95845,163 @@ amplified in the next proposition.
    \((WSS5)\), and \cref{cor:point-mass-rate-coverage-reporter} finishes the
    endpoint.  The specialization \((WSS6)\)--\((WSS7)\) is obtained by
    substituting \(\lambda m/M\le m^\rho\log^{O_c(1)}m\) into \((WSS5)\).
+\end{proof}
+
+\begin{corollary}[Unfiltered signature sampling is enough for witness lists]
+   \label{cor:unfiltered-signature-sampler-witness}
+   Work in the shared-signature and balanced-partition setting of
+   \cref{cor:weighted-signature-sampler-point-mass}, and keep the same
+   \(U_B\), \(\theta\), and \(N_B\).  Suppose that, conditional on a query
+   outcome \(B\), the query algorithm can obtain \(U_B\) and draw \(N_B\)
+   independent samples from \(u_\alpha(B)/U_B\), but need not evaluate
+   \(u_\alpha(B)\) on sampled signatures.  The unfiltered decoder outputs all
+   residents in every distinct sampled signature class.
+
+   Conditional on \(B\), every point with \(b_x(B)\ge\theta\) is output except
+   with probability at most \(O(m^{-2})\) over the sampler randomness.  The
+   unfiltered expansion work is
+   \[
+      T_{\rm raw}(B)
+      +
+      O\!\left(
+         \frac{\lambda m}{M}
+         \frac{U_B}{\theta}
+         \log\!\left(2m+2U_B/\theta\right)
+      \right),
+      \tag{USS1}
+   \]
+   where \(T_{\rm raw}(B)\) includes computing \(U_B\), drawing the signatures,
+   and duplicate removal among the samples.
+
+   Consequently, if \((PMR1)\)--\((PMR2)\) hold and
+   \[
+      \E_Z\!\left[
+         T_{\rm raw}(B(q,Z))
+         +
+         \frac{\lambda m}{M}
+         \frac{U_{B(q,Z)}}{\theta}
+         \log\!\left(2m+2U_{B(q,Z)}/\theta\right)
+      \right]
+      \le Dm^\rho\log^{O_c(1)}m,
+      \tag{USS2}
+   \]
+   then the unfiltered sampler implements the smoothed witness-list endpoint,
+   with only the same \(O(1/m)\) additional tilted miss from sampler failure.
+
+   At the aligned residue scale \(M\ge\lambda
+   m^{1-\rho}\log^{-O_c(1)}m\), it is enough that
+   \[
+      \begin{aligned}
+      \theta^{-1}&=\log^{O_c(1)}m,\\
+      \E_Z\!\left[
+         U_{B(q,Z)}
+         \log\!\left(2m+2U_{B(q,Z)}/\theta\right)
+      \right]&=\log^{O_c(1)}m,\\
+      \E_ZT_{\rm raw}(B(q,Z))&\le Dm^\rho\log^{O_c(1)}m.
+      \end{aligned}
+      \tag{USS3}
+   \]
+   Thus exact sampled-mass evaluation is not an intrinsic requirement.  It buys
+   one logarithmic factor in the class-expansion term, but a BCJR, trellis,
+   lattice, or quotient sampler that exposes only the normalized aggregate law
+   is already sufficient when the sampled class expansions fit the rate budget.
+\end{corollary}
+
+\begin{proof}
+   The heavy-signature hitting calculation is identical to the proof of
+   \cref{cor:weighted-signature-sampler-point-mass}: for every
+   \(\alpha\) with \(u_\alpha(B)\ge\theta\),
+   \[
+      \Pr_{\rm samp}[\alpha\ {\rm is\ not\ sampled}\mid B]
+      \le
+      \left(2m+2U_B/\theta\right)^{-8},
+   \]
+   and a union bound over at most \(U_B/\theta\) heavy signatures gives
+   \(O(m^{-2})\) conditional failure.  On the complementary event, if
+   \(b_x(B)=u_{\alpha(x)}(B)\ge\theta\), then the class \(C_{\alpha(x)}\) is
+   sampled and the unfiltered decoder outputs \(x\).
+
+   The decoder expands at most \(N_B\) distinct classes, each of size at most
+   \(\lambda m/M\), proving \((USS1)\).  For a near pair \(p,q\), the miss event
+   is contained in
+   \[
+      \{b_p(B(q,Z))<\theta\}
+      \cup
+      \{\alpha(p)\ {\rm is\ missed\ by\ the\ sampler}\}.
+   \]
+   The first event has tilted expectation at most \(a_c/8\) by the same
+   \(1_{\{b<\theta\}}\le e\exp(-b)\) argument used in
+   \cref{cor:point-mass-rate-coverage-reporter}.  The second contributes the
+   \(O(1/m)\) sampler-failure term as in
+   \cref{cor:weighted-signature-sampler-point-mass}.  The expected output scan
+   and sampler work are bounded by \((USS2)\), so the randomized output list
+   satisfies \cref{asm:smoothed-witness-list} and
+   \cref{prop:witness-list-polylog} applies.  The aligned-scale simplification
+   follows by substituting
+   \(\lambda m/M\le m^\rho\log^{O_c(1)}m\).
+\end{proof}
+
+\begin{corollary}[Acyclic aggregate samplers plug into the unfiltered reporter]
+   \label{cor:acyclic-aggregate-signature-reporter}
+   In the setting of
+   \cref{cor:unfiltered-signature-sampler-witness}, suppose the selected hidden
+   labels for one query outcome \(B\) are the source-to-terminal paths of a
+   finite acyclic graph \(G_B\).  A path \(\pi\) has positive weight
+   \[
+      W_B(\pi)=\prod_{e\in\pi}r_e(B),
+      \tag{AAS1}
+   \]
+   and its terminal \(t\) carries resident signature \(\alpha(t)\in\Sigma\).
+   Define
+   \[
+      u_\alpha(B)=
+      \sum_{\pi:\alpha(t(\pi))=\alpha}W_B(\pi),
+      \qquad
+      U_B=\sum_\alpha u_\alpha(B).
+      \tag{AAS2}
+   \]
+   If the backward partition recursion of
+   \cref{lem:compressed-aggregate-sampler} computes \(U_B\) in time
+   \(T_{\rm back}(B)\), and one top-down path sample costs
+   \(T_{\rm path}(B)\) after that recursion, then the raw sampler time in
+   \cref{cor:unfiltered-signature-sampler-witness} may be taken as
+   \[
+      T_{\rm raw}(B)
+      =
+      T_{\rm back}(B)
+      +
+      O\!\left(
+         \frac{U_B}{\theta}
+         \log\!\left(2m+2U_B/\theta\right)T_{\rm path}(B)
+      \right).
+      \tag{AAS3}
+   \]
+   Hence \((USS2)\) gives a point-facing ANN witness reporter without
+   enumerating the active signature support and without evaluating individual
+   signature masses.
+
+   In particular, a layered trellis with \(|E_B|\) edges and depth \(h_B\)
+   supplies \(T_{\rm back}(B)=O(|E_B|)\) and
+   \(T_{\rm path}(B)=O(h_B)\) by the BCJR recursion of
+   \cref{cor:bcjr-trellis-quotient-sampler}.  A bounded-width junction tree
+   supplies the analogous exact sampler through
+   \cref{lem:junction-tree-quotient-sampler}.  The remaining pass/fail
+   quantities are therefore the same two scalar quantities as in the unfiltered
+   sampler: the total-mass log moment and the sampled class-expansion load.
+\end{corollary}
+
+\begin{proof}
+   By \cref{lem:compressed-aggregate-sampler}, the backward recursion computes
+   \(U_B\) and the top-down walk samples a terminal with probability
+   proportional to the total weight of all paths ending there.  Pushing this
+   sampled terminal forward by \(\alpha(t)\) gives signature law
+   \(u_\alpha(B)/U_B\).  Drawing \(N_B\) independent paths and keeping their
+   signatures is exactly the raw sampler required by
+   \cref{cor:unfiltered-signature-sampler-witness}, and \((AAS3)\) is the
+   corresponding cost.  The trellis and junction-tree statements are the
+   specializations already proved in
+   \cref{cor:bcjr-trellis-quotient-sampler} and
+   \cref{lem:junction-tree-quotient-sampler}.
 \end{proof}
 
 \begin{corollary}[Aligned linear charts compute rate-coverage sketches]
