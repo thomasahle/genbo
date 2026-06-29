@@ -739,6 +739,15 @@ fn main() {
         assert!(pq::selftest_i8_fast(50) && pq::selftest_i8_fast(100), "fast-scan kernel != scalar!");
         vq::FASTSCAN.store(true, std::sync::atomic::Ordering::Relaxed);
     }
+    if std::env::var("SBANN_USE512FS").is_ok() {
+        // 64-wide AVX-512 interleaved fast-scan (needs FASTSCAN to produce the Pq8 / i8s LUT path).
+        assert!(pq::selftest_i8_fast_avx512(50) && pq::selftest_i8_fast_avx512(100), "avx512-64w fast-scan kernel != scalar!");
+        if std::is_x86_feature_detected!("avx512f") && std::is_x86_feature_detected!("avx512bw") {
+            vq::USE512FS.store(true, std::sync::atomic::Ordering::Relaxed);
+        } else {
+            eprintln!("SBANN_USE512FS requested but avx512bw not detected; falling back to AVX2 fast-scan");
+        }
+    }
     if std::env::var("SBANN_VNNI").is_ok() {
         assert!(simd::selftest_dot(200) && simd::selftest_dot(204), "VNNI int8 dot != scalar!");
         simd::VNNI_ON.store(true, std::sync::atomic::Ordering::Relaxed);
@@ -769,8 +778,9 @@ fn main() {
             let m: usize = a.get(2).map(|s| s.parse().unwrap()).unwrap_or(50);
             for &mm in &[2usize, 16, 50, 100, m] {
                 assert!(pq::selftest_i8_fast(mm), "fast-scan kernel != scalar at m={mm}");
+                assert!(pq::selftest_i8_fast_avx512(mm), "fast-scan AVX-512 64-wide kernel != scalar at m={mm}");
             }
-            println!("fast-scan selftest OK (m=2,16,50,100,{m})");
+            println!("fast-scan selftest OK (m=2,16,50,100,{m})  [avx2 + avx512-64w]");
             #[cfg(target_arch = "x86_64")]
             {
                 let nblk = 4096usize; // working set of packed blocks (fits L2)
@@ -795,6 +805,50 @@ fn main() {
                 println!("scan m={m}: fast-i8 {:.0} Mvec/s ({:.2}ns/blk), int16 {:.0} Mvec/s ({:.2}ns/blk), speedup {:.2}x (sink={sink})",
                     nb_scanned / t_fast / 1e6, t_fast / (reps * nblk) as f64 * 1e9,
                     nb_scanned / t_i16 / 1e6, t_i16 / (reps * nblk) as f64 * 1e9, t_i16 / t_fast);
+                // 64-wide AVX-512 fast-scan vs the AVX2 fast-scan baseline (both i8 LUT, i16 accum).
+                if std::is_x86_feature_detected!("avx512f") && std::is_x86_feature_detected!("avx512bw") {
+                    let regs8z = pq::lut_regs_i8_z512(&lut8, m);
+                    let nq4 = nblk / 4; // process blocks 4-at-a-time
+                    let mut o64 = [0i32; 64];
+                    let mut sink2 = 0i64;
+                    let t = Instant::now();
+                    for _ in 0..reps {
+                        for q in 0..nq4 {
+                            let b = q * 4;
+                            unsafe {
+                                pq::block_adc_i8_i16acc_avx512(
+                                    [&blocks[b * bb..(b + 1) * bb], &blocks[(b + 1) * bb..(b + 2) * bb],
+                                     &blocks[(b + 2) * bb..(b + 3) * bb], &blocks[(b + 3) * bb..(b + 4) * bb]],
+                                    m, &regs8z, &mut o64);
+                            }
+                            sink2 += o64[0] as i64;
+                        }
+                    }
+                    let t_512 = t.elapsed().as_secs_f64();
+                    let nb512 = (reps * nq4 * 64) as f64;
+                    println!("scan m={m}: fast-i8-512(64w,gather) {:.0} Mvec/s ({:.2}ns/4blk), vs fast-i8-avx2 speedup {:.2}x (sink={sink2})",
+                        nb512 / t_512 / 1e6, t_512 / (reps * nq4) as f64 * 1e9, t_fast / t_512 * (nb512 / nb_scanned));
+                    // INTERLEAVED layout: 1 load/group (proper FastScan-512). Re-pack the test data once.
+                    let mut sblocks: Vec<u8> = vec![0u8; nq4 * (m / 2) * 64];
+                    let sbb = (m / 2) * 64;
+                    for q in 0..nq4 {
+                        let b = q * 4;
+                        pq::interleave4(&blocks[b * bb..(b + 1) * bb], &blocks[(b + 1) * bb..(b + 2) * bb],
+                            &blocks[(b + 2) * bb..(b + 3) * bb], &blocks[(b + 3) * bb..(b + 4) * bb],
+                            m, &mut sblocks[q * sbb..(q + 1) * sbb]);
+                    }
+                    let mut sink3 = 0i64;
+                    let t = Instant::now();
+                    for _ in 0..reps {
+                        for q in 0..nq4 {
+                            unsafe { pq::block_adc_i8_i16acc_avx512_il(&sblocks[q * sbb..(q + 1) * sbb], m, &regs8z, &mut o64); }
+                            sink3 += o64[0] as i64;
+                        }
+                    }
+                    let t_il = t.elapsed().as_secs_f64();
+                    println!("scan m={m}: fast-i8-512(64w,interleaved) {:.0} Mvec/s ({:.2}ns/4blk), vs fast-i8-avx2 speedup {:.2}x (sink={sink3})",
+                        nb512 / t_il / 1e6, t_il / (reps * nq4) as f64 * 1e9, t_fast / t_il * (nb512 / nb_scanned));
+                }
             }
         }
         Some("abrun") => abrun(&a[2], &a[3], &a[4]),

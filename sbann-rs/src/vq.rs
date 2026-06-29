@@ -16,6 +16,10 @@ pub static LUT16_OFF: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicB
 /// true => FAST-SCAN: int8-LUT, 1 vpshufb/subspace + int16 accumulation (~1.7x scan vs int16 LUT16) at
 /// ~12-13 bit ranking resolution (vs int16's 15, the sqrt(m) i8 path's 8). Set from SBANN_FASTSCAN.
 pub static FASTSCAN: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+/// true => use the 64-wide AVX-512 fast-scan (block_adc_i8_i16acc_avx512_il) over an INTERLEAVED
+/// 64-vector superblock layout built at index time. Only meaningful with FASTSCAN (i8s LUT / Pq8 ctx)
+/// + avx512bw. Identical distances to the AVX2 fast-scan (so recall is unchanged). Set from SBANN_USE512FS.
+pub static USE512FS: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
 /// Batched exact-int8 rerank: detect AVX2 once, call it directly (no per-survivor dispatch),
 /// PREFETCH the scattered survivor gathers (the real cost — random reads into the base), and keep
@@ -653,7 +657,9 @@ pub enum QueryCtx {
     Pq { regs: Vec<__m128i> },                  // PQ/OPQ/AQ LUT registers (i8, saturating)
     // i16 LUT: lo/hi byte-tables (AVX2 single-block) + zmm tables (AVX-512 32-wide pair). Full-res ranking.
     Pq16 { lo: Vec<__m128i>, hi: Vec<__m128i>, lut_z: Vec<__m512i> },
-    Pq8 { regs: Vec<__m128i> },                  // fast-scan: int8 LUT, 1 vpshufb/subspace, i16 accum
+    // fast-scan: int8 LUT, 1 vpshufb/subspace, i16 accum. regs_z = same LUT broadcast to zmm lanes for
+    // the 64-wide AVX-512 path (empty unless USE512FS).
+    Pq8 { regs: Vec<__m128i>, regs_z: Vec<__m512i> },
     Scalar,                                      // exact int8: scan uses the raw query
 }
 
@@ -744,7 +750,8 @@ impl Compressor for Apq4 {
         // fast-scan: int8 LUT, 1 vpshufb/subspace + i16 accum. ~1.7x scan at ~12-13 bit rank. L2 or IP.
         if FASTSCAN.load(std::sync::atomic::Ordering::Relaxed) {
             let l = if IP_MODE.load(std::sync::atomic::Ordering::Relaxed) { self.pq.query_lut_f32_i8s_ip(&qf) } else { self.pq.query_lut_f32_i8s(&qf) };
-            return QueryCtx::Pq8 { regs: pq::lut_regs_i8(&l, self.pq.m) };
+            let regs_z = if USE512FS.load(std::sync::atomic::Ordering::Relaxed) { pq::lut_regs_i8_z512(&l, self.pq.m) } else { Vec::new() };
+            return QueryCtx::Pq8 { regs: pq::lut_regs_i8(&l, self.pq.m), regs_z };
         }
         if !LUT16_OFF.load(std::sync::atomic::Ordering::Relaxed) {
             let lut = if IP_MODE.load(std::sync::atomic::Ordering::Relaxed) { self.pq.query_lut_f32_i16_ip(&qf) } else { self.pq.query_lut_f32_i16(&qf) };
@@ -763,7 +770,7 @@ impl Compressor for Apq4 {
                 for i in 0..16 { out16[i] = o[i] as i32; }
             }
             QueryCtx::Pq16 { lo, hi, .. } => unsafe { pq::block_adc_i16_avx2(block, self.pq.m, lo, hi, out16) },
-            QueryCtx::Pq8 { regs } => unsafe { pq::block_adc_i8_i16acc(block, self.pq.m, regs, out16) },
+            QueryCtx::Pq8 { regs, .. } => unsafe { pq::block_adc_i8_i16acc(block, self.pq.m, regs, out16) },
             _ => {}
         }
     }
@@ -972,6 +979,11 @@ pub struct Index {
     pub xfn: Vec<i32>, // raw norms unused here; rerank reads ds
     pub raw: Vec<i8>,  // raw i8 vectors in SLOT order (cell-contiguous) -> cache-warm rerank gathers
     pub d: usize,
+    // 64-wide AVX-512 fast-scan (USE512FS): per cell, the full groups-of-4 blocks re-interleaved into
+    // superblocks (each (m/2)*64 bytes, group g = b0_g|b1_g|b2_g|b3_g). cell_ilstart[cell] = cumulative
+    // superblock index where cell `cell`'s superblocks begin. Empty unless built with USE512FS.
+    pub blocks_il: Vec<u8>,
+    pub cell_ilstart: Vec<u32>,
 }
 
 impl Index {
@@ -1020,7 +1032,36 @@ impl Index {
             }
             cell_bstart[cell + 1] = if bb > 0 { (blocks.len() / bb) as u32 } else { (slot_orig.len() / 16) as u32 };
         }
-        Index { router, comp, cell_bstart, slot_orig, blocks, bb, xfn: Vec::new(), raw, d }
+        // Optional 64-wide AVX-512 interleaved superblock layout: re-pack each cell's full groups of 4
+        // blocks (group g of the superblock = the 16 code-bytes of group g from each of the 4 blocks).
+        // Distances computed from this are bit-identical to the AVX2 fast-scan -> recall is unchanged.
+        let mut blocks_il: Vec<u8> = Vec::new();
+        let mut cell_ilstart: Vec<u32> = Vec::new();
+        if bb > 0 && USE512FS.load(std::sync::atomic::Ordering::Relaxed) {
+            let m = bb / 8; // bb = (m/2)*16  =>  m = bb/8
+            cell_ilstart = vec![0u32; nc + 1];
+            let mut nsb_total = 0u32;
+            for cell in 0..nc {
+                let nb = (cell_bstart[cell + 1] - cell_bstart[cell]) as usize;
+                nsb_total += (nb / 4) as u32;
+                cell_ilstart[cell + 1] = nsb_total;
+            }
+            blocks_il = vec![0u8; nsb_total as usize * bb * 4];
+            for cell in 0..nc {
+                let bs = cell_bstart[cell] as usize;
+                let nfull = (cell_bstart[cell + 1] - cell_bstart[cell]) as usize / 4;
+                for s in 0..nfull {
+                    let b = bs + 4 * s;
+                    let sb_idx = cell_ilstart[cell] as usize + s;
+                    let (b0, b1, b2, b3) = (
+                        &blocks[b * bb..(b + 1) * bb], &blocks[(b + 1) * bb..(b + 2) * bb],
+                        &blocks[(b + 2) * bb..(b + 3) * bb], &blocks[(b + 3) * bb..(b + 4) * bb],
+                    );
+                    pq::interleave4(b0, b1, b2, b3, m, &mut blocks_il[sb_idx * bb * 4..(sb_idx + 1) * bb * 4]);
+                }
+            }
+        }
+        Index { router, comp, cell_bstart, slot_orig, blocks, bb, xfn: Vec::new(), raw, d, blocks_il, cell_ilstart }
     }
 
     pub fn search(&self, ds: &I8Bin, q: &[i8], p: usize, t: usize, k: usize) -> Vec<u32> {
@@ -1102,6 +1143,9 @@ impl Index {
         let mut out16 = [0i32; 16];
         let mut out32 = [0i32; 32];
         let bb = self.bb;
+        let use512fs = USE512FS.load(std::sync::atomic::Ordering::Relaxed)
+            && !self.blocks_il.is_empty()
+            && matches!(ctx, QueryCtx::Pq8 { .. });
         for &cell in cells {
             let (bs, be) = (self.cell_bstart[cell as usize] as usize, self.cell_bstart[cell as usize + 1] as usize);
             if need_rows {
@@ -1116,6 +1160,37 @@ impl Index {
                     for j in 0..16 {
                         let slot = b * 16 + j;
                         if self.slot_orig[slot] != u32::MAX { pool.push((out16[j], slot as u32)); }
+                    }
+                }
+            } else if use512fs {
+                // 64-wide AVX-512 fast-scan over the interleaved superblocks (4 blocks/superblock).
+                if let QueryCtx::Pq8 { regs, regs_z } = &ctx {
+                    let m = bb / 8;
+                    let il0 = self.cell_ilstart[cell as usize] as usize;
+                    let nfull = (be - bs) / 4;
+                    let mut out64 = [0i32; 64];
+                    for s in 0..nfull {
+                        let sb = il0 + s;
+                        unsafe {
+                            pq::block_adc_i8_i16acc_avx512_il(&self.blocks_il[sb * bb * 4..(sb + 1) * bb * 4], m, regs_z, &mut out64);
+                        }
+                        let bbase = bs + 4 * s;
+                        for sub in 0..4 {
+                            let slot0 = (bbase + sub) * 16;
+                            for j in 0..16 {
+                                let slot = slot0 + j;
+                                if self.slot_orig[slot] != u32::MAX { pool.push((out64[sub * 16 + j], slot as u32)); }
+                            }
+                        }
+                    }
+                    // remainder blocks (< 4): plain AVX2 fast-scan, per block
+                    for b in (bs + 4 * nfull)..be {
+                        let block = &self.blocks[b * bb..(b + 1) * bb];
+                        unsafe { pq::block_adc_i8_i16acc(block, m, regs, &mut out16); }
+                        for j in 0..16 {
+                            let slot = b * 16 + j;
+                            if self.slot_orig[slot] != u32::MAX { pool.push((out16[j], slot as u32)); }
+                        }
                     }
                 }
             } else {

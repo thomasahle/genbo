@@ -577,6 +577,149 @@ pub fn selftest_i8_fast(m: usize) -> bool {
     true
 }
 
+/// Per-subspace int8 LUT (16 entries) broadcast to ALL FOUR 128-bit lanes of a zmm, for the 64-wide
+/// fast-scan. `_mm512_shuffle_epi8` is IN-LANE, so each 128-bit lane independently indexes its own copy
+/// of the 16-entry table — the broadcast gives each lane that copy. Pairs with block_adc_i8_i16acc_avx512.
+#[cfg(target_arch = "x86_64")]
+pub fn lut_regs_i8_z512(lut: &[i8], m: usize) -> Vec<__m512i> {
+    (0..m)
+        .map(|s| unsafe {
+            let r = _mm_loadu_si128(lut.as_ptr().add(s * 16) as *const __m128i);
+            _mm512_broadcast_i32x4(r) // same 16-byte LUT replicated into lanes 0..3
+        })
+        .collect()
+}
+
+/// AVX-512 64-wide FAST-SCAN ADC: process FOUR consecutive 16-vector blocks (64 vectors) at once.
+/// Per subspace, ONE `_mm512_shuffle_epi8` against the lane-broadcast i8 LUT looks up 64 int8 partials
+/// (each 128-bit lane uses its block's 16 codes against its own copy of the 16-entry table); the 64 i8
+/// are widened (two `_mm512_cvtepi8_epi16` over the 256-bit halves) into two int16 accumulators and
+/// summed. LUT must be the i8s LUT (per-subspace shifted, <=127) so the i16 accum never saturates
+/// (sum <= m*127 < 32767 for m<=258). Matches block_adc_i8_scalar on all 4 sub-blocks exactly.
+///   out[0..16]=block0, out[16..32]=block1, out[32..48]=block2, out[48..64]=block3.
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx512f,avx512bw")]
+pub unsafe fn block_adc_i8_i16acc_avx512(blocks: [&[u8]; 4], m: usize, lut_z: &[__m512i], out: &mut [i32; 64]) {
+    let mask = _mm512_set1_epi8(0x0f);
+    let mut acc01 = _mm512_setzero_si512(); // 32 x i16 (lane-pair: block0 in 0..15, block1 in 16..31)
+    let mut acc23 = _mm512_setzero_si512(); // 32 x i16 (block2 in 0..15, block3 in 16..31)
+    for g in 0..m / 2 {
+        // gather group g of each of the 4 blocks into the 4 lanes of a zmm
+        let c0 = _mm_loadu_si128(blocks[0].as_ptr().add(g * 16) as *const __m128i);
+        let c1 = _mm_loadu_si128(blocks[1].as_ptr().add(g * 16) as *const __m128i);
+        let c2 = _mm_loadu_si128(blocks[2].as_ptr().add(g * 16) as *const __m128i);
+        let c3 = _mm_loadu_si128(blocks[3].as_ptr().add(g * 16) as *const __m128i);
+        let mut codes = _mm512_castsi128_si512(c0);
+        codes = _mm512_inserti32x4(codes, c1, 1);
+        codes = _mm512_inserti32x4(codes, c2, 2);
+        codes = _mm512_inserti32x4(codes, c3, 3);
+        let lo = _mm512_and_si512(codes, mask);
+        let hi = _mm512_and_si512(_mm512_srli_epi16(codes, 4), mask);
+        // subspace 2g (lo nibble): 64 i8 partials, one per (block,vector)
+        let p0 = _mm512_shuffle_epi8(lut_z[2 * g], lo);
+        acc01 = _mm512_add_epi16(acc01, _mm512_cvtepi8_epi16(_mm512_castsi512_si256(p0)));
+        acc23 = _mm512_add_epi16(acc23, _mm512_cvtepi8_epi16(_mm512_extracti64x4_epi64(p0, 1)));
+        // subspace 2g+1 (hi nibble)
+        let p1 = _mm512_shuffle_epi8(lut_z[2 * g + 1], hi);
+        acc01 = _mm512_add_epi16(acc01, _mm512_cvtepi8_epi16(_mm512_castsi512_si256(p1)));
+        acc23 = _mm512_add_epi16(acc23, _mm512_cvtepi8_epi16(_mm512_extracti64x4_epi64(p1, 1)));
+    }
+    let mut t01 = [0i16; 32];
+    let mut t23 = [0i16; 32];
+    _mm512_storeu_si512(t01.as_mut_ptr() as *mut __m512i, acc01);
+    _mm512_storeu_si512(t23.as_mut_ptr() as *mut __m512i, acc23);
+    for i in 0..16 {
+        out[i] = t01[i] as i32;          // block 0
+        out[16 + i] = t01[16 + i] as i32; // block 1
+        out[32 + i] = t23[i] as i32;      // block 2
+        out[48 + i] = t23[16 + i] as i32; // block 3
+    }
+}
+
+/// INTERLEAVED 64-wide fast-scan: same math as block_adc_i8_i16acc_avx512 but reads a SUPERBLOCK
+/// whose group g is the 64 contiguous bytes [b0_g | b1_g | b2_g | b3_g] (16 codes from each of the 4
+/// sub-blocks). This replaces the 4-load+3-insert lane-gather with ONE `_mm512_loadu_si512` per group
+/// — the proper FastScan-512 layout, the best case for whether 512-bit pays on this uarch.
+///   out[0..16]=sub-block0, [16..32]=1, [32..48]=2, [48..64]=3.
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx512f,avx512bw")]
+pub unsafe fn block_adc_i8_i16acc_avx512_il(sblock: &[u8], m: usize, lut_z: &[__m512i], out: &mut [i32; 64]) {
+    let mask = _mm512_set1_epi8(0x0f);
+    let mut acc01 = _mm512_setzero_si512();
+    let mut acc23 = _mm512_setzero_si512();
+    for g in 0..m / 2 {
+        let codes = _mm512_loadu_si512(sblock.as_ptr().add(g * 64) as *const __m512i);
+        let lo = _mm512_and_si512(codes, mask);
+        let hi = _mm512_and_si512(_mm512_srli_epi16(codes, 4), mask);
+        let p0 = _mm512_shuffle_epi8(lut_z[2 * g], lo);
+        acc01 = _mm512_add_epi16(acc01, _mm512_cvtepi8_epi16(_mm512_castsi512_si256(p0)));
+        acc23 = _mm512_add_epi16(acc23, _mm512_cvtepi8_epi16(_mm512_extracti64x4_epi64(p0, 1)));
+        let p1 = _mm512_shuffle_epi8(lut_z[2 * g + 1], hi);
+        acc01 = _mm512_add_epi16(acc01, _mm512_cvtepi8_epi16(_mm512_castsi512_si256(p1)));
+        acc23 = _mm512_add_epi16(acc23, _mm512_cvtepi8_epi16(_mm512_extracti64x4_epi64(p1, 1)));
+    }
+    let mut t01 = [0i16; 32];
+    let mut t23 = [0i16; 32];
+    _mm512_storeu_si512(t01.as_mut_ptr() as *mut __m512i, acc01);
+    _mm512_storeu_si512(t23.as_mut_ptr() as *mut __m512i, acc23);
+    for i in 0..16 {
+        out[i] = t01[i] as i32;
+        out[16 + i] = t01[16 + i] as i32;
+        out[32 + i] = t23[i] as i32;
+        out[48 + i] = t23[16 + i] as i32;
+    }
+}
+
+/// Re-pack four 16-vector blocks into one interleaved 64-vector superblock (group g = b0_g|b1_g|b2_g|b3_g).
+pub fn interleave4(b0: &[u8], b1: &[u8], b2: &[u8], b3: &[u8], m: usize, out: &mut [u8]) {
+    for g in 0..m / 2 {
+        out[g * 64..g * 64 + 16].copy_from_slice(&b0[g * 16..g * 16 + 16]);
+        out[g * 64 + 16..g * 64 + 32].copy_from_slice(&b1[g * 16..g * 16 + 16]);
+        out[g * 64 + 32..g * 64 + 48].copy_from_slice(&b2[g * 16..g * 16 + 16]);
+        out[g * 64 + 48..g * 64 + 64].copy_from_slice(&b3[g * 16..g * 16 + 16]);
+    }
+}
+
+/// Self-test: the 64-wide AVX-512 fast-scan must match block_adc_i8_scalar on all 4 sub-blocks for a
+/// random i8 LUT (in [0,127], same as selftest_i8_fast) + four random packed blocks.
+pub fn selftest_i8_fast_avx512(m: usize) -> bool {
+    #[cfg(target_arch = "x86_64")]
+    {
+        if !(std::is_x86_feature_detected!("avx512f") && std::is_x86_feature_detected!("avx512bw")) {
+            return true;
+        }
+        let mut st = 0x9e3779b97f4a7c15u64;
+        let mut rng = || { st ^= st << 13; st ^= st >> 7; st ^= st << 17; st };
+        let lut: Vec<i8> = (0..m * 16).map(|_| (rng() % 128) as i8).collect();
+        let bb = (m / 2) * 16;
+        let mut blk = [vec![0u8; bb], vec![0u8; bb], vec![0u8; bb], vec![0u8; bb]];
+        for b in blk.iter_mut() { for x in b.iter_mut() { *x = (rng() & 0xff) as u8; } }
+        let regs = lut_regs_i8_z512(&lut, m);
+        let mut a = [0i32; 64];
+        unsafe { block_adc_i8_i16acc_avx512([&blk[0], &blk[1], &blk[2], &blk[3]], m, &regs, &mut a); }
+        // interleaved-layout variant must give identical results
+        let mut sb_buf = vec![0u8; (m / 2) * 64];
+        interleave4(&blk[0], &blk[1], &blk[2], &blk[3], m, &mut sb_buf);
+        let mut a2 = [0i32; 64];
+        unsafe { block_adc_i8_i16acc_avx512_il(&sb_buf, m, &regs, &mut a2); }
+        for sb in 0..4 {
+            let mut s = [0i32; 16];
+            block_adc_i8_scalar(&blk[sb], m, &lut, &mut s);
+            for i in 0..16 {
+                if a[sb * 16 + i] != s[i] {
+                    eprintln!("selftest_i8_fast_avx512 MISMATCH m={m} block={sb} lane={i}: {} vs {}", a[sb * 16 + i], s[i]);
+                    return false;
+                }
+                if a2[sb * 16 + i] != s[i] {
+                    eprintln!("selftest_i8_fast_avx512_il MISMATCH m={m} block={sb} lane={i}: {} vs {}", a2[sb * 16 + i], s[i]);
+                    return false;
+                }
+            }
+        }
+    }
+    true
+}
+
 /// Per-subspace i16 LUT broadcast into a zmm (16 entries in lanes 0..15; vpermw index 0..15 picks
 /// them). For the AVX-512 32-wide scan.
 #[cfg(target_arch = "x86_64")]
