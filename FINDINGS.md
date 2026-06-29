@@ -2015,6 +2015,51 @@ P130. (10M OOD: tree-EM confirmed ~1.25x QPS@90%, same-window, QPS-neutral -> na
     EM is the NEW OOD config (clean win, no downside). Definitive EM-vs-ScaNN same-window pending. The
     session's biggest OOD lever, from the user's routing/joint-partition redirect (P127-130).
 
+P131. (*** DEFINITIVE EM-vs-ScaNN 10M OOD same-window: ScaNN still wins; EM narrowed QPS@90% to ~1.4x ***)
+    em_vs_scann_10m.log, ONE script, same loaded window (ScaNN built at load=67.69 -> its QPS suppressed too).
+    EM(3,beam8)+fastscan+avx512 (hierk3 C0=1024 C1=8192 b0=64 b1=200 a0_soar=0.5 Kf=262144):
+      p224 0.8833@3933 | p288 0.8943@3304 | p352 0.9021@2308 | p448 0.9097@1957
+    ScaNN (num_leaves=4000, AH-2, reorder, dot_product):
+      lts50 0.6904@11244 | lts100 0.8244@5292 | lts150 0.8809@4032 | lts250 0.9317@2052 |
+      lts400 0.9589@1703 | lts600 0.9781@1450 | lts900 0.9881@1124 | lts1400 0.9928@701
+    QPS@90%: EM ~2308 (p352) vs ScaNN ~3287 (interp lts~205) => ScaNN ~1.42x faster, both load-suppressed
+    (ScaNN at higher load 67.69, so the unloaded gap is >=1.42x). Matches the ~1.6x estimate (P130).
+    *** THE REAL STORY (load-independent, trustworthy = recall): ScaNN reaches 0.9928 recall; my engine
+    CAPS at 0.9097 in this config and ~0.9487 pool-recall ceiling @p512 (P127). ScaNN dominates the entire
+    recall>=0.95 regime my routing simply cannot reach. EM raised my ceiling +0.6-1.0pt but the gap is
+    ROUTING COVERAGE: ScaNN's partition pools OOD neighbors mine never sees. *** To actually beat ScaNN on
+    OOD I must raise the routing pool-recall ceiling itself. Untried, user-endorsed levers: (1) higher SOAR
+    a0 (replicate each point into MORE fine cells -- "storing points multiple times will help"; a0 sweep was
+    botched earlier by t_surv undersizing, needs proper re-measure), (2) query-distribution-aware routing
+    (OOD = query dist != base dist; train router centroids on query/mixed sample or IP-anisotropic metric --
+    this is the ScaNN-style OOD lever the plain-L2 hierk router lacks). NEXT: a0 sweep, t_surv sized to pool.
+
+P132. (*** BREAKTHROUGH: a RERANK DEDUP BUG was masking multi-store; fixed -> routing coverage to ScaNN PARITY ***)
+    Root cause: rerank_contig/rerank_survivors keep only m=(k*4)=40 survivors in the exact-rerank heap.
+    With SOAR a0>1 a point lands in multiple probed cells as DUPLICATE SLOTS (same tiny distance), which
+    crowd out the 40-slot budget -> after id-dedup <10 distinct ids survive -> recall craters AND DECREASES
+    with p (more probes = more duplicates). So the earlier "a0>=6 collapses the ceiling" (a0_ceiling.log:
+    a0=6 0.80, a0=10 0.56, recall falling with p) was a MEASUREMENT ARTIFACT, not a real coverage failure.
+    Verified the artifact is real: capped(t=51200) and uncapped(t=p*1e7) gave IDENTICAL bad numbers, so the
+    cap was rerank_contig's m=40, not t_surv. FIX: new SBANN_POOLDEDUP flag (vq.rs) dedups the pool by ORIG
+    id (keep min approx-dist per id) BEFORE the survivor cap, so the 40-slot heap holds DISTINCT ids. Also
+    shrinks the pool (faster). 1M OOD true coverage ceiling (whole-pool rerank), POOLDEDUP on:
+      p:        128     256     384     512
+      a0=3    0.8959  0.9309  0.9433  0.9487   (== non-dedup a0=3: dedup is a no-op when few dups -> fix is safe)
+      a0=6    0.9339  0.9573  0.9648  0.9678   (+1.9pt over a0=3 @p512; monotone-in-p again, as it must be)
+      a0=12   0.9592  0.9733  0.9778  0.9797   (MATCHES ScaNN lts300 0.9794! a0=12@p128 0.9592 > a0=3 @ ANY p)
+    ScaNN 1M ref: lts80 0.9072, lts150 0.9565, lts300 0.9794, lts600 0.9924.
+    *** OVERTURNS P127's "OOD is STRUCTURALLY routing-limited, ScaNN's partition fundamentally better." It is
+    NOT structural -- multi-store (a0) + the dedup fix reaches ScaNN coverage parity (~0.98). The user was
+    right twice: joint-partition (tree-EM, P128) AND "store points multiple times" (this) both raise coverage;
+    the second was buried under the dedup bug. *** COSTS to validate next: (a) storage -- raw is per-SLOT, so
+    a0=12 = 12x raw (10M*12*200B=24GB -> over the 26GB budget; a0=6=12GB fits). May need raw stored per-DISTINCT-
+    point (rerank by orig id) to scale a0=12 to 10M/1B. (b) QPS -- the ceiling QPS above is uncapped (whole-pool
+    rerank, pathologically slow); the REAL test is production QPS@recall with small t_surv (higher a0 hits target
+    recall at much SMALLER p, but bigger pool/cell -- net QPS must be measured). NEXT: 1M production frontier
+    a0={3,6,12}+dedup+small t_surv real QPS vs ScaNN; then 10M (a0=6 fits, or raw-dedup refactor for a0=12);
+    then stack with tree-EM. Commit the dedup fix (correctness: it also stops a0>1 wasting t_surv on dups).
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT

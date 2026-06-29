@@ -28,6 +28,11 @@ pub static RESID: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool:
 /// retrained on residuals), and the scan adds the exact per-cell <q,centroid> offset. +6-11pt IP
 /// pool-recall (P124) -> shallower rerank pool for OOD. Distinct from RESID (8-bit refine, which failed).
 pub static RESIDQ: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+/// SBANN_POOLDEDUP: dedup the candidate pool by ORIG id (keep min approx-dist per id) BEFORE the
+/// t_surv survivor cap. With SOAR a0>1 a point lands in multiple probed cells as duplicate slots; the
+/// late dedup in rerank_contig (heap size k*4) gets crowded out by those duplicates, collapsing recall
+/// as a0 grows. This dedup measures the TRUE coverage of a multi-store routing (and shrinks the pool).
+pub static POOLDEDUP: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
 /// Batched exact-int8 rerank: detect AVX2 once, call it directly (no per-survivor dispatch),
 /// PREFETCH the scattered survivor gathers (the real cost — random reads into the base), and keep
@@ -1328,6 +1333,17 @@ impl Index {
                 let off = (rq_scale * dot as f32).round() as i32;
                 for e in &mut pool[pool_start..] { e.0 -= off; }
             }
+        }
+        if POOLDEDUP.load(std::sync::atomic::Ordering::Relaxed) {
+            // collapse SOAR duplicate slots: keep the min-approx-dist slot per orig id, so the
+            // downstream k*4 survivor heap holds DISTINCT ids (true multi-store coverage).
+            let mut best: std::collections::HashMap<u32, (i32, u32)> = std::collections::HashMap::with_capacity(pool.len());
+            for &(dist, slot) in pool.iter() {
+                let orig = self.slot_orig[slot as usize];
+                best.entry(orig).and_modify(|e| { if dist < e.0 { *e = (dist, slot); } }).or_insert((dist, slot));
+            }
+            pool.clear();
+            pool.extend(best.into_values());
         }
         let tt = t.min(pool.len());
         if tt > 0 { pool.select_nth_unstable(tt - 1); pool.truncate(tt); }
