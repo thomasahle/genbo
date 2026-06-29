@@ -89639,6 +89639,87 @@ top-\(k\) backup.
    satisfy this necessary storage/far-load condition.
 \end{proof}
 
+\begin{corollary}[Stable small quotients do not rescue product-sign sampling]
+   \label{cor:stable-small-quotient-product-sign-obstruction}
+   Work in the product-sign setting of
+   \cref{lem:sampled-product-sign-rate-obstruction}.  Let the sign labels be
+   partitioned into classes \(A_\ell\), and let the quotient bucket be the
+   ordinary union
+   \[
+      C_\ell=\{x:\exists s\in A_\ell,\ \Psi_s(x)\ge rt\}.
+   \]
+   For a query \(q\), let \(K_q(s)\) be the product-sign query law and let
+   \(\Pi_q(\ell)=\sum_{s\in A_\ell}K_q(s)\).  Suppose that
+   \[
+      |A_\ell|\le M_m=\log^{O_c(1)}m
+      \tag{PSQ1}
+   \]
+   for every quotient class, and that ordinary union scanning is stable in the
+   sense that, for all query/load pairs under consideration,
+   \[
+      \mathbf 1_{\{x\in C_\ell\}}\Pi_q(\ell)
+      \le
+      K_m\sum_{s\in A_\ell}K_q(s)
+      \mathbf 1_{\{\Psi_s(x)\ge rt\}},
+      \qquad
+      K_m=\log^{O_c(1)}m .
+      \tag{PSQ2}
+   \]
+   If the quotient panel satisfies the sampled terminal bounds
+   \((SP1)\)--\((SP3)\) with polylogarithmic slack, then the unquotiented
+   product-sign sampled panel satisfies the same storage and far-load bounds,
+   and its near hit probability is smaller by at most the polylogarithmic
+   factor \(K_m\).  Consequently the necessary rate condition
+   \[
+      \frac{I_\sigma(t)}{\log2}\ge1-\rho-o(1)
+      \tag{PSQ3}
+   \]
+   still holds.  In particular, a stable quotient with polylogarithmic class
+   size cannot evade the sampled product-sign obstruction.
+\end{corollary}
+
+\begin{proof}
+   Write
+   \[
+      U_x(s)=\mathbf 1_{\{\Psi_s(x)\ge rt\}} .
+   \]
+   The hidden, unquotiented storage is controlled by the quotient storage:
+   for every data point \(x\),
+   \[
+      \sum_s U_x(s)
+      =
+      \sum_\ell\sum_{s\in A_\ell}U_x(s)
+      \le
+      M_m\sum_\ell\mathbf 1_{\{x\in C_\ell\}} .
+   \]
+   Summing over \(x\) and using \((PSQ1)\), a quotient satisfying \((SP1)\)
+   gives the original product-sign labels the same storage exponent, up to a
+   polylogarithmic factor.
+
+   For far load, the hidden sampled incidence is no larger than the quotient
+   union incidence, because \(U_x(s)=1\) and \(s\in A_\ell\) imply
+   \(x\in C_\ell\):
+   \[
+      \sum_sK_q(s)U_x(s)
+      \le
+      \sum_\ell\Pi_q(\ell)\mathbf 1_{\{x\in C_\ell\}} .
+   \]
+   Thus quotient \((SP2)\) implies the hidden product-sign far-load bound.
+
+   Finally, applying the stability inequality \((PSQ2)\) with \(x=p\) and
+   summing over \(\ell\) gives
+   \[
+      \sum_{\ell:p\in C_\ell}\Pi_q(\ell)
+      \le
+      K_m\sum_sK_q(s)U_p(s).
+   \]
+   Hence a quotient near mass at least \(\log^{-O_c(1)}m\) implies hidden
+   product-sign near mass at least \(\log^{-O_c(1)}m\).  The hidden sampled
+   panel therefore has the same polynomial storage and far-load exponents as
+   in \cref{lem:sampled-product-sign-rate-obstruction}.  Applying that lemma
+   yields \((PSQ3)\).
+\end{proof}
+
 \begin{lemma}[Posterior-rank margin certificate]\label{lem:posterior-rank-margin}
    Let
    \[
@@ -90738,6 +90819,14 @@ One should also separate the resident-guard regime from the genuine finite-chann
    rate fractions are only \(0.217,0.236,0.206\); at \(a=0.9\) they are
    \(0.369,0.404,0.344\).  Thus neither polylog top-\(k\) reporting nor direct
    query-Gibbs sampling rescues the fixed-entropy growing product-sign branch.
+   Moreover, \cref{cor:stable-small-quotient-product-sign-obstruction} rules
+   out the first ordinary quotient attempt: if the quotient classes have only
+   polylogarithmic size and union scanning is stable in the sense of
+   \cref{lem:stable-quotient-sampled-spectrum}, then the hidden unquotiented
+   sampled panel would already satisfy the same polynomial storage and far-load
+   exponents, contradicting the same rate test.  Therefore a quotient rescue
+   would have to merge superpolylogarithmically many hidden labels, use
+   responsibility-thinned output, or sample aggregate bucket mass directly.
    The remaining work is therefore not another threshold certificate: it is
    either a genuinely compressed all-outcome storage/evaluation scheme whose
    bucket quotient changes the storage/far-load arithmetic, a construction whose
@@ -90813,11 +90902,13 @@ One should also separate the resident-guard regime from the genuine finite-chann
    top-\(k\) reporter cannot capture enough value in the fixed-entropy
    growing-width product-sign model, and by
    \cref{lem:sampled-product-sign-rate-obstruction} direct query-Gibbs sampling
-   of the same labels violates the sampled storage/far-load rate test.  The
-   clean endpoint now hinges on compressing the growing output layer in a way
-   that changes bucket storage, changing the channel so the tilted entropy is
-   only \(O(\log\log m)\), or accepting this as a barrier to the product-sign
-   branch.
+   of the same labels violates the sampled storage/far-load rate test.  By
+   \cref{cor:stable-small-quotient-product-sign-obstruction}, stable quotients
+   with only polylogarithmic hidden labels per bucket class inherit that same
+   obstruction.  The clean endpoint now hinges on compressing the growing output
+   layer in a way that changes bucket storage through large aggregate classes
+   and an aggregate sampler, changing the channel so the tilted entropy is only
+   \(O(\log\log m)\), or accepting this as a barrier to the product-sign branch.
 \end{remark}
 
 \begin{proposition}[Conditional finite-channel polylog endpoint]\label{prop:finite-channel-polylog}
