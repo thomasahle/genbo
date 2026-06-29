@@ -2006,6 +2006,15 @@ P129. (*** tree-EM is a CLEAN ~1.2x OOD recall@QPS win -- no query overhead; the
     routing redirect (I'd built tree-EM for msspacev P119 but missed its OOD relevance). Next: 10M EM
     confirm + more rounds. ScaNN's partition still better (its ceiling exceeds ours) so EM narrows not closes.
 
+P130. (10M OOD: tree-EM confirmed ~1.25x QPS@90%, same-window, QPS-neutral -> narrows OOD ~2x to ~1.6x)
+    10M OOD same-window (em_10m.log): baseline recall p224 0.8729@8523, p288 0.8858@7170, p352 0.8945@6429,
+    p448 0.9034@5187. +EM(3,beam8): 0.8833@9144, 0.8943@7682, 0.9021@6657, 0.9097@5458 = +0.6-1.0pt recall
+    at fixed p, QPS NEUTRAL-to-faster (no query overhead; better-balanced cells slightly faster). At matched
+    recall ~1.25x (recall 0.90: EM ~6700@p345 vs baseline 5187@p448). The 1M ~1.2x HOLDS at scale. EM build
+    954->1627s (+670s for 3 rounds; mem 6.3->11.5GB, under the 40% limit). Narrows OOD ~2x -> ~1.6x (2/1.25).
+    EM is the NEW OOD config (clean win, no downside). Definitive EM-vs-ScaNN same-window pending. The
+    session's biggest OOD lever, from the user's routing/joint-partition redirect (P127-130).
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
