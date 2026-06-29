@@ -422,6 +422,49 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
     // SBANN_LUT_AB: interleave int16 (false) vs i8 (true) scan precision per (p,t) on one index.
     let lut_ab = std::env::var("SBANN_LUT_AB").is_ok();
     let lmodes: Vec<bool> = if lut_ab { vec![false, true] } else { vec![vq::LUT16_OFF.load(std::sync::atomic::Ordering::Relaxed)] };
+    // IDEA #4 refine sweep: with SBANN_RESID, sweep (refine off/on) x rr_depth (=raw-rerank depth)
+    // at a FIXED refine pool t_surv, on ONE built index. Reports recall vs raw reads for both, so the
+    // refined order's depth saving (same recall, fewer raw reads) is a clean same-index A/B.
+    if vq::RESID.load(std::sync::atomic::Ordering::Relaxed) {
+        let mr = idx.resid_pq.as_ref().map(|p| p.m).unwrap_or(0);
+        let tmul0 = *tlist.first().unwrap_or(&tmul);
+        for &p in &plist {
+            let t_surv: usize = std::env::var("SBANN_TSURV").ok().and_then(|s| s.parse().ok())
+                .unwrap_or((p * tmul0).max(*plist.iter().max().unwrap_or(&p) * tmul0).max(2000));
+            let rrlist: Vec<usize> = match std::env::var("SBANN_RRLIST") {
+                Ok(s) => s.split(',').filter_map(|x| x.trim().parse().ok()).collect(),
+                Err(_) => vec![10, 25, 50, 100, 200, 400, 800, t_surv],
+            };
+            println!("  [RESID p={p} t_surv={t_surv} m_r={mr}B/vec raw={}B/vec]", ds.d);
+            for refine in [false, true] {
+                for &rr in &rrlist {
+                    let rr = rr.min(t_surv);
+                    let mut best_dt = f64::INFINITY;
+                    let mut res: Vec<Vec<u32>> = Vec::new();
+                    for _ in 0..reps.max(1) {
+                        let st = Instant::now();
+                        let r: Vec<Vec<u32>> = (0..nq).into_par_iter().map(|i| {
+                            let cells = idx.router.probe(qs.row(i), p);
+                            idx.scan_rerank_resid(&ds, qs.row(i), &cells, t_surv, rr, refine, 10)
+                        }).collect();
+                        best_dt = best_dt.min(st.elapsed().as_secs_f64());
+                        res = r;
+                    }
+                    let mut hit = 0usize;
+                    for i in 0..nq {
+                        let truth: std::collections::HashSet<u32> = gids[i * gk..i * gk + 10].iter().copied().collect();
+                        hit += res[i].iter().take(10).filter(|id| truth.contains(id)).count();
+                    }
+                    // raw-read-equiv bytes/query: refine path also reads t_surv*m_r refine bytes.
+                    let raw_bytes = rr * ds.d + if refine { t_surv * mr } else { 0 };
+                    let tag = if refine { "refine" } else { "plain " };
+                    println!("    {tag} rr={rr:5}: recall@10={:.4}  raw_reads={rr:5}  bytes/q={raw_bytes:8}  QPS={:.0}",
+                        hit as f64 / (nq * 10) as f64, nq as f64 / best_dt);
+                }
+            }
+        }
+        return;
+    }
     for &p in &plist {
       for &tm in &tlist {
        for &lm in &lmodes {
@@ -773,6 +816,10 @@ fn main() {
     if std::env::var("SBANN_VNNI").is_ok() {
         assert!(simd::selftest_dot(200) && simd::selftest_dot(204), "VNNI int8 dot != scalar!");
         simd::VNNI_ON.store(true, std::sync::atomic::Ordering::Relaxed);
+    }
+    if std::env::var("SBANN_RESID").is_ok() {
+        assert!(pq::selftest_resid(100, 2) && pq::selftest_resid(96, 4), "resid refine ADC != reconstruct-L2!");
+        vq::RESID.store(true, std::sync::atomic::Ordering::Relaxed);
     }
     match a.get(1).map(String::as_str) {
         Some("dotbench") => {

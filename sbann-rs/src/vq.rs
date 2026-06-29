@@ -20,6 +20,10 @@ pub static FASTSCAN: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBo
 /// 64-vector superblock layout built at index time. Only meaningful with FASTSCAN (i8s LUT / Pq8 ctx)
 /// + avx512bw. Identical distances to the AVX2 fast-scan (so recall is unchanged). Set from SBANN_USE512FS.
 pub static USE512FS: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+/// IDEA #4: build a SECOND finer 8-bit refine code (pq::ResidPq) in slot order and use it to refine
+/// the 4-bit-ADC survivor ranking before the exact raw rerank, so far fewer raw vectors are read.
+/// Set from SBANN_RESID. SBANN_RESID_DPB picks the refine subspace size (default 2 => m=d/2 bytes/vec).
+pub static RESID: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
 /// Batched exact-int8 rerank: detect AVX2 once, call it directly (no per-survivor dispatch),
 /// PREFETCH the scattered survivor gathers (the real cost — random reads into the base), and keep
@@ -990,6 +994,9 @@ pub struct Index {
     // superblock index where cell `cell`'s superblocks begin. Empty unless built with USE512FS.
     pub blocks_il: Vec<u8>,
     pub cell_ilstart: Vec<u32>,
+    // IDEA #4 refine code (empty unless SBANN_RESID): 8-bit PQ codes in SLOT order, m bytes/slot.
+    pub resid_pq: Option<pq::ResidPq>,
+    pub resid_codes: Vec<u8>,
 }
 
 impl Index {
@@ -1018,6 +1025,30 @@ impl Index {
         // encode blocks per cell
         let bb = comp.block_bytes();
         let d = ds.d;
+        // IDEA #4: train the 8-bit refine PQ and encode ALL points (parallel, by orig id) up front,
+        // so the sequential slot loop below just copies the precomputed code (256-way encode is 16x
+        // the 4-bit cost — must be fanned out, not done in the serial append loop).
+        let resid_on = RESID.load(std::sync::atomic::Ordering::Relaxed);
+        let (resid_pq, resid_by_orig): (Option<pq::ResidPq>, Vec<u8>) = if resid_on {
+            let dpb_r: usize = std::env::var("SBANN_RESID_DPB").ok().and_then(|s| s.parse().ok()).unwrap_or(2);
+            let iters_r: usize = std::env::var("SBANN_RESID_ITERS").ok().and_then(|s| s.parse().ok()).unwrap_or(6);
+            let smp = n.min(40000);
+            let stride = (n / smp).max(1);
+            let mut x = vec![0f32; smp * d];
+            x.par_chunks_mut(d).enumerate().for_each(|(i, o)| { let r = ds.row(i * stride); for k in 0..d { o[k] = r[k] as f32; } });
+            let rpq = pq::ResidPq::train_f32(&x, d, dpb_r, smp, iters_r);
+            let mr = rpq.m;
+            let mut v = vec![0u8; n * mr];
+            v.par_chunks_mut(mr).enumerate().for_each(|(i, out)| {
+                let r = ds.row(i);
+                let mut xf = vec![0f32; d];
+                for k in 0..d { xf[k] = r[k] as f32; }
+                rpq.encode_f32(&xf, out);
+            });
+            (Some(rpq), v)
+        } else { (None, Vec::new()) };
+        let mr = resid_pq.as_ref().map(|p| p.m).unwrap_or(0);
+        let mut resid_codes: Vec<u8> = Vec::new();
         let mut blocks: Vec<u8> = Vec::new();
         let mut slot_orig: Vec<u32> = Vec::new();
         let mut raw: Vec<i8> = Vec::new(); // raw i8 in slot order, parallel to slot_orig
@@ -1033,6 +1064,10 @@ impl Index {
                 for j in 0..16 {
                     slot_orig.push(if j < cnt { pts[i + j] } else { u32::MAX });
                     if j < cnt { raw.extend_from_slice(rows[j]); } else { raw.resize(raw.len() + d, 0); }
+                    if mr > 0 {
+                        if j < cnt { let o = pts[i + j] as usize; resid_codes.extend_from_slice(&resid_by_orig[o * mr..o * mr + mr]); }
+                        else { resid_codes.resize(resid_codes.len() + mr, 0); }
+                    }
                 }
                 i += 16;
             }
@@ -1067,12 +1102,20 @@ impl Index {
                 }
             }
         }
-        Index { router, comp, cell_bstart, slot_orig, blocks, bb, xfn: Vec::new(), raw, d, blocks_il, cell_ilstart }
+        Index { router, comp, cell_bstart, slot_orig, blocks, bb, xfn: Vec::new(), raw, d, blocks_il, cell_ilstart, resid_pq, resid_codes }
     }
 
     pub fn search(&self, ds: &I8Bin, q: &[i8], p: usize, t: usize, k: usize) -> Vec<u32> {
         let cells = self.router.probe(q, p);
-        self.scan_rerank(ds, q, &cells, t, k)
+        if RESID.load(std::sync::atomic::Ordering::Relaxed) && self.resid_pq.is_some() {
+            // refine pool = t survivors; exact-rerank depth from SBANN_RR_DEPTH (default = t = no
+            // shallowing); SBANN_RESID_REFINE=0 disables the 8-bit refine (plain-shallow baseline).
+            let rr: usize = std::env::var("SBANN_RR_DEPTH").ok().and_then(|s| s.parse().ok()).unwrap_or(t);
+            let refine = std::env::var("SBANN_RESID_REFINE").ok().map(|s| s != "0").unwrap_or(true);
+            self.scan_rerank_resid(ds, q, &cells, t, rr, refine, k)
+        } else {
+            self.scan_rerank(ds, q, &cells, t, k)
+        }
     }
 
     /// OLD rerank path (gather from ds by orig id) -- kept for clean same-index A/B vs the new
@@ -1230,6 +1273,70 @@ impl Index {
         if tt > 0 { pool.select_nth_unstable(tt - 1); pool.truncate(tt); }
         let _ = ds;
         rerank_contig(&self.raw, self.d, &self.slot_orig, q, &pool, k)
+    }
+
+    /// IDEA #4 refine path. Scan -> select top-`t_surv` by 4-bit ADC -> (optional) REFINE that pool
+    /// with the 8-bit code (reads only m bytes/survivor from resid_codes, NOT the d-byte raw) -> keep
+    /// the top-`rr_depth` by the refined order -> exact raw rerank ONLY those rr_depth. `refine=false`
+    /// keeps the 4-bit-ADC order (plain-shallow baseline) for a clean same-index A/B. The headline:
+    /// at fixed recall, the refined order needs a far smaller rr_depth -> far fewer raw-vector reads.
+    pub fn scan_rerank_resid(&self, ds: &I8Bin, q: &[i8], cells: &[u32], t_surv: usize, rr_depth: usize, refine: bool, k: usize) -> Vec<u32> {
+        let ctx = self.comp.prepare_query(q);
+        let need_rows = self.comp.needs_raw_rows();
+        let mut pool: Vec<(i32, u32)> = Vec::with_capacity(8192);
+        let mut out16 = [0i32; 16];
+        let mut out32 = [0i32; 32];
+        let bb = self.bb;
+        for &cell in cells {
+            let (bs, be) = (self.cell_bstart[cell as usize] as usize, self.cell_bstart[cell as usize + 1] as usize);
+            if need_rows {
+                for b in bs..be {
+                    let block = if bb > 0 { &self.blocks[b * bb..(b + 1) * bb] } else { &[][..] };
+                    let rows16: Vec<&[i8]> = (0..16).map(|j| {
+                        let o = self.slot_orig[b * 16 + j];
+                        if o != u32::MAX { ds.row(o as usize) } else { &[][..] }
+                    }).collect();
+                    self.comp.scan_block(block, &ctx, q, &rows16, &mut out16);
+                    for j in 0..16 { let slot = b * 16 + j; if self.slot_orig[slot] != u32::MAX { pool.push((out16[j], slot as u32)); } }
+                }
+            } else {
+                let mut b = bs;
+                while b + 1 < be {
+                    let b0 = &self.blocks[b * bb..(b + 1) * bb];
+                    let b1 = &self.blocks[(b + 1) * bb..(b + 2) * bb];
+                    self.comp.scan_block_x2(b0, b1, &ctx, &mut out32);
+                    for j in 0..16 { let slot = b * 16 + j; if self.slot_orig[slot] != u32::MAX { pool.push((out32[j], slot as u32)); } }
+                    for j in 0..16 { let slot = (b + 1) * 16 + j; if self.slot_orig[slot] != u32::MAX { pool.push((out32[16 + j], slot as u32)); } }
+                    b += 2;
+                }
+                if b < be {
+                    let block = &self.blocks[b * bb..(b + 1) * bb];
+                    self.comp.scan_block(block, &ctx, q, &[], &mut out16);
+                    for j in 0..16 { let slot = b * 16 + j; if self.slot_orig[slot] != u32::MAX { pool.push((out16[j], slot as u32)); } }
+                }
+            }
+        }
+        // select top-t_surv by the 4-bit ADC distance (the candidate pool entering refine)
+        let tt = t_surv.min(pool.len());
+        if tt > 0 { pool.select_nth_unstable(tt - 1); pool.truncate(tt); }
+        // refine: re-key the survivors by the 8-bit refine distance (cheap m-byte reads), else keep ADC
+        let rpq = self.resid_pq.as_ref().expect("resid_pq");
+        let mr = rpq.m;
+        let mut keyed: Vec<(f32, u32)> = if refine {
+            let qf: Vec<f32> = q.iter().map(|&v| v as f32).collect();
+            let lut = rpq.query_lut_f32(&qf);
+            pool.iter().map(|&(_, slot)| {
+                let code = &self.resid_codes[slot as usize * mr..slot as usize * mr + mr];
+                (rpq.adc(code, &lut), slot)
+            }).collect()
+        } else {
+            pool.iter().map(|&(adc, slot)| (adc as f32, slot)).collect()
+        };
+        // keep the top-rr_depth by the (refined or ADC) order -> these are the ONLY raw reads
+        let dd = rr_depth.min(keyed.len());
+        if dd > 0 { keyed.select_nth_unstable_by(dd - 1, |a, b| a.0.total_cmp(&b.0)); keyed.truncate(dd); }
+        let pool2: Vec<(i32, u32)> = keyed.iter().map(|&(_, slot)| (0i32, slot)).collect();
+        rerank_contig(&self.raw, self.d, &self.slot_orig, q, &pool2, k)
     }
 
     /// Batched search: GEMM-route ALL queries at once, then per-query scan+rerank in parallel.
