@@ -5500,6 +5500,116 @@ partition ignores the bias coordinates that certify the list size.
    polynomial-rate thinning.
 \end{remark}
 
+\begin{lemma}[Pairwise-independent syndrome masks have the right second moment]
+   \label{lem:pairwise-independent-syndrome-thinning}
+   Let \(G\) be a finite abelian group and let
+   \(\mathcal T=\mathcal C_1\times\cdots\times\mathcal C_k\).  For each
+   coordinate \(j\), choose \(h_j:\mathcal C_j\to G\) independently from a
+   pairwise-independent family: for distinct \(a,b\in\mathcal C_j\), the pair
+   \((h_j(a),h_j(b))\) is uniform on \(G^2\).  For a target syndrome
+   \(\sigma\in G\), retain
+   \[
+      R_\sigma=\{(i_1,\ldots,i_k): h_1(i_1)+\cdots+h_k(i_k)=\sigma\}.
+      \tag{PIS1}
+   \]
+   Then, for every fixed tuple set \(A\subseteq\mathcal T\), the count
+   \(X_A=|A\cap R_\sigma|\) satisfies
+   \[
+      \E X_A=\frac{|A|}{|G|},
+      \qquad
+      \operatorname{Var} X_A\le\frac{|A|}{|G|}.
+      \tag{PIS2}
+   \]
+   Consequently,
+   \[
+      \Prb[A\cap R_\sigma\ne\emptyset]
+      \ge
+      \frac{\mu}{1+\mu},
+      \qquad
+      \mu=\frac{|A|}{|G|}.
+      \tag{PIS3}
+   \]
+   In particular, every fixed top-tuple set of size at least \(|G|\) is hit
+   with constant probability, matching the second-moment behavior of a truly
+   random \(|G|^{-1}\)-subset.
+\end{lemma}
+
+\begin{proof}
+   A fixed tuple has uniform syndrome, giving \(\E X_A=|A|/|G|\).  For two
+   distinct tuples \(i,i'\in\mathcal T\), choose a coordinate \(j\) with
+   \(i_j\ne i'_j\).  Conditional on all hash values outside coordinate \(j\),
+   the pair \((h_j(i_j),h_j(i'_j))\) is uniform on \(G^2\).  Therefore the two
+   tuple syndromes are independent and uniform on \(G^2\).  The indicators
+   \(\mathbf 1\{i\in R_\sigma\}\) and
+   \(\mathbf 1\{i'\in R_\sigma\}\) are pairwise independent, so
+   \[
+      \operatorname{Var} X_A
+      =
+      \sum_{i\in A}\operatorname{Var}\mathbf 1\{i\in R_\sigma\}
+      \le
+      |A|/|G|.
+   \]
+   Finally,
+   \[
+      \Prb[X_A>0]\ge\frac{(\E X_A)^2}{\E X_A^2}
+      \ge
+      \frac{\mu^2}{\mu^2+\mu}
+      =
+      \frac{\mu}{1+\mu},
+   \]
+   by Paley--Zygmund.
+\end{proof}
+
+\begin{remark}[Multiply-shift style masks]
+   \label{rem:multiply-shift-syndrome-masks}
+   \Cref{lem:pairwise-independent-syndrome-thinning} says that the randomness
+   required for the subset itself is modest.  A practical instantiation should
+   use an affine two-universal family over a machine-sized group or field.  For
+   example, after encoding block symbols as field elements, take
+   \[
+      h_j(a)=\alpha_j a+\beta_j\in\mathbb F
+   \]
+   with \(\alpha_j,\beta_j\) uniform and independent.  This is exactly
+   pairwise independent.  Multiply-add-shift variants give the same
+   word-RAM flavor; plain multiplication without the additive shift is usually
+   only collision-universal, so it should be checked against the variance
+   calculation before being used as a proof primitive.
+
+   This separates the randomness question from the decoding question.  For a
+   fixed query score set \(A(q)\), independent of the hash seed after
+   conditioning on \(q\), no higher independence is used in the hit and load
+   calculation.  What pairwise independence does not give for free is a
+   simultaneous guarantee over an exponentially large class of sets chosen
+   after seeing the hash seed; that would require seed refresh, a finite cover,
+   or stronger limited independence.  The syndrome construction is therefore a
+   good per-query thinning primitive, not a blanket derandomization of every
+   possible top-tuple family.
+
+   The algebraic form is useful for decoding.  The retained tuples satisfy one
+   random linear parity equation
+   \[
+      \sum_j\alpha_j i_j=\sigma-\sum_j\beta_j.
+   \]
+   For \(k=2\), this determines the second coordinate from the first whenever
+   the relevant coefficient is invertible, so the best retained pairs can be
+   found by scanning one side and looking up the matching symbol.  For larger
+   constant \(k\), the same condition is a single-parity-check trellis over
+   syndrome states.  Equivalently, after splitting the coordinates into two
+   halves, one can maintain sorted high-score lists by residue
+   \[
+      g=\sum_{j\in S}\alpha_j i_j,
+      \qquad
+      \sigma-\sum_j\beta_j-g
+   \]
+   on the complementary half and join only compatible residues.  Threshold
+   enumeration of high \(\sum_j w_j(i_j)\) tuples can use \(A^*\),
+   Viterbi-style suffix bounds, max-plus convolution over the group, or sorted
+   residue lists.  The remaining accounting question is not randomness but
+   state cost: a syndrome range of size \(|G|\) gives thinning \(|G|^{-1}\)
+   and also introduces either a \(|G|\)-state decoding object or the
+   corresponding residue-list frontier.
+\end{remark}
+
 \begin{lemma}[Superset product-panel decoder]
    \label{lem:superset-product-panel-decoder}
    Work in the setting of \cref{lem:additive-product-panel-decoder}, but
