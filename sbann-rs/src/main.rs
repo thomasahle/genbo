@@ -353,7 +353,29 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
             apply_soar(&mut r);
             Box::new(r)
         }
-        _ => { eprintln!("router?"); return; }
+        // ARBITRARY-DEPTH (hierk4/5/… for 100M/1B): SBANN_LEVELS = per-level cell counts coarse→fine
+        // (last = Kf), SBANN_BEAMS = per-level beams (len L-1). Routing ≈ O(L·Kf^(1/L)). Defaults to a
+        // 4-level geometric ladder from C0→Kf if SBANN_LEVELS unset.
+        "hierkn" => {
+            let levels: Vec<usize> = std::env::var("SBANN_LEVELS").ok()
+                .map(|s| s.split(',').filter_map(|x| x.trim().parse().ok()).collect::<Vec<_>>())
+                .filter(|v: &Vec<usize>| v.len() >= 2)
+                .unwrap_or_else(|| {
+                    // default L=4 geometric: C0, C0*r, C0*r^2, Kf  (r = (Kf/C0)^(1/3))
+                    let r = (c as f64 / c0 as f64).powf(1.0 / 3.0);
+                    vec![c0, (c0 as f64 * r).round() as usize, (c0 as f64 * r * r).round() as usize, c]
+                });
+            let l = levels.len();
+            let beams: Vec<usize> = std::env::var("SBANN_BEAMS").ok()
+                .map(|s| s.split(',').filter_map(|x| x.trim().parse().ok()).collect::<Vec<_>>())
+                .filter(|v: &Vec<usize>| v.len() == l - 1)
+                .unwrap_or_else(|| (0..l - 1).map(|i| (b0 << i).max(16)).collect());
+            println!("  [hierkn levels={levels:?} beams={beams:?}]");
+            let mut r = vq::HierRouter::train_hkmeans_multi(&dr, &levels, &beams, mu.clone());
+            apply_soar(&mut r);
+            Box::new(r)
+        }
+        _ => { eprintln!("router? (flat|flatsoar|flatrair|flatrand|avq|hier|hierk|hierk3|hierkn)"); return; }
     };
     // SBANN_DPB: dims-per-block for PQ (default 2). dpb=1 -> finer 4-bit-per-dim quant (more codes
     // to scan but better ranking) -- tests whether finer quant cuts probes at high recall.

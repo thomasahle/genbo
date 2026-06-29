@@ -370,23 +370,24 @@ impl Router for AvqRouter {
 /// Routing is O(C0 + b0·Kf/C0) ≈ O(√Kf) instead of flat O(Kf) — this is what makes the BUILD
 /// scale to 100M/1B (flat assign is O(n·Kf), prohibitive). Random centroids (P32: ~k-means for
 /// IVF since exact rerank fixes ranking); the finer Kf compensates for random coarseness.
+/// L-LEVEL general hierarchy (L>=2). Level 0 = coarsest, level L-1 = finest (the actual IVF cells).
+/// Routing is O(C0 + Σ beam[l]·count[l+1]/count[l]) ≈ O(L·Kf^(1/L)) per query — deeper L cuts routing
+/// for 100M/1B. All depths share ONE code path (gather_fine descent); 2-/3-/4-level are just
+/// different `levels`/`beam` configs. Hyperparameters: per-level cell counts (cent lengths), per-level
+/// beam widths, a0 multi-assign, soar λ — all tunable (SBANN_LEVELS/SBANN_BEAMS, or the C0/C1/B0/B1
+/// back-compat knobs). `child[l]` is a general prefix-sum (supports non-uniform fan-out, e.g. random
+/// `train`); hierarchical k-means uses uniform fan-out.
 pub struct HierRouter {
     d: usize,
-    kf: usize,
-    c0n: usize,
-    cf: Vec<i8>,      // kf*d fine centroids, REORDERED so each coarse's (or mid's) fines are contiguous
-    c0: Vec<i8>,      // c0n*d coarse centroids
-    gstart: Vec<u32>, // c0n+1: for 2-level, fine range per coarse; for 3-level, MID range per coarse
     mu: Vec<f32>,
-    b0: usize,        // coarse cells expanded per query/assign
-    // --- 3-level extension (empty c1 => 2-level). routing O(Kf^1/3) instead of O(Kf^1/2). ---
-    c1: Vec<i8>,      // c1n*d MID centroids, grouped by coarse (range = gstart)
-    g1start: Vec<u32>,// c1n+1: contiguous fine range per MID
-    b1: usize,        // mid cells expanded per query
-    // SOAR (idea #3): when >0, BUILD-time multi-assignment spills the 2nd..a0-th fine cells toward
-    // the FIRST cell's residual direction (ScaNN SOAR loss ‖rj‖²+λ(rj·r̂0)²) instead of next-nearest
-    // by L2 — covers orthogonal directions so fewer probes are needed at a given recall. 0 = off
-    // (default; identical to the original assign path). Set via set_soar() from SBANN_SOAR.
+    kf: usize,              // count[L-1] = number of finest cells (= n_cells)
+    levels: usize,          // L
+    cent: Vec<Vec<i8>>,     // cent[l]: count[l]*d centroids; for l>=1 grouped contiguously by parent
+    child: Vec<Vec<u32>>,   // child[l]: count[l]+1 prefix-sum -> each level-l cell's child range in level l+1; child[L-1] empty
+    beam: Vec<usize>,       // beam[l]: # level-l cells expanded per query/assign; len L-1 (finest takes top-k)
+    // SOAR (idea #3): when >0, BUILD-time multi-assignment spills the 2nd..a0-th fine cells toward the
+    // FIRST cell's residual direction (ScaNN SOAR loss ‖rj‖²+λ(rj·r̂0)²) instead of next-nearest by L2 —
+    // covers orthogonal directions so fewer probes are needed at a given recall. 0 = off. Set via set_soar.
     soar: f32,
 }
 
@@ -394,122 +395,83 @@ impl HierRouter {
     /// Hierarchical k-means: k-means the C0 coarse centroids, then k-means `Kf/C0` fine centroids
     /// WITHIN each coarse cell's points. Gives k-means-quality routing at O(n·Kf/C0) train cost
     /// (vs flat k-means O(n·Kf)). This is the scale lever (P58) — replaces random fine centroids.
-    pub fn train_hkmeans(ds: &I8Bin, kf: usize, c0n: usize, b0: usize, mu: Vec<f32>) -> Self {
+    /// GENERAL L-level hierarchical k-means. `counts` = per-level cell counts coarse→fine
+    /// (counts[L-1]=Kf); `beams` = per-level expansion widths (len L-1). Each level's count is rounded
+    /// to a multiple of the previous (uniform fan-out). Train cost O(n·Σ fan) vs flat O(n·Kf). This is
+    /// the one trainer — train_hkmeans (L=2) and train_hkmeans3 (L=3) are thin wrappers; hierk4/5… just
+    /// pass longer `counts`/`beams`. Deeper L cuts per-query routing for 100M/1B.
+    pub fn train_hkmeans_multi(ds: &I8Bin, counts_in: &[usize], beams: &[usize], mu: Vec<f32>) -> Self {
         let (n, d) = (ds.nb, ds.d);
-        let smp = n.min(c0n * 400 + kf * 6);
+        let levels = counts_in.len();
+        assert!(levels >= 2 && beams.len() == levels - 1, "hier: need L>=2 levels and L-1 beams");
+        // actual per-level counts: each a multiple of the previous (uniform fan-out)
+        let mut counts = vec![counts_in[0].max(1)];
+        for l in 1..levels { let fan = (counts_in[l] / counts[l - 1]).max(1); counts.push(counts[l - 1] * fan); }
+        let kf = counts[levels - 1];
+        let smp = n.min(counts[0] * 300 + kf * 6 + counts.iter().sum::<usize>() * 10);
         let mut xn = vec![0f32; smp * d];
         xn.par_chunks_mut(d).enumerate().for_each(|(i, r)| simd::norm_f32(ds.row(i), &mu, r));
-        // coarse k-means
-        let c0f = kmeans::kmeans_f32(&xn, smp, d, c0n, 12, 0xc0a1_5eed);
-        let c0: Vec<i8> = c0f.iter().map(|&v| (v * 127.0).round().clamp(-127.0, 127.0) as i8).collect();
-        // assign sample to nearest coarse
-        let asg: Vec<u32> = (0..smp).into_par_iter().map(|i| {
+        // level 0: flat k-means over the whole sample
+        let mut centf = kmeans::kmeans_f32(&xn, smp, d, counts[0], 12, 0xc0a1_5eed);
+        let mut point_cell: Vec<u32> = (0..smp).into_par_iter().map(|i| {
             let x = &xn[i * d..i * d + d];
-            (0..c0n).map(|q| (simd::l2_f32(x, &c0f[q * d..q * d + d]), q as u32)).min_by(|a, b| a.0.total_cmp(&b.0)).unwrap().1
+            (0..counts[0]).map(|q| (simd::l2_f32(x, &centf[q * d..q * d + d]), q as u32)).min_by(|a, b| a.0.total_cmp(&b.0)).unwrap().1
         }).collect();
-        let mut by_coarse: Vec<Vec<u32>> = vec![Vec::new(); c0n];
-        for i in 0..smp { by_coarse[asg[i] as usize].push(i as u32); }
-        let fpc = (kf / c0n).max(1);
-        let kf2 = fpc * c0n;
-        // per-coarse fine k-means (parallel over coarse cells)
-        let cells: Vec<Vec<i8>> = (0..c0n).into_par_iter().map(|q| {
-            let idx = &by_coarse[q];
-            let m = idx.len().max(1);
-            let mut pts = vec![0f32; m * d];
-            for (j, &pi) in idx.iter().enumerate() { pts[j * d..j * d + d].copy_from_slice(&xn[pi as usize * d..pi as usize * d + d]); }
-            let fine = kmeans::kmeans_f32(&pts, m, d, fpc, 8, 0xf14e_0000 ^ q as u64);
-            fine.iter().map(|&v| (v * 127.0).round().clamp(-127.0, 127.0) as i8).collect()
-        }).collect();
-        let mut cf = vec![0i8; kf2 * d];
-        let mut gstart = vec![0u32; c0n + 1];
-        for q in 0..c0n {
-            gstart[q + 1] = gstart[q] + fpc as u32;
-            cf[gstart[q] as usize * d..(gstart[q] as usize + fpc) * d].copy_from_slice(&cells[q]);
-        }
-        HierRouter { d, kf: kf2, c0n, cf, c0, gstart, mu, b0, c1: Vec::new(), g1start: Vec::new(), b1: 0, soar: 0.0 }
-    }
-
-    /// 3-level hierarchical k-means: coarse C0 -> MID C1 (c1n total) -> fine Kf. Routing becomes
-    /// O(C0 + b0·C1/C0 + b1·Kf/C1) ≈ O(Kf^1/3) centroid-distances/query instead of O(Kf^1/2),
-    /// cutting the (compute-bound) routing phase. gstart = coarse->mid range, g1start = mid->fine range.
-    pub fn train_hkmeans3(ds: &I8Bin, kf: usize, c0n: usize, c1n: usize, b0: usize, b1: usize, mu: Vec<f32>) -> Self {
-        let (n, d) = (ds.nb, ds.d);
-        let smp = n.min(c0n * 200 + c1n * 40 + kf * 6);
-        let mut xn = vec![0f32; smp * d];
-        xn.par_chunks_mut(d).enumerate().for_each(|(i, r)| simd::norm_f32(ds.row(i), &mu, r));
-        // coarse k-means
-        let c0f = kmeans::kmeans_f32(&xn, smp, d, c0n, 12, 0xc0a1_5eed);
-        let c0: Vec<i8> = c0f.iter().map(|&v| (v * 127.0).round().clamp(-127.0, 127.0) as i8).collect();
-        let asg: Vec<u32> = (0..smp).into_par_iter().map(|i| {
-            let x = &xn[i * d..i * d + d];
-            (0..c0n).map(|q| (simd::l2_f32(x, &c0f[q * d..q * d + d]), q as u32)).min_by(|a, b| a.0.total_cmp(&b.0)).unwrap().1
-        }).collect();
-        let mut by_coarse: Vec<Vec<u32>> = vec![Vec::new(); c0n];
-        for i in 0..smp { by_coarse[asg[i] as usize].push(i as u32); }
-        let mpc = (c1n / c0n).max(1);      // mids per coarse
-        let fpm = (kf / (mpc * c0n)).max(1); // fines per mid
-        // per-coarse: mid k-means, assign coarse's points to mids, then per-mid fine k-means.
-        // returns (mids_i8 [mpc*d], fines_i8 [mpc*fpm*d] grouped by mid).
-        let cells: Vec<(Vec<i8>, Vec<i8>)> = (0..c0n).into_par_iter().map(|q| {
-            let idx = &by_coarse[q];
-            let m = idx.len().max(1);
-            let mut pts = vec![0f32; m * d];
-            for (j, &pi) in idx.iter().enumerate() { pts[j * d..j * d + d].copy_from_slice(&xn[pi as usize * d..pi as usize * d + d]); }
-            // mid k-means
-            let midf = kmeans::kmeans_f32(&pts, m, d, mpc, 8, 0x111d_0000 ^ q as u64);
-            let mids: Vec<i8> = midf.iter().map(|&v| (v * 127.0).round().clamp(-127.0, 127.0) as i8).collect();
-            // assign points to mids
-            let masg: Vec<u32> = (0..m).map(|i| {
-                let x = &pts[i * d..i * d + d];
-                (0..mpc).map(|mm| (simd::l2_f32(x, &midf[mm * d..mm * d + d]), mm as u32)).min_by(|a, b| a.0.total_cmp(&b.0)).unwrap().1
+        let mut cent: Vec<Vec<i8>> = vec![centf.iter().map(|&v| (v * 127.0).round().clamp(-127.0, 127.0) as i8).collect()];
+        let mut child: Vec<Vec<u32>> = Vec::with_capacity(levels);
+        // deeper levels: per-parent k-means into `fan` children, grouped contiguously by parent id
+        for l in 1..levels {
+            let par = counts[l - 1];
+            let fan = counts[l] / par;
+            let mut by: Vec<Vec<u32>> = vec![Vec::new(); par];
+            for i in 0..smp { by[point_cell[i] as usize].push(i as u32); }
+            let res: Vec<(Vec<f32>, Vec<u32>)> = (0..par).into_par_iter().map(|p| {
+                let idx = &by[p];
+                let m = idx.len().max(1);
+                let mut pts = vec![0f32; m * d];
+                for (j, &pi) in idx.iter().enumerate() { pts[j * d..j * d + d].copy_from_slice(&xn[pi as usize * d..pi as usize * d + d]); }
+                let cf = kmeans::kmeans_f32(&pts, m, d, fan, 8, 0x111d_0000 ^ ((l as u64) << 40) ^ p as u64);
+                let asg: Vec<u32> = (0..m).map(|i| {
+                    let x = &pts[i * d..i * d + d];
+                    (0..fan).map(|c| (simd::l2_f32(x, &cf[c * d..c * d + d]), c as u32)).min_by(|a, b| a.0.total_cmp(&b.0)).unwrap().1
+                }).collect();
+                (cf, asg)
             }).collect();
-            let mut by_mid: Vec<Vec<u32>> = vec![Vec::new(); mpc];
-            for i in 0..m { by_mid[masg[i] as usize].push(i as u32); }
-            // per-mid fine k-means, contiguous by mid
-            let mut fines = vec![0i8; mpc * fpm * d];
-            for mm in 0..mpc {
-                let mi = &by_mid[mm];
-                let mm2 = mi.len().max(1);
-                let mut fpts = vec![0f32; mm2 * d];
-                for (j, &pi) in mi.iter().enumerate() { fpts[j * d..j * d + d].copy_from_slice(&pts[pi as usize * d..pi as usize * d + d]); }
-                let fine = kmeans::kmeans_f32(&fpts, mm2, d, fpm, 6, 0xf14e_3000 ^ ((q as u64) << 8) ^ mm as u64);
-                let base = mm * fpm * d;
-                for (j, &v) in fine.iter().enumerate() { fines[base + j] = (v * 127.0).round().clamp(-127.0, 127.0) as i8; }
-            }
-            (mids, fines)
-        }).collect();
-        // assemble: mids grouped by coarse (gstart), fines grouped by mid (g1start)
-        let c1n2 = mpc * c0n;
-        let kf3 = fpm * c1n2;
-        let mut c1 = vec![0i8; c1n2 * d];
-        let mut cf = vec![0i8; kf3 * d];
-        let mut gstart = vec![0u32; c0n + 1];
-        let mut g1start = vec![0u32; c1n2 + 1];
-        for q in 0..c0n {
-            gstart[q + 1] = gstart[q] + mpc as u32;
-            let mbase = gstart[q] as usize; // first mid index of this coarse
-            c1[mbase * d..(mbase + mpc) * d].copy_from_slice(&cells[q].0);
-            for mm in 0..mpc {
-                let gmid = mbase + mm;
-                g1start[gmid + 1] = g1start[gmid] + fpm as u32;
-                let fbase = g1start[gmid] as usize;
-                cf[fbase * d..(fbase + fpm) * d].copy_from_slice(&cells[q].1[mm * fpm * d..(mm + 1) * fpm * d]);
-            }
+            let mut newcentf = vec![0f32; counts[l] * d];
+            for p in 0..par { newcentf[p * fan * d..(p + 1) * fan * d].copy_from_slice(&res[p].0); }
+            let mut newpc = vec![0u32; smp];
+            for p in 0..par { let idx = &by[p]; for (j, &pi) in idx.iter().enumerate() { newpc[pi as usize] = (p * fan) as u32 + res[p].1[j]; } }
+            point_cell = newpc;
+            centf = newcentf;
+            cent.push(centf.iter().map(|&v| (v * 127.0).round().clamp(-127.0, 127.0) as i8).collect());
+            let mut cs = vec![0u32; par + 1];
+            for p in 0..par { cs[p + 1] = cs[p] + fan as u32; }
+            child.push(cs);
         }
-        HierRouter { d, kf: kf3, c0n, cf, c0, gstart, mu, b0, c1, g1start, b1, soar: 0.0 }
+        child.push(Vec::new()); // finest level has no children
+        HierRouter { d, mu, kf, levels, cent, child, beam: beams.to_vec(), soar: 0.0 }
     }
 
+    /// 2-level hierarchical k-means (back-compat wrapper): C0 coarse → Kf/C0 fine per coarse.
+    pub fn train_hkmeans(ds: &I8Bin, kf: usize, c0n: usize, b0: usize, mu: Vec<f32>) -> Self {
+        Self::train_hkmeans_multi(ds, &[c0n, kf], &[b0], mu)
+    }
+
+    /// 3-level hierarchical k-means (back-compat wrapper): C0 coarse → C1 mid → Kf fine.
+    pub fn train_hkmeans3(ds: &I8Bin, kf: usize, c0n: usize, c1n: usize, b0: usize, b1: usize, mu: Vec<f32>) -> Self {
+        Self::train_hkmeans_multi(ds, &[c0n, c1n, kf], &[b0, b1], mu)
+    }
+
+    /// 2-level RANDOM-centroid router (P32: random ≈ k-means for IVF since rerank fixes ranking).
+    /// Non-uniform fan-out (variable fines per coarse) — supported by the general prefix-sum `child`.
     pub fn train(ds: &I8Bin, kf: usize, c0n: usize, b0: usize, mu: Vec<f32>) -> Self {
         let (n, d) = (ds.nb, ds.d);
-        // random normalized fine centroids
         let mut seed = 0x77c0_ffeeu64;
         let mut rid = |m: usize| { seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1); (seed >> 11) as usize % m };
         let mut cf0 = vec![0i8; kf * d];
         for j in 0..kf { let id = rid(n); simd::normalize_i8(ds.row(id), &mu, &mut cf0[j * d..j * d + d]); }
-        // coarse centroids = sample of the fine centroids
         let mut c0 = vec![0i8; c0n * d];
         for j in 0..c0n { let id = rid(kf); c0[j * d..j * d + d].copy_from_slice(&cf0[id * d..id * d + d]); }
-        // assign each fine centroid to nearest coarse, then reorder fines contiguous by coarse
         let f2c: Vec<u32> = (0..kf).into_par_iter()
             .map(|j| (0..c0n).map(|q| (simd::l2_i8(&cf0[j * d..j * d + d], &c0[q * d..q * d + d]), q as u32)).min_by_key(|&(dist, _)| dist).unwrap().1)
             .collect();
@@ -523,84 +485,59 @@ impl HierRouter {
         for (newpos, &oldj) in order.iter().enumerate() {
             cf[newpos * d..newpos * d + d].copy_from_slice(&cf0[oldj as usize * d..oldj as usize * d + d]);
         }
-        HierRouter { d, kf, c0n, cf, c0, gstart, mu, b0, c1: Vec::new(), g1start: Vec::new(), b1: 0, soar: 0.0 }
+        HierRouter { d, mu, kf, levels: 2, cent: vec![c0, cf], child: vec![gstart, Vec::new()], beam: vec![b0], soar: 0.0 }
     }
 
     /// Enable SOAR build-time spilled assignment with penalty λ (`s`). 0 disables (default path).
     pub fn set_soar(&mut self, s: f32) { self.soar = s; }
 
-    /// top-`k` nearest fine cells to normalized query `qn`. 2-level: top-b0 coarse -> their fines.
-    /// 3-level (c1 non-empty): top-b0 coarse -> top-b1 mids -> their fines. O(Kf^1/3) routing.
-    fn route_fine(&self, qn: &[i8], k: usize, out: &mut Vec<u32>) {
+    /// General L-level descent: top-beam[0] coarse → expand to children → top-beam[l] … → collect ALL
+    /// finest-level candidates as (l2, fine_id) into `fd` (NOT truncated — route_fine does top-k,
+    /// route_fine_soar does the SOAR spill). One code path for every depth L>=2.
+    fn gather_fine(&self, qn: &[i8], fd: &mut Vec<(i32, u32)>) {
         let d = self.d;
-        // top-b0 coarse
-        let mut cd: Vec<(i32, u32)> = (0..self.c0n).map(|q| (simd::l2_i8(qn, &self.c0[q * d..q * d + d]), q as u32)).collect();
-        let b0 = self.b0.min(cd.len());
-        cd.select_nth_unstable(b0 - 1);
-        out.clear();
-        if self.c1.is_empty() {
-            // 2-level: fines directly under the top-b0 coarse
-            let mut fd: Vec<(i32, u32)> = Vec::with_capacity(self.kf / self.c0n * b0 + 16);
-            for &(_, q) in &cd[..b0] {
-                let (s, e) = (self.gstart[q as usize] as usize, self.gstart[q as usize + 1] as usize);
-                for f in s..e { fd.push((simd::l2_i8(qn, &self.cf[f * d..f * d + d]), f as u32)); }
+        let l0 = self.cent[0].len() / d;
+        let mut cd: Vec<(i32, u32)> = (0..l0).map(|q| (simd::l2_i8(qn, &self.cent[0][q * d..q * d + d]), q as u32)).collect();
+        let b = self.beam[0].min(cd.len());
+        if b > 0 && b < cd.len() { cd.select_nth_unstable(b - 1); cd.truncate(b); }
+        let mut sel: Vec<u32> = cd.iter().map(|&(_, c)| c).collect();
+        fd.clear();
+        for l in 1..self.levels {
+            let mut nd: Vec<(i32, u32)> = Vec::with_capacity(sel.len() * 8 + 16);
+            for &p in &sel {
+                let (s, e) = (self.child[l - 1][p as usize] as usize, self.child[l - 1][p as usize + 1] as usize);
+                for c in s..e { nd.push((simd::l2_i8(qn, &self.cent[l][c * d..c * d + d]), c as u32)); }
             }
-            let k = k.min(fd.len());
-            if k > 0 { fd.select_nth_unstable(k - 1); out.extend(fd[..k].iter().map(|&(_, f)| f)); }
-        } else {
-            // 3-level: top-b0 coarse -> score their MIDS -> top-b1 mids -> their fines
-            let mut md: Vec<(i32, u32)> = Vec::with_capacity(64);
-            for &(_, q) in &cd[..b0] {
-                let (s, e) = (self.gstart[q as usize] as usize, self.gstart[q as usize + 1] as usize);
-                for mi in s..e { md.push((simd::l2_i8(qn, &self.c1[mi * d..mi * d + d]), mi as u32)); }
-            }
-            let b1 = self.b1.min(md.len());
-            if b1 > 0 { md.select_nth_unstable(b1 - 1); }
-            let mut fd: Vec<(i32, u32)> = Vec::with_capacity(256);
-            for &(_, mi) in &md[..b1] {
-                let (s, e) = (self.g1start[mi as usize] as usize, self.g1start[mi as usize + 1] as usize);
-                for f in s..e { fd.push((simd::l2_i8(qn, &self.cf[f * d..f * d + d]), f as u32)); }
-            }
-            let k = k.min(fd.len());
-            if k > 0 { fd.select_nth_unstable(k - 1); out.extend(fd[..k].iter().map(|&(_, f)| f)); }
+            if l == self.levels - 1 { *fd = nd; return; }
+            let b = self.beam[l].min(nd.len());
+            if b > 0 && b < nd.len() { nd.select_nth_unstable(b - 1); nd.truncate(b); }
+            sel = nd.iter().map(|&(_, c)| c).collect();
         }
     }
 
-    /// SOAR-aware multi-assignment (idea #3). Gathers the SAME bounded candidate-fine set route_fine
-    /// would (top-b0 coarse -> [top-b1 mids ->] their fines), then: i0 = nearest fine by L2; the
-    /// remaining a0-1 picks minimize the ScaNN SOAR loss  L = ‖rj‖² + λ·(rj·r̂0)²  where r̂0 is the
-    /// unit FIRST residual (qn - cf[i0]) and rj = qn - cf[j]. Penalizing the parallel-to-r0 component
-    /// pushes the spilled copies to cover ORTHOGONAL directions, so a query needs fewer probes to hit
-    /// a cell that contains the point. Only used at BUILD; query routing (probe) is unchanged.
+    /// top-`k` nearest finest cells to normalized query `qn`, via the general L-level descent.
+    fn route_fine(&self, qn: &[i8], k: usize, out: &mut Vec<u32>) {
+        let mut fd: Vec<(i32, u32)> = Vec::new();
+        self.gather_fine(qn, &mut fd);
+        out.clear();
+        let k = k.min(fd.len());
+        if k > 0 { fd.select_nth_unstable(k - 1); out.extend(fd[..k].iter().map(|&(_, f)| f)); }
+    }
+
+    /// SOAR-aware multi-assignment (idea #3). Gathers the SAME bounded finest-candidate set route_fine
+    /// would (general L-level descent), then: i0 = nearest finest cell by L2; the remaining a0-1 picks
+    /// minimize the ScaNN SOAR loss  L = ‖rj‖² + λ·(rj·r̂0)²  where r̂0 is the unit FIRST residual
+    /// (qn - cent_fine[i0]) and rj = qn - cent_fine[j]. Penalizing the parallel-to-r0 component pushes
+    /// the spilled copies to cover ORTHOGONAL directions, so a query needs fewer probes to hit a cell
+    /// that contains the point. Only used at BUILD; query routing (probe) is unchanged.
     fn route_fine_soar(&self, qn: &[i8], a0: usize, soar: f32, out: &mut Vec<u32>) {
         let d = self.d;
-        // top-b0 coarse
-        let mut cd: Vec<(i32, u32)> = (0..self.c0n).map(|q| (simd::l2_i8(qn, &self.c0[q * d..q * d + d]), q as u32)).collect();
-        let b0 = self.b0.min(cd.len());
-        cd.select_nth_unstable(b0 - 1);
-        // gather candidate fines (l2, fine_id) WITHOUT truncation (so SOAR has room to spill)
-        let mut fd: Vec<(i32, u32)> = Vec::with_capacity(self.kf / self.c0n.max(1) * b0 + 16);
-        if self.c1.is_empty() {
-            for &(_, q) in &cd[..b0] {
-                let (s, e) = (self.gstart[q as usize] as usize, self.gstart[q as usize + 1] as usize);
-                for f in s..e { fd.push((simd::l2_i8(qn, &self.cf[f * d..f * d + d]), f as u32)); }
-            }
-        } else {
-            let mut md: Vec<(i32, u32)> = Vec::with_capacity(64);
-            for &(_, q) in &cd[..b0] {
-                let (s, e) = (self.gstart[q as usize] as usize, self.gstart[q as usize + 1] as usize);
-                for mi in s..e { md.push((simd::l2_i8(qn, &self.c1[mi * d..mi * d + d]), mi as u32)); }
-            }
-            let b1 = self.b1.min(md.len());
-            if b1 > 0 { md.select_nth_unstable(b1 - 1); }
-            for &(_, mi) in &md[..b1] {
-                let (s, e) = (self.g1start[mi as usize] as usize, self.g1start[mi as usize + 1] as usize);
-                for f in s..e { fd.push((simd::l2_i8(qn, &self.cf[f * d..f * d + d]), f as u32)); }
-            }
-        }
+        let cf = &self.cent[self.levels - 1]; // finest centroids
+        let mut fd: Vec<(i32, u32)> = Vec::new();
+        self.gather_fine(qn, &mut fd);
         out.clear();
         if fd.is_empty() { return; }
-        // i0 = nearest fine (the primary assignment is unchanged from the L2 path)
+        // i0 = nearest finest cell (primary assignment unchanged from the L2 path)
         let mut i0pos = 0usize;
         for (idx, &(dist, _)) in fd.iter().enumerate() { if dist < fd[i0pos].0 { i0pos = idx; } }
         let i0 = fd[i0pos].1;
@@ -610,7 +547,7 @@ impl HierRouter {
         let off0 = i0 as usize * d;
         let mut r0 = [0f32; 256];
         let mut nrm = 0f32;
-        for k in 0..d { let v = qn[k] as f32 - self.cf[off0 + k] as f32; r0[k] = v; nrm += v * v; }
+        for k in 0..d { let v = qn[k] as f32 - cf[off0 + k] as f32; r0[k] = v; nrm += v * v; }
         let inv = 1.0 / nrm.sqrt().max(1e-9);
         for k in 0..d { r0[k] *= inv; }
         let qdot: f32 = (0..d).map(|k| qn[k] as f32 * r0[k]).sum();
@@ -619,7 +556,7 @@ impl HierRouter {
         for (idx, &(l2, f)) in fd.iter().enumerate() {
             if idx == i0pos { continue; }
             let offj = f as usize * d;
-            let pdot: f32 = (0..d).map(|k| self.cf[offj + k] as f32 * r0[k]).sum();
+            let pdot: f32 = (0..d).map(|k| cf[offj + k] as f32 * r0[k]).sum();
             let proj = qdot - pdot;
             loss.push((l2 as f32 + soar * proj * proj, f));
         }
