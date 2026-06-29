@@ -36,6 +36,7 @@
 \newcommand{\ANN}{\mathrm{ANN}}
 \newcommand{\Ball}{\mathrm{B}}
 \newcommand{\polylog}{\operatorname{polylog}}
+\newcommand{\Ent}{\operatorname{Ent}}
 \newcommand{\ip}[2]{\langle #1,#2\rangle}
 
 \title{Cumulative-Score Routes Toward Polylogarithmic Loss\\
@@ -89790,17 +89791,132 @@ amplified in the next proposition.
    are data processing along \(T\to Q\to U\).
 \end{proof}
 
+\begin{lemma}[Gaussian information-charge contraction]
+   \label{lem:gaussian-information-charge-contraction}
+   In the setting of \cref{lem:information-charge-survivor-test}, assume the
+   near block is a Gaussian channel
+   \[
+      U=\chi Q+\sqrt{1-\chi^2}\,G,
+      \qquad
+      0\le\chi<1,
+      \tag{GIC1}
+   \]
+   where \(Q,G\) are independent centered Gaussian blocks with the same
+   covariance.  Then every finite query transcript \(T=f(Q)\) satisfies
+   \[
+      I(T;U)\le \chi^2 I(T;Q)\le\chi^2 H(T).
+      \tag{GIC2}
+   \]
+   Consequently, in any transitive symmetric raw transcript panel with
+   transcript entropy rate \(R_T=r^{-1}H(T)\), the selected near law has
+   information charge at most
+   \[
+      i_t\le\chi^2R_T
+      \tag{GIC3}
+   \]
+   for every transcript \(t\).  A fixed-transcript far threshold charged at
+   any rate
+   \[
+      C_t>\chi^2R_T+o(1)
+      \tag{GIC4}
+   \]
+   therefore cannot lie below the selected near mean \(m_t\).
+\end{lemma}
+
+\begin{proof}
+   Rescale to standard Gaussian measure \(\gamma\).  For each transcript value
+   \(t\), let
+   \[
+      f_t(q)=\frac{\Pr[T=t\mid Q=q]}{\Pr[T=t]},
+      \qquad
+      \Ent_\gamma(f)=\int f\log f\,d\gamma .
+   \]
+   Then
+   \[
+      I(T;Q)=\sum_t\Pr[T=t]\Ent_\gamma(f_t).
+      \tag{GIC5}
+   \]
+   The density of \(U\) conditioned on \(T=t\), relative to its marginal
+   Gaussian law, is \(P_\tau f_t\), where \(P_\tau\) is the
+   Ornstein--Uhlenbeck semigroup with \(e^{-\tau}=\chi\).  Hence
+   \[
+      I(T;U)=\sum_t\Pr[T=t]\Ent_\gamma(P_\tau f_t).
+      \tag{GIC6}
+   \]
+   Gaussian entropy contraction for the Ornstein--Uhlenbeck semigroup gives
+   \[
+      \Ent_\gamma(P_\tau f)\le e^{-2\tau}\Ent_\gamma(f)=\chi^2\Ent_\gamma(f).
+      \tag{GIC7}
+   \]
+   Summing \((GIC7)\) in \((GIC6)\) proves the first inequality in
+   \((GIC2)\); the second is \(I(T;Q)\le H(T)\).
+
+   In the transitive symmetric case the number
+   \(D(P_{U\mid T=t}\|P_U)\) is independent of \(t\), and its average over
+   \(t\) is \(I(T;U)\).  Therefore \(i_t=r^{-1}I(T;U)\le\chi^2R_T\).  The
+   final claim is \cref{lem:information-charge-survivor-test}.
+\end{proof}
+
+\begin{corollary}[Polylog raw-list entropy barrier]
+   \label{cor:polylog-raw-list-entropy-barrier}
+   Let \(\mathcal A_r\) be a transitive label set with
+   \(r^{-1}\log|\mathcal A_r|\to R>0\), and let
+   \(U=\chi Q+\sqrt{1-\chi^2}G\) with fixed \(\chi<1\).  Suppose a raw query
+   decoder reports an ordered list
+   \[
+      A_1(Q),\ldots,A_K(Q)\in\mathcal A_r,
+      \qquad
+      K=e^{o(r)},
+      \tag{RLB1}
+   \]
+   and assume each reported position is equivariant under the label action, so
+   \(A_j\) is uniform and its conditional laws are label-translates.  Assume
+   also that each reported position is charged as an ordinary stored label:
+   the fixed-label far threshold has rate
+   \[
+      C_r\ge R-o(1).
+      \tag{RLB2}
+   \]
+   For each fixed position \(j\), condition on \(A_j=a\) and let \(m_{j,a}\)
+   be the corresponding selected near mean.  Then the far threshold for that
+   label cannot be below \(m_{j,a}\) for all sufficiently large \(r\).  Thus a
+   polylogarithmic raw top-list can remove the information barrier only if it
+   also changes the charged object--for example by output-sensitive bucket
+   responsibility, quotient aggregation, reduced-cost rate coverage, or a
+   Fano prefix moment.  Merely replacing top-one by top-\(K\) raw labels gives
+   no law-of-large-numbers margin at the full label-entropy threshold.
+\end{corollary}
+
+\begin{proof}
+   For every position \(j\), the transcript \(A_j\) has entropy at most
+   \(\log|\mathcal A_r|=rR+o(r)\), and by equivariance it is in fact uniform
+   on the labels it can report in the transitive panel.  The conditional
+   divergences are independent of the label \(a\).  By
+   \cref{lem:gaussian-information-charge-contraction}, that common conditional
+   near-law charge is at most
+   \[
+      \chi^2R+o(1).
+   \]
+   Since \(\chi<1\) and \(R>0\), the charged far rate \(C_r\ge R-o(1)\) is
+   strictly larger than this quantity for all large \(r\).  Applying
+   \cref{lem:information-charge-survivor-test} to each reported position proves
+   the threshold comparison.  The list length contributes only
+   \(r^{-1}\log K=o(1)\), so it cannot close the constant rate gap.
+\end{proof}
+
 \begin{remark}[How a deep code or lattice construction can pass the test]
    \label{rem:code-lattice-survivor-map}
    \Cref{lem:information-charge-survivor-test} is the falsification test for
    code and lattice proposals after \cref{rem:raw-top-one-entropy-barrier}.
    A raw maximum-likelihood or nearest-codeword decoder for a code of size
    \(e^{rR}\) pays \(C_t=R\) when each codeword is stored as an independent
-   bucket.  The selected label has at most \(I(T;U)/r<R\) information after the
-   noisy near channel, so algebraic structure alone cannot make the selected
-   near score beat the full-rate far threshold.  Reporting the top
-   \(\polylog m\) raw codewords changes only lower-order query work unless the
-   storage or bucket charge is also changed.
+   bucket.  By \cref{lem:gaussian-information-charge-contraction}, the selected
+   label has at most \(\chi^2R+o(1)\) information rate after the noisy near
+   channel, so algebraic structure alone cannot make the selected near score
+   beat the full-rate far threshold.  \Cref{cor:polylog-raw-list-entropy-barrier}
+   gives the same conclusion for any equivariant top-\(\polylog m\) raw list:
+   the list changes only lower-order query work unless the storage or bucket
+   charge is also changed.
 
    The surviving uses of coding and lattice algorithms are therefore more
    specific.
@@ -92984,6 +93100,10 @@ entropy is the certified work entropy rather than the whole label universe.
 screening rule for deep code and lattice proposals: the far-tail charge of the
 reported transcript must be no larger than the conditional information that the
 near data block retains about that transcript, up to polylogarithmic slack.
+\Cref{lem:gaussian-information-charge-contraction} makes the Gaussian version
+quantitative, \(I(T;U)\le\chi^2 I(T;Q)\), and
+\cref{cor:polylog-raw-list-entropy-barrier} applies it to rule out
+equivariant top-\(\polylog m\) raw codeword lists at full label charge.
 \Cref{lem:min-entropy-information-set} identifies the best chart for a linear
 block: assign each coordinate its soft local entropy
 \(\lambda_i=\log\sum_a\exp(\beta(\omega_i(a)-m_i))\), then choose a
