@@ -17931,6 +17931,75 @@ partition ignores the bias coordinates that certify the list size.
    \cref{prop:sampled-structured-panel} applies.
 \end{proof}
 
+\begin{lemma}[Certified approximate quotient samplers lose only their distortion]
+   \label{lem:certified-approximate-quotient-sampler}
+   Work in the setting of \cref{cor:bucket-quotient-quadrature}.  Let
+   \(W_q(b)\) be the exact aggregate bucket weights and
+   \(\Pi_q(b)=W_q(b)/\sum_aW_q(a)\).  Suppose the exact quotient panel
+   satisfies \((BQ1)\)--\((BQ3)\) with slack \(L_m\).  Let an approximate
+   sampler instead use positive weights \(\widehat W_q(b)\) and normalized law
+   \[
+      \widehat\Pi_q(b)
+      =
+      \frac{\widehat W_q(b)}{\sum_a\widehat W_q(a)} .
+   \]
+   If, for every promised query \(q\) and every bucket \(b\),
+   \[
+      K^{-1}W_q(b)\le\widehat W_q(b)\le K W_q(b),
+      \tag{AQS1}
+   \]
+   then
+   \[
+      K^{-2}\Pi_q(b)\le\widehat\Pi_q(b)\le K^2\Pi_q(b)
+      \qquad\text{for all }b.
+      \tag{AQS2}
+   \]
+   Consequently the same stored buckets satisfy
+   \[
+      \sum_{b\in\mathcal B}|C_b|\le m^{1+\rho}L_m,
+      \tag{AQS3}
+   \]
+   \[
+      \sum_{\substack{x\in P\\\|x-q\|>cr}}
+      \sum_{b:x\in C_b}\widehat\Pi_q(b)
+      \le K^2m^\rho L_m,
+      \tag{AQS4}
+   \]
+   and
+   \[
+      \sum_{b:p\in C_b}\widehat\Pi_q(b)
+      \ge (K^2L_m)^{-1}
+      \qquad\text{whenever }\|p-q\|\le r.
+      \tag{AQS5}
+   \]
+   Thus a certified approximate aggregate sampler with
+   \(K=\log^{O_c(1)}m\) preserves the clean polylogarithmic sampled ANN
+   bounds.  If \(K=m^{o(1)}\), the same argument preserves only a
+   subpolynomial loss.  An approximate loopy-BP, Monte Carlo, or lattice
+   sampler therefore needs a direct certificate of \((AQS1)\), or an
+   equivalent certificate on the normalized bucket law and marked bucket
+   sums; local marginal accuracy alone is not the bucket-spectrum theorem.
+\end{lemma}
+
+\begin{proof}
+   Summing \((AQS1)\) over \(b\) gives
+   \[
+      K^{-1}\sum_bW_q(b)
+      \le
+      \sum_b\widehat W_q(b)
+      \le
+      K\sum_bW_q(b).
+   \]
+   Dividing the pointwise inequalities in \((AQS1)\) by these two normalizer
+   bounds gives \((AQS2)\).  The storage bound \((AQS3)\) is identical to
+   \((BQ1)\).  Applying the upper half of \((AQS2)\) to every bucket in the far
+   co-load sum gives \((AQS4)\), and applying the lower half to the near
+   bucket sum gives \((AQS5)\).  With \(K=\polylog m\), the new slack
+   \(K^2L_m\) is still a power of \(\log m\), so
+   \cref{prop:sampled-structured-panel} applies with only polylogarithmic
+   overhead.
+\end{proof}
+
 \begin{remark}[What the quotient buys]
    \label{rem:bucket-quotient}
    \Cref{cor:bucket-quotient-quadrature} separates two entropies that were
