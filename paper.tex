@@ -89818,6 +89818,45 @@ top-\(k\) backup.
    and the hypothesis \(\kappa\log2<1\).
 \end{proof}
 
+\begin{lemma}[Finite-panel product-sign transfer check]
+   \label{lem:product-sign-transfer-check}
+   Fix a concrete product-sign panel with bit logits \(u_a(x)\), and let
+   \(Q_s^{\rm ref}\) be reference upper thresholds satisfying
+   \[
+      \Prb_{X\sim\mathcal D}\{\Psi_s(X)\ge Q_s^{\rm ref}\}\le\eta
+      \qquad(s\in\{\pm1\}^r).
+   \]
+   Suppose the node empirical thresholds obey
+   \(Q_s^{\rm node}\le Q_s^{\rm ref}+E\) for every label \(s\), and put
+   \(T=\max_s Q_s^{\rm ref}+E\).  For a near pair \(p,q\), let
+   \(M_{p,q}\) and \(V_{p,q}\) be the tilted mean and variance in
+   \cref{lem:product-sign-mean-gap-certificate}.  If, for some
+   \(\Delta_0,\Gamma,V_0>0\),
+   \[
+      M_{p,q}\ge T+\Delta_0+\Gamma,
+      \qquad
+      V_{p,q}\le V_0 ,
+   \]
+   then
+   \[
+      W_{p,q}\{\Psi_s(p)\ge Q_s^{\rm node}+\Delta_0\}
+      \ge
+      \frac{\Gamma^2}{V_0+\Gamma^2}.
+   \]
+   In particular, if \(T\le rt\), \(M_{p,q}\ge r(t+\varepsilon)\),
+   \(V_{p,q}=O(r)\), and \(\Delta_0=O(1)\), then the tilted good mass is
+   \(1-O_{\varepsilon}(1/r)\).
+\end{lemma}
+
+\begin{proof}
+   Since \(Q_s^{\rm node}\le T\) for every label, the event
+   \(\{\Psi_s(p)\ge T+\Delta_0\}\) is contained in the posterior-rank good
+   event \(\{\Psi_s(p)\ge Q_s^{\rm node}+\Delta_0\}\).  Apply
+   \cref{lem:product-sign-mean-gap-certificate} with threshold \(T\) and use
+   \(M_{p,q}-(T+\Delta_0)\ge\Gamma\), \(V_{p,q}\le V_0\).  The final
+   statement takes \(\Gamma\ge r\varepsilon-\Delta_0\).
+\end{proof}
+
 Thus the finite special case would follow from a posterior-rank margin statement: for every near pair not handled by the resident guard, a non-negligible fraction of the tilted affinity must lie on outcomes for which $p$ is inside the top-$\xi$ posterior child by enough margin. This is only a sufficient condition. By \cref{lem:soft-surplus-decomposition}, a failed fixed-margin test can still have large \(\mathcal H_\xi\) if the tilted winner, or a few near-winner outcomes, have moderate posterior surplus. The diagnostic should therefore report not only $\mathcal H_\xi$, but also $\mathsf A_\beta(p,q)$, the soft surplus \(\mathcal H_\xi/\mathsf A_\beta\), the tilted winner's contribution fraction from \cref{lem:soft-surplus-decomposition}, \(W_{p,q}(G_\Delta(p))\), and the certified lower bound in \cref{lem:posterior-rank-margin}, for a margin such as $\Delta=1/\beta$. For the balanced-softmax candidate
 \[
    K_x(j)=
@@ -90099,6 +90138,32 @@ One should also separate the resident-guard regime from the genuine finite-chann
    longer blocked at the bounded-margin tail; the remaining non-ideal work is
    to transfer this i.i.d. rate calculation to the actual whitened
    product-sign panels and their empirical thresholds.
+
+   The first transfer stress test keeps exactly this normal form.  The script
+   \texttt{impl/product\_sign\_transfer\_stress.py} measures the concrete bit
+   logits of the retained product-sign panel, the reference and node
+   \(\Psi_s\)-thresholds, the fitted Gaussian rate level, and the exact tilted
+   good mass whenever \(B\) is small enough to enumerate all labels.  With
+   \(d=32\), near correlation \(0.95\), target bit standard deviation \(3.5\),
+   and whitened product-sign panels, exact \(B=16,32\) runs at
+   \(m=10000\) had fitted bit standard deviations \(3.14\)--\(3.77\), q95
+   absolute cross-bit correlations \(0.224\)--\(0.371\), and q95 threshold
+   levels below the fitted Gaussian Cramer level by \(0.91\)--\(1.24\) per
+   bit.  The exact tilted good-mass lower \(5\%\) quantiles were
+   \(0.813\)--\(0.981\), and the certified value divided by \(\alpha\) was
+   \(0.648\)--\(0.778\).  A wider exact \(B=256\) check gave exact good-mass
+   lower \(5\%\) \(0.9988\)--\(0.9996\) and per-bit Cramer slack
+   \(1.35\)--\(1.50\).  A sampled-threshold \(B=4096\) run kept sampled
+   good-mass lower \(5\%\) equal to \(1\) and per-bit Cramer slack
+   \(1.55\)--\(1.70\), but this is evidence rather than a uniform
+   all-label theorem.  The same diagnostic catches the known bad control:
+   without whitening in the \(B=256\) run, the fitted bit standard deviation
+   fell to \(0.57\)--\(0.63\), the minimum label exponent rose to
+   \(1.95\)--\(2.73\), and the lower \(5\%\) mean gap was negative.  Thus the
+   transfer problem has not been hidden by a reformulation: the live theorem
+   is exactly \cref{lem:product-sign-transfer-check} for random whitened
+   product-sign bits, with cross-bit dependence and empirical quantiles under
+   control.
 
    The frozen product-sign target is therefore not another certificate form:
    it is the same distributional bounded-margin posterior-rank lower tail for
