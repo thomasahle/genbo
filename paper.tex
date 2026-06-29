@@ -5674,6 +5674,131 @@ partition ignores the bias coordinates that certify the list size.
    tending to one.  This proves \((CSM2)\)--\((CSM3)\).
 \end{proof}
 
+\begin{lemma}[Overlap spectrum for additive Gaussian masks]
+   \label{lem:additive-mask-overlap-spectrum}
+   Fix \(k\ge2\) and finite coordinate alphabets \(\mathcal C_j\).  Let
+   \(M_{j,a}\), \(j\in[k]\), \(a\in\mathcal C_j\), be independent standard
+   Gaussians, and for a tuple \(i=(i_1,\ldots,i_k)\) put
+   \[
+      M(i)=\sum_{j=1}^kM_{j,i_j}.
+   \]
+   For \(p=e^{-L}\downarrow0\), let \(s_p\) satisfy
+   \[
+      \Prb[N(0,k)\ge s_p]=p,
+   \]
+   and retain \(R_p=\{i:M(i)\ge s_p\}\).  For
+   \(A\subseteq\mathcal C_1\times\cdots\times\mathcal C_k\), write
+   \[
+      N_r(A)=
+      |\{(i,i')\in A^2:|\{j:i_j=i'_j\}|=r\}|
+      \qquad(0\le r\le k).
+   \]
+   Then, for \(X_A=|A\cap R_p|\) and all sufficiently large \(L\),
+   \[
+      \E X_A=|A|p,
+      \tag{AMO1}
+   \]
+   and
+   \[
+      \E X_A^2
+      \le
+      |A|p
+      +
+      C_kL^{C_k}
+      \sum_{r=0}^{k-1}
+      N_r(A)\,
+      p^{2k/(k+r)} .
+      \tag{AMO2}
+   \]
+   Consequently, if \(\mu=|A|p\) and
+   \[
+      C_kL^{C_k}
+      \sum_{r=0}^{k-1}
+      N_r(A)p^{2k/(k+r)}
+      \le K\mu^2 ,
+      \tag{AMO3}
+   \]
+   then
+   \[
+      \Prb[A\cap R_p\ne\emptyset]
+      \ge
+      \frac{\mu^2}{\mu+K\mu^2}.
+      \tag{AMO4}
+   \]
+
+   Thus the scalar additive mask is random enough precisely for top-tuple
+   sets whose overlap spectrum is spread.  It does not need full independent
+   thinning on every tuple pair, but high-overlap pair energy replaces the
+   variance term that a pairwise-independent syndrome would have removed.
+\end{lemma}
+
+\begin{proof}
+   The first moment is immediate because every tuple has \(M(i)\sim N(0,k)\).
+   For two distinct tuples \(i,i'\) with exactly \(r<k\) equal coordinates,
+   the pair \((M(i),M(i'))\) is centered Gaussian with variance \(k\) in both
+   coordinates and correlation \(\rho=r/k\).  The standard bivariate Gaussian
+   upper tail bound gives, uniformly over fixed \(0\le r<k\),
+   \[
+      \Prb[M(i)\ge s_p,\ M(i')\ge s_p]
+      \le
+      C_kL^{C_k}
+      \exp\!\left(-\frac{s_p^2}{k(1+\rho)}\right).
+      \tag{AMO5}
+   \]
+   Since \(s_p^2=2kL+O_k(\log L)\) and \(p=e^{-L}\), the right hand side is
+   bounded, after increasing the polylogarithmic factor, by
+   \[
+      C_kL^{C_k}p^{2/(1+\rho)}
+      =
+      C_kL^{C_k}p^{2k/(k+r)} .
+   \]
+   Summing this estimate over all ordered off-diagonal pairs in \(A\), and
+   adding the diagonal contribution \(|A|p\), proves \((AMO2)\).  Finally,
+   Paley--Zygmund gives
+   \[
+      \Prb[X_A>0]\ge\frac{(\E X_A)^2}{\E X_A^2},
+   \]
+   and substituting \((AMO1)\)--\((AMO3)\) proves \((AMO4)\).
+\end{proof}
+
+\begin{corollary}[Spread criterion for scalar auxiliary thinning]
+   \label{cor:scalar-mask-spread-criterion}
+   In the setting of \cref{lem:additive-mask-overlap-spectrum}, suppose a
+   query score \(W(i)=\sum_jw_j(i_j)\) is fixed independently of the auxiliary
+   mask, and let \(A_T=\{i:W(i)\ge T\}\) be the top-tuple witness set.  If
+   \(|A_T|p\ge\mu_0>0\) and the overlap-spectrum condition \((AMO3)\) holds
+   for \(A_T\) with \(K=\polylog(1/p)\), then
+   \(O_{\mu_0}(K\log(1/\delta))\) independent scalar masks hit \(A_T\) with
+   probability at least \(1-\delta\).  Each mask can be decoded by the
+   Lagrange product heap of \cref{lem:scalar-mask-lagrange-decoder}, followed
+   by exact filtering on both scores.
+
+   Conversely, any proposed proof using a scalar auxiliary score must certify
+   this overlap spectrum, or an equivalent conditional-entropy statement, for
+   the top-tuple sets produced by the query.  One-coordinate stars violate the
+   criterion at polynomial scale, as in
+   \cref{lem:additive-mask-star-obstruction}; balanced product witnesses meet
+   it up to the logarithmic extreme-value tax of
+   \cref{cor:critical-scalar-mask-log-tax}.
+\end{corollary}
+
+\begin{proof}
+   One scalar mask hits \(A_T\) with probability at least
+   \[
+      \frac{\mu^2}{\mu+K\mu^2}
+      \ge
+      \Omega_{\mu_0}(1/K)
+   \]
+   by \cref{lem:additive-mask-overlap-spectrum}.  Independent repetitions
+   amplify this to \(1-\delta\).  The decoding statement is exactly
+   \cref{lem:scalar-mask-lagrange-decoder}: every tuple passing both
+   thresholds also passes the single Lagrange score threshold, and exact
+   filtering removes the false positives.  The final sentence substitutes the
+   overlap spectra already exhibited by
+   \cref{lem:additive-mask-star-obstruction} and
+   \cref{cor:critical-scalar-mask-log-tax}.
+\end{proof}
+
 \begin{lemma}[Lagrange decoding for scalar-masked product thresholds]
    \label{lem:scalar-mask-lagrange-decoder}
    Let \(\mathcal C=\mathcal C_1\times\cdots\times\mathcal C_k\), and give
@@ -6250,6 +6375,16 @@ partition ignores the bias coordinates that certify the list size.
    the usual Lagrange heap remains only a terminal polylog tool.  For
    cumulative-score depths \(k=\Theta(\log m)\), this logarithmic tax is again
    far beyond the allowed endpoint overhead.
+
+   \Cref{lem:additive-mask-overlap-spectrum} gives the non-product version of
+   the same diagnosis.  After conditioning on the query weights, a scalar
+   auxiliary mask succeeds whenever the fixed top-tuple set has small
+   high-overlap pair spectrum; it fails when many acceptable tuples share most
+   coordinates, because those tuples see almost the same auxiliary Gaussian.
+   Thus a scalar mask is a usable decodable thinning primitive only together
+   with a certified overlap-spread condition.  Without that condition, a
+   syndrome or tabulation mask is the right abstraction: pairwise independence
+   removes the overlap spectrum from the second moment entirely.
 
    A better decodable pseudorandom mask is a decomposable syndrome or
    tabulation hash.  Let \(G\) be a finite abelian group, choose independent
