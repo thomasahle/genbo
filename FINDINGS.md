@@ -1982,6 +1982,19 @@ P127. (*** OOD gap is ROUTING, not scan: RESIDQ reaches our routing ceiling; Sca
     manifold (query-aware routing failed P96/98; needs more cells / OOD-distribution centroids / spill).
     Scan-accuracy work on OOD is DONE; the lever is routing. (No more ScaNN re-runs -- ample data.)
 
+P128. (*** USER INSIGHT CONFIRMED: joint tree-EM RAISES the OOD routing ceiling -- the right lever ***)
+    OOD is routing-limited (P127); user flagged that the joint cross-level partition optimization
+    (tree-EM, SBANN_TREEEM, built P119 for msspacev but NEVER tried on OOD) should improve the partition.
+    CONFIRMED (em_ceiling.log, 1M OOD, routing pool-recall ceiling = rerank whole pool): noEM 0.8958/
+    0.9308/0.9433/0.9487 (p128/256/384/512) -> +EM(3,cheap beam=8) 0.9112/0.9387/0.9475/0.9517 = +0.3 to
+    +1.5pt (largest at small p). This is PARTITION quality (the ceiling, perfect rerank), not scan, and
+    NO index bloat (unlike a0). So the OOD lever = tree-EM (raises ceiling) + RESIDQ (P125, maxes scan to
+    the ceiling). EM ceiling 0.9517 still < ScaNN achievable (lts150 0.9565) so EM narrows but doesn't
+    fully close the routing gap; more rounds / OOD-distribution centroids may help further. a0 multi-assign
+    test was BOTCHED (t_surv truncation didn't cover the bloated pool -> invalid; high a0 also has steep
+    QPS cost from the larger rerank pool). NEXT: confirm the ceiling gain -> real recall@QPS (EM+RESIDQ
+    +fastscan vs baseline vs ScaNN). Credit: user redirected from scan-accuracy (wrong half) to routing.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
