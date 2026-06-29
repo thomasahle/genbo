@@ -18348,6 +18348,79 @@ partition ignores the bias coordinates that certify the list size.
    \(h=\kappa\log_A m\) gives \((ET5)\).
 \end{proof}
 
+\begin{corollary}[Tanner check expansion blocks exact aggregate inference]
+   \label{cor:tanner-check-boundary-junction-barrier}
+   Let \(G=(V,C,E)\) be a Tanner factor graph with hidden variables
+   \(V\), \(|V|=h\), and maximum variable degree \(\Delta_v\).  Each check
+   \(a\in C\) contributes a positive local factor on its scope
+   \(\Gamma(a)\subseteq V\).  Suppose that every middle-size variable set
+   \(U\subseteq V\) with
+   \[
+      h/3\le |U|\le2h/3
+      \tag{TCB1}
+   \]
+   has crossing-check boundary
+   \[
+      \partial_C U
+      =
+      \{a\in C:\Gamma(a)\cap U\ne\emptyset,
+                  \Gamma(a)\setminus U\ne\emptyset\}
+      \tag{TCB2}
+   \]
+   of size
+   \[
+      |\partial_C U|\ge\eta h .
+      \tag{TCB3}
+   \]
+   Then every exact junction tree for the hidden-variable factorization has
+   width
+   \[
+      w\ge \frac{\eta h}{\Delta_v}-1,
+      \tag{TCB4}
+   \]
+   and exact aggregate sampling costs at least
+   \[
+      A^{\eta h/\Delta_v}
+      \tag{TCB5}
+   \]
+   up to polynomial graph factors.  In particular, if
+   \(h=\kappa\log_A m\) and \(\Delta_v=O(1)\), a middle-expanding Tanner or
+   LDPC block consumes query work
+   \[
+      m^{\eta\kappa/\Delta_v-o(1)}
+      \tag{TCB6}
+   \]
+   before bucket scanning.
+
+   Thus the usual constant-degree expansion that makes Tanner and LDPC codes
+   attractive for distance or list-recovery guarantees is hostile to this
+   exact aggregate-sampler route at the middle scales.  Such a code may still
+   be useful as an output-sensitive reporter, a low-residual-rank quotient, or
+   a certified approximate sampler, but not as a black-box exact loopy
+   sum-product object with polylogarithmic query cost.
+\end{corollary}
+
+\begin{proof}
+   Let \(H\) be the primal graph on \(V\): two variables are adjacent when
+   they appear in a common check.  Fix \(U\) satisfying \((TCB1)\).  Every
+   crossing check \(a\in\partial_CU\) contains some variable in \(U\) and some
+   variable in \(V\setminus U\), so it contributes at least one external primal
+   neighbor of \(U\).  Assign each crossing check to one such external
+   variable.  A fixed external variable can be assigned only checks incident to
+   it, and there are at most \(\Delta_v\) of those.  Therefore
+   \[
+      |N_H(U)\setminus U|
+      \ge
+      \frac{|\partial_CU|}{\Delta_v}
+      \ge
+      \frac{\eta h}{\Delta_v}.
+   \]
+   The primal graph satisfies the separator-expansion hypothesis of
+   \cref{lem:expander-factor-graph-junction-barrier} with
+   \(\varepsilon=\eta/\Delta_v\).  Applying that lemma gives
+   \((TCB4)\)--\((TCB6)\).
+\end{proof}
+
 \begin{lemma}[Marked trellis spectrum verifier]
    \label{lem:marked-trellis-spectrum-verifier}
    Work with a layered acyclic trellis as in
