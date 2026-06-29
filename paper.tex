@@ -6060,6 +6060,63 @@ partition ignores the bias coordinates that certify the list size.
    coordinate, the reporter overheads, and the emitted pairs.
 \end{proof}
 
+\begin{corollary}[Native linear syndromes for code and lattice blocks]
+   \label{cor:native-linear-syndrome-code-lattice}
+   Let \(V_j\) be finite-dimensional vector spaces over \(\mathbb F_q\), let
+   \(G=\mathbb F_q^r\), and let
+   \(\mathcal C_j\subseteq V_j\) be block alphabets.  Choose independent
+   random linear maps \(A_j:V_j\to G\) and independent shifts
+   \(\beta_j\in G\), and put
+   \[
+      h_j(c)=A_jc+\beta_j.
+      \tag{NLS1}
+   \]
+   Then the coordinate hash families satisfy the difference-universal
+   condition \((DUS1)\) with \(C_\Delta=1\).  Therefore the syndrome subset
+   \[
+      \sum_{j=1}^h h_j(c_j)=\sigma
+      \tag{NLS2}
+   \]
+   has the second-moment guarantees of
+   \cref{cor:difference-universal-syndrome-thinning} for every fixed tuple
+   set.
+
+   Moreover, after a prefix \(u=(c_1,\ldots,c_{h-1})\) is fixed, the last
+   block is constrained to the native syndrome coset
+   \[
+      B_h(\tau(u))
+      =
+      \{c\in\mathcal C_h:A_hc=\tau(u)\},
+      \quad
+      \tau(u)=\sigma-\sum_j\beta_j-\sum_{j<h}A_jc_j .
+      \tag{NLS3}
+   \]
+   Thus, for a linear code, Tanner code, polar/convolutional trellis, or
+   Construction-A quotient over \(\mathbb F_q\), the algebraic lookup problem
+   is exactly soft list recovery or threshold decoding inside a random
+   syndrome coset.  The same statement applies to lattice symbols after
+   reducing modulo a finite-field quotient, provided the quotient separates
+   the symbols being charged; otherwise the quotient collision multiplicity is
+   part of the bucket reporter cost.
+\end{corollary}
+
+\begin{proof}
+   For distinct \(a,b\in\mathcal C_j\), put \(d=a-b\ne0\).  Extend \(d\) to a
+   basis of \(V_j\).  A uniformly random linear map \(A_j:V_j\to G\) chooses
+   the image of each basis vector independently and uniformly in \(G\), hence
+   \(A_jd\) is uniform in \(G\).  The shifts cancel in differences, so
+   \[
+      \Prb[h_j(a)-h_j(b)=\tau]=|G|^{-1}
+   \]
+   for every \(\tau\in G\), proving \((DUS1)\) with \(C_\Delta=1\).  The
+   second-moment statement is then
+   \cref{cor:difference-universal-syndrome-thinning}.  Rearranging
+   \((NLS2)\) after the prefix is fixed gives exactly the coset condition
+   \((NLS3)\); any code, trellis, or lattice quotient decoder used for that
+   coset is therefore a reporter for the syndrome bucket, with its work
+   charged explicitly.
+\end{proof}
+
 \begin{corollary}[Random residues thin pair prefixes by partner counts]
    \label{cor:random-residue-pair-prefix-bound}
    Consider a two-block product query with fixed scores
