@@ -70,6 +70,11 @@ FIELDNAMES = [
     "exact_p_rate",
     "exact_scoremax_rate",
     "exact_additive_success_rate",
+    "center_gap12_q10",
+    "center_gap12_q50",
+    "center_gap12_over_ynorm_q10",
+    "center_gap32_q10",
+    "center_gap32_q50",
     "exact_candidate_mean",
     "exact_candidate_q90",
     "exact_candidate_over_nrho",
@@ -576,6 +581,9 @@ def run_trial(
     scoremax_bucket_ranks = []
     center_work = []
     center_leaf_candidates = []
+    center_gap12 = []
+    center_gap12_over_ynorm = []
+    center_gap32 = []
 
     for _ in range(query_trials):
         scores, y, _t, margin = smoothed_scores(
@@ -587,6 +595,19 @@ def run_trial(
         oracle_valid += int(top_point == p_index)
 
         center_scores = ivf.center_vecs @ y
+        center_order = np.argsort(-center_scores)
+        center_gap12.append(
+            float(center_scores[center_order[0]] - center_scores[center_order[1]])
+            if len(center_order) > 1 else math.inf
+        )
+        center_gap12_over_ynorm.append(
+            center_gap12[-1] / max(float(np.linalg.norm(y)), 1e-12)
+        )
+        rank32 = min(31, len(center_order) - 1)
+        center_gap32.append(
+            float(center_scores[center_order[0]] - center_scores[center_order[rank32]])
+            if len(center_order) else math.inf
+        )
         exact_k = min(probes, len(center_scores))
         exact_center_ids = np.argpartition(-center_scores, exact_k - 1)[:exact_k]
         exact_center_ids = exact_center_ids[np.argsort(-center_scores[exact_center_ids])]
@@ -627,6 +648,9 @@ def run_trial(
     decoder_losses_arr = np.asarray(decoder_losses, dtype=float)
     center_work_arr = np.asarray(center_work, dtype=float)
     center_leaf_arr = np.asarray(center_leaf_candidates, dtype=float)
+    center_gap12_arr = np.asarray(center_gap12, dtype=float)
+    center_gap12_over_ynorm_arr = np.asarray(center_gap12_over_ynorm, dtype=float)
+    center_gap32_arr = np.asarray(center_gap32, dtype=float)
     n_rho = n ** rho
     near_corr = 1.0 - 1.0 / (c * c)
     return {
@@ -664,6 +688,12 @@ def run_trial(
         "exact_p_rate": exact_p / query_trials,
         "exact_scoremax_rate": exact_scoremax / query_trials,
         "exact_additive_success_rate": exact_additive / query_trials,
+        "center_gap12_q10": float(np.quantile(center_gap12_arr, 0.1)),
+        "center_gap12_q50": float(np.quantile(center_gap12_arr, 0.5)),
+        "center_gap12_over_ynorm_q10": float(
+            np.quantile(center_gap12_over_ynorm_arr, 0.1)),
+        "center_gap32_q10": float(np.quantile(center_gap32_arr, 0.1)),
+        "center_gap32_q50": float(np.quantile(center_gap32_arr, 0.5)),
         "exact_candidate_mean": float(np.mean(exact_counts_arr)),
         "exact_candidate_q90": float(np.quantile(exact_counts_arr, 0.9)),
         "exact_candidate_over_nrho": float(np.mean(exact_counts_arr) / n_rho),
