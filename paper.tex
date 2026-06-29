@@ -89240,6 +89240,63 @@ amplified in the next proposition.
    subcode.
 \end{remark}
 
+\begin{remark}[Ordered-statistics sparse-subset channel]
+   \label{rem:sparse-subset-channel-stress}
+   The preceding barrier suggests the missing ingredient: the sparse labels
+   should not be random codewords.  A direct non-iid alternative is the
+   ordered-statistics sparse-subset channel already implicit in
+   \cref{lem:information-set-threshold-reporter} and
+   \cref{cor:ordered-statistics-information-set}.  Labels are pairs
+   \((A,s)\), where \(A\subseteq[r]\), \(|A|=w\), and
+   \(s\in\{\pm1\}^A\).  For bit logits \(u\), define the centered log
+   probability
+   \[
+      \Phi_{A,s}(u)
+      =
+      \sum_{i\in A}s_i u_i
+      -\log e_w(2\cosh u_1,\ldots,2\cosh u_r)
+      +\log\!\left(2^w\binom{r}{w}\right),
+      \tag{OSS0}
+   \]
+   where \(e_w\) is the elementary symmetric polynomial.  When \(w=r\),
+   \((OSS0)\) is exactly the product-sign score.  For \(w<r\), query decoding
+   is ordered-statistics decoding: choose the \(w\) largest \(|u_i(q)|\) and
+   their signs.  Thus the query-selected label is biased toward reliable
+   coordinates, not merely toward a random sparse codeword with a large average
+   inner product.
+
+   The diagnostic \texttt{impl/sparse\_subset\_channel\_stress.py} tests this
+   exact channel.  It computes the partition function \(e_w\) by dynamic
+   programming, calibrates the far threshold by a sampled Cramer transform of
+   the fixed-label far score, and measures the near score of the OSD top
+   label.  The first rows are qualitatively different from
+   \cref{rem:sparse-product-sign-saddlepoint-barrier}.  At bit correlation
+   \(0.95\), the narrow controls remain negative:
+   \([16,1]\) has saddlepoint gaps \(-0.030,-0.033\) for
+   \(\sigma=1,2\), and \([32,2]\) has gaps \(-0.022,-0.022\).  But the
+   ordered-statistics regime turns positive: \([32,4]\) has gaps
+   \(0.003,0.031\), \([64,4]\) has gaps \(0.015,0.043\), and \([64,8]\) has
+   gaps \(0.060,0.119\).  The corresponding sampled-threshold hit estimates
+   range from \(0.55\) for the weakest positive row to essentially one for the
+   \(64\)-bit rows.
+
+   These numbers are not yet a theorem, because the Cramer threshold is
+   estimated from samples and the large-deviation calculation for
+   \((OSS0)\) still has to be proved.  They do identify a non-equivalent
+   positive target: prove a uniform gap
+   \[
+      \E\Phi_{A_*(q),s_*(q)}(u(p))>t_{r,w}
+   \]
+   where \(t_{r,w}\) is the far Cramer level satisfying
+      \(I_{r,w}(t_{r,w})=r^{-1}\log(2^w\binom{r}{w})\).  If this gap holds for
+   \(r=\Theta(\log m)\) and an appropriate width \(w\), then the OSD reporter
+   gives a compact \(m^{1-\rho}\)-label channel with linear expected storage
+   and constant one-panel hit probability.  Unlike the random sparse subcode,
+   this route exploits reliability ordering and is therefore a genuine
+   coding-theoretic construction path rather than a relabeling of the
+   product-sign barrier.
+\end{remark}
+
 \begin{remark}[Why ordinary ANN does not implement the score-max target]\label{rem:score-max-ordinary-ann}
    One can force the perturbed center $y=Y/t$ to be close to $q$ by taking
    $t$ large. In dimension $D$, if
