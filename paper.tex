@@ -97140,6 +97140,116 @@ amplified in the next proposition.
    quotient-syndrome coordinates not already fixed by the chart constraints.
 \end{proof}
 
+\begin{corollary}[Quotient-syndrome trellises implement support conditioning]
+   \label{cor:quotient-syndrome-trellis-support-sampler}
+   Work in the resident-source setting of
+   \cref{cor:linear-resident-image-support-conditioning}.  Write
+   \(\bar G=G/H\) and let \(\pi:G\to\bar G\) be the quotient map.  Suppose the
+   selected labels for one query outcome \(B\) are source-to-terminal paths in a
+   layered acyclic trellis
+   \[
+      V_0\to V_1\to\cdots\to V_h,
+      \tag{QST1}
+   \]
+   with positive edge weights \(r_e(B)\).  Each edge carries a residue increment
+   \(c(e)\in G\), and the resident signature of a path \(\pi_{\rm path}\) is
+   \[
+      \sigma(\pi_{\rm path})
+      =
+      \gamma+\sum_{e\in\pi_{\rm path}}c(e)\in G .
+      \tag{QST2}
+   \]
+   Put
+   \[
+      \bar c(e)=\pi(c(e)),
+      \qquad
+      \bar s_\star=\pi(Az_0-\gamma).
+      \tag{QST3}
+   \]
+   For every trellis vertex \(v\), let \(S(v)\subseteq\bar G\) be the set of
+   prefix quotient syndromes that are reachable at \(v\), and define
+   \[
+      Q_B=\max_v |S(v)|,
+      \qquad
+      |E_B|=\text{number of trellis edges}.
+      \tag{QST4}
+   \]
+   Build the augmented trellis with vertices \((v,\eta)\), \(\eta\in S(v)\),
+   and with an edge
+   \[
+      (u,\eta)\longrightarrow (v,\eta+\bar c(e))
+      \tag{QST5}
+   \]
+   of weight \(r_e(B)\) for every original edge \(e=(u,v)\).  Use terminal
+   boundary one exactly on vertices \((t,\bar s_\star)\), \(t\in V_h\), and zero
+   on all other augmented terminals.
+
+   Then the BCJR backward recursion on the augmented trellis computes the
+   support-conditioned aggregate mass \(U_B^+\) and top-down sampling draws
+   source-to-terminal paths with probability proportional to their original
+   weight among paths satisfying
+   \[
+      \pi(\sigma(\pi_{\rm path}))=\pi(Az_0).
+      \tag{QST6}
+   \]
+   Its arithmetic cost is
+   \[
+      T_{\rm back}^+(B)
+      =
+      O(Q_B|E_B|)
+      \tag{QST7}
+   \]
+   plus the cost of forming the reachable syndrome sets, and one sampled path
+   costs \(O(h)\).
+
+   Consequently, if
+   \[
+      \E_Z[Q_{B(q,Z)}|E_{B(q,Z)}|]
+      \le Dm^\rho\log^{O_c(1)}m,
+      \qquad
+      h_{B(q,Z)}\le\log^{O_c(1)}m
+      \tag{QST8}
+   \]
+   and the original point-mass miss/load hypotheses \((PMR1)\)--\((PMR2)\)
+   hold, then the trellis implements the support-conditioned raw-expansion
+   point-mass reporter with \(m^\rho\polylog m\) expected online work.
+
+   Thus the concrete code/lattice state audit is the quotient-syndrome width
+   \(Q_B\), not the number of occupied full residue signatures.  If the quotient
+   support syndrome is already determined by the native trellis state, then
+   \(Q_B=1\).  If only \(O(\log\log m)\) independent quotient coordinates remain
+   along the active route, then \(Q_B=\polylog m\), and broad full-residue
+   images do not create the old active-support enumeration overhead.
+\end{corollary}
+
+\begin{proof}
+   Along an augmented path, the second coordinate is exactly the accumulated
+   quotient syndrome
+   \[
+      \sum_{e\in\pi_{\rm path}}\bar c(e)
+      =
+      \pi\!\left(\sum_{e\in\pi_{\rm path}}c(e)\right).
+   \]
+   Therefore the terminal condition \(\eta=\bar s_\star\) is equivalent to
+   \[
+      \pi\!\left(\gamma+\sum_{e\in\pi_{\rm path}}c(e)\right)=\pi(Az_0),
+   \]
+   which is \((QST6)\).  By
+   \cref{cor:linear-resident-image-support-conditioning}, this is precisely the
+   condition that the terminal resident signature has a nonempty resident class.
+   Applying \cref{cor:bcjr-trellis-quotient-sampler} to the augmented trellis
+   computes the total weight of these paths and samples from their normalized
+   law.  Pushing the sampled path to its full signature gives the
+   resident-support-conditioned signature law \((RSPX2)\).
+
+   Each original edge is copied for at most \(Q_B\) reachable prefix syndromes,
+   so the augmented edge count is \(O(Q_B|E_B|)\).  The backward recursion is
+   linear in this augmented edge count, and a sampled path has length \(h\).
+   The endpoint is now exactly
+   \cref{cor:resident-support-conditioned-raw-expansion}, with the work bound
+   \((QST8)\) supplying \((RSPX7)\).
+\end{proof}
+
 \begin{corollary}[Aligned linear charts compute rate-coverage sketches]
    \label{cor:aligned-linear-chart-rate-coverage-sketch}
    Work in the setting of
