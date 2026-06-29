@@ -97873,6 +97873,149 @@ amplified in the next proposition.
    lower bound is immediate.
 \end{proof}
 
+\begin{corollary}[State-exposed additive filters pay reciprocal width]
+   \label{cor:state-exposed-additive-filter-width}
+   Work with one compact trellis as in
+   \cref{cor:quotient-syndrome-trellis-support-sampler}.  Suppose a
+   pseudo-random filter is implemented by an auxiliary finite abelian additive
+   score
+   \[
+      y(p)=\sum_{e\in p}a(e)\in\mathcal Y,
+      \qquad |\mathcal Y|=M,
+      \tag{SAF1}
+   \]
+   and retained terminals are those with \(y(p)\in R\subseteq\mathcal Y\).
+   Let \(\delta=|R|/M\).  If, for a native vertex \(v\), the values
+   \(\{y(p):p\in\mathcal P(v)\}\) are pairwise independent and uniform on
+   \(\mathcal Y\), and \(N_v=|\mathcal P(v)|\), then the exact
+   support-conditioned trellis that exposes the auxiliary score has expected
+   reachable score width
+   \[
+      \E |S_y(v)|
+      \ge
+      M\frac{N_v}{M+N_v}
+      \ge
+      \frac12\min\{M,N_v\}.
+      \tag{SAF2}
+   \]
+   In particular, if \(N_v\ge M\) and the filter is nonempty, then
+   \[
+      \E |S_y(v)|\ge \frac{M}{2}\ge \frac{1}{2\delta}.
+      \tag{SAF3}
+   \]
+
+   Thus an additive hash, multiply-shift residue, or independent score-band
+   filter gives no free thinning when it is decoded by carrying its exact
+   auxiliary state through a highly merged trellis.  A \(\delta\)-density random
+   subset removes a \(\delta\) fraction of terminals but creates at least
+   reciprocal auxiliary width on any state whose prefix multiplicity already
+   exceeds the auxiliary range.  Such a filter is useful at the clean endpoint
+   only when the auxiliary score is aligned with the native state, collapses to
+   a coboundary modulo \(O(\log\log m)\) carry, or is accessed by a sampler that
+   does not materialize its support states.
+\end{corollary}
+
+\begin{proof}
+   This is exactly
+   \cref{cor:random-quotient-trellis-width-barrier} applied to the quotient
+   group or score alphabet \(\mathcal Y\).  If \(R\ne\emptyset\), then
+   \(\delta=|R|/M\ge1/M\), giving \(M\ge\delta^{-1}\) and hence \((SAF3)\).
+\end{proof}
+
+\begin{corollary}[Tilted rejection samples additive pseudo-random tails]
+   \label{cor:tilted-additive-tail-sampler}
+   Let the active labels for one query outcome be a product
+   \[
+      \mathcal C=\mathcal C_1\times\cdots\times\mathcal C_h
+   \]
+   with nonnegative product weight
+   \[
+      R(c)=\prod_{j=1}^h r_j(c_j),
+      \tag{TAT1}
+   \]
+   and let an auxiliary pseudo-random score be coordinate-additive,
+   \[
+      M(c)=\sum_{j=1}^h m_j(c_j).
+      \tag{TAT2}
+   \]
+   For a threshold \(s\), put
+   \[
+      U_s=\sum_{c:\ M(c)\ge s}R(c).
+      \tag{TAT3}
+   \]
+   For any \(\lambda\ge0\), define the tilted product partition function
+   \[
+      Z_\lambda
+      =
+      \prod_{j=1}^h\sum_{a\in\mathcal C_j}r_j(a)e^{\lambda m_j(a)}
+      \tag{TAT4}
+   \]
+   and the product proposal law
+   \[
+      Q_\lambda(c)=\frac{R(c)e^{\lambda M(c)}}{Z_\lambda}.
+      \tag{TAT5}
+   \]
+   Draw \(c\sim Q_\lambda\).  If \(M(c)<s\), reject.  If \(M(c)\ge s\),
+   accept with probability \(e^{-\lambda(M(c)-s)}\).
+
+   Conditional on acceptance, the output has exactly the original product law
+   conditioned on the additive tail,
+   \[
+      \Pr[c\mid{\rm accept}]
+      =
+      \frac{R(c)\mathbf1\{M(c)\ge s\}}{U_s}.
+      \tag{TAT6}
+   \]
+   The acceptance probability is
+   \[
+      A_\lambda
+      =
+      \frac{e^{\lambda s}U_s}{Z_\lambda}
+      =
+      \E_{Q_\lambda}\!\left[
+         \mathbf1\{M(c)\ge s\}e^{-\lambda(M(c)-s)}
+      \right].
+      \tag{TAT7}
+   \]
+   Consequently, if for some \(\Delta>0\)
+   \[
+      \Pr_{Q_\lambda}[s\le M(c)\le s+\Delta]\ge a,
+      \qquad
+      \lambda\Delta\le1,
+      \tag{TAT8}
+   \]
+   then \(A_\lambda\ge e^{-1}a\), and an exact sample from the
+   pseudo-random tail costs \(O(a^{-1})\) product samples in expectation.
+
+   This is the useful way to exploit an additive random weighting
+   \(m(i_1)+\cdots+m(i_k)\ge s\) when the goal is aggregate sampling rather
+   than support enumeration.  The rare-event probability \(U_s/Z_0\) may be
+   subpolynomially small, but the tilted proposal has already paid the large
+   deviation in its product weights; the remaining rejection overhead is only
+   the local mass of the tilted sum near the threshold.  For bounded or
+   lattice coordinate scores, a standard local central-limit or saddlepoint
+   estimate typically gives
+   \(a^{-1}\le(h+\lambda\sigma_\lambda)^{O(1)}\), where
+   \(\sigma_\lambda^2=\operatorname{Var}_{Q_\lambda}M(c)\).  Thus the concrete
+   condition to prove for a code/lattice tuple filter is local
+   anti-concentration under the tilted product law, not high independence of
+   the retained indicators.
+\end{corollary}
+
+\begin{proof}
+   The unnormalized probability of accepting a particular \(c\) is
+   \[
+      Q_\lambda(c)\mathbf1\{M(c)\ge s\}e^{-\lambda(M(c)-s)}
+      =
+      \frac{e^{\lambda s}}{Z_\lambda}
+      R(c)\mathbf1\{M(c)\ge s\}.
+   \]
+   Summing over \(c\) gives \((TAT7)\), and normalizing gives \((TAT6)\).
+   Under \((TAT8)\), every proposal with \(s\le M(c)\le s+\Delta\) is accepted
+   with probability at least \(e^{-\lambda\Delta}\ge e^{-1}\), proving
+   \(A_\lambda\ge e^{-1}a\).
+\end{proof}
+
 \begin{corollary}[Aligned linear charts compute rate-coverage sketches]
    \label{cor:aligned-linear-chart-rate-coverage-sketch}
    Work in the setting of
