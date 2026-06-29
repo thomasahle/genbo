@@ -1803,6 +1803,30 @@ P115. (cell-inverted BATCHED scan = DEAD END for hierk3; scan is COMPUTE-bound, 
     (msspacev recall>=0.95 ~1.4x, OOD ~2x) are NOT closable by more scan-kernel work on this hardware;
     they're ScaNN's mature-implementation edge + the OOD rerank-memory wall.
 
+P116. (*** 10-IDEA WORKFLOW: SOAR + AVX-512 64-wide scan are the two winners that may BEAT ScaNN ***)
+    Ran a workflow fanning out 10 agents (isolated worktrees, cheap load-robust validation: microbench
+    ratios + 1M recall). 3 winners, 7 informative negatives. Work isolated on branch engine-stack
+    (worktree /home/thomas-ahle/lsh-engine) because the theory agent churns master concurrently.
+    WINNER A -- SOAR-spill for hierk3 (found INDEPENDENTLY by 2 agents, ideas #3 and #9): build-time
+    2nd..a0-th fine-cell assignment minimizes l2 + lambda*proj^2 (proj = q-residual along r0=q-cf[i0]),
+    so a point's extra copies cover its FIRST cell's residual direction instead of near-duplicates ->
+    queries find the NN in FEWER probed cells. SBANN_SOAR=lambda (0.5 best). 10M SAME-WINDOW (soar_10m.log,
+    fastscan): recall@matched-p jumps +1.5-1.8pt at EVERY p (p96 0.9089->0.9252, p160 0.9292->0.9470,
+    p320 0.9497->0.9644) => ~1.3-1.55x QPS at matched recall. Cost: build 2.5x slower (652->1675s; the
+    per-point projection is scalar -- SIMD it later). WINNER B -- AVX-512 64-wide fast-scan
+    (block_adc_i8_i16acc_avx512_il, SBANN_USE512FS): _mm512_shuffle_epi8 in-lane (Zen4 has NO avx512
+    downclock; the old vpermw dead-end was cross-lane, not downclock). Microbench 1.75-1.98x vs avx2
+    fast-scan, recall BIT-IDENTICAL (selftest). KEY: naive 4-load gather variant is 0.75x (Zen4
+    double-pumps 512-bit) -- the build-time INTERLEAVED superblock layout (1 zmm load/group) is what wins.
+    WINNER C -- residual 8-bit refine code (SBANN_RESID): 6.8x lower raw-rerank depth at fixed recall
+    (1M); OOD-memory lever, deferred. NEGATIVES (measured, ruled out): GFNI ~0 (vpshufb-port-bound, not
+    shift-bound); 4-bit rerank store 0.5x (Zen4 prefetcher hides 2nd cache line); rerank-batching 0.6-0.8x
+    (not bandwidth-limited at scale); learned codebooks +0.0003 (apq4 already near-optimal); additive
+    quant -0.05 recall vs apq4; learned distance-correction sub-%. STACKING: SOAR+AVX-512 cherry-picked
+    cleanly onto engine-stack; baseline fastscan was at PARITY w/ ScaNN, SOAR adds ~1.4x at matched recall
+    AND AVX-512 adds ~1.75x scan -> SOAR+AVX-512 vs ScaNN same-window is the decisive test (running,
+    stack_vs_scann.log). If it holds, this is the first LEGITIMATE beat-ScaNN-on-msspacev result.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
