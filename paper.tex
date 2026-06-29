@@ -91496,6 +91496,134 @@ For a threshold $u$, the posterior-superlevel child is
    \(a_x=0\) have arbitrary \(\mu_x\).
 \end{proof}
 
+\begin{corollary}[Point-mass rate-coverage reporter]
+   \label{cor:point-mass-rate-coverage-reporter}
+   Work in the setting of \cref{cor:rate-coverage-intensity}.  Let
+   \(B(q,Z)=\mathcal A(q,Z)\), and fix a threshold
+   \(0<\theta\le1\) with \(\theta^{-1}=\log^{O_c(1)}m\).  Suppose the
+   point-label intensities satisfy the strengthened tilted miss condition
+   \[
+      \E_Z\left[
+         R_{p,q}(Z)\exp(-b_p(B(q,Z)))
+      \right]
+      \le
+      a_c/(8e)
+      \tag{PMR1}
+   \]
+   for every promised near pair \(p,q\), and the usual rate-load bound
+   \[
+      \E_Z\sum_{x\in S}b_x(B(q,Z))
+      \le m^\rho\log^{O_c(1)}m
+      \tag{PMR2}
+   \]
+   for every promised query \(q\).  Assume that the retained representation
+   has space \(m^{1+\rho}\log^{O_c(1)}m\) and, on input \((q,Z)\), computes
+   the point-indexed heavy coverage list
+   \[
+      \mathcal H_\theta(q,Z)
+      =
+      \{x\in S:b_x(B(q,Z))\ge\theta\}
+      \tag{PMR3}
+   \]
+   in expected time \(D\,m^\rho\log^{O_c(1)}m\), including exact evaluation of
+   \(b_x(B(q,Z))\) for emitted candidates and duplicate removal.
+
+   Then \(\mathcal H_\theta\) is a valid smoothed witness list: for every near
+   pair \(p,q\),
+   \[
+      \E_Z\left[
+         R_{p,q}(Z)\mathbf 1_{\{p\notin\mathcal H_\theta(q,Z)\}}
+      \right]
+      \le a_c/8 .
+      \tag{PMR4}
+   \]
+   Moreover
+   \[
+      |\mathcal H_\theta(q,Z)|
+      \le
+      \theta^{-1}\sum_{x\in S}b_x(B(q,Z)),
+      \tag{PMR5}
+   \]
+   so verification of all emitted candidates has expected cost
+   \(D\,m^\rho\log^{O_c(1)}m\).  Consequently this point-mass reporter
+   implements \cref{asm:smoothed-witness-list}, and hence the posterior ANN
+   endpoint of \cref{prop:witness-list-polylog}.
+\end{corollary}
+
+\begin{proof}
+   If \(p\notin\mathcal H_\theta(q,Z)\), then \(b_p(B(q,Z))<\theta\).  Since
+   \(\theta\le1\),
+   \[
+      \mathbf 1_{\{b_p(B(q,Z))<\theta\}}
+      \le
+      e^\theta\exp(-b_p(B(q,Z)))
+      \le
+      e\exp(-b_p(B(q,Z))).
+   \]
+   Multiplying by \(R_{p,q}(Z)\), averaging, and using \((PMR1)\) gives
+   \((PMR4)\).  This is stronger than the tilted witness-loss condition
+   \((WL2)\).  The size bound \((PMR5)\) follows because each emitted point
+   contributes at least \(\theta\) to the nonnegative sum
+   \(\sum_x b_x(B(q,Z))\).  With \(\theta^{-1}=\polylog m\), \((PMR2)\)
+   bounds expected emitted candidates and verification work by
+   \(D\,m^\rho\log^{O_c(1)}m\).  Applying
+   \cref{lem:smoothed-witness-list-compiler} and then
+   \cref{prop:witness-list-polylog} gives the endpoint.
+\end{proof}
+
+\begin{lemma}[Expansion access pays the rate load]
+   \label{lem:rate-coverage-expansion-access}
+   In the Poisson materialization of \cref{cor:rate-coverage-intensity}, let
+   \(N_B\) be the number of retained point-label incidences whose label lies in
+   a reported set \(B\).  Conditional on \(B\),
+   \[
+      \E[N_B\mid B]
+      =
+      \sum_{x\in S}b_x(B).
+      \tag{REA1}
+   \]
+   Therefore any implementation of the point-mass list in
+   \cref{cor:point-mass-rate-coverage-reporter} which obtains the values
+   \(b_x(B)\) only by expanding the reported buckets and aggregating the
+   retained incidences has expected primitive scan work at least the rate-load
+   quantity in \((RI4)\), up to constant factors and the chosen repetition
+   schedule.  In particular, such an implementation gains no accounting
+   advantage over ordinary bucket-union scanning; if its query-visible labels
+   have sub-storage effective entropy, the route-local lower bound of
+   \cref{cor:route-local-union-effective-entropy-barrier} still applies.
+\end{lemma}
+
+\begin{proof}
+   For every pair \((x,a)\), preprocessing stores a Poisson number of copies of
+   \(x\) in label \(a\) with mean \(b_{x,a}\).  Summing these independent
+   multiplicities over \(a\in B\) and \(x\in S\) gives a Poisson variable with
+   mean \(\sum_x\sum_{a\in B}b_{x,a}=\sum_xb_x(B)\), proving \((REA1)\).
+   A bucket-expansion routine whose only evidence for the aggregate point
+   masses is the retained incidence multiset must read those incidences before
+   it can aggregate or threshold them, so its expected primitive work is
+   proportional to \(\E N_B\).  This is exactly the load already charged in
+   \((RI4)\).  The final statement is the specialization of
+   \cref{cor:route-local-union-effective-entropy-barrier} to a reporter whose
+   heavy-point computation is implemented by such label expansion.
+\end{proof}
+
+\begin{remark}[What the randomness has to buy]
+   \label{rem:point-mass-randomness-interface}
+   The previous two statements isolate the useful role of pseudorandom
+   subsets.  Pairwise-independent syndromes, multiply-shift hashes, affine
+   residue maps, or tabulation masks may be random enough for second-moment
+   thinning, but randomness alone is not the missing primitive.  If the query
+   algorithm materializes the selected labels and scans their buckets, the
+   exponent is governed by \((RI4)\) and by the effective-entropy barrier.
+   What can still help is algebraic access to the point masses
+   \(x\mapsto b_x(B(q,Z))\): a convolution, trellis, low-treewidth factor
+   graph, leader quotient, sketch, or reduced-cost reporter that lists the
+   heavy points of \((PMR3)\) without enumerating the label union.  Thus the
+   right test for a code or lattice construction is not whether its subset law
+   looks more random, but whether it supplies this point-indexed aggregate
+   reporter with the tilted miss, load, and storage bounds above.
+\end{remark}
+
 \begin{lemma}[Finite-signature rate-coverage envelope]
    \label{lem:finite-signature-rate-coverage}
    Let \(\mathcal Q\) be an arbitrary, possibly continuous, query domain for
