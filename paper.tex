@@ -89904,6 +89904,59 @@ amplified in the next proposition.
    \(r^{-1}\log K=o(1)\), so it cannot close the constant rate gap.
 \end{proof}
 
+\begin{corollary}[Exponential raw-list rate required]
+   \label{cor:raw-list-rate-lower-bound}
+   Work in the setting of
+   \cref{cor:polylog-raw-list-entropy-barrier}, but allow the reported raw
+   list length \(K_r\) to be exponential in the block length.  Put
+   \[
+      L_r=\frac1r\log K_r .
+   \]
+   Suppose the proof uses the list only through its ordinary union-bound or
+   list-work discount: each fixed reported raw label is still charged at a
+   fixed-label far-tail rate
+   \[
+      C_r\ge R-L_r-o(1).
+      \tag{RLR1}
+   \]
+   If the fixed-label far threshold is to lie below the selected near mean for
+   the successful reported positions, then necessarily
+   \[
+      L_r\ge (1-\chi^2)R-o(1).
+      \tag{RLR2}
+   \]
+   Equivalently, a raw codeword list must output
+   \[
+      K_r\ge \exp\{((1-\chi^2)R-o(1))r\}
+      \tag{RLR3}
+   \]
+   labels before the Gaussian information-charge obstruction can even be
+   removed by list-size accounting.
+
+   Thus polynomial block-list decoders such as ordinary SCL, Chase, GMD, or
+   bounded-radius lattice enumeration do not rescue a full-rate raw bucket
+   panel when \(r=\Theta(\log m)\): their \(r^{O(1)}\) output size is only
+   polylogarithmic in \(m\).  An exponential-size list may pass this necessary
+   screen, but it spends a genuine constant query-work exponent unless its
+   labels are compressed by a quotient, aggregate sampler, or prefix-moment
+   certificate.
+\end{corollary}
+
+\begin{proof}
+   Fix a reported position whose selected near mean is supposed to beat its
+   fixed-label far threshold.  By the contrapositive of
+   \cref{lem:information-charge-survivor-test}, this is possible only if
+   \(C_r\le i_{j,a}+o(1)\), where \(i_{j,a}\) is the conditional divergence
+   rate of the near data block given \(A_j=a\).  The Gaussian contraction
+   bound in \cref{lem:gaussian-information-charge-contraction} gives
+   \(i_{j,a}\le\chi^2R+o(1)\) for every equivariant raw position.  Combining
+   this upper bound with \((RLR1)\) yields
+   \[
+      R-L_r-o(1)\le \chi^2R+o(1),
+   \]
+   which is \((RLR2)\).  Exponentiating gives \((RLR3)\).
+\end{proof}
+
 \begin{corollary}[Raw-label Fano prices do not change the charge]
    \label{cor:raw-label-fano-price-no-rescue}
    Work in the setting of
@@ -89950,8 +90003,11 @@ amplified in the next proposition.
    beat the full-rate far threshold.  \Cref{cor:polylog-raw-list-entropy-barrier}
    gives the same conclusion for any equivariant top-\(\polylog m\) raw list:
    the list changes only lower-order query work unless the storage or bucket
-   charge is also changed.  Even a deterministic Fano price on the raw labels
-   does not change this conclusion by
+   charge is also changed.  \Cref{cor:raw-list-rate-lower-bound} quantifies the
+   missing amount: a raw list must have rate at least
+   \((1-\chi^2)R\) before ordinary list accounting can erase the contraction
+   gap.  Even a deterministic Fano price on the raw labels does not change this
+   conclusion by
    \cref{cor:raw-label-fano-price-no-rescue}; the price has to be part of a
    different charged certificate, not a cosmetic shift of the same full-rate
    label score.
@@ -93142,6 +93198,10 @@ near data block retains about that transcript, up to polylogarithmic slack.
 quantitative, \(I(T;U)\le\chi^2 I(T;Q)\), and
 \cref{cor:polylog-raw-list-entropy-barrier} applies it to rule out
 equivariant top-\(\polylog m\) raw codeword lists at full label charge.
+\Cref{cor:raw-list-rate-lower-bound} gives the corresponding exponential-list
+audit: if the only discount is scanning \(K_r\) raw labels, then
+\(r^{-1}\log K_r\) must be at least \((1-\chi^2)R-o(1)\) before the
+information gap disappears.
 \Cref{cor:raw-label-fano-price-no-rescue} adds that deterministic pruning
 prices on the same raw labels do not help unless they change the charged
 certificate itself.
