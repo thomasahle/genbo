@@ -825,6 +825,9 @@ fn main() {
         assert!(pq::selftest_resid(100, 2) && pq::selftest_resid(96, 4), "resid refine ADC != reconstruct-L2!");
         vq::RESID.store(true, std::sync::atomic::Ordering::Relaxed);
     }
+    // RESIDUAL QUANTIZATION: encode x-cell_centroid as the primary 4-bit code + per-cell <q,cent> scan
+    // offset (P124, +6-11pt IP pool-recall). apq4 only. Int16 IP path (don't combine with FASTSCAN yet).
+    if std::env::var("SBANN_RESIDQ").is_ok() { vq::RESIDQ.store(true, std::sync::atomic::Ordering::Relaxed); }
     match a.get(1).map(String::as_str) {
         Some("dotbench") => {
             // microbench: VNNI vs AVX2 int8 dot, dim d, REPS over a working set that fits L2 (warm).

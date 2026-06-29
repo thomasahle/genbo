@@ -24,6 +24,10 @@ pub static USE512FS: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBo
 /// the 4-bit-ADC survivor ranking before the exact raw rerank, so far fewer raw vectors are read.
 /// Set from SBANN_RESID. SBANN_RESID_DPB picks the refine subspace size (default 2 => m=d/2 bytes/vec).
 pub static RESID: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+/// true => RESIDUAL QUANTIZATION (SBANN_RESIDQ): the PRIMARY scan code encodes x - cell_centroid (codebook
+/// retrained on residuals), and the scan adds the exact per-cell <q,centroid> offset. +6-11pt IP
+/// pool-recall (P124) -> shallower rerank pool for OOD. Distinct from RESID (8-bit refine, which failed).
+pub static RESIDQ: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
 /// Batched exact-int8 rerank: detect AVX2 once, call it directly (no per-survivor dispatch),
 /// PREFETCH the scattered survivor gathers (the real cost — random reads into the base), and keep
@@ -666,16 +670,20 @@ impl Router for HierRouter {
 pub enum QueryCtx {
     Pq { regs: Vec<__m128i> },                  // PQ/OPQ/AQ LUT registers (i8, saturating)
     // i16 LUT: lo/hi byte-tables (AVX2 single-block) + zmm tables (AVX-512 32-wide pair). Full-res ranking.
-    Pq16 { lo: Vec<__m128i>, hi: Vec<__m128i>, lut_z: Vec<__m512i> },
+    Pq16 { lo: Vec<__m128i>, hi: Vec<__m128i>, lut_z: Vec<__m512i>, scale: f32 }, // scale = i16-units/IP for RESIDQ offset
     // fast-scan: int8 LUT, 1 vpshufb/subspace, i16 accum. regs_z = same LUT broadcast to zmm lanes for
     // the 64-wide AVX-512 path (empty unless USE512FS).
-    Pq8 { regs: Vec<__m128i>, regs_z: Vec<__m512i> },
+    Pq8 { regs: Vec<__m128i>, regs_z: Vec<__m512i>, scale: f32 },
     Scalar,                                      // exact int8: scan uses the raw query
 }
 
 pub trait Compressor: Send + Sync {
     fn block_bytes(&self) -> usize;
-    fn encode_block(&self, rows: &[&[i8]], n_real: usize, out: &mut Vec<u8>);
+    /// Encode 16 rows into a block. `cell_cent` (empty unless SBANN_RESIDQ) = the cell's raw centroid;
+    /// when non-empty a residual compressor encodes `row - cell_cent` (in f32) instead of the raw row.
+    fn encode_block(&self, rows: &[&[i8]], n_real: usize, cell_cent: &[i8], out: &mut Vec<u8>);
+    /// Retrain the codebook on residual vectors (SBANN_RESIDQ). Default no-op; Apq4 retrains its PQ.
+    fn retrain_residual(&mut self, _sample_f32: &[f32], _n: usize, _d: usize) {}
     fn prepare_query(&self, q: &[i8]) -> QueryCtx;
     /// approx dists (smaller=closer) for the 16 points of `block` into out16.
     fn scan_block(&self, block: &[u8], ctx: &QueryCtx, q: &[i8], rows16: &[&[i8]], out16: &mut [i32; 16]);
@@ -706,7 +714,7 @@ impl Pq4 {
 
 impl Compressor for Pq4 {
     fn block_bytes(&self) -> usize { self.pq.m / 2 * 16 }
-    fn encode_block(&self, rows: &[&[i8]], n_real: usize, out: &mut Vec<u8>) {
+    fn encode_block(&self, rows: &[&[i8]], n_real: usize, _cell_cent: &[i8], out: &mut Vec<u8>) {
         let mut codes16 = [[0u8; 256]; 16];
         for j in 0..16 {
             if j < n_real { self.pq.encode(rows[j], &mut codes16[j][..self.pq.m]); }
@@ -729,7 +737,7 @@ impl Compressor for Pq4 {
 
 /// Anisotropic 4-bit PQ (ScaNN-style): codebooks trained with parallel-error weighting `eta`.
 /// No rotation (identity); isolates the anisotropic-loss effect. ADC scan identical to Pq4.
-pub struct Apq4 { pq: pq::Pq, d: usize }
+pub struct Apq4 { pq: pq::Pq, d: usize, dpb: usize, eta: f32 }
 
 impl Apq4 {
     pub fn train(ds: &I8Bin, dpb: usize, iters: usize, eta: f32) -> Self {
@@ -738,36 +746,47 @@ impl Apq4 {
         let stride = (n / smp).max(1);
         let mut x = vec![0f32; smp * d];
         x.par_chunks_mut(d).enumerate().for_each(|(i, o)| { let r = ds.row(i * stride); for k in 0..d { o[k] = r[k] as f32; } });
-        Apq4 { pq: pq::Pq::train_f32_aniso(&x, d, dpb, smp, iters, eta), d }
+        Apq4 { pq: pq::Pq::train_f32_aniso(&x, d, dpb, smp, iters, eta), d, dpb, eta }
     }
 }
 
 impl Compressor for Apq4 {
     fn block_bytes(&self) -> usize { self.pq.m / 2 * 16 }
-    fn encode_block(&self, rows: &[&[i8]], n_real: usize, out: &mut Vec<u8>) {
+    fn encode_block(&self, rows: &[&[i8]], n_real: usize, cell_cent: &[i8], out: &mut Vec<u8>) {
         let mut codes16 = [[0u8; 256]; 16];
         let mut xf = vec![0f32; self.d];
+        let resid = !cell_cent.is_empty(); // SBANN_RESIDQ: encode (row - cell_cent) in f32
         for j in 0..16 {
             if j < n_real {
-                for k in 0..self.d { xf[k] = rows[j][k] as f32; }
+                if resid { for k in 0..self.d { xf[k] = rows[j][k] as f32 - cell_cent[k] as f32; } }
+                else { for k in 0..self.d { xf[k] = rows[j][k] as f32; } }
                 self.pq.encode_f32(&xf, &mut codes16[j][..self.pq.m]);
             } else { for k in 0..self.pq.m { codes16[j][k] = 0; } }
         }
         pq::pack_block(&codes16, self.pq.m, out);
     }
+    fn retrain_residual(&mut self, sample_f32: &[f32], n: usize, _d: usize) {
+        // RESIDQ: re-fit the anisotropic codebook on residual vectors (smaller range -> 4 bits resolve
+        // them better -> more accurate IP ranking, +6-11pt pool-recall, P124).
+        self.pq = pq::Pq::train_f32_aniso(sample_f32, self.d, self.dpb, n, 6, self.eta);
+    }
     fn prepare_query(&self, q: &[i8]) -> QueryCtx {
         let qf: Vec<f32> = q.iter().map(|&v| v as f32).collect();
         // fast-scan: int8 LUT, 1 vpshufb/subspace + i16 accum. ~1.7x scan at ~12-13 bit rank. L2 or IP.
+        let ip = IP_MODE.load(std::sync::atomic::Ordering::Relaxed);
+        let residq = RESIDQ.load(std::sync::atomic::Ordering::Relaxed);
         if FASTSCAN.load(std::sync::atomic::Ordering::Relaxed) {
-            let l = if IP_MODE.load(std::sync::atomic::Ordering::Relaxed) { self.pq.query_lut_f32_i8s_ip(&qf) } else { self.pq.query_lut_f32_i8s(&qf) };
+            let l = if ip { self.pq.query_lut_f32_i8s_ip(&qf) } else { self.pq.query_lut_f32_i8s(&qf) };
             let regs_z = if USE512FS.load(std::sync::atomic::Ordering::Relaxed) { pq::lut_regs_i8_z512(&l, self.pq.m) } else { Vec::new() };
-            return QueryCtx::Pq8 { regs: pq::lut_regs_i8(&l, self.pq.m), regs_z };
+            let scale = if residq && ip { self.pq.ip_i8s_scale(&qf) } else { 0.0 };
+            return QueryCtx::Pq8 { regs: pq::lut_regs_i8(&l, self.pq.m), regs_z, scale };
         }
         if !LUT16_OFF.load(std::sync::atomic::Ordering::Relaxed) {
-            let lut = if IP_MODE.load(std::sync::atomic::Ordering::Relaxed) { self.pq.query_lut_f32_i16_ip(&qf) } else { self.pq.query_lut_f32_i16(&qf) };
+            let lut = if ip { self.pq.query_lut_f32_i16_ip(&qf) } else { self.pq.query_lut_f32_i16(&qf) };
             let (lo, hi) = pq::lut_regs_i16(&lut, self.pq.m);
             let lut_z = pq::lut_regs_i16_z(&lut, self.pq.m);
-            QueryCtx::Pq16 { lo, hi, lut_z }
+            let scale = if residq && ip { self.pq.ip_i16_scale(&qf) } else { 0.0 };
+            QueryCtx::Pq16 { lo, hi, lut_z, scale }
         } else {
             { let l = if IP_MODE.load(std::sync::atomic::Ordering::Relaxed) { self.pq.query_lut_f32_ip_i8(&qf) } else { self.pq.query_lut_f32(&qf) }; QueryCtx::Pq { regs: pq::lut_regs(&l, self.pq.m) } }
         }
@@ -912,7 +931,7 @@ impl Opq4 {
 
 impl Compressor for Opq4 {
     fn block_bytes(&self) -> usize { self.pq.m / 2 * 16 }
-    fn encode_block(&self, rows: &[&[i8]], n_real: usize, out: &mut Vec<u8>) {
+    fn encode_block(&self, rows: &[&[i8]], n_real: usize, _cell_cent: &[i8], out: &mut Vec<u8>) {
         let mut codes16 = [[0u8; 256]; 16];
         let mut rot = vec![0f32; self.d];
         for j in 0..16 {
@@ -932,7 +951,7 @@ impl Compressor for Opq4 {
             let lut = if IP_MODE.load(std::sync::atomic::Ordering::Relaxed) { self.pq.query_lut_f32_i16_ip(&rot) } else { self.pq.query_lut_f32_i16(&rot) };
             let (lo, hi) = pq::lut_regs_i16(&lut, self.pq.m);
             let lut_z = pq::lut_regs_i16_z(&lut, self.pq.m);
-            QueryCtx::Pq16 { lo, hi, lut_z }
+            QueryCtx::Pq16 { lo, hi, lut_z, scale: 0.0 }
         } else {
             { let l = if IP_MODE.load(std::sync::atomic::Ordering::Relaxed) { self.pq.query_lut_f32_ip_i8(&rot) } else { self.pq.query_lut_f32(&rot) }; QueryCtx::Pq { regs: pq::lut_regs(&l, self.pq.m) } }
         }
@@ -968,7 +987,7 @@ pub struct ScalarI8 { d: usize }
 impl ScalarI8 { pub fn new(d: usize) -> Self { ScalarI8 { d } } }
 impl Compressor for ScalarI8 {
     fn block_bytes(&self) -> usize { 0 } // stores nothing; rescans raw vectors
-    fn encode_block(&self, _rows: &[&[i8]], _n: usize, _out: &mut Vec<u8>) {}
+    fn encode_block(&self, _rows: &[&[i8]], _n: usize, _cell_cent: &[i8], _out: &mut Vec<u8>) {}
     fn prepare_query(&self, _q: &[i8]) -> QueryCtx { QueryCtx::Scalar }
     fn scan_block(&self, _b: &[u8], _c: &QueryCtx, q: &[i8], rows16: &[&[i8]], out16: &mut [i32; 16]) {
         for i in 0..16 {
@@ -997,10 +1016,13 @@ pub struct Index {
     // IDEA #4 refine code (empty unless SBANN_RESID): 8-bit PQ codes in SLOT order, m bytes/slot.
     pub resid_pq: Option<pq::ResidPq>,
     pub resid_codes: Vec<u8>,
+    // RESIDUAL QUANTIZATION (SBANN_RESIDQ): per-cell raw centroids (nc*d i8). Empty unless RESIDQ.
+    // The scan adds <q, rq_cent[cell]> (scaled) so candidate scores = <q,cent>+<q,resid_hat>.
+    pub rq_cent: Vec<i8>,
 }
 
 impl Index {
-    pub fn build(router: Box<dyn Router>, comp: Box<dyn Compressor>, ds: &I8Bin, a0: usize) -> Index {
+    pub fn build(router: Box<dyn Router>, mut comp: Box<dyn Compressor>, ds: &I8Bin, a0: usize) -> Index {
         let (n, _d) = (ds.nb, ds.d);
         let nc = router.n_cells();
         // assign all points (parallel) into a preallocated [n*a0] array — no per-point Vec
@@ -1022,6 +1044,31 @@ impl Index {
             ids[cur[c as usize] as usize] = pt;
             cur[c as usize] += 1;
         }
+        // RESIDUAL QUANTIZATION (SBANN_RESIDQ): per-cell RAW centroids + retrain the codebook on residuals.
+        // The cosine-routing centroids are in NORMALIZED space; the scan/rerank is in RAW space, so we
+        // compute raw-space centroids here (mean of each cell's raw vectors).
+        let residq_on = RESIDQ.load(std::sync::atomic::Ordering::Relaxed);
+        let dd = ds.d;
+        let rq_cent: Vec<i8> = if residq_on {
+            let mut cent = vec![0i8; nc * dd];
+            cent.par_chunks_mut(dd).enumerate().for_each(|(c, out)| {
+                let (s, e) = (cell_start[c] as usize, cell_start[c + 1] as usize);
+                let cnt = (e - s).max(1);
+                let mut acc = vec![0f64; dd];
+                for &pt in &ids[s..e] { let r = ds.row(pt as usize); for k in 0..dd { acc[k] += r[k] as f64; } }
+                for k in 0..dd { out[k] = (acc[k] / cnt as f64).round().clamp(-127.0, 127.0) as i8; }
+            });
+            // retrain the codebook on a residual sample (raw - its cell's centroid)
+            let smp = n.min(40000);
+            let stride = (n / smp).max(1);
+            let mut x = vec![0f32; smp * dd];
+            x.par_chunks_mut(dd).enumerate().for_each(|(i, o)| {
+                let oi = i * stride; let r = ds.row(oi); let cell = assign[oi * a0] as usize;
+                for k in 0..dd { o[k] = r[k] as f32 - cent[cell * dd + k] as f32; }
+            });
+            comp.retrain_residual(&x, smp, dd);
+            cent
+        } else { Vec::new() };
         // encode blocks per cell
         let bb = comp.block_bytes();
         let d = ds.d;
@@ -1060,7 +1107,8 @@ impl Index {
             while i < pts.len() {
                 let cnt = (pts.len() - i).min(16);
                 let rows: Vec<&[i8]> = (0..16).map(|j| if j < cnt { ds.row(pts[i + j] as usize) } else { &[][..] }).collect();
-                comp.encode_block(&rows, cnt, &mut blocks);
+                let cc: &[i8] = if residq_on { &rq_cent[cell * dd..cell * dd + dd] } else { &[] };
+                comp.encode_block(&rows, cnt, cc, &mut blocks);
                 for j in 0..16 {
                     slot_orig.push(if j < cnt { pts[i + j] } else { u32::MAX });
                     if j < cnt { raw.extend_from_slice(rows[j]); } else { raw.resize(raw.len() + d, 0); }
@@ -1102,7 +1150,7 @@ impl Index {
                 }
             }
         }
-        Index { router, comp, cell_bstart, slot_orig, blocks, bb, xfn: Vec::new(), raw, d, blocks_il, cell_ilstart, resid_pq, resid_codes }
+        Index { router, comp, cell_bstart, slot_orig, blocks, bb, xfn: Vec::new(), raw, d, blocks_il, cell_ilstart, resid_pq, resid_codes, rq_cent }
     }
 
     pub fn search(&self, ds: &I8Bin, q: &[i8], p: usize, t: usize, k: usize) -> Vec<u32> {
@@ -1195,7 +1243,13 @@ impl Index {
         let use512fs = USE512FS.load(std::sync::atomic::Ordering::Relaxed)
             && !self.blocks_il.is_empty()
             && matches!(ctx, QueryCtx::Pq8 { .. });
+        // RESIDQ: add the exact per-cell <q,centroid> offset (in scan i16-units) so candidate scores =
+        // <q,cent>+<q,resid_hat>. scale=0 (non-residq) skips it. Applied once per cell after its blocks.
+        let rq_scale: f32 = match &ctx { QueryCtx::Pq16 { scale, .. } | QueryCtx::Pq8 { scale, .. } => *scale, _ => 0.0 };
+        let residq = rq_scale != 0.0 && !self.rq_cent.is_empty();
+        let dd = self.d;
         for &cell in cells {
+            let pool_start = pool.len();
             let (bs, be) = (self.cell_bstart[cell as usize] as usize, self.cell_bstart[cell as usize + 1] as usize);
             if need_rows {
                 // exact-scan path: build raw rows, per-block
@@ -1213,7 +1267,7 @@ impl Index {
                 }
             } else if use512fs {
                 // 64-wide AVX-512 fast-scan over the interleaved superblocks (4 blocks/superblock).
-                if let QueryCtx::Pq8 { regs, regs_z } = &ctx {
+                if let QueryCtx::Pq8 { regs, regs_z, .. } = &ctx {
                     let m = bb / 8;
                     let il0 = self.cell_ilstart[cell as usize] as usize;
                     let nfull = (be - bs) / 4;
@@ -1267,6 +1321,12 @@ impl Index {
                         if self.slot_orig[slot] != u32::MAX { pool.push((out16[j], slot as u32)); }
                     }
                 }
+            }
+            if residq {
+                // dot = <q, cell_centroid>; score is smaller=larger-IP, so subtract scale*dot.
+                let dot = -simd::negdot_i8(q, &self.rq_cent[cell as usize * dd..cell as usize * dd + dd]);
+                let off = (rq_scale * dot as f32).round() as i32;
+                for e in &mut pool[pool_start..] { e.0 -= off; }
             }
         }
         let tt = t.min(pool.len());

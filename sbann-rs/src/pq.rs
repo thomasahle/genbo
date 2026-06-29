@@ -418,6 +418,40 @@ impl Pq {
         let scale = 30000.0 / summax.max(1e-9);
         f.iter().map(|&v| (v * scale).round().clamp(0.0, 32767.0) as i16).collect()
     }
+
+    /// Scale used by query_lut_f32_i16_ip (= 30000/summax). Lets the residual-quant scan convert the
+    /// float per-cell offset <q,centroid> into the same i16 units as the residual ADC scores.
+    pub fn ip_i16_scale(&self, q: &[f32]) -> f32 {
+        let m = self.m; let mut summax = 0.0f32;
+        for sub in 0..m {
+            let qs = &q[sub * self.dpb..sub * self.dpb + self.dpb];
+            let mut smin = f32::INFINITY; let mut v = [0f32; 16];
+            for c in 0..16 {
+                let ct = &self.cent[(sub * 16 + c) * self.dpb..(sub * 16 + c) * self.dpb + self.dpb];
+                let mut dot = 0.0f32; for k in 0..self.dpb { dot += qs[k] * ct[k]; }
+                v[c] = -dot; smin = smin.min(-dot);
+            }
+            let mut smax = 0.0f32; for c in 0..16 { smax = smax.max(v[c] - smin); }
+            summax += smax;
+        }
+        30000.0 / summax.max(1e-9)
+    }
+    /// Scale used by query_lut_f32_i8s_ip (= 127/maxrange), for the fast-scan residual-quant offset.
+    pub fn ip_i8s_scale(&self, q: &[f32]) -> f32 {
+        let m = self.m; let mut maxrange = 0.0f32;
+        for sub in 0..m {
+            let qs = &q[sub * self.dpb..sub * self.dpb + self.dpb];
+            let mut smin = f32::INFINITY; let mut v = [0f32; 16];
+            for c in 0..16 {
+                let ct = &self.cent[(sub * 16 + c) * self.dpb..(sub * 16 + c) * self.dpb + self.dpb];
+                let mut dot = 0.0f32; for k in 0..self.dpb { dot += qs[k] * ct[k]; }
+                v[c] = -dot; smin = smin.min(-dot);
+            }
+            let mut smax = 0.0f32; for c in 0..16 { smax = smax.max(v[c] - smin); }
+            maxrange = maxrange.max(smax);
+        }
+        127.0 / maxrange.max(1e-9)
+    }
 }
 
 /// 8-bit-per-subspace refine PQ (256 centroids/subspace, 1 byte/code) — a SECOND, finer in-stream
