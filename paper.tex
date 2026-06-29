@@ -97250,6 +97250,102 @@ amplified in the next proposition.
    \((QST8)\) supplying \((RSPX7)\).
 \end{proof}
 
+\begin{corollary}[Random quotient increments refill merged trellis states]
+   \label{cor:random-quotient-trellis-width-barrier}
+   Work with one layered trellis as in
+   \cref{cor:quotient-syndrome-trellis-support-sampler}, and put
+   \(M=|\bar G|\).  For a vertex \(v\in V_\ell\), let
+   \(\mathcal P(v)\) be the set of source-to-\(v\) prefixes in the original
+   trellis and write \(N_v=|\mathcal P(v)|\).  For a prefix \(p\in\mathcal P(v)\)
+   let
+   \[
+      \bar s(p)=\sum_{e\in p}\bar c(e)\in\bar G,
+      \qquad
+      S(v)=\{\bar s(p):p\in\mathcal P(v)\}.
+      \tag{RTW1}
+   \]
+   Suppose the quotient increments are random, independently of the original
+   trellis, in such a way that for every fixed \(v\) the random variables
+   \(\{\bar s(p):p\in\mathcal P(v)\}\) are pairwise independent and uniform on
+   \(\bar G\).  This holds, for example, for independent uniform edge
+   increments in a layered trellis, or for a field-affine/carry-less syndrome
+   model whose prefix sums are pairwise independent.
+
+   Then
+   \[
+      \E |S(v)|
+      \ge
+      M\,\frac{N_v}{M+N_v}
+      \ge
+      \frac12\min\{M,N_v\}.
+      \tag{RTW2}
+   \]
+   Consequently the expected number of augmented quotient states at layer
+   \(\ell\),
+   \[
+      \mathcal W_\ell=\sum_{v\in V_\ell}|S(v)|,
+      \tag{RTW3}
+   \]
+   satisfies
+   \[
+      \E\mathcal W_\ell
+      \ge
+      \frac12\sum_{v\in V_\ell}\min\{M,N_v\}.
+      \tag{RTW4}
+   \]
+
+   Thus a random-looking quotient syndrome destroys exactly the trellis
+   merging that the compact decoder was relying on.  If a native state \(v\)
+   represents many more than \(M\) high-score prefixes, quotient conditioning
+   creates \(\Omega(M)\) syndrome states over that one vertex; if it represents
+   fewer than \(M\) prefixes, almost all those prefixes remain distinct after
+   quotienting.  At the aligned design point, where \(M\) is
+   \(m^{1-\rho}\) up to polylogarithmic factors, a fresh pairwise-independent
+   or multiply-style quotient is therefore useful only for terminal thinning
+   or for already-small residual frontiers.  A polylog-overhead
+   support-conditioned trellis needs the quotient syndrome to be mostly
+   determined by the native state, or to leave only \(O(\log\log m)\) residual
+   quotient coordinates on the route-occupied states.
+\end{corollary}
+
+\begin{proof}
+   Fix \(v\), and for each \(\eta\in\bar G\) let
+   \[
+      X_\eta=|\{p\in\mathcal P(v):\bar s(p)=\eta\}|.
+   \]
+   Pairwise independence and uniformity give
+   \[
+      \E X_\eta=N_v/M=:\mu,
+      \qquad
+      \E X_\eta^2\le \mu+\mu^2 .
+   \]
+   By Paley--Zygmund,
+   \[
+      \Pr[X_\eta>0]\ge\frac{\mu}{1+\mu}.
+   \]
+   Summing this lower bound over all \(\eta\in\bar G\) yields
+   \[
+      \E |S(v)|
+      =
+      \sum_{\eta\in\bar G}\Pr[X_\eta>0]
+      \ge
+      M\frac{\mu}{1+\mu}
+      =
+      M\frac{N_v}{M+N_v}.
+   \]
+   The final inequality in \((RTW2)\) is the elementary bound
+   \(MN/(M+N)\ge\frac12\min\{M,N\}\).  Summing over vertices at layer \(\ell\)
+   proves \((RTW4)\).
+
+   For independent uniform edge increments, take two distinct source-to-\(v\)
+   prefixes \(p\ne p'\).  Since the trellis is layered, the two prefixes have
+   the same length and each has an edge not used by the other.  After all other
+   increments are fixed, one such edge controls \(\bar s(p)\) and one edge of
+   \(p'\setminus p\) controls \(\bar s(p')\), giving a uniform pair in
+   \(\bar G^2\).  The field-affine and carry-less cases are the same linear
+   rank calculation over the chosen finite-field quotient.
+\end{proof}
+
 \begin{corollary}[Aligned linear charts compute rate-coverage sketches]
    \label{cor:aligned-linear-chart-rate-coverage-sketch}
    Work in the setting of
