@@ -95713,6 +95713,66 @@ amplified in the next proposition.
    \cref{cor:route-local-union-effective-entropy-barrier}.
 \end{proof}
 
+\begin{corollary}[Random signatures cannot be materialized sparsely]
+   \label{cor:random-active-signature-support-barrier}
+   Work in the shared-signature setting of
+   \cref{cor:shared-signature-rate-coverage-sketch}, and consider one query
+   outcome whose selected label set is a fixed finite set \(B\) of size \(N\),
+   with positive weights \(\omega_a>0\).  Let \(\Sigma=G\) be a finite group
+   of size \(K\), and suppose the signatures \(\sigma(a)\), \(a\in B\), are
+   uniform in \(G\) and pairwise independent.  Then the active weighted
+   signature support
+   \[
+      \Sigma_B=\{\alpha:u_\alpha(B)>0\}
+   \]
+   satisfies
+   \[
+      \E|\Sigma_B|
+      \ge
+      K\,\frac{N}{K+N}.
+      \tag{ASB1}
+   \]
+   In particular, if \(N\ge K\), any exact materialization of the weighted
+   active-signature list
+   \[
+      \{(\alpha,u_\alpha(B)):\alpha\in\Sigma_B\}
+   \]
+   has expected output size at least \(K/2\).
+
+   Consequently, a pairwise-independent affine, tabulation, or carry-less
+   multiply-style signature supplies enough randomness for second-moment
+   thinning, but it does not by itself supply the sparse input required by
+   \cref{cor:shared-signature-rate-coverage-sketch}.  A broad decoded label
+   set with \(N\gg\polylog m\) has a sparse active-signature list only if the
+   decoder targets a small residue set in advance, or if the code/lattice
+   quotient structurally collapses the selected labels to few signatures.
+   Merely replacing the subset by another random signature map turns the
+   active-signature output into the usual occupancy problem.
+\end{corollary}
+
+\begin{proof}
+   For each \(\alpha\in G\), let
+   \[
+      X_\alpha=|\{a\in B:\sigma(a)=\alpha\}|.
+   \]
+   Pairwise independence gives
+   \[
+      \E X_\alpha=N/K=:\mu,
+      \qquad
+      \E X_\alpha^2\le\mu+\mu^2 .
+   \]
+   Hence Paley--Zygmund gives
+   \[
+      \Pr[X_\alpha>0]\ge\frac{\mu}{1+\mu}.
+   \]
+   Summing over \(\alpha\in G\) proves \((ASB1)\).  Since all weights are
+   positive, \(u_\alpha(B)>0\) exactly when \(X_\alpha>0\).  The \(N\ge K\)
+   specialization gives \(\mu\ge1\) and hence
+   \(\E|\Sigma_B|\ge K/2\).  The interpretation is the same occupancy
+   calculation as in \cref{lem:syndrome-prefix-occupancy}, now applied to the
+   active signatures required by the point-mass sketch compiler.
+\end{proof}
+
 \begin{remark}[What the sketch has to aggregate]
    \label{rem:sketched-responsibility-aggregation}
    The sketch in \cref{lem:linear-sketch-heavy-responsibilities} is linear in
