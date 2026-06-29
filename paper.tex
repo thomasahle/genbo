@@ -6226,19 +6226,24 @@ partition ignores the bias coordinates that certify the list size.
    almost every residue and the prefix remains live with constant probability.
 
    Thus the useful pseudorandom subset need only be 2-independent for recall,
-   but the decoder requires a residual-entropy condition: along the searched
-   frontier, most prefixes must have only \(O(K)\) high-scoring suffixes, or
-   else the implementation must pay a residue frontier, meet-in-the-middle
-   list, max-plus convolution, or output-sensitive bucket reporter for the
-   broad suffix set.  This is the experiment to run for score-and-ball tuple
-   machinery: measure the profile
+   but the decoder requires a residual-entropy oracle.  Along the searched
+   frontier, a prefix with many high-scoring suffixes remains live for almost
+   every target residue; algebra alone does not make that prefix disappear.
+   However, \cref{cor:retained-terminals-dominate-prefixes} shows that the
+   total number of live prefixes is still dominated by the retained terminal
+   output.  The implementation has to find the occupied residual suffix classes
+   without scanning the broad suffix set itself, using a residue frontier,
+   meet-in-the-middle list, max-plus convolution, trellis quotient, or
+   output-sensitive bucket reporter.  This is the experiment to run for
+   score-and-ball tuple machinery: measure the profile
    \[
       \sum_{u\ {\rm at\ level}\ \ell}
       \min\{1,|A_u|/K\}
    \]
-   across levels and compare it with the terminal thinning
-   \(|\{S(c)\ge\Theta\}|/K\).  A gap between these two quantities is a decoder
-   frontier barrier, not a failure of pseudorandomness.
+   across levels, but also measure the cost of constructing or querying the
+   residual suffix-residue summaries that realize this profile.  A broad
+   suffix set is an oracle/reporting barrier, not a failure of
+   pseudorandomness.
 \end{remark}
 
 \begin{corollary}[Residual-entropy audit for syndrome tuple decoders]
@@ -6283,18 +6288,16 @@ partition ignores the bias coordinates that certify the list size.
    \((SRA3)\) is always reduced by \(K\), while the branch-and-bound frontier
    is reduced only to the residual-entropy scale \((SRA2)\).
 
-   Consequently, for a target query budget \(B_{\rm tar}\), a necessary audit
-   for this prefix-decoder implementation is
+   Consequently, for a target query budget \(B_{\rm tar}\), the live-prefix
+   part of a residue-aware prefix decoder is certified by
    \[
       \sum_{\ell=0}^{h-1}\mathsf C_\ell(K,\Theta)
       \le B_{\rm tar}\log^{O(1)}m
       \tag{SRA4}
    \]
-   up to the intended reporter and priority-queue overheads.  If
-   \((SRA4)\) fails by a superpolylogarithmic factor, then the construction
-   needs a stronger suffix reporter--meet-in-the-middle residue frontiers,
-   max-plus convolution, a trellis quotient, or responsibility-thinned output--
-   rather than more independence in the hash family.
+   up to the intended residue-occupancy reporter and priority-queue overheads.
+   This condition concerns only the number of live prefixes.  It does not
+   certify that the decoder can find the occupied suffix residues cheaply.
 \end{corollary}
 
 \begin{proof}
@@ -6304,6 +6307,51 @@ partition ignores the bias coordinates that certify the list size.
    audit statement is just the accounting consequence for a decoder whose
    work includes every live prefix at each level; a more structured suffix
    reporter can be certified only by replacing this charged operation.
+\end{proof}
+
+\begin{corollary}[Retained terminals dominate residue live prefixes]
+   \label{cor:retained-terminals-dominate-prefixes}
+   In the setting of \cref{cor:syndrome-residual-entropy-audit}, let
+   \[
+      L(\Theta)=|\{c\in\mathcal C:S(c)\ge\Theta\}|.
+   \]
+   Then for every level \(\ell\),
+   \[
+      \mathsf C_\ell(K,\Theta)
+      \le \frac{L(\Theta)}{K}.
+      \tag{RTD1}
+   \]
+   Hence a syndrome-aware prefix decoder with an oracle for suffix-residue
+   occupancy has expected live-prefix count at most
+   \[
+      h\,\frac{L(\Theta)}{K}
+      \tag{RTD2}
+   \]
+   over all nonterminal levels.
+
+   In particular, for the oversampled smooth product terminal filter in
+   \cref{cor:oversampled-product-syndrome-thinning}, the live-prefix count is
+   already within the retained terminal-output scale
+   \(m^{\rho(a,b)}\log^{O_{a,b}(1)}m\), because \(h=k=O_{a,b}(1)\).  The
+   implementation issue is therefore sharper than ``too many live prefixes'':
+   it is to support the suffix-residue occupancy oracle or an equivalent
+   meet-in-the-middle, max-plus, trellis, or bucket reporter within the same
+   output-sensitive bound.
+\end{corollary}
+
+\begin{proof}
+   For a fixed level \(\ell\), each terminal tuple above threshold is counted
+   in exactly one suffix count \(N_\ell(u;\Theta)\), namely at its length
+   \(\ell\) prefix.  Therefore
+   \[
+      \sum_{u}N_\ell(u;\Theta)=L(\Theta).
+   \]
+   Since \(\min\{1,N/K\}\le N/K\) for every \(N\ge0\), summing over prefixes
+   proves \((RTD1)\).  Summing over the \(h\) levels gives \((RTD2)\).
+   The smooth-product specialization uses
+   \cref{cor:oversampled-product-syndrome-thinning}, where the expected
+   retained terminal output is \(L(\Theta)/K=
+   m^{\rho(a,b)}\log^{O_{a,b}(1)}m\) and \(h=k\) is fixed.
 \end{proof}
 
 \begin{corollary}[Oversampled product witnesses support polylog syndrome thinning]
