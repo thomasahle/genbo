@@ -17008,6 +17008,77 @@ partition ignores the bias coordinates that certify the list size.
    data lister.
 \end{remark}
 
+\begin{corollary}[OSD compiler for heavy-responsibility residents]
+   \label{cor:osd-heavy-responsibility-compiler}
+   Work in the setting of
+   \cref{cor:marked-heavy-lister-closes-trellis}, and fix one sampled
+   query-bucket pair \((q,\ell)\).  Suppose the resident points have signatures
+   \(c(x)\) in a linear code \(\mathcal C\le\mathbb F^h\), with resident
+   lookup lists for each codeword.  Let coordinate scores
+   \(\omega_i^{q,\ell}(a)\) define
+   \[
+      S_{q,\ell}(c)=\sum_{i=1}^h\omega_i^{q,\ell}(c_i).
+   \]
+   Assume there is a threshold \(\Theta_{q,\ell}\) such that every heavy
+   resident satisfies the score test
+   \[
+      \frac{Z_{q,x,\ell}^{\ge T}}{Z_{q,\ell}}\ge(2L_m)^{-1}
+      \quad\Longrightarrow\quad
+      S_{q,\ell}(c(x))\ge\Theta_{q,\ell}.
+      \tag{OHR1}
+   \]
+   For a fixed \(\beta>0\), define
+   \[
+      M_{q,\ell}=\sum_i\max_{a\in\mathbb F}\omega_i^{q,\ell}(a),
+   \]
+   and let \(\Lambda_*(q,\ell)\) be the minimum information-set entropy from
+   \cref{lem:min-entropy-information-set} for these scores.  If
+   \[
+      \beta\bigl(M_{q,\ell}-\Theta_{q,\ell}\bigr)
+      +\Lambda_*(q,\ell)
+      \le \log W_m,
+      \tag{OHR2}
+   \]
+   and if \(R_{q,\ell}\) denotes the total resident lookup size of the
+   codewords listed by this OSD call, then ordered-statistics decoding lists a
+   superset of all \((2L_m)^{-1}\)-heavy residents in work
+   \[
+      \log^{O(1)}m+W_m+O(R_{q,\ell}),
+   \]
+   after which exact evaluation of \(Z_{q,x,\ell}^{\ge T}/Z_{q,\ell}\) on the
+   candidates gives the heavy lister required by
+   \cref{cor:marked-heavy-lister-closes-trellis}.  Consequently, if
+   \(L_m=\log^{O_c(1)}m\), the marked spectrum \((MHL1)\)--\((MHL2)\) holds,
+   and
+   \[
+      \E_{\ell\sim\Pi_q}\bigl[W_m+R_{q,\ell}\bigr]
+      \le m^\rho\log^{O_c(1)}m
+      \tag{OHR3}
+   \]
+   for every promised query, then the trellis/code/lattice panel gives the
+   sampled ANN bounds with only polylogarithmic overhead.
+\end{corollary}
+
+\begin{proof}
+   Run the OSD reporter of \cref{cor:osd-superset-block-reporter} on the code
+   \(\mathcal C\), the scores \(\omega_i^{q,\ell}\), and threshold
+   \(\Theta_{q,\ell}\).  Its candidate-codeword bound \((OSD1)\) is exactly
+   \[
+      \exp\{\beta(M_{q,\ell}-\Theta_{q,\ell})+\Lambda_*(q,\ell)\}
+      \le W_m,
+   \]
+   by \((OHR2)\).  Thus it lists every codeword \(c\in\mathcal C\) with
+   \(S_{q,\ell}(c)\ge\Theta_{q,\ell}\) within the displayed work bound.
+   By \((OHR1)\), every heavy resident has such a codeword signature, so
+   expanding the resident lookup lists gives a candidate set containing every
+   heavy resident, with the displayed additional cost \(R_{q,\ell}\).  Exact
+   marked-ratio filtering removes false positives and leaves precisely the
+   lister assumed in \cref{cor:marked-heavy-lister-closes-trellis}.  Applying
+   that corollary gives the far-output and near-hit bounds, while \((OHR3)\)
+   charges the OSD and resident-expansion work to the same
+   \(m^\rho\operatorname{polylog}m\) query budget.
+\end{proof}
+
 \begin{lemma}[Tilted weight feasibility is linear]
    \label{lem:tilted-weight-linear-feasibility}
    Fix a finite retained label set \(\mathcal L\) and storage predicate
@@ -94686,6 +94757,12 @@ coding language: Construction-A theta quotients, GMD/Chase, OSD information
 sets, Tanner/polar/BCJR decoders, and recursive lattice decoders are useful
 only insofar as they provide this point-indexed heavy posterior lister or
 expose a failure of the heavy near-mass condition.
+\Cref{cor:osd-heavy-responsibility-compiler} gives the first concrete
+compiler for that lister: if the heavy-ratio test implies a soft-score
+threshold over a linear residue code and the minimum information-set entropy
+at that threshold is controlled, ordered-statistics decoding lists all heavy
+residents before exact marked-ratio filtering; the only extra accounting is the
+sampled number of resident signatures expanded from the listed codewords.
 \Cref{lem:tilted-weight-linear-feasibility} shows that, for a fixed retained
 pool, choosing those weights is just a linear feasibility problem after
 clearing the tilted partition functions.  Failure has a concrete dual
