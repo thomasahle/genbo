@@ -1968,6 +1968,20 @@ P126. (10M residq = only +0.2pt recall -> OOD is ROUTING-COVERAGE-limited, not s
     a sounder approach -- e.g. more cells, OOD-distribution-trained centroids, or spill). Honest: OOD ~2x
     is routing-coverage + scan-throughput, both of which our scan-accuracy work doesn't move much.
 
+P127. (*** OOD gap is ROUTING, not scan: RESIDQ reaches our routing ceiling; ScaNN's recall EXCEEDS it ***)
+    Routing pool-recall ceiling (rerank whole probed pool, poolrecall.log): p128 0.8958, p256 0.9308,
+    p384 0.9433, p512 0.9487. RESIDQ scan-recall (0.8955/0.9307/0.9432) == the ceiling -> our scan is
+    now OPTIMAL (extracts the full probed pool), NO scan headroom left -> RaBitQ/more-bits would NOT help.
+    ScaNN on the SAME 1M subset (bench_scann_t2i1m, num_leaves=2000, dot_product, reorder 200): recall
+    lts80 0.9072, lts150 0.9565, lts300 0.9794, lts600 0.9924. ScaNN's achievable recall (0.957-0.992)
+    EXCEEDS our routing ceiling (max 0.9487 @p512) -> ScaNN's PARTITIONING finds OOD neighbors our
+    cosine-hierk3 routing never puts in the candidate pool. (1M QPS cross-window/load-confounded -- don't
+    compare; trust the 10M same-window ~2x.) CONCLUSION: the OOD ~2x is ROUTING/PARTITIONING + scan
+    throughput, NOT scan accuracy. eta(P123)/residual-quant(P125-126)/RaBitQ all attack the scan = wrong
+    half. RESIDQ is kept (maxes the scan, clean) but OOD needs a better PARTITION for the OOD query
+    manifold (query-aware routing failed P96/98; needs more cells / OOD-distribution centroids / spill).
+    Scan-accuracy work on OOD is DONE; the lever is routing. (No more ScaNN re-runs -- ample data.)
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
