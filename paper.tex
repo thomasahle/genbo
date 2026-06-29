@@ -89297,6 +89297,167 @@ amplified in the next proposition.
    product-sign barrier.
 \end{remark}
 
+\begin{remark}[Frozen asymptotic form for the sparse-subset channel]
+   \label{rem:sparse-subset-asymptotic-normal-form}
+   The theorem target behind \cref{rem:sparse-subset-channel-stress} should be
+   stated directly as a large-deviation inequality, not as another decoder
+   certificate.  Put \(w=\lambda r\), \(0<\lambda<1\), let
+   \(\gamma_\sigma=N(0,\sigma^2)\), and define
+   \[
+      R_\lambda=H(\lambda)+\lambda\log2 .
+   \]
+   For a probability law \(\nu\) on the real line with finite Gaussian
+   exponential moments, define the elementary-symmetric coefficient free
+   energy
+   \[
+      \mathcal F_\lambda(\nu)
+      =
+      \inf_{\theta>0}
+      \left\{
+         \int \log(1+2\theta\cosh z)\,d\nu(z)
+         -
+         \lambda\log\theta
+      \right\}.
+      \tag{OSS1}
+   \]
+   The minimizing \(\theta\) is characterized by
+   \[
+      \lambda
+      =
+      \int \frac{2\theta\cosh z}{1+2\theta\cosh z}\,d\nu(z).
+      \tag{OSS2}
+   \]
+   Thus, if the empirical law of \(z_1,\ldots,z_r\) tends to \(\nu\), then
+   \[
+      r^{-1}\log e_{\lambda r}(2\cosh z_1,\ldots,2\cosh z_r)
+      \to \mathcal F_\lambda(\nu)
+   \]
+   at continuity points of the saddle.  The important point is that this is
+   the quenched coefficient limit.  Replacing the integral of the logarithm in
+   \((OSS1)\) by an annealed \(\log\E(1+2\theta\cosh Z)\) would average away
+   exactly the denominator fluctuation that the fixed-label far tail must pay.
+
+   For the canonical far label \(A=\{1,\ldots,\lambda r\}\) and all-positive
+   signs, split the empirical laws of the active and inactive coordinates as
+   \(\mu_1\) and \(\mu_0\).  Sanov plus the coefficient limit gives the
+   fixed-label upper-tail rate
+   \[
+      \mathcal J_{\lambda,\sigma}(t)
+      =
+      \inf
+      \left\{
+      \lambda D(\mu_1\|\gamma_\sigma)
+      +(1-\lambda)D(\mu_0\|\gamma_\sigma):
+      \lambda\!\int z\,d\mu_1(z)
+      -
+      \mathcal F_\lambda(\lambda\mu_1+(1-\lambda)\mu_0)
+      +R_\lambda
+      \ge t
+      \right\}.
+      \tag{OSS3}
+   \]
+   The storage/far-load threshold for a full signed width-\(\lambda r\) panel
+   is therefore the level \(t_{\lambda,\sigma}\) satisfying
+   \[
+      \mathcal J_{\lambda,\sigma}(t_{\lambda,\sigma})=R_\lambda.
+      \tag{OSS4}
+   \]
+   Equivalently, at exposed upper-tail levels \(\mathcal J\) is the Legendre
+   transform of the scalar saddle
+   \[
+      \Lambda_{\lambda,\sigma}(\beta)
+      =
+      \beta R_\lambda
+      +
+      \sup_{\theta>0}
+      \Bigg\{
+         \beta\lambda\log\theta
+         +
+         \lambda\log
+         \E_{Z\sim\gamma_\sigma}
+         \frac{e^{\beta Z}}{(1+2\theta\cosh Z)^\beta}
+         +
+         (1-\lambda)\log
+         \E_{Z\sim\gamma_\sigma}
+         \frac{1}{(1+2\theta\cosh Z)^\beta}
+      \Bigg\},
+      \tag{OSS4a}
+   \]
+   namely
+   \[
+      \mathcal J_{\lambda,\sigma}(t)
+      =
+      \sup_{\beta\ge0}\{\beta t-\Lambda_{\lambda,\sigma}(\beta)\}.
+      \tag{OSS4b}
+   \]
+   For fixed \(\beta>0\), the optimizing \(\theta\) balances the tilted
+   denominator occupancy:
+   \[
+      \lambda
+      =
+      \lambda\,\E_{\beta,\theta}^{(1)}
+      \frac{2\theta\cosh Z}{1+2\theta\cosh Z}
+      +(1-\lambda)\,\E_{\beta,\theta}^{(0)}
+      \frac{2\theta\cosh Z}{1+2\theta\cosh Z},
+      \tag{OSS4c}
+   \]
+   where \(\E_{\beta,\theta}^{(1)}\) tilts
+   \(\gamma_\sigma\) by
+   \(e^{\beta Z}(1+2\theta\cosh Z)^{-\beta}\) and
+   \(\E_{\beta,\theta}^{(0)}\) tilts it by
+   \((1+2\theta\cosh Z)^{-\beta}\).  Thus the numerical target is a
+   two-scalar saddle \((\beta,\theta)\), while the proof target remains the
+   same Sanov coefficient limit.
+
+   Now let \(Q_i\sim N(0,\sigma^2)\) be the query logits and
+   \(P_i=\chi Q_i+\sigma\sqrt{1-\chi^2}\,E_i\) the near-point logits, with
+   \(E_i\sim N(0,1)\) independent.  Let \(z_\lambda\) be defined by
+   \(2\Prb[G\ge z_\lambda]=\lambda\) for \(G\sim N(0,1)\).  The OSD top label
+   chooses the coordinates with \(|Q_i|\ge\sigma z_\lambda+o(1)\) and their
+   signs.  Hence its near score has law-of-large-numbers limit
+   \[
+      M_{\lambda,\sigma,\chi}
+      =
+      2\chi\sigma\varphi(z_\lambda)
+      -
+      \mathcal F_\lambda(\gamma_\sigma)
+      +R_\lambda ,
+      \tag{OSS5}
+   \]
+   where \(\varphi\) is the standard normal density.  The denominator in
+   \((OSS5)\) is still \(\mathcal F_\lambda(\gamma_\sigma)\), because it uses
+   the empirical law of all near logits \(P_i\), not only the selected
+   reliability set.
+
+   The frozen sparse-subset theorem is the single strict inequality
+   \[
+      M_{\lambda,\sigma,\chi}>t_{\lambda,\sigma}.
+      \tag{OSS6}
+   \]
+   If \((OSS6)\) holds with a constant gap and \(r\) is chosen so that
+   \(rR_\lambda=(1-\rho)\log m+O(1)\), then a fixed far label is hit with
+   probability \(m^{-(1-\rho)+o(1)}\), the expected storage per data point is
+   constant, the expected far scan from the query-selected label is
+   \(m^{\rho+o(1)}\), and a near pair lands in the query-selected stored label
+   with probability tending to one.  Polylogarithmically many independent
+   panels then give the desired local terminal reporter.
+
+   The finite stress rows in \cref{rem:sparse-subset-channel-stress} should be
+   interpreted through this asymptotic calibration.  Their sampled
+   log-moment thresholds probe tails of order \(\exp(-rR_\lambda)\), often far
+   below the number of generated far samples, and can therefore be optimistic.
+   The positive route is \((OSS6)\) with \(t_{\lambda,\sigma}\) from
+   \((OSS4a)\)--\((OSS4b)\), not a finite-block sampled gap by itself.
+
+   This is also the right filter for possible code and lattice replacements.
+   A Tanner, polar, Reed--Solomon, Construction-A, or lattice quotient block is
+   useful here only if it preserves the reliability-ordered numerator in
+   \((OSS5)\) while not increasing the far variational threshold
+   \((OSS3)\)--\((OSS4)\).  A random sparse subcode fails precisely because it
+   replaces the order statistic in \((OSS5)\) by an ordinary random-code
+   extreme average.
+\end{remark}
+
 \begin{remark}[Why ordinary ANN does not implement the score-max target]\label{rem:score-max-ordinary-ann}
    One can force the perturbed center $y=Y/t$ to be close to $q$ by taking
    $t$ large. In dimension $D$, if
@@ -92423,6 +92584,13 @@ basis, and exact-filters the resulting candidates.  This can be strictly
 cheaper than Chase-GMD when a reliable information set exists, because the
 online branch count is the ordered-statistics discrepancy list rather than the
 full ambiguity product.
+\Cref{rem:sparse-subset-channel-stress} and
+\cref{rem:sparse-subset-asymptotic-normal-form} isolate the corresponding
+constant-weight signed-subset channel.  The remaining theorem is no longer a
+new certificate form: prove the quenched coefficient/Sanov far threshold
+\((OSS3)\)--\((OSS4)\), compute the reliability-ordered near mean \((OSS5)\),
+and show the strict gap \((OSS6)\) for a width \(\lambda r\) whose label
+entropy is \(1-\rho\).
 \Cref{lem:min-entropy-information-set} identifies the best chart for a linear
 block: assign each coordinate its soft local entropy
 \(\lambda_i=\log\sum_a\exp(\beta(\omega_i(a)-m_i))\), then choose a
