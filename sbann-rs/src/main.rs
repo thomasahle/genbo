@@ -380,13 +380,17 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
     // SBANN_DPB: dims-per-block for PQ (default 2). dpb=1 -> finer 4-bit-per-dim quant (more codes
     // to scan but better ranking) -- tests whether finer quant cuts probes at high recall.
     let dpb: usize = std::env::var("SBANN_DPB").ok().and_then(|s| s.parse().ok()).unwrap_or(2);
+    // SBANN_ETA: anisotropic parallel-error weight for apq4/aopq. Default 4 (L2-tuned). For OOD/IP,
+    // higher eta concentrates quantization accuracy on the IP-relevant (parallel) direction -> the true
+    // top-k surface in a shallower scan (P-research: never swept on OOD; d=200 may want 16-64).
+    let eta: f32 = std::env::var("SBANN_ETA").ok().and_then(|s| s.parse().ok()).unwrap_or(4.0);
     let comp: Box<dyn vq::Compressor> = match comp_s {
         "pq4" => Box::new(vq::Pq4::train(&ds, dpb, 6)),
         "opq4" => Box::new(vq::Opq4::train(&ds, dpb, 6)),
         "opql" => Box::new(vq::Opq4::train_learned(&ds, dpb, 6, 8)),
         "opql5" => Box::new(vq::Opq4::train_learned(&ds, 5, 6, 8)),
-        "apq4" => Box::new(vq::Apq4::train(&ds, dpb, 6, 4.0)),
-        "aopq" => Box::new(vq::Opq4::train_aopq(&ds, dpb, 6, 8, 4.0)),
+        "apq4" => Box::new(vq::Apq4::train(&ds, dpb, 6, eta)),
+        "aopq" => Box::new(vq::Opq4::train_aopq(&ds, dpb, 6, 8, eta)),
         "i8" => Box::new(vq::ScalarI8::new(ds.d)),
         _ => { eprintln!("compress?"); return; }
     };
