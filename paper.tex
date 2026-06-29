@@ -93241,6 +93241,93 @@ amplified in the next proposition.
    \(\lambda\) and \(\E Q_\ell\) polylogarithmic.
 \end{proof}
 
+\begin{corollary}[Balanced residues isolate the near-residue prediction problem]
+   \label{cor:balanced-residue-near-prediction}
+   Work in the native linear-residue setting of
+   \cref{cor:linear-residue-signature-histograms} inside
+   \cref{cor:responsibility-quotient-scoremax-compiler}.  For a score direction
+   \(Y\), let the terminal residue posterior be
+   \[
+      p_Y(\alpha)
+      =
+      \sum_{a\in\mathcal A}\pi_Y(a)
+      \mathbf1\{\sigma(a)=\alpha\},
+      \qquad \alpha\in G,
+      \tag{BRP1}
+   \]
+   where \(\sigma(a)\) denotes the terminal residue of the hidden label \(a\).
+   Then every resident point \(x\) has
+   \[
+      \mu_Y(x)=p_Y(A\phi(x)).
+      \tag{BRP2}
+   \]
+   If the residue classes are \(\lambda\)-balanced and \(M=|G|\), then
+   \[
+      \sum_{x\in S}\mu_Y(x)
+      =
+      \sum_{\alpha\in G}|C_\alpha|p_Y(\alpha)
+      \le
+      \lambda m/M.
+      \tag{BRP3}
+   \]
+   Hence the load hypothesis \((RQS1)\) is automatic whenever
+   \[
+      M\ge \lambda m^{1-\rho}L_m^{-1}.
+      \tag{BRP4}
+   \]
+
+   For an exact score maximizer \(x_*(Y)\), the near-mass hypothesis \((RQS2)\)
+   is therefore exactly the residue-prediction condition
+   \[
+      p_Y(A\phi(x_*(Y)))\ge L_m^{-1}.
+      \tag{BRP5}
+   \]
+   Conversely, if the residue \(\alpha_*=A\phi(x_*(Y))\) is uniform on \(G\)
+   conditional on \(Y\) and on the posterior \(p_Y\), then
+   \[
+      \Prb\!\left[p_Y(\alpha_*)\ge L_m^{-1}\mid Y,p_Y\right]
+      \le L_m/M.
+      \tag{BRP6}
+   \]
+   Thus an independent random balanced residue partition gives the right far
+   load but misses the near-residue mass at the aligned design point
+   \(M=m^{1-\rho}\polylog m\), except with probability
+   \(m^{-(1-\rho)}\polylog m\).  A successful code or lattice construction must
+   make the query terminal posterior predict the near point's residue; balance
+   and row-span alignment alone are not enough.
+\end{corollary}
+
+\begin{proof}
+   By the native residue incidence rule,
+   \(U_x(a)=\mathbf1\{A\phi(x)=\sigma(a)\}\).  Substituting this into the
+   definition of \(\mu_Y(x)\) gives
+   \[
+      \mu_Y(x)
+      =
+      \sum_{a\in\mathcal A}\pi_Y(a)
+      \mathbf1\{A\phi(x)=\sigma(a)\}
+      =
+      p_Y(A\phi(x)),
+   \]
+   proving \((BRP2)\).  Summing over residents and grouping by residue gives
+   \[
+      \sum_x\mu_Y(x)
+      =
+      \sum_{\alpha\in G}|\{x:A\phi(x)=\alpha\}|p_Y(\alpha)
+      =
+      \sum_{\alpha\in G}|C_\alpha|p_Y(\alpha).
+   \]
+   Balance bounds this by
+   \((\lambda m/M)\sum_\alpha p_Y(\alpha)=\lambda m/M\), proving \((BRP3)\) and
+   \((BRP4)\).
+
+   The equivalence \((RQS2)\Leftrightarrow(BRP5)\) is \((BRP2)\) applied to
+   \(x_*(Y)\).  Finally, conditional on \(Y\) and \(p_Y\), the set
+   \(\{\alpha:p_Y(\alpha)\ge L_m^{-1}\}\) has size at most \(L_m\), since
+   \(p_Y\) is a probability distribution.  A uniform independent \(\alpha_*\)
+   lands in that set with probability at most \(L_m/M\), giving \((BRP6)\).
+\end{proof}
+
 \begin{corollary}[Random active residues saturate the residue budget]
    \label{cor:random-active-residue-barrier}
    Consider the balanced-residue setting with \(M=|G|\), and assume for
