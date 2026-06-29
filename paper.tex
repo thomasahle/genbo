@@ -18037,6 +18037,167 @@ partition ignores the bias coordinates that certify the list size.
    proving \((RDF3)\).
 \end{proof}
 
+\begin{lemma}[Flat product grids have a one-dimensional Cramer audit]
+   \label{lem:flat-product-grid-cramer-audit}
+   Let a raw uniform product grid use alphabet
+   \(\mathcal A\subset\mathbb R\), \(|\mathcal A|=A\), labels
+   \(g\in\mathcal A^d\), one stored bucket per label, and query law
+   \[
+      \pi_q(g)\propto \exp(\beta\ip{g}{q}).
+   \]
+   Assume \(\mathcal A\) is fixed as \(m\to\infty\), or that the displayed
+   Cramer estimates hold uniformly for the alphabet sequence.
+   Put \(M=A^d=m^{\nu+o(1)}\), take threshold
+   \(T=\sqrt{2\tau\log m}\), and let
+   \[
+      X\sim{\rm Unif}(\mathcal A),\qquad
+      \psi(s)=\log\E e^{sX},\qquad
+      I(u)=\sup_{\lambda\ge0}\{\lambda u-\psi(\lambda)\}.
+   \]
+   Work on the flat test query and resident
+   \(p=q=d^{-1/2}(1,\ldots,1)\), and write
+   \[
+      \theta=\frac{T}{\sqrt d},
+      \qquad
+      s=\frac{\beta}{\sqrt d}.
+      \tag{FPG0}
+   \]
+   Then the raw incidence of \(p\) is
+   \[
+      M\,\Pr\!\left[\frac1d\sum_{i=1}^dX_i\ge\theta\right].
+      \tag{FPG1}
+   \]
+   Hence the per-resident storage target \(m^\rho\polylog m\) forces
+   \[
+      I(\theta)
+      \ge
+      \left(1-\frac{\rho}{\nu}\right)\log A-o(1).
+      \tag{FPG2}
+   \]
+
+   Under the query law for \(q=p\), the coordinates are iid with tilted
+   one-coordinate log-mgf
+   \[
+      \psi_s(\lambda)=\psi(s+\lambda)-\psi(s).
+   \]
+   If
+   \[
+      \psi'(s)<\theta-\varepsilon
+      \tag{FPG3}
+   \]
+   for a fixed \(\varepsilon>0\), then the sampled near mass of \(p\) is
+   \(m^{-\Omega_{\varepsilon}(1)}\).  In particular, inverse-polylogarithmic
+   near mass requires
+   \[
+      \psi'(s)\ge\theta-o(1).
+      \tag{FPG4}
+   \]
+
+   Finally assume \(d\) is even and consider the flat orthogonal far point
+   \(x=d^{-1/2}(1,\ldots,1,-1,\ldots,-1)\), with half the signs positive.
+   Its sampled bucket probability under query \(q=p\) has upper-tail rate
+   \[
+      J_s(\theta)
+      =
+      \sup_{\lambda\ge0}
+      \left\{
+         \lambda\theta
+         -\frac12\bigl(\psi(s+\lambda)+\psi(s-\lambda)-2\psi(s)\bigr)
+      \right\}.
+      \tag{FPG5}
+   \]
+   The sampled far-load target \(m^{-(1-\rho)}\polylog m\) for this single
+   flat far direction forces
+   \[
+      J_s(\theta)
+      \ge
+      \frac{1-\rho}{\nu}\log A-o(1).
+      \tag{FPG6}
+   \]
+
+   Thus a raw product grid has a scalar pass/fail audit before any code or
+   lattice structure is invoked: storage is governed by \(I(\theta)\), near
+   recall by the tilted mean \(\psi'(s)\), and flat orthogonal far load by
+   \(J_s(\theta)\).  Failing any one of \((FPG2)\), \((FPG4)\), or \((FPG6)\)
+   is a genuine spectrum obstruction for this raw product-grid sampler, not a
+   decoding issue.
+\end{lemma}
+
+\begin{proof}
+   For \(p=d^{-1/2}\mathbf 1\), the score is
+   \(d^{-1/2}\sum_i g_i\), so \((FPG1)\) is immediate.  Cramer's theorem for
+   the empirical mean of \(X_i\) gives
+   \[
+      \Pr\!\left[\frac1d\sum_iX_i\ge\theta\right]
+      =
+      \exp\{-dI(\theta)+o(d)\}
+   \]
+   at continuity points, with the corresponding one-sided upper/lower
+   exponential bounds otherwise.  Since
+   \(d=(\nu/\log A+o(1))\log m\), the storage inequality
+   \(M\Pr[\cdots]\le m^\rho\polylog m\) implies \((FPG2)\).
+
+   Under query \(q=p\), the product law reweights each coordinate by
+   \(e^{sX}\), so the tilted mean is \(\psi'(s)\).  If \((FPG3)\) holds,
+   Cramer's theorem under the tilted law gives
+   \[
+      \Pr_s\!\left[\frac1d\sum_iX_i\ge\theta\right]
+      \le e^{-c_\varepsilon d}
+      =
+      m^{-\Omega_\varepsilon(1)} ,
+   \]
+   proving the near obstruction and hence the necessary condition
+   \((FPG4)\).
+
+   For the flat orthogonal \(x\), the score is
+   \(d^{-1/2}\sum_i\sigma_i g_i\), where half the \(\sigma_i\)'s are \(+1\)
+   and half are \(-1\).  Under the same query tilt, the log-mgf of this signed
+   average at dual parameter \(\lambda\) is
+   \[
+      \frac d2\bigl(\psi(s+\lambda)-\psi(s)\bigr)
+      +
+      \frac d2\bigl(\psi(s-\lambda)-\psi(s)\bigr).
+   \]
+   Chernoff and Cramer's theorem give the upper-tail exponent \(J_s(\theta)\).
+   The far sampled probability bound therefore forces \((FPG6)\) after the
+   same substitution for \(d\).
+\end{proof}
+
+\begin{corollary}[Near-linear binary product grids miss the critical height]
+   \label{cor:binary-product-grid-height-barrier}
+   In the setting of \cref{lem:flat-product-grid-cramer-audit}, take
+   \(\mathcal A=\{-1,+1\}\), \(M=2^d=m^{\nu+o(1)}\), and the critical sampled
+   Gaussian height \(T^2=2(1-\rho)\log m\).  Even nonzero near mass for the
+   flat pair \(p=q=d^{-1/2}\mathbf 1\) requires
+   \[
+      \nu\ge 2(1-\rho)\log2-o(1).
+      \tag{BPG1}
+   \]
+   At the native \(c=2\) exponent \(\rho_c=1/7\), the right side is
+   \[
+      \frac{12}{7}\log2=1.188\ldots .
+      \tag{BPG2}
+   \]
+   Thus a near-linear binary raw product grid \(M=m^{1+o(1)}\) cannot even
+   reach the critical threshold on the flat all-ones test direction.  Binary
+   product signs can still be useful in the fixed-width reporter regime
+   analyzed later in the paper, but the growing raw sampled-grid route needs a
+   larger scalar alphabet, a different score normalization, or quotient /
+   responsibility aggregation.
+\end{corollary}
+
+\begin{proof}
+   For binary signs,
+   \[
+      \ip{g}{p}=d^{-1/2}\sum_i g_i\le\sqrt d
+   \]
+   deterministically.  If the sampled near mass is nonzero, then
+   \(T\le\sqrt d\).  Since
+   \(d=(\nu/\log2+o(1))\log m\) and
+   \(T^2=2(1-\rho)\log m\), this is exactly \((BPG1)\).  Substituting
+   \(\rho_c=1/7\) gives \((BPG2)\).
+\end{proof}
+
 \begin{corollary}[Bucket-quotient weighted quadrature]
    \label{cor:bucket-quotient-quadrature}
    Fix the terminal setting of \cref{prop:sampled-structured-panel}.  Let
