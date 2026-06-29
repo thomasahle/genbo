@@ -89542,6 +89542,32 @@ top-\(k\) backup.
    Summing over $G_\Delta(p)$ proves the claim.
 \end{proof}
 
+\begin{corollary}[Bounded rank margins already give polylog value]
+   \label{cor:bounded-rank-margin-polylog-value}
+   Keep the notation of \cref{lem:posterior-rank-margin}.  Fix
+   \(\Delta_0>0\).  If
+   \[
+      \mathsf A_\beta(p,q)\ge a_m,
+      \qquad
+      W_{p,q}(G_{\Delta_0}(p))\ge w_m,
+   \]
+   then, whenever \(\beta\Delta_0\le1\),
+   \[
+      \mathcal H_\xi(p,q)
+      \ge
+      \frac{\beta\Delta_0}{2}\,a_mw_m.
+   \]
+   In particular, for \(\beta=\Theta_c(1/\log m)\), inverse-polylogarithmic
+   lower bounds on \(a_m\) and \(w_m\) imply the
+   \(\log^{-O_c(1)}m\) restricted value required by the finite-channel
+   compiler.
+\end{corollary}
+
+\begin{proof}
+   For \(0\le x\le1\), \(1-e^{-x}\ge x/2\).  Apply this to
+   \(x=\beta\Delta_0\) in \cref{lem:posterior-rank-margin}.
+\end{proof}
+
 Thus the finite special case would follow from a posterior-rank margin statement: for every near pair not handled by the resident guard, a non-negligible fraction of the tilted affinity must lie on outcomes for which $p$ is inside the top-$\xi$ posterior child by enough margin. This is only a sufficient condition. By \cref{lem:soft-surplus-decomposition}, a failed fixed-margin test can still have large \(\mathcal H_\xi\) if the tilted winner, or a few near-winner outcomes, have moderate posterior surplus. The diagnostic should therefore report not only $\mathcal H_\xi$, but also $\mathsf A_\beta(p,q)$, the soft surplus \(\mathcal H_\xi/\mathsf A_\beta\), the tilted winner's contribution fraction from \cref{lem:soft-surplus-decomposition}, \(W_{p,q}(G_\Delta(p))\), and the certified lower bound in \cref{lem:posterior-rank-margin}, for a margin such as $\Delta=1/\beta$. For the balanced-softmax candidate
 \[
    K_x(j)=
@@ -89759,6 +89785,23 @@ One should also separate the resident-guard regime from the genuine finite-chann
    should be stated for the distributional quantiles of the bit score
    \(\Psi_s\), with a standard empirical-quantile transfer as a separate
    concentration step.
+
+   For the polylogarithmic endpoint, however, the quarter-log target is
+   stronger than necessary.  By
+   \cref{cor:bounded-rank-margin-polylog-value}, a fixed margin
+   \(\Delta_0=O_c(1)\) already contributes the factor
+   \(\Theta_c(1/\log m)\), which is an allowed polylogarithmic repetition
+   loss.  This also matches the bounded nature of fixed-width product-sign
+   scores: \(\Psi_s(x)\le r\log2\), so margins growing like \(\log m\) cannot
+   be the right asymptotic target at fixed \(r\).  The bounded-margin stress
+   test is correspondingly much cleaner.  At \(\Delta_0=1\), the tilted
+   good-mass lower \(5\%\) quantiles were \(0.624\)--\(0.998\), and the
+   certified-value lower \(5\%\) quantiles were \(0.0368\)--\(0.0831\), across
+   \(B\in\{16,32\}\) and correlations \(0.90,0.95\).  Dividing by
+   \(\alpha\) gives constants \(0.38\)--\(0.79\).  Thus the current fixed-width
+   product-sign theorem target should be a distributional bounded-margin
+   posterior-rank lower tail for \(\Psi_s\), plus the already separated
+   top-eight containment and empirical-quantile transfer.
 \end{remark}
 
 \begin{proposition}[Conditional finite-channel polylog endpoint]\label{prop:finite-channel-polylog}

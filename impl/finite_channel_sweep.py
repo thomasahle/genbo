@@ -87,6 +87,10 @@ FIELDNAMES = [
     "query_top4_to_top8_gap_q05",
     "query_top4_to_top8_containment_margin_q05",
     "query_top4_to_top8_containment_fraction",
+    "margin_const05_mass_q05",
+    "margin_const05_bound_q05",
+    "margin_const1_mass_q05",
+    "margin_const1_bound_q05",
     "margin025_mass_q01",
     "margin025_mass_q05",
     "margin025_bound_q01",
@@ -220,6 +224,12 @@ def run_trial(
     _, margin050_mass, margin050_bound = posterior_margin_certificate(
         k_data, k_query, near_indices, result.pi, result.tau,
         alpha=result.alpha, margin_delta=0.50 / result.alpha)
+    _, margin_const05_mass, margin_const05_bound = posterior_margin_certificate(
+        k_data, k_query, near_indices, result.pi, result.tau,
+        alpha=result.alpha, margin_delta=0.5)
+    _, margin_const1_mass, margin_const1_bound = posterior_margin_certificate(
+        k_data, k_query, near_indices, result.pi, result.tau,
+        alpha=result.alpha, margin_delta=1.0)
 
     return {
         "n": n,
@@ -286,6 +296,10 @@ def run_trial(
             result.query_top4_to_top8_containment_margin, 0.05),
         "query_top4_to_top8_containment_fraction": float(
             np.mean(result.query_top4_to_top8_containment_margin > 0)),
+        "margin_const05_mass_q05": _q(margin_const05_mass, 0.05),
+        "margin_const05_bound_q05": _q(margin_const05_bound, 0.05),
+        "margin_const1_mass_q05": _q(margin_const1_mass, 0.05),
+        "margin_const1_bound_q05": _q(margin_const1_bound, 0.05),
         "margin025_mass_q01": _q(margin025_mass, 0.01),
         "margin025_mass_q05": _q(margin025_mass, 0.05),
         "margin025_bound_q01": _q(margin025_bound, 0.01),

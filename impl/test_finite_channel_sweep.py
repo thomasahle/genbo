@@ -50,6 +50,11 @@ def test_run_trial_produces_complete_finite_row():
     assert row["margin050_mass_q01"] <= row["margin050_mass_q05"] + 1e-12
     assert 0 <= row["margin025_bound_q01"] <= row["margin025_bound_q05"] + 1e-12
     assert 0 <= row["margin050_bound_q01"] <= row["margin050_bound_q05"] + 1e-12
+    assert 0 <= row["margin_const05_mass_q05"] <= 1
+    assert 0 <= row["margin_const1_mass_q05"] <= 1
+    assert row["margin_const1_mass_q05"] <= row["margin_const05_mass_q05"] + 1e-12
+    assert 0 <= row["margin_const05_bound_q05"] <= row["h_q05"] + 1e-12
+    assert 0 <= row["margin_const1_bound_q05"] <= row["h_q05"] + 1e-12
     assert 0 <= row["margin025_bound_q05"] <= row["h_q05"] + 1e-12
     assert 0 <= row["margin050_bound_q05"] <= row["h_q05"] + 1e-12
     for key in FIELDNAMES:
