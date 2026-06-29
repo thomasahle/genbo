@@ -97705,6 +97705,90 @@ amplified in the next proposition.
    \(Q_B\le |L|\) into \((QST7)\)--\((QST8)\) gives the work statement.
 \end{proof}
 
+\begin{corollary}[Merged-prefix carry space is the exact coboundary obstruction]
+   \label{cor:merged-prefix-carry-space-verifier}
+   Work in the setting of
+   \cref{cor:quotient-syndrome-trellis-support-sampler}, with
+   \(\bar G=\mathbb F_q^r\).  For every reachable trellis vertex \(v\), choose
+   one reference source-to-\(v\) prefix \(p_v\).  Define the merged-prefix carry
+   subspace
+   \[
+      L_{\rm merge}
+      =
+      \operatorname{span}\{
+         \bar s(p)-\bar s(p_v):
+         v\in\bigcup_iV_i,\ p\in\mathcal P(v)
+      \}
+      \le \bar G .
+      \tag{MCV1}
+   \]
+   Then
+   \[
+      |S(v)|\le |L_{\rm merge}|
+      \qquad\text{for every }v,
+      \qquad
+      Q_B\le |L_{\rm merge}|.
+      \tag{MCV2}
+   \]
+   Moreover there is a state potential \(\Phi(v)=\bar s(p_v)\) satisfying the
+   coboundary condition
+   \[
+      \bar c(e)-(\Phi(v)-\Phi(u))\in L_{\rm merge}
+      \qquad(e=(u,v)).
+      \tag{MCV3}
+   \]
+   Conversely, if a subspace \(L\le\bar G\) and a potential \(\Phi\) satisfy
+   \[
+      \bar c(e)-(\Phi(v)-\Phi(u))\in L
+      \qquad(e=(u,v)),
+      \tag{MCV4}
+   \]
+   then \(L_{\rm merge}\le L\).  Hence \(L_{\rm merge}\) is the minimal carry
+   subspace for any coboundary explanation of the quotient increments, and
+   \[
+      \dim L_{\rm merge}=O_c(\log_q\log m)
+      \tag{MCV5}
+   \]
+   is an exact finite-state certificate that support conditioning preserves
+   trellis merging up to polylogarithmic overhead.
+
+   This is the direct audit for a proposed convolutional, polar, recursive
+   lattice, or low-state Construction-A trellis.  Compute the quotient sums on
+   prefixes that merge into the same native state; the span of their differences
+   is precisely the residual quotient memory that the support-conditioned BCJR
+   pass must carry.  Random-looking quotients make this span large by
+   \cref{cor:random-quotient-trellis-width-barrier}; an aligned construction
+   must make it small for structural reasons.
+\end{corollary}
+
+\begin{proof}
+   By definition, every prefix quotient sum reaching \(v\) lies in
+   \[
+      \bar s(p_v)+L_{\rm merge},
+   \]
+   which proves \((MCV2)\).  For an edge \(e=(u,v)\), the path \(p_u e\) is a
+   source-to-\(v\) prefix, so
+   \[
+      \bar s(p_u)+\bar c(e)-\bar s(p_v)\in L_{\rm merge}.
+   \]
+   With \(\Phi(w)=\bar s(p_w)\), this is exactly \((MCV3)\).
+
+   Conversely, suppose \((MCV4)\) holds.  Along any source-to-\(v\) prefix
+   \(p=e_1,\ldots,e_\ell\), telescoping modulo \(L\) gives
+   \[
+      \bar s(p)-(\Phi(v)-\Phi(s))\in L.
+   \]
+   The same holds for the reference prefix \(p_v\).  Subtracting the two
+   congruences gives
+   \[
+      \bar s(p)-\bar s(p_v)\in L .
+   \]
+   Since these differences generate \(L_{\rm merge}\), we have
+   \(L_{\rm merge}\le L\).  The final statement is
+   \cref{cor:coboundary-quotient-trellis-width} with
+   \(L=L_{\rm merge}\).
+\end{proof}
+
 \begin{corollary}[Aligned linear charts compute rate-coverage sketches]
    \label{cor:aligned-linear-chart-rate-coverage-sketch}
    Work in the setting of
