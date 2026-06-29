@@ -57,15 +57,50 @@ FIELDNAMES = [
     "query_top_l_mass_q05",
     "query_top_l_mass_median",
     "query_top1_mass_median",
+    "query_top1_score_level_q05",
+    "query_top1_score_level_median",
     "tilted_top_l_mass_q05",
     "tilted_top_l_mass_median",
     "near_hit_rate",
     "oracle_near_hit_rate",
     "top1_near_hit_rate",
+    "reported_score_level_median",
+    "oracle_score_level_median",
     "near_margin_q05",
     "near_margin_median",
     "oracle_margin_q05",
     "decoder_loss_q95",
+]
+
+SADDLEPOINT_FIELDNAMES = [
+    "code",
+    "family",
+    "r_bits",
+    "dimension",
+    "labels",
+    "local_m",
+    "c",
+    "rho",
+    "target_label_exponent",
+    "label_exponent",
+    "top_l",
+    "sigma",
+    "corr",
+    "threshold_tail",
+    "tail_rate",
+    "far_threshold_level",
+    "query_level_median",
+    "query_level_asymptotic",
+    "median_shifted_score_mean",
+    "median_shifted_score_variance",
+    "median_mean_gap",
+    "median_normal_hit",
+    "median_decay_rate",
+    "asymptotic_shifted_score_mean",
+    "asymptotic_shifted_score_variance",
+    "asymptotic_mean_gap",
+    "asymptotic_normal_hit",
+    "asymptotic_decay_rate",
 ]
 
 
@@ -213,6 +248,24 @@ def code_from_spec(spec: str, *, seed: int) -> CodePanel:
             generator=gen,
             signs=enumerate_binary_linear_code(gen),
         )
+    if parts[0] == "iid" and len(parts) in (3, 4):
+        r_bits = int(parts[1])
+        dimension = int(parts[2])
+        local_seed = int(parts[3]) if len(parts) == 4 else seed
+        if dimension <= 0 or dimension > 22:
+            raise ValueError("iid dimension must lie in [1, 22]")
+        rng = np.random.default_rng(local_seed)
+        signs = rng.choice(
+            np.array([-1, 1], dtype=np.int8),
+            size=(1 << dimension, r_bits),
+        )
+        placeholder = np.zeros((dimension, r_bits), dtype=np.uint8)
+        return CodePanel(
+            name=f"iid({dimension},{r_bits},{local_seed})",
+            family="iid",
+            generator=placeholder,
+            signs=signs,
+        )
     if parts[0] == "polar-weight" and len(parts) == 3:
         m = int(parts[1])
         dimension = int(parts[2])
@@ -225,7 +278,7 @@ def code_from_spec(spec: str, *, seed: int) -> CodePanel:
         )
     raise ValueError(
         "code spec must be rm:m:degree, full:r, random:r:dimension[:seed], "
-        "or polar-weight:m:dimension"
+        "iid:r:dimension[:seed], or polar-weight:m:dimension"
     )
 
 
@@ -257,6 +310,267 @@ def _quantile(values: Iterable[float], q: float) -> float:
     return float(np.quantile(arr, q))
 
 
+def normal_cdf(x: float) -> float:
+    return 0.5 * (1.0 + math.erf(x / math.sqrt(2.0)))
+
+
+def normal_upper_tail(x: float) -> float:
+    return 0.5 * math.erfc(x / math.sqrt(2.0))
+
+
+def normal_ppf(p: float) -> float:
+    if not (0.0 < p < 1.0):
+        raise ValueError("p must lie in (0, 1)")
+    low = -12.0
+    high = 12.0
+    for _ in range(100):
+        mid = 0.5 * (low + high)
+        if normal_cdf(mid) < p:
+            low = mid
+        else:
+            high = mid
+    return 0.5 * (low + high)
+
+
+def normal_upper_tail_ppf(tail: float) -> float:
+    if not (0.0 < tail < 1.0):
+        raise ValueError("tail must lie in (0, 1)")
+    low = -12.0
+    high = 12.0
+    for _ in range(100):
+        mid = 0.5 * (low + high)
+        if normal_upper_tail(mid) > tail:
+            low = mid
+        else:
+            high = mid
+    return 0.5 * (low + high)
+
+
+def _normal_nodes(mean: float, sigma: float, quadrature: int) -> tuple[np.ndarray, np.ndarray]:
+    if sigma <= 0:
+        raise ValueError("sigma must be positive")
+    if quadrature < 8:
+        raise ValueError("quadrature must be at least 8")
+    nodes, weights = np.polynomial.hermite.hermgauss(quadrature)
+    z = mean + math.sqrt(2.0) * sigma * nodes
+    prob_weights = weights / math.sqrt(math.pi)
+    return z, prob_weights
+
+
+def shifted_score_moments(
+    *, mean: float, sigma: float, quadrature: int = 96
+) -> tuple[float, float]:
+    z, weights = _normal_nodes(mean, sigma, quadrature)
+    scores = bit_score(z)
+    score_mean = float(np.dot(weights, scores))
+    variance = float(np.dot(weights, (scores - score_mean) ** 2))
+    return score_mean, max(0.0, variance)
+
+
+def shifted_score_rate(
+    level: float,
+    *,
+    mean: float,
+    sigma: float,
+    quadrature: int = 96,
+    theta_max: float = 80.0,
+    theta_grid: int = 2000,
+) -> float:
+    score_mean, _variance = shifted_score_moments(
+        mean=mean, sigma=sigma, quadrature=quadrature
+    )
+    if level <= score_mean:
+        return 0.0
+    theta = np.linspace(0.0, theta_max, theta_grid)
+    z, weights = _normal_nodes(mean, sigma, quadrature)
+    scores = bit_score(z)
+    vals = np.log(weights)[None, :] + theta[:, None] * scores[None, :]
+    shifted = vals - np.max(vals, axis=1, keepdims=True)
+    log_mgf = np.max(vals, axis=1) + np.log(np.sum(np.exp(shifted), axis=1))
+    return max(0.0, float(np.max(theta * level - log_mgf)))
+
+
+def score_level_for_rate(
+    rate: float,
+    *,
+    mean: float,
+    sigma: float,
+    quadrature: int = 96,
+    theta_max: float = 80.0,
+    theta_grid: int = 2000,
+) -> float:
+    if rate < 0.0:
+        raise ValueError("rate must be nonnegative")
+    score_mean, _variance = shifted_score_moments(
+        mean=mean, sigma=sigma, quadrature=quadrature
+    )
+    if rate == 0.0:
+        return score_mean
+    low = score_mean
+    high = math.log(2.0) - 1e-10
+    for _ in range(80):
+        mid = 0.5 * (low + high)
+        mid_rate = shifted_score_rate(
+            mid,
+            mean=mean,
+            sigma=sigma,
+            quadrature=quadrature,
+            theta_max=theta_max,
+            theta_grid=theta_grid,
+        )
+        if mid_rate < rate:
+            low = mid
+        else:
+            high = mid
+    return 0.5 * (low + high)
+
+
+def random_code_query_levels(*, r_bits: int, dimension: int, sigma: float) -> tuple[float, float]:
+    if r_bits <= 0:
+        raise ValueError("r_bits must be positive")
+    if dimension <= 0:
+        raise ValueError("dimension must be positive")
+    if sigma <= 0:
+        raise ValueError("sigma must be positive")
+    log_labels = dimension * math.log(2.0)
+    asymptotic = sigma * math.sqrt(2.0 * log_labels / r_bits)
+    labels = 1 << dimension
+    median_tail = -math.expm1(math.log(0.5) / labels)
+    max_median_z = normal_upper_tail_ppf(median_tail)
+    median = sigma * max_median_z / math.sqrt(r_bits)
+    return median, asymptotic
+
+
+def _normal_hit_probability(
+    *,
+    r_bits: int,
+    threshold_level: float,
+    score_mean: float,
+    score_variance: float,
+) -> float:
+    if score_variance <= 0.0:
+        return 1.0 if score_mean >= threshold_level else 0.0
+    z = math.sqrt(r_bits) * (threshold_level - score_mean) / math.sqrt(score_variance)
+    return normal_upper_tail(z)
+
+
+def random_code_saddlepoint_summary(
+    code: CodePanel,
+    *,
+    local_m: int,
+    c: float,
+    sigma: float,
+    corr: float,
+    top_l: int,
+    threshold_tail: float | None = None,
+    quadrature: int = 96,
+    theta_grid: int = 2000,
+) -> dict:
+    return random_code_saddlepoint_summary_for_shape(
+        name=code.name,
+        family=code.family,
+        r_bits=int(code.signs.shape[1]),
+        dimension=int(code.generator.shape[0]),
+        labels=int(code.signs.shape[0]),
+        local_m=local_m,
+        c=c,
+        sigma=sigma,
+        corr=corr,
+        top_l=top_l,
+        threshold_tail=threshold_tail,
+        quadrature=quadrature,
+        theta_grid=theta_grid,
+    )
+
+
+def random_code_saddlepoint_summary_for_shape(
+    *,
+    name: str,
+    family: str,
+    r_bits: int,
+    dimension: int,
+    labels: int,
+    local_m: int,
+    c: float,
+    sigma: float,
+    corr: float,
+    top_l: int,
+    threshold_tail: float | None = None,
+    quadrature: int = 96,
+    theta_grid: int = 2000,
+) -> dict:
+    if not (0.0 < corr < 1.0):
+        raise ValueError("corr must lie in (0, 1)")
+    row = summarize_panel_shape(
+        name=name,
+        family=family,
+        r_bits=r_bits,
+        dimension=dimension,
+        labels=labels,
+        local_m=local_m,
+        c=c,
+        top_l=top_l,
+    )
+    tail_prob = (
+        float(threshold_tail)
+        if threshold_tail is not None
+        else local_m ** (row["rho"] - 1.0) / top_l
+    )
+    tail_rate = -math.log(tail_prob) / r_bits
+    threshold_level = score_level_for_rate(
+        tail_rate,
+        mean=0.0,
+        sigma=sigma,
+        quadrature=quadrature,
+        theta_grid=theta_grid,
+    )
+    query_median, query_asymptotic = random_code_query_levels(
+        r_bits=r_bits, dimension=row["dimension"], sigma=sigma
+    )
+    out = {
+        **row,
+        "sigma": float(sigma),
+        "corr": float(corr),
+        "threshold_tail": float(tail_prob),
+        "tail_rate": float(tail_rate),
+        "far_threshold_level": float(threshold_level),
+        "query_level_median": float(query_median),
+        "query_level_asymptotic": float(query_asymptotic),
+    }
+    for prefix, query_level in (
+        ("median", query_median),
+        ("asymptotic", query_asymptotic),
+    ):
+        shifted_mean, shifted_variance = shifted_score_moments(
+            mean=corr * query_level,
+            sigma=sigma,
+            quadrature=quadrature,
+        )
+        hit = _normal_hit_probability(
+            r_bits=r_bits,
+            threshold_level=threshold_level,
+            score_mean=shifted_mean,
+            score_variance=shifted_variance,
+        )
+        decay_rate = shifted_score_rate(
+            threshold_level,
+            mean=corr * query_level,
+            sigma=sigma,
+            quadrature=quadrature,
+            theta_grid=theta_grid,
+        )
+        out.update(
+            {
+                f"{prefix}_shifted_score_mean": float(shifted_mean),
+                f"{prefix}_shifted_score_variance": float(shifted_variance),
+                f"{prefix}_mean_gap": float(shifted_mean - threshold_level),
+                f"{prefix}_normal_hit": float(hit),
+                f"{prefix}_decay_rate": float(decay_rate),
+            }
+        )
+    return out
+
+
 def empirical_far_threshold(
     *,
     r_bits: int,
@@ -282,20 +596,48 @@ def empirical_far_threshold(
 
 
 def summarize_code(code: CodePanel, *, local_m: int, c: float, top_l: int) -> dict:
+    return summarize_panel_shape(
+        name=code.name,
+        family=code.family,
+        r_bits=int(code.signs.shape[1]),
+        dimension=int(code.generator.shape[0]),
+        labels=int(code.signs.shape[0]),
+        local_m=local_m,
+        c=c,
+        top_l=top_l,
+    )
+
+
+def summarize_panel_shape(
+    *,
+    name: str,
+    family: str,
+    r_bits: int,
+    dimension: int,
+    labels: int,
+    local_m: int,
+    c: float,
+    top_l: int,
+) -> dict:
     if local_m <= 1:
         raise ValueError("local_m must exceed one")
     if c <= 1:
         raise ValueError("c must exceed one")
     if top_l <= 0:
         raise ValueError("top_l must be positive")
+    if r_bits <= 0:
+        raise ValueError("r_bits must be positive")
+    if dimension <= 0:
+        raise ValueError("dimension must be positive")
+    if labels <= 0:
+        raise ValueError("labels must be positive")
     rho = 1.0 / (2.0 * c * c - 1.0)
-    labels = int(code.signs.shape[0])
     return {
-        "code": code.name,
-        "family": code.family,
-        "r_bits": int(code.signs.shape[1]),
-        "dimension": int(code.generator.shape[0]),
-        "labels": labels,
+        "code": name,
+        "family": family,
+        "r_bits": int(r_bits),
+        "dimension": int(dimension),
+        "labels": int(labels),
         "local_m": int(local_m),
         "c": float(c),
         "rho": rho,
@@ -346,10 +688,13 @@ def run_code_trial(
     signs_float = code.signs.astype(float, copy=False)
     query_masses = []
     query_top1_masses = []
+    query_top1_score_levels = []
     tilted_masses = []
     hits = []
     oracle_hits = []
     top1_hits = []
+    reported_score_levels = []
+    oracle_score_levels = []
     margins = []
     oracle_margins = []
     decoder_losses = []
@@ -364,6 +709,7 @@ def run_code_trial(
         top1 = top[:1]
         query_masses.append(_mass_of_indices(q_scores, top))
         query_top1_masses.append(_mass_of_indices(q_scores, top1))
+        query_top1_score_levels.append(float(q_scores[top[0]]) / r_bits)
 
         tilt_logits = alpha * up + (1.0 - alpha) * uq
         tilt_scores = signs_float @ tilt_logits
@@ -373,6 +719,8 @@ def run_code_trial(
         near_scores = signs_float @ up - point_offset
         reported_best = float(np.max(near_scores[top]))
         oracle_best = float(np.max(near_scores))
+        reported_score_levels.append(reported_best / r_bits)
+        oracle_score_levels.append(oracle_best / r_bits)
         margins.append(reported_best - threshold)
         oracle_margins.append(oracle_best - threshold)
         hits.append(reported_best >= threshold)
@@ -398,11 +746,15 @@ def run_code_trial(
             "query_top_l_mass_q05": _quantile(query_masses, 0.05),
             "query_top_l_mass_median": _quantile(query_masses, 0.5),
             "query_top1_mass_median": _quantile(query_top1_masses, 0.5),
+            "query_top1_score_level_q05": _quantile(query_top1_score_levels, 0.05),
+            "query_top1_score_level_median": _quantile(query_top1_score_levels, 0.5),
             "tilted_top_l_mass_q05": _quantile(tilted_masses, 0.05),
             "tilted_top_l_mass_median": _quantile(tilted_masses, 0.5),
             "near_hit_rate": float(np.mean(hits)),
             "oracle_near_hit_rate": float(np.mean(oracle_hits)),
             "top1_near_hit_rate": float(np.mean(top1_hits)),
+            "reported_score_level_median": _quantile(reported_score_levels, 0.5),
+            "oracle_score_level_median": _quantile(oracle_score_levels, 0.5),
             "near_margin_q05": _quantile(margins, 0.05),
             "near_margin_median": _quantile(margins, 0.5),
             "oracle_margin_q05": _quantile(oracle_margins, 0.05),
@@ -451,6 +803,83 @@ def run_sweep(args: argparse.Namespace) -> list[dict]:
     return rows
 
 
+def run_saddlepoint_sweep(args: argparse.Namespace) -> list[dict]:
+    rows = []
+    if args.saddlepoint_shapes:
+        for spec in parse_csv_list(args.saddlepoint_shapes):
+            parts = spec.split(":")
+            if len(parts) != 2:
+                raise ValueError("saddlepoint shape specs must be r_bits:dimension")
+            r_bits = int(parts[0])
+            dimension = int(parts[1])
+            row = random_code_saddlepoint_summary_for_shape(
+                name=f"shape({dimension},{r_bits})",
+                family="shape",
+                r_bits=r_bits,
+                dimension=dimension,
+                labels=1 << dimension,
+                local_m=args.local_m,
+                c=args.c,
+                sigma=args.sigma,
+                corr=args.corr,
+                top_l=args.top_l,
+                threshold_tail=args.threshold_tail,
+                quadrature=args.rate_quadrature,
+                theta_grid=args.rate_theta_grid,
+            )
+            rows.append(row)
+            print(
+                " ".join(
+                    [
+                        f"code={row['code']}",
+                        f"label_exp={row['label_exponent']:.3f}",
+                        f"tail_rate={row['tail_rate']:.3f}",
+                        f"threshold={row['far_threshold_level']:.3f}",
+                        f"qmed={row['query_level_median']:.3f}",
+                        f"gap_med={row['median_mean_gap']:.3f}",
+                        f"hit_med={row['median_normal_hit']:.3f}",
+                        f"gap_asym={row['asymptotic_mean_gap']:.3f}",
+                        f"hit_asym={row['asymptotic_normal_hit']:.3f}",
+                    ]
+                ),
+                file=sys.stderr,
+            )
+        return rows
+    for spec in parse_csv_list(args.codes):
+        for seed in args.seeds:
+            code = code_from_spec(spec, seed=seed)
+            row = random_code_saddlepoint_summary(
+                code,
+                local_m=args.local_m,
+                c=args.c,
+                sigma=args.sigma,
+                corr=args.corr,
+                top_l=args.top_l,
+                threshold_tail=args.threshold_tail,
+                quadrature=args.rate_quadrature,
+                theta_grid=args.rate_theta_grid,
+            )
+            rows.append(row)
+            print(
+                " ".join(
+                    [
+                        f"code={row['code']}",
+                        f"seed={seed}",
+                        f"label_exp={row['label_exponent']:.3f}",
+                        f"tail_rate={row['tail_rate']:.3f}",
+                        f"threshold={row['far_threshold_level']:.3f}",
+                        f"qmed={row['query_level_median']:.3f}",
+                        f"gap_med={row['median_mean_gap']:.3f}",
+                        f"hit_med={row['median_normal_hit']:.3f}",
+                        f"gap_asym={row['asymptotic_mean_gap']:.3f}",
+                        f"hit_asym={row['asymptotic_normal_hit']:.3f}",
+                    ]
+                ),
+                file=sys.stderr,
+            )
+    return rows
+
+
 def write_csv(path: str, rows: list[dict]) -> None:
     if not rows:
         return
@@ -461,6 +890,16 @@ def write_csv(path: str, rows: list[dict]) -> None:
             writer.writerow({name: row[name] for name in FIELDNAMES})
 
 
+def write_saddlepoint_csv(path: str, rows: list[dict]) -> None:
+    if not rows:
+        return
+    with open(path, "w", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=SADDLEPOINT_FIELDNAMES)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow({name: row[name] for name in SADDLEPOINT_FIELDNAMES})
+
+
 def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -468,7 +907,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
         default="rm:4:1,rm:4:2,random:16:11:0,full:16",
         help=(
             "Comma-separated specs: rm:m:degree, full:r, "
-            "random:r:dimension[:seed], polar-weight:m:dimension"
+            "random:r:dimension[:seed], iid:r:dimension[:seed], "
+            "polar-weight:m:dimension"
         ),
     )
     parser.add_argument("--local-m", type=int, default=8192)
@@ -485,20 +925,43 @@ def build_arg_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--threshold-samples", type=int, default=300_000)
     parser.add_argument("--query-trials", type=int, default=300)
+    parser.add_argument("--rate-quadrature", type=int, default=96)
+    parser.add_argument("--rate-theta-grid", type=int, default=2000)
     parser.add_argument(
         "--seeds",
         type=lambda text: [int(part) for part in parse_csv_list(text)],
         default=[0, 1, 2],
     )
     parser.add_argument("--csv", default="")
+    parser.add_argument("--saddlepoint-csv", default="")
+    parser.add_argument(
+        "--saddlepoint-shapes",
+        default="",
+        help="Optional comma-separated r_bits:dimension specs for saddlepoint-only sweeps.",
+    )
+    parser.add_argument(
+        "--saddlepoint-only",
+        action="store_true",
+        help="Only run the iid random-code saddlepoint approximation.",
+    )
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_arg_parser().parse_args(argv)
-    rows = run_sweep(args)
-    if args.csv:
+    if args.saddlepoint_only:
+        rows = []
+    else:
+        rows = run_sweep(args)
+    saddlepoint_rows = (
+        run_saddlepoint_sweep(args)
+        if args.saddlepoint_csv or args.saddlepoint_only
+        else []
+    )
+    if args.csv and rows:
         write_csv(args.csv, rows)
+    if args.saddlepoint_csv and saddlepoint_rows:
+        write_saddlepoint_csv(args.saddlepoint_csv, saddlepoint_rows)
     return 0
 
 
