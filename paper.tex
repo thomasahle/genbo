@@ -7744,6 +7744,90 @@ partition ignores the bias coordinates that certify the list size.
    chunk \(s\), and never by the product of the previous checkpoint ranges.
 \end{proof}
 
+\begin{corollary}[Checkpoint syndromes need few lossy checkpoints]
+   \label{cor:checkpoint-syndrome-lossy-depth}
+   In the setting of \cref{cor:checkpoint-syndrome-local-state}, put
+   \[
+      p_s=\frac{\eta_s}{1+\eta_s},
+      \qquad
+      \mathcal T_{\rm chk}
+      =
+      \sum_{s=1}^r\log\frac1{p_s}
+      =
+      \sum_{s=1}^r\log\!\left(1+\eta_s^{-1}\right).
+      \tag{CLD1}
+   \]
+   The checkpoint hit certificate of \((CPS5)\) is inverse-polylogarithmic in
+   \(m\) if and only if
+   \[
+      \mathcal T_{\rm chk}=O(\log\log m).
+      \tag{CLD2}
+   \]
+   Consequently a checkpoint-syndrome implementation whose local decoder state
+   satisfies
+   \[
+      \max_sK_s=\log^{O(1)}m
+      \quad\text{or}\quad
+      \sum_sK_s(t_s-t_{s-1})=\log^{O(1)}m
+      \tag{CLD3}
+   \]
+   and whose remaining miss/load conditions are \((PMR1)\)--\((PMR2)\) stays in
+   the clean \(m^\rho\polylog m\) envelope only when the route toll
+   \((CLD2)\) also holds.  If \(p_s\le p<1\) on \(r_{\rm loss}\) checkpoints,
+   then
+   \[
+      \mathcal T_{\rm chk}\ge r_{\rm loss}\log(1/p),
+      \tag{CLD4}
+   \]
+   so inverse-polylogarithmic certified recall forces
+   \(r_{\rm loss}=O(\log\log m)\).  In particular, refreshing independent
+   constant-quality syndromes at \(\Theta(\log m)\) route levels gives only
+   \(m^{-\Omega(1)}\) certified hit probability and would need polynomial
+   amplification.
+
+   Equivalently, if the number of checkpoints is \(r=\Theta(\log m)\), then
+   most checkpoints must be nearly deterministic for the near route.  In the
+   homogeneous case \(\eta_s=\eta\),
+   \[
+      \eta=\Omega\!\left(\frac{\log m}{\log\log m}\right)
+      \tag{CLD5}
+   \]
+   is necessary for the local checkpoint certificate to remain
+   inverse-polylogarithmic.  Thus checkpoint syndromes are a viable
+   polylog-overhead construction only for shallow nontrivial checkpoint
+   schedules, or for code/lattice/trellis routes where almost all checkpoints
+   have many more than \(K_s\) good continuations and hence negligible toll.
+\end{corollary}
+
+\begin{proof}
+   By \((CPS5)\), the certified hit probability is
+   \[
+      P_{\rm chk}
+      =
+      \prod_{s=1}^rp_s
+      =
+      \exp(-\mathcal T_{\rm chk}).
+   \]
+   This quantity is at least \(\log^{-O(1)}m\) exactly when
+   \(\mathcal T_{\rm chk}=O(\log\log m)\), proving \((CLD2)\).  The state
+   condition \((CLD3)\) is just the local-state bound \((CPS6)\); together with
+   \((PMR1)\)--\((PMR2)\), the only remaining amplification cost from this
+   checkpoint certificate is \(P_{\rm chk}^{-1}\) up to logarithmic confidence
+   factors.  Hence a superpolylogarithmic \(P_{\rm chk}^{-1}\) reintroduces the
+   overhead that the checkpoint construction was meant to remove.
+
+   If \(p_s\le p\) on \(r_{\rm loss}\) stages, the corresponding summands in
+   \(\mathcal T_{\rm chk}\) are at least \(\log(1/p)\), which gives
+   \((CLD4)\).  For \(r=\Theta(\log m)\) and homogeneous \(\eta_s=\eta\),
+   condition \((CLD2)\) reads
+   \[
+      r\log(1+\eta^{-1})=O(\log\log m).
+   \]
+   Since \(\log(1+x)\ge x/2\) for \(0\le x\le1\), and bounded \(\eta\) would
+   already violate the displayed condition, the remaining case gives
+   \(r/(2\eta)=O(\log\log m)\).  This proves \((CLD5)\).
+\end{proof}
+
 \begin{corollary}[Oversampled product witnesses support polylog syndrome thinning]
    \label{cor:oversampled-product-syndrome-thinning}
    Work in the smooth product terminal filter of
