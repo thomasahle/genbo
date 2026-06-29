@@ -87820,6 +87820,84 @@ For a threshold $u$, the posterior-superlevel child is
    and space bounds are immediate.
 \end{proof}
 
+\begin{corollary}[Additive nearest-cell list decoding suffices]
+   \label{cor:additive-nearest-cell-list-compiler}
+   Work in the setting and with the dimension-aware parameters of
+   \cref{cor:query-centered-cell-reweighting}.  Let
+   \(Z\sim N(q,I_D/t)\), and suppose a retained query primitive returns a list
+   \(\mathcal L(q,Z)\subseteq S\) that always contains the exact nearest cell
+   representative \(N_S(Z)\).  A sufficient, more decoder-like condition is
+   that for some \(\Delta_{\rm list}\ge0\) it lists every point satisfying
+   \[
+      \|Z-x\|^2
+      \le
+      \min_{y\in S}\|Z-y\|^2+\Delta_{\rm list}.
+      \tag{ANL0}
+   \]
+   Assume the expected work of producing \(\mathcal L(q,Z)\) and evaluating
+   exact distances from \(q\) to its listed candidates is \(T_{\rm list}(m)\),
+   and the retained space is \(S_{\rm list}(m)\).  Let
+   \(B=\log^{A_c}m\), with \(A_c\) large enough.  One trial samples \(Z\),
+   forms \(\mathcal L(q,Z)\), verifies listed candidates in the original
+   metric, and for every verified valid candidate \(x\) with
+   \[
+      \Delta_x(Z)=
+      \frac{\alpha t}{2}
+      \bigl(\|Z-q\|^2-\|Z-x\|^2\bigr)
+      \le \log B
+   \]
+   gives weight \(e^{\Delta_x(Z)}\).  It accepts with probability
+   \[
+      \min\left\{
+         1,\,
+         B^{-1}\sum_{\substack{x\in\mathcal L(q,Z)\cap\Ball(q,cr)\\
+                               \Delta_x(Z)\le\log B}}
+         e^{\Delta_x(Z)}
+      \right\},
+      \tag{ANL1}
+   \]
+   returning an accepted valid point proportionally to these weights.
+
+   If a near pair exists in the localized node, then \(O_c(B)\) independent
+   trials return a valid \(cr\)-neighbor with constant probability.  The
+   expected query work is
+   \[
+      O_c\!\left(B\,T_{\rm list}(m)\right),
+      \tag{ANL2}
+   \]
+   and the retained space is \(S_{\rm list}(m)+dm\).  Therefore a
+   code/lattice/list-recovery primitive does not need to identify the exact
+   Voronoi cell; it is enough to output-sensitively list a small additive
+   near-cell neighborhood under the smoothed query distribution.
+\end{corollary}
+
+\begin{proof}
+   Let \(x_*(Z)=N_S(Z)\).  Since \(x_*(Z)\in\mathcal L(q,Z)\), the acceptance
+   probability in one trial is at least
+   \[
+      B^{-1}R_q(Z)\,
+      \mathbf 1_{\{x_*(Z)\in\Ball(q,cr)\}}\,
+      \mathbf 1_{\{\log R_q(Z)\le\log B\}},
+   \]
+   where \(R_q\) is defined in \((QC1)\).  Taking expectations and using
+   \((QC2)\) with \(A=S\cap\Ball(q,cr)\), followed by the tail bound
+   \((QC3)\), gives
+   \[
+      \Pr[\text{one trial returns a valid point}]
+      \ge
+      B^{-1}
+      \left(
+         \sum_{x\in S\cap\Ball(q,cr)}\widetilde\Lambda_q(x)
+         -\frac{e^{2\kappa}}{B}
+      \right).
+   \]
+   The valid-mass lower bound \((AL4)\), with \(A_c\) large enough, makes the
+   right side \(\Omega_c(1/B)\).  Independent repetition gives constant
+   success probability.  The work bound is the expected per-trial list and
+   verification work multiplied by \(O_c(B)\), and the raw coordinates are
+   stored for final metric verification.
+\end{proof}
+
 \begin{lemma}[Smoothed witness-list compiler]
    \label{lem:smoothed-witness-list-compiler}
    Work in the setting and with the dimension-aware parameters of
