@@ -71,7 +71,7 @@ for Optimal Data-Dependent Euclidean ANN}
          O_c\!\left((\log n)^{2/3}(\log\log n)^{2/3}\right)
       \right).
    \]
-   The key self-contained ingredient is a spherical continuation-mass decoder with polylogarithmic loss; it lets the restart architecture improve from the older $7/9$ optimization to the $2/3$ exponent above. For terminal spherical search we also give a constant-depth smooth product filter with constant single-table recall and the same optimal exponent.
+   The key self-contained ingredient is a spherical continuation-mass decoder with polylogarithmic loss; it lets the restart architecture improve from the older $7/9$ optimization to the $2/3$ exponent above. For terminal spherical search we also give a constant-depth smooth product filter with constant single-table recall and the same optimal exponent.  Terminal polylogarithmic thinning can be done either by a syndrome mask or, for the balanced product witnesses of that filter, by a second scalar auxiliary score and one combined product heap.  The latter is explicitly terminal: the required extreme-value balance tax is superpolylogarithmic on long cumulative-score routes.
 
    We then record the remaining clean-endpoint routes.  The low-rate
    score-band separator is no longer left as an abstract LP/SA certificate:
@@ -5878,6 +5878,67 @@ partition ignores the bias coordinates that certify the list size.
       m^{\rho(a,b)}\log^{O_{a,b,k,\alpha}(1)}m.
    \]
    Storage is the retained update-leaf bound summed over all residents.
+\end{proof}
+
+\begin{corollary}[Scalar auxiliary masks are not long-route thinning]
+   \label{cor:scalar-mask-long-route-barrier}
+   In the scalar auxiliary model of
+   \cref{cor:critical-scalar-mask-log-tax}, suppose a density-\(K^{-1}\) mask
+   is used on a balanced \(k\)-fold product witness and the per-coordinate
+   common-good lists have size
+   \[
+      H=K^{1/k}(\log K)^\alpha .
+      \tag{SLR1}
+   \]
+   If the hit probability is bounded away from zero as \(K\to\infty\), then
+   necessarily
+   \[
+      \alpha\ge \frac{k-1}{2k}-o(1).
+      \tag{SLR2}
+   \]
+   Equivalently, the number of unmasked product witnesses that must be present
+   before the scalar thinning is at least
+   \[
+      H^k
+      \ge
+      K(\log K)^{(k-1)/2-o(k)}.
+      \tag{SLR3}
+   \]
+
+   Therefore a scalar auxiliary weight is a clean terminal thinning device only
+   while the product depth is small enough that
+   \((\log K)^{O(k)}\) is part of the allowed polylogarithmic slack.  In
+   particular, if \(K=\log^{\Theta(1)}m\) and
+   \[
+      k\gg \frac{\log\log m}{\log\log\log m},
+      \tag{SLR4}
+   \]
+   the necessary balance tax in \((SLR3)\) is already superpolylogarithmic in
+   \(m\).  For the cumulative-score branching route, where the useful score
+   depth is \(k=\Theta(\log m)\), scalar additive masks cannot be the missing
+   subpolynomial-overhead removal.  That route still needs aggregate value
+   delivery, a residue/syndrome reporter with low residual entropy, or another
+   output-sensitive structured decoder.
+\end{corollary}
+
+\begin{proof}
+   If \(\alpha<(k-1)/(2k)-\epsilon\) for some fixed \(\epsilon>0\), then
+   \cref{cor:critical-scalar-mask-log-tax} gives miss probability tending to
+   one.  This proves \((SLR2)\).  Raising \((SLR1)\) to the \(k\)-th power gives
+   \[
+      H^k=K(\log K)^{\alpha k},
+   \]
+   and substituting the necessary lower bound on \(\alpha\) proves \((SLR3)\).
+
+   When \(K=\log^{\Theta(1)}m\), we have
+   \(\log\log K=\Theta(\log\log\log m)\), so
+   \[
+      (\log K)^{(k-1)/2-o(k)}
+      =
+      \exp\!\left(\Omega(k\log\log\log m)\right).
+   \]
+   This is larger than every fixed power of \(\log m\) under \((SLR4)\), and is
+   much larger when \(k=\Theta(\log m)\).
 \end{proof}
 
 \begin{remark}[Decodable pseudorandom subsets need conditional entropy]
