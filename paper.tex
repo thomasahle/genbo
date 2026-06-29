@@ -90101,6 +90101,75 @@ amplified in the next proposition.
    conditional information budget in \((ICT4)\).
 \end{remark}
 
+\begin{remark}[Audit of deep code and lattice candidates]
+   \label{rem:deep-code-lattice-audit}
+   The preceding screen leaves only a few genuinely different imports from
+   coding and lattice algorithms.
+
+   \begin{itemize}
+      \item Algebraic soft-decision and list-recovery codes
+      (Reed--Solomon, folded Reed--Solomon, tensor, expander, and related
+      outer codes) are useful as \emph{reporters}.  They can implement the
+      positive-coverage and reduced-cost separators after dyadic unweighting.
+      The theorem to prove is not that the nearest codeword is good; it is that
+      the returned soft list has small certified work entropy and that its
+      retained buckets pass the storage/far/near spectrum tests.
+
+      \item Polar, Reed--Muller, convolutional, and low-state trellis codes are
+      useful as \emph{partition-function samplers}.  If their query likelihood
+      factors along an acyclic state graph, BCJR or successive-cancellation
+      recursions compute the exact tilted path law.  The natural experiment and
+      theorem target is then a transfer-matrix bucket spectrum for
+      \((BQ1)\)--\((BQ3)\), not SCL nearest-codeword performance.  Polynomial
+      SCL lists remain blocked by \cref{cor:raw-list-rate-lower-bound} unless
+      their prefixes are charged by a Fano moment or quotient sampler.
+
+      \item Tanner and LDPC-style constructions are promising only after
+      exactness is restored.  Ordinary loopy belief propagation is not a proof
+      of the aggregate law in \cref{lem:compressed-aggregate-sampler}.  One must
+      either use a genuine trellis or junction tree of polylogarithmic size, or
+      prove that the approximate marginals perturb \((BQ1)\)--\((BQ3)\) by only
+      polylogarithmic factors.  For a generic random LDPC block the junction-tree
+      width is linear, so its raw factor graph is not yet a compact sampler in
+      this sense.
+
+      \item Construction-A and Construction-D lattices reduce to residue-code
+      soft decisions by \cref{lem:construction-a-theta-quotient}.  This is the
+      cleanest lattice route: choose the modulus, scale, rotation, and residue
+      code so that theta reliabilities can be summed or sampled compactly, then
+      verify the induced storage, far sampled co-load, and near sampled mass.
+      Integer-lift enumeration is a local finishing step; it should not be the
+      main charged entropy.
+
+      \item Barnes--Wall, Barnes--Sloane, and other recursive lattices are
+      useful if the recursion is retained as a small state graph with aggregate
+      terminal buckets.  Their list-decoding theorems help only when the
+      recursion supplies either a Fano-biased prefix moment or an exact quotient
+      partition function.  A raw bounded-distance list is again just a raw list
+      unless the bucket charge is compressed.
+
+      \item Sphere enumeration, sequential lattice decoding, and extreme
+      pruning match the deterministic Fano-prefix certificate.  The pruning
+      radii must be read as branch prices whose exponential prefix moment is
+      certified; nearest-plane or closest-vector success alone does not lower
+      the far charge.
+
+      \item Discrete-Gaussian lattice samplers are closest to the continuous
+      ideal spectrum of
+      \cref{lem:critical-tilted-gaussian-sampled-spectrum}.  They are useful
+      only if the sampler is coupled to retained bucket sets with a verified
+      quotient spectrum.  Sampling hidden lattice points accurately is not
+      enough when many hidden points map to the same expensive stored bucket.
+   \end{itemize}
+
+   Thus the next concrete construction to test is a compact exact sampler, not
+   another raw decoder: for example a Construction-A residue code with a
+   low-state trellis or recursive factorization, analyzed by transfer matrices
+   for \((BQ1)\)--\((BQ3)\).  If that spectrum fails, the failure is a real
+   storage/far-load barrier rather than a reformulation of the top-list
+   obstruction.
+\end{remark}
+
 \begin{remark}[Why ordinary ANN does not implement the score-max target]\label{rem:score-max-ordinary-ann}
    One can force the perturbed center $y=Y/t$ to be close to $q$ by taking
    $t$ large. In dimension $D$, if
@@ -90747,6 +90816,165 @@ top-\(k\) backup.
    where the last inequality is Holder's inequality for probability vectors.
    Finally, Chebyshev gives \(D(v)=rh+o(r)\) with probability \(1-o(1)\);
    substituting \(r=\kappa\log m\) and \(|Q|\le\log^C m\) gives \((GTK4)\).
+\end{proof}
+
+\begin{corollary}[Product-sign scale tradeoff for query lists]
+   \label{cor:product-sign-scale-tradeoff}
+   The entropy obstruction in
+   \cref{lem:growing-product-sign-top-k-barrier} is not removed by increasing
+   the product-sign bit scale.  Fix \(a\in(0,1)\), \(\kappa,b>0\), and let
+   \[
+      r=\lceil\kappa\log m\rceil,
+      \qquad
+      \beta=b/\log m .
+   \]
+   In the ideal Gaussian product-sign model, let
+   \[
+      (U_i,V_i)=\sigma_m(G_i,H_i),
+      \qquad
+      \operatorname{Corr}(G_i,H_i)=a,
+   \]
+   independently over \(i\), where \(1\le\sigma_m\le\log m\).  Let
+   \(K_p,K_q\) be the corresponding product-sign laws, let
+   \(\mathsf A_\beta(p,q)=\sum_sK_p(s)^\beta K_q(s)^{1-\beta}\), and let
+   \(W_{p,q}\) be the tilted label law.  For every fixed list exponent \(C\)
+   and every fixed \(A\), with probability \(1-o(1)\) over the bit logits,
+   every query-facing label set \(Q\subseteq\{\pm1\}^r\) with
+   \(|Q|\le\log^C m\) satisfies
+   \[
+      \mathcal H_{\xi,Q}(p,q)
+      \le
+      \log^{-A}m .
+      \tag{PSTrade1}
+   \]
+
+   More quantitatively, there are constants \(c_1,c_2>0\), depending only on
+   \(a,\kappa,b\), such that for each fixed \(C'\) the same event gives the two
+   simultaneous bounds
+   \[
+      \mathcal H_{\xi,Q}(p,q)
+      \le
+      |Q|\exp\!\left\{-c_1\frac{\log m}{\sigma_m}\right\},
+      \tag{PSTrade2}
+   \]
+   whenever \(\log m/\sigma_m\ge C'\log\log m\), and
+   \[
+      \mathcal H_{\xi,Q}(p,q)
+      \le
+      \mathsf A_\beta(p,q)
+      \le
+      \exp\{-c_2\sigma_m\}
+      \tag{PSTrade3}
+   \]
+   whenever \(\sigma_m\le\log m\).  Thus one cannot tune the bit scale to make
+   a growing-width product-sign panel output-sensitive: making the tilted law
+   spiky enough for a polylogarithmic list forces \(\sigma_m\) large, but then
+   the Hellinger affinity factor in the finite-channel value is already
+   smaller than every inverse polylogarithm.
+\end{corollary}
+
+\begin{proof}
+   First consider the tilted min-entropy.  In the notation of
+   \cref{lem:growing-product-sign-top-k-barrier}, put
+   \(v_i=\beta U_i+(1-\beta)V_i\).  Then
+   \[
+      D(v)=\sum_{i=1}^r\log(1+e^{-2|v_i|})
+   \]
+   is the negative logarithm of the largest atom of the tilted product-sign
+   law.  Each \(v_i\) is a centered Gaussian with standard deviation between
+   \((1-a)^{1/2}\sigma_m/2\) and \(2\sigma_m\) for all large \(m\).  Hence, for
+   \(\sigma\ge1\),
+   \[
+      \E\log(1+e^{-2\sigma |H|})
+      \ge \frac{c}{\sigma},
+      \tag{PSTrade4}
+   \]
+   because on \(|H|\le1/\sigma\) the summand is bounded below by an absolute
+   constant and that event has probability \(\Theta(1/\sigma)\).  The summands
+   are independent and bounded, so Bernstein's inequality implies that, when
+   \(r/\sigma_m\ge C'\log\log m\) with \(C'\) large enough,
+   \[
+      D(v)\ge c_1\frac{\log m}{\sigma_m}
+   \]
+   with probability \(1-o(1)\).  Combining this with
+   \((GTK2)\)--\((GTK3)\) gives \((PSTrade2)\).
+
+   For the affinity side, write the one-bit log-affinity as
+   \[
+      F_\beta(U,V)
+      =
+      \log\cosh(\beta U+(1-\beta)V)
+      -\beta\log\cosh U
+      -(1-\beta)\log\cosh V .
+   \]
+   By Holder, \(F_\beta\le0\).  Put \(\theta=\beta\sigma\).  The expectation
+   has the following uniform negative drift.  First,
+   \[
+      \left.\frac{d}{d\beta}\E F_\beta(\sigma G,\sigma H)\right|_{\beta=0}
+      =
+      -(1-a)\E[\sigma H\tanh(\sigma H)]
+      \le -c\sigma ,
+      \tag{PSTrade5a}
+   \]
+   uniformly for \(\sigma\ge1\), and the second derivative is
+   \(O(\sigma^2)\).  Hence, when \(\theta\le\theta_0\) for a sufficiently small
+   fixed \(\theta_0\),
+   \[
+      \E F_\beta(\sigma G,\sigma H)\le -c\theta .
+      \tag{PSTrade5b}
+   \]
+   On the complementary range, \(\theta\ge\theta_0\), we have
+   \(\sigma\to\infty\) because \(\beta=b/\log m\).  For every fixed
+   \(\theta\in[\theta_0,b]\),
+   \[
+      \E F_{\theta/\sigma}(\sigma G,\sigma H)
+      \to
+      \theta\E[G\operatorname{sign}H-|G|]
+      =
+      -\theta(1-a)\sqrt{\frac2\pi},
+      \tag{PSTrade5}
+   \]
+   where the contribution from \(|H|=O(1/\sigma)\) is negligible.  Compactness
+   in \(\theta\in[\theta_0,b]\) then gives a negative constant upper bound in
+   this range.  Combining the two regimes, for all \(1\le\sigma_m\le\log m\)
+   and all large \(m\),
+   \[
+      \E F_\beta(U,V)
+      \le
+      -c\min\{\beta\sigma_m,1\}.
+      \tag{PSTrade6}
+   \]
+   The same parameter controls concentration.  Since \(\log\cosh\) is
+   \(1\)-Lipschitz,
+   \[
+      -2\beta |U_i-V_i|
+      \le
+      F_\beta(U_i,V_i)
+      \le0 ,
+      \tag{PSTrade7}
+   \]
+   so the centered variables are sub-exponential with scale
+   \(O(\beta\sigma_m)\) when \(\beta\sigma_m\le1\), and with constant scale
+   when \(\beta\sigma_m\ge1\).  Bernstein's inequality therefore gives
+   \[
+      \log\mathsf A_\beta(p,q)
+      =
+      \sum_{i=1}^rF_\beta(U_i,V_i)
+      \le
+      -c_2\min\{\beta\sigma_m,1\}r
+      \le
+      -c_2\sigma_m
+   \]
+   with probability \(1-o(1)\), using \(r=\kappa\log m\) and
+   \(\beta=b/\log m\).  Since
+   \(\mathcal H_{\xi,Q}\le\mathcal H_\xi\le\mathsf A_\beta\), this proves
+   \((PSTrade3)\).
+
+   Finally choose \(C'\) in the first case large enough compared with
+   \(A+C\).  If \(\log m/\sigma_m\ge C'\log\log m\), then
+   \((PSTrade2)\) gives \(\mathcal H_{\xi,Q}\le\log^{-A}m\).  Otherwise
+   \(\sigma_m\ge \log m/(C'\log\log m)\), and \((PSTrade3)\) is
+   superpolylogarithmically small.  This proves \((PSTrade1)\).
 \end{proof}
 
 \begin{lemma}[Sampled product-sign storage/far-load obstruction]
@@ -92239,6 +92467,10 @@ One should also separate the resident-guard regime from the genuine finite-chann
    \cref{lem:growing-product-sign-top-k-barrier}, a polylogarithmic query
    top-\(k\) reporter cannot capture enough value in the fixed-entropy
    growing-width product-sign model, and by
+   \cref{cor:product-sign-scale-tradeoff} increasing the bit scale does not
+   repair this.  Low scale leaves the tilted law with superpolylogarithmic
+   min-entropy, while high scale makes the Hellinger affinity factor
+   \(\mathsf A_\beta\) superpolylogarithmically small.  By
    \cref{lem:sampled-product-sign-rate-obstruction} direct query-Gibbs sampling
    of the same labels violates the sampled storage/far-load rate test.  By
    \cref{cor:stable-small-quotient-product-sign-obstruction}, stable quotients
@@ -93262,6 +93494,13 @@ information gap disappears.
 \Cref{cor:raw-label-fano-price-no-rescue} adds that deterministic pruning
 prices on the same raw labels do not help unless they change the charged
 certificate itself.
+\Cref{rem:deep-code-lattice-audit} records the resulting candidate map:
+algebraic list-recovery is useful as a reduced-cost reporter, low-state
+trellises and polar/convolutional recursions are useful as exact aggregate
+samplers, Tanner/LDPC factor graphs need an exact small junction tree or a
+certified approximation error, Construction-A/D should be analyzed through
+theta residue-code partition functions, and lattice enumeration or pruning
+only helps when it supplies a Fano-prefix moment or quotient bucket law.
 \Cref{lem:min-entropy-information-set} identifies the best chart for a linear
 block: assign each coordinate its soft local entropy
 \(\lambda_i=\log\sum_a\exp(\beta(\omega_i(a)-m_i))\), then choose a
