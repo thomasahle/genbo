@@ -18104,6 +18104,172 @@ partition ignores the bias coordinates that certify the list size.
    size.
 \end{proof}
 
+\begin{lemma}[Junction-tree quotient sampler]
+   \label{lem:junction-tree-quotient-sampler}
+   Let hidden labels be assignments
+   \(z=(z_1,\ldots,z_h)\in\mathcal X=\prod_i\mathcal X_i\), with
+   \(|\mathcal X_i|\le A\).  For a query \(q\), suppose the tilted weight
+   factors as
+   \[
+      W_q(z)=\prod_{a\in\mathcal F}\psi_a(z_{\partial a};q),
+      \qquad \psi_a>0,
+      \tag{JT1}
+   \]
+   where \(\partial a\subseteq[h]\).  Let
+   \(b:\mathcal X\to\mathcal B\) be any retained bucket map.  Assume the
+   factor hypergraph has a tree decomposition
+   \((\mathcal J,\{B_u\}_{u\in\mathcal J})\) of width \(w\), and assign every
+   factor \(a\) to one bag \(u(a)\) with \(\partial a\subseteq B_{u(a)}\).
+   Then ordinary junction-tree sum-product computes
+   \[
+      Z_q=\sum_{z\in\mathcal X}W_q(z)
+   \]
+   and samples \(z\) exactly from \(W_q(z)/Z_q\) in arithmetic work
+   \[
+      O\!\left(|\mathcal J|A^{w+1}\right)
+      \tag{JT2}
+   \]
+   up to the cost of evaluating the local factors.  Returning \(b(z)\) samples
+   the aggregate quotient law
+   \[
+      \Pr[b(z)=b]
+      =
+      \frac{\sum_{z:\ b(z)=b}W_q(z)}
+           {\sum_zW_q(z)} .
+      \tag{JT3}
+   \]
+
+   Consequently, any Tanner, polar, LDPC, Construction-A residue, or recursive
+   lattice block with an exact junction tree satisfying
+   \[
+      |\mathcal J|A^{w+1}\le d\log^{O_c(1)}m
+      \tag{JT4}
+   \]
+   implements the aggregate-query part of
+   \cref{cor:bucket-quotient-quadrature}.  If the induced bucket law also
+   satisfies \((BQ1)\)--\((BQ3)\), the terminal sampled ANN bounds of
+   \cref{prop:sampled-structured-panel} follow.  If instead
+   \(A^{w+1}=m^{\Omega(1)}\), the exact factor-graph decoder consumes a real
+   query exponent and cannot be hidden in the polylogarithmic overhead.
+\end{lemma}
+
+\begin{proof}
+   For a bag \(u\), put
+   \[
+      \Psi_u(x_{B_u};q)
+      =
+      \prod_{a:\ u(a)=u}\psi_a(x_{\partial a};q).
+   \]
+   Root the junction tree at \(r\).  For an oriented edge \(u\to v\), let
+   \(S_{uv}=B_u\cap B_v\).  Define messages by
+   \[
+      M_{u\to v}(x_{S_{uv}})
+      =
+      \sum_{x_{B_u\setminus S_{uv}}}
+      \Psi_u(x_{B_u};q)
+      \prod_{t\in N(u)\setminus\{v\}}
+      M_{t\to u}(x_{S_{tu}}).
+      \tag{JT5}
+   \]
+   The running-intersection property gives the usual invariant: \(M_{u\to v}\)
+   is the total weight of the component of \(\mathcal J\setminus\{uv\}\)
+   containing \(u\), conditioned on the separator assignment
+   \(x_{S_{uv}}\).  Hence
+   \[
+      Z_q=
+      \sum_{x_{B_r}}\Psi_r(x_{B_r};q)
+      \prod_{t\in N(r)}M_{t\to r}(x_{S_{tr}}).
+      \tag{JT6}
+   \]
+   Computing each message scans at most \(A^{|B_u|}\le A^{w+1}\) bag
+   assignments, up to degree constants absorbed in \(|\mathcal J|\), proving
+   the work bound for the backward pass.
+
+   Exact sampling is the standard top-down pass.  First sample the root bag
+   with probability proportional to the summand in \((JT6)\).  When a parent
+   bag assignment has been sampled, sample a child bag \(u\) given the
+   separator \(S_{uv}\) with probability proportional to the summand in
+   \((JT5)\).  Again by the message invariant and the running-intersection
+   property, the resulting consistent assignment \(z\) has probability
+   \(W_q(z)/Z_q\).  Pushing this law forward by \(b\) gives \((JT3)\).  The
+   final ANN statement is \cref{cor:bucket-quotient-quadrature}; \((JT4)\) is
+   exactly the condition that exact inference is only polylogarithmic in the
+   local terminal problem.
+\end{proof}
+
+\begin{corollary}[Junction-tree marked spectrum verifier]
+   \label{cor:junction-tree-marked-spectrum-verifier}
+   Work in the setting of \cref{lem:junction-tree-quotient-sampler}.  Suppose
+   that, for each resident point \(x\), the raw hidden label has an additive
+   local storage score
+   \[
+      S_x(z)=\sum_{a\in\mathcal F}\phi_{a,x}(z_{\partial a}),
+      \tag{JTM1}
+   \]
+   after assigning every score term to a bag containing its scope.  Assume the
+   scores lie in a shifted lattice \(\delta\mathbb Z\) with at most \(R_x\)
+   attainable bins.  Then the marked partition function
+   \[
+      Z_{q,x}^{\ge T}
+      =
+      \sum_{z:\ S_x(z)\ge T}W_q(z)
+      \tag{JTM2}
+   \]
+   is computed exactly by the same junction tree with messages whose entries
+   are truncated score polynomials.  The work is
+   \[
+      O\!\left(|\mathcal J|A^{w+1}\mathsf C(R_x)\right),
+      \tag{JTM3}
+   \]
+   where \(\mathsf C(R)\) is the cost of multiplying and truncating
+   degree-\(R\) nonnegative polynomials in the chosen representation
+   (for instance \(O(R^2)\) by direct convolution).
+
+   If the retained bucket class \(\ell\) is itself enforced by local factors
+   or by fixing variables in bags of the same junction tree, the bucket-marked
+   quantity
+   \[
+      Z_{q,x,\ell}^{\ge T}
+      =
+      \sum_{\substack{z:\ b(z)=\ell\\ S_x(z)\ge T}}W_q(z)
+      \tag{JTM4}
+   \]
+   is computed by adding those local constraints before running the same
+   marked recursion.  Therefore the responsibility ratio
+   \(Z_{q,x,\ell}^{\ge T}/Z_{q,\ell}\) in
+   \cref{lem:marked-trellis-responsibility-verifier} is an exact
+   junction-tree observable whenever \((JT4)\) and
+   \(R_x=\log^{O_c(1)}m\) hold.
+\end{corollary}
+
+\begin{proof}
+   Introduce an indeterminate \(u\).  Shift each local score term by a known
+   constant so that its exponents are nonnegative; this adds one known constant
+   to \(S_x(z)\) for every assignment \(z\), so the threshold \(T\) is shifted
+   by the same amount and we suppress this harmless notation change.  Replace
+   each local bag potential by
+   \[
+      \Psi_u(x_{B_u};q)\,
+      u^{\sum_{a:\ u(a)=u}\phi_{a,x}(x_{\partial a})/\delta},
+   \]
+   with the shifted local scores in the exponent.  Running the message
+   recursion \((JT5)\) in the semiring of nonnegative polynomials, truncated to
+   the attainable score range, gives at the root the generating function
+   \[
+      P_{q,x}(u)=\sum_zW_q(z)u^{S_x(z)/\delta}.
+   \]
+   Summing the coefficients with exponent at least \(T/\delta\) gives
+   \((JTM2)\).  Each bag assignment now combines polynomial messages rather
+   than scalars, causing exactly the multiplicative factor
+   \(\mathsf C(R_x)\) in \((JTM3)\).
+
+   If \(b(z)=\ell\) is represented by additional local constraints or fixed
+   bag variables, multiply the corresponding bag potentials by the indicator
+   of those constraints.  The same polynomial recursion then sums precisely
+   the assignments in \((JTM4)\).  Dividing by the unmarked constrained
+   partition function \(Z_{q,\ell}\) gives the exact marked responsibility.
+\end{proof}
+
 \begin{lemma}[Marked trellis spectrum verifier]
    \label{lem:marked-trellis-spectrum-verifier}
    Work with a layered acyclic trellis as in
