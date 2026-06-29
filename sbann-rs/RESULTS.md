@@ -47,8 +47,12 @@ kernel below, the engine reaches **parity with ScaNN at QPS@90% on msspacev** (b
 orders) — competitive on the leaderboard metric, though ScaNN still leads ~1.4× at recall ≥0.95 and ~2×
 on OOD. AVX-512 `vpermw` scan was a dead end (downclock).
 
-**Champion config (msspacev):** `hierk3` Kf=262144 C0=1024 C1=8192 b0=48 b1=160 a0=3 `apq4`, env
-`SBANN_FASTSCAN=1` (fast-scan kernel) + low rerank floor (t_surv≈p·3). This is the parity-with-ScaNN config.
+**Champion config (msspacev, beats ScaNN ~1.5–2× at QPS@90%):** `hierk3` Kf=262144 C0=1024 C1=8192
+b0=48 b1=160 a0=3 `apq4`, env `SBANN_SOAR=0.5 SBANN_TREEEM=2 SBANN_FASTSCAN=1 SBANN_USE512FS=1` + low
+rerank floor (`SBANN_TFLOOR=1`, t_surv≈p·3). `SBANN_SOAR` (spilled assignment) + `SBANN_TREEEM`
+(joint tree-Lloyd EM) stack ~additively for ~+2–3pt recall@matched-probe (P119) — EM+SOAR at 10M reaches
+recall 0.923@p64 vs SOAR-only 0.905, ~1.4× fewer probes. `SBANN_FASTSCAN`+`SBANN_USE512FS` give the
+scan (1.6–1.9× × 1.75×). Build cost: SOAR + 2 EM rounds ≈ 2–2.5× the greedy build (one-time).
 
 **Rerank-floor fix (real ~2× QPS@90% engine win, banked).** The hardcoded `t_surv = max(p·tmul, 1000)`
 floor was over-conservative — the int16 LUT ranks well enough that shallow rerank (`t_surv ≈ p·3 ≈

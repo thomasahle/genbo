@@ -1871,7 +1871,12 @@ P119. (*** tree-Lloyd EM joint-level optimization STACKS with SOAR ~additively -
     BUILD-COST MODEL CONFIRMED (SBANN_BUILDPROF): per-level-s=[8.6,0.5,0.7] for fanout=[256,16,16] -- cost
     ≈ I·smp·fan·d per level, so EQUAL per level ONLY with UNIFORM fan-out; the lopsided C0=256 makes level
     0 dominate (8.6 vs 0.6s). Implication: uniform fan-out (C0≈Kf^(1/L)) balances/speeds the build -- a
-    100M/1B build lever. 10M EM+SOAR validation running (em_soar_10m.log) to see if it widens the lead.
+    100M/1B build lever. 10M EM+SOAR CONFIRMED (em_soar_10m.log): EM adds +0.6-1.8pt OVER SOAR-only at
+    matched probe (p64 0.9048->0.9230, p96 0.9252->0.9393, p224 0.9566->0.9626) = additivity HOLDS at
+    scale -> ~1.4x fewer probes than SOAR-only at recall 0.92. EM+SOAR is the new msspacev champion
+    (SOAR-only already beat ScaNN ~1.5x => EM+SOAR ~1.8-2x @QPS90). Build: 2 EM rounds +~633s (10M),
+    buildprof per-level [150,1,3]s confirms fanout=1024 level-0 dominates. EM+SOAR also applied to OOD
+    full stack (ood_fullstack.log, running).
 
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
