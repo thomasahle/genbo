@@ -60,6 +60,14 @@ FIELDNAMES = [
     "top4_contribution_fraction_median",
     "top8_contribution_fraction_q05",
     "top8_contribution_fraction_median",
+    "query_top_contribution_fraction_q05",
+    "query_top_contribution_fraction_median",
+    "query_top2_contribution_fraction_q05",
+    "query_top2_contribution_fraction_median",
+    "query_top4_contribution_fraction_q05",
+    "query_top4_contribution_fraction_median",
+    "query_top8_contribution_fraction_q05",
+    "query_top8_contribution_fraction_median",
     "margin_mass_mean",
     "margin_mass_q05",
     "margin_bound_mean",
@@ -205,6 +213,18 @@ def run_trial(
         "top4_contribution_fraction_median": float(np.median(result.top4_contribution_fraction)),
         "top8_contribution_fraction_q05": _q(result.top8_contribution_fraction, 0.05),
         "top8_contribution_fraction_median": float(np.median(result.top8_contribution_fraction)),
+        "query_top_contribution_fraction_q05": _q(result.query_top_contribution_fraction, 0.05),
+        "query_top_contribution_fraction_median": float(
+            np.median(result.query_top_contribution_fraction)),
+        "query_top2_contribution_fraction_q05": _q(result.query_top2_contribution_fraction, 0.05),
+        "query_top2_contribution_fraction_median": float(
+            np.median(result.query_top2_contribution_fraction)),
+        "query_top4_contribution_fraction_q05": _q(result.query_top4_contribution_fraction, 0.05),
+        "query_top4_contribution_fraction_median": float(
+            np.median(result.query_top4_contribution_fraction)),
+        "query_top8_contribution_fraction_q05": _q(result.query_top8_contribution_fraction, 0.05),
+        "query_top8_contribution_fraction_median": float(
+            np.median(result.query_top8_contribution_fraction)),
         "margin_mass_mean": float(result.margin_mass.mean()),
         "margin_mass_q05": _q(result.margin_mass, 0.05),
         "margin_bound_mean": float(result.margin_bound.mean()),

@@ -51,7 +51,7 @@ def test_h_eta_matches_direct_formula():
     assert np.all((0 <= margin_mass) & (margin_mass <= 1))
     assert np.all(margin_bound <= h + 1e-12)
 
-    affinity2, soft_surplus, tilted_top_mass, top_fraction, topk = tilted_surplus_statistics(
+    affinity2, soft_surplus, tilted_top_mass, top_fraction, topk, query_topk = tilted_surplus_statistics(
         k_data, k_query, near, pi, tau, alpha=alpha)
     assert np.allclose(affinity2, affinity)
     assert np.allclose(h, affinity * soft_surplus)
@@ -60,6 +60,8 @@ def test_h_eta_matches_direct_formula():
     assert np.all((0 <= top_fraction) & (top_fraction <= 1))
     assert np.allclose(topk[2][h > 0], 1.0)
     assert np.all(topk[2] >= top_fraction - 1e-12)
+    assert np.all(query_topk[2] >= query_topk[1] - 1e-12)
+    assert np.all((0 <= query_topk[1]) & (query_topk[1] <= 1))
 
 
 def test_diagnostic_adds_guard_density():
@@ -84,6 +86,12 @@ def test_diagnostic_adds_guard_density():
     assert np.all(result.top2_contribution_fraction >= result.top_contribution_fraction - 1e-12)
     assert np.all(result.top4_contribution_fraction >= result.top2_contribution_fraction - 1e-12)
     assert np.all(result.top8_contribution_fraction >= result.top4_contribution_fraction - 1e-12)
+    assert np.all(result.query_top2_contribution_fraction >=
+                  result.query_top_contribution_fraction - 1e-12)
+    assert np.all(result.query_top4_contribution_fraction >=
+                  result.query_top2_contribution_fraction - 1e-12)
+    assert np.all(result.query_top8_contribution_fraction >=
+                  result.query_top4_contribution_fraction - 1e-12)
 
 
 def test_softmax_balancing_reduces_column_mass_error():
