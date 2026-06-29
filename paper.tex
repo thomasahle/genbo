@@ -96004,6 +96004,126 @@ amplified in the next proposition.
    \cref{lem:junction-tree-quotient-sampler}.
 \end{proof}
 
+\begin{corollary}[Raw signature expansion is charged by resident load]
+   \label{cor:raw-expansion-resident-load}
+   Work in the shared-signature setting of
+   \cref{cor:unfiltered-signature-sampler-witness}.  For one query outcome
+   \(B\), put
+   \[
+      c_\alpha=|C_\alpha|,
+      \qquad
+      U_B=\sum_\alpha u_\alpha(B),
+      \qquad
+      L_B=\sum_\alpha c_\alpha u_\alpha(B)
+      =
+      \sum_{x\in S}b_x(B).
+      \tag{REL1}
+   \]
+   Draw
+   \[
+      N_B=
+      \left\lceil
+      8\,\frac{U_B}{\theta}
+      \log\!\left(2m+2U_B/\theta\right)
+      \right\rceil
+      \tag{REL2}
+   \]
+   independent raw signatures from \(u_\alpha(B)/U_B\) when \(U_B>0\), and
+   expand every sampled resident class \(C_\alpha\), suppressing duplicate
+   outputs.
+
+   Conditional on \(B\), every point with \(b_x(B)\ge\theta\) is output except
+   with probability at most \(O(m^{-2})\).  Moreover, the conditional expected
+   number of resident incidences scanned by the class expansions is at most
+   \[
+      O\!\left(
+         \frac{L_B}{\theta}
+         \log\!\left(2m+2U_B/\theta\right)
+      \right).
+      \tag{REL3}
+   \]
+
+   If the raw signatures are supplied by an acyclic aggregate sampler with
+   backward cost \(T_{\rm back}(B)\) and per-path sampling cost at most
+   \(\tau_B\), then the conditional expected sampler plus expansion work is
+   \[
+      T_{\rm back}(B)
+      +
+      O\!\left(
+         \frac{\tau_BU_B+L_B}{\theta}
+         \log\!\left(2m+2U_B/\theta\right)
+      \right).
+      \tag{REL4}
+   \]
+   Consequently, under \((PMR1)\)--\((PMR2)\), this raw-expansion reporter
+   implements the smoothed witness-list endpoint whenever the expectation of
+   \((REL4)\), with \(B=B(q,Z)\), is at most
+   \(Dm^\rho\log^{O_c(1)}m\).
+
+   In particular, suppose a query-dependent leakage factor \(\Gamma_B\) obeys
+   \[
+      U_B\le \Gamma_B L_B
+      \tag{REL5}
+   \]
+   whenever \(U_B>0\), and
+   \[
+      \tau_B\Gamma_B\le\log^{O_c(1)}m,
+      \qquad
+      \log(2m+2U_B/\theta)=O_c(\log m),
+      \qquad
+      \theta^{-1}=\log^{O_c(1)}m .
+      \tag{REL6}
+   \]
+   Then \((PMR2)\) charges the whole online access cost up to polylogarithmic
+   factors.  Thus raw class expansion needs no two-sided resident balance and
+   no upper bound on class sizes in expectation.  Tiny nonempty classes are not
+   a leakage obstruction for this reporter: if every active signature has at
+   least one resident, then \(L_B\ge U_B\) and \((REL5)\) holds with
+   \(\Gamma_B=1\).  The only raw-sampling leakage left by this argument is
+   active aggregate mass assigned to empty resident classes, or a path sampler
+   whose per-sample cost is too large.
+\end{corollary}
+
+\begin{proof}
+   The heavy-signature hitting calculation is the same as in
+   \cref{cor:unfiltered-signature-sampler-witness}.  If
+   \(b_x(B)=u_{\alpha(x)}(B)\ge\theta\), then \(u_{\alpha(x)}(B)\ge\theta\), so
+   one raw draw samples \(\alpha(x)\) with probability at least \(\theta/U_B\).
+   Therefore
+   \[
+      \Pr[\alpha(x)\ {\rm is\ never sampled}\mid B]
+      \le
+      \exp(-N_B\theta/U_B)
+      \le
+      \left(2m+2U_B/\theta\right)^{-8}.
+   \]
+   A union bound over the at most \(U_B/\theta\) signatures with
+   \(u_\alpha(B)\ge\theta\) gives \(O(m^{-2})\) conditional failure.  When the
+   signature of a heavy point is sampled, expanding \(C_{\alpha(x)}\) outputs
+   the point.
+
+   For the work bound, ignore duplicate suppression, which can only reduce
+   the scan.  If \(\alpha_1,\ldots,\alpha_{N_B}\) are the raw samples, then
+   \[
+      \E\!\left[\sum_{i=1}^{N_B}c_{\alpha_i}\,\middle|\,B\right]
+      =
+      N_B\sum_\alpha \frac{u_\alpha(B)}{U_B}c_\alpha
+      =
+      N_B\frac{L_B}{U_B},
+   \]
+   which is \((REL3)\) after substituting \((REL2)\).  The acyclic sampler
+   adds the backward pass and \(N_B\) top-down samples, proving \((REL4)\).
+
+   The endpoint implication follows exactly as in
+   \cref{cor:resident-size-biased-sampler}: the near miss is contained in the
+   event \(b_p(B(q,Z))<\theta\) plus the conditional sampler miss, and the
+   expected work is bounded by the displayed hypothesis.  Finally, \((REL5)\)
+   and \((REL6)\) reduce \((REL4)\) to
+   \(T_{\rm back}(B)+L_B\log^{O_c(1)}m\), so \((PMR2)\) charges the averaged
+   work.  If every active signature is nonempty, then \(c_\alpha\ge1\) whenever
+   \(u_\alpha(B)>0\), hence \(L_B=\sum_\alpha c_\alpha u_\alpha(B)\ge U_B\).
+\end{proof}
+
 \begin{corollary}[Two-sided balance charges sampler mass to rate load]
    \label{cor:two-sided-balance-sampler-load}
    Work in the shared-signature setting above and put
