@@ -6079,6 +6079,168 @@ partition ignores the bias coordinates that certify the list size.
    retention probability \(K^{-1}\).
 \end{proof}
 
+\begin{lemma}[Syndrome branch frontiers are suffix-occupancy limited]
+   \label{lem:syndrome-prefix-occupancy}
+   Fix one product score problem
+   \[
+      \mathcal C=\mathcal C_1\times\cdots\times\mathcal C_h,
+      \qquad
+      S(c)=\sum_{j=1}^h\phi_j(c_j),
+   \]
+   and a threshold \(\Theta\).  Let \(G\) be a finite group of size \(K\), let
+   \(h_j:\mathcal C_j\to G\) be arbitrary maps, and choose the target syndrome
+   \(\sigma\) uniformly from \(G\).  For a prefix
+   \(u=(c_1,\ldots,c_\ell)\), write
+   \[
+      H(u)=\sum_{j\le\ell}h_j(c_j),
+      \qquad
+      S(u)=\sum_{j\le\ell}\phi_j(c_j),
+   \]
+   and define its high-scoring suffix set
+   \[
+      A_u=
+      \left\{
+      v\in\mathcal C_{\ell+1}\times\cdots\times\mathcal C_h:
+      S(u)+S(v)\ge\Theta
+      \right\}.
+      \tag{SPO1}
+   \]
+   A syndrome-aware threshold decoder must keep \(u\) live only if some suffix
+   in \(A_u\) can complete the target syndrome.  Conditional on the maps
+   \(h_j\), this live probability over the random target syndrome is exactly
+   \[
+      \Pr_\sigma[u\ {\rm live}\mid h]
+      =
+      \frac{|\operatorname{Res}(A_u)|}{K},
+      \qquad
+      \operatorname{Res}(A_u)=
+      \left\{
+      \sum_{j>\ell}h_j(v_j):v\in A_u
+      \right\}.
+      \tag{SPO2}
+   \]
+   In particular,
+   \[
+      \Pr_\sigma[u\ {\rm live}\mid h]
+      \le
+      \min\left\{1,\frac{|A_u|}{K}\right\}.
+      \tag{SPO3}
+   \]
+   Summing over all prefixes at level \(\ell\), the expected live frontier is
+   bounded by
+   \[
+      \E_\sigma|\mathcal L_\ell|
+      \le
+      \sum_{u\in\mathcal C_1\times\cdots\times\mathcal C_\ell}
+      \min\left\{1,\frac{|A_u|}{K}\right\}.
+      \tag{SPO4}
+   \]
+   Meanwhile the expected number of retained terminal tuples above threshold is
+   exactly
+   \[
+      K^{-1}
+      |\{c\in\mathcal C:S(c)\ge\Theta\}|.
+      \tag{SPO5}
+   \]
+
+   Conversely, suppose the suffix syndrome of every fixed suffix is uniform in
+   \(G\), and the suffix syndromes are pairwise independent over any fixed
+   suffix set.  Then
+   \[
+      \E_{h,\sigma}\mathbf 1\{u\ {\rm live}\}
+      \ge
+      \frac{|A_u|}{K+|A_u|}.
+      \tag{SPO6}
+   \]
+   Hence the upper bound \((SPO3)\) is tight up to a factor two in the random
+   syndrome model:
+   \[
+      \frac12\min\left\{1,\frac{|A_u|}{K}\right\}
+      \le
+      \E_{h,\sigma}\mathbf 1\{u\ {\rm live}\}
+      \le
+      \min\left\{1,\frac{|A_u|}{K}\right\}.
+      \tag{SPO7}
+   \]
+\end{lemma}
+
+\begin{proof}
+   For fixed maps \(h_j\), the prefix \(u\) is live exactly when
+   \[
+      \sigma-H(u)
+      \in
+      \operatorname{Res}(A_u).
+   \]
+   Since \(\sigma\) is uniform in \(G\), this proves \((SPO2)\), and
+   \((SPO3)\) follows because
+   \(|\operatorname{Res}(A_u)|\le\min\{K,|A_u|\}\).  Summing \((SPO3)\) over
+   prefixes gives \((SPO4)\).  For a fixed terminal tuple \(c\), the event
+   \(\sum_jh_j(c_j)=\sigma\) has probability \(K^{-1}\) over the random
+   target syndrome, regardless of the maps.  Linearity of expectation proves
+   \((SPO5)\).
+
+   For the converse, fix \(u\) and one residue \(g\in G\).  Let
+   \[
+      X_g=
+      |\{v\in A_u:\sum_{j>\ell}h_j(v_j)=g\}|.
+   \]
+   Under the stated pairwise-independence hypothesis,
+   \[
+      \E X_g=\mu:=|A_u|/K,
+      \qquad
+      \E X_g^2\le\mu+\mu^2 .
+   \]
+   Paley--Zygmund gives
+   \[
+      \Pr[X_g>0]\ge\frac{\mu}{1+\mu}.
+   \]
+   Therefore the expected number of occupied suffix residues is at least
+   \(K\mu/(1+\mu)\).  Dividing by \(K\), because the random target syndrome
+   hits a uniformly random residual class, proves
+   \[
+      \E_{h,\sigma}\mathbf 1\{u\ {\rm live}\}
+      =
+      K^{-1}\E_h|\operatorname{Res}(A_u)|
+      \ge
+      \frac{\mu}{1+\mu}
+      =
+      \frac{|A_u|}{K+|A_u|}.
+   \]
+   The final two-sided estimate follows from
+   \(\mu/(1+\mu)\ge\frac12\min\{1,\mu\}\).
+\end{proof}
+
+\begin{remark}[Residual entropy is the branch-and-bound bottleneck]
+   \label{rem:residual-entropy-bottleneck}
+   \Cref{lem:syndrome-prefix-occupancy} is the exact accounting boundary for
+   algebraic tuple thinning.  A random affine, tabulation, or carry-less
+   multiply syndrome gives the right retained terminal count and hits fixed
+   top-tuple sets with a second-moment guarantee.  But a branch-and-bound
+   decoder does not get a \(K\)-fold saving at every prefix automatically.  At
+   prefix \(u\), the saving is
+   \[
+      \min\left\{1,\frac{|A_u|}{K}\right\},
+   \]
+   where \(A_u\) is the high-scoring residual suffix set.  If \(A_u\) already
+   contains many more than \(K\) plausible suffixes, a random syndrome covers
+   almost every residue and the prefix remains live with constant probability.
+
+   Thus the useful pseudorandom subset need only be 2-independent for recall,
+   but the decoder requires a residual-entropy condition: along the searched
+   frontier, most prefixes must have only \(O(K)\) high-scoring suffixes, or
+   else the implementation must pay a residue frontier, meet-in-the-middle
+   list, max-plus convolution, or output-sensitive bucket reporter for the
+   broad suffix set.  This is the experiment to run for score-and-ball tuple
+   machinery: measure the profile
+   \[
+      \sum_{u\ {\rm at\ level}\ \ell}
+      \min\{1,|A_u|/K\}
+   \]
+   across levels and compare it with the terminal thinning
+   \(|\{S(c)\ge\Theta\}|/K\).  A gap between these two quantities is a decoder
+   frontier barrier, not a failure of pseudorandomness.
+\end{remark}
+
 \begin{corollary}[Oversampled product witnesses support polylog syndrome thinning]
    \label{cor:oversampled-product-syndrome-thinning}
    Work in the smooth product terminal filter of
