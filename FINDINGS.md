@@ -1995,6 +1995,17 @@ P128. (*** USER INSIGHT CONFIRMED: joint tree-EM RAISES the OOD routing ceiling 
     QPS cost from the larger rerank pool). NEXT: confirm the ceiling gain -> real recall@QPS (EM+RESIDQ
     +fastscan vs baseline vs ScaNN). Credit: user redirected from scan-accuracy (wrong half) to routing.
 
+P129. (*** tree-EM is a CLEAN ~1.2x OOD recall@QPS win -- no query overhead; the OOD lever (user insight) ***)
+    1M OOD recall@QPS (em_residq_qps.log, fastscan): baseline p128 0.8833@34565, p256 0.9244@20348.
+    +EM(3,beam8): p128 0.8970@36647 (+1.4pt, QPS NEUTRAL -- EM is BUILD-time partition, zero query cost),
+    p256 0.9315@22415. At matched recall EM = ~1.15-1.23x faster (recall 0.924: ~25000 vs 20348). EM+RESIDQ:
+    recall higher (p128 0.9108) but residq offset overhead cuts QPS -> roughly cancels at QPS@90%, only
+    edges ahead at recall>=0.94. So OOD config = EM ALONE (clean ~1.2x, no downside); RESIDQ optional for
+    high-recall. vs ScaNN 1M (lts80 0.9072@67267, load-confounded -- trust 10M ~2x): EM narrows 10M OOD
+    ~2x -> est ~1.7x. EM build +~30-60% (cheap beam=8). BIGGEST OOD gain of the session, from the user's
+    routing redirect (I'd built tree-EM for msspacev P119 but missed its OOD relevance). Next: 10M EM
+    confirm + more rounds. ScaNN's partition still better (its ceiling exceeds ours) so EM narrows not closes.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
