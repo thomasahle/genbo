@@ -96337,6 +96337,61 @@ amplified in the next proposition.
    \((RLE5)\), and \(c=2\) gives \((RLE6)\).
 \end{proof}
 
+\begin{corollary}[Native balanced residue class listing is over budget]
+   \label{cor:native-balanced-residue-class-listing-barrier}
+   Fix \(c>1\), and put
+   \[
+      \rho_c=\frac1{2c^2-1},
+      \qquad
+      a_0=1-\frac1{c^2}.
+   \]
+   Consider any seed-independent Gaussian residue map and query-side residue
+   reporter in the setting of
+   \cref{lem:balanced-gaussian-residue-list-bound}, with balance factor
+   \(\lambda=m^{o(1)}\).  Suppose a local query trial reports at most
+   \(L_m\) residue classes, pays at least one unit of work per reported class,
+   and is required to fit the native local ANN budget
+   \[
+      L_m\le m^{\rho_c+o(1)} .
+      \tag{BRL1}
+   \]
+   If the same trial has inverse-subpolynomial near hit and target independent
+   far mass,
+   \[
+      \Pr[f_S(X)\in\mathcal L_S(Y)]\ge m^{-o(1)},
+      \qquad
+      \Pr[f_S(X')\in\mathcal L_S(Y)]\le m^{\rho_c-1+o(1)},
+      \tag{BRL2}
+   \]
+   through the native Gaussian near channel with
+   \[
+      Y=a_0X+\sqrt{1-a_0^2}\,Z,
+      \tag{BRL3}
+   \]
+   then \((BRL1)\)--\((BRL3)\) are inconsistent.
+
+   Equivalently, balanced residue class listing is closed as a native
+   critical-exponent implementation: if the query scans or otherwise pays per
+   listed residue class, it cannot simultaneously have
+   \(m^{\rho_c+o(1)}\) work, \(m^{\rho_c+o(1)}\) far scan load, and
+   inverse-subpolynomial near recall.  A code or lattice construction using
+   residues must therefore stop being a class-listing scheme and instead
+   compute point-indexed responsibility, leader mass, reduced-cost reports, or
+   aggregate bucket samples.
+\end{corollary}
+
+\begin{proof}
+   Apply \cref{cor:target-residue-load-superbudget-list} with
+   \(\rho=\rho_c\), \(\chi=a_0\), and
+   \(\pi=m^{-o(1)}\).  Since \(\lambda=m^{o(1)}\), \((RLE5)\) gives
+   \[
+      L_m\ge m^{2\rho_c-o(1)}.
+   \]
+   This contradicts \((BRL1)\), because \(\rho_c>0\).  The far-load condition
+   in \((BRL2)\) is exactly the hypothesis
+   \(\beta\le m^{\rho_c-1+o(1)}\) needed for that corollary.
+\end{proof}
+
 \begin{lemma}[Poisson-thinned residue labels obey the same load tradeoff]
    \label{lem:poisson-residue-hit-load-tradeoff}
    In the setting of \cref{lem:residue-list-hit-load-tradeoff}, allow
