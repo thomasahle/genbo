@@ -95713,6 +95713,139 @@ amplified in the next proposition.
    \cref{cor:route-local-union-effective-entropy-barrier}.
 \end{proof}
 
+\begin{corollary}[Weighted signature sampling implements point-mass reporting]
+   \label{cor:weighted-signature-sampler-point-mass}
+   Work in the shared-signature setting of
+   \cref{cor:shared-signature-rate-coverage-sketch}, so
+   \(b_x(B)=u_{\alpha(x)}(B)\) for the unique signature
+   \(\alpha(x)\) with \(x\in C_{\alpha(x)}\).  Suppose the resident partition
+   is \(\lambda\)-balanced,
+   \[
+      |C_\alpha|\le\lambda m/M
+      \qquad(\alpha\in\Sigma),
+      \qquad M=|\Sigma|.
+      \tag{WSS1}
+   \]
+   For one query outcome \(B\), put
+   \[
+      U_B=\sum_{\alpha\in\Sigma}u_\alpha(B).
+      \tag{WSS2}
+   \]
+   Assume the query has a weighted-signature sampler which, conditional on
+   \(B\), can obtain \(U_B\), draw independent samples from
+   \(u_\alpha(B)/U_B\) when \(U_B>0\), and evaluate \(u_\alpha(B)\) exactly on
+   sampled signatures.  Let \(T_{\rm samp}(B)\) denote the total time for these
+   operations when the number of draws is
+   \[
+      N_B=
+      \left\lceil
+      8\,\frac{U_B}{\theta}
+      \log\!\left(2m+2U_B/\theta\right)
+      \right\rceil ,
+      \tag{WSS3}
+   \]
+   with \(N_B=0\) if \(U_B=0\).  The decoder samples \(N_B\) signatures, keeps
+   the distinct sampled signatures with \(u_\alpha(B)\ge\theta\), and outputs
+   all residents in their classes.
+
+   Conditional on \(B\), this decoder lists every point with
+   \(b_x(B)\ge\theta\), except with probability at most \(O(m^{-2})\) over its
+   sampling randomness.  Its work is
+   \[
+      T_{\rm samp}(B)
+      +
+      O\!\left(
+         \frac{U_B}{\theta}
+         \log\!\left(2m+2U_B/\theta\right)
+      \right)
+      +
+      O\!\left(
+         \frac{\lambda m}{M}\frac{U_B}{\theta}
+      \right).
+      \tag{WSS4}
+   \]
+   Consequently, if the rate-coverage miss/load hypotheses
+   \((PMR1)\)--\((PMR2)\) hold and
+   \[
+      \E_Z\!\left[
+      T_{\rm samp}(B(q,Z))
+      +
+      \frac{U_{B(q,Z)}}{\theta}
+      \log\!\left(2m+2U_{B(q,Z)}/\theta\right)
+      +
+      \frac{\lambda m}{M}\frac{U_{B(q,Z)}}{\theta}
+      \right]
+      \le Dm^\rho\log^{O_c(1)}m,
+      \tag{WSS5}
+   \]
+   then this sampler supplies the point-mass reporter required by
+   \cref{cor:point-mass-rate-coverage-reporter}, up to an \(O(1/m)\) tilted
+   miss term.
+
+   In particular, at the aligned residue scale
+   \[
+      M\ge\lambda m^{1-\rho}\log^{-O_c(1)}m,
+      \tag{WSS6}
+   \]
+   it is enough that
+   \[
+      \begin{aligned}
+      \theta^{-1}&=\log^{O_c(1)}m,\\
+      \E_Z\!\left[
+         U_{B(q,Z)}
+         \log\!\left(2m+2U_{B(q,Z)}/\theta\right)
+      \right]&=\log^{O_c(1)}m,\\
+      \E_ZT_{\rm samp}(B(q,Z))&\le Dm^\rho\log^{O_c(1)}m.
+      \end{aligned}
+      \tag{WSS7}
+   \]
+   Thus sparse active support is sufficient but not necessary.  A code,
+   trellis, or lattice quotient may keep a broad active-signature law, provided
+   it can sample that law and its total-mass log moment is only
+   polylogarithmic.  The surviving geometric obligation is then the same sharp
+   one: the near signature must have inverse-polylogarithmic mass under
+   \(u(B)\), and the sampler must be an exact or certified aggregate sampler
+   rather than a raw hidden-label generator with no point-mass evaluation.
+\end{corollary}
+
+\begin{proof}
+   Let
+   \[
+      H_B=\{\alpha:u_\alpha(B)\ge\theta\}.
+   \]
+   If \(U_B=0\), then \(H_B\) is empty.  Otherwise
+   \(|H_B|\le U_B/\theta\).  For any fixed \(\alpha\in H_B\), one sampler draw
+   hits \(\alpha\) with probability at least \(\theta/U_B\).  Therefore
+   \[
+      \Pr[\alpha\ {\rm is\ missed}]
+      \le
+      \exp(-N_B\theta/U_B)
+      \le
+      \left(2m+2U_B/\theta\right)^{-8}.
+   \]
+   A union bound over \(H_B\) gives conditional failure probability at most
+   \[
+      (U_B/\theta)\left(2m+2U_B/\theta\right)^{-8}
+      \le O(m^{-2}).
+   \]
+   On the complementary event every heavy signature is sampled, exact
+   evaluation keeps it, and all points with \(b_x(B)=u_{\alpha(x)}(B)\ge\theta\)
+   are output.
+
+   The number of sampled signatures and exact weight checks is \(N_B\), giving
+   the middle term of \((WSS4)\).  The number of retained heavy signatures is
+   at most \(U_B/\theta\), and each expanded resident class has size at most
+   \(\lambda m/M\), giving the final term of \((WSS4)\).
+
+   The conditional sampling failure contributes at most \(O(m^{-2})\) to the
+   retained tilted miss for each \(B\); after averaging over \(Z\) this is
+   \(O(1/m)\), using the same normalization as in the proof of
+   \cref{cor:sketched-rate-coverage-point-mass}.  The work bound is exactly
+   \((WSS5)\), and \cref{cor:point-mass-rate-coverage-reporter} finishes the
+   endpoint.  The specialization \((WSS6)\)--\((WSS7)\) is obtained by
+   substituting \(\lambda m/M\le m^\rho\log^{O_c(1)}m\) into \((WSS5)\).
+\end{proof}
+
 \begin{corollary}[Aligned linear charts compute rate-coverage sketches]
    \label{cor:aligned-linear-chart-rate-coverage-sketch}
    Work in the setting of
