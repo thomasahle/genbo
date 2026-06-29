@@ -88834,6 +88834,93 @@ does not fail; the final restricted Gibbs sample uses the explicitly computable
 weights on that list. The inverse-polylogarithmic success probabilities are
 amplified in the next proposition.
 
+\begin{lemma}[Medium-valid plateau obstructs mandatory Gibbs capture]
+   \label{lem:medium-valid-plateau-gibbs-obstruction}
+   Fix \(c>1\), \(\rho=\rho_c\), and an exponent
+   \[
+      \rho<a<1-\rho .
+   \]
+   Let \(A,B\) be fixed constants.  There are bounded-diameter resident
+   multisets \(S_m\), queries \(q_m\), and near witnesses \(p_m\) with
+   \(\|p_m-q_m\|\le r\), for which the guard alternative in
+   \cref{asm:smoothed-gibbs} fails by a polynomial factor, while no list of
+   size
+   \[
+      K_m\le m^\rho\log^A m
+   \]
+   can carry inverse-polylogarithmic smoothed Gibbs mass.  More precisely,
+   with probability \(1-m^{-3}\) over
+   \(Y\sim N(tq_m,tI)\), uniformly for every
+   \(t\ge C\log m/r^2\), every possibly \(Y\)-dependent list
+   \(L_Y\subseteq S_m\) with \(|L_Y|\le K_m\) satisfies
+   \[
+      \mathsf G_Y(L_Y)
+      \le
+      m^{\rho-a}\log^A m
+      =
+      o(\log^{-B}m).
+      \tag{MVP1}
+   \]
+   Thus the smoothed-Gibbs mass-capture alternative, with charged output size
+   \(m^\rho\polylog m\), cannot be the universal theorem to prove verbatim.
+\end{lemma}
+
+\begin{proof}
+   Scale so that \(r=1\), put \(q_m=p_m=0\), and choose a fixed
+   \(R>c\).  Let \(N_m=\lfloor m^a\rfloor\).  The resident multiset contains
+   \(N_m\) copies of the origin and \(m-N_m\) copies of \(Re_1\).  All origin
+   copies are valid \(cr\)-neighbors, while all \(Re_1\) copies are invalid.
+   The valid density is
+   \[
+      N_m/m=m^{a-1+o(1)}
+      =
+      o(m^{-\rho}\log^{-D}m)
+   \]
+   for every fixed \(D\), because \(a<1-\rho\).  Hence the guard alternative
+   fails even after any fixed inverse-polylogarithmic slack.
+
+   Since \(q_m=0\), write \(Y=G\sim N(0,tI)\).  Every origin copy has score
+   \(A_Y(0)=0\).  The far copies have common score
+   \[
+      A_Y(Re_1)=R\,G_1-\frac t2R^2 .
+   \]
+   The event \(A_Y(Re_1)\le0\) fails with probability at most
+   \(\exp(-tR^2/8)\), so increasing \(C\) makes it fail with probability at
+   most \(m^{-3}\), uniformly over all \(t\ge C\log m\).
+
+   On this event every resident point has Gibbs weight at most \(1\), while
+   the \(N_m\) origin copies contribute total weight exactly \(N_m\).
+   Therefore any list \(L_Y\) of size at most \(K_m\), even chosen after seeing
+   \(Y\), has
+   \[
+      \mathsf G_Y(L_Y)
+      \le
+      \frac{K_m}{N_m}
+      \le
+      m^{\rho-a+o(1)}\log^A m .
+   \]
+   Since \(a>\rho\), the last quantity is \(o(\log^{-B}m)\) for every fixed
+   \(B\).  This proves \((MVP1)\).  If one insists on a set rather than a
+   multiset, perturb the coincident copies inside balls of radius
+   \(o((t\log m)^{-1/2})\); the score ratios change by \(1+o(1)\) and the same
+   bound holds.
+\end{proof}
+
+\begin{remark}[Consequence for the frozen smoothed-Gibbs route]
+   \label{rem:medium-valid-plateau-consequence}
+   \Cref{lem:medium-valid-plateau-gibbs-obstruction} is not an ANN lower
+   bound: every plateau point is already a valid answer.  It is a barrier to
+   the proposed proof target.  A proof of \cref{asm:smoothed-gibbs} cannot
+   simply show that every low-guard instance has an
+   \(m^\rho\polylog m\)-sized list carrying inverse-polylogarithmic Gibbs
+   mass.  The smoothed route must either use a direct valid-output mechanism
+   for medium valid plateaus, or pursue the stronger score-max/Gumbel
+   primitive where returning one certified high-score valid point is enough.
+   The next useful test for this branch is therefore not another equivalent
+   Gibbs certificate; it is a concrete reporter or lower bound for the
+   medium-density valid regime.
+\end{remark}
+
 \begin{proposition}[Conditional smoothed guard-or-capture endpoint]\label{prop:smoothed-gibbs-polylog}
    Under \cref{asm:smoothed-gibbs}, worst-case Euclidean ANN has query time
    \[
@@ -92598,7 +92685,7 @@ contract: offline separation is a build-time concern, while online decoder
 output, candidate incidence load, and stored replication are charged as three
 separate resources.
 
-\Cref{lem:smoothed-max-score-margin} gives a still simpler non-channel target: a query-centered Gaussian score direction separates every invalid point from the true near point by an additive $\Theta_c(tr^2)$ score margin, with high probability. The softest resulting primitive is \cref{asm:smoothed-gibbs}: with inverse-polylogarithmic probability, report a list carrying inverse-polylogarithmic mass under the Gaussian Gibbs kernel on data points. Sampling from the kernel restricted to that list gives a pointwise dominated output law by \cref{lem:captured-gibbs-domination}, and \cref{lem:smoothed-gibbs-suffices} then returns a valid answer because invalid points have negligible Gibbs mass and cannot be oversampled too much. A more exact sampling route is certified additive Gumbel-MIPS: \cref{lem:gumbel-additive-domination} shows that an $O(\log\log m)$ additive optimizer for the Gumbel-perturbed scores gives precisely the required one-sided Gibbs domination, yielding \cref{prop:gumbel-mips-polylog}. A stronger but different implementation route is smoothed additive nearest-neighbor search for the perturbed center $Y/t$ with additive squared-distance error $\Theta_c(r^2)$, exactly equivalent to additive score maximization by \cref{lem:score-max-additive-nn}. These oracles would bypass dyadic scales and representatives entirely, as recorded in \cref{prop:smoothed-gibbs-polylog}, \cref{prop:gumbel-mips-polylog}, and \cref{prop:smoothed-score-max-polylog}. They are targets, not implemented theorems; \cref{rem:gumbel-mips-not-ann} explains why black-box multiplicative ANN does not supply the Gumbel primitive. The older finite restricted-channel compiler \cref{asm:finite-restricted-channel} and \cref{prop:finite-channel-polylog} remain as a coarse explicit-enumeration special case and as a useful diagnostic framework.
+\Cref{lem:smoothed-max-score-margin} gives a still simpler non-channel target: a query-centered Gaussian score direction separates every invalid point from the true near point by an additive $\Theta_c(tr^2)$ score margin, with high probability. The softest resulting primitive is \cref{asm:smoothed-gibbs}: with inverse-polylogarithmic probability, report a list carrying inverse-polylogarithmic mass under the Gaussian Gibbs kernel on data points. Sampling from the kernel restricted to that list gives a pointwise dominated output law by \cref{lem:captured-gibbs-domination}, and \cref{lem:smoothed-gibbs-suffices} then returns a valid answer because invalid points have negligible Gibbs mass and cannot be oversampled too much. This mass-capture target is now known not to be a universal theorem as stated: \cref{lem:medium-valid-plateau-gibbs-obstruction} gives medium-size valid plateaus where the guard test fails but every \(m^\rho\polylog m\)-sized list has only polynomially small Gibbs mass. Hence this branch must either add a direct valid-output mechanism for that regime or move to a primitive that certifies one high-score valid point. A more exact sampling route is certified additive Gumbel-MIPS: \cref{lem:gumbel-additive-domination} shows that an $O(\log\log m)$ additive optimizer for the Gumbel-perturbed scores gives precisely the required one-sided Gibbs domination, yielding \cref{prop:gumbel-mips-polylog}. A stronger but different implementation route is smoothed additive nearest-neighbor search for the perturbed center $Y/t$ with additive squared-distance error $\Theta_c(r^2)$, exactly equivalent to additive score maximization by \cref{lem:score-max-additive-nn}. These oracles would bypass dyadic scales and representatives entirely, as recorded in \cref{prop:smoothed-gibbs-polylog}, \cref{prop:gumbel-mips-polylog}, and \cref{prop:smoothed-score-max-polylog}. They are targets, not implemented theorems; \cref{rem:gumbel-mips-not-ann} explains why black-box multiplicative ANN does not supply the Gumbel primitive. The older finite restricted-channel compiler \cref{asm:finite-restricted-channel} and \cref{prop:finite-channel-polylog} remain as a coarse explicit-enumeration special case and as a useful diagnostic framework.
 
 \paragraph{Cohort-or-leaf.}
 \Cref{asm:cohort-or-leaf} is the original full-child route-level condition for the broader posterior-cohort endpoint, but \cref{lem:prefix-slice-accounting} shows that a prefix-conditioned formulation is cleaner. Work accounting for opened children is no longer the hard part: \cref{lem:vote-budget} pays opened recursive calls from realized detector votes. The preferred remaining target for that more general route is \cref{asm:prefix-slice-survival}: prove that one cumulative near-pair score path either reaches a cap-free residual scan or receives enough detector votes to follow prefix-conditioned certified slices to a resident scan. \Cref{lem:detector-inflation} and \cref{lem:off-spine-inflation} reduce the detector-shadowing part of this target to early activation prefixes with large enough continuation mass $H(v)$ and logarithmic spine-ratio sum $\sum H(u^+)/H(u)$; \cref{rem:linear-spine-ratio} explains why long score routes need an aggregate detector-mass argument instead. This should be tested against the hard cases: an isolated near point next to a massive far cluster, a near point on a cluster boundary, a tiny child that becomes heavy only late, and symmetric far shells. The proof must show a whole-lineage inverse-polylogarithmic event, not merely an inverse-polylogarithmic event at each level.
