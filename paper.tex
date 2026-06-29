@@ -98343,6 +98343,137 @@ amplified in the next proposition.
    gives the claimed proposal bound.
 \end{proof}
 
+\begin{corollary}[Bivariate Berry--Esseen criterion for tilted filters]
+   \label{cor:bivariate-tilted-berry-esseen-filter}
+   Work in the setting of
+   \cref{cor:joint-tilted-score-filter-sampler}.  Under the tilted product law
+   \(Q_{\beta,\lambda}\), write \(C_j\) for the \(j\)th coordinate and put
+   \[
+      Y_j=
+      \begin{pmatrix}
+         w_j(C_j)-\mu_{W,j}\\
+         m_j(C_j)-\mu_{M,j}
+      \end{pmatrix},
+      \qquad
+      \Sigma=\sum_{j=1}^h\E_{Q_{\beta,\lambda}}Y_jY_j^{\mathsf T}.
+      \tag{BTBE1}
+   \]
+   Assume \(\Sigma\) is positive definite, has coordinate standard deviations
+   \(\sigma_W,\sigma_M\), and correlation \(\rho\).  Define the whitened third
+   moment
+   \[
+      \eta_\Sigma
+      =
+      \sum_{j=1}^h
+      \E_{Q_{\beta,\lambda}}
+      \left\|\Sigma^{-1/2}Y_j\right\|_2^3 .
+      \tag{BTBE2}
+   \]
+   Let \(C_{\rm rect}\) be the universal constant in the standard
+   two-dimensional Berry--Esseen inequality for convex sets.  If
+   \[
+      \left|\frac{t-\mu_W}{\sigma_W}\right|\le U,
+      \qquad
+      \left|\frac{s-\mu_M}{\sigma_M}\right|\le U,
+      \qquad
+      |\rho|\le1-\kappa,
+      \tag{BTBE3}
+   \]
+   and
+   \[
+      C_{\rm rect}\eta_\Sigma
+      \le
+      \frac{\gamma_{U,\kappa}}{8W_WW_M},
+      \tag{BTBE4}
+   \]
+   then the exact score-and-filter sampler produces one output with
+   \(O_{U,\kappa}(W_WW_M)\) tilted product proposals in expectation.
+
+   In particular, suppose there are constants \(B,v>0\) such that
+   \[
+      \|Y_j\|_2\le B\quad\text{a.s. for every }j,
+      \qquad
+      \lambda_{\min}(\Sigma)\ge vh .
+      \tag{BTBE5}
+   \]
+   Then
+   \[
+      \eta_\Sigma\le \frac{2B}{\sqrt{vh}},
+      \tag{BTBE6}
+   \]
+   so \((BTBE4)\) follows from
+   \[
+      W_WW_M
+      \le
+      \frac{\gamma_{U,\kappa}}{16C_{\rm rect}B}\sqrt{vh}.
+      \tag{BTBE7}
+   \]
+
+   Thus an auxiliary additive subset does not need full random-subset
+   entropy.  For this access primitive it is enough that, after the joint
+   saddlepoint tilt, many coordinates still contribute bounded non-degenerate
+   two-dimensional variation and the true score is not almost collinear with
+   the auxiliary filter.  The remaining concrete code/lattice test is exactly
+   the moment audit \((BTBE2)\)-\((BTBE4)\), or the bounded-increment sufficient
+   condition \((BTBE5)\)-\((BTBE7)\).
+\end{corollary}
+
+\begin{proof}
+   Put
+   \[
+      S=
+      \begin{pmatrix}
+         (W-\mu_W)/\sigma_W\\
+         (M-\mu_M)/\sigma_M
+      \end{pmatrix}.
+   \]
+   The covariance of \(S\) is
+   \(R=\begin{psmallmatrix}1&\rho\\ \rho&1\end{psmallmatrix}\).  For any
+   rectangle \(I\times J\), the event \(S\in I\times J\) is the inverse image,
+   under the whitening map, of a convex parallelogram.  The standard
+   two-dimensional Berry--Esseen inequality for convex sets therefore gives
+   \[
+      \sup_{I,J}
+      \left|
+         \Pr[S\in I\times J]
+         -
+         \Pr[G_\rho\in I\times J]
+      \right|
+      \le C_{\rm rect}\eta_\Sigma .
+   \]
+   Condition \((BTBE4)\) is precisely the rectangle-discrepancy hypothesis
+   \((BTF12)\), and
+   \cref{cor:joint-tilted-score-filter-sampler} gives the proposal bound.
+
+   Under \((BTBE5)\),
+   \[
+      \left\|\Sigma^{-1/2}Y_j\right\|_2
+      \le
+      \frac{B}{\sqrt{vh}},
+   \]
+   while
+   \[
+      \sum_{j=1}^h
+      \E\left\|\Sigma^{-1/2}Y_j\right\|_2^2
+      =
+      \operatorname{tr}(\Sigma^{-1/2}\Sigma\Sigma^{-1/2})
+      =
+      2 .
+   \]
+   Hence
+   \[
+      \eta_\Sigma
+      \le
+      \frac{B}{\sqrt{vh}}
+      \sum_{j=1}^h
+      \E\left\|\Sigma^{-1/2}Y_j\right\|_2^2
+      =
+      \frac{2B}{\sqrt{vh}},
+   \]
+   and \((BTBE7)\) is exactly the condition that
+   \(C_{\rm rect}\eta_\Sigma\le\gamma_{U,\kappa}/(8W_WW_M)\).
+\end{proof}
+
 \begin{corollary}[Aligned linear charts compute rate-coverage sketches]
    \label{cor:aligned-linear-chart-rate-coverage-sketch}
    Work in the setting of
