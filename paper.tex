@@ -17760,6 +17760,81 @@ partition ignores the bias coordinates that certify the list size.
    \(m^{-\epsilon+o(1)}\).
 \end{proof}
 
+\begin{corollary}[Random sparse aggregates pass with hidden sampling]
+   \label{cor:random-sparse-hidden-sampling-positive}
+   Work in the random aggregate model of
+   \cref{lem:random-sparse-heavy-responsibility-screen}.  Let
+   \(K,L_m=\log^{O(1)}m\), put \(\tau=K^{-1}\), and suppose the far membership
+   probability and the distinguished near membership probability satisfy
+   \[
+      ms\le m^\rho L_m,
+      \qquad
+      u\ge (1+\epsilon)K^{-1}
+      \tag{RSP1}
+   \]
+   for fixed \(\epsilon>0\).  If
+   \[
+      H\ge A_{\rho,\epsilon}K
+      \tag{RSP2}
+   \]
+   with \(A_{\rho,\epsilon}\) a sufficiently large constant, then the following
+   hold.
+   First, the expected number of far points with responsibility at least
+   \(K^{-1}\) is \(o(1)\).  Second, the near point has responsibility at least
+   \(K^{-1}\) with probability at least a positive constant
+   \(c_{\rho,\epsilon}\).
+
+   On this event, a conditional hidden sampler that draws
+   \[
+      N=\lceil K\log2\rceil
+      \tag{RSP3}
+   \]
+   hidden labels from the aggregate bucket, scans the union of their raw
+   subbuckets, and exact-filters at responsibility threshold \(K^{-1}\), scans
+   the near point with conditional probability at least \(1/2\).  Its expected
+   raw scan work is
+   \[
+      O(K\,m^\rho L_m+K)
+      \tag{RSP4}
+   \]
+   and its expected emitted far output is \(o(1)\).  Thus random sparse
+   aggregation is compatible with the \(m^\rho\polylog m\) sampled ANN scale,
+   provided the implementation has a conditional hidden sampler and an exact
+   heavy-responsibility filter.
+\end{corollary}
+
+\begin{proof}
+   By \cref{lem:random-sparse-heavy-responsibility-screen},
+   \[
+      \E|\{x\ne p:r_x\ge K^{-1}\}|
+      \le
+      m\exp\{-H d(K^{-1}\Vert s)\}.
+   \]
+   Under the ANN sparse condition \(ms\le m^\rho L_m\) and
+   \(K,L_m=\log^{O(1)}m\), the same calculation as \((RHB3)\) shows that
+   \(H\ge A_{\rho,\epsilon}K\), with \(A_{\rho,\epsilon}\) large enough,
+   makes this expectation \(o(1)\).  The lower-tail bound \((RHB2)\) gives
+   \[
+      \Pr[r_p<K^{-1}]
+      \le
+      \exp\{-H d(K^{-1}\Vert u)\}.
+   \]
+   Since \(u\ge(1+\epsilon)K^{-1}\), the exponent is
+   \(\Omega_\epsilon(H/K)\), so increasing \(A_{\rho,\epsilon}\) makes the
+   success probability \(c_{\rho,\epsilon}>0\).
+
+   Conditional on \(r_p\ge K^{-1}\), the probability that \(N\) independently
+   sampled hidden labels all miss \(p\) is
+   \[
+      (1-r_p)^N\le (1-K^{-1})^{K\log2}\le\frac12,
+   \]
+   proving the near scan claim.  One sampled hidden label has expected raw
+   subbucket size at most \((m-1)s+u\le m^\rho L_m+1\), so \(N\) samples have
+   expected raw scan work \((RSP4)\).  Finally, exact filtering emits only
+   \(K^{-1}\)-heavy far points, whose expected number is \(o(1)\) by the first
+   paragraph.
+\end{proof}
+
 \begin{remark}[Trellis target for codes and lattices]
    \label{rem:trellis-quotient-target}
    \Cref{lem:compressed-aggregate-sampler} is the sampled analogue of the
