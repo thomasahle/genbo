@@ -96120,6 +96120,178 @@ amplified in the next proposition.
    \(m^\rho\polylog m\) work bound, after adding the assumed backward-pass cost.
 \end{proof}
 
+\begin{corollary}[Resident-size-biased sampling removes signature leakage]
+   \label{cor:resident-size-biased-sampler}
+   Work in the shared-signature setting of
+   \cref{cor:shared-signature-rate-coverage-sketch}.  Let
+   \(c_\alpha=|C_\alpha|\) and, for one query outcome \(B\), put
+   \[
+      L_B=\sum_{\alpha\in\Sigma}c_\alpha u_\alpha(B)
+      =
+      \sum_{x\in S}b_x(B).
+      \tag{RBS1}
+   \]
+   Suppose the query algorithm can obtain \(L_B\) and, when \(L_B>0\), draw
+   independent resident-size-biased samples by first drawing a signature with
+   probability
+   \[
+      \Pr[\alpha\mid B]
+      =
+      \frac{c_\alpha u_\alpha(B)}{L_B}
+      \tag{RBS2}
+   \]
+   and then drawing a uniformly random resident from \(C_\alpha\).  Equivalently,
+   each point \(x\in S\) is sampled with probability
+   \[
+      \Pr[x\mid B]=\frac{b_x(B)}{L_B}.
+      \tag{RBS3}
+   \]
+   Let
+   \[
+      N_B^\star=
+      \left\lceil
+      8\,\frac{L_B}{\theta}
+      \log\!\left(2m+2L_B/\theta\right)
+      \right\rceil
+      \tag{RBS4}
+   \]
+   with \(N_B^\star=0\) if \(L_B=0\).  The decoder outputs the distinct sampled
+   residents.
+
+   Conditional on \(B\), every point with \(b_x(B)\ge\theta\) is output except
+   with probability at most \(O(m^{-2})\) over the sampler randomness.  The work
+   is
+   \[
+      T_{\rm pt}(B)
+      +
+      O\!\left(
+         \frac{L_B}{\theta}
+         \log\!\left(2m+2L_B/\theta\right)
+      \right),
+      \tag{RBS5}
+   \]
+   where \(T_{\rm pt}(B)\) is the time to compute \(L_B\) and perform the
+   \(N_B^\star\) sampler draws, not counting the unit output and duplicate
+   bookkeeping charged in the displayed \(O(\cdot)\) term.
+
+   Consequently, under \((PMR1)\)--\((PMR2)\), if
+   \[
+      \E_ZT_{\rm pt}(B(q,Z))\le Dm^\rho\log^{O_c(1)}m
+      \tag{RBS6}
+   \]
+   and the usual polynomial envelope makes
+   \(\log(2m+2L_{B(q,Z)}/\theta)=O_c(\log m)\), then the sampler implements the
+   smoothed witness-list endpoint of \cref{prop:witness-list-polylog}.
+
+   Thus neither sparse active support nor two-sided signature balance is needed
+   for the online sampling access itself.  Empty signatures have zero sampling
+   probability, tiny signatures consume proportionally tiny sampler mass, and
+   large signatures are sampled in proportion to the number of resident points
+   they can actually report.  The remaining construction target is an exact
+   aggregate sampler for the resident-size-weighted law and the original
+   tilted miss/load certificate.
+\end{corollary}
+
+\begin{proof}
+   The identity \((RBS1)\) follows from \(b_x(B)=u_{\alpha(x)}(B)\).  Conditional
+   on drawing \(\alpha\), the uniform resident step gives, for \(x\in C_\alpha\),
+   \[
+      \frac{c_\alpha u_\alpha(B)}{L_B}\cdot\frac1{c_\alpha}
+      =
+      \frac{u_\alpha(B)}{L_B}
+      =
+      \frac{b_x(B)}{L_B},
+   \]
+   which proves \((RBS3)\).
+
+   If \(L_B=0\), there are no heavy points.  Otherwise, for any fixed
+   \(x\) with \(b_x(B)\ge\theta\), one draw hits \(x\) with probability at least
+   \(\theta/L_B\), so
+   \[
+      \Pr[x\ {\rm is\ missed}\mid B]
+      \le
+      \exp(-N_B^\star\theta/L_B)
+      \le
+      \left(2m+2L_B/\theta\right)^{-8}.
+   \]
+   The number of heavy points is at most \(L_B/\theta\).  A union bound gives
+   conditional failure probability at most
+   \[
+      (L_B/\theta)\left(2m+2L_B/\theta\right)^{-8}
+      \le O(m^{-2}).
+   \]
+
+   The displayed work bound is exactly the number of point samples plus the
+   stated sampler overhead.  For a near pair \(p,q\), the miss event is contained
+   in
+   \[
+      \{b_p(B(q,Z))<\theta\}
+      \cup
+      \{p\ {\rm is\ missed\ by\ the\ point sampler}\}.
+   \]
+   The first event is charged by \((PMR1)\), as in
+   \cref{cor:point-mass-rate-coverage-reporter}; the second contributes only the
+   \(O(1/m)\) sampler-failure term after averaging over \(Z\).  Finally,
+   \((PMR2)\), \(\theta^{-1}=\log^{O_c(1)}m\), the logarithmic envelope, and
+   \((RBS6)\) put the expected output size and sampler work inside
+   \(m^\rho\log^{O_c(1)}m\).  Applying
+   \cref{lem:smoothed-witness-list-compiler} and
+   \cref{prop:witness-list-polylog} gives the endpoint.
+\end{proof}
+
+\begin{corollary}[Acyclic resident-size-biased sampler]
+   \label{cor:acyclic-resident-size-biased-sampler}
+   In the acyclic aggregate setting of
+   \cref{cor:acyclic-aggregate-signature-reporter}, let
+   \(c_\alpha=|C_\alpha|\).  Replace the terminal boundary condition in the
+   backward recursion by
+   \[
+      H_B(t)=c_{\alpha(t)}
+      \tag{RBA1}
+   \]
+   and use the same edge weights \(r_e(B)\).  The resulting top-down sampler
+   draws a terminal path \(\pi\) with probability proportional to
+   \(c_{\alpha(t(\pi))}W_B(\pi)\).  After drawing a uniformly random resident in
+   \(C_{\alpha(t(\pi))}\), the output point has law \(b_x(B)/L_B\).
+
+   If the weighted backward pass costs \(T_{\rm back}^{\rm res}(B)\), one path
+   sample costs \(T_{\rm path}(B)\), and one uniform resident draw costs
+   \(T_{\rm res}(B)\), then \((RBS6)\) is implied by
+   \[
+      \E_Z\!\left[
+         T_{\rm back}^{\rm res}(B(q,Z))
+         +
+         \frac{L_{B(q,Z)}}{\theta}
+         \log\!\left(2m+2L_{B(q,Z)}/\theta\right)
+         (T_{\rm path}(B(q,Z))+T_{\rm res}(B(q,Z)))
+      \right]
+      \le Dm^\rho\log^{O_c(1)}m.
+      \tag{RBA2}
+   \]
+   In particular, if the backward pass, path sampling, and resident sampling are
+   polylogarithmic at the local scale, the online access condition follows from
+   the original rate-load bound \((PMR2)\).  A trellis, recursive lattice, or
+   low-treewidth code decoder therefore only has to support this terminal
+   resident-count boundary in its exact aggregate sampler.
+\end{corollary}
+
+\begin{proof}
+   The backward recursion with terminal boundary \(c_{\alpha(t)}\) computes
+   \[
+      \sum_{\pi}c_{\alpha(t(\pi))}W_B(\pi)
+      =
+      \sum_{\alpha}c_\alpha u_\alpha(B)
+      =
+      L_B.
+   \]
+   The usual top-down sampling invariant then samples path \(\pi\) with
+   probability \(c_{\alpha(t(\pi))}W_B(\pi)/L_B\).  Pushing this law to
+   signatures gives the resident-size-biased law \((RBS2)\), and the final
+   uniform resident step gives the point law \((RBS3)\).  The work bound is the
+   backward pass plus \(N_B^\star\) path and resident draws, so
+   \cref{cor:resident-size-biased-sampler} applies.
+\end{proof}
+
 \begin{corollary}[Aligned linear charts compute rate-coverage sketches]
    \label{cor:aligned-linear-chart-rate-coverage-sketch}
    Work in the setting of
