@@ -94178,6 +94178,155 @@ amplified in the next proposition.
    decoder.
 \end{remark}
 
+\begin{lemma}[Balanced Gaussian residues have small list agreement]
+   \label{lem:balanced-gaussian-residue-list-bound}
+   Let \(0<\chi<1\), and let \((X,Y)\) be standard Gaussian blocks with
+   \[
+      Y=\chi X+\sqrt{1-\chi^2}\,Z .
+      \tag{BGR1}
+   \]
+   Let \(S\) be an arbitrary preprocessing seed independent of \((X,Y)\).  For
+   each seed \(s\), let
+   \(f_s:\mathbb R^D\to\Gamma\) be a residue map into a finite group
+   \(\Gamma\) of size
+   \(M\), and assume the residue classes are \(\lambda\)-balanced:
+   \[
+      \Pr[f_s(X)=\alpha]\le\lambda/M
+      \qquad(\alpha\in\Gamma,\ s\in{\rm supp}\,S).
+      \tag{BGR2}
+   \]
+   Let \(\mathcal L_s(Y)\subseteq\Gamma\) be any query-side list, possibly
+   randomized using \(Y\) and \(s\), with
+   \[
+      |\mathcal L_s(Y)|\le L
+      \qquad\text{a.s.},\qquad 1\le L\le M.
+      \tag{BGR3}
+   \]
+   Then
+   \[
+      \Pr[f_S(X)\in\mathcal L_S(Y)]
+      \le
+      \lambda^{1/(1+\chi)}
+      L^{1/(1+\chi)}
+      M^{-(1-\chi)/(1+\chi)} .
+      \tag{BGR4}
+   \]
+\end{lemma}
+
+\begin{proof}
+   Condition on \(S=s\) and on any internal randomness of the list decoder.
+   Put
+   \[
+      A_\alpha=\{x:f_s(x)=\alpha\},
+      \qquad
+      B_\alpha=\{y:\alpha\in\mathcal L_s(y)\}.
+   \]
+   If \(T_\chi\) is the Ornstein--Uhlenbeck operator, then
+   \[
+      \Pr[f_s(X)\in\mathcal L_s(Y)]
+      =
+      \sum_{\alpha\in\Gamma}\E[1_{A_\alpha}(X)1_{B_\alpha}(Y)]
+      =
+      \sum_{\alpha\in\Gamma}\langle 1_{A_\alpha},T_\chi1_{B_\alpha}\rangle .
+      \tag{BGR5}
+   \]
+   Gaussian hypercontractivity, in bilinear form with
+   \(p=q=1+\chi\), gives
+   \[
+      \langle 1_A,T_\chi1_B\rangle
+      \le
+      \mu(A)^{1/(1+\chi)}\mu(B)^{1/(1+\chi)} .
+      \tag{BGR6}
+   \]
+   By balance, \(\mu(A_\alpha)\le\lambda/M\).  Also
+   \[
+      \sum_{\alpha\in\Gamma}\mu(B_\alpha)
+      =
+      \E|\mathcal L_s(Y)|
+      \le L .
+      \tag{BGR7}
+   \]
+   Since \(r=1/(1+\chi)<1\), Jensen's inequality for the concave function
+   \(u^r\) gives
+   \[
+      \sum_{\alpha\in\Gamma}\mu(B_\alpha)^r
+      \le
+      M^{1-r}L^r .
+      \tag{BGR8}
+   \]
+   Combining \((BGR5)\)--\((BGR8)\) proves the conditional version of
+   \((BGR4)\).  Averaging over the independent seed and the decoder randomness
+   gives the displayed bound.
+\end{proof}
+
+\begin{corollary}[Balanced aligned residues need polynomial query lists]
+   \label{cor:balanced-aligned-residue-list-barrier}
+   In the setting of
+   \cref{lem:balanced-gaussian-residue-list-bound}, suppose
+   \[
+      M=m^{1-\rho}\log^{O(1)}m,
+      \qquad
+      \lambda=\log^{O(1)}m,
+      \qquad
+      L=\log^{O(1)}m .
+      \tag{BAL1}
+   \]
+   Then
+   \[
+      \Pr[f_S(X)\in\mathcal L_S(Y)]
+      \le
+      m^{-(1-\rho)(1-\chi)/(1+\chi)+o(1)} .
+      \tag{BAL2}
+   \]
+   In particular, a balanced seed-independent residue partition at the aligned
+   endpoint cannot satisfy the inverse-polylogarithmic near-residue condition
+   \((BRP5)\) with a polylogarithmic posterior list.
+
+   More quantitatively, to make the success probability at least
+   \(\log^{-O(1)}m\), the query-side residue list must have size
+   \[
+      L\ge
+      M^{1-\chi}\lambda^{-1}\log^{-O(1)}m .
+      \tag{BAL3}
+   \]
+   At the native critical Euclidean correlation
+   \(\chi=a_0=1-1/c^2\), \(M=m^{1-\rho_c}\polylog m\), this is
+   \[
+      L\ge
+      m^{(1-\rho_c)/c^2-o(1)} .
+      \tag{BAL4}
+   \]
+   For \(c=2\), a balanced residue predictor therefore needs
+   \[
+      L\ge m^{3/14-o(1)}
+      \tag{BAL5}
+   \]
+   residues before it can have even inverse-polylogarithmic hit probability.
+
+   Thus the cheap aligned-residue branch is narrower than the information
+   audit alone suggested.  With balanced residue classes and a
+   seed-independent Gaussian residue map, polylogarithmic posterior lists are
+   impossible.  A surviving construction must either lower the charged residue
+   entropy on the conditioned family, use a substantially nonuniform
+   near-residue law and pay for the resulting load imbalance, or bypass
+   residue-list prediction by a genuinely point-indexed responsibility or
+   leader/rate-coverage reporter.
+\end{corollary}
+
+\begin{proof}
+   Substitute \((BAL1)\) into \((BGR4)\) to get \((BAL2)\).  If the success is
+   at least \(\delta=\log^{-O(1)}m\), then \((BGR4)\) implies
+   \[
+      L^{1/(1+\chi)}
+      \ge
+      \delta\,\lambda^{-1/(1+\chi)}
+      M^{(1-\chi)/(1+\chi)}.
+   \]
+   Raising to the power \(1+\chi\) gives \((BAL3)\).  Substituting
+   \(1-a_0=1/c^2\) and \(M=m^{1-\rho_c}\polylog m\) gives \((BAL4)\), and
+   \(c=2\), \(\rho_c=1/7\), gives \((BAL5)\).
+\end{proof}
+
 \begin{corollary}[Random active residues saturate the residue budget]
    \label{cor:random-active-residue-barrier}
    Consider the balanced-residue setting with \(M=|G|\), and assume for
