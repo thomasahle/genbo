@@ -379,6 +379,11 @@ pub struct HierRouter {
     c1: Vec<i8>,      // c1n*d MID centroids, grouped by coarse (range = gstart)
     g1start: Vec<u32>,// c1n+1: contiguous fine range per MID
     b1: usize,        // mid cells expanded per query
+    // SOAR (idea #3): when >0, BUILD-time multi-assignment spills the 2nd..a0-th fine cells toward
+    // the FIRST cell's residual direction (ScaNN SOAR loss ‖rj‖²+λ(rj·r̂0)²) instead of next-nearest
+    // by L2 — covers orthogonal directions so fewer probes are needed at a given recall. 0 = off
+    // (default; identical to the original assign path). Set via set_soar() from SBANN_SOAR.
+    soar: f32,
 }
 
 impl HierRouter {
@@ -417,7 +422,7 @@ impl HierRouter {
             gstart[q + 1] = gstart[q] + fpc as u32;
             cf[gstart[q] as usize * d..(gstart[q] as usize + fpc) * d].copy_from_slice(&cells[q]);
         }
-        HierRouter { d, kf: kf2, c0n, cf, c0, gstart, mu, b0, c1: Vec::new(), g1start: Vec::new(), b1: 0 }
+        HierRouter { d, kf: kf2, c0n, cf, c0, gstart, mu, b0, c1: Vec::new(), g1start: Vec::new(), b1: 0, soar: 0.0 }
     }
 
     /// 3-level hierarchical k-means: coarse C0 -> MID C1 (c1n total) -> fine Kf. Routing becomes
@@ -487,7 +492,7 @@ impl HierRouter {
                 cf[fbase * d..(fbase + fpm) * d].copy_from_slice(&cells[q].1[mm * fpm * d..(mm + 1) * fpm * d]);
             }
         }
-        HierRouter { d, kf: kf3, c0n, cf, c0, gstart, mu, b0, c1, g1start, b1 }
+        HierRouter { d, kf: kf3, c0n, cf, c0, gstart, mu, b0, c1, g1start, b1, soar: 0.0 }
     }
 
     pub fn train(ds: &I8Bin, kf: usize, c0n: usize, b0: usize, mu: Vec<f32>) -> Self {
@@ -514,8 +519,11 @@ impl HierRouter {
         for (newpos, &oldj) in order.iter().enumerate() {
             cf[newpos * d..newpos * d + d].copy_from_slice(&cf0[oldj as usize * d..oldj as usize * d + d]);
         }
-        HierRouter { d, kf, c0n, cf, c0, gstart, mu, b0, c1: Vec::new(), g1start: Vec::new(), b1: 0 }
+        HierRouter { d, kf, c0n, cf, c0, gstart, mu, b0, c1: Vec::new(), g1start: Vec::new(), b1: 0, soar: 0.0 }
     }
+
+    /// Enable SOAR build-time spilled assignment with penalty λ (`s`). 0 disables (default path).
+    pub fn set_soar(&mut self, s: f32) { self.soar = s; }
 
     /// top-`k` nearest fine cells to normalized query `qn`. 2-level: top-b0 coarse -> their fines.
     /// 3-level (c1 non-empty): top-b0 coarse -> top-b1 mids -> their fines. O(Kf^1/3) routing.
@@ -553,6 +561,70 @@ impl HierRouter {
             if k > 0 { fd.select_nth_unstable(k - 1); out.extend(fd[..k].iter().map(|&(_, f)| f)); }
         }
     }
+
+    /// SOAR-aware multi-assignment (idea #3). Gathers the SAME bounded candidate-fine set route_fine
+    /// would (top-b0 coarse -> [top-b1 mids ->] their fines), then: i0 = nearest fine by L2; the
+    /// remaining a0-1 picks minimize the ScaNN SOAR loss  L = ‖rj‖² + λ·(rj·r̂0)²  where r̂0 is the
+    /// unit FIRST residual (qn - cf[i0]) and rj = qn - cf[j]. Penalizing the parallel-to-r0 component
+    /// pushes the spilled copies to cover ORTHOGONAL directions, so a query needs fewer probes to hit
+    /// a cell that contains the point. Only used at BUILD; query routing (probe) is unchanged.
+    fn route_fine_soar(&self, qn: &[i8], a0: usize, soar: f32, out: &mut Vec<u32>) {
+        let d = self.d;
+        // top-b0 coarse
+        let mut cd: Vec<(i32, u32)> = (0..self.c0n).map(|q| (simd::l2_i8(qn, &self.c0[q * d..q * d + d]), q as u32)).collect();
+        let b0 = self.b0.min(cd.len());
+        cd.select_nth_unstable(b0 - 1);
+        // gather candidate fines (l2, fine_id) WITHOUT truncation (so SOAR has room to spill)
+        let mut fd: Vec<(i32, u32)> = Vec::with_capacity(self.kf / self.c0n.max(1) * b0 + 16);
+        if self.c1.is_empty() {
+            for &(_, q) in &cd[..b0] {
+                let (s, e) = (self.gstart[q as usize] as usize, self.gstart[q as usize + 1] as usize);
+                for f in s..e { fd.push((simd::l2_i8(qn, &self.cf[f * d..f * d + d]), f as u32)); }
+            }
+        } else {
+            let mut md: Vec<(i32, u32)> = Vec::with_capacity(64);
+            for &(_, q) in &cd[..b0] {
+                let (s, e) = (self.gstart[q as usize] as usize, self.gstart[q as usize + 1] as usize);
+                for mi in s..e { md.push((simd::l2_i8(qn, &self.c1[mi * d..mi * d + d]), mi as u32)); }
+            }
+            let b1 = self.b1.min(md.len());
+            if b1 > 0 { md.select_nth_unstable(b1 - 1); }
+            for &(_, mi) in &md[..b1] {
+                let (s, e) = (self.g1start[mi as usize] as usize, self.g1start[mi as usize + 1] as usize);
+                for f in s..e { fd.push((simd::l2_i8(qn, &self.cf[f * d..f * d + d]), f as u32)); }
+            }
+        }
+        out.clear();
+        if fd.is_empty() { return; }
+        // i0 = nearest fine (the primary assignment is unchanged from the L2 path)
+        let mut i0pos = 0usize;
+        for (idx, &(dist, _)) in fd.iter().enumerate() { if dist < fd[i0pos].0 { i0pos = idx; } }
+        let i0 = fd[i0pos].1;
+        out.push(i0);
+        if a0 <= 1 { return; }
+        // r̂0 = normalize(qn - cf[i0]); qdot = qn·r̂0 (so rj·r̂0 = qdot - cf[j]·r̂0)
+        let off0 = i0 as usize * d;
+        let mut r0 = [0f32; 256];
+        let mut nrm = 0f32;
+        for k in 0..d { let v = qn[k] as f32 - self.cf[off0 + k] as f32; r0[k] = v; nrm += v * v; }
+        let inv = 1.0 / nrm.sqrt().max(1e-9);
+        for k in 0..d { r0[k] *= inv; }
+        let qdot: f32 = (0..d).map(|k| qn[k] as f32 * r0[k]).sum();
+        // SOAR loss for every other candidate; take the top-(a0-1) smallest
+        let mut loss: Vec<(f32, u32)> = Vec::with_capacity(fd.len());
+        for (idx, &(l2, f)) in fd.iter().enumerate() {
+            if idx == i0pos { continue; }
+            let offj = f as usize * d;
+            let pdot: f32 = (0..d).map(|k| self.cf[offj + k] as f32 * r0[k]).sum();
+            let proj = qdot - pdot;
+            loss.push((l2 as f32 + soar * proj * proj, f));
+        }
+        let take = (a0 - 1).min(loss.len());
+        if take > 0 {
+            loss.select_nth_unstable_by(take - 1, |a, b| a.0.total_cmp(&b.0));
+            for &(_, f) in &loss[..take] { out.push(f); }
+        }
+    }
 }
 
 impl Router for HierRouter {
@@ -560,7 +632,11 @@ impl Router for HierRouter {
     fn assign(&self, row: &[i8], a0: usize, out: &mut Vec<u32>) {
         let mut qn = [0i8; 256];
         simd::normalize_i8(row, &self.mu, &mut qn[..self.d]);
-        self.route_fine(&qn[..self.d], a0, out);
+        if self.soar > 0.0 && a0 >= 2 {
+            self.route_fine_soar(&qn[..self.d], a0, self.soar, out);
+        } else {
+            self.route_fine(&qn[..self.d], a0, out);
+        }
         while out.len() < a0 { out.push(0); }
     }
     fn probe(&self, q: &[i8], p: usize) -> Vec<u32> {

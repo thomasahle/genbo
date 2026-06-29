@@ -307,6 +307,14 @@ fn benchavq(base: &str, qpath: &str, gtpath: &str, c0n: usize, c1n: usize) {
     }
 }
 
+/// SBANN_SOAR=λ enables SOAR spilled multi-assignment for a HierRouter at build (idea #3). No-op
+/// (default L2 assignment) when unset. Only affects a0>=2 builds.
+fn apply_soar(r: &mut vq::HierRouter) {
+    if let Ok(s) = std::env::var("SBANN_SOAR") {
+        if let Ok(v) = s.parse::<f32>() { if v > 0.0 { r.set_soar(v); println!("  [SOAR spilled assignment lambda={v}]"); } }
+    }
+}
+
 /// Pluggable run: `run <base> <q> <gt> <router> <compress> [a0]`. router=flat|flatrand|avq,
 /// compress=pq4|i8. Sweeps p, reports recall@10 / avg pool / QPS so routers compare at matched pool.
 fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: usize, c: usize, tmul: usize, batched: bool) {
@@ -334,14 +342,16 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
         "flatrair" => Box::new(vq::FlatIvf::train_rair(&dr, c, mu.clone(), 15, 1.0)),
         "flatrand" => Box::new(vq::FlatIvf::train(&dr, c, mu.clone(), 0)),
         "avq" => Box::new(vq::AvqRouter::train(&dr, cb, cb, mu.clone(), 15)),
-        "hier" => Box::new(vq::HierRouter::train(&dr, c, c0, b0, mu.clone())),
-        "hierk" => Box::new(vq::HierRouter::train_hkmeans(&dr, c, c0, b0, mu.clone())),
+        "hier" => { let mut r = vq::HierRouter::train(&dr, c, c0, b0, mu.clone()); apply_soar(&mut r); Box::new(r) }
+        "hierk" => { let mut r = vq::HierRouter::train_hkmeans(&dr, c, c0, b0, mu.clone()); apply_soar(&mut r); Box::new(r) }
         // 3-level: SBANN_C1 = #mid cells (default sqrt(C0*Kf)), SBANN_B1 = #mids expanded/query.
         "hierk3" => {
             let c1 = std::env::var("SBANN_C1").ok().and_then(|s| s.parse().ok()).unwrap_or(((c0 as f64 * c as f64).sqrt().round() as usize).max(c0 * 2));
             let b1 = std::env::var("SBANN_B1").ok().and_then(|s| s.parse().ok()).unwrap_or((b0 * 2).max(16));
             println!("  [hierk3 C0={c0} C1={c1} b0={b0} b1={b1}]");
-            Box::new(vq::HierRouter::train_hkmeans3(&dr, c, c0, c1, b0, b1, mu.clone()))
+            let mut r = vq::HierRouter::train_hkmeans3(&dr, c, c0, c1, b0, b1, mu.clone());
+            apply_soar(&mut r);
+            Box::new(r)
         }
         _ => { eprintln!("router?"); return; }
     };
