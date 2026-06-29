@@ -89927,6 +89927,90 @@ For a threshold $u$, the posterior-superlevel child is
    dyadic repetition count by \(O(\log(NH))\).
 \end{proof}
 
+\begin{corollary}[Average-affinity leader skeleton suffices]
+   \label{cor:average-affinity-leader-skeleton}
+   Work in the port-skeleton setting of
+   \cref{cor:affinity-proportional-route-law}.  At each nonterminal skeleton
+   state \(s\), let \(E_s\) be the decoded useful leader-port set and
+   \[
+      \Omega_s=\sum_{e\in E_s}\omega_e .
+   \]
+   Let \(\Lambda\) be the affinity-proportional route law
+   \(\lambda_e=\omega_e/\Omega_s\) on the resulting good terminal skeleton
+   routes, and put
+   \[
+      D(V)=\sum_{s\prec V}\log_+\frac1{\Omega_s}.
+      \tag{AAL1}
+   \]
+   If
+   \[
+      \E_{V\sim\Lambda}D(V)\le B,
+      \tag{AAL2}
+   \]
+   then the original harmonic value satisfies
+   \[
+      W(r_{s_0})
+      \ge
+      \frac12\,\frac{e^{-2B}}{L(s_0)} .
+      \tag{AAL3}
+   \]
+
+   More generally, suppose the leader reporters are randomized and that, for
+   every seed \(\zeta\) under consideration, the decoded ports define a
+   nonempty affinity-proportional law \(\Lambda_\zeta\).  Let
+   \(D_\zeta\) be the corresponding toll and \(W_{\rm rep}(\zeta)\) the
+   reporter work.  If
+   \[
+      \E_\zeta\E_{V\sim\Lambda_\zeta}D_\zeta(V)\le B,
+      \qquad
+      \E_\zeta W_{\rm rep}(\zeta)\le W_0,
+      \tag{AAL4}
+   \]
+   then there is a fixed seed with
+   \[
+      W_{\rm rep}\le4W_0,
+      \qquad
+      W(r_{s_0})
+      \ge
+      \frac12\,\frac{e^{-8B}}{L(s_0)} .
+      \tag{AAL5}
+   \]
+
+   Thus the leader construction need not certify an \(H^{-2}\) missed-affinity
+   bound at every exposed state.  It is enough to bound the route-average
+   cumulative deficit of the actually decoded skeleton.  This is the form
+   closest to pruned lattice enumeration and soft list decoding: spend more
+   reporter effort only on states that carry route mass, and let low-mass bad
+   states be discarded by the typical-route toll certificate.
+\end{corollary}
+
+\begin{proof}
+   For a skeleton edge \(e:s\to t\) selected by the affinity-proportional law,
+   the route transition is \(\lambda_e=\omega_e/\Omega_s\), while the skeleton
+   activation probability in the saturated recursion is \(\omega_e\).  Hence
+   the edge domination toll from \cref{cor:typical-route-law-toll} is
+   \[
+      \log_+\frac{\lambda_e}{\omega_e}
+      =
+      \log_+\frac1{\Omega_s}.
+   \]
+   The expected edge toll under \(\Lambda\) is exactly \(\E D(V)\).  Applying
+   the expectation form of \cref{cor:typical-route-law-toll} to the skeleton
+   gives skeleton saturated value at least \(\frac12e^{-2B}\).  The comparison
+   in \cref{lem:port-skeleton-saturated-comparison} then loses only the
+   skeleton denominator \(L(s_0)\), proving \((AAL3)\).
+
+   For the randomized statement, let
+   \[
+      B_\zeta=\E_{V\sim\Lambda_\zeta}D_\zeta(V).
+   \]
+   If \(B=0\), then \(B_\zeta=0\) almost surely.  Otherwise Markov's
+   inequality gives \(\Pr[B_\zeta>4B]\le1/4\).  A second Markov bound gives
+   \(\Pr[W_{\rm rep}(\zeta)>4W_0]\le1/4\).  Therefore some seed satisfies both
+   \(B_\zeta\le4B\) and \(W_{\rm rep}(\zeta)\le4W_0\).  Applying the
+   deterministic part with \(4B\) gives \((AAL5)\).
+\end{proof}
+
 \begin{corollary}[Boosted leader skeleton value delivery]
    \label{cor:boosted-leader-skeleton-value-delivery}
    Work in the setting of \cref{cor:boosted-leader-skeleton-toll}, and let
