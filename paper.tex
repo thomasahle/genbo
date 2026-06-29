@@ -94779,6 +94779,99 @@ amplified in the next proposition.
    and for \(c=2\), \(a_0=3/4\) and \(\rho_c=1/7\), giving \((MEB7)\).
 \end{proof}
 
+\begin{corollary}[Target union coverage is storage-incidence scale]
+   \label{cor:multilabel-storage-incidence-rigidity}
+   Continue in the setting of
+   \cref{lem:multilabel-effective-hit-load-tradeoff}, but specialize to the
+   native critical parameters \((MEB5)\).  Suppose one query trial has
+   inverse-polylogarithmic near hit and target far scan load,
+   \[
+      \pi\ge\log^{-O_c(1)}m,
+      \qquad
+      m\beta\le m^{\rho_c}\log^{O_c(1)}m .
+      \tag{MSI1}
+   \]
+   Let
+   \[
+      S_z=\{\alpha\in\Lambda:z_\alpha>0\}.
+      \tag{MSI2}
+   \]
+   Then the marginal query-visible label support satisfies
+   \[
+      |S_z|\ge N_r(z)
+      \ge m^{1+\rho_c-o(1)} .
+      \tag{MSI3}
+   \]
+   Moreover its average far-load contribution is microscopic:
+   \[
+      \frac1{|S_z|}\sum_{\alpha\in S_z}z_\alpha
+      \le m^{-2+o(1)} .
+      \tag{MSI4}
+   \]
+   If the total stored label intensity is within the ANN storage budget,
+   \[
+      \sum_{\alpha\in\Lambda}A_\alpha
+      \le m^{\rho_c}\log^{O_c(1)}m,
+      \tag{MSI5}
+   \]
+   then the active marginal support is singleton-scale on average:
+   \[
+      \frac1{|S_z|}\sum_{\alpha\in S_z}mA_\alpha
+      \le m^{o(1)} .
+      \tag{MSI6}
+   \]
+
+   Thus a union-scanned multi-label construction at the target exponent cannot
+   be a small code or residue dictionary with fat buckets.  It must spread its
+   query-visible mass over essentially all \(m^{1+\rho_c}\) allowed stored
+   incidences, with only subpolynomial resident load per active marginal label on
+   average.  This is exactly the regime where a practical proof needs a compact
+   aggregate sampler, point-indexed responsibility reporter, or leader decoder:
+   materializing the reported-label law as a small dictionary has already lost
+   the exponent.
+\end{corollary}
+
+\begin{proof}
+   Rearranging \((MLH5)\) gives
+   \[
+      N_r(z)\ge \pi^{1/(1-r)}\beta^{-r/(1-r)}
+      =
+      \pi^{(1+\chi)/\chi}\beta^{-1/\chi}.
+      \tag{MSI7}
+   \]
+   Under \((MSI1)\), \(\beta\le m^{\rho_c-1}\log^{O_c(1)}m\), and
+   \(\pi^{(1+\chi)/\chi}\) contributes only \(m^{-o(1)}\).  Hence
+   \[
+      N_r(z)
+      \ge
+      m^{(1-\rho_c)/a_0-o(1)}
+      =
+      m^{1+\rho_c-o(1)}
+   \]
+   by the calculation in \((MEB6)\).  Since \(N_r(z)\le |S_z|\) for every
+   probability vector supported on \(S_z\), this proves \((MSI3)\).
+
+   The average bound \((MSI4)\) is just
+   \[
+      |S_z|^{-1}\sum_{\alpha\in S_z}z_\alpha
+      =
+      \beta/|S_z|
+      \le
+      m^{\rho_c-1+o(1)}m^{-1-\rho_c+o(1)}
+      =
+      m^{-2+o(1)} .
+   \]
+   Finally, \((MSI5)\) and \((MSI3)\) give
+   \[
+      |S_z|^{-1}\sum_{\alpha\in S_z}mA_\alpha
+      \le
+      m\,m^{\rho_c+o(1)}m^{-1-\rho_c+o(1)}
+      =
+      m^{o(1)} ,
+   \]
+   proving \((MSI6)\).
+\end{proof}
+
 \begin{corollary}[Random active residues saturate the residue budget]
    \label{cor:random-active-residue-barrier}
    Consider the balanced-residue setting with \(M=|G|\), and assume for
