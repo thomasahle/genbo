@@ -94405,6 +94405,126 @@ amplified in the next proposition.
    which is \((RHL2)\).  Rearranging gives \((RHL3)\).
 \end{proof}
 
+\begin{lemma}[Poisson-thinned residue labels obey the same load tradeoff]
+   \label{lem:poisson-residue-hit-load-tradeoff}
+   In the setting of \cref{lem:residue-list-hit-load-tradeoff}, allow
+   preprocessing to attach an arbitrary nonnegative retained intensity
+   \(a_s(x)\) to each source point, still with only the single residue label
+   \(f_s(x)\).  If the query reports \(\mathcal L_s(Y)\), define the
+   Poisson-retained near hit and the independent retained far load by
+   \[
+      \pi_a
+      =
+      \E\!\left[
+         (1-e^{-a_S(X)})
+         \mathbf1\{f_S(X)\in\mathcal L_S(Y)\}
+      \right],
+      \tag{PRH1}
+   \]
+   \[
+      \beta_a
+      =
+      \E\!\left[
+         a_S(X')
+         \mathbf1\{f_S(X')\in\mathcal L_S(Y)\}
+      \right],
+      \tag{PRH2}
+   \]
+   where \(X'\) is an independent standard Gaussian block.  Then
+   \[
+      \pi_a
+      \le
+      M^{\chi/(1+\chi)}\beta_a^{1/(1+\chi)} .
+      \tag{PRH3}
+   \]
+   In particular, arbitrary point-specific redundancy on a single residue label
+   cannot improve the exponent-level near-hit/far-load tradeoff.
+\end{lemma}
+
+\begin{proof}
+   Condition on \(S=s\) and on the decoder randomness.  Put
+   \(r=1/(1+\chi)\), \(B_\alpha=\{y:\alpha\in\mathcal L_s(y)\}\), and
+   \[
+      g_\alpha(x)=(1-e^{-a_s(x)})\mathbf1\{f_s(x)=\alpha\}.
+   \]
+   Gaussian hypercontractivity gives
+   \[
+      \E\!\left[
+         (1-e^{-a_s(X)})
+         \mathbf1\{f_s(X)\in\mathcal L_s(Y)\}
+      \right]
+      \le
+      \sum_{\alpha\in\Gamma}
+      \|g_\alpha\|_{1+\chi}\,\mu(B_\alpha)^r .
+      \tag{PRH4}
+   \]
+   Since \((1-e^{-u})^{1+\chi}\le u\) for \(u\ge0\),
+   \[
+      \|g_\alpha\|_{1+\chi}
+      \le
+      \left(\int_{\{f_s=\alpha\}}a_s(x)\,d\mu(x)\right)^r
+      = A_\alpha^r .
+      \tag{PRH5}
+   \]
+   The conditioned retained far load is
+   \[
+      \beta_{a,s}=\sum_{\alpha\in\Gamma}A_\alpha\mu(B_\alpha).
+      \tag{PRH6}
+   \]
+   Hence, by concavity of \(u^r\),
+   \[
+      \sum_{\alpha\in\Gamma}(A_\alpha\mu(B_\alpha))^r
+      \le
+      M^{1-r}\beta_{a,s}^r .
+      \tag{PRH7}
+   \]
+   Averaging and applying concavity once more gives
+   \(\pi_a\le M^{1-r}\beta_a^r\), which is \((PRH3)\).
+\end{proof}
+
+\begin{corollary}[Single-residue rate coverage is still polynomially expensive]
+   \label{cor:single-residue-rate-coverage-barrier}
+   Suppose a retained rate-coverage proposal uses only one residue label per
+   point: preprocessing may choose arbitrary point intensities \(a_x\), but a
+   query can include a retained copy of \(x\) only by reporting the single label
+   \(f(x)\in\Gamma\).  At the aligned endpoint
+   \(M=|\Gamma|=m^{1-\rho}\log^{O(1)}m\), any inverse-polylogarithmic
+   Poisson-retained near hit,
+   \[
+      \pi_a\ge\log^{-O(1)}m,
+      \tag{SRRC1}
+   \]
+   forces expected retained far incidence load
+   \[
+      m\beta_a
+      \ge
+      m^{1-\chi(1-\rho)-o(1)} .
+      \tag{SRRC2}
+   \]
+   In particular, at the native critical Euclidean point
+   \(\rho=\rho_c=1/(2c^2-1)\) and
+   \(\chi=1-1/c^2\), the forced load exponent is the same
+   \[
+      \frac{3c^2-2}{c^2(2c^2-1)}
+      \tag{SRRC3}
+   \]
+   as in \cref{cor:nonuniform-residue-scan-load-barrier}; for \(c=2\) it is
+   \(5/14\).
+
+   Thus rate coverage does not escape the residue barrier by assigning
+   nonuniform replication weights to a single class label.  The label system must
+   give points multiple query-visible opportunities, or the query must compute
+   point-indexed responsibilities inside a merged hidden class rather than scan
+   every retained point carrying a reported residue.
+\end{corollary}
+
+\begin{proof}
+   Rearranging \((PRH3)\) gives
+   \(\beta_a\ge\pi_a^{1+\chi}M^{-\chi}\).  Combining this with \((SRRC1)\) and
+   \(M=m^{1-\rho}\log^{O(1)}m\) gives \((SRRC2)\).  The native exponent is the
+   calculation in \((NRL4)\).
+\end{proof}
+
 \begin{corollary}[Nonuniform residue lists still pay polynomial scan load]
    \label{cor:nonuniform-residue-scan-load-barrier}
    In the setting of \cref{lem:residue-list-hit-load-tradeoff}, suppose
