@@ -5465,6 +5465,131 @@ partition ignores the bias coordinates that certify the list size.
    weights, and give all other symbols very negative weights.
 \end{proof}
 
+\begin{lemma}[Auxiliary scalar masks require balanced witness entropy]
+   \label{lem:scalar-mask-entropy-profile}
+   Fix \(k\ge2\) and let
+   \(M_{j,a}\), \(j\in[k]\), \(a\ge1\), be independent standard Gaussians.
+   For \(p=e^{-L}\downarrow0\), let \(s_p\) satisfy
+   \[
+      \Prb[N(0,k)\ge s_p]=p,
+      \qquad
+      s_p=\sqrt{2kL}+o(\sqrt L),
+      \tag{SME1}
+   \]
+   and retain tuples by
+   \[
+      \sum_{j=1}^kM_{j,i_j}\ge s_p .
+      \tag{SME2}
+   \]
+   Write \(R_p\) for this retained set.
+   Let \(A_L=A_{1,L}\times\cdots\times A_{k,L}\) be a product witness set with
+   \[
+      |A_{j,L}|=\exp((\theta_j+o(1))L),
+      \qquad \theta_j\ge0.
+      \tag{SME3}
+   \]
+   Then
+   \[
+      \max_{i\in A_L}\sum_{j=1}^kM_{j,i_j}
+      =
+      \sqrt{2L}\sum_{j=1}^k\sqrt{\theta_j}+o_{\Prb}(\sqrt L).
+      \tag{SME4}
+   \]
+   Consequently, if
+   \[
+      \sum_{j=1}^k\sqrt{\theta_j}<\sqrt k,
+      \tag{SME5}
+   \]
+   then
+   \[
+      \Prb[A_L\cap R_p\ne\emptyset]\le e^{-\Omega(L)},
+      \tag{SME6}
+   \]
+   while if
+   \[
+      \sum_{j=1}^k\sqrt{\theta_j}>\sqrt k,
+      \tag{SME7}
+   \]
+   then
+   \[
+      \Prb[A_L\cap R_p\ne\emptyset]\to1.
+      \tag{SME8}
+   \]
+
+   Thus an independent auxiliary weight
+   \(\sum_jm_j(i_j)\) is not a distribution-free random subset at density
+   \(p\).  It is reliable only for witness families whose conditional entropy
+   is spread across the product coordinates.  A set of total size about
+   \(p^{-1}\) has \(\sum_j\theta_j=1\); by Cauchy's inequality
+   \(\sum_j\sqrt{\theta_j}\le\sqrt k\), with equality only when
+   \(\theta_1=\cdots=\theta_k=1/k\).  Hence balanced product witnesses are the
+   borderline case, whereas a star has profile \((1,0,\ldots,0)\) and fails
+   by a polynomial factor as in
+   \cref{lem:additive-mask-star-obstruction}.
+\end{lemma}
+
+\begin{proof}
+   Let
+   \[
+      Y_{j,L}=\max_{a\in A_{j,L}}M_{j,a}.
+   \]
+   Since \(A_L\) is a product,
+   \[
+      \max_{i\in A_L}\sum_jM_{j,i_j}=\sum_jY_{j,L}.
+      \tag{SME9}
+   \]
+   We first record the standard Gaussian maximum estimate
+   \[
+      \frac{Y_{j,L}}{\sqrt{2L}}\to\sqrt{\theta_j}
+      \quad\text{in probability}.
+      \tag{SME10}
+   \]
+   For the upper tail, if \(u>\sqrt{\theta_j}\), then
+   \[
+      \Prb[Y_{j,L}\ge u\sqrt{2L}]
+      \le
+      |A_{j,L}|\Prb[N(0,1)\ge u\sqrt{2L}]
+      \le
+      \exp((\theta_j-u^2+o(1))L)\to0 .
+   \]
+   For the lower tail, if \(0<u<\sqrt{\theta_j}\), then
+   \[
+      \Prb[Y_{j,L}<u\sqrt{2L}]
+      =
+      \left(1-\Prb[N(0,1)\ge u\sqrt{2L}]\right)^{|A_{j,L}|}
+      \le
+      \exp(-\exp((\theta_j-u^2+o(1))L))\to0 .
+   \]
+   When \(\theta_j=0\), the upper-tail bound with any fixed \(u>0\) gives the
+   same convergence to \(0\).  Summing \((SME10)\) over the fixed number of
+   coordinates proves \((SME4)\).
+
+   If \((SME5)\) holds, choose \(\epsilon>0\) with
+   \(\sum_j(\sqrt{\theta_j}+\epsilon)<\sqrt k\).  The same upper-tail estimate
+   gives
+   \[
+      \Prb\!\left[
+         Y_{j,L}\ge(\sqrt{\theta_j}+\epsilon)\sqrt{2L}
+      \right]\le e^{-c_jL}
+   \]
+   for some \(c_j>0\), after decreasing \(c_j\) for large \(L\).  A union bound
+   over \(j\) then implies
+   \[
+      \sum_jY_{j,L}
+      <
+      \sqrt{2L}\sum_j(\sqrt{\theta_j}+\epsilon)
+      <
+      s_p
+   \]
+   for all sufficiently large \(L\), except with probability
+   \(e^{-\Omega(L)}\), proving \((SME6)\).  If \((SME7)\) holds, choose
+   \(\epsilon>0\) with
+   \(\sum_j(\sqrt{\theta_j}-\epsilon)_+>\sqrt k\).  The lower-tail bound above
+   shows that, with probability tending to one,
+   \(Y_{j,L}\ge(\sqrt{\theta_j}-\epsilon)_+\sqrt{2L}\) for all \(j\), and then
+   \(\sum_jY_{j,L}>s_p\).  This proves \((SME8)\).
+\end{proof}
+
 \begin{remark}[Decodable pseudorandom subsets need conditional entropy]
    \label{rem:decodable-pseudorandom-tuple-subsets}
    \Cref{lem:additive-mask-star-obstruction} explains why selecting tuples by
@@ -5478,7 +5603,12 @@ partition ignores the bias coordinates that certify the list size.
    already been fixed by the query score.  A top-tuple set may leave only one
    coordinate free, and then the shared mask contribution from the other
    coordinates makes the retained mass arrive in rare bursts rather than as
-   independent thinning.
+   independent thinning.  \Cref{lem:scalar-mask-entropy-profile} gives the
+   matching entropy profile: at density \(p\), a product witness set of size
+   about \(p^{-1}\) is visible to a scalar auxiliary score only in the balanced
+   borderline case where the witness entropy is spread nearly evenly across the
+   \(k\) coordinates.  Any substantial entropy collapse requires extra
+   oversampling or a different mask.
 
    A better decodable pseudorandom mask is a decomposable syndrome or
    tabulation hash.  Let \(G\) be a finite abelian group, choose independent
