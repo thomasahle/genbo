@@ -1878,6 +1878,17 @@ P119. (*** tree-Lloyd EM joint-level optimization STACKS with SOAR ~additively -
     buildprof per-level [150,1,3]s confirms fanout=1024 level-0 dominates. EM+SOAR also applied to OOD
     full stack (ood_fullstack.log, running).
 
+P120. (OOD stays ~2x behind ScaNN -- msspacev levers DON'T convert; OOD is rerank-memory-bound)
+    Full practical stack on OOD (SOAR+FASTSCAN-IP+AVX512, ood_practical.log, same-window vs ScaNN OOD,
+    nq=10000): STACK r0.903@3986(p416), r0.897@4766(p352) vs ScaNN ~9480@r0.90 (interp) = ScaNN ~2.15x.
+    SOAR (better cosine routing) + AVX-512 (faster scan) barely move OOD because OOD is RERANK-MEMORY-
+    bound (~920KB/q raw reads), not routing/scan-bound -- the msspacev-winning levers attack the wrong
+    bottleneck for OOD. Consistent with P108/P114 (~2x). EM also build-prohibitive at 200-dim (killed a
+    47-min EM build). The lever that WOULD attack the OOD rerank wall = the RESIDUAL-rerank workflow
+    winner (idea #4, 6.8x lower raw-rerank depth, P116) -- deferred (conflicted w/ AVX-512 cherry-pick).
+    HONEST: msspacev BEATS ScaNN (~1.5-2x @QPS90, P117); OOD STILL ~2x behind (rerank wall, needs the
+    residual lever, not routing/scan). The two tracks have DIFFERENT bottlenecks.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
