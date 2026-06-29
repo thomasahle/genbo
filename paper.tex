@@ -89639,6 +89639,124 @@ top-\(k\) backup.
    score above the absolute ceiling \(r\log2\).
 \end{proof}
 
+\begin{lemma}[Product-sign mean-gap certificate]
+   \label{lem:product-sign-mean-gap-certificate}
+   Fix a product-sign near pair \(p,q\), and write
+   \(u^p_a=u_a(p)\), \(u^q_a=u_a(q)\), and
+   \[
+      v_a=\beta u^p_a+(1-\beta)u^q_a .
+   \]
+   Under the tilted label law
+   \[
+      W_{p,q}(s)\propto K_p(s)^\beta K_q(s)^{1-\beta},
+      \qquad s\in\{\pm1\}^r,
+   \]
+   the signs are independent and
+   \[
+      \E_{W_{p,q}}s_a=\tanh v_a .
+   \]
+   Hence the product-sign score \(Y=\Psi_s(p)\) has conditional mean and
+   variance
+   \[
+      M_{p,q}
+      =
+      \sum_{a=1}^r
+      \bigl(u^p_a\tanh v_a-\log\cosh u^p_a\bigr),
+      \tag{PSM}
+   \]
+   \[
+      V_{p,q}
+      =
+      \sum_{a=1}^r
+      (u^p_a)^2\bigl(1-\tanh^2 v_a\bigr).
+      \tag{PSV}
+   \]
+   Let \(T\) be any posterior-score threshold and \(\Delta_0\ge0\).  If
+   \[
+      \Gamma=M_{p,q}-(T+\Delta_0)>0,
+   \]
+   then
+   \[
+      W_{p,q}\{\Psi_s(p)\ge T+\Delta_0\}
+      \ge
+      \frac{\Gamma^2}{V_{p,q}+\Gamma^2}.
+      \tag{PSC}
+   \]
+\end{lemma}
+
+\begin{proof}
+   The tilted law factorizes because
+   \[
+      K_p(s)^\beta K_q(s)^{1-\beta}
+      \propto
+      \exp\!\left(\sum_a s_a
+      (\beta u^p_a+(1-\beta)u^q_a)\right).
+   \]
+   Thus each sign has natural parameter \(v_a\), giving
+   \(\E s_a=\tanh v_a\) and
+   \(\operatorname{Var}(s_a)=1-\tanh^2v_a\).  Substituting in
+   \[
+      \Psi_s(p)=\sum_a(s_au^p_a-\log\cosh u^p_a)
+   \]
+   gives \((PSM)\) and \((PSV)\).  Cantelli's one-sided Chebyshev inequality
+   gives
+   \[
+      W_{p,q}\{Y-M_{p,q}\le-\Gamma\}
+      \le
+      \frac{V_{p,q}}{V_{p,q}+\Gamma^2},
+   \]
+   which is exactly \((PSC)\) after taking complements.
+\end{proof}
+
+\begin{corollary}[I.i.d. Gaussian growing-width criterion]
+   \label{cor:gaussian-growing-width-product-sign}
+   Let \((U,V)\) be centered jointly Gaussian with variance \(\sigma^2\) in
+   each coordinate and correlation \(a>0\).  Let
+   \(\beta=\beta_m\in[0,1]\), and put
+   \[
+      X=Z-\log\cosh Z,\qquad Z\sim N(0,\sigma^2),
+   \]
+   and
+   \[
+      A_m=U\tanh(\beta_m U+(1-\beta_m)V)-\log\cosh U.
+   \]
+   Suppose a sequence \(r=r(m)\to\infty\) and thresholds \(T_m\) satisfy
+   \[
+      \Prb\left[\sum_{a=1}^r X_a\ge T_m\right]\le \eta_m
+      \tag{GWC1}
+   \]
+   and, for some fixed \(\varepsilon>0\),
+   \[
+      T_m+\Delta_0\le r(\E A_m-2\varepsilon)
+      \tag{GWC2}
+   \]
+   for all large \(m\).  Then, for independent \(r\)-bit Gaussian product-sign
+   pairs with this coordinate law,
+   \[
+      W_{p,q}\{\Psi_s(p)\ge T_m+\Delta_0\}
+      \ge
+      1-O_{\sigma,a,\varepsilon}(1/r)
+   \]
+   with probability \(1-O_{\sigma,a,\varepsilon}(1/r)\) over the bit
+   logits \((u^p,u^q)\).  In particular, taking \(T_m\) to be any valid upper
+   \(\eta_m\)-threshold for the fixed-label score proves the distributional
+   bounded-margin target in the ideal product-sign model.
+\end{corollary}
+
+\begin{proof}
+   For all \(\beta_m\in[0,1]\), the \(A_m\)'s have uniformly bounded second
+   moments depending only on \(\sigma\).  The empirical mean of the
+   coordinate copies has variance \(O(1/r)\), so by Chebyshev it is at least
+   \(\E A_m-\varepsilon\) with probability
+   \(1-O(1/r)\).  The empirical average of
+   \(U_a^2(1-\tanh^2(\beta_m U_a+(1-\beta_m)V_a))\) also has uniformly
+   bounded second moment, so Chebyshev gives that it is \(O(1)\) with the
+   same probability.  On this event,
+   \(M_{p,q}-(T_m+\Delta_0)\ge r\varepsilon\) and \(V_{p,q}=O(r)\).  Applying
+   \cref{lem:product-sign-mean-gap-certificate} gives
+   \(1-O(1/r)\) tilted good mass.
+\end{proof}
+
 Thus the finite special case would follow from a posterior-rank margin statement: for every near pair not handled by the resident guard, a non-negligible fraction of the tilted affinity must lie on outcomes for which $p$ is inside the top-$\xi$ posterior child by enough margin. This is only a sufficient condition. By \cref{lem:soft-surplus-decomposition}, a failed fixed-margin test can still have large \(\mathcal H_\xi\) if the tilted winner, or a few near-winner outcomes, have moderate posterior surplus. The diagnostic should therefore report not only $\mathcal H_\xi$, but also $\mathsf A_\beta(p,q)$, the soft surplus \(\mathcal H_\xi/\mathsf A_\beta\), the tilted winner's contribution fraction from \cref{lem:soft-surplus-decomposition}, \(W_{p,q}(G_\Delta(p))\), and the certified lower bound in \cref{lem:posterior-rank-margin}, for a margin such as $\Delta=1/\beta$. For the balanced-softmax candidate
 \[
    K_x(j)=
@@ -89887,6 +90005,26 @@ One should also separate the resident-guard regime from the genuine finite-chann
    mass \(0.585\)--\(0.599\).  Varying
    \(\sigma\in\{1.5,2.5,3.5,5.0\}\) kept the same first successful bit counts
    in this sweep.
+
+   \Cref{lem:product-sign-mean-gap-certificate} turns this numerical tail into
+   a proof target without changing normal form: compute the conditional tilted
+   mean \(M_{p,q}\), variance \(V_{p,q}\), and the gap
+   \(M_{p,q}-(Q_{r,\eta}+\Delta_0)\).  The same ideal-Gaussian diagnostic now
+   reports the resulting Cantelli lower bound.  At correlation \(0.9\),
+   \(m=10^{24}\), and \(\sigma=3.5\), \(r=24\) was still borderline:
+   lower \(5\%\) mean gap \(0.262\)--\(0.837\), Cantelli good-mass lower
+   \(5\%\) \(0.003\)--\(0.026\), but empirical tilted good-mass lower \(5\%\)
+   \(0.545\)--\(0.568\).  Increasing to \(r=32\) made the crude proof already
+   strong: lower \(5\%\) mean gap \(9.07\)--\(9.95\), Cantelli lower \(5\%\)
+   \(0.734\)--\(0.769\), and empirical lower \(5\%\) \(0.939\)--\(0.959\).
+   At the lower correlation \(0.75\), the transition moved upward: for
+   \(m=10^{24}\), \(r=48\) had Cantelli lower \(5\%\)
+   \(0.078\)--\(0.249\) and empirical lower \(5\%\) \(0.597\)--\(0.722\),
+   while \(r=64\) had Cantelli lower \(5\%\) \(0.776\)--\(0.783\) and
+   empirical lower \(5\%\) \(0.959\)--\(0.967\).  Thus the current proof
+   obligation is precise: prove the Gaussian rate gap \((GWC1)\)--\((GWC2)\)
+   at an \(r=O_c(\log m)\) width allowed by the compiler, or sharpen the
+   borderline \(r\) regime with a Bernstein or local-CLT lower-tail bound.
 
    The frozen product-sign target is therefore not another certificate form:
    it is the same distributional bounded-margin posterior-rank lower tail for

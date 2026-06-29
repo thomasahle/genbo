@@ -41,6 +41,14 @@ FIELDNAMES = [
     "near_ceiling_lower",
     "margin_blocked_empirical",
     "margin_blocked_lower",
+    "score_level",
+    "mean_gap_q01",
+    "mean_gap_q05",
+    "mean_gap_median",
+    "tilted_variance_q95",
+    "cantelli_good_q01",
+    "cantelli_good_q05",
+    "cantelli_bound_over_alpha_q05",
     "good_mass_q01",
     "good_mass_q05",
     "good_mass_median",
@@ -133,6 +141,34 @@ def _log_affinity(up: np.ndarray, uq: np.ndarray, alpha: float) -> np.ndarray:
     return np.sum(log_cosh(z) - alpha * log_cosh(up) - (1.0 - alpha) * log_cosh(uq), axis=1)
 
 
+def tilted_score_mean_variance(
+    up: np.ndarray,
+    uq: np.ndarray,
+    alpha: float,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Return conditional mean and variance of Psi_s(p) under tilted labels."""
+    if up.shape != uq.shape:
+        raise ValueError("up and uq must have the same shape")
+    tilt = alpha * up + (1.0 - alpha) * uq
+    mean_sign = np.tanh(tilt)
+    mean = np.sum(up * mean_sign - log_cosh(up), axis=1)
+    variance = np.sum(up * up * (1.0 - mean_sign * mean_sign), axis=1)
+    return mean, variance
+
+
+def cantelli_good_mass_lower_bound(
+    mean: np.ndarray,
+    variance: np.ndarray,
+    threshold: float,
+) -> np.ndarray:
+    gap = mean - threshold
+    positive = gap > 0.0
+    out = np.zeros_like(mean, dtype=float)
+    out[positive] = (gap[positive] * gap[positive]) / (
+        variance[positive] + gap[positive] * gap[positive])
+    return out
+
+
 def tilted_good_mass_samples(
     *,
     up: np.ndarray,
@@ -219,9 +255,13 @@ def run_trial(
         label_samples=label_samples,
         rng=rng,
     )
+    tilted_mean, tilted_variance = tilted_score_mean_variance(up, uq, alpha)
+    mean_gap = tilted_mean - threshold
+    cantelli_good = cantelli_good_mass_lower_bound(tilted_mean, tilted_variance, threshold)
     affinity = np.exp(_log_affinity(up, uq, alpha))
     margin_factor = 1.0 - math.exp(-alpha * margin)
     bound = margin_factor * affinity * good_mass
+    cantelli_bound = margin_factor * affinity * cantelli_good
 
     return {
         "m": m,
@@ -243,6 +283,14 @@ def run_trial(
         "near_ceiling_lower": near_ceiling_lower,
         "margin_blocked_empirical": float(near_ceiling_prob >= eta),
         "margin_blocked_lower": float(near_ceiling_lower >= eta),
+        "score_level": threshold / r_bits,
+        "mean_gap_q01": float(np.quantile(mean_gap, 0.01)),
+        "mean_gap_q05": float(np.quantile(mean_gap, 0.05)),
+        "mean_gap_median": float(np.median(mean_gap)),
+        "tilted_variance_q95": float(np.quantile(tilted_variance, 0.95)),
+        "cantelli_good_q01": float(np.quantile(cantelli_good, 0.01)),
+        "cantelli_good_q05": float(np.quantile(cantelli_good, 0.05)),
+        "cantelli_bound_over_alpha_q05": float(np.quantile(cantelli_bound / alpha, 0.05)),
         "good_mass_q01": float(np.quantile(good_mass, 0.01)),
         "good_mass_q05": float(np.quantile(good_mass, 0.05)),
         "good_mass_median": float(np.median(good_mass)),

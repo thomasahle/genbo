@@ -8,6 +8,7 @@ from product_sign_margin_stress import (
     ceiling_gap_lower_tail,
     log_cosh,
     run_trial,
+    tilted_score_mean_variance,
 )
 
 
@@ -26,6 +27,27 @@ def test_ceiling_gap_lower_tail_is_valid_sufficient_event():
     scores = bit_score(z).sum(axis=1)
     empirical = np.mean(scores >= 4 * math.log(2.0) - 1.0)
     assert 0.0 < prob < empirical < 1.0
+
+
+def test_tilted_score_mean_variance_matches_enumeration():
+    up = np.array([[0.4, -1.2]])
+    uq = np.array([[0.7, -0.3]])
+    alpha = 0.2
+    mean, variance = tilted_score_mean_variance(up, uq, alpha)
+
+    tilt = alpha * up[0] + (1.0 - alpha) * uq[0]
+    probs = []
+    scores = []
+    for s0 in (-1.0, 1.0):
+        for s1 in (-1.0, 1.0):
+            signs = np.array([s0, s1])
+            weight = np.exp(np.dot(signs, tilt))
+            probs.append(weight)
+            scores.append(np.sum(signs * up[0] - log_cosh(up[0])))
+    probs = np.array(probs) / np.sum(probs)
+    scores = np.array(scores)
+    assert np.allclose(mean, np.sum(probs * scores))
+    assert np.allclose(variance, np.sum(probs * (scores - mean[0]) ** 2))
 
 
 def test_run_trial_produces_complete_row():
@@ -49,6 +71,10 @@ def test_run_trial_produces_complete_row():
     assert row["good_mass_q05"] <= row["good_mass_median"] + 1e-12
     assert row["bound_q05"] <= row["affinity_q05"] + 1e-12
     assert row["bound_over_alpha_q05"] >= 0.0
+    assert row["mean_gap_q01"] <= row["mean_gap_q05"] + 1e-12
+    assert row["cantelli_good_q05"] <= row["good_mass_q05"] + 1e-12
+    assert row["cantelli_good_q01"] <= row["cantelli_good_q05"] + 1e-12
+    assert row["cantelli_bound_over_alpha_q05"] <= row["bound_over_alpha_q05"] + 1e-12
     for value in row.values():
         assert value == value
 
@@ -56,5 +82,6 @@ def test_run_trial_produces_complete_row():
 if __name__ == "__main__":
     test_bit_score_has_log_two_ceiling()
     test_ceiling_gap_lower_tail_is_valid_sufficient_event()
+    test_tilted_score_mean_variance_matches_enumeration()
     test_run_trial_produces_complete_row()
     print("product_sign_margin_stress tests passed")
