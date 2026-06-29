@@ -5377,6 +5377,129 @@ partition ignores the bias coordinates that certify the list size.
    statement is the displayed estimate with the local target budget substituted.
 \end{proof}
 
+\begin{lemma}[Scalar additive masks do not fool tuple stars]
+   \label{lem:additive-mask-star-obstruction}
+   Fix \(k\ge2\).  Let the tuple universe be \([B]^k\), and let
+   \(M_{j,a}\), \(j\in[k]\), \(a\in[B]\), be independent standard Gaussians.
+   Put
+   \[
+      M(i_1,\ldots,i_k)=\sum_{j=1}^kM_{j,i_j}.
+   \]
+   For \(p\downarrow0\), choose \(s_p\) so that
+   \[
+      \Prb[N(0,k)\ge s_p]=p,
+   \]
+   and retain the scalar-additive random subset
+   \[
+      R_p=\{i\in[B]^k:\ M(i)\ge s_p\}.
+   \]
+   Let \(H=\lfloor p^{-1}\rfloor\), assume \(B\ge H\), and fix a one-coordinate
+   star
+   \[
+      A=\{(a_1,\ldots,a_{k-1},b):\ b=1,\ldots,H\}.
+   \]
+   Then
+   \[
+      \E |A\cap R_p|=1+o(1),
+      \tag{AMS1}
+   \]
+   but there is a constant \(c_k>0\), depending only on \(k\), such that
+   \[
+      \Prb[A\cap R_p\ne\emptyset]\le p^{c_k+o(1)}.
+      \tag{AMS2}
+   \]
+   Thus a scalar additive mask has the right one-tuple density but can have
+   polynomially too little hit probability on an additive top-tuple set whose
+   mass is concentrated in a star.
+\end{lemma}
+
+\begin{proof}
+   Each fixed tuple has \(M(i)\sim N(0,k)\), so
+   \[
+      \E |A\cap R_p|=Hp=1+o(1).
+   \]
+   Let
+   \[
+      S=\sum_{j=1}^{k-1}M_{j,a_j}\sim N(0,k-1),
+      \qquad
+      Y_H=\max_{1\le b\le H}M_{k,b}.
+   \]
+   The star is hit exactly when \(S+Y_H\ge s_p\).  Write
+   \(L=\log(1/p)\).  The Gaussian quantile satisfies
+   \[
+      s_p=\sqrt{2kL}+o(\sqrt L).
+   \]
+   Choose a fixed \(\epsilon\in(0,k-1)\), and set
+   \[
+      a_p=s_p-\sqrt{2(1+\epsilon)L}.
+   \]
+   If \(S<a_p\), then by the union bound over the \(H\) free last-coordinate
+   choices,
+   \[
+      \Prb[Y_H\ge s_p-S\mid S]
+      \le
+      H\,\Prb[N(0,1)\ge\sqrt{2(1+\epsilon)L}]
+      =
+      p^{\epsilon+o(1)}.
+   \]
+   The complementary event has probability
+   \[
+      \Prb[S\ge a_p]
+      =
+      \exp\!\left(
+         -\frac{(\sqrt k-\sqrt{1+\epsilon})^2}{k-1}L+o(L)
+      \right).
+   \]
+   Taking
+   \[
+      c_k
+      <
+      \min\left\{
+         \epsilon,\,
+         \frac{(\sqrt k-\sqrt{1+\epsilon})^2}{k-1}
+      \right\}
+   \]
+   proves \((AMS2)\).  Finally, this star is itself an additive score
+   superlevel set: give the fixed symbols \(a_1,\ldots,a_{k-1}\) very large
+   positive weights, give the displayed \(H\) last-coordinate symbols equal
+   weights, and give all other symbols very negative weights.
+\end{proof}
+
+\begin{remark}[Decodable pseudorandom subsets need conditional entropy]
+   \label{rem:decodable-pseudorandom-tuple-subsets}
+   \Cref{lem:additive-mask-star-obstruction} explains why selecting tuples by
+   a second scalar score
+   \[
+      \sum_j m_j(i_j)\ge s
+   \]
+   is not, by itself, a substitute for a random subset of the tuple universe.
+   The problem is not the marginal density of a fixed tuple; that is exactly
+   right.  The problem is conditional entropy after most coordinates have
+   already been fixed by the query score.  A top-tuple set may leave only one
+   coordinate free, and then the shared mask contribution from the other
+   coordinates makes the retained mass arrive in rare bursts rather than as
+   independent thinning.
+
+   A better decodable pseudorandom mask is a decomposable syndrome or
+   tabulation hash.  Let \(G\) be a finite abelian group, choose independent
+   random maps \(h_j:\mathcal C_j\to G\), and retain the tuples satisfying
+   \[
+      h_1(i_1)+\cdots+h_k(i_k)=\sigma .
+      \tag{AMS3}
+   \]
+   Conditional on any \(k-1\) tuple coordinates, the remaining coordinate still
+   carries fresh hash entropy, so one-coordinate stars are thinned at the
+   intended density \(|G|^{-1}\) up to ordinary hash collisions.  The query
+   decoder is no longer a scalar heap, but it is still structured: \((AMS3)\)
+   is a trellis with state equal to the partial syndrome.  Viterbi, \(A^*\), or
+   threshold prefix enumeration over this state graph lists high
+   \(\sum_j w_j(i_j)\) tuples in the chosen syndrome.  The price is explicit:
+   the state space has size \(|G|\).  Hence syndrome masks are attractive when
+   \(|G|=\polylog m\), or when the \(|G|\)-state dynamic program replaces an
+   otherwise comparable output term; they cannot be treated as free
+   polynomial-rate thinning.
+\end{remark}
+
 \begin{lemma}[Superset product-panel decoder]
    \label{lem:superset-product-panel-decoder}
    Work in the setting of \cref{lem:additive-product-panel-decoder}, but
