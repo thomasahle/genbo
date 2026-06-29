@@ -18270,6 +18270,84 @@ partition ignores the bias coordinates that certify the list size.
    partition function \(Z_{q,\ell}\) gives the exact marked responsibility.
 \end{proof}
 
+\begin{lemma}[Expanding factor graphs block exact junction trees]
+   \label{lem:expander-factor-graph-junction-barrier}
+   Let \(H\) be the primal graph of the factorization in
+   \cref{lem:junction-tree-quotient-sampler}: its vertices are the hidden
+   variables \(1,\ldots,h\), and two variables are adjacent when they appear
+   together in some factor scope.  Suppose \(H\) has a linear separator
+   expansion constant \(\varepsilon>0\), meaning that every set
+   \(U\subseteq[h]\) with
+   \[
+      h/3\le |U|\le2h/3
+      \tag{ET1}
+   \]
+   has external neighborhood
+   \[
+      |N_H(U)\setminus U|\ge\varepsilon h .
+      \tag{ET2}
+   \]
+   Then every tree decomposition of the factor graph has width at least
+   \[
+      w\ge \varepsilon h-1 .
+      \tag{ET3}
+   \]
+   Consequently, for alphabet size \(A\ge2\), exact junction-tree sampling in
+   \cref{lem:junction-tree-quotient-sampler} costs at least
+   \[
+      A^{\varepsilon h}
+      \tag{ET4}
+   \]
+   up to polynomial graph factors.
+
+   In particular, when the block length is \(h=\kappa\log_A m\), an expanding
+   Tanner or LDPC-style factor graph consumes query work
+   \[
+      m^{\varepsilon\kappa-o(1)}
+      \tag{ET5}
+   \]
+   before any ANN bucket scan.  Such a graph can be used in the present
+   proof route only if this exponent is explicitly budgeted, or if the
+   construction supplies a separate certified approximation, quotient
+   aggregation, or heavy-responsibility reporter.  Ordinary loopy belief
+   propagation on an expanding graph is therefore not a proof replacement for
+   the exact aggregate sampler.
+\end{lemma}
+
+\begin{proof}
+   It is enough to recall the standard separator consequence of treewidth and
+   include the short proof.  Let \((\mathcal J,\{B_t\})\) be a tree
+   decomposition of \(H\) of width \(w\).  For an edge \(tt'\) of the
+   decomposition tree, removing it splits \(\mathcal J\) into two components;
+   by the running-intersection property, the separator \(B_t\cap B_{t'}\)
+   separates the variables living on the two sides.  Equivalently, one may
+   choose a bag \(B_t\) whose removal leaves only variable components of size
+   at most \(2h/3\): root the decomposition tree and move from a bag into a
+   neighboring component containing more than \(2h/3\) variables until no such
+   component remains.  The process strictly decreases the size of the
+   component behind the move, so it stops.
+
+   Put \(S=B_t\).  Then \(|S|\le w+1\), and every connected component of
+   \(H-S\) has size at most \(2h/3\).  If \(|S|\ge\varepsilon h\), we are
+   done.  Otherwise the vertices outside \(S\) have total size at least
+   \(h/3\) (otherwise the separator is already large enough for the claimed
+   lower bound).  Form a union \(U\) of components of \(H-S\) with
+   \(h/3\le |U|\le2h/3\): if some component already has size at least
+   \(h/3\), take it; otherwise add components greedily until the union first
+   has size at least \(h/3\), and the last added component has size \(<h/3\),
+   so the union has size \(<2h/3\).
+
+   No vertex outside \(U\cup S\) is adjacent to \(U\), because \(U\) is a union
+   of components of \(H-S\).  Hence
+   \[
+      N_H(U)\setminus U\subseteq S .
+   \]
+   The expansion hypothesis gives \(\varepsilon h\le |S|\le w+1\), proving
+   \((ET3)\).  The work lower bound \((ET4)\) follows from the
+   \(A^{w+1}\) table size in any exact junction-tree pass.  Substituting
+   \(h=\kappa\log_A m\) gives \((ET5)\).
+\end{proof}
+
 \begin{lemma}[Marked trellis spectrum verifier]
    \label{lem:marked-trellis-spectrum-verifier}
    Work with a layered acyclic trellis as in
