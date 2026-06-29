@@ -5647,6 +5647,36 @@ partition ignores the bias coordinates that certify the list size.
    each with probability \(1/2^{r-v-1}=2^{v+1}/2^r\).
 \end{proof}
 
+\begin{corollary}[Large word alphabets force two-adic multiply bias]
+   \label{cor:large-alphabet-two-adic-multiply-barrier}
+   Let \(\mathcal C\subseteq\mathbb Z/2^r\mathbb Z\) have
+   \(N=|\mathcal C|\ge2\), and restrict the cyclic multiply family
+   \(h_a(x)=ax\bmod 2^r\) to \(\mathcal C\).  Then the best constant
+   \(C_\Delta\) in the difference-universal condition \((DUS1)\) is at least
+   \(N/2\) when \(a\) is uniform in \(\mathbb Z/2^r\mathbb Z\), and at least
+   \(N\) when \(a\) is uniform over odd residues.  The same lower bound
+   applies to \(h_{a,b}(x)=ax+b\bmod 2^r\),
+   since the shift cancels in differences.
+
+   Thus ordinary low-bit integer multiplication cannot be a uniform
+   proof-safe syndrome hash on a large fixed word alphabet.  Its algebraic
+   residue buckets are useful only if the construction also proves that the
+   charged symbol pairs have small two-adic valuation, pays the resulting
+   \(C_\Delta\) loss, or replaces the ring by a field/carry-less linear model.
+\end{corollary}
+
+\begin{proof}
+   Put \(s=\lceil\log_2 N\rceil-1\).  Then \(2^s<N\le2^{s+1}\), and
+   \(s\le r-1\).  Among the \(2^s\) residue classes modulo \(2^s\), two
+   distinct symbols \(x,y\in\mathcal C\) must occupy the same class.  Hence
+   \(v=\nu_2(x-y)\ge s\).  By
+   \cref{lem:two-adic-multiply-mask-obstruction}, the largest atom of
+   \(h_a(x)-h_a(y)\) has mass at least \(2^s/2^r\) for uniform \(a\), so
+   \(C_\Delta\ge2^s\ge N/2\).  With an odd multiplier, the largest atom is at
+   least \(2^{s+1}/2^r\), giving \(C_\Delta\ge2^{s+1}\ge N\).  Adding \(b\)
+   does not change the difference distribution.
+\end{proof}
+
 \begin{lemma}[High-bit multiply-shift is not syndrome-difference-universal]
    \label{lem:high-bit-multiply-shift-obstruction}
    Let \(M=2^w\), \(K=2^r\), \(Q=2^{w-r}\), with \(1\le r\le w\), and let
@@ -5706,8 +5736,10 @@ partition ignores the bias coordinates that certify the list size.
    output bits; for distinct symbols the projected difference is uniform in
    \(G\).  Ordinary integer multiply-shift is a useful engineering heuristic
    but is not automatically this object: low-bit modular multiplication has
-   the two-adic bias of \cref{lem:two-adic-multiply-mask-obstruction}, while
-   high-bit truncation has the deterministic difference atoms of
+   the two-adic bias of \cref{lem:two-adic-multiply-mask-obstruction}, and
+   \cref{cor:large-alphabet-two-adic-multiply-barrier} shows that a large
+   fixed word alphabet cannot avoid this bias uniformly by a clever residue
+   ordering.  High-bit truncation has the deterministic difference atoms of
    \cref{lem:high-bit-multiply-shift-obstruction} and is not a group
    homomorphism for the retained syndrome.  If an integer multiply-shift
    family is used in the proof, the required check is \((DUS1)\), not just a
@@ -91796,6 +91828,99 @@ amplified in the next proposition.
    establish the required score-max margin.  The listed escape routes are
    exactly the ways in which the hypotheses of the raw-list barrier are
    violated.
+\end{proof}
+
+\begin{corollary}[Responsibility quotients implement smoothed score-max]
+   \label{cor:responsibility-quotient-scoremax-compiler}
+   Work in the smoothed score-max setting of \cref{asm:smoothed-score-max},
+   but replace raw label reporting by a hidden label family \(\mathcal A\), a
+   quotient map \(\lambda:\mathcal A\to\Lambda\), and a query law
+   \(\pi_Y\) on \(\mathcal A\).  Each resident point \(x\in S\) has a stored
+   incidence predicate \(U_x(a)\in\{0,1\}\).  For
+   \[
+      \Pi_Y(\ell)=\sum_{a:\lambda(a)=\ell}\pi_Y(a),
+      \qquad
+      \mu_Y(x)=\sum_{a\in\mathcal A}\pi_Y(a)U_x(a),
+   \]
+   define the conditional responsibility inside quotient class \(\ell\) by
+   \[
+      r_{Y,x,\ell}
+      =
+      \begin{cases}
+      \Pi_Y(\ell)^{-1}
+      \sum_{a:\lambda(a)=\ell}\pi_Y(a)U_x(a),
+      &\Pi_Y(\ell)>0,\\
+      0,&\Pi_Y(\ell)=0 .
+      \end{cases}
+      \tag{RQS0}
+   \]
+   Let \(L_m=\log^{A_c}m\).  Suppose that with probability at least
+   \(\log^{-O_c(1)}m\) over the smoothed score direction \(Y\), the following
+   three conditions hold for some exact score maximizer
+   \(x_*(Y)\in\operatorname*{arg\,max}_{x\in S}A_Y(x)\):
+   \[
+      \sum_{x\in S}\mu_Y(x)\le m^\rho L_m,
+      \tag{RQS1}
+   \]
+   \[
+      \mu_Y(x_*(Y))\ge L_m^{-1},
+      \tag{RQS2}
+   \]
+   and after sampling \(\ell\sim\Pi_Y\), an output-sensitive lister returns a
+   candidate set containing every point with
+   \[
+      r_{Y,x,\ell}\ge(2L_m)^{-1},
+      \tag{RQS3}
+   \]
+   followed by exact responsibility filtering at the same threshold, in
+   expected work \(d\,m^\rho\log^{O_c(1)}m\) per trial including emitted
+   candidate scoring.
+
+   Then \(O(L_m\log m)\) independent trials return an exact maximizer of
+   \(A_Y\) with constant probability and expected local work
+   \(d\,m^\rho\log^{O_c(1)}m\).  Consequently this responsibility-quotient
+   reporter implements \cref{asm:smoothed-score-max}, and hence the ANN
+   endpoint of \cref{prop:smoothed-score-max-polylog}.
+\end{corollary}
+
+\begin{proof}
+   This is \cref{lem:responsibility-thinned-quotient} with the promised set
+   taken to be all residents, not only invalid far residents.  A point emitted
+   after exact thresholding has \(r_{Y,x,\ell}\ge(2L_m)^{-1}\), hence
+   \[
+      \Pi_Y(\ell)\mathbf 1\{x\text{ emitted from }\ell\}
+      \le
+      2L_m\,\Pi_Y(\ell)r_{Y,x,\ell}.
+   \]
+   Summing over \(\ell\) and \(x\in S\) gives expected emitted candidate count
+   at most
+   \[
+      2L_m\sum_{x\in S}\mu_Y(x)
+      \le
+      2m^\rho L_m^2 .
+   \]
+   This is included in the per-trial work assumption after increasing the
+   polylogarithmic exponent.
+
+   For the maximizer \(x_*=x_*(Y)\), put \(R_\ell=r_{Y,x_*,\ell}\).  Then
+   \[
+      \E_{\ell\sim\Pi_Y}R_\ell=\mu_Y(x_*)\ge L_m^{-1}.
+   \]
+   Since \(0\le R_\ell\le1\),
+   \[
+      \Pr_{\ell\sim\Pi_Y}\!\left[
+         R_\ell\ge(2L_m)^{-1}
+      \right]
+      \ge
+      (2L_m)^{-1}.
+   \]
+   On this event the lister includes \(x_*\), and exact scoring of the emitted
+   candidates returns a point with score at least \(A_Y(x_*)\), hence an exact
+   maximizer.  Repeating \(O(L_m\log m)\) times gives constant success
+   probability on the good \(Y\)'s; the good \(Y\) probability is
+   inverse-polylogarithmic and is amplified in
+   \cref{prop:smoothed-score-max-polylog}.  The work bound follows from the
+   per-trial bound and \(L_m=\log^{O_c(1)}m\).
 \end{proof}
 
 \begin{remark}[What this shortcut does and does not prove]\label{rem:score-max-shortcut}
