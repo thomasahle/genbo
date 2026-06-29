@@ -57,6 +57,21 @@ FIELDNAMES = [
     "bound_over_alpha_q05",
 ]
 
+RATE_FIELDNAMES = [
+    "sigma",
+    "corr",
+    "c",
+    "gamma",
+    "level_slack",
+    "fixed_score_mean",
+    "tilted_mean_limit",
+    "score_level",
+    "chernoff_rate",
+    "theta_star",
+    "min_kappa",
+    "min_log_b_exponent",
+]
+
 
 def parse_csv_list(text: str, cast: Callable[[str], object] = str) -> list[object]:
     out = []
@@ -92,6 +107,120 @@ def _sigmoid(x: np.ndarray) -> np.ndarray:
 
 def _normal_upper_tail(x: float) -> float:
     return 0.5 * math.erfc(x / math.sqrt(2.0))
+
+
+def _hermite_normal_nodes(sigma: float, quadrature: int) -> tuple[np.ndarray, np.ndarray]:
+    if sigma <= 0:
+        raise ValueError("sigma must be positive")
+    if quadrature < 8:
+        raise ValueError("quadrature must be at least 8")
+    nodes, weights = np.polynomial.hermite.hermgauss(quadrature)
+    z = math.sqrt(2.0) * sigma * nodes
+    prob_weights = weights / math.sqrt(math.pi)
+    return z, prob_weights
+
+
+def fixed_score_mean_and_sech2(sigma: float, quadrature: int = 96) -> tuple[float, float]:
+    z, weights = _hermite_normal_nodes(sigma, quadrature)
+    score = bit_score(z)
+    sech2 = 1.0 / (np.cosh(z) ** 2)
+    return float(np.dot(weights, score)), float(np.dot(weights, sech2))
+
+
+def _fixed_score_log_mgf(
+    theta: np.ndarray,
+    *,
+    sigma: float,
+    quadrature: int,
+) -> np.ndarray:
+    z, weights = _hermite_normal_nodes(sigma, quadrature)
+    score = bit_score(z)
+    theta = np.asarray(theta, dtype=float)
+    vals = np.log(weights)[None, :] + theta[:, None] * score[None, :]
+    shifted = vals - np.max(vals, axis=1, keepdims=True)
+    return np.max(vals, axis=1) + np.log(np.sum(np.exp(shifted), axis=1))
+
+
+def fixed_score_rate(
+    level: float,
+    *,
+    sigma: float,
+    quadrature: int = 96,
+    theta_max: float = 40.0,
+    theta_grid: int = 2000,
+) -> float:
+    rate, _theta = fixed_score_rate_with_theta(
+        level,
+        sigma=sigma,
+        quadrature=quadrature,
+        theta_max=theta_max,
+        theta_grid=theta_grid,
+    )
+    return rate
+
+
+def fixed_score_rate_with_theta(
+    level: float,
+    *,
+    sigma: float,
+    quadrature: int = 96,
+    theta_max: float = 40.0,
+    theta_grid: int = 2000,
+) -> tuple[float, float]:
+    if theta_max <= 0:
+        raise ValueError("theta_max must be positive")
+    if theta_grid < 2:
+        raise ValueError("theta_grid must be at least 2")
+    theta = np.linspace(0.0, theta_max, theta_grid)
+    log_mgf = _fixed_score_log_mgf(theta, sigma=sigma, quadrature=quadrature)
+    values = theta * level - log_mgf
+    idx = int(np.argmax(values))
+    return max(0.0, float(values[idx])), float(theta[idx])
+
+
+def gaussian_rate_gap_summary(
+    *,
+    sigma: float,
+    corr: float,
+    c: float,
+    level_slack: float,
+    quadrature: int = 96,
+    theta_max: float = 40.0,
+    theta_grid: int = 2000,
+) -> dict[str, float]:
+    if not (0.0 < corr < 1.0):
+        raise ValueError("corr must lie in (0, 1)")
+    if c <= 1:
+        raise ValueError("c must be greater than 1")
+    if level_slack <= 0:
+        raise ValueError("level_slack must be positive")
+    fixed_mean, sech2_mean = fixed_score_mean_and_sech2(sigma, quadrature=quadrature)
+    tilted_mean = fixed_mean + corr * sigma * sigma * sech2_mean
+    score_level = tilted_mean - level_slack
+    rate, theta_star = fixed_score_rate_with_theta(
+        score_level,
+        sigma=sigma,
+        quadrature=quadrature,
+        theta_max=theta_max,
+        theta_grid=theta_grid,
+    )
+    gamma = 1.0 / (2.0 * c * c)
+    min_kappa = float("inf") if rate <= 0.0 else gamma / rate
+    min_log_b_exponent = min_kappa * math.log(2.0)
+    return {
+        "sigma": sigma,
+        "corr": corr,
+        "c": c,
+        "gamma": gamma,
+        "level_slack": level_slack,
+        "fixed_score_mean": fixed_mean,
+        "tilted_mean_limit": tilted_mean,
+        "score_level": score_level,
+        "chernoff_rate": rate,
+        "theta_star": theta_star,
+        "min_kappa": min_kappa,
+        "min_log_b_exponent": min_log_b_exponent,
+    }
 
 
 def ceiling_gap_lower_tail(*, r_bits: int, sigma: float, gap: float) -> float:
@@ -312,6 +441,18 @@ def write_rows(rows: list[dict[str, object]], output: str | None) -> None:
             target.close()
 
 
+def write_rate_rows(rows: list[dict[str, float]], output: str | None) -> None:
+    target = open(output, "w", newline="") if output else sys.stdout
+    try:
+        writer = csv.DictWriter(target, fieldnames=RATE_FIELDNAMES)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow(row)
+    finally:
+        if output:
+            target.close()
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Stress the ideal Gaussian product-sign bounded-margin target.")
@@ -326,7 +467,26 @@ def main() -> None:
     parser.add_argument("--label-samples", type=int, default=512)
     parser.add_argument("--seeds", default="0")
     parser.add_argument("--csv", default=None)
+    parser.add_argument("--rate-summary-csv", default=None,
+                        help="write deterministic Gaussian rate-gap summaries and exit")
+    parser.add_argument("--rate-level-slack", type=float, default=0.1)
+    parser.add_argument("--rate-quadrature", type=int, default=96)
+    parser.add_argument("--rate-theta-grid", type=int, default=2000)
     args = parser.parse_args()
+
+    if args.rate_summary_csv is not None:
+        rate_rows = []
+        for sigma in parse_csv_list(args.sigma, float):
+            rate_rows.append(gaussian_rate_gap_summary(
+                sigma=sigma,
+                corr=args.corr,
+                c=args.c,
+                level_slack=args.rate_level_slack,
+                quadrature=args.rate_quadrature,
+                theta_grid=args.rate_theta_grid,
+            ))
+        write_rate_rows(rate_rows, args.rate_summary_csv)
+        return
 
     rows = []
     for m in parse_csv_list(args.m, int):

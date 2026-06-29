@@ -6,6 +6,8 @@ from product_sign_margin_stress import (
     FIELDNAMES,
     bit_score,
     ceiling_gap_lower_tail,
+    fixed_score_rate,
+    gaussian_rate_gap_summary,
     log_cosh,
     run_trial,
     tilted_score_mean_variance,
@@ -50,6 +52,29 @@ def test_tilted_score_mean_variance_matches_enumeration():
     assert np.allclose(variance, np.sum(probs * (scores - mean[0]) ** 2))
 
 
+def test_gaussian_rate_gap_summary_has_positive_gap_and_rate():
+    summary = gaussian_rate_gap_summary(
+        sigma=2.0,
+        corr=0.75,
+        c=2.0,
+        level_slack=0.1,
+        quadrature=48,
+        theta_grid=800,
+    )
+    assert summary["tilted_mean_limit"] > summary["fixed_score_mean"]
+    assert summary["score_level"] < summary["tilted_mean_limit"]
+    assert summary["chernoff_rate"] > 0.0
+    assert summary["min_log_b_exponent"] < float("inf")
+
+    mean_rate = fixed_score_rate(
+        summary["fixed_score_mean"],
+        sigma=2.0,
+        quadrature=48,
+        theta_grid=200,
+    )
+    assert mean_rate < 1e-8
+
+
 def test_run_trial_produces_complete_row():
     row = run_trial(
         m=1_000,
@@ -83,5 +108,6 @@ if __name__ == "__main__":
     test_bit_score_has_log_two_ceiling()
     test_ceiling_gap_lower_tail_is_valid_sufficient_event()
     test_tilted_score_mean_variance_matches_enumeration()
+    test_gaussian_rate_gap_summary_has_positive_gap_and_rate()
     test_run_trial_produces_complete_row()
     print("product_sign_margin_stress tests passed")

@@ -89757,6 +89757,67 @@ top-\(k\) backup.
    \(1-O(1/r)\) tilted good mass.
 \end{proof}
 
+\begin{corollary}[Cramer-rate product-sign closure in the ideal model]
+   \label{cor:cramer-product-sign-closure}
+   Keep the notation of \cref{cor:gaussian-growing-width-product-sign}, and
+   assume \(\beta_m\to0\).  Define
+   \[
+      \mu_X=\E[Z-\log\cosh Z],
+      \qquad
+      \mu_0=\mu_X+a\sigma^2\E[\operatorname{sech}^2 Z],
+      \qquad Z\sim N(0,\sigma^2),
+   \]
+   and the upper-tail Cramer rate
+   \[
+      I_\sigma(t)
+      =
+      \sup_{\theta\ge0}
+      \left\{\theta t-
+      \log\E\exp\bigl(\theta(Z-\log\cosh Z)\bigr)\right\}.
+   \]
+   For every \(t\in(\mu_X,\mu_0)\) and every
+   \(\kappa>\gamma/I_\sigma(t)\), where \(\eta_m=m^{-\gamma}\), the choice
+   \[
+      r=\lceil\kappa\log m\rceil
+   \]
+   satisfies the distributional bounded-margin target of
+   \cref{cor:gaussian-growing-width-product-sign}.  Moreover, if
+   \(\kappa\log2<1\), then the number of product-sign labels
+   \(B=2^r=m^{\kappa\log2+o(1)}\) is within the outcome envelope of
+   \cref{prop:query-top-k-channel-compiler} for a polynomially small
+   \(\xi\ge1/m\).
+\end{corollary}
+
+\begin{proof}
+   Stein's identity gives
+   \[
+      \E[U\tanh V]
+      =
+      \operatorname{Cov}(U,V)\E[\operatorname{sech}^2V]
+      =
+      a\sigma^2\E[\operatorname{sech}^2Z],
+   \]
+   so \(\mu_0\) is the \(\beta_m\to0\) limit of \(\E A_m\).  Since
+   \(a>0\), \(\mu_0>\mu_X\).  The random variable
+   \(X=Z-\log\cosh Z\) has finite moment generating function for every
+   real \(\theta\), and therefore \(I_\sigma(t)>0\) for
+   \(t>\mu_X\).  Chernoff's bound gives
+   \[
+      \Prb\!\left[\sum_{a=1}^r X_a\ge rt\right]
+      \le
+      \exp(-rI_\sigma(t))
+      \le
+      m^{-\gamma}
+   \]
+   for all sufficiently large \(m\), by the choice of \(\kappa\).  Thus
+   \((GWC1)\) holds with \(T_m=rt\).  Since \(\E A_m\to\mu_0\) and
+   \(t<\mu_0\), choose \(\varepsilon>0\) so that
+   \(t+\Delta_0/r\le\E A_m-2\varepsilon\) for all large \(m\).  This is
+   \((GWC2)\), and \cref{cor:gaussian-growing-width-product-sign} applies.
+   The statement about \(B\) follows from \(B=2^{\lceil\kappa\log m\rceil}\)
+   and the hypothesis \(\kappa\log2<1\).
+\end{proof}
+
 Thus the finite special case would follow from a posterior-rank margin statement: for every near pair not handled by the resident guard, a non-negligible fraction of the tilted affinity must lie on outcomes for which $p$ is inside the top-$\xi$ posterior child by enough margin. This is only a sufficient condition. By \cref{lem:soft-surplus-decomposition}, a failed fixed-margin test can still have large \(\mathcal H_\xi\) if the tilted winner, or a few near-winner outcomes, have moderate posterior surplus. The diagnostic should therefore report not only $\mathcal H_\xi$, but also $\mathsf A_\beta(p,q)$, the soft surplus \(\mathcal H_\xi/\mathsf A_\beta\), the tilted winner's contribution fraction from \cref{lem:soft-surplus-decomposition}, \(W_{p,q}(G_\Delta(p))\), and the certified lower bound in \cref{lem:posterior-rank-margin}, for a margin such as $\Delta=1/\beta$. For the balanced-softmax candidate
 \[
    K_x(j)=
@@ -90025,6 +90086,19 @@ One should also separate the resident-guard regime from the genuine finite-chann
    obligation is precise: prove the Gaussian rate gap \((GWC1)\)--\((GWC2)\)
    at an \(r=O_c(\log m)\) width allowed by the compiler, or sharpen the
    borderline \(r\) regime with a Bernstein or local-CLT lower-tail bound.
+   \Cref{cor:cramer-product-sign-closure} discharges that obligation for the
+   ideal i.i.d. Gaussian bit model whenever the Cramer constant fits the
+   outcome envelope.  For the \(c=2\), \(a=0.75\) critical correlation,
+   deterministic Gauss-Hermite quadrature with score level
+   \(t=\mu_0-0.1\) gives the following reproducible constants:
+   at \(\sigma=2.5,3.5,5.0\), the Cramer rates are approximately
+   \(0.150,0.163,0.143\), so the minimum label exponents
+   \((\gamma/I_\sigma(t))\log2\) are \(0.577,0.531,0.606\), all below \(1\).
+   At correlation \(0.9\), the corresponding exponents are
+   \(0.339,0.309,0.363\).  Thus the ideal Gaussian product-sign channel is no
+   longer blocked at the bounded-margin tail; the remaining non-ideal work is
+   to transfer this i.i.d. rate calculation to the actual whitened
+   product-sign panels and their empirical thresholds.
 
    The frozen product-sign target is therefore not another certificate form:
    it is the same distributional bounded-margin posterior-rank lower tail for
