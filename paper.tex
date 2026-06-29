@@ -96211,6 +96211,96 @@ amplified in the next proposition.
    \((BRH2)\), where \(\min\{\lambda m/|G|,W\}=\lambda m/|G|\).
 \end{proof}
 
+\begin{corollary}[Random quotient constraints do not create alignment]
+   \label{cor:generic-linear-quotient-rank-barrier}
+   Fix a residue observer \(C:\mathbb F_q^N\to G=\mathbb F_q^r\) of rank
+   \(r\), and let \(V=\operatorname{row}(C)\subseteq(\mathbb F_q^N)^*\).
+   Choose the quotient row space \(U=\operatorname{row}(B)\) uniformly among
+   the \(b\)-dimensional subspaces of \((\mathbb F_q^N)^*\), independently of
+   \(C\), and put \(d_*=N-b\).  The residual observed rank
+   \[
+      R=\operatorname{rank}
+      \begin{pmatrix}B\\ C\end{pmatrix}
+      -\operatorname{rank}B
+      =
+      \dim\frac{U+V}{U}
+      \tag{GQR0}
+   \]
+   satisfies, for every \(0\le s\le\min\{r,d_*\}\),
+   \[
+      \Prb[R\le s]
+      \le
+      16q^{-(r-s)(d_*-s)}.
+      \tag{GQR1}
+   \]
+
+   Suppose moreover that the chart realizes all solutions of \(Bz=b\), or at
+   least one terminal for each residue in
+   \(\gamma+Cz_0+C(\ker B)\).  Then the chart contributes exactly \(q^R\)
+   active residues.  Hence a random parity-check, Tanner, or low-rate linear
+   quotient independent of the resident residue observer leaves essentially
+   \(q^{\min\{r,d_*\}}\) active residue signatures with overwhelming
+   probability.
+
+   At the aligned design point \(q^r=m^{1-\rho}\log^{O_c(1)}m\), the shared
+   histogram route needs \(R=O_c(\log_q\log m)\).  If the sampled quotient
+   leaves
+   \[
+      d_*-O_c(\log_q\log m)=\Omega_c(\log_q m),
+      \tag{GQR2}
+   \]
+   then \((GQR1)\) makes this low-rank event
+   \(q^{-\Omega_c((\log_q m)^2)}\).  Thus a proposed low-rate code theorem
+   cannot rely on generic random quotienting to get
+   \(Q_\ell=\polylog m\).  The quotient constraints must structurally contain
+   the residue observer up to polylogarithmically many remaining degrees of
+   freedom, or the implementation must move to a reporter that does not pay per
+   active residue.
+\end{corollary}
+
+\begin{proof}
+   The condition \(R\le s\) is equivalent to
+   \[
+      \dim(U\cap V)\ge r-s.
+   \]
+   If this occurs, then \(U\cap V\) contains some fixed
+   \((r-s)\)-dimensional subspace \(W\le V\).  There are at most
+   \(4q^{s(r-s)}\) such subspaces of \(V\).  For a fixed \(W\), the probability
+   that a uniformly random \(b\)-dimensional subspace \(U\) contains \(W\) is
+   \[
+      \frac{\binom{N-(r-s)}{b-(r-s)}_q}{\binom{N}{b}_q}
+      \le
+      4q^{-(N-b)(r-s)}
+      =
+      4q^{-d_*(r-s)},
+      \tag{GQR3}
+   \]
+   with the probability interpreted as zero when \(b<r-s\).  A union bound over
+   the possible \(W\)'s gives
+   \[
+      \Pr[R\le s]
+      \le
+      16q^{s(r-s)}q^{-d_*(r-s)}
+      =
+      16q^{-(r-s)(d_*-s)},
+   \]
+   proving \((GQR1)\).
+
+   The active-residue statement is the same affine-image calculation used in
+   \cref{cor:linear-quotient-rank-active-residues}: on a nonempty solution
+   set \(z_0+\ker B\), the observed residues are
+   \(\gamma+Cz_0+C(\ker B)\), whose dimension is exactly \(R\).
+   Therefore the number of realized residues is \(q^R\) under the stated
+   realization assumption.
+
+   For the final specialization, take
+   \(s=O_c(\log_q\log m)\).  At the aligned point
+   \(r=(1-\rho)\log_qm+O_c(\log_q\log m)\), and under \((GQR2)\) both
+   \(r-s\) and \(d_*-s\) are \(\Omega_c(\log_q m)\).  The exponent in
+   \((GQR1)\) is then \(\Omega_c((\log_q m)^2)\), giving the displayed
+   overwhelming failure probability.
+\end{proof}
+
 \begin{corollary}[Aligned quotient window]
    \label{cor:aligned-quotient-residual-rank-window}
    Work in the balanced linear-residue setting with \(M=|G|=q^r\), balance
