@@ -5674,6 +5674,212 @@ partition ignores the bias coordinates that certify the list size.
    tending to one.  This proves \((CSM2)\)--\((CSM3)\).
 \end{proof}
 
+\begin{lemma}[Lagrange decoding for scalar-masked product thresholds]
+   \label{lem:scalar-mask-lagrange-decoder}
+   Let \(\mathcal C=\mathcal C_1\times\cdots\times\mathcal C_k\), and give
+   each tuple two additive scores
+   \[
+      W(c)=\sum_{j=1}^kw_j(c_j),
+      \qquad
+      M(c)=\sum_{j=1}^km_j(c_j).
+   \]
+   Fix thresholds \(T,S>0\), put \(\gamma=S/T\), and define
+   \[
+      F_\gamma(c)=W(c)+\gamma M(c).
+   \]
+   Then every tuple satisfying
+   \[
+      W(c)\ge T,\qquad M(c)\ge S
+      \tag{SML1}
+   \]
+   also satisfies
+   \[
+      F_\gamma(c)\ge T+\gamma S.
+      \tag{SML2}
+   \]
+   Hence the ordinary product heap applied to the per-block scores
+   \(w_j+\gamma m_j\), followed by exact filtering against \((SML1)\), lists
+   every scalar-masked tuple.
+
+   Moreover, suppose that for each fixed tuple, \(W(c)\) and \(M(c)\) are
+   independent \(N(0,k)\) variables.  Then
+   \[
+      \Prb[F_\gamma(c)\ge T+\gamma S]
+      \le
+      \log^{O_k(1)}(e+T+S)\,
+      \Prb[W(c)\ge T]\Prb[M(c)\ge S].
+      \tag{SML3}
+   \]
+   Thus the Lagrange heap is only a polynomial-tail-factor superset of the
+   true two-threshold event; in ANN uses, where \(T,S=O(\sqrt{\log m})\), this
+   overhead is polylogarithmic.
+\end{lemma}
+
+\begin{proof}
+   The implication \((SML1)\Rightarrow(SML2)\) is immediate from
+   \(\gamma>0\).  The heap statement is the usual additive product
+   enumeration applied to \(F_\gamma\).
+
+   For the probability bound, with \(\gamma=S/T\),
+   \[
+      F_\gamma(c)\sim N(0,k(1+\gamma^2)),
+   \]
+   and
+   \[
+      \frac{(T+\gamma S)^2}{2k(1+\gamma^2)}
+      =
+      \frac{T^2+S^2}{2k}.
+   \]
+   The standard one-sided Gaussian tail upper bound gives
+   \[
+      \Prb[F_\gamma(c)\ge T+\gamma S]
+      \le
+      \exp\!\left(-\frac{T^2+S^2}{2k}\right).
+   \]
+   The corresponding lower bound
+   \[
+      \Prb[N(0,k)\ge r]
+      \ge
+      (1+r)^{-O(1)}\exp(-r^2/(2k))
+   \]
+   for \(r\ge0\), applied to \(r=T\) and \(r=S\), proves \((SML3)\).
+\end{proof}
+
+\begin{corollary}[Scalar auxiliary masks give polylog terminal thinning]
+   \label{cor:scalar-auxiliary-polylog-terminal-thinning}
+   Work in the smooth product terminal filter of
+   \cref{thm:smooth-product-terminal}, with fixed \(k\), threshold \(t\), and
+   \(u=t/\sqrt k\).  Let \(K=\log^{O_{a,b}(1)}m\), put
+   \(L_K=\max\{1,\log K\}\), and fix
+   \[
+      \alpha>\frac{k-1}{2k}.
+      \tag{SAP1}
+   \]
+   Replace the block count by
+   \[
+      B'
+      =
+      \left\lceil
+         A\,K^{1/k}L_K^\alpha J_a(u)^{-1}
+      \right\rceil
+      \tag{SAP2}
+   \]
+   for a sufficiently large constant \(A=A_{a,b,k,\alpha}\).  Independently of
+   the Gaussian columns, sample auxiliary masks
+   \(\xi_{i,j}\sim N(0,1)\), and retain a tuple \(j=(j_1,\ldots,j_k)\) only if
+   \[
+      \Xi(j)=\sum_{i=1}^k\xi_{i,j_i}\ge s_K,
+      \qquad
+      \Prb[N(0,k)\ge s_K]=K^{-1}.
+      \tag{SAP3}
+   \]
+   Store and query only retained tuples.  Query and update enumeration use
+   \cref{lem:scalar-mask-lagrange-decoder} with
+   \[
+      W_q(j)=\sum_i\ip{g_{i,j_i}}{q},
+      \qquad
+      T=t\sqrt k,
+      \qquad
+      S=s_K,
+      \qquad
+      \gamma=s_K/(t\sqrt k),
+      \tag{SAP4}
+   \]
+   and exact-filter the heap outputs by
+   \(W_q(j)\ge t\sqrt k\) and \(\Xi(j)\ge s_K\).
+
+   Then one table has constant success probability for every near pair of
+   correlation at least \(a\).  Its expected retained query leaves, update
+   leaves per point, ordinary far candidates, and Lagrange-heap candidates are
+   \[
+      m^{\rho(a,b)}\log^{O_{a,b,k,\alpha}(1)}m,
+      \tag{SAP5}
+   \]
+   and its expected storage is
+   \[
+      m^{1+\rho(a,b)}\log^{O_{a,b,k,\alpha}(1)}m.
+      \tag{SAP6}
+   \]
+
+   Thus a second independent scalar weighting is a viable terminal
+   polylog-thinning device when the near witness set is the balanced product
+   set supplied by the smooth product construction.  It gives a simpler
+   decoder than a syndrome-state trellis: one ordinary heap for the combined
+   score \(W+\gamma\Xi\), plus exact filtering.  The limitation is just as
+   explicit: the blind block scan/sort contains \(B'=K^{1/k}L_K^\alpha
+   J_a(u)^{-1}\) columns per block.  Therefore this proves clean polylog
+   thinning, but superpolylogarithmic \(K\) would require an additional
+   output-sensitive block reporter rather than raw block sorting.
+\end{corollary}
+
+\begin{proof}
+   First consider near success.  For a near pair \((p,q)\), let \(N_i\) be the
+   number of columns in block \(i\) satisfying
+   \[
+      \ip{g_{i,j},p}\ge u,
+      \qquad
+      \ip{g_{i,j},q}\ge u .
+   \]
+   Since the pair correlation is at least \(a\),
+   \[
+      \E N_i\ge A K^{1/k}L_K^\alpha.
+   \]
+   With constant probability, and with probability tending to one when
+   \(K\to\infty\), every block contains at least
+   \(A'K^{1/k}L_K^\alpha\) common-good columns, for a constant
+   \(A'=A'(a,b,k,\alpha)>0\) after choosing \(A\) large enough.  Conditional on
+   such a common-good product set, the auxiliary mask values are independent
+   standard Gaussians on the selected symbols.  By
+   \cref{cor:critical-scalar-mask-log-tax}, because
+   \(\alpha>(k-1)/(2k)\), the retained scalar mask hits this balanced product
+   witness with probability bounded below by a positive constant.  Any hit
+   tuple is accepted by both \(p\) and \(q\).
+
+   Retained query and update counts follow by linearity.  There are
+   \[
+      (B')^k
+      =
+      A^{O_k(1)}K L_K^{k\alpha}J_a(u)^{-k}
+   \]
+   implicit tuples.  For each fixed tuple, the geometric query event has
+   probability \(\overline\Phi(t)\), and the auxiliary event in \((SAP3)\) has
+   probability \(K^{-1}\), independently.  Therefore the expected retained
+   query leaves are
+   \[
+      A^{O_k(1)}L_K^{k\alpha}J_a(u)^{-k}\overline\Phi(t)
+      =
+      m^{\rho(a,b)}\log^{O_{a,b,k,\alpha}(1)}m,
+   \]
+   using the same Gaussian-tail calculation as in
+   \cref{thm:smooth-product-terminal}.  The update count is identical.
+
+   For the Lagrange heap, \cref{lem:scalar-mask-lagrange-decoder} shows that
+   the expected heap superset is only a polylogarithmic factor larger than the
+   retained two-threshold count, because \(t\sqrt k=O(\sqrt{\log m})\) and
+   \(s_K=O(\sqrt{\log\log m})\) for \(K=\log^{O(1)}m\).  The initial block
+   sorting cost is
+   \[
+      kB'\log B'
+      \le
+      m^{\rho(a,b)}\log^{O_{a,b,k,\alpha}(1)}m,
+   \]
+   since \(K=\log^{O(1)}m\) and the condition
+   \(k\ge2/(1-a)\) gives \(J_a(u)^{-1}\le
+   m^{\rho(a,b)}\log^{O_{a,b}(1)}m\), as in
+   \cref{thm:smooth-product-terminal}.
+
+   Finally, for a far point \(x\) with \(\ip{x,q}\le b\), the geometric
+   two-point tuple event has probability at most \(J_b(t)\), while the
+   auxiliary retention event contributes the independent factor \(K^{-1}\).
+   Summing over tuples and then over the \(m\) resident points gives
+   \[
+      m\,(B')^kK^{-1}J_b(t)
+      =
+      m^{\rho(a,b)}\log^{O_{a,b,k,\alpha}(1)}m.
+   \]
+   Storage is the retained update-leaf bound summed over all residents.
+\end{proof}
+
 \begin{remark}[Decodable pseudorandom subsets need conditional entropy]
    \label{rem:decodable-pseudorandom-tuple-subsets}
    \Cref{lem:additive-mask-star-obstruction} explains why selecting tuples by
