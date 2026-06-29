@@ -92500,6 +92500,106 @@ amplified in the next proposition.
    \((RTH1)\) gives \((RTH2)\) and the ANN-scale conclusion.
 \end{proof}
 
+\begin{corollary}[Shared terminal signatures compress sketch initialization]
+   \label{cor:shared-terminal-signature-histograms}
+   Work in the setting of
+   \cref{cor:fixed-terminal-sketch-histograms}.  Suppose there is a terminal
+   signature map \(\sigma:\mathcal T\to\Sigma\) and resident lists
+   \(C_\alpha\subseteq S\), \(\alpha\in\Sigma\), such that
+   \[
+      C_t=C_{\sigma(t)}
+      \qquad(t\in\mathcal T).
+      \tag{SSH1}
+   \]
+   Choose the heavy-hitter sketch hashes during preprocessing and store the
+   histograms \((FTH1)\)--\((FTH2)\) once for each signature \(\alpha\), with
+   \(C_\alpha\) in place of \(C_t\).  For a sampled quotient class \(\ell\),
+   define its active signature set and active signature histogram mass by
+   \[
+      \Sigma_\ell=\{\sigma(t):t\in\mathcal T_\ell\},
+      \tag{SSH2}
+   \]
+   \[
+      J_W^\Sigma(\ell)
+      =
+      \sum_{\alpha\in\Sigma_\ell}
+      \sum_{s=1}^D
+      \left(
+         |\operatorname{supp}B_{\alpha,s}|
+         +
+         \sum_{k=1}^{b_0}|\operatorname{supp}B_{\alpha,s,k}|
+      \right).
+      \tag{SSH3}
+   \]
+   Then the terminal rewards needed by
+   \cref{cor:trellis-sketch-responsibility-aggregation} are initialized from
+   these shared histograms in time
+   \[
+      O\!\left(J_W^\Sigma(\ell)+|\mathcal T_\ell|_{\rm graph}\right),
+      \tag{SSH4}
+   \]
+   where \(|\mathcal T_\ell|_{\rm graph}\) denotes the cost, already included
+   in the trellis graph traversal, of assigning the appropriate signature
+   value to active terminal states.  The number of distinct sketch counters
+   needing backward recursions is at most
+   \[
+      K_W^\Sigma(\ell)
+      \le
+      \min\{D(b_0+1)W,\ J_W^\Sigma(\ell)\}.
+      \tag{SSH5}
+   \]
+   Consequently, if the graph traversal is already charged in \(|E|\) and
+   \[
+      \E_{\ell\sim\Pi_Y}
+      \bigl[J_W^\Sigma(\ell)+K_W^\Sigma(\ell)|E|\bigr]
+      \le d\,m^\rho\log^{O_c(1)}m,
+      \tag{SSH6}
+   \]
+   then the aggregation hypothesis \((SRL2)\) holds.
+
+   The histogram storage is
+   \[
+      \mathsf H_W^\Sigma
+      \le
+      D(b_0+1)\sum_{\alpha\in\Sigma}\min\{|C_\alpha|,W\}.
+      \tag{SSH7}
+   \]
+   Hence deterministic terminal sharing is exactly the kind of structure
+   excluded by \cref{cor:random-sparse-terminal-histogram-barrier}: the
+   relevant query quantity is the number and histogram mass of distinct active
+   signatures, not the number of hidden labels nor the raw terminal incidence.
+   A code, lattice, Tanner, polar, or Construction-A construction can use the
+   responsibility-sketch route through this corollary only if its terminals
+   expose such shared signatures, or an equivalent factorized incidence
+   representation, with \((SSH6)\)--\((SSH7)\) at the target scale.
+\end{corollary}
+
+\begin{proof}
+   Under \((SSH1)\), for every sketch coefficient vector used by the
+   heavy-hitter decoder,
+   \[
+      g_c(t)=\sum_{x\in C_t}c_x
+      =
+      \sum_{x\in C_{\sigma(t)}}c_x.
+   \]
+   The latter quantity is exactly the precomputed histogram entry for the
+   signature \(\sigma(t)\), either \(B_{\sigma(t),s}(a)\) for a total counter
+   or \(B_{\sigma(t),s,k}(a)\) for a bit counter.  Thus reading each active
+   signature histogram once initializes all distinct nonzero terminal rewards.
+   Assigning those values to terminal states costs only the graph-side
+   terminal traversal already charged by the trellis dynamic program.  This
+   proves \((SSH4)\).
+
+   A counter with no nonzero entry in any active signature contributes zero
+   for all active terminals and needs no backward recursion.  The number of
+   remaining counters is bounded by the total possible number of counters and
+   by the active nonzero signature entries, proving \((SSH5)\).  Applying
+   \cref{cor:trellis-sketch-responsibility-aggregation} gives aggregation time
+   \(O(J_W^\Sigma(\ell)+K_W^\Sigma(\ell)|E|)\), so \((SSH6)\) implies
+   \((SRL2)\).  Finally, for each signature, row, and bit choice, the support
+   size is at most \(\min\{|C_\alpha|,W\}\), proving \((SSH7)\).
+\end{proof}
+
 \begin{remark}[What this shortcut does and does not prove]\label{rem:score-max-shortcut}
    \Cref{lem:smoothed-max-score-margin} is the $\alpha=0$ endpoint of the
    likelihood-ball geometry: if one can approximately maximize the smoothed
