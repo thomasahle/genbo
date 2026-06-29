@@ -92600,6 +92600,163 @@ amplified in the next proposition.
    size is at most \(\min\{|C_\alpha|,W\}\), proving \((SSH7)\).
 \end{proof}
 
+\begin{corollary}[Linear residue signatures give the shared-histogram target]
+   \label{cor:linear-residue-signature-histograms}
+   Let \(V\) be a finite-dimensional vector space over \(\mathbb F_q\), let
+   \(G=\mathbb F_q^r\), and let \(A:V\to G\) be a linear map.  Suppose every
+   resident point \(x\in S\) has a stored code or lattice residue
+   \(\phi(x)\in V\), and every terminal \(t\) of the quotient trellis has a
+   residue \(\sigma(t)\in G\).  Define the terminal incidence by the native
+   syndrome rule
+   \[
+      U_x(t)=\mathbf1\{A\phi(x)=\sigma(t)\}.
+      \tag{LRS1}
+   \]
+   Put
+   \[
+      C_\alpha=\{x\in S:A\phi(x)=\alpha\},
+      \qquad \alpha\in G .
+      \tag{LRS2}
+   \]
+   For a sampled quotient class \(\ell\), write
+   \[
+      G_\ell=\{\sigma(t):t\in\mathcal T_\ell\},
+      \tag{LRS3}
+   \]
+   and let \(J_W^G(\ell)\) and \(K_W^G(\ell)\) denote the shared-signature
+   quantities \(J_W^\Sigma(\ell)\) and \(K_W^\Sigma(\ell)\) of
+   \cref{cor:shared-terminal-signature-histograms}, with \(\Sigma=G\) and
+   \(\Sigma_\ell=G_\ell\).
+   Then \((SSH1)\) holds with the terminal signature map
+   \(t\mapsto\sigma(t)\), so the responsibility-sketch aggregation is
+   implemented by \cref{cor:shared-terminal-signature-histograms}.  In
+   particular, for sketch width \(W\), if
+   \[
+      \E_{\ell\sim\Pi_Y}
+      \bigl[
+         J_W^G(\ell)+K_W^G(\ell)|E|
+      \bigr]
+      \le d\,m^\rho\log^{O_c(1)}m
+      \tag{LRS4}
+   \]
+   and
+   \[
+      D(b_0+1)\sum_{\alpha\in G}\min\{|C_\alpha|,W\}
+      \le m^{1+\rho}\log^{O_c(1)}m,
+      \tag{LRS5}
+   \]
+   then the terminal reward aggregation hypothesis \((SRL2)\) holds at the
+   target query scale and the signature-histogram storage fits the usual LSF
+   preprocessing exponent.
+
+   Thus a Construction-A, Tanner, polar, convolutional, or lattice quotient
+   branch has a concrete responsibility-sketch pass/fail test: the query
+   trellis may contain many hidden paths, but it must activate only a
+   \(m^\rho\polylog m\)-scale amount of distinct residue-signature histogram
+   mass, and the stored resident partition by those residues must fit the
+   preprocessing budget.
+\end{corollary}
+
+\begin{proof}
+   By \((LRS1)\),
+   \[
+      C_t=\{x:U_x(t)=1\}
+      =
+      \{x:A\phi(x)=\sigma(t)\}
+      =
+      C_{\sigma(t)}.
+   \]
+   This is exactly \((SSH1)\) with signature set \(\Sigma=G\).  Applying
+   \cref{cor:shared-terminal-signature-histograms} gives query aggregation
+   time \(O(J_W^G(\ell)+K_W^G(\ell)|E|)\), so \((LRS4)\) implies \((SRL2)\).
+   The storage bound \((LRS5)\) is \((SSH7)\) with \(\Sigma=G\).
+\end{proof}
+
+\begin{corollary}[Balanced residue partitions give the parameter test]
+   \label{cor:balanced-residue-histogram-budget}
+   In the setting of
+   \cref{cor:linear-residue-signature-histograms}, put \(M=|G|\).  Assume the
+   resident residues are \(\lambda\)-balanced in the sense that
+   \[
+      |C_\alpha|\le \lambda m/M
+      \qquad(\alpha\in G).
+      \tag{BRH1}
+   \]
+   Let \(R_G(\ell)=|G_\ell|\) be the number of distinct active residues in the
+   sampled quotient class.  Then
+   \[
+      J_W^G(\ell)
+      \le
+      D(b_0+1)
+      R_G(\ell)\min\{\lambda m/M,W\},
+      \tag{BRH2}
+   \]
+   \[
+      K_W^G(\ell)
+      \le
+      \min\{D(b_0+1)W,\ J_W^G(\ell)\},
+      \tag{BRH3}
+   \]
+   and the total shared-histogram storage is at most
+   \[
+      \mathsf H_W^G
+      \le
+      D(b_0+1)M\min\{\lambda m/M,W\}.
+      \tag{BRH4}
+   \]
+   Consequently, when \(D(b_0+1)(1+|E|)\le\log^{O_c(1)}m\), the balanced
+   residue route passes the responsibility-sketch test if
+   \[
+      \E_{\ell\sim\Pi_Y}R_G(\ell)\min\{\lambda m/M,W\}
+      \le
+      m^\rho\log^{O_c(1)}m
+      \tag{BRH5}
+   \]
+   and
+   \[
+      M\min\{\lambda m/M,W\}
+      \le
+      m^{1+\rho}\log^{O_c(1)}m.
+      \tag{BRH6}
+   \]
+
+   Thus the algebraic hash buys speed only through one measurable quantity:
+   active distinct residue mass.  In the full-width regime
+   \(W\ge\lambda m/M\), the query condition becomes
+   \[
+      \E R_G(\ell)\le (M/(\lambda m))m^\rho\log^{O_c(1)}m,
+      \tag{BRH7}
+   \]
+   while storage is linear up to the balance factor.  In the capped regime
+   \(W<\lambda m/M\), the conditions are
+   \[
+      \E R_G(\ell)W\le m^\rho\log^{O_c(1)}m,
+      \qquad
+      MW\le m^{1+\rho}\log^{O_c(1)}m.
+      \tag{BRH8}
+   \]
+   These inequalities are the first audit for a Construction-A, Tanner, polar,
+   convolutional, or lattice residue design: if the sampled quotient activates
+   too many essentially independent residues, no choice of pairwise-independent
+   mask or multiply-style seed can hide that cost.
+\end{corollary}
+
+\begin{proof}
+   For each active residue \(\alpha\in G_\ell\), every row and every bit
+   histogram support has size at most \(\min\{|C_\alpha|,W\}\), and
+   \((BRH1)\) bounds this by \(\min\{\lambda m/M,W\}\).  Summing over the
+   \(D(b_0+1)\) histograms and over the \(R_G(\ell)\) active residues proves
+   \((BRH2)\).  The counter bound \((BRH3)\) is \((SSH5)\), and summing the
+   same support bound over all \(M\) residues proves \((BRH4)\).
+
+   Since \(K_W^G(\ell)\le J_W^G(\ell)\), the query cost in \((LRS4)\) is at
+   most \((1+|E|)J_W^G(\ell)\).  Under the displayed polylogarithmic graph and
+   sketch-size assumption, \((BRH5)\) implies \((LRS4)\), while \((BRH6)\) is
+   exactly \((LRS5)\) after dropping the same polylogarithmic factor.  The two
+   regimes follow by substituting either side of
+   \(\min\{\lambda m/M,W\}\).
+\end{proof}
+
 \begin{remark}[What this shortcut does and does not prove]\label{rem:score-max-shortcut}
    \Cref{lem:smoothed-max-score-margin} is the $\alpha=0$ endpoint of the
    likelihood-ball geometry: if one can approximately maximize the smoothed
