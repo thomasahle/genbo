@@ -17964,6 +17964,79 @@ partition ignores the bias coordinates that certify the list size.
    \((CSP5)\).
 \end{proof}
 
+\begin{lemma}[Random rotation flattens residents but not all near queries]
+   \label{lem:rotation-data-flat-query-spike}
+   Let \(P\subset S^{d-1}\) be a fixed terminal resident set with
+   \(|P|\le m\), and let \(R\) be a Haar-uniform orthogonal transformation.
+   Then, for every \(\delta\in(0,1)\), with probability at least \(1-\delta\),
+   \[
+      \max_{x\in P}\|Rx\|_\infty
+      \le
+      \sqrt{\frac{2\log(2md/\delta)}{d}} .
+      \tag{RDF1}
+   \]
+   Thus a preprocessing rotation removes the coordinate-spike storage
+   obstruction of
+   \cref{lem:coordinate-spike-product-grid-barrier} for any fixed data set,
+   up to the usual \(\sqrt{\log(md)/d}\) flatness scale.
+
+   However, this does not make the whole near-query promise flat.  Fix any
+   rotation \(R\), any unit resident \(p\), and any target correlation
+   \(a_0\in(0,1)\).  There is a unit query \(q\) with
+   \[
+      \ip{p}{q}=a_0
+      \tag{RDF2}
+   \]
+   such that, in the same rotated coordinates,
+   \[
+      \|Rq\|_\infty
+      \ge
+      \sqrt{1-a_0^2}\sqrt{1-\frac1d}.
+      \tag{RDF3}
+   \]
+   Consequently the raw product-grid escape is not ``rotate and assume
+   everything is flat.''  A valid theorem must prove the product or
+   code/lattice bucket spectrum for flat resident vectors against arbitrary
+   near queries in their correlation cone, or else add a certified query
+   signature/quotient mechanism that handles the nonflat query coordinate.
+\end{lemma}
+
+\begin{proof}
+   For a fixed unit vector \(x\), \(Rx\) is uniform on the sphere.  A standard
+   spherical-cap bound gives
+   \[
+      \Pr[ |(Rx)_i|\ge t]\le 2e^{-dt^2/2}
+   \]
+   for each coordinate \(i\).  Taking
+   \(t=\sqrt{2\log(2md/\delta)/d}\) and union bounding over
+   \(x\in P\) and \(i\in[d]\) proves \((RDF1)\).
+
+   For the second claim, write \(p'=Rp\).  Choose a coordinate \(j\) with
+   \(|p'_j|\le d^{-1/2}\), and choose \(\sigma\in\{\pm1\}\) so that
+   \(\sigma p'_j\ge0\).  Let
+   \[
+      v'=
+      \frac{\sigma e_j-\langle\sigma e_j,p'\rangle p'}
+           {\sqrt{1-\langle\sigma e_j,p'\rangle^2}} .
+   \]
+   Then \(v'\) is unit and orthogonal to \(p'\).  Put
+   \[
+      q'=a_0p'+\sqrt{1-a_0^2}\,v',
+      \qquad q=R^{-1}q' .
+   \]
+   This gives \(\|q\|=1\) and \(\ip{p}{q}=a_0\).  Moreover
+   \[
+      \sigma q'_j
+      =
+      a_0|p'_j|
+      +
+      \sqrt{1-a_0^2}\sqrt{1-(p'_j)^2}
+      \ge
+      \sqrt{1-a_0^2}\sqrt{1-\frac1d},
+   \]
+   proving \((RDF3)\).
+\end{proof}
+
 \begin{corollary}[Bucket-quotient weighted quadrature]
    \label{cor:bucket-quotient-quadrature}
    Fix the terminal setting of \cref{prop:sampled-structured-panel}.  Let
