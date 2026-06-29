@@ -6549,6 +6549,67 @@ partition ignores the bias coordinates that certify the list size.
    \cref{thm:smooth-product-terminal}.
 \end{proof}
 
+\begin{corollary}[Polylog terminal syndrome thinning needs no residue oracle]
+   \label{cor:polylog-terminal-syndrome-filtering}
+   In the setting of
+   \cref{cor:oversampled-product-syndrome-thinning}, assume
+   \(K=\log^{O_{a,b}(1)}m\).  Instead of using a syndrome-state, affine, or
+   residue-frontier decoder, enumerate all oversampled product tuples whose
+   query score is at least the smooth-product threshold and then keep only
+   those satisfying the syndrome equation \((OPT2)\).  Similarly, during
+   updates enumerate all oversampled product tuples accepted by the data point
+   and store only the retained syndrome class.
+
+   Then the one-table near success probability remains constant, the retained
+   query leaves, storage, and far candidates satisfy the bounds \((OPT3)\), and
+   the extra enumeration work is still
+   \[
+      m^{\rho(a,b)}\log^{O_{a,b}(1)}m
+      \quad\text{per query or update.}
+      \tag{PTS1}
+   \]
+   Thus polylogarithmic terminal tuple thinning needs only the second-moment
+   pseudorandomness of \cref{lem:pairwise-independent-syndrome-thinning}; it
+   does not require a suffix-residue occupancy oracle.  Such an oracle becomes
+   necessary only for polynomial-rate thinning, or for a nonterminal decoder
+   where enumerating the unthinned live frontier would exceed the target.
+\end{corollary}
+
+\begin{proof}
+   The retained set is identical to that of
+   \cref{cor:oversampled-product-syndrome-thinning}, so the near-success,
+   retained-leaf, storage, and far-candidate estimates are unchanged.  It
+   remains only to count the extra tuples inspected before the syndrome test.
+
+   The oversampled block count is
+   \(B'=K^{1/k}J_a(u)^{-1}\log^{O_{a,b}(1)}m\).  The standard product heap
+   enumeration from \cref{thm:smooth-product-terminal} lists all active
+   oversampled query tuples in work
+   \[
+      O_k(B'\log B'+L_{\rm all}\log(2+L_{\rm all})),
+   \]
+   where \(L_{\rm all}\) is the number of oversampled active tuples before
+   syndrome filtering.  Since the oversampling multiplies the product universe
+   by \(K\), the Gaussian-tail calculation in
+   \cref{cor:oversampled-product-syndrome-thinning} gives
+   \[
+      \E L_{\rm all}
+      =
+      K\,m^{\rho(a,b)}\log^{O_{a,b}(1)}m
+      =
+      m^{\rho(a,b)}\log^{O_{a,b}(1)}m .
+   \]
+   Since \(L_{\rm all}\le (B')^k\le m^{O_{a,b}(1)}\), the
+   \(\log(2+L_{\rm all})\) heap factor is absorbed into the displayed
+   polylogarithm.
+   Also \(B'\le m^{\rho(a,b)}\log^{O_{a,b}(1)}m\), as in the proof of
+   \cref{cor:oversampled-product-syndrome-thinning}.  This proves the query
+   enumeration bound; the update enumeration bound is identical with the data
+   score in place of the query score.  Filtering each emitted tuple by
+   \((OPT2)\) costs \(O_k(1)\), and only retained query tuples are used for
+   bucket lookup, so the far-candidate calculation remains the thinned one.
+\end{proof}
+
 \begin{corollary}[The oversampling scale is necessary for blind thinning]
    \label{cor:no-free-terminal-syndrome-thinning}
    In the smooth product terminal filter of \cref{thm:smooth-product-terminal},
