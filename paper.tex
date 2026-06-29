@@ -16063,6 +16063,61 @@ partition ignores the bias coordinates that certify the list size.
    far sampled co-load, and near sampled mass.
 \end{remark}
 
+\begin{lemma}[Random sparse buckets do not quotient-compress]
+   \label{lem:random-sparse-bucket-no-quotient}
+   Let \(\mathcal L\) be a hidden label set and let \(P\) have size \(m\).
+   For each \(g\in\mathcal L\), form a random stored bucket
+   \(C_g\subseteq P\) by including each point independently with probability
+   \(s_m\le1/2\), independently over \(g\).  If
+   \[
+      m s_m\to\infty,
+      \qquad
+      \log|\mathcal L|=o(ms_m),
+      \tag{RBQ1}
+   \]
+   then, with probability \(1-o(1)\), all buckets \(C_g\) are distinct.
+   Consequently quotienting only by identical stored point sets gives no
+   asymptotic storage compression in this sparse random model.
+
+   In particular, in the ANN sparse-storage scale
+   \(s_m=m^{\rho-1+o(1)}\) with any fixed \(\rho>0\), every polynomial-size
+   hidden label family has distinct random buckets with high probability.
+\end{lemma}
+
+\begin{proof}
+   For two labels \(g\ne h\),
+   \[
+      \Pr[C_g=C_h]
+      =
+      (s_m^2+(1-s_m)^2)^m
+      =
+      (1-2s_m(1-s_m))^m
+      \le e^{-m s_m},
+   \]
+   because \(s_m\le1/2\).  The union bound over pairs gives
+   \[
+      \Pr[\exists g\ne h:C_g=C_h]
+      \le
+      |\mathcal L|^2e^{-m s_m}
+      =
+      \exp\{-m s_m+o(ms_m)\}=o(1).
+   \]
+   The final statement is the special case \(ms_m=m^{\rho+o(1)}\) and
+   \(\log|\mathcal L|=O(\log m)=o(m^\rho)\).
+\end{proof}
+
+\begin{remark}[What this storage barrier says]
+   \label{rem:random-sparse-bucket-no-quotient}
+   \Cref{lem:random-sparse-bucket-no-quotient} is deliberately simple, but it
+   rules out a common false hope.  If a code, lattice, or trellis behaves like
+   independent sparse filters on the retained data set, then identical-bucket
+   quotienting almost never merges hidden labels.  A useful quotient sampler
+   must therefore create shared bucket identities by design--for example
+   through a canonical child map, a residue/coset bucket, a leader bucket, or a
+   responsibility-thinned aggregate law.  Accidental equality of random stored
+   subsets is not the compression mechanism.
+\end{remark}
+
 \begin{lemma}[Compressed aggregate sampler]
    \label{lem:compressed-aggregate-sampler}
    Let a finite acyclic directed graph have source \(s\), terminal states
@@ -16166,6 +16221,131 @@ partition ignores the bias coordinates that certify the list size.
    size.
 \end{proof}
 
+\begin{lemma}[Marked trellis spectrum verifier]
+   \label{lem:marked-trellis-spectrum-verifier}
+   Work with a layered acyclic trellis as in
+   \cref{cor:bcjr-trellis-quotient-sampler}.  Let \(\mathcal P\) be its
+   source-to-terminal paths, and let
+   \[
+      W_q(\pi)=\prod_{e\in\pi}r_e(q),
+      \qquad
+      Z_q=\sum_{\pi\in\mathcal P}W_q(\pi).
+   \]
+   Suppose that each point \(x\in P\) has an additive trellis storage score
+   \[
+      S_x(\pi)=\sum_{e\in\pi}\phi_e(x),
+      \tag{MTS1}
+   \]
+   and that the raw hidden path stores \(x\) when \(S_x(\pi)\ge T\).  Let
+   \[
+      C_\pi=\{x\in P:S_x(\pi)\ge T\},
+   \]
+   and quotient paths by equality of \(C_\pi\).  For a query \(q\), define the
+   marked partition function
+   \[
+      Z_{q,x}^{\ge T}
+      =
+      \sum_{\pi\in\mathcal P:\ S_x(\pi)\ge T}W_q(\pi).
+      \tag{MTS2}
+   \]
+   Then the induced quotient bucket law satisfies the exact identities
+   \[
+      \sum_{b:x\in C_b}\Pi_q(b)
+      =
+      \frac{Z_{q,x}^{\ge T}}{Z_q}
+      \qquad(x\in P),
+      \tag{MTS3}
+   \]
+   and therefore the sampled far-load and near-mass conditions \((BQ2)\) and
+   \((BQ3)\) are exactly
+   \[
+      \sum_{\substack{x\in P\\ \|x-q\|>cr}}
+      \frac{Z_{q,x}^{\ge T}}{Z_q}
+      \le m^\rho L_m,
+      \tag{MTS4}
+   \]
+   and
+   \[
+      \frac{Z_{q,p}^{\ge T}}{Z_q}
+      \ge L_m^{-1}
+      \qquad(\|p-q\|\le r).
+      \tag{MTS5}
+   \]
+   The raw incidence bound
+   \[
+      \sum_{x\in P}
+      |\{\pi\in\mathcal P:S_x(\pi)\ge T\}|
+      \le m^{1+\rho}L_m
+      \tag{MTS6}
+   \]
+   is a sufficient, but not necessary, condition for the quotient storage
+   bound \((BQ1)\).
+
+   If all scores \(\phi_e(x)\) lie in a lattice \(\delta\mathbb Z\) and the
+   attainable score range has \(M_x\) bins, then \(Z_{q,x}^{\ge T}\) is
+   computable exactly by the marked forward recursion
+   \[
+      F_0(s,0)=1,\qquad
+      F_i(v,t)=
+      \sum_{(u,v)\in E_i}r_{(u,v)}(q)
+      F_{i-1}\bigl(u,t-\phi_{(u,v)}(x)\bigr),
+      \tag{MTS7}
+   \]
+   followed by
+   \[
+      Z_{q,x}^{\ge T}
+      =
+      \sum_{v\in V_h}\sum_{t\ge T}F_h(v,t),
+      \tag{MTS8}
+   \]
+   in \(O(|E|M_x)\) arithmetic operations for that \(x\).
+\end{lemma}
+
+\begin{proof}
+   The quotient bucket probability is obtained by summing path weights over
+   all paths in the bucket class:
+   \[
+      \Pi_q(b)
+      =
+      \frac{\sum_{\pi:C_\pi=C_b}W_q(\pi)}
+           {\sum_{\pi\in\mathcal P}W_q(\pi)} .
+   \]
+   Therefore
+   \[
+      \sum_{b:x\in C_b}\Pi_q(b)
+      =
+      \frac{\sum_{\pi:x\in C_\pi}W_q(\pi)}{Z_q}
+      =
+      \frac{Z_{q,x}^{\ge T}}{Z_q},
+   \]
+   which proves \((MTS3)\).  Summing \((MTS3)\) over invalid far points gives
+   \((MTS4)\), and applying it to the true near point gives \((MTS5)\).
+
+   For storage, the quotient stores one copy of \(x\) for each distinct bucket
+   \(C_b\) containing \(x\).  This is at most the number of hidden paths whose
+   raw bucket contains \(x\).  Summing over \(x\) gives \((MTS6)\Rightarrow
+   (BQ1)\).
+
+   Finally, \((MTS7)\) is the ordinary forward dynamic program with an extra
+   score coordinate.  By induction on the layer, \(F_i(v,t)\) is the total
+   \(W_q\)-weight of prefixes ending at \(v\) with storage score \(t\) for
+   point \(x\).  Summing terminal states and score bins \(t\ge T\) gives
+   \((MTS8)\).
+\end{proof}
+
+\begin{remark}[What the trellis verifier leaves open]
+   \label{rem:marked-trellis-spectrum-target}
+   \Cref{lem:marked-trellis-spectrum-verifier} is the concrete calculation to
+   run for a Construction-A residue trellis, a low-state convolutional code, or
+   a recursive lattice state graph.  The query side and the sampled near/far
+   spectrum are transfer-matrix quantities.  The remaining storage question is
+   separate: either the raw incidence bound \((MTS6)\) already fits, or the
+   construction must prove a genuine canonicalization theorem for the distinct
+   bucket sets \(C_\pi\).  By
+   \cref{lem:random-sparse-bucket-no-quotient}, random-looking sparse bucket
+   sets will not provide that compression by accidental equality.
+\end{remark}
+
 \begin{remark}[Trellis target for codes and lattices]
    \label{rem:trellis-quotient-target}
    \Cref{lem:compressed-aggregate-sampler} is the sampled analogue of the
@@ -16175,7 +16355,10 @@ partition ignores the bias coordinates that certify the list size.
    terminals map to stored buckets, and whose dynamic program samples the
    quotient bucket law.  The remaining theorem for such a trellis is then only
    the spectrum certificate \((BQ1)\)--\((BQ3)\) plus the graph-size/query-time
-   bound for evaluating \(H_q\).  \Cref{cor:bcjr-trellis-quotient-sampler}
+   bound for evaluating \(H_q\).  \Cref{lem:marked-trellis-spectrum-verifier}
+   makes the additive-score case explicit: \((BQ2)\) and \((BQ3)\) are marked
+   transfer-matrix ratios, while \((BQ1)\) is either a raw incidence bound or a
+   genuine distinct-bucket canonicalization theorem.  \Cref{cor:bcjr-trellis-quotient-sampler}
    records the standard BCJR/sum-product instance of this target: exact
    partition-function decoding is already the right query algorithm whenever
    the retained code or lattice quotient has a compact acyclic state graph.
@@ -93754,6 +93937,14 @@ bucket spectrum rather than raw label count.
 instance of that interface: BCJR/sum-product on a compact acyclic trellis is an
 exact aggregate sampler, and the remaining ANN theorem is the induced bucket
 spectrum \((BQ1)\)--\((BQ3)\).
+\Cref{lem:marked-trellis-spectrum-verifier} turns that spectrum into concrete
+transfer-matrix quantities for additive trellis storage scores: sampled far
+load and near mass are exactly the marked partition ratios
+\(Z_{q,x}^{\ge T}/Z_q\).  The storage side is deliberately separated:
+\cref{lem:random-sparse-bucket-no-quotient} shows that random-looking sparse
+hidden buckets almost never merge by equality, so useful quotient storage must
+come from a designed canonical bucket map, residue/coset identifier, leader
+bucket, or responsibility rule.
 \Cref{lem:tilted-weight-linear-feasibility} shows that, for a fixed retained
 pool, choosing those weights is just a linear feasibility problem after
 clearing the tilted partition functions.  Failure has a concrete dual
