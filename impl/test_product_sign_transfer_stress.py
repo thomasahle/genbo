@@ -6,6 +6,7 @@ from finite_channel_diagnostic import product_sign_labels
 from product_sign_transfer_stress import (
     FIELDNAMES,
     exact_tilted_good_mass,
+    gaussian_row_pair_parameters,
     run_trial,
     upper_tail_thresholds,
 )
@@ -48,6 +49,29 @@ def test_exact_tilted_good_mass_matches_manual_enumeration():
     assert np.allclose(mass, [manual])
 
 
+def test_gaussian_row_pair_parameters_match_monte_carlo_rows():
+    rng = np.random.default_rng(3)
+    left = np.array([[0.6, -0.2, 0.4]])
+    right = np.array([[0.1, 0.7, -0.3]])
+    transform = np.array([
+        [1.2, 0.1, -0.2],
+        [0.0, 0.8, 0.3],
+        [0.4, -0.1, 1.1],
+    ])
+    bit_scale = 1.7
+    sigma_left, sigma_right, corr = gaussian_row_pair_parameters(
+        left, right, transform=transform, bit_scale=bit_scale)
+
+    rows = rng.standard_normal((60_000, 3)) @ transform / math.sqrt(3.0)
+    left_logits = bit_scale * (rows @ left[0])
+    right_logits = bit_scale * (rows @ right[0])
+    empirical_cov = np.cov(np.stack([left_logits, right_logits]), bias=True)
+    assert np.allclose(math.sqrt(empirical_cov[0, 0]), sigma_left[0], rtol=0.03)
+    assert np.allclose(math.sqrt(empirical_cov[1, 1]), sigma_right[0], rtol=0.03)
+    empirical_corr = empirical_cov[0, 1] / math.sqrt(empirical_cov[0, 0] * empirical_cov[1, 1])
+    assert np.allclose(empirical_corr, corr[0], atol=0.03)
+
+
 def test_transfer_trial_produces_complete_row():
     row = run_trial(
         n=80,
@@ -76,6 +100,9 @@ def test_transfer_trial_produces_complete_row():
     assert row["enumerated_thresholds"] == 1.0
     assert row["bit_sigma_fit"] > 0.0
     assert row["bit_var_q05"] <= row["bit_var_q95"] + 1e-12
+    assert row["metric_sigma_near_mean"] > 0.0
+    assert row["metric_sigma_query_mean"] > 0.0
+    assert row["metric_pair_corr_q05"] <= row["metric_pair_corr_mean"] + 1e-12
     assert row["pair_corr_q05"] <= row["pair_corr_mean"] + 1e-12
     assert row["threshold_ref_node_abs_q50"] <= row["threshold_ref_node_abs_q90"] + 1e-12
     assert row["exact_good_mass_q05"] >= 0.0
@@ -90,5 +117,6 @@ def test_transfer_trial_produces_complete_row():
 if __name__ == "__main__":
     test_upper_tail_thresholds_use_top_eta_order_statistic()
     test_exact_tilted_good_mass_matches_manual_enumeration()
+    test_gaussian_row_pair_parameters_match_monte_carlo_rows()
     test_transfer_trial_produces_complete_row()
     print("product_sign_transfer_stress tests passed")

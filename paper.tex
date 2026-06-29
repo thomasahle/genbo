@@ -89818,6 +89818,88 @@ top-\(k\) backup.
    and the hypothesis \(\kappa\log2<1\).
 \end{proof}
 
+\begin{lemma}[Whitened Gaussian-row product-sign transfer]
+   \label{lem:whitened-product-sign-row-law}
+   Let \(H:\R^d\to\R^d\) be a deterministic whitening map, let
+   \(g_1,\ldots,g_r\) be independent \(N(0,I_d)\) rows, and define the
+   implemented product-sign bit logits
+   \[
+      u_a(x)=\lambda\,d^{-1/2}\ip{g_a}{Hx}.
+   \]
+   For fixed \(p,q\), conditional on \(H,p,q\), the pairs
+   \((u_a(p),u_a(q))\) are independent centered Gaussians with
+   \[
+      \sigma_p^2=\lambda^2\frac{\|Hp\|^2}{d},
+      \qquad
+      \sigma_q^2=\lambda^2\frac{\|Hq\|^2}{d},
+      \qquad
+      a_{p,q}=\frac{\ip{Hp}{Hq}}{\|Hp\|\,\|Hq\|}.
+      \tag{WRL}
+   \]
+   Suppose \(\beta_m\to0\), \(r=\lceil\kappa\log m\rceil\), and
+   \(\eta_m=m^{-\gamma}\).  Let \(\mathcal K\) be a compact set of triples
+   \((\sigma_p,\sigma_q,a)\) with \(\sigma_p,\sigma_q>0\) and \(a>0\), and
+   suppose that all relevant near pairs have their parameters in
+   \(\mathcal K\).  Assume there are \(t\) and \(\varepsilon>0\) such that,
+   for every \((\sigma_p,\sigma_q,a)\in\mathcal K\), if
+   \((U,V)\) is centered Gaussian with these standard deviations and
+   correlation \(a\), then
+   \[
+      \E\bigl[U\tanh V-\log\cosh U\bigr]\ge t+3\varepsilon
+      \tag{WRM}
+   \]
+   and, for \(U\sim N(0,\sigma_p^2)\),
+   \[
+      I_{\sigma_p}(t)
+      :=
+      \sup_{\theta\ge0}
+      \left\{\theta t-
+      \log\E e^{\theta(U-\log\cosh U)}\right\}
+      >
+      \gamma/\kappa .
+      \tag{WRI}
+   \]
+   Then the distributional bounded-margin target of
+   \cref{cor:gaussian-growing-width-product-sign} holds uniformly for these
+   implemented rows, with \(T_m=rt\).  If \(\kappa\log2<1\), the resulting
+   product-sign label count is still within the outcome envelope of
+   \cref{prop:query-top-k-channel-compiler}.
+\end{lemma}
+
+\begin{proof}
+   The first assertion is immediate from Gaussian linearity:
+   each row contributes the centered Gaussian vector
+   \[
+      \lambda d^{-1/2}
+      \bigl(\ip{g_a}{Hp},\ip{g_a}{Hq}\bigr),
+   \]
+   and different rows use independent \(g_a\)'s.  Its covariance matrix is
+   exactly \((WRL)\).
+
+   Conditional on \(H,p,q\), the product-sign score therefore has the same
+   independent-coordinate form as in
+   \cref{cor:gaussian-growing-width-product-sign}, except that the two
+   marginal variances need not be equal.  The proof of that corollary uses
+   only independence, a fixed-label upper-tail bound for
+   \(\sum_a(U_a-\log\cosh U_a)\), and a tilted mean gap.  By \((WRI)\) and
+   compactness of \(\mathcal K\), Chernoff gives
+   \[
+      \Prb\left[
+        \sum_{a=1}^r(U_a-\log\cosh U_a)\ge rt
+      \right]
+      \le m^{-\gamma}
+   \]
+   for all large \(m\), uniformly over \(\mathcal K\).  Since
+   \(\beta_m\to0\), the tilted per-bit mean
+   \(\E[U\tanh(\beta_mU+(1-\beta_m)V)-\log\cosh U]\) is at least
+   \(t+2\varepsilon\) for all large \(m\), again uniformly on
+   \(\mathcal K\).  The Chebyshev/Cantelli argument in
+   \cref{cor:gaussian-growing-width-product-sign} then gives
+   \(1-O_{\mathcal K,\varepsilon}(1/r)\) tilted good mass above
+   \(rt+\Delta_0\).  The label-count statement is the same calculation as in
+   \cref{cor:cramer-product-sign-closure}.
+\end{proof}
+
 \begin{lemma}[Finite-panel product-sign transfer check]
    \label{lem:product-sign-transfer-check}
    Fix a concrete product-sign panel with bit logits \(u_a(x)\), and let
@@ -90142,8 +90224,10 @@ One should also separate the resident-guard regime from the genuine finite-chann
    The first transfer stress test keeps exactly this normal form.  The script
    \texttt{impl/product\_sign\_transfer\_stress.py} measures the concrete bit
    logits of the retained product-sign panel, the reference and node
-   \(\Psi_s\)-thresholds, the fitted Gaussian rate level, and the exact tilted
-   good mass whenever \(B\) is small enough to enumerate all labels.  With
+   \(\Psi_s\)-thresholds, the exact whitening-metric row law in
+   \cref{lem:whitened-product-sign-row-law}, the fitted Gaussian rate level,
+   and the exact tilted good mass whenever \(B\) is small enough to enumerate
+   all labels.  With
    \(d=32\), near correlation \(0.95\), target bit standard deviation \(3.5\),
    and whitened product-sign panels, exact \(B=16,32\) runs at
    \(m=10000\) had fitted bit standard deviations \(3.14\)--\(3.77\), q95
@@ -90151,19 +90235,22 @@ One should also separate the resident-guard regime from the genuine finite-chann
    levels below the fitted Gaussian Cramer level by \(0.91\)--\(1.24\) per
    bit.  The exact tilted good-mass lower \(5\%\) quantiles were
    \(0.813\)--\(0.981\), and the certified value divided by \(\alpha\) was
-   \(0.648\)--\(0.778\).  A wider exact \(B=256\) check gave exact good-mass
-   lower \(5\%\) \(0.9988\)--\(0.9996\) and per-bit Cramer slack
-   \(1.35\)--\(1.50\).  A sampled-threshold \(B=4096\) run kept sampled
+   \(0.648\)--\(0.778\).  A wider exact \(B=256\) check gave whitening-metric
+   bit standard deviations \(3.497\)--\(3.502\), metric pair-correlation lower
+   \(5\%\) \(0.9483\)--\(0.9486\), exact good-mass lower \(5\%\)
+   \(0.9988\)--\(0.9996\), and per-bit Cramer slack \(1.35\)--\(1.50\).
+   A sampled-threshold \(B=4096\) run kept sampled
    good-mass lower \(5\%\) equal to \(1\) and per-bit Cramer slack
    \(1.55\)--\(1.70\), but this is evidence rather than a uniform
    all-label theorem.  The same diagnostic catches the known bad control:
    without whitening in the \(B=256\) run, the fitted bit standard deviation
    fell to \(0.57\)--\(0.63\), the minimum label exponent rose to
    \(1.95\)--\(2.73\), and the lower \(5\%\) mean gap was negative.  Thus the
-   transfer problem has not been hidden by a reformulation: the live theorem
-   is exactly \cref{lem:product-sign-transfer-check} for random whitened
-   product-sign bits, with cross-bit dependence and empirical quantiles under
-   control.
+   row-randomness part of the transfer is now explicit rather than hidden by
+   a reformulation: \cref{lem:whitened-product-sign-row-law} reduces it to
+   whitening-metric norm and correlation slack.  The remaining theorem is
+   \cref{lem:product-sign-transfer-check} plus empirical/reference quantile
+   concentration for the random whitened product-sign panel.
 
    The frozen product-sign target is therefore not another certificate form:
    it is the same distributional bounded-margin posterior-rank lower tail for

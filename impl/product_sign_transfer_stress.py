@@ -21,6 +21,7 @@ from collections.abc import Callable
 import numpy as np
 
 from finite_channel_diagnostic import (
+    _data_whitening,
     is_power_of_two,
     make_product_sign_basis,
     product_sign_labels,
@@ -61,6 +62,11 @@ FIELDNAMES = [
     "bit_sigma_fit",
     "cross_corr_abs_q95",
     "cross_corr_abs_max",
+    "metric_sigma_near_mean",
+    "metric_sigma_query_mean",
+    "metric_pair_corr_mean",
+    "metric_pair_corr_q05",
+    "metric_pair_corr_q95",
     "pair_corr_mean",
     "pair_corr_q05",
     "pair_corr_q95",
@@ -166,6 +172,41 @@ def _column_correlations(left: np.ndarray, right: np.ndarray) -> np.ndarray:
     right_norm = np.sum(right_centered * right_centered, axis=0)
     denom = np.sqrt(np.maximum(left_norm * right_norm, 1e-300))
     return numerator / denom
+
+
+def gaussian_row_pair_parameters(
+    left: np.ndarray,
+    right: np.ndarray,
+    *,
+    transform: np.ndarray,
+    bit_scale: float,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Return the exact one-row Gaussian law for transformed bit logits.
+
+    If a basis row is ``g @ transform / sqrt(d)`` with ``g`` standard normal,
+    then the bit logits of ``left`` and ``right`` are centered Gaussian with
+    these standard deviations and correlation.
+    """
+    left = np.asarray(left, dtype=float)
+    right = np.asarray(right, dtype=float)
+    transform = np.asarray(transform, dtype=float)
+    if left.shape != right.shape:
+        raise ValueError("left and right must have the same shape")
+    if left.ndim != 2 or transform.shape != (left.shape[1], left.shape[1]):
+        raise ValueError("transform must be square with dimension matching points")
+    if bit_scale <= 0:
+        raise ValueError("bit_scale must be positive")
+
+    left_features = left @ transform.T
+    right_features = right @ transform.T
+    scale = bit_scale / math.sqrt(left.shape[1])
+    left_norm = np.linalg.norm(left_features, axis=1)
+    right_norm = np.linalg.norm(right_features, axis=1)
+    sigma_left = scale * left_norm
+    sigma_right = scale * right_norm
+    denom = np.maximum(left_norm * right_norm, 1e-300)
+    corr = np.sum(left_features * right_features, axis=1) / denom
+    return sigma_left, sigma_right, corr
 
 
 def _log_affinity(up: np.ndarray, uq: np.ndarray, alpha: float) -> np.ndarray:
@@ -283,6 +324,11 @@ def run_trial(
     r_bits = int(math.log2(b_count))
     actual_scale = bit_sigma * math.sqrt(r_bits) if scale is None else scale
     bit_scale = actual_scale / math.sqrt(r_bits)
+    transform = (
+        _data_whitening(data)
+        if panel_kind == "whitened_product_sign"
+        else np.eye(d)
+    )
     basis = make_product_sign_basis(
         d,
         b_count,
@@ -312,6 +358,12 @@ def run_trial(
     bit_sigma_fit = math.sqrt(float(np.mean(bit_vars)))
     offdiag_corr = _abs_offdiag_correlations(ref_bits)
     pair_corr = _column_correlations(near_bits, query_bits)
+    metric_sigma_near, metric_sigma_query, metric_pair_corr = gaussian_row_pair_parameters(
+        data[near_indices],
+        query_points,
+        transform=transform,
+        bit_scale=bit_scale,
+    )
 
     ideal_q_eta, _near_ceiling = score_quantile(
         r_bits=r_bits,
@@ -393,6 +445,11 @@ def run_trial(
         "bit_sigma_fit": bit_sigma_fit,
         "cross_corr_abs_q95": _q(offdiag_corr, 0.95),
         "cross_corr_abs_max": float(np.max(offdiag_corr)),
+        "metric_sigma_near_mean": float(np.mean(metric_sigma_near)),
+        "metric_sigma_query_mean": float(np.mean(metric_sigma_query)),
+        "metric_pair_corr_mean": float(np.mean(metric_pair_corr)),
+        "metric_pair_corr_q05": _q(metric_pair_corr, 0.05),
+        "metric_pair_corr_q95": _q(metric_pair_corr, 0.95),
         "pair_corr_mean": float(np.mean(pair_corr)),
         "pair_corr_q05": _q(pair_corr, 0.05),
         "pair_corr_q95": _q(pair_corr, 0.95),
