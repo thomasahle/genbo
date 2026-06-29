@@ -97538,6 +97538,109 @@ amplified in the next proposition.
    rank calculation over the chosen finite-field quotient.
 \end{proof}
 
+\begin{corollary}[Prefix cut-rank certifies quotient trellis width]
+   \label{cor:prefix-cut-rank-quotient-width}
+   Work in the quotient-trellis setting of
+   \cref{cor:quotient-syndrome-trellis-support-sampler}, and assume
+   \(\bar G=\mathbb F_q^r\).  For every vertex \(v\) at level \(\ell\), suppose
+   the source-to-\(v\) prefixes are covered by affine prefix charts
+   \(a\in I_v\).  In chart \(a\), prefixes are represented by
+   \[
+      B_{v,a}z=b_{v,a},
+      \qquad z\in\mathbb F_q^{N_{v,a}},
+      \tag{PCW1}
+   \]
+   and the accumulated quotient syndrome is an affine linear observer
+   \[
+      \bar s(p(z))=\delta_{v,a}+D_{v,a}z\in\bar G .
+      \tag{PCW2}
+   \]
+   Define the prefix residual rank
+   \[
+      r_{v,a}^{\rm cut}
+      =
+      \operatorname{rank}
+      \begin{pmatrix}
+         B_{v,a}\\
+         D_{v,a}
+      \end{pmatrix}
+      -
+      \operatorname{rank}B_{v,a},
+      \qquad
+      Q_v^{\rm cut}
+      =
+      \sum_{a\in I_v:\ B_{v,a}z=b_{v,a}\ {\rm solvable}}
+      q^{r_{v,a}^{\rm cut}} .
+      \tag{PCW3}
+   \]
+   Then the reachable quotient-syndrome set at \(v\) satisfies
+   \[
+      |S(v)|\le Q_v^{\rm cut},
+      \qquad
+      Q_B\le\max_vQ_v^{\rm cut}.
+      \tag{PCW4}
+   \]
+   Consequently the support-conditioned trellis in
+   \cref{cor:quotient-syndrome-trellis-support-sampler} has acceptable online
+   work whenever
+   \[
+      \E_Z\!\left[
+         |E_{B(q,Z)}|\max_vQ_v^{\rm cut}(B(q,Z))
+      \right]
+      \le Dm^\rho\log^{O_c(1)}m
+      \tag{PCW5}
+   \]
+   and the original tilted miss/load hypotheses \((PMR1)\)--\((PMR2)\) hold.
+
+   In particular, if each prefix chart has a row-span alignment
+   \[
+      D_{v,a}=L_{v,a}B_{v,a}+E_{v,a},
+      \qquad
+      \operatorname{rank}E_{v,a}\le s,
+      \tag{PCW6}
+   \]
+   then \(r_{v,a}^{\rm cut}\le s\).  Thus a convolutional, polar, recursive
+   lattice, or low-state trellis quotient is useful for the clean endpoint
+   precisely when the resident-support quotient syndrome is already determined
+   by the native prefix state up to \(O(\log\log m)\) residual linear
+   coordinates on the route-occupied charts.  This is the constructive
+   complement to \cref{cor:random-quotient-trellis-width-barrier}: the desired
+   property is prefix cut-rank alignment, not fresh random-looking quotient
+   increments.
+\end{corollary}
+
+\begin{proof}
+   Fix \(v\) and one nonempty chart \(a\), and choose a solution \(z_{0,a}\) of
+   \(B_{v,a}z=b_{v,a}\).  The possible accumulated quotient syndromes in that
+   chart lie in the affine image
+   \[
+      \delta_{v,a}+D_{v,a}z_{0,a}+D_{v,a}\ker B_{v,a}.
+   \]
+   Its dimension is
+   \[
+      \dim D_{v,a}\ker B_{v,a}
+      =
+      \operatorname{rank}
+      \begin{pmatrix}
+         B_{v,a}\\
+         D_{v,a}
+      \end{pmatrix}
+      -
+      \operatorname{rank}B_{v,a}
+      =
+      r_{v,a}^{\rm cut}.
+   \]
+   Hence chart \(a\) contributes at most \(q^{r_{v,a}^{\rm cut}}\) quotient
+   syndromes.  Summing over the chart cover gives \(|S(v)|\le Q_v^{\rm cut}\),
+   and maximizing over \(v\) gives \((PCW4)\).  Substituting \((PCW4)\) into
+   \((QST8)\) gives \((PCW5)\) and the endpoint claim.
+
+   If \((PCW6)\) holds, then on the affine prefix solution set the term
+   \(L_{v,a}B_{v,a}z=L_{v,a}b_{v,a}\) is fixed, and only \(E_{v,a}z\) can
+   vary.  Therefore the image dimension is at most \(\operatorname{rank}E_{v,a}
+   \le s\), proving the final claim.
+\end{proof}
+
 \begin{corollary}[Aligned linear charts compute rate-coverage sketches]
    \label{cor:aligned-linear-chart-rate-coverage-sketch}
    Work in the setting of
