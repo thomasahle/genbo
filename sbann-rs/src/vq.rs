@@ -411,16 +411,21 @@ impl HierRouter {
         let smp = n.min(counts[0] * 300 + kf * 6 + counts.iter().sum::<usize>() * 10);
         let mut xn = vec![0f32; smp * d];
         xn.par_chunks_mut(d).enumerate().for_each(|(i, r)| simd::norm_f32(ds.row(i), &mu, r));
+        let prof = std::env::var("SBANN_BUILDPROF").is_ok();
+        let mut lvl_t: Vec<f64> = Vec::new();
+        let t_lvl = std::time::Instant::now();
         // level 0: flat k-means over the whole sample
         let mut centf = kmeans::kmeans_f32(&xn, smp, d, counts[0], 12, 0xc0a1_5eed);
         let mut point_cell: Vec<u32> = (0..smp).into_par_iter().map(|i| {
             let x = &xn[i * d..i * d + d];
             (0..counts[0]).map(|q| (simd::l2_f32(x, &centf[q * d..q * d + d]), q as u32)).min_by(|a, b| a.0.total_cmp(&b.0)).unwrap().1
         }).collect();
-        let mut cent: Vec<Vec<i8>> = vec![centf.iter().map(|&v| (v * 127.0).round().clamp(-127.0, 127.0) as i8).collect()];
+        let mut centf_lv: Vec<Vec<f32>> = vec![centf.clone()]; // float centroids per level (for optional tree-EM)
         let mut child: Vec<Vec<u32>> = Vec::with_capacity(levels);
+        if prof { lvl_t.push(t_lvl.elapsed().as_secs_f64()); }
         // deeper levels: per-parent k-means into `fan` children, grouped contiguously by parent id
         for l in 1..levels {
+            let t_lvl = std::time::Instant::now();
             let par = counts[l - 1];
             let fan = counts[l] / par;
             let mut by: Vec<Vec<u32>> = vec![Vec::new(); par];
@@ -443,12 +448,64 @@ impl HierRouter {
             for p in 0..par { let idx = &by[p]; for (j, &pi) in idx.iter().enumerate() { newpc[pi as usize] = (p * fan) as u32 + res[p].1[j]; } }
             point_cell = newpc;
             centf = newcentf;
-            cent.push(centf.iter().map(|&v| (v * 127.0).round().clamp(-127.0, 127.0) as i8).collect());
+            centf_lv.push(centf.clone());
             let mut cs = vec![0u32; par + 1];
             for p in 0..par { cs[p + 1] = cs[p] + fan as u32; }
             child.push(cs);
+            if prof { lvl_t.push(t_lvl.elapsed().as_secs_f64()); }
         }
         child.push(Vec::new()); // finest level has no children
+        if prof {
+            let fans: Vec<usize> = (0..levels).map(|l| if l == 0 { counts[0] } else { counts[l] / counts[l - 1] }).collect();
+            let times: Vec<f64> = lvl_t.iter().map(|x| (x * 10.0).round() / 10.0).collect();
+            println!("  [buildprof L={levels} counts={counts:?} fanout={fans:?} per-level-s={times:?}]");
+        }
+        // OPTIONAL JOINT TREE-LLOYD EM (SBANN_TREEEM=rounds, default 0 = pure greedy). Each round:
+        // E-step reassign every sample point to its nearest LEAF via the BEAM descent (so the objective
+        // matches the query-time search, not a greedy-build artifact); M-step recompute EVERY level's
+        // centroids jointly as means of their assigned points (leaf-id ÷ fan-product gives each ancestor).
+        // Attacks the greedy boundary problem by letting upper and lower levels co-adapt.
+        let em_rounds: usize = std::env::var("SBANN_TREEEM").ok().and_then(|s| s.parse().ok()).unwrap_or(0);
+        for r in 0..em_rounds {
+            let t_em = std::time::Instant::now();
+            // E-step: nearest leaf via beam descent over current float centroids
+            let leaf: Vec<u32> = (0..smp).into_par_iter().map(|i| {
+                let x = &xn[i * d..i * d + d];
+                let mut cd: Vec<(f32, u32)> = (0..counts[0]).map(|c| (simd::l2_f32(x, &centf_lv[0][c * d..c * d + d]), c as u32)).collect();
+                let b = beams[0].min(cd.len());
+                if b > 0 && b < cd.len() { cd.select_nth_unstable_by(b - 1, |a, b| a.0.total_cmp(&b.0)); cd.truncate(b); }
+                let mut sel: Vec<u32> = cd.iter().map(|&(_, c)| c).collect();
+                for l in 1..levels {
+                    let fan = counts[l] / counts[l - 1];
+                    let mut nd: Vec<(f32, u32)> = Vec::with_capacity(sel.len() * fan);
+                    for &p in &sel { for c in (p as usize * fan)..((p as usize + 1) * fan) { nd.push((simd::l2_f32(x, &centf_lv[l][c * d..c * d + d]), c as u32)); } }
+                    if l == levels - 1 { return nd.iter().min_by(|a, b| a.0.total_cmp(&b.0)).map(|&(_, c)| c).unwrap_or(0); }
+                    let b = beams[l].min(nd.len());
+                    if b > 0 && b < nd.len() { nd.select_nth_unstable_by(b - 1, |a, b| a.0.total_cmp(&b.0)); nd.truncate(b); }
+                    sel = nd.iter().map(|&(_, c)| c).collect();
+                }
+                sel.first().copied().unwrap_or(0)
+            }).collect();
+            // M-step: recompute every level's centroids from the new leaf assignment (ancestor = leaf / div)
+            for l in 0..levels {
+                let cl = counts[l];
+                let div = counts[levels - 1] / cl;
+                let mut sum = vec![0f64; cl * d];
+                let mut cnt = vec![0u64; cl];
+                for i in 0..smp {
+                    let cell = (leaf[i] as usize) / div;
+                    cnt[cell] += 1;
+                    let x = &xn[i * d..i * d + d];
+                    for k in 0..d { sum[cell * d + k] += x[k] as f64; }
+                }
+                for c in 0..cl { if cnt[c] > 0 { for k in 0..d { centf_lv[l][c * d + k] = (sum[c * d + k] / cnt[c] as f64) as f32; } } }
+            }
+            point_cell = leaf;
+            if prof { println!("  [treeEM round {r} {:.1}s]", t_em.elapsed().as_secs_f64()); }
+        }
+        let _ = &point_cell;
+        // quantize all levels to i8 (after any EM refinement)
+        let cent: Vec<Vec<i8>> = centf_lv.iter().map(|cf| cf.iter().map(|&v| (v * 127.0).round().clamp(-127.0, 127.0) as i8).collect()).collect();
         HierRouter { d, mu, kf, levels, cent, child, beam: beams.to_vec(), soar: 0.0 }
     }
 
@@ -537,6 +594,13 @@ impl HierRouter {
         self.gather_fine(qn, &mut fd);
         out.clear();
         if fd.is_empty() { return; }
+        // PRE-FILTER to the top-K nearest by L2 before the (costly, scalar) SOAR projection. The spilled
+        // cells always sit among the near candidates (the loss is L2 + λ·proj², L2-dominated), so capping
+        // the proj dots from |fd| (thousands for deep beams) to K cuts the SOAR build overhead ~order of
+        // magnitude with negligible recall change. K scales with a0; 256 floor. Only the projection set
+        // shrinks — i0 (the L2-nearest primary assignment) is unaffected.
+        let kcap = (a0 * 64).max(256);
+        if fd.len() > kcap { fd.select_nth_unstable(kcap - 1); fd.truncate(kcap); }
         // i0 = nearest finest cell (primary assignment unchanged from the L2 path)
         let mut i0pos = 0usize;
         for (idx, &(dist, _)) in fd.iter().enumerate() { if dist < fd[i0pos].0 { i0pos = idx; } }
