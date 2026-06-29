@@ -16113,6 +16113,59 @@ partition ignores the bias coordinates that certify the list size.
    \cref{cor:bucket-quotient-quadrature}.
 \end{proof}
 
+\begin{corollary}[BCJR trellis quotient sampler]
+   \label{cor:bcjr-trellis-quotient-sampler}
+   Let a code or quotient label family be represented by a layered acyclic
+   trellis
+   \[
+      V_0\to V_1\to\cdots\to V_h,
+   \]
+   with source \(s\in V_0\).  Each edge \(e\in E_i\) from \(V_{i-1}\) to
+   \(V_i\) carries a symbol \(a(e)\) and a positive query weight
+   \(r_e(q)\).  Assume retained labels are the source-to-terminal paths
+   \(\pi\), with tilted weight
+   \[
+      W_q(\pi)=\prod_{e\in\pi}r_e(q),
+      \tag{BTS1}
+   \]
+   and that every terminal \(t\) maps to a stored bucket class \(b(t)\).
+   Then the usual backward trellis recursion
+   \[
+      H_q(t)=1\quad(t\in V_h),\qquad
+      H_q(u)=\sum_{(u,v)}r_{(u,v)}(q)H_q(v)
+      \tag{BTS2}
+   \]
+   samples bucket \(b\) with probability
+   \[
+      \frac{
+         \sum_{t\in V_h:\ b(t)=b}\sum_{\pi:s\leadsto t}W_q(\pi)
+      }{
+         \sum_{t\in V_h}\sum_{\pi:s\leadsto t}W_q(\pi)
+      },
+      \tag{BTS3}
+   \]
+   in arithmetic work \(O(|E|)\).
+
+   In particular, convolutional or tail-biting trellises, recursive
+   Barnes--Wall/Barnes--Sloane state graphs, and any polar, Tanner, or
+   Construction-A residue decoder that exposes an exact acyclic sum-product
+   state graph automatically implement the aggregate-query part of
+   \cref{cor:bucket-quotient-quadrature}.  What remains is not a decoding
+   theorem about nearest raw codewords; it is the bucket spectrum
+   \((BQ1)\)--\((BQ3)\) for the induced quotient law.
+\end{corollary}
+
+\begin{proof}
+   This is \cref{lem:compressed-aggregate-sampler} with the trellis layers as
+   the acyclic graph.  The recursion \((BTS2)\) is exactly the BCJR backward
+   partition function, and the top-down transition probabilities of
+   \cref{lem:compressed-aggregate-sampler} sample each path with probability
+   proportional to \((BTS1)\).  Summing sampled paths by terminal bucket gives
+   \((BTS3)\).  Each edge contributes once to the backward pass and at most once
+   to the sampled forward path, so the arithmetic work is linear in the trellis
+   size.
+\end{proof}
+
 \begin{remark}[Trellis target for codes and lattices]
    \label{rem:trellis-quotient-target}
    \Cref{lem:compressed-aggregate-sampler} is the sampled analogue of the
@@ -16122,7 +16175,10 @@ partition ignores the bias coordinates that certify the list size.
    terminals map to stored buckets, and whose dynamic program samples the
    quotient bucket law.  The remaining theorem for such a trellis is then only
    the spectrum certificate \((BQ1)\)--\((BQ3)\) plus the graph-size/query-time
-   bound for evaluating \(H_q\).
+   bound for evaluating \(H_q\).  \Cref{cor:bcjr-trellis-quotient-sampler}
+   records the standard BCJR/sum-product instance of this target: exact
+   partition-function decoding is already the right query algorithm whenever
+   the retained code or lattice quotient has a compact acyclic state graph.
 \end{remark}
 
 \begin{lemma}[Tilted weight feasibility is linear]
@@ -90037,7 +90093,8 @@ amplified in the next proposition.
    \cref{lem:fano-biased-prefix-list}; the branch prices lower \(C_t\) to the
    actual work entropy of the stack.  In the sampled form, the construction
    must compute aggregate bucket weights on a compact state graph as in
-   \cref{lem:compressed-aggregate-sampler}, so that the charged object is the
+   \cref{lem:compressed-aggregate-sampler} and
+   \cref{cor:bcjr-trellis-quotient-sampler}, so that the charged object is the
    quotient bucket law rather than the number of hidden lattice or code paths.
    Small ordinary quotient classes are not enough; a genuine aggregate sampler
    or responsibility certificate is needed to lower the charge below the
@@ -93454,6 +93511,10 @@ and rank-prefix reporters.
 decoder interface: a path-weighted DAG samples the quotient bucket law by a
 backward partition-function recursion, so the charged object is graph size and
 bucket spectrum rather than raw label count.
+\Cref{cor:bcjr-trellis-quotient-sampler} identifies the standard coding
+instance of that interface: BCJR/sum-product on a compact acyclic trellis is an
+exact aggregate sampler, and the remaining ANN theorem is the induced bucket
+spectrum \((BQ1)\)--\((BQ3)\).
 \Cref{lem:tilted-weight-linear-feasibility} shows that, for a fixed retained
 pool, choosing those weights is just a linear feasibility problem after
 clearing the tilted partition functions.  Failure has a concrete dual
