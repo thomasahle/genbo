@@ -90308,6 +90308,148 @@ For a threshold $u$, the posterior-superlevel child is
    deterministic part with \(4B\) gives \((AAL5)\).
 \end{proof}
 
+\begin{corollary}[Heavy-responsibility reporters supply route-average affinity]
+   \label{cor:heavy-responsibility-average-affinity}
+   Work in the port-skeleton setting of
+   \cref{cor:average-affinity-leader-skeleton}.  At a nonunit skeleton state
+   \(s\), suppose the local code, lattice, trellis, or aggregate panel is in
+   the marked-responsibility setting of
+   \cref{cor:marked-heavy-lister-closes-trellis}.  Let \(p_s\) be the local
+   near witness or leader whose emission makes the outgoing port useful, and
+   suppose the marked near mass has the certified lower bound
+   \[
+      \mu_s:=
+      \frac{Z_{s,p_s}^{\ge T}}{Z_s}
+      \ge \underline\mu_s>0 .
+      \tag{HAA1}
+   \]
+   One local trial samples \(\ell\sim\Pi_s\), lists all residents with
+   responsibility at least \(\underline\mu_s/2\), and exact-filters by the
+   marked ratio.  If \(R_s\) independent local trials are superposed and
+   quotient by reported leader, then the total useful outgoing affinity at
+   state \(s\) satisfies
+   \[
+      \Omega_s
+      \ge
+      1-\left(1-\frac{\underline\mu_s}{2}\right)^{R_s}
+      \ge
+      1-\exp\!\left(-\frac12R_s\underline\mu_s\right).
+      \tag{HAA2}
+   \]
+   Consequently, if the chosen repetition profile \(R_s\) satisfies
+   \[
+      \E_{V\sim\Lambda}
+      \sum_{s\prec V}
+      \log_+
+      \frac{1}{
+         1-\exp(-R_s\underline\mu_s/2)
+      }
+      \le B ,
+      \tag{HAA3}
+   \]
+   for the affinity-proportional route law \(\Lambda\) of the resulting
+   skeleton, then
+   \[
+      W(r_{s_0})\ge
+      \frac12\,\frac{e^{-2B}}{L(s_0)} .
+      \tag{HAA4}
+   \]
+
+   The corresponding emitted far load from state \(s\), per local trial, is
+   at most
+   \[
+      2\underline\mu_s^{-1}
+      \sum_{\substack{x\in P\\x\ {\rm invalid\ at}\ s}}
+      \frac{Z_{s,x}^{\ge T}}{Z_s},
+      \tag{HAA5}
+   \]
+   plus the work of the heavy-responsibility lister.  Thus the resource
+   accounting is explicit: if reporters are invoked only on reached skeleton
+   states, their route-average work is charged as
+   \[
+      \sum_s \Pr_{\Lambda}[s\prec V]\,
+      R_s\,T_s ,
+      \tag{HAA6}
+   \]
+   where \(T_s\) is the one-trial lister and verification work.  If instead
+   the implementation materializes reporters on every exposed state, the
+   charge is the larger unweighted sum over exposed states.
+
+   In particular, if every route has at most \(H_0\) nonunit states and
+   \(\underline\mu_s\ge L_m^{-1}\) on those states, then choosing
+   \[
+      R_s=\left\lceil 2L_m\log(4H_0)\right\rceil
+      \tag{HAA7}
+   \]
+   gives \(B\le1/2\).  Without this boosting, \(R_s=1\) gives only
+   \[
+      B\le
+      \E_{\Lambda}|V|\,\log(2L_m),
+      \tag{HAA8}
+   \]
+   so an inverse-polylogarithmic marked near mass by itself closes only
+   shallow or already contracted route skeletons.  Long cumulative-score
+   skeletons still need either the boosted route-average allocation above, a
+   stronger local marked mass, or a further quotient/contraction that reduces
+   the number of nonunit handoffs.
+\end{corollary}
+
+\begin{proof}
+   Let
+   \[
+      R_\ell=\frac{Z_{s,p_s,\ell}^{\ge T}}{Z_{s,\ell}}
+   \]
+   be the responsibility of the local near witness under a sampled bucket.
+   Then \(0\le R_\ell\le1\) and
+   \[
+      \E_{\ell\sim\Pi_s}R_\ell=\mu_s\ge\underline\mu_s .
+   \]
+   With \(\tau_s=\underline\mu_s/2\),
+   \[
+      \E R_\ell
+      \le
+      \tau_s+\Pr[R_\ell\ge\tau_s],
+   \]
+   because light buckets contribute at most \(\tau_s\) and all buckets
+   contribute at most one.  Hence one local trial emits the useful leader with
+   probability at least
+   \[
+      \Pr[R_\ell\ge\tau_s]\ge\underline\mu_s/2 .
+   \]
+   Superposing \(R_s\) independent trials makes the miss probability at most
+   \((1-\underline\mu_s/2)^{R_s}\).  After quotienting by reported leader, the
+   probability that some useful leader is reported is at most the sum of the
+   useful port weights, so the same lower bound applies to \(\Omega_s\).  This
+   proves \((HAA2)\).
+
+   Since \(\Omega_s\) is bounded below by the deterministic expression in
+   \((HAA2)\), the route toll in
+   \cref{cor:average-affinity-leader-skeleton} is at most the left-hand side
+   of \((HAA3)\).  Applying that corollary gives \((HAA4)\).
+
+   The far-load estimate is \cref{cor:heavy-responsibility-trellis-reporter}
+   with \(K=2\underline\mu_s^{-1}\), or equivalently the proof of
+   \((HRT2)\) with threshold \(\tau_s\).  The work accounting in \((HAA6)\)
+   is just the number of reporter invocations weighted by the occupation
+   probability of each state under the route law.
+
+   For \((HAA7)\), the chosen repetition count gives
+   \[
+      \exp(-R_s\underline\mu_s/2)\le(4H_0)^{-1}.
+   \]
+   Thus
+   \[
+      \log\frac1{\Omega_s}
+      \le
+      \log\frac1{1-(4H_0)^{-1}}
+      \le
+      (2H_0)^{-1},
+   \]
+   and summing over at most \(H_0\) nonunit states gives \(B\le1/2\).  The
+   unboosted estimate \((HAA8)\) follows from
+   \(\Omega_s\ge\underline\mu_s/2\ge(2L_m)^{-1}\).
+\end{proof}
+
 \begin{corollary}[Boosted leader skeleton value delivery]
    \label{cor:boosted-leader-skeleton-value-delivery}
    Work in the setting of \cref{cor:boosted-leader-skeleton-toll}, and let
