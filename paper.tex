@@ -96418,6 +96418,84 @@ amplified in the next proposition.
    the same argument as there.
 \end{proof}
 
+\begin{lemma}[Pairwise independence controls one oblivious active law]
+   \label{lem:pairwise-oblivious-active-load}
+   Let \(\Sigma\) have size \(M\), let \(S\) have size \(m\), and choose a
+   random resident signature map \(h:S\to\Sigma\) such that \(h(x)\) is uniform
+   on \(\Sigma\) and the variables \(h(x),h(y)\) are independent for
+   \(x\ne y\).  Fix nonnegative active weights \(u_\alpha\), independently of
+   the seed \(h\), and put
+   \[
+      U=\sum_{\alpha\in\Sigma}u_\alpha,\qquad
+      L_h=\sum_{x\in S}u_{h(x)}
+      =
+      \sum_{\alpha\in\Sigma}|h^{-1}(\alpha)|u_\alpha .
+      \tag{POA1}
+   \]
+   Then
+   \[
+      \E_h L_h=\frac{m}{M}U,
+      \qquad
+      \operatorname{Var}_h(L_h)
+      \le
+      \frac{m}{M}\sum_{\alpha\in\Sigma}u_\alpha^2
+      \le
+      \frac{m}{M}U^2.
+      \tag{POA2}
+   \]
+   Consequently,
+   \[
+      \Pr_h\!\left[
+         L_h<\frac12\frac{m}{M}U
+      \right]
+      \le
+      \frac{4M}{m}.
+      \tag{POA3}
+   \]
+
+   Thus a pairwise-independent affine or multiply-style resident signature is
+   random enough to give the right average resident mass for any fixed active
+   signature law that is chosen without seeing the resident-signature seed.  It
+   is not, by itself, the full quenched condition needed by
+   \cref{cor:balanced-rejection-resident-sampler}: the rejection sampler also
+   needs a usable upper cap \(C_+\), and a query-adaptive active law can
+   concentrate on the seed's empty or tiny classes.  Uniform all-query balance
+   therefore has to come from stronger concentration, deterministic balancing,
+   or structural alignment between the code/lattice quotient and the resident
+   residue map, not merely from pairwise independence.
+\end{lemma}
+
+\begin{proof}
+   Write \(Y_x=u_{h(x)}\).  Since \(h(x)\) is uniform,
+   \[
+      \E Y_x=\frac1M\sum_\alpha u_\alpha=\frac{U}{M},
+   \]
+   and summing over \(x\) gives the expectation in \((POA2)\).  Pairwise
+   independence of the signatures makes the \(Y_x\)'s pairwise independent, so
+   \[
+      \operatorname{Var}(L_h)
+      =
+      \sum_{x\in S}\operatorname{Var}(Y_x)
+      \le
+      m\,\E Y_x^2
+      =
+      \frac{m}{M}\sum_\alpha u_\alpha^2.
+   \]
+   The last inequality in \((POA2)\) uses nonnegativity:
+   \(\sum_\alpha u_\alpha^2\le(\sum_\alpha u_\alpha)^2=U^2\).  Chebyshev's
+   inequality gives
+   \[
+      \Pr\!\left[
+         L_h<\frac12\E L_h
+      \right]
+      \le
+      \frac{4\operatorname{Var}(L_h)}{(\E L_h)^2}
+      \le
+      \frac{4M}{m},
+   \]
+   proving \((POA3)\).
+\end{proof}
+
 \begin{corollary}[Aligned linear charts compute rate-coverage sketches]
    \label{cor:aligned-linear-chart-rate-coverage-sketch}
    Work in the setting of
