@@ -98016,6 +98016,83 @@ amplified in the next proposition.
    \(A_\lambda\ge e^{-1}a\).
 \end{proof}
 
+\begin{corollary}[Gaussian-window criterion for tilted additive filters]
+   \label{cor:tilted-local-gaussian-window}
+   Work in the setting of
+   \cref{cor:tilted-additive-tail-sampler}.  Under \(Q_\lambda\), let
+   \[
+      \mu_\lambda=\E_{Q_\lambda}M(c),
+      \qquad
+      \sigma_\lambda^2=\operatorname{Var}_{Q_\lambda}M(c)>0,
+      \qquad
+      W_\lambda=\max\{1,\lambda\sigma_\lambda\}.
+      \tag{TLM1}
+   \]
+   Suppose the threshold is within \(U\) tilted standard deviations of the
+   mean,
+   \[
+      u_\lambda=\frac{s-\mu_\lambda}{\sigma_\lambda},
+      \qquad |u_\lambda|\le U,
+      \tag{TLM2}
+   \]
+   and the tilted sum has Gaussian Kolmogorov error
+   \[
+      \sup_t
+      \left|
+         \Pr_{Q_\lambda}\!\left[
+            \frac{M(c)-\mu_\lambda}{\sigma_\lambda}\le t
+         \right]
+         -
+         \Phi_{\rm N}(t)
+      \right|
+      \le
+      \frac{\gamma_U}{4W_\lambda},
+      \tag{TLM3}
+   \]
+   where \(\Phi_{\rm N}\) is the standard normal distribution function and
+   \[
+      \gamma_U=(2\pi)^{-1/2}\exp(-(U+1)^2/2).
+      \tag{TLM4}
+   \]
+   Then one exact sample from the additive tail \(M(c)\ge s\), with law
+   proportional to \(R(c)\), is obtained by
+   \cref{cor:tilted-additive-tail-sampler} using
+   \(O_U(W_\lambda)\) product proposals in expectation.
+
+   Consequently, an additive pseudo-random subset of tuples is algorithmically
+   acceptable for the clean point-mass reporter whenever its exponential tilt
+   can be sampled by the native product/code/lattice decoder, its saddlepoint
+   parameter satisfies \(W_\lambda=\polylog m\), and the tilted sum obeys the
+   local Gaussian window \((TLM3)\).  This is a different requirement from
+   limited independence: limited independence controls fixed-load averages,
+   while \((TLM3)\) controls the conditional access cost of sampling the rare
+   retained tail without materializing its support.
+\end{corollary}
+
+\begin{proof}
+   Set
+   \[
+      \Delta=\frac{\sigma_\lambda}{W_\lambda}.
+   \]
+   Then \(\lambda\Delta\le1\), and the normalized window length is
+   \(w=1/W_\lambda\le1\).  Since \(|u_\lambda|\le U\), the standard normal
+   density on \([u_\lambda,u_\lambda+w]\) is at least \(\gamma_U\).  Hence
+   \[
+      \Phi_{\rm N}(u_\lambda+w)-\Phi_{\rm N}(u_\lambda)
+      \ge
+      \gamma_U w .
+   \]
+   The Kolmogorov bound \((TLM3)\) subtracts at most
+   \(2(\gamma_U/4W_\lambda)\), so
+   \[
+      \Pr_{Q_\lambda}[s\le M(c)\le s+\Delta]
+      \ge
+      \frac{\gamma_U}{2W_\lambda}.
+   \]
+   Applying \cref{cor:tilted-additive-tail-sampler} with
+   \(a=\gamma_U/(2W_\lambda)\) proves the proposal bound.
+\end{proof}
+
 \begin{corollary}[Aligned linear charts compute rate-coverage sketches]
    \label{cor:aligned-linear-chart-rate-coverage-sketch}
    Work in the setting of
