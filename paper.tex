@@ -17878,6 +17878,92 @@ partition ignores the bias coordinates that certify the list size.
    sentence is only a change of notation for the same sampled-panel compiler.
 \end{proof}
 
+\begin{lemma}[Coordinate spikes force a product-grid alphabet tradeoff]
+   \label{lem:coordinate-spike-product-grid-barrier}
+   Let a raw product quadrature panel use a scalar alphabet
+   \(\mathcal A\subset\mathbb R\), \(|\mathcal A|=A\), and labels
+   \(g=(g_1,\ldots,g_d)\in\mathcal A^d\), with one stored bucket per product
+   label.  A point \(x\) is stored in label \(g\) when
+   \[
+      \ip{g}{x}\ge T .
+      \tag{CSP1}
+   \]
+   Put \(M=A^d\) and
+   \[
+      H_T=|\{a\in\mathcal A:a\ge T\}|.
+   \]
+   If the terminal instance contains a coordinate spike \(e_i\), then its raw
+   storage incidence is exactly
+   \[
+      |\{g\in\mathcal A^d:\ip{g}{e_i}\ge T\}|
+      =
+      H_TA^{d-1}
+      =
+      M\,\frac{H_T}{A}.
+      \tag{CSP2}
+   \]
+   Hence any raw product panel satisfying the natural per-resident incidence
+   cap \(m^\rho L_m\) must obey
+   \[
+      H_TA^{d-1}\le m^\rho L_m .
+      \tag{CSP3}
+   \]
+   The same conclusion follows from the total storage condition \((SP1)\) for
+   worst-case terminal data sets that contain \(\Theta(m)\) residents in this
+   spike direction, counted as separate stored points.
+   Moreover, for the spike near pair \(p=q=e_i\), the near sampled mass is
+   zero unless \(H_T\ge1\), independently of how the query weights the product
+   labels.  Therefore any raw product grid that gives even nonzero recall for
+   coordinate spikes satisfies
+   \[
+      A\ge \frac{M}{m^\rho L_m}.
+      \tag{CSP4}
+   \]
+   In particular, if \(M=m^{\nu+o(1)}\) with \(\nu>\rho\) and
+   \(L_m=\polylog m\), then
+   \[
+      d
+      =
+      \frac{\log M}{\log A}
+      \le
+      \frac{\nu}{\nu-\rho}+o(1).
+      \tag{CSP5}
+   \]
+   At the natural near-linear product-grid scale \(M=m^{1+o(1)}\), this gives
+   \(d\le(1-\rho)^{-1}+o(1)\); for the native \(c=2\) exponent
+   \(\rho_c=1/7\), \(d\le7/6+o(1)\).
+
+   Thus a raw Cartesian product grid cannot simultaneously have near-linear
+   label count, logarithmic product depth, critical storage, and uniform
+   coverage of coordinate-spike directions.  A product construction can escape
+   only by first certifying that the promised terminal vectors are
+   \(\ell_\infty\)-flat in the product coordinates, or by quotienting and
+   aggregating the suffix labels instead of storing one bucket per product
+   label.  Random suffix buckets do not provide that quotient compression by
+   accident, by \cref{lem:random-sparse-bucket-no-quotient}.
+\end{lemma}
+
+\begin{proof}
+   For \(x=e_i\), the storage condition \((CSP1)\) is simply
+   \(g_i\ge T\).  There are \(H_T\) choices for coordinate \(i\) and
+   \(A^{d-1}\) unrestricted choices for the other coordinates, proving
+   \((CSP2)\).  The per-resident incidence cap gives \((CSP3)\).  If only the
+   total storage budget is assumed, the same inequality follows by placing a
+   constant fraction of the \(m\) stored residents at the same spike direction
+   and applying \((SP1)\) to their combined contribution.  If \(H_T=0\), no
+   product label stores \(e_i\), so no query distribution on the labels can
+   sample a bucket containing the near point \(p=e_i\).  Thus
+   nonzero spike recall forces \(H_T\ge1\), and \((CSP3)\) gives
+   \(A^{d-1}\le m^\rho L_m\), equivalently \((CSP4)\).
+
+   Finally, if \(M=m^{\nu+o(1)}\) and \(L_m=\polylog m\), then
+   \[
+      \log A\ge(\nu-\rho)\log m-o(\log m).
+   \]
+   Dividing \(\log M=(\nu+o(1))\log m\) by this lower bound proves
+   \((CSP5)\).
+\end{proof}
+
 \begin{corollary}[Bucket-quotient weighted quadrature]
    \label{cor:bucket-quotient-quadrature}
    Fix the terminal setting of \cref{prop:sampled-structured-panel}.  Let
