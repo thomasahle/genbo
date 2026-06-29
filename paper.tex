@@ -18552,6 +18552,157 @@ partition ignores the bias coordinates that certify the list size.
    variance renormalization of the alphabet.
 \end{proof}
 
+\begin{lemma}[Mixed-profile near queries give a product-grid mean test]
+   \label{lem:mixed-profile-product-grid-mean-test}
+   Let a raw product grid use a sign-symmetric alphabet multiset
+   \(\mathcal A\subset[-a_*,a_*]\) with uniform base law, and let
+   \[
+      \psi(t)=\log\E_{X\sim{\rm Unif}(\mathcal A)}e^{tX},
+      \qquad
+      \mu(t)=\psi'(t).
+   \]
+   Fix the flat resident \(p=d^{-1/2}\mathbf 1\), a target correlation
+   \(a_0\in(0,1)\), and the normalized storage threshold
+   \(\theta=T/\sqrt d\).  For any \(x<a_0\), define
+   \[
+      \sigma_0^2=1-a_0^2,\qquad
+      y_x=a_0+\frac{\sigma_0^2}{a_0-x}
+      =
+      \frac{1-a_0x}{a_0-x},
+      \tag{MPG1}
+   \]
+   and
+   \[
+      \gamma_x
+      =
+      \frac{(a_0-x)^2}{(a_0-x)^2+\sigma_0^2}.
+      \tag{MPG2}
+   \]
+   Up to \(o(1)\) rounding of coordinate counts, there is a unit query \(q\)
+   with
+   \[
+      \sqrt d\,q_i=x
+      \quad\text{on }(1-\gamma_x)d\text{ coordinates},
+      \qquad
+      \sqrt d\,q_i=y_x
+      \quad\text{on }\gamma_xd\text{ coordinates},
+      \tag{MPG3}
+   \]
+   and \(\ip{p}{q}=a_0+o(1)\).
+
+   Under the product query law
+   \(\pi_q(g)\propto\exp(\beta\ip{g}{q})\), with
+   \(s=\beta/\sqrt d\ge0\), the normalized storage score has mean
+   \[
+      m_x(s)
+      =
+      (1-\gamma_x)\mu(sx)+\gamma_x\mu(sy_x)+o(1).
+      \tag{MPG4}
+   \]
+   Therefore inverse-polylogarithmic sampled near mass for this query
+   requires
+   \[
+      m_x(s)\ge \theta-o(1)
+      \tag{MPG5}
+   \]
+   for the temperature used by the query.  In particular, if for some
+   \(x<a_0\)
+   \[
+      \sup_{s\ge0}m_x(s)\le\theta-\varepsilon
+      \tag{MPG6}
+   \]
+   with fixed \(\varepsilon>0\), then the sampled near mass is
+   \(e^{-\Omega_\varepsilon(d)}=m^{-\Omega_\varepsilon(1)}\).
+\end{lemma}
+
+\begin{proof}
+   The definitions of \(y_x\) and \(\gamma_x\) are exactly the two-point
+   moment solution:
+   \[
+      (1-\gamma_x)x+\gamma_xy_x=a_0,\qquad
+      (1-\gamma_x)x^2+\gamma_xy_x^2=1 .
+   \]
+   Thus the vector in \((MPG3)\), after harmless rounding of the coordinate
+   counts, is unit and has correlation \(a_0+o(1)\) with \(p\).
+
+   In coordinate \(i\), the query tilt is
+   \[
+      \beta q_i=s\sqrt d\,q_i,
+   \]
+   so the tilted one-coordinate mean is \(\mu(sx)\) on the \(x\)-coordinates
+   and \(\mu(sy_x)\) on the \(y_x\)-coordinates.  This proves \((MPG4)\).
+   The coordinates remain independent and bounded in \([-a_*,a_*]\).  If the
+   mean is below \(\theta-\varepsilon\), Hoeffding's inequality gives
+   \[
+      \Pr_{\pi_q}\!\left[
+         \frac1d\sum_i g_i\ge\theta
+      \right]\le e^{-\Omega_\varepsilon(d)} ,
+   \]
+   which is \(m^{-\Omega_\varepsilon(1)}\) at logarithmic product depth.
+\end{proof}
+
+\begin{corollary}[Low-peak sign-symmetric product grids fail mixed near queries]
+   \label{cor:low-peak-sign-symmetric-product-grid-barrier}
+   In the setting of
+   \cref{lem:mixed-profile-product-grid-mean-test}, assume \(x<0\).  Then
+   sign symmetry gives \(\mu(sx)\le0\) for every \(s\ge0\), while
+   \(\mu(sy_x)\le a_*\).  Hence every scalar-temperature query sampler obeys
+   \[
+      m_x(s)\le \gamma_xa_*+o(1).
+      \tag{LPG1}
+   \]
+   Since \(\gamma_x\to a_0^2\) as \(x\uparrow0\), the raw product grid fails
+   the full near-query condition whenever
+   \[
+      a_0^2a_*<\theta .
+      \tag{LPG2}
+   \]
+
+   At the native \(c=2\) point, \(a_0=3/4\).  For a near-linear product grid
+   \(M=A^d=m^{1+o(1)}\) at the critical sampled height
+   \(T^2=(12/7)\log m\), this necessary peak condition is
+   \[
+      a_*
+      \ge
+      \frac{16}{9}\sqrt{\frac{12}{7}\log A}.
+      \tag{LPG3}
+   \]
+   A variance-one sign-symmetric \(A\)-symbol uniform multiset always has
+   \(a_*\le\sqrt{A/2}\).  Therefore every such raw product alphabet with
+   \[
+      A < \frac{2048}{189}\log A
+      \tag{LPG4}
+   \]
+   is blocked by a valid mixed near query.  In particular, this rules out all
+   sign-symmetric alphabets with \(A\le39\), including the sparse seven-symbol
+   candidate of \cref{cor:signed-sparse-seven-flat-audit}, independently of
+   the one ad hoc rational profile used in
+   \cref{cor:signed-sparse-seven-mixed-query-barrier}.
+\end{corollary}
+
+\begin{proof}
+   For a sign-symmetric base law, \(\mu\) is odd and nondecreasing.  Thus
+   \(\mu(sx)\le0\) when \(x<0\) and \(s\ge0\), while bounded support gives
+   \(\mu(sy_x)\le a_*\).  This proves \((LPG1)\).  Taking \(x<0\)
+   sufficiently close to zero gives \(\gamma_xa_*<\theta\) whenever
+   \((LPG2)\) holds, and then
+   \cref{lem:mixed-profile-product-grid-mean-test} gives exponentially small
+   near mass.
+
+   For \(c=2\), \(a_0^2=9/16\), so \((LPG2)\) gives \((LPG3)\).  The
+   variance bound \(a_*^2\le A/2\) follows because the two symmetric atoms
+   \(\pm a_*\) alone contribute \(2a_*^2\) to the total squared mass
+   \(\sum_{a\in\mathcal A}a^2=A\).  Combining this with \((LPG3)\) yields
+   \[
+      \frac A2
+      \ge
+      \frac{256}{81}\cdot\frac{12}{7}\log A,
+   \]
+   which is the negation of \((LPG4)\).  Direct monotonic inspection shows
+   that \((LPG4)\) holds for every integer \(2\le A\le39\) and fails first at
+   \(A=40\).
+\end{proof}
+
 \begin{corollary}[Bucket-quotient weighted quadrature]
    \label{cor:bucket-quotient-quadrature}
    Fix the terminal setting of \cref{prop:sampled-structured-panel}.  Let
