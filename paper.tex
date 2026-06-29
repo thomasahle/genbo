@@ -16346,6 +16346,148 @@ partition ignores the bias coordinates that certify the list size.
    sets will not provide that compression by accidental equality.
 \end{remark}
 
+\begin{corollary}[Finite-state trellis rate test]
+   \label{cor:finite-state-trellis-rate-test}
+   Consider the additive trellis setting of
+   \cref{lem:marked-trellis-spectrum-verifier}, but suppose the trellis is
+   homogeneous of depth
+   \[
+      h=\lceil\kappa\log m\rceil
+   \]
+   on a fixed state set \(S\).  Let the source vector be \(e_s\) and let
+   \(\mathbf 1\) denote the all-terminal vector.  For a query \(q\), define
+   the tilted transition matrix
+   \[
+      A_q(u,v)=\sum_{e:u\to v}r_e(q),
+   \]
+   and for a point \(x\) define the marked matrices
+   \[
+      A_{q,x}(\theta)(u,v)
+      =
+      \sum_{e:u\to v}r_e(q)e^{\theta\phi_e(x)},
+      \qquad
+      B_x(\theta)(u,v)
+      =
+      \sum_{e:u\to v}e^{\theta\phi_e(x)} .
+   \]
+   Assume these matrices are Perron--Frobenius regular uniformly over the
+   relevant \(q,x,\theta\), in the sense that their boundary partition
+   functions differ from the corresponding spectral-radius powers by factors
+   absorbed into the displayed polylogarithmic slack.  Write
+   \[
+      \Lambda_q=\log\lambda(A_q),
+      \qquad
+      \Lambda_{q,x}(\theta)=\log\lambda(A_{q,x}(\theta)),
+      \qquad
+      \Gamma_x(\theta)=\log\lambda(B_x(\theta)).
+   \]
+   Use storage threshold \(T=ht\), and suppose the following three scalar
+   conditions hold with a polylogarithmic slack \(L_m\):
+   \[
+      \sup_{x\in P}
+      \inf_{\theta\ge0}\{\Gamma_x(\theta)-\theta t\}
+      \le
+      \frac{\rho}{\kappa}+O\!\left(\frac{\log L_m}{\log m}\right),
+      \tag{FST1}
+   \]
+   \[
+      \inf_{\substack{q\ {\rm promised}\\ x\ {\rm invalid\ for}\ q}}
+      \sup_{\theta\ge0}
+      \{\theta t-\Lambda_{q,x}(\theta)+\Lambda_q\}
+      \ge
+      \frac{1-\rho}{\kappa}
+      -O\!\left(\frac{\log L_m}{\log m}\right),
+      \tag{FST2}
+   \]
+   and, for every near witness \(\|p-q\|\le r\),
+   \[
+      \frac{Z_{q,p}^{\ge ht}}{e_s^TA_q^h\mathbf 1}
+      \ge L_m^{-1},
+      \tag{FST3}
+   \]
+   where \(Z_{q,p}^{\ge ht}\) is the marked path partition function from
+   \((MTS2)\).
+   Then the raw-incidence trellis panel satisfies \((BQ1)\)--\((BQ3)\).
+
+   A convenient sufficient condition for \((FST3)\) is a uniform tilted
+   law-of-large-numbers gap:
+   \[
+      \left.
+      \frac{d}{d\theta}\Lambda_{q,p}(\theta)
+      \right|_{\theta=0}
+      \ge t+\delta
+      \tag{FST4}
+   \]
+   for some fixed \(\delta>0\), with the same primitive finite-state
+   regularity; then the ratio in \((FST3)\) is \(1-e^{-\Omega_{\delta}(h)}\).
+\end{corollary}
+
+\begin{proof}
+   The raw number of hidden paths storing a fixed point \(x\) is
+   \[
+      N_x(ht)=|\{\pi:S_x(\pi)\ge ht\}|.
+   \]
+   By Chernoff and Perron--Frobenius regularity,
+   \[
+      N_x(ht)
+      \le
+      \inf_{\theta\ge0}
+      e^{-\theta ht}e_s^TB_x(\theta)^h\mathbf 1
+      \le
+      \exp\left\{
+         h\inf_{\theta\ge0}(\Gamma_x(\theta)-\theta t)
+      \right\}L_m^{O(1)}.
+   \]
+   Using \(h=\kappa\log m+O(1)\), condition \((FST1)\) gives
+   \(N_x(ht)\le m^\rho L_m\) up to a fixed enlargement of \(L_m\).  Summing
+   over \(m\) points proves the raw incidence bound \((MTS6)\), hence
+   \((BQ1)\).
+
+   For an invalid point \(x\) and query \(q\), the same Chernoff bound applied
+   to the marked tilted partition gives
+   \[
+      \frac{Z_{q,x}^{\ge ht}}{Z_q}
+      \le
+      \inf_{\theta\ge0}
+      \exp\left\{
+         -\theta ht
+         +h\Lambda_{q,x}(\theta)
+         -h\Lambda_q
+      \right\}L_m^{O(1)}.
+   \]
+   Condition \((FST2)\) makes this at most
+   \(m^{-(1-\rho)}L_m\), after increasing the polylogarithmic factor.  Summing
+   over the at most \(m\) invalid points and using \((MTS4)\) proves
+   \((BQ2)\).
+
+   Condition \((FST3)\) is exactly \((MTS5)\), which is \((BQ3)\).  Finally,
+   under \((FST4)\), the tilted path law induced by \(A_q\) is a primitive
+   finite-state Markov chain with additive functional \(S_p(\pi)\) of mean at
+   least \(t+\delta\) per step.  The standard finite-state Chernoff bound for
+   the lower tail gives
+   \[
+      \Pr_q[S_p(\pi)<ht]\le e^{-\Omega_\delta(h)},
+   \]
+   which proves the displayed sufficient condition for \((FST3)\).
+\end{proof}
+
+\begin{remark}[How to use the finite-state test]
+   \label{rem:finite-state-trellis-test-use}
+   \Cref{cor:finite-state-trellis-rate-test} is the scalar audit for a concrete
+   Construction-A residue trellis or convolutional sampler.  One chooses the
+   modulus, scale, local state graph, query edge weights, and threshold \(t\),
+   then computes three spectral curves:
+   the raw storage entropy \(\inf_\theta(\Gamma_x(\theta)-\theta t)\), the
+   far sampled separation exponent
+   \(\sup_\theta(\theta t-\Lambda_{q,x}(\theta)+\Lambda_q)\), and the near
+   tilted mean \(\Lambda'_{q,p}(0)\).  If these curves miss
+   \((FST1)\)--\((FST4)\), the construction has a genuine spectrum barrier.  If
+   they pass but raw storage is too large, then the only remaining issue is a
+   designed bucket canonicalization theorem; by
+   \cref{lem:random-sparse-bucket-no-quotient}, random sparse bucket equality
+   will not supply that theorem.
+\end{remark}
+
 \begin{remark}[Trellis target for codes and lattices]
    \label{rem:trellis-quotient-target}
    \Cref{lem:compressed-aggregate-sampler} is the sampled analogue of the
@@ -93945,6 +94087,10 @@ load and near mass are exactly the marked partition ratios
 hidden buckets almost never merge by equality, so useful quotient storage must
 come from a designed canonical bucket map, residue/coset identifier, leader
 bucket, or responsibility rule.
+\Cref{cor:finite-state-trellis-rate-test} is the scalar homogeneous-trellis
+audit: with depth \(h=\kappa\log m\), raw storage, sampled far separation, and
+near mass reduce to three Perron--Frobenius spectral inequalities against
+\(\rho/\kappa\) and \((1-\rho)/\kappa\).
 \Cref{lem:tilted-weight-linear-feasibility} shows that, for a fixed retained
 pool, choosing those weights is just a linear feasibility problem after
 clearing the tilted partition functions.  Failure has a concrete dual
