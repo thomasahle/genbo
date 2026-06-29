@@ -90450,6 +90450,155 @@ For a threshold $u$, the posterior-superlevel child is
    \(\Omega_s\ge\underline\mu_s/2\ge(2L_m)^{-1}\).
 \end{proof}
 
+\begin{corollary}[Route-local boosting budget for heavy reporters]
+   \label{cor:route-local-heavy-reporter-boosting}
+   Continue in the setting of
+   \cref{cor:heavy-responsibility-average-affinity}.  Let
+   \[
+      \pi_s=\Pr_{V\sim\Lambda}[s\prec V]
+   \]
+   be the occupation mass of state \(s\) under the affinity-proportional route
+   law.  Suppose one local heavy-responsibility trial at state \(s\) has
+   expected lister and exact-filtering work at most \(T_s\), and write
+   \[
+      F_s=
+      \sum_{\substack{x\in P\\x\ {\rm invalid\ at}\ s}}
+      \frac{Z_{s,x}^{\ge T}}{Z_s}
+      \tag{HRB1}
+   \]
+   for the local marked far spectrum.  For any miss targets
+   \(0<\varepsilon_s\le1/2\), choose
+   \[
+      R_s=
+      \left\lceil
+         2\underline\mu_s^{-1}\log\frac1{\varepsilon_s}
+      \right\rceil .
+      \tag{HRB2}
+   \]
+   Then the resulting skeleton has average affinity toll
+   \[
+      \E_{V\sim\Lambda}
+      \sum_{s\prec V}\log_+\frac1{\Omega_s}
+      \le
+      2\sum_s\pi_s\varepsilon_s,
+      \tag{HRB3}
+   \]
+   and therefore
+   \[
+      W(r_{s_0})
+      \ge
+      \frac12\,
+      \frac{\exp(-4\sum_s\pi_s\varepsilon_s)}{L(s_0)}.
+      \tag{HRB4}
+   \]
+   The corresponding route-local expected reporter work is bounded by
+   \[
+      \sum_s\pi_sR_sT_s
+      \le
+      \sum_s\pi_sT_s
+      +
+      2\sum_s\pi_s T_s\underline\mu_s^{-1}
+      \log\frac1{\varepsilon_s},
+      \tag{HRB5}
+   \]
+   and the emitted far load charged by the marked spectrum is at most
+   \[
+      2\sum_s
+      \pi_sR_s\underline\mu_s^{-1}F_s .
+      \tag{HRB6}
+   \]
+
+   Thus the heavy-responsibility route closes at the clean polylogarithmic
+   scale whenever one can choose \(\varepsilon_s\) with
+   \[
+      \sum_s\pi_s\varepsilon_s=O_c(1),
+      \qquad
+      \sum_s\pi_sT_s\underline\mu_s^{-1}
+      \log(1/\varepsilon_s)
+      \le m^\rho\log^{O_c(1)}m,
+      \tag{HRB7}
+   \]
+   and the analogous far-load sum in \((HRB6)\) is within
+   \(m^\rho\log^{O_c(1)}m\).
+
+   In the continuous relaxation of the work bound in \((HRB5)\), fixing a
+   target toll budget \(B_0\in(0,1]\) and minimizing
+   \[
+      \sum_s 2\pi_sT_s\underline\mu_s^{-1}\log(1/\varepsilon_s)
+      \quad\text{subject to}\quad
+      2\sum_s\pi_s\varepsilon_s\le B_0,\quad
+      0<\varepsilon_s\le1/2
+      \tag{HRB8}
+   \]
+   gives the water-filled miss profile
+   \[
+      \varepsilon_s
+      =
+      \min\left\{
+         \frac12,\,
+         \frac{2T_s}{\lambda\underline\mu_s}
+      \right\},
+      \tag{HRB9}
+   \]
+   where \(\lambda\) is chosen so that the constraint in \((HRB8)\) is tight
+   after omitting zero-cost states.  Hence the measurable local obstruction is
+   the cost per unit marked near mass \(T_s/\underline\mu_s\).  If this
+   route-occupied water-filled boosting cost is superpolylogarithmic, the
+   current heavy-lister implementation has not removed the subpolynomial loss;
+   the construction must either increase the local marked near mass, reduce
+   the lister cost through additional code/lattice structure, or contract the
+   skeleton before invoking the reporter.
+\end{corollary}
+
+\begin{proof}
+   By \((HRB2)\),
+   \[
+      \exp(-R_s\underline\mu_s/2)\le\varepsilon_s .
+   \]
+   Therefore \cref{cor:heavy-responsibility-average-affinity} gives
+   \(\Omega_s\ge1-\varepsilon_s\).  Since
+   \(\varepsilon_s\le1/2\),
+   \[
+      \log_+\frac1{\Omega_s}
+      \le
+      \log\frac1{1-\varepsilon_s}
+      \le2\varepsilon_s .
+   \]
+   Averaging this inequality over the route law gives \((HRB3)\), and
+   substituting \(B=2\sum_s\pi_s\varepsilon_s\) in
+   \cref{cor:average-affinity-leader-skeleton} gives \((HRB4)\).
+
+   The work bound \((HRB5)\) is the occupation-weighted sum of
+   \(R_sT_s\), using
+   \[
+      \left\lceil
+         2\underline\mu_s^{-1}\log(1/\varepsilon_s)
+      \right\rceil
+      \le
+      1+
+      2\underline\mu_s^{-1}\log(1/\varepsilon_s).
+   \]
+   The far-load estimate \((HRB6)\) follows by multiplying the one-trial
+   estimate \((HAA5)\) by \(R_s\) and averaging over occupied states.  This
+   proves the polylogarithmic sufficient condition \((HRB7)\).
+
+   It remains to justify the water-filled form.  In the continuous relaxation,
+   ignore states with \(\pi_sT_s=0\), since they do not affect the objective.
+   The objective is decreasing in every \(\varepsilon_s\), so the constraint is
+   tight at an optimum unless all variables are capped at \(1/2\).  For
+   uncapped states, the Lagrange equations are
+   \[
+      -\frac{2\pi_sT_s\underline\mu_s^{-1}}{\varepsilon_s}
+      +\lambda\pi_s=0,
+   \]
+   hence
+   \[
+      \varepsilon_s=\frac{2T_s}{\lambda\underline\mu_s}.
+   \]
+   Applying the upper cap \(\varepsilon_s\le1/2\) gives \((HRB9)\), with
+   \(\lambda\) determined by the tight constraint.
+\end{proof}
+
 \begin{corollary}[Boosted leader skeleton value delivery]
    \label{cor:boosted-leader-skeleton-value-delivery}
    Work in the setting of \cref{cor:boosted-leader-skeleton-toll}, and let
