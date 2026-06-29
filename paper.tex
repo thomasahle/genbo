@@ -5647,6 +5647,45 @@ partition ignores the bias coordinates that certify the list size.
    each with probability \(1/2^{r-v-1}=2^{v+1}/2^r\).
 \end{proof}
 
+\begin{lemma}[High-bit multiply-shift is not syndrome-difference-universal]
+   \label{lem:high-bit-multiply-shift-obstruction}
+   Let \(M=2^w\), \(K=2^r\), \(Q=2^{w-r}\), with \(1\le r\le w\), and let
+   \[
+      \operatorname{hi}_r(z)=\left\lfloor\frac{z}{Q}\right\rfloor
+      \in\mathbb Z/K\mathbb Z
+   \]
+   be the high \(r\) bits of a word \(z\in\mathbb Z/M\mathbb Z\).  For
+   \[
+      h_{a,b}(x)=\operatorname{hi}_r(ax+b\bmod M),
+   \]
+   with \(a\) uniform over the odd residues and \(b\) arbitrary, there are
+   distinct residues \(x,x'\) such that
+   \[
+      h_{a,b}(x')-h_{a,b}(x)=K/2
+      \quad\text{in }\mathbb Z/K\mathbb Z
+      \tag{HBM1}
+   \]
+   for every odd \(a\).  Thus the family has difference-universal constant at
+   least \(K\) for the proof interface \((DUS1)\).  If \(a\) is uniform over
+   all residues, the largest atom is still at least \(1/2\), so the
+   difference-universal constant is at least \(K/2\).
+
+   Consequently the usual high-bit power-of-two multiply-shift hash may be a
+   useful bucket heuristic, but it is not automatically a proof-safe syndrome
+   mask.  Collision universality does not imply the difference law needed for
+   \cref{cor:difference-universal-syndrome-thinning}.
+\end{lemma}
+
+\begin{proof}
+   Take \(x'=x+2^{w-1}\) modulo \(M\).  If \(a\) is odd, then
+   \(a(x'-x)\equiv2^{w-1}\pmod M\).  Since
+   \(2^{w-1}=(K/2)Q\), adding this word flips the top residue by \(K/2\)
+   modulo \(K\), independently of the lower \(w-r\) bits and independently of
+   \(b\).  This proves \((HBM1)\).  If \(a\) is uniform over all residues,
+   the same deterministic shift occurs on the odd half of the choices of
+   \(a\), giving an atom of mass at least \(1/2\).
+\end{proof}
+
 \begin{remark}[Multiply-shift style masks]
    \label{rem:multiply-shift-syndrome-masks}
    \Cref{lem:pairwise-independent-syndrome-thinning} says that the randomness
@@ -5666,12 +5705,13 @@ partition ignores the bias coordinates that certify the list size.
    \(\mathbb F_{2^w}\) followed by a full-rank linear projection to \(r\)
    output bits; for distinct symbols the projected difference is uniform in
    \(G\).  Ordinary integer multiply-shift is a useful engineering heuristic
-   but is not automatically this object: high-bit truncation over
-   \(\mathbb Z/2^w\) is not a group homomorphism for the retained syndrome,
-   while low-bit modular multiplication has the two-adic bias of
-   \cref{lem:two-adic-multiply-mask-obstruction}.  If an integer
-   multiply-shift family is used in the proof, the required check is
-   \((DUS1)\), not just a marginal load test.
+   but is not automatically this object: low-bit modular multiplication has
+   the two-adic bias of \cref{lem:two-adic-multiply-mask-obstruction}, while
+   high-bit truncation has the deterministic difference atoms of
+   \cref{lem:high-bit-multiply-shift-obstruction} and is not a group
+   homomorphism for the retained syndrome.  If an integer multiply-shift
+   family is used in the proof, the required check is \((DUS1)\), not just a
+   marginal load or collision test.
 
    This separates the randomness question from the decoding question.  For a
    fixed query score set \(A(q)\), independent of the hash seed after
