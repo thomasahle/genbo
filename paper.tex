@@ -96553,6 +96553,154 @@ amplified in the next proposition.
    lands in that set with probability at most \(L_m/M\), giving \((BRP6)\).
 \end{proof}
 
+\begin{corollary}[Aligned residues give the route-local heavy reporter]
+   \label{cor:aligned-residue-route-heavy-reporter}
+   Work at each nonunit state \(s\) of the affinity skeleton in
+   \cref{cor:route-local-heavy-reporter-boosting}.  Suppose the local
+   aggregate panel is a residue trellis satisfying the hypotheses of
+   \cref{cor:balanced-aligned-residue-lister}, with residue group
+   \(G_s\), \(M_s=|G_s|\), balance factor \(\lambda_s\), and active
+   residual-rank budget
+   \[
+      \mathcal Q_s
+      =
+      \E_{\ell\sim\Pi_s}Q_{s,\ell}.
+      \tag{ARH1}
+   \]
+   Put
+   \[
+      \eta_s=\frac{\lambda_s m}{M_s},
+      \tag{ARH2}
+   \]
+   and let \(p_s\) be the local near witness or useful leader.  If the terminal
+   residue posterior satisfies
+   \[
+      p_s(A_s\phi_s(p_s))\ge\underline\mu_s,
+      \qquad
+      \underline\mu_s^{-1}\le\log^{O_c(1)}m,
+      \tag{ARH3}
+   \]
+   then one local heavy-responsibility trial at threshold
+   \(\underline\mu_s/2\) is implemented by the residue sketch lister with
+   expected work
+   \[
+      T_s
+      \le
+      d\log^{O_c(1)}m\,
+      \eta_s
+      \left(\mathcal Q_s+\underline\mu_s^{-1}\right),
+      \tag{ARH4}
+   \]
+   and its local marked far spectrum obeys
+   \[
+      F_s\le\eta_s.
+      \tag{ARH5}
+   \]
+   Consequently, for any miss profile \(0<\varepsilon_s\le1/2\), the
+   route-local boosted aligned-residue reporter has average affinity toll at
+   most \(2\sum_s\pi_s\varepsilon_s\), and its reporter work and emitted far
+   load are within the clean local ANN budget whenever
+   \[
+      \sum_s\pi_s
+      \eta_s
+      \left(
+         \mathcal Q_s\underline\mu_s^{-1}
+         +
+         \underline\mu_s^{-2}
+      \right)
+      \log\frac1{\varepsilon_s}
+      \le
+      m^\rho\log^{O_c(1)}m .
+      \tag{ARH6}
+   \]
+
+   In particular, the aligned-residue branch closes the average-affinity
+   skeleton whenever the route has polylogarithmic expected nonunit length,
+   \[
+      \sum_s\pi_s=\log^{O_c(1)}m,
+      \tag{ARH7}
+   \]
+   and, on occupied states,
+   \[
+      \eta_s\le m^\rho\log^{O_c(1)}m,\qquad
+      \mathcal Q_s\le\log^{O_c(1)}m,\qquad
+      \underline\mu_s^{-1}\le\log^{O_c(1)}m.
+      \tag{ARH8}
+   \]
+   At the natural aligned design point this says exactly:
+   \(M_s\ge\lambda_s m^{1-\rho}\log^{-O_c(1)}m\), the quotient leaves only
+   polylogarithmically many active residue degrees of freedom, and the query
+   posterior puts inverse-polylogarithmic mass on the near residue.  If any
+   one of these three quantities is polynomially worse on a route-occupied
+   set, the residue-heavy-reporter route still carries a polynomial or
+   subpolynomial overhead unless another quotient, contraction, or
+   point-indexed reporter changes the charged object.
+\end{corollary}
+
+\begin{proof}
+   For a sampled quotient class \(\ell\), the proof of
+   \cref{cor:balanced-aligned-residue-lister} applies with the heavy threshold
+   \(\tau_s=\underline\mu_s/2\), equivalently with
+   \(L_s=2\underline\mu_s^{-1}\).  The shared-residue histogram initialization
+   and backward recursions cost, in expectation over \(\ell\),
+   \[
+      d\log^{O_c(1)}m\,
+      \mathcal Q_s\eta_s,
+      \tag{ARH9}
+   \]
+   by the same calculation as \((BAR4)\).
+
+   The exact filtering stage decodes
+   \(O(M_{s,\ell}\tau_s^{-1}\log m)\) candidates, where
+   \(M_{s,\ell}=\sum_xr_{s,x,\ell}\) is the responsibility-vector mass in the
+   sampled quotient.  By the identity \((SRL3)\) and
+   \cref{cor:balanced-residue-near-prediction},
+   \[
+      \E_{\ell\sim\Pi_s}M_{s,\ell}
+      =
+      \sum_x\mu_s(x)
+      \le
+      \eta_s .
+      \tag{ARH10}
+   \]
+   Hence exact filtering contributes at most
+   \(d\log^{O_c(1)}m\,\eta_s\underline\mu_s^{-1}\) expected work.  Combining
+   this with \((ARH9)\) proves \((ARH4)\).
+
+   The local far spectrum is bounded by the all-resident marked mass:
+   \[
+      F_s
+      \le
+      \sum_x\frac{Z_{s,x}^{\ge T}}{Z_s}
+      =
+      \sum_x\mu_s(x)
+      \le
+      \eta_s,
+   \]
+   again by \((ARH10)\), proving \((ARH5)\).
+
+   Substitute \((ARH4)\)--\((ARH5)\) into
+   \cref{cor:route-local-heavy-reporter-boosting}.  The work term
+   \((HRB5)\) is bounded by
+   \[
+      d\log^{O_c(1)}m
+      \sum_s\pi_s
+      \eta_s
+      \left(
+         \mathcal Q_s\underline\mu_s^{-1}
+         +
+         \underline\mu_s^{-2}
+      \right)
+      \log(1/\varepsilon_s),
+   \]
+   up to the lower-order one-trial term, while the far-load term \((HRB6)\) is
+   bounded by the same expression without the \(\mathcal Q_s\) summand and
+   with only a different polylogarithmic factor.  Thus \((ARH6)\) gives both
+   bounds, and the average-affinity value conclusion is \((HRB3)\)--\((HRB4)\).
+   The final specialization is immediate from
+   \((ARH6)\)--\((ARH8)\).
+\end{proof}
+
 \begin{corollary}[Near-residue prediction has a list-Fano information cost]
    \label{cor:near-residue-list-fano-cost}
    Let \(\alpha_*\in G\), \(M=|G|\), be the residue of the near or score-max
