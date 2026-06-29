@@ -87195,6 +87195,69 @@ For a threshold $u$, the posterior-superlevel child is
    Applying \cref{cor:affinity-proportional-route-law} gives \((BLS2)\).
 \end{proof}
 
+\begin{corollary}[Expected-affinity leader reporters can be fixed on finite skeletons]
+   \label{cor:expected-affinity-leader-seed}
+   Work in the setting of
+   \cref{cor:boosted-leader-skeleton-toll}, but suppose the local leader
+   reporters are randomized.  Let \(\mathcal S_*\) be the set of nonunit
+   skeleton states on the decoded good support, let \(N=|\mathcal S_*|\), and
+   let \(H\) still bound the number of nonunit states on any good route.  At
+   state \(s\), the reporter outputs verified leader ports with total useful
+   outgoing affinity \(\Omega_s\in[0,1]\).  Assume
+   \[
+      \E[1-\Omega_s]\le
+      \frac{1}{40N(H+1)^2}
+      \qquad(s\in\mathcal S_*).
+      \tag{ELS1}
+   \]
+   If \(W_{\rm rep}\) is the total reporter work over the exposed skeleton and
+   \(\E W_{\rm rep}\le W_0\), then with positive probability over the reporter
+   seed,
+   \[
+      \Omega_s\ge1-(H+1)^{-2}
+      \quad\text{for every }s\in\mathcal S_*,
+      \qquad
+      W_{\rm rep}\le 20W_0 .
+      \tag{ELS2}
+   \]
+   For any seed satisfying \((ELS2)\), the deterministic conclusion of
+   \cref{cor:boosted-leader-skeleton-toll} applies:
+   \[
+      W(r_{s_0})\ge e^{-2}/L(s_0).
+      \tag{ELS3}
+   \]
+
+   Thus a finite decoded leader skeleton does not need a pointwise local
+   guarantee before the query randomness is fixed.  It is enough to make the
+   expected missed affinity per exposed state smaller than
+   \(1/(N H^2)\).  When \(N,H=\log^{O_c(1)}n\), this costs only an additional
+   \(O(\log(NH))\) local repetition factor in the Poisson or dyadic leader
+   reporter.
+\end{corollary}
+
+\begin{proof}
+   By Markov's inequality and \((ELS1)\),
+   \[
+      \Pr\bigl[1-\Omega_s>(H+1)^{-2}\bigr]
+      \le
+      (H+1)^2\E[1-\Omega_s]
+      \le \frac1{40N}.
+   \]
+   A union bound over \(s\in\mathcal S_*\) shows that all affinity bounds in
+   \((ELS2)\) hold with probability at least \(39/40\).  A second application
+   of Markov gives
+   \[
+      \Pr[W_{\rm rep}>20W_0]\le1/20.
+   \]
+   Therefore both events hold simultaneously with probability at least
+   \(1-1/40-1/20>0\).  Fix any seed in this event.  The affinity inequalities
+   are exactly \((BLS0)\), so
+   \cref{cor:boosted-leader-skeleton-toll} gives \((ELS3)\).
+   The final sentence is the usual amplification calculation: reducing a
+   missed-affinity expectation to \(1/(NH^2)\) multiplies the local Poisson or
+   dyadic repetition count by \(O(\log(NH))\).
+\end{proof}
+
 \begin{corollary}[Boosted leader skeleton value delivery]
    \label{cor:boosted-leader-skeleton-value-delivery}
    Work in the setting of \cref{cor:boosted-leader-skeleton-toll}, and let
