@@ -96004,6 +96004,122 @@ amplified in the next proposition.
    \cref{lem:junction-tree-quotient-sampler}.
 \end{proof}
 
+\begin{corollary}[Two-sided balance charges sampler mass to rate load]
+   \label{cor:two-sided-balance-sampler-load}
+   Work in the shared-signature setting above and put
+   \[
+      L_B=\sum_{x\in S}b_x(B)
+      =
+      \sum_{\alpha\in\Sigma}|C_\alpha|u_\alpha(B).
+      \tag{TSB1}
+   \]
+   Suppose the resident signature classes that can receive active mass are
+   two-sided balanced:
+   \[
+      \kappa m/M\le |C_\alpha|\le\lambda m/M
+      \qquad\text{whenever }u_\alpha(B)>0,
+      \tag{TSB2}
+   \]
+   with \(\kappa>0\).  Then, deterministically for this query outcome,
+   \[
+      U_B\le \frac{M}{\kappa m}L_B,
+      \qquad
+      \frac{\lambda m}{M}U_B\le \frac{\lambda}{\kappa}L_B.
+      \tag{TSB3}
+   \]
+   Consequently the unfiltered sampler of
+   \cref{cor:unfiltered-signature-sampler-witness} has expansion work at most
+   \[
+      T_{\rm raw}(B)
+      +
+      O\!\left(
+         \frac{\lambda}{\kappa}
+         \frac{L_B}{\theta}
+         \log\!\left(2m+\frac{2ML_B}{\kappa m\theta}\right)
+      \right).
+      \tag{TSB4}
+   \]
+
+   If, in addition, the sampler is supplied by an acyclic aggregate sampler as in
+   \cref{cor:acyclic-aggregate-signature-reporter}, with backward cost
+   \(T_{\rm back}(B)\) and per-sampled-path cost \(T_{\rm path}(B)\le\tau_B\),
+   then the total sampler plus expansion work is at most
+   \[
+      T_{\rm back}(B)
+      +
+      O\!\left(
+         \left(
+            \frac{\tau_BM}{\kappa m}
+            +
+            \frac{\lambda}{\kappa}
+         \right)
+         \frac{L_B}{\theta}
+         \log\!\left(2m+\frac{2ML_B}{\kappa m\theta}\right)
+      \right).
+      \tag{TSB5}
+   \]
+
+   Thus, under \((PMR1)\)--\((PMR2)\), the acyclic sampler implements the
+   smoothed witness-list endpoint whenever the expectation of the right-hand
+   side of \((TSB5)\) is \(Dm^\rho\log^{O_c(1)}m\).  In the usual polynomial
+   envelope regime
+   \[
+      \frac{ML_B}{m\theta}\le m^{O_c(1)},\qquad
+      \theta^{-1},\ \lambda/\kappa,\ \tau_B,\ M/m
+      \le \log^{O_c(1)}m,
+      \tag{TSB6}
+   \]
+   this work condition follows directly from the rate-load bound \((PMR2)\) and
+   \(\E_ZT_{\rm back}(B(q,Z))\le Dm^\rho\log^{O_c(1)}m\).
+
+   Hence the sampler branch has no independent ``total active mass'' theorem
+   once the resident quotient is two-sided balanced.  The real construction
+   target is instead: exact aggregate sampling on a compact code/lattice/trellis
+   graph, two-sided resident signature balance, and the original tilted
+   miss/load conditions \((PMR1)\)--\((PMR2)\).  If active mass can fall on empty
+   or tiny signatures, \((TSB3)\) fails and the raw aggregate sampler may spend
+   most of its draws on signatures that do not help the point list.
+\end{corollary}
+
+\begin{proof}
+   The identity \((TSB1)\) follows from \(b_x(B)=u_{\alpha(x)}(B)\) and the
+   partition \(S=\bigsqcup_\alpha C_\alpha\).  The lower side of \((TSB2)\) gives
+   \[
+      L_B
+      =
+      \sum_\alpha |C_\alpha|u_\alpha(B)
+      \ge
+      \frac{\kappa m}{M}\sum_\alpha u_\alpha(B)
+      =
+      \frac{\kappa m}{M}U_B,
+   \]
+   proving the first inequality in \((TSB3)\).  Multiplying it by
+   \(\lambda m/M\) proves the second.
+
+   Substitute the first inequality in the logarithm and the second in the class
+   expansion factor of \((USS1)\) to obtain \((TSB4)\).  For an acyclic sampler,
+   \cref{cor:acyclic-aggregate-signature-reporter} gives
+   \[
+      T_{\rm raw}(B)
+      \le
+      T_{\rm back}(B)
+      +
+      O\!\left(
+         \frac{U_B}{\theta}
+         \log(2m+2U_B/\theta)\,T_{\rm path}(B)
+      \right).
+   \]
+   Using \(T_{\rm path}(B)\le\tau_B\) and the first inequality in \((TSB3)\)
+   bounds this sampling term by the \(\tau_BM/(\kappa m)\) part of \((TSB5)\);
+   the expansion term is \((TSB4)\).
+
+   The endpoint statement is now exactly
+   \cref{cor:unfiltered-signature-sampler-witness}.  Under \((TSB6)\), the
+   logarithm in \((TSB5)\) is \(O_c(\log m)\), and the prefactor multiplying
+   \(L_B\) is polylogarithmic.  Averaging and using \((PMR2)\) gives the claimed
+   \(m^\rho\polylog m\) work bound, after adding the assumed backward-pass cost.
+\end{proof}
+
 \begin{corollary}[Aligned linear charts compute rate-coverage sketches]
    \label{cor:aligned-linear-chart-rate-coverage-sketch}
    Work in the setting of
