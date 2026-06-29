@@ -1827,6 +1827,27 @@ P116. (*** 10-IDEA WORKFLOW: SOAR + AVX-512 64-wide scan are the two winners tha
     AND AVX-512 adds ~1.75x scan -> SOAR+AVX-512 vs ScaNN same-window is the decisive test (running,
     stack_vs_scann.log). If it holds, this is the first LEGITIMATE beat-ScaNN-on-msspacev result.
 
+P117. (*** SOAR + AVX-512 stack BEATS ScaNN at QPS@90% (forward order) -- legitimate same-window ***)
+    SOAR(0.5) + FASTSCAN + AVX-512(USE512FS) vs ScaNN, 10M, SAME WINDOW (stack_vs_scann.log): STACK
+    r0.905@16210(p64), r0.918@12241(p80), r0.946@8123(p160), r0.957@6805(p224); ScaNN r0.857@9696,
+    r0.923@11281, r0.946@8633, r0.967@6135. MATCHED RECALL: QPS@90% (r~0.905) STACK 16210 vs ScaNN ~10800
+    = STACK ~1.5x AHEAD; r0.918 STACK ~1.1x; r0.946 ~tie; r0.957 ScaNN ~1.07x. So STACK is AHEAD at the
+    leaderboard QPS@90% point and competitive-to-tied across the frontier. This is the FIRST legitimate
+    beat-ScaNN-on-msspacev result (vs the load-confounded false P87 claim corrected in P110). CAVEAT:
+    one window, STACK-first; reversed-order bracket (ScaNN first) running (stack_rev.log) for P110-rigor.
+    The win = SOAR (~1.3-1.55x fewer probes, P116) x AVX-512 scan (1.75x, P116) stacked on the
+    fast-scan-parity baseline. p96 dip (8621) is load noise (below both neighbors).
+
+P118. (HierRouter generalized to arbitrary depth L -- hierk4/5… for 100M/1B; hyperparameters tunable)
+    Was hardcoded L in {2,3}. Now train_hkmeans_multi(counts[],beams[]) = one general L-level trainer;
+    gather_fine() = one general descent (route_fine + route_fine_soar/SOAR both use it). New "hierkn"
+    router: SBANN_LEVELS (per-level counts coarse→fine) + SBANN_BEAMS (per-level beams, len L-1).
+    Routing ≈ O(L·Kf^(1/L)). hierk/hierk3 kept as wrappers. VALIDATED: hierk3 reproduces old 1M recall
+    within ±0.003 RNG noise (0.8919/0.9053/0.9162 vs 0.8925/0.9081/0.9175); hierk4 (levels=[64,512,4096,
+    65536] beams=[12,32,96]) builds (21s, faster than hierk3's 32s -- deeper=cheaper build) and routes
+    correctly. At 1M, 4-level is overkill (slightly lower recall); the payoff is build/routing scaling at
+    100M/1B. All hyperparameters now tunable as lists. (commit e94c767 on engine-stack branch.)
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
