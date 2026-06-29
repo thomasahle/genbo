@@ -95476,6 +95476,99 @@ amplified in the next proposition.
    \(m^\rho\log^{O_c(1)}m\).  Adding \((SRL2)\) gives the stated expected work.
 \end{proof}
 
+\begin{corollary}[Sketchable rate coverage implements point-mass reporting]
+   \label{cor:sketched-rate-coverage-point-mass}
+   Work in the setting of
+   \cref{cor:point-mass-rate-coverage-reporter}.  For one query outcome
+   \(B=B(q,Z)\), put
+   \[
+      r^B_x=b_x(B),
+      \qquad
+      M_B=\sum_{x\in S}r^B_x,
+      \qquad
+      \tau=\theta .
+      \tag{PMHS0}
+   \]
+   Suppose that, for pairwise-independent sketch rows
+   \(h_s:S\to[W_B]\) with
+   \(W_B=\max\{1,\lceil32M_B/\theta\rceil\}\), sampled independently of the
+   query outcome or fixed by a finite-signature union bound, the query can
+   compute the exact nonnegative measurements
+   \[
+      T_{s,a}(B)=\sum_{x:\ h_s(x)=a}b_x(B),
+      \tag{PMHS1}
+   \]
+   and
+   \[
+      T_{s,a,k}(B)=
+      \sum_{\substack{x:\ h_s(x)=a\\{\rm bit}_k(x)=1}}b_x(B)
+      \tag{PMHS2}
+   \]
+   in time
+   \[
+      T_{\rm agg}(q,Z)+O\!\left(\theta^{-1}M_B\log^2m\right),
+      \tag{PMHS3}
+   \]
+   including exact evaluation of \(b_x(B)\) for decoded candidates.  Assume
+   the strengthened miss and load bounds \((PMR1)\)--\((PMR2)\), and
+   \[
+      \E_ZT_{\rm agg}(q,Z)
+      \le D\,m^\rho\log^{O_c(1)}m .
+      \tag{PMHS4}
+   \]
+   Then the sketch decoder of
+   \cref{lem:linear-sketch-heavy-responsibilities} supplies the point-mass
+   reporter required by
+   \cref{cor:point-mass-rate-coverage-reporter}, up to an additional
+   \(O(1/m)\) tilted miss term.  Consequently the local expected query work is
+   \(D\,m^\rho\log^{O_c(1)}m\), and the resulting retained structure gives the
+   posterior ANN endpoint of \cref{prop:witness-list-polylog}.
+
+   Equivalently, since \(b_x(B)=\sum_{a\in B}b_{x,a}\), every required sketch
+   counter has the label-linear form
+   \[
+      \sum_{a\in B}\sum_{x\in S}c_x b_{x,a},
+      \qquad
+      c_x\in\{0,1\},
+      \tag{PMHS5}
+   \]
+   where \(c_x\) is a hash-bucket indicator or a hash-bucket-and-bit
+   indicator.  Thus pairwise-independent hashes, such as word-level affine or
+   multiply-shift rows, are random enough for the heavy-point decoding step;
+   the remaining mathematical burden is computing the aggregate counters
+   \((PMHS5)\) without expanding the selected label union.
+\end{corollary}
+
+\begin{proof}
+   Condition on the query outcome \(B\).  Applying
+   \cref{lem:linear-sketch-heavy-responsibilities} to the nonnegative vector
+   \(r^B\) with threshold \(\theta\) returns every point with
+   \(b_x(B)\ge\theta\), except with probability at most \(1/m\) over the sketch
+   rows, and exact filtering removes decoded false positives.  The number of
+   decoded candidates and the sketch-dependent arithmetic are
+   \(O(\theta^{-1}M_B\log^2m)\).  Averaging over \(Z\), the load bound
+   \((PMR2)\) and \(\theta^{-1}=\log^{O_c(1)}m\) put this term within
+   \(m^\rho\log^{O_c(1)}m\).  Adding \((PMHS4)\) gives the claimed local work.
+
+   For a near pair \(p,q\), the exact heavy list has tilted miss at most
+   \(a_c/8\) by \cref{cor:point-mass-rate-coverage-reporter}.  The independent
+   sketch failure contributes at most
+   \[
+      m^{-1}\E_ZR_{p,q}(Z)\le m^{-1},
+   \]
+   because the normalizing identity \((WL1)\) gives
+   \(\E_ZR_{p,q}(Z)\le1\).  For all large \(m\) this is still below the
+   witness-loss allowance \((WL2)\); small \(m\) are absorbed into constants.
+   \Cref{lem:smoothed-witness-list-compiler} and
+   \cref{prop:witness-list-polylog} finish the endpoint.
+
+   Finally, substituting \(b_x(B)=\sum_{a\in B}b_{x,a}\) into
+   \((PMHS1)\)--\((PMHS2)\) gives \((PMHS5)\).  The proof of
+   \cref{lem:linear-sketch-heavy-responsibilities} used only pairwise
+   independence of the rows, so no stronger randomness is needed for the
+   sketch decoder itself.
+\end{proof}
+
 \begin{remark}[What the sketch has to aggregate]
    \label{rem:sketched-responsibility-aggregation}
    The sketch in \cref{lem:linear-sketch-heavy-responsibilities} is linear in
