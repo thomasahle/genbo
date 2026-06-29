@@ -16666,6 +16666,65 @@ partition ignores the bias coordinates that certify the list size.
    \(Z_{q,x,\ell}^{\ge T}/Z_q\).
 \end{proof}
 
+\begin{lemma}[Random sparse aggregate buckets overcharge full scans]
+   \label{lem:random-sparse-aggregate-responsibility-barrier}
+   Let one quotient bucket aggregate \(H\) hidden labels with equal conditional
+   query weight.  For each point \(x\in P\), \(|P|=m\), and each hidden label
+   \(a\), let \(U_x(a)\) be independent Bernoulli\((s)\).  Put
+   \[
+      N_x=\sum_{a=1}^H U_x(a),
+      \qquad
+      r_x=\frac{N_x}{H}.
+   \]
+   The hidden marked load of this aggregate bucket is
+   \(\sum_x r_x\), while ordinary union scanning emits
+   \(\sum_x\mathbf 1\{N_x>0\}\) points.  Their expectations are
+   \[
+      \E\sum_x r_x=ms,
+      \qquad
+      \E\sum_x\mathbf 1\{N_x>0\}
+      =
+      m\bigl(1-(1-s)^H\bigr).
+      \tag{RSR1}
+   \]
+   Therefore the expected full-scan overcharge relative to the hidden marked
+   spectrum is
+   \[
+      \frac{1-(1-s)^H}{s}
+      \ge c\,\min\{H,s^{-1}\}
+      \tag{RSR2}
+   \]
+   for a universal constant \(c>0\) whenever \(0<s\le1/2\).
+
+   In the ANN sparse scale \(s=m^{\rho-1+o(1)}\), any forced aggregate class
+   of size \(H=\log^{\omega(1)}m\) has superpolylogarithmic expected overcharge
+   under ordinary union scanning.  If \(H=\log^{O(1)}m\), the overcharge is only
+   polylogarithmic but the aggregate class is too small to provide more than
+   polylogarithmic hidden-label compression.
+\end{lemma}
+
+\begin{proof}
+   The identity for the hidden marked load follows from
+   \[
+      \E r_x=H^{-1}\sum_{a=1}^H\E U_x(a)=s.
+   \]
+   A point is scanned by the union bucket exactly when at least one hidden label
+   contains it, so
+   \[
+      \Pr[N_x>0]=1-(1-s)^H,
+   \]
+   proving \((RSR1)\).
+
+   If \(Hs\le1\), then
+   \[
+      1-(1-s)^H\ge \frac12Hs
+   \]
+   for \(s\le1/2\), giving overcharge at least \(H/2\).  If \(Hs>1\), then
+   \(1-(1-s)^H\ge1-e^{-1}\), giving overcharge at least
+   \((1-e^{-1})s^{-1}\).  This proves \((RSR2)\).  Substituting
+   \(s=m^{\rho-1+o(1)}\) gives the final claims.
+\end{proof}
+
 \begin{remark}[Trellis target for codes and lattices]
    \label{rem:trellis-quotient-target}
    \Cref{lem:compressed-aggregate-sampler} is the sampled analogue of the
@@ -16692,6 +16751,10 @@ partition ignores the bias coordinates that certify the list size.
    \Cref{cor:full-bucket-scan-responsibility-barrier} records the matching
    obstruction to ordinary union scanning: its pointwise overcharge is the
    inverse of this marked responsibility.
+   \Cref{lem:random-sparse-aggregate-responsibility-barrier} shows that this is
+   not a pathological edge case: aggregating \(H\) independent sparse hidden
+   filters into one bucket inflates union-scan load by
+   \(\Theta(\min\{H,s^{-1}\})\) in expectation.
 \end{remark}
 
 \begin{lemma}[Tilted weight feasibility is linear]
@@ -94349,6 +94412,9 @@ factor preserves the far and near spectrum.
 \Cref{cor:full-bucket-scan-responsibility-barrier} gives the corresponding
 barrier for ordinary full-bucket scanning: its overcharge on \(x,\ell\) is
 exactly the inverse marked responsibility.
+\Cref{lem:random-sparse-aggregate-responsibility-barrier} instantiates that
+barrier in the random sparse model: merging \(H\) hidden filters inflates the
+expected union scan by \((1-(1-s)^H)/s=\Theta(\min\{H,s^{-1}\})\).
 \Cref{lem:tilted-weight-linear-feasibility} shows that, for a fixed retained
 pool, choosing those weights is just a linear feasibility problem after
 clearing the tilted partition functions.  Failure has a concrete dual
