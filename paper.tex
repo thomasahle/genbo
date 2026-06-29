@@ -94327,6 +94327,156 @@ amplified in the next proposition.
    \(c=2\), \(\rho_c=1/7\), gives \((BAL5)\).
 \end{proof}
 
+\begin{lemma}[Residue-list hit probability forces far load]
+   \label{lem:residue-list-hit-load-tradeoff}
+   Let \(0<\chi<1\), and let \((X,Y)\) be standard Gaussian blocks with
+   \(Y=\chi X+\sqrt{1-\chi^2}Z\).  Let \(S\) be an independent preprocessing
+   seed, and for each seed \(s\) let
+   \(f_s:\mathbb R^D\to\Gamma\) be an arbitrary residue map into a finite set
+   \(\Gamma\) of size \(M\).  Let \(\mathcal L_s(Y)\subseteq\Gamma\) be any
+   query-side residue list, possibly randomized using \(Y\) and \(s\).  Let
+   \(X'\) be an independent standard Gaussian block, independent of
+   \((X,Y,S)\), and define
+   \[
+      \pi=\Pr[f_S(X)\in\mathcal L_S(Y)],
+      \qquad
+      \beta=\Pr[f_S(X')\in\mathcal L_S(Y)] .
+      \tag{RHL1}
+   \]
+   Then
+   \[
+      \pi
+      \le
+      M^{\chi/(1+\chi)}\beta^{1/(1+\chi)} .
+      \tag{RHL2}
+   \]
+   Equivalently, any residue list with correlated hit probability \(\pi\) has
+   independent far mass
+   \[
+      \beta\ge \pi^{1+\chi}M^{-\chi}.
+      \tag{RHL3}
+   \]
+\end{lemma}
+
+\begin{proof}
+   Condition on \(S=s\) and on the internal randomness of the list decoder.
+   Put
+   \[
+      A_\alpha=\{x:f_s(x)=\alpha\},
+      \qquad
+      B_\alpha=\{y:\alpha\in\mathcal L_s(y)\},
+   \]
+   and write \(a_\alpha=\mu(A_\alpha)\), \(b_\alpha=\mu(B_\alpha)\).  As in
+   \cref{lem:balanced-gaussian-residue-list-bound}, Gaussian
+   hypercontractivity gives, with \(r=1/(1+\chi)\),
+   \[
+      \Pr[f_s(X)\in\mathcal L_s(Y)]
+      \le
+      \sum_{\alpha\in\Gamma}a_\alpha^r b_\alpha^r
+      =
+      \sum_{\alpha\in\Gamma}(a_\alpha b_\alpha)^r .
+      \tag{RHL4}
+   \]
+   The independent far mass in this conditioned experiment is
+   \[
+      \beta_s
+      =
+      \Pr[f_s(X')\in\mathcal L_s(Y)]
+      =
+      \sum_{\alpha\in\Gamma}a_\alpha b_\alpha .
+      \tag{RHL5}
+   \]
+   Since \(u^r\) is concave,
+   \[
+      \sum_{\alpha\in\Gamma}(a_\alpha b_\alpha)^r
+      \le
+      M^{1-r}\beta_s^r .
+      \tag{RHL6}
+   \]
+   Averaging over the seed and the decoder randomness, and using concavity once
+   more, yields
+   \[
+      \pi
+      \le
+      M^{1-r}\E\beta_s^r
+      \le
+      M^{1-r}\beta^r,
+   \]
+   which is \((RHL2)\).  Rearranging gives \((RHL3)\).
+\end{proof}
+
+\begin{corollary}[Nonuniform residue lists still pay polynomial scan load]
+   \label{cor:nonuniform-residue-scan-load-barrier}
+   In the setting of \cref{lem:residue-list-hit-load-tradeoff}, suppose
+   \[
+      M=m^{1-\rho}\log^{O(1)}m
+      \tag{NRL1}
+   \]
+   and a query-side residue-list reporter has near hit probability
+   \(\pi\ge\log^{-O(1)}m\).  Then its independent far residue mass satisfies
+   \[
+      \beta
+      \ge
+      m^{-\chi(1-\rho)-o(1)} .
+      \tag{NRL2}
+   \]
+   Consequently, any implementation that pays one unit for each resident in the
+   listed residue classes has expected class-scan load at least
+   \[
+      m\beta
+      \ge
+      m^{1-\chi(1-\rho)-o(1)} .
+      \tag{NRL3}
+   \]
+
+   At the native critical Euclidean point
+   \[
+      \rho_c=\frac1{2c^2-1},
+      \qquad
+      \chi=a_0=1-\frac1{c^2},
+   \]
+   the forced scan exponent is
+   \[
+      \tau_c
+      =
+      1-a_0(1-\rho_c)
+      =
+      \frac{3c^2-2}{c^2(2c^2-1)}
+      =
+      \rho_c+\frac{2(c^2-1)}{c^2(2c^2-1)}
+      >
+      \rho_c .
+      \tag{NRL4}
+   \]
+   For \(c=2\), this is
+   \[
+      m\beta\ge m^{5/14-o(1)},
+      \tag{NRL5}
+   \]
+   while the target local query budget is \(m^{1/7}\polylog m\).
+
+   Thus nonuniform residue cells do not rescue a residue-list or class-scan
+   implementation.  They can increase near hit probability only by increasing
+   the independent far mass of the reported cells.  A surviving construction
+   must either reduce the entropy of the charged object before forming the
+   residue list, or report point-indexed responsibility/leader mass without
+   paying for every resident in the listed residue classes.
+\end{corollary}
+
+\begin{proof}
+   Rearranging \((RHL2)\) gives \((RHL3)\).  With
+   \(\pi\ge\log^{-O(1)}m\) and \((NRL1)\), this is \((NRL2)\).  Multiplying by
+   \(m\) gives \((NRL3)\).  Finally,
+   \[
+      1-\left(1-\frac1{c^2}\right)
+        \left(1-\frac1{2c^2-1}\right)
+      =
+      \frac{3c^2-2}{c^2(2c^2-1)},
+   \]
+   and subtracting \(\rho_c\) gives the positive gap in \((NRL4)\).  The value
+   \(c=2\) gives \(5/14\).
+\end{proof}
+
 \begin{corollary}[Random active residues saturate the residue budget]
    \label{cor:random-active-residue-barrier}
    Consider the balanced-residue setting with \(M=|G|\), and assume for
