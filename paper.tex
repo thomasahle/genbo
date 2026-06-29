@@ -97036,6 +97036,110 @@ amplified in the next proposition.
    \cref{cor:resident-support-conditioned-raw-expansion}.
 \end{proof}
 
+\begin{corollary}[Support-conditioned linear charts need only quotient rank]
+   \label{cor:support-conditioned-linear-chart-sampler}
+   Work in the resident-source setting of
+   \cref{cor:linear-resident-image-support-conditioning}.  Write
+   \(\bar G=G/H\) and let \(\pi:G\to\bar G\) be the quotient map.  For one query
+   outcome \(B\), suppose the selected labels are partitioned into affine
+   charts \(a\in I_B\).  In chart \(a\), labels are
+   \[
+      B_a z=b_a,\qquad z\in\mathbb F_q^{N_a},
+      \tag{LCS1}
+   \]
+   carry nonnegative constant weight \(\omega_a(B)\), and have terminal resident
+   signature
+   \[
+      \sigma_a(z)=\gamma_a+C_a z\in G .
+      \tag{LCS2}
+   \]
+   Define the support-conditioned augmented system
+   \[
+      \widetilde B_a z=\widetilde b_a,
+      \qquad
+      \widetilde B_a=
+      \begin{pmatrix}
+      B_a\\
+      \pi C_a
+      \end{pmatrix},
+      \qquad
+      \widetilde b_a=
+      \begin{pmatrix}
+      b_a\\
+      \pi(Az_0-\gamma_a)
+      \end{pmatrix}.
+      \tag{LCS3}
+   \]
+   Let
+   \[
+      \bar R_a=
+      \operatorname{rank}\widetilde B_a-\operatorname{rank}B_a .
+      \tag{LCS4}
+   \]
+   Then the support-conditioned aggregate mass is
+   \[
+      U_B^+
+      =
+      \sum_{a:\ \widetilde B_a z=\widetilde b_a\ {\rm solvable}}
+      \omega_a(B)\,q^{N_a-\operatorname{rank}\widetilde B_a}.
+      \tag{LCS5}
+   \]
+   It is sampled exactly by first choosing chart \(a\) with probability
+   proportional to the summand in \((LCS5)\), then drawing a uniform solution
+   \(z\) of \((LCS3)\), and returning the signature \(\sigma_a(z)\).
+
+   If \(T_{\rm aug}(B)\) is the time to solve the augmented linear systems,
+   compute \((LCS5)\), and prepare uniform samplers for the nonempty solution
+   spaces, and if one sampled augmented solution costs at most \(\tau_B\), then
+   \cref{cor:resident-support-conditioned-raw-expansion} applies with
+   \(T_{\rm back}^+(B)=T_{\rm aug}(B)\).  Hence, under
+   \((PMR1)\)--\((PMR2)\), the point-mass reporter has
+   \(m^\rho\polylog m\) expected online work whenever, in the usual polynomial
+   envelope,
+   \[
+      \E_Z T_{\rm aug}(B(q,Z))\le Dm^\rho\log^{O_c(1)}m,
+      \qquad
+      \tau_{B(q,Z)}\le\log^{O_c(1)}m .
+      \tag{LCS6}
+   \]
+
+   The rank \(\bar R_a\) is the exact algebraic toll for imposing resident
+   support on chart \(a\): it is the residual rank of the quotient observer
+   \(\pi C_a\) after the chart constraints \(B_a z=b_a\).  Thus a
+   code/lattice decoder does not need to list the full active residue image
+   \(C_a(\ker B_a)\) to use raw expansion.  It only needs to maintain the
+   quotient syndrome \(\pi C_a z\).  If this quotient syndrome is already
+   determined by the chart, \(\bar R_a=0\); if it has \(O(\log\log m)\) residual
+   dimension, the associated syndrome-state overhead is polylogarithmic.
+\end{corollary}
+
+\begin{proof}
+   By \cref{cor:linear-resident-image-support-conditioning}, a terminal
+   signature \(\gamma_a+C_az\) has a nonempty resident class if and only if
+   \[
+      \pi(\gamma_a+C_az)=\pi(Az_0),
+   \]
+   which is precisely the second block of the augmented system \((LCS3)\).
+   Therefore the support-conditioned labels in chart \(a\) are exactly the
+   solutions of \((LCS3)\).  If this affine system is consistent, it has
+   \(q^{N_a-\operatorname{rank}\widetilde B_a}\) solutions; otherwise it
+   contributes no mass.  Multiplying by the constant label weight
+   \(\omega_a(B)\) and summing over charts proves \((LCS5)\).
+
+   The proposed sampler chooses each support-conditioned label \((a,z)\) with
+   probability proportional to its weight \(\omega_a(B)\).  Pushing this law
+   forward by \(\sigma_a(z)\) gives exactly the signature law
+   \(u_\alpha(B)/U_B^+\) restricted to \(\Sigma^+\), because all labels with
+   signatures outside \(\Sigma^+\) have been removed by \((LCS3)\).  This is
+   the law \((RSPX2)\).  The work statement and endpoint are therefore
+   \cref{cor:resident-support-conditioned-raw-expansion} with
+   \(T_{\rm back}^+=T_{\rm aug}\).
+
+   Finally, adding the quotient block \(\pi C_a\) to \(B_a\) raises the rank by
+   \(\bar R_a\), exactly as in \((LCS4)\).  This is the number of independent
+   quotient-syndrome coordinates not already fixed by the chart constraints.
+\end{proof}
+
 \begin{corollary}[Aligned linear charts compute rate-coverage sketches]
    \label{cor:aligned-linear-chart-rate-coverage-sketch}
    Work in the setting of
