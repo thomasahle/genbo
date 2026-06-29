@@ -96496,6 +96496,101 @@ amplified in the next proposition.
    proving \((POA3)\).
 \end{proof}
 
+\begin{lemma}[Limited independence gives quenched resident balance]
+   \label{lem:limited-independence-resident-balance}
+   Let \(\Sigma\) have size \(M\), let \(S\) have size \(m\), and put
+   \[
+      \mu=\frac{m}{M}.
+      \tag{LIR1}
+   \]
+   Choose a random resident signature map \(h:S\to\Sigma\) such that the
+   variables \(\{h(x):x\in S\}\) are \(2r\)-wise independent and uniform on
+   \(\Sigma\).  There is a universal constant \(C\) such that, for every
+   \(1\le r\le \mu/C\),
+   \[
+      \Pr_h\!\left[
+         \exists\alpha\in\Sigma:
+         \bigl||h^{-1}(\alpha)|-\mu\bigr|>\mu/2
+      \right]
+      \le
+      2M\left(\frac{Cr}{\mu}\right)^r .
+      \tag{LIR2}
+   \]
+   Consequently, with positive probability every resident class satisfies
+   \[
+      \frac12\,\frac mM
+      \le
+      |h^{-1}(\alpha)|
+      \le
+      \frac32\,\frac mM
+      \qquad(\alpha\in\Sigma)
+      \tag{LIR3}
+   \]
+   whenever the right-hand side of \((LIR2)\) is below one.
+
+   At the aligned LSF scale
+   \[
+      M\le m^{1-\rho}\log^{A}m,
+      \qquad \rho>0,\ A=O_c(1),
+      \tag{LIR4}
+   \]
+   a constant \(r=O_{\rho,A}(1)\) gives failure probability \(m^{-2}\) for all
+   large \(m\).  Thus two-sided resident balance is not a high-randomness
+   obstacle at this scale: constant-wise, \(c\)-dependent independence is
+   enough to find a balanced partition.
+
+   This does not discharge the code/lattice decoder.  A high-independence
+   hash balances the resident classes, but the query-side aggregate sampler
+   must still compute or sample the corresponding active law \(u_\alpha(B)\),
+   and the near-residue posterior must still put inverse-polylogarithmic mass
+   on \(h(p)\).  Pairwise affine or carry-less maps are attractive because
+   they remain linear observers for trellises and residues; limited-independence
+   polynomial or tabulation maps buy quenched balance only if their evaluation
+   can be represented inside the same compact decoder state.
+\end{lemma}
+
+\begin{proof}
+   Fix one \(\alpha\in\Sigma\) and write
+   \[
+      X_\alpha=|h^{-1}(\alpha)|
+      =
+      \sum_{x\in S}\mathbf1\{h(x)=\alpha\}.
+   \]
+   The summands are \(2r\)-wise independent Bernoulli variables with mean
+   \(1/M\), so \(X_\alpha\) has the same centered \(2r\)-th moment as a
+   binomial variable with mean \(\mu\).  The standard bounded-independence
+   Chernoff moment estimate gives, for a universal \(C\) and \(r\le\mu/C\),
+   \[
+      \E|X_\alpha-\mu|^{2r}
+      \le
+      2(Cr\mu)^r .
+      \tag{LIR5}
+   \]
+   Markov's inequality yields
+   \[
+      \Pr\!\left[|X_\alpha-\mu|>\mu/2\right]
+      \le
+      2\left(\frac{Cr}{\mu}\right)^r
+      \tag{LIR6}
+   \]
+   after increasing \(C\).  A union bound over the \(M\) signatures proves
+   \((LIR2)\), and \((LIR3)\) is the complementary event.
+
+   Under \((LIR4)\),
+   \[
+      \mu\ge m^\rho\log^{-A}m .
+   \]
+   Choose \(r>(3+A)/\rho\), rounded up and with \(r\le\mu/C\) for all large
+   \(m\).  Then
+   \[
+      M(Cr/\mu)^r
+      \le
+      m^{1-\rho-r\rho+o(1)}
+      \le m^{-2},
+   \]
+   after increasing \(r\) by a fixed \(O_{\rho,A}(1)\) amount.
+\end{proof}
+
 \begin{corollary}[Aligned linear charts compute rate-coverage sketches]
    \label{cor:aligned-linear-chart-rate-coverage-sketch}
    Work in the setting of
