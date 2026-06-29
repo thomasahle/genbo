@@ -89143,6 +89143,15 @@ amplified in the next proposition.
    therefore promising only if its pruning profile can be certified as a
    budget-stable Fano potential or as a compact quotient sampler in the sense of
    \cref{lem:compressed-aggregate-sampler}.
+
+   The later entropy barriers make this restriction essential rather than
+   stylistic.  By \cref{rem:raw-top-one-entropy-barrier}, a symmetric raw
+   top-one Gaussian panel charged at full label entropy loses the gap by data
+   processing: the data block contains only \(I(A;U)\) nats about the query
+   label \(A\), while the far threshold is charged at \(H(A)\).  Thus the
+   code/lattice families above should be used as output-sensitive reporters,
+   quotient samplers, reduced-cost separators, or Fano-biased prefix decoders,
+   not as better nearest-label oracles.
 \end{remark}
 
 \begin{remark}[Exact coded product-sign stress test]
@@ -89649,6 +89658,77 @@ amplified in the next proposition.
    variational problem by a noncoordinate spectrum, or add an external
    Fano/decoder bias that is not equivalent to the ternary query decision
    \(L\).
+\end{remark}
+
+\begin{remark}[Raw top-one entropy barrier for symmetric Gaussian panels]
+   \label{rem:raw-top-one-entropy-barrier}
+   The preceding obstruction is an instance of a more general rule.  A
+   symmetric raw top-one decoder cannot pay the full entropy of its label
+   universe and still prove a strict far-threshold gap from a noisy near pair.
+
+   Let \(\mathcal A_r\) be a finite transitive label set, let \(Q_r,U_r\) be a
+   near Gaussian block pair, and let \(A=A(Q_r)\in\mathcal A_r\) be a
+   deterministic top-one query decision.  Assume \(A\) is uniform on
+   \(\mathcal A_r\), write
+   \[
+      R_r=r^{-1}H(A)=r^{-1}\log|\mathcal A_r|,
+   \]
+   and let \(\Phi_a(U_r)\) be the storage score for label \(a\).  Let
+   \(P_U\) be the far law of \(U_r\).  Suppose symmetry makes
+   \[
+      m_r=\E[\Phi_A(U_r)\mid A=a],
+      \qquad
+      c_r=D(P_{U_r\mid A=a}\|P_U)
+   \]
+   independent of \(a\).  If \(J_r(t)\) is the fixed-label far variational
+   rate
+   \[
+      J_r(t)=
+      r^{-1}\inf\{D(\nu\|P_U): \E_\nu\Phi_a(U_r)\ge rt\},
+      \tag{RTO1}
+   \]
+   then the conditional near law itself is an admissible far witness, and
+   therefore
+   \[
+      J_r(m_r/r)\le c_r/r.
+      \tag{RTO2}
+   \]
+   But
+   \[
+      c_r
+      =
+      I(A;U_r)
+      \le I(A;Q_r)
+      =
+      H(A),
+      \tag{RTO3}
+   \]
+   by data processing along \(A\to Q_r\to U_r\).  For a nondegenerate noisy
+   Gaussian near channel and a nontrivial label decision, the inequality is
+   strict:
+   \[
+      c_r<H(A).
+      \tag{RTO4}
+   \]
+   Consequently a far threshold calibrated at full label entropy,
+   \(J_r(t_r)=R_r\), cannot lie below the near top-one mean \(m_r/r\).  In
+   particular, any law-of-large-numbers proof that the selected near score is
+   typically above the full-entropy far threshold is impossible in this raw
+   top-one normal form.
+
+   This explains why the product-sign top-one, sparse random-code top-one, and
+   exact OSD sparse-subset attempts all run into the same wall.  The decoder
+   may choose an excellent label under \(Q_r\), but after the noisy Gaussian
+   channel the data block \(U_r\) contains only \(I(A;U_r)\) nats about that
+   label.  Charging storage and far load as if \(H(A)\) nats were recoverable
+   leaves a missing information gap.
+
+   The escape routes are now sharply constrained.  A useful code or lattice
+   construction must either lower the charged entropy from \(H(A)\) to an
+   output-sensitive list, prefix-moment, quotient, or sampler entropy; change
+   the far spectrum so that \((RTO1)\) is not the relevant load rate; or add a
+   certified Fano/branch-price bias whose retained reporter is charged by the
+   biased prefix moment rather than by the raw label universe.
 \end{remark}
 
 \begin{remark}[Why ordinary ANN does not implement the score-max target]\label{rem:score-max-ordinary-ann}
@@ -92791,6 +92871,12 @@ the question to the quenched coefficient/Sanov far threshold
 mean.  A positive code/lattice theorem must therefore change the charged
 label entropy, the far spectrum, or the decoder bias rather than reuse the raw
 ternary OSD decision.
+\Cref{rem:raw-top-one-entropy-barrier} records the general principle behind
+this failure: any symmetric raw top-one Gaussian panel charged at full label
+entropy is limited by \(I(A;U)<H(A)\).  Thus the useful code/lattice targets
+are not better top-one decoders, but output-sensitive threshold reporters,
+quotient or aggregate samplers, and Fano-biased prefix decoders whose charged
+entropy is the certified work entropy rather than the whole label universe.
 \Cref{lem:min-entropy-information-set} identifies the best chart for a linear
 block: assign each coordinate its soft local entropy
 \(\lambda_i=\log\sum_a\exp(\beta(\omega_i(a)-m_i))\), then choose a
