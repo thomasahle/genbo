@@ -6241,6 +6241,71 @@ partition ignores the bias coordinates that certify the list size.
    frontier barrier, not a failure of pseudorandomness.
 \end{remark}
 
+\begin{corollary}[Residual-entropy audit for syndrome tuple decoders]
+   \label{cor:syndrome-residual-entropy-audit}
+   Work in the setting of \cref{lem:syndrome-prefix-occupancy}.  For a level
+   \(\ell\), define the deterministic suffix-count profile
+   \[
+      N_{\ell}(u;\Theta)
+      =
+      \left|
+      \left\{
+      v\in\mathcal C_{\ell+1}\times\cdots\times\mathcal C_h:
+      S(v)\ge \Theta-S(u)
+      \right\}
+      \right|
+      \tag{SRA1}
+   \]
+   and the residual-entropy frontier cost
+   \[
+      \mathsf C_\ell(K,\Theta)
+      =
+      \sum_{u\in\mathcal C_1\times\cdots\times\mathcal C_\ell}
+      \min\left\{1,\frac{N_\ell(u;\Theta)}{K}\right\}.
+      \tag{SRA2}
+   \]
+   Then every prefix branch-and-bound decoder that expands a prefix whenever it
+   is syndrome-completable above threshold has expected live-prefix work at
+   level \(\ell\) at most \(\mathsf C_\ell(K,\Theta)\), over a random target
+   syndrome.  If the suffix syndromes are pairwise independent and uniform on
+   every fixed suffix set, this expected live-prefix work is at least
+   \(\mathsf C_\ell(K,\Theta)/2\).
+
+   The expected retained terminal output is
+   \[
+      K^{-1}
+      \left|
+      \{c\in\mathcal C:S(c)\ge\Theta\}
+      \right|.
+      \tag{SRA3}
+   \]
+   Hence a residue mask has separated terminal thinning from prefix thinning:
+   \((SRA3)\) is always reduced by \(K\), while the branch-and-bound frontier
+   is reduced only to the residual-entropy scale \((SRA2)\).
+
+   Consequently, for a target query budget \(B_{\rm tar}\), a necessary audit
+   for this prefix-decoder implementation is
+   \[
+      \sum_{\ell=0}^{h-1}\mathsf C_\ell(K,\Theta)
+      \le B_{\rm tar}\log^{O(1)}m
+      \tag{SRA4}
+   \]
+   up to the intended reporter and priority-queue overheads.  If
+   \((SRA4)\) fails by a superpolylogarithmic factor, then the construction
+   needs a stronger suffix reporter--meet-in-the-middle residue frontiers,
+   max-plus convolution, a trellis quotient, or responsibility-thinned output--
+   rather than more independence in the hash family.
+\end{corollary}
+
+\begin{proof}
+   The upper bound is \((SPO4)\) with \(N_\ell(u;\Theta)=|A_u|\).  Under
+   pairwise-independent suffix syndromes, \((SPO7)\) gives the lower bound
+   after summing over prefixes.  The terminal identity is \((SPO5)\).  The
+   audit statement is just the accounting consequence for a decoder whose
+   work includes every live prefix at each level; a more structured suffix
+   reporter can be certified only by replacing this charged operation.
+\end{proof}
+
 \begin{corollary}[Oversampled product witnesses support polylog syndrome thinning]
    \label{cor:oversampled-product-syndrome-thinning}
    Work in the smooth product terminal filter of
