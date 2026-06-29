@@ -1938,6 +1938,21 @@ P124. (*** residual-PQ DE-RISK: +6-11pt IP pool-recall at small pools -- the rea
     encode_block gets cell_cent (subtract), codebook retrained on residuals, scan adds scaled <q,cell_cent>
     offset per cell. The de-risk (minutes) saved a 1-2 day build on an unproven hypothesis.
 
+P125. (residual quant IMPLEMENTED + validated: real but MODEST OOD win, routing-diluted)
+    SBANN_RESIDQ (commit ec18a5c): build computes per-cell RAW centroids, retrains apq4 on residuals,
+    encode_block subtracts the centroid (f32), scan_rerank adds the exact scaled <q,centroid> offset per
+    cell (ip_i16_scale/ip_i8s_scale). Works on BOTH int16 and fast-scan paths (offset correct -> recall
+    rises not tanks). 1M OOD subset (own GT): recall-per-probe +0.4-1.6pt at fixed budget (p128
+    0.8833->0.8954, p256 0.9244->0.9307). MUCH smaller than the de-risk's +6-11pt (P124) because the
+    sim isolated SCAN accuracy (all 1M candidates) while the engine's recall is ALSO gated by ROUTING
+    (only probed cells' points are candidates) -> RESIDQ improves the scan WITHIN probed cells toward the
+    routing-coverage ceiling, diluted by routing. Net QPS@matched-recall (1M+fastscan, cache-warm):
+    ~break-even at recall 0.88 (per-cell <q,cent> offset overhead ~13%), crossing to ~1.07x at recall 0.94
+    (gain grows with recall). KEY INSIGHT: OOD recall is gated by BOTH routing coverage AND scan accuracy;
+    RESIDQ fixes the scan half (modestly), routing is the other half. Genuine positive (unlike eta P123)
+    but NOT a 2x-closer alone. 10M test pending (memory-bound rerank should amplify: shallower survivor
+    pool -> less of the 920KB/q wall).
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
