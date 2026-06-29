@@ -89731,6 +89731,109 @@ amplified in the next proposition.
    biased prefix moment rather than by the raw label universe.
 \end{remark}
 
+\begin{lemma}[Information-charge test for retained code/lattice reporters]
+   \label{lem:information-charge-survivor-test}
+   Fix a block of length \(r\).  Let \(Q\) be the query block, let \(U\) be the
+   corresponding near data block, and let \(P_U\) be the far data law.  Suppose
+   a query-facing reporter exposes a finite transcript or label
+   \(T=f(Q)\).  For each transcript \(t\), let \(\Phi_t(U)\) be the storage or
+   bucket score that the retained index charges to that transcript, and define
+   the fixed-transcript far rate
+   \[
+      J_t(a)
+      =
+      \frac1r
+      \inf\left\{
+         D(\nu\|P_U):
+         \int \Phi_t(u)\,d\nu(u)\ge ra
+      \right\}.
+      \tag{ICT1}
+   \]
+   Put
+   \[
+      m_t=\frac1r\E[\Phi_t(U)\mid T=t],
+      \qquad
+      i_t=\frac1rD(P_{U\mid T=t}\|P_U).
+      \tag{ICT2}
+   \]
+   If the retained certificate charges transcript \(t\) at far-tail rate
+   \(C_t\), so that its threshold must lie at a level \(a_t\) with
+   \(J_t(a_t)\ge C_t\), then
+   \[
+      C_t> i_t
+      \qquad\Longrightarrow\qquad
+      a_t\ge m_t .
+      \tag{ICT3}
+   \]
+   Consequently any proof whose near success is a law-of-large-numbers
+   comparison between the selected mean \(m_t\) and a fixed-transcript far
+   threshold must satisfy the necessary information budget
+   \[
+      C_t\le i_t+o(1)
+      \tag{ICT4}
+   \]
+   on the successful transcripts.  In a transitive symmetric panel,
+   \(i_t=r^{-1}I(T;U)\) for every \(t\), and data processing gives
+   \(I(T;U)\le I(T;Q)\le H(T)\), with strict inequality for a nondegenerate
+   noisy Gaussian near channel whenever \(T\) is not already determined by
+   \(U\).
+\end{lemma}
+
+\begin{proof}
+   The conditional near law \(P_{U\mid T=t}\) is an admissible trial measure in
+   \((ICT1)\).  Its score is \(rm_t\) and its cost is \(ri_t\).  Hence
+   \(J_t(m_t)\le i_t\).  Since the feasible set in \((ICT1)\) shrinks as the
+   required score level \(a\) increases, \(J_t(a)\) is nondecreasing.  If
+   \(C_t>i_t\), no threshold level below \(m_t\) can have far rate at least
+   \(C_t\); therefore \(a_t\ge m_t\).  The symmetric statement follows by
+   averaging \(D(P_{U\mid T=t}\|P_U)\) over \(t\), and the final inequalities
+   are data processing along \(T\to Q\to U\).
+\end{proof}
+
+\begin{remark}[How a deep code or lattice construction can pass the test]
+   \label{rem:code-lattice-survivor-map}
+   \Cref{lem:information-charge-survivor-test} is the falsification test for
+   code and lattice proposals after \cref{rem:raw-top-one-entropy-barrier}.
+   A raw maximum-likelihood or nearest-codeword decoder for a code of size
+   \(e^{rR}\) pays \(C_t=R\) when each codeword is stored as an independent
+   bucket.  The selected label has at most \(I(T;U)/r<R\) information after the
+   noisy near channel, so algebraic structure alone cannot make the selected
+   near score beat the full-rate far threshold.  Reporting the top
+   \(\polylog m\) raw codewords changes only lower-order query work unless the
+   storage or bucket charge is also changed.
+
+   The surviving uses of coding and lattice algorithms are therefore more
+   specific.
+   Polar, Reed--Muller, Reed--Solomon, Tanner, tensor, or expander codes are
+   useful when their list-recovery or soft-decision decoders implement the
+   threshold/reduced-cost reporters of
+   \cref{lem:soft-list-recovery-reporter},
+   \cref{cor:ordinary-list-recovery-positive-coverage}, and
+   \cref{cor:unified-soft-decoded-rate-coverage}; the charged quantity is then
+   the reported transcript work or reduced-cost bucket class, not the full code
+   entropy.  GMD, Chase, and OSD are useful only in the
+   \cref{lem:min-entropy-information-set} sense: choose a chart with small
+   soft entropy \(\Lambda_*(q)\), enumerate the certified discrepancy ball, and
+   exact-filter.  The raw constant-weight OSD channel of
+   \cref{rem:sparse-subset-mutual-information-barrier} fails because its
+   charge remains \(H(L)\).
+
+   Construction-A/D quotients, Barnes--Wall or Barnes--Sloane recursion, sphere
+   enumeration, sequential lattice decoding, and discrete-Gaussian samplers can
+   pass only if they expose one of two certificates already isolated in the
+   paper.  In the deterministic form, the pruning metric must be a Fano-biased
+   prefix score with a certified moment
+   \(\sum g_q(u)\exp(\beta U_q(u))\) as in
+   \cref{lem:fano-biased-prefix-list}; the branch prices lower \(C_t\) to the
+   actual work entropy of the stack.  In the sampled form, the construction
+   must compute aggregate bucket weights on a compact state graph as in
+   \cref{lem:compressed-aggregate-sampler}, so that the charged object is the
+   quotient bucket law rather than the number of hidden lattice or code paths.
+   Small ordinary quotient classes are not enough; a genuine aggregate sampler
+   or responsibility certificate is needed to lower the charge below the
+   conditional information budget in \((ICT4)\).
+\end{remark}
+
 \begin{remark}[Why ordinary ANN does not implement the score-max target]\label{rem:score-max-ordinary-ann}
    One can force the perturbed center $y=Y/t$ to be close to $q$ by taking
    $t$ large. In dimension $D$, if
@@ -92877,6 +92980,10 @@ entropy is limited by \(I(A;U)<H(A)\).  Thus the useful code/lattice targets
 are not better top-one decoders, but output-sensitive threshold reporters,
 quotient or aggregate samplers, and Fano-biased prefix decoders whose charged
 entropy is the certified work entropy rather than the whole label universe.
+\Cref{lem:information-charge-survivor-test} turns this into the current
+screening rule for deep code and lattice proposals: the far-tail charge of the
+reported transcript must be no larger than the conditional information that the
+near data block retains about that transcript, up to polylogarithmic slack.
 \Cref{lem:min-entropy-information-set} identifies the best chart for a linear
 block: assign each coordinate its soft local entropy
 \(\lambda_i=\log\sum_a\exp(\beta(\omega_i(a)-m_i))\), then choose a
