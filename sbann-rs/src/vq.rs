@@ -34,6 +34,46 @@ pub static RESIDQ: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool
 /// as a0 grows. This dedup measures the TRUE coverage of a multi-store routing (and shrinks the pool).
 pub static POOLDEDUP: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
+thread_local! {
+    // reused open-addressing table for the per-query pool dedup (a0>1). Entries: (orig_key, best_approx,
+    // slot); orig_key==u32::MAX marks empty. Fibonacci-hashed + linear-probed -> far cheaper than a
+    // per-query std HashMap (no SipHash, no alloc), keeping the min-approx slot per distinct orig id.
+    static DEDUP_TBL: std::cell::RefCell<Vec<(u32, i32, u32)>> = std::cell::RefCell::new(Vec::new());
+}
+
+/// Dedup `pool` (approx_dist, slot) IN PLACE to one entry per distinct orig id (the min-approx slot),
+/// using a reused thread-local open-addressing table. Must run BEFORE the t_surv cap so the cap selects
+/// distinct survivors. slot_orig maps slot->orig (valid: pushed slots are never u32::MAX).
+fn dedup_pool_by_orig(pool: &mut Vec<(i32, u32)>, slot_orig: &[u32]) {
+    if pool.len() < 2 { return; }
+    DEDUP_TBL.with(|tbl| {
+        let mut tbl = tbl.borrow_mut();
+        let cap = (pool.len() * 2).next_power_of_two();
+        tbl.clear();
+        tbl.resize(cap, (u32::MAX, 0, 0));
+        let mask = cap - 1;
+        for &(dist, slot) in pool.iter() {
+            let orig = slot_orig[slot as usize];
+            let mut h = (orig.wrapping_mul(0x9E3779B1) as usize) & mask;
+            loop {
+                let e = tbl[h];
+                if e.0 == u32::MAX {
+                    tbl[h] = (orig, dist, slot);
+                    break;
+                } else if e.0 == orig {
+                    if dist < e.1 { tbl[h] = (orig, dist, slot); }
+                    break;
+                }
+                h = (h + 1) & mask;
+            }
+        }
+        pool.clear();
+        for &(k, bd, bs) in tbl.iter() {
+            if k != u32::MAX { pool.push((bd, bs)); }
+        }
+    });
+}
+
 /// Batched exact-int8 rerank: detect AVX2 once, call it directly (no per-survivor dispatch),
 /// PREFETCH the scattered survivor gathers (the real cost — random reads into the base), and keep
 /// a bounded top-heap instead of sorting all T survivors. Survivors = (approx_dist, orig_id);
@@ -45,30 +85,30 @@ fn rerank_survivors(ds: &I8Bin, q: &[i8], pool: &[(i32, u32)], k: usize) -> Vec<
     }
     let avx = std::is_x86_feature_detected!("avx2");
     let n = pool.len();
+    // bounded heap of the m smallest exact dists, DEDUPED by id (SOAR multi-assignment can surface the same
+    // point via several probed cells; a duplicate has identical raw -> identical dist, so it is skipped
+    // rather than allowed to crowd the m slots — the bug that POOLDEDUP worked around, fixed at the source).
     let mut heap: std::collections::BinaryHeap<(i32, u32)> = std::collections::BinaryHeap::with_capacity(m + 1);
     for i in 0..n {
-        let id = pool[i].1 as usize;
+        let id = pool[i].1;
         if i + 8 < n {
             unsafe { _mm_prefetch(ds.row(pool[i + 8].1 as usize).as_ptr() as *const i8, _MM_HINT_T0) };
         }
-        let row = ds.row(id);
+        let row = ds.row(id as usize);
         let dist = if avx { unsafe { simd::l2_i8_avx2(q, row) } } else { simd::l2_i8_scalar(q, row) };
-        if heap.len() < m {
-            heap.push((dist, pool[i].1));
-        } else if dist < heap.peek().unwrap().0 {
-            heap.pop();
-            heap.push((dist, pool[i].1));
-        }
+        let full = heap.len() >= m;
+        if full && dist >= heap.peek().unwrap().0 { continue; }
+        if heap.iter().any(|&(_, o)| o == id) { continue; }
+        if full { heap.pop(); }
+        heap.push((dist, id));
     }
     let mut v = heap.into_vec();
     v.sort_unstable();
     let mut out = Vec::with_capacity(k);
     for &(_, id) in &v {
-        if !out.contains(&id) {
-            out.push(id);
-            if out.len() == k {
-                break;
-            }
+        out.push(id);
+        if out.len() == k {
+            break;
         }
     }
     out
@@ -85,31 +125,33 @@ fn rerank_contig(raw: &[i8], d: usize, slot_orig: &[u32], q: &[i8], pool: &[(i32
     let avx = std::is_x86_feature_detected!("avx2");
     let ip = IP_MODE.load(std::sync::atomic::Ordering::Relaxed);
     let n = pool.len();
+    // bounded heap of the m smallest exact dists, DEDUPED by orig id. SOAR multi-store places a point in
+    // several cells as duplicate slots; same orig => identical raw => identical dist, so the heap stores
+    // (dist, orig) and skips a duplicate orig instead of letting copies crowd the m slots (the bug the
+    // per-query POOLDEDUP HashMap papered over; deduping here removes the need for that O(poolsize) map).
     let mut heap: std::collections::BinaryHeap<(i32, u32)> = std::collections::BinaryHeap::with_capacity(m + 1);
     for i in 0..n {
         let slot = pool[i].1 as usize;
         if i + 8 < n {
             unsafe { _mm_prefetch(raw.as_ptr().add(pool[i + 8].1 as usize * d) as *const i8, _MM_HINT_T0) };
         }
+        let orig = slot_orig[slot];
+        if orig == u32::MAX { continue; }
         let row = &raw[slot * d..slot * d + d];
         let dist = if ip { simd::negdot_i8(q, row) } else if avx { unsafe { simd::l2_i8_avx2(q, row) } } else { simd::l2_i8_scalar(q, row) };
-        if heap.len() < m {
-            heap.push((dist, pool[i].1));
-        } else if dist < heap.peek().unwrap().0 {
-            heap.pop();
-            heap.push((dist, pool[i].1));
-        }
+        let full = heap.len() >= m;
+        if full && dist >= heap.peek().unwrap().0 { continue; }
+        if heap.iter().any(|&(_, o)| o == orig) { continue; }
+        if full { heap.pop(); }
+        heap.push((dist, orig));
     }
     let mut v = heap.into_vec();
     v.sort_unstable();
     let mut out = Vec::with_capacity(k);
-    for &(_, slot) in &v {
-        let id = slot_orig[slot as usize];
-        if id != u32::MAX && !out.contains(&id) {
-            out.push(id);
-            if out.len() == k {
-                break;
-            }
+    for &(_, orig) in &v {
+        out.push(orig);
+        if out.len() == k {
+            break;
         }
     }
     out
@@ -1024,6 +1066,10 @@ pub struct Index {
     // RESIDUAL QUANTIZATION (SBANN_RESIDQ): per-cell raw centroids (nc*d i8). Empty unless RESIDQ.
     // The scan adds <q, rq_cent[cell]> (scaled) so candidate scores = <q,cent>+<q,resid_hat>.
     pub rq_cent: Vec<i8>,
+    // build-time multi-assignment factor (a0). >1 => SOAR multi-store: a point can appear in several
+    // probed cells as duplicate slots, so scan_rerank must dedup the pool by orig id BEFORE the t_surv cap
+    // (deduping after the cap loses recall when dups crowd the survivors). a0==1 => no dedup needed.
+    pub a0: usize,
 }
 
 impl Index {
@@ -1155,7 +1201,7 @@ impl Index {
                 }
             }
         }
-        Index { router, comp, cell_bstart, slot_orig, blocks, bb, xfn: Vec::new(), raw, d, blocks_il, cell_ilstart, resid_pq, resid_codes, rq_cent }
+        Index { router, comp, cell_bstart, slot_orig, blocks, bb, xfn: Vec::new(), raw, d, blocks_il, cell_ilstart, resid_pq, resid_codes, rq_cent, a0 }
     }
 
     pub fn search(&self, ds: &I8Bin, q: &[i8], p: usize, t: usize, k: usize) -> Vec<u32> {
@@ -1334,16 +1380,11 @@ impl Index {
                 for e in &mut pool[pool_start..] { e.0 -= off; }
             }
         }
-        if POOLDEDUP.load(std::sync::atomic::Ordering::Relaxed) {
-            // collapse SOAR duplicate slots: keep the min-approx-dist slot per orig id, so the
-            // downstream k*4 survivor heap holds DISTINCT ids (true multi-store coverage).
-            let mut best: std::collections::HashMap<u32, (i32, u32)> = std::collections::HashMap::with_capacity(pool.len());
-            for &(dist, slot) in pool.iter() {
-                let orig = self.slot_orig[slot as usize];
-                best.entry(orig).and_modify(|e| { if dist < e.0 { *e = (dist, slot); } }).or_insert((dist, slot));
-            }
-            pool.clear();
-            pool.extend(best.into_values());
+        // SOAR multi-store (a0>1): dedup the pool by orig id BEFORE the cap so distinct survivors enter
+        // rerank (deduping after the cap loses recall at high a0). a0==1 has no dups -> skip. The fast
+        // reused open-addressing table replaces the per-query SipHash HashMap (the gap-widener, P134).
+        if self.a0 > 1 || POOLDEDUP.load(std::sync::atomic::Ordering::Relaxed) {
+            dedup_pool_by_orig(&mut pool, &self.slot_orig);
         }
         let tt = t.min(pool.len());
         if tt > 0 { pool.select_nth_unstable(tt - 1); pool.truncate(tt); }

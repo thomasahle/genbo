@@ -2060,6 +2060,64 @@ P132. (*** BREAKTHROUGH: a RERANK DEDUP BUG was masking multi-store; fixed -> ro
     a0={3,6,12}+dedup+small t_surv real QPS vs ScaNN; then 10M (a0=6 fits, or raw-dedup refactor for a0=12);
     then stack with tree-EM. Commit the dedup fix (correctness: it also stops a0>1 wasting t_surv on dups).
 
+P133. (1M production frontier: multi-store a0 = the HIGH-RECALL lever; optimal a0 RISES with target recall)
+    a0_frontier_1m.log, POOLDEDUP on, t_surv=max(6p,600), best-of-5, 8 threads, loaded window (load~60):
+      a0=3 : p96 0.8736@9138 | p160 0.9084@7050 | p256 0.9303@3372 | p384 0.9429@2603 | p512 0.9484@2051
+      a0=6 : p96 0.9166@5912 | p160 0.9411@4080 | p256 0.9561@2163 | p384 0.9642@1336 | p512 0.9674@945
+      a0=12: p96 0.9440@2918 | p160 0.9617@1779 | p256 0.9713@1090 | p384 0.9768@1330 | p512 0.9791@1008
+    Pareto: recall<=0.91 -> a0=3; ~0.94 -> a0=6 (p160 4080 vs a0=3 p384 2603 = 1.6x); >=0.96 -> a0=12 (only
+    a0>=12 reaches 0.97-0.98). Each higher a0 EXTENDS+dominates the high-recall frontier. a0=12 0.9791 ==
+    ScaNN 0.9790 (COVERAGE PARITY). *** Two confounds make 1M QPS NON-representative, do NOT read a QPS gap
+    from it: (a) ScaNN 1M frontier (16 threads, load~47): lts80 0.9081@40574, lts150 0.9566@30155, lts300
+    0.9790@18607, lts600 0.9923@8174 -> ScaNN 6-18x our QPS ON 1M, but 1M is cache-resident (ScaNN's
+    in-register AH scan flies) and overhead-dominated; the SAME comparison at 10M = only 1.42x (P131). 1M is
+    a COVERAGE proxy, not a QPS proxy. (b) THREAD CONFOUND (found this session): box has 16 cores; our runs
+    pin RAYON_NUM_THREADS=8, ScaNN's search_batched_parallel grabs ALL 16 -> every ScaNN-vs-us QPS gap
+    (incl P131 1.42x) gave ScaNN 2x the cores. Scan parallelizes ~linearly across queries, so at thread
+    parity our QPS should ~1.6-1.8x. NEXT (definitive 10M OOD): our a0=6+dedup(+tree-EM) at 16 threads vs
+    ScaNN at 16 threads, same window -- the real leaderboard test combining multi-store + thread parity.
+    (a0=6 raw=10M*6*200B=12GB fits 26GB budget; a0=12=24GB needs per-distinct-point raw refactor.)
+
+P134. (*** THREAD CONFOUND = clean ~2x (we ran on HALF the box); multi-store extends 10M recall to 0.9225 ***)
+    def_10m_ood.log, ONE script same window (load drifted DOWN 55->34 over the run -> later stages = lighter
+    load; POOLDEDUP on, NO EM). hierk3 C0=1024 C1=8192 b0=64 b1=200 SOAR=0.5 Kf=262144 fastscan+avx512:
+      THREAD A/B (a0=3, IDENTICAL recall both, back-to-back = CLEAN):
+        p192 0.8691: 16thr 5658 vs 8thr 2341 = 2.42x | p256 0.8843: 3704 vs 1769 = 2.09x |
+        p352 0.8978: 2871 vs 1448 = 1.98x | p448 0.9058: 2469 vs 1427 = 1.73x | p576 0.9133: 2089 vs 1061 = 1.97x
+      => 8->16 threads = ~2x QPS (slightly superlinear low-p). We had been pinning RAYON=8 on a 16-core box
+      while ScaNN's search_batched_parallel uses all 16. ADOPT 16 THREADS (leaderboard uses whole machine).
+      a0=6 @16thr: 0.8772@3245 0.8973@2126 0.9075@1692 0.9171@1240 0.9225@986 (extends recall to 0.9225 at
+      10M vs a0=3's 0.9133 same plist; QPS penalized by the POOLDEDUP HashMap -> fix #5 pending).
+      ScaNN @16thr (load 34, LIGHTER than our 50 -> confound FAVORS ScaNN): lts50 0.6911@19987, lts100
+      0.8241@11194, lts150 0.8803@7736, lts250 0.9301@4440, lts400 0.9576@2935, lts600 0.9766@1950,
+      lts900 0.9877@1628, lts1400 0.9927@1847.
+    READ: at recall ~0.88 our a0=3 went 4.4x behind (8thr) -> 2.1x behind (16thr) = thread parity HALVED the
+    gap. Residual ScaNN lead ~1.4-2x is load-confounded (ScaNN got the light window) -> NOT a clean number;
+    needs a BRACKETED re-measure (both 16thr, interleaved load) AFTER fix #5 lands. Clean facts: (1) thread
+    ~2x, (2) multi-store recall parity/extension (load-independent). ScaNN owns recall>=0.95 (our 10M plists
+    capped 0.9225; a0=12 would reach higher but =24GB raw at 10M, needs per-distinct-point raw refactor).
+    Per-query-overhead workflow (wa09pg6d8): the POOLDEDUP HashMap (added this session) is built PER QUERY
+    and is the gap-WIDENER (scales p*a0). Top fix = fuse scan+select, dedup in rerank not via a poolsize map.
+
+P135. (*** FIX #5 LANDED: dedup heap + fast open-addr dedup-before-cap kill the per-query HashMap; 1M@0.90 = ScaNN PARITY ***)
+    Two changes (vq.rs): (1) rerank_contig/rerank_survivors heap now stores (dist, ORIG) and SKIPS a
+    duplicate orig (same point=identical raw=identical dist) -> fixes the k*4=40-slot crowding at the source.
+    (2) scan_rerank: for a0>1, dedup the pool by orig BEFORE the t_surv cap via a REUSED thread-local
+    open-addressing table (Fibonacci hash + linear probe, no SipHash, no per-query alloc) instead of the
+    std HashMap. a0==1 (msspacev) skips dedup entirely. Index gained an `a0` field.
+    WHY before-cap (not the cheaper after-cap dedup-in-rerank): dedup-AFTER-cap loses recall at high a0 --
+    a0=12 after-cap collapsed to 0.8828@p96 / 0.9624@p512 (dups crowd the top-t_surv survivors). Before-cap
+    is recall-correct. (a0=3 after-cap only -0.003, so a future a0-threshold could use the faster after-cap
+    for small a0.) Validated 1M OOD, 16 threads, prod t_surv, best-of-5 -- recall MATCHES old SipHash exactly:
+      a0=3 : 0.8736/0.9083/0.9303/0.9429/0.9484  QPS 37805/23899/15466/12319/8798
+      a0=6 : 0.9166/0.9411/0.9561/0.9642/0.9674  QPS 27263/19560/12038/8320/5861
+      a0=12: 0.9440/0.9617/0.9713/0.9768/0.9791  QPS 15672/8978/6652/4114/2993  (vs old SipHash 8331/../1760 = 1.7-1.9x)
+    *** Combined with the 16-thread fix, the 1M QPS jumped 3-5.6x at matched recall (a0=6@0.956: 2163->12038).
+    1M recall-0.90: us 38925 (a0=3 after-cap) ~= ScaNN 40574 = PARITY (was 5.8x behind). Mid-recall gap 14x->
+    2.5x. High recall 0.979 still ScaNN 6x (1M cache-resident; expect smaller at 10M). *** THREAD FIX = just
+    stop pinning RAYON_NUM_THREADS=8; rayon defaults to all 16 cores. NEXT: msspacev a0=1 regression check
+    (the rerank heap any()-scan), then BRACKETED 10M OOD vs ScaNN both @16thr with fix#5 -- the real test.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
