@@ -89900,6 +89900,44 @@ top-\(k\) backup.
    \cref{cor:cramer-product-sign-closure}.
 \end{proof}
 
+\begin{lemma}[Uniform empirical product-sign threshold transfer]
+   \label{lem:product-sign-empirical-quantile-transfer}
+   Let \(\mathcal S\) be a finite product-sign label set of size \(B\), and
+   let \(X_1,\ldots,X_m\) be independent samples from a reference
+   distribution \(\mathcal D\).  For each \(s\in\mathcal S\), let
+   \(\Psi_s\) be the product-sign score \((PSS)\), and let
+   \(Q_s^{\rm node}\) be the empirical upper \(\eta\)-threshold: the smallest
+   level whose empirical upper tail is at most \(\eta\).  If numbers
+   \(Q_s^{\rm ref}\) satisfy
+   \[
+      \Prb_{X\sim\mathcal D}\{\Psi_s(X)\ge Q_s^{\rm ref}\}\le\eta-\delta
+      \qquad(s\in\mathcal S)
+   \]
+   for some \(0<\delta<\eta\), then
+   \[
+      \Prb\{\exists s\in\mathcal S:\ Q_s^{\rm node}>Q_s^{\rm ref}\}
+      \le
+      B\exp(-2m\delta^2).
+      \tag{EQT}
+   \]
+   In particular, with \(\delta=\eta/2\), \(\eta=m^{-\gamma}\), and
+   \(B\le m^C\), the failure probability is
+   \[
+      \exp\{-\Omega(m^{1-2\gamma})\}
+   \]
+   for every fixed \(\gamma<1/2\) and \(C<\infty\).
+\end{lemma}
+
+\begin{proof}
+   Fix a label \(s\), and write
+   \(Z_i=\mathbf 1\{\Psi_s(X_i)\ge Q_s^{\rm ref}\}\).  By assumption
+   \(\E Z_i\le\eta-\delta\).  If \(Q_s^{\rm node}>Q_s^{\rm ref}\), then the
+   empirical upper tail at \(Q_s^{\rm ref}\) is larger than \(\eta\), so
+   \(m^{-1}\sum_iZ_i>\eta\).  Hoeffding's inequality gives probability at
+   most \(\exp(-2m\delta^2)\).  Union bound over \(B\) labels proves
+   \((EQT)\), and the final display substitutes the stated parameters.
+\end{proof}
+
 \begin{lemma}[Finite-panel product-sign transfer check]
    \label{lem:product-sign-transfer-check}
    Fix a concrete product-sign panel with bit logits \(u_a(x)\), and let
@@ -90248,9 +90286,14 @@ One should also separate the resident-guard regime from the genuine finite-chann
    \(1.95\)--\(2.73\), and the lower \(5\%\) mean gap was negative.  Thus the
    row-randomness part of the transfer is now explicit rather than hidden by
    a reformulation: \cref{lem:whitened-product-sign-row-law} reduces it to
-   whitening-metric norm and correlation slack.  The remaining theorem is
-   \cref{lem:product-sign-transfer-check} plus empirical/reference quantile
-   concentration for the random whitened product-sign panel.
+   whitening-metric norm and correlation slack.  The empirical node quantile
+   part is also standard in the iid-node model by
+   \cref{lem:product-sign-empirical-quantile-transfer}: since
+   \(\eta=m^{-\gamma}\) has \(\gamma<1/2\) for every \(c>1\), the union bound
+   over \(B\le m^{O(1)}\) labels is negligible.  The remaining theorem is
+   therefore the reference all-label \(\Psi_s\)-threshold bound and the
+   whitening-metric calibration needed to invoke
+   \cref{lem:product-sign-transfer-check}.
 
    The frozen product-sign target is therefore not another certificate form:
    it is the same distributional bounded-margin posterior-rank lower tail for
