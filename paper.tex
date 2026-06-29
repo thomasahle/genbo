@@ -96928,8 +96928,8 @@ amplified in the next proposition.
    before it can even expose enough nonempty residue classes.  If the resident
    cloud has smaller linear rank, the construction must either lower the
    effective residue group, use non-linear or data-dependent balancing, or
-   rely on the resident-size weighted sampler with an explicitly computable
-   terminal count boundary rather than on raw-signature rejection.
+   rely on support-conditioned raw expansion or the resident-size weighted
+   sampler rather than on raw-signature rejection with global balance.
 \end{corollary}
 
 \begin{proof}
@@ -96939,6 +96939,101 @@ amplified in the next proposition.
    least \(q^r-q^d\) empty classes, contradicting any positive lower bound on
    all class sizes.  The displayed rank requirement is the rearrangement of
    \(q^d\ge M\gtrsim m^{1-\rho}\polylog^{-1}m\).
+\end{proof}
+
+\begin{corollary}[Linear resident images support conditioned raw expansion]
+   \label{cor:linear-resident-image-support-conditioning}
+   Let \(V\) be a vector space over \(\mathbb F_q\), let \(W\le V\) have
+   dimension \(d\), and suppose the resident multiset consists of every element
+   of \(z_0+W\), each with multiplicity \(\nu\).  Let \(A:V\to G\) be a linear
+   residue observer, with \(G\) a finite vector space, and put
+   \[
+      H=A(W),\qquad
+      \Sigma^+=Az_0+H .
+      \tag{LSI1}
+   \]
+   For the resident classes
+   \[
+      C_\alpha=\{x\in z_0+W:Ax=\alpha\},
+      \qquad \alpha\in G,
+      \tag{LSI2}
+   \]
+   counted with multiplicity,
+   \[
+      |C_\alpha|=
+      \begin{cases}
+      \nu q^{d-\dim H},& \alpha\in\Sigma^+,\\
+      0,&\alpha\notin\Sigma^+ .
+      \end{cases}
+      \tag{LSI3}
+   \]
+   Thus the one-bit resident-support predicate needed in
+   \cref{cor:resident-support-conditioned-raw-expansion} is exactly affine
+   image membership
+   \[
+      c_\alpha>0
+      \quad\Longleftrightarrow\quad
+      \pi(\alpha)=\pi(Az_0),
+      \tag{LSI4}
+   \]
+   where \(\pi:G\to G/H\) is the quotient map.
+
+   Consequently, consider an acyclic aggregate sampler whose terminal labels
+   are linear code/lattice variables \(z\), with terminal resident signature
+   \[
+      \alpha(t(z))=\gamma+Cz\in G.
+      \tag{LSI5}
+   \]
+   Support conditioning is the single linear terminal constraint
+   \[
+      \pi(Cz)=\pi(Az_0-\gamma).
+      \tag{LSI6}
+   \]
+   If the trellis, junction tree, or recursive lattice sampler can impose this
+   quotient syndrome with support-conditioned backward cost \(T_{\rm back}^+\)
+   and top-down path cost \(\tau_B\), then the access work is exactly the bound
+   \((RSPX6)\) of
+   \cref{cor:resident-support-conditioned-raw-expansion}.  In particular, under
+   \((PMR1)\)--\((PMR2)\), the point-mass reporter is obtained with
+   \(m^\rho\polylog m\) expected online work whenever
+   \[
+      \E_Z T_{\rm back}^+(B(q,Z))\le Dm^\rho\log^{O_c(1)}m,
+      \qquad
+      \tau_{B(q,Z)}\le\log^{O_c(1)}m
+      \tag{LSI7}
+   \]
+   in the usual polynomial envelope.
+
+   This is the precise positive counterpart to
+   \cref{cor:low-rank-linear-resident-balance-barrier}.  Low resident affine
+   rank prevents global two-sided balance over \(G\), but it does not by itself
+   block raw expansion: one conditions the sampler on the affine image
+   \(Az_0+A(W)\).  The remaining construction burden is no longer bucket
+   balance, but the concrete decoder question of whether the quotient syndrome
+   \(\pi C z\) is cheap to maintain while preserving the original tilted
+   miss/load bounds.
+\end{corollary}
+
+\begin{proof}
+   The image of \(z_0+W\) under \(A\) is the affine subspace \(Az_0+H\).  If
+   \(\alpha\notin Az_0+H\), the fiber is empty.  If
+   \(\alpha=Az_0+h\) with \(h\in H\), choose \(w_\alpha\in W\) with
+   \(Aw_\alpha=h\).  The source elements in the fiber are exactly
+   \(z_0+w_\alpha+\ker(A|_W)\), whose size is
+   \(q^{d-\dim H}\).  Multiplying by the common multiplicity \(\nu\) proves
+   \((LSI3)\).  Since the quotient map \(\pi\) kills \(H\), membership in
+   \(Az_0+H\) is equivalent to \(\pi(\alpha)=\pi(Az_0)\), proving
+   \((LSI4)\).
+
+   Substituting \(\alpha(t(z))=\gamma+Cz\) into \((LSI4)\) gives
+   \[
+      \pi(\gamma+Cz)=\pi(Az_0),
+   \]
+   which is the linear terminal syndrome \((LSI6)\).  The backward recursion
+   with this terminal predicate computes the support-conditioned aggregate mass
+   \(U_B^+\), and the standard top-down sampler draws from the law
+   \((RSPX2)\).  The work and endpoint claims are therefore exactly
+   \cref{cor:resident-support-conditioned-raw-expansion}.
 \end{proof}
 
 \begin{corollary}[Aligned linear charts compute rate-coverage sketches]
