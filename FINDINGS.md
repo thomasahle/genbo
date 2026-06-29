@@ -1925,6 +1925,19 @@ P123. (OOD eta sweep = NEGATIVE: anisotropic weight has zero effect; accuracy bo
     default) -- but it COUPLES compressor training to the router (codebook must be trained on routed
     residuals), a real Tier-1 change. Or RaBitQ (more bits + unbiased IP estimator, the high-ceiling swing).
 
+P124. (*** residual-PQ DE-RISK: +6-11pt IP pool-recall at small pools -- the real OOD lever, integrate it ***)
+    After eta failed (P123), de-risked residual quant with an offline numpy sim (resid_pq_sim2.py) BEFORE
+    integration: 4-bit PQ, dpb=2, 1M text2image subset, 2048 cells. RAW-PQ (encode x) vs RESID-PQ
+    (encode x-cell_centroid, score <q,cent>+<q,resid_hat>) IP pool-recall: @T=20 0.591->0.705 (+11.4pt),
+    @50 0.784->0.878, @100 0.881->0.944, @200 0.939->0.976. Win LARGEST at small pools -> RESID-PQ
+    reaches a given pool-recall at ~2-2.5x SMALLER T (raw needs T=500 for 0.976, resid hits it at T=200).
+    Mechanism: residuals have smaller dynamic range -> 4 bits resolve them better; the per-cell <q,cent>
+    offset (constant per cell, ESSENTIAL) carries the bulk IP. This is ScaNN's use_residual_quantization
+    default. Translation: OOD scan needs t_surv~5000 -> resid-PQ ~2-2.5x less -> rerank-memory wall (920KB/q)
+    drops ~2x = most of the OOD gap. UNLIKE eta (flat, P123) this is a large clean win. INTEGRATING:
+    encode_block gets cell_cent (subtract), codebook retrained on residuals, scan adds scaled <q,cell_cent>
+    offset per cell. The de-risk (minutes) saved a 1-2 day build on an unproven hypothesis.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
