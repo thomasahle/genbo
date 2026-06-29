@@ -16787,6 +16787,122 @@ partition ignores the bias coordinates that certify the list size.
    polylogarithmic factor.
 \end{proof}
 
+\begin{corollary}[Conditional hidden-path sampling implements heavy reporting]
+   \label{cor:conditional-hidden-sampling-heavy-lister}
+   Work in the setting of
+   \cref{lem:marked-trellis-responsibility-verifier}.  After sampling a bucket
+   \(\ell\sim\Pi_q\), suppose the query can draw independent hidden paths from
+   the conditional law
+   \[
+      \Pr_q[\pi\mid \ell]
+      =
+      \frac{W_q(\pi)}{Z_{q,\ell}}
+      \mathbf 1\{\lambda(\pi)=\ell\},
+      \tag{CHS1}
+   \]
+   and can enumerate the raw subbucket
+   \(C_\pi=\{x:S_x(\pi)\ge T\}\).  Let \(\tau\in(0,1]\), draw \(N\) such
+   conditional paths, scan the union of their raw subbuckets, and then emit
+   exactly the scanned points with
+   \[
+      \frac{Z_{q,x,\ell}^{\ge T}}{Z_{q,\ell}}\ge\tau
+      \tag{CHS2}
+   \]
+   by exact marked-ratio filtering.  Then, for every fixed
+   \((q,\ell,x)\),
+   \[
+      \Pr[x\ {\rm is\ scanned}\mid q,\ell]
+      =
+      1-(1-r_{q,x,\ell})^N.
+      \tag{CHS3}
+   \]
+   Consequently every point with \(r_{q,x,\ell}\ge\tau\) is scanned with
+   probability at least \(1-e^{-N\tau}\), while every emitted far point is
+   charged by
+   \[
+      \Pi_q(\ell)\mathbf 1\{x\ {\rm emitted\ from}\ \ell\}
+      \le
+      \tau^{-1}\frac{Z_{q,x,\ell}^{\ge T}}{Z_q}.
+      \tag{CHS4}
+   \]
+
+   If the marked spectrum \((MHL1)\)--\((MHL2)\) holds and
+   \(\tau=(2L_m)^{-1}\), then with
+   \(N=\lceil \tau^{-1}\log2\rceil\) one sampled panel emits every near witness
+   with probability at least \((4L_m)^{-1}\), and has expected emitted far load
+   at most \(2m^\rho L_m^2\).
+
+   The corresponding raw-scan work is
+   \[
+      N\,
+      \E_{\ell\sim\Pi_q}
+      \E_{\pi\sim\Pr_q[\cdot\mid\ell]}
+      |C_\pi|
+      =
+      N\sum_{x\in P}\frac{Z_{q,x}^{\ge T}}{Z_q},
+      \tag{CHS5}
+   \]
+   plus the conditional-path sampling and exact-filtering overhead.  Thus this
+   compiler is polylogarithmic over the sampled ANN budget whenever the
+   conditional sampler, raw-subbucket enumeration, and exact ratio filter have
+   polylogarithmic overhead and the all-resident marked raw-scan load in
+   \((CHS5)\) is \(m^\rho\log^{O_c(1)}m\).
+\end{corollary}
+
+\begin{proof}
+   Under the conditional law \((CHS1)\),
+   \[
+      \Pr_q[x\in C_\pi\mid\ell]
+      =
+      \frac{1}{Z_{q,\ell}}
+      \sum_{\substack{\pi:\lambda(\pi)=\ell\\S_x(\pi)\ge T}}W_q(\pi)
+      =
+      r_{q,x,\ell}.
+   \]
+   The \(N\) conditional path samples are independent, so the probability that
+   none of their raw subbuckets contains \(x\) is
+   \((1-r_{q,x,\ell})^N\).  This proves \((CHS3)\), and the lower bound
+   \(1-e^{-N\tau}\) follows when \(r_{q,x,\ell}\ge\tau\).
+
+   Exact filtering emits only points with \(r_{q,x,\ell}\ge\tau\).  Therefore
+   \[
+      \Pi_q(\ell)\mathbf 1\{x\ {\rm emitted\ from}\ \ell\}
+      \le
+      \tau^{-1}\Pi_q(\ell)r_{q,x,\ell}
+      =
+      \tau^{-1}\frac{Z_{q,x,\ell}^{\ge T}}{Z_q},
+   \]
+   proving \((CHS4)\).
+
+   For the near witness \(p\), \cref{cor:marked-heavy-lister-closes-trellis}
+   proves that the sampled mass of buckets with
+   \(r_{q,p,\ell}\ge(2L_m)^{-1}=\tau\) is at least \((2L_m)^{-1}\).  On those
+   buckets, \(N=\lceil\tau^{-1}\log2\rceil\) scans \(p\) with probability at
+   least \(1/2\).  Thus one panel emits \(p\) with probability at least
+   \((4L_m)^{-1}\).  Summing \((CHS4)\) over invalid far points and all
+   buckets, and using \((MHL1)\), gives the far emitted load
+   \(\tau^{-1}m^\rho L_m=2m^\rho L_m^2\).
+
+   Finally,
+   \[
+   \begin{aligned}
+      \E_{\ell}\E_{\pi\mid\ell}|C_\pi|
+      &=
+      \sum_{\ell}\Pi_q(\ell)
+      \sum_{\pi:\lambda(\pi)=\ell}
+      \frac{W_q(\pi)}{Z_{q,\ell}}
+      \sum_{x\in P}\mathbf 1\{S_x(\pi)\ge T\}  \\
+      &=
+      \sum_{x\in P}
+      \sum_{\ell}\frac{1}{Z_q}
+      \sum_{\substack{\pi:\lambda(\pi)=\ell\\S_x(\pi)\ge T}}W_q(\pi)
+      =
+      \sum_{x\in P}\frac{Z_{q,x}^{\ge T}}{Z_q}.
+   \end{aligned}
+   \]
+   Multiplying by \(N\) proves \((CHS5)\).
+\end{proof}
+
 \begin{lemma}[Random sparse aggregate buckets overcharge full scans]
    \label{lem:random-sparse-aggregate-responsibility-barrier}
    Let one quotient bucket aggregate \(H\) hidden labels with equal conditional
@@ -16941,6 +17057,13 @@ partition ignores the bias coordinates that certify the list size.
    near-heavy hypothesis: once the marked near mass is inverse-polylogarithmic,
    at least inverse-polylogarithmic sampled bucket mass has the witness above
    the matching responsibility threshold.
+   \Cref{cor:conditional-hidden-sampling-heavy-lister} gives one direct
+   implementation path for such a lister: sample a few hidden paths conditional
+   on the already-sampled quotient bucket and scan only their raw subbuckets.
+   This succeeds for heavy residents with probability proportional to their
+   marked responsibility, while its work is exactly the conditional raw-scan
+   load \(\sum_x Z_{q,x}^{\ge T}/Z_q\) times the inverse responsibility
+   threshold.
    \Cref{lem:random-sparse-aggregate-responsibility-barrier} shows that this is
    not a pathological edge case: aggregating \(H\) independent sparse hidden
    filters into one bucket inflates union-scan load by
@@ -94744,6 +94867,12 @@ is automatic at the right threshold: marked near mass \(L_m^{-1}\) implies
 sampled mass at least \((2L_m)^{-1}\) on buckets where the witness
 responsibility is at least \((2L_m)^{-1}\).  Therefore the marked spectrum plus
 a heavy lister is already the clean trellis/code/lattice endpoint.
+\Cref{cor:conditional-hidden-sampling-heavy-lister} gives a direct Monte Carlo
+compiler for that lister when conditional hidden paths and their raw subbuckets
+can be sampled and scanned cheaply: \(O(L_m)\) conditional paths find a
+heavy witness with constant probability on each heavy bucket, and the expected
+raw-scan work is the all-resident marked load
+\(\sum_x Z_{q,x}^{\ge T}/Z_q\) times \(O(L_m)\).
 \Cref{lem:random-sparse-aggregate-responsibility-barrier} instantiates that
 barrier in the random sparse model: merging \(H\) hidden filters inflates the
 expected union scan by \((1-(1-s)^H)/s=\Theta(\min\{H,s^{-1}\})\).
