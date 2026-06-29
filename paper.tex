@@ -89092,6 +89092,59 @@ amplified in the next proposition.
    enumerating a constant fraction of the retained centers.
 \end{remark}
 
+\begin{remark}[Structured decoders after the centroid-search barrier]
+   \label{rem:structured-decoder-targets}
+   The compact-centroid experiments above are evidence against treating the
+   retained buckets as an unstructured set of learned centers searched by a
+   generic ANN data structure.  The coding/lattice route should instead replace
+   the flat center set by a structured label universe with a native
+   threshold/list decoder for the actual score.  The useful interface is already
+   the one in \cref{lem:soft-list-recovery-reporter},
+   \cref{cor:euclidean-list-decoder-reporter},
+   \cref{lem:reliability-erasure-sweep}, and
+   \cref{cor:unified-soft-decoded-rate-coverage}: list high-score labels by a
+   Fano-biased or soft-decision metric, then verify the reported buckets.
+
+   Four construction families now look worth testing.  First, constrain the
+   product-sign label universe by a polar, Reed--Muller, or related outer code
+   and use successive-cancellation list decoding to report the top few labels
+   under the query bit log-likelihoods~\cite{TV12,TH23}.  This attacks the
+   product-sign entropy barrier directly: the outer code can lower tilted
+   entropy and storage/far-load while preserving the bitwise near correlation,
+   unlike reporting top labels from the full cube.  The immediate experiment is
+   to replace the full product-sign panel by a polar/RM subcode and measure
+   query-top-\(L\) tilted value, sampled far-load, and rate-coverage feasibility.
+
+   Second, use algebraic or Euclidean soft-decision block decoders as exact
+   score reporters.  Koetter--Vardy Reed--Solomon decoding, Barnes--Sloane or
+   Barnes--Wall lattice list decoding, and Construction-A/D quotients are useful
+   only when the score embeds as a block Euclidean radius or a certified
+   coordinatewise soft score~\cite{KV03,GP17,MP20}.  In that case
+   \cref{cor:euclidean-list-decoder-reporter} turns the decoder into the right
+   threshold reporter without repeated-coordinate discretization.  The
+   certificate still has to prove that the target radius/list size and the
+   retained spectrum match the \(m^\rho\polylog m\) budget.
+
+   Third, high-rate expander/Tanner/tensor list-recovery codes are better
+   viewed as reduced-cost separation engines than as nearest-center
+   data structures~\cite{HW15,HRW17,ST25}.  After dyadic discretization of a
+   positive coverage score, ordinary list recovery can expose candidate labels
+   for the finite rate-coverage verifier; the verifier then filters by exact
+   reduced gain.  This is the most plausible way to use deep list-recovery
+   theorems against the finite dual obstructions without enumerating the whole
+   Cartesian product.
+
+   Finally, lattice sphere enumeration, bounded-distance decoding, Gaussian
+   sampling, and nearest-neighbor-aided information-set decoding should not be
+   imported as black-box nearest-center oracles~\cite{FP85,SE94,GNR10,Kle00,
+   GPV08,MO15}.  Their useful feature is the pruning metric: a stack or
+   enumeration decoder subtracts a volume/rate bias from raw likelihood, exactly
+   as in \cref{lem:fano-biased-prefix-list}.  A lattice construction is
+   therefore promising only if its pruning profile can be certified as a
+   budget-stable Fano potential or as a compact quotient sampler in the sense of
+   \cref{lem:compressed-aggregate-sampler}.
+\end{remark}
+
 \begin{remark}[Why ordinary ANN does not implement the score-max target]\label{rem:score-max-ordinary-ann}
    One can force the perturbed center $y=Y/t$ to be close to $q$ by taking
    $t$ large. In dimension $D$, if
