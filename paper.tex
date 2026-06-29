@@ -5763,6 +5763,77 @@ partition ignores the bias coordinates that certify the list size.
    hashes, and linearity of expectation gives the identity.
 \end{proof}
 
+\begin{corollary}[Affine one-check lookup compiler]
+   \label{cor:affine-syndrome-lookup-compiler}
+   Let the block alphabets be embedded in a finite field \(\mathbb F\), and
+   retain one affine syndrome
+   \[
+      \sum_{j=1}^h(\alpha_j c_j+\beta_j)=\sigma,
+      \qquad \alpha_h\ne0.
+      \tag{ASL1}
+   \]
+   For a prefix \(u=(c_1,\ldots,c_{h-1})\), define the forced last symbol
+   \[
+      \kappa(u)
+      =
+      \alpha_h^{-1}
+      \left(\sigma-\sum_{j=1}^h\beta_j-\sum_{j<h}\alpha_jc_j\right).
+      \tag{ASL2}
+   \]
+   Then retained terminals of syndrome \(\sigma\) are in bijection with the
+   prefixes \(u\in\mathcal C_1\times\cdots\times\mathcal C_{h-1}\) for which
+   \(\kappa(u)\in\mathcal C_h\).  Hence the syndrome-constrained threshold
+   query is exactly the corrected-prefix problem
+   \[
+      \widetilde S_q(u)
+      =
+      \sum_{j<h}\phi_j(q,c_j)+\phi_h(q,\kappa(u))
+      \ge\Theta,
+      \qquad \kappa(u)\in\mathcal C_h.
+      \tag{ASL3}
+   \]
+   With a dictionary for \(\mathcal C_h\), exhaustive corrected-prefix
+   enumeration costs
+   \[
+      O\!\left(\prod_{j<h}|\mathcal C_j|+L\right),
+      \tag{ASL4}
+   \]
+   where \(L\) is the number of emitted terminals.  In particular, for
+   \(h=2\) the query work is \(O(|\mathcal C_1|+L)\), with no \(|\mathbb F|\)
+   syndrome-state factor.  For \(h>2\), the same algebra removes the explicit
+   state factor but replaces it by an \((h-1)\)-coordinate corrected-prefix
+   frontier; meet-in-the-middle residue lists can reduce constants and exploit
+   score order, but the certificate must still bound that frontier.
+
+   When the affine coefficients are sampled from the unconditioned
+   pairwise-independent family \(\alpha_j,\beta_j\sim\mathbb F\), the retained
+   terminal moment is thinned by \(|\mathbb F|^{-1}\) in expectation as in
+   \((RBL2)\).  With probability \(1-|\mathbb F|^{-h}\) at least one
+   coefficient is nonzero, and the compiler may use any nonzero coefficient as
+   the forced coordinate.  This is useful for ANN only in a broad-witness
+   regime: the query/near top set being sampled must contain
+   \(\Omega(|\mathbb F|)\) acceptable tuples, or one must repeat comparable
+   many syndromes.  A large algebraic thinning range cannot preserve constant
+   recall for an essentially singleton near tuple.
+\end{corollary}
+
+\begin{proof}
+   The equation \((ASL1)\) determines \(c_h\) uniquely once
+   \(c_1,\ldots,c_{h-1}\) are fixed, and the unique value is \((ASL2)\).  Thus
+   every retained terminal corresponds to exactly one prefix with
+   \(\kappa(u)\in\mathcal C_h\), and its score is \((ASL3)\).  Dictionary
+   membership and score evaluation for the forced last symbol give the
+   exhaustive work bound \((ASL4)\).  The unconditioned affine family is
+   pairwise independent, so the expected terminal thinning is
+   \cref{lem:pairwise-independent-syndrome-thinning} applied with terminal
+   weights, or equivalently linearity over fixed terminals; the lookup step
+   only needs that some coefficient is nonzero.  The final claim is the
+   Paley--Zygmund scale in \((PIS3)\): a fixed acceptable set of size \(A\) has
+   hit probability at most its expected retained size \(|A|/|\mathbb F|\), and
+   has constant hit probability from the second-moment lemma only once
+   \(|A|=\Omega(|\mathbb F|)\).
+\end{proof}
+
 \begin{lemma}[Superset product-panel decoder]
    \label{lem:superset-product-panel-decoder}
    Work in the setting of \cref{lem:additive-product-panel-decoder}, but
