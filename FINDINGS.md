@@ -1912,6 +1912,19 @@ P122. (OOD residual-IP refine = NET LOSS; OOD gap is FUNDAMENTAL quantization ac
     makes the pool small enough -- the additive-quant attempt (idea #8) already lost to apq4. OOD stays
     ~2x; this is now well-characterized as fundamental on this engine. msspacev WIN (P117) stands.
 
+P123. (OOD eta sweep = NEGATIVE: anisotropic weight has zero effect; accuracy bottleneck is real but eta can't move it)
+    Exposed SBANN_ETA (was hardcoded 4.0, L2-tuned, never swept on OOD). 1M text2image subset (own exact-IP
+    GT, t2i1m-gt), champion config hierk3+SOAR+FASTSCAN-IP, eta in {4,8,16,32,64}: recall@10 FLAT
+    (p128 0.8833+-0.0002, p256 0.9244+-0.0001) across all eta. So apq4's anisotropic loss is SATURATED/
+    ineffective at 4-bit -- raising the parallel-error weight does NOT change which candidates the scan
+    ranks high. Confirms (research open-Q4) our DECOUPLED per-subspace loss doesn't respond to eta.
+    IMPLICATION: recall = pool-recall@t_surv (exact rerank), and on 10M the champion needs t_surv~5000 for
+    recall 0.90 -> the 4-bit scan RANKING is poor (low pool-recall at small pools) = accuracy IS the
+    bottleneck, but eta/anisotropic-weighting is a DEAD lever for it. Next accuracy levers (different
+    mechanism): residual quantization (encode x-cent_fine: smaller range -> 4 bits resolve it better; ScaNN's
+    default) -- but it COUPLES compressor training to the router (codebook must be trained on routed
+    residuals), a real Tier-1 change. Or RaBitQ (more bits + unbiased IP estimator, the high-ceiling swing).
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
