@@ -40,6 +40,8 @@ def test_run_trial_produces_complete_finite_row():
     assert row["route_depth"] == 7
     assert math.isclose(row["leader_eps"], 1 / 64)
     assert abs(row["near_corr"] - 0.9) < 1e-12
+    assert 0 <= row["top4_value_q05"] <= row["h_q05"] + 1e-12
+    assert 0 <= row["query_top8_value_q05"] <= row["h_q05"] + 1e-12
     for key in FIELDNAMES:
         if key == "panel":
             continue

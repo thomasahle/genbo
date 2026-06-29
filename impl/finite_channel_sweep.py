@@ -61,6 +61,10 @@ FIELDNAMES = [
     "top4_contribution_fraction_median",
     "top8_contribution_fraction_q05",
     "top8_contribution_fraction_median",
+    "top4_value_q01",
+    "top4_value_q05",
+    "query_top8_value_q01",
+    "query_top8_value_q05",
     "query_top_contribution_fraction_q05",
     "query_top_contribution_fraction_median",
     "query_top2_contribution_fraction_q05",
@@ -199,6 +203,8 @@ def run_trial(
     if route_depth is None:
         route_depth = max(1, int(math.ceil(math.log(max(n, 3)))))
     leader_eps, boost_overhead = leader_boost_overhead(result.h_eta, route_depth)
+    top4_value = result.h_eta * result.top4_contribution_fraction
+    query_top8_value = result.h_eta * result.query_top8_contribution_fraction
 
     return {
         "n": n,
@@ -230,6 +236,10 @@ def run_trial(
         "top4_contribution_fraction_median": float(np.median(result.top4_contribution_fraction)),
         "top8_contribution_fraction_q05": _q(result.top8_contribution_fraction, 0.05),
         "top8_contribution_fraction_median": float(np.median(result.top8_contribution_fraction)),
+        "top4_value_q01": _q(top4_value, 0.01),
+        "top4_value_q05": _q(top4_value, 0.05),
+        "query_top8_value_q01": _q(query_top8_value, 0.01),
+        "query_top8_value_q05": _q(query_top8_value, 0.05),
         "query_top_contribution_fraction_q05": _q(result.query_top_contribution_fraction, 0.05),
         "query_top_contribution_fraction_median": float(
             np.median(result.query_top_contribution_fraction)),
