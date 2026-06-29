@@ -5,6 +5,7 @@ import numpy as np
 from finite_channel_diagnostic import product_sign_labels
 from product_sign_transfer_stress import (
     FIELDNAMES,
+    coupled_sphere_gaussian_points,
     covariance_spectral_summary,
     exact_tilted_good_mass,
     gaussian_row_pair_parameters,
@@ -68,6 +69,17 @@ def test_covariance_spectral_summary_detects_scalar_and_anisotropic_cases():
     assert rel_min2 < 1.0 < rel_max2
 
 
+def test_coupled_sphere_gaussian_points_share_radial_direction():
+    sphere, gaussian_shell, rel_shell = coupled_sphere_gaussian_points(32, 5, seed=7)
+    assert sphere.shape == gaussian_shell.shape == (32, 5)
+    assert rel_shell.shape == (32,)
+    assert np.allclose(np.linalg.norm(sphere, axis=1), 1.0)
+    radial_ratio = np.linalg.norm(gaussian_shell, axis=1)
+    assert np.allclose(rel_shell, np.abs(radial_ratio - 1.0))
+    dots = np.sum(sphere * gaussian_shell, axis=1)
+    assert np.all(dots > 0.0)
+
+
 def test_gaussian_row_pair_parameters_match_monte_carlo_rows():
     rng = np.random.default_rng(3)
     left = np.array([[0.6, -0.2, 0.4]])
@@ -121,10 +133,14 @@ def test_transfer_trial_produces_complete_row():
     assert row["bit_var_q05"] <= row["bit_var_q95"] + 1e-12
     assert row["ref_cov_rel_op"] >= 0.0
     assert row["ref_cov_lambda_min_rel"] <= 1.0 <= row["ref_cov_lambda_max_rel"]
+    assert row["shell_rel_dev_q95"] <= row["shell_rel_dev_max"] + 1e-12
     assert row["metric_sigma_near_mean"] > 0.0
     assert row["metric_sigma_query_mean"] > 0.0
     assert row["metric_pair_corr_q05"] <= row["metric_pair_corr_mean"] + 1e-12
     assert row["pair_corr_q05"] <= row["pair_corr_mean"] + 1e-12
+    assert row["threshold_gaussian_ref_q95"] == row["threshold_gaussian_ref_q95"]
+    assert row["threshold_sphere_minus_gaussian_q95"] <= (
+        row["threshold_sphere_minus_gaussian_max"] + 1e-12)
     assert row["threshold_ref_node_abs_q50"] <= row["threshold_ref_node_abs_q90"] + 1e-12
     assert row["exact_good_mass_q05"] >= 0.0
     assert row["sampled_good_mass_q05"] >= 0.0
@@ -139,6 +155,7 @@ if __name__ == "__main__":
     test_upper_tail_thresholds_use_top_eta_order_statistic()
     test_exact_tilted_good_mass_matches_manual_enumeration()
     test_covariance_spectral_summary_detects_scalar_and_anisotropic_cases()
+    test_coupled_sphere_gaussian_points_share_radial_direction()
     test_gaussian_row_pair_parameters_match_monte_carlo_rows()
     test_transfer_trial_produces_complete_row()
     print("product_sign_transfer_stress tests passed")

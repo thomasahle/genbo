@@ -90055,6 +90055,181 @@ top-\(k\) backup.
    singular-value concentration bound for \(G/\sqrt d\).
 \end{proof}
 
+\begin{lemma}[Spherical shell replacement for product-sign scores]
+   \label{lem:product-sign-spherical-shell-transfer}
+   For \(s\in\{\pm1\}^r\), write
+   \[
+      \Phi_s(z)=\sum_{a=1}^r(s_az_a-\log\cosh z_a).
+   \]
+   Let \(Y\sim N(0,I_d)\), \(X=Y/\|Y\|\), and let \(M:\R^d\to\R^r\) be
+   deterministic.  Put
+   \[
+      Z_{\rm sph}=MX,\qquad Z_{\rm gau}=M(Y/\sqrt d).
+   \]
+   Then for every \(0<\delta<1\), \(L>0\), \(t\in\R\), and label \(s\),
+   \[
+   \begin{aligned}
+      \Prb\{\Phi_s(Z_{\rm sph})\ge r(t+2L\delta/(1-\delta))\}
+      \le{}&
+      \Prb\{\Phi_s(Z_{\rm gau})\ge rt\}  \\
+      &+\Prb\{|\|Y\|/\sqrt d-1|>\delta\}
+       +\Prb\{\|Z_{\rm gau}\|_2>L\sqrt r\}.
+   \end{aligned}
+      \tag{SST}
+   \]
+   Moreover
+   \[
+      \Prb\{|\|Y\|/\sqrt d-1|>\delta\}
+      \le 2\exp(-c\delta^2d)
+      \tag{SST2}
+   \]
+   for a universal constant \(c>0\).
+\end{lemma}
+
+\begin{proof}
+   On the shell event \(|\|Y\|/\sqrt d-1|\le\delta\),
+   \[
+      Z_{\rm sph}=\frac{\sqrt d}{\|Y\|}Z_{\rm gau},
+      \qquad
+      \|Z_{\rm sph}-Z_{\rm gau}\|_2
+      \le \frac{\delta}{1-\delta}\|Z_{\rm gau}\|_2 .
+   \]
+   The gradient bound used in
+   \cref{lem:product-sign-reference-covariance-transfer} gives
+   \(\|\nabla\Phi_s(z)\|_2\le2\sqrt r\).  Hence, on the shell event and on
+   \(\{\|Z_{\rm gau}\|_2\le L\sqrt r\}\),
+   \[
+      |\Phi_s(Z_{\rm sph})-\Phi_s(Z_{\rm gau})|
+      \le 2L\delta(1-\delta)^{-1}r .
+   \]
+   This proves \((SST)\).  The final estimate is the standard chi-square shell
+   bound.
+\end{proof}
+
+\begin{corollary}[Spherical random-row reference threshold transfer]
+   \label{cor:spherical-random-row-reference-threshold-transfer}
+   Let \(X\) be uniform on \(S^{d-1}\), let \(H:\R^d\to\R^d\) be deterministic,
+   and use product-sign rows
+   \[
+      u_a(x)=\lambda d^{-1/2}\ip{g_a}{Hx},
+      \qquad g_a\sim N(0,I_d)
+   \]
+   independently.  Let \(G\) be the \(r\times d\) matrix with rows \(g_a\), and
+   suppose
+   \[
+      \left\|d^{-1}HH^\top-I_d\right\|_{\rm op}\le\delta_H,
+      \qquad
+      \left\|d^{-1}GG^\top-I_r\right\|_{\rm op}\le\varepsilon_G .
+      \tag{SRR1}
+   \]
+   Put
+   \[
+      \zeta=\varepsilon_G+\delta_H(1+\varepsilon_G)
+      \tag{SRR2}
+   \]
+   and assume \(\zeta\le1\).  If
+   \[
+      \Prb_{Z\sim N(0,\lambda^2)}
+      \left[
+        \sum_{a=1}^r(Z_a-\log\cosh Z_a)\ge rt
+      \right]\le \eta_0 ,
+      \tag{SRR3}
+   \]
+   then, for every \(A\ge1\), \(0<\delta_s<1\), and every label \(s\),
+   \[
+   \begin{aligned}
+      \Prb_X\{\Psi_s(X)\ge
+      r(t+2A\lambda\zeta
+          +2A\lambda\sqrt{1+\zeta}\,\delta_s/(1-\delta_s))\}
+      \le{}&
+      \eta_0
+      +2\Prb\{\|N(0,I_r)\|_2>A\sqrt r\}  \\
+      &+2\exp(-c\delta_s^2d).
+   \end{aligned}
+      \tag{SRR4}
+   \]
+   Consequently, when \(r=\Theta(\log m)\), \(d/\log m\to\infty\), and
+   \(\delta_H\to0\), the spherical reference threshold has the same per-bit
+   level \(t+o(1)\) as the scalar Gaussian reference threshold on the standard
+   row-Gram event.
+\end{corollary}
+
+\begin{proof}
+   Conditional on \(G,H\), the coupled Gaussian reference vector is
+   \[
+      Z_{\rm gau}=\lambda d^{-1}GHY ,
+      \qquad Y\sim N(0,I_d),
+   \]
+   with covariance
+   \[
+      \Sigma=\lambda^2d^{-2}GHH^\top G^\top .
+   \]
+   Since \(W=d^{-1}HH^\top\) satisfies \(\|W-I\|_{\rm op}\le\delta_H\),
+   \[
+      \left\|\lambda^{-2}\Sigma-I_r\right\|_{\rm op}
+      =
+      \left\|d^{-1}GWG^\top-I_r\right\|_{\rm op}
+      \le
+      \varepsilon_G+\delta_H\|G\|_{\rm op}^2/d
+      \le \zeta .
+   \]
+   Thus \(\Sigma\preceq\lambda^2(1+\zeta)I_r\), so
+   \[
+      \Prb\{\|Z_{\rm gau}\|_2>A\lambda\sqrt{1+\zeta}\sqrt r\}
+      \le
+      \Prb\{\|N(0,I_r)\|_2>A\sqrt r\}.
+   \]
+   Apply \cref{lem:product-sign-spherical-shell-transfer} with
+   \(M=\lambda d^{-1/2}GH\) and
+   \(L=A\lambda\sqrt{1+\zeta}\).  Then apply
+   \cref{lem:product-sign-reference-covariance-transfer} to the Gaussian
+   reference vector \(Z_{\rm gau}\), using \((SRR3)\).  The two Gaussian norm
+   exceptional events and the spherical shell event give \((SRR4)\).
+\end{proof}
+
+\begin{lemma}[Empirical spherical whitening calibration]
+   \label{lem:empirical-spherical-whitening-calibration}
+   Let \(X_1,\ldots,X_m\) be independent uniform points on \(S^{d-1}\), let
+   \[
+      \widehat\Sigma_c
+      =
+      \frac1m\sum_{i=1}^m (X_i-\bar X)(X_i-\bar X)^\top,
+      \qquad
+      \bar X=\frac1m\sum_iX_i,
+   \]
+   and suppose
+   \[
+      \|d\widehat\Sigma_c-I_d\|_{\rm op}\le\delta<1 .
+      \tag{EWC1}
+   \]
+   For the exact whitening map \(H=\widehat\Sigma_c^{-1/2}\),
+   \[
+      \left\|d^{-1}H^\top H-I_d\right\|_{\rm op}
+      \le \frac{\delta}{1-\delta}.
+      \tag{EWC2}
+   \]
+   Moreover, the event \((EWC1)\) holds with probability at least
+   \(1-2e^{-u}\) whenever
+   \[
+      \delta
+      \ge
+      C\left(\sqrt{\frac{d+u}{m}}+\frac{d+u}{m}\right)
+      \tag{EWC3}
+   \]
+   for a universal constant \(C\).
+\end{lemma}
+
+\begin{proof}
+   The eigenvalues of \(d\widehat\Sigma_c\) lie in
+   \([1-\delta,1+\delta]\).  Hence the eigenvalues of
+   \(d^{-1}H^\top H=(d\widehat\Sigma_c)^{-1}\) lie in
+   \([(1+\delta)^{-1},(1-\delta)^{-1}]\), proving \((EWC2)\).  The final
+   display is the standard sample-covariance concentration bound for the
+   isotropic subgaussian vectors \(\sqrt d\,X_i\); centering subtracts the
+   positive semidefinite rank-one matrix \(\bar X\bar X^\top\) and is covered by
+   the same bound after adjusting the universal constant.
+\end{proof}
+
 \begin{lemma}[Uniform empirical product-sign threshold transfer]
    \label{lem:product-sign-empirical-quantile-transfer}
    Let \(\mathcal S\) be a finite product-sign label set of size \(B\), and
@@ -90438,7 +90613,13 @@ One should also separate the resident-guard regime from the genuine finite-chann
    all-label theorem.  The same diagnostic catches the known bad control:
    without whitening in the \(B=256\) run, the fitted bit standard deviation
    fell to \(0.57\)--\(0.63\), the minimum label exponent rose to
-   \(1.95\)--\(2.73\), and the lower \(5\%\) mean gap was negative.  Thus the
+   \(1.95\)--\(2.73\), and the lower \(5\%\) mean gap was negative.  The same
+   diagnostic now couples spherical reference points \(Y/\|Y\|\) to Gaussian
+   shell points \(Y/\sqrt d\).  In a compact \(d=128\), \(B=256\), two-seed
+   check, the relative shell deviation q95 was \(0.120\)--\(0.123\), the
+   spherical threshold exceeded the coupled Gaussian threshold by at most
+   \(0.026\)--\(0.034\), and the exact tilted good-mass lower \(5\%\) stayed at
+   \(0.9995\)--\(0.9997\).  Thus the
    row-randomness part of the transfer is now explicit rather than hidden by
    a reformulation: \cref{lem:whitened-product-sign-row-law} reduces it to
    whitening-metric norm and correlation slack.  The empirical node quantile
@@ -90448,16 +90629,24 @@ One should also separate the resident-guard regime from the genuine finite-chann
    over \(B\le m^{O(1)}\) labels is negligible.  The near-pair metric
    calibration is the elementary spectral statement
    \cref{lem:whitening-metric-calibration}.  The Gaussian-reference all-label
-   threshold is now also reduced to a standard row-Gram event:
+   threshold is reduced to a standard row-Gram event:
    \cref{lem:product-sign-reference-covariance-transfer} and
    \cref{cor:random-row-reference-threshold-transfer}
    compare the implemented \(\Psi_s\) tail with the iid Cramer tail whenever
-   the reference bit covariance is close to scalar.  The remaining theorem is
-   therefore no longer a certificate reformulation: it is to prove these
-   spectral calibration events for the actual localized node/reference model,
-   together with the usual Gaussian-to-spherical/local-shell replacement if
-   the node model is stated on the sphere rather than under the Gaussian
-   reference law.
+   the reference bit covariance is close to scalar.  The spherical reference
+   case is no longer a separate assumption: \cref{lem:product-sign-spherical-shell-transfer}
+   couples it to the Gaussian reference on the ordinary chi-square shell, and
+   \cref{cor:spherical-random-row-reference-threshold-transfer} combines that
+   coupling with the same row-Gram event.  Finally,
+   \cref{lem:empirical-spherical-whitening-calibration} proves the metric event
+   for the exact empirical whitening map in the iid spherical model.
+
+   Thus the product-sign transfer is closed for the standard iid spherical
+   local model in the high-dimensional regime where \(r=\Theta(\log m)\),
+   \(d/\log m\to\infty\), and the empirical whitening covariance concentrates.
+   The explicit slack in \((SRR4)\) also records the barrier in the borderline
+   \(d=\Theta(\log m)\) regime: the proof only works when the row-Gram,
+   whitening, and shell terms leave a positive per-bit Cramer gap.
 
    The frozen product-sign target is therefore not another certificate form:
    it is the same distributional bounded-margin posterior-rank lower tail for

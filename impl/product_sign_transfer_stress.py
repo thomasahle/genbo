@@ -63,6 +63,8 @@ FIELDNAMES = [
     "ref_cov_rel_op",
     "ref_cov_lambda_min_rel",
     "ref_cov_lambda_max_rel",
+    "shell_rel_dev_q95",
+    "shell_rel_dev_max",
     "cross_corr_abs_q95",
     "cross_corr_abs_max",
     "metric_sigma_near_mean",
@@ -77,6 +79,9 @@ FIELDNAMES = [
     "threshold_ref_median",
     "threshold_ref_q95",
     "threshold_ref_max",
+    "threshold_gaussian_ref_q95",
+    "threshold_sphere_minus_gaussian_q95",
+    "threshold_sphere_minus_gaussian_max",
     "threshold_node_q95",
     "threshold_ref_node_abs_q50",
     "threshold_ref_node_abs_q90",
@@ -119,6 +124,21 @@ def sphere_points(n: int, d: int, seed: int) -> np.ndarray:
     rng = np.random.default_rng(seed)
     points = rng.standard_normal((n, d))
     return points / np.linalg.norm(points, axis=1, keepdims=True)
+
+
+def coupled_sphere_gaussian_points(
+    n: int,
+    d: int,
+    seed: int,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Return coupled ``Y / ||Y||`` and ``Y / sqrt(d)`` reference points."""
+    rng = np.random.default_rng(seed)
+    points = rng.standard_normal((n, d))
+    norms = np.linalg.norm(points, axis=1, keepdims=True)
+    sphere = points / norms
+    gaussian_shell = points / math.sqrt(d)
+    rel_shell = np.abs(norms[:, 0] / math.sqrt(d) - 1.0)
+    return sphere, gaussian_shell, rel_shell
 
 
 def upper_tail_thresholds(scores: np.ndarray, eta: float) -> np.ndarray:
@@ -360,7 +380,10 @@ def run_trial(
     data_bits = (data @ basis.T) * bit_scale
     query_bits = (query_points @ basis.T) * bit_scale
     near_bits = data_bits[near_indices]
-    ref_bits = sphere_points(ref_samples, d, seed + 10_000) @ basis.T * bit_scale
+    ref_points, gaussian_ref_points, shell_rel_dev = coupled_sphere_gaussian_points(
+        ref_samples, d, seed + 10_000)
+    ref_bits = ref_points @ basis.T * bit_scale
+    gaussian_ref_bits = gaussian_ref_points @ basis.T * bit_scale
 
     labels, enumerated = _label_sample(
         b_count=b_count,
@@ -370,8 +393,11 @@ def run_trial(
     )
     threshold_label_count = labels.shape[0]
     ref_thresholds = upper_tail_thresholds(_score_matrix(ref_bits, labels), eta)
+    gaussian_ref_thresholds = upper_tail_thresholds(
+        _score_matrix(gaussian_ref_bits, labels), eta)
     node_thresholds = upper_tail_thresholds(_score_matrix(data_bits, labels), eta)
     threshold_abs_diff = np.abs(ref_thresholds - node_thresholds)
+    sphere_minus_gaussian = ref_thresholds - gaussian_ref_thresholds
 
     bit_means = np.mean(ref_bits, axis=0)
     bit_vars = np.var(ref_bits, axis=0)
@@ -468,6 +494,8 @@ def run_trial(
         "ref_cov_rel_op": ref_cov_rel_op,
         "ref_cov_lambda_min_rel": ref_cov_lambda_min_rel,
         "ref_cov_lambda_max_rel": ref_cov_lambda_max_rel,
+        "shell_rel_dev_q95": _q(shell_rel_dev, 0.95),
+        "shell_rel_dev_max": float(np.max(shell_rel_dev)),
         "cross_corr_abs_q95": _q(offdiag_corr, 0.95),
         "cross_corr_abs_max": float(np.max(offdiag_corr)),
         "metric_sigma_near_mean": float(np.mean(metric_sigma_near)),
@@ -482,6 +510,9 @@ def run_trial(
         "threshold_ref_median": float(np.median(ref_thresholds)),
         "threshold_ref_q95": threshold_ref_q95,
         "threshold_ref_max": certificate_threshold,
+        "threshold_gaussian_ref_q95": _q(gaussian_ref_thresholds, 0.95),
+        "threshold_sphere_minus_gaussian_q95": _q(sphere_minus_gaussian, 0.95),
+        "threshold_sphere_minus_gaussian_max": float(np.max(sphere_minus_gaussian)),
         "threshold_node_q95": _q(node_thresholds, 0.95),
         "threshold_ref_node_abs_q50": float(np.median(threshold_abs_diff)),
         "threshold_ref_node_abs_q90": _q(threshold_abs_diff, 0.90),
