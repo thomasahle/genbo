@@ -94090,6 +94090,94 @@ amplified in the next proposition.
    substitution \(a_0=3/4\).
 \end{proof}
 
+\begin{corollary}[Independent residues cannot have channel-code reliability]
+   \label{cor:independent-residue-no-channel-reliability}
+   Work in the Gaussian setting of
+   \cref{cor:gaussian-residue-prediction-cap}, but include an arbitrary
+   preprocessing seed \(S\) independent of the Gaussian pair \((Q,U)\).  Let
+   the residue \(\alpha_*\) be generated from \((Q,S)\), and let the query
+   posterior be computed from \((U,S)\).  Suppose that, conditional on \(S\),
+   the residue is \(\lambda_*\)-balanced on a group \(G\) of size \(M\).
+   If a polylogarithmic-list posterior satisfies
+   \[
+      \Pr[p_{U,S}(\alpha_*)\ge L^{-1}]\ge\delta,
+      \qquad L=\polylog M,
+      \tag{IRC1}
+   \]
+   then
+   \[
+      \delta
+      \le
+      \chi^2+o(1)
+      \tag{IRC2}
+   \]
+   in the uniform balanced case, and more generally obeys the bound
+   \((GRP3)\) with the same balance loss.
+
+   In particular, a residue construction with an independent preprocessing
+   seed cannot behave like an ordinary reliable channel code that recovers the
+   full residue with probability \(1-o(1)\) whenever \(\chi<1\) and
+   \(\log M\to\infty\).  The aligned-residue route is therefore an
+   erasure/list-posterior target: it may succeed on a constant fraction of
+   panels or score directions, but it cannot turn the native noisy near block
+   into near-certain decoding of an \(m^{1-\rho}\)-scale residue.
+\end{corollary}
+
+\begin{proof}
+   Condition on the independent seed \(S=s\).  The variables form a Markov
+   chain
+   \[
+      \alpha_* \to Q \to U
+   \]
+   under that conditioning, with \(\alpha_*\) generated from \(Q\).  Applying
+   \cref{cor:gaussian-residue-prediction-cap} conditionally on \(S=s\), and
+   then averaging over \(s\), gives \((GRP3)\).  For uniform residues and
+   \(L=\polylog M\), this is \((IRC2)\).  If a reliable channel-code decoder
+   had success \(1-o(1)\), then \(\delta=1-o(1)\), contradicting
+   \((IRC2)\) for every fixed \(\chi<1\).
+\end{proof}
+
+\begin{remark}[Forward AWGN coding is the wrong shortcut]
+   \label{rem:forward-awgn-code-shortcut-invalid}
+   A tempting construction is to pick Gaussian codewords \(Z_\alpha\), sample a
+   hidden message \(\alpha\), generate
+   \(Q=Z_\alpha+E\), and decode \(\alpha\) from
+   \(U=\chi Q+\sqrt{1-\chi^2}G\).  This is an ordinary AWGN channel code, and
+   below its channel rate the message is recovered with high probability.
+   That model is not the ANN residue problem.  In the data structure the panel
+   seed is sampled before the data and query and is independent of the query
+   Gaussian block.  The residue must be generated from the realized block
+   \(Q\) and the independent seed, not by first choosing a message and then
+   drawing \(Q\) from the corresponding codeword cloud.
+
+   Equivalently, reversing the AWGN code into a kernel
+   \(\Pr[\alpha\mid Q,\mathcal Z]\) makes the codebook seed
+   \(\mathcal Z\) statistically coupled to the source block \(Q\), unless the
+   seed-conditioned codeword mixture already resolves the standard Gaussian
+   source.  The usual Gaussian covering rate for that resolution is
+   \[
+      \frac12\log\frac1{1-\tau^2},
+   \]
+   while the forward noisy decoder sees only
+   \[
+      \frac12\log\frac1{1-\chi^2\tau^2}.
+   \]
+   The latter is strictly smaller for every \(0<\chi<1\) and \(0<\tau<1\).
+   Thus the ordinary channel-code shortcut tries to use source randomness that
+   a legal independent-seed panel does not possess.
+
+   The correct coding target is closer to no-communication common randomness
+   with an erasure/list success criterion: construct a seed-independent
+   residue map whose posterior puts inverse-polylogarithmic mass on the near
+   residue for a constant fraction of trials, while also preserving balanced
+   resident classes and the low residual-rank incidence needed by
+   \cref{cor:balanced-aligned-residue-lister}.  Product signs, raw OSD labels,
+   and nearest-codeword top lists fail this target for the reasons above; a
+   useful polar, Tanner, trellis, or lattice construction must expose this
+   erasure-style posterior directly, not just an ordinary reliable channel
+   decoder.
+\end{remark}
+
 \begin{corollary}[Random active residues saturate the residue budget]
    \label{cor:random-active-residue-barrier}
    Consider the balanced-residue setting with \(M=|G|\), and assume for
