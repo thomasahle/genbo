@@ -98474,6 +98474,136 @@ amplified in the next proposition.
    \(C_{\rm rect}\eta_\Sigma\le\gamma_{U,\kappa}/(8W_WW_M)\).
 \end{proof}
 
+\begin{lemma}[Pairwise sign masks reduce randomness to effective support]
+   \label{lem:pairwise-sign-mask-effective-support}
+   Fix a query and a product law \(P=\prod_{j=1}^hP_j\) on
+   \(\mathcal C_1\times\cdots\times\mathcal C_h\).  For each coordinate,
+   let \(\xi_{j,a}\in\{-1,1\}\) be unbiased and pairwise independent over the
+   labels \(a\in\mathcal C_j\), and use the auxiliary additive mask
+   \(m_j(a)=\xi_{j,a}\).  Define
+   \[
+      \bar w_j=\sum_aP_j(a)w_j(a),
+      \qquad
+      \nu_j=\sum_aP_j(a)^2,
+      \tag{PWS1}
+   \]
+   and the signed imbalance and signed score-correlation
+   \[
+      \alpha_j=\sum_aP_j(a)\xi_{j,a},
+      \qquad
+      \zeta_j=\sum_aP_j(a)(w_j(a)-\bar w_j)\xi_{j,a}.
+      \tag{PWS2}
+   \]
+   Then, over the mask seed,
+   \[
+      \E\alpha_j=\E\zeta_j=0,
+      \qquad
+      \E\alpha_j^2=\nu_j,
+      \qquad
+      \E\zeta_j^2
+      =
+      \sum_aP_j(a)^2(w_j(a)-\bar w_j)^2 .
+      \tag{PWS3}
+   \]
+   In particular, if \(|w_j(a)-\bar w_j|\le B_j\), then
+   \[
+      \E\zeta_j^2\le B_j^2\nu_j .
+      \tag{PWS4}
+   \]
+
+   Now tilt the same coordinate by the auxiliary sign,
+   \[
+      Q_{j,\lambda}(a)
+      =
+      \frac{P_j(a)e^{\lambda\xi_{j,a}}}
+           {\sum_bP_j(b)e^{\lambda\xi_{j,b}}}.
+      \tag{PWS5}
+   \]
+   With \(c_\lambda=\cosh\lambda\) and \(s_\lambda=\sinh\lambda\),
+   \[
+      \E_{Q_{j,\lambda}}\xi_j
+      =
+      \frac{s_\lambda+\alpha_jc_\lambda}
+           {c_\lambda+\alpha_js_\lambda},
+      \tag{PWS6}
+   \]
+   \[
+      \operatorname{Var}_{Q_{j,\lambda}}\xi_j
+      =
+      \frac{1-\alpha_j^2}
+           {(c_\lambda+\alpha_js_\lambda)^2},
+      \tag{PWS7}
+   \]
+   and
+   \[
+      \operatorname{Cov}_{Q_{j,\lambda}}(w_j,\xi_j)
+      =
+      \frac{\zeta_j}
+           {(c_\lambda+\alpha_js_\lambda)^2}.
+      \tag{PWS8}
+   \]
+
+   Consequently, pairwise independence is enough to make an additive sign
+   filter look random to the tilted sampler wherever the score-tilted
+   coordinate laws have large \(\ell_2\) effective support
+   \(\nu_j^{-1}\).  If \(\nu_j\) is small on most coordinates, then a
+   pairwise-independent implementation, such as an affine finite-field sign
+   family or a multiply-shift family that is genuinely unbiased pairwise on the
+   label universe, makes \(\alpha_j\) and \(\zeta_j\) small in second moment.
+   Formulas \((PWS6)\)-\((PWS8)\) then feed directly into the covariance and
+   Berry--Esseen audit in
+   \cref{cor:bivariate-tilted-berry-esseen-filter}.  What pairwise
+   independence does not give is a uniform quenched guarantee over all
+   query-adaptive laws \(P_j\); that requires either a deterministic
+   effective-support audit, stronger limited independence, or a query-family
+   net.
+\end{lemma}
+
+\begin{proof}
+   The first two means vanish by unbiasedness.  Pairwise independence gives
+   \[
+      \E\alpha_j^2
+      =
+      \sum_{a,b}P_j(a)P_j(b)\E[\xi_{j,a}\xi_{j,b}]
+      =
+      \sum_aP_j(a)^2,
+   \]
+   and the same calculation with weights \(w_j(a)-\bar w_j\) gives the formula
+   for \(\E\zeta_j^2\).  The bound \((PWS4)\) is immediate.
+
+   For the tilted identities, write
+   \[
+      Z_j=\sum_aP_j(a)e^{\lambda\xi_{j,a}}
+          =c_\lambda+\alpha_js_\lambda .
+   \]
+   Since \(\xi^2=1\),
+   \[
+      \E_{Q_{j,\lambda}}\xi_j
+      =
+      \frac{\sum_aP_j(a)\xi_{j,a}(c_\lambda+s_\lambda\xi_{j,a})}{Z_j}
+      =
+      \frac{s_\lambda+\alpha_jc_\lambda}{Z_j},
+   \]
+   and subtracting the square from one gives \((PWS7)\).  Finally,
+   \[
+      \E_{Q_{j,\lambda}}(w_j-\bar w_j)
+      =
+      \frac{s_\lambda\zeta_j}{Z_j},
+      \qquad
+      \E_{Q_{j,\lambda}}(w_j-\bar w_j)\xi_j
+      =
+      \frac{c_\lambda\zeta_j}{Z_j}.
+   \]
+   Subtracting their product with \(\E_{Q_{j,\lambda}}\xi_j\) leaves
+   \[
+      \zeta_j
+      \frac{c_\lambda Z_j-s_\lambda(s_\lambda+\alpha_jc_\lambda)}{Z_j^2}
+      =
+      \frac{\zeta_j}{Z_j^2},
+   \]
+   proving \((PWS8)\).
+\end{proof}
+
 \begin{corollary}[Aligned linear charts compute rate-coverage sketches]
    \label{cor:aligned-linear-chart-rate-coverage-sketch}
    Work in the setting of
