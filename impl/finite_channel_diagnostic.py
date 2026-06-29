@@ -30,6 +30,9 @@ class DiagnosticResult:
     guard_density: np.ndarray
     score: np.ndarray
     affinity: np.ndarray
+    soft_surplus: np.ndarray
+    tilted_top_mass: np.ndarray
+    top_contribution_fraction: np.ndarray
     margin_mass: np.ndarray
     margin_bound: np.ndarray
     pi: np.ndarray
@@ -51,6 +54,9 @@ class DiagnosticResult:
             "guard_mean": float(self.guard_density.mean()),
             "score_mean": float(self.score.mean()),
             "affinity_mean": float(self.affinity.mean()),
+            "soft_surplus_mean": float(self.soft_surplus.mean()),
+            "tilted_top_mass_mean": float(self.tilted_top_mass.mean()),
+            "top_contribution_fraction_mean": float(self.top_contribution_fraction.mean()),
             "margin_delta": float(self.margin_delta),
             "margin_mass_mean": float(self.margin_mass.mean()),
             "margin_bound_mean": float(self.margin_bound.mean()),
@@ -59,6 +65,10 @@ class DiagnosticResult:
             out[f"h_q{q:g}"] = float(np.quantile(self.h_eta, q))
             out[f"score_q{q:g}"] = float(np.quantile(self.score, q))
             out[f"affinity_q{q:g}"] = float(np.quantile(self.affinity, q))
+            out[f"soft_surplus_q{q:g}"] = float(np.quantile(self.soft_surplus, q))
+            out[f"tilted_top_mass_q{q:g}"] = float(np.quantile(self.tilted_top_mass, q))
+            out[f"top_contribution_fraction_q{q:g}"] = float(
+                np.quantile(self.top_contribution_fraction, q))
             out[f"margin_mass_q{q:g}"] = float(np.quantile(self.margin_mass, q))
             out[f"margin_bound_q{q:g}"] = float(np.quantile(self.margin_bound, q))
         return out
@@ -210,6 +220,55 @@ def posterior_margin_certificate(
     return affinity, margin_mass, margin_bound
 
 
+def tilted_surplus_statistics(
+    k_data: np.ndarray,
+    k_query: np.ndarray,
+    near_indices: np.ndarray,
+    pi: np.ndarray,
+    tau: np.ndarray,
+    *,
+    alpha: float,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Return affinity, average surplus, top tilted mass, and top contribution.
+
+    The identity
+
+        H_eta = A_beta E_W[(1 - (tau_j/R_j(p))^alpha)_+]
+
+    separates two possible ways the finite-channel diagnostic can be large:
+    either the tilted law is spread over many mildly positive outcomes, or the
+    top tilted outcome already carries most of the positive surplus.  The latter
+    is the regime relevant to a single-leader reporter.
+    """
+    near = np.asarray(near_indices, dtype=int)
+    k_near = np.maximum(k_data[near], _EPS)
+    k_query = np.maximum(k_query, _EPS)
+    affinity_terms = (k_near ** alpha) * (k_query ** (1.0 - alpha))
+    affinity = np.sum(affinity_terms, axis=1)
+
+    ratios = k_near / pi[None, :]
+    surplus = np.maximum(1.0 - (tau[None, :] / np.maximum(ratios, _EPS)) ** alpha, 0.0)
+    contributions = affinity_terms * surplus
+    h_eta = np.sum(contributions, axis=1)
+    soft_surplus = np.divide(h_eta, affinity, out=np.zeros_like(h_eta), where=affinity > 0)
+
+    top = np.argmax(affinity_terms, axis=1)
+    rows = np.arange(len(top))
+    tilted_top_mass = np.divide(
+        affinity_terms[rows, top],
+        affinity,
+        out=np.zeros_like(affinity),
+        where=affinity > 0,
+    )
+    top_contribution_fraction = np.divide(
+        contributions[rows, top],
+        h_eta,
+        out=np.zeros_like(h_eta),
+        where=h_eta > 0,
+    )
+    return affinity, soft_surplus, tilted_top_mass, top_contribution_fraction
+
+
 def guard_density(data: np.ndarray, queries: np.ndarray, *, c: float, r: float) -> np.ndarray:
     threshold = c * r
     out = np.empty(len(queries), dtype=float)
@@ -239,12 +298,18 @@ def diagnose_channel(
     h_eta, pi, tau = h_eta_for_pairs(k_data, k_query, near_indices, eta=eta, alpha=alpha)
     if margin_delta is None:
         margin_delta = 1.0 / alpha
+    affinity2, soft_surplus, tilted_top_mass, top_contribution_fraction = tilted_surplus_statistics(
+        k_data, k_query, near_indices, pi, tau, alpha=alpha)
     affinity, margin_mass, margin_bound = posterior_margin_certificate(
         k_data, k_query, near_indices, pi, tau, alpha=alpha, margin_delta=margin_delta)
+    if not np.allclose(affinity, affinity2):
+        raise AssertionError("affinity decomposition mismatch")
     guard = guard_density(data, queries, c=c, r=r)
     return DiagnosticResult(h_eta=h_eta, guard_density=guard, score=guard + h_eta,
-                            affinity=affinity, margin_mass=margin_mass,
-                            margin_bound=margin_bound, pi=pi, tau=tau,
+                            affinity=affinity, soft_surplus=soft_surplus,
+                            tilted_top_mass=tilted_top_mass,
+                            top_contribution_fraction=top_contribution_fraction,
+                            margin_mass=margin_mass, margin_bound=margin_bound, pi=pi, tau=tau,
                             eta=eta, alpha=alpha, margin_delta=margin_delta)
 
 

@@ -10,6 +10,7 @@ from finite_channel_diagnostic import (
     posterior_thresholds,
     stable_softmax,
     synthetic_near_pairs,
+    tilted_surplus_statistics,
 )
 
 
@@ -50,6 +51,14 @@ def test_h_eta_matches_direct_formula():
     assert np.all((0 <= margin_mass) & (margin_mass <= 1))
     assert np.all(margin_bound <= h + 1e-12)
 
+    affinity2, soft_surplus, tilted_top_mass, top_fraction = tilted_surplus_statistics(
+        k_data, k_query, near, pi, tau, alpha=alpha)
+    assert np.allclose(affinity2, affinity)
+    assert np.allclose(h, affinity * soft_surplus)
+    assert np.all((0 <= soft_surplus) & (soft_surplus <= 1))
+    assert np.all((0 <= tilted_top_mass) & (tilted_top_mass <= 1))
+    assert np.all((0 <= top_fraction) & (top_fraction <= 1))
+
 
 def test_diagnostic_adds_guard_density():
     data = np.array([
@@ -69,6 +78,7 @@ def test_diagnostic_adds_guard_density():
     assert np.allclose(result.guard_density, [1 / 3, 0.0])
     assert np.allclose(result.score, result.guard_density + result.h_eta)
     assert np.all(result.margin_bound <= result.h_eta + 1e-12)
+    assert np.allclose(result.h_eta, result.affinity * result.soft_surplus)
 
 
 def test_softmax_balancing_reduces_column_mass_error():

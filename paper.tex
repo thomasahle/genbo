@@ -89120,6 +89120,52 @@ Also compute the resident-guard density
 \]
 The conjecture predicts that the lower quantiles of $g(q)+\mathcal H_\xi(p,q)$ should be at worst inverse-polylogarithmic in $m$, and ideally bounded below by a constant.
 
+\begin{lemma}[Soft-surplus decomposition]\label{lem:soft-surplus-decomposition}
+   Let
+   \[
+      \mathsf A_\beta(p,q)=\sum_j K_p(j)^\beta K_q(j)^{1-\beta}.
+   \]
+   If \(\mathsf A_\beta(p,q)>0\), define the tilted outcome law
+   \[
+      W_{p,q}(j)=
+      \frac{K_p(j)^\beta K_q(j)^{1-\beta}}{\mathsf A_\beta(p,q)}
+   \]
+   and the soft posterior surplus
+   \[
+      \sigma_j(p)=
+      \left(1-\left(\frac{\tau_j}{R_j(p)}\right)^\beta\right)_+ .
+   \]
+   Then
+   \[
+      \mathcal H_\xi(p,q)
+      =
+      \mathsf A_\beta(p,q)\,
+      \E_{j\sim W_{p,q}}\sigma_j(p).
+      \tag{SSD}
+   \]
+   In particular, if \(j_\star\) maximizes
+   \(K_p(j)^\beta K_q(j)^{1-\beta}\), then the fraction of the diagnostic
+   value explained by the single tilted winner is
+   \[
+      \frac{W_{p,q}(j_\star)\sigma_{j_\star}(p)}
+           {\E_{j\sim W_{p,q}}\sigma_j(p)}
+   \]
+   whenever the denominator is nonzero.  For a balanced-softmax channel, this
+   tilted winner is the maximum-probability outcome under \(K_z\) with
+   \(z=\beta p+(1-\beta)q\).
+\end{lemma}
+
+\begin{proof}
+   Since \(K_p(j)=\mu_jR_j(p)\), each summand in \(\mathcal H_\xi(p,q)\)
+   equals
+   \[
+      K_p(j)^\beta K_q(j)^{1-\beta}
+      \left(1-\left(\frac{\tau_j}{R_j(p)}\right)^\beta\right)_+ .
+   \]
+   Summing and normalizing by \(\mathsf A_\beta(p,q)\) proves \((SSD)\).
+   The final statement is the same softmax interpolation identity used below.
+\end{proof}
+
 \begin{lemma}[Posterior-rank margin certificate]\label{lem:posterior-rank-margin}
    Let
    \[
@@ -89156,7 +89202,7 @@ The conjecture predicts that the lower quantiles of $g(q)+\mathcal H_\xi(p,q)$ s
    Summing over $G_\Delta(p)$ proves the claim.
 \end{proof}
 
-Thus the finite special case would follow from a posterior-rank margin statement: for every near pair not handled by the resident guard, a non-negligible fraction of the tilted affinity must lie on outcomes for which $p$ is inside the top-$\xi$ posterior child by enough margin. The diagnostic should therefore report not only $\mathcal H_\xi$, but also $\mathsf A_\beta(p,q)$, $W_{p,q}(G_\Delta(p))$, and the certified lower bound in \cref{lem:posterior-rank-margin}, for a margin such as $\Delta=1/\beta$. For the balanced-softmax candidate
+Thus the finite special case would follow from a posterior-rank margin statement: for every near pair not handled by the resident guard, a non-negligible fraction of the tilted affinity must lie on outcomes for which $p$ is inside the top-$\xi$ posterior child by enough margin. This is only a sufficient condition. By \cref{lem:soft-surplus-decomposition}, a failed fixed-margin test can still have large \(\mathcal H_\xi\) if the tilted winner, or a few near-winner outcomes, have moderate posterior surplus. The diagnostic should therefore report not only $\mathcal H_\xi$, but also $\mathsf A_\beta(p,q)$, the soft surplus \(\mathcal H_\xi/\mathsf A_\beta\), the tilted winner's contribution fraction from \cref{lem:soft-surplus-decomposition}, \(W_{p,q}(G_\Delta(p))\), and the certified lower bound in \cref{lem:posterior-rank-margin}, for a margin such as $\Delta=1/\beta$. For the balanced-softmax candidate
 \[
    K_x(j)=
    \frac{\exp(\lambda_{\rm sm}\ip{a_j}{x}+b_j)}
@@ -89211,6 +89257,15 @@ One should also separate the resident-guard regime from the genuine finite-chann
    \(1.6\cdot10^2\)--\(3.0\cdot10^2\).  The constructive theorem should
    therefore target tuned, balanced, whitening-based leader reporters, or else
    prove that this posterior-contraction signal cannot be made uniform.
+   A follow-up winner-decomposition run supports the same interpretation but
+   also exposes the lower-tail work still to do: for isolated \(m=1000,3000\)
+   whitened panels at scales \(8,12\), the lower \(5\%\) soft-surplus quantile
+   was \(0.468\)--\(0.793\), the lower \(5\%\) tilted-top-mass quantile was
+   \(0.433\)--\(0.611\), and the median fraction of \(\mathcal H_\eta\) carried
+   by the top tilted outcome was \(0.950\)--\(0.997\).  However the lower
+   \(5\%\) top-outcome contribution fraction was only \(0.441\)--\(0.632\).
+   The typical state is therefore almost winner-led, but a uniform theorem
+   still needs a lower-tail backup rather than only an argmax reporter.
 \end{remark}
 
 \begin{proposition}[Conditional finite-channel polylog endpoint]\label{prop:finite-channel-polylog}
