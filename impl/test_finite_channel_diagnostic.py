@@ -5,6 +5,7 @@ from finite_channel_diagnostic import (
     balance_softmax_offsets,
     diagnose_channel,
     h_eta_for_pairs,
+    h_eta_for_pairs_with_thresholds,
     is_product_sign_kind,
     make_panel,
     make_product_sign_basis,
@@ -49,6 +50,10 @@ def test_h_eta_matches_direct_formula():
             )
         expected.append(total)
     assert np.allclose(h, expected)
+    assert np.allclose(
+        h,
+        h_eta_for_pairs_with_thresholds(k_data, k_query, near, pi, tau, alpha=alpha),
+    )
 
     affinity, margin_mass, margin_bound = posterior_margin_certificate(
         k_data, k_query, near, pi, tau, alpha=alpha, margin_delta=0.1)

@@ -382,10 +382,28 @@ def h_eta_for_pairs(
     alpha: float,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     pi, ratios, tau = posterior_thresholds(k_data, eta)
+    return h_eta_for_pairs_with_thresholds(
+        k_data, k_query, near_indices, pi, tau, alpha=alpha), pi, tau
+
+
+def h_eta_for_pairs_with_thresholds(
+    k_data: np.ndarray,
+    k_query: np.ndarray,
+    near_indices: np.ndarray,
+    pi: np.ndarray,
+    tau: np.ndarray,
+    *,
+    alpha: float,
+) -> np.ndarray:
+    pi = np.asarray(pi, dtype=float)
+    tau = np.asarray(tau, dtype=float)
+    if pi.shape != tau.shape or pi.shape != (k_data.shape[1],):
+        raise ValueError("pi and tau must have one entry per channel outcome")
+    ratios = k_data / np.maximum(pi[None, :], _EPS)
     r_near = ratios[np.asarray(near_indices, dtype=int)]
     positive = np.maximum(np.power(np.maximum(r_near, _EPS), alpha) - tau[None, :] ** alpha, 0.0)
     weights = (pi[None, :] ** alpha) * (np.maximum(k_query, _EPS) ** (1.0 - alpha))
-    return np.sum(weights * positive, axis=1), pi, tau
+    return np.sum(weights * positive, axis=1)
 
 
 def posterior_margin_certificate(

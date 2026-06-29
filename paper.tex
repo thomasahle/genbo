@@ -89320,6 +89320,55 @@ top-\(k\) backup.
    \(O(r\log r)\), and the heap performs \(O(k)\) pushes and pops.
 \end{proof}
 
+\begin{lemma}[Product-sign posterior-rank score]\label{lem:product-sign-posterior-score}
+   For a product-sign channel
+   \[
+      K_x(s)=
+      \prod_{a=1}^r
+      \frac{\exp(s_a u_a(x))}{2\cosh u_a(x)},
+      \qquad s\in\{\pm1\}^r,
+   \]
+   define the centered posterior score
+   \[
+      \Psi_s(x)=
+      \sum_{a=1}^r\bigl(s_a u_a(x)-\log\cosh u_a(x)\bigr).
+      \tag{PSS}
+   \]
+   If \(\pi_s\) is any positive reference output mass and
+   \(R_s(x)=K_x(s)/\pi_s\), then
+   \[
+      \log R_s(x)=\Psi_s(x)-\log(2^r\pi_s).
+      \tag{PSR}
+   \]
+   Consequently, for any data node and any \(\eta\), the posterior rank-margin
+   event
+   \[
+      R_s(p)\ge e^\Delta\tau_s
+   \]
+   is exactly
+   \[
+      \Psi_s(p)\ge Q_{s,\eta}^{\rm node}+\Delta,
+      \tag{PSQ}
+   \]
+   where \(Q_{s,\eta}^{\rm node}\) is the top-\(\eta\) empirical quantile of
+   \(\Psi_s(x)\) over node points.  In particular, the rank-margin event is
+   independent of the output-mass imbalance \(\pi_s\).
+\end{lemma}
+
+\begin{proof}
+   Expanding the product gives
+   \[
+      \log K_x(s)=
+      \sum_a s_a u_a(x)-\sum_a\log(2\cosh u_a(x))
+      =
+      \Psi_s(x)-r\log2.
+   \]
+   Since \(2^r\) is the number of labels, \((PSR)\) follows after subtracting
+   \(\log\pi_s\).  The same constant \(-\log(2^r\pi_s)\) appears in
+   \(\log R_s(p)\) and in the empirical top-\(\eta\) threshold
+   \(\log\tau_s\), so it cancels in the margin comparison.
+\end{proof}
+
 \begin{lemma}[Fixed-width product-sign containment tail]
    \label{lem:product-sign-containment-tail}
    In the product-sign channel, write
@@ -89694,6 +89743,22 @@ One should also separate the resident-guard regime from the genuine finite-chann
    a concrete non-equivalent target: prove a fixed-width product-sign
    posterior-rank lower tail at margin \(\Omega(1/\alpha)\) with a small
    enough constant, or find a genuine low-tail obstruction there.
+
+   \Cref{lem:product-sign-posterior-score} removes one possible distraction:
+   the sizeable output-mass imbalance of zero-offset product-sign panels does
+   not enter the rank-margin event.  It only shifts all posterior scores for a
+   label by the same constant.  A held-out threshold check confirms that the
+   observed quarter-log target is not mainly finite-node threshold noise.
+   Recomputing \((\pi_s,\tau_s)\) on \(10^5\) independent spherical reference
+   points, while keeping the same node, panel, and near pairs, changed the
+   top-\(\eta\) threshold logs by median \(0.025\)--\(0.138\) and \(90\%\)
+   quantile \(0.085\)--\(0.310\).  The lower \(5\%\) quantiles of
+   \(\mathcal H_\eta\), soft surplus, hidden top-four value, and the
+   quarter-log certified value were essentially unchanged across
+   \(B\in\{16,32\}\) and correlations \(0.90,0.95\).  Thus the next theorem
+   should be stated for the distributional quantiles of the bit score
+   \(\Psi_s\), with a standard empirical-quantile transfer as a separate
+   concentration step.
 \end{remark}
 
 \begin{proposition}[Conditional finite-channel polylog endpoint]\label{prop:finite-channel-polylog}
