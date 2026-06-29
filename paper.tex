@@ -16622,6 +16622,50 @@ partition ignores the bias coordinates that certify the list size.
    chosen bucket.
 \end{proof}
 
+\begin{corollary}[Full bucket scans require large marked responsibility]
+   \label{cor:full-bucket-scan-responsibility-barrier}
+   In the setting of \cref{lem:marked-trellis-responsibility-verifier}, suppose
+   the query scans every point that appears in the sampled quotient bucket:
+   \[
+      \theta_{q,x,\ell}
+      =
+      \mathbf 1\{Z_{q,x,\ell}^{\ge T}>0\}.
+   \]
+   Then the polylogarithmic responsibility condition \((MTR3)\) with constant
+   \(K\) holds if and only if every emitted query/load triple satisfies
+   \[
+      \frac{Z_{q,x,\ell}^{\ge T}}{Z_{q,\ell}}\ge\frac1K.
+      \tag{FBR1}
+   \]
+   More generally, the pointwise overcharge of full scanning relative to the
+   hidden marked spectrum is exactly
+   \[
+      \frac{\Pi_q(\ell)}
+           {Z_{q,x,\ell}^{\ge T}/Z_q}
+      =
+      \frac{Z_{q,\ell}}{Z_{q,x,\ell}^{\ge T}}
+      =
+      r_{q,x,\ell}^{-1}.
+      \tag{FBR2}
+   \]
+   Thus a quotient bucket containing points with superpolylogarithmically small
+   marked responsibility cannot be certified by ordinary union scanning; it
+   needs responsibility-thinned reporting or a finer bucket map.
+\end{corollary}
+
+\begin{proof}
+   For full scanning, the lower inequality in \((MTR3)\) is automatic whenever
+   \(\theta_{q,x,\ell}=1\), because then \(r_{q,x,\ell}>0\).  The upper
+   inequality is
+   \[
+      1\le K r_{q,x,\ell},
+   \]
+   which is exactly \((FBR1)\).  The overcharge identity \((FBR2)\) is the
+   ratio between the full-scan contribution
+   \(\Pi_q(\ell)=Z_{q,\ell}/Z_q\) and the hidden marked contribution
+   \(Z_{q,x,\ell}^{\ge T}/Z_q\).
+\end{proof}
+
 \begin{remark}[Trellis target for codes and lattices]
    \label{rem:trellis-quotient-target}
    \Cref{lem:compressed-aggregate-sampler} is the sampled analogue of the
@@ -16645,6 +16689,9 @@ partition ignores the bias coordinates that certify the list size.
    version of the same calculation: the quantity a reporter must approximate
    for point \(x\) in sampled bucket \(\ell\) is exactly the marked partition
    ratio \(Z_{q,x,\ell}^{\ge T}/Z_{q,\ell}\).
+   \Cref{cor:full-bucket-scan-responsibility-barrier} records the matching
+   obstruction to ordinary union scanning: its pointwise overcharge is the
+   inverse of this marked responsibility.
 \end{remark}
 
 \begin{lemma}[Tilted weight feasibility is linear]
@@ -94299,6 +94346,9 @@ option checkable: inside a sampled trellis bucket, the exact emission
 responsibility of point \(x\) is the marked partition ratio
 \(Z_{q,x,\ell}^{\ge T}/Z_{q,\ell}\), and reporting within a polylogarithmic
 factor preserves the far and near spectrum.
+\Cref{cor:full-bucket-scan-responsibility-barrier} gives the corresponding
+barrier for ordinary full-bucket scanning: its overcharge on \(x,\ell\) is
+exactly the inverse marked responsibility.
 \Cref{lem:tilted-weight-linear-feasibility} shows that, for a fixed retained
 pool, choosing those weights is just a linear feasibility problem after
 clearing the tilted partition functions.  Failure has a concrete dual
