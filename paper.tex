@@ -92315,6 +92315,113 @@ amplified in the next proposition.
    \(\Omega(I(\ell))\) raw-access barrier and the final conclusion.
 \end{proof}
 
+\begin{corollary}[Fixed terminal histograms remove dense incidence scans]
+   \label{cor:fixed-terminal-sketch-histograms}
+   Work in the setting of
+   \cref{cor:sparse-terminal-sketch-initialization}, but choose the
+   heavy-hitter sketch hashes during preprocessing.  For one sketch width
+   \(W\), let \(h_s:S\to[W]\), \(s=1,\ldots,D\), be the fixed sketch rows.
+   For each terminal \(t\), store the sparse histograms
+   \[
+      B_{t,s}(a)=|\{x\in C_t:h_s(x)=a\}|,
+      \tag{FTH1}
+   \]
+   and, for identifier bits \(k=1,\ldots,b_0\),
+   \[
+      B_{t,s,k}(a)
+      =
+      |\{x\in C_t:h_s(x)=a,\ {\rm bit}_k(x)=1\}|,
+      \tag{FTH2}
+   \]
+   omitting zero entries.  For a sampled quotient class \(\ell\), define the
+   active histogram size
+   \[
+      J_W(\ell)
+      =
+      \sum_{t\in\mathcal T_\ell}
+      \sum_{s=1}^D
+      \left(
+         |\operatorname{supp}B_{t,s}|
+         +
+         \sum_{k=1}^{b_0}|\operatorname{supp}B_{t,s,k}|
+      \right).
+      \tag{FTH3}
+   \]
+   Then the terminal rewards for all total and bit counters of width \(W\) can
+   be initialized in time \(O(J_W(\ell))\), without reading the resident
+   identifiers in the posting lists.  The number of nonzero sketch counters
+   that require a backward trellis recursion is at most
+   \[
+      K_W(\ell)
+      \le
+      \min\{D(b_0+1)W,\ J_W(\ell)\}.
+      \tag{FTH4}
+   \]
+   Consequently, if
+   \[
+      \E_{\ell\sim\Pi_Y}
+      \bigl[J_W(\ell)+K_W(\ell)|E|\bigr]
+      \le d\,m^\rho\log^{O_c(1)}m,
+      \tag{FTH5}
+   \]
+   then the aggregation hypothesis \((SRL2)\) of
+   \cref{cor:sketched-responsibility-lister} holds for this fixed sketch
+   width.
+
+   The preprocessing storage for the histograms is
+   \[
+      \mathsf H_W
+      =
+      \sum_{t}
+      \sum_{s=1}^D
+      \left(
+         |\operatorname{supp}B_{t,s}|
+         +
+         \sum_{k=1}^{b_0}|\operatorname{supp}B_{t,s,k}|
+      \right)
+      \le
+      D(b_0+1)\sum_t\min\{|C_t|,W\}.
+      \tag{FTH6}
+   \]
+   Thus fixed sketch histograms are useful exactly in the regime where the
+   active histogram mass \(J_W(\ell)\), not the raw incidence mass
+   \(I(\ell)\), is within the \(m^\rho\polylog m\) query budget and the global
+   histogram storage \(\mathsf H_W\) fits the allowed preprocessing budget.
+   For the dyadic width choice in
+   \cref{lem:linear-sketch-heavy-responsibilities}, one may store the same
+   histograms for the \(O(\log m)\) admissible dyadic widths, increasing
+   \((FTH6)\) by only a logarithmic factor.  The sketch success probability is
+   then the preprocessing probability of
+   \cref{lem:linear-sketch-heavy-responsibilities} for each fixed promised
+   query/load vector whose responsibilities do not depend on the sketch rows.
+\end{corollary}
+
+\begin{proof}
+   For a total counter \(c_x=\mathbf1\{h_s(x)=a\}\), the terminal reward is
+   exactly
+   \[
+      g_c(t)=\sum_{x\in C_t}\mathbf1\{h_s(x)=a\}=B_{t,s}(a).
+   \]
+   For a bit counter
+   \(c_x=\mathbf1\{h_s(x)=a,\ {\rm bit}_k(x)=1\}\), the terminal reward is
+   \(B_{t,s,k}(a)\).  Therefore reading the stored nonzero histogram entries
+   for terminals \(t\in\mathcal T_\ell\) initializes precisely all nonzero
+   terminal rewards, and costs \(O(J_W(\ell))\).  Every counter with no
+   nonzero terminal reward on \(\mathcal T_\ell\) contributes zero to the
+   numerator and needs no backward recursion.  The remaining number of
+   counters is at most the total possible number \(D(b_0+1)W\) and at most the
+   number of active nonzero histogram entries, proving \((FTH4)\).
+
+   Applying \cref{cor:trellis-sketch-responsibility-aggregation} to these
+   initialized rewards gives aggregation time
+   \(O(J_W(\ell)+K_W(\ell)|E|)\).  Averaging over
+   \(\ell\sim\Pi_Y\) proves \((FTH5)\Rightarrow(SRL2)\).  The storage identity
+   in \((FTH6)\) is the number of nonzero stored histogram entries.  For each
+   fixed terminal, row, and bit choice, the support size is at most both
+   \(|C_t|\) and \(W\), giving the displayed upper bound.  The dyadic-width
+   statement just repeats this construction for each admissible width.
+\end{proof}
+
 \begin{remark}[What this shortcut does and does not prove]\label{rem:score-max-shortcut}
    \Cref{lem:smoothed-max-score-margin} is the $\alpha=0$ endpoint of the
    likelihood-ball geometry: if one can approximately maximize the smoothed
