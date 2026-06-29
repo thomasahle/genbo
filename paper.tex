@@ -5610,6 +5610,159 @@ partition ignores the bias coordinates that certify the list size.
    corresponding residue-list frontier.
 \end{remark}
 
+\begin{lemma}[Syndrome-state product decoder]
+   \label{lem:syndrome-state-product-decoder}
+   Fix one query \(q\).  Let
+   \(\mathcal C=\mathcal C_1\times\cdots\times\mathcal C_h\) have additive
+   score \(S_q(c)=\sum_j\phi_j(q,c_j)\), let \(G\) be a finite abelian group,
+   and let \(h_j:\mathcal C_j\to G\).  Write
+   \(H(u)=\sum_{j\le |u|}h_j(u_j)\) for the partial syndrome of a prefix.
+   Fix a target syndrome \(\sigma\in G\).  For each suffix length and residue
+   let \(R_{\ell+1}(q,\tau)\), \(0\le\ell\le h\), be an admissible suffix
+   score:
+   \[
+      \sum_{j=\ell+1}^h\phi_j(q,c_j)\le R_{\ell+1}(q,\tau)
+      \quad
+      \text{whenever }
+      \sum_{j=\ell+1}^h h_j(c_j)=\tau .
+      \tag{SSD1}
+   \]
+   For the empty suffix, take \(R_{h+1}(q,0)=0\) and
+   \(R_{h+1}(q,\tau)=-\infty\) for \(\tau\ne0\).  Suppose that for every block
+   \(j\), residue \(a\in G\), and threshold \(\theta\), a residue reporter lists
+   exactly
+   \[
+      \{c\in\mathcal C_j:\ h_j(c)=a,\ \phi_j(q,c)\ge\theta\}
+   \]
+   in work \(D_j(q,a)\) plus a constant per listed symbol.
+
+   Run the priority prefix decoder with prefix upper bound
+   \[
+      U_q(u)=\sum_{j\le |u|}\phi_j(q,u_j)
+      +R_{|u|+1}(q,\sigma-H(u)).
+   \]
+   At a live prefix \(u\) of length \(\ell<h\), call the residue-\(a\) block
+   reporter with threshold
+   \[
+      \Theta-\sum_{j\le\ell}\phi_j(q,u_j)
+      -R_{\ell+2}(q,\sigma-H(u)-a),
+      \qquad a\in G .
+      \tag{SSD2}
+   \]
+   Then every terminal \(c\) with \(H(c)=\sigma\) and \(S_q(c)\ge\Theta\) is
+   visited.  For \(\beta>0\), put
+   \[
+      Z_{\le\ell}^{\rm syn}(q,g)
+      =
+      \sum_{\substack{u\in\mathcal C_1\times\cdots\times\mathcal C_\ell\\
+                      H(u)=g}}
+      \exp\!\left(\beta\sum_{j\le\ell}\phi_j(q,u_j)\right),
+      \qquad Z_{\le0}^{\rm syn}(q,0)=1,
+   \]
+   and \(Z_{\le0}^{\rm syn}(q,g)=0\) for \(g\ne0\).  Define
+   \[
+      P_\beta^{\rm syn}(q)
+      =
+      \sum_{\ell=0}^h
+      a_\ell(q)
+      \sum_{g\in G}
+      e^{\beta R_{\ell+1}(q,\sigma-g)}
+      Z_{\le\ell}^{\rm syn}(q,g),
+      \tag{SSD3}
+   \]
+   where \(a_h(q)=1\) and
+   \(a_\ell(q)=1+\sum_{a\in G}D_{\ell+1}(q,a)\) for \(\ell<h\).  If terminal
+   prices \(Q_c\ge0\) are charged on output, also put
+   \[
+      T_\beta^{\rm syn}(q)
+      =
+      \sum_{\substack{c\in\mathcal C\\ H(c)=\sigma}}
+      Q_c e^{\beta S_q(c)} .
+      \tag{SSD4}
+   \]
+   The query work is
+   \[
+      O\!\left(
+         (L_\beta^{\rm syn}(q)+1)\log(2+L_\beta^{\rm syn}(q))
+         +
+         e^{-\beta\Theta}T_\beta^{\rm syn}(q)
+      \right),
+      \qquad
+      L_\beta^{\rm syn}(q)=e^{-\beta\Theta}P_\beta^{\rm syn}(q).
+      \tag{SSD5}
+   \]
+\end{lemma}
+
+\begin{proof}
+   The bound \(U_q\) is admissible by \((SSD1)\).  A child \(u,c\) can have a
+   terminal descendant of syndrome \(\sigma\) and score at least \(\Theta\)
+   only if its block score satisfies \((SSD2)\).  Thus the residue reporters
+   generate exactly the live children, and the priority-prefix correctness
+   argument applies unchanged.
+
+   At level \(\ell\), grouping prefixes by their partial syndrome gives
+   \[
+      \sum_{|u|=\ell} e^{\beta U_q(u)}
+      =
+      \sum_{g\in G}
+      e^{\beta R_{\ell+1}(q,\sigma-g)}
+      Z_{\le\ell}^{\rm syn}(q,g).
+   \]
+   Multiplying by \(a_\ell(q)\), summing over levels, and applying the
+   exponential list-size bound gives at most \(L_\beta^{\rm syn}(q)\) live
+   prefix work, including the fixed cost of all residue-reporter calls.  The
+   constant per listed child is charged to the child prefix.  Finally,
+   \[
+      \sum_{\substack{c:H(c)=\sigma\\ S_q(c)\ge\Theta}} Q_c
+      \le
+      e^{-\beta\Theta}T_\beta^{\rm syn}(q),
+   \]
+   which proves the displayed work bound.
+\end{proof}
+
+\begin{corollary}[Residue-blind syndrome thinning does not reduce prefix work]
+   \label{cor:residue-blind-syndrome-prefix-leakage}
+   In the setting of \cref{lem:syndrome-state-product-decoder}, suppose the
+   nonterminal suffix certificates used by the decoder are residue-blind:
+   \(R_{\ell+1}(q,\tau)=R_{\ell+1}(q)\) for every \(\tau\) and every
+   \(0\le\ell<h\).  Then, for those nonterminal levels,
+   \[
+      \sum_{g\in G}
+      e^{\beta R_{\ell+1}(q,\sigma-g)}
+      Z_{\le\ell}^{\rm syn}(q,g)
+      =
+      e^{\beta R_{\ell+1}(q)}Z_{\le\ell}(q),
+      \tag{RBL1}
+   \]
+   the same prefix moment as in \cref{lem:additive-product-panel-decoder}.
+   Thus the live nonterminal prefix search is unthinned, up to the explicit
+   cost of the residue reporters.  A random pairwise-independent syndrome mask
+   still thins the fixed terminal moment in expectation,
+   \[
+      \E_{\{h_j\}} T_\beta^{\rm syn}(q)=|G|^{-1}T_\beta(q),
+      \tag{RBL2}
+   \]
+   for terminal weights independent of the hash seed, but it has not by itself
+   reduced the live prefix search.
+
+   Consequently, polynomial-rate syndrome thinning is a clean ANN primitive
+   only when the unthinned prefix moment is already affordable, when
+   \(|G|=\polylog m\), or when the construction supplies genuinely
+   residue-aware suffix bounds, direct lookup, or meet-in-the-middle residue
+   frontiers whose analogue of \((SSD3)\) is small.  The pairwise-independence
+   lemma proves the subset randomness; \((RBL1)\) is the separate decoder-work
+   obstruction.
+\end{corollary}
+
+\begin{proof}
+   Since the residue-blind suffix bound is independent of \(g\), the left side
+   of \((RBL1)\) factors as \(e^{\beta R_{\ell+1}(q)}\) times the sum of the
+   prefix Gibbs weights over all partial syndromes, which is exactly
+   \(Z_{\le\ell}(q)\).  For \((RBL2)\), each fixed terminal has uniform
+   syndrome \(\sigma\) under the independent pairwise-independent coordinate
+   hashes, and linearity of expectation gives the identity.
+\end{proof}
+
 \begin{lemma}[Superset product-panel decoder]
    \label{lem:superset-product-panel-decoder}
    Work in the setting of \cref{lem:additive-product-panel-decoder}, but
