@@ -16780,6 +16780,67 @@ partition ignores the bias coordinates that certify the list size.
    \(s=m^{\rho-1+o(1)}\) gives the final claims.
 \end{proof}
 
+\begin{lemma}[Random sparse heavy responsibilities have a binomial screen]
+   \label{lem:random-sparse-heavy-responsibility-screen}
+   In the random aggregate model of
+   \cref{lem:random-sparse-aggregate-responsibility-barrier}, fix a threshold
+   \(s<\tau<1\), and let
+   \[
+      d(a\Vert b)
+      =
+      a\log\frac ab+(1-a)\log\frac{1-a}{1-b}
+   \]
+   be the binary relative entropy.  Then the expected number of far passenger
+   points whose marked responsibility is at least \(\tau\) is at most
+   \[
+      m\exp\{-H d(\tau\Vert s)\}.
+      \tag{RHB1}
+   \]
+   If a distinguished near point has independent hidden memberships with
+   probability \(u>\tau\), so that
+   \(N_p\sim{\rm Binomial}(H,u)\), then it fails to be \(\tau\)-heavy with
+   probability at most
+   \[
+      \Pr[N_p/H<\tau]\le \exp\{-H d(\tau\Vert u)\}.
+      \tag{RHB2}
+   \]
+
+   In particular, at the ANN far scale \(s=m^{\rho-1+o(1)}\), with
+   \(\tau=K^{-1}\) and \(K=\log^{O(1)}m\),
+   \[
+      H\ge
+      \left(\frac{1+\epsilon}{1-\rho}+o(1)\right)K
+      \tag{RHB3}
+   \]
+   makes the expected number of far \(\tau\)-heavy passengers \(o(1)\).  Thus
+   the sparse random aggregate is statistically compatible with
+   \cref{cor:heavy-responsibility-trellis-reporter}; the missing ingredient is
+   an output-sensitive way to find the \(\tau\)-heavy points without scanning
+   all \(m\) residents.
+\end{lemma}
+
+\begin{proof}
+   For every far point, \(N_x\sim{\rm Binomial}(H,s)\).  Chernoff's bound gives
+   \[
+      \Pr[N_x/H\ge\tau]\le e^{-H d(\tau\Vert s)}.
+   \]
+   Summing this probability over the \(m\) resident points proves \((RHB1)\).
+   The lower-tail Chernoff bound for \(N_p\sim{\rm Binomial}(H,u)\) gives
+   \((RHB2)\).
+
+   For the displayed ANN specialization,
+   \[
+      d(K^{-1}\Vert s)
+      =
+      K^{-1}\log\frac{K^{-1}}s
+      +(1-K^{-1})\log\frac{1-K^{-1}}{1-s}
+      =
+      \frac{(1-\rho)\log m-\log K-O(1)}{K}+o(K^{-1}).
+   \]
+   Substituting \((RHB3)\) into \(m\exp\{-H d(K^{-1}\Vert s)\}\) gives
+   \(m^{-\epsilon+o(1)}\).
+\end{proof}
+
 \begin{remark}[Trellis target for codes and lattices]
    \label{rem:trellis-quotient-target}
    \Cref{lem:compressed-aggregate-sampler} is the sampled analogue of the
@@ -16814,6 +16875,12 @@ partition ignores the bias coordinates that certify the list size.
    not a pathological edge case: aggregating \(H\) independent sparse hidden
    filters into one bucket inflates union-scan load by
    \(\Theta(\min\{H,s^{-1}\})\) in expectation.
+   \Cref{lem:random-sparse-heavy-responsibility-screen} explains why this does
+   not rule out responsibility thresholding: with an inverse-polylogarithmic
+   threshold, only a binomial large-deviation set of far passengers is heavy.
+   The problem is algorithmic and structural--finding those heavy residents by
+   code, lattice, or list-recovery machinery--rather than another tail bound
+   for ordinary union scans.
 \end{remark}
 
 \begin{remark}[Which coding and lattice tools can address the responsibility target]
@@ -94534,6 +94601,11 @@ mass of buckets where the true witness is heavy.
 \Cref{lem:random-sparse-aggregate-responsibility-barrier} instantiates that
 barrier in the random sparse model: merging \(H\) hidden filters inflates the
 expected union scan by \((1-(1-s)^H)/s=\Theta(\min\{H,s^{-1}\})\).
+\Cref{lem:random-sparse-heavy-responsibility-screen} adds the complementary
+positive sanity check: after inverse-polylogarithmic responsibility
+thresholding, random far passengers survive only with binomial
+large-deviation probability, so the remaining bottleneck is a heavy-resident
+lister rather than the marked tail itself.
 \Cref{rem:code-lattice-responsibility-audit} translates this target back into
 coding language: Construction-A theta quotients, GMD/Chase, OSD information
 sets, Tanner/polar/BCJR decoders, and recursive lattice decoders are useful
