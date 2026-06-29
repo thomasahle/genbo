@@ -1780,10 +1780,15 @@ P114. (*** FAST-SCAN extends to OOD: int16-accurate IP selection at i8 speed -> 
     the i8-IP baseline (NOLUT16): FASTSCAN-IP wins on BOTH recall AND QPS at every point (p352 t8: recall
     0.8961 vs 0.8814; QPS 6260 vs 5031) -- better int16-accuracy IP candidate selection AND faster scan.
     QPS@90%: FASTSCAN-IP ~5678 (r0.9010@p352t16) vs i8-IP ~4500 vs recorded baseline ~4569 (P108) =
-    ~1.24x engine win. Narrows OOD-vs-ScaNN from ~2.0x toward ~1.6x (chained; same-window scann confirm
-    running). So fast-scan is a win on BOTH tracks (msspacev L2 -> parity; OOD IP -> ~1.24x). FASTSCAN
-    should replace NOLUT16 as the OOD scan default. Mechanism general: rerank fixes final order, so scan
-    only needs ~12-bit SELECTION resolution -- get it at i8 (1 vpshufb) speed via min-subtract + i16 accum.
+    ~1.24x engine win. So fast-scan is a win on BOTH tracks (msspacev L2 -> parity; OOD IP -> ~1.24x engine).
+    FASTSCAN should replace NOLUT16 as the OOD scan default. Mechanism general: rerank fixes final order, so
+    scan only needs ~12-bit SELECTION resolution -- get it at i8 (1 vpshufb) speed via min-subtract+i16 accum.
+    BUT OOD-vs-ScaNN gap does NOT close: clean SAME-WINDOW (ood_fs_vs_scann.log, nq=10000): my FASTSCAN-IP
+    r0.9008@5001 vs ScaNN ~9782@r0.90 (interp lts150 0.881@11326 / lts250 0.931@7262) = ScaNN ~1.96x ahead,
+    i.e. STILL ~2x. My earlier "narrows to ~1.6x" was a CROSS-WINDOW artifact (chained my-low-load vs
+    scann-recorded) -- same P108 error, corrected by same-window measurement: ScaNN OOD measured strong
+    here (~9782). The +1.24x engine win is real but ScaNN's OOD lead (200-dim AH scan throughput) is ~2x
+    and the fast-scan doesn't close it. HONEST: OOD stays ~2x behind ScaNN, same-window.
 
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window

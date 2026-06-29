@@ -10,7 +10,7 @@ are **same-window / back-to-back**; ratios at matched recall are the meaningful 
 | dataset | metric | sbann-rs | ScaNN (same box) | verdict |
 |---|---|---|---|---|
 | msspacev-10M (int8, L2, in-distribution) | QPS @ recall@10 ≥ 0.90 | ~12.5–19k (floor fix + fast-scan) | ~14.5–16k | **PARITY** (bracketed both load orders); ScaNN ~1.4× at recall 0.95 |
-| text2image-10M (float32, MIPS, OOD — the real leaderboard) | QPS @ recall@10 ≥ 0.90 | ~4.5k | ~9k | **ScaNN ~2× faster** |
+| text2image-10M (float32, MIPS, OOD — the real leaderboard) | QPS @ recall@10 ≥ 0.90 | ~5k (fast-scan IP) | ~9.8k | **ScaNN ~2× faster** (same-window) |
 
 **Fast-scan kernel (P113) roughly halved the msspacev gap.** A FAISS/Quick-ADC-style scan (int8 LUT,
 1 vpshufb/subspace + int16 widening accumulation; `SBANN_FASTSCAN`) is selftest-validated and **1.6–1.9×
