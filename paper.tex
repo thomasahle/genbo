@@ -89067,6 +89067,20 @@ amplified in the next proposition.
    that exploits more than ordinary centroid ANN/LSH routing, or with a proof
    that such top-bucket search inherently costs a constant fraction of the
    retained centers in this regime.
+
+   The same diagnostic now includes an exact-neighbor pivot graph over the
+   centroids, to separate weak random partitions from local-navigation failure.
+   This is a stronger negative control because the centroid graph itself is
+   built from exact all-pairs centroid similarities.  With \(172\approx C^{3/4}\)
+   query-scored pivots, degree \(16\), and \(256\) graph visits, the graph spends
+   about \(0.39C\) centroid-score equivalents on the \(m=3000\) \(k\)-means++
+   rows but has only \(0\%\)--\(8.75\%\) additive score-max success; the
+   \(90\%\) loss is still about \(4.24\)--\(4.27\) score margins.  Even \(512\)
+   graph visits raise success only to \(1.7\%\)--\(30\%\) while spending about
+   \(0.61C\).  Thus the obstruction is not just poor tree/hash engineering:
+   the score-max bucket can lie outside the query-visible local-navigation basin
+   of ordinary centroid proximity graphs until the search is already
+   near-dense.
 \end{remark}
 
 \begin{remark}[Why ordinary ANN does not implement the score-max target]\label{rem:score-max-ordinary-ann}

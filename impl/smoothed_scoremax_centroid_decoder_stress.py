@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import heapq
 import math
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
@@ -54,6 +55,10 @@ FIELDNAMES = [
     "center_beam",
     "center_hash_bits",
     "center_hash_probes",
+    "center_graph_degree",
+    "center_graph_pivots",
+    "center_graph_entries",
+    "center_graph_ef",
     "probes",
     "bucket_mean",
     "bucket_q90",
@@ -323,6 +328,112 @@ class LSHCenterDecoder:
         return ids.astype(int), stats
 
 
+class PivotGraphCenterDecoder:
+    """Exact centroid-neighbor graph with query-scored pivot entries."""
+
+    name = "pivotgraph"
+
+    def __init__(
+        self,
+        centers: np.ndarray,
+        *,
+        degree: int,
+        pivots: int,
+        entries: int,
+        ef: int,
+        seed: int,
+    ) -> None:
+        if degree < 1:
+            raise ValueError("degree must be positive")
+        if pivots < 1:
+            raise ValueError("pivots must be positive")
+        if entries < 1:
+            raise ValueError("entries must be positive")
+        if ef < 1:
+            raise ValueError("ef must be positive")
+        self.centers = np.asarray(centers, dtype=float)
+        n = len(self.centers)
+        self.degree = min(degree, max(1, n - 1))
+        self.pivot_count = min(pivots, n)
+        self.entries = min(entries, self.pivot_count)
+        self.ef = min(max(ef, self.entries), n)
+        rng = np.random.default_rng(seed)
+        self.pivots = rng.choice(n, size=self.pivot_count, replace=False)
+        self.neighbors = self._build_exact_neighbor_graph()
+
+    def _build_exact_neighbor_graph(self) -> list[np.ndarray]:
+        n = len(self.centers)
+        if n <= 1:
+            return [np.empty(0, dtype=int)]
+        scores = self.centers @ self.centers.T
+        np.fill_diagonal(scores, -np.inf)
+        k = min(self.degree, n - 1)
+        raw = np.argpartition(-scores, k - 1, axis=1)[:, :k]
+        return [
+            raw[i][np.argsort(-scores[i, raw[i]])].astype(int)
+            for i in range(n)
+        ]
+
+    def query_top(self, y: np.ndarray, top: int) -> tuple[np.ndarray, DecodeStats]:
+        if top < 1:
+            raise ValueError("top must be positive")
+        pivot_scores = self.centers[self.pivots] @ y
+        entry_local = np.argpartition(
+            -pivot_scores, self.entries - 1)[: self.entries]
+        entries = self.pivots[entry_local]
+
+        score_cache = {
+            int(pivot): float(score)
+            for pivot, score in zip(self.pivots, pivot_scores)
+        }
+        work = len(self.pivots)
+
+        def score(idx: int) -> float:
+            nonlocal work
+            idx = int(idx)
+            if idx not in score_cache:
+                score_cache[idx] = float(self.centers[idx] @ y)
+                work += 1
+            return score_cache[idx]
+
+        visited = set()
+        frontier: list[tuple[float, int]] = []
+        for idx in entries:
+            idx = int(idx)
+            visited.add(idx)
+            heapq.heappush(frontier, (-score(idx), idx))
+
+        while frontier and len(visited) < self.ef:
+            _neg_score, idx = heapq.heappop(frontier)
+            for nb in self.neighbors[idx]:
+                nb = int(nb)
+                if nb in visited:
+                    continue
+                visited.add(nb)
+                heapq.heappush(frontier, (-score(nb), nb))
+                if len(visited) >= self.ef:
+                    break
+
+        if not visited:
+            return np.empty(0, dtype=int), DecodeStats(
+                work=work,
+                leaf_candidates=0,
+                child_scores=len(self.pivots),
+            )
+
+        candidates = np.fromiter(visited, dtype=int)
+        scores = np.asarray([score(int(i)) for i in candidates])
+        k = min(top, len(candidates))
+        ids = candidates[np.argpartition(-scores, k - 1)[:k]]
+        ids = ids[np.argsort(-(self.centers[ids] @ y))]
+        stats = DecodeStats(
+            work=work,
+            leaf_candidates=len(candidates),
+            child_scores=len(self.pivots),
+        )
+        return ids.astype(int), stats
+
+
 def _make_decoder(
     decoder: str,
     centers: np.ndarray,
@@ -333,8 +444,12 @@ def _make_decoder(
     beam: int,
     hash_bits: int,
     hash_probes: int,
+    graph_degree: int,
+    graph_pivots: int,
+    graph_entries: int,
+    graph_ef: int,
     seed: int,
-) -> ExactCenterDecoder | RPCenterDecoder | LSHCenterDecoder:
+) -> ExactCenterDecoder | RPCenterDecoder | LSHCenterDecoder | PivotGraphCenterDecoder:
     if decoder == "exact":
         return ExactCenterDecoder(centers)
     if decoder == "rptree":
@@ -354,7 +469,17 @@ def _make_decoder(
             hash_probes=hash_probes,
             seed=seed,
         )
-    raise ValueError("decoder must be 'exact', 'rptree', or 'lsh'")
+    if decoder == "pivotgraph":
+        pivots = graph_pivots or max(1, int(math.ceil(len(centers) ** 0.5)))
+        return PivotGraphCenterDecoder(
+            centers,
+            degree=graph_degree,
+            pivots=pivots,
+            entries=graph_entries,
+            ef=graph_ef,
+            seed=seed,
+        )
+    raise ValueError("decoder must be 'exact', 'rptree', 'lsh', or 'pivotgraph'")
 
 
 def _bucket_candidates(ivf: CentroidRouter, center_ids: np.ndarray) -> set[int]:
@@ -382,6 +507,10 @@ def run_trial(
     center_beam: int,
     center_hash_bits: int = 10,
     center_hash_probes: int = 16,
+    center_graph_degree: int = 16,
+    center_graph_pivots: int = 0,
+    center_graph_entries: int = 8,
+    center_graph_ef: int = 128,
     probes: int,
     query_trials: int,
     seed: int,
@@ -422,6 +551,10 @@ def run_trial(
         beam=center_beam,
         hash_bits=center_hash_bits,
         hash_probes=center_hash_probes,
+        graph_degree=center_graph_degree,
+        graph_pivots=center_graph_pivots,
+        graph_entries=center_graph_entries,
+        graph_ef=center_graph_ef,
         seed=seed + 79,
     )
 
@@ -516,6 +649,10 @@ def run_trial(
         "center_beam": center_beam,
         "center_hash_bits": center_hash_bits,
         "center_hash_probes": center_hash_probes,
+        "center_graph_degree": center_graph_degree,
+        "center_graph_pivots": center_graph_pivots,
+        "center_graph_entries": center_graph_entries,
+        "center_graph_ef": center_graph_ef,
         "probes": probes,
         "bucket_mean": float(np.mean(ivf.bucket_sizes)),
         "bucket_q90": float(np.quantile(ivf.bucket_sizes, 0.9)),
@@ -578,6 +715,10 @@ def _rows(args: argparse.Namespace) -> Iterable[dict[str, float | int | str]]:
                                     center_beam=args.center_beam,
                                     center_hash_bits=args.center_hash_bits,
                                     center_hash_probes=args.center_hash_probes,
+                                    center_graph_degree=args.center_graph_degree,
+                                    center_graph_pivots=args.center_graph_pivots,
+                                    center_graph_entries=args.center_graph_entries,
+                                    center_graph_ef=args.center_graph_ef,
                                     probes=probes,
                                     query_trials=args.query_trials,
                                     seed=seed,
@@ -602,6 +743,10 @@ def main() -> None:
     parser.add_argument("--center-beam", type=int, default=4)
     parser.add_argument("--center-hash-bits", type=int, default=10)
     parser.add_argument("--center-hash-probes", type=int, default=16)
+    parser.add_argument("--center-graph-degree", type=int, default=16)
+    parser.add_argument("--center-graph-pivots", type=int, default=0)
+    parser.add_argument("--center-graph-entries", type=int, default=8)
+    parser.add_argument("--center-graph-ef", type=int, default=128)
     parser.add_argument("--probes", default="1,2,4")
     parser.add_argument("--query-trials", type=int, default=60)
     parser.add_argument("--seeds", default="0,1,2")
