@@ -91662,6 +91662,103 @@ amplified in the next proposition.
    localization copies exactly as in \cref{prop:multiscale-structured-polylog}.
 \end{proof}
 
+\begin{corollary}[OSD certificate for smoothed score maximization]
+   \label{cor:osd-smoothed-score-max-compiler}
+   Work in one bounded-diameter localized node, and sample the smoothed score
+   direction \(Y\) as in \cref{asm:smoothed-score-max}.  Suppose resident
+   points are grouped by signatures \(c\in\mathcal C\le\mathbb F^h\), where
+   \(\mathcal C\) is a linear code and \(S_c\subseteq S\) is the lookup bucket
+   of residents with signature \(c\).  Assume the query supplies coordinate
+   scores \(\omega_i(Y,a)\) whose separable signature score
+   \[
+      U_Y(c)=\sum_{i=1}^h\omega_i(Y,c_i)
+   \]
+   upper-bounds the best resident score in the bucket:
+   \[
+      \max_{x\in S_c} A_Y(x)\le U_Y(c).
+      \tag{OSM1}
+   \]
+   Put
+   \[
+      M_Y=\sum_i\max_{a\in\mathbb F}\omega_i(Y,a),
+      \qquad
+      \operatorname{OPT}_Y=\max_{x\in S}A_Y(x),
+   \]
+   and let \(\Lambda_*(Y)\) be the minimum information-set entropy of
+   \cref{lem:min-entropy-information-set} for the scores \(\omega_i(Y,\cdot)\)
+   and some fixed \(\beta>0\).
+
+   Suppose that the query tries a polylogarithmic family \(\mathcal G_Y\) of
+   certified gap values.  Assume that, with probability at least
+   \(\log^{-O_c(1)}m\) over the smoothed score direction \(Y\), some
+   \(\Gamma\in\mathcal G_Y\) satisfies
+   \[
+      \Gamma\ge M_Y-\operatorname{OPT}_Y
+      \tag{OSM2}
+   \]
+   and the OSD entropy bound
+   \[
+      \exp\!\bigl(\beta\Gamma+\Lambda_*(Y)\bigr)
+      +R_{Y,\Gamma}
+      \le
+      m^\rho\log^{O_c(1)}m
+      \tag{OSM3}
+   \]
+   where \(R_{Y,\Gamma}\) is the total resident lookup size of all codeword
+   buckets listed at threshold \(M_Y-\Gamma\).  Then the following query
+   routine implements \cref{asm:smoothed-score-max}: for each
+   \(\Gamma\in\mathcal G_Y\), run the OSD threshold reporter of
+   \cref{cor:osd-superset-block-reporter} with threshold \(M_Y-\Gamma\),
+   expand the listed buckets \(S_c\) only up to the per-gap cap
+   \(m^\rho\log^{O_c(1)}m\), exact-score the expanded residents by \(A_Y\),
+   and return the best expanded point over all nonaborted tried gaps.
+
+   In particular, for a one-resident-per-codeword embedding, \(R_{Y,\Gamma}\)
+   is just the OSD candidate count.  For a Construction-A, Construction-D,
+   trellis, or lattice quotient, \(R_{Y,\Gamma}\) is the charged coset or
+   bucket expansion.  Thus
+   the concrete code/lattice target for this shortcut is the inequality
+   \[
+      \beta\bigl(M_Y-\operatorname{OPT}_Y\bigr)+\Lambda_*(Y)
+      \le \rho\log m+O_c(\log\log m),
+      \tag{OSM4}
+   \]
+   together with output-sensitive expansion of the listed quotient buckets.
+\end{corollary}
+
+\begin{proof}
+   Condition on a score direction \(Y\) for which a gap
+   \(\Gamma\in\mathcal G_Y\) satisfies \((OSM2)\)--\((OSM3)\).  Let \(x_*\)
+   be a resident point attaining \(\operatorname{OPT}_Y\), and let \(c_*\) be
+   its signature.  By \((OSM1)\),
+   \[
+      U_Y(c_*)\ge A_Y(x_*)=\operatorname{OPT}_Y .
+   \]
+   Since \(\Gamma\ge M_Y-\operatorname{OPT}_Y\), this implies
+   \[
+      U_Y(c_*)\ge M_Y-\Gamma .
+   \]
+   Therefore the OSD threshold reporter called at threshold \(M_Y-\Gamma\)
+   lists \(c_*\).  Expanding the returned buckets and exact-scoring their
+   residents includes \(x_*\), so the best expanded resident is an exact
+   maximizer of \(A_Y\) over \(S\), and in particular satisfies the additive
+   guarantee required by \cref{asm:smoothed-score-max}.
+
+   The candidate-codeword count is \((OSD1)\) with
+   \(\theta=M_Y-\Gamma\), namely at most
+   \(\exp(\beta\Gamma+\Lambda_*(Y))\).  Adding the charged resident expansion
+   gives the work bound in \((OSM3)\), up to the polylogarithmic
+   information-set construction and exact-scoring overhead.  The good gap is
+   not aborted because \(R_{Y,\Gamma}\) is within the cap in \((OSM3)\), while
+   every bad gap is stopped after the same cap.  The remaining tried gaps
+   therefore contribute only the stated polylogarithmic factor, since
+   \(|\mathcal G_Y|=\log^{O_c(1)}m\).  Since the certificate succeeds for an
+   inverse-polylogarithmic fraction of score directions, this is exactly the
+   success probability and query bound in \cref{asm:smoothed-score-max}; the
+   global endpoint is then
+   \cref{prop:smoothed-score-max-polylog}.
+\end{proof}
+
 \begin{remark}[What this shortcut does and does not prove]\label{rem:score-max-shortcut}
    \Cref{lem:smoothed-max-score-margin} is the $\alpha=0$ endpoint of the
    likelihood-ball geometry: if one can approximately maximize the smoothed
