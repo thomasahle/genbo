@@ -91923,6 +91923,164 @@ amplified in the next proposition.
    per-trial bound and \(L_m=\log^{O_c(1)}m\).
 \end{proof}
 
+\begin{lemma}[Nonnegative linear sketches list heavy responsibilities]
+   \label{lem:linear-sketch-heavy-responsibilities}
+   Let \(S\) be a resident set of size \(m\), with fixed binary identifiers of
+   length \(b_0=\lceil\log_2 m\rceil\).  For one sampled query-bucket pair let
+   \(r=(r_x)_{x\in S}\in\mathbb R_+^S\) be the responsibility vector, put
+   \(M=\sum_xr_x\), and fix a threshold \(\tau>0\).  Suppose a query can
+   obtain the following linear measurements of \(r\).  For
+   \(D=\lceil 4\log(2m)\rceil\) independent pairwise-independent hashes
+   \(h_s:S\to[W]\), with
+   \(W=\max\{1,\lceil 32M/\tau\rceil\}\), it has
+   \[
+      T_{s,a}=\sum_{x:\ h_s(x)=a}r_x
+      \tag{LHH1}
+   \]
+   and, for each identifier bit \(k\),
+   \[
+      T_{s,a,k}=\sum_{\substack{x:\ h_s(x)=a\\{\rm bit}_k(x)=1}}r_x .
+      \tag{LHH2}
+   \]
+   The decoder scans all buckets with \(T_{s,a}\ge\tau\), decodes a candidate
+   identifier by the rule
+   \[
+      {\rm bit}_k(\widehat x)=1
+      \quad\Longleftrightarrow\quad
+      T_{s,a,k}>T_{s,a}/2,
+      \tag{LHH3}
+   \]
+   and then applies the exact responsibility filter \(r_{\widehat x}\ge\tau\)
+   to all decoded candidates.
+
+   With probability at least \(1-1/m\) over the sketch hashes, every resident
+   with \(r_x\ge\tau\) appears among the decoded candidates.  The number of
+   buckets scanned and exact-filtered candidates is
+   \[
+      O\!\left(\frac{M}{\tau}\log m\right),
+      \tag{LHH4}
+   \]
+   and the arithmetic size of the measurements is
+   \[
+      O\!\left(\frac{M}{\tau}\log^2m\right).
+      \tag{LHH5}
+   \]
+\end{lemma}
+
+\begin{proof}
+   Fix a heavy point \(x\) with \(r_x\ge\tau\), and expose one sketch row.
+   Let
+   \[
+      N_x=\sum_{y\ne x:\ h_s(y)=h_s(x)}r_y
+   \]
+   be its collision noise.  Pairwise independence gives
+   \[
+      \E N_x\le M/W\le \tau/32\le r_x/32 .
+   \]
+   Hence, by Markov's inequality,
+   \[
+      \Prb[N_x\ge r_x/2]\le 1/16 .
+   \]
+   On the complementary event, the bucket containing \(x\) is scanned because
+   \(T_{s,h_s(x)}\ge r_x\ge\tau\).  Moreover \(T=r_x+N_x\).  If bit \(k\) of
+   \(x\) is one, then \(T_{s,h_s(x),k}\ge r_x>T/2\); if it is zero, then
+   \(T_{s,h_s(x),k}\le N_x<T/2\).  Thus the bit test \((LHH3)\) recovers the
+   identifier of \(x\) from that row.  The probability that no row is good for
+   this fixed \(x\) is at most \(16^{-D}\).  A union bound over all residents
+   gives failure probability at most \(m16^{-D}\le1/m\).
+
+   In one row, the number of scanned buckets is at most \(M/\tau\), since the
+   bucket masses are nonnegative and sum to \(M\).  Multiplying by \(D\) gives
+   the candidate bound.  The sketch stores one total counter and \(b_0\) bit
+   counters for each of the \(DW\) buckets, which gives \((LHH5)\).
+\end{proof}
+
+\begin{corollary}[Sketchable responsibilities close the quotient lister]
+   \label{cor:sketched-responsibility-lister}
+   In the setting of
+   \cref{cor:responsibility-quotient-scoremax-compiler}, fix a good score
+   direction \(Y\) and a sampled quotient \(\ell\).  Let
+   \[
+      M_{Y,\ell}=\sum_{x\in S}r_{Y,x,\ell}.
+   \]
+   Suppose that, for the dyadic sketch width
+   \(W=\Theta(M_{Y,\ell}L_m)\) corresponding to
+   \(\tau=(2L_m)^{-1}\), the query can compute the linear measurements
+   \((LHH1)\)--\((LHH2)\) of the vector
+   \(r_{Y,\cdot,\ell}\) in time
+   \[
+      T_{\rm agg}(Y,\ell)+
+      O\!\left(M_{Y,\ell}L_m\log^2m\right),
+      \tag{SRL1}
+   \]
+   including exact filtering of the decoded candidates at the same threshold.
+   If
+   \[
+      \E_{\ell\sim\Pi_Y}T_{\rm agg}(Y,\ell)
+      \le d\,m^\rho\log^{O_c(1)}m,
+      \tag{SRL2}
+   \]
+   then the sketch decoder supplies the lister required in \((RQS3)\) with
+   expected work \(d\,m^\rho\log^{O_c(1)}m\).
+
+   Concretely, because
+   \[
+      \E_{\ell\sim\Pi_Y}M_{Y,\ell}
+      =
+      \sum_{x\in S}\mu_Y(x),
+      \tag{SRL3}
+   \]
+   the mass-dependent part of \((SRL1)\) is within the desired
+   \(m^\rho\polylog m\) budget under \((RQS1)\).  Thus the remaining
+   code/lattice obligation is not to invent another responsibility formula; it
+   is to compute these aggregate sketch counters output-sensitively.
+\end{corollary}
+
+\begin{proof}
+   Apply \cref{lem:linear-sketch-heavy-responsibilities} to the vector
+   \(r_{Y,\cdot,\ell}\) with \(\tau=(2L_m)^{-1}\).  It returns a candidate set
+   containing every point above the \((RQS3)\) threshold with probability
+   \(1-1/m\), and the exact filter removes false positives.  The decoded
+   candidate count and measurement work are
+   \(O(M_{Y,\ell}L_m\log^2m)\).  Averaging over \(\ell\sim\Pi_Y\), identity
+   \((SRL3)\) follows from
+   \[
+      \sum_{\ell}\Pi_Y(\ell)r_{Y,x,\ell}
+      =
+      \mu_Y(x),
+   \]
+   and \((RQS1)\) bounds the expected sketch-dependent work by
+   \(m^\rho\log^{O_c(1)}m\).  Adding \((SRL2)\) gives the stated expected work.
+\end{proof}
+
+\begin{remark}[What the sketch has to aggregate]
+   \label{rem:sketched-responsibility-aggregation}
+   The sketch in \cref{lem:linear-sketch-heavy-responsibilities} is linear in
+   the point responsibilities, so it is compatible with quotient and trellis
+   laws.  If
+   \[
+      r_{Y,x,\ell}
+      =
+      \Pi_Y(\ell)^{-1}
+      \sum_{a:\lambda(a)=\ell}\pi_Y(a)U_x(a),
+   \]
+   then every counter in \((LHH1)\)--\((LHH2)\) has the form
+   \[
+      \Pi_Y(\ell)^{-1}
+      \sum_{a:\lambda(a)=\ell}\pi_Y(a)
+      \sum_x c_xU_x(a),
+      \qquad c_x\in\{0,1\}.
+      \tag{SRL4}
+   \]
+   Hence a BCJR, polar, Tanner, Construction-A, or lattice quotient decoder
+   can use the sketch route only if it can compute the weighted terminal
+   statistics in \((SRL4)\) for \(O(m^\rho\polylog m)\) point-hash buckets.
+   Computing only the scalar partition function \(Z_{Y,\ell}\), or sampling
+   hidden labels without these linear statistics, does not yet implement the
+   point-indexed heavy-responsibility lister.  This is the concrete reverse
+   data-access problem left by the responsibility normal form.
+\end{remark}
+
 \begin{remark}[What this shortcut does and does not prove]\label{rem:score-max-shortcut}
    \Cref{lem:smoothed-max-score-margin} is the $\alpha=0$ endpoint of the
    likelihood-ball geometry: if one can approximately maximize the smoothed
