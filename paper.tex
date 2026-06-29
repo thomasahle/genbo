@@ -89568,6 +89568,77 @@ top-\(k\) backup.
    \(x=\beta\Delta_0\) in \cref{lem:posterior-rank-margin}.
 \end{proof}
 
+\begin{lemma}[Small-width product-sign ceiling barrier]
+   \label{lem:product-sign-ceiling-barrier}
+   Fix \(\sigma,\gamma,\Delta_0>0\).  Let
+   \(Z_1,\ldots,Z_r\) be independent \(N(0,\sigma^2)\) variables and put
+   \[
+      S_r=\sum_{a=1}^r\bigl(Z_a-\log\cosh Z_a\bigr).
+   \]
+   Let
+   \[
+      Q_{r,\eta}:=\sup\{t:\Prb[S_r\ge t]\ge\eta\}
+   \]
+   be the upper \(\eta\)-threshold of \(S_r\), and set
+   \(\eta=m^{-\gamma}\).  If
+   \[
+      r(1+\log^2 r)=o(\log m),
+      \tag{PSB}
+   \]
+   then, for all sufficiently large \(m\),
+   \[
+      Q_{r,\eta}\ge r\log2-\Delta_0/2 .
+   \]
+   Consequently the fixed-margin event
+   \[
+      \Psi_s(p)\ge Q_{r,\eta}+\Delta_0
+   \]
+   is impossible for the product-sign score \((PSS)\), since
+   \(\Psi_s(p)\le r\log2\).  In particular, fixed-width product-sign
+   channels, and product-sign channels with only polylogarithmically many
+   outcomes, cannot be the asymptotic proof of the bounded-margin target when
+   the Gaussian bit variance is bounded.
+\end{lemma}
+
+\begin{proof}
+   The deficit of one fixed-label bit from its ceiling is
+   \[
+      \log2-\bigl(Z-\log\cosh Z\bigr)
+      =
+      \log(1+e^{-2Z}).
+   \]
+   Choose \(t_r=\frac12\log(4r/\Delta_0)\).  On the event
+   \(Z_a\ge t_r\) for every \(a\),
+   \[
+      r\log2-S_r
+      =
+      \sum_a\log(1+e^{-2Z_a})
+      \le
+      \sum_a e^{-2t_r}
+      =
+      \Delta_0/4 .
+   \]
+   A standard Gaussian tail lower bound gives
+   \[
+      \Prb[Z\ge t_r]
+      \ge
+      \exp\{-C_\sigma(1+\log^2 r)\}
+   \]
+   with \(C_\sigma\) depending only on \(\sigma\).  Hence
+   \[
+      \Prb[S_r\ge r\log2-\Delta_0/4]
+      \ge
+      \exp\{-C_\sigma r(1+\log^2 r)\}
+      =
+      m^{-o(1)}
+   \]
+   under \((PSB)\).  This probability is larger than \(m^{-\gamma}\) for all
+   sufficiently large \(m\), so the upper \(m^{-\gamma}\)-quantile lies at
+   least at \(r\log2-\Delta_0/4\), and therefore at least at
+   \(r\log2-\Delta_0/2\).  Adding the margin \(\Delta_0\) puts the required
+   score above the absolute ceiling \(r\log2\).
+\end{proof}
+
 Thus the finite special case would follow from a posterior-rank margin statement: for every near pair not handled by the resident guard, a non-negligible fraction of the tilted affinity must lie on outcomes for which $p$ is inside the top-$\xi$ posterior child by enough margin. This is only a sufficient condition. By \cref{lem:soft-surplus-decomposition}, a failed fixed-margin test can still have large \(\mathcal H_\xi\) if the tilted winner, or a few near-winner outcomes, have moderate posterior surplus. The diagnostic should therefore report not only $\mathcal H_\xi$, but also $\mathsf A_\beta(p,q)$, the soft surplus \(\mathcal H_\xi/\mathsf A_\beta\), the tilted winner's contribution fraction from \cref{lem:soft-surplus-decomposition}, \(W_{p,q}(G_\Delta(p))\), and the certified lower bound in \cref{lem:posterior-rank-margin}, for a margin such as $\Delta=1/\beta$. For the balanced-softmax candidate
 \[
    K_x(j)=
@@ -89798,10 +89869,34 @@ One should also separate the resident-guard regime from the genuine finite-chann
    good-mass lower \(5\%\) quantiles were \(0.624\)--\(0.998\), and the
    certified-value lower \(5\%\) quantiles were \(0.0368\)--\(0.0831\), across
    \(B\in\{16,32\}\) and correlations \(0.90,0.95\).  Dividing by
-   \(\alpha\) gives constants \(0.38\)--\(0.79\).  Thus the current fixed-width
-   product-sign theorem target should be a distributional bounded-margin
-   posterior-rank lower tail for \(\Psi_s\), plus the already separated
-   top-eight containment and empirical-quantile transfer.
+   \(\alpha\) gives constants \(0.38\)--\(0.79\).
+
+   This fixed-width evidence should not be extrapolated to the endpoint.
+   \Cref{lem:product-sign-ceiling-barrier} shows the actual asymptotic
+   obstruction: for bounded Gaussian bit variance and
+   \(r(1+\log^2r)=o(\log m)\), the top-\(\eta=m^{-\Theta_c(1)}\)
+   distributional score threshold is within \(o(1)\) of the ceiling
+   \(r\log2\), so even a fixed positive margin is eventually impossible.
+   A direct ideal-Gaussian stress test of the same \(\Psi_s\) normal form
+   agrees with this barrier.  With \(\sigma=3.5\), correlation \(0.9\), and
+   \(\Delta_0=1\), the first tested bit counts whose lower \(5\%\) tilted
+   good mass exceeded \(0.1\) were \(r=12,16,24\) at
+   \(m=10^{12},10^{18},10^{24}\), respectively.  A selected three-seed repeat
+   at \(m=10^{24}\) had \(r=8\) ceiling-blocked in every seed, \(r=16\) lower
+   \(5\%\) good mass \(0.033\)--\(0.039\), and \(r=24\) lower \(5\%\) good
+   mass \(0.585\)--\(0.599\).  Varying
+   \(\sigma\in\{1.5,2.5,3.5,5.0\}\) kept the same first successful bit counts
+   in this sweep.
+
+   The frozen product-sign target is therefore not another certificate form:
+   it is the same distributional bounded-margin posterior-rank lower tail for
+   \(\Psi_s\), but with a growing bit count beyond the ceiling-barrier scale,
+   together with the already separated query-prefix containment and empirical
+   quantile transfer.  This is compatible with
+   \cref{prop:query-top-k-channel-compiler}: the reporter cost is
+   \(O(dr+k\log k)\), and the storage arithmetic only requires
+   \(2^r\le\xi^{-1}\log^{O_c(1)}m\), not a fixed or polylogarithmic number of
+   outcomes.
 \end{remark}
 
 \begin{proposition}[Conditional finite-channel polylog endpoint]\label{prop:finite-channel-polylog}
