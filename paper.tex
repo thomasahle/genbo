@@ -89224,6 +89224,58 @@ top-\(k\) backup.
    is an implementation problem rather than a hidden-witness problem.
 \end{proof}
 
+\begin{lemma}[Query-to-tilted prefix stability]\label{lem:query-tilted-prefix-stability}
+   Let the finite channel have positive probabilities \(K_x(j)\).  For a
+   pair \((p,q)\) and exponent \(\beta\in[0,1]\), order the hidden tilted
+   labels by
+   \[
+      W_{p,q}(j)\propto K_p(j)^\beta K_q(j)^{1-\beta}.
+   \]
+   Let \(Q_k(q)\) be the top \(k\) labels under \(K_q\), and let
+   \(g_k(q)\) be the gap between the \(k\)-th and \((k+1)\)-st largest values
+   of \(\log K_q(j)\), with \(g_k(q)=+\infty\) if there are at most \(k\)
+   labels.  Define the centered tilt radius
+   \[
+      \Delta_{p,q}
+      =
+      \frac{\beta}{2}
+      \left(
+        \max_j\log\frac{K_p(j)}{K_q(j)}
+        -
+        \min_j\log\frac{K_p(j)}{K_q(j)}
+      \right).
+      \tag{QTS}
+   \]
+   If \(g_k(q)>2\Delta_{p,q}\), then the hidden tilted top \(k\) labels are
+   exactly \(Q_k(q)\).  Consequently, if
+   \(\mathcal H_\xi(p,q)\ge h\) and the hidden tilted top \(k\) labels carry
+   a \(\gamma\) fraction of the soft-surplus value, then the query-visible
+   labels \(Q_k(q)\) carry at least \(\gamma h\) restricted value.  Conversely,
+   if a hidden tilted top-\(k\) label lies outside \(Q_k(q)\), then
+   \(g_k(q)\le2\Delta_{p,q}\).
+\end{lemma}
+
+\begin{proof}
+   The tilted ordering is the ordering of
+   \[
+      \log K_q(j)+\beta\log\frac{K_p(j)}{K_q(j)}
+   \]
+   because the normalizing constant of \(W_{p,q}\) is independent of \(j\).
+   After subtracting the midpoint of the second term's range, the perturbation
+   from the query log-probabilities has absolute value at most
+   \(\Delta_{p,q}\).  If \(i\in Q_k(q)\) and \(j\notin Q_k(q)\), then
+   \[
+      \log K_q(i)-\log K_q(j)\ge g_k(q).
+   \]
+   Under the tilted perturbation this difference can decrease by at most
+   \(2\Delta_{p,q}\).  Hence \(g_k(q)>2\Delta_{p,q}\) makes every label in
+   \(Q_k(q)\) beat every label outside \(Q_k(q)\) in the hidden tilted order.
+   The value statement follows by applying
+   \cref{cor:top-k-tilted-backup} and
+   \cref{cor:query-top-k-backup} to the same label set.  The contrapositive
+   gives the final claim.
+\end{proof}
+
 \begin{proposition}[Query-top-\(k\) finite-channel compiler]
    \label{prop:query-top-k-channel-compiler}
    Fix a localized node of size \(m\), a scale \(\xi\in[1/m,1]\), and a finite
@@ -89412,6 +89464,23 @@ One should also separate the resident-guard regime from the genuine finite-chann
    \Cref{prop:query-top-k-channel-compiler} records the resulting arithmetic:
    once those top labels are reported output-sensitively, the query no longer
    pays the \(B\simeq\xi^{-1}\) enumeration factor.
+   \Cref{lem:query-tilted-prefix-stability} gives a tempting direct proof
+   route from the hidden tilted prefix to the query prefix: if the query
+   top-\(k\) logit gap dominates the centered tilt radius, the two prefixes
+   are identical.  A focused stability diagnostic shows that this route is too
+   strong to be the whole proof.  On isolated whitened Gaussian panels with
+   \(m=1000,3000\), scales \(8,12\), and the same near-pair model as above,
+   query top four captured lower \(5\%\) contribution fraction
+   \(0.988\)--\(1.000\), but the lower \(5\%\) stability margin
+   \(g_4(q)-2\Delta_{p,q}\) was negative, between \(-1.86\) and \(-0.91\),
+   and only \(55.0\%\)--\(69.4\%\) of rows were certified stable.  The larger
+   \(m=10000,30000\) run kept query top-four capture at \(0.963\)--\(0.999\),
+   while the top-four stability margin lower tail was still negative
+   \((-1.44\) to \(-0.70)\) and the stable fraction was only
+   \(55.0\%\)--\(68.1\%\).  Thus the observed lower tail is not explained by
+   worst-case top-\(k\) order invariance; the proof must use weighted surplus
+   concentration, a larger query backup, or additional structure of the
+   retained panel.
 \end{remark}
 
 \begin{proposition}[Conditional finite-channel polylog endpoint]\label{prop:finite-channel-polylog}

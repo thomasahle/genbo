@@ -24,6 +24,13 @@ _EPS = 1e-300
 PANEL_KINDS = ("gaussian", "whitened_gaussian", "cross_polytope", "pca", "landmark")
 
 
+def _finite_or_inf_quantile(values: np.ndarray, q: float) -> float:
+    finite = values[np.isfinite(values)]
+    if len(finite) == 0:
+        return float("inf")
+    return float(np.quantile(finite, q))
+
+
 @dataclass
 class DiagnosticResult:
     h_eta: np.ndarray
@@ -40,6 +47,15 @@ class DiagnosticResult:
     query_top2_contribution_fraction: np.ndarray
     query_top4_contribution_fraction: np.ndarray
     query_top8_contribution_fraction: np.ndarray
+    query_tilt_perturbation: np.ndarray
+    query_top_gap: np.ndarray
+    query_top2_gap: np.ndarray
+    query_top4_gap: np.ndarray
+    query_top8_gap: np.ndarray
+    query_top_stability_margin: np.ndarray
+    query_top2_stability_margin: np.ndarray
+    query_top4_stability_margin: np.ndarray
+    query_top8_stability_margin: np.ndarray
     margin_mass: np.ndarray
     margin_bound: np.ndarray
     pi: np.ndarray
@@ -75,6 +91,15 @@ class DiagnosticResult:
                 self.query_top4_contribution_fraction.mean()),
             "query_top8_contribution_fraction_mean": float(
                 self.query_top8_contribution_fraction.mean()),
+            "query_tilt_perturbation_mean": float(self.query_tilt_perturbation.mean()),
+            "query_top_gap_mean": float(self.query_top_gap.mean()),
+            "query_top2_gap_mean": float(self.query_top2_gap.mean()),
+            "query_top4_gap_mean": float(self.query_top4_gap.mean()),
+            "query_top8_gap_mean": float(self.query_top8_gap.mean()),
+            "query_top_stable_fraction": float(np.mean(self.query_top_stability_margin > 0)),
+            "query_top2_stable_fraction": float(np.mean(self.query_top2_stability_margin > 0)),
+            "query_top4_stable_fraction": float(np.mean(self.query_top4_stability_margin > 0)),
+            "query_top8_stable_fraction": float(np.mean(self.query_top8_stability_margin > 0)),
             "margin_delta": float(self.margin_delta),
             "margin_mass_mean": float(self.margin_mass.mean()),
             "margin_bound_mean": float(self.margin_bound.mean()),
@@ -101,6 +126,20 @@ class DiagnosticResult:
                 np.quantile(self.query_top4_contribution_fraction, q))
             out[f"query_top8_contribution_fraction_q{q:g}"] = float(
                 np.quantile(self.query_top8_contribution_fraction, q))
+            out[f"query_tilt_perturbation_q{q:g}"] = float(
+                np.quantile(self.query_tilt_perturbation, q))
+            out[f"query_top_gap_q{q:g}"] = _finite_or_inf_quantile(self.query_top_gap, q)
+            out[f"query_top2_gap_q{q:g}"] = _finite_or_inf_quantile(self.query_top2_gap, q)
+            out[f"query_top4_gap_q{q:g}"] = _finite_or_inf_quantile(self.query_top4_gap, q)
+            out[f"query_top8_gap_q{q:g}"] = _finite_or_inf_quantile(self.query_top8_gap, q)
+            out[f"query_top_stability_margin_q{q:g}"] = _finite_or_inf_quantile(
+                self.query_top_stability_margin, q)
+            out[f"query_top2_stability_margin_q{q:g}"] = _finite_or_inf_quantile(
+                self.query_top2_stability_margin, q)
+            out[f"query_top4_stability_margin_q{q:g}"] = _finite_or_inf_quantile(
+                self.query_top4_stability_margin, q)
+            out[f"query_top8_stability_margin_q{q:g}"] = _finite_or_inf_quantile(
+                self.query_top8_stability_margin, q)
             out[f"margin_mass_q{q:g}"] = float(np.quantile(self.margin_mass, q))
             out[f"margin_bound_q{q:g}"] = float(np.quantile(self.margin_bound, q))
         return out
@@ -339,6 +378,39 @@ def tilted_surplus_statistics(
     )
 
 
+def query_tilt_stability_statistics(
+    k_data: np.ndarray,
+    k_query: np.ndarray,
+    near_indices: np.ndarray,
+    *,
+    alpha: float,
+) -> tuple[np.ndarray, dict[int, np.ndarray], dict[int, np.ndarray]]:
+    """Return the perturbation from query logits to tilted logits.
+
+    The hidden tilted order is the query log-probability order plus
+    alpha*(log K_p - log K_q), up to an irrelevant row constant.  If the gap
+    between the k-th and (k+1)-st query log probabilities exceeds twice the
+    centered perturbation radius, then the top-k query set is unchanged by the
+    tilt and therefore contains the hidden top-k labels.
+    """
+    near = np.asarray(near_indices, dtype=int)
+    log_query = np.log(np.maximum(k_query, _EPS))
+    log_delta = np.log(np.maximum(k_data[near], _EPS)) - log_query
+    perturbation = 0.5 * alpha * (np.max(log_delta, axis=1) - np.min(log_delta, axis=1))
+
+    ordered = np.sort(log_query, axis=1)[:, ::-1]
+    gaps: dict[int, np.ndarray] = {}
+    margins: dict[int, np.ndarray] = {}
+    for k in (1, 2, 4, 8):
+        if ordered.shape[1] <= k:
+            gap = np.full(len(ordered), float("inf"))
+        else:
+            gap = ordered[:, k - 1] - ordered[:, k]
+        gaps[k] = gap
+        margins[k] = gap - 2.0 * perturbation
+    return perturbation, gaps, margins
+
+
 def guard_density(data: np.ndarray, queries: np.ndarray, *, c: float, r: float) -> np.ndarray:
     threshold = c * r
     out = np.empty(len(queries), dtype=float)
@@ -379,6 +451,8 @@ def diagnose_channel(
         k_data, k_query, near_indices, pi, tau, alpha=alpha)
     affinity, margin_mass, margin_bound = posterior_margin_certificate(
         k_data, k_query, near_indices, pi, tau, alpha=alpha, margin_delta=margin_delta)
+    query_tilt_perturbation, query_gaps, query_margins = query_tilt_stability_statistics(
+        k_data, k_query, near_indices, alpha=alpha)
     if not np.allclose(affinity, affinity2):
         raise AssertionError("affinity decomposition mismatch")
     guard = guard_density(data, queries, c=c, r=r)
@@ -393,6 +467,15 @@ def diagnose_channel(
                             query_top2_contribution_fraction=query_topk_contribution[2],
                             query_top4_contribution_fraction=query_topk_contribution[4],
                             query_top8_contribution_fraction=query_topk_contribution[8],
+                            query_tilt_perturbation=query_tilt_perturbation,
+                            query_top_gap=query_gaps[1],
+                            query_top2_gap=query_gaps[2],
+                            query_top4_gap=query_gaps[4],
+                            query_top8_gap=query_gaps[8],
+                            query_top_stability_margin=query_margins[1],
+                            query_top2_stability_margin=query_margins[2],
+                            query_top4_stability_margin=query_margins[4],
+                            query_top8_stability_margin=query_margins[8],
                             margin_mass=margin_mass, margin_bound=margin_bound, pi=pi, tau=tau,
                             eta=eta, alpha=alpha, margin_delta=margin_delta)
 

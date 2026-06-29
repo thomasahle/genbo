@@ -8,6 +8,7 @@ from finite_channel_diagnostic import (
     make_panel,
     posterior_margin_certificate,
     posterior_thresholds,
+    query_tilt_stability_statistics,
     stable_softmax,
     synthetic_near_pairs,
     tilted_surplus_statistics,
@@ -92,6 +93,33 @@ def test_diagnostic_adds_guard_density():
                   result.query_top2_contribution_fraction - 1e-12)
     assert np.all(result.query_top8_contribution_fraction >=
                   result.query_top4_contribution_fraction - 1e-12)
+    assert np.all(result.query_tilt_perturbation >= 0)
+    assert np.allclose(result.query_top4_stability_margin,
+                       result.query_top4_gap - 2.0 * result.query_tilt_perturbation)
+
+
+def test_query_tilt_stability_margin_certifies_topk_order():
+    k_data = np.array([
+        [0.68, 0.20, 0.08, 0.04],
+        [0.30, 0.28, 0.24, 0.18],
+    ])
+    k_query = np.array([
+        [0.70, 0.18, 0.08, 0.04],
+        [0.40, 0.31, 0.20, 0.09],
+    ])
+    near = np.array([0, 1])
+    alpha = 0.05
+
+    perturbation, gaps, margins = query_tilt_stability_statistics(
+        k_data, k_query, near, alpha=alpha)
+    assert np.all(perturbation >= 0)
+    assert np.allclose(margins[2], gaps[2] - 2.0 * perturbation)
+    assert margins[2][0] > 0
+
+    query_top2 = set(np.argsort(-k_query[0])[:2])
+    tilted_scores = (k_data[0] ** alpha) * (k_query[0] ** (1.0 - alpha))
+    tilted_top2 = set(np.argsort(-tilted_scores)[:2])
+    assert tilted_top2 == query_top2
 
 
 def test_softmax_balancing_reduces_column_mass_error():
@@ -126,6 +154,7 @@ def test_synthetic_near_pairs_honors_requested_correlation():
 if __name__ == "__main__":
     test_h_eta_matches_direct_formula()
     test_diagnostic_adds_guard_density()
+    test_query_tilt_stability_margin_certifies_topk_order()
     test_softmax_balancing_reduces_column_mass_error()
     test_panel_variants_have_expected_shape_and_unit_adaptive_rows()
     test_synthetic_near_pairs_honors_requested_correlation()
