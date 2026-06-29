@@ -96229,6 +96229,114 @@ amplified in the next proposition.
    which is \((RHL2)\).  Rearranging gives \((RHL3)\).
 \end{proof}
 
+\begin{corollary}[Target residue load forces a superbudget list]
+   \label{cor:target-residue-load-superbudget-list}
+   Work in the setting of
+   \cref{lem:balanced-gaussian-residue-list-bound} and
+   \cref{lem:residue-list-hit-load-tradeoff}.  Thus the residue map is
+   seed-independent, its classes are \(\lambda\)-balanced in the Gaussian
+   source law, \(|\Gamma|=M\), and the query-side reporter outputs at most
+   \(L\) residues.  Suppose the correlated hit probability and independent far
+   residue mass satisfy
+   \[
+      \pi=\Pr[f_S(X)\in\mathcal L_S(Y)]\ge\log^{-O(1)}m,
+      \qquad
+      \beta=\Pr[f_S(X')\in\mathcal L_S(Y)]
+      \le m^{\rho-1}\log^{O(1)}m .
+      \tag{RLE1}
+   \]
+   Then necessarily
+   \[
+      M\ge m^{(1-\rho)/\chi-o(1)}
+      \tag{RLE2}
+   \]
+   and
+   \[
+      L\ge
+      \lambda^{-1}m^{(1-\rho)(1-\chi)/\chi-o(1)} .
+      \tag{RLE3}
+   \]
+
+   At the native critical Euclidean parameters
+   \[
+      \rho=\rho_c=\frac1{2c^2-1},
+      \qquad
+      \chi=a_0=1-\frac1{c^2},
+      \tag{RLE4}
+   \]
+   these lower bounds become
+   \[
+      M\ge m^{1+\rho_c-o(1)},
+      \qquad
+      L\ge \lambda^{-1}m^{2\rho_c-o(1)} .
+      \tag{RLE5}
+   \]
+   For \(c=2\), this is
+   \[
+      M\ge m^{8/7-o(1)},
+      \qquad
+      L\ge \lambda^{-1}m^{2/7-o(1)} .
+      \tag{RLE6}
+   \]
+
+   Therefore the residue-list route has no hidden entropy setting that gives
+   the \(m^\rho\polylog m\) scan bound and inverse-polylogarithmic recall by
+   class listing.  A smaller residue dictionary has too much far mass by
+   \cref{lem:residue-list-hit-load-tradeoff}; a large enough dictionary forces
+   a query list whose size is already polynomially above the local ANN budget
+   at the native endpoint.  Any successful construction in this regime must
+   stop paying per listed residue class, for example by point-indexed
+   responsibility, leader reporting, or a genuine aggregate sampler.
+\end{corollary}
+
+\begin{proof}
+   Rearranging \((RHL3)\) under \((RLE1)\) gives
+   \[
+      M^\chi
+      \ge
+      \pi^{1+\chi}\beta^{-1}
+      \ge
+      m^{1-\rho-o(1)},
+   \]
+   which proves \((RLE2)\).
+
+   The balanced list bound \((BGR4)\) gives
+   \[
+      \pi
+      \le
+      \lambda^{1/(1+\chi)}
+      L^{1/(1+\chi)}
+      M^{-(1-\chi)/(1+\chi)} .
+   \]
+   Raising to the power \(1+\chi\) and using the lower bound on \(M\) gives
+   \[
+      L
+      \ge
+      \lambda^{-1}\pi^{1+\chi}M^{1-\chi}
+      \ge
+      \lambda^{-1}m^{(1-\rho)(1-\chi)/\chi-o(1)},
+   \]
+   proving \((RLE3)\).
+
+   For the native specialization,
+   \[
+      \frac{1-\rho_c}{a_0}
+      =
+      \frac{2(c^2-1)/(2c^2-1)}{(c^2-1)/c^2}
+      =
+      1+\rho_c,
+   \]
+   and
+   \[
+      \frac{(1-\rho_c)(1-a_0)}{a_0}
+      =
+      2\rho_c,
+   \]
+   as in the proof of
+   \cref{cor:rare-balanced-residue-direction-barrier}.  This proves
+   \((RLE5)\), and \(c=2\) gives \((RLE6)\).
+\end{proof}
+
 \begin{lemma}[Poisson-thinned residue labels obey the same load tradeoff]
    \label{lem:poisson-residue-hit-load-tradeoff}
    In the setting of \cref{lem:residue-list-hit-load-tradeoff}, allow
