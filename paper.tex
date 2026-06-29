@@ -98186,6 +98186,163 @@ amplified in the next proposition.
    quantity is at most \(\gamma_U/(4W_\lambda)\).
 \end{proof}
 
+\begin{corollary}[Joint tilted sampler for score and pseudo-random filter]
+   \label{cor:joint-tilted-score-filter-sampler}
+   Let the active labels for one query outcome be a product
+   \(\mathcal C=\mathcal C_1\times\cdots\times\mathcal C_h\) with product
+   weight \(R(c)=\prod_jr_j(c_j)\).  Let both the query score and auxiliary
+   pseudo-random score be coordinate-additive,
+   \[
+      W(c)=\sum_{j=1}^h w_j(c_j),
+      \qquad
+      M(c)=\sum_{j=1}^h m_j(c_j).
+      \tag{BTF1}
+   \]
+   For thresholds \(t,s\), put
+   \[
+      U_{t,s}
+      =
+      \sum_{c:\ W(c)\ge t,\ M(c)\ge s}R(c).
+      \tag{BTF2}
+   \]
+   For \(\beta,\lambda\ge0\), define
+   \[
+      Z_{\beta,\lambda}
+      =
+      \prod_{j=1}^h
+      \sum_{a\in\mathcal C_j}
+      r_j(a)e^{\beta w_j(a)+\lambda m_j(a)}
+      \tag{BTF3}
+   \]
+   and sample from the product proposal
+   \[
+      Q_{\beta,\lambda}(c)
+      =
+      \frac{R(c)e^{\beta W(c)+\lambda M(c)}}{Z_{\beta,\lambda}}.
+      \tag{BTF4}
+   \]
+   Draw \(c\sim Q_{\beta,\lambda}\).  Reject unless \(W(c)\ge t\) and
+   \(M(c)\ge s\).  If both thresholds hold, accept with probability
+   \[
+      \exp\{-\beta(W(c)-t)-\lambda(M(c)-s)\}.
+      \tag{BTF5}
+   \]
+   Conditional on acceptance, the output has exactly the original product law
+   conditioned on the score-and-filter event,
+   \[
+      \Pr[c\mid{\rm accept}]
+      =
+      \frac{R(c)\mathbf1\{W(c)\ge t,\ M(c)\ge s\}}{U_{t,s}}.
+      \tag{BTF6}
+   \]
+   The acceptance probability is
+   \[
+      A_{\beta,\lambda}
+      =
+      \frac{e^{\beta t+\lambda s}U_{t,s}}{Z_{\beta,\lambda}}.
+      \tag{BTF7}
+   \]
+   Hence, if for some \(\Delta_W,\Delta_M>0\)
+   \[
+      \Pr_{Q_{\beta,\lambda}}\!\left[
+         t\le W(c)\le t+\Delta_W,
+         s\le M(c)\le s+\Delta_M
+      \right]\ge a
+      \tag{BTF8}
+   \]
+   and
+   \[
+      \beta\Delta_W+\lambda\Delta_M\le1,
+      \tag{BTF9}
+   \]
+   then \(A_{\beta,\lambda}\ge e^{-1}a\).
+
+   Moreover, under \(Q_{\beta,\lambda}\), let the means be
+   \(\mu_W,\mu_M\), standard deviations \(\sigma_W,\sigma_M>0\), and
+   correlation \(\rho\).  Put
+   \[
+      W_W=\max\{1,\beta\sigma_W\},
+      \qquad
+      W_M=\max\{1,\lambda\sigma_M\}.
+      \tag{BTF10}
+   \]
+   Suppose
+   \[
+      \left|\frac{t-\mu_W}{\sigma_W}\right|\le U,
+      \qquad
+      \left|\frac{s-\mu_M}{\sigma_M}\right|\le U,
+      \qquad
+      |\rho|\le1-\kappa
+      \tag{BTF11}
+   \]
+   for some \(\kappa>0\).  Let \(G_\rho\) be the centered bivariate normal with
+   unit variances and correlation \(\rho\), and assume the tilted standardized
+   pair has rectangle discrepancy
+   \[
+      \sup_{I,J}
+      \left|
+         \Pr_{Q_{\beta,\lambda}}\!\left[
+            \frac{W-\mu_W}{\sigma_W}\in I,\
+            \frac{M-\mu_M}{\sigma_M}\in J
+         \right]
+         -
+         \Pr[G_\rho\in I\times J]
+      \right|
+      \le
+      \frac{\gamma_{U,\kappa}}{8W_WW_M},
+      \tag{BTF12}
+   \]
+   where the supremum is over intervals and
+   \[
+      \gamma_{U,\kappa}
+      =
+      (2\pi)^{-1}
+      \exp\!\left(-\frac{2(U+1)^2}{\kappa(2-\kappa)}\right).
+      \tag{BTF13}
+   \]
+   Then one exact sample from the high-query-score tuples inside the
+   pseudo-random additive subset costs \(O_{U,\kappa}(W_WW_M)\) product
+   proposals in expectation.
+
+   This is the sampling analogue of the scalar-mask Lagrange heap.  A combined
+   score \(W+\gamma M\) can list a terminal superset, but the joint tilted
+   sampler gives the exact conditioned law needed by aggregate samplers and
+   raw-expansion reporters.  The concrete pseudo-random-subset target is
+   therefore a bivariate saddlepoint estimate for \((W,M)\) under the native
+   product/code/lattice tilted law.
+\end{corollary}
+
+\begin{proof}
+   The unnormalized probability of accepting \(c\) is
+   \[
+      Q_{\beta,\lambda}(c)
+      \mathbf1\{W(c)\ge t,\ M(c)\ge s\}
+      e^{-\beta(W(c)-t)-\lambda(M(c)-s)}
+      =
+      \frac{e^{\beta t+\lambda s}}{Z_{\beta,\lambda}}
+      R(c)\mathbf1\{W(c)\ge t,\ M(c)\ge s\}.
+   \]
+   Summing over \(c\) gives \((BTF7)\), and normalizing gives \((BTF6)\).
+   On the rectangle in \((BTF8)\), the acceptance probability in \((BTF5)\) is
+   at least \(e^{-(\beta\Delta_W+\lambda\Delta_M)}\ge e^{-1}\), proving
+   \(A_{\beta,\lambda}\ge e^{-1}a\).
+
+   For the Gaussian-rectangle criterion, take
+   \[
+      \Delta_W=\frac{\sigma_W}{2W_W},
+      \qquad
+      \Delta_M=\frac{\sigma_M}{2W_M}.
+   \]
+   Then \(\beta\Delta_W+\lambda\Delta_M\le1\).  In standardized coordinates the
+   target rectangle has side lengths \((2W_W)^{-1}\) and \((2W_M)^{-1}\) and
+   lies inside \([-(U+1),U+1]^2\).  For \(|\rho|\le1-\kappa\), the bivariate
+   normal density on this square is at least \(\gamma_{U,\kappa}\).  Therefore
+   the normal mass of the rectangle is at least
+   \(\gamma_{U,\kappa}/(4W_WW_M)\).  Subtracting the discrepancy in \((BTF12)\)
+   gives \((BTF8)\) with \(a=\gamma_{U,\kappa}/(8W_WW_M)\), and the first part
+   gives the claimed proposal bound.
+\end{proof}
+
 \begin{corollary}[Aligned linear charts compute rate-coverage sketches]
    \label{cor:aligned-linear-chart-rate-coverage-sketch}
    Work in the setting of
