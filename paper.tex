@@ -96292,6 +96292,132 @@ amplified in the next proposition.
    \cref{cor:resident-size-biased-sampler} applies.
 \end{proof}
 
+\begin{corollary}[Balanced rejection converts raw signatures to point samples]
+   \label{cor:balanced-rejection-resident-sampler}
+   Work in the shared-signature setting of
+   \cref{cor:shared-signature-rate-coverage-sketch}.  For one query outcome
+   \(B\), put
+   \[
+      U_B=\sum_{\alpha}u_\alpha(B),
+      \qquad
+      L_B=\sum_{\alpha}c_\alpha u_\alpha(B),
+      \qquad c_\alpha=|C_\alpha|.
+      \tag{BRR1}
+   \]
+   Suppose that a number \(C_+\) is known with
+   \[
+      c_\alpha\le C_+
+      \qquad(\alpha\in\Sigma),
+      \tag{BRR2}
+   \]
+   and that, conditional on \(B\), the query algorithm can obtain \(U_B\), draw
+   independent raw signature samples from \(u_\alpha(B)/U_B\) when \(U_B>0\),
+   read the class size \(c_\alpha\), and draw a uniformly random resident from
+   any nonempty \(C_\alpha\).  One proposal draws such a signature \(\alpha\),
+   accepts it with probability \(c_\alpha/C_+\), and, if accepted, draws a
+   uniformly random resident from \(C_\alpha\).  Let
+   \[
+      N_B^{\rm rej}=
+      \left\lceil
+      8\,\frac{C_+U_B}{\theta}
+      \log\!\left(2m+2C_+U_B/\theta\right)
+      \right\rceil
+      \tag{BRR3}
+   \]
+   with \(N_B^{\rm rej}=0\) if \(U_B=0\).  The decoder makes
+   \(N_B^{\rm rej}\) proposals and outputs the distinct accepted residents.
+
+   Conditional on \(B\), every point with \(b_x(B)\ge\theta\) is output except
+   with probability at most \(O(m^{-2})\).  The point returned by one accepted
+   proposal has exactly the resident-size-biased law
+   \[
+      \Pr[x\mid B,\ {\rm accepted}]=\frac{b_x(B)}{L_B}.
+      \tag{BRR4}
+   \]
+   Equivalently, before conditioning on acceptance, one proposal emits \(x\)
+   with probability
+   \[
+      \Pr[x\ {\rm emitted\ in\ one\ proposal}\mid B]
+      =
+      \frac{b_x(B)}{C_+U_B}.
+      \tag{BRR5}
+   \]
+
+   If, on the active support, the resident classes also satisfy a lower balance
+   condition
+   \[
+      c_\alpha\ge C_-
+      \qquad\text{whenever }u_\alpha(B)>0,
+      \tag{BRR6}
+   \]
+   then
+   \[
+      C_+U_B\le\frac{C_+}{C_-}L_B.
+      \tag{BRR7}
+   \]
+   Hence, if \(C_+/C_-=\log^{O_c(1)}m\), \(\theta^{-1}=\log^{O_c(1)}m\), and
+   each raw proposal plus resident draw costs only \(\log^{O_c(1)}m\), the
+   proposal work is charged by the original point-mass load \(L_B\) up to
+   polylogarithmic factors.
+
+   In particular, a BCJR, junction-tree, recursive lattice, or quotient sampler
+   that exposes only the raw aggregate signature law \(u_\alpha(B)/U_B\) still
+   supplies the same point-sampling access as
+   \cref{cor:resident-size-biased-sampler} under two-sided resident balance.  It
+   does not have to install the boundary \(c_{\alpha(t)}\) inside the backward
+   recursion or compute \(L_B\) before sampling.  The price is exactly the
+   balance ratio \(C_+/C_-\); if active mass can fall on empty or tiny resident
+   classes, the rejection rate records the same leakage obstruction as
+   \cref{cor:two-sided-balance-sampler-load}.
+\end{corollary}
+
+\begin{proof}
+   If \(U_B=0\), there are no heavy points.  Otherwise, fix
+   \(x\in C_{\alpha(x)}\).  One proposal draws \(\alpha(x)\) with probability
+   \(u_{\alpha(x)}(B)/U_B=b_x(B)/U_B\), accepts with probability
+   \(c_{\alpha(x)}/C_+\), and then chooses \(x\) with probability
+   \(1/c_{\alpha(x)}\).  This proves \((BRR5)\).  Summing \((BRR5)\) over all
+   residents gives acceptance probability
+   \[
+      \sum_x\frac{b_x(B)}{C_+U_B}
+      =
+      \frac{L_B}{C_+U_B},
+   \]
+   so conditioning on acceptance gives \((BRR4)\).
+
+   For a fixed heavy point \(x\), \((BRR5)\) gives
+   \[
+      \Pr[x\ {\rm is\ missed}\mid B]
+      \le
+      \exp\!\left(-N_B^{\rm rej}\theta/(C_+U_B)\right)
+      \le
+      \left(2m+2C_+U_B/\theta\right)^{-8}.
+   \]
+   Since \(L_B\le C_+U_B\), the number of points with \(b_x(B)\ge\theta\) is at
+   most \(C_+U_B/\theta\).  A union bound over the heavy points gives
+   \(O(m^{-2})\) conditional failure.
+
+   Finally, \((BRR6)\) implies
+   \[
+      L_B
+      =
+      \sum_\alpha c_\alpha u_\alpha(B)
+      \ge
+      C_-U_B,
+   \]
+   which is \((BRR7)\) after multiplying by \(C_+/C_-\).  Under the displayed
+   polylogarithmic balance and per-proposal cost assumptions, \((BRR3)\) is
+   bounded by
+   \[
+      \frac{L_B}{\theta}\log^{O_c(1)}m.
+   \]
+   Averaging and using \((PMR2)\) therefore gives the same online access bound
+   as \((RBS6)\).  Together with the conditional heavy-point hitting bound
+   proved above, this supplies the point-mass reporter used in
+   \cref{cor:resident-size-biased-sampler} and hence the endpoint follows by
+   the same argument as there.
+\end{proof}
+
 \begin{corollary}[Aligned linear charts compute rate-coverage sketches]
    \label{cor:aligned-linear-chart-rate-coverage-sketch}
    Work in the setting of
