@@ -89048,6 +89048,25 @@ amplified in the next proposition.
    positive target: a compact centroid decoder whose top few facility buckets
    contain the smoothed score maximizer with inverse-polylogarithmic failure
    probability and \(m^\rho\polylog m\) scan load.
+
+   A follow-up compact-decoder diagnostic,
+   \texttt{impl/smoothed\_scoremax\_centroid\_decoder\_stress.py}, stress-tests
+   exactly this target instead of changing formulation.  On the same planted
+   \(k\)-means++ facility instances with \(m=3000,d=24,c=2\), exact centroid
+   scoring still puts the score-maximizer bucket first in all tested trials,
+   but a balanced random-projection beam tree over the centroids can miss that
+   bucket completely at sublinear work: for one seed, beam \(8\) spent about
+   \(0.46C\) centroid-score equivalents, \(C=m^{1-\rho}\), and recovered the
+   top bucket in none of the trials; beam \(32\) recovered only about \(74\%\)
+   while already spending \(1.24C\).  A flat multiprobe hyperplane decoder shows
+   the same tradeoff.  Eight 6-bit tables with 64 probes spend about
+   \(0.51C\)--\(0.54C\) and recover only \(28\%\)--\(96\%\) across seeds, while
+   128 probes recover all tested trials only after spending about
+   \(0.79C\)--\(0.82C\).  Thus the naive compact centroid-search layer is a real
+   bottleneck: the facility route remains viable only with a stronger decoder
+   that exploits more than ordinary centroid ANN/LSH routing, or with a proof
+   that such top-bucket search inherently costs a constant fraction of the
+   retained centers in this regime.
 \end{remark}
 
 \begin{remark}[Why ordinary ANN does not implement the score-max target]\label{rem:score-max-ordinary-ann}
