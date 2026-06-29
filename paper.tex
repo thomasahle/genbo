@@ -5941,6 +5941,165 @@ partition ignores the bias coordinates that certify the list size.
    much larger when \(k=\Theta(\log m)\).
 \end{proof}
 
+\begin{lemma}[Exponential scalar masks trade star robustness for a larger log tax]
+   \label{lem:exponential-mask-profile-tax}
+   Fix \(k\ge2\).  Let \(E_{j,a}\), \(j\in[k]\), be independent
+   \(\mathrm{Exp}(1)\) random variables, and put
+   \[
+      M(i_1,\ldots,i_k)=\sum_{j=1}^kE_{j,i_j}.
+   \]
+   For \(K\to\infty\), let \(s_K\) satisfy
+   \[
+      \Pr[\Gamma(k,1)\ge s_K]=K^{-1}.
+      \tag{EMS1}
+   \]
+   Then
+   \[
+      s_K=\log K+(k-1)\log\log K+O_k(1).
+      \tag{EMS2}
+   \]
+   Let \(A_K=A_{1,K}\times\cdots\times A_{k,K}\) be a product witness with
+   \(L=\log K\) and
+   \[
+      |A_{j,K}|=\exp(\theta_jL)L^{\alpha_j+o(1)},
+      \qquad
+      \theta_j,\alpha_j\ge0,
+      \qquad
+      \sum_j\theta_j=1.
+      \tag{EMS3}
+   \]
+   Then
+   \[
+      \max_{i\in A_K}M(i)
+      =
+      L+\left(\sum_{j=1}^k\alpha_j\right)\log L
+      +o(\log L)+O_{\Prb,k}(1).
+      \tag{EMS4}
+   \]
+   Consequently, for the retained set
+   \(R_K=\{i:M(i)\ge s_K\}\),
+   \[
+      \Pr[A_K\cap R_K\ne\emptyset]\to0
+      \quad\text{if}\quad
+      \sum_j\alpha_j<k-1,
+      \tag{EMS5}
+   \]
+   while
+   \[
+      \Pr[A_K\cap R_K\ne\emptyset]\to1
+      \quad\text{if}\quad
+      \sum_j\alpha_j>k-1.
+      \tag{EMS6}
+   \]
+
+   Thus an exponential additive mask is less sensitive to where the witness
+   entropy sits than the Gaussian mask of
+   \cref{lem:scalar-mask-entropy-profile}: every product entropy profile of
+   total size \(K\) has the same leading threshold.  The price is a larger
+   universal boundary tax.  One needs about
+   \(K(\log K)^{k-1}\) product witnesses, independent of whether they are
+   balanced or star-like, before a density-\(K^{-1}\) exponential scalar mask
+   hits with high probability.
+\end{lemma}
+
+\begin{proof}
+   The gamma tail identity
+   \[
+      \Pr[\Gamma(k,1)\ge s]
+      =
+      e^{-s}\sum_{r=0}^{k-1}\frac{s^r}{r!}
+      \tag{EMS7}
+   \]
+   gives \((EMS2)\) by solving \((EMS7)=K^{-1}\).
+
+   For deterministic \(H\ge1\), the maximum \(Y_H\) of \(H\) independent
+   \(\mathrm{Exp}(1)\) variables satisfies
+   \(Y_H=\log H+O_{\Prb}(1)\), uniformly in \(H\).  Since \(A_K\) is a product,
+   \[
+      \max_{i\in A_K}M(i)
+      =
+      \sum_{j=1}^k\max_{a\in A_{j,K}}E_{j,a}.
+   \]
+   Substituting
+   \(\log |A_{j,K}|=\theta_jL+\alpha_j\log L+o(\log L)\) and
+   \(\sum_j\theta_j=1\) gives \((EMS4)\).
+   Comparing \((EMS4)\) with the threshold expansion \((EMS2)\) proves
+   \((EMS5)\)--\((EMS6)\).
+\end{proof}
+
+\begin{corollary}[Exponential scalar masks remain terminal-decodable]
+   \label{cor:exponential-mask-terminal-decoder}
+   Let \(W(c)=\sum_{j=1}^kw_j(c_j)\) be an independent Gaussian additive score
+   with \(W(c)\sim N(0,k)\) for every fixed tuple, and let
+   \(M(c)=\sum_jE_j(c_j)\) be the exponential mask of
+   \cref{lem:exponential-mask-profile-tax}.  Fix thresholds \(T\ge2k\) and
+   \(S\ge1\), put \(\gamma=k/T\), and enumerate the halfspace
+   \[
+      W(c)+\gamma M(c)\ge T+\gamma S.
+      \tag{EMD1}
+   \]
+   Then every tuple satisfying \(W(c)\ge T\) and \(M(c)\ge S\) is enumerated,
+   and for each fixed tuple
+   \[
+      \Pr[W+\gamma M\ge T+\gamma S]
+      \le
+      \left(\frac{e^{1/2}T}{k}\right)^k
+      e^{kS/T}
+      e^{-T^2/(2k)-S}.
+      \tag{EMD2}
+   \]
+   Equivalently,
+   \[
+      \Pr[W+\gamma M\ge T+\gamma S]
+      \le
+      \operatorname{poly}_k(T,S)e^{kS/T}
+      \Pr[W\ge T]\Pr[M\ge S].
+      \tag{EMD3}
+   \]
+
+   Therefore exponential scalar masks are a legitimate terminal
+   polylog-thinning device when \(k\) is fixed and
+   \(S=O(\log\log m)\), since \(T=\Theta(\sqrt{\log m})\) in the terminal
+   Gaussian panels.  They are not a long-route cure: the witness tax
+   \(K(\log K)^{k-1}\) from \cref{lem:exponential-mask-profile-tax} is already
+   superpolylogarithmic when
+   \(K=\log^{\Theta(1)}m\) and
+   \(k\gg \log\log m/\log\log\log m\).
+\end{corollary}
+
+\begin{proof}
+   The containment in \((EMD1)\) is immediate.  For the tail bound, use
+   Chernoff with
+   \[
+      \beta=T/k-1>0,
+      \qquad
+      \gamma=k/T,
+   \]
+   so that \(\beta\gamma=1-k/T\).  Since
+   \[
+      \E e^{\beta W}=e^{k\beta^2/2},
+      \qquad
+      \E e^{\beta\gamma M}=(1-\beta\gamma)^{-k}=(T/k)^k,
+   \]
+   we get
+   \[
+   \begin{aligned}
+      \Pr[W+\gamma M\ge T+\gamma S]
+      &\le
+      \exp\{-\beta(T+\gamma S)+k\beta^2/2\}
+      (T/k)^k                                      \\
+      &=
+      \left(\frac{e^{1/2}T}{k}\right)^k
+      e^{kS/T}
+      e^{-T^2/(2k)-S},
+   \end{aligned}
+   \]
+   proving \((EMD2)\).  The standard lower bounds
+   \(\Pr[N(0,k)\ge T]\ge\operatorname{poly}_k(T)^{-1}e^{-T^2/(2k)}\) and
+   \(\Pr[\Gamma(k,1)\ge S]\ge\operatorname{poly}_k(S)^{-1}e^{-S}\) give
+   \((EMD3)\).
+\end{proof}
+
 \begin{remark}[Decodable pseudorandom subsets need conditional entropy]
    \label{rem:decodable-pseudorandom-tuple-subsets}
    \Cref{lem:additive-mask-star-obstruction} explains why selecting tuples by
@@ -5962,6 +6121,16 @@ partition ignores the bias coordinates that certify the list size.
    oversampling or a different mask.  Even at the balanced boundary,
    \cref{cor:critical-scalar-mask-log-tax} shows a logarithmic extreme-value
    tax for scalar Gaussian masks.
+
+   \Cref{lem:exponential-mask-profile-tax} and
+   \cref{cor:exponential-mask-terminal-decoder} record one such different mask.
+   Exponential coordinate weights remove the
+   polynomial star failure: every product witness of total size \(K\) is at
+   the same leading threshold, no matter how its entropy is split across
+   coordinates.  But the boundary shifts to \(K(\log K)^{k-1}\) witnesses, and
+   the usual Lagrange heap remains only a terminal polylog tool.  For
+   cumulative-score depths \(k=\Theta(\log m)\), this logarithmic tax is again
+   far beyond the allowed endpoint overhead.
 
    A better decodable pseudorandom mask is a decomposable syndrome or
    tabulation hash.  Let \(G\) be a finite abelian group, choose independent
@@ -6908,12 +7077,13 @@ partition ignores the bias coordinates that certify the list size.
 
 \begin{remark}[Residual entropy is the branch-and-bound bottleneck]
    \label{rem:residual-entropy-bottleneck}
-   \Cref{lem:syndrome-prefix-occupancy} is the exact accounting boundary for
-   algebraic tuple thinning.  A random affine, tabulation, or carry-less
-   multiply syndrome gives the right retained terminal count and hits fixed
-   top-tuple sets with a second-moment guarantee.  But a branch-and-bound
-   decoder does not get a \(K\)-fold saving at every prefix automatically.  At
-   prefix \(u\), the saving is
+   \Cref{lem:syndrome-prefix-occupancy} and
+   \cref{cor:syndrome-residual-entropy-audit} give the exact accounting
+   boundary for algebraic tuple thinning.  A random
+   affine, tabulation, or carry-less multiply syndrome gives the right retained
+   terminal count and hits fixed top-tuple sets with a second-moment guarantee.
+   But a branch-and-bound decoder does not get a \(K\)-fold saving at every
+   prefix automatically.  At prefix \(u\), the saving is
    \[
       \min\left\{1,\frac{|A_u|}{K}\right\},
    \]
