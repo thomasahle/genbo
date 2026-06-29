@@ -1833,10 +1833,18 @@ P117. (*** SOAR + AVX-512 stack BEATS ScaNN at QPS@90% (forward order) -- legiti
     r0.923@11281, r0.946@8633, r0.967@6135. MATCHED RECALL: QPS@90% (r~0.905) STACK 16210 vs ScaNN ~10800
     = STACK ~1.5x AHEAD; r0.918 STACK ~1.1x; r0.946 ~tie; r0.957 ScaNN ~1.07x. So STACK is AHEAD at the
     leaderboard QPS@90% point and competitive-to-tied across the frontier. This is the FIRST legitimate
-    beat-ScaNN-on-msspacev result (vs the load-confounded false P87 claim corrected in P110). CAVEAT:
-    one window, STACK-first; reversed-order bracket (ScaNN first) running (stack_rev.log) for P110-rigor.
+    beat-ScaNN-on-msspacev result (vs the load-confounded false P87 claim corrected in P110).
     The win = SOAR (~1.3-1.55x fewer probes, P116) x AVX-512 scan (1.75x, P116) stacked on the
     fast-scan-parity baseline. p96 dip (8621) is load noise (below both neighbors).
+    *** BRACKET CONFIRMED BOTH LOAD ORDERS *** (stack_rev.log, reversed = ScaNN-first/STACK-second):
+    STACK r0.918@29681, r0.925@26950, r0.954@14335 vs ScaNN r0.925@8635, r0.950@6708 = STACK ~3x ahead
+    (STACK advantaged at low load running second). So forward (STACK first/DISADVANTAGED) STACK ~1.5x
+    ahead @QPS90; reversed (STACK advantaged) ~3x. BOTH ORDERS: STACK WINS at QPS@90%. CONSERVATIVE
+    DEFENSIBLE HEADLINE = forward ~1.5x (STACK ran first/disadvantaged and still won). High recall >=0.95:
+    tie (forward) to ahead (reversed) -> at least competitive. LEGITIMATE beat-ScaNN result, validated
+    across load orders. Exact ratio is load-dependent (1.5-3x bracket); the ROBUST fact = STACK ahead at
+    QPS@90% regardless of order. Champion: hierk3 C0=1024 C1=8192 b0=48 b1=160 a0=3 apq4 + SBANN_SOAR=0.5
+    + SBANN_FASTSCAN=1 + SBANN_USE512FS=1 + low TFLOOR. (engine-stack branch, /home/thomas-ahle/lsh-engine.)
 
 P118. (HierRouter generalized to arbitrary depth L -- hierk4/5… for 100M/1B; hyperparameters tunable)
     Was hardcoded L in {2,3}. Now train_hkmeans_multi(counts[],beams[]) = one general L-level trainer;

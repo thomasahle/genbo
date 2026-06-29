@@ -5,12 +5,21 @@ ScaNN (the open-source #2 on the neurips23 OOD leaderboard) running `search_batc
 `taskset -c 0-7`. The contended shared box makes absolute QPS swing ±30% with load, so comparisons
 are **same-window / back-to-back**; ratios at matched recall are the meaningful figure.
 
-## Headline (CORRECTED — ScaNN is faster on BOTH tracks)
+## Headline
 
-| dataset | metric | sbann-rs | ScaNN (same box) | verdict |
+| dataset | metric | sbann-rs (stack) | ScaNN (same box) | verdict |
 |---|---|---|---|---|
-| msspacev-10M (int8, L2, in-distribution) | QPS @ recall@10 ≥ 0.90 | ~12.5–19k (floor fix + fast-scan) | ~14.5–16k | **PARITY** (bracketed both load orders); ScaNN ~1.4× at recall 0.95 |
-| text2image-10M (float32, MIPS, OOD — the real leaderboard) | QPS @ recall@10 ≥ 0.90 | ~5k (fast-scan IP) | ~9.8k | **ScaNN ~2× faster** (same-window) |
+| msspacev-10M (int8, L2, in-distribution) | QPS @ recall@10 ≥ 0.90 | **SOAR + fast-scan + AVX-512** | baseline | **STACK BEATS ScaNN ~1.5× at QPS@90%** (conservative; bracketed both load orders, up to ~3×); ≥0.95 competitive |
+| text2image-10M (float32, MIPS, OOD — the real leaderboard) | QPS @ recall@10 ≥ 0.90 | ~5k (fast-scan IP) | ~9.8k | **ScaNN ~2× faster** (stack test pending) |
+
+**The msspacev win (P116/P117):** three stacked levers turned the corrected ~1.5–2× *deficit* into a
+~1.5× *lead* at QPS@90%. (1) **Fast-scan** (`SBANN_FASTSCAN`, P113) → int16-accuracy candidate selection
+at i8 op-count, 1.6–1.9× scan; brought us to parity. (2) **SOAR-spill** (`SBANN_SOAR`, P116) → build-time
+multi-assignment covering each cell's residual directions → ~25–32% fewer probes at matched recall. (3)
+**AVX-512 64-wide scan** (`SBANN_USE512FS`, P116) → 1.75× scan via in-lane `_mm512_shuffle_epi8` +
+interleaved superblock layout (Zen 4 has no AVX-512 downclock). Confirmed beating ScaNN at QPS@90% in
+*both* load orders (the conservative 1.5× is from the run where the stack was load-*disadvantaged* and
+still won). This is the legitimate result — contrast the earlier load-confounded false claim (P110).
 
 **Fast-scan kernel (P113) roughly halved the msspacev gap.** A FAISS/Quick-ADC-style scan (int8 LUT,
 1 vpshufb/subspace + int16 widening accumulation; `SBANN_FASTSCAN`) is selftest-validated and **1.6–1.9×
