@@ -70,6 +70,8 @@ RATE_FIELDNAMES = [
     "theta_star",
     "min_kappa",
     "min_log_b_exponent",
+    "mode_deficit",
+    "min_topk_mass_exponent",
 ]
 
 
@@ -125,6 +127,13 @@ def fixed_score_mean_and_sech2(sigma: float, quadrature: int = 96) -> tuple[floa
     score = bit_score(z)
     sech2 = 1.0 / (np.cosh(z) ** 2)
     return float(np.dot(weights, score)), float(np.dot(weights, sech2))
+
+
+def product_sign_mode_deficit(sigma: float, quadrature: int = 96) -> float:
+    """Return E[-log max_s K_q(s)] per product-sign bit for Gaussian logits."""
+    z, weights = _hermite_normal_nodes(sigma, quadrature)
+    deficit = np.log1p(np.exp(-2.0 * np.abs(z)))
+    return float(np.dot(weights, deficit))
 
 
 def _fixed_score_log_mgf(
@@ -207,6 +216,8 @@ def gaussian_rate_gap_summary(
     gamma = 1.0 / (2.0 * c * c)
     min_kappa = float("inf") if rate <= 0.0 else gamma / rate
     min_log_b_exponent = min_kappa * math.log(2.0)
+    mode_deficit = product_sign_mode_deficit(sigma, quadrature=quadrature)
+    min_topk_mass_exponent = min_kappa * mode_deficit
     return {
         "sigma": sigma,
         "corr": corr,
@@ -220,6 +231,8 @@ def gaussian_rate_gap_summary(
         "theta_star": theta_star,
         "min_kappa": min_kappa,
         "min_log_b_exponent": min_log_b_exponent,
+        "mode_deficit": mode_deficit,
+        "min_topk_mass_exponent": min_topk_mass_exponent,
     }
 
 

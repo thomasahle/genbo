@@ -89506,6 +89506,81 @@ top-\(k\) backup.
      \le d\,m^\rho\log^{O_c(1)}m\).
 \end{proof}
 
+\begin{lemma}[Growing product-sign top-\(k\) entropy barrier]
+   \label{lem:growing-product-sign-top-k-barrier}
+   Fix a product-sign channel and a near pair \(p,q\).  Under the tilted label
+   law \(W_{p,q}\), write
+   \[
+      v_a=\beta u_a(p)+(1-\beta)u_a(q),
+      \qquad
+      D(v)=\sum_{a=1}^r\log(1+e^{-2|v_a|}).
+      \tag{GTK1}
+   \]
+   For every label set \(Q\subseteq\{\pm1\}^r\),
+   \[
+      W_{p,q}(Q)\le |Q|e^{-D(v)}
+      \tag{GTK2}
+   \]
+   and the restricted finite-channel value on \(Q\) obeys
+   \[
+      \mathcal H_{\xi,Q}(p,q)
+      :=
+      \sum_{s\in Q}\mu_s^\beta K_q(s)^{1-\beta}
+      \left(R_s(p)^\beta-\tau_s^\beta\right)_+
+      \le W_{p,q}(Q).
+      \tag{GTK3}
+   \]
+   Consequently, if the coordinates \(v_a\) are iid with
+   \[
+      h=\E\log(1+e^{-2|V|})>0
+   \]
+   and finite variance, \(r=\lceil\kappa\log m\rceil\), and
+   \(|Q|\le\log^C m\), then with probability \(1-o(1)\),
+   \[
+      \mathcal H_{\xi,Q}(p,q)
+      \le m^{-\kappa h+o(1)} .
+      \tag{GTK4}
+   \]
+   In particular, a polylogarithmic top-\(k\) product-sign reporter cannot
+   deliver the inverse-polylogarithmic value required by
+   \cref{prop:query-top-k-channel-compiler} in any fixed-entropy growing-width
+   regime.
+\end{lemma}
+
+\begin{proof}
+   The tilted product-sign law factorizes:
+   \[
+      W_{p,q}(s)=
+      \prod_{a=1}^r\frac{e^{s_av_a}}{2\cosh v_a}.
+   \]
+   Its largest atom is obtained by choosing \(s_a=\operatorname{sign}v_a\), and
+   equals
+   \[
+      \prod_a\frac{e^{|v_a|}}{2\cosh v_a}
+      =
+      \prod_a(1+e^{-2|v_a|})^{-1}
+      =
+      e^{-D(v)}.
+   \]
+   Hence any \(Q\) has \(W_{p,q}\)-mass at most \(|Q|e^{-D(v)}\).  For
+   \((GTK3)\), use
+   \[
+      \left(R_s(p)^\beta-\tau_s^\beta\right)_+\le R_s(p)^\beta
+   \]
+   and \(R_s(p)=K_p(s)/\mu_s\).  Thus
+   \[
+      \mathcal H_{\xi,Q}(p,q)
+      \le
+      \sum_{s\in Q}K_p(s)^\beta K_q(s)^{1-\beta}
+      =
+      \mathsf A_\beta(p,q)W_{p,q}(Q)
+      \le W_{p,q}(Q),
+   \]
+   where the last inequality is Holder's inequality for probability vectors.
+   Finally, Chebyshev gives \(D(v)=rh+o(r)\) with probability \(1-o(1)\);
+   substituting \(r=\kappa\log m\) and \(|Q|\le\log^C m\) gives \((GTK4)\).
+\end{proof}
+
 \begin{lemma}[Posterior-rank margin certificate]\label{lem:posterior-rank-margin}
    Let
    \[
@@ -90585,9 +90660,20 @@ One should also separate the resident-guard regime from the genuine finite-chann
    \((\gamma/I_\sigma(t))\log2\) are \(0.577,0.531,0.606\), all below \(1\).
    At correlation \(0.9\), the corresponding exponents are
    \(0.339,0.309,0.363\).  Thus the ideal Gaussian product-sign channel is no
-   longer blocked at the bounded-margin tail; the remaining non-ideal work is
-   to transfer this i.i.d. rate calculation to the actual whitened
-   product-sign panels and their empirical thresholds.
+   longer blocked at the all-label bounded-margin tail.  However,
+   \cref{lem:growing-product-sign-top-k-barrier} exposes a separate
+   output-sensitive obstruction.  The same deterministic quadrature gives
+   fixed-bit tilted mode deficits \(0.116,0.077,0.045\) at
+   \(\sigma=2.5,3.5,5.0\).  At the minimum Cramer widths above, any
+   polylogarithmic label list has tilted mass at most
+   \(m^{-0.096},m^{-0.059},m^{-0.040+o(1)}\) in the \(a=0.75\) case, and at
+   most \(m^{-0.057},m^{-0.035},m^{-0.024+o(1)}\) in the \(a=0.9\) case.  This
+   is polynomially smaller than the inverse-polylogarithmic value required by
+   \cref{prop:query-top-k-channel-compiler}.  The remaining work is therefore
+   not another threshold certificate: it is either a compressed all-outcome
+   storage/evaluation scheme for the growing product-sign panel, a construction
+   whose tilted output entropy is \(O(\log\log m)\), or a proof that this
+   entropy barrier rules out the product-sign route to the endpoint.
 
    The first transfer stress test keeps exactly this normal form.  The script
    \texttt{impl/product\_sign\_transfer\_stress.py} measures the concrete bit
@@ -90641,22 +90727,25 @@ One should also separate the resident-guard regime from the genuine finite-chann
    \cref{lem:empirical-spherical-whitening-calibration} proves the metric event
    for the exact empirical whitening map in the iid spherical model.
 
-   Thus the product-sign transfer is closed for the standard iid spherical
-   local model in the high-dimensional regime where \(r=\Theta(\log m)\),
-   \(d/\log m\to\infty\), and the empirical whitening covariance concentrates.
-   The explicit slack in \((SRR4)\) also records the barrier in the borderline
-   \(d=\Theta(\log m)\) regime: the proof only works when the row-Gram,
-   whitening, and shell terms leave a positive per-bit Cramer gap.
+   Thus the all-label product-sign transfer is closed for the standard iid
+   spherical local model in the high-dimensional regime where
+   \(r=\Theta(\log m)\), \(d/\log m\to\infty\), and the empirical whitening
+   covariance concentrates.  The explicit slack in \((SRR4)\) also records the
+   barrier in the borderline \(d=\Theta(\log m)\) regime: the proof only works
+   when the row-Gram, whitening, and shell terms leave a positive per-bit
+   Cramer gap.
 
    The frozen product-sign target is therefore not another certificate form:
    it is the same distributional bounded-margin posterior-rank lower tail for
    \(\Psi_s\), but with a growing bit count beyond the ceiling-barrier scale,
-   together with the already separated query-prefix containment and empirical
-   quantile transfer.  This is compatible with
-   \cref{prop:query-top-k-channel-compiler}: the reporter cost is
-   \(O(dr+k\log k)\), and the storage arithmetic only requires
-   \(2^r\le\xi^{-1}\log^{O_c(1)}m\), not a fixed or polylogarithmic number of
-   outcomes.
+   together with empirical quantile transfer.  The output-sensitive query
+   prefix is not solved by this all-label theorem: by
+   \cref{lem:growing-product-sign-top-k-barrier}, a polylogarithmic query
+   top-\(k\) reporter cannot capture enough value in the fixed-entropy
+   growing-width product-sign model.  The clean endpoint now hinges on
+   compressing the growing output layer, changing the channel so the tilted
+   entropy is only \(O(\log\log m)\), or accepting this as a barrier to the
+   product-sign branch.
 \end{remark}
 
 \begin{proposition}[Conditional finite-channel polylog endpoint]\label{prop:finite-channel-polylog}

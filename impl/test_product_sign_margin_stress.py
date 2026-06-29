@@ -9,6 +9,7 @@ from product_sign_margin_stress import (
     fixed_score_rate,
     gaussian_rate_gap_summary,
     log_cosh,
+    product_sign_mode_deficit,
     run_trial,
     tilted_score_mean_variance,
 )
@@ -65,6 +66,8 @@ def test_gaussian_rate_gap_summary_has_positive_gap_and_rate():
     assert summary["score_level"] < summary["tilted_mean_limit"]
     assert summary["chernoff_rate"] > 0.0
     assert summary["min_log_b_exponent"] < float("inf")
+    assert summary["mode_deficit"] > 0.0
+    assert summary["min_topk_mass_exponent"] > 0.0
 
     mean_rate = fixed_score_rate(
         summary["fixed_score_mean"],
@@ -73,6 +76,15 @@ def test_gaussian_rate_gap_summary_has_positive_gap_and_rate():
         theta_grid=200,
     )
     assert mean_rate < 1e-8
+
+
+def test_product_sign_mode_deficit_matches_monte_carlo_mode_mass():
+    sigma = 1.5
+    estimate = product_sign_mode_deficit(sigma, quadrature=64)
+    rng = np.random.default_rng(4)
+    z = sigma * rng.standard_normal(100_000)
+    empirical = np.mean(np.log1p(np.exp(-2.0 * np.abs(z))))
+    assert abs(estimate - empirical) < 0.01
 
 
 def test_run_trial_produces_complete_row():
@@ -109,5 +121,6 @@ if __name__ == "__main__":
     test_ceiling_gap_lower_tail_is_valid_sufficient_event()
     test_tilted_score_mean_variance_matches_enumeration()
     test_gaussian_rate_gap_summary_has_positive_gap_and_rate()
+    test_product_sign_mode_deficit_matches_monte_carlo_mode_mass()
     test_run_trial_produces_complete_row()
     print("product_sign_margin_stress tests passed")
