@@ -97789,6 +97789,90 @@ amplified in the next proposition.
    \(L=L_{\rm merge}\).
 \end{proof}
 
+\begin{corollary}[Sliding-window trellises must carry forgotten quotient span]
+   \label{cor:finite-memory-forgetting-quotient-barrier}
+   Let
+   \[
+      \mathcal C=\mathcal C_1\times\cdots\times\mathcal C_h
+   \]
+   be represented by the full sliding-window trellis of memory \(\mu\): a level
+   \(\ell\) state records the last \(\mu\) symbols of the prefix, with the
+   evident truncation near the source.  Suppose the accumulated support
+   quotient syndrome is coordinate-additive,
+   \[
+      \bar s(c_1,\ldots,c_\ell)
+      =
+      \sum_{j\le\ell}g_j(c_j)\in\bar G,
+      \qquad \bar G=\mathbb F_q^r .
+      \tag{FMB1}
+   \]
+   Then the merged-prefix carry space of
+   \cref{cor:merged-prefix-carry-space-verifier} contains
+   \[
+      L_{\rm forget}
+      =
+      \operatorname{span}\{
+         g_j(a)-g_j(a'):
+         1\le j\le h-\mu,\ a,a'\in\mathcal C_j
+      \}.
+      \tag{FMB2}
+   \]
+   Consequently every coboundary-mod-\(L\) explanation of the quotient
+   increments in \cref{cor:coboundary-quotient-trellis-width} must satisfy
+   \(L_{\rm forget}\le L\).  Thus the coboundary route has polylogarithmic
+   support-conditioning overhead only if
+   \[
+      \dim L_{\rm forget}=O(\log_q\log m).
+      \tag{FMB3}
+   \]
+   Actual support-conditioned width is controlled by the reachable forgotten
+   sumset.  For any reference symbols \(a_j^0\in\mathcal C_j\), define
+   \[
+      A_{\rm forget}
+      =
+      \left\{
+         \sum_{j\le h-\mu}\bigl(g_j(a_j)-g_j(a_j^0)\bigr):
+         a_j\in\mathcal C_j
+      \right\}\subseteq \bar G .
+      \tag{FMB4}
+   \]
+   Some level-\(h\) native state has at least \(|A_{\rm forget}|\) reachable
+   quotient syndromes.  In particular, if \(A_{\rm forget}\) contains an
+   affine subspace of dimension \(d\), then \(Q_B\ge q^d\).
+
+   Therefore a finite-memory product, convolutional, or shift-register trellis
+   cannot support-condition on a long random coordinate syndrome merely by
+   using the native window state.  Every independent quotient direction that is
+   attached to a coordinate after that coordinate is forgotten becomes residual
+   carry.  To obtain polylogarithmic support-conditioning overhead, the quotient
+   must either telescope through the native state before forgetting, be refreshed
+   in checkpoint chunks, or have only \(O(\log\log m)\) total independent
+   forgotten directions on the active route.
+\end{corollary}
+
+\begin{proof}
+   Fix \(j\le h-\mu\), two symbols \(a,a'\in\mathcal C_j\), and arbitrary
+   symbols in all other coordinates up to level \(j+\mu\).  Form two prefixes
+   of length \(j+\mu\) that agree everywhere except at coordinate \(j\), where
+   they use \(a\) and \(a'\).  Since coordinate \(j\) is no longer in the last
+   \(\mu\)-symbol window at level \(j+\mu\), the two prefixes reach the same
+   native trellis state.  Their accumulated quotient syndromes differ by
+   \(g_j(a)-g_j(a')\).  By
+   \cref{cor:merged-prefix-carry-space-verifier}, every such difference lies in
+   \(L_{\rm merge}\), proving \(L_{\rm forget}\le L_{\rm merge}\).
+
+   Since the same corollary shows that every coboundary-mod-\(L\) explanation
+   must contain \(L_{\rm merge}\), it must also contain \(L_{\rm forget}\).
+
+   For the width statement, fix the final window symbols to their reference
+   values \(a_j^0\) for \(h-\mu<j\le h\) and vary the forgotten coordinates
+   \(1,\ldots,h-\mu\).  All resulting full paths end in the same level-\(h\)
+   native state, while their quotient syndromes are one fixed terminal offset
+   plus the elements of \(A_{\rm forget}\).  Hence that merged state has at
+   least \(|A_{\rm forget}|\) reachable quotient syndromes.  The affine-subspace
+   lower bound is immediate.
+\end{proof}
+
 \begin{corollary}[Aligned linear charts compute rate-coverage sketches]
    \label{cor:aligned-linear-chart-rate-coverage-sketch}
    Work in the setting of
