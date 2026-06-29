@@ -95713,6 +95713,156 @@ amplified in the next proposition.
    \cref{cor:route-local-union-effective-entropy-barrier}.
 \end{proof}
 
+\begin{corollary}[Aligned linear charts compute rate-coverage sketches]
+   \label{cor:aligned-linear-chart-rate-coverage-sketch}
+   Work in the setting of
+   \cref{cor:shared-signature-rate-coverage-sketch}, with
+   \(\Sigma=G=\mathbb F_q^r\), \(|G|=M\), and a resident signature map
+   \(\alpha(x)=A\phi(x)\).  Assume the resident classes are
+   \(\lambda\)-balanced:
+   \[
+      |\{x:A\phi(x)=\alpha\}|\le\lambda m/M
+      \qquad(\alpha\in G).
+      \tag{ALC1}
+   \]
+   For one query outcome \(B\), suppose the selected labels are partitioned
+   into affine linear charts \(a\in I_B\).  In chart \(a\), labels are
+   solutions of
+   \[
+      B_a z=b_a,\qquad z\in\mathbb F_q^{N_a},
+      \tag{ALC2}
+   \]
+   the resident signature of label \(z\) is
+   \[
+      \sigma_a(z)=\gamma_a+C_a z\in G,
+      \tag{ALC3}
+   \]
+   and the point-label intensity is constant on the chart fiber:
+   \[
+      b_{x,(a,z)}
+      =
+      \omega_a(B)\mathbf1\{A\phi(x)=\sigma_a(z)\},
+      \qquad \omega_a(B)\ge0 .
+      \tag{ALC4}
+   \]
+   Put
+   \[
+      R_a=
+      \operatorname{rank}\begin{pmatrix}B_a\\ C_a\end{pmatrix}
+      -\operatorname{rank} B_a,
+      \qquad
+      Q_B=\sum_{a\in I_B:\ B_az=b_a\ {\rm is\ solvable}} q^{R_a}.
+      \tag{ALC5}
+   \]
+   Then the weighted active-signature list
+   \[
+      u_\alpha(B)=
+      \sum_{a\in I_B}\sum_{\substack{z:\ B_az=b_a\\
+                                     \gamma_a+C_az=\alpha}}
+      \omega_a(B)
+      \tag{ALC6}
+   \]
+   has support size at most \(Q_B\) and can be materialized by affine-image
+   enumeration in time
+   \[
+      T_{\rm lin}(B)+\log^{O(1)}m\,Q_B,
+      \tag{ALC7}
+   \]
+   where \(T_{\rm lin}(B)\) is the cost of solving the displayed linear systems
+   and producing bases for the images \(C_a(\ker B_a)\).
+   Consequently the aggregation cost in
+   \cref{cor:sketched-rate-coverage-point-mass} is bounded by
+   \[
+      T_{\rm lin}(B)
+      +
+      \log^{O(1)}m\,
+      Q_B\min\{\lambda m/M,W_B\}.
+      \tag{ALC8}
+   \]
+
+   Therefore, if
+   \[
+      \E_Z\!\left[
+         T_{\rm lin}(B(q,Z))
+         +
+         Q_{B(q,Z)}\min\{\lambda m/M,W_{B(q,Z)}\}
+      \right]
+      \le D\,m^\rho\log^{O_c(1)}m,
+      \tag{ALC9}
+   \]
+   then the counter-aggregation hypothesis \((PMHS4)\) holds, and the
+   point-mass reporter follows from
+   \cref{cor:sketched-rate-coverage-point-mass}.  In the full-width aligned
+   regime
+   \[
+      M\ge\lambda m^{1-\rho}\log^{-O_c(1)}m,
+      \tag{ALC10}
+   \]
+   it is enough that
+   \[
+      \E_ZT_{\rm lin}(B(q,Z))\le Dm^\rho\log^{O_c(1)}m,
+      \qquad
+      \E_ZQ_{B(q,Z)}\le\log^{O_c(1)}m .
+      \tag{ALC11}
+   \]
+
+   Thus the linear-code/lattice version of the point-mass normal form has an
+   exact pass/fail quantity: residual observed rank after quotienting.  A
+   quotient may hide many labels inside each chart, but it removes the
+   subpolynomial overhead only when the observed residue image
+   \(C_a(\ker B_a)\) is polylogarithmic on the route-occupied charts, or when a
+   different point-indexed reporter avoids paying per active residue.
+\end{corollary}
+
+\begin{proof}
+   Fix one nonempty chart \(a\), choose a solution \(z_{0,a}\) of
+   \(B_az=b_a\), and let \(K_a=\ker B_a\).  The active signatures contributed
+   by the chart are the affine image
+   \[
+      \gamma_a+C_az_{0,a}+C_aK_a .
+   \]
+   Its dimension is
+   \[
+      \dim C_aK_a
+      =
+      \operatorname{rank}\begin{pmatrix}B_a\\ C_a\end{pmatrix}
+      -\operatorname{rank} B_a
+      =
+      R_a,
+   \]
+   hence it contains \(q^{R_a}\) signatures.  Moreover, every signature in
+   this affine image has exactly
+   \(q^{\dim K_a-R_a}\) preimages in the chart.  Therefore chart \(a\) adds the
+   constant weight
+   \[
+      \omega_a(B)q^{\dim K_a-R_a}
+   \]
+   to each listed signature in its affine image, and adds no weight outside
+   that image.  Enumerating a basis of \(C_aK_a\) lists these signatures with
+   \(q^{R_a}\) outputs after the linear-algebra setup.  Summing over charts
+   proves the support and time bounds \((ALC6)\)--\((ALC7)\).
+
+   Once this weighted active-signature list is materialized,
+   \cref{cor:shared-signature-rate-coverage-sketch} computes the required
+   heavy-point sketch counters by reading the stored histograms for the active
+   signatures.  By balance, each active signature contributes at most
+   \(O(\log^2m)\min\{\lambda m/M,W_B\}\) total and bit histogram entries over
+   all sketch rows.  Multiplying by the \(Q_B\) active-signature bound and
+   absorbing fixed row and bit factors gives \((ALC8)\).  Averaging gives
+   \((ALC9)\), which is exactly \((SSI8)\) and hence \((PMHS4)\).
+
+   Finally, under \((ALC10)\) and in the full-width case used by the balanced
+   residue histograms,
+   \[
+      \min\{\lambda m/M,W_B\}
+      \le
+      \lambda m/M
+      \le
+      m^\rho\log^{O_c(1)}m .
+   \]
+   Combining this with \((ALC11)\) gives \((ALC9)\).
+\end{proof}
+
 \begin{corollary}[Random signatures cannot be materialized sparsely]
    \label{cor:random-active-signature-support-barrier}
    Work in the shared-signature setting of
