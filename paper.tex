@@ -102656,6 +102656,200 @@ polylogarithmic state]
    theta query law.
 \end{proof}
 
+\begin{corollary}[Construction-A theta partition audit for product rates]
+   \label{cor:construction-a-theta-product-rate-audit}
+   Work in one product block of
+   \cref{cor:product-panel-rate-bookkeeping}.  Let the block labels be the
+   scaled Construction-A lattice
+   \[
+      \Lambda_j
+      =
+      \Delta_j\{\iota(c)+p_jz:\ c\in C_j,\ z\in\mathbb Z^{b_j}\},
+      \qquad
+      C_j\subseteq(\mathbb Z/p_j\mathbb Z)^{b_j},
+      \tag{TPA1}
+   \]
+   and use the Euclidean score
+   \[
+      S_y(\lambda)=\ip{y}{\lambda}-\frac12\|\lambda\|^2 .
+      \tag{TPA2}
+   \]
+   Thus \(\psi_j(x,\lambda)=S_{x_j}(\lambda)\) and
+   \(\phi_j(q,\lambda)=S_{q_j}(\lambda)\) for the storage and query block
+   projections \(x_j,q_j\).  For \(\tau>0\) define the coordinate theta
+   weights
+   \[
+      \Theta_{a}^{(\tau,j)}(y_i)
+      =
+      \sum_{k\in\mathbb Z}
+      \exp\!\left\{
+         -\frac{\tau}{2}
+         \bigl(y_i-\Delta_j(\iota(a)+p_jk)\bigr)^2
+      \right\},
+      \tag{TPA3}
+   \]
+   and the residue-code partition function
+   \[
+      \mathcal Z_j(\tau,y)
+      =
+      \sum_{c\in C_j}\prod_{i=1}^{b_j}
+         \Theta_{c_i}^{(\tau,j)}(y_i).
+      \tag{TPA4}
+   \]
+   Then the one-block product-panel partition factors are exactly
+   \[
+      Z_j^Q(q)
+      =
+      \exp\!\left(\frac{\beta}{2}\|q_j\|^2\right)
+      \mathcal Z_j(\beta,q_j),
+      \tag{TPA5}
+   \]
+   \[
+      Z_j^P(x)
+      =
+      \exp\!\left(\frac{\alpha}{2}\|x_j\|^2\right)
+      \mathcal Z_j(\alpha,x_j),
+      \tag{TPA6}
+   \]
+   and
+   \[
+      Z_j^{PQ}(x,q)
+      =
+      \exp\!\left(
+         \frac{\|\alpha x_j+\beta q_j\|^2}{2(\alpha+\beta)}
+      \right)
+      \mathcal Z_j\!\left(
+         \alpha+\beta,\frac{\alpha x_j+\beta q_j}{\alpha+\beta}
+      \right).
+      \tag{TPA7}
+   \]
+
+   Suppose the block threshold reporter has setup work \(D_j(q)\), suffix
+   upper score \(M_j(q)\), and thresholds \(\theta_{P,j},\theta_{Q,j}\).  Put
+   \[
+   \begin{aligned}
+      Q_j(q)
+      =\max\{&
+         -\beta\theta_{Q,j}
+         +\frac{\beta}{2}\|q_j\|^2
+         +\log\mathcal Z_j(\beta,q_j),\\
+      &  \beta(M_j(q)-\theta_{Q,j}),\\
+      &  \log(1+D_j(q))+\beta(M_j(q)-\theta_{Q,j})\},
+   \end{aligned}
+      \tag{TPA8}
+   \]
+   \[
+      S_j(x)
+      =
+      -\alpha\theta_{P,j}
+      +\frac{\alpha}{2}\|x_j\|^2
+      +\log\mathcal Z_j(\alpha,x_j),
+      \tag{TPA9}
+   \]
+   and
+   \[
+   \begin{aligned}
+      F_j(x,q)
+      =
+      &-\alpha\theta_{P,j}-\beta\theta_{Q,j}
+      +\frac{\|\alpha x_j+\beta q_j\|^2}{2(\alpha+\beta)}  \\
+      &+\log\mathcal Z_j\!\left(
+         \alpha+\beta,\frac{\alpha x_j+\beta q_j}{\alpha+\beta}
+      \right).
+   \end{aligned}
+      \tag{TPA10}
+   \]
+   Therefore the block factors in
+   \cref{cor:product-panel-rate-bookkeeping} may be taken as
+   \[
+      \mathfrak q_j(q)=e^{Q_j(q)},
+      \qquad
+      \mathfrak s_j(x)=e^{S_j(x)},
+      \qquad
+      \mathfrak f_j(x,q)=e^{F_j(x,q)} .
+      \tag{TPA11}
+   \]
+   Consequently the product/Fano CPFA far-side hypotheses
+   \((FRC6)\)--\((FRC7)\) follow from the explicit theta inequalities
+   \[
+      \sum_j Q_j(q)
+      \le
+      \rho_c\log m+O_c(\log\log m),
+      \tag{TPA12}
+   \]
+   and, for every far pair,
+   \[
+      \sum_j F_j(x,q)
+      \le
+      -(1-\rho_c-\zeta)\log m+o(\log m),
+      \tag{TPA13}
+   \]
+   while the ordinary storage side follows from
+   \[
+      \sum_j S_j(x)
+      \le
+      \rho_c\log m+O_c(\log\log m).
+      \tag{TPA14}
+   \]
+
+   Thus a Construction-A, Tanner, or trellis implementation does not have to
+   prove a vague Gaussian-quadrature statement for this route.  It has to
+   compute or bound the residue-code theta partition functions in
+   \((TPA4)\), at the three centers \(q_j\), \(x_j\), and
+   \((\alpha x_j+\beta q_j)/(\alpha+\beta)\), and check
+   \((TPA12)\)--\((TPA14)\).  If those inequalities fail by
+   \(m^{\Omega(1)}\) for the induced bucket map, checkpoint thinning can still
+   remove only the raw far excess allowed by \(\zeta<A\gamma\); it cannot fix
+   query partition work or storage overcharge.
+\end{corollary}
+
+\begin{proof}
+   The score identity
+   \[
+      \tau S_y(\lambda)
+      =
+      \frac{\tau}{2}\|y\|^2
+      -
+      \frac{\tau}{2}\|y-\lambda\|^2
+   \]
+   and \cref{lem:construction-a-theta-quotient}, with the harmless scaling
+   \(\Delta_j\) included in each coordinate, give \((TPA5)\) and \((TPA6)\).
+   For the mixed partition,
+   \[
+      \alpha S_{x_j}(\lambda)+\beta S_{q_j}(\lambda)
+      =
+      \ip{\alpha x_j+\beta q_j}{\lambda}
+      -\frac{\alpha+\beta}{2}\|\lambda\|^2 .
+   \]
+   Put \(y_{xq}=(\alpha x_j+\beta q_j)/(\alpha+\beta)\).  Completing the
+   square gives
+   \[
+      \alpha S_{x_j}(\lambda)+\beta S_{q_j}(\lambda)
+      =
+      \frac{\alpha+\beta}{2}\|y_{xq}\|^2
+      -\frac{\alpha+\beta}{2}\|\lambda-y_{xq}\|^2,
+   \]
+   which is \((TPA7)\) after applying the same theta quotient at temperature
+   \(\alpha+\beta\).
+
+   The three terms in \(Q_j(q)\) are precisely the three query-factor
+   requirements in \cref{cor:product-panel-rate-bookkeeping}: the partition
+   term \(e^{-\beta\theta_{Q,j}}Z_j^Q(q)\), the suffix upper-score term, and
+   the setup-work term \((1+D_j(q))e^{\beta(M_j(q)-\theta_{Q,j})}\).  Equations
+   \((TPA6)\) and \((TPA7)\) give the displayed storage and far factors after
+   multiplying by the threshold exponentials.  Therefore
+   \((TPA11)\) supplies valid \(\mathfrak q,\mathfrak s,\mathfrak f\) factors.
+   The exponent inequalities \((TPA12)\)--\((TPA14)\) are exactly the log-rate
+   form of \((RB1)\)--\((RB3)\), with \((TPA13)\) written in the relaxed CPFA
+   far-load form used by \((FRC7)\).  Applying
+   \cref{cor:product-panel-rate-bookkeeping} and then
+   \cref{cor:fano-product-reporter-cpfa-estimates} proves the final
+   interpretation.  Monotone convergence justifies the same identities for the
+   full lattice whenever the threshold reporter enumerates only finitely many
+   labels above threshold; finite truncations give the identical formulas with
+   the theta sums restricted to the retained lifts.
+\end{proof}
+
 \begin{corollary}[Checkpoint boundary frontiers see the remaining product]
    \label{cor:checkpoint-boundary-residual-frontier}
    Continue in the setting of
