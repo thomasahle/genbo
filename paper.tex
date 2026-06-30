@@ -10097,6 +10097,128 @@ partition ignores the bias coordinates that certify the list size.
    interpretation.
 \end{proof}
 
+\begin{corollary}[Last-segment CPFA closes under a cut Fano moment]
+   \label{cor:last-segment-cpfa-cut-fano-moment}
+   Continue in the setting of
+   \cref{cor:polylog-suffix-handoff-removes-residue-oracle}.  For one realized
+   query outcome \(B\), let \(\mathcal T_{\rm cut}(B)\) be the native cut-prefix
+   universe before checkpoint offsets are applied.  Suppose the native reporter
+   keeps exactly the cut prefixes
+   \[
+      \mathcal U_B
+      =
+      \{u\in\mathcal T_{\rm cut}(B): U_B(u)\ge\Theta_B\},
+      \tag{CFM1}
+   \]
+   where \(U_B\) is its cut upper score and \(g_B(u)\ge1\) is the work needed to
+   generate and test \(u\).  If, for some fixed \(\beta>0\),
+   \[
+      \E_Z
+      e^{-\beta\Theta_{B(q,Z)}}
+      \sum_{u\in\mathcal T_{\rm cut}(B(q,Z))}
+         g_{B(q,Z)}(u)e^{\beta U_{B(q,Z)}(u)}
+      \le
+      m^{\rho_c}\log^{O(1)}m,
+      \tag{CFM2}
+   \]
+   then the native cut-prefix condition \((PSH5)\) holds.  Consequently, if the
+   raw far/cut load condition \((PSH6)\) also holds, the last-segment
+   checkpointed panel has clean \(m^{\rho_c}\polylog m\) far-side work with only
+   the direct polylogarithmic suffix scan of \((PSH3)\).
+
+   In particular, under the fixed-branch Gaussian handoff
+   \(K_{\rm tot}=m^{A\gamma+o(1)}\) from \((LGH10)\), it is enough to prove
+   \[
+      \E_ZL_{B(q,Z)}^{\rm raw}
+      \le
+      m^{\rho_c+\zeta+o(1)}
+      \tag{CFM3}
+   \]
+   for some \(\zeta<A\gamma\).  The prefix moment \((CFM2)\) and the raw load
+   exponent \((CFM3)\) are separate tests: the checkpoint product removes the
+   latter excess but never improves the former.
+
+   The continuation-mass version is the special case
+   \(U_B(u)=\log H_B(u)\), \(\Theta_B=\log\tau_B\).  If the reporter keeps
+   \[
+      \mathcal U_B=\{u:H_B(u)\ge\tau_B\},
+      \qquad
+      \tau_B^{-1}\le\log^{O(1)}m,
+      \tag{CFM4}
+   \]
+   and
+   \[
+      \E_Z\sum_{u\in\mathcal T_{\rm cut}(B(q,Z))}g_{B(q,Z)}(u)H_{B(q,Z)}(u)
+      \le
+      m^{\rho_c}\log^{O(1)}m,
+      \tag{CFM5}
+   \]
+   then \((PSH5)\) follows.  Thus an exact continuation-mass or Fano stack
+   reporter may discharge the native prefix count without any additional
+   randomness in the subset.
+
+   For an additive product panel cut after block \(r\), with
+   \(U_q(c_{\le r})=\sum_{j\le r}\phi_j(q,c_j)+R_{r+1}(q)\) and generation
+   weights bounded by \(\log^{O(1)}m\), the cut moment \((CFM2)\) is implied by
+   the scalar product estimate
+   \[
+      \E_Z
+      e^{-\beta\theta_Q}
+      e^{\beta R_{r+1}(q)}
+      \prod_{j\le r}
+         \sum_{a\in\mathcal C_j}
+            e^{\beta\phi_j(q,a)}
+      \le
+      m^{\rho_c}\log^{O(1)}m .
+      \tag{CFM6}
+   \]
+   In a Fano-priced product or lattice stack decoder, the same formula holds with
+   \(\phi_j\) and \(R_{r+1}\) replaced by their priced upper-score versions.
+   Hence the concrete code/lattice task at the last cut is a product prefix
+   moment plus the raw far co-load, not a stronger independence requirement for
+   the checkpoint masks.
+\end{corollary}
+
+\begin{proof}
+   Since \(g_B(u)\ge1\),
+   \[
+      N_{\rm cut}(B)
+      =
+      |\mathcal U_B|
+      \le
+      \sum_{u\in\mathcal T_{\rm cut}(B)}
+         g_B(u)\mathbf1\{U_B(u)\ge\Theta_B\}.
+   \]
+   The exponential majorant
+   \(\mathbf1\{U_B(u)\ge\Theta_B\}\le
+   e^{-\beta\Theta_B}e^{\beta U_B(u)}\), followed by averaging over \(Z\), gives
+   \((PSH5)\) from \((CFM2)\).  Applying
+   \cref{cor:polylog-suffix-handoff-removes-residue-oracle} then gives the clean
+   direct-suffix implementation under \((PSH6)\).  If \(K_{\rm tot}=m^{A\gamma+o(1)}\)
+   and \((CFM3)\) holds with \(\zeta<A\gamma\), then \((PSH6)\) follows by
+   absorbing \(m^{\zeta-A\gamma+o(1)}\) into the polylogarithmic slack.
+
+   The continuation-mass claim is the same argument with \(\beta=1\):
+   \[
+      \mathbf1\{H_B(u)\ge\tau_B\}
+      \le
+      \tau_B^{-1}H_B(u).
+   \]
+   Conditions \((CFM4)\)--\((CFM5)\) therefore imply
+   \(\E_ZN_{\rm cut}(B(q,Z))\le m^{\rho_c}\log^{O(1)}m\).
+
+   Finally, in the additive product panel, summing
+   \(e^{\beta U_q(c_{\le r})}\) over all prefixes at the cut factors as
+   \[
+      e^{\beta R_{r+1}(q)}
+      \prod_{j\le r}\sum_{a\in\mathcal C_j}e^{\beta\phi_j(q,a)},
+   \]
+   exactly as in \cref{lem:additive-product-panel-decoder}.  The polylogarithmic
+   generation weights are absorbed in the right side of \((CFM6)\).  Substitution
+   into \((CFM2)\) proves the product-panel specialization; subtracting Fano
+   branch prices only changes the corresponding upper scores.
+\end{proof}
+
 \begin{corollary}[Checkpoint continuation multiplicity is not free]
    \label{cor:checkpoint-continuation-oversampling-toll}
    In the checkpoint-syndrome setting, suppose the checkpoint hit certificate
