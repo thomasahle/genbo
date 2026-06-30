@@ -98804,6 +98804,165 @@ amplified in the next proposition.
    \(\mathcal F_j\).
 \end{proof}
 
+\begin{corollary}[Reusable limited-independent sign filters]
+   \label{cor:reusable-limited-independent-sign-filter}
+   Work in the setting of
+   \cref{cor:joint-tilted-score-filter-sampler}.  Fix \(\beta\ge0\), and
+   write the \(\beta\)-score-tilted coordinate law as
+   \[
+      P_j(a)=
+      \frac{r_j(a)e^{\beta w_j(a)}}{\sum_br_j(b)e^{\beta w_j(b)}} .
+      \tag{LSG0}
+   \]
+   Let \(\xi_{j,a}\in\{-1,1\}\) be an auxiliary sign mask and set
+   \(M(c)=\sum_j\xi_{j,c_j}\).  For a sign tilt \(0\le\lambda\le\Lambda\),
+   define
+   \[
+      Q_{j,\lambda}(a)
+      =
+      \frac{P_j(a)e^{\lambda\xi_{j,a}}}
+           {\sum_bP_j(b)e^{\lambda\xi_{j,b}}},
+      \qquad
+      Q_\lambda=\prod_jQ_{j,\lambda}.
+      \tag{LSG1}
+   \]
+   Put
+   \[
+      \alpha_j=\sum_aP_j(a)\xi_{j,a},
+      \qquad
+      \zeta_j=\sum_aP_j(a)(w_j(a)-\bar w_j)\xi_{j,a},
+      \qquad
+      \bar w_j=\sum_aP_j(a)w_j(a).
+      \tag{LSG2}
+   \]
+   Suppose the score diameter on every coordinate is at most \(B_W\):
+   \[
+      \max_{a,b\in\mathcal C_j}|w_j(a)-w_j(b)|\le B_W,
+      \tag{LSG3}
+   \]
+   and the sign seed satisfies
+   \[
+      |\alpha_j|\le a<1
+      \qquad(j=1,\ldots,h).
+      \tag{LSG4}
+   \]
+   Under \(Q_\lambda\), let
+   \(\sigma_W^2=\operatorname{Var}_{Q_\lambda}W\),
+   \(\sigma_M^2=\operatorname{Var}_{Q_\lambda}M\), and let
+   \(\rho\) be the correlation of \(W\) and \(M\).  Assume
+   \[
+      \sigma_W^2\ge v_Wh,
+      \qquad
+      |\rho|\le1-\kappa .
+      \tag{LSG5}
+   \]
+   Then
+   \[
+      \sigma_M^2\ge v_Mh,
+      \qquad
+      v_M=(1-a^2)e^{-2\Lambda},
+      \tag{LSG6}
+   \]
+   and the covariance matrix of \((W,M)\) under \(Q_\lambda\) has
+   \[
+      \lambda_{\min}(\Sigma)
+      \ge
+      v_*h,
+      \qquad
+      v_*=
+      \frac{\kappa(2-\kappa)v_Wv_M}{B_W^2+1}.
+      \tag{LSG7}
+   \]
+   Let
+   \[
+      B_*=(B_W^2+4)^{1/2}.
+      \tag{LSG8}
+   \]
+   If the thresholds \(t,s\) obey
+   \[
+      \left|\frac{t-\mu_W}{\sigma_W}\right|\le U,
+      \qquad
+      \left|\frac{s-\mu_M}{\sigma_M}\right|\le U,
+      \tag{LSG9}
+   \]
+   and, with
+   \(W_W=\max\{1,\beta\sigma_W\}\),
+   \(W_M=\max\{1,\lambda\sigma_M\}\),
+   \[
+      W_WW_M
+      \le
+      \frac{\gamma_{U,\kappa}}{16C_{\rm rect}B_*}\sqrt{v_*h},
+      \tag{LSG10}
+   \]
+   then the exact joint tilted rejection sampler outputs a tuple from the
+   original product law \(R\) conditioned on
+   \[
+      W(c)\ge t,\qquad M(c)\ge s
+      \tag{LSG11}
+   \]
+   using \(O_{U,\kappa}(W_WW_M)\) proposals in expectation.
+
+   Moreover, the seed conditions in \((LSG4)\) and the correlation condition in
+   \((LSG5)\) are exactly the finite/net sign audit from
+   \cref{lem:finite-family-limited-independence-sign-filter} and
+   \cref{lem:coefficient-net-sign-mask-transfer}.
+   Indeed, \((PWS8)\) gives
+   \[
+      \operatorname{Cov}_{Q_{j,\lambda}}(w_j,\xi_j)
+      =
+      \frac{\zeta_j}{(\cosh\lambda+\alpha_j\sinh\lambda)^2},
+      \tag{LSG12}
+   \]
+   so limited-independent signs only have to make the exposed
+   \(\alpha_j\)'s and \(\zeta_j\)'s small on the coefficient net.  The decoder
+   never carries the sign sum as a state variable; it samples the locally
+   tilted product law \((LSG1)\) and uses likelihood-ratio rejection.  Thus the
+   randomness needed by this pseudo-random subset is controlled by the
+   coefficient-net size and effective supports, not by the total number of
+   tuples.
+\end{corollary}
+
+\begin{proof}
+   Formula \((PWS7)\) gives
+   \[
+      \operatorname{Var}_{Q_{j,\lambda}}\xi_j
+      =
+      \frac{1-\alpha_j^2}{(\cosh\lambda+\alpha_j\sinh\lambda)^2}
+      \ge
+      (1-a^2)e^{-2\Lambda}.
+   \]
+   Summing over \(j\) proves \((LSG6)\).  The score diameter bound gives
+   \(\sigma_W^2\le B_W^2h\), and \(\sigma_M^2\le h\).  Since
+   \(|\rho|\le1-\kappa\),
+   \[
+      \det\Sigma
+      =
+      \sigma_W^2\sigma_M^2(1-\rho^2)
+      \ge
+      \kappa(2-\kappa)\sigma_W^2\sigma_M^2 .
+   \]
+   For a positive semidefinite \(2\times2\) matrix,
+   \(\lambda_{\min}(\Sigma)\ge\det\Sigma/\operatorname{tr}\Sigma\).  Using
+   \((LSG5)\), \((LSG6)\), and
+   \(\operatorname{tr}\Sigma\le(B_W^2+1)h\) gives \((LSG7)\).
+
+   Each centered increment
+   \(Y_j=(w_j(C_j)-\mu_{W,j},\xi_{j,C_j}-\mu_{M,j})\) under \(Q_\lambda\) has
+   norm at most \(B_*\), because the score coordinate has diameter at most
+   \(B_W\) and the sign coordinate has diameter at most \(2\).  Therefore
+   \((BTBE5)\) holds with \(B=B_*\) and \(v=v_*\).  Conditions \((LSG9)\) and
+   \((LSG10)\) are exactly the bounded-increment sufficient condition in
+   \cref{cor:bivariate-tilted-berry-esseen-filter}, so the joint tilted sampler
+   has the claimed proposal bound and outputs the exact conditioned law.
+
+   The last paragraph follows from
+   \cref{lem:pairwise-sign-mask-effective-support}: \((PWS7)\) controls the
+   sign variance through \(\alpha_j\), and \((PWS8)\) controls the score-sign
+   covariance through \(\zeta_j\).  The finite-family and coefficient-net
+   lemmas give high-probability uniform bounds on precisely those quantities
+   for limited-independent signs.
+\end{proof}
+
 \begin{corollary}[Aligned linear charts compute rate-coverage sketches]
    \label{cor:aligned-linear-chart-rate-coverage-sketch}
    Work in the setting of
