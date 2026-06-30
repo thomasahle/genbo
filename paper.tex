@@ -101089,6 +101089,101 @@ amplified in the next proposition.
    finite-family statement is \((BCA5)\) with this collision bound.
 \end{proof}
 
+\begin{corollary}[Score-observer rank tradeoff for affine fibers]
+   \label{cor:score-observer-rank-affine-support}
+   Work in the Gibbs block setting of
+   \cref{cor:two-temperature-gibbs-block-support}.  Let the near-success set be
+   one affine linear chart
+   \[
+      E_j=z_0+K,
+      \qquad K=\ker B\le\mathbb F_q^N,\quad \dim K=d .
+      \tag{SOF1}
+   \]
+   Let \(D:\mathbb F_q^N\to\mathbb F_q^r\) be a linear observer for the
+   residual score state, and put
+   \[
+      r_D=\dim D K
+      =
+      \operatorname{rank}
+      \begin{pmatrix}B\\D\end{pmatrix}
+      -
+      \operatorname{rank}B .
+      \tag{SOF2}
+   \]
+   For each observer value \(y\in D(E_j)\), write
+   \[
+      E_y=\{z\in E_j:\ Dz=y\}.
+      \tag{SOF3}
+   \]
+   Assume that the query Gibbs score is flat inside every observer fiber:
+   \[
+      \max_{a,b\in E_y}\beta(\phi_j(a)-\phi_j(b))\le\Gamma
+      \qquad(y\in D(E_j)).
+      \tag{SOF4}
+   \]
+   Then every nonempty \(E_y\) has the same size
+   \[
+      M_0=q^{d-r_D},
+      \tag{SOF5}
+   \]
+   and the whole near block satisfies
+   \[
+      N_{2,j}^E
+      =
+      \frac{Z_E(\beta)^2}{Z_E(2\beta)}
+      \ge
+      M_0e^{-\Gamma}.
+      \tag{SOF6}
+   \]
+   Consequently pairwise-independent signs on the raw labels have conditional
+   imbalance
+   \[
+      \E_\xi\alpha_j^2=\nu_j^E\le e^\Gamma q^{-(d-r_D)}.
+      \tag{SOF7}
+   \]
+
+   Thus the affine-fiber sign target has a precise code/lattice tradeoff.  The
+   residual observer rank \(r_D\) is the number of score states that must be
+   enumerated or aggregated by a trellis, theta recursion, or affine solve,
+   while the leftover hidden dimension \(d-r_D\) is the conditional support
+   that powers the random sign or additive mask.  A materialized-state decoder
+   reaches support level \(S\) at polylogarithmic overhead when
+   \(q^{r_D}=\polylog m\) and \(q^{d-r_D}\ge e^\Gamma S\); if \(r_D\) is
+   larger, the same proof must replace state listing by a genuine BCJR/theta
+   aggregate sampler, and if \(d-r_D\) is too small, no bounded auxiliary
+   random weighting can create the missing variance.
+\end{corollary}
+
+\begin{proof}
+   The image of \(K\) under \(D\) has dimension \(r_D\), so
+   \(D(E_j)\) has \(q^{r_D}\) elements.  For a nonempty observer fiber \(E_y\),
+   the difference of any two of its elements lies in \(K\cap\ker D\), and
+   conversely adding any element of \(K\cap\ker D\) stays in the same fiber.
+   Hence \(E_y\) is an affine coset of \(K\cap\ker D\).  Its dimension is
+   \(d-r_D\), proving \((SOF5)\).
+
+   Let \(w_z=e^{\beta\phi_j(z)}\).  Fix \(z\in E_y\), and let
+   \(w_{\min,y}=\min_{a\in E_y}w_a\).  By \((SOF4)\),
+   \(w_z\le e^\Gamma w_{\min,y}\), while
+   \[
+      Z_E(\beta)\ge\sum_{a\in E_y}w_a\ge M_0w_{\min,y}.
+   \]
+   Therefore every conditional atom satisfies
+   \[
+      P_j^E(z)=\frac{w_z}{Z_E(\beta)}\le\frac{e^\Gamma}{M_0}.
+   \]
+   It follows that
+   \[
+      \nu_j^E=\sum_{z\in E_j}P_j^E(z)^2
+      \le
+      \max_zP_j^E(z)
+      \le
+      e^\Gamma/M_0.
+   \]
+   Since \(\nu_j^E=(N_{2,j}^E)^{-1}\), this proves \((SOF6)\), and
+   \((SOF7)\) is \((BCA4)\).
+\end{proof}
+
 \begin{corollary}[Support collapse blocks bounded additive masks]
    \label{cor:support-collapse-blocks-bounded-additive-masks}
    Work with one conditional near block law \(P^E_j\) from
