@@ -9449,6 +9449,78 @@ partition ignores the bias coordinates that certify the list size.
    from \((CTM4)\).
 \end{proof}
 
+\begin{corollary}[Prefix-cut checkpoints need cut support, not leaf support]
+   \label{cor:prefix-cut-checkpoint-reporter}
+   Work in a segmented route trie with checkpoint segments
+   \(s=1,\ldots,r\), local syndrome ranges \(K_s\), and independent
+   pairwise-independent segment syndromes.  Let \(\mathcal U\) be a
+   prefix-free cut at depth \(r\).  Think of reaching a prefix
+   \(u\in\mathcal U\) as handing control to an aggregate reporter, value
+   oracle, Fano prefix list, or certified recursive child, rather than as
+   choosing a terminal leaf.
+
+   Suppose there is a probability law \(\nu\) supported on reporter-valid
+   prefixes in \(\mathcal U\).  For each live prefix \(w\) at checkpoint
+   \(s-1\), let \(\nu_{s,w}\) be the conditional law of the next segment under
+   \(\nu\), conditioned on the event that the sampled cut prefix extends \(w\).
+   If
+   \[
+      N_2(\nu_{s,w})\ge \eta_sK_s
+      \qquad\text{for every live }(s,w),
+      \tag{PCC1}
+   \]
+   then one checkpoint-filtered panel reaches some reporter-valid prefix in
+   \(\mathcal U\) with probability at least
+   \[
+      \prod_{s=1}^r\frac{\eta_s}{1+\eta_s}.
+      \tag{PCC2}
+   \]
+   The syndrome state is local: while scanning segment \(s\), the decoder
+   carries only the \(K_s\)-state syndrome for that segment and then forgets it
+   at the cut boundary.
+
+   Moreover the cut law must have collision support
+   \[
+      N_2(\nu)\ge \prod_{s=1}^r\eta_sK_s .
+      \tag{PCC3}
+   \]
+   Thus checkpoint thinning can move the required multiplicity from terminal
+   leaves to a prefix cut, but it cannot erase it.  A positive construction
+   must provide a large collision-support cut together with an output-sensitive
+   reporter for the suffix value behind each retained prefix.  The
+   terminal-leaf route is the special case where the cut is the leaf set, and
+   then \cref{cor:terminal-collision-chain-barrier} recovers the terminal
+   support obstruction.
+
+   In particular, a Fano-biased prefix-list decoder of
+   \cref{lem:fano-biased-prefix-list} implements the reporter side of this
+   corollary whenever its prefix moment bound lists all prefixes in
+   \(\mathcal U\) that pass the aggregate-value threshold within
+   \(m^{\rho_c}\polylog m\) work.  The remaining near-side theorem is then the
+   cut-support statement \((PCC1)\)--\((PCC3)\), not stronger randomness in
+   the checkpoint masks.
+\end{corollary}
+
+\begin{proof}
+   Expose the checkpoint syndromes in order.  Conditional on having reached a
+   retained live prefix \(w\) at the start of segment \(s\), the next segment
+   syndrome seed is fresh and \(\nu_{s,w}\) is fixed.  Applying
+   \cref{lem:weighted-syndrome-collision-thinning} gives a surviving next
+   segment with conditional probability at least
+   \(\eta_s/(1+\eta_s)\).  Multiplying these conditional lower bounds over
+   the \(r\) segments gives \((PCC2)\).  The local-state statement is the same
+   checkpoint-forgetting argument as in
+   \cref{cor:checkpoint-syndrome-local-state}.
+
+   The support lower bound is exactly the collision-chain calculation from
+   \cref{cor:terminal-collision-chain-barrier}, applied to the cut law
+   \(\nu\) instead of a terminal leaf law and with \(M_s=\eta_sK_s\).  The
+   final Fano statement is just the work guarantee of
+   \cref{lem:fano-biased-prefix-list}: once a retained cut prefix lies above
+   the aggregate-value threshold, the prefix-list decoder materializes that
+   reporter call within the certified prefix moment budget.
+\end{proof}
+
 \begin{corollary}[Checkpoint continuation multiplicity is not free]
    \label{cor:checkpoint-continuation-oversampling-toll}
    In the checkpoint-syndrome setting, suppose the checkpoint hit certificate
