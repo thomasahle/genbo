@@ -2555,6 +2555,29 @@ P160. (*** 30M STREAMING BREAKTHROUGH: the gap was PROBE FRACTION, not the route
     leverage engine change for streaming AND OOD. GREENLIT (multi-hour perf rewrite). Block-merge compaction =
     deprioritized (search dominates). 1M=1.0000 mechanism proof banked regardless.
 
+P161. (*** CRITICAL ELIGIBILITY CONSTRAINT (audit-caught): STREAMING track = HARD 8GB DRAM + 1hr, COMPACT index over ACTIVE points -- our 0.978 config is DOUBLY INELIGIBLE ***)
+    The independent audit workflow (wgd9wmg3y, 5 dims, 3 rate-limited) caught what the whole session missed. CONFIRMED
+    in the harness: benchmark/runner.py:269 `mem_limit = ... if track!='streaming' else (8*1024*1024*1024)` -> the
+    streaming Docker container is HARD-CAPPED at 8GB DRAM; neurips23/README.md:28 states "1 hour and a DRAM limit of
+    8GB ... maintain a COMPACT index over the ACTIVE points rather than index the entire anticipated set and use
+    tombstones." (Machine = Azure D8lds_v5, 8 vCPU / 16GB, container limited to 8GB; competitor indexsize: zilliz ~2GB,
+    diskann ~4.9GB -- all < 8GB.) *** So our headline recall@10=0.978 @ p=512 is DOUBLY INELIGIBLE: (a) TIME -- ~20x
+    over the 1hr budget at the REAL NQ=10000 (our SBANN_NQ defaulted to 1000, undercounting the dominant search cost
+    ~10x; the <1hr verdict was projected, never measured); (b) MEMORY -- the full 12GB float base (or full-nb=30M float
+    cache, which commits all 30M rows by end-of-run) blows the 8GB cap. *** The recall VALUE itself is sound/faithful to
+    official (per-step float GT step{N}.gt100, top-10/10, row-aligned int8->float rerank reading only BASE vectors +
+    queries, NO GT leak; deviations = NQ=1000 subsample + ignored tie-window, both tiny & strictly CONSERVATIVE = we
+    score equal-or-LOWER). So 0.978 is "true recall of a config that does not make the leaderboard." *** ELIGIBLE DESIGN
+    (the pivot): cache ONLY the ACTIVE float window (~10.3M x 100 x 4 = 4.1GB, slot-indexed, NOT full-nb) + compact
+    active int8/apq4 codes (~10.3M x100 = ~1GB) + router + buffers = ~6GB < 8GB. Compaction to active-only is now an
+    ELIGIBILITY requirement (the 8GB cap + the "compact index" intent), not just budget. THEN the scan-throughput rewrite
+    for the 1hr time budget. Open question: does recall stay >0.922 (top-3) under active-window-cache + compact index +
+    whatever p fits 1hr? TBD on streaming2's float-cache QPS. Minor audit findings (conservative, non-blocking): recall
+    ignores official count_ties window (~0.02%); non-cache replace-op rerank reads fb.row(tag) not fb.row(src)
+    (main.rs:1135, INERT here -- msturing-30M has 0 replace ops). FIX list: SBANN_NQ=10000 for any budget verdict;
+    active-window float cache; madvise/free dead rows; assert fbase.nb==full.nb. The 1M=1.0000 used the int8-space
+    self-GT fallback (NOT float-GT) -> 1M proxies are NOT official-comparable; only the 30M gtdir/float-GT path is.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
