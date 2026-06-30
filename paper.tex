@@ -6567,6 +6567,173 @@ partition ignores the bias coordinates that certify the list size.
    by Paley--Zygmund.
 \end{proof}
 
+\begin{lemma}[Weighted syndrome hits are controlled by collision entropy]
+   \label{lem:weighted-syndrome-collision-thinning}
+   Work in the setting of
+   \cref{lem:pairwise-independent-syndrome-thinning}, and let
+   \(\nu\) be any probability distribution on a fixed set
+   \(A\subseteq\mathcal T\), independent of the syndrome seed.  Put
+   \[
+      Y_\sigma=\nu(R_\sigma)
+      =
+      \sum_{i\in A}\nu(i)\mathbf 1\{i\in R_\sigma\},
+      \qquad
+      N_2(\nu)=\left(\sum_{i\in A}\nu(i)^2\right)^{-1}.
+      \tag{WSH1}
+   \]
+   Then
+   \[
+      \E Y_\sigma=|G|^{-1},
+      \qquad
+      \E Y_\sigma^2
+      \le
+      |G|^{-2}+|G|^{-1}N_2(\nu)^{-1},
+      \tag{WSH2}
+   \]
+   and therefore
+   \[
+      \Prb[Y_\sigma>0]
+      \ge
+      \frac{N_2(\nu)}{N_2(\nu)+|G|}.
+      \tag{WSH3}
+   \]
+   In particular, if the collision-effective support satisfies
+   \(N_2(\nu)\ge\eta |G|\), then the syndrome hits the support of \(\nu\) with
+   probability at least
+   \[
+      \frac{\eta}{1+\eta}.
+      \tag{WSH4}
+   \]
+
+   Consequently, in the checkpoint setting of
+   \cref{cor:checkpoint-syndrome-local-state}, the cardinality hypothesis
+   \(|\mathcal B_s(u)|\ge\eta_sK_s\) may be replaced by the following weighted
+   one: for every live prefix \(u\), there is a probability law
+   \(\nu_{s,u}\) supported on good continuations \(\mathcal B_s(u)\) with
+   \[
+      N_2(\nu_{s,u})\ge\eta_sK_s.
+      \tag{WSH5}
+   \]
+   Under independent checkpoint seeds, the same lower bound
+   \[
+      \Prb[W_r\cap R\ne\emptyset]
+      \ge
+      \prod_{s=1}^r\frac{\eta_s}{1+\eta_s}
+      \tag{WSH6}
+   \]
+   follows.
+\end{lemma}
+
+\begin{proof}
+   The first moment is immediate from the uniformity of each tuple syndrome.
+   For two distinct tuples \(i,i'\), the proof of
+   \cref{lem:pairwise-independent-syndrome-thinning} shows that the two
+   retention indicators are independent.  Hence
+   \[
+      \E Y_\sigma^2
+      =
+      \sum_i\nu(i)^2\Prb[i\in R_\sigma]
+      +
+      \sum_{i\ne i'}\nu(i)\nu(i')
+      \Prb[i,i'\in R_\sigma]
+      \le
+      |G|^{-1}\sum_i\nu(i)^2+|G|^{-2},
+   \]
+   proving \((WSH2)\).  Paley--Zygmund gives
+   \[
+      \Prb[Y_\sigma>0]
+      \ge
+      \frac{(\E Y_\sigma)^2}{\E Y_\sigma^2}
+      \ge
+      \frac{|G|^{-2}}
+           {|G|^{-2}+|G|^{-1}N_2(\nu)^{-1}}
+      =
+      \frac{N_2(\nu)}{N_2(\nu)+|G|},
+   \]
+   which is \((WSH3)\), and \((WSH4)\) is the substitution
+   \(N_2(\nu)\ge\eta|G|\).
+
+   For checkpoints, repeat the exposure argument from
+   \cref{cor:checkpoint-syndrome-local-state}.  Conditional on any retained
+   prefix \(u\in W_{s-1}\), the next checkpoint seed is still fresh and
+   \(\nu_{s,u}\) is fixed.  By \((WSH4)\), with probability at least
+   \(\eta_s/(1+\eta_s)\) some good continuation in the support of
+   \(\nu_{s,u}\) satisfies the checkpoint syndrome.  Multiplying these
+   conditional lower bounds over the independent checkpoint segments proves
+   \((WSH6)\).
+\end{proof}
+
+\begin{corollary}[Finite-state checkpoint multiplicity is a squared-partition test]
+   \label{cor:finite-state-checkpoint-collision-test}
+   Consider one checkpoint segment whose good continuations from a prefix
+   \(u\) are represented by a finite acyclic state graph of paths
+   \(\mathcal P(u)\).  Let the query assign each path a positive weight
+   \(W_q(\pi)\), and assume the segment syndrome on paths satisfies the
+   pairwise-independence hypothesis of
+   \cref{lem:weighted-syndrome-collision-thinning}.  Define
+   \[
+      Z_1(u)=\sum_{\pi\in\mathcal P(u)}W_q(\pi),
+      \qquad
+      Z_2(u)=\sum_{\pi\in\mathcal P(u)}W_q(\pi)^2,
+      \qquad
+      N_2(u)=\frac{Z_1(u)^2}{Z_2(u)}.
+      \tag{FCE1}
+   \]
+   If \(N_2(u)\ge\eta_sK_s\) for every live prefix entering segment \(s\),
+   then the checkpoint hit factor for that segment is at least
+   \[
+      \frac{\eta_s}{1+\eta_s}.
+      \tag{FCE2}
+   \]
+   Therefore the polynomial checkpoint regime of
+   \cref{cor:polylog-state-checkpoint-polynomial-thinning} can be certified by
+   a finite-state code, trellis, or lattice block whenever
+   \[
+      \frac{Z_1(u)^2}{Z_2(u)}
+      \ge
+      K_s\cdot C\frac{r}{\log\log m}
+      \tag{FCE3}
+   \]
+   holds at every checkpoint prefix, with the same local-state and hit bounds
+   as \((PCT6)\)--\((PCT8)\).
+
+   The quantities in \((FCE1)\) are ordinary transfer-matrix observables:
+   \(Z_1\) is the usual BCJR or sum-product partition function, while \(Z_2\)
+   is computed on the same state graph with every edge weight squared.  Thus a
+   structured code or lattice supplies checkpoint multiplicity for this
+   weighted checkpoint certificate exactly through the collision-effective
+   support of its tilted segment posterior.  If this squared-partition ratio is
+   small on many segments, stronger hash independence will not fix the
+   checkpoint proof; the segment posterior itself has collapsed to too few
+   effective continuations for this local-thinning argument.
+\end{corollary}
+
+\begin{proof}
+   Apply
+   \cref{lem:weighted-syndrome-collision-thinning} to the probability law
+   \[
+      \nu_{s,u}(\pi)=\frac{W_q(\pi)}{Z_1(u)}
+      \qquad(\pi\in\mathcal P(u)).
+   \]
+   Its collision-effective support is
+   \[
+      \left(\sum_{\pi\in\mathcal P(u)}\nu_{s,u}(\pi)^2\right)^{-1}
+      =
+      \frac{Z_1(u)^2}{Z_2(u)}.
+   \]
+   Hence \(N_2(u)\ge\eta_sK_s\) gives \((FCE2)\).  Substituting
+   \(\eta_s=C r/\log\log m\) in
+   \cref{cor:polylog-state-checkpoint-polynomial-thinning} gives \((FCE3)\)
+   and the polynomial-regime conclusion.
+
+   On an acyclic weighted graph, both \(Z_1\) and \(Z_2\) are computed by the
+   same backward recursion.  The second recursion replaces each local
+   transition weight \(r_e(q)\) by \(r_e(q)^2\), or equivalently replaces the
+   transition matrix by its entrywise square in the homogeneous finite-state
+   case.  This proves the transfer-matrix statement and the final
+   interpretation.
+\end{proof}
+
 \begin{corollary}[Difference-universal syndromes suffice with a random bucket]
    \label{cor:difference-universal-syndrome-thinning}
    Let \(G\) be a finite abelian group and let
