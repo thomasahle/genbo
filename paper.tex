@@ -100818,6 +100818,145 @@ amplified in the next proposition.
    \(\ell-r+1=(\kappa+o(1))\log\log m\), reducing \((SBF4)\) to \((SBF8)\).
 \end{proof}
 
+\begin{corollary}[Balanced score-window alphabets instantiate MDS checkpoints]
+   \label{cor:balanced-score-window-mds-segment}
+   Let one checkpoint segment have length
+   \[
+      \ell=\kappa\log\log m+O(1)
+   \]
+   and let every coordinate alphabet be identified with \(\mathbb F_q\).  On
+   coordinate \(i\), suppose the retained alphabet \(A_i\subseteq\mathcal P_i\)
+   has size \(q\) and weights
+   \[
+      W_i(a)=\exp(\beta_iG_i(a)),
+      \qquad a\in A_i,
+      \tag{BSW1}
+   \]
+   whose dimensionless score width is bounded by
+   \[
+      \max_{a,b\in A_i}\beta_i|G_i(a)-G_i(b)|\le D .
+      \tag{BSW2}
+   \]
+   Use the explicit MDS syndrome \(H\in\mathbb F_q^{r\times\ell}\) from
+   \cref{cor:explicit-mds-local-check-segment}, with
+   \[
+      r=A_{\rm syn}\log_q\log m+O(1).
+      \tag{BSW3}
+   \]
+   Then the two-temperature Fourier-bias hypothesis of that corollary holds
+   with
+   \[
+      \mu_*\le 1-e^{-2D}.
+      \tag{BSW4}
+   \]
+   Hence
+   \[
+      \mathfrak B_1(H),\mathfrak B_2(H)\le(\log m)^{-C+o(1)}
+      \tag{BSW5}
+   \]
+   whenever
+   \[
+      (\ell-r+1)\bigl[-\log(1-e^{-2D})\bigr]
+      \ge(A_{\rm syn}+C+o(1))\log\log m.
+      \tag{BSW6}
+   \]
+
+   The same score-window condition gives a direct collision-support lower
+   bound.  For each coordinate,
+   \[
+      2\log Z_{i,1}-\log Z_{i,2}
+      \ge
+      \log q-2D,
+      \tag{BSW7}
+   \]
+   and therefore the segment passes the local checkpoint support audit for
+   range \(K\) and support ratio \(\eta\) as soon as
+   \[
+      \ell(\log q-2D)-r\log q
+      +2\log(1-\varepsilon_1)-\log(1+\varepsilon_2)
+      \ge
+      \log K+\log\eta,
+      \tag{BSW8}
+   \]
+   where \(\varepsilon_t=\mathfrak B_t(H)\).  In particular, if
+   \(q\asymp\log\log m\), \(D=O(1)\), and \((BSW6)\) holds, then
+   \(q^r=(\log m)^{A_{\rm syn}+o(1)}\), the support side has
+   \[
+      \ell(\log q-2D)-r\log q
+      =
+      \kappa\log\log m\log\log\log m
+      -A_{\rm syn}\log\log m
+      +o(\log\log m\log\log\log m),
+      \tag{BSW9}
+   \]
+   and every polylogarithmic checkpoint range
+   \(K=\log^{A_{\rm chk}+o(1)}m\), \(\eta=\log^{A_\eta+o(1)}m\) is supported
+   with room to spare.
+
+   Finally, the required retained alphabets are supplied by a simple occupancy
+   condition.  Suppose coordinate \(i\) has \(N_i\) independent candidate
+   symbols and a score window \(J_i\) of dimensionless width at most \(D\), and
+   put \(p_i=\Pr[\beta_iG_i\in J_i]\).  If
+   \[
+      N_ip_i\ge4\bigl(q+\log(\ell/\delta)\bigr)
+      \qquad(i\le\ell),
+      \tag{BSW10}
+   \]
+   then with probability at least \(1-\delta\), every coordinate has at least
+   \(q\) candidates in its window, and choosing any \(q\) of them gives the
+   alphabet required above.
+
+   Thus the local-code construction can use deterministic bounded-window
+   alphabets once they have been found; the random part of a random code,
+   lattice shell, or candidate pool is only to populate these windows.  The
+   needed randomness is an occupancy estimate plus the pairwise-independent
+   checkpoint offset, not a fully random subset of all tuples.  The remaining
+   global question is unchanged: these local segments must still be placed
+   inside a quotient reporter whose CPFA prefix work and raw far emission obey
+   \((CPFA5)\)--\((CPFA6)\).
+\end{corollary}
+
+\begin{proof}
+   Condition \((BSW2)\) says that the unnormalized weights on \(A_i\) have
+   dynamic range at most \(e^D\).  Applying
+   \cref{cor:score-band-mds-posterior-bias} with
+   \(\Lambda=e^D\) gives the uniform floor \(\tau=e^{-2D}\), hence
+   \((BSW4)\).  Substitution into the MDS bias inequality gives
+   \((BSW5)\)--\((BSW6)\).
+
+   For the support scalar, let \(w_i^-=\min_{a\in A_i}W_i(a)\) and
+   \(w_i^+=\max_{a\in A_i}W_i(a)\).  Then \(w_i^+/w_i^-\le e^D\), and
+   \[
+      Z_{i,1}\ge q w_i^-,
+      \qquad
+      Z_{i,2}\le q(w_i^+)^2.
+   \]
+   Therefore
+   \[
+      2\log Z_{i,1}-\log Z_{i,2}
+      \ge
+      2\log(qw_i^-)-\log(q(w_i^+)^2)
+      \ge
+      \log q-2D,
+   \]
+   proving \((BSW7)\).  Summing \((BSW7)\) over the \(\ell\) coordinates and
+   substituting the result into \((TBS7)\) gives \((BSW8)\).  The asymptotic
+   statement \((BSW9)\) follows from
+   \(\ell=\kappa\log\log m+O(1)\), \(q\asymp\log\log m\), and
+   \(r\log q=A_{\rm syn}\log\log m+o(\log\log m)\).
+
+   For the occupancy statement, let \(X_i\) be the number of candidates in
+   \(J_i\).  Then \(X_i\sim{\rm Bin}(N_i,p_i)\), with mean
+   \(\mu_i=N_ip_i\).  Under \((BSW10)\), \(q\le\mu_i/4\), and Chernoff's
+   bound gives
+   \[
+      \Pr[X_i<q]\le\Pr[X_i<\mu_i/4]\le e^{-9\mu_i/32}
+      \le e^{-(q+\log(\ell/\delta))}\le\delta/\ell .
+   \]
+   A union bound over the \(\ell\) coordinates proves that all windows contain
+   at least \(q\) symbols with probability at least \(1-\delta\).
+\end{proof}
+
 \begin{corollary}[Checkpoint products thin emissions, not prefix work]
    \label{cor:checkpoint-product-far-load-accounting}
    Work in the checkpointed quotient reporter of
