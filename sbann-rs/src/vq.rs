@@ -1829,8 +1829,7 @@ impl Index {
     /// Supports the default apq4/i8 layout — RESID/RESIDQ/USE512FS are not used on the streaming path.
     pub fn compact_live(&mut self, a0: usize) {
         let ord = std::sync::atomic::Ordering::Relaxed;
-        assert!(!RESID.load(ord) && !RESIDQ.load(ord) && !USE512FS.load(ord),
-            "compact_live: RESID/RESIDQ/USE512FS layouts unsupported");
+        assert!(!RESID.load(ord) && !RESIDQ.load(ord), "compact_live: RESID/RESIDQ layouts unsupported");
         let d = self.d;
         let nc = self.router.n_cells();
         let bb = self.bb;
@@ -1867,25 +1866,38 @@ impl Index {
             let pt = (idx / a0) as u32;
             ids[cur[cc as usize] as usize] = pt; cur[cc as usize] += 1;
         }
-        // 3) encode blocks per cell; raw is slot-indexed (raw_orig_indexed=false), self-contained.
+        // 3) encode blocks per cell IN PARALLEL (each cell -> its own buffers), then concatenate in cell
+        // order. The per-cell encode is the dominant compaction cost at 10M live; fanning it out keeps
+        // compaction affordable inside the streaming-track 1-hour budget. raw is slot-indexed.
+        let comp = &*self.comp;
+        let per_cell: Vec<(Vec<u8>, Vec<u32>, Vec<i8>)> = (0..nc).into_par_iter().map(|cell| {
+            let (s, e) = (cell_start[cell] as usize, cell_start[cell + 1] as usize);
+            let pts = &ids[s..e];
+            let mut bl: Vec<u8> = Vec::new();
+            let mut so: Vec<u32> = Vec::new();
+            let mut rw: Vec<i8> = Vec::new();
+            let mut i = 0;
+            while i < pts.len() {
+                let cnt = (pts.len() - i).min(16);
+                let rows: Vec<&[i8]> = (0..16).map(|j| if j < cnt { &rowbuf[pts[i + j] as usize * d..pts[i + j] as usize * d + d] } else { &[][..] }).collect();
+                comp.encode_block(&rows, cnt, &[], &mut bl);
+                for j in 0..16 {
+                    so.push(if j < cnt { origs[pts[i + j] as usize] } else { u32::MAX });
+                    if j < cnt { rw.extend_from_slice(rows[j]); } else { rw.resize(rw.len() + d, 0); }
+                }
+                i += 16;
+            }
+            (bl, so, rw)
+        }).collect();
         let mut blocks: Vec<u8> = Vec::new();
         let mut slot_orig: Vec<u32> = Vec::new();
         let mut raw: Vec<i8> = Vec::new();
         let mut cell_bstart = vec![0u32; nc + 1];
         for cell in 0..nc {
-            let (s, e) = (cell_start[cell] as usize, cell_start[cell + 1] as usize);
-            let pts = &ids[s..e];
-            let mut i = 0;
-            while i < pts.len() {
-                let cnt = (pts.len() - i).min(16);
-                let rows: Vec<&[i8]> = (0..16).map(|j| if j < cnt { &rowbuf[pts[i + j] as usize * d..pts[i + j] as usize * d + d] } else { &[][..] }).collect();
-                self.comp.encode_block(&rows, cnt, &[], &mut blocks);
-                for j in 0..16 {
-                    slot_orig.push(if j < cnt { origs[pts[i + j] as usize] } else { u32::MAX });
-                    if j < cnt { raw.extend_from_slice(rows[j]); } else { raw.resize(raw.len() + d, 0); }
-                }
-                i += 16;
-            }
+            let (bl, so, rw) = &per_cell[cell];
+            blocks.extend_from_slice(bl);
+            slot_orig.extend_from_slice(so);
+            raw.extend_from_slice(rw);
             cell_bstart[cell + 1] = if bb > 0 { (blocks.len() / bb) as u32 } else { (slot_orig.len() / 16) as u32 };
         }
         // 4) install the new main and reset the append buffer.
@@ -1897,8 +1909,38 @@ impl Index {
         self.n_main = n;
         self.main_rev = None;
         self.resid_codes = Vec::new();
-        self.blocks_il = Vec::new();
-        self.cell_ilstart = Vec::new();
+        // rebuild the 64-wide AVX-512 interleaved superblock layout (USE512FS) so the compacted main is
+        // scanned by the same fast path the build produced — else the search would read a stale/empty il.
+        if bb > 0 && USE512FS.load(ord) {
+            let m = bb / 8;
+            let mut cell_ilstart = vec![0u32; nc + 1];
+            for cell in 0..nc {
+                let nb = (self.cell_bstart[cell + 1] - self.cell_bstart[cell]) as usize;
+                cell_ilstart[cell + 1] = cell_ilstart[cell] + (nb / 4) as u32;
+            }
+            let bl = &self.blocks;
+            let cbs = &self.cell_bstart;
+            // per-cell interleave (parallel) -> concatenate; each cell's superblocks are contiguous.
+            let per: Vec<Vec<u8>> = (0..nc).into_par_iter().map(|cell| {
+                let bs = cbs[cell] as usize;
+                let nfull = (cbs[cell + 1] - cbs[cell]) as usize / 4;
+                let mut out = vec![0u8; nfull * bb * 4];
+                for s in 0..nfull {
+                    let b = bs + 4 * s;
+                    pq::interleave4(&bl[b * bb..(b + 1) * bb], &bl[(b + 1) * bb..(b + 2) * bb],
+                        &bl[(b + 2) * bb..(b + 3) * bb], &bl[(b + 3) * bb..(b + 4) * bb], m,
+                        &mut out[s * bb * 4..(s + 1) * bb * 4]);
+                }
+                out
+            }).collect();
+            let mut blocks_il: Vec<u8> = Vec::new();
+            for c in &per { blocks_il.extend_from_slice(c); }
+            self.blocks_il = blocks_il;
+            self.cell_ilstart = cell_ilstart;
+        } else {
+            self.blocks_il = Vec::new();
+            self.cell_ilstart = Vec::new();
+        }
         self.ins_blocks = vec![Vec::new(); nc];
         self.ins_gidx = vec![Vec::new(); nc];
         self.ins_full_blocks = vec![0; nc];

@@ -999,15 +999,31 @@ fn stream_runbook(base: &str, qpath: &str, opspath: &str, router_s: &str, comp_s
     let (max_pts, ops) = parse_ops(opspath);
     let dpb: usize = std::env::var("SBANN_DPB").ok().and_then(|s| s.parse().ok()).unwrap_or(2);
     let eta: f32 = std::env::var("SBANN_ETA").ok().and_then(|s| s.parse().ok()).unwrap_or(4.0);
-    // cold-start: train router cells + PQ codebook on the first n_init base rows, then start EMPTY
-    // (every live point arrives via insert()) so this measures true streaming, not a warm prebuild.
+    // cold-start: train router cells + PQ codebook on a representative sample, then start EMPTY (every
+    // live point arrives via insert()) so this measures true streaming, not a warm prebuild. Default =
+    // the first n_init base rows; for CLUSTERED data (where a contiguous prefix is one cluster) pass
+    // SBANN_TRAIN_FILE=<strided i8bin sample> so the cells cover all clusters.
     let n_init = std::env::var("SBANN_NINIT").ok().and_then(|s| s.parse().ok()).unwrap_or(200_000).min(full.nb);
-    let train = I8Bin::open_range(base, 0, n_init).expect("train view");
-    let mu = mean_of(&train);
-    let router = match build_router(&train, router_s, c, mu) { Some(r) => r, None => return };
-    let comp = make_comp(&train, comp_s, dpb, eta);
-    let empty = I8Bin::open_range(base, 0, 0).expect("empty view");
-    let mut idx = vq::Index::build(router, comp, &empty, a0);
+    // SBANN_LOAD_EMPTY=<path>: reuse a previously trained-but-empty index (router+codebook) instead of
+    // retraining — lets a p-sweep over a fine hierk router skip the (free, but wall-expensive) k-means
+    // each run. SBANN_SAVE_EMPTY=<path>: train, then persist the empty index for later reuse.
+    let mut idx = if let Ok(lp) = std::env::var("SBANN_LOAD_EMPTY") {
+        let li = vq::Index::load_from(&lp).expect("load empty index");
+        println!("  [loaded trained empty index from {lp}]");
+        li
+    } else {
+        let train = match std::env::var("SBANN_TRAIN_FILE") {
+            Ok(tf) => { let t = I8Bin::open(&tf).expect("train file"); println!("  [cold-start trained on {tf} n={}]", t.nb); t }
+            Err(_) => I8Bin::open_range(base, 0, n_init).expect("train view"),
+        };
+        let mu = mean_of(&train);
+        let router = match build_router(&train, router_s, c, mu) { Some(r) => r, None => return };
+        let comp = make_comp(&train, comp_s, dpb, eta);
+        let empty = I8Bin::open_range(base, 0, 0).expect("empty view");
+        let bi = vq::Index::build(router, comp, &empty, a0);
+        if let Ok(sp) = std::env::var("SBANN_SAVE_EMPTY") { bi.save_to(&sp).expect("save empty index"); println!("  [saved trained empty index to {sp}]"); }
+        bi
+    };
     println!("[stream_runbook] base nb={} d={d} max_pts={max_pts} ops={} | train={n_init} router={router_s} comp={comp_s} a0={a0} C={c} dpb={dpb}",
         full.nb, ops.len());
     println!("  trained cold-start structure in {:.1}s", t0.elapsed().as_secs_f64());
