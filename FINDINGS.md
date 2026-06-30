@@ -2614,6 +2614,17 @@ P163. (*** PIVOTAL & POSITIVE: the 14x scan deficit is RECOVERABLE PATH OVERHEAD
     P158/P162). *** DECISION: GREENLIT the path-optimization -- highest-leverage work in the session, recoverable in
     hours (not a ground-up kernel rewrite), projects to eligible top-3/win on streaming AND lifts OOD. *** (Independent
     code-level scan analysis workflow wxkgkaojd running in parallel to produce a ranked optimization plan to guide it.)
+    WORKFLOW VERDICT (wxkgkaojd, 3/4 analyses, synth rate-limited) -- CONVERGES with streaming2 (kernel at peak,
+    deficit is post-kernel host logic) + adds a ranked plan with file:line: (1) [biggest] the threshold-bounded pool
+    streaming2 ADDED is likely the culprit -- per-candidate branch+push breaks vectorization + trashes prefetch
+    locality; REVERT to native flat-IVF collect (vq.rs:1664-1745) = unconditional push into a pre-sized pool + ONE
+    select_nth AFTER the full scan (A/B test it). (2) PREFETCH slot_orig indices -> miss penalty 150->40 cyc. (3)
+    Defer RESIDQ adjustment to POST-scan (not per-cell) -> drops per-cell negdot_i8 + query re-reads. (4) Pre-MERGE
+    main+buffer into one pool (kills the double-scan; subsumes the unbounded scalar scan_ins_pool). Est ~5-8x ->
+    0.9-1.5e9 cand/s. HONEST CEILING: a residual ~1.5-2x is NOT path-recoverable (i8 LUT precision -> coarser ranking
+    + mem-BW at high candidate counts). So realistic prize = TOP-3 ELIGIBLE (p~128-256, recall ~0.90-0.95, beats
+    zilliz 0.922/pinecone 0.912); the 0.97/p=512 WIN is a stretch needing the residual kernel factor. Relayed to
+    streaming2; same fixes lift OOD QPS@90%. NEXT = measured post-opt eligible 30M recall@10 at NQ=10000 in 8GB.
 
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
