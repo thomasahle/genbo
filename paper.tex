@@ -10395,6 +10395,89 @@ partition ignores the bias coordinates that certify the list size.
    summed over at most \(m\) far points, gives \((LFC3)\).
 \end{proof}
 
+\begin{corollary}[Last-segment CPFA panels terminalize product states]
+   \label{cor:last-segment-cpfa-product-terminalizer}
+   Work in one localized product or Fano-priced product-stack state with
+   \(m\) residents and projected dimension \(D\).  Suppose the checkpointed
+   prefix and suffix handoff satisfy the hypotheses of
+   \cref{cor:last-segment-gaussian-checkpoint-handoff} and
+   \cref{cor:polylog-suffix-handoff-removes-residue-oracle}, and that on the
+   checkpoint hit event the suffix reporter scans a polylogarithmic
+   continuation set and emits a verified useful port for the local near
+   witness.  Write the one-panel hit lower bound from \((LGH9)\) as
+   \[
+      h_m\ge\log^{-A_h}m .
+      \tag{CPFT1}
+   \]
+   Assume further that the product bookkeeping and raw far-side conditions of
+   \cref{cor:last-segment-product-rate-cpfa-far-side} hold, so that one
+   checkpointed panel has expected prefix/suffix scan work and retained
+   invalid-emission work at most
+   \[
+      D\,m^{\rho_c}\log^{A_w}m,
+      \tag{CPFT2}
+   \]
+   and retained storage at most
+   \[
+      m^{1+\rho_c}\log^{A_s}m .
+      \tag{CPFT3}
+   \]
+
+   For any \(0<\delta\le1/2\), store and query
+   \[
+      R=\left\lceil h_m^{-1}\log\frac1\delta\right\rceil
+      \tag{CPFT4}
+   \]
+   independent such panels, quotienting duplicate reports by verified port.
+   Then the state reporter emits a useful verified port with probability at
+   least
+   \[
+      1-\delta ,
+      \tag{CPFT5}
+   \]
+   and its expected work, retained invalid-emission load, and storage are
+   bounded by
+   \[
+      D\,m^{\rho_c}\log^{A_w+A_h+O(1)}m\log\frac1\delta,
+      \tag{CPFT6}
+   \]
+   and
+   \[
+      m^{1+\rho_c}\log^{A_s+A_h+O(1)}m\log\frac1\delta,
+      \tag{CPFT7}
+   \]
+   respectively.
+
+   Consequently, in a port skeleton, any state satisfying these
+   last-segment CPFA product conditions may be used as a terminalized state in
+   the sense of
+   \cref{cor:terminalized-scaled-grs-skeleton-compiler}, with the
+   dimension-charged work sum \((CPFT6)\).  The random-subset side is fully
+   accounted for by checkpoint-local pairwise-independent syndromes; the
+   remaining mathematical obligations for this branch are exactly the
+   near cut-support hypotheses in \((LGH5)\)--\((LGH8)\), the product
+   \(\mathfrak q/\mathfrak f\) rate estimates in
+   \((LFC2)\)--\((LFC5)\), and the polylogarithmic suffix size.
+\end{corollary}
+
+\begin{proof}
+   A single checkpointed panel reports the useful port with probability at
+   least \(h_m\) by the near-hit statement \((LGH9)\) and the assumed exact
+   suffix reporter.  Independent repetition gives miss probability
+   \[
+      (1-h_m)^R\le e^{-Rh_m}\le\delta,
+   \]
+   proving \((CPFT5)\).
+
+   The work and invalid-load bounds are \(R\) times the one-panel bound
+   \((CPFT2)\); using \(R\le1+h_m^{-1}\log(1/\delta)\) and \((CPFT1)\) gives
+   \((CPFT6)\).  The storage calculation is identical from \((CPFT3)\), giving
+   \((CPFT7)\).  Thus the state satisfies the useful-port and polylogarithmic
+   resource hypotheses needed in the proof of
+   \cref{cor:terminalized-scaled-grs-skeleton-compiler}; substituting
+   \((CPFT6)\) into the route-local work sum gives the final statement.
+\end{proof}
+
 \begin{corollary}[Checkpoint continuation multiplicity is not free]
    \label{cor:checkpoint-continuation-oversampling-toll}
    In the checkpoint-syndrome setting, suppose the checkpoint hit certificate
