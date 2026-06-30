@@ -97922,6 +97922,64 @@ amplified in the next proposition.
    \(\delta=|R|/M\ge1/M\), giving \(M\ge\delta^{-1}\) and hence \((SAF3)\).
 \end{proof}
 
+\begin{corollary}[Affine hash filters reduce to carry rank]
+   \label{cor:affine-hash-carry-rank-dichotomy}
+   Let a compact native trellis have coordinate-additive feature increments
+   \(g(e)\in G\), where \(G\) is a finite abelian group, and write
+   \[
+      T(p)=\sum_{e\in p}g(e).
+      \tag{AXH1}
+   \]
+   Suppose an auxiliary pairwise-independent affine hash filter is decoded
+   through a homomorphism \(L:G\to\mathcal Y\) and an offset \(b\in\mathcal Y\):
+   \[
+      y(p)=L(T(p))+b,
+      \qquad
+      \text{retain }p\text{ when }y(p)\in R\subseteq\mathcal Y .
+      \tag{AXH2}
+   \]
+   Then exact state-exposed decoding of this filter is controlled by the
+   reachable carry sets
+   \[
+      S_T(v)=\{T(p):p\in\mathcal P(v)\}
+      \tag{AXH3}
+   \]
+   and, more precisely, by their images \(L(S_T(v))\).  In particular:
+   \[
+      |S_y(v)|\le |L(S_T(v))|\le |S_T(v)|.
+      \tag{AXH4}
+   \]
+   If \(T\) is a native-state coboundary modulo a subspace or subgroup
+   \(K\le G\), then \( |S_y(v)|\le |L(K)|\) for every native state \(v\).  If,
+   on the other hand, \(L(T(p))\) is pairwise independent and uniform on
+   \(\mathcal Y\) over the prefixes merging into \(v\), then the reciprocal
+   width lower bound of
+   \cref{cor:state-exposed-additive-filter-width} applies with
+   \(M=|\mathcal Y|\).
+
+   Thus affine two-independent hashing, including field-linear or modular
+   multiply-style hashes before truncation, has useful algebraic structure only
+   when the aggregate feature \(T\) has low carry rank in the native decoder.
+   Randomness alone thins terminal support but refills merged states.  If the
+   carry rank is large, the clean way to use the same hash is not to expose its
+   state; it is to access the retained tail by the tilted sampler of
+   \cref{cor:tilted-additive-tail-sampler} or the joint sampler of
+   \cref{cor:joint-tilted-score-filter-sampler}.  High-bit multiply-shift
+   truncation fits this statement after the deterministic carry bits needed to
+   make the map affine are included in \(T\).
+\end{corollary}
+
+\begin{proof}
+   Equation \((AXH2)\) shows that every prefix reaching \(v\) has auxiliary
+   state in \(L(S_T(v))+b\), so the number of reachable auxiliary states is at
+   most \(|L(S_T(v))|\), proving \((AXH4)\).  If \(T\) is a coboundary modulo
+   \(K\), then all prefixes reaching \(v\) have \(T(p)\) in one coset of \(K\),
+   and their \(L\)-images lie in one coset of \(L(K)\).  This gives
+   \(|S_y(v)|\le |L(K)|\).  The random-looking case is exactly the hypothesis
+   of \cref{cor:state-exposed-additive-filter-width} for the exposed auxiliary
+   state \(y\).
+\end{proof}
+
 \begin{corollary}[Tilted rejection samples additive pseudo-random tails]
    \label{cor:tilted-additive-tail-sampler}
    Let the active labels for one query outcome be a product
