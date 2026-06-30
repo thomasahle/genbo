@@ -24684,6 +24684,11 @@ partition ignores the bias coordinates that certify the list size.
    obstruction explicit: low-soft-entropy coordinates must span all but
    \(O(\log\log m)\) information dimensions, so a diffuse posterior block is
    not rescued by choosing a clever information set.
+   For GRS blocks, \cref{cor:kv-heavy-responsibility-compiler} gives the
+   corresponding Koetter--Vardy escape hatch: replace the information-set
+   entropy by the waterfilling score-cost inequality \((KHR4)\).  Its flat
+   obstruction shows that KV is still not a black-box cure when the score
+   threshold contains a polynomial fraction of the code.
 
    Tanner, LDPC, polar, BCJR, and recursive Barnes--Wall/Barnes--Sloane
    decoders supply compact partition-function or threshold-enumeration
@@ -24952,6 +24957,146 @@ partition ignores the bias coordinates that certify the list size.
    \(M_{q,\ell}-\Theta_{q,\ell}\ge0\), so the OSD exponent in \((OHR2)\) is at
    least \(\Lambda_*(q,\ell)\).  This yields the displayed polynomial candidate
    multiplier.
+\end{proof}
+
+\begin{corollary}[Koetter--Vardy compiler for heavy-responsibility residents]
+   \label{cor:kv-heavy-responsibility-compiler}
+   Work in the setting of
+   \cref{cor:osd-heavy-responsibility-compiler}, but assume now that
+   \(\mathcal C\) is a \([h,k]\) generalized Reed--Solomon code over
+   \(\mathbb F_p\).  For the sampled pair \((q,\ell)\), write
+   \[
+      m_i=\max_{a\in\mathbb F_p}\omega_i^{q,\ell}(a),
+      \qquad
+      d_i(a)=m_i-\omega_i^{q,\ell}(a),
+      \qquad
+      \Delta=M_{q,\ell}-\Theta_{q,\ell}.
+      \tag{KHR1}
+   \]
+   Suppose access to a certified Koetter--Vardy soft-decision decoder with the
+   usual score-cost guarantee: for any integer multiplicity matrix \(N\), it
+   returns every codeword \(c\in\mathcal C\) satisfying
+   \[
+      \left(\sum_i N_{i,c_i}\right)^2
+      >
+      2(k-1)\sum_{i,a}\binom{N_{i,a}+1}{2}.
+      \tag{KHR2}
+   \]
+   For \(u>\Delta/h\), set
+   \[
+      \nu_{i,a}(u)=(u-d_i(a))_+,
+      \qquad
+      A(u)=\sum_{i=1}^h\sum_{a\in\mathbb F_p}\nu_{i,a}(u)^2 .
+      \tag{KHR3}
+   \]
+   If
+   \[
+      (hu-\Delta)^2>(k-1)A(u)
+      \tag{KHR4}
+   \]
+   with fixed slack, then after a sufficiently fine integer scaling of the
+   multiplicities \(\nu_{i,a}(u)\), the KV decoder returns every codeword with
+   \(S_{q,\ell}(c)\ge\Theta_{q,\ell}\).  Therefore, under \((OHR1)\), it returns
+   every \((2L_m)^{-1}\)-heavy resident signature before exact marked-ratio
+   filtering.
+
+   Consequently, if \(h,p,A(u)\), the inverse slack in \((KHR4)\), and the
+   decoder overhead are \(\log^{O_c(1)}m\), and if the expected returned
+   signature expansion satisfies the analogue of \((OHR3)\), then KV supplies the
+   heavy-responsibility lister required by
+   \cref{cor:marked-heavy-lister-closes-trellis}.  The scalar pass/fail screen is
+   \((KHR4)\), not the OSD information-set entropy.
+
+   The flat-profile obstruction remains real.  If
+   \[
+      d_i(a)\le D\qquad(i\in[h],\ a\in\mathbb F_p),
+      \qquad
+      \Delta\ge hD,
+      \tag{KHR5}
+   \]
+   then every one of the \(p^k\) GRS codewords satisfies
+   \(S_{q,\ell}(c)\ge\Theta_{q,\ell}\).  Hence any exact threshold reporter based
+   only on this score must return \(p^k\) signatures before marked-responsibility
+   filtering; it cannot fit an \(m^{\rho_c}\polylog m\) local query budget unless
+   \[
+      p^k\le m^{\rho_c}\log^{O_c(1)}m
+      \tag{KHR6}
+   \]
+   or an additional quotient/responsibility filter is used before signature
+   expansion.  Moreover, any KV certificate of the form \((KHR2)\) that includes
+   all codewords must satisfy
+   \[
+      p<\frac{h}{k-1}
+      \tag{KHR7}
+   \]
+   up to lower-order integer-scaling terms.  Thus constant-rate GRS blocks with
+   growing alphabet cannot use KV to certify a fully flat heavy-resident
+   threshold; KV can help only in reliability profiles for which the
+   waterfilling inequality \((KHR4)\) passes on the actual threshold.
+\end{corollary}
+
+\begin{proof}
+   Let \(c\) satisfy \(S_{q,\ell}(c)\ge\Theta_{q,\ell}\).  In deficit form,
+   \[
+      \sum_i d_i(c_i)\le\Delta .
+      \tag{KHR8}
+   \]
+   Since \((u-z)_+\ge u-z\), the real multiplicity profile in \((KHR3)\) gives
+   \[
+      \sum_i\nu_{i,c_i}(u)\ge hu-\Delta .
+      \tag{KHR9}
+   \]
+   Choose integer multiplicities \(N_{i,a}=\lfloor L\nu_{i,a}(u)\rfloor\).  Then
+   \[
+      \sum_iN_{i,c_i}\ge L(hu-\Delta)-h,
+      \tag{KHR10}
+   \]
+   while
+   \[
+      \sum_{i,a}\binom{N_{i,a}+1}{2}
+      \le
+      \frac{L^2}{2}A(u)+O\!\left(L\sum_{i,a}\nu_{i,a}(u)+hp\right).
+      \tag{KHR11}
+   \]
+   Under the strict inequality \((KHR4)\), taking \(L\) large enough compared
+   with the slack and with \(h,p\) makes \((KHR2)\) hold for every threshold
+   codeword.  Exact filtering by \(S_{q,\ell}(c)\ge\Theta_{q,\ell}\) removes
+   false positives, and \((OHR1)\) then gives a complete heavy-resident
+   candidate set.  The work composition is the same as in
+   \cref{cor:osd-heavy-responsibility-compiler}, replacing the OSD candidate
+   count by the KV decoder overhead plus returned signature expansion.
+
+   Under \((KHR5)\), every codeword has total deficit at most \(hD\le\Delta\),
+   so every codeword lies in the threshold list.  This proves the output-size
+   obstruction and \((KHR6)\).
+
+   For the KV necessity, suppose a multiplicity matrix \(N\) satisfies
+   \((KHR2)\) for every codeword.  Since a GRS code is MDS and linear, every
+   field symbol appears equally often in every coordinate as \(c\) ranges over
+   \(\mathcal C\).  Thus the average KV score over all codewords is
+   \[
+      \frac1{|\mathcal C|}\sum_{c\in\mathcal C}\sum_iN_{i,c_i}
+      =
+      \frac1p\sum_{i,a}N_{i,a}.
+      \tag{KHR12}
+   \]
+   If every codeword satisfies \((KHR2)\), this average is larger than
+   \[
+      \sqrt{2(k-1)\sum_{i,a}\binom{N_{i,a}+1}{2}} .
+      \tag{KHR13}
+   \]
+   Cauchy's inequality gives
+   \[
+      \frac1p\sum_{i,a}N_{i,a}
+      \le
+      \sqrt{\frac hp\sum_{i,a}N_{i,a}^2}
+      \le
+      \sqrt{\frac{2h}{p}
+      \sum_{i,a}\binom{N_{i,a}+1}{2}}
+      \tag{KHR14}
+   \]
+   up to the lower-order linear terms in the cost.  Combining \((KHR13)\) and
+   \((KHR14)\) forces \(p<h/(k-1)\), proving \((KHR7)\).
 \end{proof}
 
 \begin{lemma}[Tilted weight feasibility is linear]
@@ -123546,6 +123691,11 @@ constant-rate diffuse reliability profiles: if fewer than a rate-\(\alpha\)
 fraction of coordinates have entropy below a fixed level for a \(k\ge\alpha h\)
 code, the OSD multiplier is polynomial with high probability, independently of
 the code's algebraic structure.
+\Cref{cor:kv-heavy-responsibility-compiler} records the Reed--Solomon
+soft-decision alternative: Koetter--Vardy can replace the OSD entropy screen by
+the waterfilling inequality \((KHR4)\), but fully flat thresholds still force
+the decoder to return \(p^k\) signatures or fail the KV average score-cost test
+at constant rate and growing alphabet.
 \Cref{lem:tilted-weight-linear-feasibility} shows that, for a fixed retained
 pool, choosing those weights is just a linear feasibility problem after
 clearing the tilted partition functions.  Failure has a concrete dual
