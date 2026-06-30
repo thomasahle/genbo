@@ -101013,6 +101013,82 @@ amplified in the next proposition.
    subtracting endpoints gives \((FNB6)\).
 \end{proof}
 
+\begin{corollary}[Affine flat near fibers pass the sign audit]
+   \label{cor:affine-flat-near-fiber-sign-audit}
+   Work in the Gibbs block setting of
+   \cref{cor:two-temperature-gibbs-block-support}.  Suppose the near-success
+   set \(E_j\) is represented by one affine finite-field fiber
+   \[
+      E_j=\{z_0+u:\ u\in L\},
+      \qquad L\le\mathbb F_q^N,\quad \dim L=s,
+      \tag{AFN1}
+   \]
+   and put \(M=q^s=|E_j|\).  Assume the query Gibbs score is flat on this
+   fiber up to log-spread \(\Gamma\):
+   \[
+      \max_{a,b\in E_j}\beta(\phi_j(a)-\phi_j(b))\le\Gamma .
+      \tag{AFN2}
+   \]
+   Then
+   \[
+      N_{2,j}^E
+      =
+      \frac{Z_E(\beta)^2}{Z_E(2\beta)}
+      \ge
+      M e^{-\Gamma}.
+      \tag{AFN3}
+   \]
+   Consequently, an unbiased pairwise-independent sign mask on this block has
+   conditional imbalance
+   \[
+      \E_\xi\alpha_j^2
+      =
+      \nu_j^E
+      \le
+      e^\Gamma M^{-1}.
+      \tag{AFN4}
+   \]
+   More generally, the finite-family limited-independence bound \((BCA5)\)
+   applies with \(\nu_{\ell,j}^E\le e^\Gamma M^{-1}\) for every exposed law
+   whose near fiber has the same flatness bound.
+
+   Thus the positive sign/additive-mask target for a code or lattice block is
+   not a random-looking high-temperature label pool.  It is a query-decodable
+   residual affine fiber, or an equivalent trellis coset, on which the
+   near-conditioned Gibbs weights are nearly flat.  If \(M\) and
+   \(e^\Gamma\) are polylogarithmic, the block can enumerate the fiber and
+   compute \(Z_E(\beta)\), \(Z_E(2\beta)\), and the sign imbalance directly
+   after one affine solve.  If \(M\) is larger, the same condition is still a
+   valid support certificate, but an implementation must sample or aggregate
+   the fiber by BCJR, theta-code recursion, or another compact partition
+   function routine; listing all \(M\) labels would simply reintroduce the
+   lost branch-and-bound factor.
+\end{corollary}
+
+\begin{proof}
+   Let
+   \[
+      w_a=e^{\beta\phi_j(a)}
+      \qquad(a\in E_j).
+   \]
+   The spread condition says
+   \(\max_{a\in E_j}w_a\le e^\Gamma\min_{a\in E_j}w_a\).  Therefore
+   under the conditional law
+   \(P^E_j(a)=w_a/\sum_{b\in E_j}w_b\), every atom is at most
+   \(e^\Gamma/M\).  Hence
+   \[
+      \nu_j^E=\sum_{a\in E_j}P^E_j(a)^2
+      \le
+      \max_aP^E_j(a)
+      \le
+      e^\Gamma/M,
+   \]
+   and, since
+   \(\nu_j^E=Z_E(2\beta)/Z_E(\beta)^2=(N_{2,j}^E)^{-1}\), this is
+   exactly \((AFN3)\).  Equation \((AFN4)\) is then \((BCA4)\), and the
+   finite-family statement is \((BCA5)\) with this collision bound.
+\end{proof}
+
 \begin{corollary}[Support collapse blocks bounded additive masks]
    \label{cor:support-collapse-blocks-bounded-additive-masks}
    Work with one conditional near block law \(P^E_j\) from
