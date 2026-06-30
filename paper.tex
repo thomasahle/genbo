@@ -101050,9 +101050,12 @@ amplified in the next proposition.
    \(K_{\rm tot}\), while the state cost in \((CPFA5)\) sees only the local
    factor \(K_s\) on segment \(s\).  The local construction in
    \cref{cor:random-dense-local-check-segment} supplies such segments when its
-   entropy inequalities hold, and \(\eta_s=\log^{A_\eta}m\) with
-   \(A_\eta>0\) makes the survival loss in \((CPFA8)\) bounded, in particular
-   inverse-polylogarithmic.
+   entropy inequalities hold.  For
+   \(O(\log m/\log\log m)\) checkpoint segments, choosing
+   \(\eta_s=\log^{A_\eta}m\) makes the survival loss in \((CPFA8)\) bounded,
+   in particular inverse-polylogarithmic, once \(A_\eta\ge1\); if
+   \(0<A_\eta<1\), the same product still carries a superpolylogarithmic
+   subpolynomial toll.
 
    Conversely, within this state-exposed checkpointed quotient normal form,
    the product \(K_{\rm tot}\) never appears with a favorable sign in the
@@ -101099,6 +101102,149 @@ amplified in the next proposition.
    while \(\sum_sK_s|E_{B,s}|\le(\max_sK_s)|E_B|\).  Finally, \((CPFA10)\)
    contradicts \((CPFA5)\) for this prefix cut, independently of the terminal
    thinning identity \((CPFA3)\), proving the normal-form barrier.
+\end{proof}
+
+\begin{corollary}[Balanced-window MDS checkpoints give polynomial thinning with
+polylogarithmic state]
+   \label{cor:balanced-window-mds-cpfa-schedule}
+   Work in the checkpointed quotient reporter of
+   \cref{cor:checkpoint-product-far-load-accounting}.  Suppose the reporter is
+   split into
+   \[
+      S=\left\lceil\gamma\frac{\log m}{\log\log m}\right\rceil
+      \tag{BCS1}
+   \]
+   consecutive checkpoint segments, and every live segment is instantiated by
+   the balanced score-window MDS construction of
+   \cref{cor:balanced-score-window-mds-segment} with
+   \[
+      \ell=\kappa\log\log m+O(1),
+      \qquad q\asymp\log\log m,
+      \qquad D=O(1).
+      \tag{BCS2}
+   \]
+   Let the local MDS support rank be
+   \[
+      r_{\rm syn}=A_{\rm syn}\log_q\log m+O(1),
+      \tag{BCS3}
+   \]
+   and assume the MDS Fourier-bias inequality
+   \[
+      \kappa[-\log(1-e^{-2D})]>A_{\rm syn}+C
+      \tag{BCS4}
+   \]
+   for a fixed \(C>0\).  Choose local checkpoint ranges and support ratios
+   \[
+      K_s=(\log m)^{A_{\rm chk}+o(1)},
+      \qquad
+      \eta_s=(\log m)^{A_\eta+o(1)}
+      \tag{BCS5}
+   \]
+   with \(A_\eta\ge1\).  Then, for all large \(m\), the local segment support
+   condition \((CPFA7)\) holds on every live balanced-window segment, and the
+   one-panel checkpoint survival product satisfies
+   \[
+      \prod_{s=1}^S\frac{\eta_s}{1+\eta_s}=1-o(1).
+      \tag{BCS6}
+   \]
+
+   Suppose moreover that the support checks are ordered as segment-local
+   interval rows, so the active residual width obeys
+   \[
+      w_{\rm res}\le r_{\rm syn},
+      \tag{BCS7}
+   \]
+   and the unaugmented native reporter has expected edge work
+   \[
+      \E_Z\sum_s |E_{B(q,Z),s}|
+      \le m^{\rho_c}\log^{C_0}m .
+      \tag{BCS8}
+   \]
+   Then the checkpointed support-conditioned prefix work is clean:
+   \[
+      \E_Z q^{w_{\rm res}}\sum_sK_s|E_{B(q,Z),s}|
+      \le
+      m^{\rho_c}\log^{C_0+A_{\rm syn}+A_{\rm chk}+o(1)}m .
+      \tag{BCS9}
+   \]
+
+   Finally, if the raw emitted far/cut load satisfies
+   \[
+      \E_ZL_{B(q,Z)}^{\rm raw}
+      \le m^{\rho_c+\alpha+o(1)}
+      \tag{BCS10}
+   \]
+   and
+   \[
+      \gamma A_{\rm chk}>\alpha ,
+      \tag{BCS11}
+   \]
+   then the retained emitted far/cut load is also clean:
+   \[
+      \E_ZL_{B(q,Z)}^{\rm raw}/K_{\rm tot}
+      \le m^{\rho_c-\Omega(1)+o(1)} .
+      \tag{BCS12}
+   \]
+
+   Hence, under the explicit balanced-window occupancy and bias checks, local
+   Reed--Solomon/MDS checkpoints can provide a polynomial thinning factor
+   \(K_{\rm tot}=m^{\gamma A_{\rm chk}+o(1)}\) while exposing only
+   polylogarithmic online state.  What remains is exactly the native reporter
+   estimate \((BCS8)\), the raw-load estimate \((BCS10)\), and the existence
+   of live balanced-window alphabets along the near cut; no stronger random
+   subset primitive is used.
+\end{corollary}
+
+\begin{proof}
+   By \cref{cor:balanced-score-window-mds-segment}, conditions
+   \((BCS2)\)--\((BCS4)\) give negligible two-temperature Fourier bias.  The
+   same corollary gives the segment support scalar
+   \[
+      \ell(\log q-2D)-r_{\rm syn}\log q
+      =
+      \kappa\log\log m\log\log\log m
+      -A_{\rm syn}\log\log m
+      +o(\log\log m\log\log\log m).
+   \]
+   This dominates
+   \[
+      \log K_s+\log\eta_s
+      =
+      (A_{\rm chk}+A_\eta+o(1))\log\log m
+   \]
+   for fixed \(A_{\rm chk},A_\eta\).  Thus \((CPFA7)\) holds on every live
+   balanced-window segment.  Moreover,
+   \[
+      \sum_{s=1}^S\log(1+\eta_s^{-1})
+      \le
+      (1+o(1))S(\log m)^{-A_\eta}
+      =
+      O\!\left(\frac{(\log m)^{1-A_\eta}}{\log\log m}\right)
+      =
+      o(1)
+   \]
+   when \(A_\eta\ge1\), proving \((BCS6)\).
+
+   The active-check width assumption \((BCS7)\) and
+   \cref{cor:banded-quotient-active-check-width} give
+   \[
+      q^{w_{\rm res}}\le q^{r_{\rm syn}}
+      =
+      (\log m)^{A_{\rm syn}+o(1)} .
+   \]
+   Since \(K_s=(\log m)^{A_{\rm chk}+o(1)}\), condition \((BCS8)\) gives
+   \((BCS9)\).
+
+   Finally,
+   \[
+      K_{\rm tot}=\prod_{s=1}^SK_s
+      =
+      \exp\{(A_{\rm chk}+o(1))S\log\log m\}
+      =
+      m^{\gamma A_{\rm chk}+o(1)} .
+   \]
+   Combining this with \((BCS10)\) and \((BCS11)\) gives \((BCS12)\), which is
+   exactly the emitted-load term in \((CPFA4)\).
 \end{proof}
 
 \begin{corollary}[Checkpoint boundary frontiers see the remaining product]
