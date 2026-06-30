@@ -101983,6 +101983,125 @@ amplified in the next proposition.
    failure-probability term, and the chart size is \(2^s\).
 \end{proof}
 
+\begin{corollary}[Low-gap shortened subcodes separate reporting from support]
+   \label{cor:low-gap-shortened-subcode-compiler}
+   Let \(\mathcal C\le\mathbb F_q^b\) be a linear block code.  Fix a set
+   \(J\subseteq[b]\), put \(H=[b]\setminus J\), and write
+   \[
+      \mathcal C_J=\{v\in\mathcal C:\ v_H=0\},
+      \qquad
+      d_J=\dim\mathcal C_J .
+      \tag{SLC1}
+   \]
+   For query coordinate scores \(\phi_i(a)\), define
+   \[
+      S(z)=\sum_{i=1}^b\phi_i(z_i),
+      \qquad
+      m_i=\max_{a\in\mathbb F_q}\phi_i(a),
+      \qquad
+      \ell_i=\min_{a\in\mathbb F_q}\phi_i(a),
+      \tag{SLC2}
+   \]
+   and
+   \[
+      R_J=\sum_{i\in J}(m_i-\ell_i).
+      \tag{SLC3}
+   \]
+   Let \(D_H=\{c_H:\ c\in\mathcal C\}\), and for \(u\in D_H\) let
+   \[
+      F(u)=\{c\in\mathcal C:\ c_H=u\}.
+      \tag{SLC4}
+   \]
+   Then every nonempty fiber \(F(u)\) has size \(q^{d_J}\).  Define the
+   quotient upper and lower score envelopes
+   \[
+      U_H(u)=\sum_{i\in H}\phi_i(u_i)+\sum_{i\in J}m_i,
+      \qquad
+      L_H(u)=\sum_{i\in H}\phi_i(u_i)+\sum_{i\in J}\ell_i .
+      \tag{SLC5}
+   \]
+   Suppose an outer quotient reporter returns a set
+   \(\mathsf R_H(q,\Theta)\subseteq D_H\) containing every \(u\) with
+   \(U_H(u)\ge\Theta\).  If the algorithm enumerates \(F(u)\) for every
+   reported \(u\) and then filters by \(S(c)\ge\Theta\), it returns exactly
+   \[
+      \{c\in\mathcal C:\ S(c)\ge\Theta\}.
+      \tag{SLC6}
+   \]
+   Its extra work after the quotient reporter is
+   \(q^{d_J}|\mathsf R_H(q,\Theta)|\) score checks.
+
+   Moreover, every quotient label with \(L_H(u)\ge\Theta\) contributes a whole
+   affine near fiber.  On such a fiber,
+   \[
+      \max_{a,b\in F(u)}\beta(S(a)-S(b))\le \beta R_J,
+      \tag{SLC7}
+   \]
+   and therefore the affine-flat sign audit gives
+   \[
+      N_2^{F(u)}\ge q^{d_J}e^{-\beta R_J},
+      \qquad
+      \E_\xi\alpha_u^2\le e^{\beta R_J}q^{-d_J}.
+      \tag{SLC8}
+   \]
+   The only quotient labels for which this full-fiber support certificate is
+   not certified by the envelopes lie in the boundary band
+   \[
+      \{u\in D_H:\ U_H(u)\ge\Theta>L_H(u)\}
+      \subseteq
+      \{u\in D_H:\ \Theta\le U_H(u)<\Theta+R_J\}.
+      \tag{SLC9}
+   \]
+
+   Consequently, the adaptive low-gap chart should be used as a quotient
+   fiber, not as the entire threshold reporter.  In the binary equal-weight
+   Gaussian setting of \cref{cor:binary-low-gap-frozen-chart}, if \(J\) is the
+   set of the \(r\) smallest realized gaps, then with probability at least
+   \(1-\eta\),
+   \[
+      R_J\le C\frac{r(r+\log(1/\eta))}{b^{3/2}}.
+      \tag{SLC10}
+   \]
+   Thus, for \(b=\lambda\log m+O(1)\), \(r=O(\log\log m)\), and
+   \(\beta^2\le B\log m\), the interior-fiber loss satisfies
+   \[
+      \beta R_J
+      =
+      O_{B,\lambda}\left(\frac{(\log\log m)^2
+            +\log\log m\,\log(1/\eta)}
+            {\log m}\right).
+      \tag{SLC11}
+   \]
+   If also \(q^{d_J}=\log^{O(1)}m\), the hidden low-gap fiber is enumerable and
+   has polylogarithmic conditional support.  The remaining theorem is then no
+   longer a low-gap flatness statement: it is to build a polylogarithmic outer
+   quotient reporter for \(D_H\), and to charge or avoid the boundary band
+   \((SLC9)\).
+\end{corollary}
+
+\begin{proof}
+   The projection \(\pi_H:\mathcal C\to D_H\) is a linear map with kernel
+   \(\mathcal C_J\).  Hence every nonempty fiber is an affine coset of
+   \(\mathcal C_J\) and has cardinality \(q^{d_J}\).
+
+   If \(c\in\mathcal C\) satisfies \(S(c)\ge\Theta\) and \(u=c_H\), then
+   \(S(c)\le U_H(u)\).  Therefore the quotient reporter lists \(u\), the fiber
+   enumeration includes \(c\), and the exact filter keeps it.  Conversely, the
+   exact filter removes every enumerated codeword below threshold, proving
+   \((SLC6)\).
+
+   If \(L_H(u)\ge\Theta\), then every codeword in \(F(u)\) is above threshold.
+   Two codewords in \(F(u)\) agree on \(H\), so their unscaled score difference
+   is at most \(R_J\).  Thus \((SLC7)\) holds, and
+   \cref{cor:affine-flat-near-fiber-sign-audit} applied to the affine fiber
+   \(F(u)\) gives \((SLC8)\).  Finally,
+   \(U_H(u)-L_H(u)=R_J\).  Hence any reported quotient label with
+   \(U_H(u)\ge\Theta>L_H(u)\) has \(U_H(u)<\Theta+R_J\), proving
+   \((SLC9)\).  The binary order-statistic and scaling statements are exactly
+   \((BLG7)\) with \(s\) renamed \(r\), followed by multiplication by
+   \(\beta\).
+\end{proof}
+
 \begin{corollary}[Support collapse blocks bounded additive masks]
    \label{cor:support-collapse-blocks-bounded-additive-masks}
    Work with one conditional near block law \(P^E_j\) from
