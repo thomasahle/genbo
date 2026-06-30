@@ -2454,6 +2454,25 @@ P156. (*** STREAMING MECHANISM PROVEN (float rerank -> 1.0000 @1M) + the SCORED 
     low-p + float-rerank K~200-400; report (a) full runbook wall <1hr? (b) avg recall@10 vs official per-step GT.
     Target beat scann 0.9924 / leader 0.99786. Mem: 30M int8 3GB + ~10.3M active window, safe a0=1/2 under 26GB.
 
+P157. (*** OOD: int8 rerank has a HARD ~0.924 recall ceiling vs the FLOAT GT; float rerank removes it (+0.028), required >0.92 ***)
+    ood2 (committed e5fe96e feat/ood2, NOT merged): built an exact float-IP GT (new `floatgt` subcommand) over
+    text2image 1M (base.1B.fbin first 1M + query.public.100K first NQ=2000), then scored int8-rerank vs
+    float-rerank BOTH against that FLOAT GT (the leaderboard's real metric). *** int8 rerank PLATEAUS at ~0.924
+    recall@10 vs float GT: p=320->0.9097, 448->0.9172, 640->0.9214, 1024->0.9239 -- MORE PROBES DON'T BREAK IT.
+    That is the int8 quantization ceiling against the actual (float) metric = a real slice of the ScaNN gap (ScaNN
+    reranks at float precision). *** Float rerank (int8 scan/route unchanged; rerank t_surv survivors by exact
+    float IP, only survivors paged in via mmap): matched-p gain +0.022..0.028 EVERYWHERE -> 0.9384@p320 /
+    0.9472@p448 / 0.9523@p640. QPS@90% (the OOD metric): float hits 0.90 at p~152 vs int8 p~248 (1.6x fewer probes)
+    but QPS-NEUTRAL at exactly 0.90 (float's 4x-byte + f32-dot cost offsets the scan saving: int8 p256 ~5748 QPS vs
+    float p160 ~4661-5844, load-noisy). THE REAL WIN is >0.92: float 0.9286 @ QPS 4136 beats int8's best-possible
+    0.9239 @ QPS 2231 on BOTH recall AND speed (clean REPS=3). *** CORRECTION: our prior OOD recall numbers were vs
+    the INT8 GT (optimistic); vs the real FLOAT GT int8 caps ~0.924, so float rerank is REQUIRED for any high-recall
+    OOD point and should be the OOD default. Code: fbin.rs, simd.rs dot_f32_fast, vq.rs rerank_contig_float +
+    Index::search_frr, main.rs floatgt + SBANN_FLOAT_RERANK/FBASE/FQUERY. Float GT cached t2i1m-floatgt. CAVEAT:
+    1M/NQ=2000; re-check at 10M (scan + rerank-survivor cost both grow). Combines with t_surv-cut (P154) + adaptive
+    depth. NEXT: leaderboard-accurate OOD = MAX QPS@90% vs FLOAT GT at 10M, combining float-rerank+t_surv-cut+low-p,
+    compared to ScaNN's OOD QPS@90%. (Float rerank is neutral at 0.90 alone -> the QPS@90% win must come from t_surv+routing.)
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
