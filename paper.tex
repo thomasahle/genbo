@@ -100306,6 +100306,160 @@ amplified in the next proposition.
    bound in \cref{lem:weighted-syndrome-collision-thinning}.
 \end{proof}
 
+\begin{corollary}[Two-temperature small-bias syndromes preserve cut support]
+   \label{cor:two-temperature-small-bias-syndrome-support}
+   Let one checkpoint segment have product label space
+   \(\mathbb F_q^\ell\) and positive product weight
+   \[
+      W(x)=\prod_{i=1}^{\ell}W_i(x_i).
+      \tag{TBS1}
+   \]
+   Let \(H:\mathbb F_q^\ell\to\mathbb F_q^r\) be a full-rank linear syndrome,
+   and condition the segment on
+   \[
+      Hx=b .
+      \tag{TBS2}
+   \]
+   For \(t=1,2\), define the normalized coordinate laws
+   \[
+      P_{i,t}(a)=\frac{W_i(a)^t}{Z_{i,t}},
+      \qquad
+      Z_{i,t}=\sum_{a\in\mathbb F_q}W_i(a)^t ,
+      \tag{TBS3}
+   \]
+   and fix a nontrivial additive character \(\psi\) of \(\mathbb F_q\).  For
+   \(\lambda\in\mathbb F_q\), put
+   \[
+      \widehat P_{i,t}(\lambda)
+      =
+      \sum_{a\in\mathbb F_q}P_{i,t}(a)\psi(\lambda a),
+      \tag{TBS4}
+   \]
+   so \(\widehat P_{i,t}(0)=1\).  Define the two-temperature syndrome-bias
+   sums
+   \[
+      \mathfrak B_t(H)
+      =
+      \sum_{u\in\mathbb F_q^r\setminus\{0\}}
+      \prod_{i=1}^{\ell}
+      \left|
+         \widehat P_{i,t}\bigl((H^Tu)_i\bigr)
+      \right|
+      \qquad(t=1,2).
+      \tag{TBS5}
+   \]
+   If \(\mathfrak B_1(H)\le\varepsilon_1<1\) and
+   \(\mathfrak B_2(H)\le\varepsilon_2\), then for every syndrome value \(b\)
+   with nonzero first-temperature mass the conditioned segment law satisfies
+   \[
+      N_2(P_1\mid Hx=b)
+      \ge
+      \left(\prod_{i=1}^{\ell}\frac{Z_{i,1}^2}{Z_{i,2}}\right)
+      q^{-r}\,
+      \frac{(1-\varepsilon_1)^2}{1+\varepsilon_2}.
+      \tag{TBS6}
+   \]
+   Consequently the local checkpoint support condition \((QCA4)\) holds for a
+   checkpoint range \(K\) and support ratio \(\eta\) whenever
+   \[
+      \sum_{i=1}^{\ell}(2\log Z_{i,1}-\log Z_{i,2})
+      -r\log q
+      +2\log(1-\varepsilon_1)-\log(1+\varepsilon_2)
+      \ge
+      \log K+\log\eta .
+      \tag{TBS7}
+   \]
+
+   A convenient dual-distance certificate is the following.  Suppose
+   \[
+      |\widehat P_{i,t}(\lambda)|\le \mu_t<1
+      \qquad(i\le\ell,\ \lambda\ne0,\ t=1,2),
+      \tag{TBS8}
+   \]
+   and every nonzero word in the row span of \(H\) has Hamming weight at least
+   \(d\).  Then
+   \[
+      \mathfrak B_t(H)\le(q^r-1)\mu_t^d
+      \qquad(t=1,2).
+      \tag{TBS9}
+   \]
+   Thus a segment syndrome of rank
+   \(r=A\log_q\log m+O(1)\) has negligible two-temperature bias as soon as
+   \[
+      d\ge
+      \max_{t=1,2}
+      \frac{(A+C)\log\log m+O(1)}{-\log\mu_t}
+      \tag{TBS10}
+   \]
+   for the desired error \(\mathfrak B_t(H)\le(\log m)^{-C}\).
+
+   Therefore the random-subset requirement inside the frozen normal form is
+   not full tuple randomness.  A local linear code with small active rank,
+   small two-temperature dual bias, and enough unconditioned collision entropy
+   loses exactly its syndrome rate \(q^r\) in the support audit.  Combined with
+   \cref{cor:banded-quotient-active-check-width}, this gives a concrete
+   construction target: use banded or convolutional segment checks whose active
+   rank is \(O(\log_q\log m)\), but whose local row span has enough
+   two-temperature dual distance on the route-occupied segment.  A fresh global
+   random quotient fails by
+   \cref{cor:random-support-quotient-checkpoint-barrier}; a locally refreshed
+   small-bias syndrome can pass because its state is forgotten at the segment
+   boundary and its support loss is exactly audited by \((TBS7)\).
+\end{corollary}
+
+\begin{proof}
+   Let \(P_t=\prod_iP_{i,t}\) be the product law at temperature \(t\).  Fourier
+   inversion on the additive group \(\mathbb F_q^r\) gives, for every
+   \(b\in\mathbb F_q^r\),
+   \[
+      P_t[Hx=b]
+      =
+      q^{-r}
+      \sum_{u\in\mathbb F_q^r}
+      \psi(-\ip{u}{b})
+      \prod_{i=1}^{\ell}
+      \widehat P_{i,t}\bigl((H^Tu)_i\bigr).
+      \tag{TBS11}
+   \]
+   The \(u=0\) term is one, and the remaining terms have total absolute value
+   at most \(\mathfrak B_t(H)\).  Therefore
+   \[
+      q^{-r}(1-\varepsilon_1)
+      \le P_1[Hx=b]\le q^{-r}(1+\varepsilon_1),
+      \qquad
+      P_2[Hx=b]\le q^{-r}(1+\varepsilon_2).
+      \tag{TBS12}
+   \]
+
+   The unconditioned collision-effective support of \(P_1\) is
+   \[
+      N_2(P_1)
+      =
+      \left(\sum_xP_1(x)^2\right)^{-1}
+      =
+      \prod_i\frac{Z_{i,1}^2}{Z_{i,2}}.
+      \tag{TBS13}
+   \]
+   Applying the conditional event ratio of
+   \cref{lem:conditional-collision-event-ratio} to
+   \(E_b=\{Hx=b\}\) gives
+   \[
+      N_2(P_1\mid E_b)
+      =
+      N_2(P_1)\frac{P_1(E_b)^2}{P_2(E_b)}.
+      \tag{TBS14}
+   \]
+   Substituting \((TBS12)\) and \((TBS13)\) proves \((TBS6)\), and taking
+   logarithms gives \((TBS7)\).
+
+   Finally, under \((TBS8)\), each nonzero \(u\) gives a nonzero row-span word
+   \(H^Tu\), since \(H\) has full row rank.  By the dual-distance assumption,
+   at least \(d\) coordinates of \(H^Tu\) are nonzero, so the corresponding
+   product in \((TBS5)\) is at most \(\mu_t^d\).  Summing over the
+   \(q^r-1\) nonzero \(u\)'s gives \((TBS9)\), and \((TBS10)\) is the
+   rearrangement of \((q^r-1)\mu_t^d\le(\log m)^{-C}\).
+\end{proof}
+
 \begin{corollary}[Sliding-window trellises must carry forgotten quotient span]
    \label{cor:finite-memory-forgetting-quotient-barrier}
    Let
