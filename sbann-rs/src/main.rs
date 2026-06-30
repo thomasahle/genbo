@@ -12,7 +12,7 @@ mod pq;
 mod simd;
 mod vq;
 
-use ibin::I8Bin;
+use ibin::{FBin, I8Bin};
 use rayon::prelude::*;
 use std::time::Instant;
 
@@ -1017,7 +1017,21 @@ fn stream_runbook(base: &str, qpath: &str, opspath: &str, router_s: &str, comp_s
     let tmul: usize = std::env::var("SBANN_TMUL").ok().and_then(|s| s.parse().ok()).unwrap_or(4);
     let t = (p * tmul).max(1000);
     let compact_frac: f64 = std::env::var("SBANN_COMPACT").ok().and_then(|s| s.parse().ok()).unwrap_or(0.0);
-    println!("  nq={nq} p={p} t={t} compact_frac={compact_frac}");
+    // SBANN_RB_GT=<official k>=100 GT file>: ALSO score recall vs the official (float-distance) GT,
+    // live-filtered to the current set — the leaderboard-comparable metric. The per-query top-10-among-
+    // live is the first 10 live ids of that query's global top-gk (exact while >=10 live survive). The
+    // always-on brute-force GT below is int8-SPACE exact (matches our int8 index, so it's the ceiling
+    // an int8 method can hit); the two differ by exactly the int8-quantization error.
+    let rbgt: Option<(usize, usize, Vec<u32>)> = std::env::var("SBANN_RB_GT").ok().map(|gp| read_gt(&gp));
+    // FLOAT RERANK (breaks the int8 ceiling vs the float GT): with SBANN_RB_FBASE + SBANN_RB_FQUERY set
+    // we generate candidates with the cheap int8 index (search_stream top-K, K=SBANN_RERANK_K) then
+    // re-score them by EXACT float L2 against the original float vectors and keep the top-10. Cheap (K
+    // survivors/query) and lifts recall@10 vs the official float GT toward 1.0. orig id == float-base row.
+    let fbase: Option<FBin> = std::env::var("SBANN_RB_FBASE").ok().map(|p| FBin::open(&p).expect("fbase"));
+    let fquery: Option<FBin> = std::env::var("SBANN_RB_FQUERY").ok().map(|p| FBin::open(&p).expect("fquery"));
+    let do_frerank = fbase.is_some() && fquery.is_some();
+    let rerank_k: usize = std::env::var("SBANN_RERANK_K").ok().and_then(|s| s.parse().ok()).unwrap_or(if do_frerank { 200 } else { 10 });
+    println!("  nq={nq} p={p} t={t} compact_frac={compact_frac} float_gt={} float_rerank={do_frerank} rerank_k={rerank_k}", rbgt.is_some());
 
     // live_src[orig] = base row supplying that orig's vector (u32::MAX = not live). For inserts orig==row;
     // `replace` remaps it. Drives the brute-force live-set GT and counts.
@@ -1026,6 +1040,7 @@ fn stream_runbook(base: &str, qpath: &str, opspath: &str, router_s: &str, comp_s
     let (mut del_total, mut del_secs) = (0usize, 0f64);
     let mut n_compact = 0usize;
     let mut rec_sum = 0f64;
+    let mut rec_sum_f = 0f64; // vs official float GT (when SBANN_RB_GT set)
     let mut n_search = 0usize;
 
     let maybe_compact = |idx: &mut vq::Index, n_compact: &mut usize| {
@@ -1091,21 +1106,53 @@ fn stream_runbook(base: &str, qpath: &str, opspath: &str, router_s: &str, comp_s
                     top.iter().map(|x| x.1).collect()
                 }).collect();
                 let gt_s = gst.elapsed().as_secs_f64();
-                // search + recall@10 vs the live-set GT
+                // search: int8 index produces the top-`rerank_k` candidates per query.
                 let sst = Instant::now();
-                let res: Vec<Vec<u32>> = (0..nq).into_par_iter().map(|qi| idx.search_stream(&full, qs.row(qi), p, t, 10)).collect();
+                let cand: Vec<Vec<u32>> = (0..nq).into_par_iter().map(|qi| idx.search_stream(&full, qs.row(qi), p, t, rerank_k)).collect();
                 let qps = nq as f64 / sst.elapsed().as_secs_f64();
+                // res = the top-10 we submit. With float rerank ON, re-score the candidates by EXACT float
+                // L2 (original float vectors) and keep the top-10; else just the int8 top-10.
+                let res: Vec<Vec<u32>> = if do_frerank {
+                    let fb = fbase.as_ref().unwrap(); let fq = fquery.as_ref().unwrap();
+                    (0..nq).into_par_iter().map(|qi| {
+                        let qf = fq.row(qi);
+                        let mut scored: Vec<(f32, u32)> = cand[qi].iter().map(|&o| (simd::l2_f32(qf, fb.row(o as usize)), o)).collect();
+                        scored.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
+                        scored.iter().take(10).map(|x| x.1).collect()
+                    }).collect()
+                } else {
+                    cand.iter().map(|c| c.iter().take(10).copied().collect()).collect()
+                };
+                // int8-space-GT recall uses the int8 top-10 (cand[:10]); the float rerank only helps vs float GT.
                 let mut r = 0f64;
                 for qi in 0..nq {
                     let denom = truth[qi].len().min(10);
                     if denom == 0 { continue; }
                     let tset: std::collections::HashSet<u32> = truth[qi].iter().copied().collect();
-                    let hit = res[qi].iter().take(10).filter(|id| tset.contains(id)).count();
+                    let hit = cand[qi].iter().take(10).filter(|id| tset.contains(id)).count();
                     r += hit as f64 / denom as f64;
                 }
                 let r = r / nq as f64;
                 rec_sum += r; n_search += 1;
-                println!("  [op{:>3} search #{n_search}] live={:>8} recall@10={r:.4}  QPS={qps:.0}  (gt {:.1}s)",
+                // float-GT recall (leaderboard-comparable): official top-gk live-filtered to top-10.
+                let mut rf_str = String::new();
+                if let Some((gnq, gk, gids)) = &rbgt {
+                    let mut rf = 0f64; let mut few = 0usize;
+                    for qi in 0..nq.min(*gnq) {
+                        let ft: Vec<u32> = gids[qi * gk..qi * gk + gk].iter().copied()
+                            .filter(|&id| (id as usize) < max_pts && live_src[id as usize] != u32::MAX).take(10).collect();
+                        let denom = ft.len().min(10);
+                        if denom == 0 { continue; }
+                        if ft.len() < 10 { few += 1; }
+                        let fset: std::collections::HashSet<u32> = ft.iter().copied().collect();
+                        let hit = res[qi].iter().take(10).filter(|id| fset.contains(id)).count();
+                        rf += hit as f64 / denom as f64;
+                    }
+                    let rf = rf / nq.min(*gnq) as f64;
+                    rec_sum_f += rf;
+                    rf_str = format!("  floatGT={rf:.4}{}", if few > 0 { format!(" ({few} q <10 live in top-{gk})") } else { String::new() });
+                }
+                println!("  [op{:>3} search #{n_search}] live={:>8} recall@10(int8)={r:.4}{rf_str}  QPS={qps:.0}  (gt {:.1}s)",
                     si + 1, live.len(), gt_s);
             }
         }
@@ -1113,7 +1160,9 @@ fn stream_runbook(base: &str, qpath: &str, opspath: &str, router_s: &str, comp_s
     let avg = if n_search > 0 { rec_sum / n_search as f64 } else { 0.0 };
     let ins_tput = if ins_secs > 0.0 { ins_total as f64 / ins_secs } else { 0.0 };
     let del_tput = if del_secs > 0.0 { del_total as f64 / del_secs } else { 0.0 };
-    println!("\n[stream_runbook SUMMARY] avg recall@10 = {avg:.4} over {n_search} search steps");
+    let avg_f = if n_search > 0 { rec_sum_f / n_search as f64 } else { 0.0 };
+    println!("\n[stream_runbook SUMMARY] avg recall@10 (int8-space GT) = {avg:.4} over {n_search} search steps{}",
+        if rbgt.is_some() { format!("  |  avg recall@10 (official float GT) = {avg_f:.4}") } else { String::new() });
     println!("  inserts: {ins_total} in {ins_secs:.1}s ({ins_tput:.0}/s) | deletes: {del_total} in {del_secs:.1}s ({del_tput:.0}/s) | compactions: {n_compact}");
     println!("  total wall {:.1}s", t0.elapsed().as_secs_f64());
 }

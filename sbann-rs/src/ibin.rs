@@ -57,3 +57,36 @@ impl I8Bin {
         unsafe { std::slice::from_raw_parts(self.base.add(i * self.d), self.d) }
     }
 }
+
+/// Memory-mapped reader for the big-ann `.fbin` format (same 8-byte u32 nb/d header, then nb*d f32).
+/// Used by the streaming eval for an exact FLOAT rerank of the int8-generated candidates: the int8
+/// index caps recall@10 at the quantization ceiling vs the official (float) GT, so the survivors are
+/// re-scored against the original float vectors to lift recall toward 1.0 within the 1-hour budget.
+pub struct FBin {
+    _mmap: Mmap,
+    pub nb: usize,
+    pub d: usize,
+    base: *const f32,
+}
+
+unsafe impl Send for FBin {}
+unsafe impl Sync for FBin {}
+
+impl FBin {
+    pub fn open(path: &str) -> io::Result<Self> {
+        let f = File::open(path)?;
+        let mmap = unsafe { Mmap::map(&f)? };
+        assert!(mmap.len() >= 8, "file too small for header");
+        let nb = u32::from_le_bytes(mmap[0..4].try_into().unwrap()) as usize;
+        let d = u32::from_le_bytes(mmap[4..8].try_into().unwrap()) as usize;
+        assert!(mmap.len() >= 8 + nb * d * 4, "fbin truncated: have {} need {}", mmap.len(), 8 + nb * d * 4);
+        let base = unsafe { mmap.as_ptr().add(8) } as *const f32;
+        Ok(Self { _mmap: mmap, nb, d, base })
+    }
+
+    #[inline]
+    pub fn row(&self, i: usize) -> &[f32] {
+        debug_assert!(i < self.nb);
+        unsafe { std::slice::from_raw_parts(self.base.add(i * self.d), self.d) }
+    }
+}
