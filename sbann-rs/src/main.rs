@@ -5,6 +5,7 @@
 //! All SIMD lives in `simd.rs` (Rust AVX2, scalar-validated). PQ-ADC bucket scan is the next
 //! kernel to fold into the query path; today's rerank is exact int8 L2 over the probed pool.
 
+mod fbin;
 mod ibin;
 mod kmeans;
 mod persist;
@@ -427,6 +428,25 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
     // SBANN_NQ caps the #queries (for fair same-NQ head-to-head vs the Python frontier's NQ=1000).
     let nq_cap = std::env::var("SBANN_NQ").ok().and_then(|s| s.parse().ok()).unwrap_or(usize::MAX);
     let nq = qs.nb.min(gnq).min(nq_cap);
+    // FLOAT-RERANK (SBANN_FLOAT_RERANK): int8 scan/route stays, but the exact survivor rerank reads the
+    // ORIGINAL float vectors (SBANN_FBASE, first ds.nb rows) using the float queries (SBANN_FQUERY) ->
+    // float-precision ranking against the leaderboard's float GT. fqf is the contiguous float query block.
+    let float_rerank = std::env::var("SBANN_FLOAT_RERANK").is_ok();
+    let fbase: Option<fbin::FBin> = if float_rerank {
+        let p = std::env::var("SBANN_FBASE").expect("SBANN_FLOAT_RERANK set but SBANN_FBASE missing");
+        let fb = fbin::FBin::open(&p, ds.nb).expect("fbase");
+        assert_eq!(fb.d, ds.d, "fbase dim != index dim"); assert!(fb.nb >= ds.nb, "fbase has fewer rows than index");
+        println!("  [FLOAT_RERANK fbase={p} nb={} d={}]", fb.nb, fb.d);
+        Some(fb)
+    } else { None };
+    let fqf: Vec<f32> = if float_rerank {
+        let p = std::env::var("SBANN_FQUERY").expect("SBANN_FLOAT_RERANK set but SBANN_FQUERY missing");
+        let fq = fbin::FBin::open(&p, nq).expect("fquery");
+        assert_eq!(fq.d, ds.d, "fquery dim != index dim"); assert!(fq.nb >= nq, "fquery has fewer rows than nq");
+        let mut v = vec![0f32; nq * ds.d];
+        for i in 0..nq { v[i * ds.d..i * ds.d + ds.d].copy_from_slice(fq.row(i)); }
+        v
+    } else { Vec::new() };
     // avq cell count is cb^2 == c; keep probes well under nc
     // SBANN_PLIST="128,256,512" overrides the default sweep (lets a built index be probed at custom p).
     let plist: Vec<usize> = match std::env::var("SBANN_PLIST") {
@@ -527,7 +547,9 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
         if measure_depth { vq::DEPTH_SUM.store(0, std::sync::atomic::Ordering::Relaxed); vq::DEPTH_NQ.store(0, std::sync::atomic::Ordering::Relaxed); }
         for _ in 0..reps.max(1) {
             let st = Instant::now();
-            let r: Vec<Vec<u32>> = if batched {
+            let r: Vec<Vec<u32>> = if let Some(fb) = fbase.as_ref() {
+                (0..nq).into_par_iter().map(|i| idx.search_frr(&ds, qs.row(i), &fqf[i * ds.d..i * ds.d + ds.d], fb, p, t_surv, 10)).collect()
+            } else if batched {
                 idx.search_batch(&ds, &qarr, nq, p, t_surv, 10)
             } else {
                 (0..nq).into_par_iter().map(|i| idx.search(&ds, qs.row(i), p, t_surv, 10)).collect()
@@ -974,6 +996,52 @@ fn stream(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a
         rec_b - rec_fresh);
 }
 
+/// Exact FLOAT inner-product ground truth: for the first `nq` float queries, the top-`k` of the first
+/// `nb` float base rows by <q,x> (descending). Parallel over queries, each keeps a bounded top-k heap.
+/// Writes [u32 nq][u32 k][nq*k u32 ids] — the same layout the run loop's GT reader expects, so the
+/// output path can be passed straight as run's gtpath to score recall against the FLOAT GT.
+fn floatgt(fbase_path: &str, fquery_path: &str, out: &str, nb: usize, nq: usize, k: usize) {
+    use std::cmp::Reverse;
+    let fb = fbin::FBin::open(fbase_path, nb).unwrap();
+    let fq = fbin::FBin::open(fquery_path, nq).unwrap();
+    let nb = fb.nb; let nq = fq.nb; let d = fb.d;
+    assert_eq!(d, fq.d, "base/query dim mismatch");
+    eprintln!("[floatgt] nb={nb} nq={nq} d={d} k={k} (exact float IP)...");
+    let t = Instant::now();
+    // ids[q*k .. q*k+k] = top-k base ids for query q, best (largest IP) first.
+    let mut ids = vec![0u32; nq * k];
+    ids.par_chunks_mut(k).enumerate().for_each(|(qi, slot)| {
+        let q = fq.row(qi);
+        // min-heap on (IP, id) keyed so the SMALLEST IP is on top; keep the k largest IPs.
+        let mut heap: std::collections::BinaryHeap<Reverse<(ordf32, u32)>> = std::collections::BinaryHeap::with_capacity(k + 1);
+        for b in 0..nb {
+            let ip = simd::dot_f32_fast(q, fb.row(b));
+            if heap.len() < k {
+                heap.push(Reverse((ordf32(ip), b as u32)));
+            } else if ip > (heap.peek().unwrap().0).0 .0 {
+                heap.pop();
+                heap.push(Reverse((ordf32(ip), b as u32)));
+            }
+        }
+        let mut v: Vec<(ordf32, u32)> = heap.into_iter().map(|r| r.0).collect();
+        v.sort_unstable_by(|a, b| b.0 .0.total_cmp(&a.0 .0)); // descending IP
+        for (s, &(_, id)) in slot.iter_mut().zip(v.iter()) { *s = id; }
+    });
+    let mut buf: Vec<u8> = Vec::with_capacity(8 + nq * k * 4);
+    buf.extend_from_slice(&(nq as u32).to_le_bytes());
+    buf.extend_from_slice(&(k as u32).to_le_bytes());
+    for &id in &ids { buf.extend_from_slice(&id.to_le_bytes()); }
+    std::fs::write(out, &buf).unwrap();
+    eprintln!("[floatgt] wrote {out} ({} ids) in {:.1}s", nq * k, t.elapsed().as_secs_f64());
+}
+
+/// Total-order f32 wrapper for the GT heap (text2image IPs are finite). total_cmp gives a strict order.
+#[derive(Clone, Copy, PartialEq)]
+struct ordf32(f32);
+impl Eq for ordf32 {}
+impl PartialOrd for ordf32 { fn partial_cmp(&self, o: &Self) -> Option<std::cmp::Ordering> { Some(self.cmp(o)) } }
+impl Ord for ordf32 { fn cmp(&self, o: &Self) -> std::cmp::Ordering { self.0.total_cmp(&o.0) } }
+
 fn main() {
     let a: Vec<String> = std::env::args().collect();
     if std::env::var("SBANN_IP").is_ok() { vq::IP_MODE.store(true, std::sync::atomic::Ordering::Relaxed); }
@@ -1130,6 +1198,12 @@ fn main() {
             a.get(5).map(|s| s.parse().unwrap()).unwrap_or(256),
             a.get(6).map(|s| s.parse().unwrap()).unwrap_or(256),
         ),
+        // floatgt <fbase> <fquery> <out> <nb> <nq> [k=10]: exact FLOAT-IP top-k ground truth (the
+        // leaderboard's GT is float-computed; our int8 GT has a quantization ceiling). Writes the
+        // [u32 nq][u32 k][nq*k u32 ids] format the run loop reads, so pass <out> as run's gtpath.
+        Some("floatgt") => floatgt(&a[2], &a[3], &a[4],
+            a[5].parse().unwrap(), a[6].parse().unwrap(),
+            a.get(7).map(|s| s.parse().unwrap()).unwrap_or(10)),
         Some("run") => run(&a[2], &a[3], &a[4], &a[5], &a[6], a.get(7).map(|s| s.parse().unwrap()).unwrap_or(2), a.get(8).map(|s| s.parse().unwrap()).unwrap_or(4096), a.get(9).map(|s| s.parse().unwrap()).unwrap_or(30), false),
         Some("runb") => run(&a[2], &a[3], &a[4], &a[5], &a[6], a.get(7).map(|s| s.parse().unwrap()).unwrap_or(2), a.get(8).map(|s| s.parse().unwrap()).unwrap_or(4096), a.get(9).map(|s| s.parse().unwrap()).unwrap_or(30), true),
         Some("runa") => runa(&a[2], &a[3], &a[4], &a[5], &a[6], a.get(7).map(|s| s.parse().unwrap()).unwrap_or(2), a.get(8).map(|s| s.parse().unwrap()).unwrap_or(256)),

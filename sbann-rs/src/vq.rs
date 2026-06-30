@@ -258,6 +258,37 @@ fn rerank_contig_adapt(raw: &[i8], d: usize, slot_orig: &[u32], q: &[i8], pool: 
     (out, reranked)
 }
 
+/// FLOAT-RERANK (SBANN_FLOAT_RERANK): exact rerank of the int8-scan survivors at FLOAT precision.
+/// `pool` = (approx_dist, slot) survivors; we read each survivor's ORIGINAL float vector from `fbase`
+/// (by orig id) and rank by exact float inner product (-dot, smaller = larger IP). Only survivors are
+/// touched, so the float base stays mostly unpaged. Returns up to k DISTINCT orig ids. The int8 rerank
+/// has a quantization ceiling against the leaderboard's float-computed GT; this removes it.
+fn rerank_contig_float(fbase: &crate::fbin::FBin, slot_orig: &[u32], qf: &[f32], pool: &[(i32, u32)], k: usize) -> Vec<u32> {
+    let mut scored: Vec<(f32, u32)> = Vec::with_capacity(pool.len());
+    let n = pool.len();
+    for i in 0..n {
+        let slot = pool[i].1 as usize;
+        let orig = slot_orig[slot];
+        if i + 8 < n {
+            let no = slot_orig[pool[i + 8].1 as usize];
+            if no != u32::MAX { unsafe { _mm_prefetch(fbase.row(no as usize).as_ptr() as *const i8, _MM_HINT_T0) }; }
+        }
+        if orig == u32::MAX { continue; }
+        let row = fbase.row(orig as usize);
+        scored.push((-simd::dot_f32_fast(qf, row), orig));
+    }
+    // partial-select the k*4 best, then sort that prefix; dedup origs (SOAR duplicate slots -> same orig
+    // -> identical dist) while taking the top k distinct.
+    let m = (k * 4).min(scored.len());
+    if m > 0 { scored.select_nth_unstable_by(m - 1, |a, b| a.0.total_cmp(&b.0)); scored.truncate(m); }
+    scored.sort_unstable_by(|a, b| a.0.total_cmp(&b.0));
+    let mut out = Vec::with_capacity(k);
+    for &(_, o) in &scored {
+        if !out.contains(&o) { out.push(o); if out.len() == k { break; } }
+    }
+    out
+}
+
 // ---------------- Router: coarse quantizer (which cells) ----------------
 pub trait Router: Send + Sync {
     fn n_cells(&self) -> usize;
@@ -1844,6 +1875,31 @@ impl Index {
             if measure { DEPTH_SUM.fetch_add(tt as u64, std::sync::atomic::Ordering::Relaxed); DEPTH_NQ.fetch_add(1, std::sync::atomic::Ordering::Relaxed); }
             rerank_contig(&self.raw, self.d, &self.slot_orig, q, &pool, k, self.raw_orig_indexed)
         };
+        if let Some(tr) = tr { PROF_RERANK_NS.fetch_add(tr.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed); }
+        out
+    }
+
+    /// FLOAT-RERANK search (SBANN_FLOAT_RERANK): int8 scan + cap, then exact FLOAT-IP rerank of the
+    /// survivors from `fbase` using the FLOAT query `qf` (the int8 query `q` only drives scan/route).
+    /// Same pool as scan_rerank; only the final rerank precision differs. Profiled like scan_rerank.
+    pub fn search_frr(&self, ds: &I8Bin, q: &[i8], qf: &[f32], fbase: &crate::fbin::FBin, p: usize, t: usize, k: usize) -> Vec<u32> {
+        let prof = PROFILE.load(std::sync::atomic::Ordering::Relaxed);
+        let t0 = if prof { Some(std::time::Instant::now()) } else { None };
+        let cells = self.router.probe(q, p);
+        if let Some(t0) = t0 { PROF_ROUTE_NS.fetch_add(t0.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed); }
+        let ts = if prof { Some(std::time::Instant::now()) } else { None };
+        let ctx = self.comp.prepare_query(q);
+        let mut pool = self.scan_pool(ds, q, &cells, &ctx);
+        if let Some(ts) = ts { PROF_SCAN_NS.fetch_add(ts.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed); }
+        let tr = if prof { Some(std::time::Instant::now()) } else { None };
+        if self.a0 >= DEDUP_A0.load(std::sync::atomic::Ordering::Relaxed) || POOLDEDUP.load(std::sync::atomic::Ordering::Relaxed) {
+            dedup_pool_by_orig(&mut pool, &self.slot_orig);
+        }
+        let tt = t.min(pool.len());
+        if tt > 0 { pool.select_nth_unstable(tt - 1); pool.truncate(tt); }
+        if MEASURE_DEPTH.load(std::sync::atomic::Ordering::Relaxed) { DEPTH_SUM.fetch_add(tt as u64, std::sync::atomic::Ordering::Relaxed); DEPTH_NQ.fetch_add(1, std::sync::atomic::Ordering::Relaxed); }
+        let _ = ds;
+        let out = rerank_contig_float(fbase, &self.slot_orig, qf, &pool, k);
         if let Some(tr) = tr { PROF_RERANK_NS.fetch_add(tr.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed); }
         out
     }
