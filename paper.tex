@@ -102917,6 +102917,107 @@ amplified in the next proposition.
    of Markov's inequality proves \(\Pr[d_J>0]=o(1)\).
 \end{proof}
 
+\begin{corollary}[Nonuniform parity pockets pay a harmonic repair toll]
+   \label{cor:nonuniform-pocket-repair-toll}
+   Work in the binary equal-weight Gaussian gap model, but allow an arbitrary
+   deterministic pocket partition \(P_1,\ldots,P_p\) with lengths
+   \(L_t=|P_t|\).  Let \(J\) be the set of the \(r=O(\log\log m)\) smallest
+   gaps, and let
+   \[
+      \Gamma_U=\sum_{t:\,J\cap P_t=\emptyset}\gamma_t
+      \tag{NPR1}
+   \]
+   be the unhit-pocket parity repair term from \((PTH8)\).  Then there is an
+   absolute constant \(c>0\) such that
+   \[
+      \E\,\Gamma_U
+      \ge
+      \frac{c}{\sqrt b}\sum_{t=1}^p\frac1{L_t}
+      -
+      O\!\left(\frac{r^2}{b^{3/2}}\right).
+      \tag{NPR2}
+   \]
+   Consequently, for every fixed \(a>0\), at the critical Chernoff scale
+   \(\alpha=a\sqrt b\),
+   \[
+      \E\,\alpha\Gamma_U
+      \ge
+      ca\sum_{t=1}^p\frac1{L_t}
+      -
+      O\!\left(\frac{ar^2}{b}\right)
+      \ge
+      ca\,\frac{p^2}{b}
+      -
+      o(1).
+      \tag{NPR3}
+   \]
+
+   Thus a nonuniform pocket design can make the parity checks nearly free only
+   when the harmonic pocket count is small.  In particular, if
+   \(p\ge\varepsilon b\), the expected repair toll at the ANN Chernoff scale is
+   \(\Omega_{a,\varepsilon}(b)=\Omega(\log m)\).  If one insists on only
+   polylogarithmic repair toll, \(\E\,\alpha\Gamma_U=O(\log\log m)\), then
+   necessarily
+   \[
+      p\le O_a\!\left(\sqrt{b\log\log m}\right).
+      \tag{NPR4}
+   \]
+   Hence adding many short parity pockets to the long neutral pockets is not a
+   free way to buy polynomial quotient thinning.  The exact partition exponent
+   must include the repair term \(\alpha\Gamma_U\); a construction with
+   \(p=\Theta(\log m)\) small checks is really a finite-state/Tanner spectrum
+   problem, not the low-gap neutral-fiber mechanism.
+\end{corollary}
+
+\begin{proof}
+   Write \(\delta_i=\sqrt{2/b}\,|G_i|\), with iid standard normal \(G_i\)'s.
+   Conditional on the gap magnitudes and on \(J\), the top symbols have
+   independent fair signs, so an unhit pocket has odd top parity with
+   probability \(1/2\).  Therefore
+   \[
+      \E_{\rm signs}[\Gamma_U\mid(\delta_i),J]
+      =
+      \frac12
+      \sum_{t:\,J\cap P_t=\emptyset}\min_{i\in P_t}\delta_i .
+      \tag{NPR5}
+   \]
+   The unhit-pocket sum is the all-pocket sum minus the hit-pocket contribution.
+   Choosing one low-gap coordinate in every hit pocket gives
+   \[
+      \sum_{t:\,J\cap P_t\ne\emptyset}\min_{i\in P_t}\delta_i
+      \le
+      \sum_{i\in J}\delta_i .
+      \tag{NPR6}
+   \]
+   The expected sum of the \(r\) smallest half-normal gaps among \(b\) coordinates
+   is \(O(r^2/b^{3/2})\), by the elementary small-ball estimate
+   \(\Pr[|G|\le u]\asymp u\) near zero.
+
+   It remains to lower-bound the all-pocket minima.  For \(L\ge1\),
+   \[
+      \E\min_{1\le j\le L}|G_j|
+      =
+      \int_0^\infty \Pr[|G|>u]^L\,du
+      \ge
+      \int_0^{c_0/L}(1-Cu)^L\,du
+      \ge \frac{c_1}{L}
+      \tag{NPR7}
+   \]
+   with absolute constants \(c_0,c_1>0\).  Multiplying by \(\sqrt{2/b}\), summing
+   over pockets, and subtracting the hit-pocket loss proves \((NPR2)\).
+   Equation \((NPR3)\) follows by multiplying by \(\alpha=a\sqrt b\) and using
+   Cauchy's inequality
+   \[
+      \sum_{t=1}^p\frac1{L_t}
+      \ge
+      \frac{p^2}{\sum_tL_t}
+      =
+      \frac{p^2}{b}.
+      \tag{NPR8}
+   \]
+   The final two consequences are immediate from \((NPR3)\).
+\end{proof}
+
 \begin{corollary}[Support collapse blocks bounded additive masks]
    \label{cor:support-collapse-blocks-bounded-additive-masks}
    Work with one conditional near block law \(P^E_j\) from
