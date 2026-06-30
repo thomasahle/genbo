@@ -7943,6 +7943,87 @@ partition ignores the bias coordinates that certify the list size.
    Substituting this in \((PCT3)\) gives \((PCT8)\).
 \end{proof}
 
+\begin{corollary}[Checkpoint terminal thinning needs terminal multiplicity]
+   \label{cor:checkpoint-terminal-multiplicity-necessity}
+   Work in the checkpoint-syndrome setting of
+   \cref{cor:checkpoint-syndrome-local-state}, and write
+   \(\mathcal K=\prod_sK_s\).  Let \(W_r\) be any possibly random set of
+   acceptable terminal tuples which is fixed before the checkpoint seeds and
+   targets are exposed.  If \(R\) is the retained checkpoint set, then
+   \[
+      \Pr[W_r\cap R\ne\emptyset]
+      \le
+      \E|W_r\cap R|
+      =
+      \mathcal K^{-1}\E|W_r|.
+      \tag{CTM1}
+   \]
+   Consequently any terminal checkpoint filter whose one-panel hit probability
+   is at least \(p\) must have
+   \[
+      \E|W_r|\ge p\mathcal K .
+      \tag{CTM2}
+   \]
+   In the polynomial checkpoint regime of
+   \cref{cor:polylog-state-checkpoint-polynomial-thinning}, an
+   inverse-polylogarithmic hit probability therefore requires
+   \[
+      \E|W_r|\ge m^{A\gamma-o(1)} .
+      \tag{CTM3}
+   \]
+
+   For the raw cumulative-score spherical block of
+   \cref{lem:continuation-work}--\cref{cor:spherical-survival}, this
+   multiplicity is absent.  If \(Z_{\rm acc}\) is the number of common near
+   accepting leaves satisfying
+   \(S_v(p)\ge kt\) and \(S_v(q)\ge kt\) for a pair of correlation \(a\), then
+   \[
+      \E Z_{\rm acc}
+      =
+      B^k\Pr[X\ge t\sqrt k,\ Y\ge t\sqrt k]
+      \le
+      k^{O_{a,b}(1)}.
+      \tag{CTM4}
+   \]
+   Hence applying a polynomial terminal checkpoint thinning
+   \(\mathcal K=m^{\Omega(1)}\) to the raw cumulative-score leaves gives hit
+   probability at most \(m^{-\Omega(1)}\), up to polylogarithmic factors.
+
+   Thus \cref{cor:polylog-state-checkpoint-polynomial-thinning} is a genuine
+   positive mechanism only for broad terminal witness families, or for
+   intermediate route/value layers where checkpoint success is charged before
+   the final endpoint collapse.  It is not a free way to remove the
+   inverse-polylogarithmic survival loss of the bare cumulative-score leaf
+   process.
+\end{corollary}
+
+\begin{proof}
+   Conditional on \(W_r\), every fixed terminal tuple satisfies the independent
+   checkpoint equations with probability \(\mathcal K^{-1}\).  Linearity of
+   expectation gives
+   \[
+      \E[|W_r\cap R|\mid W_r]=\mathcal K^{-1}|W_r|.
+   \]
+   Markov's inequality gives the hit bound in \((CTM1)\), and \((CTM2)\) is
+   its contrapositive.  Substituting \((PCT7)\) and
+   \(p=\log^{-O(1)}m\) gives \((CTM3)\).
+
+   For \((CTM4)\), let \((X,Y)\) be standard Gaussians with correlation \(a\).
+   The usual bivariate Gaussian tail estimate gives
+   \[
+      \Pr[X\ge u,\ Y\ge u]
+      \le
+      u^{O_{a,b}(1)}
+      \exp\left(-\frac{u^2}{1+a}\right)
+      \qquad(u\ge1).
+   \]
+   With \(u=t\sqrt k\) and \(t^2=(1+a)\log B\), the exponential term is
+   \(B^{-k}\), so multiplying by the \(B^k\) leaves proves \((CTM4)\).  Any
+   tame, pruned, or unit-window witness family is a subset of these accepting
+   leaves and therefore has no larger expectation.  Combining \((CTM1)\) with
+   \((CTM4)\) proves the final claim.
+\end{proof}
+
 \begin{corollary}[Oversampled product witnesses support polylog syndrome thinning]
    \label{cor:oversampled-product-syndrome-thinning}
    Work in the smooth product terminal filter of
