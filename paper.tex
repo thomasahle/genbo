@@ -10001,6 +10001,102 @@ partition ignores the bias coordinates that certify the list size.
    substitution of \((LGH2)\) into \(B^{c_{\rm suf}\ell+O(1)}\).
 \end{proof}
 
+\begin{corollary}[Polylog suffix handoff removes the residual-residue oracle]
+   \label{cor:polylog-suffix-handoff-removes-residue-oracle}
+   Work in the checkpointed prefix-cut setting of
+   \cref{cor:last-segment-gaussian-checkpoint-handoff}.  Let
+   \(\mathcal U_B\) be the random cut-prefix set produced by the
+   uncheckpointed native reporter for one query outcome \(B\), and suppose
+   every retained cut prefix has at most
+   \[
+      R_{\rm suf}(m)=\log^{C_{\rm suf}+o(1)}m
+      \tag{PSH1}
+   \]
+   suffix continuations that the final reporter may need to inspect.  For
+   example, \((LGH11)\) gives
+   \(C_{\rm suf}=c_{\rm suf}\kappa\log B\) for a fixed-branch suffix scan.
+   Let
+   \[
+      N_{\rm cut}(B)=|\mathcal U_B|,
+      \qquad
+      K_{\rm tot}=\prod_sK_s .
+      \tag{PSH2}
+   \]
+   Attach a nonnegative verification or emission cost to every suffix
+   continuation, bounded by \(\log^{O(1)}m\), and let
+   \(L_B^{\rm raw}\) be the uncheckpointed emitted cut/suffix load.
+
+   Then exact suffix-residue summaries for all retained cut prefixes can be
+   built by direct suffix scanning in work
+   \[
+      O\!\left(N_{\rm cut}(B)R_{\rm suf}(m)\log^{O(1)}m\right).
+      \tag{PSH3}
+   \]
+   After independent checkpoint offsets, the expected retained emitted load is
+   \[
+      \E_\sigma L_B^{\rm ret}=K_{\rm tot}^{-1}L_B^{\rm raw}.
+      \tag{PSH4}
+   \]
+   Consequently the checkpointed panel is in the clean far-side envelope
+   whenever
+   \[
+      \E_ZN_{\rm cut}(B(q,Z))
+      \le
+      m^{\rho_c}\log^{O(1)}m
+      \tag{PSH5}
+   \]
+   and
+   \[
+      \E_ZL_B^{\rm raw}
+      \le
+      K_{\rm tot}m^{\rho_c}\log^{O(1)}m .
+      \tag{PSH6}
+   \]
+
+   Conversely, in this direct-suffix implementation the polylog suffix removes
+   only the residual-residue oracle from
+   \cref{rem:residual-entropy-bottleneck}; it does not reduce the number of
+   native cut prefixes.  If
+   \[
+      \E_ZN_{\rm cut}(B(q,Z))=m^{\rho_c+\Omega(1)},
+      \tag{PSH7}
+   \]
+   then the retained-prefix pass is already too large, independently of the
+   checkpoint product and independently of the fact that each suffix is
+   polylogarithmic.  One must then move the cut earlier, lower the native
+   prefix-list moment, or charge the cut prefixes through an aggregate,
+   responsibility, leader, or Fano value reporter rather than direct cut-prefix
+   scanning.
+
+   Thus the last-segment Gaussian handoff reduces the remaining CPFA theorem
+   to two scalar estimates, not to another pseudorandom-subset question:
+   a native cut-prefix count \((PSH5)\) and a raw far/cut load \((PSH6)\).
+   The suffix-residue data structure can be the trivial one once the suffix
+   universe is only polylogarithmic.
+\end{corollary}
+
+\begin{proof}
+   For a fixed cut prefix, direct enumeration of its suffix continuation set
+   computes every occupied residual class, every final score, and every
+   verification/emission record in
+   \(R_{\rm suf}(m)\log^{O(1)}m\) work.  Summing over all cut prefixes gives
+   \((PSH3)\).  This is precisely the materialized summary that would be
+   forbidden by \cref{cor:materialized-residue-summary-barrier} when the suffix
+   residue range or suffix set is superpolylogarithmic; here it is
+   polylogarithmic by assumption.
+
+   The retained-load identity \((PSH4)\) is \((CPFA3)\) from
+   \cref{cor:checkpoint-product-far-load-accounting}, applied to the emitted
+   suffix records below the cut.  Averaging \((PSH3)\) over the query
+   randomization gives a clean prefix/suffix scanning cost under \((PSH5)\),
+   because \(R_{\rm suf}\) is polylogarithmic.  Averaging \((PSH4)\) gives the
+   emitted-load condition \((PSH6)\).  If \((PSH7)\) holds, then even the
+   one-unit work needed to touch each native cut prefix is already
+   \(m^{\rho_c+\Omega(1)}\), and neither terminal thinning nor polylog suffix
+   scanning changes that prefix count.  This proves the converse and the final
+   interpretation.
+\end{proof}
+
 \begin{corollary}[Checkpoint continuation multiplicity is not free]
    \label{cor:checkpoint-continuation-oversampling-toll}
    In the checkpoint-syndrome setting, suppose the checkpoint hit certificate
