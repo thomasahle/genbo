@@ -99563,6 +99563,89 @@ amplified in the next proposition.
    equations and the terminal quotient support condition.
 \end{proof}
 
+\begin{corollary}[Random support quotients still blow up checkpointed reporters]
+   \label{cor:random-support-quotient-checkpoint-barrier}
+   Work in the setting of
+   \cref{cor:checkpointed-quotient-prefix-cut-compiler}, and write
+   \(M=|\bar G|\) for the support quotient range.  Fix one query outcome \(B\)
+   and condition on its native trellis.  At a layer \(\ell\), let
+   \(\mathcal P(v)\) be the set of source-to-\(v\) native prefixes and
+   \(N_v=|\mathcal P(v)|\).  Suppose the support quotient increments are
+   random-looking in the sense of
+   \cref{cor:random-quotient-trellis-width-barrier}: for every fixed vertex
+   \(v\), the prefix quotient sums reaching \(v\) are pairwise independent and
+   uniform in \(\bar G\).
+
+   Then, conditional on the native trellis,
+   \[
+      \E Q_B
+      \ge
+      \max_{v\in V_\ell}
+      M\,\frac{N_v}{M+N_v}
+      \ge
+      \frac12\max_{v\in V_\ell}\min\{M,N_v\}.
+      \tag{RQC1}
+   \]
+   Consequently the checkpointed quotient sufficient condition \((CQR3)\)
+   has the conditional lower bound
+   \[
+      \E\!\left[
+         Q_B\sum_sK_s|E_{B,s}|
+         \,\middle|\, B
+      \right]
+      \ge
+      \left(\sum_sK_s|E_{B,s}|\right)
+      \max_{v\in V_\ell}
+      M\,\frac{N_v}{M+N_v},
+      \tag{RQC2}
+   \]
+   whenever the checkpoint seeds are independent of the support quotient.
+
+   In particular, in the full-width point-mass regime
+   \[
+      M\ge m^{1-\rho-o(1)}
+      \tag{RQC3}
+   \]
+   and on query outcomes whose native reporter has
+   \[
+      \sum_sK_s|E_{B,s}|\ge m^{\rho-o(1)}
+      \qquad\text{and}\qquad
+      \max_{v\in V_\ell}N_v\ge M,
+      \tag{RQC4}
+   \]
+   the left side of \((CQR3)\) is at least \(m^{1-o(1)}\) on those outcomes.
+   This is far above the desired \(m^\rho\polylog m\) envelope for every
+   fixed \(\rho<1\).
+
+   Thus the two random objects in
+   \cref{cor:checkpointed-quotient-prefix-cut-compiler} have different roles.
+   The local checkpoint syndromes may be fresh and random because their
+   \(K_s\)-state cost is polylogarithmic and is reset at segment boundaries.
+   The support quotient cannot be a fresh random-looking low-rate code of
+   polynomial range on merged trellis states.  It must be mostly determined by
+   the native state, have a small coboundary carry space, or be replaced by an
+   aggregate/responsibility reporter that does not materialize quotient
+   states.
+\end{corollary}
+
+\begin{proof}
+   By \cref{cor:random-quotient-trellis-width-barrier}, for every fixed
+   vertex \(v\),
+   \[
+      \E |S(v)|
+      \ge
+      M\frac{N_v}{M+N_v}.
+   \]
+   Since \(Q_B=\max_w|S(w)|\), taking the maximum over \(v\in V_\ell\) gives
+   \((RQC1)\).  The checkpoint edge budget
+   \(\sum_sK_s|E_{B,s}|\) is fixed after conditioning on the native trellis
+   and is independent of the support quotient and checkpoint seeds, so
+   multiplying by this deterministic factor gives \((RQC2)\).  Under
+   \((RQC3)\)--\((RQC4)\), the maximum term in \((RQC2)\) is at least
+   \(M/2\), hence the product is \(m^{1-o(1)}\).  The final paragraph is the
+   contrapositive interpretation for the clean \(m^\rho\polylog m\) target.
+\end{proof}
+
 \begin{corollary}[Coboundary quotient increments preserve trellis merging]
    \label{cor:coboundary-quotient-trellis-width}
    Work in the setting of
