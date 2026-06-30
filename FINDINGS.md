@@ -2245,6 +2245,26 @@ P143. (*** CONCLUSIVE: ours BEATS ScaNN ~2-3x at msspacev QPS@90% on the leaderb
     still ScaNN's (~2.4x, scan/rerank execution). HONEST: re-verify on a genuinely idle box to nail the exact
     multiple, but the no-overlap separation across many windows makes the WIN robust, not a single-bracket fluke.
 
+P144. (scan-code bake-off [offline, load-indep, recall@t_surv]: PQ ranks WELL -> msspacev lever=adaptive depth;
+       OOD benefits from a HIGHER-RES code -> configurable RaBitQ for OOD specifically)
+    rabitq_bakeoff.py, 200k subset, residual-domain, recall@t = true-top10-of-pool retained in top-t by approx.
+    msspacev (L2, d=100): PQ-4bit(25B) t40=0.959 t80=0.991 t160=0.998 -> ranks EXCELLENTLY; RaBitQ at matched
+      25B(2-bit) much WORSE (0.82@t80) but my naive uniform B-bit quantizer is BROKEN at low B (2-bit < 1-bit,
+      impossible) so discount the matched-byte RaBitQ; RaBitQ-4b(50B,2x) perfect but 2x bytes. => msspacev: PQ
+      ranks fine, the deep t_surv is wasteful -> ADAPTIVE/SHALLOW rerank depth is the lever, NOT a new code.
+    OOD (IP, d=200) [after fixing an IP-estimator bug: residual dot needs RAW q for <q,R>, not q-cz]:
+      PQ-4bit(50B): t40=0.901 t80=0.961 t160=0.986 t320=0.995 -- ranks decently.
+      RaBitQ-4b(100B,2x): t40=0.997 t80=0.9998 -- NEAR-PERFECT, ~8x shallower rerank at matched recall.
+      RaBitQ-1b(25B) 0.76@t80 (half bytes, worse). => OOD code RESOLUTION matters: a higher-res rotated code
+      ranks far better, enabling shallow rerank. OPEN: is it the ROTATION or just 2x bytes? need PQ@100B
+      (8-bit) matched. And net wall-clock depends on scan(2x bytes)-vs-rerank(~8x shallower) bandwidth split.
+    *** CONCLUSION: PQ already ranks the probed pool well on BOTH tracks (within-pool recall 0.96-0.99@t80),
+    so the engine's t_surv~300(msspacev)/~3072(OOD) is oversized for RANKING -> ADAPTIVE DEPTH (#2, small) is
+    the broad lever. A configurable higher-res code (RaBitQ-4b / PQ-8bit) is a real OOD-specific win on top.
+    Caveat: 200k-subset proxy + within-pool recall (not global); validate by lowering engine t_surv (recall is
+    load-independent). My naive RaBitQ != faithful Extended-RaBitQ (whose unbiased estimator + error BOUND is
+    what makes adaptive early-stop PROVABLE). NEXT: PQ@100B matched-byte; then engine t_surv-reduction recall test.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
