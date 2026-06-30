@@ -1357,6 +1357,11 @@
   \lambda_i^{(\mu)}=\log\sum_r(\Theta_r(y_i)/\max_s\Theta_s(y_i))^\mu .
   \]
   This exponent is invariant under the random column scalings. So the scalings solve the dual complete-theta spectrum but do not reduce OSD query-list entropy. If a coordinate has \(Q_i\) residues within \(D_i\) of the maximum, then \(\lambda_i^{(\mu)}\ge\log Q_i-\mu D_i\), and full \(D\)-flat theta weights give \(\Lambda_{\rm OSD}^{(\mu)}\ge k(\log p-\mu D)\). Thus plain OSD only discharges the soft-GRS reporter in high-reliability/low-entropy coordinates, or when its false-candidate exponent is explicitly paid by a Fano/product moment. The remaining positive route needs a genuinely output-sensitive soft-decision/list-recovery GRS theorem or a reduced-cost/aggregate charge, not just monomial scaling plus OSD.
+- Added the analogous Koetter--Vardy score-cost audit. `cor:scaled-grs-kv-score-cost-audit` translates theta deficits \(d_i(r)=\log W_i^*-\log W_i(r)\) and threshold deficit \(\Delta_\theta\) into the scalar multiplicity screen
+  \[
+  (bu-\Delta_\theta)^2>(k-1)\sum_{i,r}(u-d_i(r))_+^2 .
+  \]
+  If this passes with slack, a scaled integer multiplicity matrix gives a certified KV soft-GRS reporter for that threshold. If the block is fully \(D\)-flat and \(\theta\le M_{\tau,y}-bD\), however, the list is all \(p^k\) codewords, and any KV score-cost certificate that includes all codewords forces \(p<b/(k-1)\) up to rounding. So standard KV is useful only in nonflat reliability profiles; it does not rescue the balanced/flat theta regime needed for checkpoint alphabets at constant GRS rate.
 - Audited the obvious MDS/Reed--Solomon escape. `cor:mds-hamming-spectrum-max-screen` records the exact MDS dual Hamming enumerator and shows that if an MDS/RS block is certified only by minimum distance/Hamming support, the weighted bound is still
   \[
   \sum_w A_w^\perp\eta^w\le p^{-k}\sum_{w\ge k+1}\binom bw(p\eta)^w\le p^{-k}(1+p\eta)^b.

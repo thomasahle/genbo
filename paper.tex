@@ -103835,6 +103835,135 @@ work]
    \((SGR5)\) and the product/Fano accounting.
 \end{proof}
 
+\begin{corollary}[Koetter--Vardy score-cost audit for scaled-GRS theta weights]
+   \label{cor:scaled-grs-kv-score-cost-audit}
+   In the notation of \cref{cor:scaled-grs-osd-audit}, define the coordinate
+   deficits
+   \[
+      d_i(r)=\log W_i^*-\log W_i(r)\ge0,
+      \qquad
+      \Delta_\theta=M_{\tau,y}-\theta .
+      \tag{KVA1}
+   \]
+   Assume access to a certified algebraic soft-decision GRS decoder with the
+   standard Koetter--Vardy score-cost guarantee: for any integer multiplicity
+   matrix \(N=(N_{i,a})\), writing
+   \[
+      S_N(c)=\sum_iN_{i,c_i},
+      \qquad
+      C(N)=\sum_{i,a}\binom{N_{i,a}+1}{2},
+      \tag{KVA2}
+   \]
+   the decoder returns every \(c\in C_0\) with
+   \[
+      S_N(c)^2>2(k-1)C(N)
+      \tag{KVA3}
+   \]
+   in time polynomial in \(b,p,C(N)\), followed by exact filtering.
+
+   For \(u>\Delta_\theta/b\), put
+   \[
+      \nu_{i,r}(u)=\bigl(u-d_i(r)\bigr)_+,
+      \qquad
+      A(u)=\sum_{i=1}^b\sum_{r\in\mathbb F_p}\nu_{i,r}(u)^2 .
+      \tag{KVA4}
+   \]
+   If
+   \[
+      \bigl(bu-\Delta_\theta\bigr)^2>(k-1)A(u),
+      \tag{KVA5}
+   \]
+   with fixed slack, then after multiplying the profile
+   \(\nu_{i,\sigma_i^{-1}a}(u)\) by a sufficiently fine integer scale and
+   rounding down, the KV decoder returns every codeword in the threshold list
+   \[
+      \{a\in C_0:S_{\tau,y}(a)\ge\theta\},
+      \tag{KVA6}
+   \]
+   with interpolation cost \(O(A(u))\) up to the chosen integer scaling and
+   lower-order \(bp\) terms.  Consequently, if \(b,p,A(u)\), and the inverse
+   slack in \((KVA5)\) are \(\log^{O(1)}m\), this gives a polylogarithmic
+   certified soft-GRS reporter for that block and threshold.
+
+   The same audit gives a sharp warning in the flat theta regime.  Suppose
+   every coordinate is \(D\)-flat on all residues,
+   \(d_i(r)\le D\) for all \(i,r\), and take any threshold
+   \(\theta\le M_{\tau,y}-bD\).  Then every one of the \(p^k\) GRS codewords
+   lies in \((KVA6)\), so no output-sensitive reporter can be polylogarithmic
+   unless \(p^k=\log^{O(1)}m\).  Moreover, any KV certificate of the form
+   \((KVA3)\) that includes all codewords must satisfy
+   \[
+      p<\frac{b}{k-1}
+      \tag{KVA7}
+   \]
+   up to lower-order rounding terms.  Thus at constant GRS rate and
+   \(p\to\infty\), the KV score-cost guarantee cannot be the missing theorem
+   in a fully flat theta block.  KV can help only in genuinely nonflat
+   reliability profiles where the scalar screen \((KVA5)\) passes.
+\end{corollary}
+
+\begin{proof}
+   Let \(c\in C_0\) satisfy \(S_{\tau,y}(c)\ge\theta\).  In deficit form this
+   means
+   \[
+      \sum_i d_i(\sigma_i^{-1}c_i)\le\Delta_\theta .
+      \tag{KVA8}
+   \]
+   For every real \(z\ge0\), \((u-z)_+\ge u-z\).  Hence the real multiplicity
+   profile in \((KVA4)\), pulled back by the coordinate scalings, gives
+   \[
+      \sum_i\nu_{i,\sigma_i^{-1}c_i}(u)
+      \ge
+      bu-\Delta_\theta .
+      \tag{KVA9}
+   \]
+   Choose integer multiplicities
+   \(N_{i,a}=\lfloor L\nu_{i,\sigma_i^{-1}a}(u)\rfloor\).  Then
+   \[
+      S_N(c)\ge L(bu-\Delta_\theta)-b,
+      \tag{KVA10}
+   \]
+   while
+   \[
+      C(N)
+      \le
+      \frac{L^2}{2}A(u)+O\!\left(L\sum_{i,r}\nu_{i,r}(u)+bp\right).
+      \tag{KVA11}
+   \]
+   Under the strict inequality \((KVA5)\), taking \(L\) large enough compared
+   with the slack and with \(b,p\) makes \((KVA3)\) hold for every codeword in
+   the threshold list.  The certified decoder then outputs a superset, and the
+   exact theta-score filter leaves precisely \((KVA6)\).  The stated work
+   follows from the assumed polynomial dependence on the interpolation cost.
+
+   If \(d_i(r)\le D\) for every coordinate and residue, then every codeword
+   has total deficit at most \(bD\), proving that the threshold
+   \(\theta\le M_{\tau,y}-bD\) includes all \(p^k\) codewords.  For the KV
+   score-cost necessity, let \(N\) be any multiplicity matrix satisfying
+   \((KVA3)\) for all codewords.  Since \(C_0\) is MDS and linear, every symbol
+   appears equally often in every coordinate as \(c\) ranges over \(C_0\).
+   Therefore the average KV score over all codewords is
+   \[
+      \frac1{|C_0|}\sum_{c\in C_0}S_N(c)
+      =
+      \frac1p\sum_{i,a}N_{i,a}.
+      \tag{KVA12}
+   \]
+   If every codeword satisfies \((KVA3)\), this average is larger than
+   \(\sqrt{2(k-1)C(N)}\).  On the other hand, by Cauchy's inequality,
+   \[
+      \frac1p\sum_{i,a}N_{i,a}
+      \le
+      \sqrt{\frac{b}{p}\sum_{i,a}N_{i,a}^2}
+      \le
+      \sqrt{\frac{2b}{p}C(N)} .
+      \tag{KVA13}
+   \]
+   Combining the two displayed inequalities forces \(p<b/(k-1)\), up to the
+   harmless lower-order effect of the linear terms in
+   \(C(N)=\frac12\sum N_{i,a}^2+O(\sum N_{i,a})\).  This proves \((KVA7)\).
+\end{proof}
+
 \begin{corollary}[MDS Hamming spectrum does not beat the max-residue screen]
    \label{cor:mds-hamming-spectrum-max-screen}
    Let \(C_j\le\mathbb F_{p_j}^{b_j}\) be an \([b_j,k_j]\) MDS code, so
