@@ -107397,6 +107397,109 @@ tax]
    \(M\).
 \end{proof}
 
+\begin{corollary}[Unnormalized port intensities are checkpoint-compatible]
+   \label{cor:unnormalized-port-intensity-compiler}
+   Work in one local port-skeleton state with verified output-port alphabet
+   \(\mathcal O_B\).  For a query outcome \(B\), let \(\Omega_B\) be a finite
+   family of hidden records, such as trellis paths, checkpointed cut records, or
+   aggregate reporter records.  Each record \(\omega\in\Omega_B\) has
+   nonnegative query intensity \(A_B(\omega)\) and a certified port set
+   \(O_\omega(B)\subseteq\mathcal O_B\).  For every near pair \(p,q\), let
+   \(o_p(B)\) be a useful verified port, and assume soundness in the sense that
+   every emitted useful record certifies only valid terminal answers or outgoing
+   ports.
+
+   Define the unnormalized port intensities
+   \[
+      \Lambda_o(B)
+      =
+      \sum_{\omega:\ o\in O_\omega(B)}A_B(\omega),
+      \qquad
+      \Lambda_{\rm port}(B)
+      =
+      \sum_{o\in\mathcal O_B}\Lambda_o(B)
+      =
+      \sum_{\omega\in\Omega_B}|O_\omega(B)|A_B(\omega).
+      \tag{UIP1}
+   \]
+   A reporter that runs independent Poisson clocks of mean
+   \(A_B(\omega)\) for each certified pair \((\omega,o)\), or equivalently
+   reports each port \(o\) with Poisson mean \(\Lambda_o(B)\), misses the useful
+   port with conditional probability
+   \[
+      \exp\{-\Lambda_{o_p(B)}(B)\}.
+      \tag{UIP2}
+   \]
+   Therefore, if
+   \[
+      \E_Z\!\left[
+         R_{p,q}(Z)
+         \exp\{-\Lambda_{o_p(B(q,Z))}(B(q,Z))\}
+      \right]\le\frac{a_c}{8}
+      \tag{UIP3}
+   \]
+   for every promised near pair, and
+   \[
+      \E_Z\!\left[
+         T_{\rm int}(B(q,Z))
+         +
+         \Lambda_{\rm port}(B(q,Z))\log^{O_c(1)}m
+      \right]
+      \le Dm^{\rho_c}\log^{O_c(1)}m,
+      \tag{UIP4}
+   \]
+   then the reporter terminalizes the state with useful-port probability
+   \(1-\delta_s\) after the usual \(O(\log(1/\delta_s))\) independent
+   repetitions, at the clean \(Dm^{\rho_c}\polylog m\) work scale.
+
+   This is the port version of the intensity form of rate coverage.  It is
+   distinct from the normalized port-size-biased sampler of
+   \cref{cor:quotient-port-sampler-terminalizes-rate-coverage}: checkpoint
+   products can reduce \(\Lambda_{\rm port}\), but they need not reduce the
+   normalized load \(P_B\), because the normalizing partition function may be
+   thinned by the same factor.
+
+   More concretely, suppose each hidden record has checkpoint syndromes
+   \(H_s(\omega)\in G_s\), with independent uniform offsets \(\sigma_s\), and a
+   record is retained only when \(H_s(\omega)=\sigma_s\) for every segment.
+   Conditional on \(B,\Omega_B\), on the checkpoint increments, and on the port
+   sets, the retained total port intensity satisfies
+   \[
+      \E_\sigma\Lambda_{\rm port}^{\rm ret}(B)
+      =
+      \frac{\Lambda_{\rm port}^{\rm raw}(B)}{K_{\rm tot}},
+      \qquad K_{\rm tot}=\prod_s|G_s|.
+      \tag{UIP5}
+   \]
+   Thus the balanced-window MDS schedule of
+   \cref{cor:balanced-window-mds-cpfa-schedule} may be used to thin the
+   unnormalized port-emission load exactly as in \((CPFA3)\)--\((CPFA6)\), while
+   the near side must still be proved by the direct miss bound \((UIP3)\) or by
+   the segment support audit \((CPFA7)\).  Stronger terminal randomness is not
+   a substitute for either requirement.
+\end{corollary}
+
+\begin{proof}
+   Poisson superposition gives independent port clocks with means
+   \(\Lambda_o(B)\).  Hence the probability that no clock for the useful port
+   rings is exactly \((UIP2)\).  Multiplying by the tilted likelihood and
+   averaging gives the smoothed miss condition \((UIP3)\), while linearity of
+   expectation gives total expected emitted-port count \(\Lambda_{\rm port}\).
+   With the implementation work \(T_{\rm int}\), condition \((UIP4)\) is the
+   one-trial work bound.  Independent repetition amplifies the useful-port
+   success probability in the same way as
+   \cref{cor:quotient-port-sampler-terminalizes-rate-coverage}.
+
+   For \((UIP5)\), apply the same calculation as
+   \cref{cor:checkpoint-product-far-load-accounting} to the finite record set
+   \[
+      \{(\omega,o):\omega\in\Omega_B,\ o\in O_\omega(B)\}
+   \]
+   with weight \(A_B(\omega)\) on each pair.  Each pair is retained with
+   probability \(K_{\rm tot}^{-1}\) over the independent checkpoint offsets,
+   and summing its weight gives exactly the retained total port intensity.
+\end{proof}
+
 \begin{corollary}[Balanced checkpoints can absorb any fixed flat-volume excess]
    \label{cor:balanced-checkpoints-absorb-flat-volume-excess}
    Continue with the nearest-mesh scaled-GRS window of
