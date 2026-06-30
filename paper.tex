@@ -23690,7 +23690,11 @@ partition ignores the bias coordinates that certify the list size.
    partition \(Z_B^{\rm res}/Z_B\), and check quotient storage.  If
    \(Z_B^{\rm res}/Z_B=m^{\Omega(1)}m^{\rho_c}\) or the resident-count backward
    pass has polynomial width, the overhead is a real code/lattice obstruction,
-   not a failure of terminal randomness.
+   not a failure of terminal randomness.  The only way around a large resident
+   plateau inside this normal form is the verified port quotient of
+   \cref{cor:quotient-port-sampler-terminalizes-rate-coverage}: compute the
+   certified output-port boundary of each aggregate path and prove the
+   corresponding port load, rather than expanding residents.
 \end{corollary}
 
 \begin{proof}
@@ -106844,6 +106848,113 @@ tax]
    \cref{cor:bcjr-trellis-quotient-sampler}, and
    \cref{lem:junction-tree-quotient-sampler} with terminal boundary
    \(b\mapsto |C_b|\).
+\end{proof}
+
+\begin{corollary}[Verified port quotients bypass resident plateaus]
+   \label{cor:quotient-port-sampler-terminalizes-rate-coverage}
+   Work in the same local skeleton state as
+   \cref{cor:quotient-point-sampler-terminalizes-rate-coverage}.  Let
+   \(\mathcal O\) be the verified terminal-answer and outgoing-port alphabet for
+   the state.  For each query outcome \((q,Z)\), suppose the quotient reporter
+   can attach to every aggregate bucket \(b\) a certified port set
+   \(O_b(q,Z)\subseteq\mathcal O\) with the following soundness property: if
+   exact verification of any resident \(x\in C_b\) would terminate or emit an
+   outgoing port \(o_x(q,Z)\), then \(o_x(q,Z)\in O_b(q,Z)\).  For the local near
+   witness \(p\), write \(o_p(q,Z)\) for its useful verified output.
+
+   Define the port coverage and total port load by
+   \[
+      \omega_o(q,Z)=
+      \sum_{b:\ o\in O_b(q,Z)}\Pi_{q,Z}(b),
+      \qquad
+      P(q,Z)=\sum_{o\in\mathcal O}\omega_o(q,Z)
+      =
+      \sum_{b\in\mathcal B}|O_b(q,Z)|\Pi_{q,Z}(b).
+      \tag{EQO1}
+   \]
+   Assume the retained quotient representation has storage
+   \(m^{1+\rho_c}\log^{O_c(1)}m\), including whatever certificates are needed to
+   verify emitted ports, and that an exact port-size-biased aggregate sampler
+   computes \(P(q,Z)\) and, when \(P(q,Z)>0\), draws ports from
+   \[
+      \Pr[O=o\mid q,Z]=\frac{\omega_o(q,Z)}{P(q,Z)}
+      \tag{EQO2}
+   \]
+   with expected backward, sampling, certification, and duplicate-suppression
+   work \(T_{\rm port}(q,Z)\) plus polylogarithmic cost per drawn port.
+
+   If for some \(\lambda_m=\log^{O_c(1)}m\),
+   \[
+      \E_Z\!\left[
+         R_{p,q}(Z)\exp\{-\lambda_m\omega_{o_p(q,Z)}(q,Z)\}
+      \right]
+      \le \frac{a_c}{8}
+      \tag{EQO3}
+   \]
+   for every promised near pair \(p,q\), and
+   \[
+      \E_Z\!\left[
+         T_{\rm port}(q,Z)
+         +
+         \lambda_m P(q,Z)\log^{O_c(1)}m
+      \right]
+      \le
+      D\,m^{\rho_c}\log^{O_c(1)}m ,
+      \tag{EQO4}
+   \]
+   then the quotient reporter terminalizes the state with useful-port probability
+   \(1-\delta_s\), expected work
+   \[
+      D\,m^{\rho_c}\log^{O_c(1)}m\log\frac1{\delta_s},
+      \tag{EQO5}
+   \]
+   and retained storage \(m^{1+\rho_c}\log^{O_c(1)}m\).
+
+   In particular, if the soundness property holds for all residents in each
+   bucket, then
+   \[
+      \omega_{o_p(q,Z)}(q,Z)\ge\pi_p(q,Z),
+      \tag{EQO6}
+   \]
+   so the point-coverage miss bound \((EQP4)\) implies the port miss bound
+   \((EQO3)\).  The large-resident-bucket obstruction is then reduced exactly to
+   the port-load audit \(P(q,Z)\) and the ability to compute the certified port
+   boundary.  A bucket with \(m\) mutually equivalent residents but one verified
+   output port has \(P(q,Z)=1\), not resident load \(m\).
+\end{corollary}
+
+\begin{proof}
+   Conditional on \((q,Z)\), compute \(P=P(q,Z)\).  If \(P=0\), emit nothing.
+   Otherwise draw
+   \[
+      N\sim{\rm Poisson}(\lambda_m P)
+   \]
+   independent ports from \((EQO2)\), suppress duplicates, and emit only ports
+   whose certificates are accepted.  For the useful port \(o_p(q,Z)\), the number
+   of draws equal to it is Poisson with mean
+   \(\lambda_m P\cdot\omega_{o_p}/P=\lambda_m\omega_{o_p}\).  Hence the
+   conditional miss probability is
+   \(\exp\{-\lambda_m\omega_{o_p(q,Z)}(q,Z)\}\).  Averaging with the tilted weight
+   \(R_{p,q}(Z)\) and using \((EQO3)\) gives the same smoothed-list miss condition
+   used in \cref{cor:quotient-point-sampler-terminalizes-rate-coverage}.
+
+   The conditional expected number of port draws is \(\lambda_mP(q,Z)\), and the
+   assumed aggregate sampler contributes \(T_{\rm port}(q,Z)\).  Thus \((EQO4)\)
+   is the one-trial work bound.  Applying the same amplification as in
+   \cref{cor:rate-coverage-terminalizes-skeleton-state} proves \((EQO5)\) and the
+   storage statement.
+
+   Finally, if \(p\in C_b\), soundness puts \(o_p(q,Z)\in O_b(q,Z)\).  Summing
+   \(\Pi_{q,Z}(b)\) over such buckets gives
+   \[
+      \omega_{o_p(q,Z)}(q,Z)
+      \ge
+      \sum_{b:\ p\in C_b}\Pi_{q,Z}(b)
+      =
+      \pi_p(q,Z),
+   \]
+   proving \((EQO6)\).  The last sentence is the one-bucket calculation with
+   \(|O_b|=1\).
 \end{proof}
 
 \begin{corollary}[Balanced checkpoints can absorb any fixed flat-volume excess]
