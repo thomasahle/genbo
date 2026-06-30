@@ -106341,6 +106341,119 @@ tax]
    into the aggregate-value budget.
 \end{proof}
 
+\begin{corollary}[Rate-coverage panels terminalize skeleton states]
+   \label{cor:rate-coverage-terminalizes-skeleton-state}
+   Work in the port-skeleton setting of
+   \cref{cor:terminalized-scaled-grs-skeleton-compiler}.  At a nonunit state
+   \(s\), let \(S_s\) be the resident set, \(m_s=|S_s|\), and suppose that
+   exact verification of a reported resident either terminates with a valid
+   \(cr\)-neighbor or maps the resident to a verified outgoing port.  Assume
+   that for the local near witness \(p_s\) this verified output is useful.
+
+   Suppose further that the local state has a point-mass rate-coverage
+   reporter in the sense of
+   \cref{cor:point-mass-rate-coverage-reporter}, with
+   \(\rho=\rho_c\), \(\theta_s^{-1}=\log^{O_c(1)}m_s\), and with the
+   strengthened miss and load bounds \((PMR1)\)--\((PMR2)\) for the local
+   smoothed law.  Assume its retained implementation constructs the heavy list,
+   removes duplicates, evaluates the point masses on emitted candidates, and
+   verifies all emitted residents in expected work
+   \[
+      T_s^{\rm rc}
+      \le
+      D_s\,m_s^{\rho_c}\log^{A_{\rm rc}}m_s
+      \tag{RTC1}
+   \]
+   for the local projected dimension \(D_s\), and that its retained storage is
+   at most \(m_s^{1+\rho_c}\log^{O_c(1)}m_s\).
+
+   For a target \(0<\delta_s\le1/2\), run
+   \[
+      N_s=
+      \left\lceil
+         C_c\log^{A_c}m_s\,\log\frac1{\delta_s}
+      \right\rceil
+      \tag{RTC2}
+   \]
+   independent smoothed witness-list trials from
+   \cref{lem:smoothed-witness-list-compiler}, using this point-mass reporter
+   as the list routine and exact verification before any port is emitted.
+   Here \(A_c\) is the cap exponent from
+   \cref{lem:smoothed-witness-list-compiler}, and \(C_c\) is a sufficiently
+   large constant depending only on \(c\).  Then the resulting state
+   terminalizer reports a useful verified port with probability at least
+   \[
+      1-\delta_s,
+      \tag{RTC3}
+   \]
+   and its expected query, list, and invalid-verification work is
+   \[
+      T_s
+      \le
+      D_s\,m_s^{\rho_c}\log^{A_{\rm rc}+A_c+O_c(1)}m_s
+      \log\frac1{\delta_s}.
+      \tag{RTC4}
+   \]
+
+   Consequently, if every nonunit skeleton state admits such a local
+   rate-coverage terminalizer and the route-local sums
+   \[
+      \sum_s\pi_s
+      D_s\,m_s^{\rho_c}\log^{A_{\rm rc}+A_c+O_c(1)}m_s
+      \log\frac1{\delta_s}
+      \tag{RTC5}
+   \]
+   fit inside the global \(n^{\rho_c}\polylog n\) budget, then the skeleton
+   satisfies the value bound \((TGS3)\) with these \(\delta_s\)'s and no
+   additional subpolynomial branch-and-bound loss.
+
+   In particular, this corollary applies to the acyclic code/lattice quotient
+   implementations of
+   \cref{cor:resident-support-conditioned-raw-expansion},
+   \cref{cor:quotient-syndrome-trellis-support-sampler},
+   \cref{cor:checkpointed-quotient-prefix-cut-compiler},
+   \cref{cor:edge-defect-carry-rank-verifier}, and
+   \cref{cor:banded-quotient-active-check-width} whenever their concrete
+   width/work conditions, such as \((QST8)\), \((CQR3)\), \((EDV7)\), or
+   \((ACW9)\), supply \((RTC1)\) while the same retained panel passes
+   \((PMR1)\)--\((PMR2)\).  This is the fixed normal form for a deep
+   code/lattice terminalization proof: tilted miss, rate load, and
+   low-width aggregate access.  Extra randomness in the terminal subset is not
+   a separate substitute for these three checks.
+\end{corollary}
+
+\begin{proof}
+   By \cref{cor:point-mass-rate-coverage-reporter}, the heavy point-mass list
+   satisfies the tilted witness-list condition \((WL2)\) for \(p_s\).  Applying
+   \cref{lem:smoothed-witness-list-compiler} with
+   \(B=\log^{A_c}m_s\) shows that one smoothed trial returns a verified useful
+   output with probability at least \(\gamma_c\log^{-A_c}m_s\), for a constant
+   \(\gamma_c>0\) depending only on \(c\).  The lower bound is witnessed by
+   \(p_s\)'s contribution to the capped valid weight; if another verified
+   valid resident is returned instead, it is also a useful terminal output.
+
+   With \(N_s\) independent trials, the miss probability is at most
+   \[
+      \left(1-\gamma_c\log^{-A_c}m_s\right)^{N_s}
+      \le
+      \delta_s
+   \]
+   after choosing \(C_c\ge\gamma_c^{-1}\), proving \((RTC3)\).  The expected
+   work is \(N_s\) times the one-trial point-mass reporter and verification
+   work in \((RTC1)\), with the polylogarithmic list-size and acceptance
+   factors already included by
+   \cref{cor:point-mass-rate-coverage-reporter}; this proves \((RTC4)\).
+
+   Thus each state satisfies the useful-port hypothesis \((TGS1)\), and the
+   same proof as \cref{cor:terminalized-scaled-grs-skeleton-compiler} applies
+   with the dimension-charged local work bound \((RTC4)\) in place of the
+   shorthand \(m_s^{\rho_c}\polylog m_s\) in \((TGS2)\).  This gives
+   \((RTC5)\) and the displayed skeleton value claim.  The final paragraph is
+   just the substitution of the listed aggregate-sampler work certificates into
+   \((RTC1)\); their miss and load hypotheses are still exactly
+   \((PMR1)\)--\((PMR2)\).
+\end{proof}
+
 \begin{corollary}[Balanced checkpoints can absorb any fixed flat-volume excess]
    \label{cor:balanced-checkpoints-absorb-flat-volume-excess}
    Continue with the nearest-mesh scaled-GRS window of
