@@ -8667,6 +8667,100 @@ partition ignores the bias coordinates that certify the list size.
    \(|A|=\Omega(|\mathbb F|)\).
 \end{proof}
 
+\begin{corollary}[Meet-in-the-middle syndrome frontiers pay occupied residues]
+   \label{cor:mitm-syndrome-frontier-occupancy}
+   Split the tuple coordinates into two sides \(L,R\).  Write
+   \(a\in\mathcal A\) for a left partial tuple, \(b\in\mathcal B\) for a
+   right partial tuple,
+   \[
+      S_q(a,b)=S_L(a)+S_R(b),
+      \qquad
+      H(a,b)=H_L(a)+H_R(b)\in G,
+      \tag{MSF1}
+   \]
+   and fix a target syndrome \(\sigma\).  Suppose the right side is stored in
+   residue buckets that, for any \(g\in G\) and score threshold \(\theta\),
+   list
+   \[
+      B_g(\theta)=\{b\in\mathcal B:H_R(b)=g,\ S_R(b)\ge\theta\}
+      \tag{MSF2}
+   \]
+   in \(D_R(g,\theta)+|B_g(\theta)|\) work.  Then scanning any query-visible
+   left frontier \(A\subseteq\mathcal A\) reports every retained tuple with
+   left part in \(A\) and total score at least \(\Theta\) by the rule
+   \[
+      a\in A
+      \quad\mapsto\quad
+      B_{\sigma-H_L(a)}(\Theta-S_L(a)),
+      \tag{MSF3}
+   \]
+   at work
+   \[
+      |A|+
+      \sum_{a\in A}\left(
+         D_R(\sigma-H_L(a),\Theta-S_L(a))
+         +
+         |B_{\sigma-H_L(a)}(\Theta-S_L(a))|
+      \right).
+      \tag{MSF4}
+   \]
+   In particular, a two-coordinate full affine syndrome is clean because one
+   side frontier is a single coordinate list;
+   \cref{cor:affine-syndrome-lookup-compiler} is exactly this case with
+   singleton right buckets.
+
+   The same formula also identifies the barrier.  Let \(A\) be fixed before
+   the syndrome seed is exposed, put \(K=|G|\), and suppose the exposed
+   residues \(\{H_L(a):a\in A\}\) are pairwise independent and uniform in
+   \(G\).  If
+   \[
+      W_A=|\{H_L(a):a\in A\}|,
+      \tag{MSF5}
+   \]
+   then
+   \[
+      \E W_A
+      \ge
+      K\,\frac{|A|}{K+|A|}
+      \ge \frac12\min\{K,|A|\}.
+      \tag{MSF6}
+   \]
+   Thus a meet-in-the-middle decoder that materializes a high-score side
+   frontier of size at least \(K\) still exposes \(\Omega(K)\) residue buckets
+   in expectation.  The algebraic syndrome has removed the false scalar-mask
+   correlations, but it has not compressed branch-and-bound by its thinning
+   factor.  Polynomial \(K\) is compatible with the clean endpoint only when
+   one materialized side frontier is already small enough, when the reporter
+   has a direct low-width quotient/carry structure, or when the syndrome is
+   used terminally through the unnormalized intensity route rather than as an
+   exposed prefix state.
+\end{corollary}
+
+\begin{proof}
+   The positive lookup statement is just substitution: for a fixed left partial
+   \(a\), the syndrome equation forces
+   \(H_R(b)=\sigma-H_L(a)\), and the score inequality forces
+   \(S_R(b)\ge\Theta-S_L(a)\).  Therefore \((MSF3)\) lists exactly the valid
+   right completions of \(a\), and summing the right-bucket costs gives
+   \((MSF4)\).
+
+   For the occupancy bound, for each residue \(g\in G\) let
+   \(X_g=|\{a\in A:H_L(a)=g\}|\).  Pairwise independence and uniformity give
+   \[
+      \E X_g=\frac{|A|}{K}=:\mu,
+      \qquad
+      \E X_g^2\le \mu+\mu^2 .
+   \]
+   Paley--Zygmund yields
+   \[
+      \Pr[X_g>0]\ge\frac{\mu}{1+\mu}.
+   \]
+   Summing this lower bound over \(g\in G\) proves \((MSF6)\).  The final
+   interpretation is the comparison between the thinning range \(K\) and the
+   number of occupied residue frontiers that a state-exposed or
+   meet-in-the-middle decoder must touch.
+\end{proof}
+
 \begin{corollary}[Projected affine residues give bucket lookup, not magic]
    \label{cor:projected-affine-residue-compiler}
    Let \(\mathbb F\) be a finite field, let
