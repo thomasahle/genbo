@@ -136,6 +136,13 @@ fn rerank_survivors(ds: &I8Bin, q: &[i8], pool: &[(i32, u32)], k: usize) -> Vec<
 /// gathers stay inside the small probed-cell region (cache-warm) instead of scattering across the
 /// full base. Pool = (approx_dist, slot); returns up to k DISTINCT orig ids by true L2.
 fn rerank_contig(raw: &[i8], d: usize, slot_orig: &[u32], q: &[i8], pool: &[(i32, u32)], k: usize) -> Vec<u32> {
+    rerank_contig_pairs(raw, d, slot_orig, q, pool, k).into_iter().take(k).map(|(_, o)| o).collect()
+}
+
+/// Like `rerank_contig` but returns the full sorted `(exact_dist, orig)` heap (up to `k*4` entries),
+/// not just the top-k ids. The streaming search reranks the main index and the per-cell append buffer
+/// SEPARATELY (they read different raw stores) and merges these scored lists, so it needs the dists.
+fn rerank_contig_pairs(raw: &[i8], d: usize, slot_orig: &[u32], q: &[i8], pool: &[(i32, u32)], k: usize) -> Vec<(i32, u32)> {
     let m = (k * 4).min(pool.len());
     if m == 0 {
         return Vec::new();
@@ -165,14 +172,7 @@ fn rerank_contig(raw: &[i8], d: usize, slot_orig: &[u32], q: &[i8], pool: &[(i32
     }
     let mut v = heap.into_vec();
     v.sort_unstable();
-    let mut out = Vec::with_capacity(k);
-    for &(_, orig) in &v {
-        out.push(orig);
-        if out.len() == k {
-            break;
-        }
-    }
-    out
+    v
 }
 
 // ---------------- Router: coarse quantizer (which cells) ----------------
@@ -1176,6 +1176,25 @@ pub struct Index {
     // probed cells as duplicate slots, so scan_rerank must dedup the pool by orig id BEFORE the t_surv cap
     // (deduping after the cap loses recall when dups crowd the survivors). a0==1 => no dedup needed.
     pub a0: usize,
+    // ---- STREAMING (all empty/None until insert()/delete() is used) ----
+    // Per-cell APPEND BUFFER for inserted points. ins_blocks[c] = that cell's appended points packed
+    // into the SAME 16-row PQ block layout as the main index, so the existing scan_block kernel runs
+    // over them unchanged. ins_gidx[c][slot] = the GLOBAL appended index for that slot. ins_full_blocks[c]
+    // = #complete (16-full) blocks already sealed into ins_blocks[c]; the partial tail block is re-encoded
+    // on each finalize_inserts(). Every appended point also lives in the flat ins_raw/ins_orig arrays (in
+    // append order) so the exact rerank reuses rerank_contig_pairs(ins_raw, ins_orig, (approx, gidx)).
+    pub ins_blocks: Vec<Vec<u8>>,
+    pub ins_gidx: Vec<Vec<u32>>,
+    pub ins_full_blocks: Vec<usize>,
+    pub ins_raw: Vec<i8>,                              // d i8 per appended point (flat, append order)
+    pub ins_orig: Vec<u32>,                           // orig id per appended point (u32::MAX once deleted)
+    pub ins_loc: std::collections::HashMap<u32, u32>, // inserted orig id -> global appended index (delete)
+    pub ins_dirty: Vec<u32>,                          // cells whose tail block needs (re)encoding
+    pub ins_count: usize,                             // live (non-deleted) appended points
+    // reverse map MAIN orig -> its slots, built lazily on the first delete (CSR; main orig ids are the
+    // dense point indices 0..n_main-1 produced by build). None until a main point is deleted.
+    pub main_rev: Option<(Vec<u32>, Vec<u32>)>,       // (offsets[n_main+1], slots)
+    pub n_main: usize,                                // #points at build time
 }
 
 impl Index {
@@ -1307,7 +1326,13 @@ impl Index {
                 }
             }
         }
-        Index { router, comp, cell_bstart, slot_orig, blocks, bb, xfn: Vec::new(), raw, d, blocks_il, cell_ilstart, resid_pq, resid_codes, rq_cent, a0 }
+        Index {
+            router, comp, cell_bstart, slot_orig, blocks, bb, xfn: Vec::new(), raw, d, blocks_il,
+            cell_ilstart, resid_pq, resid_codes, rq_cent, a0,
+            ins_blocks: vec![Vec::new(); nc], ins_gidx: vec![Vec::new(); nc], ins_full_blocks: vec![0; nc],
+            ins_raw: Vec::new(), ins_orig: Vec::new(), ins_loc: std::collections::HashMap::new(),
+            ins_dirty: Vec::new(), ins_count: 0, main_rev: None, n_main: n,
+        }
     }
 
     pub fn search(&self, ds: &I8Bin, q: &[i8], p: usize, t: usize, k: usize) -> Vec<u32> {
@@ -1392,11 +1417,11 @@ impl Index {
         ((t1 - t0).as_nanos() as u64, (t2 - t1).as_nanos() as u64, (t3 - t2).as_nanos() as u64)
     }
 
-    /// Scan the given cells with the compressor, keep top-T by approx dist, exact-rerank to top-k.
-    pub fn scan_rerank(&self, ds: &I8Bin, q: &[i8], cells: &[u32], t: usize, k: usize) -> Vec<u32> {
-        let prof = PROFILE.load(std::sync::atomic::Ordering::Relaxed);
-        let ts = if prof { Some(std::time::Instant::now()) } else { None };
-        let ctx = self.comp.prepare_query(q);
+    /// Build the candidate pool (approx_dist, slot) for `cells` using the active compressor's scan
+    /// kernels (exact-row / 64-wide AVX-512 / paired PQ), applying the RESIDQ per-cell offset. Factored
+    /// out of scan_rerank so the streaming search reuses the IDENTICAL hot scan path. Returns the raw
+    /// pool BEFORE any dedup / survivor cap. `ctx` is the prepared query (prepare_query) shared by caller.
+    fn scan_pool(&self, ds: &I8Bin, q: &[i8], cells: &[u32], ctx: &QueryCtx) -> Vec<(i32, u32)> {
         let need_rows = self.comp.needs_raw_rows();
         let mut pool: Vec<(i32, u32)> = Vec::with_capacity(8192);
         let mut out16 = [0i32; 16];
@@ -1407,7 +1432,7 @@ impl Index {
             && matches!(ctx, QueryCtx::Pq8 { .. });
         // RESIDQ: add the exact per-cell <q,centroid> offset (in scan i16-units) so candidate scores =
         // <q,cent>+<q,resid_hat>. scale=0 (non-residq) skips it. Applied once per cell after its blocks.
-        let rq_scale: f32 = match &ctx { QueryCtx::Pq16 { scale, .. } | QueryCtx::Pq8 { scale, .. } => *scale, _ => 0.0 };
+        let rq_scale: f32 = match ctx { QueryCtx::Pq16 { scale, .. } | QueryCtx::Pq8 { scale, .. } => *scale, _ => 0.0 };
         let residq = rq_scale != 0.0 && !self.rq_cent.is_empty();
         let dd = self.d;
         for &cell in cells {
@@ -1421,7 +1446,7 @@ impl Index {
                         let o = self.slot_orig[b * 16 + j];
                         if o != u32::MAX { ds.row(o as usize) } else { &[][..] }
                     }).collect();
-                    self.comp.scan_block(block, &ctx, q, &rows16, &mut out16);
+                    self.comp.scan_block(block, ctx, q, &rows16, &mut out16);
                     for j in 0..16 {
                         let slot = b * 16 + j;
                         if self.slot_orig[slot] != u32::MAX { pool.push((out16[j], slot as u32)); }
@@ -1429,7 +1454,7 @@ impl Index {
                 }
             } else if use512fs {
                 // 64-wide AVX-512 fast-scan over the interleaved superblocks (4 blocks/superblock).
-                if let QueryCtx::Pq8 { regs, regs_z, .. } = &ctx {
+                if let QueryCtx::Pq8 { regs, regs_z, .. } = ctx {
                     let m = bb / 8;
                     let il0 = self.cell_ilstart[cell as usize] as usize;
                     let nfull = (be - bs) / 4;
@@ -1464,7 +1489,7 @@ impl Index {
                 while b + 1 < be {
                     let b0 = &self.blocks[b * bb..(b + 1) * bb];
                     let b1 = &self.blocks[(b + 1) * bb..(b + 2) * bb];
-                    self.comp.scan_block_x2(b0, b1, &ctx, &mut out32);
+                    self.comp.scan_block_x2(b0, b1, ctx, &mut out32);
                     for j in 0..16 {
                         let slot = b * 16 + j;
                         if self.slot_orig[slot] != u32::MAX { pool.push((out32[j], slot as u32)); }
@@ -1477,7 +1502,7 @@ impl Index {
                 }
                 if b < be {
                     let block = &self.blocks[b * bb..(b + 1) * bb];
-                    self.comp.scan_block(block, &ctx, q, &[], &mut out16);
+                    self.comp.scan_block(block, ctx, q, &[], &mut out16);
                     for j in 0..16 {
                         let slot = b * 16 + j;
                         if self.slot_orig[slot] != u32::MAX { pool.push((out16[j], slot as u32)); }
@@ -1491,6 +1516,15 @@ impl Index {
                 for e in &mut pool[pool_start..] { e.0 -= off; }
             }
         }
+        pool
+    }
+
+    /// Scan the given cells with the compressor, keep top-T by approx dist, exact-rerank to top-k.
+    pub fn scan_rerank(&self, ds: &I8Bin, q: &[i8], cells: &[u32], t: usize, k: usize) -> Vec<u32> {
+        let prof = PROFILE.load(std::sync::atomic::Ordering::Relaxed);
+        let ts = if prof { Some(std::time::Instant::now()) } else { None };
+        let ctx = self.comp.prepare_query(q);
+        let mut pool = self.scan_pool(ds, q, cells, &ctx);
         // SOAR multi-store (a0>1): dedup the pool by orig id BEFORE the cap so distinct survivors enter
         // rerank (deduping after the cap loses recall at high a0). a0==1 has no dups -> skip. The fast
         // reused open-addressing table replaces the per-query SipHash HashMap (the gap-widener, P134).
@@ -1504,6 +1538,185 @@ impl Index {
         let _ = ds;
         let out = rerank_contig(&self.raw, self.d, &self.slot_orig, q, &pool, k);
         if let Some(tr) = tr { PROF_RERANK_NS.fetch_add(tr.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed); }
+        out
+    }
+
+    // ======================= STREAMING (insert / delete / search) =======================
+    // No-graph IVF makes streaming structurally cheap: a point lives in its routed cell(s) only, so an
+    // insert is an APPEND to a per-cell buffer and a delete is a TOMBSTONE (slot_orig := u32::MAX, which
+    // every scan/rerank already skips). There is no neighbor graph to repair. Costs:
+    //   delete: O(a0) (tombstone the point's a0 slots) after a one-time O(n_main) reverse-map build.
+    //   insert: O(d) amortized — append raw+orig (O(d)), route (router.assign), mark the cell dirty;
+    //           the PQ re-encode of the touched tail block is deferred to finalize_inserts().
+    //   finalize_inserts(): O(new points) — (re)encode each dirty cell's unsealed tail into PQ blocks.
+    //   search: main scan + a buffer scan over the probed cells' appended blocks, merged at rerank.
+    // The buffer scan re-walks a probed cell's appended points every query, so search cost grows with the
+    // buffer; production amortizes this with a periodic compaction (= rebuild folding the buffer into the
+    // main cell-contiguous layout). For this recall-focused validation we keep the buffer un-compacted.
+
+    /// Tombstone `orig` so it disappears from all future results. Returns false if `orig` is unknown.
+    /// Inserted points: clear their flat ins_orig entry (referenced from every cell that holds them).
+    /// Main points: clear every slot the point occupies (a0 copies under SOAR multi-store).
+    pub fn delete(&mut self, orig: u32) -> bool {
+        if let Some(&g) = self.ins_loc.get(&orig) {
+            if self.ins_orig[g as usize] != u32::MAX { self.ins_orig[g as usize] = u32::MAX; self.ins_count -= 1; }
+            self.ins_loc.remove(&orig);
+            return true;
+        }
+        if (orig as usize) >= self.n_main { return false; }
+        if self.main_rev.is_none() { self.build_main_rev(); }
+        let slots: Vec<u32> = {
+            let (off, sl) = self.main_rev.as_ref().unwrap();
+            let (s, e) = (off[orig as usize] as usize, off[orig as usize + 1] as usize);
+            sl[s..e].to_vec()
+        };
+        let mut any = false;
+        for slot in slots {
+            if self.slot_orig[slot as usize] != u32::MAX { self.slot_orig[slot as usize] = u32::MAX; any = true; }
+        }
+        any
+    }
+
+    /// Build the lazy MAIN reverse index orig -> slots (CSR). Main orig ids are the dense point indices
+    /// 0..n_main-1 produced by build(), so a flat offset table is exact and compact (~(1+a0)*n_main u32).
+    fn build_main_rev(&mut self) {
+        let n = self.n_main;
+        let mut off = vec![0u32; n + 1];
+        for &o in &self.slot_orig { if o != u32::MAX && (o as usize) < n { off[o as usize + 1] += 1; } }
+        for i in 0..n { off[i + 1] += off[i]; }
+        let mut slots = vec![0u32; off[n] as usize];
+        let mut cur = off.clone();
+        for (slot, &o) in self.slot_orig.iter().enumerate() {
+            if o != u32::MAX && (o as usize) < n { slots[cur[o as usize] as usize] = slot as u32; cur[o as usize] += 1; }
+        }
+        self.main_rev = Some((off, slots));
+    }
+
+    /// Insert one point: store raw+orig in the flat append arrays, route it (router.assign, a0 cells),
+    /// and reference its global appended index from each routed cell's buffer. The PQ encoding of the
+    /// touched cells' tail blocks is deferred to finalize_inserts() (so a batch encodes once). Uses the
+    /// index's own compressor (self.comp); `a0` controls multi-store like build's a0.
+    pub fn insert(&mut self, row: &[i8], orig: u32, a0: usize) {
+        debug_assert_eq!(row.len(), self.d);
+        let g = self.ins_orig.len() as u32;
+        self.ins_raw.extend_from_slice(row);
+        self.ins_orig.push(orig);
+        self.ins_loc.insert(orig, g);
+        self.ins_count += 1;
+        let mut cells: Vec<u32> = Vec::with_capacity(a0);
+        self.router.assign(row, a0, &mut cells);
+        if cells.is_empty() { cells.push(0); }
+        cells.sort_unstable();
+        cells.dedup();
+        for &c in &cells {
+            self.ins_gidx[c as usize].push(g);
+            self.ins_dirty.push(c);
+        }
+    }
+
+    /// Encode the appended points of every dirty cell into the per-cell PQ block buffer (the 16-row
+    /// layout the scan kernel expects). Only the unsealed tail (past the last full block) is re-encoded,
+    /// so repeated batches stay O(new points). MUST be called after an insert batch and before searching
+    /// (search takes &self and cannot mutate). No-op for ScalarI8 (bb==0: the buffer is scanned exactly).
+    pub fn finalize_inserts(&mut self) {
+        if self.ins_dirty.is_empty() { return; }
+        let bb = self.bb;
+        let d = self.d;
+        let dirty = std::mem::take(&mut self.ins_dirty);
+        let mut seen = std::collections::HashSet::new();
+        for cell in dirty {
+            if !seen.insert(cell) { continue; }
+            let c = cell as usize;
+            if bb == 0 { continue; }
+            let n = self.ins_gidx[c].len();
+            let full = self.ins_full_blocks[c];
+            self.ins_blocks[c].truncate(full * bb); // drop the previously-padded tail block(s)
+            let mut b = full;
+            while b * 16 < n {
+                let s = b * 16;
+                let cnt = (n - s).min(16);
+                let rows: Vec<&[i8]> = (0..16).map(|j| {
+                    if j < cnt { let g = self.ins_gidx[c][s + j] as usize; &self.ins_raw[g * d..g * d + d] }
+                    else { &[][..] }
+                }).collect();
+                self.comp.encode_block(&rows, cnt, &[], &mut self.ins_blocks[c]);
+                b += 1;
+            }
+            self.ins_full_blocks[c] = n / 16; // only complete blocks are permanently sealed
+        }
+    }
+
+    /// Scan the append buffer for the probed `cells`, returning (approx_dist, global_appended_index).
+    /// PQ path: the same scan_block kernels over the cell's appended blocks. ScalarI8 / bb==0: exact L2
+    /// straight from ins_raw. Tombstoned points (ins_orig==u32::MAX) are skipped.
+    fn scan_ins_pool(&self, q: &[i8], cells: &[u32], ctx: &QueryCtx) -> Vec<(i32, u32)> {
+        let need_rows = self.comp.needs_raw_rows();
+        let bb = self.bb;
+        let d = self.d;
+        let mut pool: Vec<(i32, u32)> = Vec::new();
+        let mut out16 = [0i32; 16];
+        let mut out32 = [0i32; 32];
+        for &cell in cells {
+            let c = cell as usize;
+            let gidx = &self.ins_gidx[c];
+            let n = gidx.len();
+            if n == 0 { continue; }
+            if need_rows || bb == 0 {
+                for idx in 0..n {
+                    let g = gidx[idx];
+                    if self.ins_orig[g as usize] == u32::MAX { continue; }
+                    let row = &self.ins_raw[g as usize * d..g as usize * d + d];
+                    pool.push((simd::l2_i8(q, row), g));
+                }
+            } else {
+                let blk = &self.ins_blocks[c];
+                let nblk = blk.len() / bb; // == ceil(n/16) after finalize_inserts
+                let mut b = 0;
+                while b + 1 < nblk {
+                    let b0 = &blk[b * bb..(b + 1) * bb];
+                    let b1 = &blk[(b + 1) * bb..(b + 2) * bb];
+                    self.comp.scan_block_x2(b0, b1, ctx, &mut out32);
+                    for j in 0..16 { let s = b * 16 + j; if s < n { let g = gidx[s]; if self.ins_orig[g as usize] != u32::MAX { pool.push((out32[j], g)); } } }
+                    for j in 0..16 { let s = (b + 1) * 16 + j; if s < n { let g = gidx[s]; if self.ins_orig[g as usize] != u32::MAX { pool.push((out32[16 + j], g)); } } }
+                    b += 2;
+                }
+                if b < nblk {
+                    let block = &blk[b * bb..(b + 1) * bb];
+                    self.comp.scan_block(block, ctx, q, &[], &mut out16);
+                    for j in 0..16 { let s = b * 16 + j; if s < n { let g = gidx[s]; if self.ins_orig[g as usize] != u32::MAX { pool.push((out16[j], g)); } } }
+                }
+            }
+        }
+        pool
+    }
+
+    /// Streaming search: scan the MAIN index AND the per-cell append buffer over the same probed cells,
+    /// exact-rerank each store to scored (dist, orig) survivors, then merge for the global top-k. Deletes
+    /// are already reflected (tombstoned slots/ins_orig are skipped). Falls back to the main path alone
+    /// when nothing was inserted.
+    pub fn search_stream(&self, ds: &I8Bin, q: &[i8], p: usize, t: usize, k: usize) -> Vec<u32> {
+        let cells = self.router.probe(q, p);
+        let ctx = self.comp.prepare_query(q);
+        let mut pool = self.scan_pool(ds, q, &cells, &ctx);
+        if self.a0 >= DEDUP_A0.load(std::sync::atomic::Ordering::Relaxed) || POOLDEDUP.load(std::sync::atomic::Ordering::Relaxed) {
+            dedup_pool_by_orig(&mut pool, &self.slot_orig);
+        }
+        let tt = t.min(pool.len());
+        if tt > 0 { pool.select_nth_unstable(tt - 1); pool.truncate(tt); }
+        let mut cand = rerank_contig_pairs(&self.raw, self.d, &self.slot_orig, q, &pool, k);
+        if !self.ins_raw.is_empty() {
+            let mut bpool = self.scan_ins_pool(q, &cells, &ctx);
+            let bt = t.min(bpool.len());
+            if bt > 0 { bpool.select_nth_unstable(bt - 1); bpool.truncate(bt); }
+            let bpairs = rerank_contig_pairs(&self.ins_raw, self.d, &self.ins_orig, q, &bpool, k);
+            cand.extend_from_slice(&bpairs);
+        }
+        cand.sort_unstable();
+        let mut out = Vec::with_capacity(k);
+        let mut seen = std::collections::HashSet::new();
+        for (_, orig) in cand {
+            if seen.insert(orig) { out.push(orig); if out.len() == k { break; } }
+        }
         out
     }
 
