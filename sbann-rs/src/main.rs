@@ -839,6 +839,123 @@ fn rbench(base: &str, qpath: &str, gtpath: &str) {
     }
 }
 
+/// Streaming-mean of a dataset (parallel reduce); SBANN_NOMU -> zero mean (router uses raw space).
+fn mean_of(ds: &I8Bin) -> Vec<f32> {
+    let n = ds.nb;
+    let sum: Vec<f64> = (0..n).into_par_iter()
+        .fold(|| vec![0f64; ds.d], |mut a, i| { let r = ds.row(i); for k in 0..ds.d { a[k] += r[k] as f64; } a })
+        .reduce(|| vec![0f64; ds.d], |mut a, b| { for k in 0..ds.d { a[k] += b[k]; } a });
+    if std::env::var("SBANN_NOMU").is_ok() { vec![0f32; ds.d] } else { sum.iter().map(|s| (s / n as f64) as f32).collect() }
+}
+
+fn make_router(ds: &I8Bin, router_s: &str, c: usize, mu: Vec<f32>) -> Box<dyn vq::Router> {
+    match router_s {
+        "flatsoar" => Box::new(vq::FlatIvf::train_soar(ds, c, mu, 15, 1.0)),
+        "flatrair" => Box::new(vq::FlatIvf::train_rair(ds, c, mu, 15, 1.0)),
+        _ => Box::new(vq::FlatIvf::train(ds, c, mu, 15)), // "flat"
+    }
+}
+
+fn make_comp(ds: &I8Bin, comp_s: &str, dpb: usize, eta: f32) -> Box<dyn vq::Compressor> {
+    match comp_s {
+        "pq4" => Box::new(vq::Pq4::train(ds, dpb, 6)),
+        "opq4" => Box::new(vq::Opq4::train(ds, dpb, 6)),
+        "opql" => Box::new(vq::Opq4::train_learned(ds, dpb, 6, 8)),
+        "i8" => Box::new(vq::ScalarI8::new(ds.d)),
+        _ => Box::new(vq::Apq4::train(ds, dpb, 6, eta)), // "apq4"
+    }
+}
+
+/// recall@10 of search_stream over `nq` queries, GT FILTERED to the live set by `live(id)`. The deep
+/// (k=100) ground truth lets us recover the true top-10-among-live as the first 10 live ids of each
+/// query's global top-100: any point outside the global top-100 is farther than all of them, so this is
+/// EXACT whenever >=10 live ids survive (rare shortfalls are reported, denom = min(10, #live-in-top100)).
+#[allow(clippy::too_many_arguments)]
+fn eval_stream(idx: &vq::Index, ds: &I8Bin, qs: &I8Bin, gids: &[u32], gk: usize, nq: usize,
+               p: usize, t: usize, label: &str, live: &dyn Fn(u32) -> bool) -> f64 {
+    let st = Instant::now();
+    let res: Vec<Vec<u32>> = (0..nq).into_par_iter().map(|i| idx.search_stream(ds, qs.row(i), p, t, 10)).collect();
+    let dt = st.elapsed().as_secs_f64();
+    let mut rec_sum = 0f64;
+    let mut few = 0usize;
+    for i in 0..nq {
+        let truth: Vec<u32> = gids[i * gk..i * gk + gk].iter().copied().filter(|&id| live(id)).take(10).collect();
+        if truth.len() < 10 { few += 1; }
+        let denom = truth.len().min(10);
+        if denom == 0 { continue; }
+        let tset: std::collections::HashSet<u32> = truth.iter().copied().collect();
+        let hit = res[i].iter().take(10).filter(|id| tset.contains(id)).count();
+        rec_sum += hit as f64 / denom as f64;
+    }
+    let rec = rec_sum / nq as f64;
+    let warn = if few > 0 { format!("  ({few}/{nq} q had <10 live GT in top-{gk})") } else { String::new() };
+    println!("  [{label:>18}] recall@10={rec:.4}  QPS={:.0}{warn}", nq as f64 / dt);
+    rec
+}
+
+/// STREAMING-track validation. Build on the first n_init points of `base`, then apply a workload
+/// (insert the rest -> delete a fraction of the first half) and report recall@10 at each step against
+/// the live-set-filtered ground truth — verifying that streaming insert/delete tracks a from-scratch
+/// build. Recall (not QPS) is the metric; the box is load-noisy. p/t/n_init via SBANN_P/SBANN_TMUL/SBANN_NINIT.
+fn stream(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: usize, c: usize) {
+    let t0 = Instant::now();
+    let full = I8Bin::open(base).expect("base");
+    let (n_total, d) = (full.nb, full.d);
+    let n_init = std::env::var("SBANN_NINIT").ok().and_then(|s| s.parse().ok()).unwrap_or(n_total / 2).min(n_total);
+    let dpb: usize = std::env::var("SBANN_DPB").ok().and_then(|s| s.parse().ok()).unwrap_or(2);
+    let eta: f32 = std::env::var("SBANN_ETA").ok().and_then(|s| s.parse().ok()).unwrap_or(4.0);
+    let init = I8Bin::open_range(base, 0, n_init).expect("init view");
+    println!("[stream] base nb={n_total} d={d}  n_init={n_init}  to_insert={}  router={router_s} comp={comp_s} a0={a0} C={c} dpb={dpb}",
+        n_total - n_init);
+
+    // build the streaming index on the INITIAL subset (cold start: PQ codebook + cells trained on it)
+    let mu = mean_of(&init);
+    let router = make_router(&init, router_s, c, mu.clone());
+    let comp = make_comp(&init, comp_s, dpb, eta);
+    let mut idx = vq::Index::build(router, comp, &init, a0);
+    println!("  built initial index ({n_init} pts) in {:.1}s", t0.elapsed().as_secs_f64());
+
+    let qs = I8Bin::open(qpath).expect("q");
+    let (gnq, gk, gids) = read_gt(gtpath);
+    let nq_cap = std::env::var("SBANN_NQ").ok().and_then(|s| s.parse().ok()).unwrap_or(usize::MAX);
+    let nq = qs.nb.min(gnq).min(nq_cap);
+    let p: usize = std::env::var("SBANN_P").ok().and_then(|s| s.parse().ok()).unwrap_or((c / 16).max(1));
+    let tmul: usize = std::env::var("SBANN_TMUL").ok().and_then(|s| s.parse().ok()).unwrap_or(30);
+    let t = (p * tmul).max(1000);
+    println!("  queries nq={nq} gt_k={gk}  p={p} t={t}");
+
+    // (a) initial-build recall: GT filtered to ids < n_init
+    let rec_a = eval_stream(&idx, &init, &qs, &gids, gk, nq, p, t, "initial-build", &|id| (id as usize) < n_init);
+
+    // (b) INSERT the held-out points (orig id = global index), then finalize the buffer encoding
+    let ti = Instant::now();
+    for j in n_init..n_total { idx.insert(full.row(j), j as u32, a0); }
+    idx.finalize_inserts();
+    let dti = ti.elapsed().as_secs_f64();
+    println!("  inserted {} pts in {:.1}s ({:.0} pts/s); live={}", n_total - n_init, dti, (n_total - n_init) as f64 / dti, n_init + idx.ins_count);
+    let rec_b = eval_stream(&idx, &init, &qs, &gids, gk, nq, p, t, "after-insert->1M", &|_| true);
+
+    // (c) DELETE ~20% of the first half (every 5th id) -> tombstones; GT filtered to exclude them
+    let td = Instant::now();
+    let mut deleted: std::collections::HashSet<u32> = std::collections::HashSet::new();
+    for id in (0..n_init).step_by(5) { if idx.delete(id as u32) { deleted.insert(id as u32); } }
+    println!("  deleted {} ids in {:.3}s; live={}", deleted.len(), td.elapsed().as_secs_f64(), n_init + idx.ins_count - deleted.len());
+    let rec_c = eval_stream(&idx, &init, &qs, &gids, gk, nq, p, t, "after-delete-100k", &|id| !deleted.contains(&id));
+
+    // FRESH from-scratch build on the full live 1M (same config) — the bar (b) should reach.
+    drop(idx); // free the streaming index before allocating the fresh one (RAM budget)
+    let tf = Instant::now();
+    let mu2 = mean_of(&full);
+    let router2 = make_router(&full, router_s, c, mu2);
+    let comp2 = make_comp(&full, comp_s, dpb, eta);
+    let idx2 = vq::Index::build(router2, comp2, &full, a0);
+    println!("  fresh full-{n_total} build in {:.1}s", tf.elapsed().as_secs_f64());
+    let rec_fresh = eval_stream(&idx2, &full, &qs, &gids, gk, nq, p, t, "fresh-full-1M", &|_| true);
+
+    println!("\n[stream SUMMARY] init({n_init})={rec_a:.4} | insert->1M stream={rec_b:.4} vs fresh={rec_fresh:.4} (gap {:+.4}) | after-delete={rec_c:.4}",
+        rec_b - rec_fresh);
+}
+
 fn main() {
     let a: Vec<String> = std::env::args().collect();
     if std::env::var("SBANN_IP").is_ok() { vq::IP_MODE.store(true, std::sync::atomic::Ordering::Relaxed); }
@@ -994,6 +1111,13 @@ fn main() {
         Some("run") => run(&a[2], &a[3], &a[4], &a[5], &a[6], a.get(7).map(|s| s.parse().unwrap()).unwrap_or(2), a.get(8).map(|s| s.parse().unwrap()).unwrap_or(4096), a.get(9).map(|s| s.parse().unwrap()).unwrap_or(30), false),
         Some("runb") => run(&a[2], &a[3], &a[4], &a[5], &a[6], a.get(7).map(|s| s.parse().unwrap()).unwrap_or(2), a.get(8).map(|s| s.parse().unwrap()).unwrap_or(4096), a.get(9).map(|s| s.parse().unwrap()).unwrap_or(30), true),
         Some("runa") => runa(&a[2], &a[3], &a[4], &a[5], &a[6], a.get(7).map(|s| s.parse().unwrap()).unwrap_or(2), a.get(8).map(|s| s.parse().unwrap()).unwrap_or(256)),
-        _ => eprintln!("usage: sbann build|bench|benchpq|benchavq|run <base> <q> <gt> [router] [compress] [a0]"),
+        // STREAMING track: build on first SBANN_NINIT pts, insert the rest, delete 20% of the first half,
+        // report recall@10 at each step vs live-filtered GT and vs a fresh full build.
+        Some("stream") => stream(&a[2], &a[3], &a[4],
+            a.get(5).map(|s| s.as_str()).unwrap_or("flat"),
+            a.get(6).map(|s| s.as_str()).unwrap_or("apq4"),
+            a.get(7).map(|s| s.parse().unwrap()).unwrap_or(1),
+            a.get(8).map(|s| s.parse().unwrap()).unwrap_or(4096)),
+        _ => eprintln!("usage: sbann build|bench|benchpq|benchavq|run|stream <base> <q> <gt> [router] [compress] [a0] [C]"),
     }
 }
