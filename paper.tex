@@ -101355,6 +101355,114 @@ polylogarithmic state]
    exactly the emitted-load term in \((CPFA4)\).
 \end{proof}
 
+\begin{corollary}[Fano product reporters reduce the CPFA gap to far co-load]
+   \label{cor:fano-product-reporter-cpfa-estimates}
+   Work in the schedule of
+   \cref{cor:balanced-window-mds-cpfa-schedule}, but take the uncheckpointed
+   native reporter to be a product-panel threshold reporter of
+   \cref{lem:additive-product-panel-decoder}, or any Fano/list decoder with the
+   same prefix-work accounting.  Let \(W_{\rm pref}(q,\mathcal G)\) be the
+   number of native prefix edges expanded before local checkpoint states are
+   added, and let \(L^{\rm raw}(q,\mathcal G)\) be the invalid emitted
+   point-bucket or cut-record load before checkpoint thinning.  Suppose
+   \[
+      \E_{\mathcal G}W_{\rm pref}(q,\mathcal G)
+      \le m^{\rho_c}\log^{C_1}m
+      \tag{FRC1}
+   \]
+   for every promised query, and for some \(\zeta\ge0\),
+   \[
+      \E_{\mathcal G}L^{\rm raw}(q,\mathcal G)
+      \le m^{\rho_c+\zeta+o(1)} .
+      \tag{FRC2}
+   \]
+   Then \((BCS8)\) and \((BCS10)\) hold with \(\alpha=\zeta\).  Hence, if the
+   balanced-window MDS checkpoint schedule has
+   \[
+      \gamma A_{\rm chk}>\zeta ,
+      \tag{FRC3}
+   \]
+   the reporter-side prefix work and retained far/cut emissions are both in
+   the clean \(m^{\rho_c}\polylog m\) envelope.  The only remaining
+   hypotheses are the near-side live-window and cut-support assumptions already
+   stated in \cref{cor:balanced-window-mds-cpfa-schedule}.
+
+   In the product-panel notation of
+   \cref{prop:product-panel-spectrum-compiler}, conditions
+   \((FRC1)\)--\((FRC2)\) are implied by the concrete partition estimates
+   \[
+      \E_{\mathcal G} W_{\rm dec}(q;\mathcal G)
+      \le m^{\rho_c}\log^{C_1}m
+      \tag{FRC4}
+   \]
+   and
+   \[
+      \E_{\mathcal G}
+      \sum_{\substack{x\in P\\ \|x-q\|>cr}}
+      e^{-\alpha_P\theta_P-\beta\theta_Q}
+      \prod_{j=1}^h
+      \sum_{a\in\mathcal C_j}
+      e^{\alpha_P\psi_j(x,a)+\beta\phi_j(q,a)}
+      \le m^{\rho_c+\zeta+o(1)} ,
+      \tag{FRC5}
+   \]
+   where \(\alpha_P\) is the storage-side Chernoff parameter.  Equivalently,
+   under the block tensorization of
+   \cref{cor:product-panel-rate-bookkeeping}, it is enough to have
+   \[
+      \prod_j\mathfrak q_j(q)\le m^{\rho_c}\log^{O_c(1)}m
+      \tag{FRC6}
+   \]
+   and, for every far pair,
+   \[
+      \prod_j\mathfrak f_j(x,q)
+      \le
+      m^{-(1-\rho_c-\zeta)+o(1)} .
+      \tag{FRC7}
+   \]
+   Thus a code or lattice threshold reporter need not prove the full critical
+   far co-load exponent before checkpointing is useful.  It may leave a
+   measured far-load excess \(\zeta\), provided its prefix reporter is already
+   output-sensitive and the local MDS checkpoints supply
+   \(K_{\rm tot}=m^{\gamma A_{\rm chk}+o(1)}\) with
+   \(\gamma A_{\rm chk}>\zeta\).  Conversely, if the decoder-side prefix moment
+   itself exceeds \(m^{\rho_c}\polylog m\), checkpoint thinning does not repair
+   it; that is exactly the prefix-work barrier \((CPFA10)\).
+\end{corollary}
+
+\begin{proof}
+   The uncheckpointed native edge set in segment \(s\) is a subset of the
+   prefix expansions counted by \(W_{\rm pref}\), so
+   \[
+      \sum_s|E_{B(q,\mathcal G),s}|
+      \le C\,W_{\rm pref}(q,\mathcal G)
+   \]
+   for an absolute accounting constant depending only on the chosen compact
+   reporter representation.  Taking expectations gives \((BCS8)\) from
+   \((FRC1)\), after absorbing this constant into the polylogarithmic factor.
+   Condition \((FRC2)\) is exactly \((BCS10)\) with \(\alpha=\zeta\).
+   Therefore \cref{cor:balanced-window-mds-cpfa-schedule} applies, and
+   \((FRC3)\) gives the clean retained-load conclusion.
+
+   For the product-panel specialization, \((FRC4)\) is \((FRC1)\) because
+   \(W_{\rm dec}\) is precisely the prefix-list work bound from
+   \cref{lem:additive-product-panel-decoder}.  For each invalid point \(x\),
+   the raw emitted-load indicator is bounded by the same exponential majorant
+   used in the proof of \cref{prop:product-panel-spectrum-compiler}:
+   \[
+      \mathbf1\{S_P(x,c)\ge\theta_P\}
+      \mathbf1\{S_Q(q,c)\ge\theta_Q\}
+      \le
+      e^{\alpha_P(S_P(x,c)-\theta_P)+\beta(S_Q(q,c)-\theta_Q)} .
+   \]
+   Summing this bound over product labels \(c\) factors into the product inside
+   \((FRC5)\), and summing over far points gives
+   \(L^{\rm raw}\le\) the left side of \((FRC5)\).  Hence \((FRC5)\) implies
+   \((FRC2)\).  Finally, \((FRC6)\) implies \((FRC4)\) by the query-work part
+   of \cref{cor:product-panel-rate-bookkeeping}, while \((FRC7)\), summed over
+   at most \(m\) far points, gives \((FRC5)\).
+\end{proof}
+
 \begin{corollary}[Checkpoint boundary frontiers see the remaining product]
    \label{cor:checkpoint-boundary-residual-frontier}
    Continue in the setting of
