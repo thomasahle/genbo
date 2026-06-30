@@ -106537,6 +106537,129 @@ tax]
    \((PMR1)\)--\((PMR2)\).
 \end{proof}
 
+\begin{corollary}[Exact quotient point samplers terminalize rate-coverage states]
+   \label{cor:quotient-point-sampler-terminalizes-rate-coverage}
+   Work in one local skeleton state of
+   \cref{cor:rate-coverage-terminalizes-skeleton-state}, with resident set
+   \(S\), \(|S|=m\), and exact verification of every emitted resident before a
+   terminal answer or outgoing port is reported.  Let a code, lattice, trellis,
+   or quotient reporter induce bucket classes \(b\in\mathcal B\) with resident
+   lists \(C_b\subseteq S\).  For each query outcome \((q,Z)\), let
+   \(\Pi_{q,Z}\) be the exact aggregate bucket law.  Define the point coverage
+   and total resident coverage by
+   \[
+      \pi_x(q,Z)=\sum_{b:\ x\in C_b}\Pi_{q,Z}(b),
+      \qquad
+      L(q,Z)=\sum_{x\in S}\pi_x(q,Z)
+      =
+      \sum_{b\in\mathcal B}|C_b|\Pi_{q,Z}(b).
+      \tag{EQP1}
+   \]
+   Suppose the retained representation has storage
+   \[
+      \sum_{b\in\mathcal B}|C_b|
+      \le m^{1+\rho_c}\log^{O_c(1)}m,
+      \tag{EQP2}
+   \]
+   and that an exact resident-size-biased aggregate sampler computes \(L(q,Z)\)
+   and then, when \(L(q,Z)>0\), draws residents from the law
+   \[
+      \Pr[X=x\mid q,Z]=\frac{\pi_x(q,Z)}{L(q,Z)}
+      \tag{EQP3}
+   \]
+   with expected backward, sampling, and duplicate-suppression work bounded by
+   the quantities below.  Assume that for some
+   \(\lambda_m=\log^{O_c(1)}m\),
+   \[
+      \E_Z\!\left[
+         R_{p,q}(Z)\exp\{-\lambda_m\pi_p(q,Z)\}
+      \right]
+      \le \frac{a_c}{8}
+      \tag{EQP4}
+   \]
+   for every promised near pair \(p,q\), and
+   \[
+      \E_Z\!\left[
+         T_{\rm back}(q,Z)
+         +
+         \lambda_m L(q,Z)\log^{O_c(1)}m
+      \right]
+      \le
+      D\,m^{\rho_c}\log^{O_c(1)}m .
+      \tag{EQP5}
+   \]
+   Then the quotient reporter gives a valid rate-coverage terminalizer for this
+   state: after the smoothed witness-list amplification of
+   \cref{cor:rate-coverage-terminalizes-skeleton-state}, it reports a useful
+   verified port with probability \(1-\delta_s\) using expected work
+   \[
+      D\,m^{\rho_c}\log^{O_c(1)}m\log\frac1{\delta_s}
+      \tag{EQP6}
+   \]
+   and retained storage \(m^{1+\rho_c}\log^{O_c(1)}m\).
+
+   A convenient pointwise sufficient condition is the following.  If
+   \(L_0=\log^{O_c(1)}m\),
+   \[
+      \pi_p(q,Z)\ge L_0^{-1}
+      \tag{EQP7}
+   \]
+   on the tilted near outcomes that carry \(R_{p,q}\)-mass, and
+   \[
+      \E_Z\!\left[T_{\rm back}(q,Z)\right]
+      +
+      \lambda_m\E_ZL(q,Z)\log^{O_c(1)}m
+      \le D\,m^{\rho_c}\log^{O_c(1)}m,
+      \tag{EQP8}
+   \]
+   then choosing \(\lambda_m=C_cL_0\) gives \((EQP4)\)--\((EQP5)\), after
+   increasing the constant \(C_c\) according to the tilted normalization.
+
+   In particular, an exact BCJR trellis, recursive lattice state graph, or
+   junction-tree code sampler supplies the algorithmic part of this corollary
+   whenever its resident-count terminal boundary is computable in
+   \(D\,m^{\rho_c}\polylog m\) expected work.  The remaining pass/fail tests are
+   exactly the point-coverage miss \((EQP4)\), the total resident load
+   \((EQP5)\), and the storage count \((EQP2)\).  More independence in the
+   terminal subset, or replacing the exact sampler by multiply-shift thinning,
+   does not substitute for these three scalar checks.
+\end{corollary}
+
+\begin{proof}
+   Conditional on \((q,Z)\), compute \(L=L(q,Z)\).  If \(L=0\), emit nothing.
+   Otherwise draw
+   \[
+      N\sim{\rm Poisson}(\lambda_m L)
+   \]
+   independent residents from the law \((EQP3)\), suppress duplicates, and verify
+   every emitted resident before reporting it.  For a fixed resident \(p\), the
+   number of draws equal to \(p\) is Poisson with mean
+   \(\lambda_m L\cdot\pi_p/L=\lambda_m\pi_p\).  Hence the conditional miss
+   probability is exactly
+   \[
+      \exp\{-\lambda_m\pi_p(q,Z)\}.
+   \]
+   Multiplying by the tilted likelihood \(R_{p,q}(Z)\), averaging over \(Z\), and
+   using \((EQP4)\) gives the smoothed witness-list miss condition.
+
+   The conditional expected number of raw resident draws is \(\lambda_mL(q,Z)\).
+   Duplicate suppression and exact verification only add the displayed
+   polylogarithmic per-draw factors, while the exact aggregate sampler contributes
+   \(T_{\rm back}(q,Z)\).  Therefore \((EQP5)\) bounds the expected one-trial
+   query and verification work by \(D\,m^{\rho_c}\polylog m\).  The storage bound
+   is \((EQP2)\).  Applying
+   \cref{cor:rate-coverage-terminalizes-skeleton-state} gives \((EQP6)\).
+
+   Under \((EQP7)\), the near miss factor is at most
+   \(\exp(-\lambda_m/L_0)\) on the relevant tilted outcomes.  Taking
+   \(\lambda_m=C_cL_0\) with \(C_c\) large enough gives \((EQP4)\); \((EQP8)\)
+   is exactly \((EQP5)\).  The BCJR and junction-tree statements are
+   \cref{cor:acyclic-resident-size-biased-sampler},
+   \cref{cor:bcjr-trellis-quotient-sampler}, and
+   \cref{lem:junction-tree-quotient-sampler} with terminal boundary
+   \(b\mapsto |C_b|\).
+\end{proof}
+
 \begin{corollary}[Balanced checkpoints can absorb any fixed flat-volume excess]
    \label{cor:balanced-checkpoints-absorb-flat-volume-excess}
    Continue with the nearest-mesh scaled-GRS window of
