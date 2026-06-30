@@ -100387,6 +100387,139 @@ amplified in the next proposition.
    finite family of conditional laws with no score-correlation coefficient.
 \end{proof}
 
+\begin{corollary}[Block collision audit for conditional sign tails]
+   \label{cor:block-collision-audit-conditional-sign-tail}
+   Work with one block of the Gibbs near route in
+   \cref{cor:gibbs-near-mass-matched-fano}.  Let \(\Pi_j\) be the query Gibbs
+   law on \(\mathcal C_j\), let \(E_j\subseteq\mathcal C_j\) be the realized
+   near-success event, and put
+   \[
+      h_j=\Pi_j(E_j)>0,
+      \qquad
+      P^E_j(a)=\Pi_j(a\mid E_j).
+      \tag{BCA1}
+   \]
+   Define the conditional collision mass and Renyi effective support by
+   \[
+      \nu_j^E
+      =
+      \sum_aP^E_j(a)^2
+      =
+      \frac{\sum_{a\in E_j}\Pi_j(a)^2}{h_j^2},
+      \qquad
+      N_{2,j}^E=(\nu_j^E)^{-1}.
+      \tag{BCA2}
+   \]
+   For an unbiased pairwise-independent sign mask on this block,
+   \[
+      \alpha_j=\sum_aP^E_j(a)\xi_{j,a}
+      \tag{BCA3}
+   \]
+   satisfies
+   \[
+      \E_\xi\alpha_j^2=\nu_j^E .
+      \tag{BCA4}
+   \]
+   More generally, for a finite family \(\mathcal L\) of exposed conditional
+   near laws, \(2r\)-wise independent signs satisfy, with probability at least
+   \(1-\delta\),
+   \[
+      |\alpha_{\ell,j}|
+      \le
+      \sqrt{C_{\rm Kh}r\,\nu_{\ell,j}^E}\,
+      \left(\frac{2h|\mathcal L|}{\delta}\right)^{1/(2r)}
+      \tag{BCA5}
+   \]
+   simultaneously for all \((\ell,j)\).
+
+   Hence an aggregate sign tail may be placed on any chosen coordinate set
+   \(J\subseteq[h]\) for which the right side of \((BCA5)\) is at most
+   \(a_0<1\).  Applying
+   \cref{cor:conditional-effective-support-aggregate-sign-tail} to the reduced
+   aggregate
+   \[
+      M_J(c)=\sum_{j\in J}\xi_{j,c_j}
+      \tag{BCA6}
+   \]
+   gives the same conclusion with \(h\) replaced by \(|J|\).  In particular,
+   this route needs many conditionally diffuse coordinates, not randomness on
+   the full tuple universe.
+
+   The following simple screens are often enough for a concrete code or
+   lattice block.  If
+   \[
+      p_{\infty,j}=\max_{a\in E_j}\Pi_j(a),
+      \tag{BCA7}
+   \]
+   then
+   \[
+      \nu_j^E\le \frac{p_{\infty,j}}{h_j}.
+      \tag{BCA8}
+   \]
+   Thus an atom cap \(p_{\infty,j}\le \varepsilon h_j\) gives
+   \(N_{2,j}^E\ge\varepsilon^{-1}\).  If \(\Pi_j\) is uniform on
+   \(\mathcal C_j\), then
+   \[
+      N_{2,j}^E=|E_j|.
+      \tag{BCA9}
+   \]
+   More generally, if the Gibbs weights on \(E_j\) are within a factor
+   \(\Lambda\) of one another and \(|E_j|=N_j\), then
+   \[
+      \nu_j^E\le\frac{\Lambda}{N_j},
+      \qquad
+      N_{2,j}^E\ge\frac{N_j}{\Lambda}.
+      \tag{BCA10}
+   \]
+
+   Conversely, let
+   \[
+      p^E_{\infty,j}=\max_aP^E_j(a)=\frac{p_{\infty,j}}{h_j}.
+      \tag{BCA11}
+   \]
+   For every deterministic sign assignment,
+   \[
+      |\alpha_j|\ge (2p^E_{\infty,j}-1)_+ .
+      \tag{BCA12}
+   \]
+   Therefore if \(p^E_{\infty,j}>(1+a_0)/2\), that coordinate can never satisfy
+   the imbalance condition \(|\alpha_j|\le a_0\), regardless of whether the
+   signs come from multiply-shift hashing, affine hashing, tabulation, or fully
+   independent randomness.  This is the concrete singleton-collapse barrier:
+   after conditioning on the near event, the block must still contain many
+   comparable Gibbs labels, or it cannot supply aggregate sign variance.
+\end{corollary}
+
+\begin{proof}
+   The identity \((BCA2)\) is just the definition of conditioning:
+   \(P^E_j(a)=\Pi_j(a)\mathbf1_{E_j}(a)/h_j\).  Equation \((BCA4)\) is
+   \((PWS3)\) from \cref{lem:pairwise-sign-mask-effective-support}, applied to
+   the conditional law \(P^E_j\).  The finite-family statement \((BCA5)\) is
+   \((LIS4)\) from \cref{lem:finite-family-limited-independence-sign-filter}.
+   Once \((BCA5)\) is bounded by \(a_0\) on \(J\), the proof of
+   \cref{cor:conditional-effective-support-aggregate-sign-tail} applies to
+   \(M_J\) with every sum over coordinates restricted to \(J\), replacing \(h\)
+   by \(|J|\).
+
+   For \((BCA8)\),
+   \[
+      \sum_{a\in E_j}\Pi_j(a)^2
+      \le
+      p_{\infty,j}\sum_{a\in E_j}\Pi_j(a)
+      =
+      p_{\infty,j}h_j .
+   \]
+   Dividing by \(h_j^2\) gives the claim.  The uniform identity \((BCA9)\) is
+   immediate.  If all weights on \(E_j\) are within a factor \(\Lambda\), then
+   after conditioning every atom is at most \(\Lambda/N_j\), so
+   \(\nu_j^E\le\max_aP^E_j(a)\le\Lambda/N_j\), proving \((BCA10)\).
+
+   Finally, for any signs, separate the largest atom \(a_*\).  The remaining
+   atoms have total mass \(1-p^E_{\infty,j}\), so the best possible cancellation
+   against the contribution of \(a_*\) still leaves magnitude at least
+   \(p^E_{\infty,j}-(1-p^E_{\infty,j})\), proving \((BCA12)\).
+\end{proof}
+
 \begin{corollary}[Aligned linear charts compute rate-coverage sketches]
    \label{cor:aligned-linear-chart-rate-coverage-sketch}
    Work in the setting of
