@@ -2333,6 +2333,30 @@ P149. (user idea: ADC routing WITHOUT the exact-rescore? -> cheaper routing but 
     exact routing (P148). A higher-bit centroid code would sharpen the boundary but doubles the scan (P145) = wash.
     FINAL routing verdict: l2_i8_block (+1.27x) is the win; ADC routing (any KEEP) is a dead end for speed.
 
+P150. (*** 4 PARALLEL AGENTS (worktree-isolated) delivered the next-10 batch: 3 features MERGED + 1 honest gate-negative ***)
+    User: "do all of them in parallel." Spawned 4 background agents, each own git worktree+branch off engine-stack,
+    recall-validated on 1M subsets (load-independent). Results:
+    - rabitq (feat/rabitq, MERGED): faithful Extended-RaBitQ Compressor (Gao&Long SIGMOD'24) -- fixed rotation +
+      B-bit quant + UNBIASED IP estimator (the part my numpy bake-off got wrong). comp "rabitq", SBANN_RABITQ_BITS.
+      msspacev 1M: B=4 == apq4 recall (0.9218 vs 0.9207), B=1 within 0.001-0.05. CONFIRMS no ranking edge over PQ
+      (P145), but the swappable-code FEATURE the user wanted is in. Scalar scan (not perf-critical).
+    - scale (feat/scale, MERGED): (A) index mmap PERSISTENCE (persist.rs; save/load, tagged router/comp). Bit-
+      identical recall; load 0.2-1.1s vs build 15-20s. SBANN_INDEX_SAVE/LOAD. (B) DROP-RAW-COPY (SBANN_RAW_DEDUP):
+      raw per-distinct-orig not per-slot -> index -41% to -45% (a0x as a0 grows), bit-identical. Caveats: only
+      HierRouter+Apq4/Pq4 serialize; LOAD needs the same scan-flag env (FASTSCAN/USE512FS/IP/...). Enables 100M/1B.
+    - streaming (feat/streaming, MERGED): per-cell APPEND-buffer insert + tombstone delete + finalize_inserts +
+      search_stream + `stream` subcommand. msspacev 1M: insert 500k->1M recall 0.9640 vs fresh-build 0.9634
+      (within noise); deletes 100k in ~0.01s; inserts 16-26k/s. No-graph IVF = streaming is structurally cheap.
+      Caveat: buffer uncompacted (search cost grows) -> production needs periodic rebuild. (Merge: resolved
+      rerank_contig_pairs+by_orig conflict w/ scale's RAW_DEDUP; both Index{} ctors got both field sets.)
+    - leanvec (offline gate, NEGATIVE, NO wiring): query-aware asymmetric IP-preserving map. POSITIVE: it IS real
+      -- beats PCA by 10-15pt at low t in FULL precision (OOD queries DO concentrate IP directions; near-isotropy
+      pessimism too strong for the ASYMMETRIC map). BUT fails the gate: at matched PQ bytes LeanVec is WORSE,
+      full-rank rotation is a no-op, coverage marginally worse. Why: its only lever is dim-cut of FULL-PRECISION
+      work, but our pipeline = PQ + EXACT-IP rerank (rerank needs true IP; PQ@matched-bytes loses more from dim-cut
+      than it saves). *** Re-confirms the OOD gap is EXECUTION-SPEED, not metric/ranking. *** Cheap offline gate
+      saved the engine wiring -- the discipline that's paid off all session (RaBitQ, ADC, this).
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
