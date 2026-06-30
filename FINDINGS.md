@@ -2536,16 +2536,24 @@ P160. (*** 30M STREAMING BREAKTHROUGH: the gap was PROBE FRACTION, not the route
     rewrite directly buys p -> recall. NEXT: highest-p config that finishes <1hr WITH realistic compaction, locked
     at NQ=10000 = the DEFINITIVE 30M streaming number. Target: >0.922 (top-3, looks secured if budget holds) pushing
     toward the 0.9924 win. (developing; NQ=1000 calibration -- finalize on the NQ=10000 + budget verdict.)
-    BUDGET DIAGNOSTIC (streaming2): p=512 holds recall ~0.96 (0.965@866k) but QPS only ~743 -- and the wall is NOT
-    scan (USE512FS barely helped; scan runs ~25x below native apq4 rate, scan+gather ~90us vs the observed
-    1.35ms/query). The bottleneck is the FLOAT-RERANK MMAP: 317 random reads/query from the 12GB float base =
-    page-fault bound (+ per-query search_stream allocs). FIX directed = cache the LIVE float rows in a contiguous
-    RAM Vec<f32> (~4.1GB for 10.3M live, populate once on insert, rerank from RAM not mmap) -> kills the fault path,
-    shrinks footprint 12GB->4.1GB, expected QPS several-thousand -> makes p=512/recall-0.96 budget-viable (solid #2,
-    maybe push p higher toward the win). Compaction made USE512FS-compatible (~80k pts/s, ~125s/call@10M, est
-    ~900-1500s total, each live pt re-encoded ~2.3x) -> block-merge rewrite reclaims most. Levers ranked:
-    (1) live-float-cache (the big one), (2) kill per-query allocs, (3) block-merge compaction. Budget-viable knee
-    WITHOUT the float-cache fix is only p~128-256 (recall ~0.90-0.93, still TOP-3 > zilliz 0.922).
+    BUDGET DIAGNOSTIC (streaming2, committed eb451a3 -- the DECISIVE measurement): p=512 reaches recall@10 = 0.978
+    at 2.4M live (0.95@111k, 0.964@1.2M, 0.978@2.4M) -- right up near scann 0.9924, well past zilliz/pinecone. BUT
+    the budget wall is SEARCH THROUGHPUT, and the root cause is NEITHER the float-rerank mmap NOR compaction -- it is
+    the IVF scan_pool TOP-K BOOKKEEPING: per query it pushes EVERY candidate (p*live/C*a0 ~= live/4 at p=512 = ~2.5M
+    cand/query @10M) into a Vec then select_nth's it. That alloc+select churn = ~2.1e8 cand/s = 20-40x BELOW the
+    native apq4/AVX-512 fast-scan rate (the distance compute is NOT the cost; USE512FS barely moved it). QPS
+    collapses with live: 3224@39k -> 553@2M -> projected ~86 @10M => the 6.4M-query runbook ~= 20 HOURS, massively
+    over 1hr. Compaction is MINOR (8 calls/51s @2M, projected 300-600s full-runbook; now parallel+USE512FS-compat).
+    Budget-viable p on the CURRENT engine ~= p=14 (recall ~0.6) -- so no config gives budget AND recall yet. *** THE
+    GAP TO SCANN IS ENGINE SCAN THROUGHPUT (their AH2 + streamlined top-k), confirmed NOT recall capability (0.978
+    proven) NOR router granularity (fine hierk trains in 146s but is worse; scann's 5000 leaves ~ our C=4096). ***
+    FIX = rewrite scan_pool/scan_ins_pool to a BOUNDED top-t selection (threshold-filter: keep ~2x(tmul*K) buffer,
+    prune via select_nth only when full, reject most candidates with one threshold compare -- stop materializing
+    ~live/4). Projection: at native scan speed, p~256 (recall ~0.95) -> ~3650s ~ 1hr => TOP-3 near scann (push p=512
+    /0.978 if it fits = run at the WIN). *** THIS REWRITE UNLOCKS BOTH TRACKS: OOD QPS@90% is the SAME scan-bound
+    wall (P158, int8 path 56% scan after the t_surv-cut) -- so the bounded-top-t scan_pool is the single highest-
+    leverage engine change for streaming AND OOD. GREENLIT (multi-hour perf rewrite). Block-merge compaction =
+    deprioritized (search dominates). 1M=1.0000 mechanism proof banked regardless.
 
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
