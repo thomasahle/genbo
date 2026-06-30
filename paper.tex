@@ -7456,6 +7456,175 @@ partition ignores the bias coordinates that certify the list size.
    is exactly \((BUC8)\).
 \end{proof}
 
+\begin{corollary}[Critical Gaussian upper caps expose Shannon checkpoint entropy]
+   \label{cor:gaussian-upper-cap-shannon-checkpoint}
+   Fix a branching factor \(B\ge2\), put
+   \[
+      \beta_B=\sqrt{2\log B},
+      \qquad
+      Z_j(\alpha)=\sum_{i=1}^B e^{\alpha z_{j,i}},
+      \tag{GUC1}
+   \]
+   and let \(z_{j,i}\), \(1\le j\le\ell\), \(1\le i\le B\), be a realized
+   Gaussian child-score environment.  On layer \(j\), define the critical
+   first-temperature law and the square-temperature law by
+   \[
+      p_{j,i}=\frac{e^{\beta_Bz_{j,i}}}{Z_j(\beta_B)},
+      \qquad
+      q_{j,i}=\frac{e^{2\beta_Bz_{j,i}}}{Z_j(2\beta_B)}.
+      \tag{GUC2}
+   \]
+   Write
+   \[
+      \mu_j=\sum_i p_{j,i}z_{j,i},
+      \qquad
+      H_j=-\sum_i p_{j,i}\log p_{j,i}
+          =\log Z_j(\beta_B)-\beta_B\mu_j,
+      \tag{GUC3}
+   \]
+   and
+   \[
+      h_j=2\log Z_j(\beta_B)-\log Z_j(2\beta_B).
+      \tag{GUC4}
+   \]
+   Thus \(h_j\) is the one-layer order-two checkpoint entropy from
+   \((BGC1)\), while \(H_j\) is the Shannon entropy of the same critical
+   Boltzmann child posterior.
+
+   Let \(P_1=\prod_j p_j\), \(P_2=\prod_j q_j\), and define the centered
+   common-coordinate cap increments
+   \[
+      X_j(i)=z_{j,i}-\mu_j .
+      \tag{GUC5}
+   \]
+   For fixed \(H>0\), let
+   \[
+      E_H=\left\{(i_1,\ldots,i_\ell):
+      \sum_{j\le r}X_j(i_j)\le H\quad\text{for all }1\le r\le\ell\right\}.
+      \tag{GUC6}
+   \]
+   If the realized first-temperature bridge probability satisfies
+   \[
+      P_1(E_H)\ge\ell^{-C_H},
+      \tag{GUC7}
+   \]
+   then the critical Gaussian segment law conditioned on this upper cap has
+   collision-effective support
+   \[
+      \log N_2(P_1(\cdot\mid E_H))
+      \ge
+      \sum_{j=1}^\ell H_j-O_{B,H,C_H}(\log\ell).
+      \tag{GUC8}
+   \]
+
+   In particular, for iid standard Gaussian child environments with fixed
+   \(B\), the quenched triangular-array ballot estimate gives
+   \((GUC7)\) with probability tending to one, and the law of large numbers
+   gives
+   \[
+      \sum_{j=1}^\ell H_j=s_B\ell+o_{\Prb}(\ell),
+      \qquad
+      s_B=\E H_1 .
+      \tag{GUC9}
+   \]
+   Hence, for
+   \[
+      \ell=\kappa\log\log m+o(\log\log m),
+      \qquad
+      K_s=\log^A m,\qquad
+      \eta_s=C\frac{r}{\log\log m},
+      \tag{GUC10}
+   \]
+   the capped fixed-\(B\) Gaussian checkpoint passes at leading order whenever
+   \[
+      \kappa s_B>A+1 .
+      \tag{GUC11}
+   \]
+
+   A direct log-sum-exp Monte Carlo audit gives the following scale for this
+   capped scalar:
+   \[
+   \begin{array}{c|cccccccc}
+      B&2&4&8&16&64&256&1024&4096\\ \hline
+      s_B&0.505&0.871&1.175&1.441&1.888&2.269&2.595&2.90 .
+   \end{array}
+   \tag{GUC12}
+   \]
+   Thus the broad upper cap gives a real finite-\(B\) gain over the raw
+   order-two constants in \((BGC8)\).  It still does not create a
+   power-of-\(B\) entropy rate; it upgrades the local checkpoint scalar from
+   critical order-two entropy to critical Shannon entropy.
+\end{corollary}
+
+\begin{proof}
+   The uncapped product collision support is
+   \[
+      \log N_2(P_1)=\sum_{j=1}^\ell h_j .
+      \tag{GUC13}
+   \]
+   For one layer and any \(\lambda\ge0\),
+   \[
+      -\log\E_{q_j}e^{-\lambda X_j}
+      =
+      \log Z_j(2\beta_B)-\log Z_j(2\beta_B-\lambda)-\lambda\mu_j.
+      \tag{GUC14}
+   \]
+   The right hand side is concave in \(\lambda\), and its derivative is
+   \[
+      \frac{\sum_i z_{j,i}e^{(2\beta_B-\lambda)z_{j,i}}}
+           {Z_j(2\beta_B-\lambda)}
+      -\mu_j .
+      \tag{GUC15}
+   \]
+   At \(\lambda=\beta_B\) this derivative is zero.  Therefore the
+   one-layer square-temperature lower-tail Cramer rate is attained at
+   \(\lambda=\beta_B\), and
+   \[
+      -\log\E_{q_j}e^{-\beta_B X_j}
+      =
+      \log Z_j(2\beta_B)-\log Z_j(\beta_B)-\beta_B\mu_j
+      =
+      H_j-h_j .
+      \tag{GUC16}
+   \]
+   Since \(E_H\) implies \(\sum_{j=1}^\ell X_j(i_j)\le H\), Chernoff's
+   inequality under \(P_2\) with \(\lambda=\beta_B\) gives
+   \[
+      P_2(E_H)
+      \le
+      e^{\beta_BH}
+      \prod_{j=1}^\ell\E_{q_j}e^{-\beta_BX_j}
+      =
+      \exp\left\{\beta_BH-\sum_{j=1}^\ell(H_j-h_j)\right\}.
+      \tag{GUC17}
+   \]
+   Applying the exact conditioning identity
+   \cref{lem:conditional-collision-event-ratio} to \(P_1\) and \(E_H\)
+   yields
+   \[
+      \log N_2(P_1(\cdot\mid E_H))
+      =
+      \sum_j h_j+2\log P_1(E_H)-\log P_2(E_H).
+      \tag{GUC18}
+   \]
+   Combining \((GUC7)\) and \((GUC17)\) proves \((GUC8)\).
+
+   For iid Gaussian child environments, conditional on the environment the
+   increments \(X_j\) under \(P_1\) are independent and centered.  Their
+   conditional variances have a positive finite mean, and the maximum realized
+   layer range over \(j\le\ell\) is \(o(\sqrt\ell)\) with probability tending
+   to one.  The standard quenched Lindeberg invariance principle and
+   one-sided ballot estimate for triangular arrays then give a polynomial
+   lower bound for the upper-cap event \(E_H\), proving \((GUC7)\) with high
+   probability.  Since \(H_j\) is an iid integrable function of the \(j\)-th
+   child environment, the law of large numbers gives \((GUC9)\).  Substituting
+   \((GUC9)\) into the checkpoint requirement
+   \(N_2\ge\eta_sK_s\), exactly as in
+   \cref{cor:fixed-branch-gaussian-checkpoint-constant}, gives
+   \((GUC11)\).  The numerical table is the direct evaluation of
+   \((GUC3)\) by stable log-sum-exp sampling.
+\end{proof}
+
 \begin{corollary}[Difference-universal syndromes suffice with a random bucket]
    \label{cor:difference-universal-syndrome-thinning}
    Let \(G\) be a finite abelian group and let
