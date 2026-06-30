@@ -20,10 +20,12 @@ if [ ! -f t2i10m-floatgt ]; then
 fi
 
 COMMON="SBANN_IP=1 SBANN_FASTSCAN=1 SBANN_SOAR=0.5 SBANN_C0=256 SBANN_C1=4096 SBANN_B0=24 SBANN_B1=96 \
-  SBANN_NQ=$NQ SBANN_REPS=5 SBANN_TFLOOR=1 RAYON_NUM_THREADS=$THREADS"
-# p rescaled for 10M (~150 pts/cell at C=65536): sweep wide; t_surv kept SMALL (the cut).
-PLIST=${PLIST:-512,768,1024,1536,2048}
-TMUL=${TMUL:-3,4,6}
+  SBANN_NQ=$NQ SBANN_REPS=3 SBANN_TFLOOR=1 RAYON_NUM_THREADS=$THREADS"
+# 10x more distractors than 1M (where int8 hit 0.90 vs float GT at p~288) -> recall@p drops,
+# so 0.90 needs a higher p. Sweep wide to BRACKET the 0.90 crossing on the first (expensive)
+# pass; t_surv kept SMALL (the cut). Narrow PLIST/TMUL on a second pass once 0.90 is located.
+PLIST=${PLIST:-384,512,768,1024,1536}
+TMUL=${TMUL:-4,6}
 
 echo "=== INT8 + t_surv-cut, 10M vs FLOAT GT ==="
 env $COMMON SBANN_PLIST="$PLIST" SBANN_TMUL="$TMUL" \
