@@ -102586,6 +102586,133 @@ amplified in the next proposition.
    obligations are precisely the ones already isolated in \((SLC8)\)--\((SLC9)\).
 \end{proof}
 
+\begin{corollary}[Parity-pocket list size has an explicit partition test]
+   \label{cor:parity-pocket-list-partition-test}
+   In the setting of
+   \cref{cor:planted-pocket-factor-heap-reporter}, define for \(\alpha>0\)
+   \[
+      Z_t(\alpha)=\sum_{v\in D_t}e^{-\alpha d_t(v)} .
+      \tag{PHC1}
+   \]
+   Then the factor-heap output count satisfies the exact Chernoff certificate
+   \[
+      N_H(\Delta)
+      \le
+      \inf_{\alpha>0}
+      \exp(\alpha\Delta)\prod_t Z_t(\alpha).
+      \tag{PHC2}
+   \]
+   These local factors are closed form.  If \(P_t\) is hit, then
+   \[
+      Z_t(\alpha)=
+      \prod_{i\in H_t}\left(1+e^{-\alpha\delta_i}\right).
+      \tag{PHC3}
+   \]
+   If \(P_t\) is unhit, let \(a_i^\star\in\arg\max_{a\in\{0,1\}}\phi_i(a)\),
+   let
+   \[
+      \epsilon_t=\sum_{i\in P_t}a_i^\star\pmod2,
+      \qquad
+      \gamma_t=
+      \begin{cases}
+      0,&\epsilon_t=0,\\
+      \min_{i\in P_t}\delta_i,&\epsilon_t=1,
+      \end{cases}
+      \tag{PHC4}
+   \]
+   and put \(\lambda_i(\alpha)=\log(1+e^{-\alpha\delta_i})\).  Then
+   \[
+      Z_t(\alpha)
+      =
+      e^{\alpha\gamma_t}
+      \frac12
+      \left(
+      \prod_{i\in P_t}(1+e^{-\alpha\delta_i})
+      +
+      (-1)^{\epsilon_t}
+      \prod_{i\in P_t}(1-e^{-\alpha\delta_i})
+      \right),
+      \tag{PHC5}
+   \]
+   equivalently
+   \[
+      \log Z_t(\alpha)
+      =
+      \alpha\gamma_t-\log2+\sum_{i\in P_t}\lambda_i(\alpha)
+      +
+      \log\left(
+      1+(-1)^{\epsilon_t}\prod_{i\in P_t}
+      \tanh\frac{\alpha\delta_i}{2}
+      \right).
+      \tag{PHC6}
+   \]
+
+   Therefore the concrete far-load test left by \((PFQ6)\) is
+   \[
+      d_J\log2+
+      \inf_{\alpha>0}
+      \left\{
+      \alpha\Delta_H(\Theta(q))+\sum_t\log Z_t(\alpha)
+      \right\}
+      \le
+      \rho_c\log m+O(\log\log m)
+      \tag{PHC7}
+   \]
+   in expectation or with the appropriate high-probability averaging over far
+   queries.  In the long-pocket regime, if every unhit pocket satisfies
+   \[
+      \alpha\gamma_t=O(1),
+      \qquad
+      \left|\prod_{i\in P_t}\tanh\frac{\alpha\delta_i}{2}\right|=o(1),
+      \tag{PHC8}
+   \]
+   then the unhit factor contributes
+   \[
+      \log Z_t(\alpha)
+      =
+      \sum_{i\in P_t}\lambda_i(\alpha)-\log2+O(1).
+      \tag{PHC9}
+   \]
+   Thus the factor heap removes the information-set enumeration overhead, but
+   the remaining exponent is the genuine parity-pocket tilted tail.  A planted
+   pocket construction closes the clean ANN endpoint only if this explicit
+   tail test, not just the OSD entropy surrogate, fits inside
+   \(m^{\rho_c}\polylog m\).
+\end{corollary}
+
+\begin{proof}
+   For any fixed \(\alpha>0\),
+   \[
+      \mathbf1\left\{\sum_td_t(v_t)\le\Delta\right\}
+      \le
+      \exp\left(\alpha\Delta-\alpha\sum_td_t(v_t)\right).
+   \]
+   Summing this inequality over \(\prod_tD_t\) gives \((PHC2)\).
+
+   For a hit pocket the feasible set is the full cube on \(H_t\), and the local
+   deficit is exactly the sum of the flipped coordinate gaps relative to the
+   coordinatewise best word.  This gives \((PHC3)\).
+
+   For an unhit pocket, a word is feasible iff the flip set relative to
+   \(a^\star\) has parity \(\epsilon_t\).  The best feasible flip cost is
+   \(\gamma_t\), so \(d_t(F)=\sum_{i\in F}\delta_i-\gamma_t\) on feasible flip
+   sets.  The even/odd projection identity
+   \[
+      \sum_{\substack{F\subseteq P_t\\ |F|\equiv\epsilon_t\pmod2}}
+      \prod_{i\in F}x_i
+      =
+      \frac12
+      \left(\prod_i(1+x_i)+(-1)^{\epsilon_t}\prod_i(1-x_i)\right)
+   \]
+   with \(x_i=e^{-\alpha\delta_i}\) proves \((PHC5)\).  Factoring
+   \(\prod_i(1+e^{-\alpha\delta_i})\) gives \((PHC6)\).
+
+   Multiplying the quotient count by the fiber size \(2^{d_J}\) in \((PFQ5)\)
+   and substituting the Chernoff exponent gives \((PHC7)\).  Finally,
+   \((PHC9)\) is immediate from \((PHC6)\) under \((PHC8)\), after absorbing
+   the bounded \(\alpha\gamma_t\) and the \(o(1)\) logarithmic parity correction.
+\end{proof}
+
 \begin{corollary}[Support collapse blocks bounded additive masks]
    \label{cor:support-collapse-blocks-bounded-additive-masks}
    Work with one conditional near block law \(P^E_j\) from
