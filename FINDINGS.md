@@ -2597,6 +2597,24 @@ P162. (*** 30M STREAMING DECIDING RUN: 8GB plumbing WORKS, but ELIGIBLE recall ~
     DECISION PENDING: diagnose whether the 15-20x is recoverable (profile scan_pool: where does native 2-3e9 -> 1.8e8
     go?) BEFORE committing to a multi-hour scan-kernel/AH2 rewrite. 1M=1.0000 mechanism proof stands.
 
+P163. (*** PIVOTAL & POSITIVE: the 14x scan deficit is RECOVERABLE PATH OVERHEAD, not the kernel -> GREENLIT path-opt (unlocks BOTH tracks) ***)
+    streaming2 settled the invest-vs-bank question with a microbench. scanbench (bare apq4 kernel, m=50 = d=100/dpb=2,
+    L2-resident, single thread): fast-i8 AVX2 = 321 Mvec/s/thread, AVX-512 interleaved = 430 Mvec/s/thread -> ~2.6e9
+    (AVX2) to 3.4e9 (512-IL) across 8 threads. THE KERNEL HITS NATIVE (confirms P89). The 30M streaming scan PATH =
+    ~1.8e8 cand/s total = ~22.5M/s/thread -> the path is ~14x SLOWER than the bare kernel. Confirmed NOT kernel and
+    NOT memory-BW (the scan pulls only ~0.56GB/s/thread, far below RAM BW) => it is PER-CANDIDATE PATH OVERHEAD around
+    the kernel. SUSPECTS (priority): (1) the per-candidate SCALAR COLLECT loop -- for each of ~2.5M candidates a
+    slot_orig[slot] tombstone-check + bounded-top-t threshold-compare/push = ~16 scalar ops per 16-wide kernel block,
+    doubling per-block time + breaking vectorization; (2) the main+BUFFER split -- scan_ins_pool (buffer) is UNbounded
+    + per-point scalar, NOT vectorized; (3) dedup_pool_by_orig (a0=2) + QueryCtx rebuild per query. FIX = vectorize/
+    bulk the collect (SIMD threshold-compare, bulk-compact survivors, skip per-candidate tombstone-check for cells with
+    no tombstones) + bound+vectorize scan_ins_pool. PROJECTION: recover HALF the 14x (-> ~7x -> ~1.3e9 cand/s) -> p~128
+    (recall ~0.90) fits comfortably, p~256 (~0.95) ~71min (close) => TOP-3 ELIGIBLE (>0.922); recover the FULL 14x ->
+    p~512 (0.97) eligible -> a run at the WIN (vs scann 0.9924). UNLOCKS OOD QPS@90% IDENTICALLY (same scan-bound wall,
+    P158/P162). *** DECISION: GREENLIT the path-optimization -- highest-leverage work in the session, recoverable in
+    hours (not a ground-up kernel rewrite), projects to eligible top-3/win on streaming AND lifts OOD. *** (Independent
+    code-level scan analysis workflow wxkgkaojd running in parallel to produce a ranked optimization plan to guide it.)
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
