@@ -6734,6 +6734,96 @@ partition ignores the bias coordinates that certify the list size.
    interpretation.
 \end{proof}
 
+\begin{corollary}[Product and trellis collision rates are the checkpoint audit]
+   \label{cor:product-checkpoint-collision-rate}
+   In the setting of
+   \cref{cor:finite-state-checkpoint-collision-test}, suppose first that the
+   segment continuation law is a product over coordinates
+   \(I_s=\{a,\ldots,b\}\):
+   \[
+      W_q(c_{I_s})=\prod_{j\in I_s}W_j(c_j),
+      \qquad W_j(c)>0 .
+   \]
+   Put
+   \[
+      Z_{j,1}=\sum_{c\in\mathcal C_j}W_j(c),
+      \qquad
+      Z_{j,2}=\sum_{c\in\mathcal C_j}W_j(c)^2,
+      \qquad
+      h_{2,j}=2\log Z_{j,1}-\log Z_{j,2}.
+      \tag{PCE1}
+   \]
+   Then the checkpoint collision-effective support is
+   \[
+      N_2(u)=\prod_{j\in I_s}\frac{Z_{j,1}^2}{Z_{j,2}}
+      =
+      \exp\left\{\sum_{j\in I_s}h_{2,j}\right\}.
+      \tag{PCE2}
+   \]
+   Hence the segment passes the polynomial checkpoint requirement whenever
+   \[
+      \sum_{j\in I_s}h_{2,j}
+      \ge
+      \log K_s+\log C+\log r-\log\log\log m
+      +O(1),
+      \tag{PCE3}
+   \]
+   with the obvious adjustment for the chosen \(\eta_s\).
+
+   In the homogeneous finite-state case, let the segment have length \(\ell\)
+   and tilted transition matrix
+   \[
+      A_q(u,v)=\sum_{e:u\to v}r_e(q),
+   \]
+   and define the squared-weight transition matrix
+   \[
+      A_q^{(2)}(u,v)=\sum_{e:u\to v}r_e(q)^2.
+      \tag{PCE4}
+   \]
+   Under the same Perron--Frobenius regularity convention as in
+   \cref{cor:finite-state-trellis-rate-test},
+   \[
+      \log N_2(u)
+      =
+      \ell\bigl(2\log\lambda(A_q)-\log\lambda(A_q^{(2)})\bigr)
+      +O(\log\ell).
+      \tag{PCE5}
+   \]
+   Thus a convolutional, Construction-A, or recursive lattice segment has a
+   scalar checkpoint pass/fail test:
+   \[
+      \ell\bigl(2\log\lambda(A_q)-\log\lambda(A_q^{(2)})\bigr)
+      \ge
+      \log K_s+\log\eta_s+O(\log\ell).
+      \tag{PCE6}
+   \]
+
+   This is the numerical stress test for the checkpoint route.  The randomness
+   needed for the subset is still only pairwise-independent syndrome
+   randomness; the construction succeeds or fails according to the collision
+   entropy rate of the query-tilted local code or lattice posterior.
+\end{corollary}
+
+\begin{proof}
+   In the product case,
+   \[
+      Z_1(u)=\prod_{j\in I_s}Z_{j,1},
+      \qquad
+      Z_2(u)=\prod_{j\in I_s}Z_{j,2},
+   \]
+   so \((PCE2)\) is exactly \(Z_1(u)^2/Z_2(u)\).  Substituting
+   \(\eta_s=C r/\log\log m\) in the condition
+   \(N_2(u)\ge\eta_sK_s\) gives \((PCE3)\).
+
+   In the homogeneous finite-state case, the ordinary partition function is
+   \(e_s^TA_q^\ell\mathbf 1\), and the squared partition function is
+   \(e_s^T(A_q^{(2)})^\ell\mathbf 1\).  Perron--Frobenius regularity replaces
+   these boundary quantities by \(\lambda(A_q)^\ell\) and
+   \(\lambda(A_q^{(2)})^\ell\), up to polynomial factors in \(\ell\).  Taking
+   \(2\log Z_1-\log Z_2\) gives \((PCE5)\), and
+   \(N_2(u)\ge\eta_sK_s\) gives \((PCE6)\).
+\end{proof}
+
 \begin{corollary}[Difference-universal syndromes suffice with a random bucket]
    \label{cor:difference-universal-syndrome-thinning}
    Let \(G\) be a finite abelian group and let
