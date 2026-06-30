@@ -2415,6 +2415,25 @@ P154. (*** OOD QPS@90% WIN: rerank depth was massively over-provisioned; tighten
     int8-scan+float-rerank, does 0.90 come at a smaller p (compounds with this t_surv win). Both have uncommitted
     float-reader work (ibin/fbin) in flight. Box at load ~62: 1M-only light builds, heavy builds strictly sequential.
 
+P155. (*** STREAMING TARGET CORRECTED: the scored dataset is msturing-30M-clustered via final_runbook.yaml, NOT 1M/10M-sliding ***)
+    Read the actual scoring artifacts (neurips23/ongoing_leaderboard): streaming track is scored by
+    res_final_runbook_AzureD8lds_v5.csv = dataset **msturing-30M-clustered**, runbook **final_runbook.yaml**
+    (max_pts 10292043 active window; insert(clustered start/end ranges into the 30M) interleaved with search;
+    later deletes). Local CSV standings (recall@10): scann 0.9924 | zilliz 0.9219 | pinecone 0.9123 | pyanns 0.870
+    | diskann 0.722. Live leaderboard leader = 0.99786 (newer than the local CSV snapshot). So the BAR = beat
+    ~0.992-0.998 recall@10 on msturing-30M-clustered, runbook finishing <1hr. The other runbooks (wikipedia-1M,
+    msmarco-100M, wikipedia-35M) are SEPARATE streaming runbooks; final_runbook=msturing-30M-clustered is THE
+    scored one. *** IMPLICATIONS: (1) streaming2's msturing-1M float-rerank run is a MECHANISM PROXY (right
+    technique, wrong scale/dataset) -- it validates that exact-float-rerank breaks the int8 ceiling, but the
+    leaderboard number requires msturing-30M-clustered. (2) DATA GAP: we have ONLY the 1M msturing crop
+    (base1b.fbin.crop_nb_1000000); need the 30M float base (~12GB) + final_runbook GT (download via
+    benchmark/streaming/download_gt.py needs a gt_url our local runbook lacks, else compute_gt.py = expensive over
+    the 10M window). (3) Our edge vs scann's 0.992: exact-FLOAT rerank of a large survivor pool within the 1hr
+    budget should push recall->~1.0; scann uses float AH+reorder=317. Memory/compute: 30M int8 base=3GB + index
+    anon ~4GB (we build 100M msspacev, so 30M is safe). GATING: stage the 30M data ONLY after the 1M mechanism
+    proof returns >0.99 (don't download 12GB for a dead mechanism). OOD target unchanged (QPS@90% on text2image,
+    scann=baseline). NEXT: agents' 1M float-rerank numbers (in flight) -> if >0.99, stage msturing-30M + run final_runbook.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
