@@ -2370,6 +2370,22 @@ P151. (GOAL refined: top OOD + STREAMING at 1M/10M/100M. 100M msspacev scale att
     get the 100M msspacev recall (rebuild a0=2 no-save, running), then msturing streaming number, then OOD scale.
     Box discipline: ONE big build at a time (concurrent 100M+streaming starved both).
 
+P152. (*** 100M msspacev SCALE PROOF: engine builds+queries at 100M; + the LEADERBOARD-METRIC reframing ***)
+    100M msspacev (crop_nb_100000000) a0=1 raw-dedup, hierk3 C0=1024 C1=16384 b0=64 b1=200 Kf=262144, RC=0:
+      built 1384s (23min, anon ~13GB), recall@10: p128 0.8772 | p192 0.8950 | p288 0.9108 | p448 0.9253 | p640 0.9337.
+    So we REACH recall 0.90 @ p~200 and 0.93 @ p640 at 100M (QPS load-suppressed, 1-rep). Engine scales to 100M.
+    (a0=2 100M got SIGTERM-killed -- ~15-16GB exceeds the shared-box headroom; a0=1 ~13GB is the safe ceiling here.)
+    *** LEADERBOARD METRICS (from neurips23/ongoing_leaderboard, fetched): tracks = Filter/OOD/Sparse/Streaming.
+    - OOD/Filter/Sparse: ranked by QPS at recall@10 >= 90% (SPEED). ScaNN = OOD BASELINE (not a competitor entry);
+      the actual OOD #1 is FASTER than ScaNN -> we are >2.4x behind the real #1. HARD track (execution speed).
+    - STREAMING: ranked by recall@10, as long as the runbook finishes within 1 HOUR (RECALL, not speed!). The
+      current STREAMING LEADER = recall@10 0.99786. *** This REFRAMES streaming as WINNABLE for us: our final
+      rerank is EXACT int8, so recall is gated only by probe-coverage + #survivors, both crankable within the 1hr
+      budget -> drive recall -> ~1.0. Target = beat 0.99786, NOT DiskANN's 0.892 baseline. ***
+    PARALLEL (box forces heavy builds sequential, light 1M agent-work parallel): 100M (me, done) + streaming2
+    (msturing 1M: ops correct -0.004 vs rebuild, runbook eval + compact_live built, tuning toward 0.998) +
+    ood2 (1M OOD adaptive-rerank). Now also 10M streaming (msspacev, max-recall config) toward ~0.99.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
