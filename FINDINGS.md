@@ -2265,6 +2265,20 @@ P144. (scan-code bake-off [offline, load-indep, recall@t_surv]: PQ ranks WELL ->
     load-independent). My naive RaBitQ != faithful Extended-RaBitQ (whose unbiased estimator + error BOUND is
     what makes adaptive early-stop PROVABLE). NEXT: PQ@100B matched-byte; then engine t_surv-reduction recall test.
 
+P145. (*** matched-byte: PQ-8bit == RaBitQ-4b on OOD -> rotation buys NOTHING; DON'T build RaBitQ; lever = ADAPTIVE DEPTH ***)
+    OOD 100B matched: PQ-8bit t40=0.9984 t80=0.9998 ~= RaBitQ-4b t40=0.997 t80=0.9998. So the OOD ranking gain
+    is purely MORE RESOLUTION (bytes), not the rotation -- RaBitQ has no edge over higher-bit PQ for ranking.
+    DECISION: (a) DON'T implement RaBitQ (no ranking advantage; its only distinct value = error BOUND for
+    provable early-stop, which heuristic adaptive depth approximates). (b) higher-res PQ-8bit = 2x scan bytes
+    + loses the 4-bit vpshufb fast-scan, and OOD scan is already 52% -> 2x scan likely outweighs the shallower
+    rerank -> probably NOT a net win. (c) THE LEVER (both tracks) = ADAPTIVE REREANK DEPTH: PQ-4bit ALREADY
+    ranks the pool to 0.96-0.99@t80 at NO extra scan cost; engine t_surv~300(msspacev)/~3072(OOD) is oversized.
+    The cheap offline bake-off (~20min numpy) steered us OFF a ~week-long RaBitQ build onto a small change.
+    NEXT (load-independent validation): lower engine t_surv on 10M OOD, check recall@10 holds. The within-pool
+    bake-off (200k) predicts t~320 suffices for 0.99; if 10M global recall holds at low TMUL, adaptive depth =
+    free ~1.2-1.3x OOD (rerank is 27%) + ~1.05-1.1x msspacev (rerank 19%). Then implement per-query adaptive
+    early-stop (#2): rerank in scan order, stop when running k-th exact dist < next survivor's approx score.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
