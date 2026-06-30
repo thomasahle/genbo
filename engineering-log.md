@@ -1345,6 +1345,11 @@
   \le g_0^b+p^{-k}\bigl(g_0+\tfrac p{p-1}(\Theta-g_0)\bigr)^b.
   \]
   For GRS lengths \(b\le p+1\), this is the complete-theta random-code screen up to a constant factor. Thus the amount of randomness needed to fix the MDS Lee/theta spectrum is only one random nonzero multiplier per coordinate, not random tuple subsets or a random dense code. The scaling is monomial equivalence, so generalized Reed--Solomon decoding can absorb it by coordinate rescaling. The remaining obstacle for this branch is now the actual Construction-A/Fano reporter: prefix work and far co-load must satisfy the product estimates with these scaled residue blocks.
+- Composed the scaled-MDS spectral result with the Construction-A/Fano reporter interface. `cor:scaled-grs-construction-a-reporter-endpoint` uses \(C_j=\operatorname{diag}(\sigma_i^{-1})C_{0,j}\), so the residue theta partition is exactly a soft GRS score
+  \[
+  \log\mathcal Z_j(\tau,y)=\log\sum_{a\in C_{0,j}}\exp\{\sum_i\log\Theta_{\sigma_i^{-1}a_i}^{(\tau,j)}(y_i)\}.
+  \]
+  If the scaled duals pass the complete-theta screen, a certified soft-decision GRS threshold reporter has output-sensitive setup/list work, and the flat Gaussian surrogates satisfy the product query/storage/far inequalities, then the checkpointed panel has near survival \(1-o(1)\) and \(m^{\rho_c}\polylog m\) prefix plus retained far work. This is not a new certificate form: it is the actual endpoint checklist for the scaled-GRS Construction-A branch. The remaining theorem is now either to prove those soft-prefix/rate estimates for a concrete GRS decoder, or show that the GRS soft list necessarily violates the prefix-work budget.
 - Audited the obvious MDS/Reed--Solomon escape. `cor:mds-hamming-spectrum-max-screen` records the exact MDS dual Hamming enumerator and shows that if an MDS/RS block is certified only by minimum distance/Hamming support, the weighted bound is still
   \[
   \sum_w A_w^\perp\eta^w\le p^{-k}\sum_{w\ge k+1}\binom bw(p\eta)^w\le p^{-k}(1+p\eta)^b.

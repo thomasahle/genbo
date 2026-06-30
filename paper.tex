@@ -103547,6 +103547,160 @@ explicit]
    product-rate consequence.
 \end{proof}
 
+\begin{corollary}[Scaled-GRS Construction-A endpoint reduces to soft prefix
+work]
+   \label{cor:scaled-grs-construction-a-reporter-endpoint}
+   Work in the Construction-A product/Fano schedule of
+   \cref{cor:construction-a-theta-mds-cpfa-endpoint}.  In each product block
+   \(j\), let \(D_{0,j}\le\mathbb F_{p_j}^{b_j}\) be an
+   \([b_j,h_j]\) generalized Reed--Solomon dual code, put
+   \(C_{0,j}=D_{0,j}^\perp\), \(k_j=b_j-h_j\), and choose nonzero column
+   multipliers \(\sigma_{j,i}\).  Use the primal residue code
+   \[
+      C_j
+      =
+      \{(\sigma_{j,1}^{-1}a_1,\ldots,\sigma_{j,b_j}^{-1}a_{b_j}):
+         a\in C_{0,j}\}
+      \tag{SGR1}
+   \]
+   in the Construction-A lattice.  For a center \(y\) and temperature
+   \(\tau\), define the soft GRS coordinate weights
+   \[
+      \omega_{j,i}^{(\tau,y)}(a)
+      =
+      \log \Theta_{\sigma_{j,i}^{-1}a}^{(\tau,j)}(y_i),
+      \qquad a\in\mathbb F_{p_j},
+      \tag{SGR2}
+   \]
+   where \(\Theta_a^{(\tau,j)}\) is the residue theta weight from
+   \((TPA3)\).  Then
+   \[
+      \log\mathcal Z_j(\tau,y)
+      =
+      \log\sum_{a\in C_{0,j}}
+         \exp\!\left\{\sum_i\omega_{j,i}^{(\tau,y)}(a_i)\right\}.
+      \tag{SGR3}
+   \]
+
+   Assume the following three concrete conditions.
+   First, the randomly scaled duals
+   \(D_j=C_j^\perp=\operatorname{diag}(\sigma_{j,i})D_{0,j}\) satisfy, at the
+   charged temperatures \(\mathcal T=\{\alpha,\beta,\alpha+\beta\}\),
+   \[
+      \sum_j
+      \left(
+         b_j\varepsilon_{j,*}
+         +
+         p_j^{-k_j}
+         \exp\!\left\{\frac{b_j}{p_j-1}\right\}
+         \Theta_{j,*}^{b_j}
+      \right)
+      =
+      O_c(\log\log m),
+      \qquad
+      \max_j
+      \left(
+         b_j\varepsilon_{j,*}
+         +
+         p_j^{-k_j}
+         \exp\!\left\{\frac{b_j}{p_j-1}\right\}
+         \Theta_{j,*}^{b_j}
+      \right)
+      <c_0 ,
+      \tag{SGR4}
+   \]
+   either deterministically or with high probability over the multipliers, as
+   supplied by \cref{cor:randomly-scaled-mds-complete-theta}.
+
+   Second, for every block \(j\), center \(y\) used by the query, storage, and
+   mixed far audits, and threshold \(\theta\), a certified soft-decision GRS
+   reporter returns exactly
+   \[
+      \left\{
+      a\in C_{0,j}:
+      \sum_i\omega_{j,i}^{(\tau,y)}(a_i)\ge\theta
+      \right\}
+      \tag{SGR5}
+   \]
+   in work \(D_j(y,\tau)+O(|L_j(y,\tau,\theta)|)\).  Its setup work is charged
+   in the query factor \(Q_j\) of \((TPA8)\), or equivalently in
+   \(\widetilde Q_j\) of \((DTF7)\), with only \(O_c(\log\log m)\) total
+   slack.
+
+   Third, the flat Gaussian-rate surrogates of
+   \cref{cor:construction-a-dual-theta-rate-flatness} satisfy
+   \[
+      \sum_j\widetilde Q_j(q)
+      \le\rho_c\log m+O_c(\log\log m),
+      \tag{SGR6}
+   \]
+   \[
+      \sum_j\widetilde S_j(x)
+      \le\rho_c\log m+O_c(\log\log m),
+      \tag{SGR7}
+   \]
+   and, for every far pair,
+   \[
+      \sum_j\widetilde F_j(x,q)
+      \le-(1-\rho_c-\zeta)\log m+o(\log m),
+      \qquad
+      \gamma A_{\rm chk}>\zeta .
+      \tag{SGR8}
+   \]
+   Then the scaled-GRS Construction-A product panel satisfies the hypotheses of
+   \(\cref{cor:construction-a-theta-mds-cpfa-endpoint}\).  In particular, with
+   the local balanced-window MDS checkpoint assumptions of that corollary,
+   \[
+      \text{near survival }1-o(1),
+      \qquad
+      \E(\text{prefix work}+\text{retained far work})
+      \le
+      m^{\rho_c}\log^{O_c(1)}m .
+      \tag{SGR9}
+   \]
+
+   Thus the scaled-GRS route has a clean separation of obligations.  The
+   random monomial multipliers supply the complete-theta dual flatness without
+   the small-field Hamming smoothing tax; the GRS soft decoder supplies the
+   output-sensitive threshold reporter; and the remaining exponent calculation
+   is only the flat product-rate check \((SGR6)\)--\((SGR8)\).  If the soft
+   decoder can only output raw codeword lists whose prefix/setup work violates
+   \((SGR6)\), the spectral improvement does not by itself remove the ANN
+   overhead.
+\end{corollary}
+
+\begin{proof}
+   The orthogonal complement of
+   \(D_j=\operatorname{diag}(\sigma_{j,i})D_{0,j}\) is
+   \[
+      C_j
+      =
+      \operatorname{diag}(\sigma_{j,i}^{-1})C_{0,j},
+   \]
+   which is \((SGR1)\).  Substituting
+   \(c_i=\sigma_{j,i}^{-1}a_i\) in the residue-code theta partition
+   \((TPA4)\) gives \((SGR3)\).  Therefore the reporter in \((SGR5)\) is
+   exactly the block threshold reporter required by
+   \cref{lem:soft-list-recovery-reporter}, applied to the monomially
+   equivalent GRS code \(C_{0,j}\) with coordinate weights \((SGR2)\).
+
+   Condition \((SGR4)\) is precisely the scaled-MDS complete-theta flatness
+   screen \((RSM6)\), summed over blocks and over the three charged
+   temperatures.  Hence
+   \cref{cor:construction-a-dual-theta-rate-flatness} replaces every true
+   \(\log\mathcal Z_j\) in the query, storage, and mixed far factors by the
+   flat main term \(\Gamma_j\), losing only polylogarithmic slack.  Conditions
+   \((SGR6)\)--\((SGR8)\) then imply the true theta inequalities
+   \((TPA12)\)--\((TPA14)\), and thus the product/Fano hypotheses
+   \((FRC6)\)--\((FRC7)\), by
+   \cref{cor:construction-a-theta-product-rate-audit}.
+
+   Finally, \((SGR8)\) gives the checkpoint thinning condition
+   \(\gamma A_{\rm chk}>\zeta\).  Combining the product/Fano estimates with
+   the local balanced-window checkpoint assumptions in
+   \cref{cor:construction-a-theta-mds-cpfa-endpoint} proves \((SGR9)\).
+\end{proof}
+
 \begin{corollary}[MDS Hamming spectrum does not beat the max-residue screen]
    \label{cor:mds-hamming-spectrum-max-screen}
    Let \(C_j\le\mathbb F_{p_j}^{b_j}\) be an \([b_j,k_j]\) MDS code, so
