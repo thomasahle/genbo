@@ -102412,6 +102412,137 @@ polylogarithmic state]
    quantity is at most \(\gamma_U/(4W_\lambda)\).
 \end{proof}
 
+\begin{corollary}[Lattice local-limit certificate for additive filters]
+   \label{cor:lattice-local-limit-additive-filter}
+   Work in the setting of
+   \cref{cor:tilted-additive-tail-sampler}.  Assume that under the tilted law
+   \(Q_\lambda\) the additive score \(M\) takes values in one lattice
+   \(a+\Delta_0\mathbb Z\), has mean \(\mu_\lambda\), and has variance
+   \(\sigma_\lambda^2>0\).  Put
+   \[
+      W_\lambda=\max\{1,\lambda\sigma_\lambda\},
+      \qquad
+      \gamma_U^{\rm lat}
+      =
+      (2\pi)^{-1/2}\exp\{-(U+1)^2/2\}.
+      \tag{LLA1}
+   \]
+   Suppose the threshold is in the tilted central window and the lattice span
+   is fine at the rejection scale:
+   \[
+      |s-\mu_\lambda|\le U\sigma_\lambda,
+      \qquad
+      \Delta_0\le \frac{\sigma_\lambda}{4W_\lambda}.
+      \tag{LLA2}
+   \]
+   Let
+   \[
+      \Phi_\lambda(\theta)=
+      \E_{Q_\lambda}\exp\{\mathrm i\theta M\}.
+   \]
+   If the lattice Fourier error satisfies
+   \[
+   \begin{aligned}
+      &\int_{-\pi/\Delta_0}^{\pi/\Delta_0}
+      \left|
+         \Phi_\lambda(\theta)
+         -
+         \exp\{\mathrm i\theta\mu_\lambda
+               -\sigma_\lambda^2\theta^2/2\}
+      \right|\,d\theta  \\
+      &\qquad\qquad
+      +
+      \int_{|\theta|>\pi/\Delta_0}
+      \exp\{-\sigma_\lambda^2\theta^2/2\}\,d\theta
+      \le
+      \frac{\pi\gamma_U^{\rm lat}}{\sigma_\lambda},
+   \end{aligned}
+      \tag{LLA3}
+   \]
+   then the tilted rejection sampler of
+   \cref{cor:tilted-additive-tail-sampler} produces one exact sample from
+   \(M(c)\ge s\), with law proportional to \(R(c)\), using
+   \(O_U(W_\lambda)\) tilted product proposals in expectation.
+
+   Thus the additive pseudo-random subset route has a concrete arithmetic
+   pass/fail test.  For a Construction-A, Tanner, or other residue-code filter,
+   it is not enough that the auxiliary weights be pairwise independent as raw
+   labels.  After the saddlepoint tilt, the code must have fine enough lattice
+   span and no large nonzero Fourier peaks at the tilted law.  A coarse span
+   \(\Delta_0\gg\sigma_\lambda/W_\lambda\), a periodic residue obstruction, or
+   a dominant coordinate is a genuine access barrier for exact tail sampling,
+   even when fixed-tuple retention probabilities have the right density.
+\end{corollary}
+
+\begin{proof}
+   Fourier inversion on the lattice gives, for every
+   \(z\in a+\Delta_0\mathbb Z\),
+   \[
+      \Pr_{Q_\lambda}[M=z]
+      =
+      \frac{\Delta_0}{2\pi}
+      \int_{-\pi/\Delta_0}^{\pi/\Delta_0}
+      e^{-\mathrm i\theta z}\Phi_\lambda(\theta)\,d\theta .
+   \]
+   The corresponding inversion formula for the Gaussian density gives
+   \[
+      \frac{\Delta_0}{\sigma_\lambda}
+      \varphi\!\left(\frac{z-\mu_\lambda}{\sigma_\lambda}\right)
+      =
+      \frac{\Delta_0}{2\pi}
+      \int_{-\infty}^{\infty}
+      e^{-\mathrm i\theta z}
+      e^{\mathrm i\theta\mu_\lambda-\sigma_\lambda^2\theta^2/2}
+      \,d\theta ,
+   \]
+   where \(\varphi\) is the standard normal density.  Hence \((LLA3)\) implies
+   \[
+      \left|
+      \Pr_{Q_\lambda}[M=z]
+      -
+      \frac{\Delta_0}{\sigma_\lambda}
+      \varphi\!\left(\frac{z-\mu_\lambda}{\sigma_\lambda}\right)
+      \right|
+      \le
+      \frac{\gamma_U^{\rm lat}\Delta_0}{2\sigma_\lambda}.
+      \tag{LLA4}
+   \]
+   Let \(z_0\) be the first lattice point at least \(s\), and consider the
+   lattice points
+   \[
+      z_0+r\Delta_0,
+      \qquad
+      0\le r\le
+      \left\lfloor
+         \frac{\sigma_\lambda}{2\Delta_0W_\lambda}
+      \right\rfloor .
+   \]
+   By \((LLA2)\), all these points lie in
+   \([s,s+\sigma_\lambda/W_\lambda]\), and therefore within
+   \((U+1)\sigma_\lambda\) of \(\mu_\lambda\).  For each of them, the Gaussian
+   proxy in \((LLA4)\) is at least
+   \(\gamma_U^{\rm lat}\Delta_0/\sigma_\lambda\), so
+   \[
+      \Pr_{Q_\lambda}
+      \left[
+         s\le M\le s+\frac{\sigma_\lambda}{W_\lambda}
+      \right]
+      \ge
+      \frac{\gamma_U^{\rm lat}}{4W_\lambda},
+      \tag{LLA5}
+   \]
+   after decreasing the absolute constant.  On this same window,
+   \[
+      e^{-\lambda(M-s)}
+      \ge
+      e^{-\lambda\sigma_\lambda/W_\lambda}
+      \ge e^{-1}.
+   \]
+   Substituting \((LLA5)\) into the acceptance identity \((TAT7)\) gives
+   \(A_\lambda\ge \gamma_U^{\rm lat}/(4eW_\lambda)\), so the expected number
+   of proposals is \(O_U(W_\lambda)\).
+\end{proof}
+
 \begin{corollary}[Joint tilted sampler for score and pseudo-random filter]
    \label{cor:joint-tilted-score-filter-sampler}
    Let the active labels for one query outcome be a product
