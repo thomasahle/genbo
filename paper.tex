@@ -108048,6 +108048,192 @@ entropy budget]
    proving \((PWS8)\).
 \end{proof}
 
+\begin{corollary}[Fixed-law pairwise sign masks are random enough]
+   \label{cor:fixed-law-pairwise-sign-tail-sampler}
+   Work in the setting of
+   \cref{cor:joint-tilted-score-filter-sampler}.  Fix the score tilt
+   \(\beta\ge0\), and write
+   \[
+      P_j(a)=
+      \frac{r_j(a)e^{\beta w_j(a)}}
+           {\sum_br_j(b)e^{\beta w_j(b)}} .
+      \tag{PSF1}
+   \]
+   Let \(\xi_{j,a}\in\{-1,1\}\) be unbiased and pairwise independent over the
+   disjoint union of all coordinate labels, and set
+   \(M(c)=\sum_j\xi_{j,c_j}\).  Define, under the fixed laws \(P_j\),
+   \[
+      \bar w_j=\sum_aP_j(a)w_j(a),\qquad
+      \nu_j=\sum_aP_j(a)^2,
+      \qquad
+      \tau_j=\sum_aP_j(a)^2(w_j(a)-\bar w_j)^2,
+      \tag{PSF2}
+   \]
+   and
+   \[
+      \alpha_j=\sum_aP_j(a)\xi_{j,a},
+      \qquad
+      \zeta_j=\sum_aP_j(a)(w_j(a)-\bar w_j)\xi_{j,a}.
+      \tag{PSF3}
+   \]
+   For any \(a_2\in(0,1)\) and \(z_0>0\), with probability at least
+   \[
+      1-
+      \frac{\sum_j\nu_j}{a_2h}
+      -
+      \frac{\sum_j\sqrt{\tau_j}}{z_0h},
+      \tag{PSF4}
+   \]
+   the sign seed satisfies
+   \[
+      \sum_j\alpha_j^2\le a_2h,
+      \qquad
+      \sum_j|\zeta_j|\le z_0h .
+      \tag{PSF5}
+   \]
+
+   Fix such a seed and a sign saddlepoint \(0\le\lambda\le\Lambda\).  Under the
+   joint tilted product law \(Q_{\beta,\lambda}\), let
+   \(\sigma_W^2,\sigma_M^2\) be the variances of \(W,M\), and let
+   \(\rho\) be their correlation.  Then
+   \[
+      \sigma_M^2\ge v_Mh,
+      \qquad
+      v_M=e^{-2\Lambda}(1-a_2),
+      \tag{PSF6}
+   \]
+   and
+   \[
+      |\operatorname{Cov}_{Q_{\beta,\lambda}}(W,M)|
+      \le e^{2\Lambda}z_0h .
+      \tag{PSF7}
+   \]
+   Consequently, if also
+   \[
+      \sigma_W^2\ge v_Wh,
+      \qquad
+      e^{2\Lambda}z_0\le(1-\kappa)\sqrt{v_Wv_M},
+      \tag{PSF8}
+   \]
+   then \(|\rho|\le1-\kappa\).
+
+   Assume in addition that every coordinate score has diameter at most
+   \(B_W\):
+   \[
+      \max_{a,b}|w_j(a)-w_j(b)|\le B_W .
+      \tag{PSF9}
+   \]
+   Put
+   \[
+      v_\Sigma=
+      \frac{\kappa(2-\kappa)v_Wv_M}{B_W^2+1},
+      \qquad
+      B_*=(B_W^2+4)^{1/2}.
+      \tag{PSF10}
+   \]
+   If the target thresholds obey
+   \[
+      \left|\frac{t-\mu_W}{\sigma_W}\right|\le U,
+      \qquad
+      \left|\frac{s-\mu_M}{\sigma_M}\right|\le U,
+      \tag{PSF11}
+   \]
+   under \(Q_{\beta,\lambda}\), and
+   \[
+      W_WW_M
+      \le
+      \frac{\gamma_{U,\kappa}}{16C_{\rm rect}B_*}\sqrt{v_\Sigma h},
+      \qquad
+      W_W=\max\{1,\beta\sigma_W\},\quad
+      W_M=\max\{1,\lambda\sigma_M\},
+      \tag{PSF12}
+   \]
+   then the exact joint tilted rejection sampler outputs a tuple from the
+   original product law \(R\) conditioned on
+   \[
+      W(c)\ge t,\qquad M(c)\ge s
+      \tag{PSF13}
+   \]
+   using \(O_{U,\kappa}(W_WW_M)\) proposals in expectation.
+
+   Thus, for one fixed query-visible tilted law, full random-subset entropy is
+   unnecessary.  Pairwise-independent signs are enough whenever the tilted
+   coordinate laws have large aggregate effective support
+   \(\sum_j\nu_j=o(h)\) and small aggregate score-sign leverage
+   \(\sum_j\sqrt{\tau_j}=o(h)\).  Reusing one seed over many possible query
+   laws is the separate finite-family or coefficient-net problem handled by
+   \cref{lem:finite-family-limited-independence-sign-filter} and
+   \cref{lem:coefficient-net-sign-mask-transfer};
+   exposing the sign sum as a trellis state is the separate carry-width problem
+   handled by \cref{cor:state-exposed-additive-filter-width}.
+\end{corollary}
+
+\begin{proof}
+   From \cref{lem:pairwise-sign-mask-effective-support},
+   \[
+      \E\sum_j\alpha_j^2=\sum_j\nu_j .
+   \]
+   Markov's inequality gives the first bound in \((PSF5)\) with failure
+   probability at most \((\sum_j\nu_j)/(a_2h)\).  The same lemma gives
+   \(\E\zeta_j^2=\tau_j\), hence
+   \(\E|\zeta_j|\le\sqrt{\tau_j}\).  Another Markov bound gives the second
+   inequality in \((PSF5)\) with failure probability at most
+   \((\sum_j\sqrt{\tau_j})/(z_0h)\).  This proves \((PSF4)\).
+
+   For \(0\le\lambda\le\Lambda\) and \(|\alpha_j|\le1\),
+   \[
+      e^{-\Lambda}
+      \le
+      \cosh\lambda+\alpha_j\sinh\lambda
+      \le
+      e^\Lambda .
+   \]
+   Applying \((PWS7)\) from
+   \cref{lem:pairwise-sign-mask-effective-support} and summing gives
+   \[
+      \sigma_M^2
+      =
+      \sum_j
+      \frac{1-\alpha_j^2}
+           {(\cosh\lambda+\alpha_j\sinh\lambda)^2}
+      \ge
+      e^{-2\Lambda}
+      \left(h-\sum_j\alpha_j^2\right),
+   \]
+   which is \((PSF6)\).  Likewise \((PWS8)\) gives
+   \[
+      |\operatorname{Cov}_{Q_{\beta,\lambda}}(W,M)|
+      \le
+      e^{2\Lambda}\sum_j|\zeta_j|,
+   \]
+   proving \((PSF7)\).  Combining \((PSF6)\)--\((PSF8)\) gives
+   \[
+      |\rho|
+      \le
+      \frac{e^{2\Lambda}z_0h}{\sqrt{v_Wh\,v_Mh}}
+      \le1-\kappa .
+   \]
+
+   The diameter bound gives \(\sigma_W^2\le B_W^2h\) and
+   \(\sigma_M^2\le h\).  Since \(|\rho|\le1-\kappa\), the covariance matrix
+   \(\Sigma\) of \((W,M)\) has
+   \[
+      \det\Sigma
+      =
+      \sigma_W^2\sigma_M^2(1-\rho^2)
+      \ge
+      \kappa(2-\kappa)v_Wv_Mh^2 .
+   \]
+   Also \(\operatorname{tr}\Sigma\le(B_W^2+1)h\), so
+   \(\lambda_{\min}(\Sigma)\ge v_\Sigma h\).  Each centered increment
+   \((w_j(C_j)-\mu_{W,j},\xi_{j,C_j}-\mu_{M,j})\) has norm at most \(B_*\).
+   Therefore the bounded-increment sufficient condition
+   \((BTBE5)\)--\((BTBE7)\) of
+   \cref{cor:bivariate-tilted-berry-esseen-filter} is exactly
+   \((PSF11)\)--\((PSF12)\), and that corollary gives the claimed exact
+   sampler and proposal bound.
+\end{proof}
+
 \begin{lemma}[Finite-family certificate for limited-independent sign masks]
    \label{lem:finite-family-limited-independence-sign-filter}
    Let \(\mathcal L\) be a finite family of query-visible tilted coordinate
