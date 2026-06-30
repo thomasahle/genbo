@@ -98604,6 +98604,103 @@ amplified in the next proposition.
    proving \((PWS8)\).
 \end{proof}
 
+\begin{lemma}[Finite-family certificate for limited-independent sign masks]
+   \label{lem:finite-family-limited-independence-sign-filter}
+   Let \(\mathcal L\) be a finite family of query-visible tilted coordinate
+   laws.  For \(\ell\in\mathcal L\) and coordinate \(j\), let
+   \(P_{\ell,j}\) be a probability law on \(\mathcal C_j\), and let
+   \(g_{\ell,j}:\mathcal C_j\to\mathbb R\) be centered under that law:
+   \[
+      \sum_aP_{\ell,j}(a)g_{\ell,j}(a)=0.
+      \tag{LIS1}
+   \]
+   Put
+   \[
+      \nu_{\ell,j}=\sum_aP_{\ell,j}(a)^2,
+      \qquad
+      \tau_{\ell,j}=\sum_aP_{\ell,j}(a)^2g_{\ell,j}(a)^2 .
+      \tag{LIS2}
+   \]
+   For each coordinate \(j\), draw unbiased \(2r\)-wise independent signs
+   \(\xi_{j,a}\in\{-1,1\}\).  Define
+   \[
+      \alpha_{\ell,j}=\sum_aP_{\ell,j}(a)\xi_{j,a},
+      \qquad
+      \zeta_{\ell,j}=\sum_aP_{\ell,j}(a)g_{\ell,j}(a)\xi_{j,a}.
+      \tag{LIS3}
+   \]
+   There is a universal constant \(C_{\rm Kh}\) such that, for every
+   \(\delta\in(0,1)\), with probability at least \(1-\delta\) over the sign
+   seed, simultaneously for all \(\ell\in\mathcal L\) and all \(j\),
+   \[
+      |\alpha_{\ell,j}|
+      \le
+      \sqrt{C_{\rm Kh}r\,\nu_{\ell,j}}\,
+      \left(\frac{2h|\mathcal L|}{\delta}\right)^{1/(2r)}
+      \tag{LIS4}
+   \]
+   and
+   \[
+      |\zeta_{\ell,j}|
+      \le
+      \sqrt{C_{\rm Kh}r\,\tau_{\ell,j}}\,
+      \left(\frac{2h|\mathcal L|}{\delta}\right)^{1/(2r)} .
+      \tag{LIS5}
+   \]
+   In particular, taking
+   \(r\ge\log(2h|\mathcal L|/\delta)\) gives the cleaner bounds
+   \[
+      |\alpha_{\ell,j}|\le O(\sqrt{r\nu_{\ell,j}}),
+      \qquad
+      |\zeta_{\ell,j}|\le O(\sqrt{r\tau_{\ell,j}})
+      \tag{LIS6}
+   \]
+   uniformly over the whole finite family.
+
+   Therefore the amount of randomness required by an additive sign subset is
+   not full random-subset entropy.  It is the randomness needed to make the
+   signed imbalance and signed score-correlation small on the finite collection
+   of tilted laws that the decoder can expose.  Pure pairwise independence
+   corresponds to \(r=1\) and is enough for an annealed or fixed-law audit.
+   A quenched seed good for \(N\) possible law/coefficient pairs needs either
+   \(2r\)-wise independence with \(r\simeq\log N\), a deterministic
+   effective-support certificate, or a sharper structural argument for that
+   family.  Algebraic implementations such as affine polynomial hashes,
+   higher-order tabulation, or multiply-shift variants are useful only to the
+   extent that they supply this moment order while preserving the local product
+   tilt \(P_{\ell,j}(a)e^{\lambda\xi_{j,a}}\).
+\end{lemma}
+
+\begin{proof}
+   For any coefficients \(c_a\), \(2r\)-wise independence makes
+   \(\E|\sum_ac_a\xi_{j,a}|^{2r}\) identical to the fully independent
+   Rademacher moment.  Expanding the moment, only monomials in which every
+   sign appears an even number of times survive.  The standard Khintchine
+   moment bound gives
+   \[
+      \E\left|\sum_ac_a\xi_{j,a}\right|^{2r}
+      \le
+      (C_{\rm Kh}r)^r\left(\sum_ac_a^2\right)^r .
+      \tag{LIS7}
+   \]
+   Applying \((LIS7)\) first with \(c_a=P_{\ell,j}(a)\), and then with
+   \(c_a=P_{\ell,j}(a)g_{\ell,j}(a)\), gives
+   \[
+      \E|\alpha_{\ell,j}|^{2r}
+      \le
+      (C_{\rm Kh}r)^r\nu_{\ell,j}^r,
+      \qquad
+      \E|\zeta_{\ell,j}|^{2r}
+      \le
+      (C_{\rm Kh}r)^r\tau_{\ell,j}^r .
+   \]
+   Markov's inequality with thresholds \((LIS4)\) and \((LIS5)\) gives failure
+   probability at most \(\delta/(2h|\mathcal L|)\) for each displayed
+   inequality and each pair \((\ell,j)\).  A union bound proves the simultaneous
+   statement.  If \(r\ge\log(2h|\mathcal L|/\delta)\), the factor
+   \((2h|\mathcal L|/\delta)^{1/(2r)}\) is bounded by an absolute constant.
+\end{proof}
+
 \begin{corollary}[Aligned linear charts compute rate-coverage sketches]
    \label{cor:aligned-linear-chart-rate-coverage-sketch}
    Work in the setting of
