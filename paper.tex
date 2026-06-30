@@ -6824,6 +6824,132 @@ partition ignores the bias coordinates that certify the list size.
    \(N_2(u)\ge\eta_sK_s\) gives \((PCE6)\).
 \end{proof}
 
+\begin{lemma}[Gaussian checkpoint collision entropy freezes at the near-pair tilt]
+   \label{lem:gaussian-checkpoint-collision-freezing}
+   Let \(X_1,\ldots,X_B\) be independent standard Gaussians and put
+   \[
+      Z_B(\theta)=
+      \sum_{i=1}^B
+      \exp\{\theta\sqrt{2\log B}\,X_i\}.
+      \tag{GCE1}
+   \]
+   For fixed \(\theta\ge0\),
+   \[
+      \frac{\log Z_B(\theta)}{\log B}
+      \to
+      f(\theta)
+      =
+      \begin{cases}
+         1+\theta^2, & 0\le\theta\le1,\\
+         2\theta, & \theta\ge1,
+      \end{cases}
+      \tag{GCE2}
+   \]
+   in probability as \(B\to\infty\).  Consequently the order-two
+   collision-effective support of the tilted block law
+   \[
+      \pi_i(\theta)=
+      \frac{\exp\{\theta\sqrt{2\log B}\,X_i\}}{Z_B(\theta)}
+   \]
+   satisfies
+   \[
+      \frac{\log N_2(\pi(\theta))}{\log B}
+      \to
+      g(\theta)=2f(\theta)-f(2\theta)
+      =
+      \begin{cases}
+         1-2\theta^2, & 0\le\theta\le\tfrac12,\\
+         2(1-\theta)^2, & \tfrac12\le\theta\le1,\\
+         0, & \theta\ge1.
+      \end{cases}
+      \tag{GCE3}
+   \]
+
+   Apply this to one child layer of the cumulative-score spherical primitive,
+   where \(t^2=(1+a)\log B\).  The single-query tilted child law has
+   \[
+      \theta_q=\frac{t}{\sqrt{2\log B}}
+      =
+      \sqrt{\frac{1+a}{2}}
+      <1,
+      \tag{GCE4}
+   \]
+   and therefore has a positive power-of-\(B\) collision support rate
+   \(g(\theta_q)\) whenever \(a<1\).  By contrast, the near-pair first-moment
+   tilt from \cref{lem:good-first-moment} weights one child by
+   \[
+      \exp\left\{\frac{t}{1+a}(X_i+Y_i)\right\}
+      =
+      \exp\{\sqrt{2\log B}\,Z_i\},
+      \tag{GCE5}
+   \]
+   where \(Z_i=(X_i+Y_i)/\sqrt{2(1+a)}\) is standard Gaussian.  This is exactly
+   the freezing value \(\theta=1\), and hence
+   \[
+      \log N_2=o_{\Prb}(\log B)
+      \tag{GCE6}
+   \]
+   for the natural pair-tilted Gaussian child law as \(B\to\infty\).
+
+   Thus increasing the raw Gaussian branching factor does not create a
+   power-of-\(B\) collision-entropy margin for the pair-conditioned common
+   continuation law.  A checkpoint proof based on
+   \cref{cor:finite-state-checkpoint-collision-test} must either exploit a
+   finite-\(B\) constant in the exact squared-partition ratio, or use a
+   structured code/lattice/quotient law whose pair-tilted posterior has
+   strictly positive order-two entropy rate away from this Gaussian freezing
+   boundary.
+\end{lemma}
+
+\begin{proof}
+   We recall the standard random-energy partition estimate.  The maximum of
+   \(B\) standard Gaussians is
+   \((1+o_{\Prb}(1))\sqrt{2\log B}\), which gives the lower bound
+   \(f(\theta)\ge2\theta\) for all \(\theta\), and the matching frozen upper
+   bound after discarding the event that some \(X_i>(1+\varepsilon)\sqrt{2\log B}\).
+
+   For the high-temperature lower bound, fix \(0\le\theta<1\) and
+   \(\varepsilon>0\).  The number of indices with
+   \(X_i\in[(\theta-\varepsilon)\sqrt{2\log B},
+            (\theta+\varepsilon)\sqrt{2\log B}]\)
+   is \(B^{1-\theta^2+o_{\Prb}(1)}\), and each such index contributes
+   \(B^{2\theta^2+O_\theta(\varepsilon)}\).  Hence
+   \[
+      \log Z_B(\theta)\ge
+      (1+\theta^2-O_\theta(\varepsilon)+o_{\Prb}(1))\log B .
+   \]
+   The endpoint \(\theta=1\) follows from the maximum lower bound, since
+   \(1+\theta^2=2\theta=2\) there.
+   For the high-temperature upper bound, partition
+   \((-\infty,(1+\varepsilon)\sqrt{2\log B}]\) into \(O_\varepsilon(1)\)
+   intervals of width \(\varepsilon\sqrt{2\log B}\).  The interval centered at
+   \(s\sqrt{2\log B}\) contains at most
+   \(B^{1-s^2+O(\varepsilon)+o_{\Prb}(1)}\) points for \(0\le s\le1+\varepsilon\),
+   and its contribution has exponent at most
+   \(1-s^2+2\theta s+O_\theta(\varepsilon)\).  Maximizing over \(s\ge0\) gives
+   \(1+\theta^2+O_\theta(\varepsilon)\) when \(\theta\le1\), and \(2\theta+
+   O_\theta(\varepsilon)\) when \(\theta\ge1\).  Letting \(\varepsilon\downarrow0\)
+   proves \((GCE2)\).
+
+   Since
+   \[
+      N_2(\pi(\theta))
+      =
+      \frac{Z_B(\theta)^2}{Z_B(2\theta)},
+   \]
+   \((GCE3)\) follows by substituting \((GCE2)\).  The formula is nonnegative,
+   as required by Cauchy's inequality.
+
+   For the cumulative-score substitutions, the single-query weight is
+   \(e^{tX_i}\), giving \((GCE4)\).  In the near-pair tilted proof,
+   \((X_i,Y_i)\) has covariance matrix with off-diagonal \(a\), and the tilt
+   vector is \(t(1,1)/(1+a)\).  Therefore the exponent is
+   \(t(X_i+Y_i)/(1+a)\).  After writing
+   \(Z_i=(X_i+Y_i)/\sqrt{2(1+a)}\) and using
+   \(t^2=(1+a)\log B\), this becomes \((GCE5)\).  Thus \(\theta=1\) in
+   \((GCE3)\), proving \((GCE6)\) and the final interpretation.
+\end{proof}
+
 \begin{corollary}[Difference-universal syndromes suffice with a random bucket]
    \label{cor:difference-universal-syndrome-thinning}
    Let \(G\) be a finite abelian group and let
