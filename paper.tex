@@ -9374,6 +9374,81 @@ partition ignores the bias coordinates that certify the list size.
    \((CTM4)\) proves the final claim.
 \end{proof}
 
+\begin{corollary}[Local checkpoint entropy forces terminal collision support]
+   \label{cor:terminal-collision-chain-barrier}
+   Let \(\mathcal T=\mathcal A_1\times\cdots\times\mathcal A_r\) be a
+   segmented terminal path space, and let \(\nu\) be any probability law on
+   terminal witnesses.  For a prefix
+   \(u=(a_1,\ldots,a_{s-1})\) with \(\nu(u)>0\), write
+   \(\nu_{s,u}\) for the conditional law of the next segment \(a_s\).  Suppose
+   that for every such live prefix,
+   \[
+      N_2(\nu_{s,u})\ge M_s
+      \qquad(s=1,\ldots,r).
+      \tag{TCC1}
+   \]
+   Then the terminal law itself satisfies
+   \[
+      N_2(\nu)\ge\prod_{s=1}^r M_s .
+      \tag{TCC2}
+   \]
+   In particular, if \(\nu\) is supported on a terminal witness set \(W\), then
+   \[
+      |W|\ge\prod_{s=1}^r M_s .
+      \tag{TCC3}
+   \]
+
+   Therefore a proposed checkpoint proof cannot certify
+   \(N_2(\nu_{s,u})\ge\eta_sK_s\) at every segment of a terminal leaf law
+   unless the terminal witness family has collision support at least
+   \[
+      \prod_s\eta_sK_s .
+      \tag{TCC4}
+   \]
+   For the raw cumulative-score endpoint leaves, \((CTM4)\) gives only
+   polylogarithmic expected terminal support.  Thus the Shannon cap scalar and
+   the future-flatness bound from
+   \cref{cor:gaussian-future-window-flatness} can be used to discharge
+   intermediate checkpoints only if the charged object is an intermediate
+   aggregate, value layer, reporter, or responsibility bucket with genuine
+   terminal multiplicity behind it.  They cannot all be applied to the same
+   bare endpoint-leaf law.
+\end{corollary}
+
+\begin{proof}
+   We prove the equivalent collision upper bound.  For \(s=0,\ldots,r\), let
+   \(C_s\) be the collision probability of the length-\(s\) prefix marginal:
+   \[
+      C_s=\sum_{u\in\mathcal A_1\times\cdots\times\mathcal A_s}\nu(u)^2,
+      \qquad C_0=1.
+      \tag{TCC5}
+   \]
+   If \(u\) is a live prefix of length \(s-1\), then
+   \[
+      \sum_{a_s}\nu(a_s\mid u)^2
+      =
+      N_2(\nu_{s,u})^{-1}
+      \le M_s^{-1}.
+      \tag{TCC6}
+   \]
+   Hence
+   \[
+      C_s
+      =
+      \sum_u \nu(u)^2
+      \sum_{a_s}\nu(a_s\mid u)^2
+      \le
+      M_s^{-1}C_{s-1}.
+      \tag{TCC7}
+   \]
+   Iterating \((TCC7)\) gives
+   \(C_r\le\prod_sM_s^{-1}\).  Since \(N_2(\nu)=1/C_r\), this proves
+   \((TCC2)\).  Finally \(N_2(\nu)\le|\operatorname{supp}\nu|\le |W|\) for a
+   law supported on \(W\), giving \((TCC3)\).  Substituting
+   \(M_s=\eta_sK_s\) gives \((TCC4)\), and the final interpretation follows
+   from \((CTM4)\).
+\end{proof}
+
 \begin{corollary}[Checkpoint continuation multiplicity is not free]
    \label{cor:checkpoint-continuation-oversampling-toll}
    In the checkpoint-syndrome setting, suppose the checkpoint hit certificate
