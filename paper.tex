@@ -8024,6 +8024,122 @@ partition ignores the bias coordinates that certify the list size.
    \((CTM4)\) proves the final claim.
 \end{proof}
 
+\begin{corollary}[Checkpoint continuation multiplicity is not free]
+   \label{cor:checkpoint-continuation-oversampling-toll}
+   In the checkpoint-syndrome setting, suppose the checkpoint hit certificate
+   uses local continuation ratios \(\eta_s>0\), so its certified one-panel hit
+   probability is
+   \[
+      P_{\rm chk}
+      =
+      \prod_{s=1}^r\frac{\eta_s}{1+\eta_s}.
+      \tag{CKO1}
+   \]
+   Let \(T\ge1\), and assume \(P_{\rm chk}\ge T^{-1}\).  Then
+   \[
+      \prod_{s=1}^r \eta_s
+      \ge
+      \left(\frac{r}{2\log T}\right)^r
+      \tag{CKO2}
+   \]
+   whenever \(\log T<r\), with the harmless convention that the bound is void
+   when \(\log T\ge r\).
+
+   Consequently, any explicit product-style implementation that creates the
+   checkpoint condition
+   \[
+      |\mathcal B_s(u)|\gtrsim \eta_sK_s
+      \tag{CKO3}
+   \]
+   by increasing the local number of candidate continuations pays at least the
+   volume factor \(\prod_s\eta_s\), before the syndrome thinning
+   \(\prod_sK_s^{-1}\) is charged.  In the polynomial checkpoint regime
+   \[
+      r=\gamma\frac{\log m}{\log\log m}(1+o(1)),
+      \qquad
+      T=\log^{A_0}m,
+      \tag{CKO4}
+   \]
+   this toll is
+   \[
+      \prod_s\eta_s
+      \ge
+      \exp\!\left(
+         \gamma\log m
+         -
+         O_{\gamma,A_0}\!\left(
+            \frac{\log m\log\log\log m}{\log\log m}
+         \right)
+      \right)
+      =
+      m^{\gamma-o(1)}.
+      \tag{CKO5}
+   \]
+
+   Thus checkpoint syndromes cannot be made clean by simply oversampling every
+   local product block until each checkpoint has many compatible near
+   continuations.  That strategy reintroduces a polynomial volume factor.  A
+   clean checkpoint construction needs the multiplicity in \((CKO3)\) to be
+   structurally cheap: for example a neutral fiber, quotient aggregate,
+   responsibility/leader bucket, or finite-state code/lattice sampler that
+   carries the local alternatives without paying their product volume as
+   query work or storage.
+\end{corollary}
+
+\begin{proof}
+   From \((CKO1)\),
+   \[
+      \prod_s\left(1+\eta_s^{-1}\right)
+      \le T .
+   \]
+   Put \(x_s=\eta_s^{-1}\) and \(L=\log T\).  We need an upper bound on
+   \(\prod_sx_s\) subject to
+   \[
+      \sum_s\log(1+x_s)\le L .
+      \tag{CKO6}
+   \]
+   Write \(y_s=\log(1+x_s)\).  Then \(x_s=e^{y_s}-1\), and
+   \(g(y)=\log(e^y-1)\) is concave on \(y>0\).  By Jensen's inequality, under
+   \(\sum_sy_s\le L\),
+   \[
+      \sum_s\log x_s
+      =
+      \sum_sg(y_s)
+      \le
+      r\,g(L/r)
+      =
+      r\log(e^{L/r}-1).
+      \tag{CKO7}
+   \]
+   Therefore
+   \[
+      \prod_s\eta_s
+      =
+      \left(\prod_sx_s\right)^{-1}
+      \ge
+      (e^{L/r}-1)^{-r}.
+      \tag{CKO8}
+   \]
+   When \(L<r\), \(e^{L/r}-1\le2L/r\), giving \((CKO2)\).
+
+   Substituting \((CKO4)\) and \(\log T=A_0\log\log m\) into \((CKO2)\) gives
+   \[
+      \log\prod_s\eta_s
+      \ge
+      r\log\frac{r}{2\log T}
+      =
+      \gamma\frac{\log m}{\log\log m}
+      \left(
+         \log\log m
+         -
+         O_{\gamma,A_0}(\log\log\log m)
+      \right),
+   \]
+   which is \((CKO5)\).  The final paragraph is the contrapositive
+   interpretation for product or block constructions whose candidate volume is
+   proportional to the number of locally supplied continuations.
+\end{proof}
+
 \begin{corollary}[Oversampled product witnesses support polylog syndrome thinning]
    \label{cor:oversampled-product-syndrome-thinning}
    Work in the smooth product terminal filter of
