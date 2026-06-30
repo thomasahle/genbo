@@ -91,6 +91,64 @@ pub unsafe fn dot_i8_vnni(x: &[i8], c: &[i8]) -> i32 {
     s
 }
 
+/// Batched int8 L2 over a CONTIGUOUS [ncand x d] centroid block to one query `qn`, writing ncand i32
+/// distances into `out`. Beam-descent routing (gather_fine) was a SCALAR per-centroid l2_i8 loop -- which
+/// re-ran the avx2 dispatch every centroid and reloaded `qn` every time. This keeps `qn` hot and runs 2
+/// centroids/step with independent accumulators (ILP), the dispatch done once via target_feature. The
+/// dominant 10M-routing cost (P139: 46% of msspacev QPS@90% query time was routing). Bit-identical to l2_i8.
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2")]
+pub unsafe fn l2_i8_block_avx2(qn: &[i8], block: &[i8], ncand: usize, d: usize, out: &mut [i32]) {
+    let kmax = d & !15; // largest multiple of 16
+    let mut j = 0usize;
+    while j + 2 <= ncand {
+        let c0 = block.as_ptr().add(j * d);
+        let c1 = block.as_ptr().add((j + 1) * d);
+        let mut a0 = _mm256_setzero_si256();
+        let mut a1 = _mm256_setzero_si256();
+        let mut k = 0usize;
+        while k < kmax {
+            let x16 = _mm256_cvtepi8_epi16(_mm_loadu_si128(qn.as_ptr().add(k) as *const __m128i));
+            let e0 = _mm256_sub_epi16(x16, _mm256_cvtepi8_epi16(_mm_loadu_si128(c0.add(k) as *const __m128i)));
+            let e1 = _mm256_sub_epi16(x16, _mm256_cvtepi8_epi16(_mm_loadu_si128(c1.add(k) as *const __m128i)));
+            a0 = _mm256_add_epi32(a0, _mm256_madd_epi16(e0, e0));
+            a1 = _mm256_add_epi32(a1, _mm256_madd_epi16(e1, e1));
+            k += 16;
+        }
+        let mut t0 = [0i32; 8];
+        let mut t1 = [0i32; 8];
+        _mm256_storeu_si256(t0.as_mut_ptr() as *mut __m256i, a0);
+        _mm256_storeu_si256(t1.as_mut_ptr() as *mut __m256i, a1);
+        let mut s0 = t0.iter().sum::<i32>();
+        let mut s1 = t1.iter().sum::<i32>();
+        for k in kmax..d {
+            let q = *qn.get_unchecked(k) as i32;
+            let d0 = q - *c0.add(k) as i32; s0 += d0 * d0;
+            let d1 = q - *c1.add(k) as i32; s1 += d1 * d1;
+        }
+        *out.get_unchecked_mut(j) = s0;
+        *out.get_unchecked_mut(j + 1) = s1;
+        j += 2;
+    }
+    while j < ncand {
+        *out.get_unchecked_mut(j) = l2_i8_avx2(qn, std::slice::from_raw_parts(block.as_ptr().add(j * d), d));
+        j += 1;
+    }
+}
+
+/// Dispatch wrapper: batched L2 of `qn` against `ncand` contiguous centroids -> `out[..ncand]`.
+#[inline]
+pub fn l2_i8_block(qn: &[i8], block: &[i8], ncand: usize, d: usize, out: &mut [i32]) {
+    #[cfg(target_arch = "x86_64")]
+    {
+        if is_x86_feature_detected!("avx2") {
+            unsafe { l2_i8_block_avx2(qn, block, ncand, d, out) };
+            return;
+        }
+    }
+    for j in 0..ncand { out[j] = l2_i8_scalar(qn, &block[j * d..j * d + d]); }
+}
+
 /// Opt-in VNNI for the int8 dot (set from SBANN_VNNI). Default off until proven faster than AVX2 on
 /// this HW (AVX-512 downclocking can make it slower -- cf. the vpermw scan dead-end).
 pub static VNNI_ON: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);

@@ -625,7 +625,11 @@ impl HierRouter {
     fn gather_fine(&self, qn: &[i8], fd: &mut Vec<(i32, u32)>) {
         let d = self.d;
         let l0 = self.cent[0].len() / d;
-        let mut cd: Vec<(i32, u32)> = (0..l0).map(|q| (simd::l2_i8(qn, &self.cent[0][q * d..q * d + d]), q as u32)).collect();
+        // batched block L2 (qn held in registers, 2-wide ILP) instead of a scalar per-centroid l2_i8 loop;
+        // routing was 20-46% of the 10M query (P139). `scores` scratch is reused across all levels.
+        let mut scores: Vec<i32> = vec![0; l0.max(64)];
+        simd::l2_i8_block(qn, &self.cent[0], l0, d, &mut scores);
+        let mut cd: Vec<(i32, u32)> = (0..l0).map(|q| (scores[q], q as u32)).collect();
         let b = self.beam[0].min(cd.len());
         if b > 0 && b < cd.len() { cd.select_nth_unstable(b - 1); cd.truncate(b); }
         let mut sel: Vec<u32> = cd.iter().map(|&(_, c)| c).collect();
@@ -634,7 +638,11 @@ impl HierRouter {
             let mut nd: Vec<(i32, u32)> = Vec::with_capacity(sel.len() * 8 + 16);
             for &p in &sel {
                 let (s, e) = (self.child[l - 1][p as usize] as usize, self.child[l - 1][p as usize + 1] as usize);
-                for c in s..e { nd.push((simd::l2_i8(qn, &self.cent[l][c * d..c * d + d]), c as u32)); }
+                let nc = e - s;
+                if nc == 0 { continue; }
+                if scores.len() < nc { scores.resize(nc, 0); }
+                simd::l2_i8_block(qn, &self.cent[l][s * d..e * d], nc, d, &mut scores);
+                for (i, c) in (s..e).enumerate() { nd.push((scores[i], c as u32)); }
             }
             if l == self.levels - 1 { *fd = nd; return; }
             let b = self.beam[l].min(nd.len());

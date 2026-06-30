@@ -2168,6 +2168,20 @@ P138. (threshold fix = modest; box load noise now EXCEEDS the effects we're chas
     (at ScaNN coverage parity). So autonomous QPS micro-optimization has hit diminishing+unmeasurable returns
     -> surfaced a strategic decision to the user (deep low-level kernel work vs consolidate vs new approach).
 
+P139. (*** PROFILE: routing is 20-46% of query time (NOT ~4%) -> router GEMV is THE msspacev QPS@90% lever ***)
+    SBANN_PROFILE route/scan/rerank split, 10M, 16 threads (fractions load-robust). profile_10m.log:
+      msspacev p64 (QPS@90%, r0.91): route 46.3% scan 34.9% rerank 18.7%   <- ROUTING DOMINATES
+      msspacev p128 (r0.94):         route 32.5% scan 45.5% rerank 22.0%
+      OOD p256 (r0.88):              route 26.3% scan 48.9% rerank 24.8%
+      OOD p384 (r0.90):              route 20.6% scan 52.3% rerank 27.1%
+    1M OOD for ref: route 13-20% scan ~50% rerank ~32%. The workflow's "routing ~4% at 10M" was WRONG --
+    the beam descent scores b1*(Kf/C1) ~5100-6400 fine centroids/query via a SCALAR l2_i8 loop (gather_fine,
+    vq.rs:619). At msspacev d=100 the scan is cheap so routing = 46% at the QPS@90% point. *** THE LEVER:
+    l2_i8 = ||q-c||^2 = cnorm[c] - 2*(q.c) + ||q||^2; ||q||^2 const, cnorm precomputable -> scoring = a DOT
+    q.c batched over the contiguous children (ScaNN's execution form: GEMV/VNNI with q in registers, vs our
+    scalar per-centroid loop). Halving routing (46->23%) ~= 1.3x QPS -> converts the msspacev TIE into a WIN
+    at QPS@90%. This is the user-approved kernel work. IMPLEMENTING: batched int8 dot scorer for gather_fine.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
