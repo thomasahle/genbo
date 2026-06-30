@@ -44,6 +44,9 @@ pub static PROFILE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBoo
 pub static PROF_ROUTE_NS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 pub static PROF_SCAN_NS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 pub static PROF_RERANK_NS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+/// SBANN_ROUTE_SDIM: score only the first N dims of each centroid at the FINEST routing level (the 78%-of-
+/// routing term, P139). 0 = full d (exact). Approximate finest routing -> cheaper routing if recall@p holds.
+pub static ROUTE_SDIM: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
 
 thread_local! {
     // reused open-addressing table for the per-query pool dedup (a0>1). Entries: (orig_key, best_approx,
@@ -628,7 +631,8 @@ impl HierRouter {
         // batched block L2 (qn held in registers, 2-wide ILP) instead of a scalar per-centroid l2_i8 loop;
         // routing was 20-46% of the 10M query (P139). `scores` scratch is reused across all levels.
         let mut scores: Vec<i32> = vec![0; l0.max(64)];
-        simd::l2_i8_block(qn, &self.cent[0], l0, d, &mut scores);
+        let sdim = ROUTE_SDIM.load(std::sync::atomic::Ordering::Relaxed);
+        simd::l2_i8_block(qn, &self.cent[0], l0, d, d, &mut scores);
         let mut cd: Vec<(i32, u32)> = (0..l0).map(|q| (scores[q], q as u32)).collect();
         let b = self.beam[0].min(cd.len());
         if b > 0 && b < cd.len() { cd.select_nth_unstable(b - 1); cd.truncate(b); }
@@ -641,7 +645,9 @@ impl HierRouter {
                 let nc = e - s;
                 if nc == 0 { continue; }
                 if scores.len() < nc { scores.resize(nc, 0); }
-                simd::l2_i8_block(qn, &self.cent[l][s * d..e * d], nc, d, &mut scores);
+                // finest level (the dominant routing term) may score a reduced dim prefix (SBANN_ROUTE_SDIM).
+                let sd = if l == self.levels - 1 && sdim > 0 && sdim < d { sdim } else { d };
+                simd::l2_i8_block(qn, &self.cent[l][s * d..e * d], nc, d, sd, &mut scores);
                 for (i, c) in (s..e).enumerate() { nd.push((scores[i], c as u32)); }
             }
             if l == self.levels - 1 { *fd = nd; return; }

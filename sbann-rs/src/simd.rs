@@ -96,10 +96,13 @@ pub unsafe fn dot_i8_vnni(x: &[i8], c: &[i8]) -> i32 {
 /// re-ran the avx2 dispatch every centroid and reloaded `qn` every time. This keeps `qn` hot and runs 2
 /// centroids/step with independent accumulators (ILP), the dispatch done once via target_feature. The
 /// dominant 10M-routing cost (P139: 46% of msspacev QPS@90% query time was routing). Bit-identical to l2_i8.
+/// `sd` = number of leading dims actually scored (centroid STRIDE stays `d`). sd<d = APPROXIMATE routing:
+/// score only the first sd coords -> cheaper finest-level scoring (#3, routing is the 10M bottleneck). For
+/// normalized routing vectors the leading dims carry most energy; recall@p tolerance is measured per-config.
 #[cfg(target_arch = "x86_64")]
 #[target_feature(enable = "avx2")]
-pub unsafe fn l2_i8_block_avx2(qn: &[i8], block: &[i8], ncand: usize, d: usize, out: &mut [i32]) {
-    let kmax = d & !15; // largest multiple of 16
+pub unsafe fn l2_i8_block_avx2(qn: &[i8], block: &[i8], ncand: usize, d: usize, sd: usize, out: &mut [i32]) {
+    let kmax = sd & !15; // largest multiple of 16 within the SCORED prefix
     let mut j = 0usize;
     while j + 2 <= ncand {
         let c0 = block.as_ptr().add(j * d);
@@ -121,7 +124,7 @@ pub unsafe fn l2_i8_block_avx2(qn: &[i8], block: &[i8], ncand: usize, d: usize, 
         _mm256_storeu_si256(t1.as_mut_ptr() as *mut __m256i, a1);
         let mut s0 = t0.iter().sum::<i32>();
         let mut s1 = t1.iter().sum::<i32>();
-        for k in kmax..d {
+        for k in kmax..sd {
             let q = *qn.get_unchecked(k) as i32;
             let d0 = q - *c0.add(k) as i32; s0 += d0 * d0;
             let d1 = q - *c1.add(k) as i32; s1 += d1 * d1;
@@ -131,22 +134,23 @@ pub unsafe fn l2_i8_block_avx2(qn: &[i8], block: &[i8], ncand: usize, d: usize, 
         j += 2;
     }
     while j < ncand {
-        *out.get_unchecked_mut(j) = l2_i8_avx2(qn, std::slice::from_raw_parts(block.as_ptr().add(j * d), d));
+        *out.get_unchecked_mut(j) = l2_i8_avx2(qn, std::slice::from_raw_parts(block.as_ptr().add(j * d), sd));
         j += 1;
     }
 }
 
-/// Dispatch wrapper: batched L2 of `qn` against `ncand` contiguous centroids -> `out[..ncand]`.
+/// Dispatch wrapper: batched L2 of `qn` against `ncand` contiguous centroids (stride `d`), scoring the
+/// first `sd` dims (sd==d => exact full L2) -> `out[..ncand]`.
 #[inline]
-pub fn l2_i8_block(qn: &[i8], block: &[i8], ncand: usize, d: usize, out: &mut [i32]) {
+pub fn l2_i8_block(qn: &[i8], block: &[i8], ncand: usize, d: usize, sd: usize, out: &mut [i32]) {
     #[cfg(target_arch = "x86_64")]
     {
         if is_x86_feature_detected!("avx2") {
-            unsafe { l2_i8_block_avx2(qn, block, ncand, d, out) };
+            unsafe { l2_i8_block_avx2(qn, block, ncand, d, sd, out) };
             return;
         }
     }
-    for j in 0..ncand { out[j] = l2_i8_scalar(qn, &block[j * d..j * d + d]); }
+    for j in 0..ncand { out[j] = l2_i8_scalar(qn, &block[j * d..j * d + sd]); }
 }
 
 /// Opt-in VNNI for the int8 dot (set from SBANN_VNNI). Default off until proven faster than AVX2 on
