@@ -24698,6 +24698,11 @@ partition ignores the bias coordinates that certify the list size.
    the retained code in \(Q^h p^{k-h}\) random-like codewords, even a perfect
    list-recovery oracle must expand that many signatures before any later
    responsibility filter can distinguish residents.
+   \Cref{cor:two-independent-masks-terminal-responsibility} clarifies the
+   hash question: pairwise independence is already enough for the terminal
+   responsibility heavy-hitter sketch, but when used as a prefix active-alphabet
+   mask it has the same active-box output moments and therefore the same
+   expansion barrier.
 
    Tanner, LDPC, polar, BCJR, and recursive Barnes--Wall/Barnes--Sloane
    decoders supply compact partition-function or threshold-enumeration
@@ -25334,6 +25339,105 @@ partition ignores the bias coordinates that certify the list size.
    The final claim follows because the calculation above used only the
    one-symbol probability for the first moment and the displayed two-symbol
    probabilities for each coordinate of each ordered pair.
+\end{proof}
+
+\begin{corollary}[Pairwise-independent masks are useful only after responsibility]
+   \label{cor:two-independent-masks-terminal-responsibility}
+   Work in the active-box setting of
+   \cref{cor:active-box-list-recovery-output-barrier}, but allow the coordinate
+   masks \(A_i\subseteq\mathbb F_p\) to be drawn from any independent family
+   satisfying the one- and two-symbol bounds
+   \[
+      \Pr[a\in A_i]=\frac Qp,
+      \qquad
+      \Pr[a,b\in A_i]\le
+      C_2\frac{Q(Q-1)}{p(p-1)}
+      \quad(a\ne b),
+      \tag{TIM1}
+   \]
+   for a constant \(C_2\ge1\).  Let
+   \[
+      r_Q=\frac{Q-1}{p-1},
+      \qquad
+      \mu=p^k(Q/p)^h .
+      \tag{TIM2}
+   \]
+   For
+   \[
+      L=\left|\mathcal C\cap\prod_iA_i\right|,
+   \]
+   one has
+   \[
+      \E L=\mu,
+      \qquad
+      \E L^2\le \mu W_{\mathcal C}(C_2r_Q).
+      \tag{TIM3}
+   \]
+   Hence, whenever \(W_{\mathcal C}(C_2r_Q)\le C\mu\),
+   \[
+      \Pr[L\ge\mu/2]\ge\frac1{4C}.
+      \tag{TIM4}
+   \]
+   In particular, in the logarithmic regime \(h=\kappa\log_p m\),
+   \(k=R_hh+O(1)\), \(Q=p^\sigma\), any such mask family leaves expected
+   threshold output
+   \[
+      \mu=m^{\kappa(R_h+\sigma-1)+o(1)}.
+      \tag{TIM5}
+   \]
+   Thus pairwise-independent or affine-threshold active alphabets do not by
+   themselves remove the signature-expansion barrier when
+   \(R_h+\sigma>1\) by a constant.
+
+   The same independence level is, however, sufficient once the charged object
+   is already the point-indexed responsibility vector.  In the setting of
+   \cref{lem:linear-sketch-heavy-responsibilities}, any pairwise-independent
+   resident hash family \(h_s:S\to[W]\) with
+   \(W\ge32M/\tau\), including standard multiply-add or multiply-shift word
+   hashes with their usual collision constant absorbed into the width, gives a
+   heavy-responsibility lister with
+   \[
+      O\!\left(\frac{M}{\tau}\log m\right)
+   \]
+   decoded candidates and
+   \[
+      O\!\left(\frac{M}{\tau}\log^2m\right)
+   \]
+   measurements.  Therefore the useful role of low-independence algebraic
+   hashing is terminal aggregation of responsibility counters.  A code,
+   lattice, Tanner, or trellis construction still has to compute the aggregate
+   counters of \((SRL4)\); the aligned-residue criterion
+   \cref{cor:balanced-aligned-residue-lister} is the current positive
+   pass/fail test for doing so at the \(m^\rho\polylog m\) scale.
+\end{corollary}
+
+\begin{proof}
+   The first-moment identity is the same calculation as in
+   \cref{cor:active-box-list-recovery-output-barrier}: a fixed codeword lies in
+   the active box with probability \((Q/p)^h\).  For the second moment,
+   \[
+      \E L^2
+      =
+      \sum_{c,d\in\mathcal C}
+      \prod_{i=1}^h\Pr[c_i,d_i\in A_i].
+   \]
+   If \(c_i=d_i\), the coordinate factor is \(Q/p\); if \(c_i\ne d_i\),
+   \((TIM1)\) bounds it by \((Q/p)C_2r_Q\).  Summing over differences
+   \(z=c-d\in\mathcal C\) gives \((TIM3)\).  Paley--Zygmund then gives
+   \[
+      \Pr[L\ge\mu/2]\ge\frac{\mu^2}{4\E L^2}
+      \ge\frac{\mu}{4W_{\mathcal C}(C_2r_Q)},
+   \]
+   and \((TIM4)\) follows from the displayed flatness assumption.  The
+   exponent calculation in \((TIM5)\) is \(p^k(Q/p)^h=p^{k-h}Q^h\).
+
+   The terminal statement is exactly
+   \cref{lem:linear-sketch-heavy-responsibilities}; its proof uses only
+   pairwise independence to bound the expected collision mass in one sketch
+   bucket, and then Markov plus independent repetitions.  The final sentence is
+   the aggregation requirement isolated in
+   \cref{cor:sketched-responsibility-lister} and implemented in the aligned
+   residue case by \cref{cor:balanced-aligned-residue-lister}.
 \end{proof}
 
 \begin{lemma}[Tilted weight feasibility is linear]
@@ -123944,6 +124048,11 @@ matching second-moment test controlled by the code weight enumerator.  Thus
 even an ideal list-recovery oracle has polynomial output at logarithmic block
 length whenever \(R_h+\log_pQ>1\) by a constant, unless the quotient or
 responsibility rule is already part of the reporter.
+\Cref{cor:two-independent-masks-terminal-responsibility} separates the two
+uses of algebraic hashing: pairwise-independent active masks have the same
+active-box output moments up to their collision constant, but the same
+pairwise independence is sufficient for terminal heavy-responsibility sketches
+once the code/lattice decoder can aggregate the sketch counters.
 \Cref{lem:tilted-weight-linear-feasibility} shows that, for a fixed retained
 pool, choosing those weights is just a linear feasibility problem after
 clearing the tilted partition functions.  Failure has a concrete dual
