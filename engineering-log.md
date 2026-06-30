@@ -1350,6 +1350,13 @@
   \log\mathcal Z_j(\tau,y)=\log\sum_{a\in C_{0,j}}\exp\{\sum_i\log\Theta_{\sigma_i^{-1}a_i}^{(\tau,j)}(y_i)\}.
   \]
   If the scaled duals pass the complete-theta screen, a certified soft-decision GRS threshold reporter has output-sensitive setup/list work, and the flat Gaussian surrogates satisfy the product query/storage/far inequalities, then the checkpointed panel has near survival \(1-o(1)\) and \(m^{\rho_c}\polylog m\) prefix plus retained far work. This is not a new certificate form: it is the actual endpoint checklist for the scaled-GRS Construction-A branch. The remaining theorem is now either to prove those soft-prefix/rate estimates for a concrete GRS decoder, or show that the GRS soft list necessarily violates the prefix-work budget.
+- Audited the concrete OSD instantiation of that scaled-GRS reporter. `cor:scaled-grs-osd-audit` specializes the minimum-entropy information-set reporter to GRS theta scores and gets the exact candidate exponent
+  \[
+  \mu(M_{\tau,y}-\theta)+\Lambda_{\rm OSD}^{(\mu)},\qquad
+  \Lambda_{\rm OSD}^{(\mu)}=\sum_{\ell\le k}\lambda_{(\ell)}^{(\mu)},\quad
+  \lambda_i^{(\mu)}=\log\sum_r(\Theta_r(y_i)/\max_s\Theta_s(y_i))^\mu .
+  \]
+  This exponent is invariant under the random column scalings. So the scalings solve the dual complete-theta spectrum but do not reduce OSD query-list entropy. If a coordinate has \(Q_i\) residues within \(D_i\) of the maximum, then \(\lambda_i^{(\mu)}\ge\log Q_i-\mu D_i\), and full \(D\)-flat theta weights give \(\Lambda_{\rm OSD}^{(\mu)}\ge k(\log p-\mu D)\). Thus plain OSD only discharges the soft-GRS reporter in high-reliability/low-entropy coordinates, or when its false-candidate exponent is explicitly paid by a Fano/product moment. The remaining positive route needs a genuinely output-sensitive soft-decision/list-recovery GRS theorem or a reduced-cost/aggregate charge, not just monomial scaling plus OSD.
 - Audited the obvious MDS/Reed--Solomon escape. `cor:mds-hamming-spectrum-max-screen` records the exact MDS dual Hamming enumerator and shows that if an MDS/RS block is certified only by minimum distance/Hamming support, the weighted bound is still
   \[
   \sum_w A_w^\perp\eta^w\le p^{-k}\sum_{w\ge k+1}\binom bw(p\eta)^w\le p^{-k}(1+p\eta)^b.

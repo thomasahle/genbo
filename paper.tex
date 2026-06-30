@@ -103701,6 +103701,140 @@ work]
    \cref{cor:construction-a-theta-mds-cpfa-endpoint} proves \((SGR9)\).
 \end{proof}
 
+\begin{corollary}[Scaled-GRS OSD audit and flat-soft obstruction]
+   \label{cor:scaled-grs-osd-audit}
+   Fix one block in the setting of
+   \cref{cor:scaled-grs-construction-a-reporter-endpoint}.  Thus
+   \(C_0\le\mathbb F_p^b\) is a \([b,k]\) generalized Reed--Solomon code,
+   \(C_\sigma=\operatorname{diag}(\sigma_i^{-1})C_0\), and the soft residue
+   score is
+   \[
+      S_{\tau,y}(a)
+      =
+      \sum_{i=1}^b
+      \omega_i^{(\tau,y)}(a_i),
+      \qquad
+      \omega_i^{(\tau,y)}(a)
+      =
+      \log\Theta_{\sigma_i^{-1}a}^{(\tau)}(y_i).
+      \tag{SGO1}
+   \]
+   For \(\mu>0\), put
+   \[
+      W_i(r)=\Theta_r^{(\tau)}(y_i),
+      \qquad
+      W_i^*=\max_{r\in\mathbb F_p}W_i(r),
+      \qquad
+      M_{\tau,y}=\sum_{i=1}^b\log W_i^*,
+      \tag{SGO2}
+   \]
+   and define the coordinate soft entropies
+   \[
+      \lambda_i^{(\mu)}(\tau,y)
+      =
+      \log\sum_{r\in\mathbb F_p}
+      \left(\frac{W_i(r)}{W_i^*}\right)^\mu .
+      \tag{SGO3}
+   \]
+   Let
+   \(\lambda_{(1)}^{(\mu)}\le\cdots\le
+     \lambda_{(b)}^{(\mu)}\)
+   be these numbers in nondecreasing order and set
+   \[
+      \Lambda_{\rm OSD}^{(\mu)}(\tau,y)
+      =
+      \sum_{\ell=1}^k\lambda_{(\ell)}^{(\mu)}(\tau,y).
+      \tag{SGO4}
+   \]
+   Then the minimum-entropy information-set reporter of
+   \cref{lem:min-entropy-information-set}, applied to the GRS code \(C_0\),
+   returns a superset of every threshold list
+   \[
+      \{a\in C_0:S_{\tau,y}(a)\ge\theta\}
+      \tag{SGO5}
+   \]
+   and exact filtering gives the desired list.  The number of candidate
+   extensions before filtering is at most
+   \[
+      \exp\left\{
+         \mu\bigl(M_{\tau,y}-\theta\bigr)
+         +
+         \Lambda_{\rm OSD}^{(\mu)}(\tau,y)
+      \right\}.
+      \tag{SGO6}
+   \]
+   The quantities \(M_{\tau,y}\),
+   \(\lambda_i^{(\mu)}(\tau,y)\), and
+   \(\Lambda_{\rm OSD}^{(\mu)}(\tau,y)\) are independent of the multipliers
+   \(\sigma_i\).
+
+   Consequently random monomial scaling separates the two jobs in the
+   scaled-GRS route.  It improves the dual complete-theta spectrum through
+   \cref{cor:randomly-scaled-mds-complete-theta}, but it does not lower the
+   OSD false-candidate entropy in \((SGO6)\).  The OSD implementation can
+   replace the output-sensitive reporter hypothesis \((SGR5)\) only at
+   thresholds and centers where the exponent in \((SGO6)\) is
+   \(O(\log\log m)\), or where the same exponent is explicitly charged in the
+   product/Fano query factor as in
+   \cref{cor:osd-superset-block-reporter}.
+
+   More generally, suppose that for coordinate \(i\) there is a residue set
+   \(R_i\subseteq\mathbb F_p\) of size \(Q_i\) such that
+   \[
+      \log W_i(r)\ge \log W_i^*-D_i
+      \qquad(r\in R_i).
+      \tag{SGO7}
+   \]
+   Then
+   \[
+      \lambda_i^{(\mu)}(\tau,y)\ge \log Q_i-\mu D_i .
+      \tag{SGO8}
+   \]
+   In particular, if every coordinate is \(D\)-flat on all \(p\) residues,
+   then
+   \[
+      \Lambda_{\rm OSD}^{(\mu)}(\tau,y)
+      \ge
+      k(\log p-\mu D).
+      \tag{SGO9}
+   \]
+   Thus the short-period or deliberately balanced theta regime is a real
+   obstruction to using plain OSD as the missing soft GRS theorem: unless the
+   top-score deficit \(M_{\tau,y}-\theta\), the information dimension \(k\),
+   or the charged product moment absorbs this entropy, the reporter spends the
+   same soft alphabet entropy that the Construction-A code was meant to hide.
+   A successful scaled-GRS proof must therefore use either a genuinely
+   output-sensitive soft-decision/list-recovery decoder, a reduced-cost or
+   Fano charge that pays only the actual prefix work, or a high-reliability
+   theta regime with \(k\) low-entropy coordinates.
+\end{corollary}
+
+\begin{proof}
+   The map \(a\mapsto\sigma_i^{-1}a\) is a permutation of \(\mathbb F_p\) on
+   every coordinate.  Hence the coordinate maximum and the normalized
+   exponential sum in \((SGO3)\) are exactly the same as for the unscaled
+   weights \(r\mapsto\log W_i(r)\).  This proves the multiplier-invariance of
+   \(M_{\tau,y}\) and the \(\lambda_i^{(\mu)}\)'s.
+
+   Since \(C_0\) is MDS, every \(k\)-subset of coordinates is an information
+   set.  Therefore the minimum information-set entropy in
+   \cref{lem:min-entropy-information-set} is the sum of the \(k\) smallest
+   values in \((SGO3)\), namely \((SGO4)\).  Applying
+   \cref{lem:min-entropy-information-set} with Chernoff parameter \(\mu\) gives
+   the superset reporter and the candidate bound \((SGO6)\), followed by exact
+   filtering to remove lower-score extensions.  This is precisely the OSD
+   superset reporter of \cref{cor:osd-superset-block-reporter} specialized to
+   the scaled-GRS theta weights.
+
+   If \((SGO7)\) holds, then the contribution of \(R_i\) to \((SGO3)\) is at
+   least \(Q_ie^{-\mu D_i}\), proving \((SGO8)\).  Taking \(Q_i=p\) and
+   \(D_i\le D\) for every coordinate gives
+   \(\lambda_i^{(\mu)}\ge\log p-\mu D\), and summing the \(k\) smallest such
+   values proves \((SGO9)\).  The final interpretation is just the comparison
+   of the OSD exponent \((SGO6)\) with the desired polylogarithmic overhead in
+   \((SGR5)\) and the product/Fano accounting.
+\end{proof}
+
 \begin{corollary}[MDS Hamming spectrum does not beat the max-residue screen]
    \label{cor:mds-hamming-spectrum-max-screen}
    Let \(C_j\le\mathbb F_{p_j}^{b_j}\) be an \([b_j,k_j]\) MDS code, so
