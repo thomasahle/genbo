@@ -2641,6 +2641,27 @@ P164. (*** OOD 10M STANDING: int8 recall REACHES 0.90 at p~700; QPS@90% scan-bou
     QPS@90% (current) then re-measure with the optimized scan = the real OOD number. (Float-rerank recall curve
     building; float QPS is mmap-bound but OOD has the full 16GB so the active-window-cache trick applies if needed.)
 
+P165. (*** CRITICAL CORRECTION to P163/P164: the 14x is NOT clean recoverable path overhead -- scanbench OVERSTATED (L2-hot); real wall = MEMORY-LATENCY, ~37x, PARTLY FUNDAMENTAL. TOP-3 likely UNREACHABLE. ***)
+    streaming2 A/B-tested the collect hypothesis and it REFUTED my optimistic projection. 1M p=512, same recall 0.9456:
+    BOUNDED QPS 1381 (scan 87.6%/15.1s, rerank 10.6%/1.8s) vs UNBOUNDED/native-push QPS 1329 (scan 61.2%/11.0s,
+    rerank 36.9%/6.6s). Native push IS 1.37x faster on SCAN (the bounded per-candidate branch does cost) BUT its
+    unbounded pool (250k vs 32k survivors) makes rerank dedup+select_nth 3.6x SLOWER -> NET-NEUTRAL (bounded slightly
+    ahead). The collect swap is NOT the 5-8x. *** THE REAL STORY: even the unbounded scan runs only ~6.8e7 cand/s
+    (8-thread) at 1M p=512 = ~37x BELOW scanbench's bare kernel (2.6e9 8-thread). scanbench is L2-RESIDENT (1.6MB,
+    data hot); the real scan reads ~25MB of block data per query (routing-scattered) = MEMORY-LATENCY bound, which the
+    microbench cannot see and the collect-swap cannot fix. So the "14x recoverable" of P163 was WRONG -- the bare-
+    kernel rate is unachievable at scale; the deficit is memory-access on the block reads, ~37x, and it is the SAME
+    mechanism as scann's high-candidate-count edge (P89) => PARTLY FUNDAMENTAL. *** REVISED RECOVERABLE: ~1.4-2x only
+    (keep BOUNDED for cheap rerank + make its collect branchless/SIMD to reclaim the 1.4x without the rerank penalty;
+    + PREFETCH block data to hide latency = the only lever at the real 37x, but UNCERTAIN). NOT 5-8x. => streaming
+    eligible recall ~0.88-0.90 at the budget-fitting p, BELOW the 0.922 top-3 bar; OOD ~1.4-2x -> ~9-12k QPS@90% vs
+    scann 43k = still ~4x behind. *** HONEST VERDICT: with this IVF+apq4 engine we do NOT top (or likely reach top-3
+    on) either leaderboard -- the wall is memory-latency-bound scan at high candidate counts, scann's AH2 blocked-
+    layout advantage is partly fundamental. Last engineering lever = prefetch (attempting; maybe 2-3x -> borderline).
+    The session's REAL deliverables: recall CAPABILITY proven (streaming 0.978, OOD reaches 0.90), the 8GB+1hr
+    eligibility re-architecture, the audit that caught the eligibility constraints, and this honest characterization.
+    (NOTE: my earlier user push projecting top-3 was based on the now-refuted 5-8x -- correct it once prefetch lands.)
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
