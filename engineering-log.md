@@ -1334,6 +1334,11 @@
   \mathbb E(1+\mathcal E)=g_0^b+\frac{p^h-1}{p^b-1}(\Theta^b-g_0^b).
   \]
   At the nearest checkpoint mesh, \(\lambda_*=\Theta(1)\), \(\Theta_*=O(1)\), and the true random Lee-spread condition is only \(k\log p\ge b\log\Theta_*+O(1)\), not \(\lambda_*\gtrsim(1-R)\log p\). So the previous small-field smoothing tax is a barrier for Hamming/max-residue proofs, not for codes whose dual words are genuinely spread in Lee/Euclidean residue weight. The target for deep coding/lattice constructions is now a complete Lee/theta enumerator bound plus a fast reporter.
+- Turned that target into a structured-code list-decoding criterion. `cor:theta-cost-list-decoding-transfer` defines the additive theta cost \(\Omega(u)=\sum_i-\log(g(u_i)/g(0))\). If an explicit dual code has random-density list sizes in every theta-cost ball,
+  \[
+  |\{u\in D\setminus0:\Omega(u)\le s\}|\le A p^{-k}|\{v\ne0:\Omega(v)\le s\}|,
+  \]
+  then it inherits the complete-theta screen with \(A p^{-k}(\Theta^b-g_0^b)\). At the nearest-residue mesh this is a Lee/Euclidean ball list-decoding condition. This is now the concrete ask for Reed--Solomon, AG, Tanner, trellis, or lattice constructions: prove random-like Lee-ball counts with only polylog \(A\), then separately prove the fast reporter/product-Fano rates.
 - Audited the obvious MDS/Reed--Solomon escape. `cor:mds-hamming-spectrum-max-screen` records the exact MDS dual Hamming enumerator and shows that if an MDS/RS block is certified only by minimum distance/Hamming support, the weighted bound is still
   \[
   \sum_w A_w^\perp\eta^w\le p^{-k}\sum_{w\ge k+1}\binom bw(p\eta)^w\le p^{-k}(1+p\eta)^b.
