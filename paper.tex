@@ -101794,6 +101794,130 @@ amplified in the next proposition.
    which is positive for some \(\kappa\) iff \(\lambda>16B/\log q\).
 \end{proof}
 
+\begin{corollary}[Binary low-gap frozen charts are flat and enumerable]
+   \label{cor:binary-low-gap-frozen-chart}
+   Specialize the equal-weight one-hot model to \(q=2\) and
+   \(\omega_i^2=1/b\).  For a Gaussian query score, write the two symbol scores
+   in coordinate \(i\) as \(\phi_i(0)\) and \(\phi_i(1)\), let
+   \[
+      a_i^\star\in\arg\max_{a\in\{0,1\}}\phi_i(a),
+      \qquad
+      \delta_i=|\phi_i(1)-\phi_i(0)|,
+      \tag{BLG1}
+   \]
+   and order the gaps as
+   \[
+      \delta_{(1)}\le\cdots\le\delta_{(b)} .
+      \tag{BLG2}
+   \]
+   Let \(J_s\) be the indices of the \(s\) smallest gaps, and define the
+   frozen chart
+   \[
+      E_s=\{z\in\{0,1\}^b:\ z_i=a_i^\star\text{ for }i\notin J_s\}.
+      \tag{BLG3}
+   \]
+   Put \(M=\sum_i\max_a\phi_i(a)\).  If a threshold
+   \(\Theta=M-\Delta\) satisfies
+   \[
+      \Delta<\delta_{(s+1)}
+      \tag{BLG4}
+   \]
+   with \(\delta_{(b+1)}=+\infty\), then every label with
+   \(\sum_i\phi_i(z_i)\ge\Theta\) lies in \(E_s\).  Moreover
+   \[
+      \mathsf{Sp}_{E_s}(g)
+      \le
+      \beta\sum_{r=1}^s\delta_{(r)} .
+      \tag{BLG5}
+   \]
+   There are universal constants \(C,c>0\) such that, for every
+   \(\eta\in(0,1)\) and every \(s\) with
+   \[
+      s+\log\frac1\eta\le cb,
+      \tag{BLG6}
+   \]
+   the Gaussian score satisfies, with probability at least \(1-\eta\),
+   \[
+      \sum_{r=1}^s\delta_{(r)}
+      \le
+      C\,\frac{s(s+\log(1/\eta))}{b^{3/2}}.
+      \tag{BLG7}
+   \]
+   On this event,
+   \[
+      N_2^{E_s}
+      \ge
+      2^s
+      \exp\left(
+         -C\beta\frac{s(s+\log(1/\eta))}{b^{3/2}}
+      \right).
+      \tag{BLG8}
+   \]
+
+   Consequently, if \(b=\lambda\log m+O(1)\),
+   \(\beta^2\le B\log m\), \(s=\kappa\log\log m+O(1)\), and
+   \(\eta=(\log m)^{-a}\), then with probability \(1-\eta\)
+   \[
+      \log N_2^{E_s}
+      \ge
+      \kappa\log 2\,\log\log m
+      -
+      O_{B,\lambda,\kappa,a}\left(\frac{(\log\log m)^2}{\log m}\right).
+      \tag{BLG9}
+   \]
+   Thus the adaptive low-gap chart gives
+   \(N_2^{E_s}=(\log m)^{\kappa\log2-o(1)}\), has size
+   \(2^s=(\log m)^{\kappa\log2+o(1)}\), and is enumerable in polylogarithmic
+   time.  Unlike a random parity-check kernel, it deliberately concentrates the
+   residual entropy on coordinates whose realized query gaps are tiny; unlike a
+   fully adaptive branch-and-bound tree, it uses one frozen chart and one
+   polylogarithmic enumeration.
+\end{corollary}
+
+\begin{proof}
+   For any \(z\in\{0,1\}^b\),
+   \[
+      M-\sum_i\phi_i(z_i)
+      =
+      \sum_{i:z_i\ne a_i^\star}\delta_i .
+      \tag{BLG10}
+   \]
+   If \(z\notin E_s\), then it differs from \(a^\star\) in some coordinate
+   outside \(J_s\), and the right side of \((BLG10)\) is at least
+   \(\delta_{(s+1)}\).  This proves the threshold-containment claim.  Two
+   labels in \(E_s\) can differ only on \(J_s\), and in a binary coordinate the
+   score range is exactly \(\delta_i\).  Hence the unscaled score spread inside
+   \(E_s\) is at most \(\sum_{i\in J_s}\delta_i=\sum_{r\le s}\delta_{(r)}\),
+   proving \((BLG5)\).
+
+   It remains to bound the low order statistics.  Since
+   \[
+      \delta_i\sqrt{b/2}\sim |N(0,1)|,
+   \]
+   there is a universal \(c_0>0\) such that
+   \[
+      \Pr[|N(0,1)|\le u]\ge c_0u
+      \qquad(0\le u\le1).
+      \tag{BLG11}
+   \]
+   Let \(R=s+\log(1/\eta)\), and take
+   \(u=C_0R/b\) with \(C_0\) a sufficiently large universal constant.  Under
+   \((BLG6)\), \(u\le1\) after reducing \(c\) if needed.  The number of gaps
+   with \(\delta_i\le\sqrt{2/b}\,u\) stochastically dominates a binomial
+   variable of mean at least \(16R\).  Chernoff's bound gives probability at
+   most \(e^{-2R}\le\eta\) that fewer than \(s\) gaps are below this level.
+   Therefore, with probability at least \(1-\eta\),
+   \[
+      \delta_{(s)}
+      \le
+      C\,\frac{s+\log(1/\eta)}{b^{3/2}},
+   \]
+   and \((BLG7)\) follows by summing the first \(s\) gaps.  Combining
+   \((BLG5)\) with \cref{cor:affine-flat-near-fiber-sign-audit} gives
+   \((BLG8)\), since \(|E_s|=2^s\).  Substituting the displayed scaling of
+   \(b,\beta,s,\eta\) into \((BLG8)\) gives \((BLG9)\).
+\end{proof}
+
 \begin{corollary}[Support collapse blocks bounded additive masks]
    \label{cor:support-collapse-blocks-bounded-additive-masks}
    Work with one conditional near block law \(P^E_j\) from
