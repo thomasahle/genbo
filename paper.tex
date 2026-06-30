@@ -101506,6 +101506,95 @@ amplified in the next proposition.
    over the exceptional code event, proves \((RLN4)\).
 \end{proof}
 
+\begin{corollary}[Low-score-coordinate neutral fibers pass flatness]
+   \label{cor:low-score-coordinate-neutral-flatness}
+   Keep the weighted one-hot model \((HNF1)\), and let
+   \(E=z_0+L\subseteq\mathbb F_q^b\) with \(\dim L=s\).  Let
+   \[
+      I(L)=\{i:\exists u\in L\text{ with }u_i\ne0\},
+      \qquad
+      W_L=\sum_{i\in I(L)}\omega_i^2 .
+      \tag{LSC1}
+   \]
+   Then, for every \(\eta\in(0,1)\),
+   \[
+      \Pr_g\left[
+         \mathsf{Sp}_E(g)
+         >
+         4\beta\sqrt{W_L\left(s\log q+\log\frac2\eta\right)}
+      \right]
+      \le
+      \eta .
+      \tag{LSC2}
+   \]
+   Consequently, with probability at least \(1-\eta\), the affine-flat sign
+   audit of \cref{cor:affine-flat-near-fiber-sign-audit} holds with
+   \[
+      \Gamma_\eta
+      =
+      4\beta\sqrt{W_L\left(s\log q+\log\frac2\eta\right)},
+      \tag{LSC3}
+   \]
+   and hence
+   \[
+      N_2^E\ge q^se^{-\Gamma_\eta},
+      \qquad
+      \E_\xi\alpha^2\le e^{\Gamma_\eta}q^{-s}
+      \tag{LSC4}
+   \]
+   for pairwise independent signs on the fiber.
+
+   This is the actual positive window left by the Hamming barriers.  At the
+   ANN scale \(\beta=\Theta_c(\sqrt{\log m})\), a polylogarithmic flatness
+   budget \(\Gamma_\eta=O_c(\log\log m)\) requires
+   \[
+      W_L\left(s\log q+\log\frac2\eta\right)
+      =
+      O_c\left(\frac{(\log\log m)^2}{\log m}\right).
+      \tag{LSC5}
+   \]
+   Thus a code or lattice quotient can use affine neutral entropy only when
+   that entropy is sheltered inside coordinates of total query-score weight
+   \(W_L\) satisfying \((LSC5)\), or when an equivalent geometric contraction
+   reduces the same diameter.  If \(s\log q\ge\Gamma_\eta+\sigma\log\log m\),
+   then \((LSC4)\) supplies \(N_2^E\ge(\log m)^\sigma\), enough for a
+   polylogarithmic sign-support audit without random Hamming distance.
+\end{corollary}
+
+\begin{proof}
+   If \(W_L=0\), every coordinate that varies along \(L\) has zero score
+   weight and the spread is identically zero, so assume \(W_L>0\).  Fix
+   \(z_\star\in E\).  For every \(z\in E\),
+   \[
+      \|x_z-x_{z_\star}\|_2^2
+      \le
+      2W_L,
+      \tag{LSC6}
+   \]
+   because \(z\) can differ from \(z_\star\) only on \(I(L)\).  Therefore
+   \(\ip{g}{x_z-x_{z_\star}}\) is a centered Gaussian with variance at most
+   \(2W_L\).  If the score range on \(E\) exceeds \(T\), then for some
+   \(z\in E\),
+   \[
+      |\ip{g}{x_z-x_{z_\star}}|>T/2 .
+      \tag{LSC7}
+   \]
+   A union bound over \(|E|=q^s\) labels gives
+   \[
+      \Pr_g\left[
+         \max_{z\in E}\phi_g(z)-\min_{z\in E}\phi_g(z)>T
+      \right]
+      \le
+      2q^s\exp\left(-\frac{T^2}{16W_L}\right).
+      \tag{LSC8}
+   \]
+   Taking
+   \(T=4\sqrt{W_L(s\log q+\log(2/\eta))}\) and multiplying by \(\beta\)
+   proves \((LSC2)\).  On this high-probability event, apply
+   \cref{cor:affine-flat-near-fiber-sign-audit} with
+   \(M=q^s\) and \(\Gamma=\Gamma_\eta\) to get \((LSC4)\).
+\end{proof}
+
 \begin{corollary}[Support collapse blocks bounded additive masks]
    \label{cor:support-collapse-blocks-bounded-additive-masks}
    Work with one conditional near block law \(P^E_j\) from
