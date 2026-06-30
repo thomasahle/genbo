@@ -2578,6 +2578,25 @@ P161. (*** CRITICAL ELIGIBILITY CONSTRAINT (audit-caught): STREAMING track = HAR
     active-window float cache; madvise/free dead rows; assert fbase.nb==full.nb. The 1M=1.0000 used the int8-space
     self-GT fallback (NOT float-GT) -> 1M proxies are NOT official-comparable; only the 30M gtdir/float-GT path is.
 
+P162. (*** 30M STREAMING DECIDING RUN: 8GB plumbing WORKS, but ELIGIBLE recall ~0.6 -- gated entirely on a ~15-20x SCAN deficit (= the OOD gap) ***)
+    streaming2 ran the eligible deciding run (NQ=1000, clean box, commits fb94bd7+582e841). RESULT: the active-window
+    float cache works EXACTLY as designed (sized 4.12GB for the 10.3M window, anon tracks live 0.3->1.9GB, recall
+    UNCHANGED 0.97@1.7M -- 8GB plumbing sound). BUT with the mmap faults gone, SCAN THROUGHPUT is the hard wall:
+    ~1.8e8 cand/s, QPS collapsing ~1/live (3225@177k, 897@733k, 484@1.7M). The cache barely moved QPS because <2M
+    live the float still fit page-cache (no faults yet); it only helps >5M, where scan already dominates. BUDGET
+    (NQ=10000, need ~2133 QPS@10M for search<3000s): QPS@10M ~= 36862/p -> p=512=72QPS=15h, p=128=288=6h, p=32=92min,
+    p=16=~2300QPS=46min (FITS). So the highest p that fits 1hr = ~p=16 -> ELIGIBLE recall ~0.55-0.65, FAR below the
+    0.922 top-3 bar. *** ROOT CAUSE: apq4 fast-scan delivers ~1.8e8 cand/s = ~15-20x BELOW native (~2-3e9); the 0.978
+    config needs ~2.5M cand/query @10M, the 1hr-buster. This is the SAME engine-throughput gap as OOD (P158). ***
+    NUANCE: our flat-IVF scan BEAT scann at QPS@90% on msspacev-10M (P89) -- BUT P89 also noted scann wins at
+    recall>=0.95 (faster scan at HIGH candidate counts, ~fundamental). Streaming p=512 needs ~2.5M cand/query = exactly
+    that high-count regime where scann's AH2 wins. So the 15-20x is PARTLY the known scann-high-count edge + PARTLY
+    possibly-recoverable streaming-path overhead (slot indirection, per-cell LUT setup, buffer/main split, the
+    bounded-top-t collection). VERDICT: recall CAPABILITY 0.978 PROVEN; ELIGIBLE (8GB+1hr) recall ~0.6; topping
+    streaming (or OOD) requires closing the ~15-20x scan deficit = a real scan-kernel optimization, NOT a config.
+    DECISION PENDING: diagnose whether the 15-20x is recoverable (profile scan_pool: where does native 2-3e9 -> 1.8e8
+    go?) BEFORE committing to a multi-hour scan-kernel/AH2 rewrite. 1M=1.0000 mechanism proof stands.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
