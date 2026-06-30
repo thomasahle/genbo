@@ -24870,6 +24870,90 @@ partition ignores the bias coordinates that certify the list size.
    polylogarithmic specialization is \((DIO7)\).
 \end{proof}
 
+\begin{corollary}[Constant-rate diffuse reliabilities defeat OSD]
+   \label{cor:random-diffuse-reliability-osd-barrier}
+   Continue in the setting of
+   \cref{cor:diffuse-information-set-osd-barrier}, and for \(u_0>0\) put
+   \[
+      N_{u_0}(q,\ell)=|\{i:\lambda_i(q,\ell)<u_0\}|.
+      \tag{RDO1}
+   \]
+   For every linear code,
+   \[
+      \Lambda_*(q,\ell)
+      \ge
+      u_0\bigl(k-N_{u_0}(q,\ell)\bigr)_+ .
+      \tag{RDO2}
+   \]
+   Thus a polylogarithmic OSD heavy lister on a nonempty heavy bucket requires
+   \[
+      N_{u_0}(q,\ell)
+      \ge
+      k-O_c(\log\log m/u_0)
+      \tag{RDO3}
+   \]
+   for every fixed \(u_0>0\).
+
+   In particular, suppose \(h\ge \kappa\log m\), \(k\ge\alpha h\), and, under
+   the randomness used to generate the query-local reliability profile, the
+   variables \(\lambda_1(q,\ell),\ldots,\lambda_h(q,\ell)\) are independent and
+   satisfy
+   \[
+      \Pr[\lambda_i(q,\ell)<u_0]\le\alpha-\varepsilon
+      \qquad(i\in[h])
+      \tag{RDO4}
+   \]
+   for fixed constants \(\alpha,\varepsilon,\kappa,u_0>0\).  Then with
+   probability at least \(1-\exp(-\varepsilon^2 h/2)\),
+   \[
+      \Lambda_*(q,\ell)
+      \ge
+      \frac{\varepsilon u_0}{2}\,h
+      \ge
+      \frac{\varepsilon u_0\kappa}{2}\log m .
+      \tag{RDO5}
+   \]
+   On those buckets, if the heavy set is nonempty, the OSD candidate multiplier
+   is at least \(m^{\varepsilon u_0\kappa/2}\) before adding the nonnegative
+   threshold-deficit term.  Hence a constant-rate code with a genuinely diffuse
+   reliability profile cannot use information-set OSD as a
+   \(m^{\rho_c}\polylog m\) heavy-responsibility lister.  A positive
+   constant-rate construction must create many more low-entropy coordinates than
+   a diffuse law predicts, or use a decoder whose work is not controlled by one
+   information-set entropy.
+\end{corollary}
+
+\begin{proof}
+   Since \(r_{u_0}(q,\ell)\le N_{u_0}(q,\ell)\), \((RDO2)\) is the one-level
+   bound \((DIO5)\) from
+   \cref{cor:diffuse-information-set-osd-barrier}.  The necessary condition
+   \((RDO3)\) is just \((DIO7)\) applied at the fixed level \(u_0\).
+
+   Under \((RDO4)\), Hoeffding's inequality gives
+   \[
+      \Pr\!\left[
+         N_{u_0}(q,\ell)>(\alpha-\varepsilon/2)h
+      \right]
+      \le
+      \exp(-\varepsilon^2h/2).
+      \tag{RDO6}
+   \]
+   On the complementary event,
+   \[
+      k-N_{u_0}(q,\ell)
+      \ge
+      \alpha h-(\alpha-\varepsilon/2)h
+      =
+      \varepsilon h/2.
+   \]
+   Substituting this into \((RDO2)\) proves \((RDO5)\).  If the heavy set is
+   nonempty, the proof of
+   \cref{cor:diffuse-information-set-osd-barrier} gives
+   \(M_{q,\ell}-\Theta_{q,\ell}\ge0\), so the OSD exponent in \((OHR2)\) is at
+   least \(\Lambda_*(q,\ell)\).  This yields the displayed polynomial candidate
+   multiplier.
+\end{proof}
+
 \begin{lemma}[Tilted weight feasibility is linear]
    \label{lem:tilted-weight-linear-feasibility}
    Fix a finite retained label set \(\mathcal L\) and storage predicate
@@ -123457,6 +123541,11 @@ must span almost the whole message space.  If the low-entropy span leaves
 \(\omega(\log\log m)\) information dimensions behind at any fixed entropy level,
 OSD is the wrong heavy-resident lister and the construction needs a structured
 quotient, list-recovery, responsibility, or aggregate-sampler implementation.
+\Cref{cor:random-diffuse-reliability-osd-barrier} specializes this screen to
+constant-rate diffuse reliability profiles: if fewer than a rate-\(\alpha\)
+fraction of coordinates have entropy below a fixed level for a \(k\ge\alpha h\)
+code, the OSD multiplier is polynomial with high probability, independently of
+the code's algebraic structure.
 \Cref{lem:tilted-weight-linear-feasibility} shows that, for a fixed retained
 pool, choosing those weights is just a linear feasibility problem after
 clearing the tilted partition functions.  Failure has a concrete dual
