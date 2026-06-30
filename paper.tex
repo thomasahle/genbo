@@ -10281,6 +10281,100 @@ partition ignores the bias coordinates that certify the list size.
    statement is the \((CFM3)\) consequence of the same corollary.
 \end{proof}
 
+\begin{corollary}[Product rates discharge the last-segment CPFA far side]
+   \label{cor:last-segment-product-rate-cpfa-far-side}
+   Continue in the setting of
+   \cref{cor:product-bookkeeping-last-cut-prefix-count}, and let the
+   last-segment suffix reporter emit only product-panel terminal records below
+   the cut, with verification cost \(\log^{O(1)}m\) per record.  Suppose the raw
+   invalid cut/suffix load is dominated by the standard product incidence count:
+   \[
+      L_{B(q,Z)}^{\rm raw}
+      \le
+      \log^{O(1)}m
+      \sum_{\substack{x\in P\\ \|x-q\|>cr}}
+      \sum_{c\in\mathcal C}
+      \mathbf1\{S_P(x,c)\ge\theta_P\}
+      \mathbf1\{S_Q(q,c)\ge\theta_Q\}.
+      \tag{LFC1}
+   \]
+   Assume the product query-rate bound
+   \[
+      \prod_j\mathfrak q_j(q)
+      \le
+      m^{\rho_c}\log^{O_c(1)}m
+      \tag{LFC2}
+   \]
+   and the raw product far co-load bound, for some \(\zeta\ge0\),
+   \[
+      \E_Z
+      \sum_{\substack{x\in P\\ \|x-q\|>cr}}
+      e^{-\alpha\theta_P-\beta\theta_Q}
+      \prod_{j=1}^h
+      \sum_{a\in\mathcal C_j}
+      e^{\alpha\psi_j(x,a)+\beta\phi_j(q,a)}
+      \le
+      m^{\rho_c+\zeta+o(1)} .
+      \tag{LFC3}
+   \]
+   If the fixed-branch handoff has
+   \[
+      K_{\rm tot}=m^{A\gamma+o(1)}
+      \qquad\text{and}\qquad
+      \zeta<A\gamma,
+      \tag{LFC4}
+   \]
+   then the two far-side hypotheses \((PSH5)\)--\((PSH6)\) of
+   \cref{cor:polylog-suffix-handoff-removes-residue-oracle} both hold.  Hence the
+   last-segment product-panel CPFA pass has \(m^{\rho_c}\polylog m\) expected
+   prefix/suffix scan and retained invalid-emission work.
+
+   Under independent block panels, \((LFC3)\) follows from the pointwise block
+   estimate
+   \[
+      \prod_j\mathfrak f_j(x,q)
+      \le
+      m^{-(1-\rho_c-\zeta)+o(1)}
+      \qquad(\|x-q\|>cr),
+      \tag{LFC5}
+   \]
+   after summing over the at most \(m\) far points.  Therefore, for product or
+   Fano-priced product-stack reporters, the far side is now reduced to the
+   familiar one-block \(\mathfrak q/\mathfrak f\) rate calculation plus the
+   inequality \(A\gamma>\zeta\).  The assumptions not touched by this corollary
+   are the near live-window/cut-support conditions and the polylogarithmic suffix
+   size.
+\end{corollary}
+
+\begin{proof}
+   Condition \((LFC2)\) is \((PLC2)\), so
+   \cref{cor:product-bookkeeping-last-cut-prefix-count} gives \((PSH5)\).  For
+   the raw load, use the Chernoff majorant
+   \[
+      \mathbf1\{S_P(x,c)\ge\theta_P\}
+      \mathbf1\{S_Q(q,c)\ge\theta_Q\}
+      \le
+      e^{\alpha(S_P(x,c)-\theta_P)+\beta(S_Q(q,c)-\theta_Q)} .
+   \]
+   Summing over \(c=(c_1,\ldots,c_h)\) factors the exponential sum into the
+   product in \((LFC3)\).  Combining this with \((LFC1)\) gives
+   \[
+      \E_ZL_{B(q,Z)}^{\rm raw}
+      \le
+      m^{\rho_c+\zeta+o(1)} .
+   \]
+   Since \(K_{\rm tot}=m^{A\gamma+o(1)}\) and \(\zeta<A\gamma\), this is
+   \(o(K_{\rm tot}m^{\rho_c})\), hence certainly implies \((PSH6)\) after
+   absorbing lower-order terms into the polylogarithmic slack.  Applying
+   \cref{cor:polylog-suffix-handoff-removes-residue-oracle} gives the stated
+   clean far-side work.
+
+   If the blocks are independent, the expectation of the product far majorant
+   factors as \(\prod_j\mathfrak f_j(x,q)\), by \((BT3)\) in
+   \cref{lem:product-panel-tensorization}.  The pointwise estimate \((LFC5)\),
+   summed over at most \(m\) far points, gives \((LFC3)\).
+\end{proof}
+
 \begin{corollary}[Checkpoint continuation multiplicity is not free]
    \label{cor:checkpoint-continuation-oversampling-toll}
    In the checkpoint-syndrome setting, suppose the checkpoint hit certificate
