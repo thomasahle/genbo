@@ -105593,6 +105593,168 @@ tax]
    positive constant.
 \end{proof}
 
+\begin{corollary}[A central midpoint slice pays only polylog Fano height]
+   \label{cor:central-midpoint-lens-slice-polylog}
+   Continue in the flat score model of
+   \cref{cor:two-sided-lens-tilt-price}, with
+   \(\ip{p}{q}=a_0+o(1)\) and
+   \(\beta=2(1+\rho_c)L+o(L)\).  Assume the terminal calibration is
+   polylogarithmically accurate in the scalar sense
+   \[
+      \frac{\beta D^2}{8}
+      \le
+      \rho_cL+C_0\log\log m,
+      \qquad D=\|p-q\|,
+      \tag{CML1}
+   \]
+   and that the live dimension satisfies
+   \[
+      d\le C_0\log\log m .
+      \tag{CML2}
+   \]
+   Let \(P_\star=\Pi^{(1)}_{p,q}\) be the midpoint law, write
+   \[
+      \mu=\frac{p+q}{2},
+      \qquad
+      e=\frac{q-p}{D},
+      \qquad
+      \lambda=\mu+\frac{1}{\sqrt{2\beta}}Z
+      \quad(Z\sim N(0,I_d))
+      \tag{CML3}
+   \]
+   under \(P_\star\).  There are constants \(A_1,A_2,A_3\), depending only on
+   \(c\) and \(C_0\), such that the slice
+   \[
+      G_m=
+      \left\{
+         \|Z\|^2\le A_1\log\log m,\
+         -\frac{2A_2\log\log m}{\sqrt L}
+         \le\ip{Z}{e}\le
+         -\frac{A_2\log\log m}{\sqrt L}
+      \right\}
+      \tag{CML4}
+   \]
+   satisfies, for all sufficiently large \(m\),
+   \[
+      G_m\subseteq E_{\theta_{\rm lens}},
+      \tag{CML5}
+   \]
+   \[
+      P_\star(G_m)\ge L^{-A_3},
+      \tag{CML6}
+   \]
+   and
+   \[
+      \sup_{\lambda\in G_m}
+      \log\frac{dP_\star}{d\Pi_q}(\lambda)
+      \le
+      \rho_cL+A_3\log\log m .
+      \tag{CML7}
+   \]
+
+   Consequently the conditional midpoint route law
+   \(P_\star^G=P_\star(\cdot\mid G_m)\) is dominated by a polynomially priced
+   query-centered activation measure:
+   \[
+      \frac{dP_\star^G}{d\Pi_q}(\lambda)
+      \le
+      m^{\rho_c}\log^{O_c(1)}m
+      \qquad(\lambda\in G_m).
+      \tag{CML8}
+   \]
+   Equivalently, if the query has the unnormalized query-centered activation
+   measure \(B_A\Pi_q\) and the route retains this one scalar depth slice, with
+\[
+      B_A=m^{\rho_c}\log^{A_4}m
+      \tag{CML9}
+   \]
+   for a large enough constant \(A_4\), then
+   \(P_\star^G\) has matched-Fano prefix height \(O_c(\log\log m)\) with
+   respect to that activation.  Since \(G_m\subseteq E_{\theta_{\rm lens}}\)
+   and \(P_\star(G_m)\) is inverse-polylogarithmic, the route-height gate of
+   \cref{cor:scaled-grs-route-height-gate} gives inverse-polylogarithmic
+   value for this localized terminal lens state, at exactly the allowed
+   \(m^{\rho_c}\polylog m\) activation price.
+
+   Thus the midpoint likelihood fluctuations do not force a subpolynomial
+   branch-and-bound loss.  They are removed by a single central
+   one-dimensional lens-depth band of inverse-polylogarithmic mass.  The
+   remaining algorithmic obligation is concrete: a code, lattice, trellis, or
+   quotient/responsibility reporter must expose this depth-sliced
+   two-sided law and its marked residents without enumerating a larger raw
+   label universe.
+\end{corollary}
+
+\begin{proof}
+   Under \(P_\star\), \(Z\) is standard Gaussian.  Choose \(A_1\) large enough
+   that
+   \[
+      \Pr[\|Z_{\perp e}\|^2\le A_1\log\log m/2]\ge\frac12
+      \tag{CML10}
+   \]
+   for all large \(m\), using \(d=O(\log\log m)\).  Since the interval in
+   \((CML4)\) has length \(A_2\log\log m/\sqrt L=o(1)\), the one-dimensional
+   Gaussian density gives
+   \[
+      P_\star(G_m)
+      \ge
+      c\,\frac{\log\log m}{\sqrt L}
+      \ge
+      L^{-A_3}
+      \tag{CML11}
+   \]
+   after increasing \(A_3\).
+
+   The lens condition from \((TLT10)\) is
+   \[
+      \ip{Z}{e}
+      \le
+      -\frac{\|Z\|^2}{D\sqrt{2\beta}} .
+      \tag{CML12}
+   \]
+   On \(G_m\), the right-hand side has magnitude at most
+   \(A_1\log\log m/(D\sqrt{2\beta})\).  Since
+   \(\beta/L\to2(1+\rho_c)\) and \(D\to\sqrt{2}/c\), choosing \(A_2\) larger
+   than the corresponding fixed multiple of \(A_1\) makes \((CML12)\) hold on
+   all of \(G_m\).  This proves \((CML5)\).
+
+   It remains to bound the pointwise likelihood ratio.  The midpoint and
+   query-centered Gaussian densities give
+   \[
+      \log\frac{dP_\star}{d\Pi_q}(\lambda)
+      =
+      \frac{\beta D^2}{8}
+      +
+      \frac d2\log2
+      -
+      \frac14\|Z\|^2
+      -
+      \frac{D\sqrt\beta}{2\sqrt2}\ip{Z}{e}.
+      \tag{CML13}
+   \]
+   On \(G_m\), the quadratic term is nonpositive, while the linear term is at
+   most
+   \[
+      \frac{D\sqrt\beta}{2\sqrt2}
+      \frac{2A_2\log\log m}{\sqrt L}
+      =
+      O_c(\log\log m).
+   \]
+   Combining this with \((CML1)\) and \(d=O(\log\log m)\) proves
+   \((CML7)\).  Dividing by the slice mass lower bound \((CML6)\) gives
+   \((CML8)\).
+
+   Finally, take the unnormalized activation measure to be \(B_A\Pi_q\), and
+   retain the scalar slice in the route law.  By \((CML8)\), choosing
+   \(A_4\) large enough makes
+   \(P_\star^G(u)\le\log^{O_c(1)}m\,A(u)\) on every exposed prefix, where
+   \(A(u)\) is the corresponding prefix mass of \(B_A\Pi_q\), after the usual
+   product/block discretization of the scalar slice.  This is exactly the
+   matched-Fano domination condition with height \(O_c(\log\log m)\).
+   Applying \cref{cor:scaled-grs-route-height-gate} to the sufficient lens
+   event \(G_m\subseteq E_{\theta_{\rm lens}}\) gives the stated value bound.
+\end{proof}
+
 \begin{corollary}[Balanced checkpoints can absorb any fixed flat-volume excess]
    \label{cor:balanced-checkpoints-absorb-flat-volume-excess}
    Continue with the nearest-mesh scaled-GRS window of
