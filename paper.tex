@@ -107500,6 +107500,63 @@ tax]
    and summing its weight gives exactly the retained total port intensity.
 \end{proof}
 
+\begin{corollary}[Checkpoint thinning does not certify normalized port load]
+   \label{cor:checkpoint-normalized-port-load-barrier}
+   Work with the normalized port load \(P_B\) of
+   \cref{cor:quotient-port-sampler-terminalizes-rate-coverage}.  Fix one query
+   outcome \(B\), a finite hidden record set \(\Omega_B\), positive weights
+   \(A(\omega)\), and certified port sets \(O_\omega\).  Put
+   \[
+      Z=\sum_{\omega}A(\omega),
+      \qquad
+      P^{\rm raw}
+      =
+      \frac{\sum_\omega |O_\omega|A(\omega)}{Z}.
+      \tag{CNL1}
+   \]
+   Let a checkpoint product retain records by indicators \(I_\omega\in\{0,1\}\)
+   and, when \(Z_I=\sum_\omega A(\omega)I_\omega>0\), define the retained
+   normalized port load
+   \[
+      P^{\rm ret}
+      =
+      \frac{\sum_\omega |O_\omega|A(\omega)I_\omega}{Z_I}.
+      \tag{CNL2}
+   \]
+   If all nonzero records have the same certified port-set size
+   \[
+      |O_\omega|=R\qquad(\omega\in\Omega_B),
+      \tag{CNL3}
+   \]
+   then, on every nonempty retained outcome,
+   \[
+      P^{\rm raw}=P^{\rm ret}=R.
+      \tag{CNL4}
+   \]
+   In particular, for a bucket family in which every surviving aggregate record
+   certifies \(R=m^{\alpha}\) possible ports, a checkpoint product of total range
+   \(K_{\rm tot}=m^\alpha\) reduces the unnormalized port intensity
+   \(\Lambda_{\rm port}\) by \(K_{\rm tot}^{-1}\) as in \((UIP5)\), but it leaves
+   the normalized port-size-biased load at \(m^\alpha\) whenever the retained
+   bucket is nonempty.
+
+   Thus the normalized sampler and the unnormalized intensity reporter are
+   genuinely different algorithms.  Checkpoint thinning can prove a clean
+   \((UIP4)\)-type emitted-intensity bound, but it cannot by itself prove the
+   \((EQO4)\) or \((DPT10)\) bound for the normalized port-size-biased sampler.
+   A normalized proof must show small certified image size under the normalized
+   aggregate law, or use the low-width transducer/carry-rank criteria directly.
+\end{corollary}
+
+\begin{proof}
+   Equation \((CNL4)\) is immediate: substituting \((CNL3)\) into \((CNL1)\)
+   gives \(P^{\rm raw}=RZ/Z=R\), and substituting it into \((CNL2)\) gives
+   \(P^{\rm ret}=RZ_I/Z_I=R\) whenever \(Z_I>0\).  The checkpoint range affects
+   the probability that records survive and the unnormalized retained sum, but
+   after conditioning and renormalizing it cancels from the ratio defining
+   normalized port load.
+\end{proof}
+
 \begin{corollary}[Balanced checkpoints can absorb any fixed flat-volume excess]
    \label{cor:balanced-checkpoints-absorb-flat-volume-excess}
    Continue with the nearest-mesh scaled-GRS window of
