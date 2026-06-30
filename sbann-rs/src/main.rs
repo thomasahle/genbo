@@ -384,6 +384,10 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
     // higher eta concentrates quantization accuracy on the IP-relevant (parallel) direction -> the true
     // top-k surface in a shallower scan (P-research: never swept on OOD; d=200 may want 16-64).
     let eta: f32 = std::env::var("SBANN_ETA").ok().and_then(|s| s.parse().ok()).unwrap_or(4.0);
+    // RaBitQ knobs: SBANN_RABITQ_BITS = B bits/coordinate (default 1 = sign bits); SBANN_RABITQ_L =
+    // multi-bit uniform quantizer half-range on the unit-variance rotated coords (default 2.5).
+    let rbq_bits: usize = std::env::var("SBANN_RABITQ_BITS").ok().and_then(|s| s.parse().ok()).unwrap_or(1).clamp(1, 8);
+    let rbq_l: f32 = std::env::var("SBANN_RABITQ_L").ok().and_then(|s| s.parse().ok()).unwrap_or(2.5);
     let comp: Box<dyn vq::Compressor> = match comp_s {
         "pq4" => Box::new(vq::Pq4::train(&ds, dpb, 6)),
         "opq4" => Box::new(vq::Opq4::train(&ds, dpb, 6)),
@@ -392,6 +396,7 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
         "apq4" => Box::new(vq::Apq4::train(&ds, dpb, 6, eta)),
         "aopq" => Box::new(vq::Opq4::train_aopq(&ds, dpb, 6, 8, eta)),
         "i8" => Box::new(vq::ScalarI8::new(ds.d)),
+        "rabitq" => { println!("  [rabitq B={rbq_bits} L={rbq_l}]"); Box::new(vq::RaBitQ::new(ds.d, rbq_bits, rbq_l, 0x5a17)) }
         _ => { eprintln!("compress?"); return; }
     };
     let idx = vq::Index::build(router, comp, &ds, a0);

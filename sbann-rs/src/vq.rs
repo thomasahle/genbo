@@ -834,6 +834,8 @@ pub enum QueryCtx {
     // the 64-wide AVX-512 path (empty unless USE512FS).
     Pq8 { regs: Vec<__m128i>, regs_z: Vec<__m512i>, scale: f32 },
     Scalar,                                      // exact int8: scan uses the raw query
+    // RaBitQ: the rotated query qrot = P*q (global frame, c=0). `ip` selects IP vs L2 score assembly.
+    RaBitQ { qrot: Vec<f32>, ip: bool },
 }
 
 pub trait Compressor: Send + Sync {
@@ -1154,6 +1156,163 @@ impl Compressor for ScalarI8 {
         }
     }
     fn needs_raw_rows(&self) -> bool { true }
+}
+
+/// RaBitQ (Gao & Long, SIGMOD'24): a rotation + per-coordinate B-bit quantization with an UNBIASED
+/// inner-product estimator. For each data vector x we form the unit residual `o = (x-c)/||x-c||`
+/// (c = cell centroid when SBANN_RESIDQ supplies one, else 0 — the global frame), rotate it by a fixed
+/// orthonormal P into `o' = P o`, and quantize each coordinate of o' to B bits → integer codes `t_i`,
+/// reconstructing `u_i = level[t_i]`. We store the codes plus two f32 scalars per vector:
+///   cadd = ||x-c||^2          (the L2 self-term)
+///   cmul = ||x-c|| / f,  f = <u, o'>   (the unbiased-estimator rescale; f is the cosine of the code
+///                                       with the true rotated unit vector, computed EXACTLY at encode)
+/// At query time we rotate q once (`qrot = P q`) and, per vector, form `s = <u, qrot>`; then
+///   <q, x-c> ≈ ||x-c|| * <u, qrot> / f = cmul * s        (RaBitQ's unbiased IP estimator)
+///   L2:  ||q-x||^2 ≈ ||q||^2 + cadd - 2*cmul*s   → rank score = cadd - 2*cmul*s  (||q||^2 const, dropped)
+///   IP:  <q,x>     ≈ cmul*s                       → rank score = -(cmul*s)        (smaller = closer)
+/// Storing f exactly makes the estimator unbiased for ANY reconstruction `u`, so the multi-bit (B>1)
+/// quantizer choice only affects variance, not bias. This is a CORRECTNESS/pluggability slot (scalar
+/// scan, no vpshufb fast path); the exact int8 rerank that follows only needs a reasonable ranking.
+/// NOTE: operates in the GLOBAL frame (c=0). Combining with SBANN_RESIDQ (per-cell c) is not wired —
+/// the per-cell `||q-c||^2` / `<q,c>` offsets would need plumbing the centroid into the scan.
+pub struct RaBitQ {
+    d: usize,
+    bits: usize,          // B bits/coordinate
+    rot: Vec<f32>,        // d×d orthonormal P (row-major)
+    code_bytes: usize,    // ceil(d*bits/8) packed B-bit codes per vector
+    levels: Vec<f32>,     // dequant LUT: code t -> reconstructed coordinate value (already /sqrt(d))
+    l_range: f32,         // multi-bit uniform quantizer half-range on g=sqrt(d)*o'  (unused for B=1)
+}
+
+impl RaBitQ {
+    pub fn new(d: usize, bits: usize, l_range: f32, seed: u64) -> Self {
+        let rot = random_orthogonal(d, seed);
+        let code_bytes = (d * bits + 7) / 8;
+        let inv_sqrt_d = 1.0 / (d as f32).sqrt();
+        let nlev = 1usize << bits;
+        // Dequant levels on g = sqrt(d)*o' (≈ unit-variance), then scaled back by 1/sqrt(d) into o'-space.
+        // B=1 -> {-1,+1}; B>=2 -> 2^B uniform levels over [-L, L].
+        let levels: Vec<f32> = if bits == 1 {
+            vec![-inv_sqrt_d, inv_sqrt_d]
+        } else {
+            (0..nlev).map(|t| (-l_range + 2.0 * l_range * t as f32 / (nlev - 1) as f32) * inv_sqrt_d).collect()
+        };
+        RaBitQ { d, bits, rot, code_bytes, levels, l_range }
+    }
+
+    /// Quantize one rotated unit vector o' (length d) -> integer codes t_i, returning f = <u, o'>.
+    #[inline]
+    fn quantize(&self, oprime: &[f32], codes: &mut [u8]) -> f32 {
+        let nlev = 1usize << self.bits;
+        let sqrt_d = (self.d as f32).sqrt();
+        for b in codes.iter_mut() { *b = 0; }
+        let mut f = 0.0f32;
+        let mut bitpos = 0usize;
+        for i in 0..self.d {
+            let t = if self.bits == 1 {
+                if oprime[i] >= 0.0 { 1usize } else { 0usize }
+            } else {
+                let g = oprime[i] * sqrt_d; // ≈ unit variance
+                let q = ((g + self.l_range) / (2.0 * self.l_range) * (nlev - 1) as f32).round();
+                q.clamp(0.0, (nlev - 1) as f32) as usize
+            };
+            f += self.levels[t] * oprime[i];
+            // pack `bits` bits of t at bitpos (LSB-first, coordinate 0 lowest)
+            let mut tt = t;
+            for _ in 0..self.bits {
+                if tt & 1 != 0 { codes[bitpos >> 3] |= 1u8 << (bitpos & 7); }
+                tt >>= 1;
+                bitpos += 1;
+            }
+        }
+        f
+    }
+
+    /// s = <u, qrot> for the vector whose codes start at `codes` (length code_bytes).
+    #[inline]
+    fn code_dot(&self, codes: &[u8], qrot: &[f32]) -> f32 {
+        let mut s = 0.0f32;
+        let mut bitpos = 0usize;
+        for i in 0..self.d {
+            // read `bits` bits at bitpos (LSB-first)
+            let mut t = 0usize;
+            for b in 0..self.bits {
+                if codes[bitpos >> 3] & (1u8 << (bitpos & 7)) != 0 { t |= 1 << b; }
+                bitpos += 1;
+            }
+            s += self.levels[t] * qrot[i];
+        }
+        s
+    }
+}
+
+impl Compressor for RaBitQ {
+    fn block_bytes(&self) -> usize { 16 * (self.code_bytes + 8) } // per lane: code + cadd(f32) + cmul(f32)
+    fn encode_block(&self, rows: &[&[i8]], n_real: usize, cell_cent: &[i8], out: &mut Vec<u8>) {
+        let stride = self.code_bytes + 8;
+        let resid = !cell_cent.is_empty(); // SBANN_RESIDQ: encode (row - cell_cent); else global frame (c=0)
+        let mut r = vec![0f32; self.d];
+        let mut oprime = vec![0f32; self.d];
+        let mut codes = vec![0u8; self.code_bytes];
+        for j in 0..16 {
+            let base = out.len();
+            out.resize(base + stride, 0);
+            if j >= n_real { continue; } // padding lane: zeros (cadd=cmul=0); slot_orig==MAX skips it
+            // residual r = x - c (c=0 in the global frame)
+            for k in 0..self.d {
+                r[k] = rows[j][k] as f32 - if resid { cell_cent[k] as f32 } else { 0.0 };
+            }
+            let rnorm2: f32 = r.iter().map(|&v| v * v).sum();
+            let rnorm = rnorm2.sqrt();
+            if rnorm < 1e-9 {
+                // zero residual: leave code zero, cadd=cmul=0 (rerank fixes exact distance)
+                continue;
+            }
+            // o' = P (r / ||r||)
+            let inv = 1.0 / rnorm;
+            for a in 0..self.d {
+                let mut acc = 0.0f32;
+                let row = &self.rot[a * self.d..a * self.d + self.d];
+                for k in 0..self.d { acc += row[k] * r[k]; }
+                oprime[a] = acc * inv;
+            }
+            for b in codes.iter_mut() { *b = 0; }
+            let f = self.quantize(&oprime, &mut codes);
+            let f = if f.abs() < 1e-9 { 1e-9 } else { f };
+            let cadd = rnorm2;
+            let cmul = rnorm / f;
+            out[base..base + self.code_bytes].copy_from_slice(&codes);
+            out[base + self.code_bytes..base + self.code_bytes + 4].copy_from_slice(&cadd.to_le_bytes());
+            out[base + self.code_bytes + 4..base + self.code_bytes + 8].copy_from_slice(&cmul.to_le_bytes());
+        }
+    }
+    fn prepare_query(&self, q: &[i8]) -> QueryCtx {
+        // qrot = P q (global frame). For L2 and for IP (c=0) the rotated query is identical.
+        let mut qrot = vec![0f32; self.d];
+        for a in 0..self.d {
+            let mut acc = 0.0f32;
+            let row = &self.rot[a * self.d..a * self.d + self.d];
+            for k in 0..self.d { acc += row[k] * q[k] as f32; }
+            qrot[a] = acc;
+        }
+        let ip = IP_MODE.load(std::sync::atomic::Ordering::Relaxed);
+        QueryCtx::RaBitQ { qrot, ip }
+    }
+    fn scan_block(&self, block: &[u8], ctx: &QueryCtx, _q: &[i8], _rows16: &[&[i8]], out16: &mut [i32; 16]) {
+        if let QueryCtx::RaBitQ { qrot, ip } = ctx {
+            let stride = self.code_bytes + 8;
+            for j in 0..16 {
+                let base = j * stride;
+                let codes = &block[base..base + self.code_bytes];
+                let cadd = f32::from_le_bytes(block[base + self.code_bytes..base + self.code_bytes + 4].try_into().unwrap());
+                let cmul = f32::from_le_bytes(block[base + self.code_bytes + 4..base + self.code_bytes + 8].try_into().unwrap());
+                let s = self.code_dot(codes, qrot);
+                let est_ip = cmul * s; // ≈ <q, x-c>
+                let score = if *ip { -est_ip } else { cadd - 2.0 * est_ip };
+                out16[j] = score.round().clamp(i32::MIN as f32, i32::MAX as f32) as i32;
+            }
+        }
+    }
 }
 
 // ---------------- Index: compose Router + Compressor ----------------
