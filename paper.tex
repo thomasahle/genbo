@@ -98963,6 +98963,74 @@ amplified in the next proposition.
    for limited-independent signs.
 \end{proof}
 
+\begin{corollary}[Polylog-density sign thinning has local Gaussian cost]
+   \label{cor:polylog-density-sign-thinning-calibration}
+   Work in the setting of
+   \cref{cor:reusable-limited-independent-sign-filter}, and assume
+   \(|\alpha_j|\le a<1\) for every coordinate.  Let
+   \[
+      \mu_M(\lambda)=\E_{Q_\lambda}M,
+      \qquad
+      A_0=\mu_M(0)=\sum_j\alpha_j .
+      \tag{PST1}
+   \]
+   Fix \(0\le\Lambda\) and put \(v_M=(1-a^2)e^{-2\Lambda}\).  If
+   \(0\le\lambda\le\Lambda\), then
+   \[
+      \frac{d}{d\lambda}\mu_M(\lambda)
+      =
+      \operatorname{Var}_{Q_\lambda}M
+      \ge v_Mh .
+      \tag{PST2}
+   \]
+   Therefore, whenever a target sign threshold \(s>A_0\) is reached by some
+   saddlepoint \(0\le\lambda_s\le\Lambda\) with
+   \(\mu_M(\lambda_s)=s\), one has
+   \[
+      \lambda_s
+      \le
+      \frac{s-A_0}{v_Mh},
+      \qquad
+      W_M=\max\{1,\lambda_s\sigma_M(\lambda_s)\}
+      \le
+      \max\left\{1,\frac{s-A_0}{v_M\sqrt h}\right\}.
+      \tag{PST3}
+   \]
+   In particular, if
+   \[
+      s-A_0\le C_s\sqrt{h\log K},
+      \tag{PST4}
+   \]
+   then
+   \[
+      W_M\le O_{a,\Lambda,C_s}(\sqrt{\log K}).
+      \tag{PST5}
+   \]
+   Thus a sign filter at polylogarithmic density contributes only the local
+   saddlepoint width \(\sqrt{\log K}\) to the proposal count.  Combined with
+   \cref{cor:reusable-limited-independent-sign-filter}, the exact sampler has
+   polylogarithmic overhead whenever the score side has \(W_W=\polylog m\),
+   the coefficient-net sign audit holds, and
+   \(W_W\sqrt{\log K}\lesssim\sqrt h\) with the constants in \((LSG10)\).
+   The filter density \(K^{-1}\) is not paid as a decoder state width or as a
+   rejection probability.
+\end{corollary}
+
+\begin{proof}
+   The derivative identity in \((PST2)\) is the usual exponential-family
+   identity.  The lower bound is exactly \((LSG6)\), applied uniformly for
+   \(0\le\lambda\le\Lambda\).  Integrating \((PST2)\) from \(0\) to
+   \(\lambda_s\) gives
+   \[
+      s-A_0=\mu_M(\lambda_s)-\mu_M(0)\ge v_Mh\lambda_s,
+   \]
+   proving the bound on \(\lambda_s\).  Since \(M\) is a sum of \(h\) signs,
+   \(\sigma_M(\lambda_s)\le\sqrt h\), and \((PST3)\) follows.  Substituting
+   \((PST4)\) gives \((PST5)\).  The final statement is then just
+   \cref{cor:reusable-limited-independent-sign-filter} with this bound on
+   \(W_M\).
+\end{proof}
+
 \begin{corollary}[Aligned linear charts compute rate-coverage sketches]
    \label{cor:aligned-linear-chart-rate-coverage-sketch}
    Work in the setting of
