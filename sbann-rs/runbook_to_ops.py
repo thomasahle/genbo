@@ -42,7 +42,10 @@ def main():
             if b > a:                       # drop empty ranges produced by rounding
                 lines.append(f"{op} {a} {b}")
         elif op == "search":
-            lines.append("search")
+            # emit the 1-based ORIGINAL runbook op index: the official per-step GT is named
+            # step{i}.gt100 (download_gt.py uses enumerate over the full op list), so the eval
+            # loads the right GT regardless of any dropped/scaled ops above.
+            lines.append(f"search {i}")
         elif op == "replace":
             lines.append(f"replace {sc(e['tags_start'])} {sc(e['tags_end'])} {sc(e['ids_start'])} {sc(e['ids_end'])}")
         else:
