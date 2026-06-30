@@ -100957,6 +100957,114 @@ amplified in the next proposition.
    at least \(q\) symbols with probability at least \(1-\delta\).
 \end{proof}
 
+\begin{corollary}[Gaussian score windows populate the balanced alphabets]
+   \label{cor:gaussian-score-window-occupancy}
+   In the occupancy step of
+   \cref{cor:balanced-score-window-mds-segment}, suppose the dimensionless
+   candidate scores in coordinate \(i\) are independent standard Gaussians
+   \(X_{i,1},\ldots,X_{i,N_i}\).  Fix a window
+   \[
+      J_i=[u_i-D/2,u_i+D/2],
+      \qquad D>0,
+      \tag{GWO1}
+   \]
+   and put
+   \[
+      p_i=\Pr[X\in J_i],
+      \qquad
+      a_i=|u_i|+D/2 .
+      \tag{GWO2}
+   \]
+   Then
+   \[
+      p_i\ge
+      \frac{D}{\sqrt{2\pi}}\exp\{-a_i^2/2\}.
+      \tag{GWO3}
+   \]
+   Consequently the balanced-window alphabet condition holds with probability
+   at least \(1-\delta\) whenever
+   \[
+      N_i\ge
+      \frac{4\sqrt{2\pi}\,\exp\{a_i^2/2\}}{D}
+      \bigl(q+\log(\ell/\delta)\bigr)
+      \qquad(i\le\ell).
+      \tag{GWO4}
+   \]
+
+   This estimate is sharp at the scale relevant to the construction.  If
+   \(X_i\) is the number of candidates in \(J_i\) and
+   \(N_ip_i\le q/4\), then
+   \[
+      \Pr[X_i\ge q]\le\frac14 .
+      \tag{GWO5}
+   \]
+   Thus the correct order for populating one coordinate window is
+   \(N_i\asymp q/p_i\), up to the logarithmic union-bound margin.
+
+   In particular, with \(q\asymp\log\log m\) and fixed \(D\):
+   \[
+      |u_i|=O(1)
+      \quad\Longrightarrow\quad
+      N_i=O_D(q+\log(\ell/\delta))
+      \tag{GWO6}
+   \]
+   suffices, while
+   \[
+      |u_i|=\sqrt{2A\log\log m}+O(1)
+      \quad\Longrightarrow\quad
+      N_i=(\log m)^{A+o(1)}(q+\log(\ell/\delta))
+      \tag{GWO7}
+   \]
+   candidates are sufficient and necessary up to subpolynomial factors.
+   A window at polynomial Gaussian-tail height
+   \[
+      |u_i|=\sqrt{2a\log m}+O(1)
+      \tag{GWO8}
+   \]
+   instead requires
+   \[
+      N_i=m^{a+o(1)}(q+\log(\ell/\delta)).
+      \tag{GWO9}
+   \]
+
+   Therefore the local MDS checkpoint construction can get its balanced
+   alphabets from only polylogarithmically many independent Gaussian
+   candidates per coordinate when the retained windows are central or
+   \(\sqrt{\log\log m}\)-moderate.  It cannot populate constant-width windows
+   sitting in a genuine \(m^{-a}\) Gaussian tail without paying a polynomial
+   coordinate pool.  A code or lattice construction that wants those tail
+   windows must provide them structurally, by a shifted/residue fiber,
+   theta-function sampler, or recentered local chart, rather than by drawing a
+   small independent candidate pool.
+\end{corollary}
+
+\begin{proof}
+   The standard Gaussian density is at least
+   \((2\pi)^{-1/2}\exp\{-a_i^2/2\}\) throughout \(J_i\), because every point in
+   \(J_i\) has absolute value at most \(a_i\).  Integrating over the interval
+   of length \(D\) gives \((GWO3)\).  Substituting this lower bound for \(p_i\)
+   into \((BSW10)\) gives \((GWO4)\).
+
+   For the converse scale, \(X_i\sim{\rm Bin}(N_i,p_i)\), so Markov's
+   inequality gives
+   \[
+      \Pr[X_i\ge q]\le\frac{\E X_i}{q}=\frac{N_ip_i}{q}\le\frac14,
+   \]
+   proving \((GWO5)\).  The central estimate \((GWO6)\) is immediate from
+   \((GWO4)\).  For fixed \(D\), \((GWO3)\) gives
+   \[
+      p_i\ge
+      \exp\{-u_i^2/2-O_D(|u_i|+1)\}.
+      \tag{GWO10}
+   \]
+   The matching elementary upper bound
+   \(p_i\le D(2\pi)^{-1/2}\exp\{-(\max\{|u_i|-D/2,0\})^2/2\}\) gives the same
+   logarithmic exponent.  Substituting
+   \(|u_i|=\sqrt{2A\log\log m}+O(1)\) or
+   \(|u_i|=\sqrt{2a\log m}+O(1)\) yields \((GWO7)\)--\((GWO9)\), with the lower
+   side supplied by \((GWO5)\).
+\end{proof}
+
 \begin{corollary}[Checkpoint products thin emissions, not prefix work]
    \label{cor:checkpoint-product-far-load-accounting}
    Work in the checkpointed quotient reporter of
