@@ -100258,6 +100258,135 @@ amplified in the next proposition.
    \((AGV5)\).
 \end{proof}
 
+\begin{corollary}[Conditional effective support certifies aggregate sign tails]
+   \label{cor:conditional-effective-support-aggregate-sign-tail}
+   Work in the setting of
+   \cref{cor:averaged-gibbs-mass-aggregate-value}, and take the aggregate
+   filter to be a sign tail
+   \[
+      m_j(a)=\xi_{j,a}\in\{-1,1\},
+      \qquad
+      F=\left\{\sum_{j=1}^h\xi_{j,c_j}\ge s\right\}.
+      \tag{CES1}
+   \]
+   Fix one realized conditional near route law
+   \(P^E=\prod_jP^E_j\), and define its sign imbalances
+   \[
+      \alpha_j=\sum_aP^E_j(a)\xi_{j,a},
+      \qquad
+      A_0=\sum_j\alpha_j .
+      \tag{CES2}
+   \]
+   Suppose that for some \(a_0<1\),
+   \[
+      |\alpha_j|\le a_0\qquad(j=1,\ldots,h),
+      \tag{CES3}
+   \]
+   and that the sign saddlepoint \(0\le\lambda\le\Lambda\) satisfies
+   \[
+      \E_{Q_\lambda}M=s,
+      \qquad
+      s-A_0\le C_s\sqrt{h\log K},
+      \tag{CES4}
+   \]
+   where
+   \[
+      Q_\lambda(c)
+      \propto
+      P^E(c)\exp\!\left(\lambda\sum_j\xi_{j,c_j}\right).
+      \tag{CES5}
+   \]
+   Put \(v_M=(1-a_0^2)e^{-2\Lambda}\) and
+   \(W_\lambda=\max\{1,\lambda\sqrt{\operatorname{Var}_{Q_\lambda}M}\}\).
+   If
+   \[
+      W_\lambda
+      \le
+      \frac{\gamma_U}{8C_{\rm BE}}\sqrt{v_Mh},
+      \tag{CES6}
+   \]
+   then the aggregate-tail hypotheses \((AGV3)\) hold with
+   \(a^{-1}=O_U(W_\lambda)\) and
+   \[
+      B_*
+      =
+      O_{a_0,\Lambda,C_s,U}
+      \!\left(
+         \log K+
+         \sqrt{\log K\log(hW_\lambda)}
+         +
+         \log(hW_\lambda)
+      \right).
+      \tag{CES7}
+   \]
+   In particular, if \(K\) and \(h\) are polylogarithmic and
+   \(W_\lambda=\polylog m\), then \(a^{-1}e^{B_*}=\log^{O(1)}m\), so
+   \cref{cor:averaged-gibbs-mass-aggregate-value} turns the averaged Gibbs
+   near mass into inverse-polylogarithmic filtered value.
+
+   The randomness needed to make \((CES3)\) hold is exactly conditional
+   effective support.  Let \(\mathcal L\) be a finite family of conditional
+   near coordinate laws \(P^E_{\ell,j}\), and put
+   \[
+      \nu_{\ell,j}=\sum_aP^E_{\ell,j}(a)^2 .
+      \tag{CES8}
+   \]
+   If the signs on each coordinate are unbiased \(2r\)-wise independent, then
+   with probability at least \(1-\delta\),
+   \[
+      |\alpha_{\ell,j}|
+      \le
+      \sqrt{C_{\rm Kh}r\,\nu_{\ell,j}}\,
+      \left(\frac{2h|\mathcal L|}{\delta}\right)^{1/(2r)}
+      \tag{CES9}
+   \]
+   for every exposed law \(\ell\) and coordinate \(j\).  Thus pairwise
+   independence is enough for one fixed conditional near law with large
+   effective support, while a reusable seed over a finite query/panel family
+   needs the limited-independence order dictated by that family's coefficient
+   net.  If conditioning on \(E_j\) collapses many \(P^E_j\)'s to nearly
+   singleton laws, then the sign tail has negligible conditional variance and
+   this aggregate route fails regardless of how algebraic the hash family is.
+\end{corollary}
+
+\begin{proof}
+   Under \(Q_\theta\), \(0\le\theta\le\lambda\), \cref{lem:pairwise-sign-mask-effective-support}
+   gives
+   \[
+      \operatorname{Var}_{Q_\theta}\xi_{j,C_j}
+      =
+      \frac{1-\alpha_j^2}{(\cosh\theta+\alpha_j\sinh\theta)^2}
+      \ge
+      (1-a_0^2)e^{-2\Lambda}=v_M .
+   \]
+   Therefore
+   \[
+      \frac{d}{d\theta}\E_{Q_\theta}M
+      =
+      \operatorname{Var}_{Q_\theta}M
+      \ge v_Mh ,
+   \]
+   which is the variance-growth part of \((BAL5)\).  The bound
+   \(s-A_0\le C_s\sqrt{h\log K}\) is the other part of \((BAL5)\), and
+   \cref{cor:polylog-density-sign-thinning-calibration} gives
+   \(W_\lambda=O_{a_0,\Lambda,C_s}(\sqrt{\log K})\) whenever this is the active
+   estimate.
+
+   Since the summands are signs, \(|X_j-\E X_j|\le2\) under \(Q_\lambda\), and
+   \(\operatorname{Var}_{Q_\lambda}M\ge v_Mh\).  Condition \((CES6)\) is the
+   Berry--Esseen sufficient condition \((TBE5)\), with \(B=2\), up to the
+   harmless displayed constant.  Hence
+   \cref{cor:tilted-berry-esseen-filter} and
+   \cref{cor:tilted-local-gaussian-window} give
+   \(A_\lambda^{-1}=O_U(W_\lambda)\).  Substituting this lower bound on
+   \(A_\lambda\), together with the variance-growth calibration above, into
+   \((BAL9)\) gives \((CES7)\).  This proves \((AGV3)\).
+
+   Finally, \((CES9)\) is \((LIS4)\) from
+   \cref{lem:finite-family-limited-independence-sign-filter}, applied to the
+   finite family of conditional laws with no score-correlation coefficient.
+\end{proof}
+
 \begin{corollary}[Aligned linear charts compute rate-coverage sketches]
    \label{cor:aligned-linear-chart-rate-coverage-sketch}
    Work in the setting of
