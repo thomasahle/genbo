@@ -100601,6 +100601,150 @@ amplified in the next proposition.
    \cref{cor:checkpointed-quotient-prefix-cut-compiler}.
 \end{proof}
 
+\begin{corollary}[Checkpoint products thin emissions, not prefix work]
+   \label{cor:checkpoint-product-far-load-accounting}
+   Work in the checkpointed quotient reporter of
+   \cref{cor:checkpointed-quotient-prefix-cut-compiler}.  Fix one query
+   outcome \(B\) after all randomness except the checkpoint offsets has been
+   exposed.  Let \(\Omega_B\) be any finite set of support-valid cut records,
+   terminal records, or point-label occurrences that the uncheckpointed
+   quotient reporter may emit, and attach a nonnegative verification or
+   emission cost \(w_B(\omega)\) to each \(\omega\in\Omega_B\).  Each
+   \(\omega\) is represented by a trellis path \(p(\omega)\).  Put
+   \[
+      L_B^{\rm raw}=\sum_{\omega\in\Omega_B}w_B(\omega),
+      \qquad
+      K_{\rm tot}=\prod_sK_s .
+      \tag{CPFA1}
+   \]
+   In segment \(s\), write
+   \[
+      H_s(\omega)=\sum_{e\in I_s\cap p(\omega)}d_s(e)\in G_s .
+      \tag{CPFA2}
+   \]
+   Suppose the checkpoint offsets \(\sigma_s\) are independent and uniform in
+   \(G_s\), independent of \(B,\Omega_B\), and independent across segments.
+   The checkpoint-retained records are those satisfying
+   \(H_s(\omega)=\sigma_s\) for every \(s\).  Then, conditional on
+   \(B,\Omega_B\), and on the checkpoint increments \(d_s\),
+   \[
+      \E_{\sigma}\sum_{\omega\in\Omega_B}
+      w_B(\omega)\mathbf1\{H_s(\omega)=\sigma_s\ \forall s\}
+      =
+      \frac{L_B^{\rm raw}}{K_{\rm tot}} .
+      \tag{CPFA3}
+   \]
+   Therefore one checkpointed panel has expected far-side work bounded by
+   \[
+      O\!\left(
+         Q_B\sum_sK_s|E_{B,s}|
+      \right)
+      +
+      \frac{L_B^{\rm raw}}{K_{\rm tot}},
+      \tag{CPFA4}
+   \]
+   before the harmless logarithmic priority-queue and duplicate-removal
+   factors.  Averaging over the query randomization, the far side is in the
+   clean envelope whenever
+   \[
+      \E_Z Q_{B(q,Z)}\sum_sK_s|E_{B(q,Z),s}|
+      \le m^{\rho_c}\log^{O_c(1)}m
+      \tag{CPFA5}
+   \]
+   and
+   \[
+      \E_Z L_{B(q,Z)}^{\rm raw}
+      \le
+      K_{\rm tot}\,m^{\rho_c}\log^{O_c(1)}m .
+      \tag{CPFA6}
+   \]
+
+   The far-load identity above only used the random offsets.  For the near
+   side, assume in addition that the full segment seeds, including the
+   increments and offsets, satisfy the pairwise-independent weighted-syndrome
+   hypothesis of \cref{cor:checkpointed-quotient-prefix-cut-compiler}.  If the
+   cut law for each unresolved near pair is fixed before the relevant segment
+   seed is exposed and satisfies
+   \[
+      N_2(\nu_{s,w})\ge\eta_sK_s
+      \tag{CPFA7}
+   \]
+   on every live segment prefix, then one panel reaches a valid cut path with
+   probability at least
+   \[
+      \Gamma_\eta=\prod_s\frac{\eta_s}{1+\eta_s}
+      =
+      \exp\!\left\{-\sum_s\log(1+\eta_s^{-1})\right\}.
+      \tag{CPFA8}
+   \]
+   Hence polylogarithmically many panels suffice whenever
+   \(\sum_s\log(1+\eta_s^{-1})=O_c(\log\log m)\).
+
+   Consequently local checkpoints can remove a raw terminal or cut-emission
+   excess but cannot repair an overlarge prefix reporter.  For example, if
+   \[
+      \E_ZL_B^{\rm raw}\le m^{\rho_c+\alpha+o(1)}
+      \tag{CPFA9}
+   \]
+   while the prefix pass already obeys \((CPFA5)\), then choosing
+   \(K_{\rm tot}\ge m^{\alpha+o(1)}\) makes the emitted far load clean.  This
+   may be done with only local polylogarithmic checkpoint ranges:
+   \(K_s\le\log^{A_{\rm chk}}m\) and
+   \(O(\log m/\log\log m)\) segments already allow polynomial
+   \(K_{\rm tot}\), while the state cost in \((CPFA5)\) sees only the local
+   factor \(K_s\) on segment \(s\).  The local construction in
+   \cref{cor:random-dense-local-check-segment} supplies such segments when its
+   entropy inequalities hold, and \(\eta_s=\log^{A_\eta}m\) with
+   \(A_\eta>0\) makes the survival loss in \((CPFA8)\) bounded, in particular
+   inverse-polylogarithmic.
+
+   Conversely, within this state-exposed checkpointed quotient normal form,
+   the product \(K_{\rm tot}\) never appears with a favorable sign in the
+   prefix work term \((CPFA5)\).  If
+   \[
+      \E_Z Q_B\sum_sK_s|E_{B,s}|
+      =
+      m^{\rho_c+\Omega(1)}
+      \tag{CPFA10}
+   \]
+   for the proposed prefix cut, then more checkpoint randomness only thins the
+   emitted records in \((CPFA3)\); it does not certify a clean reporter.  One
+   must instead move the cut, reduce the native edge set, use a lower-width
+   aligned or banded quotient, or replace the state-exposed pass by an
+   aggregate/responsibility reporter.  Thus the remaining global theorem for
+   the local-code route is not another randomness statement: it is precisely
+   the pair of estimates \((CPFA5)\)--\((CPFA6)\), together with the near cut
+   support condition \((CPFA7)\).
+\end{corollary}
+
+\begin{proof}
+   Conditional on \(B,\Omega_B\), the increments \(d_s\), and one fixed record
+   \(\omega\), the value \(H_s(\omega)\) is deterministic.  Since
+   \(\sigma_s\) is uniform in \(G_s\),
+   \[
+      \Pr_\sigma[H_s(\omega)=\sigma_s]=K_s^{-1}.
+   \]
+   The offsets are independent across segments, so
+   \[
+      \Pr_\sigma[H_s(\omega)=\sigma_s\ \forall s]=K_{\rm tot}^{-1}.
+   \]
+   Multiplying by \(w_B(\omega)\) and summing over \(\omega\) proves
+   \((CPFA3)\).
+
+   The prefix-pass cost is exactly the checkpointed augmented trellis cost
+   \((CQR2)\) from
+   \cref{cor:checkpointed-quotient-prefix-cut-compiler}.  Adding the expected
+   retained emission cost \((CPFA3)\) gives \((CPFA4)\), and averaging gives
+   the sufficient far-work conditions \((CPFA5)\)--\((CPFA6)\).  The near-hit
+   statement is \((CQR5)\), rewritten as \((CPFA8)\).  The displayed
+   consequence for \(K_{\rm tot}\) is just the substitution of \((CPFA9)\) into
+   \((CPFA6)\); if \(K_s\le\log^{A_{\rm chk}}m\) for
+   \(O(\log m/\log\log m)\) segments, their product can be \(m^{\Theta(1)}\)
+   while \(\sum_sK_s|E_{B,s}|\le(\max_sK_s)|E_B|\).  Finally, \((CPFA10)\)
+   contradicts \((CPFA5)\) for this prefix cut, independently of the terminal
+   thinning identity \((CPFA3)\), proving the normal-form barrier.
+\end{proof}
+
 \begin{corollary}[Sliding-window trellises must carry forgotten quotient span]
    \label{cor:finite-memory-forgetting-quotient-barrier}
    Let
