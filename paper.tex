@@ -99961,6 +99961,92 @@ amplified in the next proposition.
    proving \((AVS7)\) and hence \((AVS8)\).
 \end{proof}
 
+\begin{corollary}[Matched Fano activation certifies product-prefix height]
+   \label{cor:matched-fano-activation-route-height}
+   Work in the product-prefix setting of
+   \cref{cor:product-prefix-route-height-bernstein}.  Let
+   \(P=\prod_jP_j\) be the route law the decoder will sample.  Suppose there
+   are nonnegative branch prices \(b_j\) and mismatch functions
+   \(\Delta_j:\mathcal C_j\to\mathbb R\) such that, for every coordinate label
+   on the retained support,
+   \[
+      \log\frac{P_j(c)}{a_j(c)}
+      \le b_j+\Delta_j(c).
+      \tag{MFA1}
+   \]
+   Then every leaf \(c\) satisfies
+   \[
+      H_P(c)
+      \le
+      \sum_{j=1}^hb_j
+      +
+      \max_{0\le r\le h}\sum_{j\le r}\Delta_j(c_j).
+      \tag{MFA2}
+   \]
+   In particular, if the activation masses dominate a priced copy of the route
+   law,
+   \[
+      a_j(c)\ge e^{-b_j}P_j(c)
+      \qquad(c\in\mathcal C_j),
+      \tag{MFA3}
+   \]
+   and
+   \[
+      \sum_jb_j=O_c(\log\log n),
+      \tag{MFA4}
+   \]
+   then the \(H_P=O_c(\log\log n)\) hypothesis in
+   \cref{prop:bounded-aggregate-tail-value-delivery} holds deterministically.
+
+   Moreover, the activation-volume screen is tight for this matched design.
+   If \(a_j(c)=e^{-b_j}P_j(c)\) for all \(j,c\), then
+   \[
+      H_P(c)=\sum_jb_j,
+      \qquad
+      B_A=e^{-\sum_jb_j},
+      \qquad
+      \bar A=P,
+      \tag{MFA5}
+   \]
+   so \cref{cor:activation-volume-score-tilt-screen} holds with equality.
+
+   Thus the positive code/lattice design rule is not to choose an ordinary raw
+   decoder and hope that a terminal pseudo-random filter fixes the route value.
+   The branch price that makes a stack, trellis, Construction-A, or lattice
+   sampler output-sensitive must also appear in the activation mass.  Once the
+   stored activation measure is a priced copy of the same tilted law that the
+   query sampler uses, the route-height obstruction is discharged; the
+   remaining work is the already isolated sampler/local-limit and storage/far
+   spectrum audits.
+\end{corollary}
+
+\begin{proof}
+   For any prefix \(u=(c_1,\ldots,c_r)\),
+   \[
+      \log\frac{P(u)}{A(u)}
+      =
+      \sum_{j\le r}\log\frac{P_j(c_j)}{a_j(c_j)}
+      \le
+      \sum_{j\le r}b_j+\sum_{j\le r}\Delta_j(c_j).
+   \]
+   Since the \(b_j\)'s are nonnegative, \(\sum_{j\le r}b_j\le\sum_jb_j\).
+   Taking the positive part and maximizing over prefixes proves \((MFA2)\).
+   The domination condition \((MFA3)\) is exactly \((MFA1)\) with
+   \(\Delta_j\le0\), hence \((MFA4)\) gives the deterministic height bound.
+
+   Under equality in \((MFA3)\), every prefix ratio is
+   \(\exp(\sum_{j\le r}b_j)\), so the maximum is attained at the full leaf and
+   \(H_P(c)=\sum_jb_j\).  Also
+   \[
+      B_j=\sum_c e^{-b_j}P_j(c)=e^{-b_j},
+      \qquad
+      \bar a_j=P_j,
+   \]
+   proving \((MFA5)\).  Substituting \(D(P\|\bar A)=0\),
+   \(\log B_A=-\sum_jb_j\), and \(H_0=\sum_jb_j\) into \((AVS3)\) gives
+   equality.
+\end{proof}
+
 \begin{corollary}[Aligned linear charts compute rate-coverage sketches]
    \label{cor:aligned-linear-chart-rate-coverage-sketch}
    Work in the setting of
