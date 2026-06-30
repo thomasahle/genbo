@@ -9711,6 +9711,166 @@ partition ignores the bias coordinates that certify the list size.
    reporter call within the certified prefix moment budget.
 \end{proof}
 
+\begin{corollary}[Gaussian prefix cuts preserve Shannon checkpoint entropy]
+   \label{cor:gaussian-prefix-cut-shannon-checkpoints}
+   Work in the prefix-cut setting of
+   \cref{cor:prefix-cut-checkpoint-reporter}.  Fix one live prefix \(w\) at
+   the entrance to checkpoint segment \(s\), and let \(A_{s,w}\) be the
+   current continuations through that segment.  Suppose the current segment,
+   after whatever broad cap or local code constraint is part of the reporter,
+   has an uncoupled law \(P_{s,w}\) satisfying
+   \[
+      \log N_2(P_{s,w})\ge H_{s,w}.
+      \tag{GPC1}
+   \]
+   Let \(F_{s,w}(a)\) be the first-temperature mass of future reporter-valid
+   suffixes after choosing \(a\in A_{s,w}\), and form the live segment law
+   \[
+      \nu_{s,w}(a)
+      =
+      \frac{P_{s,w}(a)F_{s,w}(a)}
+           {\sum_bP_{s,w}(b)F_{s,w}(b)} .
+      \tag{GPC2}
+   \]
+   Assume this future mass is a Gaussian endpoint window in the sense that,
+   for some positive-volume set \(\Gamma_{s,w}\) contained in a radius-\(L\)
+   ball,
+   \[
+      F_{s,w}(a)
+      =
+      \Prb[G_{R_{s,w}}\in \Gamma_{s,w}-Y(a)],
+      \qquad G_{R_{s,w}}\sim N(0,R_{s,w}I),
+      \tag{GPC3}
+   \]
+   and
+   \[
+      \|Y(a)\|\le M_{s,w}\qquad(a\in A_{s,w}).
+      \tag{GPC4}
+   \]
+   Then the live law has collision-effective support
+   \[
+      \log N_2(\nu_{s,w})
+      \ge
+      H_{s,w}
+      -
+      C_L\frac{(1+M_{s,w})^2}{R_{s,w}} .
+      \tag{GPC5}
+   \]
+   Consequently the checkpoint condition for this live prefix is verified as
+   soon as
+   \[
+      H_{s,w}
+      -
+      C_L\frac{(1+M_{s,w})^2}{R_{s,w}}
+      \ge
+      \log K_s+\log\eta_s .
+      \tag{GPC6}
+   \]
+   If \((GPC6)\) holds for every live prefix before the cut, then one
+   checkpointed panel reaches the reporter cut with probability at least
+   \[
+      \prod_s\frac{\eta_s}{1+\eta_s},
+      \tag{GPC7}
+   \]
+   and the cut marginal must have
+   \(N_2\ge\prod_s\eta_sK_s\).
+
+   In particular, consider the fixed-branch critical Gaussian child law from
+   \cref{cor:gaussian-upper-cap-shannon-checkpoint}, with segment length
+   \[
+      \ell=\kappa\log\log m+o(\log\log m),
+      \tag{GPC8}
+   \]
+   and let \(s_B=\E H_1\) be the Shannon scalar in \((GUC9)\).  Take
+   \[
+      r=\gamma\frac{\log m}{\log\log m}(1+o(1)),
+      \qquad
+      K_s=\log^A m,
+      \qquad
+      \eta_s=C_\eta\frac{r}{\log\log m}.
+      \tag{GPC9}
+   \]
+   Suppose that, on every live segment before the cut, the capped current law
+   has
+   \[
+      H_{s,w}\ge(s_B-\varepsilon)\ell,
+      \tag{GPC10}
+   \]
+   its centered displacement obeys
+   \[
+      M_{s,w}^2\le C_M\ell\log\ell,
+      \tag{GPC11}
+   \]
+   and the suffix reporter still has Gaussian variance
+   \[
+      R_{s,w}\ge C_R\ell\log\ell
+      \tag{GPC12}
+   \]
+   for a fixed sufficiently large \(C_R\).  If
+   \[
+      \kappa(s_B-\varepsilon)>A+1,
+      \tag{GPC13}
+   \]
+   then \((GPC6)\) holds for all large \(m\).  The checkpoint product supplies
+   cut/emission thinning
+   \[
+      \prod_{s=1}^rK_s=m^{A\gamma+o(1)}
+      \tag{GPC14}
+   \]
+   before the reporter cut, while the one-panel near survival is at least
+   \[
+      \log^{-1/C_\eta+o(1)}m .
+      \tag{GPC15}
+   \]
+
+   Thus the capped Gaussian checkpoint scalar is usable exactly up to cuts
+   where the future reporter mass is still flat across one current segment.
+   The obstruction is no longer local randomness: pairwise segment syndromes
+   are enough.  The concrete remaining tasks are to exhibit a cut marginal with
+   collision support \(\prod_s\eta_sK_s\), and to implement the suffix
+   reporter from that cut within \(m^{\rho_c}\polylog m\) work.  If the cut is
+   pushed to terminal leaves, \cref{cor:terminal-collision-chain-barrier}
+   reappears and the required support becomes terminal leaf multiplicity.
+\end{corollary}
+
+\begin{proof}
+   Equation \((GPC5)\) is exactly the composition of
+   \cref{lem:future-continuation-doob-square} with
+   \cref{cor:gaussian-future-window-flatness}.  The former gives the
+   collision support of the future-weighted law \(P_{s,w}F_{s,w}\), and the
+   latter says that the Gaussian window mass has log-spread at most
+   \(C_L(1+M_{s,w})^2/R_{s,w}\) on the current segment.  Substituting this
+   spread into \((FDM6)\), and then using \((GPC1)\), proves \((GPC5)\).
+   Inequality \((GPC6)\) is precisely the local hypothesis \((PCC1)\).
+   Applying \cref{cor:prefix-cut-checkpoint-reporter} over all segments gives
+   the hit probability \((GPC7)\) and the cut-support necessity.
+
+   For the fixed-branch specialization, \((GPC10)\) is the segment version of
+   the capped Shannon lower bound \((GUC8)\)--\((GUC9)\).  Conditions
+   \((GPC11)\)--\((GPC12)\) make the future-flatness loss in \((GPC5)\)
+   \(O_{L,C_M,C_R}(1)\).  On the other hand,
+   \[
+      \log K_s+\log\eta_s
+      =
+      A\log\log m+\log r-\log\log\log m+O(1)
+      =
+      (A+1)\log\log m+O(\log\log\log m).
+   \]
+   Since \((GPC13)\) gives a positive multiple of \(\log\log m\) of slack,
+   \((GPC6)\) follows for all large \(m\).
+
+   The thinning identity \((GPC14)\) follows from
+   \(r=\gamma\log m/\log\log m(1+o(1))\) and \(K_s=\log^A m\).  Finally,
+   \[
+      \sum_{s=1}^r\log(1+\eta_s^{-1})
+      \le
+      (1+o(1))\frac r{\eta_s}
+      =
+      (1/C_\eta+o(1))\log\log m,
+   \]
+   which gives \((GPC15)\) after exponentiating the survival product.
+\end{proof}
+
 \begin{corollary}[Checkpoint continuation multiplicity is not free]
    \label{cor:checkpoint-continuation-oversampling-toll}
    In the checkpoint-syndrome setting, suppose the checkpoint hit certificate
