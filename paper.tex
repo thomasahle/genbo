@@ -99205,6 +99205,185 @@ amplified in the next proposition.
    prefix-tail inflation quantified above.
 \end{proof}
 
+\begin{corollary}[Typical aggregate tails only pay their prefix likelihood toll]
+   \label{cor:typical-aggregate-tail-value}
+   Work in the setting of
+   \cref{cor:aggregate-sign-tail-value-compiler}, but do not assume the
+   worst-case prefix-tail bound \((ASV2)\).  For a filtered leaf
+   \(v\in F\), define the unfiltered route height and the filter-inflation
+   height
+   \[
+      H_P(v)=
+      \max_{u\preceq v}
+      \log_+\frac{P(u)}{A(u)},
+      \qquad
+      J_F(v)=
+      \max_{\substack{u\preceq v\\P(u)>0}}
+      \log_+\frac{P(F\mid u)}{P(F)} .
+      \tag{TAV1}
+   \]
+   If, under the filtered route law \(P_F=P(\cdot\mid F)\),
+   \[
+      P_F\{v:H_P(v)+J_F(v)\le B\}\ge h,
+      \tag{TAV2}
+   \]
+   then the filtered trie has saturated value
+   \[
+      U_F(\varnothing)\ge h e^{-B}.
+      \tag{TAV3}
+   \]
+   In particular, if
+   \[
+      \E_{P_F}\bigl[H_P(v)+J_F(v)\bigr]\le B,
+      \tag{TAV4}
+   \]
+   then
+   \[
+      U_F(\varnothing)\ge \frac12 e^{-2B}.
+      \tag{TAV5}
+   \]
+
+   Hence the aggregate-tail value test can be performed on the filtered
+   route law itself.  A few irrelevant prefixes with very large
+   \(P(F\mid u)/P(F)\) do not matter unless they lie on a non-negligible
+   fraction of filtered routes, or on a stopping frontier with large
+   cut-energy.
+\end{corollary}
+
+\begin{proof}
+   For any prefix \(u\) of a filtered leaf,
+   \[
+      \frac{P_F(u)}{A(u)}
+      =
+      \frac{P(u)}{A(u)}\frac{P(F\mid u)}{P(F)} .
+   \]
+   Therefore the prefix domination height of \(v\) under \(P_F\) is at most
+   \(H_P(v)+J_F(v)\).  Applying
+   \cref{cor:typical-route-law-toll} to \(P_F\) gives \((TAV3)\).  The
+   expectation form follows from Markov's inequality exactly as in
+   \cref{cor:typical-route-law-toll}: the event
+   \(H_P+J_F\le2B\) has \(P_F\)-probability at least \(1/2\), with the
+   zero-case interpreted in the limiting way.
+\end{proof}
+
+\begin{corollary}[Saddlepoint likelihood controls aggregate-tail inflation]
+   \label{cor:saddlepoint-prefix-tail-inflation}
+   Let \(P=\prod_{j=1}^hP_j\) be a product law on coordinate labels, and let
+   the route trie expose coordinate prefixes.  Let
+   \[
+      W(c)=\sum_{j=1}^hw_j(c_j),
+      \qquad
+      M(c)=\sum_{j=1}^hm_j(c_j),
+      \qquad
+      F=\{W(c)\ge t,\ M(c)\ge s\}.
+      \tag{SPT1}
+   \]
+   For \(\beta,\lambda\ge0\), put
+   \[
+      Z_{\beta,\lambda}
+      =
+      \prod_{j=1}^h
+      \E_{P_j}e^{\beta w_j(C_j)+\lambda m_j(C_j)}
+      \tag{SPT2}
+   \]
+   and suppose the tilted rejection acceptance
+   \[
+      A_{\beta,\lambda}
+      =
+      \frac{e^{\beta t+\lambda s}P(F)}{Z_{\beta,\lambda}}
+      \tag{SPT3}
+   \]
+   is at least \(a>0\).  For a prefix \(u=(c_1,\ldots,c_r)\), define the
+   prefix tilt likelihood ratio
+   \[
+      L_{\beta,\lambda}(u)
+      =
+      \frac{
+         e^{\beta\sum_{j\le r}w_j(c_j)
+           +\lambda\sum_{j\le r}m_j(c_j)}
+      }{
+         \prod_{j\le r}
+         \E_{P_j}e^{\beta w_j(C_j)+\lambda m_j(C_j)}
+      } .
+      \tag{SPT4}
+   \]
+   Then every prefix with \(P(u)>0\) satisfies
+   \[
+      \frac{P(F\mid u)}{P(F)}
+      \le
+      a^{-1}L_{\beta,\lambda}(u).
+      \tag{SPT5}
+   \]
+   Consequently, for every filtered leaf \(v\),
+   \[
+      J_F(v)
+      \le
+      \log(1/a)
+      +
+      \max_{u\preceq v}\log_+L_{\beta,\lambda}(u).
+      \tag{SPT6}
+   \]
+
+   Combining this with
+   \cref{cor:typical-aggregate-tail-value}, if
+   \[
+      P_F\left\{
+         H_P(v)+
+         \max_{u\preceq v}\log_+L_{\beta,\lambda}(u)
+         \le B
+      \right\}
+      \ge h_*
+      \tag{SPT7}
+   \]
+   then
+   \[
+      U_F(\varnothing)\ge h_*\,a\,e^{-B}.
+      \tag{SPT8}
+   \]
+
+   Thus for the aggregate sign construction the remaining route-value audit is
+   a maximum-likelihood-ratio estimate along the filtered tilted route.  In the
+   polylog-density regime of
+   \cref{cor:aggregate-sign-tail-avoids-checkpoint-toll}, the local-Gaussian
+   sampler gives \(a^{-1}=O_{U,\kappa}(W_W\sqrt{\log K})\).  Therefore the
+   aggregate filter preserves polylogarithmic value whenever the cumulative
+   tilt likelihood in \((SPT7)\) is \(O(\log\log m)\) on all but an
+   inverse-polylogarithmic loss of the filtered route law.
+\end{corollary}
+
+\begin{proof}
+   Fix a prefix \(u=(c_1,\ldots,c_r)\).  Let \(W_u,M_u\) be the prefix scores
+   and let \(Z_{\rm pre}(u)\) be the denominator in \((SPT4)\).  Let
+   \(Z_{\rm suf}(u)=Z_{\beta,\lambda}/Z_{\rm pre}(u)\) be the remaining
+   suffix partition function.  By Chernoff's bound on the suffix law,
+   \[
+      P(F\mid u)
+      \le
+      \exp\{-\beta(t-W_u)-\lambda(s-M_u)\}Z_{\rm suf}(u).
+   \]
+   Dividing by \(P(F)=A_{\beta,\lambda}e^{-\beta t-\lambda s}
+   Z_{\beta,\lambda}\) gives
+   \[
+      \frac{P(F\mid u)}{P(F)}
+      \le
+      A_{\beta,\lambda}^{-1}
+      \frac{e^{\beta W_u+\lambda M_u}}{Z_{\rm pre}(u)}
+      =
+      A_{\beta,\lambda}^{-1}L_{\beta,\lambda}(u),
+   \]
+   proving \((SPT5)\).  Since \(A_{\beta,\lambda}\ge a\),
+   taking \(\log_+\) and maximizing over prefixes gives \((SPT6)\).
+
+   On the event in \((SPT7)\), \((SPT6)\) gives
+   \(H_P(v)+J_F(v)\le B+\log(1/a)\).  Applying
+   \cref{cor:typical-aggregate-tail-value} with this threshold yields
+   \(U_F(\varnothing)\ge h_*\exp[-B-\log(1/a)]\), which is \((SPT8)\).
+   The final statement substitutes the acceptance lower bound implicit in the
+   local-Gaussian rectangle estimate of
+   \cref{cor:joint-tilted-score-filter-sampler} and the aggregate calibration
+   in \cref{cor:aggregate-sign-tail-avoids-checkpoint-toll}.
+\end{proof}
+
 \begin{corollary}[Aligned linear charts compute rate-coverage sketches]
    \label{cor:aligned-linear-chart-rate-coverage-sketch}
    Work in the setting of
