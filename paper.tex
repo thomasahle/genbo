@@ -100596,6 +100596,108 @@ amplified in the next proposition.
    additive tail \((TTG6)\).
 \end{proof}
 
+\begin{corollary}[Gaussian tail block support audit]
+   \label{cor:gaussian-tail-block-support-audit}
+   Work in the setting of \cref{cor:two-temperature-gibbs-block-support}.  Suppose
+   the block is a finite quadrature for a centered bivariate Gaussian score pair
+   \((X,Y)\) with unit variances and correlation \(\eta\in[-1,1]\): the query
+   Gibbs score is \(\phi=X\), the storage or near-success score is \(Y\), and
+   \(E=\{Y\ge\theta\}\).  More precisely, for some constant \(C_0\ge1\) and
+   \(r\in\{1,2\}\),
+   \[
+      C_0^{-1}N\,\E e^{r\beta X}\mathbf 1_{\{Y\ge\theta\}}
+      \le
+      Z_E(r\beta)
+      \le
+      C_0N\,\E e^{r\beta X}\mathbf 1_{\{Y\ge\theta\}},
+      \tag{GTB1}
+   \]
+   where \(N\) is the block label count.  Then
+   \[
+      \log N_2^E
+      =
+      \log N-\beta^2
+      +2\log\overline\Phi(\theta-\eta\beta)
+      -\log\overline\Phi(\theta-2\eta\beta)
+      +O(\log C_0).
+      \tag{GTB2}
+   \]
+   Thus the aggregate-sign support audit on this block is the explicit scalar
+   inequality
+   \[
+      \log N-\beta^2
+      +2\log\overline\Phi(\theta-\eta\beta)
+      -\log\overline\Phi(\theta-2\eta\beta)
+      \ge
+      \log N_{\rm req}+O(\log C_0).
+      \tag{GTB3}
+   \]
+
+   Two regimes are especially useful.  If \(\eta\beta\ge0\) and
+   \(\theta-\eta\beta=O(1)\), then
+   \[
+      \log N_2^E=\log N-\beta^2+O_{\theta-\eta\beta}(1+\log C_0).
+      \tag{GTB4}
+   \]
+   Even an easy near-success event therefore leaves only the usual Gibbs Renyi
+   support \(Ne^{-\beta^2}\), up to constants.  If instead
+   \(\theta-2\eta\beta\ge1\), then Mills' estimates give
+   \[
+      \log N_2^E
+      =
+      \log N
+      -(1-\eta^2)\beta^2
+      -\frac{\theta^2}{2}
+      +O(\log(2+\theta+|\beta|)+\log C_0).
+      \tag{GTB5}
+   \]
+   Hence a hard storage tail aligned with the query score \((\eta=1)\) leaves
+   approximately the number of base labels above the tail, \(N e^{-\theta^2/2}\);
+   any imperfect alignment pays the additional hidden-coordinate loss
+   \(e^{-(1-\eta^2)\beta^2}\).
+
+   Consequently a Gaussian, Construction-A, trellis, or lattice block whose
+   theta/residue partition functions locally match this Gaussian model can pass
+   the pseudo-random aggregate-sign branch only if \((GTB3)\) holds on enough
+   route-occupied blocks.  Failure of \((GTB3)\) is a concrete support collapse,
+   not a randomness defect in the sign hash.
+\end{corollary}
+
+\begin{proof}
+   Exponential tilting of a bivariate Gaussian gives, for \(r=1,2\),
+   \[
+      \E e^{r\beta X}\mathbf 1_{\{Y\ge\theta\}}
+      =
+      e^{r^2\beta^2/2}\overline\Phi(\theta-r\eta\beta).
+      \tag{GTB6}
+   \]
+   Substituting the two estimates from \((GTB1)\) and \((GTB6)\) into
+   \[
+      N_2^E=\frac{Z_E(\beta)^2}{Z_E(2\beta)}
+   \]
+   from \cref{cor:two-temperature-gibbs-block-support} gives \((GTB2)\), and
+   \((GTB3)\) is just the requested lower bound on this quantity.
+
+   If \(\eta\beta\ge0\) and \(\theta-\eta\beta=O(1)\), then both
+   \(\overline\Phi(\theta-\eta\beta)\) and
+   \(\overline\Phi(\theta-2\eta\beta)\) are bounded above and below by constants
+   depending only on \(\theta-\eta\beta\), proving \((GTB4)\).  If
+   \(\theta-2\eta\beta\ge1\), then both Gaussian-tail arguments in \((GTB2)\)
+   are nonnegative and Mills' formula
+   \[
+      \log\overline\Phi(u)=-u^2/2+O(\log(2+u))
+      \qquad(u\ge0)
+   \]
+   applies.  The quadratic part is
+   \[
+      -\beta^2-(\theta-\eta\beta)^2
+      +\frac{(\theta-2\eta\beta)^2}{2}
+      =
+      -(1-\eta^2)\beta^2-\frac{\theta^2}{2},
+   \]
+   which proves \((GTB5)\).
+\end{proof}
+
 \begin{corollary}[Aligned linear charts compute rate-coverage sketches]
    \label{cor:aligned-linear-chart-rate-coverage-sketch}
    Work in the setting of
