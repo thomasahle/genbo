@@ -110008,6 +110008,109 @@ entropy budget]
    sampler and proposal bound.
 \end{proof}
 
+\begin{corollary}[Additive tuple masks: threshold overlap versus modular
+hashing]
+   \label{cor:additive-tuple-mask-overlap-modular-escape}
+   Let tuple records be \(c=(c_1,\ldots,c_k)\in\prod_{j=1}^k\mathcal C_j\).
+   The additive-threshold mask proposed by an auxiliary random score
+   \(M(c)=\sum_j m_j(c_j)\) is decodable by the same score machinery, but it is
+   not automatically a pairwise random subset of tuples.
+
+   In the Gaussian model, take \(m_j(a)\) independent \(N(0,1)\) variables and
+   retain \(c\) when \(M(c)\ge s\).  For two tuples \(c,d\), let
+   \[
+      r(c,d)=|\{j:c_j=d_j\}|,
+      \qquad
+      \rho(c,d)=\frac{r(c,d)}k,
+      \qquad
+      u=\frac{s}{\sqrt k}.
+      \tag{ATM1}
+   \]
+   Then \(M(c)/\sqrt k\) and \(M(d)/\sqrt k\) are standard Gaussians with
+   correlation \(\rho(c,d)\).  Therefore, if
+   \(\delta=\Pr[M(c)\ge s]=\bar\Phi(u)\), then for every fixed
+   \(0<\rho<1\),
+   \[
+      \Pr[M(c)\ge s,\ M(d)\ge s]
+      =
+      \exp\!\left\{-\frac{u^2}{1+\rho}+O_\rho(\log u)\right\}
+      =
+      \delta^{\,2/(1+\rho)+o_\rho(1)}
+      \tag{ATM2}
+   \]
+   for pairs with \(\rho(c,d)=\rho\), as \(u\to\infty\).  Thus a density
+   \(\delta=K^{-1}\) additive-threshold mask has effective pair-collision
+   constant
+   \[
+      \frac{\Pr[M(c)\ge s,\ M(d)\ge s]}{\delta^2}
+      =
+      K^{2\rho/(1+\rho)+o_\rho(1)}
+      \tag{ATM3}
+   \]
+   on such overlapping tuple pairs.  It is random enough only after an
+   overlap/effective-support audit like
+   \cref{cor:fixed-law-pairwise-sign-tail-sampler}; it is not a black-box
+   replacement for the complete-record pair-collision condition in
+   \((TCP3)\).
+
+   There is, however, an additive algebraic replacement that is genuinely
+   pairwise on complete tuples.  Let \(G\) be a finite abelian group of size
+   \(K\).  For each coordinate \(j\), choose an independent family
+   \(h_j:\mathcal C_j\to G\) such that for distinct labels \(a\ne b\) the pair
+   \((h_j(a),h_j(b))\) is uniform on \(G^2\).  Define
+   \[
+      H(c)=b+\sum_{j=1}^k h_j(c_j),
+      \qquad b\sim{\rm Unif}(G).
+      \tag{ATM4}
+   \]
+   Then for every distinct pair of complete tuples \(c\ne d\),
+   \[
+      \Pr[H(c)=H(d)]=\frac1K .
+      \tag{ATM5}
+   \]
+   Hence the modular additive mask supplies \(C_{\rm col}=1\) for the terminal
+   port terminalizer of
+   \cref{cor:terminal-collision-mask-port-terminalizer}.  The price is
+   algorithmic, not probabilistic: if \(H\) is exposed as a prefix state in a
+   branch-and-bound decoder, \cref{cor:port-transducer-width-dichotomy} says
+   that width \(K\) is paid unless the construction supplies a low-carry,
+   reset, quotient, or non-state-exposed sampler.  As a purely terminal
+   complete-record mask, no stronger randomness than \((ATM5)\) is needed.
+\end{corollary}
+
+\begin{proof}
+   The Gaussian-threshold calculation is immediate from covariance.  Each
+   \(M(c)\) has variance \(k\), and the two sums share exactly the
+   \(r(c,d)\) Gaussian coordinates where the tuples agree, so their covariance
+   is \(r(c,d)\).  This proves the correlation statement in \((ATM1)\).
+   The bivariate normal upper-tail saddle for fixed \(\rho\in(0,1)\) gives
+   \[
+      \Pr[X\ge u,Y\ge u]
+      =
+      \exp\!\left\{-\frac{u^2}{1+\rho}+O_\rho(\log u)\right\}
+   \]
+   for standard correlated Gaussians \(X,Y\) with correlation \(\rho\).  Since
+   \(\bar\Phi(u)=\exp\{-u^2/2+O(\log u)\}\), this gives \((ATM2)\), and
+   substituting \(\delta=K^{-1}\) gives \((ATM3)\).
+
+   For the modular hash, fix \(c\ne d\) and choose a coordinate \(j_0\) with
+   \(c_{j_0}\ne d_{j_0}\).  Condition on all coordinate hash families
+   \(h_j\) with \(j\ne j_0\), and on the value \(h_{j_0}(d_{j_0})\).  Since
+   \((h_{j_0}(c_{j_0}),h_{j_0}(d_{j_0}))\) is uniform on \(G^2\) and the
+   \(j_0\)-family is independent of the other coordinate families,
+   \(h_{j_0}(c_{j_0})\) remains uniform in \(G\).  Therefore
+   \[
+      H(c)-H(d)
+      =
+      h_{j_0}(c_{j_0})-h_{j_0}(d_{j_0})
+      +
+      \sum_{j\ne j_0}(h_j(c_j)-h_j(d_j))
+   \]
+   is uniform on \(G\), after conditioning on the remaining terms.  It is zero
+   with probability \(1/K\), proving \((ATM5)\).  The terminalizer and
+   state-width interpretations are exactly the cited corollaries.
+\end{proof}
+
 \begin{lemma}[Finite-family certificate for limited-independent sign masks]
    \label{lem:finite-family-limited-independence-sign-filter}
    Let \(\mathcal L\) be a finite family of query-visible tilted coordinate
