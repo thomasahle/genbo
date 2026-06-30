@@ -99384,6 +99384,178 @@ amplified in the next proposition.
    in \cref{cor:aggregate-sign-tail-avoids-checkpoint-toll}.
 \end{proof}
 
+\begin{corollary}[Bounded aggregate tails have logarithmic likelihood toll]
+   \label{cor:bounded-aggregate-tail-likelihood-toll}
+   Let \(P=\prod_{j=1}^hP_j\) be the native product law after any score-side
+   conditioning already charged to the unfiltered route law.  Let
+   \[
+      M(c)=\sum_{j=1}^hm_j(c_j),
+      \qquad |m_j|\le1,
+      \qquad F=\{M\ge s\}.
+      \tag{BAL1}
+   \]
+   For \(\lambda\ge0\), write
+   \[
+      \psi_j(\lambda)=\log\E_{P_j}e^{\lambda m_j(C_j)},
+      \qquad
+      \psi(\lambda)=\sum_{j=1}^h\psi_j(\lambda),
+      \tag{BAL2}
+   \]
+   and let \(Q_\lambda\) be the product tilt
+   \(dQ_\lambda/dP=e^{\lambda M-\psi(\lambda)}\).  Suppose
+   \[
+      A_\lambda=\frac{e^{\lambda s}P(F)}{e^{\psi(\lambda)}}\ge a>0,
+      \tag{BAL3}
+   \]
+   and that the saddlepoint reaches the threshold,
+   \[
+      \E_{Q_\lambda}M=s .
+      \tag{BAL4}
+   \]
+   Put \(A_0=\E_PM\), and assume the same variance-growth calibration as in
+   \cref{cor:polylog-density-sign-thinning-calibration}: for some
+   \(v_M>0\) and some density parameter \(K\ge e\),
+   \[
+      \frac{d}{d\theta}\E_{Q_\theta}M\ge v_Mh
+      \quad(0\le\theta\le\lambda),
+      \qquad
+      s-A_0\le C_s\sqrt{h\log K}.
+      \tag{BAL5}
+   \]
+   Let
+   \[
+      L_\lambda(c_1,\ldots,c_r)
+      =
+      \exp\!\left\{
+         \lambda\sum_{j\le r}m_j(c_j)
+         -
+         \sum_{j\le r}\psi_j(\lambda)
+      \right\}.
+      \tag{BAL6}
+   \]
+   Define
+   \[
+      R_{h,a}=\log\frac{2h}{a}.
+      \tag{BAL7}
+   \]
+   Then, under the filtered law \(P_F=P(\cdot\mid F)\),
+   \[
+      P_F\left[
+         \max_{0\le r\le h}\log_+L_\lambda(C_1,\ldots,C_r)
+         \le
+         B_{\rm like}
+      \right]\ge\frac12,
+      \tag{BAL8}
+   \]
+   where
+   \[
+      B_{\rm like}
+      =
+      \frac{C_s^2}{v_M}\log K
+      +
+      \sqrt{\frac{2C_s^2}{v_M^2}\log K\,R_{h,a}}
+      +
+      \frac{4\lambda}{3}R_{h,a}.
+      \tag{BAL9}
+   \]
+
+   Consequently, if the unfiltered route height obeys
+   \(H_P(v)\le H_0\) on the considered route family, then
+   \[
+      U_F(\varnothing)
+      \ge
+      \frac{a}{2}\exp\{-H_0-B_{\rm like}\}.
+      \tag{BAL10}
+   \]
+   In particular, when \(K\), \(h\), \(a^{-1}\), and \(e^{H_0}\) are
+   polylogarithmic in \(m\), \(\lambda=O(1)\), and \(H_0=O(\log\log m)\), the
+   aggregate tail loses only a polylogarithmic factor in saturated value.  This
+   is the positive bounded-increment case of the pseudo-random subset route:
+   the hash/sign sum is sampled at the terminal tilted law, and the only
+   near-side toll is the logarithmic likelihood maximum \((BAL8)\), not a
+   product of checkpoint losses or a reciprocal state width.
+\end{corollary}
+
+\begin{proof}
+   First note that \(P_F\) is dominated by \(Q_\lambda\) on \(F\):
+   for \(c\in F\),
+   \[
+      \frac{P_F(c)}{Q_\lambda(c)}
+      =
+      \frac{e^{\psi(\lambda)-\lambda M(c)}}{P(F)}
+      \le
+      \frac{e^{\psi(\lambda)-\lambda s}}{P(F)}
+      =
+      A_\lambda^{-1}
+      \le a^{-1}.
+      \tag{BAL11}
+   \]
+
+   Under \(Q_\lambda\), write
+   \[
+      X_j=\lambda m_j(C_j)-\psi_j(\lambda),
+      \qquad
+      \ell_r=\sum_{j\le r}X_j=\log L_\lambda(C_1,\ldots,C_r).
+      \tag{BAL12}
+   \]
+   Let \(d_j=\E_{Q_\lambda}X_j\), \(D_r=\sum_{j\le r}d_j\), and
+   \(D=\sum_jd_j\).  Since \(|m_j|\le1\), the centered variables
+   \(X_j-d_j\) have range at most \(2\lambda\) and variance at most
+   \(\lambda^2\operatorname{Var}_{Q_\lambda}m_j(C_j)\le\lambda^2\).  Hence
+   the total variance proxy is at most
+   \[
+      V\le\lambda^2h .
+      \tag{BAL13}
+   \]
+   Bernstein's inequality and a union bound over the \(h\) nonempty prefixes
+   give
+   \[
+      Q_\lambda\left[
+         \max_{0\le r\le h}(\ell_r-D_r)
+         >
+         \sqrt{2VR_{h,a}}+\frac{4\lambda}{3}R_{h,a}
+      \right]
+      \le
+      \frac a2 .
+      \tag{BAL14}
+   \]
+   Because \(D_r\le D\), the same event controls \(\max_r\ell_r\).
+
+   It remains to bound \(D\) and \(V\).  From \((BAL4)\),
+   \[
+      D=\lambda s-\psi(\lambda).
+      \tag{BAL15}
+   \]
+   Convexity gives \(\psi(\lambda)\ge\lambda A_0\), so
+   \[
+      D\le\lambda(s-A_0).
+      \tag{BAL16}
+   \]
+   Integrating the first inequality in \((BAL5)\) from \(0\) to \(\lambda\)
+   yields
+   \[
+      \lambda\le\frac{s-A_0}{v_Mh}
+      \le
+      \frac{C_s}{v_M}\sqrt{\frac{\log K}{h}}.
+      \tag{BAL17}
+   \]
+   Therefore
+   \[
+      D\le\frac{C_s^2}{v_M}\log K,
+      \qquad
+      V\le\lambda^2h\le\frac{C_s^2}{v_M^2}\log K.
+      \tag{BAL18}
+   \]
+   Substituting \((BAL18)\) into \((BAL14)\) gives a
+   \(Q_\lambda\)-failure probability at most \(a/2\) for the bound
+   \((BAL9)\).  The domination \((BAL11)\) turns this into
+   \(P_F\)-failure probability at most \(1/2\), proving \((BAL8)\).
+
+   Finally apply
+   \cref{cor:saddlepoint-prefix-tail-inflation} with \(\beta=0\),
+   \(h_*=1/2\), and \(B=H_0+B_{\rm like}\).  This gives \((BAL10)\).
+\end{proof}
+
 \begin{corollary}[Aligned linear charts compute rate-coverage sketches]
    \label{cor:aligned-linear-chart-rate-coverage-sketch}
    Work in the setting of
