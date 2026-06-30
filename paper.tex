@@ -112785,6 +112785,103 @@ entropy budget]
    The final two consequences are immediate from \((NPR3)\).
 \end{proof}
 
+\begin{corollary}[Frozen singleton pockets pay a score-loss exponent]
+   \label{cor:frozen-singleton-pocket-score-loss}
+   Work in the binary equal-weight Gaussian score model of
+   \cref{cor:binary-low-gap-frozen-chart}.  Let
+   \(F\subseteq[b]\) be a deterministic set of frozen coordinates, and fix
+   frozen bits \(\zeta_i\in\{0,1\}\), \(i\in F\), independently of the query
+   score.  Let \(M=\sum_i\max_a\phi_i(a)\) be the unrestricted coordinatewise
+   top score, and let \(M_F\) be the top score subject to the frozen
+   coordinates:
+   \[
+      M_F
+      =
+      \sum_{i\in F}\phi_i(\zeta_i)
+      +
+      \sum_{i\notin F}\max_a\phi_i(a).
+      \tag{FZP1}
+   \]
+   Then
+   \[
+      M-M_F
+      =
+      \sum_{i\in F}\delta_i\,
+      \mathbf1\{\zeta_i\ne a_i^\star\},
+      \tag{FZP2}
+   \]
+   where \(a_i^\star\) and \(\delta_i\) are as in \((BLG1)\).  There are
+   absolute constants \(c,C>0\) such that, for every \(f=|F|\ge1\),
+   \[
+      \Pr\left[
+         M-M_F\le c\frac f{\sqrt b}
+      \right]
+      \le
+      Ce^{-cf}.
+      \tag{FZP3}
+   \]
+
+   Consequently, if
+   \[
+      b=\lambda\log m+O(1),
+      \qquad
+      \beta^2\ge B_-\log m
+      \tag{FZP4}
+   \]
+   for fixed \(\lambda,B_->0\), and \(f\ge\epsilon b\), then with probability
+   \(1-e^{-\Omega_{\epsilon}(\log m)}\),
+   \[
+      \beta(M-M_F)
+      \ge
+      c_{\epsilon,\lambda,B_-}\log m .
+      \tag{FZP5}
+   \]
+
+   Thus singleton or otherwise query-independent frozen parity pockets cannot
+   be used as free polynomial quotient thinning.  Freezing \(f=\Theta(\log m)\)
+   binary coordinates buys at most the expected \(2^{-f}\) entropy reduction,
+   but at the ANN score temperature it also removes a polynomial factor from
+   the near top-score mass unless the activation/Fano accounting explicitly
+   pays the loss or the frozen bits are chosen by a query-dependent chart.  The
+   low-gap neutral-pocket mechanism must therefore obtain its hidden entropy
+   from coordinates selected after seeing the small gaps, not from a large
+   collection of pre-frozen singleton checks.
+\end{corollary}
+
+\begin{proof}
+   Equation \((FZP2)\) follows directly from the definition of the coordinate
+   top symbols: only frozen coordinates can lose score, and coordinate \(i\)
+   loses exactly \(\delta_i\) iff the frozen bit is not the top bit.
+
+   In the equal-weight Gaussian model,
+   \[
+      \delta_i=\sqrt{2/b}\,|G_i|
+   \]
+   with iid standard normal \(G_i\)'s, and the top bit \(a_i^\star\) is an
+   independent fair bit.  Since the frozen bit \(\zeta_i\) is query-independent,
+   \(B_i=\mathbf1\{\zeta_i\ne a_i^\star\}\) is Bernoulli \(1/2\) and
+   independent of \(|G_i|\).  Hence the variables
+   \[
+      Y_i=|G_i|B_i
+   \]
+   are iid nonnegative variables with positive mean.  A standard Chernoff
+   bound for bounded-below truncations gives constants \(c,C>0\) such that
+   \[
+      \Pr\left[\sum_{i\in F}Y_i\le cf\right]\le Ce^{-cf}.
+      \tag{FZP6}
+   \]
+   Multiplying by \(\sqrt{2/b}\) proves \((FZP3)\).  Under \((FZP4)\) and
+   \(f\ge\epsilon b\), this gives
+   \[
+      \beta(M-M_F)
+      \ge
+      c\beta\frac f{\sqrt b}
+      \ge
+      c_{\epsilon,\lambda,B_-}\log m,
+   \]
+   after adjusting the constant, which proves \((FZP5)\).
+\end{proof}
+
 \begin{corollary}[Support collapse blocks bounded additive masks]
    \label{cor:support-collapse-blocks-bounded-additive-masks}
    Work with one conditional near block law \(P^E_j\) from
