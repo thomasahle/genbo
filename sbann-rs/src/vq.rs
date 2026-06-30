@@ -47,6 +47,10 @@ pub static PROF_RERANK_NS: std::sync::atomic::AtomicU64 = std::sync::atomic::Ato
 /// SBANN_ROUTE_SDIM: score only the first N dims of each centroid at the FINEST routing level (the 78%-of-
 /// routing term, P139). 0 = full d (exact). Approximate finest routing -> cheaper routing if recall@p holds.
 pub static ROUTE_SDIM: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+/// SBANN_ROUTE_ADC: 4-bit ADC scoring of the finest centroids (recall gate for #3). ROUTE_ADC_KEEP = how
+/// many ADC-top children to exact-rescore (default 1024). Built only when the flag is set at train time.
+pub static ROUTE_ADC: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+pub static ROUTE_ADC_KEEP: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(1024);
 
 thread_local! {
     // reused open-addressing table for the per-query pool dedup (a0>1). Entries: (orig_key, best_approx,
@@ -458,6 +462,11 @@ pub struct HierRouter {
     // FIRST cell's residual direction (ScaNN SOAR loss ‖rj‖²+λ(rj·r̂0)²) instead of next-nearest by L2 —
     // covers orthogonal directions so fewer probes are needed at a given recall. 0 = off. Set via set_soar.
     soar: f32,
+    // ADC routing (#3, SBANN_ROUTE_ADC): a 4-bit PQ over the FINEST centroids so the finest-level expansion
+    // (the 78%-of-routing term, P139) is scored by cheap ADC instead of exact i8 L2, then only the ADC-top
+    // ROUTE_ADC_KEEP are exact-rescored. radc=codebook, rcodes=kf*m codes. Empty unless built with the flag.
+    radc: Option<pq::Pq>,
+    rcodes: Vec<u8>,
 }
 
 impl HierRouter {
@@ -580,7 +589,19 @@ impl HierRouter {
         let _ = &point_cell;
         // quantize all levels to i8 (after any EM refinement)
         let cent: Vec<Vec<i8>> = centf_lv.iter().map(|cf| cf.iter().map(|&v| (v * 127.0).round().clamp(-127.0, 127.0) as i8).collect()).collect();
-        HierRouter { d, mu, kf, levels, cent, child, beam: beams.to_vec(), soar: 0.0 }
+        // optional ADC routing codebook over the FINEST centroids (recall gate for #3)
+        let (radc, rcodes) = if ROUTE_ADC.load(std::sync::atomic::Ordering::Relaxed) && d % 4 == 0 {
+            let cf = &cent[levels - 1];
+            let kfn = cf.len() / d;
+            let rows: Vec<&[i8]> = (0..kfn).map(|i| &cf[i * d..i * d + d]).collect();
+            let pq = pq::Pq::train(&rows, d, 2, 8); // dpb=2 -> m=d/2 (even for d%4==0)
+            let m = pq.m;
+            let mut codes = vec![0u8; kfn * m];
+            for i in 0..kfn { pq.encode(&cf[i * d..i * d + d], &mut codes[i * m..i * m + m]); }
+            println!("  [ROUTE_ADC: 4-bit PQ over {kfn} finest centroids, m={m}]");
+            (Some(pq), codes)
+        } else { (None, Vec::new()) };
+        HierRouter { d, mu, kf, levels, cent, child, beam: beams.to_vec(), soar: 0.0, radc, rcodes }
     }
 
     /// 2-level hierarchical k-means (back-compat wrapper): C0 coarse → Kf/C0 fine per coarse.
@@ -616,7 +637,7 @@ impl HierRouter {
         for (newpos, &oldj) in order.iter().enumerate() {
             cf[newpos * d..newpos * d + d].copy_from_slice(&cf0[oldj as usize * d..oldj as usize * d + d]);
         }
-        HierRouter { d, mu, kf, levels: 2, cent: vec![c0, cf], child: vec![gstart, Vec::new()], beam: vec![b0], soar: 0.0 }
+        HierRouter { d, mu, kf, levels: 2, cent: vec![c0, cf], child: vec![gstart, Vec::new()], beam: vec![b0], soar: 0.0, radc: None, rcodes: Vec::new() }
     }
 
     /// Enable SOAR build-time spilled assignment with penalty λ (`s`). 0 disables (default path).
@@ -638,19 +659,45 @@ impl HierRouter {
         if b > 0 && b < cd.len() { cd.select_nth_unstable(b - 1); cd.truncate(b); }
         let mut sel: Vec<u32> = cd.iter().map(|&(_, c)| c).collect();
         fd.clear();
+        // ADC routing (#3): at the finest level, score children by 4-bit ADC (LUT+codes), keep the ADC-top
+        // ROUTE_ADC_KEEP, then EXACT-rescore only those -> cheap finest scoring if recall holds.
+        let adc = ROUTE_ADC.load(std::sync::atomic::Ordering::Relaxed) && self.radc.is_some();
+        let adc_lut: Vec<i8> = if adc { self.radc.as_ref().unwrap().query_lut(qn) } else { Vec::new() };
+        let adc_m = self.radc.as_ref().map(|p| p.m).unwrap_or(0);
         for l in 1..self.levels {
+            let finest = l == self.levels - 1;
             let mut nd: Vec<(i32, u32)> = Vec::with_capacity(sel.len() * 8 + 16);
             for &p in &sel {
                 let (s, e) = (self.child[l - 1][p as usize] as usize, self.child[l - 1][p as usize + 1] as usize);
                 let nc = e - s;
                 if nc == 0 { continue; }
-                if scores.len() < nc { scores.resize(nc, 0); }
-                // finest level (the dominant routing term) may score a reduced dim prefix (SBANN_ROUTE_SDIM).
-                let sd = if l == self.levels - 1 && sdim > 0 && sdim < d { sdim } else { d };
-                simd::l2_i8_block(qn, &self.cent[l][s * d..e * d], nc, d, sd, &mut scores);
-                for (i, c) in (s..e).enumerate() { nd.push((scores[i], c as u32)); }
+                if finest && adc {
+                    for c in s..e {
+                        let code = &self.rcodes[c * adc_m..c * adc_m + adc_m];
+                        let mut sc = 0i32;
+                        for sub in 0..adc_m { sc += adc_lut[sub * 16 + code[sub] as usize] as i32; }
+                        nd.push((sc, c as u32));
+                    }
+                } else {
+                    if scores.len() < nc { scores.resize(nc, 0); }
+                    // finest level (the dominant routing term) may score a reduced dim prefix (SBANN_ROUTE_SDIM).
+                    let sd = if finest && sdim > 0 && sdim < d { sdim } else { d };
+                    simd::l2_i8_block(qn, &self.cent[l][s * d..e * d], nc, d, sd, &mut scores);
+                    for (i, c) in (s..e).enumerate() { nd.push((scores[i], c as u32)); }
+                }
             }
-            if l == self.levels - 1 { *fd = nd; return; }
+            if finest {
+                if adc {
+                    let keep = ROUTE_ADC_KEEP.load(std::sync::atomic::Ordering::Relaxed).min(nd.len());
+                    if keep > 0 && keep < nd.len() { nd.select_nth_unstable(keep - 1); nd.truncate(keep); }
+                    for ent in nd.iter_mut() {
+                        let c = ent.1 as usize;
+                        ent.0 = simd::l2_i8(qn, &self.cent[l][c * d..c * d + d]);
+                    }
+                }
+                *fd = nd;
+                return;
+            }
             let b = self.beam[l].min(nd.len());
             if b > 0 && b < nd.len() { nd.select_nth_unstable(b - 1); nd.truncate(b); }
             sel = nd.iter().map(|&(_, c)| c).collect();

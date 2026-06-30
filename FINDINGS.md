@@ -2293,6 +2293,19 @@ P146. (t_surv sweep: engine rerank depth ALREADY well-tuned (TMUL=8 = recall pla
     don't convert to wall-clock -> verify count->wall-clock via A/B. Next after #3: LeanVec (OOD), fused
     scan+topk, drop-raw-copy + Streaming (per user's approved batch).
 
+P147. (*** #3 ADC-ROUTING GATE PASSES: 4-bit ADC of the finest centroids is RECALL-NEUTRAL -> fast kernel justified ***)
+    Built SBANN_ROUTE_ADC: train a 4-bit PQ (m=d/2) over the FINEST centroids at build; gather_fine ADC-scores
+    the finest children (LUT+codes), keeps ADC-top ROUTE_ADC_KEEP, exact-rescores ONLY those. msspacev 1M,
+    recall@10 (load-independent): EXACT 0.8850/0.9207/0.9460 (p64/128/256). ADC KEEP=256: 0.8842/0.9191/0.9393
+    (-0.001 to -0.007, p256 loss = KEEP<p). ADC KEEP=512: 0.8850/0.9206/0.9461 == EXACT (within 0.0001) ->
+    RECALL-NEUTRAL. So ADC-rank the ~1536 finest children, exact only ~512 = 3x fewer exact L2 at the finest
+    level (the 78%-of-routing term) with ZERO recall loss. (The dim-drop probe P146 failed; ADC keeps all dims
+    at 4-bit -> works, confirming the two approximations differ.) *** GATE PASSED. The committed path is SCALAR
+    ADC (50 lookups/child) so it is currently SLOWER (gate = correctness, not speed); the win needs the vpshufb
+    kernel: re-layout rcodes into 16-cell subspace-major blocks (like data blocks) + block_adc_i8 scan, 16
+    centroids/instr. Expected ~1.3-1.5x total on msspacev (routing 46%). Measurable load-independently via the
+    route-time FRACTION (SBANN_PROFILE) -- not just wall-clock. NEXT: the vpshufb ADC routing kernel.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
