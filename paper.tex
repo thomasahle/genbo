@@ -106109,6 +106109,150 @@ tax]
    \(\beta=\Theta_c(\log m)\) and \(d\ge\kappa\log\log m\) gives \((QND5)\).
 \end{proof}
 
+\begin{corollary}[Query-centered lens reporters close an affinity skeleton]
+   \label{cor:query-centered-lens-skeleton-compiler}
+   Work in the port-skeleton setting of
+   \cref{cor:average-affinity-leader-skeleton}.  At each nonunit skeleton state
+   \(s\), let \(m_s\ge2\) be the local resident count and
+   \(L_s=\log m_s\).  Suppose the state has a compact query-centered lens
+   sampler, implemented by a code, lattice, trellis, quotient bucket, or
+   responsibility reporter, with the following certified one-trial properties.
+   For the local useful near witness or leader \(p_s\), one sampled bucket
+   reports a valid outgoing port with probability at least
+   \[
+      h_s\ge m_s^{-\rho_c}L_s^{-A_0},
+      \tag{QLS1}
+   \]
+   and its expected number of emitted invalid residents is at most
+   \[
+      f_s\le m_s^{1-\Gamma_c+o(1)}L_s^{A_f},
+      \qquad
+      \Gamma_c=\frac{(2c-1)^2}{2c^2-1}>1.
+      \tag{QLS2}
+   \]
+   One trial has query/sampling/reporter work \(T_s\).  These hypotheses are
+   exactly the single-state spectrum supplied by
+   \cref{cor:query-centered-monte-carlo-lens-activation}, after replacing raw
+   labels by a compact sampler and using the marked-responsibility audit to
+   count emitted residents.
+
+   Choose miss targets \(0<\varepsilon_s\le1/2\), and independently repeat the
+   local sampler
+   \[
+      R_s=
+      \left\lceil h_s^{-1}\log\frac1{\varepsilon_s}\right\rceil
+      \tag{QLS3}
+   \]
+   times whenever state \(s\) is reached.  Quotient repeated reports by their
+   verified outgoing leader/port, and use their marginal reporting
+   probabilities as the outgoing affinities for the affinity-proportional route
+   law.  Then the useful outgoing affinity at state \(s\) obeys
+   \[
+      \Omega_s\ge1-\varepsilon_s,
+      \tag{QLS4}
+   \]
+   and therefore
+   \[
+      W(r_{s_0})
+      \ge
+      \frac12\,
+      \frac{\exp(-4\sum_s\pi_s\varepsilon_s)}{L(s_0)},
+      \tag{QLS5}
+   \]
+   where \(\pi_s=\Pr_{\Lambda}[s\prec V]\) is the occupation mass under the
+   resulting affinity-proportional law and \(L(s_0)\) is the contracted
+   unit-region denominator from \cref{cor:average-affinity-leader-skeleton}.
+
+   The route-local expected reporter work is bounded by
+   \[
+      \sum_s\pi_sR_sT_s
+      \le
+      \sum_s\pi_sT_s
+      +
+      \sum_s
+      \pi_sT_s\,m_s^{\rho_c}L_s^{A_0}
+      \log\frac1{\varepsilon_s},
+      \tag{QLS6}
+   \]
+   up to fixed constant factors, and the corresponding expected invalid
+   emissions are at most
+   \[
+      \sum_s\pi_sR_sf_s
+      \le
+      \sum_s
+      \pi_s\,
+      m_s^{\rho_c+1-\Gamma_c+o(1)}
+      L_s^{A_0+A_f}
+      \log\frac1{\varepsilon_s}.
+      \tag{QLS7}
+   \]
+   Since \(\Gamma_c>1\), the exponent in \((QLS7)\) is strictly below
+   \(\rho_c\) on every polynomial-size local state.
+
+   Consequently, if \(L(s_0)=\log^{O_c(1)}n\) and the work sum in
+   \((QLS6)\) is charged by the existing budget or fractional allocation within
+   \(n^{\rho_c}\log^{O_c(1)}n\), then this contracted skeleton satisfies the
+   value clause of \cref{asm:aggregate-value-delivery}.  In the common case
+   where every successful skeleton route has at most
+   \(H=\log^{O_c(1)}n\) nonunit states, taking
+   \(\varepsilon_s=(H+1)^{-2}\) gives
+   \(\sum_s\pi_s\varepsilon_s=O(1)\) and costs only an additional
+   \(O(\log H)\) factor in \((QLS6)\)--\((QLS7)\).
+
+   The obstruction isolated by
+   \cref{cor:raw-lens-net-discretization-barrier} is precisely why the sampler
+   in this corollary must be compact and aggregate: the \(m_s^{\rho_c}\)
+   repetitions are allowed, but storing a separate raw tangency-net bucket for
+   every possible useful port is not.
+\end{corollary}
+
+\begin{proof}
+   At state \(s\), the probability that all \(R_s\) independent trials miss the
+   useful port is at most
+   \[
+      (1-h_s)^{R_s}
+      \le
+      \exp(-R_sh_s)
+      \le
+      \varepsilon_s,
+   \]
+   proving that some useful port is reported with probability at least
+   \(1-\varepsilon_s\).  The affinity-proportional edge set is obtained by
+   merging repeated reports of the same verified outgoing port.  Thus the
+   useful-report event is the union of the useful port events, and the union
+   bound gives
+   \[
+      1-\varepsilon_s
+      \le
+      \Pr[\text{some useful port is reported}]
+      \le
+      \sum_{e\in E_s}\omega_e
+      =
+      \Omega_s ,
+   \]
+   proving \((QLS4)\).
+
+   Since \(\Omega_s\ge1-\varepsilon_s\) and
+   \(\varepsilon_s\le1/2\),
+   \[
+      \log_+\frac1{\Omega_s}\le2\varepsilon_s .
+   \]
+   Averaging along the affinity-proportional route law gives
+   \[
+      \E_{\Lambda}\sum_{s\prec V}\log_+\frac1{\Omega_s}
+      \le
+      2\sum_s\pi_s\varepsilon_s .
+   \]
+   Applying \cref{cor:average-affinity-leader-skeleton} with
+   \(B=2\sum_s\pi_s\varepsilon_s\) proves \((QLS5)\).
+
+   The work bound \((QLS6)\) is the occupation-weighted sum of \(R_sT_s\),
+   using \(R_s\le1+h_s^{-1}\log(1/\varepsilon_s)\) and \((QLS1)\).  The
+   invalid-emission bound \((QLS7)\) is the same calculation with \(f_s\) in
+   place of \(T_s\), followed by \((QLS1)\)--\((QLS2)\).  The final statements
+   are direct substitutions into \((QLS5)\)--\((QLS7)\).
+\end{proof}
+
 \begin{corollary}[Balanced checkpoints can absorb any fixed flat-volume excess]
    \label{cor:balanced-checkpoints-absorb-flat-volume-excess}
    Continue with the nearest-mesh scaled-GRS window of
