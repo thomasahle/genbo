@@ -7967,6 +7967,100 @@ partition ignores the bias coordinates that certify the list size.
    hit bound.
 \end{proof}
 
+\begin{corollary}[Weighted difference-universal syndromes pay the bias in the checkpoint scalar]
+   \label{cor:weighted-difference-universal-checkpoint-thinning}
+   Work in the setting of
+   \cref{cor:difference-universal-syndrome-thinning}.  Let \(\nu\) be any
+   probability law on a fixed set \(A\subseteq\mathcal T\), independent of the
+   hash seed and of the random target \(\sigma\), and put
+   \[
+      Y_\sigma=\nu(R_\sigma),
+      \qquad
+      N_2(\nu)=\left(\sum_{i\in A}\nu(i)^2\right)^{-1}.
+      \tag{WDU1}
+   \]
+   Then
+   \[
+      \E Y_\sigma=|G|^{-1},
+      \qquad
+      \E Y_\sigma^2
+      \le
+      |G|^{-1}N_2(\nu)^{-1}
+      +C_\Delta |G|^{-2},
+      \tag{WDU2}
+   \]
+   and therefore
+   \[
+      \Prb[Y_\sigma>0]
+      \ge
+      \frac{N_2(\nu)}{|G|+C_\Delta N_2(\nu)}.
+      \tag{WDU3}
+   \]
+   In particular, if \(N_2(\nu)\ge\eta |G|\), then one biased syndrome bucket
+   hits the support of \(\nu\) with probability at least
+   \[
+      \frac{\eta}{1+C_\Delta\eta}.
+      \tag{WDU4}
+   \]
+
+   Thus the finite-state checkpoint scalar is stable under a
+   difference-universal hash only after charging the same bias constant.  For a
+   segment with squared-partition support \(Z_1^2/Z_2\) and syndrome range
+   \(K_s=|G|\), the local hit factor certified by
+   \cref{cor:finite-state-checkpoint-collision-test} becomes
+   \[
+      \frac{Z_1^2/Z_2}{K_s+C_\Delta Z_1^2/Z_2}.
+      \tag{WDU5}
+   \]
+   Exact pairwise independence is the special case \(C_\Delta=1\).  A
+   multiply-shift or biased algebraic family with \(C_\Delta=\polylog m\) may
+   be harmless for a terminal mask or for \(O(1)\) biased checkpoints, but it is
+   not automatically harmless on a long checkpoint chain: if the proof pays the
+   ceiling \(1/C_\Delta\) independently on
+   \(\Theta(\log m/\log\log m)\) segments, the loss is superpolylogarithmic.
+   Such a hash must therefore be either genuinely field-affine/carry-less on
+   the charged differences, used only where \(C_\Delta=1+o(1)\), or accompanied
+   by a separate repetition/aggregation charge.
+\end{corollary}
+
+\begin{proof}
+   Conditional on the hash functions, a fixed tuple lies in the random target
+   bucket with probability \(|G|^{-1}\), so \(\E Y_\sigma=|G|^{-1}\).  For two
+   distinct tuples \(i,i'\), the proof of
+   \cref{cor:difference-universal-syndrome-thinning} gives
+   \[
+      \Prb[i,i'\in R_\sigma]\le C_\Delta |G|^{-2}.
+   \]
+   Therefore
+   \[
+   \begin{aligned}
+      \E Y_\sigma^2
+      &=
+      \sum_i\nu(i)^2\Prb[i\in R_\sigma]
+      +
+      \sum_{i\ne i'}\nu(i)\nu(i')\Prb[i,i'\in R_\sigma]  \\
+      &\le
+      |G|^{-1}\sum_i\nu(i)^2
+      +C_\Delta |G|^{-2}
+      \sum_{i\ne i'}\nu(i)\nu(i')                         \\
+      &\le
+      |G|^{-1}N_2(\nu)^{-1}+C_\Delta |G|^{-2},
+   \end{aligned}
+   \]
+   proving \((WDU2)\).  Paley--Zygmund then gives
+   \[
+      \Prb[Y_\sigma>0]
+      \ge
+      \frac{|G|^{-2}}
+           {|G|^{-1}N_2(\nu)^{-1}+C_\Delta |G|^{-2}}
+      =
+      \frac{N_2(\nu)}{|G|+C_\Delta N_2(\nu)}.
+   \]
+   Substituting \(N_2(\nu)\ge\eta |G|\) proves \((WDU4)\), and applying the
+   identity \(N_2=Z_1^2/Z_2\) from
+   \cref{cor:finite-state-checkpoint-collision-test} gives \((WDU5)\).
+\end{proof}
+
 \begin{corollary}[Difference bias is only a repetition loss]
    \label{cor:difference-bias-repetition-loss}
    In the setting of
@@ -8181,6 +8275,11 @@ partition ignores the bias coordinates that certify the list size.
    that every biased machine hash is unusable; they say that ordinary
    power-of-two multiplication has no uniform proof when the relevant
    \(C_\Delta\) is as large as the alphabet or the retained syndrome range.
+   For weighted checkpoint laws the corresponding audit is
+   \cref{cor:weighted-difference-universal-checkpoint-thinning}: the same
+   \(C_\Delta\) appears inside the collision-support hit factor, so a
+   polylogarithmic bias is a terminal/repetition cost, not something that can
+   be multiplied over many lossy checkpoints for free.
 
    The algebraic form is useful for decoding.  The retained tuples satisfy one
    random linear parity equation
