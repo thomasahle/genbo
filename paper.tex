@@ -7715,24 +7715,207 @@ partition ignores the bias coordinates that certify the list size.
 
    The useful reading is therefore operational.  A code, lattice, or trellis
    construction may use the Shannon cap scalar on an intermediate continuation
-   layer only if the live continuation/value boundary keeps a
-   high-entropy tilted posterior after conditioning on future success.  The
-   next audit for a concrete construction is
+   layer only if the live continuation/value boundary keeps a high-entropy
+   tilted posterior after weighting the current segment by future success
+   mass.  As made exact in
+   \cref{lem:future-continuation-doob-square}, the next audit for a concrete
+   construction is
    \[
       \log N_2^{\rm live}(u)
       =
       H_{\rm live}(u)
-      +2\log p_1^{\rm future}(u)-\log p_2^{\rm future}(u),
+      +2\log\E_{P_{\rm live}}F_u
+      -\log\E_{P_{\rm live}^{[2]}}F_u^2,
       \tag{LCE1}
    \]
    where \(H_{\rm live}\) is the capped Shannon entropy from the current
-   segment and the two \(p\)-terms measure the future continuation boundary
-   under first and square temperatures.  If future endpoint conditioning
-   drives \((LCE1)\) below \(\log K_s+\log\eta_s\) on many live prefixes, the
-   checkpoint route fails for the same reason as the terminal barrier.  If it
-   stays above that threshold, pairwise local syndromes are already random
-   enough.
+   segment, \(F_u\) is the first-temperature future continuation mass after
+   the current segment, and \(P_{\rm live}^{[2]}\) is the squared current
+   segment law.  If future endpoint conditioning drives \((LCE1)\) below
+   \(\log K_s+\log\eta_s\) on many live prefixes, the checkpoint route fails
+   for the same reason as the terminal barrier.  If it stays above that
+   threshold, pairwise local syndromes are already random enough.
 \end{remark}
+
+\begin{lemma}[Future continuation mass enters through a Doob-square ratio]
+   \label{lem:future-continuation-doob-square}
+   Let \(A\) be the set of current checkpoint continuations from a live prefix
+   \(u\).  Give \(a\in A\) a positive current weight \(W(a)\), and let
+   \(F(a)\ge0\) be the first-temperature mass of all future completions after
+   choosing \(a\).  Define
+   \[
+      Z_1=\sum_{a\in A}W(a),
+      \qquad
+      Z_2=\sum_{a\in A}W(a)^2,
+      \qquad
+      P_1(a)=\frac{W(a)}{Z_1},
+      \qquad
+      P_2(a)=\frac{W(a)^2}{Z_2}.
+      \tag{FDM1}
+   \]
+   If the checkpoint syndrome is imposed on the current continuation \(a\)
+   before the future completion is chosen, the natural live witness law on
+   \(A\) is
+   \[
+      \nu_F(a)=
+      \frac{W(a)F(a)}{\sum_{b\in A}W(b)F(b)} .
+      \tag{FDM2}
+   \]
+   Its collision-effective support is exactly
+   \[
+      N_2(\nu_F)
+      =
+      \frac{Z_1^2}{Z_2}\,
+      \frac{\bigl(\E_{P_1}F\bigr)^2}{\E_{P_2}F^2}.
+      \tag{FDM3}
+   \]
+   Equivalently,
+   \[
+      \log N_2(\nu_F)
+      =
+      \log N_2(P_1)
+      +2\log\E_{P_1}F-\log\E_{P_2}F^2.
+      \tag{FDM4}
+   \]
+
+   Consequently, if \(F\) is \(\Delta\)-flat on \(A\), meaning that
+   \(F(a)>0\) and
+   \[
+      \sup_{a,b\in A}\left|\log F(a)-\log F(b)\right|\le\Delta,
+      \tag{FDM5}
+   \]
+   then
+   \[
+      \log N_2(\nu_F)\ge \log N_2(P_1)-2\Delta.
+      \tag{FDM6}
+   \]
+
+   If, in addition, the current segment has already been conditioned on a
+   broad upper cap so that its uncoupled live law \(P_{\rm cap}\) satisfies
+   \[
+      \log N_2(P_{\rm cap})\ge H_{\rm cap}-o(\log K_s),
+      \tag{FDM7}
+   \]
+   then the exact checkpoint audit after future weighting is
+   \[
+      \log N_2^{\rm live}(u)
+      =
+      H_{\rm cap}(u)
+      +2\log\E_{P_{\rm cap}}F_u
+      -\log\E_{P_{\rm cap}^{[2]}}F_u^2
+      -o(\log K_s),
+      \tag{FDM8}
+   \]
+   where \(P_{\rm cap}^{[2]}\) is the squared law of the capped current
+   segment.  Thus future endpoint or value information preserves the capped
+   Shannon scalar exactly when the Doob-square correction in \((FDM8)\) is not
+   more negative than the available checkpoint slack.
+\end{lemma}
+
+\begin{proof}
+   By definition,
+   \[
+      N_2(\nu_F)
+      =
+      \frac{\left(\sum_aW(a)F(a)\right)^2}
+           {\sum_a W(a)^2F(a)^2}.
+   \]
+   Factoring out \(Z_1\) in the numerator and \(Z_2\) in the denominator gives
+   \((FDM3)\), and taking logarithms gives \((FDM4)\).
+
+   Under \((FDM5)\), let \(F_{\min}\) and \(F_{\max}\) be the minimum and
+   maximum values of \(F\).  Then
+   \[
+      \E_{P_1}F\ge F_{\min},
+      \qquad
+      \E_{P_2}F^2\le F_{\max}^2,
+   \]
+   so the second factor in \((FDM3)\) is at least
+   \((F_{\min}/F_{\max})^2\ge e^{-2\Delta}\).  This proves \((FDM6)\).
+
+   Finally apply \((FDM4)\) with \(P_1=P_{\rm cap}\), replace
+   \(\log N_2(P_{\rm cap})\) by \((FDM7)\), and note that the squared law of
+   \(P_{\rm cap}\) is \(P_{\rm cap}^{[2]}\).  This proves \((FDM8)\).
+\end{proof}
+
+\begin{corollary}[Gaussian future windows are flat before the terminal layer]
+   \label{cor:gaussian-future-window-flatness}
+   Let \(R\ge1\), let \(\Gamma\subset\R^d\) be a fixed endpoint window of
+   positive volume contained in a ball of radius \(L\), and let
+   \(G_R\sim N(0,R I_d)\).  For a current continuation \(a\), let
+   \(Y(a)\in\R^d\) be its centered displacement from the linear tilted
+   trajectory, and define the future endpoint mass
+   \[
+      F(a)=\Prb[G_R\in \Gamma-Y(a)] .
+      \tag{GFW1}
+   \]
+   If a current witness family \(A\) satisfies
+   \[
+      \|Y(a)\|\le M
+      \qquad(a\in A),
+      \tag{GFW2}
+   \]
+   then \(F\) is \(\Delta\)-flat on \(A\), with
+   \[
+      \Delta\le C_L\frac{(1+M)^2}{R}.
+      \tag{GFW3}
+   \]
+   Consequently, in the setting of
+   \cref{lem:future-continuation-doob-square},
+   \[
+      \log N_2(\nu_F)
+      \ge
+      \log N_2(P_1)
+      -
+      C_L\frac{(1+M)^2}{R}.
+      \tag{GFW4}
+   \]
+
+   Thus a Gaussian endpoint boundary is not intrinsically fatal for an early
+   checkpoint.  If the current segment has typical centered displacement
+   \(M^2=O(\ell\log\ell)\) and the remaining tilted variance
+   \(R\gg \ell\log\ell\), future endpoint weighting costs only \(o(1)\) in
+   the local entropy scalar.  The terminal obstruction begins when the
+   remaining variance is comparable to the square of the current uncertainty;
+   this is exactly the regime covered by the terminal multiplicity barrier
+   \cref{cor:checkpoint-terminal-multiplicity-necessity}.
+\end{corollary}
+
+\begin{proof}
+   Let \(\varphi_R(x)=(2\pi R)^{-d/2}\exp(-\|x\|^2/(2R))\).  For a
+   displacement \(y\), write
+   \[
+      F(y)=\int_\Gamma \varphi_R(x-y)\,dx .
+      \tag{GFW5}
+   \]
+   Since \(\Gamma\) has positive volume, \(F(y)>0\).  Differentiating under
+   the integral gives
+   \[
+      \nabla_y\log F(y)
+      =
+      \frac1R
+      \frac{\int_\Gamma (x-y)\varphi_R(x-y)\,dx}
+           {\int_\Gamma\varphi_R(x-y)\,dx}.
+      \tag{GFW6}
+   \]
+   If \(\|y\|\le M\) and \(\Gamma\subseteq B(0,L)\), then every vector
+   \(x-y\) in the average has norm at most \(M+L\).  Thus
+   \[
+      \|\nabla_y\log F(y)\|\le\frac{M+L}{R}
+      \qquad(\|y\|\le M).
+      \tag{GFW7}
+   \]
+   The diameter of the ball \(\{\|y\|\le M\}\) is \(2M\), so
+   \[
+      |\log F(y)-\log F(y')|
+      \le
+      \frac{2M(M+L)}{R}
+      \le
+      C_L\frac{(1+M)^2}{R}
+   \]
+   for all \(\|y\|,\|y'\|\le M\).  This proves \((GFW3)\).  Substituting
+   \(\Delta\) into \((FDM6)\) gives \((GFW4)\).
+\end{proof}
 
 \begin{corollary}[Difference-universal syndromes suffice with a random bucket]
    \label{cor:difference-universal-syndrome-thinning}
