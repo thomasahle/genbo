@@ -2118,6 +2118,56 @@ P135. (*** FIX #5 LANDED: dedup heap + fast open-addr dedup-before-cap kill the 
     stop pinning RAYON_NUM_THREADS=8; rayon defaults to all 16 cores. NEXT: msspacev a0=1 regression check
     (the rerank heap any()-scan), then BRACKETED 10M OOD vs ScaNN both @16thr with fix#5 -- the real test.
 
+P136. (*** CLEAN 10M OOD at FULL parity: ScaNN ~2.4x ahead at QPS@90% -- OOD is structurally ScaNN's ***)
+    bracket_10m.log: ours(a0=3 fix#5 16thr, load 32) -> ScaNN(16thr, load 35) -> ours(load 60, drifted).
+    The pre-run and ScaNN are bracketed at MATCHED light load (32 vs 35) = the clean comparison; the post
+    drifted up so it only confirms drift came AFTER ScaNN.
+      ours a0=3 fix#5 @16thr: p256 0.8843@6680 p320 0.8940@5134 p384 0.9009@3878 p448 0.9058@3461 p576 0.9133@2405
+      ScaNN @16thr: lts50 0.6910@20876 lts100 0.8254@13513 lts150 0.8805@10488 lts250 0.9295@7325
+                    lts400 0.9567@4756 lts600 0.9768@3820 lts900 0.9872@2411 lts1400 0.9919@1835
+    QPS@90%: ours ~3878 (p384) vs ScaNN interp ~9229 => ScaNN ~2.4x. *** This OVERTURNS the rosy reading of
+    P131's "1.42x": that was because ScaNN ran at load 67 (suppressed). At LIGHT load + 16-thread parity
+    ScaNN's true QPS@90% is ~9229 and the real OOD gap is ~2.4x, ScaNN ahead. The 16-thread fix corrected
+    OUR under-threading (a measurement artifact: we'd run 8thr-us vs 16thr-ScaNN) but did NOT win OOD --
+    ScaNN's in-register AH scan + GEMM routing + low per-query overhead are ~2.4x faster at 10M OOD. ***
+    NOT-YET-TRIED faster QPS@90% configs (could narrow ~2.4x -> ~1.5x but unlikely to win): a0=1 / after-cap
+    dedup (1M showed 1.6x), scoped router GEMM (workflow #2), EM (reach 0.90 at lower p). LEADERBOARD TAKE:
+    OOD (text2image) is ScaNN's track. The thread fix's REAL value is on the EUCLIDEAN tracks (msspacev/
+    BIGANN/DEEP) where we ALREADY beat ScaNN (P117 ~1.5x) -- if that win was at 8thr-us vs 16thr-ScaNN, it
+    ~doubles at parity. NEXT: msspacev 16-vs-16 thread A/B + bracketed vs ScaNN (the win we can grow).
+
+P137. (*** msspacev at CLEAN parity: TIED at QPS@90% (not P117's confounded 1.5x win); ScaNN ahead at high recall ***)
+    msspacev_retest.log + msspacev_parity.log, 16-thread parity, the cleanest same-LOAD pair = ours-before-cap-a0=3
+    and ScaNN both at load ~47-48:
+      ours a0=3 (before-cap): p48 0.9000@14753 p64 0.9108@12444 p96 0.9263@9575 p128 0.9375@7298 p192 0.9500@5520
+      ScaNN @16: lts50 0.8585@14472 lts100 0.9221@16094 lts150 0.9486@10863 lts250 0.9681@6614 lts400 0.9814@5969
+    QPS@90%: ours 14753 vs ScaNN ~15526 (interp) = ScaNN 1.05x = TIED. recall0.925 ScaNN 1.68x; 0.95 ScaNN ~2x.
+    Threshold fix (after-cap a0=3, DEDUP_A0=4 default) at light load hit 0.95@10804 (vs before-cap 5520) -> should
+    push QPS@90% slightly AHEAD and narrow the high-recall gap to ~1.4x (couldn't measure same-load: after-cap ran
+    at load 28, before-cap+ScaNN at 47 -- the persistent box-load drift from the concurrent master agent). a0=1 caps
+    at recall 0.8666@p256 (never reaches 0.90) -> multi-store (a0>=2) is REQUIRED to reach 0.90 efficiently.
+    *** CORRECTION: P117's "msspacev beats ScaNN ~1.5x" was LOAD-CONFOUNDED (ScaNN suppressed in that window), the
+    SAME P87->P110 mistake. At clean light-load 16-thread parity, ScaNN's true msspacev QPS@90% ~15.5-20k (vs P117's
+    ~11k). HONEST STANDING at parity: msspacev = TIED at QPS@90% (competitive), ScaNN ahead >=0.95; OOD = ScaNN ~2.4x
+    (P136). The thread fix corrected OUR under-threading but ScaNN-at-light-load is also fast -> no clean WIN anywhere
+    yet. *** LESSON (re-learned): NEVER trust a cross-window QPS win on this shared box; only same-load same-window
+    bracketed pairs. The lever to convert msspacev TIE->WIN = cut per-query overhead (scoped router GEMM, workflow #2:
+    our beam descent ~435K scalar MACs vs ScaNN's single GEMM; same MAC count, worse execution FORM).
+
+P138. (threshold fix = modest; box load noise now EXCEEDS the effects we're chasing -> measurement impasse)
+    thresh_ab.log, msspacev a0=3, "back-to-back" after-cap vs before-cap -- but load drifted 33->44 mid-A/B:
+      after-cap: p96 0.9251@13415 p128 0.9365@12387 p192 0.9496@6582 p256 0.9576@5945
+      before-cap: p96 0.9263@8414 p128 0.9375@7642 p192 0.9500@5681 p256 0.9576@4740
+    Ratio 1.16-1.59x but ~1.33x of that is the load delta -> true after-cap savings ~1.0-1.2x (modest). Recall
+    identical (-0.001) = threshold fix safe. *** KEY: even a back-to-back A/B is load-confounded now; QPS
+    variance on this shared box (concurrent master agent) >> the 1.1-1.2x effects remaining. Only RECALL
+    (load-independent) and ~2x+ effects are reliably measurable. *** IMPASSE: the remaining ScaNN gaps (OOD
+    QPS 2.4x; msspacev high-recall ~1.5-2x) are SCAN/ROUTING EXECUTION-EFFICIENCY gaps (ScaNN's in-register AH
+    + GEMM routing), not coverage (multi-store closed that). Closing them = matching ScaNN's low-level kernels
+    (substantial) AND is UNMEASURABLE on this box (load noise drowns ~1.1x gains). Recall headroom is exhausted
+    (at ScaNN coverage parity). So autonomous QPS micro-optimization has hit diminishing+unmeasurable returns
+    -> surfaced a strategic decision to the user (deep low-level kernel work vs consolidate vs new approach).
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT

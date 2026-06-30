@@ -483,6 +483,12 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
         let t_surv = (p * tm).max(tfloor);
         let mut best_dt = f64::INFINITY;
         let mut res: Vec<Vec<u32>> = Vec::new();
+        let prof = std::env::var("SBANN_PROFILE").is_ok();
+        if prof {
+            vq::PROF_ROUTE_NS.store(0, std::sync::atomic::Ordering::Relaxed);
+            vq::PROF_SCAN_NS.store(0, std::sync::atomic::Ordering::Relaxed);
+            vq::PROF_RERANK_NS.store(0, std::sync::atomic::Ordering::Relaxed);
+        }
         for _ in 0..reps.max(1) {
             let st = Instant::now();
             let r: Vec<Vec<u32>> = if batched {
@@ -502,6 +508,14 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
         let vtag = if vnni_ab { if vm { " VNNI" } else { " AVX2" } } else { "" };
         let ltag = if lut_ab { if lm { " i8" } else { " i16" } } else { "" };
         println!("  p={p:5} t={tm:3}{ltag}{vtag}: recall@10={:.4}  QPS={:.0} (best/{reps})", hit as f64 / (nq * 10) as f64, nq as f64 / dt);
+        if prof {
+            let r = vq::PROF_ROUTE_NS.load(std::sync::atomic::Ordering::Relaxed) as f64;
+            let s = vq::PROF_SCAN_NS.load(std::sync::atomic::Ordering::Relaxed) as f64;
+            let k = vq::PROF_RERANK_NS.load(std::sync::atomic::Ordering::Relaxed) as f64;
+            let tot = (r + s + k).max(1.0);
+            println!("      [profile] route {:.1}%  scan {:.1}%  rerank {:.1}%  (sum {:.0}ms over {reps} reps)",
+                100.0 * r / tot, 100.0 * s / tot, 100.0 * k / tot, (r + s + k) / 1e6);
+        }
        }
        }
       }
@@ -805,6 +819,7 @@ fn main() {
     if std::env::var("SBANN_IP").is_ok() { vq::IP_MODE.store(true, std::sync::atomic::Ordering::Relaxed); }
     if std::env::var("SBANN_POOLDEDUP").is_ok() { vq::POOLDEDUP.store(true, std::sync::atomic::Ordering::Relaxed); }
     if let Ok(s) = std::env::var("SBANN_DEDUP_A0") { if let Ok(v) = s.parse::<usize>() { vq::DEDUP_A0.store(v, std::sync::atomic::Ordering::Relaxed); } }
+    if std::env::var("SBANN_PROFILE").is_ok() { vq::PROFILE.store(true, std::sync::atomic::Ordering::Relaxed); }
     if std::env::var("SBANN_NOLUT16").is_ok() { vq::LUT16_OFF.store(true, std::sync::atomic::Ordering::Relaxed); }
     if std::env::var("SBANN_FASTSCAN").is_ok() {
         assert!(pq::selftest_i8_fast(50) && pq::selftest_i8_fast(100), "fast-scan kernel != scalar!");

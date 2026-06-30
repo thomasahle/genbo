@@ -38,6 +38,12 @@ pub static POOLDEDUP: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicB
 /// (1M OOD a0=3 = -0.003) but avoids the per-query dedup cost on the QPS@90% / msspacev champion configs.
 /// a0 >= this uses the correct before-cap dedup (needed at heavy duplication, e.g. a0>=6). Default 4.
 pub static DEDUP_A0: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(4);
+/// SBANN_PROFILE: accumulate per-component query time (nanos) to see where the 10M query goes
+/// (route vs scan vs rerank). Load-robust (report the FRACTIONS, not absolute). main.rs prints+resets.
+pub static PROFILE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+pub static PROF_ROUTE_NS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+pub static PROF_SCAN_NS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+pub static PROF_RERANK_NS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 
 thread_local! {
     // reused open-addressing table for the per-query pool dedup (a0>1). Entries: (orig_key, best_approx,
@@ -1210,7 +1216,10 @@ impl Index {
     }
 
     pub fn search(&self, ds: &I8Bin, q: &[i8], p: usize, t: usize, k: usize) -> Vec<u32> {
+        let prof = PROFILE.load(std::sync::atomic::Ordering::Relaxed);
+        let t0 = if prof { Some(std::time::Instant::now()) } else { None };
         let cells = self.router.probe(q, p);
+        if let Some(t0) = t0 { PROF_ROUTE_NS.fetch_add(t0.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed); }
         if RESID.load(std::sync::atomic::Ordering::Relaxed) && self.resid_pq.is_some() {
             // refine pool = t survivors; exact-rerank depth from SBANN_RR_DEPTH (default = t = no
             // shallowing); SBANN_RESID_REFINE=0 disables the 8-bit refine (plain-shallow baseline).
@@ -1290,6 +1299,8 @@ impl Index {
 
     /// Scan the given cells with the compressor, keep top-T by approx dist, exact-rerank to top-k.
     pub fn scan_rerank(&self, ds: &I8Bin, q: &[i8], cells: &[u32], t: usize, k: usize) -> Vec<u32> {
+        let prof = PROFILE.load(std::sync::atomic::Ordering::Relaxed);
+        let ts = if prof { Some(std::time::Instant::now()) } else { None };
         let ctx = self.comp.prepare_query(q);
         let need_rows = self.comp.needs_raw_rows();
         let mut pool: Vec<(i32, u32)> = Vec::with_capacity(8192);
@@ -1388,13 +1399,17 @@ impl Index {
         // SOAR multi-store (a0>1): dedup the pool by orig id BEFORE the cap so distinct survivors enter
         // rerank (deduping after the cap loses recall at high a0). a0==1 has no dups -> skip. The fast
         // reused open-addressing table replaces the per-query SipHash HashMap (the gap-widener, P134).
+        if let Some(ts) = ts { PROF_SCAN_NS.fetch_add(ts.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed); }
+        let tr = if prof { Some(std::time::Instant::now()) } else { None };
         if self.a0 >= DEDUP_A0.load(std::sync::atomic::Ordering::Relaxed) || POOLDEDUP.load(std::sync::atomic::Ordering::Relaxed) {
             dedup_pool_by_orig(&mut pool, &self.slot_orig);
         }
         let tt = t.min(pool.len());
         if tt > 0 { pool.select_nth_unstable(tt - 1); pool.truncate(tt); }
         let _ = ds;
-        rerank_contig(&self.raw, self.d, &self.slot_orig, q, &pool, k)
+        let out = rerank_contig(&self.raw, self.d, &self.slot_orig, q, &pool, k);
+        if let Some(tr) = tr { PROF_RERANK_NS.fetch_add(tr.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed); }
+        out
     }
 
     /// IDEA #4 refine path. Scan -> select top-`t_surv` by 4-bit ADC -> (optional) REFINE that pool
