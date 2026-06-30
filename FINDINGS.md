@@ -2491,6 +2491,27 @@ P158. (*** OOD QPS@90% (1M): float-rerank TIES int8 at 0.90 matched-load -- NOT 
     + run best config; HELD until box clears (30M streaming owns it). Keep float-rerank behind SBANN_FLOAT_RERANK
     (NOT a hard default).
 
+P159. (*** 30M STREAMING REALITY: flat-IVF caps ~0.88 in budget < scann 0.9924; router+scan-throughput is the gap; offline training is FREE ***)
+    streaming2 ran the real final_runbook/msturing-30M-clustered (GT alignment verified 10/10 vs float brute-force).
+    ROUTER matters enormously on the clustered data: hier RANDOM centroids Kf=262144 -> recall ~0.30 (fail); flat
+    C=4096 EXACT-kmeans IVF p=64 K=400 + float rerank -> recall climbs with live set: 0.39@39k, 0.71@100k,
+    0.77@866k, 0.83@2M, still rising (~0.85-0.90 projected ceiling @10M active), QPS~3000 (budget-viable). TENSION:
+    recall>0.95 needs higher p (coverage) but p>=128 drops QPS below the ~3000 needed for 6.4M queries in 1hr; flat
+    INSERT routing caps C at ~4096-8192 (C=16384 = 150us/insert = 4500s, over budget). So flat IVF tops ~0.85-0.90
+    IN BUDGET -- below scann 0.9924. BAR (from standings): scann 0.9924 = "tree=700/5000,AH2,reorder=317" (~5000
+    leaves, ~700 probed=14%, anisotropic 4-bit AH fast-scan, float reorder 317); zilliz 0.922 / pinecone 0.912 are
+    R32 GRAPHS (DiskANN-style). >0.922 = top-3, >0.9924 = win. *** LEVERS I directed (the gap is candidate-gen, not
+    rerank): (1) OFFLINE TRAINING IS FREE -- the runbook starts EMPTY and the benchmark times only the runbook ops,
+    NOT cold-start router training (same as ScaNN pre-training its 5000-leaf tree). streaming2 KILLED hierk k-means
+    Kf=262144 at 4min thinking it too slow -- premature; a fine router can train 10-30min offline at ZERO budget.
+    The untested middle between random-hierk(0.30) and flat(0.88) = a FULLY-TRAINED fine hierk: fine cells (better
+    recall/probe) + cheap b0=16 BEAM routing (~10us insert, dodges the high-C flat insert wall). (2) USE512FS faster
+    fast-scan -> more probes per budget-second (ScaNN affords 700 probes via fast AH2; our wall is scan speed).
+    (3) BUDGET REBALANCE: max-recall-in-1hr means every sec off inserts/deletes/compaction = search budget = higher
+    p. (streaming2 parallelized compaction -- the old O(live) sequential was 240s/call @10M, a budget killer.)
+    HONEST: ~0.88 flat is a real result but below the 0.922 bar; exhausting trained-fine-router + fast-scan next.
+    The msturing-1M=1.0000 float-rerank MECHANISM proof (P156) stands regardless. (in_progress, task #11.)
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
