@@ -2434,6 +2434,26 @@ P155. (*** STREAMING TARGET CORRECTED: the scored dataset is msturing-30M-cluste
     proof returns >0.99 (don't download 12GB for a dead mechanism). OOD target unchanged (QPS@90% on text2image,
     scann=baseline). NEXT: agents' 1M float-rerank numbers (in flight) -> if >0.99, stage msturing-30M + run final_runbook.
 
+P156. (*** STREAMING MECHANISM PROVEN (float rerank -> 1.0000 @1M) + the SCORED runbook is SPEED-CONSTRAINED ***)
+    streaming2 PROVED the lever: msturing-1M simple_runbook, flat C=4096 apq4, p=4096 (full scan) + EXACT FLOAT
+    rerank of K=800 survivors (base1b.fbin/query100K.fbin) => avg recall@10 = **1.0000** vs the official float GT
+    (steps 1.0/1.0/1.0), vs leader 0.99786. The int8-only ceiling (0.9543) is FULLY closed by float rerank. p=1024
+    already gives 0.9922; K=800 is plenty (float top-10 sit at int8-rank ~1-50). Committed feat/streaming2 (FBin
+    reader + SBANN_RB_FBASE/FQUERY/RERANK_K/RB_GT). *** BUT that was simple_runbook@1M (3 searches) -- a MECHANISM
+    PROXY. The actually-SCORED streaming runbook = final_runbook.yaml over msturing-30M-clustered, and it is
+    SPEED-CONSTRAINED: 1280 ops = 320 insert (covering all 30M), 320 delete, **640 search steps each running the
+    FULL 10k query set = 6.4M query evals**, and the ENTIRE runbook must finish <1hr (the runner times all 1280
+    steps; recall@10 averaged over the 640 searches vs per-step GT). So p=4096 full-scan (~50 QPS) => ~35h =>
+    FAILS the cutoff (scores 0). Budget: ~30M inserts @~20k/s ~= 1500s, leaving ~2100s for 6.4M queries => need
+    ~3000 QPS sustained. WINNING RECIPE = scann's: FAST router (low p) + float rerank of a SMALL K (scann
+    reorder=317 -> 0.9924), maximizing recall SUBJECT TO the 1hr budget. *** DATA STAGED (this session): downloading
+    data/MSTuring-30M-clustered/30M-clustered64.fbin (11.4GB float, 29998994x100) + testQuery10K.fbin + static GT
+    clu_msturing30M_gt100; per-step streaming GT IS official-downloadable (final_runbook.yaml carries gt_url) via
+    benchmark/streaming/download_gt.py -> data/MSTuring-30M-clustered/29998994/final_runbook.yaml/step{N}.gt100
+    (640 files ~8MB each). NEXT (streaming2): wire final_runbook parser + quantize 30M->int8 + hierk Kf=262144
+    low-p + float-rerank K~200-400; report (a) full runbook wall <1hr? (b) avg recall@10 vs official per-step GT.
+    Target beat scann 0.9924 / leader 0.99786. Mem: 30M int8 3GB + ~10.3M active window, safe a0=1/2 under 26GB.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
