@@ -23605,6 +23605,131 @@ partition ignores the bias coordinates that certify the list size.
    which proves the displayed sufficient condition for \((FST3)\).
 \end{proof}
 
+\begin{corollary}[Finite-state trellis point sampler terminalizes rate states]
+   \label{cor:finite-state-trellis-point-sampler-terminalizer}
+   Continue in the marked trellis setting of
+   \cref{lem:marked-trellis-spectrum-verifier}, but use the trellis as the exact
+   quotient sampler inside one local rate-coverage skeleton state.  For one
+   query outcome \(B=B(q,Z)\), write the hidden path weight as \(W_B(\pi)\), put
+   \[
+      Z_B=\sum_{\pi}W_B(\pi),
+      \qquad
+      C_\pi=\{x\in S:S_x(\pi)\ge T\},
+      \qquad
+      c_\pi=|C_\pi|,
+      \tag{FQS1}
+   \]
+   and define the induced point coverage
+   \[
+      \pi_x(B)=\frac{1}{Z_B}\sum_{\pi:\ x\in C_\pi}W_B(\pi),
+      \qquad
+      L_B=\sum_{x\in S}\pi_x(B)
+      =
+      \frac1{Z_B}\sum_{\pi}c_\pi W_B(\pi).
+      \tag{FQS2}
+   \]
+   Suppose the quotient bucket storage satisfies
+   \[
+      \sum_{b\in\mathcal B}|C_b|
+      \le m^{1+\rho_c}\log^{O_c(1)}m,
+      \tag{FQS3}
+   \]
+   where \(\mathcal B\) is the quotient by equality of resident sets \(C_\pi\).
+   The raw incidence bound \(\sum_\pi c_\pi\le
+   m^{1+\rho_c}\log^{O_c(1)}m\) is a sufficient way to prove \((FQS3)\).
+
+   Assume the trellis admits a resident-count backward pass: with terminal
+   boundary \(c_\pi\) it computes
+   \[
+      Z_B^{\rm res}:=\sum_\pi c_\pi W_B(\pi)
+      \tag{FQS4}
+   \]
+   and samples a path \(\pi\) with probability
+   \(c_\pi W_B(\pi)/Z_B^{\rm res}\), in expected backward cost
+   \(T_{\rm res}(B)\) and polylogarithmic top-down cost per sampled path.  After
+   drawing such a path, choose a uniformly random resident from \(C_\pi\).
+
+   If for some \(\lambda_m=\log^{O_c(1)}m\) the point coverages satisfy the tilted
+   miss and load bounds
+   \[
+      \E_Z\!\left[
+         R_{p,q}(Z)e^{-\lambda_m\pi_p(B(q,Z))}
+      \right]
+      \le \frac{a_c}{8}
+      \tag{FQS5}
+   \]
+   for every promised near pair \(p,q\), and
+   \[
+      \E_Z\!\left[
+         T_{\rm res}(B(q,Z))
+         +
+         \lambda_m L_{B(q,Z)}\log^{O_c(1)}m
+      \right]
+      \le
+      D\,m^{\rho_c}\log^{O_c(1)}m,
+      \tag{FQS6}
+   \]
+   then this finite-state trellis supplies the implementation hypothesis of
+   \cref{cor:quotient-point-sampler-terminalizes-rate-coverage}.  Hence the local
+   skeleton state is terminalized with useful-port probability \(1-\delta_s\) and
+   work
+   \[
+      D\,m^{\rho_c}\log^{O_c(1)}m\log\frac1{\delta_s}.
+      \tag{FQS7}
+   \]
+
+   In the homogeneous Perron--Frobenius setting of
+   \cref{cor:finite-state-trellis-rate-test}, the scalar tests are explicit.
+   The storage condition follows from \((FST1)\).  The near miss follows from
+   \((FST3)\), or from the tilted mean gap \((FST4)\), after choosing
+   \(\lambda_m\) large enough within the polylogarithmic budget.  The only
+   additional online-load scalar beyond the sampled terminal test is the
+   resident-count partition bound \((FQS6)\).  Thus a concrete convolutional,
+   trellis, Construction-A, or recursive-lattice proposal has a finite
+   numerical audit: compute the marked near ratios, compute the resident-count
+   partition \(Z_B^{\rm res}/Z_B\), and check quotient storage.  If
+   \(Z_B^{\rm res}/Z_B=m^{\Omega(1)}m^{\rho_c}\) or the resident-count backward
+   pass has polynomial width, the overhead is a real code/lattice obstruction,
+   not a failure of terminal randomness.
+\end{corollary}
+
+\begin{proof}
+   The identity for \(L_B\) in \((FQS2)\) follows by exchanging the sums:
+   \[
+      \sum_{x\in S}\sum_{\pi:\ x\in C_\pi}W_B(\pi)
+      =
+      \sum_\pi |C_\pi|W_B(\pi).
+   \]
+   The resident-count backward pass samples \(\pi\) with probability
+   \(c_\pi W_B(\pi)/Z_B^{\rm res}\).  Conditional on this path, the uniform
+   resident draw gives
+   \[
+      \Pr[X=x\mid B]
+      =
+      \sum_{\pi:\ x\in C_\pi}
+      \frac{c_\pi W_B(\pi)}{Z_B^{\rm res}}\frac1{c_\pi}
+      =
+      \frac{\sum_{\pi:\ x\in C_\pi}W_B(\pi)}{Z_B^{\rm res}}
+      =
+      \frac{\pi_x(B)}{L_B}.
+   \]
+   This is exactly the resident-size-biased law \((EQP3)\) of
+   \cref{cor:quotient-point-sampler-terminalizes-rate-coverage}.
+
+   Conditions \((FQS3)\), \((FQS5)\), and \((FQS6)\) are respectively
+   \((EQP2)\), \((EQP4)\), and \((EQP5)\) for that corollary, with
+   \(T_{\rm back}=T_{\rm res}\).  Therefore the quoted terminalizer and work
+   bound \((FQS7)\) follow immediately.
+
+   Finally, \((FST1)\) implies the raw incidence bound \((MTS6)\), hence
+   \((FQS3)\), by the proof of
+   \cref{cor:finite-state-trellis-rate-test}.  Conditions \((FST3)\) and
+   \((FST4)\) give inverse-polylogarithmic, respectively overwhelming, lower
+   bounds on \(\pi_p(B)\); substituting such a bound into the exponential miss
+   term gives \((FQS5)\) with a suitable polylogarithmic \(\lambda_m\).  The
+   remaining scalar is exactly the expected resident-count work in \((FQS6)\).
+\end{proof}
+
 \begin{remark}[How to use the finite-state test]
    \label{rem:finite-state-trellis-test-use}
    \Cref{cor:finite-state-trellis-rate-test} is the scalar audit for a concrete
