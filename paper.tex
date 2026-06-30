@@ -107831,6 +107831,103 @@ intensity]
    \cref{cor:unnormalized-port-intensity-compiler}.
 \end{proof}
 
+\begin{corollary}[Field-affine and shifted multiply-high terminal masks]
+   \label{cor:field-affine-multiply-high-terminal-mask}
+   Continue with the terminal-mask interface of
+   \cref{cor:collision-universal-terminal-port-mask}.  Suppose every hidden
+   record \(\omega\) has an injective seed-independent encoding \(u(\omega)\).
+
+   First, if the encodings lie in a finite vector space \(V\) over
+   \(\mathbb F_q\), \(G=\mathbb F_q^r\), and
+   \[
+      H_{A,b}(\omega)=Au(\omega)+b
+      \tag{FMT1}
+   \]
+   with \(A:V\to G\) uniform linear and \(b\in G\) uniform, then distinct
+   records collide with probability exactly \(1/|G|\).  Hence
+   \(C_{\rm col}=1\) in \((CUT1)\).  The same statement holds for the
+   word-RAM carry-less model \(V=\mathbb F_{2^w}\), followed by any full-rank
+   linear projection to \(r\) output bits.
+
+   Second, let \(u(\omega)\in\mathbb Z/2^w\mathbb Z\), put
+   \(K=2^r\), \(Q=2^{w-r}\), and define the shifted high-bit multiply mask
+   \[
+      H_{a,b}(\omega)
+      =
+      \left\lfloor
+         \frac{a\,u(\omega)+b \bmod 2^w}{Q}
+      \right\rfloor
+      \in\{0,\ldots,K-1\},
+      \tag{FMT2}
+   \]
+   where \(a\) is uniform over odd residues modulo \(2^w\) and \(b\) is
+   uniform in \(\mathbb Z/2^w\mathbb Z\), independently.  Then for every
+   distinct pair of records,
+   \[
+      \Pr_{a,b}[H_{a,b}(\omega)=H_{a,b}(\omega')]
+      \le \frac{4}{K}.
+      \tag{FMT3}
+   \]
+   Thus shifted high-bit multiply is a valid terminal collision mask with
+   \(C_{\rm col}\le4\) in
+   \cref{cor:collision-universal-terminal-port-mask}.
+
+   This positive statement is deliberately narrower than the syndrome
+   requirements in \cref{rem:multiply-shift-syndrome-masks}.  It applies when
+   the reporter hashes complete hidden records and then emits retained
+   record-port pairs.  It does not give a low-width prefix decoder, because the
+   map in \((FMT2)\) is not a group homomorphism of the retained syndrome and
+   does not satisfy the difference law needed by long checkpoint chains.
+\end{corollary}
+
+\begin{proof}
+   For the field-affine case, fix two distinct records and put
+   \(d=u(\omega)-u(\omega')\ne0\).  A uniform linear map sends \(d\) uniformly
+   to \(G\), so \(Au(\omega)+b=Au(\omega')+b\) exactly when \(Ad=0\), an event
+   of probability \(|G|^{-1}\).  The shift cancels from the collision event.
+
+   For the multiply-high case, set \(U=2^w\) and
+   \(d=u(\omega)-u(\omega')\ne0\pmod U\).  Write
+   \(d=2^v d_0\), \(d_0\) odd, with \(0\le v<w\).  As \(a\) ranges uniformly
+   over odd residues, \(z=ad\bmod U\) is uniform over the residues of exact
+   two-adic valuation \(v\):
+   \[
+      \mathcal S_v=\{2^v t\bmod U:t\ {\rm odd}\},
+      \qquad |\mathcal S_v|=2^{w-v-1}.
+      \tag{FMT4}
+   \]
+   Conditional on a fixed nonzero separation \(z\), the random shift \(b\)
+   makes the two words \(b\) and \(b+z\) collide under the interval partition
+   into \(K\) consecutive blocks of length \(Q\) only if their cyclic distance
+   \[
+      \delta(z)=\min\{z,U-z\}
+      \tag{FMT5}
+   \]
+   is smaller than \(Q\).  Therefore
+   \[
+      \Pr_b[H_{a,b}(\omega)=H_{a,b}(\omega')\mid z]
+      \le \mathbf 1\{\delta(z)<Q\}.
+      \tag{FMT6}
+   \]
+   If \(Q\le2^v\), no element of \(\mathcal S_v\) has cyclic distance below
+   \(Q\).  If \(Q>2^v\), the two arcs of cyclic radius \(Q\) around zero
+   contain at most \(2Q/2^v\) elements of \(\mathcal S_v\).  Hence in all
+   cases
+   \[
+      \Pr_a[\delta(ad)<Q]
+      \le
+      \frac{2Q/2^v}{2^{w-v-1}}
+      =
+      \frac{4Q}{2^w}
+      =
+      \frac4K .
+      \tag{FMT7}
+   \]
+   Combining \((FMT6)\) and \((FMT7)\) proves \((FMT3)\).  The final paragraph
+   is exactly the distinction between complete-record collision control and
+   the state-exposed difference/carry requirements isolated earlier.
+\end{proof}
+
 \begin{corollary}[Balanced checkpoints can absorb any fixed flat-volume excess]
    \label{cor:balanced-checkpoints-absorb-flat-volume-excess}
    Continue with the nearest-mesh scaled-GRS window of
