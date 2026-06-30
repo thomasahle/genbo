@@ -115420,6 +115420,110 @@ entropy budget]
    polylogarithmic.
 \end{proof}
 
+\begin{corollary}[Route-local near-residue mass is not supplied by generic residues]
+   \label{cor:route-local-near-residue-mass-barrier}
+   Work in the route-local aligned-residue setting of
+   \cref{cor:aligned-residue-route-heavy-reporter}.  Fix one route state and
+   suppress the state subscript.  Suppose the local near residue has the form
+   \[
+      \alpha_*=f_S(X)\in G,
+      \qquad |G|=M,
+      \tag{RNB1}
+   \]
+   where \(S\) is a preprocessing seed independent of the correlated Gaussian
+   source blocks
+   \[
+      Y=\chi X+\sqrt{1-\chi^2}Z,
+      \qquad 0<\chi<1,
+      \tag{RNB2}
+   \]
+   and, for every seed, the residue classes are \(\lambda\)-balanced:
+   \[
+      \Pr[f_S(X)=\alpha\mid S]\le \lambda/M.
+      \tag{RNB3}
+   \]
+   Let \(E=E(S,Y)\) be the query-visible event on which this route-local
+   reporter is invoked, and let \(p_{S,Y}\) be any posterior residue law
+   computed from the query transcript.  If, on \(E\), the near-residue mass
+   condition needed in \((ARH3)\) holds with conditional probability at least
+   \(\delta_E\):
+   \[
+      \Pr\!\left[
+         p_{S,Y}(\alpha_*)\ge L^{-1}\mid E
+      \right]\ge\delta_E,
+      \tag{RNB4}
+   \]
+   then, writing \(p=\Pr[E]>0\),
+   \[
+      \delta_E
+      \le
+      \lambda^{1/(1+\chi)}
+      L^{1/(1+\chi)}
+      p^{-\chi/(1+\chi)}
+      M^{-(1-\chi)/(1+\chi)} .
+      \tag{RNB5}
+   \]
+
+   Consequently, at the native critical Euclidean point
+   \[
+      \rho_c=\frac1{2c^2-1},
+      \qquad
+      \chi=a_0=1-\frac1{c^2},
+      \qquad
+      M=m^{1-\rho_c}\log^{O_c(1)}m,
+      \tag{RNB6}
+   \]
+   with \(\lambda,L,\delta_E^{-1}=\log^{O_c(1)}m\), one must have
+   \[
+      p\le m^{-2\rho_c+o(1)}.
+      \tag{RNB7}
+   \]
+
+   Thus the point-indexed responsibility sketch does not rescue a generic
+   seed-independent balanced residue map.  Even though the sketch avoids paying
+   for all resident points in a listed residue class, the required local
+   near-residue mass itself creates a polylogarithmic residue list.  Such a
+   list can occur on only \(m^{-2\rho_c+o(1)}\) of the native Gaussian route
+   directions.  Seeing one with constant probability would require
+   \(m^{2\rho_c-o(1)}\) independent local panels before any candidate work is
+   charged, already above the \(m^{\rho_c}\polylog m\) local budget.  A viable
+   code or lattice route therefore needs a non-generic mechanism: lower the
+   conditioned residue entropy, make the query posterior structurally
+   nonbalanced, or report point-indexed leader/responsibility mass without
+   passing through a seed-independent balanced residue of size
+   \(m^{1-\rho_c}\).
+\end{corollary}
+
+\begin{proof}
+   On a realized transcript, the set
+   \[
+      \mathcal L_{S,Y}
+      =
+      \{\alpha\in G:\ p_{S,Y}(\alpha)\ge L^{-1}\}
+   \]
+   has size at most \(L\).  Hence \((RNB4)\) is exactly the conditional
+   residue-list hit event for this query-visible list.  Applying
+   \cref{cor:rare-balanced-residue-direction-barrier} to the event \(E\) gives
+   \((RNB5)\).
+
+   Under \((RNB6)\) and polylogarithmic \(\lambda,L,\delta_E^{-1}\), rearrange
+   \((RNB5)\) to obtain
+   \[
+      p
+      \le
+      M^{-(1-\chi)/\chi+o(1)}.
+   \]
+   Since
+   \[
+      (1-\rho_c)\frac{1-a_0}{a_0}
+      =
+      2\rho_c,
+   \]
+   this is \((RNB7)\).  The final paragraph is the contrapositive
+   interpretation applied to the local near-mass hypothesis \((ARH3)\) of
+   \cref{cor:aligned-residue-route-heavy-reporter}.
+\end{proof}
+
 \begin{remark}[What this shortcut does and does not prove]\label{rem:score-max-shortcut}
    \Cref{lem:smoothed-max-score-margin} is the $\alpha=0$ endpoint of the
    likelihood-ball geometry: if one can approximately maximize the smoothed
