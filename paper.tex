@@ -99655,6 +99655,132 @@ amplified in the next proposition.
    \((BAV5)\).
 \end{proof}
 
+\begin{corollary}[Product-prefix route height has a Bernstein audit]
+   \label{cor:product-prefix-route-height-bernstein}
+   Let the leaves of a route trie be coordinate product labels
+   \(c\in\mathcal C_1\times\cdots\times\mathcal C_h\), and suppose the
+   activation prefix masses factor as
+   \[
+      A(c_1,\ldots,c_r)=\prod_{j\le r}a_j(c_j),
+      \qquad a_j(c_j)>0
+      \tag{PRH1}
+   \]
+   on the support under consideration.  Let
+   \(P=\prod_jP_j\) be the product route law whose prefix height is to be
+   certified:
+   \[
+      H_P(c)=
+      \max_{0\le r\le h}
+      \log_+
+      \frac{P(c_1,\ldots,c_r)}{A(c_1,\ldots,c_r)} .
+      \tag{PRH2}
+   \]
+   Let \(\Pi\) be the actual leaf law under which the route will be sampled,
+   and suppose \(\Pi\) is dominated by a product law \(Q=\prod_jQ_j\):
+   \[
+      \Pi(E)\le LQ(E)
+      \qquad\text{for every leaf event }E .
+      \tag{PRH3}
+   \]
+   Define, under \(C_j\sim Q_j\),
+   \[
+      X_j(C_j)=\log\frac{P_j(C_j)}{a_j(C_j)},
+      \qquad
+      d_j=\E_QX_j(C_j),
+      \qquad
+      D_+=\sum_{j=1}^h\max\{d_j,0\},
+      \tag{PRH4}
+   \]
+   and
+   \[
+      V=\sum_{j=1}^h\operatorname{Var}_QX_j(C_j).
+      \tag{PRH5}
+   \]
+   Suppose
+   \[
+      |X_j(C_j)-d_j|\le R
+      \qquad Q_j\text{-a.s. for every }j .
+      \tag{PRH6}
+   \]
+   Then for every \(\eta\in(0,1)\), with
+   \[
+      R_{h,L,\eta}=\log\frac{\max\{2,h\}L}{\eta},
+      \tag{PRH7}
+   \]
+   one has
+   \[
+      \Pi\left[
+         H_P(C)
+         \le
+         D_+
+         +
+         \sqrt{2VR_{h,L,\eta}}
+         +
+         \frac{2R}{3}R_{h,L,\eta}
+      \right]\ge1-\eta .
+      \tag{PRH8}
+   \]
+
+   In particular, suppose the route law is an activation-base saddlepoint
+   product tilt,
+   \[
+      P_j(c)=
+      \frac{a_j(c)e^{\theta s_j(c)}}
+           {\sum_ba_j(b)e^{\theta s_j(b)}} .
+      \tag{PRH9}
+   \]
+   Then \(X_j=\theta s_j-\log\sum_ba_j(b)e^{\theta s_j(b)}\).  Thus the
+   quantitative condition
+   \[
+      D_+
+      +\sqrt{V\log(hL/\eta)}
+      +R\log(hL/\eta)
+      =
+      O_c(\log\log n)
+      \tag{PRH10}
+   \]
+   certifies the \(H_P=O_c(\log\log n)\) hypothesis in
+   \cref{prop:bounded-aggregate-tail-value-delivery}.  This is the concrete
+   audit for a proposed code/lattice/product route law: if it fails, the
+   obstruction is a large prefix likelihood ratio against activation mass,
+   not randomness of the aggregate sign tail.
+\end{corollary}
+
+\begin{proof}
+   For a prefix \(u=(c_1,\ldots,c_r)\),
+   \[
+      \log\frac{P(u)}{A(u)}
+      =
+      \sum_{j\le r}X_j(c_j).
+      \tag{PRH11}
+   \]
+   Under \(Q\), the centered sums
+   \[
+      S_r=\sum_{j\le r}(X_j(C_j)-d_j)
+      \tag{PRH12}
+   \]
+   have total variance at most \(V\), and every increment is bounded in
+   absolute value by \(R\).  Bernstein's inequality gives, for every fixed
+   \(r\),
+   \[
+      Q\left[
+         S_r>
+         \sqrt{2VR_{h,L,\eta}}
+         +
+         \frac{2R}{3}R_{h,L,\eta}
+      \right]
+      \le
+      e^{-R_{h,L,\eta}} .
+      \tag{PRH13}
+   \]
+   A union bound over the at most \(h\) nonempty prefixes makes the
+   \(Q\)-failure probability at most \(\eta/L\).  Since
+   \(\sum_{j\le r}d_j\le D_+\) for every \(r\), \((PRH11)\) gives the displayed
+   height bound on the complementary event.  Finally, domination \((PRH3)\)
+   turns \(Q\)-failure probability \(\eta/L\) into \(\Pi\)-failure probability
+   at most \(\eta\).
+\end{proof}
+
 \begin{corollary}[Aligned linear charts compute rate-coverage sketches]
    \label{cor:aligned-linear-chart-rate-coverage-sketch}
    Work in the setting of
