@@ -100460,6 +100460,147 @@ amplified in the next proposition.
    rearrangement of \((q^r-1)\mu_t^d\le(\log m)^{-C}\).
 \end{proof}
 
+\begin{corollary}[Random dense local checks instantiate the small-bias segment]
+   \label{cor:random-dense-local-check-segment}
+   Fix \(q\ge2\) and constants \(A_{\rm syn},A_{\rm chk},A_{\eta},C>0\).
+   Let one checkpoint segment have length
+   \[
+      \ell=\kappa\log\log m+O(1),
+      \tag{RDL1}
+   \]
+   and let \(H\in\mathbb F_q^{r\times\ell}\) be a uniformly random full-rank
+   matrix, conditioned on full rank, with
+   \[
+      r=A_{\rm syn}\log_q\log m+O(1).
+      \tag{RDL2}
+   \]
+   Use the rows of \(H\) only inside this segment, so every row has interval
+   support contained in the segment and the active-check width of
+   \cref{cor:banded-quotient-active-check-width} is at most \(r\).
+
+   For \(0<\delta<1-1/q\), let
+   \[
+      \mathsf h_q(\delta)
+      =
+      -\delta\log\delta-(1-\delta)\log(1-\delta)
+      +\delta\log(q-1).
+      \tag{RDL3}
+   \]
+   If
+   \[
+      \mathsf h_q(\delta)
+      <
+      \log q-\frac{A_{\rm syn}}{\kappa},
+      \tag{RDL4}
+   \]
+   then with probability \(1-(\log m)^{-\Omega(1)}\), every nonzero word in
+   the row span of \(H\) has Hamming weight at least
+   \[
+      d\ge\delta\ell .
+      \tag{RDL5}
+   \]
+
+   Suppose moreover that, on this segment, the two tilted coordinate laws from
+   \cref{cor:two-temperature-small-bias-syndrome-support} satisfy
+   \[
+      |\widehat P_{i,t}(\lambda)|\le\mu_t<1
+      \qquad(i\le\ell,\ \lambda\ne0,\ t=1,2),
+      \tag{RDL6}
+   \]
+   and put \(\mu_*=\max\{\mu_1,\mu_2\}\).  If
+   \[
+      \delta\kappa(-\log\mu_*)>A_{\rm syn}+C,
+      \tag{RDL7}
+   \]
+   then, with the same high probability,
+   \[
+      \mathfrak B_1(H),\mathfrak B_2(H)\le(\log m)^{-C+o(1)} .
+      \tag{RDL8}
+   \]
+
+   Finally assume the unconditioned first-temperature collision entropy rate is
+   bounded below:
+   \[
+      \sum_{i=1}^{\ell}(2\log Z_{i,1}-\log Z_{i,2})
+      \ge h_2\ell-O(1).
+      \tag{RDL9}
+   \]
+   Then the syndrome-conditioned segment passes the local checkpoint support
+   audit for
+   \[
+      K=(\log m)^{A_{\rm chk}+o(1)},\qquad
+      \eta=(\log m)^{A_{\eta}+o(1)}
+      \tag{RDL10}
+   \]
+   whenever
+   \[
+      \kappa h_2
+      >
+      A_{\rm syn}+A_{\rm chk}+A_{\eta}.
+      \tag{RDL11}
+   \]
+   Under \((RDL4)\), \((RDL7)\), and \((RDL11)\), one such segment therefore
+   has polylogarithmic active state \(q^r=(\log m)^{A_{\rm syn}+o(1)}\), loses
+   exactly this syndrome rate in the two-temperature support audit, and supplies
+   the checkpoint support needed by
+   \cref{cor:checkpointed-quotient-prefix-cut-compiler}.
+
+   This is a concrete local-code positive instance, but it is deliberately
+   local.  It does not contradict the random support-quotient barrier:
+   \cref{cor:random-support-quotient-checkpoint-barrier} applies when a
+   polynomial-range random quotient is carried across merged states.  Here the
+   rank is only \(O(\log\log m)\), the rows are confined to one segment, and the
+   state is reset at the segment boundary.  The full ANN theorem still needs
+   the far/list-size and cut-value estimates for the surrounding reporter; the
+   present corollary only discharges the local randomness and support side for
+   a short banded segment.
+\end{corollary}
+
+\begin{proof}
+   First prove the row-span distance statement before conditioning on full
+   rank.  For any fixed nonzero message \(u\in\mathbb F_q^r\), the word \(u^TH\)
+   is uniform in \(\mathbb F_q^\ell\).  The number of words of Hamming weight at
+   most \(\delta\ell\) is at most
+   \[
+      \exp\{\ell\mathsf h_q(\delta)+O(\log\ell)\}.
+   \]
+   A union bound over \(q^r-1\) nonzero \(u\)'s gives failure probability at
+   most
+   \[
+      \exp\{
+         r\log q-\ell(\log q-\mathsf h_q(\delta))+O(\log\ell)
+      \}.
+      \tag{RDL12}
+   \]
+   Under \((RDL1)\), \((RDL2)\), and \((RDL4)\), this is
+   \((\log m)^{-\Omega(1)}\).  Conditioning on full rank changes this
+   probability by only a constant factor for fixed \(q\) and \(r\le\ell-O(1)\),
+   which follows from \((RDL4)\), so \((RDL5)\) holds with the claimed
+   probability.
+
+   On the distance event, \cref{cor:two-temperature-small-bias-syndrome-support}
+   gives
+   \[
+      \mathfrak B_t(H)\le(q^r-1)\mu_t^{\delta\ell}
+      \le
+      \exp\{(A_{\rm syn}-\delta\kappa(-\log\mu_t)+o(1))\log\log m\}.
+   \]
+   Condition \((RDL7)\) gives \((RDL8)\) simultaneously for \(t=1,2\).  Now
+   substitute \((RDL8)\) into \((TBS7)\).  The error term
+   \(2\log(1-\mathfrak B_1)-\log(1+\mathfrak B_2)\) is \(o(1)\), while
+   \(r\log q=A_{\rm syn}\log\log m+o(\log\log m)\).  By \((RDL9)\), the left
+   side of \((TBS7)\) is at least
+   \[
+      (\kappa h_2-A_{\rm syn}+o(1))\log\log m .
+   \]
+   The right side under \((RDL10)\) is
+   \((A_{\rm chk}+A_{\eta}+o(1))\log\log m\).  Therefore \((RDL11)\) proves the
+   checkpoint support condition.  The active-width and local-reset
+   interpretations are exactly
+   \cref{cor:banded-quotient-active-check-width} and
+   \cref{cor:checkpointed-quotient-prefix-cut-compiler}.
+\end{proof}
+
 \begin{corollary}[Sliding-window trellises must carry forgotten quotient span]
    \label{cor:finite-memory-forgetting-quotient-barrier}
    Let
