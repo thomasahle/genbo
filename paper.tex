@@ -102522,6 +102522,140 @@ polylogarithmic state]
    at most \(m\) far points, gives \((FRC5)\).
 \end{proof}
 
+\begin{corollary}[Construction-A theta alphabets close the CPFA randomness side]
+   \label{cor:construction-a-theta-mds-cpfa-endpoint}
+   Work in the Fano/product reporter schedule of
+   \cref{cor:fano-product-reporter-cpfa-estimates}.  Let the checkpoint
+   segments have length \(\ell=\kappa\log\log m+O(1)\), and let the local
+   MDS alphabet size be a prime power
+   \[
+      Q=Q(m)\asymp\log\log m .
+      \tag{CAT1}
+   \]
+   Suppose every live coordinate \(i\) in every checkpoint segment is supplied
+   by a one-dimensional Construction-A theta fiber with residue modulus
+   \(p_i\), mesh \(\Delta_i\), inverse temperature \(\beta_i\), and theta
+   weights as in \cref{cor:construction-a-theta-balanced-window}.  Put
+   \[
+      s_i=\sqrt{\beta_i}\,p_i\Delta_i .
+   \]
+   Assume that a fixed constant \(D=O(1)\) is chosen so that every required
+   live coordinate satisfies \(p_i\ge Q\) and at least one of the following two
+   local tests:
+   \[
+      \frac{\beta_i\Delta_i^2Q^2}{8}+\log\Xi(s_i)\le D,
+      \tag{CAT2}
+   \]
+   or
+   \[
+      E(s_i)<1,
+      \qquad
+      \log\frac{1+E(s_i)}{1-E(s_i)}\le D .
+      \tag{CAT3}
+   \]
+   Use segment-local explicit MDS checks of rank
+   \[
+      r_{\rm syn}=A_{\rm syn}\log_Q\log m+O(1)
+      \tag{CAT4}
+   \]
+   and checkpoint ranges/support ratios
+   \[
+      K_s=(\log m)^{A_{\rm chk}+o(1)},
+      \qquad
+      \eta_s=(\log m)^{A_\eta+o(1)}
+      \tag{CAT5}
+   \]
+   with \(A_\eta\ge1\).  If
+   \[
+      \kappa[-\log(1-e^{-2D})]>A_{\rm syn}+C
+      \tag{CAT6}
+   \]
+   for some fixed \(C>0\), and if the native product/Fano reporter obeys
+   \[
+      \E W_{\rm pref}(\mathsf q,\mathcal G)\le m^{\rho_c}\log^{O(1)}m,
+      \qquad
+      \E L^{\rm raw}(\mathsf q,\mathcal G)\le m^{\rho_c+\zeta+o(1)}
+      \tag{CAT7}
+   \]
+   with
+   \[
+      \gamma A_{\rm chk}>\zeta ,
+      \tag{CAT8}
+   \]
+   then the checkpointed Construction-A/product panel has
+   \[
+      \text{near survival }1-o(1)
+      \quad\text{and}\quad
+      \E(\text{prefix work}+\text{retained far work})
+      \le m^{\rho_c}\log^{O(1)}m .
+      \tag{CAT9}
+   \]
+   Equivalently, under block tensorization, \((CAT7)\) may be replaced by the
+   one-block product estimates \((FRC6)\)--\((FRC7)\) with the same
+   \(\zeta\).
+
+   Conversely, this local alphabet condition is a genuine Construction-A
+   pass/fail test for this CPFA route.  If a required coordinate has \(p_i<Q\),
+   it cannot supply a \(Q\)-symbol residue alphabet.  If \(p_i\ge Q\), the
+   smoothing test \((CAT3)\) fails, and
+   \[
+      Q>
+      2+
+      \frac{2\sqrt{2(D+\log\Xi(s_i))/\beta_i}}{\Delta_i},
+      \tag{CAT10}
+   \]
+   then no \(Q\)-residue set in that coordinate has theta log-width \(D\).
+   Stronger checkpoint randomness or a different pairwise-independent offset
+   cannot repair this local failure; the construction must recenter the
+   coordinate, use a finer or structured fiber, drop the coordinate from the
+   live MDS segment, or obtain the live alphabet from another responsibility
+   object.
+
+   Finally, the smoothing alternative \((CAT3)\) is only a source of local
+   checkpoint alphabet balance.  If the same nearly flat theta residues are
+   used as the terminal sampled separator without an additional nonflat
+   product/Fano/responsibility charge, then
+   \cref{cor:flat-theta-residue-sampled-barrier} gives nearly linear invalid
+   load on the self-query instance whenever the near hit probability is
+   inverse-polylogarithmic.  Thus a viable Construction-A endpoint has a sharp
+   division of labor: theta balance may supply the MDS checkpoint entropy, but
+   ANN selectivity must still come from the product-rate estimates in
+   \((CAT7)\) or \((FRC6)\)--\((FRC7)\).
+\end{corollary}
+
+\begin{proof}
+   If \((CAT2)\) holds, then
+   \cref{cor:construction-a-theta-balanced-window} supplies the \(Q\) nearest
+   theta residues with log-width at most \(D\).  If \((CAT3)\) holds, the
+   Poisson-smoothing part of the same corollary says that any \(Q\le p_i\)
+   residues have log-width at most \(D\).  Hence every live coordinate in every
+   checkpoint segment has a \(Q\)-symbol alphabet satisfying the balanced
+   score-window hypothesis of
+   \cref{cor:balanced-score-window-mds-segment}.
+
+   Conditions \((CAT1)\), \((CAT4)\), \((CAT5)\), and \((CAT6)\) are exactly
+   the local MDS support and survival hypotheses \((BCS2)\)--\((BCS5)\) of
+   \cref{cor:balanced-window-mds-cpfa-schedule}.  The rows are segment-local,
+   so their active residual width is at most \(r_{\rm syn}\).  Therefore that
+   corollary gives the local support condition, polylogarithmic checkpoint
+   state, and near survival \(1-o(1)\).  The reporter estimates \((CAT7)\),
+   together with \((CAT8)\), are precisely the hypotheses of
+   \cref{cor:fano-product-reporter-cpfa-estimates}; they give clean prefix
+   work and clean retained far/cut emissions.  The tensorized replacement by
+   \((FRC6)\)--\((FRC7)\) is the final paragraph of the same corollary.
+
+   For the converse, \(p_i<Q\) leaves fewer than \(Q\) residue symbols.  When
+   \(p_i\ge Q\), \cref{cor:construction-a-theta-mesh-dichotomy} says that any
+   \(Q\)-residue theta alphabet of log-width \(D\) must satisfy the negation of
+   \((CAT10)\).  Thus \((CAT10)\), together with failure of the smoothing
+   alternative, rules out the required coordinate alphabet.  The checkpoint
+   offset distribution is applied only after this support alphabet exists, so
+   changing that offset cannot create the missing \(Q\) balanced symbols.
+   The final terminal-separator warning is exactly
+   \cref{cor:flat-theta-residue-sampled-barrier} applied to the nearly flat
+   theta query law.
+\end{proof}
+
 \begin{corollary}[Checkpoint boundary frontiers see the remaining product]
    \label{cor:checkpoint-boundary-residual-frontier}
    Continue in the setting of
