@@ -103023,6 +103023,145 @@ explicit]
    consequence.
 \end{proof}
 
+\begin{corollary}[Dual-code enumerator audit for Construction-A flatness]
+   \label{cor:construction-a-dual-weight-enumerator-flatness}
+   Continue with the linear Construction-A block of
+   \cref{cor:construction-a-dual-theta-rate-flatness}.  For a residue
+   \(r\in\mathbb F_{p_j}\), let \(\ell_{p_j}(r)\) be an integer representative
+   of minimum absolute value.  For \(\tau>0\), put
+   \[
+      \lambda_{j,\tau}
+      =
+      \frac{2\pi^2}{\tau p_j^2\Delta_j^2},
+      \qquad
+      g_{j,\tau}(r)
+      =
+      \sum_{z\in\mathbb Z}
+         \exp\{-\lambda_{j,\tau}(\ell_{p_j}(r)+p_jz)^2\}.
+      \tag{DWE1}
+   \]
+   Then the dual theta tail in \((DTF2)\) satisfies the exact identity
+   \[
+      1+\mathcal E_j(\tau)
+      =
+      \sum_{u\in C_j^\perp}
+         \prod_{i=1}^{b_j}g_{j,\tau}(u_i).
+      \tag{DWE2}
+   \]
+
+   Let
+   \[
+      A_{j,w}^\perp
+      =
+      |\{u\in C_j^\perp:\ |{\rm supp}(u)|=w\}|,
+      \qquad
+      g_{j,\tau,0}=g_{j,\tau}(0),
+      \qquad
+      \eta_{j,\tau}
+      =
+      \frac{\max_{r\ne0}g_{j,\tau}(r)}{g_{j,\tau,0}} .
+      \tag{DWE3}
+   \]
+   Hence
+   \[
+      \mathcal E_j(\tau)
+      \le
+      g_{j,\tau,0}^{b_j}
+      \sum_{w=0}^{b_j}A_{j,w}^\perp\eta_{j,\tau}^w
+      -1
+      =
+      \bigl(g_{j,\tau,0}^{b_j}-1\bigr)
+      +
+      g_{j,\tau,0}^{b_j}
+      \sum_{w\ge1}A_{j,w}^\perp\eta_{j,\tau}^w .
+      \tag{DWE4}
+   \]
+   In particular, the flatness hypothesis \((DTF6)\) follows if the
+   right-hand side of \((DWE4)\), summed over all blocks and over
+   \(\tau\in\{\alpha,\beta,\alpha+\beta\}\), is \(O_c(\log\log m)\), with
+   every individual tail \(<1/2\).  Under this enumerator condition the
+   conclusions of \cref{cor:construction-a-dual-theta-rate-flatness} and
+   \cref{cor:construction-a-theta-product-rate-audit} apply with only
+   polylogarithmic slack loss.
+
+   Conversely, for every \(B\subseteq C_j^\perp\setminus\{0\}\),
+   \[
+      \mathcal E_j(\tau)
+      \ge
+      \sum_{u\in B}
+         \exp\{-\lambda_{j,\tau}\|u\|_{\rm Lee}^2\},
+      \qquad
+      \|u\|_{\rm Lee}^2
+      =
+      \sum_{i=1}^{b_j}\ell_{p_j}(u_i)^2 .
+      \tag{DWE5}
+   \]
+   Thus \(B\) dual words with Lee square at most \(R\) force
+   \(\mathcal E_j(\tau)\ge |B|e^{-\lambda_{j,\tau}R}\).  If this lower bound
+   is polynomially large, or if it prevents the total three-temperature tail
+   from being \(O(\log\log m)\), then the flat Gaussian-volume rate audit is
+   not valid for that block.  The obstruction is a real dual-code spectral
+   obstruction, not a failure of checkpoint randomness.
+
+   As a random-code benchmark, if \(C_j^\perp\) is a uniformly random
+   \(h_j=b_j-k_j\) dimensional subspace of \(\mathbb F_{p_j}^{b_j}\), then for
+   every \(\eta\ge0\)
+   \[
+      \mathbb E
+      \sum_{w\ge1}A_{j,w}^\perp\eta^w
+      =
+      \frac{p_j^{h_j}-1}{p_j^{b_j}-1}
+      \left((1+(p_j-1)\eta)^{b_j}-1\right)
+      \le
+      2p_j^{-k_j}(1+(p_j-1)\eta)^{b_j}.
+      \tag{DWE6}
+   \]
+   Therefore fully random residues are more than the construction needs:
+   any explicit code, Tanner graph, trellis, or lattice quotient that proves
+   the same weighted dual enumerator bound at the charged values
+   \(\eta_{j,\alpha},\eta_{j,\beta},\eta_{j,\alpha+\beta}\) supplies the rate
+   smoothing required by the Construction-A route.  If the zero-residue lift
+   term \(g_{j,\tau,0}^{b_j}-1\) or the weighted dual enumerator in \((DWE4)\)
+   is too large, no amount of stronger random offsets in the checkpoint layer
+   can repair the product-rate calculation.
+\end{corollary}
+
+\begin{proof}
+   By \((DTF1)\), every dual vector is uniquely represented by a residue
+   word \(u\in C_j^\perp\) and an integer lift \(z\in\mathbb Z^{b_j}\):
+   \[
+      \xi
+      =
+      \frac{\ell_{p_j}(u)+p_jz}{p_j\Delta_j}.
+   \]
+   Substituting this parametrization in the full dual Gaussian sum gives
+   \[
+      \sum_{\xi\in\Lambda_j^*}
+         e^{-2\pi^2\|\xi\|^2/\tau}
+      =
+      \sum_{u\in C_j^\perp}
+      \prod_{i=1}^{b_j}
+         \sum_{z_i\in\mathbb Z}
+         e^{-\lambda_{j,\tau}(\ell_{p_j}(u_i)+p_jz_i)^2},
+   \]
+   which is \((DWE2)\) after removing the zero dual vector.
+
+   If \(u\) has Hamming weight \(w\), then the product in \((DWE2)\) is at
+   most \(g_{j,\tau,0}^{b_j-w}(\max_{r\ne0}g_{j,\tau}(r))^w\).  Summing by
+   Hamming weight proves \((DWE4)\).  The implication for \((DTF6)\) is then
+   exactly \cref{cor:construction-a-dual-theta-rate-flatness}.
+
+   For the converse, keep only the zero integer lift \(z=0\) for each
+   nonzero dual word \(u\).  This gives the contribution
+   \(\exp\{-\lambda_{j,\tau}\|u\|_{\rm Lee}^2\}\), proving \((DWE5)\).
+
+   Finally, a fixed nonzero vector of \(\mathbb F_{p_j}^{b_j}\) lies in a
+   uniformly random \(h_j\)-dimensional subspace with probability
+   \((p_j^{h_j}-1)/(p_j^{b_j}-1)\).  Summing this probability over all
+   nonzero vectors with weight generating function
+   \((1+(p_j-1)\eta)^{b_j}-1\) gives \((DWE6)\).
+\end{proof}
+
 \begin{corollary}[Checkpoint boundary frontiers see the remaining product]
    \label{cor:checkpoint-boundary-residual-frontier}
    Continue in the setting of
