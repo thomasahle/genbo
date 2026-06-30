@@ -722,12 +722,18 @@ impl HierRouter {
             }
             if finest {
                 if adc {
-                    let keep = ROUTE_ADC_KEEP.load(std::sync::atomic::Ordering::Relaxed).min(nd.len());
-                    if keep > 0 && keep < nd.len() { nd.select_nth_unstable(keep - 1); nd.truncate(keep); }
-                    for ent in nd.iter_mut() {
-                        let c = ent.1 as usize;
-                        ent.0 = simd::l2_i8(qn, &self.cent[l][c * d..c * d + d]);
+                    let keepv = ROUTE_ADC_KEEP.load(std::sync::atomic::Ordering::Relaxed);
+                    if keepv > 0 {
+                        // keep ADC-top-KEEP then EXACT-rescore them (precise cell distances).
+                        let keep = keepv.min(nd.len());
+                        if keep < nd.len() { nd.select_nth_unstable(keep - 1); nd.truncate(keep); }
+                        for ent in nd.iter_mut() {
+                            let c = ent.1 as usize;
+                            ent.0 = simd::l2_i8(qn, &self.cent[l][c * d..c * d + d]);
+                        }
                     }
+                    // KEEP==0: NO exact rerank -- route_fine picks top-p straight from the ADC scores. The
+                    // router only needs the RIGHT cells (scan+final rerank rank candidates), so ADC may suffice.
                 }
                 *fd = nd;
                 return;

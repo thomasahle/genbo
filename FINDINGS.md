@@ -2322,6 +2322,17 @@ P148. (ADC routing kernel: recall-neutral but NO speed win -- l2_i8_block alread
     routing is now also largely tapped (l2_i8_block banked; dim-drop fails; ADC no speed). PIVOT to the
     recall-measurable items: LeanVec (OOD), drop-raw-copy + Streaming, and RaBitQ-as-a-swappable-Compressor (user req).
 
+P149. (user idea: ADC routing WITHOUT the exact-rescore? -> cheaper routing but LOSES recall; rerank is needed)
+    Added SBANN_ROUTE_ADC_KEEP=0 = take top-p straight from ADC scores (no exact-rescore). msspacev 1M:
+      EXACT:   p64 r0.8850 route30.1% | p128 r0.9207 route17.6% | p256 r0.9460 route14.5%
+      KEEP=0:  p64 r0.8276 route24.4% | p128 r0.8854 route16.5% | p256 r0.9268 route14.5%
+    No-rerank routing IS ~1.2x cheaper (route 30.1->24.4% @p64) but recall drops -0.019 to -0.057: the ADC
+    cell-ranking is too coarse AT THE TOP-P BOUNDARY -> a few true cells fall to rank p+1, never probed. At
+    MATCHED recall it's a NET LOSS (no-rerank@p128 r0.8854 ~= exact@p64 r0.8850 -> 2x the scan for a 1.2x route
+    saving). So the rerank IS needed; and WITH it ADC routing isn't faster than the already-SIMD-fast l2_i8_block
+    exact routing (P148). A higher-bit centroid code would sharpen the boundary but doubles the scan (P145) = wash.
+    FINAL routing verdict: l2_i8_block (+1.27x) is the win; ADC routing (any KEEP) is a dead end for speed.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
