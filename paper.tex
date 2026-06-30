@@ -98701,6 +98701,109 @@ amplified in the next proposition.
    \((2h|\mathcal L|/\delta)^{1/(2r)}\) is bounded by an absolute constant.
 \end{proof}
 
+\begin{lemma}[Coefficient-net transfer for sign-mask audits]
+   \label{lem:coefficient-net-sign-mask-transfer}
+   Fix signs \(\xi_{j,a}\in\{-1,1\}\).  For coordinate \(j\), let
+   \(\mathcal F_j\) be a family of coefficient pairs \((p,q)\), where \(p\) is
+   a probability vector on \(\mathcal C_j\) and \(q\in\mathbb R^{\mathcal C_j}\)
+   is the centered score coefficient vector \(q_a=p(a)g(a)\).  Define
+   \[
+      A_j(p)=\sum_ap(a)\xi_{j,a},
+      \qquad
+      Z_j(q)=\sum_aq_a\xi_{j,a}.
+      \tag{CNT1}
+   \]
+   Suppose \(\mathcal N_j\subseteq\mathcal F_j\) is an
+   \((\varepsilon_\alpha,\varepsilon_\zeta)\)-net in the sense that every
+   \((p,q)\in\mathcal F_j\) has \((\tilde p,\tilde q)\in\mathcal N_j\) with
+   \[
+      \|p-\tilde p\|_1\le\varepsilon_\alpha,
+      \qquad
+      \|q-\tilde q\|_1\le\varepsilon_\zeta .
+      \tag{CNT2}
+   \]
+   If a sign seed satisfies
+   \[
+      |A_j(\tilde p)|\le a_j(\tilde p,\tilde q),
+      \qquad
+      |Z_j(\tilde q)|\le z_j(\tilde p,\tilde q)
+      \tag{CNT3}
+   \]
+   for every \((\tilde p,\tilde q)\in\mathcal N_j\), then every
+   \((p,q)\in\mathcal F_j\) satisfies
+   \[
+      |A_j(p)|
+      \le
+      \inf_{\substack{(\tilde p,\tilde q)\in\mathcal N_j\\
+                      \text{satisfying }(CNT2)}}
+      a_j(\tilde p,\tilde q)+\varepsilon_\alpha,
+      \tag{CNT4}
+   \]
+   and
+   \[
+      |Z_j(q)|
+      \le
+      \inf_{\substack{(\tilde p,\tilde q)\in\mathcal N_j\\
+                      \text{satisfying }(CNT2)}}
+      z_j(\tilde p,\tilde q)+\varepsilon_\zeta .
+      \tag{CNT5}
+   \]
+
+   Consequently, if \(N=\sum_j|\mathcal N_j|\) and the signs are \(2r\)-wise
+   independent on each coordinate, then with probability at least \(1-\delta\)
+   the bounds
+   \[
+      |A_j(p)|
+      \le
+      \inf_{\substack{(\tilde p,\tilde q)\in\mathcal N_j\\
+                      \text{satisfying }(CNT2)}}
+      \sqrt{C_{\rm Kh}r\,\|\tilde p\|_2^2}
+      \left(\frac{2N}{\delta}\right)^{1/(2r)}
+      +\varepsilon_\alpha
+      \tag{CNT6}
+   \]
+   and
+   \[
+      |Z_j(q)|
+      \le
+      \inf_{\substack{(\tilde p,\tilde q)\in\mathcal N_j\\
+                      \text{satisfying }(CNT2)}}
+      \sqrt{C_{\rm Kh}r\,\|\tilde q\|_2^2}
+      \left(\frac{2N}{\delta}\right)^{1/(2r)}
+      +\varepsilon_\zeta
+      \tag{CNT7}
+   \]
+   hold for every coordinate and every exposed coefficient pair.  Thus a
+   continuous query family costs only the metric entropy of the tilted
+   coordinate laws in the two coefficient norms that matter for
+   \cref{lem:pairwise-sign-mask-effective-support}: total variation of \(p\)
+   and \(\ell_1\) variation of \(p(a)g(a)\).  A large raw query space is not by
+   itself an obstruction; the obstruction is a large net in these coefficient
+   metrics, or small effective support on the net points.
+\end{lemma}
+
+\begin{proof}
+   If \((\tilde p,\tilde q)\) satisfies \((CNT2)\), then
+   \[
+      |A_j(p)-A_j(\tilde p)|
+      =
+      \left|\sum_a(p(a)-\tilde p(a))\xi_{j,a}\right|
+      \le
+      \|p-\tilde p\|_1
+      \le
+      \varepsilon_\alpha ,
+   \]
+   because \(|\xi_{j,a}|=1\).  This proves \((CNT4)\), and the same argument
+   with \(q-\tilde q\) proves \((CNT5)\).
+
+   For the probabilistic statement, apply the moment bound \((LIS7)\) to the
+   finite set of all net coefficient vectors \(\tilde p\) and \(\tilde q\),
+   using a union bound over \(2N\) displayed inequalities.  This gives
+   \((CNT3)\) with the right-hand sides in \((CNT6)\) and \((CNT7)\); the
+   deterministic transfer then extends the bounds from the net to all of
+   \(\mathcal F_j\).
+\end{proof}
+
 \begin{corollary}[Aligned linear charts compute rate-coverage sketches]
    \label{cor:aligned-linear-chart-rate-coverage-sketch}
    Work in the setting of
