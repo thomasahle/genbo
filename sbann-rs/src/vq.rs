@@ -1668,19 +1668,28 @@ impl Index {
         // every distance (native speed) — we only skip the far ~99% of PUSHES. The global top-t is always
         // pushed (its dist <= the t-th smallest <= thr at every point), so recall is unchanged. RESIDQ
         // adjusts per-cell dists AFTER pushing (reads pool[pool_start..]), so it can't prune -> cap=MAX.
-        let bound = t > 0 && !residq;
+        // SBANN_UNBOUNDED A/B: the native flat-IVF collect (unconditional push + ONE post-scan select_nth)
+        // may beat the threshold-bounded collect at high candidate counts (the per-candidate branch breaks
+        // vectorization + prefetch). When set, !bound -> thr=MAX/cap=MAX -> unconditional push.
+        let bound = t > 0 && !residq && std::env::var("SBANN_UNBOUNDED").is_err();
         let keep = (t * 4).max(64);
-        let cap = if bound { (t * 16).max(256) } else { usize::MAX };
+        let cap = (t * 16).max(256);
         let mut thr = i32::MAX;
+        // `bound` is loop-invariant -> the branch is perfectly predicted; the else-arm is the NATIVE
+        // unconditional push (no per-candidate threshold compare) for the A/B.
         macro_rules! push { ($d:expr, $s:expr) => {{
-            let d = $d;
-            if d < thr {
-                pool.push((d, $s));
-                if pool.len() >= cap {
-                    pool.select_nth_unstable(keep - 1);
-                    thr = pool[keep - 1].0;
-                    pool.truncate(keep);
+            if bound {
+                let d = $d;
+                if d < thr {
+                    pool.push((d, $s));
+                    if pool.len() >= cap {
+                        pool.select_nth_unstable(keep - 1);
+                        thr = pool[keep - 1].0;
+                        pool.truncate(keep);
+                    }
                 }
+            } else {
+                pool.push(($d, $s));
             }
         }}; }
         for &cell in cells {
