@@ -6950,6 +6950,95 @@ partition ignores the bias coordinates that certify the list size.
    \((GCE3)\), proving \((GCE6)\) and the final interpretation.
 \end{proof}
 
+\begin{corollary}[Fixed-branch Gaussian checkpoints have a scalar pass/fail constant]
+   \label{cor:fixed-branch-gaussian-checkpoint-constant}
+   Keep the cumulative-score spherical primitive with a fixed branching factor
+   \(B\).  Under the near-pair tilted child law in \((GCE5)\), define the
+   one-layer collision random variable
+   \[
+      R_B=
+      \frac{
+         \left(\sum_{i=1}^B e^{\sqrt{2\log B}\,Z_i}\right)^2
+      }{
+         \sum_{i=1}^B e^{2\sqrt{2\log B}\,Z_i}
+      },
+      \qquad
+      Z_i\stackrel{\rm iid}{\sim}N(0,1),
+      \tag{BGC1}
+   \]
+   and let
+   \[
+      h_B=\E\log R_B .
+      \tag{BGC2}
+   \]
+   For a checkpoint segment of length
+   \[
+      \ell_m=\kappa\log\log m+o(\log\log m),
+      \tag{BGC3}
+   \]
+   the pair-tilted collision-effective support satisfies
+   \[
+      \log N_2
+      =
+      \kappa h_B\log\log m+o_{\Prb}(\log\log m).
+      \tag{BGC4}
+   \]
+
+   Consequently, in the polynomial checkpoint regime with
+   \(K_s=\log^A m\) and
+   \[
+      \eta_s=C\frac{r}{\log\log m},
+      \qquad
+      r=\gamma\frac{\log m}{\log\log m}(1+o(1)),
+      \tag{BGC5}
+   \]
+   the fixed-\(B\) Gaussian pair-tilted segment passes the weighted checkpoint
+   requirement \(N_2\ge\eta_sK_s\) with probability tending to one if
+   \[
+      \kappa h_B>A+1,
+      \tag{BGC6}
+   \]
+   and fails with probability tending to one if
+   \[
+      \kappa h_B<A+1.
+      \tag{BGC7}
+   \]
+   At equality the lower-order constants decide the test.
+
+   Thus the raw Gaussian checkpoint route has a concrete numerical audit:
+   estimate the single scalar \(h_B\) in \((BGC2)\) and compare it with the
+   required local thinning coefficient.  The large-\(B\) calculation
+   \((GCE6)\) says that this scalar should not be expected to grow like
+   \(\log B\); any positive result for the raw Gaussian tree must come from
+   the finite-\(B\) constant and the chosen segment length, while a robust
+   code/lattice improvement should increase the analogue of \(h_B\) for the
+   pair-tilted posterior.
+\end{corollary}
+
+\begin{proof}
+   Along a fixed checkpoint segment under the pair-tilted law, the child
+   layers are independent and identically distributed, and the segment
+   collision support is the product of the one-layer quantities \(R_B\).  Hence
+   \[
+      \log N_2=\sum_{j=1}^{\ell_m}\log R_{B,j},
+   \]
+   with iid copies \(R_{B,j}\) of \(R_B\).  Since \(B\) is fixed,
+   \(\log R_B\) has finite variance, and the law of large numbers gives
+   \((BGC4)\).
+
+   Under \((BGC5)\),
+   \[
+      \log(\eta_sK_s)
+      =
+      A\log\log m+\log r-\log\log\log m+O(1)
+      =
+      (A+1)\log\log m+O(\log\log\log m).
+   \]
+   Comparing this with \((BGC4)\) proves \((BGC6)\)--\((BGC7)\).  The final
+   paragraph is the interpretation of this scalar test together with
+   \((GCE6)\).
+\end{proof}
+
 \begin{corollary}[Difference-universal syndromes suffice with a random bucket]
    \label{cor:difference-universal-syndrome-thinning}
    Let \(G\) be a finite abelian group and let
