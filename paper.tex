@@ -101390,6 +101390,76 @@ amplified in the next proposition.
    This proves the stated dichotomy.
 \end{proof}
 
+\begin{corollary}[Flat theta residues cannot be the sampled ANN separator]
+   \label{cor:flat-theta-residue-sampled-barrier}
+   Let a sampled panel have a finite label set \(\mathcal L\), storage
+   predicates \(A_g(x)\in\{0,1\}\), and query laws \(\pi_q\).  Suppose there is
+   a set \(P=\{x_1,\ldots,x_m\}\) and promised queries \(q_1,\ldots,q_m\) such
+   that \(x_i\) is a near witness for \(q_i\), while every \(x_j\), \(j\ne i\),
+   is invalid for \(q_i\).  Assume the query laws are \(D\)-flat relative to
+   counting measure on \(\mathcal L\):
+   \[
+      \frac{e^{-D}}{|\mathcal L|}
+      \le
+      \pi_{q_i}(g)
+      \le
+      \frac{e^{D}}{|\mathcal L|}
+      \qquad(i\le m,\ g\in\mathcal L).
+      \tag{FTR1}
+   \]
+   If every self query hits its near point with probability at least \(h\),
+   \[
+      \sum_{g\in\mathcal L}\pi_{q_i}(g)A_g(x_i)\ge h
+      \qquad(i\le m),
+      \tag{FTR2}
+   \]
+   then every \(q_i\) has sampled invalid load at least
+   \[
+      \sum_{j\ne i}\sum_{g\in\mathcal L}\pi_{q_i}(g)A_g(x_j)
+      \ge
+      e^{-2D}h(m-1).
+      \tag{FTR3}
+   \]
+
+   Consequently, if \(h\ge\log^{-O_c(1)}m\) and \(D=O_c(\log\log m)\), a
+   flat sampled panel has far load \(m\log^{-O_c(1)}m\) on this terminal
+   instance.  This is incompatible with the clean
+   \(m^{\rho_c}\log^{O_c(1)}m\) sampled ANN target for every fixed
+   \(\rho_c<1\).
+
+   In particular, the theta-smoothing side of
+   \cref{cor:construction-a-theta-balanced-window} is useful as a balanced
+   local MDS checkpoint alphabet, but it is not by itself a sampled
+   Construction-A separator.  A successful construction using smoothed theta
+   residues must obtain query selectivity from another nonflat coordinate,
+   a Fano/reporter prefix charge, or a responsibility/aggregate object; the
+   flat residue law cannot supply the near/far sampled spectrum alone.
+\end{corollary}
+
+\begin{proof}
+   From \((FTR2)\) and the upper flatness bound in \((FTR1)\),
+   \[
+      h
+      \le
+      \frac{e^D}{|\mathcal L|}
+      |\{g:A_g(x_i)=1\}|.
+   \]
+   Hence each point is stored in at least \(e^{-D}h|\mathcal L|\) labels.  For
+   query \(q_i\), the lower flatness bound gives
+   \[
+   \begin{aligned}
+      \sum_{j\ne i}\sum_g\pi_{q_i}(g)A_g(x_j)
+      &\ge
+      \frac{e^{-D}}{|\mathcal L|}
+      \sum_{j\ne i}|\{g:A_g(x_j)=1\}|  \\
+      &\ge
+      \frac{e^{-D}}{|\mathcal L|}(m-1)e^{-D}h|\mathcal L|,
+   \end{aligned}
+   \]
+   which is \((FTR3)\).  The asymptotic consequence follows because
+   \(m^{1-\rho_c}/\log^{O_c(1)}m\to\infty\) for fixed \(\rho_c<1\).
+\end{proof}
+
 \begin{corollary}[Checkpoint products thin emissions, not prefix work]
    \label{cor:checkpoint-product-far-load-accounting}
    Work in the checkpointed quotient reporter of
