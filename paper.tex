@@ -105301,6 +105301,190 @@ tax]
    \((QPT3)\) and taking logarithms gives \((QPT4)\).
 \end{proof}
 
+\begin{corollary}[Two-sided lens tilts pay the exact polynomial toll]
+   \label{cor:two-sided-lens-tilt-price}
+   Work in the ideal flat score model of
+   \cref{cor:query-centered-gibbs-lens-barrier}.  Put
+   \(D=\|p-q\|\), \(R=D/2\), and for \(r\ge1\) let
+   \[
+      \Pi_{p,q}^{(r)}
+      \quad\text{have density proportional to}\quad
+      \exp\{\beta S_q(\lambda)+r\beta S_p(\lambda)\}.
+      \tag{TLT1}
+   \]
+   Equivalently,
+   \[
+      \Pi_{p,q}^{(r)}
+      =
+      N\!\left(
+         \frac{q+rp}{1+r},
+         \frac1{\beta(1+r)}I_d
+      \right).
+   \]
+   Relative to the query-centered Gibbs law \(\Pi_q=N(q,\beta^{-1}I_d)\),
+   \[
+      D(\Pi_{p,q}^{(r)}\|\Pi_q)
+      =
+      \frac{\beta D^2}{2}\frac{r^2}{(1+r)^2}
+      +
+      \frac d2
+      \left(
+         \frac1{1+r}-1+\log(1+r)
+      \right).
+      \tag{TLT2}
+   \]
+   In particular, for the midpoint tilt \(r=1\), if
+   \(\beta=2(1+\rho_c)L+o(L)\), \(\ip{p}{q}=a_0+o(1)\), and
+   \(d=o(L)\), then
+   \[
+      D(\Pi_{p,q}^{(1)}\|\Pi_q)
+      =
+      \rho_cL+O(d)+o(L).
+      \tag{TLT3}
+   \]
+   If moreover \(d=o(\sqrt L)\), then the midpoint tilt has nonvanishing lens
+   mass at the all-reporting threshold:
+   \[
+      \Pi_{p,q}^{(1)}(E_{\theta_{\rm lens}})
+      =
+      \frac12+o(1),
+      \tag{TLT4}
+   \]
+   and the same conclusion holds for threshold perturbations
+   \(\theta_{\rm lens}+o(\beta^{-1/2})\).
+
+   For larger live dimension one may move the two-sided tilt slightly toward
+   the storage center.  If \(r=1+\epsilon\) and \(u\ge0\) satisfy
+   \[
+      \sqrt{\beta(1+r)}
+      \left(
+         R-\frac D{1+r}
+      \right)
+      \ge
+      \sqrt d+\sqrt{2u},
+      \tag{TLT5}
+   \]
+   then
+   \[
+      \Pi_{p,q}^{(r)}(E_{\theta_{\rm lens}})
+      \ge
+      1-e^{-u}.
+      \tag{TLT6}
+   \]
+   Hence, whenever \(d=o(L)\) and \(u=o(L)\), choosing
+   \[
+      \epsilon
+      =
+      O_c\!\left(\frac{\sqrt d+\sqrt u}{\sqrt L}\right)
+      =
+      o(1)
+      \tag{TLT7}
+   \]
+   gives lens mass \(1-e^{-u}\) and
+   \[
+      D(\Pi_{p,q}^{(1+\epsilon)}\|\Pi_q)
+      =
+      \rho_cL
+      +
+      O_c\!\left(\sqrt{L(d+u)}+d\right)
+      +
+      o(L)
+      =
+      \rho_cL+o(L).
+      \tag{TLT8}
+   \]
+
+   Thus \cref{cor:query-only-perturbation-lens-toll} is tight in the correct
+   sense.  A two-sided law concentrated on the lens exists, and at block scale
+   \(d=O(\log\log m)\) its midpoint form pays only the polynomial
+   \(m^{\rho_c}\) likelihood toll up to polylogarithmic factors.  What remains
+   is not stronger terminal randomness: the algorithm must realize this
+   two-sided lens price through activation volume, Fano pricing, a leader or
+   responsibility charge, or a quotient bucket.  Once that price is present,
+   the existing pairwise-independent or multiply-shift aggregate filters are
+   only terminal thinning devices.
+\end{corollary}
+
+\begin{proof}
+   The density in \((TLT1)\) has quadratic part
+   \[
+      -\frac{\beta(1+r)}2\|\lambda\|^2
+      +
+      \beta\ip{q+rp}{\lambda},
+   \]
+   which gives the displayed Gaussian mean and covariance.  The KL divergence
+   between \(N(\mu,\Sigma)\) and \(N(q,\beta^{-1}I_d)\), with
+   \(\mu=(q+rp)/(1+r)\) and \(\Sigma=(\beta(1+r))^{-1}I_d\), is
+   \[
+      \frac12
+      \left[
+         \beta\|\mu-q\|^2
+         +
+         \operatorname{tr}(\beta\Sigma)
+         -
+         d
+         +
+         \log\frac{\det(\beta^{-1}I_d)}{\det\Sigma}
+      \right].
+   \]
+   Since \(\|\mu-q\|=rD/(1+r)\), this is \((TLT2)\).
+   For \(r=1\), \(D^2=2(1-a_0)+o(1)=2/c^2+o(1)\), so
+   \[
+      \frac{\beta D^2}{8}
+      =
+      \frac{1+\rho_c}{2c^2}L+o(L)
+      =
+      \rho_cL+o(L),
+   \]
+   proving \((TLT3)\).
+
+   For the midpoint mass, write
+   \[
+      \lambda=\frac{p+q}{2}+\frac1{\sqrt{2\beta}}Z,
+      \qquad Z\sim N(0,I_d),
+   \]
+   and let \(e=(q-p)/D\).  Since
+   \(\|(p+q)/2-p\|=D/2=R\), the lens event is
+   \[
+      2R(2\beta)^{-1/2}\ip{Z}{e}
+      +
+      (2\beta)^{-1}\|Z\|^2
+      \le0 .
+      \tag{TLT9}
+   \]
+   Equivalently,
+   \[
+      \ip{Z}{e}
+      \le
+      -\frac{\|Z\|^2}{2R\sqrt{2\beta}} .
+      \tag{TLT10}
+   \]
+   When \(d=o(\sqrt L)\), and hence \(d=o(\sqrt\beta)\), the right-hand side
+   is \(o_{\Pr}(1)\).  Slutsky's theorem, applied to the one-dimensional
+   Gaussian \(\ip{Z}{e}\), gives \((TLT4)\).  A threshold perturbation
+   \(o(\beta^{-1/2})\) changes the right-hand side of \((TLT10)\) by
+   \(o(1)\), so the same argument applies.
+
+   For \(r\ge1\), the center of \(\Pi_{p,q}^{(r)}\) is at distance
+   \(D/(1+r)\) from \(p\).  Thus the ball
+   \(E_{\theta_{\rm lens}}\), whose radius is \(R=D/2\), contains every draw
+   whose Gaussian fluctuation has norm at most \(R-D/(1+r)\).  The standard
+   Gaussian norm bound
+   \[
+      \Pr[\|Z\|\ge\sqrt d+\sqrt{2u}]\le e^{-u}
+   \]
+   gives \((TLT6)\) under \((TLT5)\).  Since
+   \[
+      R-\frac D{1+r}
+      =
+      \frac{D(r-1)}{2(1+r)},
+   \]
+   condition \((TLT5)\) is met by \((TLT7)\).  Expanding \((TLT2)\) at
+   \(r=1\) then gives an additional mean-shift cost \(O_c(\beta\epsilon)\)
+   and dimension cost \(O(d)\).  With
+   \(\beta=\Theta_c(L)\) and \((TLT7)\), this is \((TLT8)\).
+\end{proof}
+
 \begin{corollary}[Balanced checkpoints can absorb any fixed flat-volume excess]
    \label{cor:balanced-checkpoints-absorb-flat-volume-excess}
    Continue with the nearest-mesh scaled-GRS window of
