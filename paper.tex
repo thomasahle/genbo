@@ -103418,6 +103418,135 @@ explicit]
    \(g_{j,\tau,0}=1+o(1)\) in the same regime.  This gives \((TLC6)\).
 \end{proof}
 
+\begin{corollary}[Randomly scaled MDS blocks have the complete-theta spectrum]
+   \label{cor:randomly-scaled-mds-complete-theta}
+   Let \(D_0\le\mathbb F_p^b\) be an \([b,h]\) MDS code and put
+   \(k=b-h\).  Choose independent multipliers
+   \(\sigma_i\in\mathbb F_p^*\) uniformly and set
+   \[
+      D_\sigma=\{(\sigma_1u_1,\ldots,\sigma_bu_b):u\in D_0\}.
+      \tag{RSM1}
+   \]
+   For a fixed charged temperature \(\tau\), abbreviate
+   \(g_0=g_{j,\tau,0}\),
+   \[
+      \Theta=\sum_{r\in\mathbb F_p}g_{j,\tau}(r),
+      \qquad
+      \bar g=\frac{\Theta-g_0}{p-1},
+      \qquad
+      \Theta^+=g_0+\frac{p}{p-1}(\Theta-g_0).
+      \tag{RSM2}
+   \]
+   Then
+   \[
+      \mathbb E_\sigma[1+\mathcal E_\sigma(\tau)]
+      =
+      \sum_{w=0}^b A_w(D_0)g_0^{b-w}\bar g^w
+      \le
+      g_0^b+p^{-k}(\Theta^+)^b .
+      \tag{RSM3}
+   \]
+   Consequently, for any finite charged-temperature set \(\mathcal T\), with
+   probability at least \(1-\delta\) over the multipliers,
+   \[
+      \max_{\tau\in\mathcal T}\mathcal E_\sigma(\tau)
+      \le
+      \max_{\tau\in\mathcal T}(g_{j,\tau,0}^b-1)
+      +
+      \frac{|\mathcal T|}{\delta}\,
+      p^{-k}
+      \max_{\tau\in\mathcal T}(\Theta_{j,\tau}^+)^b .
+      \tag{RSM4}
+   \]
+
+   In the mesh notation of
+   \cref{cor:construction-a-complete-theta-random-screen},
+   \[
+      \Theta_{j,\tau}^+
+      \le
+      \left(1+\frac1{p-1}\right)\Theta_{j,\tau}
+      \le
+      \left(1+\frac1{p-1}\right)\Theta_*,
+      \tag{RSM5}
+   \]
+   and \(g_{j,\tau,0}^b-1\le2b\varepsilon_*\) whenever
+   \(b\varepsilon_*\le1\).  Thus a product panel of independently scaled MDS
+   blocks satisfies the complete-theta flatness screen if
+   \[
+      \sum_j
+      \left(
+         b_j\varepsilon_{j,*}
+         +
+         p_j^{-k_j}
+         \exp\!\left\{\frac{b_j}{p_j-1}\right\}
+         \Theta_{j,*}^{b_j}
+      \right)
+      =
+      O_c(\log\log m),
+      \tag{RSM6}
+   \]
+   with the analogous per-block \(<c_0\) bound and the usual union-bound
+   allocation of \(\delta_j\).  For generalized Reed--Solomon lengths
+   \(b_j\le p_j+1\), the extra factor
+   \(\exp\{b_j/(p_j-1)\}\) is constant.  Therefore a randomly monomially
+   scaled MDS block matches the random complete-theta screen up to constant
+   slack while using only \(b_j\) independent nonzero field multipliers.
+
+   This is the positive MDS/Reed--Solomon spectral route.  The scaling is a
+   Lee-spreading device, not a new random tuple subset: \(D_\sigma\) is
+   monomially equivalent to \(D_0\), remains MDS, and a generalized
+   Reed--Solomon decoder can absorb the multipliers by rescaling coordinates.
+   The remaining work for a clean ANN theorem is no longer the dual theta
+   spectrum for such blocks; it is to combine this scaled-MDS spectral
+   flatness with a Construction-A/Fano reporter whose prefix work and far
+   co-load satisfy the product estimates.
+\end{corollary}
+
+\begin{proof}
+   For a codeword \(u\in D_0\) of Hamming weight \(w\), the zero coordinates
+   contribute \(g_0^{b-w}\).  On every nonzero coordinate,
+   \(\sigma_i u_i\) is uniform in \(\mathbb F_p^*\), independently across
+   \(i\), so
+   \[
+      \mathbb E_\sigma
+      \prod_{i=1}^b g_{j,\tau}(\sigma_i u_i)
+      =
+      g_0^{b-w}\bar g^w .
+   \]
+   Summing over the Hamming weight enumerator of \(D_0\) gives the equality in
+   \((RSM3)\).
+
+   Because \(D_0\) is an \([b,h]\) MDS code, every codeword of weight \(w>0\)
+   has \(w\ge k+1\).  For a fixed support \(S\) of size \(w\), the shortening
+   to \(S\) has dimension at most \(w-k\), hence there are at most
+   \(p^{w-k}\) codewords supported in \(S\).  Therefore
+   \(A_w(D_0)\le\binom bw p^{w-k}\) for \(w\ge k+1\).  Substituting this into
+   the nonzero part gives
+   \[
+      \sum_{w\ge k+1}A_w(D_0)g_0^{b-w}\bar g^w
+      \le
+      p^{-k}\sum_{w\ge k+1}
+         \binom bw g_0^{b-w}(p\bar g)^w
+      \le
+      p^{-k}(g_0+p\bar g)^b,
+   \]
+   which is the inequality in \((RSM3)\), since \(g_0+p\bar g=\Theta^+\).
+
+   Markov's inequality applied to the nonzero contribution for each
+   \(\tau\in\mathcal T\), followed by a union bound, gives \((RSM4)\).  The
+   bound \((RSM5)\) follows from
+   \[
+      \Theta^+=\Theta+\frac{\Theta-g_0}{p-1}
+      \le
+      \left(1+\frac1{p-1}\right)\Theta .
+   \]
+   The zero-residue lift bound is the same estimate used in
+   \cref{cor:construction-a-complete-theta-random-screen}.  Substituting these
+   two estimates and summing over blocks gives \((RSM6)\), after which
+   \cref{cor:construction-a-dual-theta-rate-flatness} supplies the flat
+   product-rate consequence.
+\end{proof}
+
 \begin{corollary}[MDS Hamming spectrum does not beat the max-residue screen]
    \label{cor:mds-hamming-spectrum-max-screen}
    Let \(C_j\le\mathbb F_{p_j}^{b_j}\) be an \([b_j,k_j]\) MDS code, so

@@ -1339,6 +1339,12 @@
   |\{u\in D\setminus0:\Omega(u)\le s\}|\le A p^{-k}|\{v\ne0:\Omega(v)\le s\}|,
   \]
   then it inherits the complete-theta screen with \(A p^{-k}(\Theta^b-g_0^b)\). At the nearest-residue mesh this is a Lee/Euclidean ball list-decoding condition. This is now the concrete ask for Reed--Solomon, AG, Tanner, trellis, or lattice constructions: prove random-like Lee-ball counts with only polylog \(A\), then separately prove the fast reporter/product-Fano rates.
+- Found a positive MDS/RS spectral construction rather than another barrier. `cor:randomly-scaled-mds-complete-theta` takes any \([b,h]\) MDS dual and multiplies each coordinate by an independent nonzero field scalar. For a weight-\(w\) codeword the nonzero symbols become uniform in \(\mathbb F_p^*\), so
+  \[
+  \mathbb E_\sigma(1+\mathcal E_\sigma)=\sum_w A_w g_0^{b-w}\bar g^w
+  \le g_0^b+p^{-k}\bigl(g_0+\tfrac p{p-1}(\Theta-g_0)\bigr)^b.
+  \]
+  For GRS lengths \(b\le p+1\), this is the complete-theta random-code screen up to a constant factor. Thus the amount of randomness needed to fix the MDS Lee/theta spectrum is only one random nonzero multiplier per coordinate, not random tuple subsets or a random dense code. The scaling is monomial equivalence, so generalized Reed--Solomon decoding can absorb it by coordinate rescaling. The remaining obstacle for this branch is now the actual Construction-A/Fano reporter: prefix work and far co-load must satisfy the product estimates with these scaled residue blocks.
 - Audited the obvious MDS/Reed--Solomon escape. `cor:mds-hamming-spectrum-max-screen` records the exact MDS dual Hamming enumerator and shows that if an MDS/RS block is certified only by minimum distance/Hamming support, the weighted bound is still
   \[
   \sum_w A_w^\perp\eta^w\le p^{-k}\sum_{w\ge k+1}\binom bw(p\eta)^w\le p^{-k}(1+p\eta)^b.
