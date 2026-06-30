@@ -2490,6 +2490,13 @@ P158. (*** OOD QPS@90% (1M): float-rerank TIES int8 at 0.90 matched-load -- NOT 
     generation, not float rerank. NEXT (#12 rest): 10M QPS@90% vs ScaNN (the ranking number) -- build a 10M float GT
     + run best config; HELD until box clears (30M streaming owns it). Keep float-rerank behind SBANN_FLOAT_RERANK
     (NOT a hard default).
+    ADDENDUM (ood2 daf57ae): the t_surv-cut QPS@90% lever RE-MEASURED on text2image-vs-float-GT (not assumed from
+    msturing): INT8 p=288 depth 8640->1152 (rerank 56.5%->28.5%) QPS 3317->6576 = **1.98x**, recall 0.9071->0.9020
+    (held >=0.90); after the cut the int8 path is SCAN-bound (56%). FLOAT p=208 depth 6240->624 stays REREANK-bound
+    (~76%, the 4x/survivor cost) so its cut can't beat int8's -> the max-QPS@90% is a TIE (int8+cut simpler/no 4x
+    base; float+cut safer-margin: 0.908 vs int8's fragile 0.924-ceiling-only-0.005-over-0.90). So the durable OOD
+    QPS@90% lever is the t_surv-cut on the INT8 path (~2x); after it, the remaining wall is SCAN throughput. 10M
+    builder (ood_10m.sh) validated + row-alignment confirmed across the full 10M, ready to fire on box-clear.
 
 P159. (*** 30M STREAMING REALITY: flat-IVF caps ~0.88 in budget < scann 0.9924; router+scan-throughput is the gap; offline training is FREE ***)
     streaming2 ran the real final_runbook/msturing-30M-clustered (GT alignment verified 10/10 vs float brute-force).
