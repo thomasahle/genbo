@@ -106957,6 +106957,73 @@ tax]
    \(|O_b|=1\).
 \end{proof}
 
+\begin{lemma}[Unstructured port maps do not compress plateaus]
+   \label{lem:random-port-map-no-plateau-compression}
+   Work with the port-load quantity \(P(q,Z)\) from
+   \cref{cor:quotient-port-sampler-terminalizes-rate-coverage}.  Fix one bucket
+   \(b\) with resident count \(c=|C_b|\) and aggregate query probability
+   \(\Pi_{q,Z}(b)=\alpha\).  Suppose that, conditional on \(C_b\), the resident
+   outputs are assigned independently and uniformly to an output-port alphabet
+   of size \(M\), and that the certified port set is the exact image
+   \(O_b=\{o_x:x\in C_b\}\).  Then
+   \[
+      \E |O_b|
+      =
+      M\left(1-\left(1-\frac1M\right)^c\right)
+      \ge
+      \kappa\,\min\{c,M\}
+      \tag{UPQ1}
+   \]
+   for an absolute constant \(\kappa>0\).  Consequently this single bucket
+   contributes expected port load at least
+   \[
+      \E P(q,Z)\ge \alpha\,\kappa\,\min\{c,M\}.
+      \tag{UPQ2}
+   \]
+   If \(\min\{c,M\}\to\infty\), then with probability \(1-o(1)\),
+   \[
+      |O_b|\ge\frac{\kappa}{2}\min\{c,M\}.
+      \tag{UPQ3}
+   \]
+
+   Thus the verified-port bridge is not discharged by applying an independent
+   hash or a generic resident-to-child map after the bucket has been found.  It
+   helps only when the construction supplies a structured lumping theorem:
+   large resident sets must have small certified images under the true terminal
+   answer or outgoing-port map, or else the port load is the same order as the
+   resident load up to the size of the whole port alphabet.
+\end{lemma}
+
+\begin{proof}
+   For each port \(o\), let \(I_o\) be the indicator that some resident maps to
+   \(o\).  Then
+   \[
+      \E I_o=1-\left(1-\frac1M\right)^c,
+   \]
+   and summing over \(o\) gives the equality in \((UPQ1)\).  If \(c\le M\), then
+   \(1-(1-1/M)^c\ge c/(2M)\).  If \(c\ge M\), then
+   \(1-(1-1/M)^c\ge1-e^{-1}\).  This proves \((UPQ1)\), with for instance
+   \(\kappa=\min\{1/2,1-e^{-1}\}\), and \((UPQ2)\) follows by multiplying by the
+   bucket probability \(\alpha\).
+
+   The occupied-port indicators are negatively correlated in the usual
+   occupancy experiment, so
+   \[
+      \operatorname{Var} |O_b|\le \E |O_b|.
+   \]
+   Chebyshev's inequality gives
+   \[
+      \Pr\!\left[
+         |O_b|<\frac12\E|O_b|
+      \right]
+      \le \frac{4}{\E|O_b|}.
+   \]
+   Together with \((UPQ1)\), this proves \((UPQ3)\).  The final interpretation is
+   just the definition of \(P(q,Z)\): the port sampler pays for distinct output
+   ports in the bucket image, so a random image with
+   \(\Theta(\min\{c,M\})\) occupied ports has not compressed the plateau.
+\end{proof}
+
 \begin{corollary}[Balanced checkpoints can absorb any fixed flat-volume excess]
    \label{cor:balanced-checkpoints-absorb-flat-volume-excess}
    Continue with the nearest-mesh scaled-GRS window of
