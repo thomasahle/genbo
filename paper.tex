@@ -7039,6 +7039,35 @@ partition ignores the bias coordinates that certify the list size.
    \((GCE6)\).
 \end{proof}
 
+\begin{remark}[Numerical scale of the fixed-branch checkpoint constant]
+   \label{rem:fixed-branch-gaussian-checkpoint-numerics}
+   The scalar in \cref{cor:fixed-branch-gaussian-checkpoint-constant} is easy
+   to stress-test directly, because it is only a one-layer Gaussian order
+   statistic.  A direct Monte Carlo audit of \((BGC1)\), using log-sum-exp
+   evaluation of \(R_B\), gives the following estimates for \(h_B=\E\log R_B\):
+   \[
+   \begin{array}{c|cccccccc}
+      B&2&4&8&16&64&256&1024&4096\\ \hline
+      h_B&0.431&0.706&0.920&1.093&1.369&1.577&1.748&1.854 .
+   \end{array}
+   \tag{BGC8}
+   \]
+   Larger exploratory runs give \(h_{8192}\approx1.97\),
+   \(h_{16384}\approx2.06\), and \(h_{65536}\approx2.21\).  This is consistent
+   with the critical random-energy heuristic \(h_B=\log\log B+O(1)\), not with
+   a linear \(\log B\) entropy gain.
+
+   Therefore the raw Gaussian checkpoint schedule is numerically plausible
+   only when the segment-length coefficient \(\kappa\) in \((BGC3)\) is large
+   enough to compensate for this small constant.  For example, \(B=64\) gives
+   the leading requirement \(\kappa\gtrsim(A+1)/1.37\), while \(B=4096\) gives
+   \(\kappa\gtrsim(A+1)/1.85\).  This does not close the theorem: it only says
+   that the next Gaussian checkpoint experiment should measure the finite
+   bridge/barrier correction to \(h_B\), and that a code or lattice replacement
+   should be judged by whether its pair-tilted order-two entropy rate is
+   materially larger than these Gaussian constants.
+\end{remark}
+
 \begin{corollary}[Difference-universal syndromes suffice with a random bucket]
    \label{cor:difference-universal-syndrome-thinning}
    Let \(G\) be a finite abelian group and let
