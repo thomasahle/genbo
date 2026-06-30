@@ -7068,6 +7068,156 @@ partition ignores the bias coordinates that certify the list size.
    materially larger than these Gaussian constants.
 \end{remark}
 
+\begin{lemma}[Conditioning costs exactly a two-temperature event ratio]
+   \label{lem:conditional-collision-event-ratio}
+   Let \(\nu\) be a probability law on a finite set \(\Omega\), and let
+   \(E\subseteq\Omega\) have \(\nu(E)>0\).  Define the collision-effective
+   support and the squared law by
+   \[
+      N_2(\nu)=\left(\sum_{\omega\in\Omega}\nu(\omega)^2\right)^{-1},
+      \qquad
+      \nu^{[2]}(\omega)=
+      \frac{\nu(\omega)^2}{\sum_{\omega'}\nu(\omega')^2}.
+      \tag{CER1}
+   \]
+   Let \(\nu_E\) be \(\nu\) conditioned on \(E\).  Then
+   \[
+      N_2(\nu_E)
+      =
+      N_2(\nu)\,
+      \frac{\nu(E)^2}{\nu^{[2]}(E)} .
+      \tag{CER2}
+   \]
+   In particular,
+   \[
+      \log N_2(\nu_E)
+      \ge
+      \log N_2(\nu)+2\log\nu(E),
+      \tag{CER3}
+   \]
+   and if \(\nu(E)\ge L^{-C}\), then conditioning on \(E\) loses at most
+   \(2C\log L\) in \(\log N_2\).
+
+   More generally, for a sequence of product or finite-state segments of
+   length \(\ell\), if
+   \[
+      \log N_2(\nu)=h\ell+o(\ell),\quad
+      \log\nu(E)=-I_1\ell+o(\ell),\quad
+      \log\nu^{[2]}(E)=-I_2\ell+o(\ell),
+      \tag{CER4}
+   \]
+   then the conditioned collision-entropy rate is
+   \[
+      \frac1\ell\log N_2(\nu_E)
+      =
+      h-2I_1+I_2+o(1).
+      \tag{CER5}
+   \]
+\end{lemma}
+
+\begin{proof}
+   By definition,
+   \[
+      \sum_{\omega\in E}\nu_E(\omega)^2
+      =
+      \frac{\sum_{\omega\in E}\nu(\omega)^2}{\nu(E)^2}
+      =
+      \frac{\nu^{[2]}(E)}{N_2(\nu)\nu(E)^2}.
+   \]
+   Inverting gives \((CER2)\).  Since \(\nu^{[2]}(E)\le1\), \((CER3)\)
+   follows.  Substituting the three exponential rates in \((CER4)\) gives
+   \((CER5)\).
+\end{proof}
+
+\begin{corollary}[Bridge and barrier corrections are the same checkpoint scalar]
+   \label{cor:checkpoint-bridge-barrier-correction}
+   In the finite-state checkpoint setting of
+   \cref{cor:finite-state-checkpoint-collision-test}, let
+   \(E(u)\subseteq\mathcal P(u)\) be any segment event imposed after entering
+   prefix \(u\): an endpoint window, a tame barrier, a continuation guard, or
+   an intersection of these.  Write
+   \[
+      p_1(u)=
+      \frac{\sum_{\pi\in E(u)}W_q(\pi)}{\sum_{\pi\in\mathcal P(u)}W_q(\pi)},
+      \qquad
+      p_2(u)=
+      \frac{\sum_{\pi\in E(u)}W_q(\pi)^2}
+           {\sum_{\pi\in\mathcal P(u)}W_q(\pi)^2}.
+      \tag{BBC1}
+   \]
+   If the checkpoint witness law is the tilted law conditioned on \(E(u)\),
+   then its collision-effective support is
+   \[
+      N_2^E(u)
+      =
+      N_2(u)\frac{p_1(u)^2}{p_2(u)}.
+      \tag{BBC2}
+   \]
+   Hence the exact conditioned checkpoint test is
+   \[
+      \log N_2(u)+2\log p_1(u)-\log p_2(u)
+      \ge
+      \log K_s+\log\eta_s.
+      \tag{BBC3}
+   \]
+
+   Consequently, if a segment of length \(\ell\) has
+   \[
+      \log N_2(u)=h\ell+o(\ell)
+      \tag{BBC4}
+   \]
+   and the endpoint/barrier event is central for the first-temperature tilted
+   path law in the sense that
+   \[
+      p_1(u)\ge \ell^{-C}
+      \tag{BBC5}
+   \]
+   uniformly on live prefixes, then conditioning on that event changes
+   \(\log N_2\) by only \(O_C(\log\ell)\) in the adverse direction.  In the
+   fixed-\(B\) Gaussian checkpoint regime
+   \(\ell=\kappa\log\log m+o(\log\log m)\), the leading pass/fail condition
+   sufficient condition \(\kappa h_B>A+1\) from
+   \cref{cor:fixed-branch-gaussian-checkpoint-constant} is therefore not
+   harmed by such central bridge or tame-barrier conditioning.  The failure
+   side, and any possible improvement from conditioning away square-heavy
+   paths, is decided by \(p_2(u)\).
+
+   If instead \(p_1(u)=\exp\{-I_1\ell+o(\ell)\}\) and
+   \(p_2(u)=\exp\{-I_2\ell+o(\ell)\}\), then the checkpoint entropy rate is
+   \(h-2I_1+I_2\).  Thus the bridge/barrier experiment has one concrete
+   output: measure the first-temperature and squared-temperature probabilities
+   of the same event.  The same transfer-matrix or dynamic-programming pass
+   that computes \(Z_1\) and \(Z_2\) computes \(p_1\) and \(p_2\) by adding the
+   endpoint or barrier state.
+\end{corollary}
+
+\begin{proof}
+   Apply \cref{lem:conditional-collision-event-ratio} to the tilted segment
+   law
+   \[
+      \nu_u(\pi)=
+      \frac{W_q(\pi)}{\sum_{\pi'\in\mathcal P(u)}W_q(\pi')}.
+   \]
+   Then \(N_2(\nu_u)=N_2(u)\), \(\nu_u(E(u))=p_1(u)\), and
+   \(\nu_u^{[2]}(E(u))=p_2(u)\), because the squared law is exactly the
+   tilted path law with weights \(W_q(\pi)^2\).  This proves \((BBC2)\), and
+   the checkpoint requirement \(N_2^E(u)\ge\eta_sK_s\) is \((BBC3)\).
+
+   Since \(p_2(u)\le1\), \((BBC5)\) and \((BBC2)\) give
+   \[
+      \log N_2^E(u)
+      \ge
+      \log N_2(u)-2C\log\ell .
+   \]
+   For \(\ell=\Theta(\log\log m)\), this is
+   \(o(\log\log m)\), so it does not affect the strict leading comparison
+   \(\kappa h_B\gtrless A+1\) in
+   \cref{cor:fixed-branch-gaussian-checkpoint-constant}.  The exponential-rate
+   statement is \((CER5)\), and the final dynamic-programming statement is the
+   same \(Z_1/Z_2\) recursion with the event \(E(u)\) encoded in the state or
+   terminal boundary condition.
+\end{proof}
+
 \begin{corollary}[Difference-universal syndromes suffice with a random bucket]
    \label{cor:difference-universal-syndrome-thinning}
    Let \(G\) be a finite abelian group and let
