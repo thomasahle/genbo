@@ -2473,19 +2473,23 @@ P157. (*** OOD: int8 rerank has a HARD ~0.924 recall ceiling vs the FLOAT GT; fl
     depth. NEXT: leaderboard-accurate OOD = MAX QPS@90% vs FLOAT GT at 10M, combining float-rerank+t_surv-cut+low-p,
     compared to ScaNN's OOD QPS@90%. (Float rerank is neutral at 0.90 alone -> the QPS@90% win must come from t_surv+routing.)
 
-P158. (*** OOD QPS@90% NUMBER (1M): float-rerank = 1.13x at the 0.90 line (t_surv on BOTH paths tips it positive) + ceiling break ***)
-    ood2 (committed 420d056 feat/ood2): max QPS at recall@10>=0.90 vs the FLOAT GT, text2image 1M, t_surv-cut
-    applied to BOTH candidate paths, a0=3 SOAR (a0=1 routing CAN'T reach 0.90 here), REPS=5 clean:
-      FLOAT-rerank: 11372 QPS @ 0.9051  (p=176, t_surv=704)
-      INT8-only:    10067 QPS @ 0.9020  (p=288, t_surv=1152)
-    => float-rerank ~1.13x faster at QPS@90% (hits 0.90 at 1.6x fewer probes p176 vs p288; the 4x-byte+f32 rerank
-    cost partly offsets -> net 1.13x). This REVISES P157's "QPS-neutral@0.90" read: cutting the float path's
-    rerank DEPTH (t_surv) to the min that holds 0.90 tips it from neutral to a modest win. Plus the P157 ceiling
-    break (int8 caps ~0.924 vs float GT; float required >0.92). => float-rerank is the OOD DEFAULT candidate (small
-    QPS@90% win + needed for the high-recall ScaNN regime). CAVEAT: 1.13x does NOT close the ~2.4x gap to the real
-    OOD #1 (P92-95, and those were vs int8-GT = optimistic) -- so 10M-vs-ScaNN is still the number that ranks us.
-    NEXT (#12 rest): 10M float-GT builder (ood2 prepping) + the 10M QPS@90% run vs ScaNN, HELD until the box clears
-    (30M streaming run owns it now). Don't hard-wire float-default until 10M confirms the win there.
+P158. (*** OOD QPS@90% (1M): float-rerank TIES int8 at 0.90 matched-load -- NOT a QPS@90% lever; t_surv+low-p IS. Float = ceiling break only ***)
+    ood2: max QPS at recall@10>=0.90 vs the FLOAT GT, text2image 1M, t_surv-cut floored on BOTH paths, a0=3 SOAR
+    (a0=1 routing CAN'T reach 0.90 here), REPS=5, MATCHED-LOAD (committed bea5770, supersedes the 420d056 first read):
+      busy window:  FLOAT p=208 t_surv=624  0.9080 @ 9795  | INT8 p=288 t_surv=1152 0.9020 @ 9562  (float +2.4%, noise)
+      light window: FLOAT p=176 t_surv=704  0.9051 @ 11372 | INT8 p=288 t_surv=1152 0.9020 @ 10067 (float +13%, load-luck)
+    VERDICT: TIE at 0.90. Float reaches 0.90 at fewer probes (p~208 vs ~288, load-independent fact) but its 4x-byte +
+    f32 rerank cost cancels the scan saving -- flooring t_surv does NOT tip float to a win (rerank stays the
+    bottleneck). The earlier "1.13x" was light-load luck; matched-load it's +2.4% = noise. *** So float-rerank is
+    QPS-NEUTRAL at the 0.90 leaderboard point and is NOT the QPS@90% lever. The QPS@90% win is t_surv-cut + low-p
+    routing (shared by both paths); at the pure 0.90 point int8+t_surv-cut is as good as float AND avoids the 4x float
+    base. Float-rerank's REAL value is narrow: (a) the ceiling break >0.92 (int8 caps ~0.924 vs float GT; float
+    .9523@p640), (b) correcting our optimistic int8-GT recall reporting. Best QPS@90% @1M ~= 9.6-11.4k QPS @ recall
+    ~0.902-0.908 (box-load-bound). *** STRATEGIC: the OOD gap to the real #1 (~2.4x, and that was vs int8-GT =
+    optimistic) is a SCAN-throughput/routing gap, NOT a rerank gap -- so the durable OOD lever is faster candidate
+    generation, not float rerank. NEXT (#12 rest): 10M QPS@90% vs ScaNN (the ranking number) -- build a 10M float GT
+    + run best config; HELD until box clears (30M streaming owns it). Keep float-rerank behind SBANN_FLOAT_RERANK
+    (NOT a hard default).
 
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
