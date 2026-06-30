@@ -2357,6 +2357,19 @@ P150. (*** 4 PARALLEL AGENTS (worktree-isolated) delivered the next-10 batch: 3 
       than it saves). *** Re-confirms the OOD gap is EXECUTION-SPEED, not metric/ranking. *** Cheap offline gate
       saved the engine wiring -- the discipline that's paid off all session (RaBitQ, ADC, this).
 
+P151. (GOAL refined: top OOD + STREAMING at 1M/10M/100M. 100M msspacev scale attempt + a persistence-at-scale bug)
+    100M msspacev (crop_nb_100000000, 9.3GB base) BUILDS fine: hierk3 C0=1024 C1=16384 b0=64 b1=200 a0=1
+    raw-dedup, built in 1981s (33min), anon ~13GB (RSS 22GB incl ~9GB evictable base cache -> the RSS-based
+    watchdog false-alarms; ANON is the true metric and stayed safe under the 24GB/40% limit). BUT SBANN_INDEX_SAVE
+    OOM-KILLED during the ~13GB write: build holds 13GB anon + the save accumulates up to ~13GB dirty page cache
+    (BufWriter+lazy writeback) -> 13+13 > limit -> killed mid-write (file truncated to 3.9GB; load panics
+    persist.rs:82 reading a 12.96GB region from a 3.9GB file). Worked at 1M (tiny). FIX: periodic bw.flush() +
+    File::sync_data() in Index::save_to after the big arrays (raw, blocks) to force writeback + bound dirty pages.
+    (Persistence is the scale enabler -> this fix matters for the 100M/1B program.) Streaming = MSTuring track
+    (data + neurips23/runbooks here; DiskANN ref recall@10=0.892 @10M). msturing 1M quantized to int8. NEXT:
+    get the 100M msspacev recall (rebuild a0=2 no-save, running), then msturing streaming number, then OOD scale.
+    Box discipline: ONE big build at a time (concurrent 100M+streaming starved both).
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
