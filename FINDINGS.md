@@ -2536,6 +2536,16 @@ P160. (*** 30M STREAMING BREAKTHROUGH: the gap was PROBE FRACTION, not the route
     rewrite directly buys p -> recall. NEXT: highest-p config that finishes <1hr WITH realistic compaction, locked
     at NQ=10000 = the DEFINITIVE 30M streaming number. Target: >0.922 (top-3, looks secured if budget holds) pushing
     toward the 0.9924 win. (developing; NQ=1000 calibration -- finalize on the NQ=10000 + budget verdict.)
+    BUDGET DIAGNOSTIC (streaming2): p=512 holds recall ~0.96 (0.965@866k) but QPS only ~743 -- and the wall is NOT
+    scan (USE512FS barely helped; scan runs ~25x below native apq4 rate, scan+gather ~90us vs the observed
+    1.35ms/query). The bottleneck is the FLOAT-RERANK MMAP: 317 random reads/query from the 12GB float base =
+    page-fault bound (+ per-query search_stream allocs). FIX directed = cache the LIVE float rows in a contiguous
+    RAM Vec<f32> (~4.1GB for 10.3M live, populate once on insert, rerank from RAM not mmap) -> kills the fault path,
+    shrinks footprint 12GB->4.1GB, expected QPS several-thousand -> makes p=512/recall-0.96 budget-viable (solid #2,
+    maybe push p higher toward the win). Compaction made USE512FS-compatible (~80k pts/s, ~125s/call@10M, est
+    ~900-1500s total, each live pt re-encoded ~2.3x) -> block-merge rewrite reclaims most. Levers ranked:
+    (1) live-float-cache (the big one), (2) kill per-query allocs, (3) block-merge compaction. Budget-viable knee
+    WITHOUT the float-cache fix is only p~128-256 (recall ~0.90-0.93, still TOP-3 > zilliz 0.922).
 
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
