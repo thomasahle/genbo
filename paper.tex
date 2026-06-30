@@ -99794,6 +99794,103 @@ amplified in the next proposition.
    \(L=L_{\rm merge}\).
 \end{proof}
 
+\begin{corollary}[Edge-defect verifier for quotient carry rank]
+   \label{cor:edge-defect-carry-rank-verifier}
+   Work in the setting of
+   \cref{cor:merged-prefix-carry-space-verifier}.  Choose one reference
+   source-to-\(v\) path \(p_v\) for every reachable vertex \(v\), with
+   \(p_s\) empty at the source, and write
+   \[
+      \Phi(v)=\bar s(p_v).
+      \tag{EDV1}
+   \]
+   For every trellis edge \(e=(u,v)\), define its quotient defect
+   \[
+      \Delta(e)
+      =
+      \Phi(u)+\bar c(e)-\Phi(v)\in\bar G,
+      \tag{EDV2}
+   \]
+   and let
+   \[
+      L_{\rm edge}=\operatorname{span}\{\Delta(e):e\in E_B\}\le\bar G .
+      \tag{EDV3}
+   \]
+   Then
+   \[
+      L_{\rm edge}=L_{\rm merge}.
+      \tag{EDV4}
+   \]
+   Consequently the exact support-conditioned quotient width satisfies
+   \[
+      Q_B\le q^{\operatorname{rank}L_{\rm edge}},
+      \tag{EDV5}
+   \]
+   and this rank is the minimal carry dimension in any coboundary explanation
+   of the quotient increments.
+
+   In particular, the checkpointed quotient reporter of
+   \cref{cor:checkpointed-quotient-prefix-cut-compiler} has certified work
+   \[
+      O\!\left(
+         q^{\operatorname{rank}L_{\rm edge}}
+         \sum_sK_s|E_{B,s}|
+      \right),
+      \tag{EDV6}
+   \]
+   before priority-queue and output factors.  Thus an aligned code, lattice,
+   or convolutional trellis can certify the quotient side of the clean
+   endpoint by a finite linear-algebra audit:
+   \[
+      \operatorname{rank}L_{\rm edge}=O_c(\log_q\log m),
+      \qquad
+      \sum_sK_s|E_{B,s}|\le m^\rho\log^{O_c(1)}m.
+      \tag{EDV7}
+   \]
+   This is the operational replacement for a random low-rate-code theorem on
+   the support quotient.  Random quotient increments make the edge defects span
+   many dimensions; a useful structured quotient makes almost every edge
+   increment telescope through the native state, leaving only a polylogarithmic
+   carry space.
+\end{corollary}
+
+\begin{proof}
+   First, every edge defect lies in \(L_{\rm merge}\).  Indeed, \(p_u e\) is a
+   source-to-\(v\) path, so
+   \[
+      \bar s(p_u e)-\bar s(p_v)
+      =
+      \Phi(u)+\bar c(e)-\Phi(v)
+      =
+      \Delta(e)
+   \]
+   is one of the merged-prefix differences used to generate \(L_{\rm merge}\).
+   Hence \(L_{\rm edge}\le L_{\rm merge}\).
+
+   Conversely, let \(p=e_1,\ldots,e_\ell\) be any source-to-\(v\) path, with
+   intermediate vertices \(v_0=s,\ldots,v_\ell=v\).  Telescoping the edge
+   defects gives
+   \[
+      \sum_{i=1}^{\ell}\Delta(e_i)
+      =
+      \sum_{i=1}^{\ell}
+      \bigl(\Phi(v_{i-1})+\bar c(e_i)-\Phi(v_i)\bigr)
+      =
+      \bar s(p)-\Phi(v)
+      =
+      \bar s(p)-\bar s(p_v).
+   \]
+   Thus every generator of \(L_{\rm merge}\) lies in \(L_{\rm edge}\), proving
+   \((EDV4)\).
+
+   Now apply \cref{cor:merged-prefix-carry-space-verifier}: \(Q_B\le
+   |L_{\rm merge}|=q^{\operatorname{rank}L_{\rm edge}}\), and no smaller
+   coboundary carry subspace can contain all merged-prefix differences.  Finally
+   substitute this bound on \(Q_B\) into \((CQR2)\) from
+   \cref{cor:checkpointed-quotient-prefix-cut-compiler}, giving \((EDV6)\) and
+   the displayed clean-envelope criterion.
+\end{proof}
+
 \begin{corollary}[Sliding-window trellises must carry forgotten quotient span]
    \label{cor:finite-memory-forgetting-quotient-barrier}
    Let
