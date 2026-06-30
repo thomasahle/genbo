@@ -23694,7 +23694,10 @@ partition ignores the bias coordinates that certify the list size.
    plateau inside this normal form is the verified port quotient of
    \cref{cor:quotient-port-sampler-terminalizes-rate-coverage}: compute the
    certified output-port boundary of each aggregate path and prove the
-   corresponding port load, rather than expanding residents.
+   corresponding port load, rather than expanding residents.  When port
+   membership is an additive marked trellis event, this is exactly the
+   port-partition audit of
+   \cref{cor:port-marked-trellis-sampler-terminalizer}.
 \end{corollary}
 
 \begin{proof}
@@ -107022,6 +107025,133 @@ tax]
    just the definition of \(P(q,Z)\): the port sampler pays for distinct output
    ports in the bucket image, so a random image with
    \(\Theta(\min\{c,M\})\) occupied ports has not compressed the plateau.
+\end{proof}
+
+\begin{corollary}[Port-marked trellises implement the quotient sampler]
+   \label{cor:port-marked-trellis-sampler-terminalizer}
+   Continue in the finite-state quotient setting of
+   \cref{cor:finite-state-trellis-point-sampler-terminalizer}, but suppose the
+   local implementation exposes a verified port alphabet \(\mathcal O_B\) for
+   each query outcome \(B\).  For every hidden path \(\pi\), let
+   \(O_\pi(B)\subseteq\mathcal O_B\) be the certified set of terminal answers or
+   outgoing ports attached to the aggregate bucket of \(\pi\), and assume
+   soundness:
+   every resident \(x\in C_\pi\) whose exact verification would output port
+   \(o_x(B)\) satisfies \(o_x(B)\in O_\pi(B)\).
+
+   Suppose, moreover, that port membership is itself a marked trellis event.  For
+   each \(o\in\mathcal O_B\), there are edge marks \(\psi_e(o,B)\) and a threshold
+   \(T_o(B)\) such that
+   \[
+      o\in O_\pi(B)
+      \quad\Longleftrightarrow\quad
+      S_o(\pi;B):=\sum_{e\in\pi}\psi_e(o,B)\ge T_o(B).
+      \tag{PMT1}
+   \]
+   Define the port-marked partition functions
+   \[
+      Z_{B,o}^{\rm port}
+      =
+      \sum_{\pi:\ S_o(\pi;B)\ge T_o(B)}W_B(\pi),
+      \qquad
+      Z_B=\sum_\pi W_B(\pi),
+      \tag{PMT2}
+   \]
+   and
+   \[
+      \omega_o(B)=\frac{Z_{B,o}^{\rm port}}{Z_B},
+      \qquad
+      P_B=\sum_{o\in\mathcal O_B}\omega_o(B).
+      \tag{PMT3}
+   \]
+   Assume the retained quotient storage, including port certificates, is
+   \(m^{1+\rho_c}\log^{O_c(1)}m\), and that the port-marked recursions compute the
+   normalizer
+   \[
+      Z_B^{\rm port}:=\sum_{o\in\mathcal O_B}Z_{B,o}^{\rm port}=P_BZ_B
+      \tag{PMT4}
+   \]
+   and sample a certified port from
+   \[
+      \Pr[O=o\mid B]=\frac{Z_{B,o}^{\rm port}}{Z_B^{\rm port}}
+      =
+      \frac{\omega_o(B)}{P_B}
+      \tag{PMT5}
+   \]
+   in expected work \(T_{\rm port}(B)\).
+
+   If, for some \(\lambda_m=\log^{O_c(1)}m\),
+   \[
+      \E_Z\!\left[
+         R_{p,q}(Z)\exp\{-\lambda_m\omega_{o_p(B(q,Z))}(B(q,Z))\}
+      \right]
+      \le\frac{a_c}{8}
+      \tag{PMT6}
+   \]
+   for every promised near pair \(p,q\), and
+   \[
+      \E_Z\!\left[
+         T_{\rm port}(B(q,Z))
+         +
+         \lambda_m P_{B(q,Z)}\log^{O_c(1)}m
+      \right]
+      \le Dm^{\rho_c}\log^{O_c(1)}m,
+      \tag{PMT7}
+   \]
+   then the port-marked trellis terminalizes the local rate state with work
+   \(Dm^{\rho_c}\log^{O_c(1)}m\log(1/\delta_s)\) and useful-port probability
+   \(1-\delta_s\).
+
+   A concrete exact implementation is the marked forward recursion
+   \[
+      F_0^o(s,0)=1,\qquad
+      F_i^o(v,t)=
+      \sum_{(u,v)\in E_i}
+      r_{(u,v)}(B)\,
+      F_{i-1}^o\bigl(u,t-\psi_{(u,v)}(o,B)\bigr),
+      \tag{PMT8}
+   \]
+   followed by
+   \[
+      Z_{B,o}^{\rm port}
+      =
+      \sum_{v\in V_h}\sum_{t\ge T_o(B)}F_h^o(v,t).
+      \tag{PMT9}
+   \]
+   If the marks use \(M_o(B)\) attainable score bins, computing all port
+   partition functions costs
+   \[
+      O\!\left(|E|\sum_{o\in\mathcal O_B}M_o(B)\right)
+      \tag{PMT10}
+   \]
+   arithmetic operations.  Hence this route is useful only when the verified
+   port alphabet and mark ranges are compressed by the code/lattice state
+   structure.  Running a separate marked recursion for \(m\) singleton resident
+   ports is just the resident-load obstruction in another form.
+\end{corollary}
+
+\begin{proof}
+   By \((PMT1)\), \(Z_{B,o}^{\rm port}\) is exactly the total query weight of
+   hidden paths whose aggregate bucket certifies port \(o\).  Therefore
+   \((PMT3)\) is the port coverage \((EQO1)\) from
+   \cref{cor:quotient-port-sampler-terminalizes-rate-coverage}, and \(P_B\) is
+   the corresponding port load.  Equation \((PMT5)\) is precisely the required
+   port-size-biased law \((EQO2)\).
+
+   Conditions \((PMT6)\) and \((PMT7)\) are \((EQO3)\) and \((EQO4)\) for this
+   port law, while the storage assumption is the storage hypothesis of
+   \cref{cor:quotient-port-sampler-terminalizes-rate-coverage}.  Applying that
+   corollary gives the stated terminalizer and amplification cost.
+
+   The recursion \((PMT8)\) is the same score-marked dynamic program as
+   \((MTS7)\): by induction on the layer, \(F_i^o(v,t)\) is the total weight of
+   prefixes ending at \(v\) with accumulated port score \(t\).  Summing terminal
+   states and \(t\ge T_o(B)\) gives \((PMT9)\).  The cost bound \((PMT10)\) scans
+   each edge once for each retained score bin of each port.  The final sentence
+   is the comparison with
+   \cref{lem:random-port-map-no-plateau-compression}: without a compressed port
+   alphabet or shared marked recursion, the port computation has not removed the
+   resident-scale work.
 \end{proof}
 
 \begin{corollary}[Balanced checkpoints can absorb any fixed flat-volume excess]
