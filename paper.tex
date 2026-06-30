@@ -102188,6 +102188,166 @@ amplified in the next proposition.
    \(h-r=\Omega(\log m)\).
 \end{proof}
 
+\begin{corollary}[Parallel neutral pockets and the low-gap occupancy tradeoff]
+   \label{cor:parallel-neutral-pocket-occupancy}
+   Partition \([b]\) into nonempty pockets
+   \[
+      [b]=P_1\sqcup\cdots\sqcup P_p,
+   \]
+   and let \(A\in\mathbb F_q^{p\times b}\) have column \(e_t\) on every
+   coordinate \(i\in P_t\).  Equivalently,
+   \[
+      \mathcal C=\ker A
+      =
+      \left\{z\in\mathbb F_q^b:\ \sum_{i\in P_t}z_i=0
+      \text{ for every }t\right\}.
+      \tag{PNP1}
+   \]
+   For \(J\subseteq[b]\), put \(n_t(J)=|J\cap P_t|\).  Then the shortened
+   dimension from \cref{cor:low-gap-shortened-subcode-compiler} is
+   \[
+      d_J
+      =
+      \sum_{t=1}^p (n_t(J)-1)_+
+      =
+      |J|-\left|\{t:\ n_t(J)>0\}\right|.
+      \tag{PNP2}
+   \]
+   Thus parallel pockets are the explicit local-rank-defect construction:
+   every second and later low-gap coordinate landing in the same pocket
+   contributes one neutral affine degree.
+
+   If \(J\) is a uniformly random \(r\)-subset of \([b]\), independent of the
+   pocket partition, then
+   \[
+      \E d_J
+      =
+      r-\sum_{t=1}^p
+      \left(
+         1-\frac{\binom{b-|P_t|}{r}}{\binom br}
+      \right).
+      \tag{PNP3}
+   \]
+   In particular, if \(L=\max_t|P_t|\), then
+   \[
+      \E d_J
+      \le
+      \binom r2\frac{L-1}{b-1}.
+      \tag{PNP4}
+   \]
+   Hence bounded-size pockets, or more generally \(L=o(b/r)\), do not produce
+   a linear-in-\(r\) low-gap neutral dimension.
+
+   Conversely, suppose the pockets are balanced:
+   \[
+      |P_t|=\frac bp+O(1),
+      \qquad r=o(b),
+      \qquad p=\Theta(r).
+      \tag{PNP5}
+   \]
+   Then
+   \[
+      \E d_J
+      =
+      r-p\left(1-e^{-r/p}\right)+O\left(\frac{r^2}{b}+1\right).
+      \tag{PNP6}
+   \]
+   If \(p=\alpha r+O(1)\) for a fixed \(\alpha>0\), then
+   \[
+      \frac{\E d_J}{r}
+      =
+      1-\alpha(1-e^{-1/\alpha})+o(1).
+      \tag{PNP7}
+   \]
+   Moreover \(d_J\) is concentrated at scale \(O(\sqrt r)\): for every
+   \(u>0\),
+   \[
+      \Pr\left[|d_J-\E d_J|\ge u\right]
+      \le
+      2e^{-u^2/(8r)} .
+      \tag{PNP8}
+   \]
+
+   Finally specialize to the binary equal-weight Gaussian gaps of
+   \cref{cor:binary-low-gap-frozen-chart}, and let \(J\) be the indices of the
+   \(r\) smallest realized gaps.  The set \(J\) is uniform among \(r\)-subsets
+   and independent of the ordered gap values.  Therefore the same occupancy
+   formulas hold, while \((BLG7)\) gives
+   \[
+      R_J\le C\frac{r(r+\log(1/\eta))}{b^{3/2}}
+      \tag{PNP9}
+   \]
+   with probability at least \(1-\eta\).  At
+   \(b=\lambda\log m+O(1)\), \(r=\kappa\log\log m+O(1)\), and
+   \(\beta^2\le B\log m\), balanced pockets with
+   \(p=\alpha r+O(1)\) therefore give, with high probability,
+   \[
+      d_J=
+      \left(1-\alpha(1-e^{-1/\alpha})+o(1)\right)r,
+      \qquad
+      \beta R_J=o(1).
+      \tag{PNP10}
+   \]
+
+   This identifies the deliberate low-gap code shape.  Small local duplicate
+   pairs are too sparse to matter; useful shortened entropy requires pockets
+   of length \(\Theta(b/r)=\Theta(\log m/\log\log m)\).  Such a block has
+   intentionally poor local distance inside each pocket, so it is not a
+   standalone random-code substitute.  Its role is narrower: provide the
+   neutral fiber in \cref{cor:low-gap-shortened-subcode-compiler}, while the
+   quotient reporter and the boundary/far-load spectrum must still be
+   certified separately.
+\end{corollary}
+
+\begin{proof}
+   The restriction of \(A\) to \(J\) is block diagonal by pockets after
+   permuting columns.  On a pocket with \(n_t>0\) selected coordinates, the
+   restricted row has rank \(1\); if \(n_t=0\), it contributes no columns and
+   no rank.  Therefore
+   \[
+      \operatorname{rank} A_J=|\{t:n_t(J)>0\}|.
+   \]
+   Combining this with \cref{cor:shortened-low-gap-rank-defect} gives
+   \((PNP2)\).
+
+   The probability that a fixed pocket \(P_t\) is hit by a uniform \(r\)-set is
+   \(1-\binom{b-|P_t|}{r}/\binom br\), so taking expectations in \((PNP2)\)
+   gives \((PNP3)\).  Also \((n-1)_+\le\binom n2\), hence
+   \[
+      d_J\le\sum_t\binom{n_t(J)}2 .
+   \]
+   A fixed pair of selected coordinates lies in the same pocket with
+   probability
+   \[
+      \frac{\sum_t |P_t|(|P_t|-1)}{b(b-1)}
+      \le\frac{L-1}{b-1}.
+   \]
+   Taking expectations proves \((PNP4)\).
+
+   Under the balanced condition, for every \(t\),
+   \[
+      \frac{\binom{b-|P_t|}{r}}{\binom br}
+      =
+      \left(1-\frac1p\right)^r
+      +O\left(\frac r b+\frac1b\right),
+   \]
+   uniformly in \(t\).  Substitution in \((PNP3)\) and
+   \((1-1/p)^r=e^{-r/p}+O(r/p^2)\) in the regime \(p=\Theta(r)\) gives
+   \((PNP6)\) and \((PNP7)\).
+
+   For concentration, expose the elements of the random \(r\)-subset one at a
+   time using the standard without-replacement Doob martingale.  Changing one
+   exposed coordinate changes the number of occupied pockets, and hence
+   \(d_J=r-\#\{\text{occupied pockets}\}\), by at most two.  Azuma--Hoeffding
+   gives \((PNP8)\).
+
+   For iid continuous Gaussian gaps the order of the coordinates is a uniform
+   random permutation independent of the ordered gap values; hence the indices
+   of the \(r\) smallest gaps form an independent uniform \(r\)-subset.
+   Applying the preceding occupancy statements and \((BLG7)\) proves
+   \((PNP9)\)--\((PNP10)\).
+\end{proof}
+
 \begin{corollary}[Support collapse blocks bounded additive masks]
    \label{cor:support-collapse-blocks-bounded-additive-masks}
    Work with one conditional near block law \(P^E_j\) from
