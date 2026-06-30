@@ -2279,6 +2279,20 @@ P145. (*** matched-byte: PQ-8bit == RaBitQ-4b on OOD -> rotation buys NOTHING; D
     free ~1.2-1.3x OOD (rerank is 27%) + ~1.05-1.1x msspacev (rerank 19%). Then implement per-query adaptive
     early-stop (#2): rerank in scan order, stop when running k-th exact dist < next survivor's approx score.
 
+P146. (t_surv sweep: engine rerank depth ALREADY well-tuned (TMUL=8 = recall plateau) -> Cluster A tapped; pivot to ROUTING)
+    1M OOD recall@10 vs TMUL (t_surv=max(TMUL*p,300)), recall load-independent. p256: TMUL 2/4/8/16 =
+    0.9080/0.9244/0.9296/0.9308 (gains +0.016,+0.005,+0.001). Knee ~4; engine default TMUL=8 sits at the
+    plateau. So fixed t_surv is well-tuned; adaptive depth's only headroom = per-query VARIANCE (easy queries
+    stop early), likely modest ~1.1x and low on all-hard OOD queries. *** Combined with P144/P145: the
+    scan/rerank pipeline (Cluster A: RaBitQ, higher-res PQ, adaptive depth) is LARGELY TAPPED -- RaBitQ no
+    edge over PQ at matched bytes, t_surv already at plateau. The cheap offline bake-off (~20min) + this recall
+    sweep saved a ~week RaBitQ build. *** PIVOT to ROUTING (the profile's real headroom: 46% of msspacev
+    QPS@90%, 21% OOD): #3 ADC-route the finest centroids -- gather_fine does b1*32~5120 EXACT i8 L2/query to
+    return p=64 cells (80x overcompute); fast-scan the centroids (4-bit ADC) + exact-rank only top~128. Grows
+    the msspacev WIN; recall-measurable (top-128 hit-rate). CAVEAT (memory): centroid dot-count wins sometimes
+    don't convert to wall-clock -> verify count->wall-clock via A/B. Next after #3: LeanVec (OOD), fused
+    scan+topk, drop-raw-copy + Streaming (per user's approved batch).
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
