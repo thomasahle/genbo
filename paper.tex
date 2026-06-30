@@ -107557,6 +107557,167 @@ tax]
    normalized port load.
 \end{proof}
 
+\begin{corollary}[Pairwise checkpoint randomness is enough for useful-port
+intensity]
+   \label{cor:pairwise-checkpoint-useful-port-intensity}
+   Work in the unnormalized port-intensity setting of
+   \cref{cor:unnormalized-port-intensity-compiler}.  Fix one query outcome
+   \(B\), one useful port \(o\), and let
+   \[
+      \Omega_o(B)=\{\omega\in\Omega_B:o\in O_\omega(B)\}.
+   \]
+   Write
+   \[
+      \mu_o(B)=\sum_{\omega\in\Omega_o(B)}A_B(\omega),
+      \qquad
+      S_o(B)=\sum_{\omega\in\Omega_o(B)}A_B(\omega)^2,
+      \qquad
+      N_{2,o}(B)=\frac{\mu_o(B)^2}{S_o(B)}
+      \tag{PCU1}
+   \]
+   when \(\mu_o(B)>0\), with \(N_{2,o}=0\) otherwise; terms \(K/N_{2,o}\)
+   below are interpreted as \(+\infty\) when \(N_{2,o}=0\).  Let a checkpoint
+   seed choose a map \(H:\Omega_B\to G\), \(|G|=K\), and let the offset
+   \(\sigma\) be uniform in \(G\), independent of \(H\).  The retained useful
+   intensity is
+   \[
+      \Lambda_o^{\rm ret}(B;H,\sigma)
+      =
+      \sum_{\omega\in\Omega_o(B)}
+      A_B(\omega)\mathbf 1\{H(\omega)=\sigma\}.
+      \tag{PCU2}
+   \]
+   Suppose that, for every distinct pair
+   \(\omega\ne\omega'\) in \(\Omega_o(B)\),
+   \[
+      \Pr_H[H(\omega)=H(\omega')]\le\frac1K .
+      \tag{PCU3}
+   \]
+   Then
+   \[
+      \E_{H,\sigma}\Lambda_o^{\rm ret}=\frac{\mu_o}{K},
+      \qquad
+      \operatorname{Var}_{H,\sigma}\Lambda_o^{\rm ret}
+      \le\frac{S_o}{K}.
+      \tag{PCU4}
+   \]
+   Consequently, for every \(0<\theta<1\),
+   \[
+      \Pr_{H,\sigma}\!\left[
+         \Lambda_o^{\rm ret}<(1-\theta)\frac{\mu_o}{K}
+      \right]
+      \le
+      \frac{K}{\theta^2N_{2,o}},
+      \tag{PCU5}
+   \]
+   and
+   \[
+      \E_{H,\sigma}e^{-\Lambda_o^{\rm ret}}
+      \le
+      \exp\!\left\{-(1-\theta)\frac{\mu_o}{K}\right\}
+      +
+      \frac{K}{\theta^2N_{2,o}} .
+      \tag{PCU6}
+   \]
+
+   Therefore a checkpointed port-intensity reporter satisfies the useful-port
+   miss condition \((UIP3)\) whenever, for every promised near pair \(p,q\),
+   \[
+      \E_Z\!\left[
+         R_{p,q}(Z)
+         \left(
+            \exp\!\left\{-(1-\theta)
+               \frac{\mu_{o_p(B(q,Z))}(B(q,Z))}{K}\right\}
+            +
+            \frac{K}{\theta^2
+               N_{2,o_p(B(q,Z))}(B(q,Z))}
+         \right)
+      \right]
+      \le\frac{a_c}{8}.
+      \tag{PCU7}
+   \]
+   If, in addition, the seed-averaged non-emission checkpoint work
+   \(T_{\rm chk}\) and the raw port intensity obey
+   \[
+      \E_{Z,H,\sigma}\!\left[
+         T_{\rm chk}(B(q,Z),H,\sigma)
+         +
+         \frac{\Lambda_{\rm port}^{\rm raw}(B(q,Z))}{K}
+         \log^{O_c(1)}m
+      \right]
+      \le
+      Dm^{\rho_c}\log^{O_c(1)}m ,
+      \tag{PCU8}
+   \]
+   then the retained unnormalized port reporter terminalizes the local state at
+   the clean \(Dm^{\rho_c}\polylog m\) work scale.
+
+   Thus the random-subset requirement in this route is only a weighted
+   pair-collision condition plus effective support
+   \(N_{2,o}\gg K\) for the useful-port records.  Full random subsets are not
+   required.  Conversely, if the useful raw intensity is concentrated on
+   \(N_{2,o}\ll K\) heavy records, a density \(K^{-1}\) checkpoint has a real
+   near-side miss obstruction: stronger independence of the seed cannot make a
+   single heavy useful record survive with probability larger than \(K^{-1}\).
+   Multiply-shift, affine finite-field hashes, Tanner syndromes, and
+   Construction-A residues can instantiate this condition only after the record
+   encoding has the displayed collision law and the decoder passes the separate
+   low-width or non-state-exposed access audits: state-exposed additive filters
+   pay reciprocal width, high-bit multiply-shift exposes the low-bit carry
+   state, and tilted additive tails avoid materializing the retained support
+   only when their local-limit sampler has polylogarithmic overhead.
+\end{corollary}
+
+\begin{proof}
+   For every record \(\omega\), the offset is uniform, so
+   \(\Pr[H(\omega)=\sigma]=K^{-1}\).  This gives the first identity in
+   \((PCU4)\).  Expanding the second moment,
+   \[
+   \begin{aligned}
+      \E(\Lambda_o^{\rm ret})^2
+      &=
+      \sum_\omega A_B(\omega)^2\Pr[H(\omega)=\sigma]  \\
+      &\qquad+
+      \sum_{\omega\ne\omega'}
+      A_B(\omega)A_B(\omega')
+      \Pr[H(\omega)=\sigma,\ H(\omega')=\sigma].
+   \end{aligned}
+   \]
+   For \(\omega\ne\omega'\), the last probability is
+   \(K^{-1}\Pr_H[H(\omega)=H(\omega')]\le K^{-2}\) by \((PCU3)\).  Hence
+   \[
+      \E(\Lambda_o^{\rm ret})^2
+      \le
+      \frac{S_o}{K}+\frac{\mu_o^2-S_o}{K^2}
+      \le
+      \frac{\mu_o^2}{K^2}+\frac{S_o}{K},
+   \]
+   proving the variance bound in \((PCU4)\).
+
+   Chebyshev's inequality gives
+   \[
+      \Pr\!\left[
+         \Lambda_o^{\rm ret}<(1-\theta)\frac{\mu_o}{K}
+      \right]
+      \le
+      \frac{S_o/K}{\theta^2\mu_o^2/K^2}
+      =
+      \frac{K}{\theta^2N_{2,o}},
+   \]
+   which is \((PCU5)\).  On the complementary event,
+   \(e^{-\Lambda_o^{\rm ret}}\le
+   \exp\{-(1-\theta)\mu_o/K\}\); adding the bad-event probability gives
+   \((PCU6)\).
+
+   Applying \((PCU6)\) with \(o=o_p(B(q,Z))\), multiplying by the tilted
+   likelihood \(R_{p,q}(Z)\), and averaging over \(Z,H,\sigma\) proves
+   \((UIP3)\) under \((PCU7)\).  For the work bound, apply the offset-thinning
+   identity \((UIP5)\) to every raw record-port pair.  Its expectation is
+   \(\Lambda_{\rm port}^{\rm raw}/K\), and adding the non-emission checkpoint
+   work gives \((UIP4)\) from \((PCU8)\).  The terminalizer conclusion is then
+   exactly \cref{cor:unnormalized-port-intensity-compiler}.
+\end{proof}
+
 \begin{corollary}[Balanced checkpoints can absorb any fixed flat-volume excess]
    \label{cor:balanced-checkpoints-absorb-flat-volume-excess}
    Continue with the nearest-mesh scaled-GRS window of
