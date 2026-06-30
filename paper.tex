@@ -99891,6 +99891,107 @@ amplified in the next proposition.
    the displayed clean-envelope criterion.
 \end{proof}
 
+\begin{corollary}[Aligned quotient cut support is a two-temperature trellis audit]
+   \label{cor:aligned-quotient-cut-support-audit}
+   Work in the checkpointed quotient reporter of
+   \cref{cor:checkpointed-quotient-prefix-cut-compiler}, and fix one query
+   outcome \(B\), one checkpoint segment \(s\), and one live prefix state
+   \(w\) at the entrance to that segment.  Let \(\mathcal P_s(w)\) be the
+   finite set of native segment continuations from \(w\), with positive
+   first-temperature edge product \(W(\pi)\).  Let
+   \(A_s(\pi)\ge0\) be the deterministic live-reportability multiplier left
+   after the prefix \(w\): for a pure segment event this is
+   \(\mathbf 1_{E_s(w)}(\pi)\), while for a suffix-aware cut law it may be the
+   remaining first-temperature continuation mass from the exit state of
+   \(\pi\).  Assume \(A_s\) is fixed before the checkpoint seed for segment
+   \(s\) is exposed.
+
+   Define the two partition sums
+   \[
+      Z_{1,s}(w)=
+      \sum_{\pi\in\mathcal P_s(w)} W(\pi)A_s(\pi),
+      \qquad
+      Z_{2,s}(w)=
+      \sum_{\pi\in\mathcal P_s(w)} W(\pi)^2A_s(\pi)^2 .
+      \tag{QCA1}
+   \]
+   If \(Z_{1,s}(w)>0\), the conditional segment law used in the checkpoint
+   hit test is
+   \[
+      \nu_{s,w}(\pi)
+      =
+      \frac{W(\pi)A_s(\pi)}{Z_{1,s}(w)} .
+      \tag{QCA2}
+   \]
+   Its collision-effective support is exactly
+   \[
+      N_2(\nu_{s,w})
+      =
+      \frac{Z_{1,s}(w)^2}{Z_{2,s}(w)}.
+      \tag{QCA3}
+   \]
+   Hence the local checkpoint condition \((CQR4)\) is not an additional
+   qualitative hypothesis; it is the concrete scalar inequality
+   \[
+      2\log Z_{1,s}(w)-\log Z_{2,s}(w)
+      \ge
+      \log K_s+\log\eta_s
+      \tag{QCA4}
+   \]
+   for every live prefix \(w\) at segment \(s\).
+
+   Suppose moreover that the multiplier \(A_s\) is recognized on the same
+   quotient-carry graph used in
+   \cref{cor:edge-defect-carry-rank-verifier}, with carry rank \(r_s\).  Then
+   both \(Z_{1,s}(w)\) and \(Z_{2,s}(w)\) are
+   computable by forward/backward trellis passes on at most
+   \(q^{r_s}|E_{B,s}|\) augmented edges, using edge weights \(W\) and \(W^2\)
+   and terminal multipliers \(A_s\) and \(A_s^2\), respectively.  In
+   particular, if the global edge-defect audit has rank
+   \(r_{\rm edge}\), all segment cut-support scalars can be audited within
+   \[
+      O\!\left(q^{r_{\rm edge}}\sum_s|E_{B,s}|\right)
+      \tag{QCA5}
+   \]
+   arithmetic operations, before the extra local checkpoint factors \(K_s\)
+   in the actual reporter.
+
+   Therefore the frozen normal form has a fully finite pass/fail test on a
+   proposed code, lattice, or low-state trellis: the width side is
+   \(\operatorname{rank}L_{\rm edge}=O_c(\log_q\log m)\), and the support side
+   is \((QCA4)\) on the live cut prefixes.  If \((QCA4)\) fails by more than a
+   polylogarithmic slack on a live prefix, replacing the pairwise-independent
+   checkpoint seed by a more random seed cannot repair the construction; the
+   failure is concentration of the quotient-conditioned witness law itself.
+\end{corollary}
+
+\begin{proof}
+   The identity \((QCA3)\) is immediate from \((QCA2)\):
+   \[
+      \sum_{\pi\in\mathcal P_s(w)}\nu_{s,w}(\pi)^2
+      =
+      \frac{Z_{2,s}(w)}{Z_{1,s}(w)^2}.
+   \]
+   Inverting gives the collision-effective support, and substituting this
+   expression into \((CQR4)\) gives \((QCA4)\).  When
+   \(A_s=\mathbf 1_{E_s(w)}\), this is the event-ratio identity of
+   \cref{lem:conditional-collision-event-ratio}.  When \(A_s\) is a suffix
+   continuation mass, it is the same square-denominator correction as
+   \cref{lem:future-continuation-doob-square}.
+
+   For the computation statement, run the usual dynamic program on the
+   quotient-carry augmentation.  The first pass uses each original edge weight
+   \(W(e)\) and the multiplier \(A_s\) at the accepting boundary; the second
+   pass uses \(W(e)^2\) and \(A_s^2\).  The state set is the native segment
+   state crossed with the reachable carry states.  If the carry rank is
+   \(r_s\), there are at most \(q^{r_s}\) carry states per native state, so the
+   two passes together use \(O(q^{r_s}|E_{B,s}|)\) augmented edge operations.
+   The edge-defect verifier gives \(r_s\le r_{\rm edge}\) for the globally
+   certified carry graph, yielding \((QCA5)\).  The final paragraph combines
+   this scalar audit with \((EDV7)\) and the pairwise-independent thinning
+   bound in \cref{lem:weighted-syndrome-collision-thinning}.
+\end{proof}
+
 \begin{corollary}[Sliding-window trellises must carry forgotten quotient span]
    \label{cor:finite-memory-forgetting-quotient-barrier}
    Let
