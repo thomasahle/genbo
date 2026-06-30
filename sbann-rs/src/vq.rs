@@ -467,6 +467,9 @@ pub struct HierRouter {
     // ROUTE_ADC_KEEP are exact-rescored. radc=codebook, rcodes=kf*m codes. Empty unless built with the flag.
     radc: Option<pq::Pq>,
     rcodes: Vec<u8>,
+    // finest codes re-laid into 16-cell vpshufb blocks (m/2 groups * 16 bytes each, cell order). Lets the
+    // ADC finest scoring use block_adc_i8_i16acc (16 centroids/instr) instead of the scalar LUT-sum.
+    rblocks: Vec<u8>,
 }
 
 impl HierRouter {
@@ -601,7 +604,24 @@ impl HierRouter {
             println!("  [ROUTE_ADC: 4-bit PQ over {kfn} finest centroids, m={m}]");
             (Some(pq), codes)
         } else { (None, Vec::new()) };
-        HierRouter { d, mu, kf, levels, cent, child, beam: beams.to_vec(), soar: 0.0, radc, rcodes }
+        // re-lay the finest codes into 16-cell vpshufb blocks (only when kf%16==0; our Kf are powers of 2)
+        let rblocks: Vec<u8> = if let Some(pq) = &radc {
+            let m = pq.m; let nb = kf / 16; let mut rb = vec![0u8; nb * (m / 2) * 16];
+            if kf % 16 == 0 {
+                for b in 0..nb {
+                    for g in 0..m / 2 {
+                        for i in 0..16 {
+                            let c = b * 16 + i;
+                            let lo = rcodes[c * m + 2 * g] & 0x0f;
+                            let hi = rcodes[c * m + 2 * g + 1] & 0x0f;
+                            rb[(b * (m / 2) + g) * 16 + i] = lo | (hi << 4);
+                        }
+                    }
+                }
+            }
+            rb
+        } else { Vec::new() };
+        HierRouter { d, mu, kf, levels, cent, child, beam: beams.to_vec(), soar: 0.0, radc, rcodes, rblocks }
     }
 
     /// 2-level hierarchical k-means (back-compat wrapper): C0 coarse → Kf/C0 fine per coarse.
@@ -637,7 +657,7 @@ impl HierRouter {
         for (newpos, &oldj) in order.iter().enumerate() {
             cf[newpos * d..newpos * d + d].copy_from_slice(&cf0[oldj as usize * d..oldj as usize * d + d]);
         }
-        HierRouter { d, mu, kf, levels: 2, cent: vec![c0, cf], child: vec![gstart, Vec::new()], beam: vec![b0], soar: 0.0, radc: None, rcodes: Vec::new() }
+        HierRouter { d, mu, kf, levels: 2, cent: vec![c0, cf], child: vec![gstart, Vec::new()], beam: vec![b0], soar: 0.0, radc: None, rcodes: Vec::new(), rblocks: Vec::new() }
     }
 
     /// Enable SOAR build-time spilled assignment with penalty λ (`s`). 0 disables (default path).
@@ -662,8 +682,12 @@ impl HierRouter {
         // ADC routing (#3): at the finest level, score children by 4-bit ADC (LUT+codes), keep the ADC-top
         // ROUTE_ADC_KEEP, then EXACT-rescore only those -> cheap finest scoring if recall holds.
         let adc = ROUTE_ADC.load(std::sync::atomic::Ordering::Relaxed) && self.radc.is_some();
-        let adc_lut: Vec<i8> = if adc { self.radc.as_ref().unwrap().query_lut(qn) } else { Vec::new() };
         let adc_m = self.radc.as_ref().map(|p| p.m).unwrap_or(0);
+        let adc_lut: Vec<i8> = if adc { self.radc.as_ref().unwrap().query_lut(qn) } else { Vec::new() };
+        // vpshufb block path when codes are blocked + avx2; else scalar LUT-sum.
+        let adc_regs = if adc && !self.rblocks.is_empty() && std::is_x86_feature_detected!("avx2") {
+            pq::lut_regs_i8(&adc_lut, adc_m)
+        } else { Vec::new() };
         for l in 1..self.levels {
             let finest = l == self.levels - 1;
             let mut nd: Vec<(i32, u32)> = Vec::with_capacity(sel.len() * 8 + 16);
@@ -672,11 +696,21 @@ impl HierRouter {
                 let nc = e - s;
                 if nc == 0 { continue; }
                 if finest && adc {
-                    for c in s..e {
-                        let code = &self.rcodes[c * adc_m..c * adc_m + adc_m];
-                        let mut sc = 0i32;
-                        for sub in 0..adc_m { sc += adc_lut[sub * 16 + code[sub] as usize] as i32; }
-                        nd.push((sc, c as u32));
+                    if !adc_regs.is_empty() && s % 16 == 0 && (e - s) % 16 == 0 {
+                        let gb = (adc_m / 2) * 16; // bytes per 16-cell block
+                        let mut out16 = [0i32; 16];
+                        for jb in 0..(e - s) / 16 {
+                            let blk = s / 16 + jb;
+                            unsafe { pq::block_adc_i8_i16acc(&self.rblocks[blk * gb..blk * gb + gb], adc_m, &adc_regs, &mut out16); }
+                            for i in 0..16 { nd.push((out16[i], (s + jb * 16 + i) as u32)); }
+                        }
+                    } else {
+                        for c in s..e {
+                            let code = &self.rcodes[c * adc_m..c * adc_m + adc_m];
+                            let mut sc = 0i32;
+                            for sub in 0..adc_m { sc += adc_lut[sub * 16 + code[sub] as usize] as i32; }
+                            nd.push((sc, c as u32));
+                        }
                     }
                 } else {
                     if scores.len() < nc { scores.resize(nc, 0); }

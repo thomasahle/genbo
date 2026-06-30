@@ -2306,6 +2306,22 @@ P147. (*** #3 ADC-ROUTING GATE PASSES: 4-bit ADC of the finest centroids is RECA
     centroids/instr. Expected ~1.3-1.5x total on msspacev (routing 46%). Measurable load-independently via the
     route-time FRACTION (SBANN_PROFILE) -- not just wall-clock. NEXT: the vpshufb ADC routing kernel.
 
+P148. (ADC routing kernel: recall-neutral but NO speed win -- l2_i8_block already fast + ADC per-query overhead cancels it)
+    Built the vpshufb ADC routing kernel (finest codes -> 16-cell blocks + block_adc_i8_i16acc, 16 centroids/
+    instr). msspacev 1M, SBANN_PROFILE (route FRACTION = load-robust, recall = load-indep):
+      EXACT:     p64 r0.8850 route29.4% | p128 r0.9207 route18.1% | p256 r0.9460 route12.7%
+      ADC-BLOCK: p64 r0.8850 route28.9% | p128 r0.9206 route24.3% | p256 r0.9461 route18.1%
+    Recall EXACT-NEUTRAL (kernel correct) but route fraction EQUAL-TO-HIGHER -> NO routing speedup. (QPS looked
+    higher for ADC but that was cross-run LOAD; the within-run fraction is the load-robust signal.) ROOT CAUSE:
+    l2_i8_block (P140) ALREADY made exact routing SIMD-fast (1536 batched l2_i8); ADC's only benefit (exact-
+    rescore 512 not 1536) is offset by its FIXED per-query overhead -- build the m*16 query LUT (~1600 ops),
+    select_nth over 1536, 512 exact rescores. Net wash-to-worse. This REALIZES the memory's "centroid dot-count
+    wins don't convert to wall-clock" caveat: the dot-count IS lower, wall-clock isn't. *** ROUTING VERDICT:
+    l2_i8_block (+1.27x, committed) is the routing win; ADC routing (P147 gate passed on recall) adds NO speed.
+    The ADC code stays behind SBANN_ROUTE_ADC (default off, recall-neutral option) but is not a win. Cluster:
+    routing is now also largely tapped (l2_i8_block banked; dim-drop fails; ADC no speed). PIVOT to the
+    recall-measurable items: LeanVec (OOD), drop-raw-copy + Streaming, and RaBitQ-as-a-swappable-Compressor (user req).
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
