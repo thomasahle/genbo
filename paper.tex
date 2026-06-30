@@ -100081,6 +100081,127 @@ amplified in the next proposition.
    the displayed clean-envelope criterion.
 \end{proof}
 
+\begin{corollary}[Banded quotient checks cost only active residual checks]
+   \label{cor:banded-quotient-active-check-width}
+   Work in the quotient-trellis setting of
+   \cref{cor:quotient-syndrome-trellis-support-sampler}, with
+   \(\bar G=\mathbb F_q^r\).  Suppose the terminal support condition is a
+   linear syndrome
+   \[
+      Hz=b,\qquad
+      H=(H_1,\ldots,H_h),
+      \tag{ACW1}
+   \]
+   where edge \(e\) in layer \(i\) chooses the coordinate block \(z_i(e)\) and
+   contributes quotient increment \(H_iz_i(e)\).  Assume every row
+   \(a\in[r]\) of \(H\) has interval support
+   \[
+      I_a=[L_a,R_a]\subseteq[h],
+      \qquad
+      H_{a,i}=0\quad(i\notin I_a).
+      \tag{ACW2}
+   \]
+   After layer \(\ell\), let
+   \[
+      \mathcal O_\ell=\{a:L_a\le \ell<R_a\}
+      \tag{ACW3}
+   \]
+   be the open quotient checks.  For a prefix \(p\) ending after layer \(\ell\),
+   write its active partial syndrome as
+   \[
+      y_\ell(p)_a
+      =
+      \sum_{i\le \ell}H_{a,i}z_i(p),
+      \qquad a\in\mathcal O_\ell .
+      \tag{ACW4}
+   \]
+   For a reachable native state \(v\in V_\ell\), let \(Y(v)\) be the set of
+   active partial syndromes \(y_\ell(p)\) over prefixes reaching \(v\) that
+   satisfy all checks already closed by layer \(\ell\).  Put
+   \[
+      d_v=\dim\operatorname{aff}Y(v),
+      \qquad
+      w_{\rm res}=\max_{v:\,Y(v)\ne\emptyset} d_v .
+      \tag{ACW5}
+   \]
+   Then the terminal support condition \(Hz=b\) is enforced by an exact
+   active-check trellis whose additional state over \(v\) has size at most
+   \(|Y(v)|\le q^{d_v}\).  Consequently the support-conditioned backward pass
+   has work
+   \[
+      O(q^{w_{\rm res}}|E_B|)
+      \tag{ACW6}
+   \]
+   up to the cost of computing the reachable active states.  In the plain
+   interval-check trellis,
+   \[
+      w_{\rm res}\le
+      w_{\rm path}:=\max_\ell|\mathcal O_\ell|,
+      \tag{ACW7}
+   \]
+   so banded quotient checks of pathwidth \(w_{\rm path}\) cost
+   \(O(q^{w_{\rm path}}|E_B|)\).
+
+   Combining this active-check state with the checkpointed reporter of
+   \cref{cor:checkpointed-quotient-prefix-cut-compiler} gives
+   \[
+      O\!\left(
+         q^{w_{\rm res}}\sum_sK_s|E_{B,s}|
+      \right)
+      \tag{ACW8}
+   \]
+   online work.  Hence the quotient-width side of the clean endpoint is
+   discharged by any convolutional, banded Tanner, Construction-A, or
+   recursive-lattice quotient whose support checks can be ordered so that
+   \[
+      w_{\rm res}=O_c(\log_q\log m)
+      \tag{ACW9}
+   \]
+   on the route-occupied states.  The remaining near-side requirement is still
+   the two-temperature cut-support scalar of
+   \cref{cor:aligned-quotient-cut-support-audit}; low active-check width does
+   not by itself create collision-effective continuation support.
+
+   This is a layer-local width certificate, not a fixed global coboundary
+   certificate.  The global edge-defect span in
+   \cref{cor:edge-defect-carry-rank-verifier} may include many rows that open
+   at different times, while the online decoder carries only the checks open
+   at the current cut.  Conversely, if every exact ordering has
+   \(w_{\rm res}=\Omega(\log_q m)\), then a state-exposed exact quotient pass
+   already costs \(m^{\Omega(1)}\); such a construction must use a different
+   aggregate, responsibility, approximation, or output-sensitive reporter
+   rather than exposing the full support quotient as trellis state.
+\end{corollary}
+
+\begin{proof}
+   Build a layered trellis whose state after layer \(\ell\) is a native state
+   \(v\in V_\ell\) together with an active partial syndrome
+   \(y\in Y(v)\subseteq\mathbb F_q^{\mathcal O_\ell}\).  When an edge in layer
+   \(i\) with coordinate block \(z_i(e)\) is traversed, first introduce the
+   rows with \(L_a=i\), then add \(H_{a,i}z_i(e)\) to every currently active
+   row \(a\), and finally close the rows with \(R_a=i\).  A closing row is kept
+   exactly when its updated partial sum equals the target value \(b_a\), and is
+   then deleted from the active state.
+
+   By induction on the layer, the augmented states after layer \(\ell\) are
+   exactly the prefixes that satisfy every row with \(R_a\le\ell\), annotated
+   by the still-open partial sums \((ACW4)\).  Rows with \(L_a>\ell\) have not
+   started and contribute zero to the prefix syndrome; rows with \(R_a\le\ell\)
+   have already been checked against \(b_a\); the only unfixed coordinates of
+   the terminal syndrome are the open partials.  At layer \(h\) no row is open,
+   so the surviving paths are precisely the paths satisfying \(Hz=b\).
+
+   The number of augmented states over a native state \(v\) is \(|Y(v)|\), at
+   most \(q^{d_v}\).  Thus every native edge is copied at most
+   \(q^{w_{\rm res}}\) times, proving \((ACW6)\).  Since
+   \(Y(v)\subseteq\mathbb F_q^{\mathcal O_\ell}\), the plain interval-check
+   bound \((ACW7)\) follows.  Adding a local checkpoint component inside
+   segment \(s\) multiplies only that segment by \(K_s\) and resets at the
+   boundary, exactly as in
+   \cref{cor:checkpointed-quotient-prefix-cut-compiler}; this gives
+   \((ACW8)\).  The final claims are the interpretations of these work bounds.
+\end{proof}
+
 \begin{corollary}[Aligned quotient cut support is a two-temperature trellis audit]
    \label{cor:aligned-quotient-cut-support-audit}
    Work in the checkpointed quotient reporter of
@@ -100144,7 +100265,10 @@ amplified in the next proposition.
       \tag{QCA5}
    \]
    arithmetic operations, before the extra local checkpoint factors \(K_s\)
-   in the actual reporter.
+   in the actual reporter.  For a banded quotient implemented by the
+   active-check state of
+   \cref{cor:banded-quotient-active-check-width}, the same two trellis passes
+   replace \(q^{r_{\rm edge}}\) by \(q^{w_{\rm res}}\).
 
    Therefore the frozen normal form has a fully finite pass/fail test on a
    proposed code, lattice, or low-state trellis: the width side is
