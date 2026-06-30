@@ -2403,6 +2403,18 @@ P153. (*** KEY: int8 has a RECALL CEILING vs the FLOAT leaderboard GT; FLOAT RER
     recall vs float GT (target >0.99786); ood2 -> OOD int8-scan + FLOAT-rerank, recall@p vs float GT, does it hit
     0.90 at smaller p (QPS@90% win)? This could be the missing OOD lever AND the streaming-topping mechanism.
 
+P154. (*** OOD QPS@90% WIN: rerank depth was massively over-provisioned; tightening t_surv to what 0.90 needs = 1.65x ***)
+    ood2 (commit 1c81a44): the OOD QPS@90% metric only needs recall EXACTLY 0.90, but our default reranked the
+    full survivor pool (depth ~5760 at p=192). Profiling: at p=192 recall 0.9037 needs only depth 576 (10x fewer
+    reranked) -> MEASURED QPS 1884 -> 3108 = 1.65x at matched 0.90 recall, 1M msturing. SCAN is now the wall (~57%
+    of query time); rerank dropped from dominant to minor. Adaptive per-query rerank depth (SBANN_ADAPT_RERANK,
+    gate=max) only helps the >0.92 tail, NOT the 0.90 operating point -> banked but off by default for the metric.
+    CAVEAT: re-profile at 10M -- scan dominates more there, so the 1.65x (a rerank-side win) SHRINKS at scale; the
+    durable scale lever is faster SCAN (candidate gen), not less rerank. NEXT (both agents, re-dispatched): the
+    P153 FLOAT-RERANK test -- streaming2 msturing 1M float-rerank recall vs float GT (>0.99786?), ood2 OOD
+    int8-scan+float-rerank, does 0.90 come at a smaller p (compounds with this t_surv win). Both have uncommitted
+    float-reader work (ibin/fbin) in flight. Box at load ~62: 1M-only light builds, heavy builds strictly sequential.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
