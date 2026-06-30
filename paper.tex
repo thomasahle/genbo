@@ -24689,6 +24689,10 @@ partition ignores the bias coordinates that certify the list size.
    entropy by the waterfilling score-cost inequality \((KHR4)\).  Its flat
    obstruction shows that KV is still not a black-box cure when the score
    threshold contains a polynomial fraction of the code.
+   \Cref{cor:kv-active-alphabet-barrier} gives the sharper local obstruction:
+   if \(Q\) near-top symbols per coordinate are already inside the active
+   deficit and \(Q\) exceeds the reciprocal rate, the KV score-cost screen
+   cannot pass.
 
    Tanner, LDPC, polar, BCJR, and recursive Barnes--Wall/Barnes--Sloane
    decoders supply compact partition-function or threshold-enumeration
@@ -25097,6 +25101,77 @@ partition ignores the bias coordinates that certify the list size.
    \]
    up to the lower-order linear terms in the cost.  Combining \((KHR13)\) and
    \((KHR14)\) forces \(p<h/(k-1)\), proving \((KHR7)\).
+\end{proof}
+
+\begin{corollary}[KV active-alphabet barrier]
+   \label{cor:kv-active-alphabet-barrier}
+   Work in the setting and notation of
+   \cref{cor:kv-heavy-responsibility-compiler}, and put
+   \[
+      \delta=\Delta/h,\qquad R_h=(k-1)/h .
+      \tag{KAB1}
+   \]
+   Suppose that, for every coordinate \(i\), there is a set
+   \(A_i\subseteq\mathbb F_p\) of size \(Q\) such that
+   \[
+      \min_{a\in A_i}d_i(a)=0,
+      \qquad
+      d_i(a)\le D\quad(a\in A_i).
+      \tag{KAB2}
+   \]
+   Then any \(u>\delta\) satisfying the KV waterfilling inequality \((KHR4)\)
+   must satisfy the scalar necessary condition
+   \[
+      \frac{(u-\delta)^2}
+           {u^2+(Q-1)(u-D)_+^2}
+      >
+      R_h .
+      \tag{KAB3}
+   \]
+
+   In particular, if the threshold deficit reaches this \(Q\)-symbol flat
+   pocket,
+   \[
+      \delta\ge D,
+      \tag{KAB4}
+   \]
+   then the left-hand side of \((KAB3)\) is at most \(1/Q\) for every
+   \(u>\delta\).  Hence the KV screen cannot pass whenever
+   \[
+      Q(k-1)\ge h .
+      \tag{KAB5}
+   \]
+   Thus a constant-rate GRS block can use KV as the heavy-responsibility lister
+   only if the effective near-top alphabet at the active threshold has size
+   strictly below the reciprocal code rate, unless a quotient or responsibility
+   filter is applied before expanding signatures.
+\end{corollary}
+
+\begin{proof}
+   For \(a_i^*\in A_i\) with \(d_i(a_i^*)=0\), the \(Q\) active symbols in
+   \(A_i\) contribute at least
+   \[
+      u^2+(Q-1)(u-D)_+^2
+   \]
+   to \(\sum_a(u-d_i(a))_+^2\).  Therefore
+   \[
+      A(u)
+      \ge
+      h\bigl(u^2+(Q-1)(u-D)_+^2\bigr).
+      \tag{KAB6}
+   \]
+   Combining \((KAB6)\) with the necessary inequality \((KHR4)\), divided by
+   \(h^2\), gives \((KAB3)\).
+
+   If \(\delta\ge D\) and \(u>\delta\), then
+   \(u\ge u-\delta\) and \(u-D\ge u-\delta\).  Hence
+   \[
+      u^2+(Q-1)(u-D)^2
+      \ge
+      Q(u-\delta)^2,
+   \]
+   so the ratio in \((KAB3)\) is at most \(1/Q\).  If \(Q(k-1)\ge h\), then
+   \(R_h\ge1/Q\), contradicting the strict inequality in \((KAB3)\).
 \end{proof}
 
 \begin{lemma}[Tilted weight feasibility is linear]
@@ -123696,6 +123771,10 @@ soft-decision alternative: Koetter--Vardy can replace the OSD entropy screen by
 the waterfilling inequality \((KHR4)\), but fully flat thresholds still force
 the decoder to return \(p^k\) signatures or fail the KV average score-cost test
 at constant rate and growing alphabet.
+\Cref{cor:kv-active-alphabet-barrier} evaluates that scalar screen: once the
+active threshold contains \(Q\) near-top symbols per coordinate, KV needs
+\(Q<1/R_h\) at code rate \(R_h=(k-1)/h\), unless a quotient or responsibility
+filter has already compressed the signatures.
 \Cref{lem:tilted-weight-linear-feasibility} shows that, for a fixed retained
 pool, choosing those weights is just a linear feasibility problem after
 clearing the tilted partition functions.  Failure has a concrete dual
