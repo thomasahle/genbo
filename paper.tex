@@ -107928,6 +107928,105 @@ intensity]
    the state-exposed difference/carry requirements isolated earlier.
 \end{proof}
 
+\begin{corollary}[Terminal collision masks give a local port terminalizer]
+   \label{cor:terminal-collision-mask-port-terminalizer}
+   Work in one local port-skeleton state with hidden raw records
+   \(\Omega_B\), raw intensities \(A_B(\omega)\), certified port sets
+   \(O_\omega(B)\), and useful port \(o_p(B)\) as in
+   \cref{cor:unnormalized-port-intensity-compiler}.  For each query outcome
+   \(B\), put
+   \[
+      \Lambda_{\rm port}^{\rm raw}(B)
+      =
+      \sum_{\omega\in\Omega_B}|O_\omega(B)|A_B(\omega),
+      \tag{TCP1}
+   \]
+   and, for a port \(o\),
+   \[
+      \mu_o(B)=\sum_{\omega:o\in O_\omega(B)}A_B(\omega),
+      \qquad
+      N_{2,o}(B)
+      =
+      \frac{\mu_o(B)^2}
+      {\sum_{\omega:o\in O_\omega(B)}A_B(\omega)^2}.
+      \tag{TCP2}
+   \]
+   Interpret \(K/N_{2,o}\) as \(+\infty\) when \(\mu_o=0\).  Suppose the
+   reporter has an injective complete-record encoding and a terminal mask
+   family \(H:\Omega_B\to G\), \(|G|=K\), with collision constant
+   \(C_{\rm col}\):
+   \[
+      \Pr_H[H(\omega)=H(\omega')]\le \frac{C_{\rm col}}K
+      \qquad(\omega\ne\omega').
+      \tag{TCP3}
+   \]
+   Use \(R\) independent terminal masks and offsets, and emit retained
+   record-port pairs by the unnormalized Poisson reporter.  If, for some
+   \(0<\theta<1\), every promised near pair \(p,q\) satisfies
+   \[
+      \E_Z\!\left[
+         R_{p,q}(Z)
+         \left(
+            \exp\!\left\{-(1-\theta)
+               \frac{R\mu_{o_p(B(q,Z))}(B(q,Z))}{K}\right\}
+            +
+            \frac{
+               K/N_{2,o_p(B(q,Z))}(B(q,Z))+C_{\rm col}-1
+            }{\theta^2R}
+         \right)
+      \right]
+      \le \frac{a_c}{8},
+      \tag{TCP4}
+   \]
+   and the terminal implementation obeys
+   \[
+      \E_Z\!\left[
+         T_{\rm term}^{(R)}(B(q,Z))
+         +
+         \frac{R\,\Lambda_{\rm port}^{\rm raw}(B(q,Z))}{K}
+            \log^{O_c(1)}m
+      \right]
+      \le Dm^{\rho_c}\log^{O_c(1)}m,
+      \tag{TCP5}
+   \]
+   then this local state has a clean unnormalized port terminalizer at
+   \(Dm^{\rho_c}\polylog m\) work, with the usual independent repetition
+   factor \(O(\log(1/\delta_s))\) for failure probability \(\delta_s\).
+
+   In particular, \cref{cor:field-affine-multiply-high-terminal-mask} supplies
+   \(C_{\rm col}=1\) for field-affine or carry-less complete-record masks and
+   \(C_{\rm col}\le4\) for shifted high-bit multiply masks.  Thus the
+   pseudo-random subset requirement for this terminal route is exactly the
+   scalar check in \((TCP4)\)--\((TCP5)\): raw useful intensity
+   \(R\mu_o/K\), useful effective support \(N_{2,o}\) large enough compared
+   with \(K\), raw emitted port mass \(R\Lambda_{\rm port}^{\rm raw}/K\), and
+   actual terminal hash/reporting work.  No stronger randomness assumption is
+   needed for the terminal mask itself.  Conversely, this statement does not
+   close the global ANN theorem: each unresolved skeleton state must still
+   supply these scalars, or else supply a normalized low-width
+   port-transducer, quotient, leader, or responsibility reporter with the same
+   marked far-load bounds.
+\end{corollary}
+
+\begin{proof}
+   For every fixed \(B\) and useful port \(o\), condition \((TCP3)\) is exactly
+   the collision hypothesis \((CUT1)\) of
+   \cref{cor:collision-universal-terminal-port-mask}.  Applying \((CUT4)\) to
+   the \(R\) terminal masks gives the conditional useful-port miss bound
+   displayed inside \((TCP4)\).  Multiplying by the tilted likelihood
+   \(R_{p,q}(Z)\) and averaging over \(Z\) proves the miss condition
+   \((UIP3)\) of \cref{cor:unnormalized-port-intensity-compiler}.
+
+   The expected number of retained emitted record-port pairs is
+   \(R\Lambda_{\rm port}^{\rm raw}/K\) by the same offset-thinning calculation
+   used in \((UIP5)\), once for each independent terminal mask.  Adding the
+   non-emission terminal work gives \((UIP4)\) from \((TCP5)\).  The
+   unnormalized port-intensity compiler then supplies the local terminalizer
+   and the standard repetition factor.  The final specialization to
+   field-affine, carry-less, and shifted multiply-high masks is precisely
+   \cref{cor:field-affine-multiply-high-terminal-mask}.
+\end{proof}
+
 \begin{corollary}[Balanced checkpoints can absorb any fixed flat-volume excess]
    \label{cor:balanced-checkpoints-absorb-flat-volume-excess}
    Continue with the nearest-mesh scaled-GRS window of
