@@ -111152,6 +111152,109 @@ entropy budget]
    \(h-r=\Omega(\log m)\).
 \end{proof}
 
+\begin{corollary}[Tanner expansion blocks low-gap neutral fibers]
+   \label{cor:tanner-expansion-low-gap-neutral-barrier}
+   Work over \(\mathbb F_2\), and let
+   \(\mathcal C=\ker A\le\mathbb F_2^b\).  Write \(G_A\) for the Tanner graph
+   whose variable vertices are \([b]\) and whose check vertices are the rows of
+   \(A\).  For \(S\subseteq[b]\), let \(N(S)\) be its check-neighborhood, and
+   say that \(S\) has a unique neighbor if some check in \(N(S)\) is adjacent
+   to exactly one variable of \(S\).
+
+   If every nonempty \(S\subseteq J\) has a unique neighbor, then the shortened
+   dimension from \cref{cor:shortened-low-gap-rank-defect} is
+   \[
+      d_J=0 .
+      \tag{TNE1}
+   \]
+   In particular, if the Tanner graph is left \(\Delta\)-regular and satisfies
+   the small-set expansion
+   \[
+      |N(S)|>\frac{\Delta}{2}|S|
+      \qquad
+      (0<|S|\le r),
+      \tag{TNE2}
+   \]
+   then \(d_J=0\) for every \(|J|\le r\).
+
+   The random sparse-code version has the same conclusion at the low-gap
+   scale.  Let \(h_0=\alpha b\) with fixed \(\alpha>0\), let every variable
+   choose \(\Delta\ge3\) distinct checks from \([h_0]\) independently, and take
+   \(A\) to be the resulting parity-check matrix.  Then
+   \[
+      \Pr\!\left[
+         \exists S,\ 1\le |S|\le r,\ |N(S)|\le\frac{\Delta}{2}|S|
+      \right]
+      \le
+      \sum_{s=1}^r
+      \left[
+         C_{\alpha,\Delta}
+         \left(\frac{s}{b}\right)^{\Delta/2-1}
+      \right]^s .
+      \tag{TNE3}
+   \]
+   Consequently, if \(b=\Theta(\log m)\) and
+   \(r=O(\log\log m)\), this probability is \(o(1)\).  For iid continuous
+   Gaussian coordinate gaps, the set of the \(r\) smallest gaps is a uniform
+   \(r\)-subset independent of the Tanner graph; hence a random
+   left-regular LDPC/Tanner block has no low-gap shortened entropy at this
+   scale with high probability.
+
+   Thus ordinary sparse-code expansion is a barrier for the neutral-fiber
+   branch, not a source of the needed polylogarithmic conditional support.  A
+   Tanner, expander, or LDPC construction that wants to use
+   \cref{cor:low-gap-shortened-subcode-compiler} must deliberately create
+   local rank defects on low-gap coordinates--as in the planted pocket
+   construction below--or else use a quotient, responsibility, Fano, or
+   aggregate-sampler certificate that does not require shortened-code entropy
+   on the low-gap set.
+\end{corollary}
+
+\begin{proof}
+   If \(d_J>0\), then there is a nonzero word
+   \(v\in\ker A_J\).  Let \(S=\operatorname{supp}v\subseteq J\).  Any check
+   adjacent to exactly one variable of \(S\) would have parity one on \(v\),
+   contradicting \(Av=0\).  Hence \(S\) has no unique neighbor.  This proves
+   the contrapositive of \((TNE1)\).
+
+   In a left \(\Delta\)-regular graph, if a nonempty \(S\) has no unique
+   neighbor, every check in \(N(S)\) is incident to at least two of the
+   \(\Delta|S|\) edges leaving \(S\).  Therefore
+   \[
+      2|N(S)|\le\Delta|S|,
+   \]
+   contradicting \((TNE2)\).  Thus every nonempty subset of every
+   \(|J|\le r\) has a unique neighbor, and \((TNE1)\) applies.
+
+   For the random bound, fix \(S\subseteq[b]\) with \(|S|=s\), and put
+   \(t=\lfloor\Delta s/2\rfloor\).  If \(|N(S)|\le\Delta s/2\), then
+   \(N(S)\) is contained in some \(T\subseteq[h_0]\) of size \(t\).  For a
+   fixed \(T\), the probability that all \(\Delta\) check choices of one
+   variable lie in \(T\) is at most \((t/h_0)^\Delta\), and the variables in
+   \(S\) choose independently.  Hence
+   \[
+   \begin{aligned}
+      \Pr[\exists S,\ |S|=s,\ |N(S)|\le\Delta s/2]
+      &\le
+      \binom bs\binom{h_0}{t}\left(\frac{t}{h_0}\right)^{\Delta s}  \\
+      &\le
+      \left[
+         e^{1+\Delta/2}
+         \left(\frac{\Delta}{2\alpha}\right)^{\Delta/2}
+         \left(\frac{s}{b}\right)^{\Delta/2-1}
+      \right]^s ,
+   \end{aligned}
+      \tag{TNE4}
+   \]
+   after using \(h_0=\alpha b\) and the standard binomial estimates.  Summing
+   over \(1\le s\le r\) gives \((TNE3)\), with the displayed constant absorbed
+   into \(C_{\alpha,\Delta}\).  If \(r=O(\log\log m)\) and
+   \(b=\Theta(\log m)\), the base in \((TNE3)\) is \(o(1)\) uniformly over
+   \(s\le r\), because \(\Delta/2-1>0\).  The final low-gap statement follows
+   because the ordering of iid continuous Gaussian gaps is a uniform random
+   permutation independent of the Tanner graph.
+\end{proof}
+
 \begin{corollary}[Parallel neutral pockets and the low-gap occupancy tradeoff]
    \label{cor:parallel-neutral-pocket-occupancy}
    Partition \([b]\) into nonempty pockets
