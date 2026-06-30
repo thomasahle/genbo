@@ -108677,6 +108677,98 @@ entropy budget]
    \((BAV5)\).
 \end{proof}
 
+\begin{corollary}[Global terminal thinning pays its retained route mass]
+   \label{cor:global-terminal-thinning-route-value-toll}
+   Work in the dominated route-law setting of
+   \cref{lem:dominated-route-law}.  Let \(\mathcal T\) be a successful route
+   trie with activation prefix masses \(A(u)\), and suppose that an unfiltered
+   successful route law \(\Lambda\) satisfies
+   \[
+      \Lambda(u)\le e^{H_0}A(u)
+      \qquad (u\in\mathcal T).
+      \tag{GTT1}
+   \]
+   Let \(F\) be any terminal retained event and put
+   \(y=\Lambda(F)\).  If \(y>0\), then the law
+   \[
+      \Lambda_F(v)=\frac{\Lambda(v)\mathbf1_{\{v\in F\}}}{y}
+      \tag{GTT2}
+   \]
+   on retained successful leaves satisfies
+   \[
+      \Lambda_F(u)\le e^{H_0}\,y^{-1}A(u)
+      \qquad (u\in\mathcal T).
+      \tag{GTT3}
+   \]
+   Hence the black-box conditioning certificate supplied by
+   \cref{lem:dominated-route-law} gives the filtered trie value
+   \[
+      U_F(\varnothing)\ge y\,e^{-H_0}.
+      \tag{GTT4}
+   \]
+
+   Now suppose \(F\) is a random terminal mask, independent of \(\Lambda\), and
+   every fixed leaf is retained with probability \(\delta\).  Then
+   \[
+      \E_F y=\delta,
+      \tag{GTT5}
+   \]
+   and therefore
+   \[
+      \Pr_F[y\le2\delta]\ge\frac12 .
+      \tag{GTT6}
+   \]
+   On these seeds, the lower bound obtained from the conditioning route above
+   is no larger than \(2\delta e^{-H_0}\).  Thus a terminal-only random subset of density
+   \(\delta\) removes value as well as emissions in this normal form.  If
+   \(\delta=K_{\rm tot}^{-1}\) for a product of checkpoint ranges and
+   \(K_{\rm tot}=m^{\Omega(1)}\), global conditioning reintroduces a polynomial
+   near-side loss even when the terminal mask is perfectly pairwise
+   independent.
+
+   Consequently, polynomial checkpoint products cannot be justified as one
+   giant terminal random subset in the aggregate-value proof.  They must be
+   used as segment-local aggregate reporters, where each checkpoint is reset
+   and promoted to an edge whose success loss is the collision-support factor
+   \(\eta_s/(1+\eta_s)\) from
+   \cref{lem:weighted-syndrome-collision-thinning} or
+   \cref{cor:checkpointed-quotient-prefix-cut-compiler}, while its state cost
+   is charged locally as in \((CQR2)\)--\((CPFA6)\).  In that regime the value
+   toll is \(\sum_s\log(1+\eta_s^{-1})\), not \(\sum_s\log K_s\).
+\end{corollary}
+
+\begin{proof}
+   For every trie node \(u\),
+   \[
+      \Lambda_F(u)
+      =
+      \frac{\Lambda(F\cap\{v:v\succeq u\})}{y}
+      \le
+      \frac{\Lambda(u)}{y}
+      \le
+      e^{H_0}y^{-1}A(u),
+   \]
+   proving \((GTT3)\).  Applying
+   \cref{lem:dominated-route-law} to the filtered leaf set with
+   \(p=ye^{-H_0}\) proves \((GTT4)\).
+
+   If the mask has fixed-leaf retention probability \(\delta\), then
+   \[
+      \E_Fy
+      =
+      \sum_v\Lambda(v)\Pr_F[v\in F]
+      =
+      \delta\sum_v\Lambda(v)
+      =
+      \delta,
+   \]
+   proving \((GTT5)\).  Markov's inequality gives
+   \(\Pr_F[y>2\delta]\le1/2\), which is \((GTT6)\).  The interpretation for
+   checkpoint products is exactly the substitution
+   \(\delta=\prod_sK_s^{-1}\), contrasted with the segment-local
+   support-hitting bounds cited in the statement.
+\end{proof}
+
 \begin{corollary}[Product-prefix route height has a Bernstein audit]
    \label{cor:product-prefix-route-height-bernstein}
    Let the leaves of a route trie be coordinate product labels
