@@ -102348,6 +102348,137 @@ amplified in the next proposition.
    \((PNP9)\)--\((PNP10)\).
 \end{proof}
 
+\begin{corollary}[Planted neutral pockets leave polynomial OSD quotient entropy]
+   \label{cor:planted-pocket-quotient-entropy-barrier}
+   Work over \(\mathbb F_2\) in the parallel-pocket code of
+   \cref{cor:parallel-neutral-pocket-occupancy}.  Fix a low-gap set \(J\),
+   put \(H=[b]\setminus J\), and let \(D_H=\{c_H:c\in\mathcal C\}\) be the
+   quotient code used in \cref{cor:low-gap-shortened-subcode-compiler}.  A
+   pocket \(P_t\) is called hit if \(J\cap P_t\ne\emptyset\), and unhit
+   otherwise.  Then
+   \[
+      D_H
+      =
+      \left\{u\in\mathbb F_2^H:
+      \sum_{i\in P_t}u_i=0\text{ for every unhit pocket }P_t\right\}.
+      \tag{PQE1}
+   \]
+   For binary query scores define
+   \[
+      m_i=\max_{a\in\{0,1\}}\phi_i(a),
+      \qquad
+      \delta_i=|\phi_i(1)-\phi_i(0)|,
+      \qquad
+      \lambda_i=\log\left(1+e^{-\beta\delta_i}\right).
+      \tag{PQE2}
+   \]
+   Let \(\Lambda_H^*(q)\) be the minimum information-set entropy of
+   \(D_H\), as in \cref{lem:min-entropy-information-set}, for the quotient
+   score \(\sum_{i\in H}\phi_i(u_i)\).  If \(U_0(J)\) is the number of unhit
+   pockets, then
+   \[
+      \Lambda_H^*(q)
+      =
+      \sum_{i\in H}\lambda_i
+      -
+      \sum_{t:\,J\cap P_t=\emptyset}
+         \max_{i\in P_t}\lambda_i ,
+      \tag{PQE3}
+   \]
+   and in particular
+   \[
+      \Lambda_H^*(q)
+      \ge
+      \sum_{i\in H}\lambda_i-U_0(J)\log2 .
+      \tag{PQE4}
+   \]
+
+   Now take the equal-weight Gaussian binary score model from
+   \cref{cor:binary-low-gap-frozen-chart}, with
+   \(b=\lambda\log m+O(1)\), \(\beta^2\le B\log m\), and
+   \(r=|J|=O(\log\log m)\), where \(J\) is the set of the \(r\) smallest
+   realized gaps.  For a constant
+   \(C_{B,\lambda}>0\), let
+   \[
+      \mu_{B,\lambda}
+      =
+      \E_{Z\sim |N(0,1)|}
+      \log\left(1+e^{-C_{B,\lambda} Z}\right)>0
+      \tag{PQE5}
+   \]
+   be chosen so that \(\beta\delta_i\le C_{B,\lambda}|N_i|\) under the
+   equal-weight normalization, up to the harmless \(1+o(1)\) factor.  Then
+   there is \(c_{B,\lambda}>0\) such that
+   \[
+      \Pr\left[
+         \Lambda_H^*(q)
+         \le
+         \frac{\mu_{B,\lambda}}3\,b
+      \right]
+      \le
+      e^{-c_{B,\lambda}b}
+      \tag{PQE6}
+   \]
+   for all sufficiently large \(m\), whenever the number of pockets is
+   \(p=O(\log\log m)\).
+
+   Consequently the planted-pocket construction supplies the flat neutral
+   fiber, but not an OSD/ordinary information-set quotient reporter.  The
+   OSD candidate multiplier for the outer quotient is
+   \[
+      e^{\Lambda_H^*(q)}\ge m^{\Omega_{B,\lambda}(1)}
+      \tag{PQE7}
+   \]
+   with high probability, before any threshold-deficit term is added.  Thus a
+   clean polylogarithmic implementation of this planted-pocket branch must use
+   a different quotient mechanism: a Fano-priced activation measure,
+   responsibility-thinned reporting, an aggregate theta/trellis sampler, or a
+   boundary-band theorem that does not materialize a full information set.
+\end{corollary}
+
+\begin{proof}
+   If \(P_t\) is hit, at least one omitted coordinate in \(J\cap P_t\) can
+   complete any assignment on \(H\cap P_t\), so there is no constraint on that
+   quotient block.  If \(P_t\) is unhit, all coordinates of the pocket remain
+   in \(H\), and the original parity equation remains.  This proves
+   \((PQE1)\).
+
+   In a hit pocket the quotient block is a full product cube, so every
+   information set must contain every coordinate of \(H\cap P_t\).  In an
+   unhit pocket the quotient block is a single even-parity code; any all-but
+   one coordinates form an information set, and one cannot omit more than one
+   coordinate while retaining injectivity.  Therefore the minimum entropy
+   basis includes every coordinate in every hit pocket and, in each unhit
+   pocket, omits exactly the coordinate with largest \(\lambda_i\).  This is
+   \((PQE3)\), and \((PQE4)\) follows from \(\lambda_i\le\log2\).
+
+   For the Gaussian statement, write
+   \(\delta_i\sqrt{b/2}=|N_i|\).  Since
+   \(\beta^2\le B\log m\) and \(b=\lambda\log m+O(1)\), there is a constant
+   \(C_{B,\lambda}\) such that, for all large \(m\),
+   \[
+      \lambda_i
+      =
+      \log(1+e^{-\beta\delta_i})
+      \ge
+      \log(1+e^{-C_{B,\lambda}|N_i|}).
+   \]
+   The right side is a bounded nonnegative iid random variable with positive
+   mean \(\mu_{B,\lambda}\).  Hoeffding's inequality gives
+   \[
+      \Pr\left[\sum_{i=1}^b\lambda_i
+         \le \frac23\mu_{B,\lambda}b\right]
+      \le e^{-c_{B,\lambda}b}.
+      \tag{PQE8}
+   \]
+   Passing from all coordinates to \(H\) removes only the \(r=O(\log\log m)\)
+   low-gap coordinates, each contributing at most \(\log2\).  The unhit-pocket
+   subtraction in \((PQE4)\) removes at most \(p\log2=O(\log\log m)\).  Since
+   \(b=\Theta(\log m)\), the lower bound \((PQE6)\) follows from \((PQE8)\)
+   for all sufficiently large \(m\).  Equation \((PQE7)\) is the exponential
+   form of \((PQE6)\).
+\end{proof}
+
 \begin{corollary}[Support collapse blocks bounded additive masks]
    \label{cor:support-collapse-blocks-bounded-additive-masks}
    Work with one conditional near block law \(P^E_j\) from
