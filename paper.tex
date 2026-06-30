@@ -105831,6 +105831,175 @@ tax]
    to know the near witness.
 \end{proof}
 
+\begin{corollary}[Monte Carlo activation pays the query-centered lens price]
+   \label{cor:query-centered-monte-carlo-lens-activation}
+   Work in the flat score model of
+   \cref{cor:query-centered-gibbs-lens-barrier}.  Fix \(c>1\), put
+   \(a_0=1-c^{-2}\), \(\rho_c=(2c^2-1)^{-1}\), \(L=\log m\), and use the
+   all-reporting lens radius
+   \[
+      R_0=\sqrt{1-2\theta_{\rm lens}}
+      =
+      \frac1{\sqrt2\,c}.
+      \tag{QMC1}
+   \]
+   Let
+   \[
+      G_q=q+\beta^{-1/2}Z,\qquad Z\sim N(0,I_d),
+      \qquad
+      \beta=2(1+\rho_c)L+O_c(\log\log m),
+      \tag{QMC2}
+   \]
+   with \(d\le C_0\log\log m\).  For the promised near witness \(p\), assume
+   the calibrated tangent-distance bound
+   \[
+      \frac{\beta}{2}\bigl(\|p-q\|-R_0\bigr)_+^2
+      \le
+      \rho_cL+C_0\log\log m.
+      \tag{QMC3}
+   \]
+   This holds, in particular, for the critical near correlation
+   \(\ip{p}{q}=a_0+O_c((\log\log m)/\log m)\).  For a set \(F\) of at most
+   \(m\) invalid unit points, assume
+   \[
+      \sup_{x\in F}\ip{x}{q}=o(1).
+      \tag{QMC4}
+   \]
+   Define the storage event of a point \(y\) by
+   \[
+      E_y=\{S_y(G_q)\ge\theta_{\rm lens}\}
+      =
+      \{\|G_q-y\|\le R_0\}.
+      \tag{QMC5}
+   \]
+   Then there is a constant \(A_0=A_0(c,C_0)\) such that
+   \[
+      \Pr[E_p]\ge m^{-\rho_c}L^{-A_0},
+      \tag{QMC6}
+   \]
+   while, with
+   \[
+      \Gamma_c=
+      (1+\rho_c)\left(\sqrt2-\frac1{\sqrt2\,c}\right)^2
+      =
+      \frac{(2c-1)^2}{2c^2-1}
+      =
+      1+\frac{2(c-1)^2}{2c^2-1}>1,
+      \tag{QMC7}
+   \]
+   every invalid point satisfies
+   \[
+      \Pr[E_x]\le m^{-\Gamma_c+o(1)}
+      \qquad(x\in F).
+      \tag{QMC8}
+   \]
+
+   Consequently, \(N=\lceil C m^{\rho_c}L^{A_0+B}\rceil\) independent samples
+   from the query-centered law hit the near witness with probability at least
+   \[
+      1-\exp\{-C L^B+o(1)\},
+      \tag{QMC9}
+   \]
+   and their expected total invalid emissions are at most
+   \[
+      C\,m^{\rho_c+1-\Gamma_c+o(1)}L^{A_0+B}
+      \le
+      m^{\rho_c}\log^{O_{c,B}(1)}m.
+      \tag{QMC10}
+   \]
+   For constant success in \((QMC9)\), full independence of the \(N\) samples
+   may be weakened to pairwise independence of the near-hit indicators; the
+   far-load estimate only uses linearity of expectation.
+
+   Thus the obstruction in
+   \cref{cor:query-centered-gibbs-lens-barrier} is not that the
+   query-centered law has the wrong exponent.  Its lens mass is exactly
+   \(m^{-\rho_c}\) up to polylogarithmic factors.  A code, lattice, trellis, or
+   quotient sampler that can draw from this query-centered bucket law in
+   polylogarithmic time per draw may spend the allowed
+   \(m^{\rho_c}\operatorname{polylog}m\) activation samples and recover the
+   terminal lens without a subpolynomial branch-and-bound search.  What remains
+   for such a sampler is the concrete bucket audit: storage, marked far load,
+   and near responsibility as in
+   \cref{lem:marked-trellis-responsibility-verifier} and
+   \cref{cor:marked-heavy-lister-closes-trellis}.
+\end{corollary}
+
+\begin{proof}
+   We first prove the near lower bound.  Write \(D=\|p-q\|\) and
+   \(\Delta=(D-R_0)_+\).  If \(\Delta=0\), then \(q\) lies in the storage ball
+   around \(p\), and \(\Pr[E_p]\) is bounded below by a positive constant for
+   all large \(m\).  Assume henceforth \(\Delta>0\), and decompose
+   \(Z=Z_1e+Z_\perp\) where \(e=(q-p)/D\).  The event \(E_p\) is
+   \[
+      \left(D-\frac{Z_1}{\sqrt\beta}\right)^2
+      +
+      \frac{\|Z_\perp\|^2}{\beta}
+      \le R_0^2 .
+      \tag{QMC11}
+   \]
+   Choose a constant \(A_1=A_1(C_0,c)\) large enough that
+   \(\Pr[\|Z_\perp\|^2\le A_1(d+1)]\ge1/2\).  On the event
+   \[
+      Z_1\in
+      \left[
+         \sqrt\beta\,\Delta+\frac{A_1(d+1)}{R_0\sqrt\beta},
+         \sqrt\beta\,\Delta+\frac{2A_1(d+1)}{R_0\sqrt\beta}
+      \right],
+      \qquad
+      \|Z_\perp\|^2\le A_1(d+1),
+      \tag{QMC12}
+   \]
+   inequality \((QMC11)\) holds for all sufficiently large \(m\), after
+   increasing \(A_1\) once.  The one-dimensional Gaussian density on the
+   interval in \((QMC12)\), together with \(d=O(\log\log m)\), gives
+   \[
+      \Pr[E_p]
+      \ge
+      L^{-O_{c,C_0}(1)}
+      \exp\left\{-\frac12\beta\Delta^2\right\}.
+      \tag{QMC13}
+   \]
+   The calibration hypothesis \((QMC3)\) proves \((QMC6)\).
+
+   For an invalid point \(x\), let \(D_x=\|x-q\|\) and
+   \(\Delta_x=(D_x-R_0)_+\).  By \((QMC4)\),
+   \[
+      D_x\ge\sqrt{2-o(1)},
+      \qquad
+      \Delta_x\ge
+      \sqrt2-\frac1{\sqrt2c}-o(1).
+      \tag{QMC14}
+   \]
+   Applying the Gaussian norm bound \((QGB4)\) from
+   \cref{cor:query-centered-gibbs-lens-barrier} and using
+   \(d=O(\log\log m)\) yields
+   \[
+      \Pr[E_x]
+      \le
+      \exp\left\{
+         -\frac12(\sqrt\beta\,\Delta_x-\sqrt d)_+^2
+      \right\}
+      =
+      m^{-\Gamma_c+o(1)},
+      \tag{QMC15}
+   \]
+   which is \((QMC8)\).
+
+   For \(N\) independent samples, the miss probability for \(p\) is at most
+   \[
+      (1-\Pr[E_p])^N
+      \le
+      \exp\{-N\Pr[E_p]\},
+   \]
+   and \((QMC6)\) gives \((QMC9)\).  Summing \((QMC8)\) over at most \(m\)
+   invalid points and over the \(N\) samples gives \((QMC10)\).  If only
+   pairwise independent near-hit indicators are used and
+   \(\mu=N\Pr[E_p]\), Chebyshev's inequality gives
+   \(\Pr[\text{no near hit}]\le\mu^{-1}\), so \(\mu=\Omega(1)\) is enough for
+   constant success.
+\end{proof}
+
 \begin{corollary}[Balanced checkpoints can absorb any fixed flat-volume excess]
    \label{cor:balanced-checkpoints-absorb-flat-volume-excess}
    Continue with the nearest-mesh scaled-GRS window of
