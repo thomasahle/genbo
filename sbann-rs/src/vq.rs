@@ -28,6 +28,11 @@ pub static RESID: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool:
 /// retrained on residuals), and the scan adds the exact per-cell <q,centroid> offset. +6-11pt IP
 /// pool-recall (P124) -> shallower rerank pool for OOD. Distinct from RESID (8-bit refine, which failed).
 pub static RESIDQ: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+/// SBANN_RAW_DEDUP (Task B): store the exact-rerank `raw` array per DISTINCT ORIG point (n*d, indexed
+/// by orig id) instead of per SLOT (n*a0*d, a full a0x-oversized 2nd dataset copy). rerank_contig reads
+/// raw[orig*d] when set. Shrinks the largest index array by ~a0x with bit-identical recall (a duplicate
+/// slot's orig points at the same raw bytes either way). Set once at startup from the env in main().
+pub static RAW_DEDUP: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 /// SBANN_POOLDEDUP: dedup the candidate pool by ORIG id (keep min approx-dist per id) BEFORE the
 /// t_surv survivor cap. With SOAR a0>1 a point lands in multiple probed cells as duplicate slots; the
 /// late dedup in rerank_contig (heap size k*4) gets crowded out by those duplicates, collapsing recall
@@ -135,7 +140,10 @@ fn rerank_survivors(ds: &I8Bin, q: &[i8], pool: &[(i32, u32)], k: usize) -> Vec<
 /// Like rerank_survivors but survivors are SLOTS into a cell-contiguous raw i8 array (`raw`), so the
 /// gathers stay inside the small probed-cell region (cache-warm) instead of scattering across the
 /// full base. Pool = (approx_dist, slot); returns up to k DISTINCT orig ids by true L2.
-fn rerank_contig(raw: &[i8], d: usize, slot_orig: &[u32], q: &[i8], pool: &[(i32, u32)], k: usize) -> Vec<u32> {
+// `by_orig` (Task B, SBANN_RAW_DEDUP): when true `raw` is per-distinct-orig (n*d), so a slot's row lives
+// at raw[orig*d]; when false `raw` is slot-indexed (n*a0*d) and the row lives at raw[slot*d]. The chosen
+// rows are bit-identical either way (a duplicate slot's orig points at the same bytes), so recall is unchanged.
+fn rerank_contig(raw: &[i8], d: usize, slot_orig: &[u32], q: &[i8], pool: &[(i32, u32)], k: usize, by_orig: bool) -> Vec<u32> {
     let m = (k * 4).min(pool.len());
     if m == 0 {
         return Vec::new();
@@ -150,12 +158,15 @@ fn rerank_contig(raw: &[i8], d: usize, slot_orig: &[u32], q: &[i8], pool: &[(i32
     let mut heap: std::collections::BinaryHeap<(i32, u32)> = std::collections::BinaryHeap::with_capacity(m + 1);
     for i in 0..n {
         let slot = pool[i].1 as usize;
-        if i + 8 < n {
-            unsafe { _mm_prefetch(raw.as_ptr().add(pool[i + 8].1 as usize * d) as *const i8, _MM_HINT_T0) };
-        }
         let orig = slot_orig[slot];
+        if i + 8 < n {
+            let nslot = pool[i + 8].1 as usize;
+            let ri = if by_orig { slot_orig[nslot] as usize } else { nslot };
+            unsafe { _mm_prefetch(raw.as_ptr().add(ri * d) as *const i8, _MM_HINT_T0) };
+        }
         if orig == u32::MAX { continue; }
-        let row = &raw[slot * d..slot * d + d];
+        let ri = if by_orig { orig as usize } else { slot };
+        let row = &raw[ri * d..ri * d + d];
         let dist = if ip { simd::negdot_i8(q, row) } else if avx { unsafe { simd::l2_i8_avx2(q, row) } } else { simd::l2_i8_scalar(q, row) };
         let full = heap.len() >= m;
         if full && dist >= heap.peek().unwrap().0 { continue; }
@@ -184,6 +195,11 @@ pub trait Router: Send + Sync {
     fn probe_ranked(&self, q: &[i8], p: usize) -> Vec<u32> { self.probe(q, p) }
     /// Batched routing: top-p cells for all nq queries (nq*p). Default: parallel per-query probe;
     /// FlatIvf overrides with a single GEMM (Q @ pivots^T) — far faster for large C.
+    /// Serialize self (1-byte concrete-type tag + POD fields) for SBANN_INDEX_SAVE. Default: error —
+    /// only the scale-path router (HierRouter) implements it; load_router reads the tag back.
+    fn save(&self, _w: &mut crate::persist::Sw) -> std::io::Result<()> {
+        Err(std::io::Error::new(std::io::ErrorKind::Unsupported, "router type not serializable (only HierRouter is)"))
+    }
     fn probe_batch(&self, q_i8: &[i8], nq: usize, d: usize, p: usize) -> Vec<u32> {
         let mut out = vec![0u32; nq * p];
         out.par_chunks_mut(p).enumerate().for_each(|(i, slot)| {
@@ -817,6 +833,23 @@ impl Router for HierRouter {
         self.route_fine(&qn[..self.d], p, &mut out);
         out
     }
+    fn save(&self, w: &mut crate::persist::Sw) -> std::io::Result<()> {
+        w.u8(ROUTER_TAG_HIER)?;
+        w.usize(self.d)?;
+        w.usize(self.kf)?;
+        w.usize(self.levels)?;
+        w.f32(self.soar)?;
+        w.f32s(&self.mu)?;
+        w.usize(self.cent.len())?;
+        for c in &self.cent { w.i8s(c)?; }   // cent: Vec<Vec<i8>> (per-level centroids)
+        w.usize(self.child.len())?;
+        for c in &self.child { w.u32s(c)?; } // child: Vec<Vec<u32>> (per-level prefix sums)
+        w.usizes(&self.beam)?;
+        save_opt_pq(&self.radc, w)?;
+        w.u8s(&self.rcodes)?;
+        w.u8s(&self.rblocks)?;
+        Ok(())
+    }
 }
 
 // ---------------- Compressor: candidate scan (approx distances) ----------------
@@ -843,6 +876,11 @@ pub trait Compressor: Send + Sync {
     /// Does scan_block read the raw i8 rows? PQ/ADC compressors don't (LUT-only) -> skip the 16
     /// per-block ds.row() gathers + Vec build entirely. Only ScalarI8 (exact scan) needs them.
     fn needs_raw_rows(&self) -> bool { false }
+    /// Serialize self (1-byte concrete-type tag + POD fields) for SBANN_INDEX_SAVE. Default: error —
+    /// only the scale-path compressors (Apq4, Pq4) implement it; load_comp reads the tag back.
+    fn save(&self, _w: &mut crate::persist::Sw) -> std::io::Result<()> {
+        Err(std::io::Error::new(std::io::ErrorKind::Unsupported, "compressor type not serializable (only Apq4/Pq4 are)"))
+    }
     /// Scan TWO consecutive blocks (32 points) at once -> out[0..16]=block0, out[16..32]=block1.
     /// Default = two scan_block calls; PQ16 overrides with the AVX-512 32-wide vpermw kernel.
     fn scan_block_x2(&self, b0: &[u8], b1: &[u8], ctx: &QueryCtx, out: &mut [i32; 32]) {
@@ -885,6 +923,10 @@ impl Compressor for Pq4 {
             unsafe { pq::block_adc_sse(block, self.pq.m, regs, &mut o) };
             for i in 0..16 { out16[i] = o[i] as i32; }
         }
+    }
+    fn save(&self, w: &mut crate::persist::Sw) -> std::io::Result<()> {
+        w.u8(COMP_TAG_PQ4)?;
+        save_pq(&self.pq, w)
     }
 }
 
@@ -968,6 +1010,13 @@ impl Compressor for Apq4 {
         self.scan_block(b1, ctx, &[], &[], &mut o1);
         out[..16].copy_from_slice(&o0);
         out[16..].copy_from_slice(&o1);
+    }
+    fn save(&self, w: &mut crate::persist::Sw) -> std::io::Result<()> {
+        w.u8(COMP_TAG_APQ4)?;
+        w.usize(self.d)?;
+        w.usize(self.dpb)?;
+        w.f32(self.eta)?;
+        save_pq(&self.pq, w)
     }
 }
 
@@ -1176,6 +1225,11 @@ pub struct Index {
     // probed cells as duplicate slots, so scan_rerank must dedup the pool by orig id BEFORE the t_surv cap
     // (deduping after the cap loses recall when dups crowd the survivors). a0==1 => no dedup needed.
     pub a0: usize,
+    // RAW LAYOUT (SBANN_RAW_DEDUP, Task B): false => `raw` is SLOT-indexed (n*a0*d, a full 2nd copy);
+    // true => `raw` is per-DISTINCT-ORIG (n*d, indexed by orig id) so rerank reads raw[orig*d] instead of
+    // raw[slot*d]. rerank_contig already dedups to distinct orig ids, so the orig-indexed read is exact
+    // and the index shrinks by ~a0x on the biggest array. Set at build from RAW_DEDUP; serialized.
+    pub raw_orig_indexed: bool,
 }
 
 impl Index {
@@ -1255,7 +1309,14 @@ impl Index {
         let mut resid_codes: Vec<u8> = Vec::new();
         let mut blocks: Vec<u8> = Vec::new();
         let mut slot_orig: Vec<u32> = Vec::new();
-        let mut raw: Vec<i8> = Vec::new(); // raw i8 in slot order, parallel to slot_orig
+        // RAW LAYOUT (Task B). Default: slot-indexed `raw` grown in the slot loop (n*a0*d, a full a0x copy).
+        // SBANN_RAW_DEDUP: per-distinct-orig `raw` (n*d), prefilled here by orig id; the slot loop skips it.
+        let raw_dedup = RAW_DEDUP.load(std::sync::atomic::Ordering::Relaxed);
+        let mut raw: Vec<i8> = if raw_dedup {
+            let mut r = vec![0i8; n * d];
+            r.par_chunks_mut(d).enumerate().for_each(|(o, out)| out.copy_from_slice(ds.row(o)));
+            r
+        } else { Vec::new() }; // raw i8 in slot order, parallel to slot_orig
         let mut cell_bstart = vec![0u32; nc + 1];
         for cell in 0..nc {
             let (s, e) = (cell_start[cell] as usize, cell_start[cell + 1] as usize);
@@ -1268,7 +1329,7 @@ impl Index {
                 comp.encode_block(&rows, cnt, cc, &mut blocks);
                 for j in 0..16 {
                     slot_orig.push(if j < cnt { pts[i + j] } else { u32::MAX });
-                    if j < cnt { raw.extend_from_slice(rows[j]); } else { raw.resize(raw.len() + d, 0); }
+                    if !raw_dedup { if j < cnt { raw.extend_from_slice(rows[j]); } else { raw.resize(raw.len() + d, 0); } }
                     if mr > 0 {
                         if j < cnt { let o = pts[i + j] as usize; resid_codes.extend_from_slice(&resid_by_orig[o * mr..o * mr + mr]); }
                         else { resid_codes.resize(resid_codes.len() + mr, 0); }
@@ -1307,7 +1368,7 @@ impl Index {
                 }
             }
         }
-        Index { router, comp, cell_bstart, slot_orig, blocks, bb, xfn: Vec::new(), raw, d, blocks_il, cell_ilstart, resid_pq, resid_codes, rq_cent, a0 }
+        Index { router, comp, cell_bstart, slot_orig, blocks, bb, xfn: Vec::new(), raw, d, blocks_il, cell_ilstart, resid_pq, resid_codes, rq_cent, a0, raw_orig_indexed: raw_dedup }
     }
 
     pub fn search(&self, ds: &I8Bin, q: &[i8], p: usize, t: usize, k: usize) -> Vec<u32> {
@@ -1387,7 +1448,7 @@ impl Index {
         let tt = t.min(pool.len());
         if tt > 0 { pool.select_nth_unstable(tt - 1); pool.truncate(tt); }
         let _ = ds;
-        let _ = rerank_contig(&self.raw, self.d, &self.slot_orig, q, &pool, k);
+        let _ = rerank_contig(&self.raw, self.d, &self.slot_orig, q, &pool, k, self.raw_orig_indexed);
         let t3 = Instant::now();
         ((t1 - t0).as_nanos() as u64, (t2 - t1).as_nanos() as u64, (t3 - t2).as_nanos() as u64)
     }
@@ -1502,7 +1563,7 @@ impl Index {
         let tt = t.min(pool.len());
         if tt > 0 { pool.select_nth_unstable(tt - 1); pool.truncate(tt); }
         let _ = ds;
-        let out = rerank_contig(&self.raw, self.d, &self.slot_orig, q, &pool, k);
+        let out = rerank_contig(&self.raw, self.d, &self.slot_orig, q, &pool, k, self.raw_orig_indexed);
         if let Some(tr) = tr { PROF_RERANK_NS.fetch_add(tr.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed); }
         out
     }
@@ -1570,7 +1631,7 @@ impl Index {
         let dd = rr_depth.min(keyed.len());
         if dd > 0 { keyed.select_nth_unstable_by(dd - 1, |a, b| a.0.total_cmp(&b.0)); keyed.truncate(dd); }
         let pool2: Vec<(i32, u32)> = keyed.iter().map(|&(_, slot)| (0i32, slot)).collect();
-        rerank_contig(&self.raw, self.d, &self.slot_orig, q, &pool2, k)
+        rerank_contig(&self.raw, self.d, &self.slot_orig, q, &pool2, k, self.raw_orig_indexed)
     }
 
     /// Batched search: GEMM-route ALL queries at once, then per-query scan+rerank in parallel.
@@ -1631,5 +1692,168 @@ impl Index {
         let tt = t.min(pool.len());
         if tt > 0 { pool.select_nth_unstable(tt - 1); pool.truncate(tt); }
         (rerank_survivors(ds, q, &pool, k), used)
+    }
+}
+
+// ============================= Index persistence (SBANN_INDEX_SAVE/LOAD) =============================
+// Trait objects are NOT serialized generically: each concrete Router/Compressor writes a 1-byte type
+// tag (these constants) + its POD fields; load_router/load_comp read the tag and rebuild the type.
+const ROUTER_TAG_HIER: u8 = 1;
+const COMP_TAG_APQ4: u8 = 1;
+const COMP_TAG_PQ4: u8 = 2;
+
+fn save_pq(pq: &pq::Pq, w: &mut crate::persist::Sw) -> std::io::Result<()> {
+    w.usize(pq.d)?;
+    w.usize(pq.dpb)?;
+    w.usize(pq.m)?;
+    w.f32(pq.eta)?;
+    w.f32s(&pq.cent)
+}
+fn load_pq(r: &mut crate::persist::Pr) -> pq::Pq {
+    let d = r.usize();
+    let dpb = r.usize();
+    let m = r.usize();
+    let eta = r.f32();
+    let cent = r.f32_vec();
+    pq::Pq { d, dpb, m, cent, eta }
+}
+fn save_opt_pq(o: &Option<pq::Pq>, w: &mut crate::persist::Sw) -> std::io::Result<()> {
+    match o { Some(p) => { w.u8(1)?; save_pq(p, w) } None => w.u8(0) }
+}
+fn load_opt_pq(r: &mut crate::persist::Pr) -> Option<pq::Pq> {
+    if r.u8() == 1 { Some(load_pq(r)) } else { None }
+}
+fn save_opt_residpq(o: &Option<pq::ResidPq>, w: &mut crate::persist::Sw) -> std::io::Result<()> {
+    match o {
+        Some(p) => { w.u8(1)?; w.usize(p.d)?; w.usize(p.dpb)?; w.usize(p.m)?; w.f32s(&p.cent) }
+        None => w.u8(0),
+    }
+}
+fn load_opt_residpq(r: &mut crate::persist::Pr) -> Option<pq::ResidPq> {
+    if r.u8() == 1 {
+        let d = r.usize();
+        let dpb = r.usize();
+        let m = r.usize();
+        let cent = r.f32_vec();
+        Some(pq::ResidPq { d, dpb, m, cent })
+    } else { None }
+}
+
+/// Rebuild the concrete Router from its tag + fields (the inverse of `Router::save`).
+fn load_router(r: &mut crate::persist::Pr) -> Box<dyn Router> {
+    let tag = r.u8();
+    match tag {
+        ROUTER_TAG_HIER => {
+            let d = r.usize();
+            let kf = r.usize();
+            let levels = r.usize();
+            let soar = r.f32();
+            let mu = r.f32_vec();
+            let nc = r.usize();
+            let cent: Vec<Vec<i8>> = (0..nc).map(|_| r.i8_vec()).collect();
+            let ncc = r.usize();
+            let child: Vec<Vec<u32>> = (0..ncc).map(|_| r.u32_vec()).collect();
+            let beam = r.usize_vec();
+            let radc = load_opt_pq(r);
+            let rcodes = r.u8_vec();
+            let rblocks = r.u8_vec();
+            Box::new(HierRouter { d, mu, kf, levels, cent, child, beam, soar, radc, rcodes, rblocks })
+        }
+        _ => panic!("unknown router type tag {tag} in index file (only HierRouter={ROUTER_TAG_HIER} supported)"),
+    }
+}
+
+/// Rebuild the concrete Compressor from its tag + fields (the inverse of `Compressor::save`).
+fn load_comp(r: &mut crate::persist::Pr) -> Box<dyn Compressor> {
+    let tag = r.u8();
+    match tag {
+        COMP_TAG_APQ4 => {
+            let d = r.usize();
+            let dpb = r.usize();
+            let eta = r.f32();
+            let pq = load_pq(r);
+            Box::new(Apq4 { pq, d, dpb, eta })
+        }
+        COMP_TAG_PQ4 => {
+            let pq = load_pq(r);
+            Box::new(Pq4 { pq })
+        }
+        _ => panic!("unknown compressor type tag {tag} in index file (only Apq4={COMP_TAG_APQ4}, Pq4={COMP_TAG_PQ4} supported)"),
+    }
+}
+
+impl Index {
+    /// Serialize the whole index to `path` (magic+version header, then POD arrays, then the tagged
+    /// concrete router+compressor). Streams to a BufWriter so the n*a0*d `raw`/`blocks` arrays never
+    /// get a second in-RAM copy. Errors clearly if the router/comp type is not one of the supported tags.
+    pub fn save_to(&self, path: &str) -> std::io::Result<()> {
+        use std::io::Write;
+        let f = std::fs::File::create(path)?;
+        let mut bw = std::io::BufWriter::new(f);
+        {
+            let mut w = crate::persist::Sw { w: &mut bw };
+            w.w.write_all(crate::persist::MAGIC)?;
+            w.u32(crate::persist::VERSION)?;
+            // POD scalars
+            w.usize(self.d)?;
+            w.usize(self.bb)?;
+            w.usize(self.a0)?;
+            w.u8(self.raw_orig_indexed as u8)?;
+            // POD arrays (each length-prefixed)
+            w.u32s(&self.cell_bstart)?;
+            w.u32s(&self.slot_orig)?;
+            w.u8s(&self.blocks)?;
+            w.i32s(&self.xfn)?;
+            w.i8s(&self.raw)?;
+            w.u8s(&self.blocks_il)?;
+            w.u32s(&self.cell_ilstart)?;
+            w.u8s(&self.resid_codes)?;
+            w.i8s(&self.rq_cent)?;
+            save_opt_residpq(&self.resid_pq, &mut w)?;
+            // concrete router + compressor (each writes its own 1-byte type tag)
+            self.router.save(&mut w)?;
+            self.comp.save(&mut w)?;
+        }
+        bw.flush()?;
+        Ok(())
+    }
+
+    /// Reconstruct an index from a file written by `save_to`. mmaps the file and COPIES each region into
+    /// owned Vecs (the Index owns its arrays), then drops the mmap. Recall is bit-identical to the in-RAM
+    /// build (same arrays, same router/comp). The build/scan global flags (FASTSCAN/USE512FS/RESID/...)
+    /// must match the build env, exactly as for the in-RAM path — they gate which arrays the search reads.
+    pub fn load_from(path: &str) -> std::io::Result<Index> {
+        let f = std::fs::File::open(path)?;
+        let mmap = unsafe { memmap2::Mmap::map(&f)? };
+        if mmap.len() < 12 || &mmap[0..8] != &crate::persist::MAGIC[..] {
+            return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "not an sbann index file (bad magic)"));
+        }
+        let mut r = crate::persist::Pr::new(&mmap[..]);
+        r.pos = 8;
+        let ver = r.u32();
+        if ver != crate::persist::VERSION {
+            return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,
+                format!("index version {ver} != supported {}", crate::persist::VERSION)));
+        }
+        let d = r.usize();
+        let bb = r.usize();
+        let a0 = r.usize();
+        let raw_orig_indexed = r.u8() != 0;
+        let cell_bstart = r.u32_vec();
+        let slot_orig = r.u32_vec();
+        let blocks = r.u8_vec();
+        let xfn = r.i32_vec();
+        let raw = r.i8_vec();
+        let blocks_il = r.u8_vec();
+        let cell_ilstart = r.u32_vec();
+        let resid_codes = r.u8_vec();
+        let rq_cent = r.i8_vec();
+        let resid_pq = load_opt_residpq(&mut r);
+        let router = load_router(&mut r);
+        let comp = load_comp(&mut r);
+        Ok(Index {
+            router, comp, cell_bstart, slot_orig, blocks, bb, xfn, raw, d,
+            blocks_il, cell_ilstart, resid_pq, resid_codes, rq_cent, a0, raw_orig_indexed,
+        })
     }
 }

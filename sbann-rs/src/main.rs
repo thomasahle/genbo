@@ -7,6 +7,7 @@
 
 mod ibin;
 mod kmeans;
+mod persist;
 mod pq;
 mod simd;
 mod vq;
@@ -321,6 +322,15 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
     let t0 = Instant::now();
     let ds = I8Bin::open(base).expect("base");
     let n = ds.nb;
+    // SBANN_INDEX_LOAD: skip the (minutes-long) router/comp train + encode and instead mmap+copy a
+    // prebuilt index (seconds). Everything below in the else-branch (mean, route-train open, k-means,
+    // PQ encode, Index::build) is build-only, so loading bypasses it entirely.
+    let idx = if let Some(lp) = std::env::var("SBANN_INDEX_LOAD").ok() {
+        let tl = Instant::now();
+        let i = vq::Index::load_from(&lp).expect("index load");
+        println!("[loaded index from {lp}] in {:.2}s (build skipped)", tl.elapsed().as_secs_f64());
+        i
+    } else {
     let sum: Vec<f64> = (0..n).into_par_iter()
         .fold(|| vec![0f64; ds.d], |mut a, i| { let r = ds.row(i); for k in 0..ds.d { a[k] += r[k] as f64; } a })
         .reduce(|| vec![0f64; ds.d], |mut a, b| { for k in 0..ds.d { a[k] += b[k]; } a });
@@ -396,6 +406,16 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
     };
     let idx = vq::Index::build(router, comp, &ds, a0);
     println!("[{router_s}+{comp_s} a0={a0}] built in {:.1}s", t0.elapsed().as_secs_f64());
+    // SBANN_INDEX_SAVE: persist the freshly built index, then continue into the bench below (so the same
+    // process gives the in-RAM recall to compare the reloaded run against).
+    if let Ok(sp) = std::env::var("SBANN_INDEX_SAVE") {
+        let tsv = Instant::now();
+        idx.save_to(&sp).expect("index save");
+        let sz = std::fs::metadata(&sp).map(|m| m.len()).unwrap_or(0);
+        println!("[saved index to {sp}] in {:.2}s, {sz} bytes ({:.3} GB)", tsv.elapsed().as_secs_f64(), sz as f64 / 1e9);
+    }
+    idx
+    };
 
     let qs = I8Bin::open(qpath).expect("q");
     let (gnq, gk, gids) = read_gt(gtpath);
@@ -848,6 +868,10 @@ fn main() {
     // RESIDUAL QUANTIZATION: encode x-cell_centroid as the primary 4-bit code + per-cell <q,cent> scan
     // offset (P124, +6-11pt IP pool-recall). apq4 only. Int16 IP path (don't combine with FASTSCAN yet).
     if std::env::var("SBANN_RESIDQ").is_ok() { vq::RESIDQ.store(true, std::sync::atomic::Ordering::Relaxed); }
+    // SBANN_RAW_DEDUP (Task B): store the exact-rerank raw array per distinct orig (n*d) instead of per
+    // slot (n*a0*d) — shrinks the biggest index array ~a0x, bit-identical recall. Read at BUILD only; the
+    // layout is recorded in the index (Index.raw_orig_indexed) so a LOAD restores it without the flag.
+    if std::env::var("SBANN_RAW_DEDUP").is_ok() { vq::RAW_DEDUP.store(true, std::sync::atomic::Ordering::Relaxed); }
     match a.get(1).map(String::as_str) {
         Some("dotbench") => {
             // microbench: VNNI vs AVX2 int8 dot, dim d, REPS over a working set that fits L2 (warm).
