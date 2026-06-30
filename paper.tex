@@ -100698,6 +100698,121 @@ amplified in the next proposition.
    which proves \((GTB5)\).
 \end{proof}
 
+\begin{corollary}[Critical raw Gaussian tails have no sign support]
+   \label{cor:critical-gaussian-tail-sign-support-barrier}
+   Fix \(c>1\), and put
+   \[
+      a_0=1-\frac1{c^2},
+      \qquad
+      \rho_c=\frac1{2c^2-1}.
+   \]
+   Let \(L=\log m\).  Consider a raw Gaussian-tail block in the sense of
+   \cref{cor:gaussian-tail-block-support-audit}, with label count
+   \(N=m^{\nu+o(1)}\), storage threshold
+   \[
+      \theta^2=2\tau L+o(L),
+      \tag{CGB1}
+   \]
+   and native critical query tilt
+   \[
+      \beta=\frac{\theta}{a_0}.
+      \tag{CGB2}
+   \]
+   Suppose the near score has correlation \(\eta\ge a_0+o(1)\) with the query
+   score and the two-temperature Gaussian quadrature distortion in \((GTB1)\) is
+   subexponential, \(C_0=m^{o(1)}\).  Then the conditional effective support
+   predicted by the two-temperature audit is
+   \[
+      \log N_2^E
+      =
+      \left(\nu-\frac{2\tau}{a_0^2}\right)L+o(L).
+      \tag{CGB3}
+   \]
+
+   If the same raw block is kept at the critical ANN storage and sampled far-load
+   rates,
+   \[
+      \nu-\tau\le\rho_c+o(1),
+      \qquad
+      \tau\ge1-\rho_c-o(1),
+      \tag{CGB4}
+   \]
+   then
+   \[
+      \log N_2^E
+      \le
+      -\Delta_cL+o(L),
+      \qquad
+      \Delta_c=
+      \frac{2(1-\rho_c)}{a_0^2}-1
+      =
+      \frac{2c^4+3c^2-1}{(c^2-1)(2c^2-1)}
+      >0.
+      \tag{CGB5}
+   \]
+   In particular, at \(c=2\), \(\Delta_c=43/21\).  Thus, for large \(m\), a
+   finite block cannot simultaneously have nonzero near-success support, critical
+   raw Gaussian storage/far rates, and subexponential two-temperature Gaussian
+   quadrature.  Equivalently, the pseudo-random aggregate-sign branch cannot be
+   closed by adding pairwise-independent or multiply-shift signs on top of an
+   iid-like critical Gaussian tail block: before the sign hash is used, the
+   near-conditioned Gibbs law has already collapsed.
+
+   Any positive code, trellis, or lattice construction at this endpoint must
+   therefore change the charged object or the two-temperature spectrum.  It must
+   use quotient/responsibility/Fano accounting, or else supply a genuinely
+   repulsive low-temperature quadrature for which \(Z_E(2\beta)\) is much smaller
+   than the iid Gaussian prediction while \(Z_E(\beta)\) and the storage/far
+   moments remain at the critical rates.
+\end{corollary}
+
+\begin{proof}
+   Since \(\eta\ge a_0+o(1)\) and \(\beta=\theta/a_0\), both
+   \[
+      \theta-\eta\beta\le o(\theta),
+      \qquad
+      \theta-2\eta\beta\le-\theta+o(\theta).
+   \]
+   In the critical application the near-success event is the easy side of the
+   tilted law.  More explicitly, the first argument is \(o(\sqrt L)\), so
+   \(\log\overline\Phi(\theta-\eta\beta)=o(L)\), while the second argument tends
+   to \(-\infty\), so
+   \(\log\overline\Phi(\theta-2\eta\beta)=o(L)\).  Hence
+   \[
+      \log N_2^E
+      =
+      \log N-\beta^2+o(L)
+      =
+      \left(\nu-\frac{2\tau}{a_0^2}\right)L+o(L),
+   \]
+   proving \((CGB3)\).
+
+   The first inequality in \((CGB4)\) is the raw per-point storage exponent
+   \(N\overline\Phi(\theta)\le m^{\rho_c+o(1)}\).  The second is the sampled
+   far-load exponent \(m\overline\Phi(\theta)\le m^{\rho_c+o(1)}\) for a far
+   point orthogonal to the query.  Combining \((CGB3)\) with
+   \(\nu\le\tau+\rho_c+o(1)\) gives
+   \[
+      \log N_2^E
+      \le
+      \left(\rho_c+\tau\left(1-\frac2{a_0^2}\right)\right)L+o(L).
+   \]
+   Since \(1-2/a_0^2<0\), this upper bound is largest at the smallest permitted
+   \(\tau\), namely \(\tau=1-\rho_c+o(1)\).  Therefore
+   \[
+      \log N_2^E
+      \le
+      \left(1-\frac{2(1-\rho_c)}{a_0^2}\right)L+o(L)
+      =
+      -\Delta_cL+o(L).
+   \]
+   Substituting \(a_0=(c^2-1)/c^2\) and
+   \(\rho_c=1/(2c^2-1)\) gives the displayed formula for \(\Delta_c\).  Finally,
+   a nonempty finite conditional law has \(N_2^E\ge1\), so the negative linear
+   bound is incompatible with a genuine subexponential-distortion Gaussian
+   two-temperature quadrature at the critical rates.
+\end{proof}
+
 \begin{corollary}[Aligned linear charts compute rate-coverage sketches]
    \label{cor:aligned-linear-chart-rate-coverage-sketch}
    Work in the setting of
