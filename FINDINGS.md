@@ -2519,6 +2519,24 @@ P159. (*** 30M STREAMING REALITY: flat-IVF caps ~0.88 in budget < scann 0.9924; 
     HONEST: ~0.88 flat is a real result but below the 0.922 bar; exhausting trained-fine-router + fast-scan next.
     The msturing-1M=1.0000 float-rerank MECHANISM proof (P156) stands regardless. (in_progress, task #11.)
 
+P160. (*** 30M STREAMING BREAKTHROUGH: the gap was PROBE FRACTION, not the router -- scann-matched 12.5% probe -> recall ~0.95 (TOP-3) ***)
+    streaming2, after the scann-config reframe (scann "tree=700/5000" = probes 700/5000 = 14% of leaves): we were
+    probing 1.6% (p=64 of C=4096). MATCHING scann's fraction -- flat C=4096, p=512 (=12.5%) + USE512FS + float
+    rerank K=317 -- recall@10 climbs fast and HOLDS ~0.95: 0.73@39k, 0.91@74k, 0.95@100k, 0.956@137k, 0.954@177k.
+    Fill-phase drag is tiny (only first ~3 searches <0.90) so the 640-search AVG projects ~0.94-0.95. *** That BEATS
+    zilliz 0.922 + pinecone 0.912 (=> TOP-3) and approaches scann 0.9924. *** hierk Kf=262144 was a RED HERRING:
+    trains fast (146s; the earlier "too slow, killed at 4min" was box CONTENTION, not training cost) BUT fine cells
+    are WORSE here -- p=512 of 262144 = 0.2% probe -> recall ~0.50; fine cells would need scann-FRACTION probing =
+    ~36000 probes (absurd). So flat C=4096 + HIGH p is the right structure (the scann family); granularity was never
+    the lever, PROBE FRACTION is. *** THE GATE IS NOW BUDGET, not recall: p=512 warm QPS ~1500-3000 (cold float mmap
+    warms up) -> search ~2500-4000s + inserts ~1150s => p=512 may be slightly OVER the 1hr budget. Knee likely
+    p~256-384 (recall ~0.93-0.94 at ~2x QPS, budget-safe). PLUS compaction: the recall read was COMPACT=0
+    (optimistic); the real run needs compaction (buffer/tombstones bloat over 30M inserts + 27.6M deletes, ~10.3M
+    live cap) -- if compaction (currently 250-550s/call re-encoding apq4) is a budget hog, the cheap block-merge
+    rewrite directly buys p -> recall. NEXT: highest-p config that finishes <1hr WITH realistic compaction, locked
+    at NQ=10000 = the DEFINITIVE 30M streaming number. Target: >0.922 (top-3, looks secured if budget holds) pushing
+    toward the 0.9924 win. (developing; NQ=1000 calibration -- finalize on the NQ=10000 + budget verdict.)
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
