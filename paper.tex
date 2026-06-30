@@ -24693,6 +24693,11 @@ partition ignores the bias coordinates that certify the list size.
    if \(Q\) near-top symbols per coordinate are already inside the active
    deficit and \(Q\) exceeds the reciprocal rate, the KV score-cost screen
    cannot pass.
+   \Cref{cor:active-box-list-recovery-output-barrier} gives the corresponding
+   decoder-independent obstruction: if the active \(Q\)-symbol boxes intersect
+   the retained code in \(Q^h p^{k-h}\) random-like codewords, even a perfect
+   list-recovery oracle must expand that many signatures before any later
+   responsibility filter can distinguish residents.
 
    Tanner, LDPC, polar, BCJR, and recursive Barnes--Wall/Barnes--Sloane
    decoders supply compact partition-function or threshold-enumeration
@@ -25172,6 +25177,163 @@ partition ignores the bias coordinates that certify the list size.
    \]
    so the ratio in \((KAB3)\) is at most \(1/Q\).  If \(Q(k-1)\ge h\), then
    \(R_h\ge1/Q\), contradicting the strict inequality in \((KAB3)\).
+\end{proof}
+
+\begin{corollary}[Active boxes force list-recovery expansion]
+   \label{cor:active-box-list-recovery-output-barrier}
+   Work with a linear code \(\mathcal C\le\mathbb F_p^h\) of dimension \(k\),
+   coordinate scores \(\omega_i(a)\), coordinate maxima \(m_i\), deficits
+   \(d_i(a)=m_i-\omega_i(a)\), and threshold deficit
+   \[
+      \Delta=\sum_{i=1}^hm_i-\Theta .
+      \tag{ABL1}
+   \]
+   Suppose there are sets \(A_i\subseteq\mathbb F_p\), all of size \(Q\), such
+   that
+   \[
+      d_i(a)\le D\qquad(i\in[h],\ a\in A_i),
+      \qquad
+      \Delta\ge hD .
+      \tag{ABL2}
+   \]
+   Put
+   \[
+      L(A_1,\ldots,A_h)
+      =
+      \left|\mathcal C\cap\prod_{i=1}^hA_i\right|.
+      \tag{ABL3}
+   \]
+   Then every codeword in \(\mathcal C\cap\prod_iA_i\) has score at least
+   \(\Theta\).  Hence any exact threshold reporter for
+   \(\{c\in\mathcal C:\sum_i\omega_i(c_i)\ge\Theta\}\), including an ideal
+   soft or hard list-recovery decoder, must return at least
+   \(L(A_1,\ldots,A_h)\) signatures before any point-responsibility filter that
+   is not already built into the decoder.
+
+   Now choose \(A_1,\ldots,A_h\) independently as uniform \(Q\)-subsets of
+   \(\mathbb F_p\).  Let
+   \[
+      a=\frac Qp,\qquad
+      r=\frac{Q-1}{p-1},\qquad
+      W_{\mathcal C}(r)=\sum_{z\in\mathcal C}r^{\operatorname{wt}(z)},
+      \qquad
+      \mu=p^k a^h .
+      \tag{ABL4}
+   \]
+   Then
+   \[
+      \E L(A_1,\ldots,A_h)=\mu,
+      \qquad
+      \E L(A_1,\ldots,A_h)^2=\mu W_{\mathcal C}(r),
+      \tag{ABL5}
+   \]
+   and therefore
+   \[
+      \Pr\!\left[L(A_1,\ldots,A_h)\ge\frac{\mu}{2}\right]
+      \ge
+      \frac{\mu}{4W_{\mathcal C}(r)} .
+      \tag{ABL6}
+   \]
+   In particular, if the active boxes are weight-enumerator-flat at this
+   scale, \(W_{\mathcal C}(r)\le C\mu\), then a random active box contains
+   \(\Omega(\mu)\) codewords with probability at least \(1/(4C)\), and its
+   expected threshold output is \(\mu\).
+
+   Consequently, in the logarithmic block regime
+   \[
+      h=\kappa\log_p m,\qquad k=R_hh+O(1),
+      \qquad Q=p^\sigma ,
+      \tag{ABL7}
+   \]
+   the random-box threshold list has mean
+   \[
+      \mu
+      =
+      p^{k-h}Q^h
+      =
+      m^{\kappa(R_h+\sigma-1)+o(1)} .
+      \tag{ABL8}
+   \]
+   A polylogarithmic exact list-recovery heavy lister therefore needs either
+   \[
+      R_h+\log_p Q
+      \le
+      1+O\!\left(\frac{\log\log m}{h}\right),
+      \tag{ABL9}
+   \]
+   or a nonrandom active-set structure, quotient map, or responsibility rule
+   that removes most of these active-box codewords before signature expansion.
+
+   The moment identities \((ABL5)\) do not require fully random subsets.  They
+   use only the coordinatewise one- and two-symbol marginals
+   \[
+      \Pr[a_0\in A_i]=Q/p,\qquad
+      \Pr[a_0,b_0\in A_i]=\frac{Q(Q-1)}{p(p-1)}
+      \quad(a_0\ne b_0),
+      \tag{ABL10}
+   \]
+   independently across coordinates.  Thus a two-transitive affine
+   permutation followed by a fixed threshold set has the same list-size
+   moments as a uniform \(Q\)-subset; weaker two-independent hash thresholds
+   inherit the same obstruction up to their two-symbol collision constant.
+\end{corollary}
+
+\begin{proof}
+   If \(c\in\mathcal C\cap\prod_iA_i\), then by \((ABL2)\)
+   \[
+      \sum_i d_i(c_i)\le hD\le\Delta .
+   \]
+   Since
+   \[
+      \sum_i\omega_i(c_i)
+      =
+      \sum_i m_i-\sum_i d_i(c_i),
+   \]
+   the score of \(c\) is at least
+   \(\sum_i m_i-\Delta=\Theta\).  This proves the deterministic output
+   lower bound.
+
+   For the random-box identities, write \(L=L(A_1,\ldots,A_h)\).  For each
+   fixed codeword \(c\), independence across coordinates gives
+   \[
+      \Pr[c_i\in A_i\ {\rm for\ all}\ i]=a^h,
+   \]
+   so \(\E L=p^ka^h=\mu\).  For the second moment,
+   \[
+      \E L^2
+      =
+      \sum_{c,d\in\mathcal C}
+      \prod_{i=1}^h
+      \Pr[c_i,d_i\in A_i].
+   \]
+   If \(c_i=d_i\), the coordinate probability is \(a\).  If \(c_i\ne d_i\),
+   it is
+   \[
+      \frac{Q(Q-1)}{p(p-1)}=a r .
+   \]
+   For each difference \(z=c-d\in\mathcal C\) there are \(p^k\) ordered pairs
+   \((c,d)\), hence
+   \[
+      \E L^2
+      =
+      p^k a^h
+      \sum_{z\in\mathcal C}r^{\operatorname{wt}(z)}
+      =
+      \mu W_{\mathcal C}(r).
+   \]
+   Paley--Zygmund gives \((ABL6)\).  The logarithmic-regime calculation is the
+   identity
+   \[
+      p^ka^h=p^{k-h}Q^h
+      =
+      p^{h(R_h+\sigma-1)+o(h)}
+      =
+      m^{\kappa(R_h+\sigma-1)+o(1)}.
+   \]
+   Requiring this expectation to be polylogarithmic is exactly \((ABL9)\).
+   The final claim follows because the calculation above used only the
+   one-symbol probability for the first moment and the displayed two-symbol
+   probabilities for each coordinate of each ordered pair.
 \end{proof}
 
 \begin{lemma}[Tilted weight feasibility is linear]
@@ -123775,6 +123937,13 @@ at constant rate and growing alphabet.
 active threshold contains \(Q\) near-top symbols per coordinate, KV needs
 \(Q<1/R_h\) at code rate \(R_h=(k-1)/h\), unless a quotient or responsibility
 filter has already compressed the signatures.
+\Cref{cor:active-box-list-recovery-output-barrier} removes the decoder
+specificity from that obstruction: a random-looking \(Q\)-set active alphabet
+intersects a \(p\)-ary \([h,k]\) code in mean \(Q^hp^{k-h}\) codewords, with a
+matching second-moment test controlled by the code weight enumerator.  Thus
+even an ideal list-recovery oracle has polynomial output at logarithmic block
+length whenever \(R_h+\log_pQ>1\) by a constant, unless the quotient or
+responsibility rule is already part of the reporter.
 \Cref{lem:tilted-weight-linear-feasibility} shows that, for a fixed retained
 pool, choosing those weights is just a linear feasibility problem after
 clearing the tilted partition functions.  Failure has a concrete dual
