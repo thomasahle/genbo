@@ -104077,6 +104077,142 @@ work]
    reporter proves \((LGO5)\).
 \end{proof}
 
+\begin{corollary}[Polylog-entropy scaled-GRS blocks have no hidden smoothing
+tax]
+   \label{cor:polylog-entropy-scaled-grs-window}
+   Continue with the product panel of
+   \cref{cor:low-rate-scaled-grs-osd-endpoint}.  Let the charged-temperature
+   set be \(\mathcal T=\{\alpha,\beta,\alpha+\beta\}\), and for block \(j\)
+   put
+   \[
+      H_j=k_j\log p_j .
+      \tag{PES1}
+   \]
+   Suppose the number of scaled-GRS blocks is
+   \(J_m=\log^{O_c(1)}m\), and choose nonnegative slack parameters \(A_j\)
+   such that
+   \[
+      \sum_j e^{-A_j}=O_c(\log\log m),
+      \qquad
+      \max_j e^{-A_j}<c_0 .
+      \tag{PES2}
+   \]
+   Assume also that every block is in the complete-theta density window
+   \[
+      H_j
+      \ge
+      b_j\log\Theta_{j,*}
+      +
+      \frac{b_j}{p_j-1}
+      +
+      A_j,
+      \tag{PES3}
+   \]
+   and that
+   \[
+      \sum_j b_j\varepsilon_{j,*}=O_c(\log\log m),
+      \qquad
+      \max_j b_j\varepsilon_{j,*}<c_0 .
+      \tag{PES4}
+   \]
+   Finally suppose the block entropies and lengths are polylogarithmic at the
+   checkpoint scale:
+   \[
+      \max_j H_j=O_c(\log\log m),
+      \qquad
+      b_j=O_c(H_j+1).
+      \tag{PES5}
+   \]
+
+   Then, with positive probability over the independent monomial scalings, and
+   hence for some deterministic choice of those scalings found by uncharged
+   preprocessing, the scaled duals satisfy the complete-theta flatness screen
+   \((SGR4)\).  The OSD reporter satisfies \((LGO2)\), so the reporter side is
+   polylogarithmic by
+   \cref{cor:low-rate-scaled-grs-osd-endpoint}.  Moreover, if the mesh is kept
+   in a bounded complete-theta regime,
+   \[
+      \tau_{j,*}=\max_{\tau\in\mathcal T}\tau,
+      \qquad
+      \lambda_{j,*}=\frac{2\pi^2}{\tau_{j,*}p_j^2\Delta_j^2},
+      \qquad
+      \left|
+      \log\frac{\tau_{j,*}\lambda_{j,*}}{\pi\tau}
+      \right|
+      \le C_\Gamma
+      \qquad(j,\ \tau\in\mathcal T),
+      \tag{PES6}
+   \]
+   then the flat main terms obey
+   \[
+      \sum_j \sup_{\tau\in\mathcal T}\Gamma_j(\tau)
+      \le
+      O_c\!\left(\sum_j H_j+J_m\right).
+      \tag{PES7}
+   \]
+   Thus this window has no separate subpolynomial Construction-A smoothing
+   tax: all query, storage, and mixed far rate calculations are charged on the
+   ordinary flat code-volume scale \(\sum_jH_j+O(J_m)\), with only
+   \(O_c(\log\log m)\) theta-flatness slack and polylogarithmic OSD overhead.
+
+   In particular, the long local-checkpoint scale is compatible with this
+   window.  One may take
+   \[
+      J_m=\Theta\!\left(\frac{\log m}{\log\log m}\right),
+      \qquad
+      H_j=\Theta(\log\log m),
+      \qquad
+      \sum_jH_j=\Theta(\log m),
+      \tag{PES8}
+   \]
+   with \(b_j=O(\log\log m)\) and \(p_j\ge b_j-1\) for GRS existence.  The
+   extra \(A_j=\Theta(\log\log m)\) needed to make the sum in \((PES2)\)
+   small is still inside the per-block OSD budget \((PES5)\).
+
+   Consequently, in the low-rate scaled-GRS branch, the remaining clean-ANN
+   obligations are exactly the flat product inequalities
+   \((SGR6)\)--\((SGR8)\) and the local checkpoint near-support hypotheses.
+   There is no longer an additional conditional theorem about random tuple
+   subsets, a low-rate-code theta spectrum, or a black-box soft GRS reporter
+   in this parameter window.
+\end{corollary}
+
+\begin{proof}
+   By \((PES3)\),
+   \[
+      p_j^{-k_j}
+      \exp\!\left\{\frac{b_j}{p_j-1}\right\}
+      \Theta_{j,*}^{b_j}
+      \le e^{-A_j}.
+   \]
+   Summing this inequality and using \((PES2)\) and \((PES4)\) gives the
+   summed and per-block bounds in \((SGR4)\), through
+   \cref{cor:randomly-scaled-mds-complete-theta}.  Since the expectation over
+   the monomial scalings satisfies the same bound up to the constant factors
+   in that corollary, Markov's inequality gives a positive-probability
+   realization with the displayed \(O_c(\log\log m)\) total slack; uncharged
+   preprocessing can sample and verify such a realization.
+
+   The OSD condition follows immediately from
+   \(\Lambda_j^{\rm osd}(q)\le k_j\log p_j=H_j\) in
+   \cref{cor:low-rate-scaled-grs-osd-endpoint} and from \((PES5)\), together
+   with the assumed polylogarithmic setup work.  This proves \((LGO2)\).
+
+   Finally, \cref{cor:construction-a-dual-smoothing-flat-volume-price} gives
+   \[
+      \Gamma_j(\tau)
+      =
+      H_j+\frac{b_j}{2}
+      \log\frac{\tau_{j,*}\lambda_{j,*}}{\pi\tau}.
+   \]
+   Under \((PES6)\) and \(b_j=O_c(H_j+1)\), the supremum over
+   \(\tau\in\mathcal T\) is \(O_c(H_j+1)\).  Summing over \(j\) proves
+   \((PES7)\).  The specialization \((PES8)\) is just the substitution
+   \(J_m=\Theta(\log m/\log\log m)\) and
+   \(H_j=\Theta(\log\log m)\); then \(A_j=\Theta(\log\log m)\) makes
+   \(e^{-A_j}\) summable while preserving \(\max_jH_j=O(\log\log m)\).
+\end{proof}
+
 \begin{corollary}[MDS Hamming spectrum does not beat the max-residue screen]
    \label{cor:mds-hamming-spectrum-max-screen}
    Let \(C_j\le\mathbb F_{p_j}^{b_j}\) be an \([b_j,k_j]\) MDS code, so
