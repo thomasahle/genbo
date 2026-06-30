@@ -101184,6 +101184,101 @@ amplified in the next proposition.
    \((SOF7)\) is \((BCA4)\).
 \end{proof}
 
+\begin{corollary}[Generic quotients miss the score-observer window]
+   \label{cor:generic-quotient-score-observer-window-barrier}
+   Fix a score observer \(D:\mathbb F_q^N\to\mathbb F_q^r\) of rank \(r\),
+   and choose the quotient row space \(U=\operatorname{row}(B)\) uniformly among
+   the \(b\)-dimensional subspaces of \((\mathbb F_q^N)^*\), independently of
+   \(D\).  Put
+   \[
+      d=N-b,
+      \qquad
+      R_D=
+      \operatorname{rank}
+      \begin{pmatrix}B\\D\end{pmatrix}
+      -
+      \operatorname{rank}B .
+      \tag{GSO1}
+   \]
+   Suppose a materialized score-observer proof is allowed to expose at most
+   \(Q_{\max}\) residual score states and needs support level \(S\) under
+   intra-state log-spread \(\Gamma\).  By
+   \cref{cor:score-observer-rank-affine-support}, such a proof can pass only
+   if
+   \[
+      q^{R_D}\le Q_{\max},
+      \qquad
+      q^{d-R_D}\ge e^\Gamma S .
+      \tag{GSO2}
+   \]
+   Define
+   \[
+      s_\star=
+      \left\lfloor
+         \min\left\{
+            \log_q Q_{\max},\,
+            d-\log_q(e^\Gamma S)
+         \right\}
+      \right\rfloor .
+      \tag{GSO3}
+   \]
+   If \(s_\star<0\), the window is empty.  If
+   \(0\le s_\star\le\min\{r,d\}\), then
+   \[
+      \Prb[\text{\((GSO2)\) can hold}]
+      \le
+      16q^{-(r-s_\star)(d-s_\star)}.
+      \tag{GSO4}
+   \]
+
+   In particular, at the intended polylogarithmic observer window
+   \[
+      Q_{\max},\ S,\ e^\Gamma\le\log^{O_c(1)}m,
+      \qquad
+      r,d=\Omega_c(\log_qm),
+      \tag{GSO5}
+   \]
+   a random quotient independent of the score observer hits the window with
+   probability at most \(q^{-\Omega_c((\log_qm)^2)}\).  Thus a low-rate code,
+   Tanner quotient, or Construction-A residue choice cannot rely on generic
+   random parity checks to make the affine-fiber sign branch work.  The
+   quotient rows must structurally contain the score observer up to
+   \(O_c(\log_q\log m)\) residual directions while still leaving a
+   \(S\)-sized neutral kernel, or the implementation must use a nonmaterialized
+   aggregate sampler that avoids exposing one state per residual score value.
+\end{corollary}
+
+\begin{proof}
+   The two inequalities in \((GSO2)\) imply \(R_D\le s_\star\), so it remains
+   to bound the probability of this low residual-rank event.  Let
+   \(V=\operatorname{row}(D)\), so \(\dim V=r\).  Since
+   \[
+      R_D=\dim\frac{U+V}{U},
+   \]
+   the event \(R_D\le s_\star\) is equivalent to
+   \[
+      \dim(U\cap V)\ge r-s_\star .
+   \]
+   If this occurs, then \(U\cap V\) contains some fixed
+   \((r-s_\star)\)-dimensional subspace \(W\le V\).  There are at most
+   \(4q^{s_\star(r-s_\star)}\) choices for \(W\).  For a fixed \(W\), the
+   probability that a uniformly random \(b\)-dimensional subspace \(U\)
+   contains \(W\) is at most
+   \[
+      4q^{-d(r-s_\star)},
+   \]
+   with probability zero if \(b<r-s_\star\).  A union bound gives
+   \[
+      \Prb[R_D\le s_\star]
+      \le
+      16q^{s_\star(r-s_\star)}q^{-d(r-s_\star)}
+      =
+      16q^{-(r-s_\star)(d-s_\star)}.
+   \]
+   Under \((GSO5)\), \(s_\star=O_c(\log_q\log m)\), while both \(r-s_\star\)
+   and \(d-s_\star\) are \(\Omega_c(\log_qm)\), giving the final exponent.
+\end{proof}
+
 \begin{corollary}[Support collapse blocks bounded additive masks]
    \label{cor:support-collapse-blocks-bounded-additive-masks}
    Work with one conditional near block law \(P^E_j\) from
