@@ -100601,6 +100601,127 @@ amplified in the next proposition.
    \cref{cor:checkpointed-quotient-prefix-cut-compiler}.
 \end{proof}
 
+\begin{corollary}[Explicit MDS local checks instantiate the small-bias segment]
+   \label{cor:explicit-mds-local-check-segment}
+   Let \(q=q(m)\) be a prime power and let one checkpoint segment have length
+   \[
+      \ell=\kappa\log\log m+O(1),
+      \qquad
+      \ell\le q+1 .
+      \tag{MDL1}
+   \]
+   Choose \(H\in\mathbb F_q^{r\times \ell}\) whose row span is an
+   \([\ell,r,\ell-r+1]_q\) MDS code, for instance a generalized
+   Reed--Solomon code after shortening or puncturing, and put
+   \[
+      r=A_{\rm syn}\log_q\log m+O(1),
+      \qquad
+      r<\ell .
+      \tag{MDL2}
+   \]
+   Use these rows only inside the segment.  Then the active-check width in
+   \cref{cor:banded-quotient-active-check-width} is at most \(r\), and every
+   nonzero word in the row span of \(H\) has Hamming weight
+   \[
+      d=\ell-r+1 .
+      \tag{MDL3}
+   \]
+
+   Suppose the two tilted coordinate laws from
+   \cref{cor:two-temperature-small-bias-syndrome-support} satisfy
+   \[
+      |\widehat P_{i,t}(\lambda)|\le\mu_t<1
+      \qquad(i\le\ell,\ \lambda\ne0,\ t=1,2),
+      \tag{MDL4}
+   \]
+   and put \(\mu_*=\max\{\mu_1,\mu_2\}\).  If
+   \[
+      (\ell-r+1)(-\log\mu_*)
+      \ge
+      (A_{\rm syn}+C+o(1))\log\log m,
+      \tag{MDL5}
+   \]
+   then
+   \[
+      \mathfrak B_1(H),\mathfrak B_2(H)\le(\log m)^{-C+o(1)} .
+      \tag{MDL6}
+   \]
+
+   Finally assume the unconditioned first-temperature collision entropy rate is
+   bounded below:
+   \[
+      \sum_{i=1}^{\ell}(2\log Z_{i,1}-\log Z_{i,2})
+      \ge h_2\ell-O(1).
+      \tag{MDL7}
+   \]
+   Then the syndrome-conditioned segment passes the local checkpoint support
+   audit for
+   \[
+      K=(\log m)^{A_{\rm chk}+o(1)},\qquad
+      \eta=(\log m)^{A_{\eta}+o(1)}
+      \tag{MDL8}
+   \]
+   whenever
+   \[
+      \kappa h_2>A_{\rm syn}+A_{\rm chk}+A_{\eta}.
+      \tag{MDL9}
+   \]
+
+   In the common slowly growing alphabet choice \(q\asymp\log\log m\),
+   condition \((MDL2)\) gives
+   \[
+      r=O\!\left(\frac{\log\log m}{\log\log\log m}\right)=o(\ell).
+   \]
+   Then \((MDL5)\) reduces to the transparent constant inequality
+   \[
+      \kappa(-\log\mu_*)>A_{\rm syn}+C .
+      \tag{MDL10}
+   \]
+   Hence a completely explicit local Reed--Solomon/MDS segment gives the same
+   local checkpoint functionality as the random dense segment:
+   polylogarithmic active state \(q^r=(\log m)^{A_{\rm syn}+o(1)}\),
+   two-temperature small bias, exact syndrome-rate support loss, and
+   checkpoint range \(K=\log^{A_{\rm chk}}m\).  The price is not randomness but
+   alphabet and posterior-bias control: the segment alphabet must support an
+   MDS row span of length \(\ell\), and the tilted coordinate laws must keep
+   all nontrivial Fourier biases bounded away from one.
+\end{corollary}
+
+\begin{proof}
+   The active-width statement follows because every row of \(H\) is confined to
+   this one segment, so at most \(r\) checks are open while the segment is
+   scanned.  The distance statement \((MDL3)\) is the MDS minimum-distance
+   property of the row-span code.
+
+   Applying the dual-distance certificate
+   \((TBS9)\) from
+   \cref{cor:two-temperature-small-bias-syndrome-support} gives
+   \[
+      \mathfrak B_t(H)\le(q^r-1)\mu_t^{\ell-r+1}
+      \le
+      \exp\{r\log q-(\ell-r+1)(-\log\mu_t)+O(1)\}.
+   \]
+   Since \(r\log q=A_{\rm syn}\log\log m+o(\log\log m)\), condition
+   \((MDL5)\) proves \((MDL6)\) simultaneously for \(t=1,2\).
+
+   Substitute \((MDL6)\) into the support inequality \((TBS7)\).  The bias
+   correction is \(o(1)\), the syndrome-rate loss is
+   \(r\log q=A_{\rm syn}\log\log m+o(\log\log m)\), and by \((MDL7)\) the
+   unconditioned collision entropy is at least
+   \[
+      \kappa h_2\log\log m+o(\log\log m).
+   \]
+   Thus the left side of \((TBS7)\) is
+   \[
+      (\kappa h_2-A_{\rm syn}+o(1))\log\log m .
+   \]
+   The right side under \((MDL8)\) is
+   \((A_{\rm chk}+A_{\eta}+o(1))\log\log m\), so \((MDL9)\) proves the
+   checkpoint support condition.  If \(q\asymp\log\log m\), then
+   \(r=o(\ell)\) and \(\ell-r+1=(\kappa+o(1))\log\log m\), giving
+   \((MDL10)\).
+\end{proof}
+
 \begin{corollary}[Checkpoint products thin emissions, not prefix work]
    \label{cor:checkpoint-product-far-load-accounting}
    Work in the checkpointed quotient reporter of
