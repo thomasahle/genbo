@@ -2626,6 +2626,21 @@ P163. (*** PIVOTAL & POSITIVE: the 14x scan deficit is RECOVERABLE PATH OVERHEAD
     zilliz 0.922/pinecone 0.912); the 0.97/p=512 WIN is a stretch needing the residual kernel factor. Relayed to
     streaming2; same fixes lift OOD QPS@90%. NEXT = measured post-opt eligible 30M recall@10 at NQ=10000 in 8GB.
 
+P164. (*** OOD 10M STANDING: int8 recall REACHES 0.90 at p~700; QPS@90% scan-bound ~7-10x behind, but the SAME scan-opt unlocks it to competitive ***)
+    ood2 (committed c8fb6f5): text2image-10M, IP, vs the 10M float GT (t2i10m-floatgt). INT8 recall@10 (t_surv=p*4):
+    p512=0.8941, p1024=0.9089, p2048=0.9157, p4096=0.9188 -> CROSSES 0.90 at p~700, ceiling ~0.92 (= the 1M plateau).
+    So int8+t_surv IS scoreable at the 0.90 leaderboard point (the 10x distractors raise the needed p from 1M's ~288
+    to ~700, but don't sink it below 0.90). *** OFFICIAL OOD QPS@90% standings (text2image-10M, from
+    ood/res_public_queries_AzureD8lds_v5.csv, max QPS at recall>=0.90): hanns 46034 | scann(baseline) 42854@0.9025 |
+    pinecone-ood 38088 | zilliz 33241 | mysteryann 22555 | pyanns 22296 | sustech 13772 | puck 8700 | vamana 6753 |
+    ngt 6374 | epsearch 5877 | diskann 4133 | cufe 3561. *** OUR QPS@90%: this run was contention-JUNK (~1.5-2k @
+    load 48, 16 cores 3x oversubscribed) -> clean-box est ~4.5-6k -> BOTTOM tier (~cufe/diskann), ~7-10x behind
+    scann/hanns. BUT the scan path-opt (5-8x, P163) projects ~4.5-6k -> ~22-48k QPS@90% = competitive with
+    mysteryann/pyanns (22k) / zilliz (33k), approaching scann (43k) / hanns (46k). *** So OOD is gated on the SAME
+    recoverable scan path-opt as streaming -- NOT hopeless; it's the single unlock for BOTH tracks. NEXT: clean-box
+    QPS@90% (current) then re-measure with the optimized scan = the real OOD number. (Float-rerank recall curve
+    building; float QPS is mmap-bound but OOD has the full 16GB so the active-window-cache trick applies if needed.)
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
