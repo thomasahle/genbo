@@ -1789,10 +1789,10 @@ impl Index {
             self.ins_loc.remove(&orig);
             return true;
         }
-        if (orig as usize) >= self.n_main { return false; }
         if self.main_rev.is_none() { self.build_main_rev(); }
         let slots: Vec<u32> = {
             let (off, sl) = self.main_rev.as_ref().unwrap();
+            if (orig as usize) + 1 >= off.len() { return false; } // orig outside the main id range
             let (s, e) = (off[orig as usize] as usize, off[orig as usize + 1] as usize);
             sl[s..e].to_vec()
         };
@@ -1803,19 +1803,110 @@ impl Index {
         any
     }
 
-    /// Build the lazy MAIN reverse index orig -> slots (CSR). Main orig ids are the dense point indices
-    /// 0..n_main-1 produced by build(), so a flat offset table is exact and compact (~(1+a0)*n_main u32).
+    /// Build the lazy MAIN reverse index orig -> slots (CSR), sized to max(orig)+1. After build() the
+    /// main orig ids are the dense indices 0..n_main-1 (so this is the compact ~(1+a0)*n_main u32 table);
+    /// after compact_live() they are the arbitrary live orig ids, so we size by the largest orig seen
+    /// (still exact, just sparse). Invalidated (set to None) by any change to slot_orig (compaction).
     fn build_main_rev(&mut self) {
-        let n = self.n_main;
-        let mut off = vec![0u32; n + 1];
-        for &o in &self.slot_orig { if o != u32::MAX && (o as usize) < n { off[o as usize + 1] += 1; } }
-        for i in 0..n { off[i + 1] += off[i]; }
-        let mut slots = vec![0u32; off[n] as usize];
+        let maxo = self.slot_orig.iter().copied().filter(|&o| o != u32::MAX).max().map(|m| m as usize + 1).unwrap_or(0);
+        let mut off = vec![0u32; maxo + 1];
+        for &o in &self.slot_orig { if o != u32::MAX { off[o as usize + 1] += 1; } }
+        for i in 0..maxo { off[i + 1] += off[i]; }
+        let mut slots = vec![0u32; off[maxo] as usize];
         let mut cur = off.clone();
         for (slot, &o) in self.slot_orig.iter().enumerate() {
-            if o != u32::MAX && (o as usize) < n { slots[cur[o as usize] as usize] = slot as u32; cur[o as usize] += 1; }
+            if o != u32::MAX { slots[cur[o as usize] as usize] = slot as u32; cur[o as usize] += 1; }
         }
         self.main_rev = Some((off, slots));
+    }
+
+    /// COMPACTION — re-encode the entire LIVE set (main survivors + insert buffer, deduped by orig)
+    /// into a fresh main cell-contiguous layout and DROP the append buffer. The trained router +
+    /// compressor are reused as-is (no retrain), so this is a pure re-layout. Self-contained: every
+    /// live point's raw vector is pulled from the index's OWN stores (self.raw + self.ins_raw), so no
+    /// base file is needed and it stays correct under replace. The append buffer's per-query rescan
+    /// cost (and accumulated tombstones) is what makes long runbooks slow; compaction reclaims it.
+    /// Supports the default apq4/i8 layout — RESID/RESIDQ/USE512FS are not used on the streaming path.
+    pub fn compact_live(&mut self, a0: usize) {
+        let ord = std::sync::atomic::Ordering::Relaxed;
+        assert!(!RESID.load(ord) && !RESIDQ.load(ord) && !USE512FS.load(ord),
+            "compact_live: RESID/RESIDQ/USE512FS layouts unsupported");
+        let d = self.d;
+        let nc = self.router.n_cells();
+        let bb = self.bb;
+        // 1) gather unique live (orig, vector): main survivors first (dedup a0 copies), then buffer.
+        let mut origs: Vec<u32> = Vec::new();
+        let mut rowbuf: Vec<i8> = Vec::new();
+        let mut seen: std::collections::HashSet<u32> = std::collections::HashSet::new();
+        let orig_idx = self.raw_orig_indexed;
+        for (slot, &o) in self.slot_orig.iter().enumerate() {
+            if o == u32::MAX || !seen.insert(o) { continue; }
+            let src = if orig_idx { o as usize } else { slot };
+            origs.push(o);
+            rowbuf.extend_from_slice(&self.raw[src * d..src * d + d]);
+        }
+        for (g, &o) in self.ins_orig.iter().enumerate() {
+            if o == u32::MAX || !seen.insert(o) { continue; }
+            origs.push(o);
+            rowbuf.extend_from_slice(&self.ins_raw[g * d..g * d + d]);
+        }
+        let n = origs.len();
+        // 2) assign every live point to a0 cells (parallel), then CSR (cell -> point indices).
+        let mut assign = vec![0u32; n * a0];
+        assign.par_chunks_mut(a0).enumerate().for_each(|(i, out)| {
+            let mut buf: Vec<u32> = Vec::with_capacity(a0);
+            self.router.assign(&rowbuf[i * d..i * d + d], a0, &mut buf);
+            for k in 0..a0 { out[k] = buf.get(k).copied().unwrap_or(0); }
+        });
+        let mut cell_start = vec![0u32; nc + 1];
+        for &cc in &assign { cell_start[cc as usize + 1] += 1; }
+        for j in 0..nc { cell_start[j + 1] += cell_start[j]; }
+        let mut ids = vec![0u32; n * a0];
+        let mut cur = cell_start.clone();
+        for (idx, &cc) in assign.iter().enumerate() {
+            let pt = (idx / a0) as u32;
+            ids[cur[cc as usize] as usize] = pt; cur[cc as usize] += 1;
+        }
+        // 3) encode blocks per cell; raw is slot-indexed (raw_orig_indexed=false), self-contained.
+        let mut blocks: Vec<u8> = Vec::new();
+        let mut slot_orig: Vec<u32> = Vec::new();
+        let mut raw: Vec<i8> = Vec::new();
+        let mut cell_bstart = vec![0u32; nc + 1];
+        for cell in 0..nc {
+            let (s, e) = (cell_start[cell] as usize, cell_start[cell + 1] as usize);
+            let pts = &ids[s..e];
+            let mut i = 0;
+            while i < pts.len() {
+                let cnt = (pts.len() - i).min(16);
+                let rows: Vec<&[i8]> = (0..16).map(|j| if j < cnt { &rowbuf[pts[i + j] as usize * d..pts[i + j] as usize * d + d] } else { &[][..] }).collect();
+                self.comp.encode_block(&rows, cnt, &[], &mut blocks);
+                for j in 0..16 {
+                    slot_orig.push(if j < cnt { origs[pts[i + j] as usize] } else { u32::MAX });
+                    if j < cnt { raw.extend_from_slice(rows[j]); } else { raw.resize(raw.len() + d, 0); }
+                }
+                i += 16;
+            }
+            cell_bstart[cell + 1] = if bb > 0 { (blocks.len() / bb) as u32 } else { (slot_orig.len() / 16) as u32 };
+        }
+        // 4) install the new main and reset the append buffer.
+        self.blocks = blocks;
+        self.slot_orig = slot_orig;
+        self.raw = raw;
+        self.cell_bstart = cell_bstart;
+        self.raw_orig_indexed = false;
+        self.n_main = n;
+        self.main_rev = None;
+        self.resid_codes = Vec::new();
+        self.blocks_il = Vec::new();
+        self.cell_ilstart = Vec::new();
+        self.ins_blocks = vec![Vec::new(); nc];
+        self.ins_gidx = vec![Vec::new(); nc];
+        self.ins_full_blocks = vec![0; nc];
+        self.ins_raw = Vec::new();
+        self.ins_orig = Vec::new();
+        self.ins_loc = std::collections::HashMap::new();
+        self.ins_dirty = Vec::new();
+        self.ins_count = 0;
     }
 
     /// Insert one point: store raw+orig in the flat append arrays, route it (router.assign, a0 cells),

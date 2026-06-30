@@ -335,57 +335,15 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
         .fold(|| vec![0f64; ds.d], |mut a, i| { let r = ds.row(i); for k in 0..ds.d { a[k] += r[k] as f64; } a })
         .reduce(|| vec![0f64; ds.d], |mut a, b| { for k in 0..ds.d { a[k] += b[k]; } a });
     let mu: Vec<f32> = if std::env::var("SBANN_NOMU").is_ok() { vec![0f32; ds.d] } else { sum.iter().map(|s| (s / n as f64) as f32).collect() };
-    let cb = (c as f64).sqrt().round() as usize; // per-codebook size for AVQ multi-index
-    // hierk routing fan-out overrides: SBANN_C0 = #coarse cells, SBANN_B0 = #coarse expanded/query.
-    // Routing cost/query ~= C0 + B0*(Kf/C0); the default C0=sqrt(Kf), B0=C0/4 is one point on that curve.
-    let c0 = std::env::var("SBANN_C0").ok().and_then(|s| s.parse().ok()).unwrap_or(cb);
-    let b0 = std::env::var("SBANN_B0").ok().and_then(|s| s.parse().ok()).unwrap_or((cb / 4).max(8));
     // OOD-aware routing: train the cells on a SEPARATE distribution (e.g. query.learn) so OOD
     // queries route to cells holding their true neighbors. Index is still BUILT on the base `ds`.
     let route_path = std::env::var("SBANN_ROUTE_TRAIN").unwrap_or_else(|_| base.to_string());
     let dr = I8Bin::open(&route_path).expect("route-train");
     if route_path != base { println!("  [OOD routing trained on {route_path} n={}]", dr.nb); }
 
-    let router: Box<dyn vq::Router> = match router_s {
-        "flat" => Box::new(vq::FlatIvf::train(&dr, c, mu.clone(), 15)),
-        "flatsoar" => Box::new(vq::FlatIvf::train_soar(&dr, c, mu.clone(), 15, 1.0)),
-        "flatrair" => Box::new(vq::FlatIvf::train_rair(&dr, c, mu.clone(), 15, 1.0)),
-        "flatrand" => Box::new(vq::FlatIvf::train(&dr, c, mu.clone(), 0)),
-        "avq" => Box::new(vq::AvqRouter::train(&dr, cb, cb, mu.clone(), 15)),
-        "hier" => { let mut r = vq::HierRouter::train(&dr, c, c0, b0, mu.clone()); apply_soar(&mut r); Box::new(r) }
-        "hierk" => { let mut r = vq::HierRouter::train_hkmeans(&dr, c, c0, b0, mu.clone()); apply_soar(&mut r); Box::new(r) }
-        // 3-level: SBANN_C1 = #mid cells (default sqrt(C0*Kf)), SBANN_B1 = #mids expanded/query.
-        "hierk3" => {
-            let c1 = std::env::var("SBANN_C1").ok().and_then(|s| s.parse().ok()).unwrap_or(((c0 as f64 * c as f64).sqrt().round() as usize).max(c0 * 2));
-            let b1 = std::env::var("SBANN_B1").ok().and_then(|s| s.parse().ok()).unwrap_or((b0 * 2).max(16));
-            println!("  [hierk3 C0={c0} C1={c1} b0={b0} b1={b1}]");
-            let mut r = vq::HierRouter::train_hkmeans3(&dr, c, c0, c1, b0, b1, mu.clone());
-            apply_soar(&mut r);
-            Box::new(r)
-        }
-        // ARBITRARY-DEPTH (hierk4/5/… for 100M/1B): SBANN_LEVELS = per-level cell counts coarse→fine
-        // (last = Kf), SBANN_BEAMS = per-level beams (len L-1). Routing ≈ O(L·Kf^(1/L)). Defaults to a
-        // 4-level geometric ladder from C0→Kf if SBANN_LEVELS unset.
-        "hierkn" => {
-            let levels: Vec<usize> = std::env::var("SBANN_LEVELS").ok()
-                .map(|s| s.split(',').filter_map(|x| x.trim().parse().ok()).collect::<Vec<_>>())
-                .filter(|v: &Vec<usize>| v.len() >= 2)
-                .unwrap_or_else(|| {
-                    // default L=4 geometric: C0, C0*r, C0*r^2, Kf  (r = (Kf/C0)^(1/3))
-                    let r = (c as f64 / c0 as f64).powf(1.0 / 3.0);
-                    vec![c0, (c0 as f64 * r).round() as usize, (c0 as f64 * r * r).round() as usize, c]
-                });
-            let l = levels.len();
-            let beams: Vec<usize> = std::env::var("SBANN_BEAMS").ok()
-                .map(|s| s.split(',').filter_map(|x| x.trim().parse().ok()).collect::<Vec<_>>())
-                .filter(|v: &Vec<usize>| v.len() == l - 1)
-                .unwrap_or_else(|| (0..l - 1).map(|i| (b0 << i).max(16)).collect());
-            println!("  [hierkn levels={levels:?} beams={beams:?}]");
-            let mut r = vq::HierRouter::train_hkmeans_multi(&dr, &levels, &beams, mu.clone());
-            apply_soar(&mut r);
-            Box::new(r)
-        }
-        _ => { eprintln!("router? (flat|flatsoar|flatrair|flatrand|avq|hier|hierk|hierk3|hierkn)"); return; }
+    let router: Box<dyn vq::Router> = match build_router(&dr, router_s, c, mu.clone()) {
+        Some(r) => r,
+        None => return,
     };
     // SBANN_DPB: dims-per-block for PQ (default 2). dpb=1 -> finer 4-bit-per-dim quant (more codes
     // to scan but better ranking) -- tests whether finer quant cuts probes at high recall.
@@ -848,12 +806,58 @@ fn mean_of(ds: &I8Bin) -> Vec<f32> {
     if std::env::var("SBANN_NOMU").is_ok() { vec![0f32; ds.d] } else { sum.iter().map(|s| (s / n as f64) as f32).collect() }
 }
 
-fn make_router(ds: &I8Bin, router_s: &str, c: usize, mu: Vec<f32>) -> Box<dyn vq::Router> {
-    match router_s {
-        "flatsoar" => Box::new(vq::FlatIvf::train_soar(ds, c, mu, 15, 1.0)),
-        "flatrair" => Box::new(vq::FlatIvf::train_rair(ds, c, mu, 15, 1.0)),
-        _ => Box::new(vq::FlatIvf::train(ds, c, mu, 15)), // "flat"
-    }
+/// Build a Router from a name + cell count, honoring the SBANN_C0/B0/C1/B1/LEVELS/BEAMS fan-out
+/// overrides and SBANN_SOAR. Shared by `run` and `stream` so BOTH paths support every router kind
+/// (flat/avq/hier/hierk/hierk3/hierkn). `dr` is the routing-train dataset (may differ from the index
+/// base for OOD). Returns None on an unknown router name (caller bails).
+fn build_router(dr: &I8Bin, router_s: &str, c: usize, mu: Vec<f32>) -> Option<Box<dyn vq::Router>> {
+    let cb = (c as f64).sqrt().round() as usize; // per-codebook size for AVQ multi-index
+    // hierk routing fan-out overrides: SBANN_C0 = #coarse cells, SBANN_B0 = #coarse expanded/query.
+    // Routing cost/query ~= C0 + B0*(Kf/C0); the default C0=sqrt(Kf), B0=C0/4 is one point on that curve.
+    let c0 = std::env::var("SBANN_C0").ok().and_then(|s| s.parse().ok()).unwrap_or(cb);
+    let b0 = std::env::var("SBANN_B0").ok().and_then(|s| s.parse().ok()).unwrap_or((cb / 4).max(8));
+    let router: Box<dyn vq::Router> = match router_s {
+        "flat" => Box::new(vq::FlatIvf::train(dr, c, mu.clone(), 15)),
+        "flatsoar" => Box::new(vq::FlatIvf::train_soar(dr, c, mu.clone(), 15, 1.0)),
+        "flatrair" => Box::new(vq::FlatIvf::train_rair(dr, c, mu.clone(), 15, 1.0)),
+        "flatrand" => Box::new(vq::FlatIvf::train(dr, c, mu.clone(), 0)),
+        "avq" => Box::new(vq::AvqRouter::train(dr, cb, cb, mu.clone(), 15)),
+        "hier" => { let mut r = vq::HierRouter::train(dr, c, c0, b0, mu.clone()); apply_soar(&mut r); Box::new(r) }
+        "hierk" => { let mut r = vq::HierRouter::train_hkmeans(dr, c, c0, b0, mu.clone()); apply_soar(&mut r); Box::new(r) }
+        // 3-level: SBANN_C1 = #mid cells (default sqrt(C0*Kf)), SBANN_B1 = #mids expanded/query.
+        "hierk3" => {
+            let c1 = std::env::var("SBANN_C1").ok().and_then(|s| s.parse().ok()).unwrap_or(((c0 as f64 * c as f64).sqrt().round() as usize).max(c0 * 2));
+            let b1 = std::env::var("SBANN_B1").ok().and_then(|s| s.parse().ok()).unwrap_or((b0 * 2).max(16));
+            println!("  [hierk3 C0={c0} C1={c1} b0={b0} b1={b1}]");
+            let mut r = vq::HierRouter::train_hkmeans3(dr, c, c0, c1, b0, b1, mu.clone());
+            apply_soar(&mut r);
+            Box::new(r)
+        }
+        // ARBITRARY-DEPTH (hierk4/5/… for 100M/1B): SBANN_LEVELS = per-level cell counts coarse→fine
+        // (last = Kf), SBANN_BEAMS = per-level beams (len L-1). Routing ≈ O(L·Kf^(1/L)). Defaults to a
+        // 4-level geometric ladder from C0→Kf if SBANN_LEVELS unset.
+        "hierkn" => {
+            let levels: Vec<usize> = std::env::var("SBANN_LEVELS").ok()
+                .map(|s| s.split(',').filter_map(|x| x.trim().parse().ok()).collect::<Vec<_>>())
+                .filter(|v: &Vec<usize>| v.len() >= 2)
+                .unwrap_or_else(|| {
+                    // default L=4 geometric: C0, C0*r, C0*r^2, Kf  (r = (Kf/C0)^(1/3))
+                    let r = (c as f64 / c0 as f64).powf(1.0 / 3.0);
+                    vec![c0, (c0 as f64 * r).round() as usize, (c0 as f64 * r * r).round() as usize, c]
+                });
+            let l = levels.len();
+            let beams: Vec<usize> = std::env::var("SBANN_BEAMS").ok()
+                .map(|s| s.split(',').filter_map(|x| x.trim().parse().ok()).collect::<Vec<_>>())
+                .filter(|v: &Vec<usize>| v.len() == l - 1)
+                .unwrap_or_else(|| (0..l - 1).map(|i| (b0 << i).max(16)).collect());
+            println!("  [hierkn levels={levels:?} beams={beams:?}]");
+            let mut r = vq::HierRouter::train_hkmeans_multi(dr, &levels, &beams, mu.clone());
+            apply_soar(&mut r);
+            Box::new(r)
+        }
+        _ => { eprintln!("router? (flat|flatsoar|flatrair|flatrand|avq|hier|hierk|hierk3|hierkn)"); return None; }
+    };
+    Some(router)
 }
 
 fn make_comp(ds: &I8Bin, comp_s: &str, dpb: usize, eta: f32) -> Box<dyn vq::Compressor> {
@@ -910,7 +914,7 @@ fn stream(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a
 
     // build the streaming index on the INITIAL subset (cold start: PQ codebook + cells trained on it)
     let mu = mean_of(&init);
-    let router = make_router(&init, router_s, c, mu.clone());
+    let router = match build_router(&init, router_s, c, mu.clone()) { Some(r) => r, None => return };
     let comp = make_comp(&init, comp_s, dpb, eta);
     let mut idx = vq::Index::build(router, comp, &init, a0);
     println!("  built initial index ({n_init} pts) in {:.1}s", t0.elapsed().as_secs_f64());
@@ -946,7 +950,7 @@ fn stream(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a
     drop(idx); // free the streaming index before allocating the fresh one (RAM budget)
     let tf = Instant::now();
     let mu2 = mean_of(&full);
-    let router2 = make_router(&full, router_s, c, mu2);
+    let router2 = match build_router(&full, router_s, c, mu2) { Some(r) => r, None => return };
     let comp2 = make_comp(&full, comp_s, dpb, eta);
     let idx2 = vq::Index::build(router2, comp2, &full, a0);
     println!("  fresh full-{n_total} build in {:.1}s", tf.elapsed().as_secs_f64());
@@ -954,6 +958,164 @@ fn stream(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a
 
     println!("\n[stream SUMMARY] init({n_init})={rec_a:.4} | insert->1M stream={rec_b:.4} vs fresh={rec_fresh:.4} (gap {:+.4}) | after-delete={rec_c:.4}",
         rec_b - rec_fresh);
+}
+
+/// One step of a parsed streaming runbook.
+enum RbOp { Insert(usize, usize), Delete(usize, usize), Search, Replace(usize, usize, usize, usize) }
+
+/// Parse a flat `.ops` file (emitted by runbook_to_ops.py) into (max_pts, ops).
+fn parse_ops(path: &str) -> (usize, Vec<RbOp>) {
+    let txt = std::fs::read_to_string(path).expect("read ops");
+    let mut max_pts = 0usize;
+    let mut ops = Vec::new();
+    for line in txt.lines() {
+        let f: Vec<&str> = line.split_whitespace().collect();
+        if f.is_empty() { continue; }
+        match f[0] {
+            "max_pts" => max_pts = f[1].parse().unwrap(),
+            "insert" => ops.push(RbOp::Insert(f[1].parse().unwrap(), f[2].parse().unwrap())),
+            "delete" => ops.push(RbOp::Delete(f[1].parse().unwrap(), f[2].parse().unwrap())),
+            "search" => ops.push(RbOp::Search),
+            "replace" => ops.push(RbOp::Replace(f[1].parse().unwrap(), f[2].parse().unwrap(), f[3].parse().unwrap(), f[4].parse().unwrap())),
+            _ => panic!("bad op line: {line}"),
+        }
+    }
+    (max_pts, ops)
+}
+
+/// RUNBOOK-DRIVEN streaming eval (the REAL NeurIPS-23 STREAMING-track metric). Replays a runbook's
+/// exact insert/delete/(replace)/search sequence on a from-empty index and, at every `search` step,
+/// scores recall@10 against the EXACT top-10 of the *current live set* (brute-forced per query over
+/// the live points — fully faithful, no precomputed GT needed). Reports avg recall@10 over all search
+/// steps plus insert/delete throughput. Vectors come from the index's own stores; `base` supplies the
+/// streamed rows (orig id == base row, unless `replace` remaps). Knobs: SBANN_NINIT (cold-start train
+/// sample), SBANN_P/SBANN_TMUL (probe depth), SBANN_NQ (queries for the brute-force GT), SBANN_COMPACT
+/// (fold-buffer-into-main when live buffer fraction exceeds this, default 0=off).
+fn stream_runbook(base: &str, qpath: &str, opspath: &str, router_s: &str, comp_s: &str, a0: usize, c: usize) {
+    let t0 = Instant::now();
+    let full = I8Bin::open(base).expect("base");
+    let d = full.d;
+    let (max_pts, ops) = parse_ops(opspath);
+    let dpb: usize = std::env::var("SBANN_DPB").ok().and_then(|s| s.parse().ok()).unwrap_or(2);
+    let eta: f32 = std::env::var("SBANN_ETA").ok().and_then(|s| s.parse().ok()).unwrap_or(4.0);
+    // cold-start: train router cells + PQ codebook on the first n_init base rows, then start EMPTY
+    // (every live point arrives via insert()) so this measures true streaming, not a warm prebuild.
+    let n_init = std::env::var("SBANN_NINIT").ok().and_then(|s| s.parse().ok()).unwrap_or(200_000).min(full.nb);
+    let train = I8Bin::open_range(base, 0, n_init).expect("train view");
+    let mu = mean_of(&train);
+    let router = match build_router(&train, router_s, c, mu) { Some(r) => r, None => return };
+    let comp = make_comp(&train, comp_s, dpb, eta);
+    let empty = I8Bin::open_range(base, 0, 0).expect("empty view");
+    let mut idx = vq::Index::build(router, comp, &empty, a0);
+    println!("[stream_runbook] base nb={} d={d} max_pts={max_pts} ops={} | train={n_init} router={router_s} comp={comp_s} a0={a0} C={c} dpb={dpb}",
+        full.nb, ops.len());
+    println!("  trained cold-start structure in {:.1}s", t0.elapsed().as_secs_f64());
+
+    let qs = I8Bin::open(qpath).expect("q");
+    let nq = std::env::var("SBANN_NQ").ok().and_then(|s| s.parse().ok()).unwrap_or(1000).min(qs.nb);
+    let p: usize = std::env::var("SBANN_P").ok().and_then(|s| s.parse().ok()).unwrap_or((c / 16).max(1));
+    let tmul: usize = std::env::var("SBANN_TMUL").ok().and_then(|s| s.parse().ok()).unwrap_or(4);
+    let t = (p * tmul).max(1000);
+    let compact_frac: f64 = std::env::var("SBANN_COMPACT").ok().and_then(|s| s.parse().ok()).unwrap_or(0.0);
+    println!("  nq={nq} p={p} t={t} compact_frac={compact_frac}");
+
+    // live_src[orig] = base row supplying that orig's vector (u32::MAX = not live). For inserts orig==row;
+    // `replace` remaps it. Drives the brute-force live-set GT and counts.
+    let mut live_src: Vec<u32> = vec![u32::MAX; max_pts];
+    let (mut ins_total, mut ins_secs) = (0usize, 0f64);
+    let (mut del_total, mut del_secs) = (0usize, 0f64);
+    let mut n_compact = 0usize;
+    let mut rec_sum = 0f64;
+    let mut n_search = 0usize;
+
+    let maybe_compact = |idx: &mut vq::Index, n_compact: &mut usize| {
+        if compact_frac <= 0.0 { return; }
+        let live = idx.n_main + idx.ins_count;
+        if live > 0 && idx.ins_count as f64 / live as f64 >= compact_frac {
+            idx.finalize_inserts();
+            let cs = Instant::now();
+            idx.compact_live(a0);
+            *n_compact += 1;
+            println!("    [compact #{n_compact}] folded buffer -> main n={} in {:.2}s", idx.n_main, cs.elapsed().as_secs_f64());
+        }
+    };
+
+    for (si, op) in ops.iter().enumerate() {
+        match *op {
+            RbOp::Insert(s, e) => {
+                let st = Instant::now();
+                for i in s..e.min(full.nb) { idx.insert(full.row(i), i as u32, a0); live_src[i] = i as u32; }
+                ins_secs += st.elapsed().as_secs_f64(); ins_total += e.min(full.nb) - s;
+                maybe_compact(&mut idx, &mut n_compact);
+            }
+            RbOp::Delete(s, e) => {
+                let st = Instant::now();
+                for i in s..e { if (i as u32) < max_pts as u32 && live_src[i] != u32::MAX { idx.delete(i as u32); live_src[i] = u32::MAX; } }
+                del_secs += st.elapsed().as_secs_f64(); del_total += e - s;
+                maybe_compact(&mut idx, &mut n_compact);
+            }
+            RbOp::Replace(ts, te, is, ie) => {
+                let st = Instant::now();
+                for (k, tag) in (ts..te).enumerate() {
+                    let src = is + k;
+                    if src >= ie || src >= full.nb || tag >= max_pts { break; }
+                    if live_src[tag] != u32::MAX { idx.delete(tag as u32); }
+                    idx.insert(full.row(src), tag as u32, a0); live_src[tag] = src as u32;
+                }
+                ins_secs += st.elapsed().as_secs_f64();
+                maybe_compact(&mut idx, &mut n_compact);
+            }
+            RbOp::Search => {
+                idx.finalize_inserts();
+                // exact top-10 of the current live set, per query (brute-force L2 over live points)
+                let live: Vec<(u32, u32)> = (0..max_pts).filter_map(|o| {
+                    let sx = live_src[o]; if sx != u32::MAX { Some((o as u32, sx)) } else { None }
+                }).collect();
+                let gst = Instant::now();
+                let truth: Vec<Vec<u32>> = (0..nq).into_par_iter().map(|qi| {
+                    let q = qs.row(qi);
+                    let mut top: Vec<(i32, u32)> = Vec::with_capacity(10);
+                    let mut worst = i32::MAX;
+                    for &(o, sx) in &live {
+                        let dist = simd::l2_i8(q, full.row(sx as usize));
+                        if top.len() < 10 {
+                            top.push((dist, o));
+                            if top.len() == 10 { worst = top.iter().map(|x| x.0).max().unwrap(); }
+                        } else if dist < worst {
+                            let wi = top.iter().enumerate().max_by_key(|(_, x)| x.0).unwrap().0;
+                            top[wi] = (dist, o);
+                            worst = top.iter().map(|x| x.0).max().unwrap();
+                        }
+                    }
+                    top.sort_unstable();
+                    top.iter().map(|x| x.1).collect()
+                }).collect();
+                let gt_s = gst.elapsed().as_secs_f64();
+                // search + recall@10 vs the live-set GT
+                let sst = Instant::now();
+                let res: Vec<Vec<u32>> = (0..nq).into_par_iter().map(|qi| idx.search_stream(&full, qs.row(qi), p, t, 10)).collect();
+                let qps = nq as f64 / sst.elapsed().as_secs_f64();
+                let mut r = 0f64;
+                for qi in 0..nq {
+                    let denom = truth[qi].len().min(10);
+                    if denom == 0 { continue; }
+                    let tset: std::collections::HashSet<u32> = truth[qi].iter().copied().collect();
+                    let hit = res[qi].iter().take(10).filter(|id| tset.contains(id)).count();
+                    r += hit as f64 / denom as f64;
+                }
+                let r = r / nq as f64;
+                rec_sum += r; n_search += 1;
+                println!("  [op{:>3} search #{n_search}] live={:>8} recall@10={r:.4}  QPS={qps:.0}  (gt {:.1}s)",
+                    si + 1, live.len(), gt_s);
+            }
+        }
+    }
+    let avg = if n_search > 0 { rec_sum / n_search as f64 } else { 0.0 };
+    let ins_tput = if ins_secs > 0.0 { ins_total as f64 / ins_secs } else { 0.0 };
+    let del_tput = if del_secs > 0.0 { del_total as f64 / del_secs } else { 0.0 };
+    println!("\n[stream_runbook SUMMARY] avg recall@10 = {avg:.4} over {n_search} search steps");
+    println!("  inserts: {ins_total} in {ins_secs:.1}s ({ins_tput:.0}/s) | deletes: {del_total} in {del_secs:.1}s ({del_tput:.0}/s) | compactions: {n_compact}");
+    println!("  total wall {:.1}s", t0.elapsed().as_secs_f64());
 }
 
 fn main() {
@@ -1118,6 +1280,14 @@ fn main() {
             a.get(6).map(|s| s.as_str()).unwrap_or("apq4"),
             a.get(7).map(|s| s.parse().unwrap()).unwrap_or(1),
             a.get(8).map(|s| s.parse().unwrap()).unwrap_or(4096)),
-        _ => eprintln!("usage: sbann build|bench|benchpq|benchavq|run|stream <base> <q> <gt> [router] [compress] [a0] [C]"),
+        // RUNBOOK-DRIVEN streaming eval: `stream_runbook <base> <q> <ops> [router] [comp] [a0] [C]`
+        // where <ops> is a flat runbook produced by runbook_to_ops.py. Reports avg recall@10 over the
+        // runbook's search steps vs the exact live-set top-10.
+        Some("stream_runbook") => stream_runbook(&a[2], &a[3], &a[4],
+            a.get(5).map(|s| s.as_str()).unwrap_or("flat"),
+            a.get(6).map(|s| s.as_str()).unwrap_or("apq4"),
+            a.get(7).map(|s| s.parse().unwrap()).unwrap_or(1),
+            a.get(8).map(|s| s.parse().unwrap()).unwrap_or(4096)),
+        _ => eprintln!("usage: sbann build|bench|benchpq|benchavq|run|stream|stream_runbook <base> <q> <gt|ops> [router] [compress] [a0] [C]"),
     }
 }
