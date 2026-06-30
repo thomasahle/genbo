@@ -102148,6 +102148,103 @@ polylogarithmic state]
    state \(y\).
 \end{proof}
 
+\begin{corollary}[Multiply-shift truncation exposes a low-bit carry state]
+   \label{cor:multiply-shift-low-carry-state}
+   Let a native trellis path \(p\) have length at most \(h\).  Fix
+   \(Q=2^w\), \(M=2^b\), \(U=Q/M\), and for each edge \(e\) let
+   \(z(e)\in\{0,\ldots,Q-1\}\) be the full multiply-shift word after reduction
+   modulo \(Q\).  Write
+   \[
+      H(z)=\left\lfloor\frac zU\right\rfloor\in\{0,\ldots,M-1\},
+      \qquad
+      L(z)=z-UH(z)\in\{0,\ldots,U-1\}.
+      \tag{MSC1}
+   \]
+   The additive high-bit score is
+   \[
+      Y(p)=\sum_{e\in p}H(z(e)).
+      \tag{MSC2}
+   \]
+   Also define the full-word residue, full-word wrap count, and low-bit carry
+   count
+   \[
+      T(p)=\sum_{e\in p}z(e)\pmod Q,\qquad
+      N(p)=\left\lfloor\frac{\sum_{e\in p}z(e)}Q\right\rfloor,
+      \qquad
+      C(p)=\left\lfloor\frac{\sum_{e\in p}L(z(e))}U\right\rfloor .
+      \tag{MSC3}
+   \]
+   Taking \(T(p)\) in \(\{0,\ldots,Q-1\}\), one has the exact identity
+   \[
+      Y(p)=MN(p)+H(T(p))-C(p).
+      \tag{MSC4}
+   \]
+   Consequently the high-bit threshold \(Y(p)\ge s\) can be represented
+   exactly by carrying the state triple
+   \[
+      \bigl(T(p),N(p),C(p)\bigr),
+      \tag{MSC5}
+   \]
+   with \(0\le N(p)\le h-1\) and \(0\le C(p)\le h-1\).  If the full-word
+   residue reachable at every native state lies in at most \(R_{\rm word}\)
+   values, then
+   the exact high-bit filter adds at most \(h^2R_{\rm word}\) auxiliary states.  In
+   particular, if the full word is a coboundary modulo a subgroup \(K\le
+   \mathbb Z/Q\mathbb Z\), then this multiply-shift filter has state-exposed
+   width at most \(h^2|K|\) over the native trellis.
+
+   The converse lesson is the important one for LSF.  The high-bit range
+   \(M=2^b\), which sets the sampled density, is not the algebraic state range.
+   The exact affine implementation must still account for the discarded
+   low-bit residue modulo \(U=2^{w-b}\), through \(T(p)\).  Thus high-bit
+   multiply-shift is useful only when the full word residue has low carry rank
+   or the low modulus \(U\) is itself polylogarithmic on the active route.  If
+   the full residues \(T(p)\) look uniform over a polynomial-size set on merged
+   native states, \cref{cor:state-exposed-additive-filter-width} applies to
+   that exposed full-word component; the algebraic truncation has not removed
+   the CPFA prefix-width barrier.  In that case the clean use of the same
+   random weighting is the non-state-exposed tilted sampler of
+   \cref{cor:tilted-additive-tail-sampler} or
+   \cref{cor:joint-tilted-score-filter-sampler}, where the low bits are sampled
+   under the product tilt rather than carried through every prefix.
+\end{corollary}
+
+\begin{proof}
+   Let
+   \[
+      S=\sum_{e\in p}z(e),\qquad
+      R_{\rm low}=\sum_{e\in p}L(z(e)).
+   \]
+   By definition,
+   \[
+      S=U Y(p)+R_{\rm low}.
+      \tag{MSC6}
+   \]
+   Also \(S=QN(p)+T(p)\), and with \(T(p)\) represented in
+   \(\{0,\ldots,Q-1\}\),
+   \[
+      T(p)=UH(T(p))+L(T(p)).
+      \tag{MSC7}
+   \]
+   Since \(R_{\rm low}\equiv S\equiv T(p)\pmod U\), writing
+   \(R_{\rm low}=UC(p)+L(T(p))\) and substituting \((MSC6)\)--\((MSC7)\) gives
+   \[
+      UY(p)+UC(p)+L(T(p))
+      =
+      UMN(p)+UH(T(p))+L(T(p)).
+   \]
+   Dividing by \(U\) proves \((MSC4)\).  The ranges for \(N(p)\) and \(C(p)\)
+   follow from \(0\le z(e)<Q\), \(0\le L(z(e))<U\), and \(|p|\le h\).
+
+   The state-width statement is then immediate: for each native state, the
+   high-bit score is determined by one reachable value of \(T\) and the two
+   carry counters \(N,C\), each having at most \(h\) possible values.  If
+   \(T\) is a coboundary modulo \(K\), all prefixes reaching the same native
+   state have full residues in one coset of \(K\), so
+   \(R_{\rm word}\le |K|\).  The final paragraph is the interpretation
+   together with \cref{cor:state-exposed-additive-filter-width}.
+\end{proof}
+
 \begin{corollary}[Tilted rejection samples additive pseudo-random tails]
    \label{cor:tilted-additive-tail-sampler}
    Let the active labels for one query outcome be a product
