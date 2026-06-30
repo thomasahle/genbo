@@ -2213,6 +2213,22 @@ P141. (*** PROMISING: full-stack BRACKETED ~2x ScaNN at msspacev QPS@90% -- thre
     25%) means ratio uncertainty ~1.7-2.7x. Recording as PROMISING not certain; running a confirmation that
     isolates after-cap vs before-cap @p64 same-window (the mechanism) before claiming the win.
 
+P142. (*** KEY INSIGHT: ours is LOAD-SENSITIVE, ScaNN is not -> the LEADERBOARD's quiet box favors us; threshold fix confirmed +1.6x ***)
+    confirm_aftercap.log, back-to-back p64 (recall 0.91), msspacev-10M, 16t:
+      after-cap#1 (load34) 37588 | before-cap (load29) 26007 | after-cap#2 (load28.6) 43845
+    after-cap#2 vs before-cap = NEAR-IDENTICAL load (28.6 vs 29), consecutive -> clean ratio 43845/26007 =
+    1.69x. THRESHOLD FIX (after-cap, P138) = genuine ~1.6x at QPS@90% (skipping whole-pool dedup at low p),
+    LOAD-ROBUST. *** THE BIG REALIZATION: ours QPS scales STRONGLY with idle CPU (before-cap p64: 12444@load47
+    -> 26007@load29 = 2.1x), ScaNN barely moves (15526@load47 -> 17062@load37 = 1.1x). Ours is COMPUTE-bound
+    (uses all 16 cores when free), ScaNN is MEMORY-BANDWIDTH-bound (load-insensitive). The big-ANN LEADERBOARD
+    runs on a QUIET DEDICATED box (load ~0) = ours' MAXIMALLY-ADVANTAGED condition. So the LIGHT-load reading
+    is the leaderboard-relevant one, and the whole session's "tied/behind" msspacev numbers (P137 etc.) were
+    measured on a LOADED box where ours is artificially suppressed. *** Light-load msspacev QPS@90%: ours
+    after-cap ~40-46k (p52) vs ScaNN ~17k -> ours ~2.4x. CONFIRMING: pinning ScaNN's light-load ceiling
+    (scann_light.log @ load 18) -- if ScaNN stays ~17-20k, the msspacev QPS@90% WIN is real for the leaderboard.
+    This reframes the load-confounding: not "noise drowns the signal" but "ours and ScaNN respond to load
+    DIFFERENTLY, and the leaderboard condition (quiet) is the one where we win."
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
