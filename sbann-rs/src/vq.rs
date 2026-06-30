@@ -1647,7 +1647,7 @@ impl Index {
     /// kernels (exact-row / 64-wide AVX-512 / paired PQ), applying the RESIDQ per-cell offset. Factored
     /// out of scan_rerank so the streaming search reuses the IDENTICAL hot scan path. Returns the raw
     /// pool BEFORE any dedup / survivor cap. `ctx` is the prepared query (prepare_query) shared by caller.
-    fn scan_pool(&self, ds: &I8Bin, q: &[i8], cells: &[u32], ctx: &QueryCtx) -> Vec<(i32, u32)> {
+    fn scan_pool(&self, ds: &I8Bin, q: &[i8], cells: &[u32], ctx: &QueryCtx, t: usize) -> Vec<(i32, u32)> {
         let need_rows = self.comp.needs_raw_rows();
         let mut pool: Vec<(i32, u32)> = Vec::with_capacity(8192);
         let mut out16 = [0i32; 16];
@@ -1661,6 +1661,28 @@ impl Index {
         let rq_scale: f32 = match ctx { QueryCtx::Pq16 { scale, .. } | QueryCtx::Pq8 { scale, .. } => *scale, _ => 0.0 };
         let residq = rq_scale != 0.0 && !self.rq_cent.is_empty();
         let dd = self.d;
+        // THRESHOLD-BOUNDED pool: pushing EVERY candidate (p*live/C*a0, ~millions at high p/live) into a
+        // multi-MB Vec per query is memory-bandwidth bound (the streaming-track 30M scan wall). Instead keep
+        // a running threshold (the t-th smallest seen) and only push candidates below it; when the pool hits
+        // `cap` (16t), select_nth to `keep` (4t) and tighten the threshold. The fast-scan still computes
+        // every distance (native speed) — we only skip the far ~99% of PUSHES. The global top-t is always
+        // pushed (its dist <= the t-th smallest <= thr at every point), so recall is unchanged. RESIDQ
+        // adjusts per-cell dists AFTER pushing (reads pool[pool_start..]), so it can't prune -> cap=MAX.
+        let bound = t > 0 && !residq;
+        let keep = (t * 4).max(64);
+        let cap = if bound { (t * 16).max(256) } else { usize::MAX };
+        let mut thr = i32::MAX;
+        macro_rules! push { ($d:expr, $s:expr) => {{
+            let d = $d;
+            if d < thr {
+                pool.push((d, $s));
+                if pool.len() >= cap {
+                    pool.select_nth_unstable(keep - 1);
+                    thr = pool[keep - 1].0;
+                    pool.truncate(keep);
+                }
+            }
+        }}; }
         for &cell in cells {
             let pool_start = pool.len();
             let (bs, be) = (self.cell_bstart[cell as usize] as usize, self.cell_bstart[cell as usize + 1] as usize);
@@ -1675,7 +1697,7 @@ impl Index {
                     self.comp.scan_block(block, ctx, q, &rows16, &mut out16);
                     for j in 0..16 {
                         let slot = b * 16 + j;
-                        if self.slot_orig[slot] != u32::MAX { pool.push((out16[j], slot as u32)); }
+                        if self.slot_orig[slot] != u32::MAX { push!(out16[j], slot as u32); }
                     }
                 }
             } else if use512fs {
@@ -1695,7 +1717,7 @@ impl Index {
                             let slot0 = (bbase + sub) * 16;
                             for j in 0..16 {
                                 let slot = slot0 + j;
-                                if self.slot_orig[slot] != u32::MAX { pool.push((out64[sub * 16 + j], slot as u32)); }
+                                if self.slot_orig[slot] != u32::MAX { push!(out64[sub * 16 + j], slot as u32); }
                             }
                         }
                     }
@@ -1705,7 +1727,7 @@ impl Index {
                         unsafe { pq::block_adc_i8_i16acc(block, m, regs, &mut out16); }
                         for j in 0..16 {
                             let slot = b * 16 + j;
-                            if self.slot_orig[slot] != u32::MAX { pool.push((out16[j], slot as u32)); }
+                            if self.slot_orig[slot] != u32::MAX { push!(out16[j], slot as u32); }
                         }
                     }
                 }
@@ -1718,11 +1740,11 @@ impl Index {
                     self.comp.scan_block_x2(b0, b1, ctx, &mut out32);
                     for j in 0..16 {
                         let slot = b * 16 + j;
-                        if self.slot_orig[slot] != u32::MAX { pool.push((out32[j], slot as u32)); }
+                        if self.slot_orig[slot] != u32::MAX { push!(out32[j], slot as u32); }
                     }
                     for j in 0..16 {
                         let slot = (b + 1) * 16 + j;
-                        if self.slot_orig[slot] != u32::MAX { pool.push((out32[16 + j], slot as u32)); }
+                        if self.slot_orig[slot] != u32::MAX { push!(out32[16 + j], slot as u32); }
                     }
                     b += 2;
                 }
@@ -1731,7 +1753,7 @@ impl Index {
                     self.comp.scan_block(block, ctx, q, &[], &mut out16);
                     for j in 0..16 {
                         let slot = b * 16 + j;
-                        if self.slot_orig[slot] != u32::MAX { pool.push((out16[j], slot as u32)); }
+                        if self.slot_orig[slot] != u32::MAX { push!(out16[j], slot as u32); }
                     }
                 }
             }
@@ -1750,7 +1772,7 @@ impl Index {
         let prof = PROFILE.load(std::sync::atomic::Ordering::Relaxed);
         let ts = if prof { Some(std::time::Instant::now()) } else { None };
         let ctx = self.comp.prepare_query(q);
-        let mut pool = self.scan_pool(ds, q, cells, &ctx);
+        let mut pool = self.scan_pool(ds, q, cells, &ctx, t);
         // SOAR multi-store (a0>1): dedup the pool by orig id BEFORE the cap so distinct survivors enter
         // rerank (deduping after the cap loses recall at high a0). a0==1 has no dups -> skip. The fast
         // reused open-addressing table replaces the per-query SipHash HashMap (the gap-widener, P134).
@@ -2056,7 +2078,7 @@ impl Index {
     pub fn search_stream(&self, ds: &I8Bin, q: &[i8], p: usize, t: usize, k: usize) -> Vec<u32> {
         let cells = self.router.probe(q, p);
         let ctx = self.comp.prepare_query(q);
-        let mut pool = self.scan_pool(ds, q, &cells, &ctx);
+        let mut pool = self.scan_pool(ds, q, &cells, &ctx, t);
         if self.a0 >= DEDUP_A0.load(std::sync::atomic::Ordering::Relaxed) || POOLDEDUP.load(std::sync::atomic::Ordering::Relaxed) {
             dedup_pool_by_orig(&mut pool, &self.slot_orig);
         }

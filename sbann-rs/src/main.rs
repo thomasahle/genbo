@@ -1048,6 +1048,14 @@ fn stream_runbook(base: &str, qpath: &str, opspath: &str, router_s: &str, comp_s
     let fquery: Option<FBin> = std::env::var("SBANN_RB_FQUERY").ok().map(|p| FBin::open(&p).expect("fquery"));
     let do_frerank = fbase.is_some() && fquery.is_some();
     let rerank_k: usize = std::env::var("SBANN_RERANK_K").ok().and_then(|s| s.parse().ok()).unwrap_or(if do_frerank { 200 } else { 10 });
+    // LIVE FLOAT CACHE (the real QPS lever at scale): the float rerank's K random reads/query from the
+    // 12GB mmap are PAGE-FAULT bound (the live rows are scattered across the whole base). Cache each
+    // point's float row in a contiguous RAM array (indexed by orig) populated ONCE on insert; rerank then
+    // reads resident anon RAM, no faults. vec![0.0;..] is alloc_zeroed (lazy) so only the ~live rows are
+    // committed (~4GB for 10M live), not the full 12GB. SBANN_RB_FCACHE=0 disables (mmap path).
+    let use_fcache = do_frerank && std::env::var("SBANN_RB_FCACHE").map(|v| v != "0").unwrap_or(true);
+    let mut live_float: Vec<f32> = if use_fcache { vec![0.0f32; full.nb * d] } else { Vec::new() };
+    if use_fcache { println!("  [live-float cache ON: {:.1}GB virtual, ~live committed]", (full.nb * d * 4) as f64 / 1e9); }
     // SBANN_RB_GTDIR=<dir>: OFFICIAL PER-STEP GT mode (the real leaderboard metric, e.g. msturing-30M
     // final_runbook). Each search op N loads <dir>/step{N}.gt100 (precomputed against that step's live
     // set) and scores recall@10 directly — NO brute force (infeasible at 10M live x 10k q x 640 steps).
@@ -1084,7 +1092,11 @@ fn stream_runbook(base: &str, qpath: &str, opspath: &str, router_s: &str, comp_s
             RbOp::Insert(s, e) => {
                 let e = e.min(full.nb);
                 let st = Instant::now();
-                for i in s..e { idx.insert(full.row(i), i as u32, a0); if live_src[i] == u32::MAX { n_live += 1; } live_src[i] = i as u32; }
+                for i in s..e {
+                    idx.insert(full.row(i), i as u32, a0);
+                    if use_fcache { live_float[i * d..i * d + d].copy_from_slice(fbase.as_ref().unwrap().row(i)); }
+                    if live_src[i] == u32::MAX { n_live += 1; } live_src[i] = i as u32;
+                }
                 ins_secs += st.elapsed().as_secs_f64(); ins_total += e - s;
                 maybe_compact(&mut idx, &mut n_compact);
             }
@@ -1101,6 +1113,7 @@ fn stream_runbook(base: &str, qpath: &str, opspath: &str, router_s: &str, comp_s
                     if src >= ie || src >= full.nb || tag >= full.nb { break; }
                     if live_src[tag] != u32::MAX { idx.delete(tag as u32); } else { n_live += 1; }
                     idx.insert(full.row(src), tag as u32, a0); live_src[tag] = src as u32;
+                    if use_fcache { live_float[tag * d..tag * d + d].copy_from_slice(fbase.as_ref().unwrap().row(src)); }
                 }
                 ins_secs += st.elapsed().as_secs_f64();
                 maybe_compact(&mut idx, &mut n_compact);
@@ -1114,9 +1127,14 @@ fn stream_runbook(base: &str, qpath: &str, opspath: &str, router_s: &str, comp_s
                 let qps = nq as f64 / search_s;
                 let res: Vec<Vec<u32>> = if do_frerank {
                     let fb = fbase.as_ref().unwrap(); let fq = fquery.as_ref().unwrap();
+                    let lf = &live_float;
                     (0..nq).into_par_iter().map(|qi| {
                         let qf = fq.row(qi);
-                        let mut scored: Vec<(f32, u32)> = cand[qi].iter().map(|&o| (simd::l2_f32(qf, fb.row(o as usize)), o)).collect();
+                        // read each candidate's float row from the RAM cache (no mmap page-faults) when on.
+                        let mut scored: Vec<(f32, u32)> = cand[qi].iter().map(|&o| {
+                            let row = if use_fcache { &lf[o as usize * d..o as usize * d + d] } else { fb.row(o as usize) };
+                            (simd::l2_f32(qf, row), o)
+                        }).collect();
                         scored.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
                         scored.iter().take(10).map(|x| x.1).collect()
                     }).collect()
