@@ -10219,6 +10219,68 @@ partition ignores the bias coordinates that certify the list size.
    branch prices only changes the corresponding upper scores.
 \end{proof}
 
+\begin{corollary}[Product bookkeeping discharges the last-cut prefix count]
+   \label{cor:product-bookkeeping-last-cut-prefix-count}
+   Continue in the additive product-panel specialization of
+   \cref{cor:last-segment-cpfa-cut-fano-moment}.  Suppose the thresholds split
+   as in \cref{lem:product-panel-tensorization},
+   \[
+      \theta_Q=\sum_{j=1}^h\theta_{Q,j},
+      \qquad
+      R_{r+1}(q)=\sum_{j>r}M_j(q),
+      \tag{PLC1}
+   \]
+   and suppose the query block factors \(\mathfrak q_j(q)\) of
+   \cref{cor:product-panel-rate-bookkeeping} satisfy
+   \[
+      \prod_{j=1}^h\mathfrak q_j(q)
+      \le
+      m^{\rho_c}\log^{O_c(1)}m
+      \tag{PLC2}
+   \]
+   for every promised query.  Then, for every fixed cut block \(r\), the
+   cut-prefix moment \((CFM6)\) holds.  Hence the last-segment handoff satisfies
+   the native cut-prefix condition \((PSH5)\).
+
+   Consequently, for product-panel or Fano-priced product-stack reporters with
+   the corresponding priced \(\mathfrak q\)-rate bound, the prefix side of
+   \cref{cor:polylog-suffix-handoff-removes-residue-oracle} is already certified
+   by the same \(\mathfrak q\)-rate bound that certifies the ordinary product
+   decoder.  The remaining far-side scalar is the raw co-load exponent: if
+   \[
+      \E_ZL_{B(q,Z)}^{\rm raw}
+      \le m^{\rho_c+\zeta+o(1)}
+      \qquad\text{with}\qquad
+      \zeta<A\gamma,
+      \tag{PLC3}
+   \]
+   then the checkpoint product \(K_{\rm tot}=m^{A\gamma+o(1)}\) gives the clean
+   \(m^{\rho_c}\polylog m\) far-side bound after the direct suffix scan.
+\end{corollary}
+
+\begin{proof}
+   For the cut after block \(r\),
+   \[
+   \begin{aligned}
+      e^{-\beta\theta_Q}
+      e^{\beta R_{r+1}(q)}
+      \prod_{j\le r}Z_j^Q(q)
+      &=
+      \prod_{j\le r}
+      \left(e^{-\beta\theta_{Q,j}}Z_j^Q(q)\right)
+      \prod_{j>r}
+      e^{\beta(M_j(q)-\theta_{Q,j})}.
+   \end{aligned}
+   \]
+   Each factor on the right is bounded by the corresponding
+   \(\mathfrak q_j(q)\) in
+   \cref{cor:product-panel-rate-bookkeeping}.  Therefore the whole cut term is
+   at most \(\prod_j\mathfrak q_j(q)\), deterministically for each block
+   realization, and \((PLC2)\) gives \((CFM6)\).  Applying
+   \cref{cor:last-segment-cpfa-cut-fano-moment} proves \((PSH5)\).  The final
+   statement is the \((CFM3)\) consequence of the same corollary.
+\end{proof}
+
 \begin{corollary}[Checkpoint continuation multiplicity is not free]
    \label{cor:checkpoint-continuation-oversampling-toll}
    In the checkpoint-syndrome setting, suppose the checkpoint hit certificate
