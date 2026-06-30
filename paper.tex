@@ -103964,6 +103964,119 @@ work]
    \(C(N)=\frac12\sum N_{i,a}^2+O(\sum N_{i,a})\).  This proves \((KVA7)\).
 \end{proof}
 
+\begin{corollary}[Low-rate scaled-GRS blocks discharge the reporter by OSD]
+   \label{cor:low-rate-scaled-grs-osd-endpoint}
+   Work in the scaled-GRS Construction-A setting of
+   \cref{cor:scaled-grs-construction-a-reporter-endpoint}, but implement the
+   query-side block reporter by the OSD superset reporter of
+   \cref{cor:scaled-grs-osd-audit} at temperature \(\beta\).  For block \(j\)
+   and query center \(q_j\), write
+   \[
+      \Lambda_j^{\rm osd}(q)
+      =
+      \Lambda_{{\rm OSD},j}^{(\beta)}(\beta,q_j)
+      \tag{LGO1}
+   \]
+   for the minimum information-set entropy in \((SGO4)\), and let
+   \(A_j^{\rm osd}(q)\) denote the sorting, rank-test, extension, and exact
+   block-score setup work.  Suppose
+   \[
+      \max_j
+      \left(
+         \Lambda_j^{\rm osd}(q)+\log(1+A_j^{\rm osd}(q))
+      \right)
+      =
+      O_c(\log\log m)
+      \tag{LGO2}
+   \]
+   for every promised query.  A sufficient, query-independent condition is
+   \[
+      \max_j k_j\log p_j=O_c(\log\log m),
+      \tag{LGO3}
+   \]
+   because \(\Lambda_j^{\rm osd}(q)\le k_j\log p_j\).
+
+   Under \((LGO2)\), the exact-reporter hypothesis \((SGR5)\) in
+   \cref{cor:scaled-grs-construction-a-reporter-endpoint} may be replaced by
+   this OSD superset reporter.  More precisely, in the superset priority
+   decoder of \cref{lem:superset-product-panel-decoder}, the OSD candidate
+   term at level \(\ell\), block \(r=\ell+1\), is at most
+   \[
+      \log^{O_c(1)}m\,
+      e^{\beta R_{r}(q)}Z_{\le r-1}(q),
+      \tag{LGO4}
+   \]
+   i.e. a polylogarithmic multiple of the ordinary live-prefix term.  Hence the
+   product/Fano query estimate used in \((FRC6)\), or equivalently the flat
+   query-rate estimate \((SGR6)\), is unchanged up to polylogarithmic slack.
+
+   Consequently, if the scaled dual theta screen \((SGR4)\), the flat storage
+   and far estimates \((SGR7)\)--\((SGR8)\), and the local MDS checkpoint
+   hypotheses of
+   \cref{cor:construction-a-theta-mds-cpfa-endpoint} also hold, then the
+   scaled-GRS Construction-A panel has
+   \[
+      \text{near survival }1-o(1),
+      \qquad
+      \E(\text{prefix work}+\text{retained far work})
+      \le
+      m^{\rho_c}\log^{O_c(1)}m .
+      \tag{LGO5}
+   \]
+
+   Thus the scaled-GRS branch has a concrete low-rate positive case.  Random
+   monomial scaling supplies the dual complete-theta spectrum, while low
+   primal block entropy \(k_j\log p_j=O(\log\log m)\) makes the OSD reporter
+   polylogarithmic.  The remaining work in this case is the actual flat
+   product-rate calculation and the checkpoint near-support assumptions, not a
+   separate soft-decision GRS oracle.
+\end{corollary}
+
+\begin{proof}
+   For every coordinate,
+   \(0\le W_i(r)/W_i^*\le1\).  Therefore
+   \[
+      \lambda_i^{(\beta)}
+      =
+      \log\sum_{r\in\mathbb F_{p_j}}
+      \left(\frac{W_i(r)}{W_i^*}\right)^\beta
+      \le \log p_j .
+   \]
+   Summing the \(k_j\) smallest coordinate entropies gives
+   \(\Lambda_j^{\rm osd}(q)\le k_j\log p_j\), proving the sufficiency of
+   \((LGO3)\).
+
+   By \cref{cor:scaled-grs-osd-audit} with \(\mu=\beta\), block \(j\)'s OSD
+   reporter has threshold-dependent candidate work bounded by
+   \[
+      \exp\{\beta(M_j(q)-\theta)+\Lambda_j^{\rm osd}(q)\},
+   \]
+   plus the setup work \(A_j^{\rm osd}(q)\).  This is exactly the OSD
+   superset form in \cref{cor:osd-superset-block-reporter}, with
+   \(B_j(q)=\exp(\beta M_j(q)+\Lambda_j^{\rm osd}(q))\).
+   Substituting into the exact identity \((OSD3)\) gives the level-\(\ell\)
+   candidate contribution
+   \[
+      e^{\Lambda_r^{\rm osd}(q)}
+      e^{\beta R_r(q)}Z_{\le r-1}(q),
+      \qquad r=\ell+1 .
+   \]
+   Condition \((LGO2)\) bounds this by \((LGO4)\), and bounds the fixed setup
+   term by the same polylogarithmic slack times the ordinary live-prefix term.
+   Hence \(\widehat P_\beta(q)\) in
+   \cref{lem:superset-product-panel-decoder} is only a polylogarithmic
+   multiple of the exact-reporter prefix majorant already controlled by
+   \((FRC6)\) or \((SGR6)\).
+
+   The storage and far estimates are unchanged, because the OSD reporter is
+   only an online query enumeration device; the partition functions and
+   incidence moments are still the theta factors controlled by
+   \((SGR4)\), \((SGR7)\), and \((SGR8)\).  Applying
+   \cref{cor:scaled-grs-construction-a-reporter-endpoint} with
+   \cref{lem:superset-product-panel-decoder} in place of the exact block
+   reporter proves \((LGO5)\).
+\end{proof}
+
 \begin{corollary}[MDS Hamming spectrum does not beat the max-residue screen]
    \label{cor:mds-hamming-spectrum-max-screen}
    Let \(C_j\le\mathbb F_{p_j}^{b_j}\) be an \([b_j,k_j]\) MDS code, so
