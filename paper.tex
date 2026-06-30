@@ -7257,6 +7257,88 @@ partition ignores the bias coordinates that certify the list size.
    annealed first moment remains positive.
 \end{remark}
 
+\begin{corollary}[Sharp local endpoint windows cannot supply checkpoint support]
+   \label{cor:checkpoint-endpoint-window-support-barrier}
+   Fix the Gaussian cumulative-score branch with constant branching \(B\) and
+   near correlation \(a\), and let \(t^2=(1+a)\log B\).  Consider a checkpoint
+   segment of length \(\ell\).  There are constants \(c_a,C_a>0\) such that
+   the following holds for every \(0\le w\le c_a\ell\).  For each path
+   \(\pi\in[B]^\ell\), let
+   \(S_p(\pi),S_q(\pi)\) be the two segment score sums for a near pair with
+   correlation \(a\), and define the local endpoint window
+   \[
+      E_w=\{\pi:\ell t\le S_p(\pi)\le \ell t+w,
+                  \ell t\le S_q(\pi)\le \ell t+w\}.
+      \tag{EWB1}
+   \]
+   Let \(Z_w=|E_w|\).  Then
+   \[
+      \E Z_w\le C_a\frac{(1+w)^2}{\ell}.
+      \tag{EWB2}
+   \]
+   Consequently any weighted checkpoint law supported on this endpoint window
+   satisfies
+   \[
+      \Prb[N_2\ge M]\le
+      C_a\frac{(1+w)^2}{\ell M}.
+      \tag{EWB3}
+   \]
+
+   In the polynomial checkpoint regime
+   \[
+      \ell=\kappa\log\log m+o(\log\log m),
+      \qquad
+      M=\eta_sK_s=(\log m)^{A+1+o(1)},
+      \tag{EWB4}
+   \]
+   a natural Brownian or polylogarithmic-in-\(\ell\) endpoint window has
+   \(N_2<M\) with probability tending to one.  A constant-probability
+   endpoint-window certificate in the local regime \(w\le c_a\ell\) would need
+   \[
+      w\ge (\ell M)^{1/2-o(1)}.
+      \tag{EWB5}
+   \]
+   For \((EWB4)\) this lower bound is already much larger than \(\ell\), so
+   every genuinely local endpoint window fails.  Thus the favorable
+   \(-\log p_2\) term in \((BBC3)\) must not be interpreted as a free endpoint
+   gain: sharp endpoint conditioning has already collapsed the support.  Local
+   checkpoint events must be broad continuation/barrier events, quotient or
+   responsibility fibers, or other structurally large witness families.
+\end{corollary}
+
+\begin{proof}
+   For a fixed path \(\pi\), the pair
+   \((S_p(\pi),S_q(\pi))\) is centered Gaussian with covariance
+   \[
+      \ell
+      \begin{pmatrix}
+         1&a\\
+         a&1
+      \end{pmatrix}.
+   \]
+   If \(c_a>0\) is chosen sufficiently small, then on the rectangle
+   \((EWB1)\) the Gaussian density is at most a constant factor times its
+   value at \((\ell t,\ell t)\).  Therefore
+   \[
+      \Prb[\pi\in E_w]
+      \le
+      C_a\frac{(1+w)^2}{\ell}
+      \exp\!\left\{-\frac{\ell t^2}{1+a}\right\}
+      =
+      C_a\frac{(1+w)^2}{\ell}B^{-\ell}.
+      \tag{EWB6}
+   \]
+   Summing \((EWB6)\) over the \(B^\ell\) paths gives \((EWB2)\).  If a
+   probability law is supported on \(E_w\), its collision-effective support is
+   at most its support size \(Z_w\).  Hence
+   \[
+      \Prb[N_2\ge M]\le\Prb[Z_w\ge M]\le\frac{\E Z_w}{M},
+   \]
+   which is \((EWB3)\).  Substituting \((EWB4)\) gives the asymptotic
+   statement and rearranging \((EWB3)\) gives the necessary width scale
+   \((EWB5)\).
+\end{proof}
+
 \begin{corollary}[Difference-universal syndromes suffice with a random bucket]
    \label{cor:difference-universal-syndrome-thinning}
    Let \(G\) be a finite abelian group and let
