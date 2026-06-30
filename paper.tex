@@ -7456,6 +7456,81 @@ partition ignores the bias coordinates that certify the list size.
    is exactly \((BUC8)\).
 \end{proof}
 
+\begin{corollary}[Exponential upper caps convert collision entropy to Shannon entropy]
+   \label{cor:exponential-upper-cap-shannon-entropy}
+   In the product setting of
+   \cref{cor:upper-cap-square-drift-checkpoint-gain}, assume that the local
+   weights are a uniform exponential score family
+   \[
+      W(c)=e^{\beta G(c)},\qquad \beta>0 .
+      \tag{ECS1}
+   \]
+   Let
+   \[
+      Z_\theta=\sum_{c\in\mathcal C}e^{\theta G(c)},
+      \qquad
+      P_\theta(c)=\frac{e^{\theta G(c)}}{Z_\theta},
+      \qquad
+      \mu_\beta=\E_{P_\beta}G,
+      \tag{ECS2}
+   \]
+   and define
+   \[
+      h_2=2\log Z_\beta-\log Z_{2\beta},
+      \qquad
+      H_\beta=-\sum_cP_\beta(c)\log P_\beta(c)
+              =\log Z_\beta-\beta\mu_\beta .
+      \tag{ECS3}
+   \]
+   Use the centered cap coordinate \(X(c)=G(c)-\mu_\beta\).  Then the
+   square-temperature lower-tail rate in \((BUC5)\) is exactly
+   \[
+      I_2^{\rm cap}=H_\beta-h_2.
+      \tag{ECS4}
+   \]
+   Consequently, if the first-temperature upper-cap event \(E_H\) from
+   \((BUC4)\) has \(P_\beta^\ell(E_H)\ge\ell^{-C_H}\), then
+   \[
+      \log N_2(P_\beta^\ell(\cdot\mid E_H))
+      \ge
+      \ell H_\beta-O_{\beta,H,C_H}(\log\ell).
+      \tag{ECS5}
+   \]
+
+   The same statement holds for an inhomogeneous product segment with
+   \(W_j(c)=e^{\beta G_j(c)}\): replace \(\ell H_\beta\) in \((ECS5)\) by
+   \(\sum_jH_{\beta,j}\).  Thus for a uniform code, trellis, or Construction-A
+   block whose pair-tilted local posterior is an exponential score family, a
+   broad upper cap changes the checkpoint audit from order-two entropy to the
+   Shannon entropy of the tilted posterior.  The construction target is then
+   not stronger hash randomness; it is a high-Shannon-entropy tilted posterior
+   together with a first-temperature cap bridge that costs only polynomially.
+\end{corollary}
+
+\begin{proof}
+   Under the square-temperature law \(P_{2\beta}\),
+   \[
+      -\log\E_{P_{2\beta}}e^{-\lambda X}
+      =
+      \log Z_{2\beta}-\log Z_{2\beta-\lambda}-\lambda\mu_\beta .
+      \tag{ECS6}
+   \]
+   This expression is concave in \(\lambda\), and its derivative is
+   \(\E_{P_{2\beta-\lambda}}G-\mu_\beta\).  Hence the optimum is attained at
+   \(\lambda=\beta\).  Substituting this value gives
+   \[
+      I_2^{\rm cap}
+      =
+      \log Z_{2\beta}-\log Z_\beta-\beta\mu_\beta
+      =
+      H_\beta-h_2,
+   \]
+   which proves \((ECS4)\).  Equation \((ECS5)\) is then exactly
+   \((BUC7)\) with \(h_{\rm coll}=h_2\).  The inhomogeneous version uses the
+   same Chernoff parameter \(\lambda=\beta\) in every coordinate and sums the
+   one-layer identities.
+\end{proof}
+
 \begin{corollary}[Critical Gaussian upper caps expose Shannon checkpoint entropy]
    \label{cor:gaussian-upper-cap-shannon-checkpoint}
    Fix a branching factor \(B\ge2\), put
@@ -7624,6 +7699,40 @@ partition ignores the bias coordinates that certify the list size.
    \((GUC11)\).  The numerical table is the direct evaluation of
    \((GUC3)\) by stable log-sum-exp sampling.
 \end{proof}
+
+\begin{remark}[Local cap entropy is not terminal recall]
+   \label{rem:local-cap-entropy-not-terminal-recall}
+   \Cref{cor:exponential-upper-cap-shannon-entropy} and
+   \cref{cor:gaussian-upper-cap-shannon-checkpoint} are local checkpoint
+   statements.
+   They certify that a broad upper cap leaves enough segment posterior entropy
+   for pairwise-independent local syndrome thinning.  They do not by themselves
+   contradict the terminal multiplicity barrier in
+   \cref{cor:checkpoint-terminal-multiplicity-necessity}.  If the only final
+   witnesses are the sharp endpoint leaves of the raw spherical tree, their
+   expected count is still only polylogarithmic, so a polynomial product of
+   checkpoint syndromes cannot be imposed on complete terminal leaves.
+
+   The useful reading is therefore operational.  A code, lattice, or trellis
+   construction may use the Shannon cap scalar on an intermediate continuation
+   layer only if the live continuation/value boundary keeps a
+   high-entropy tilted posterior after conditioning on future success.  The
+   next audit for a concrete construction is
+   \[
+      \log N_2^{\rm live}(u)
+      =
+      H_{\rm live}(u)
+      +2\log p_1^{\rm future}(u)-\log p_2^{\rm future}(u),
+      \tag{LCE1}
+   \]
+   where \(H_{\rm live}\) is the capped Shannon entropy from the current
+   segment and the two \(p\)-terms measure the future continuation boundary
+   under first and square temperatures.  If future endpoint conditioning
+   drives \((LCE1)\) below \(\log K_s+\log\eta_s\) on many live prefixes, the
+   checkpoint route fails for the same reason as the terminal barrier.  If it
+   stays above that threshold, pairwise local syndromes are already random
+   enough.
+\end{remark}
 
 \begin{corollary}[Difference-universal syndromes suffice with a random bucket]
    \label{cor:difference-universal-syndrome-thinning}
