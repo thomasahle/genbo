@@ -107154,6 +107154,162 @@ tax]
    resident-scale work.
 \end{proof}
 
+\begin{corollary}[Port-state transducers share the quotient recursion]
+   \label{cor:port-state-transducer-quotient-sampler}
+   Continue in the finite-state quotient setting of
+   \cref{cor:port-marked-trellis-sampler-terminalizer}.  Instead of running one
+   marked recursion for each possible output port, suppose the certified port
+   boundary is recognized by a deterministic port-state transducer.  Thus, for
+   each query outcome \(B\), there is a finite state set \(\mathcal A_B\), an
+   initial state \(\eta_0\), and edge transitions
+   \[
+      \eta_i=\delta_i^B(\eta_{i-1},e_i),
+      \qquad i=1,\ldots,h,
+      \tag{DPT1}
+   \]
+   along every hidden path \(\pi=(e_1,\ldots,e_h)\).  Each terminal transducer
+   state \(\eta\in\mathcal A_B\) has a certified port set
+   \(O_\eta(B)\subseteq\mathcal O_B\), and the aggregate path certifies exactly
+   \[
+      O_\pi(B)=O_{\eta_h(\pi)}(B).
+      \tag{DPT2}
+   \]
+   Assume the same soundness condition as before: if a resident in the aggregate
+   bucket of \(\pi\) would verify to port \(o\), then \(o\in O_\pi(B)\).
+
+   Let
+   \[
+      Z_{B,\eta}
+      =
+      \sum_{\pi:\ \eta_h(\pi)=\eta}W_B(\pi),
+      \qquad
+      \nu_\eta(B)=\frac{Z_{B,\eta}}{Z_B}.
+      \tag{DPT3}
+   \]
+   Then the port coverages and port load are
+   \[
+      \omega_o(B)=\sum_{\eta:\ o\in O_\eta(B)}\nu_\eta(B),
+      \qquad
+      P_B=\sum_{\eta\in\mathcal A_B}|O_\eta(B)|\nu_\eta(B).
+      \tag{DPT4}
+   \]
+   Moreover, if \(P_B>0\), the following sampler has exactly the
+   port-size-biased law required in \((EQO2)\): draw a terminal transducer
+   state with probability
+   \[
+      \Pr[\eta\mid B]
+      =
+      \frac{|O_\eta(B)|Z_{B,\eta}}
+           {\sum_{\eta'}|O_{\eta'}(B)|Z_{B,\eta'}},
+      \tag{DPT5}
+   \]
+   and then draw \(O\) uniformly from \(O_\eta(B)\).  Equivalently,
+   \[
+      \Pr[O=o\mid B]
+      =
+      \frac{\omega_o(B)}{P_B}.
+      \tag{DPT6}
+   \]
+
+   The quantities in \((DPT3)\)--\((DPT5)\) are computed by one BCJR pass on
+   the augmented trellis with vertices \((v,\eta)\) and edges
+   \[
+      (u,\eta)\longrightarrow
+      \bigl(v,\delta_i^B(\eta,e)\bigr)
+      \quad(e=(u,v)\in E_i),
+      \tag{DPT7}
+   \]
+   with terminal boundary \(|O_\eta(B)|\).  If
+   \[
+      Q_B=\max_i |\{\eta:\ (v,\eta)\text{ is reachable for some }v\in V_i\}|,
+      \tag{DPT8}
+   \]
+   and the native trellis has edge count \(|E_B|\), the arithmetic cost is
+   \(O(Q_B|E_B|)\), plus the cost of sampling uniformly from the selected
+   certified port set.
+
+   Consequently, if the retained transducer certificates fit in
+   \(m^{1+\rho_c}\log^{O_c(1)}m\) space and, for some
+   \(\lambda_m=\log^{O_c(1)}m\),
+   \[
+      \E_Z\!\left[
+         R_{p,q}(Z)\exp\{-\lambda_m
+         \omega_{o_p(B(q,Z))}(B(q,Z))\}
+      \right]\le\frac{a_c}{8},
+      \tag{DPT9}
+   \]
+   while
+   \[
+      \E_Z\!\left[
+         Q_{B(q,Z)}|E_{B(q,Z)}|
+         +
+         \lambda_m P_{B(q,Z)}\log^{O_c(1)}m
+      \right]
+      \le Dm^{\rho_c}\log^{O_c(1)}m,
+      \tag{DPT10}
+   \]
+   then this port-state transducer terminalizes the local rate state at the
+   clean \(Dm^{\rho_c}\polylog m\) work scale.
+
+   In particular, a linear syndrome, carry-less multiply-and-project quotient,
+   Construction-A residue, Tanner syndrome, or convolutional-code state is a
+   useful pseudo-random subset primitive only when it is exposed as such a
+   low-width port transducer.  The random-subset requirement is then merely the
+   fixed-set second-moment property of the syndrome; the decoding requirement
+   is the width/load bound \((DPT10)\).  If an auxiliary hash fills
+   polynomially many transducer states at merged vertices, the cost is paid as
+   \(Q_B\), exactly as in
+   \cref{cor:random-quotient-trellis-width-barrier} and
+   \cref{cor:state-exposed-additive-filter-width}.
+\end{corollary}
+
+\begin{proof}
+   By \((DPT2)\), the event \(o\in O_\pi(B)\) depends only on the final
+   transducer state of \(\pi\).  Summing path weights by that state gives
+   \((DPT3)\), and summing the normalized state masses over the states whose
+   certified set contains \(o\) gives the first identity in \((DPT4)\).  The
+   second identity follows by summing \(\omega_o\) over ports and exchanging the
+   order of summation:
+   \[
+      \sum_o\omega_o
+      =
+      \sum_\eta \nu_\eta |\{o:o\in O_\eta\}|.
+   \]
+
+   The sampler in \((DPT5)\) reports a fixed port \(o\) with probability
+   \[
+      \sum_{\eta:\ o\in O_\eta}
+      \frac{|O_\eta|Z_{B,\eta}}
+           {\sum_{\eta'}|O_{\eta'}|Z_{B,\eta'}}
+      \frac1{|O_\eta|}
+      =
+      \frac{\sum_{\eta:\ o\in O_\eta}Z_{B,\eta}}
+           {\sum_{\eta'}|O_{\eta'}|Z_{B,\eta'}}
+      =
+      \frac{\omega_o}{P_B},
+   \]
+   proving \((DPT6)\).
+
+   The augmented trellis in \((DPT7)\) records exactly the deterministic
+   transducer state reached by a native path prefix.  The usual BCJR recursion
+   with terminal boundary \(|O_\eta|\) therefore computes
+   \(\sum_\eta |O_\eta|Z_{B,\eta}=P_BZ_B\) and samples paths, hence terminal
+   transducer states, with the law \((DPT5)\).  Each native edge has at most
+   \(Q_B\) reachable transducer-state copies, giving the displayed
+   \(O(Q_B|E_B|)\) cost.
+
+   Conditions \((DPT9)\)--\((DPT10)\) are exactly the miss and work hypotheses
+   \((EQO3)\)--\((EQO4)\) of
+   \cref{cor:quotient-port-sampler-terminalizes-rate-coverage}, with
+   \(T_{\rm port}(B)\) supplied by the augmented-transducer BCJR pass and with
+   \(P_B\) given by \((DPT4)\).  Applying that corollary gives the terminalizer.
+   The final paragraph is the specialization of the same construction to the
+   quotient-syndrome state graphs of
+   \cref{cor:quotient-syndrome-trellis-support-sampler} together with the
+   width lower bounds already proved for random or state-exposed additive
+   quotients.
+\end{proof}
+
 \begin{corollary}[Balanced checkpoints can absorb any fixed flat-volume excess]
    \label{cor:balanced-checkpoints-absorb-flat-volume-excess}
    Continue with the nearest-mesh scaled-GRS window of
