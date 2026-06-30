@@ -2182,6 +2182,21 @@ P139. (*** PROFILE: routing is 20-46% of query time (NOT ~4%) -> router GEMV is 
     scalar per-centroid loop). Halving routing (46->23%) ~= 1.3x QPS -> converts the msspacev TIE into a WIN
     at QPS@90%. This is the user-approved kernel work. IMPLEMENTING: batched int8 dot scorer for gather_fine.
 
+P140. (batched routing scorer = real ~1.11x (committed); hierk4 = wash; routing is per-query bandwidth-bound)
+    l2_i8_block (simd.rs, 2-wide ILP, qn in regs, dispatch once) replaced the scalar per-centroid l2_i8 loop
+    in gather_fine. Bit-identical recall. msspacev p64 routing share 46.3->40.5% (~1.27x routing, ~1.11x
+    total); applies to OOD too (routing 20-46% everywhere). COMMITTED 4c0289f.
+    hierk4 (levels 1024,8192,65536,262144 beams 48,200,200) vs hierk3: route 40.5->35.7% BUT recall
+    0.9100->0.9009 @p64 (deeper hierarchy prunes harder) -> at MATCHED recall a wash. Not pursued.
+    *** ROOT INSIGHT: the fine level scores b1*(Kf/C1)~5000 query-SPECIFIC centroids scattered across the
+    26MB centroid array -> bandwidth/latency-bound, and (unlike ScaNN's FLAT 4000-leaf GEMM read once per
+    query-batch) our HIERARCHY reads different fine cells per query => NO cross-query amortization. ILP helps
+    only ~1.27x; the rest is bandwidth. Matching ScaNN's routing amortization would need flat-ish batched-GEMM
+    routing (architectural change, uncertain payoff). *** Other gaps similarly structural: scan 38-52% (our
+    AVX-512 64-wide ~= ScaNN AH, little headroom); rerank 19-27% (we rerank t_surv~3072 vs ScaNN reorder=200
+    -- ScaNN's better ADC ranking needs shallower rerank; closing = deeper quantization, modest/explored).
+    NET: per-query-overhead lever yielded a real ~1.11x; further is diminishing+unmeasurable on this box.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
