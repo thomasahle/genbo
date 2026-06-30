@@ -2197,6 +2197,22 @@ P140. (batched routing scorer = real ~1.11x (committed); hierk4 = wash; routing 
     -- ScaNN's better ADC ranking needs shallower rerank; closing = deeper quantization, modest/explored).
     NET: per-query-overhead lever yielded a real ~1.11x; further is diminishing+unmeasurable on this box.
 
+P141. (*** PROMISING: full-stack BRACKETED ~2x ScaNN at msspacev QPS@90% -- threshold fix is the big low-p lever ***)
+    final_msspacev.log, BRACKET ours(full stack)->ScaNN->ours, all 16 threads. Full stack = batched routing
+    scorer + after-cap a0=3 (DEDUP_A0=4 default) + 16t. msspacev-10M:
+      ours PRE:  p48 0.8996@47846 p56 0.9056@44791 p64 0.9100@42794 p80 0.9194@33832 p96 0.9251@33850
+      ScaNN:     lts50 0.8539@17288 lts100 0.9209@16960 lts150 0.9428@22485 lts250 0.9645@10984 lts400 0.9775@7164
+      ours POST: p48 0.8996@38255 p56 0.9056@31806 p64 0.9100@34459 p80 0.9194@32657 p96 0.9251@33031
+    QPS@90%: ours ~36-46k (pre/post) vs ScaNN interp ~17062 => ours ~2.0-2.7x. ScaNN (17k) sandwiched BETWEEN
+    two ours runs both ~2x higher -> not a simple light-window fluke for us. MECHANISM: P137 "tied" used
+    BEFORE-cap a0=3 (the fix#5 handicap, p64@12444); the THRESHOLD FIX (after-cap, P138) skips the whole-pool
+    dedup which at low p (tiny scan) is a big fraction -> after-cap p64 jumped to ~34-43k. Plus batched scorer
+    (1.11x) + 16t. *** CAVEAT (P117 burned me): the SAME after-cap config gave p64@14830 in a loaded window
+    (route_gemv_test) vs 34-43k here -> absolute QPS still swings ~2.5x on measurement-window load. The bracket
+    (ScaNN between two ours) is the evidence the RATIO holds, but the within-bracket drift (pre 46k/post 36k =
+    25%) means ratio uncertainty ~1.7-2.7x. Recording as PROMISING not certain; running a confirmation that
+    isolates after-cap vs before-cap @p64 same-window (the mechanism) before claiming the win.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
