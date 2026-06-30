@@ -99031,6 +99031,97 @@ amplified in the next proposition.
    \(W_M\).
 \end{proof}
 
+\begin{corollary}[One aggregate sign tail avoids checkpoint product toll]
+   \label{cor:aggregate-sign-tail-avoids-checkpoint-toll}
+   Partition the route coordinates into disjoint blocks
+   \(I_1,\ldots,I_L\), with \(h_\ell=|I_\ell|\), and write
+   \[
+      M_\ell(c)=\sum_{j\in I_\ell}\xi_{j,c_j},
+      \qquad
+      M(c)=\sum_{\ell=1}^LM_\ell(c).
+      \tag{AGF1}
+   \]
+   Suppose blockwise checkpoint thinning would use target density parameters
+   \(K_\ell\ge e\) and block thresholds satisfying, under their local
+   score-tilted laws,
+   \[
+      s_\ell-A_\ell\le C_0\sqrt{h_\ell\log K_\ell},
+      \qquad
+      A_\ell=\E[M_\ell\mid\lambda=0].
+      \tag{AGF2}
+   \]
+   If every block sign saddlepoint stays in the same bounded window and has
+   the same imbalance bound as in
+   \cref{cor:polylog-density-sign-thinning-calibration}, then a sequential
+   checkpoint implementation which imposes all events
+   \(M_\ell\ge s_\ell\) by separate tilted rejection steps has the generic
+   local-Gaussian width toll
+   \[
+      \prod_{\ell=1}^L O(\sqrt{\log K_\ell}).
+      \tag{AGF3}
+   \]
+
+   In contrast, set
+   \[
+      K=\prod_{\ell=1}^LK_\ell,
+      \qquad
+      h=\sum_{\ell=1}^Lh_\ell .
+      \tag{AGF4}
+   \]
+   A single aggregate sign filter with threshold
+   \[
+      s-A_0\le C_0\sqrt{h\log K},
+      \qquad
+      A_0=\E[M\mid\lambda=0],
+      \tag{AGF5}
+   \]
+   has
+   \[
+      W_M=O_{a,\Lambda,C_0}(\sqrt{\log K}),
+      \tag{AGF6}
+   \]
+   and therefore, under the remaining hypotheses of
+   \cref{cor:reusable-limited-independent-sign-filter}, the exact joint tilted
+   sampler costs
+   \[
+      O_{U,\kappa}(W_W\sqrt{\log K})
+      \tag{AGF7}
+   \]
+   proposals in expectation, subject to the same moment condition
+   \(W_W\sqrt{\log K}\lesssim\sqrt h\).
+
+   Thus a long cumulative-score route should not be thinned by many independent
+   checkpoint sign constraints unless
+   \[
+      \sum_{\ell=1}^L
+      \log\max\{2,\sqrt{\log K_\ell}\}
+      =
+      O(\log\log m).
+      \tag{AGF8}
+   \]
+   The scalable pseudo-random-subset normal form is one aggregate additive
+   score over the whole sampled route, with the decoder sampling the final
+   tilted product/code law.  Checkpoint filters are useful only when they are
+   few, nearly deterministic, or structurally necessary for the native decoder.
+\end{corollary}
+
+\begin{proof}
+   Applying
+   \cref{cor:polylog-density-sign-thinning-calibration} separately to block
+   \(\ell\) gives local width \(O(\sqrt{\log K_\ell})\).  A sequential
+   rejection implementation that enforces the checkpoint events one after
+   another multiplies these proposal factors, giving \((AGF3)\).
+
+   For the aggregate filter, \((AGF5)\) is exactly the hypothesis \((PST4)\)
+   with \(K=\prod_\ell K_\ell\), so
+   \cref{cor:polylog-density-sign-thinning-calibration} gives \((AGF6)\).
+   Substituting this bound into
+   \cref{cor:reusable-limited-independent-sign-filter} gives \((AGF7)\).
+   Finally, the logarithm of the product toll in \((AGF3)\) is bounded, up to
+   constants depending only on the local Gaussian-window constants, by the
+   left-hand side of \((AGF8)\).  This is the displayed depth warning.
+\end{proof}
+
 \begin{corollary}[Aligned linear charts compute rate-coverage sketches]
    \label{cor:aligned-linear-chart-rate-coverage-sketch}
    Work in the setting of
