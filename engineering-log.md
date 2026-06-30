@@ -1395,3 +1395,8 @@
   D(P\|\bar A)-\sum_j\log B_j\le O(\log\log n),
   \]
   so an auxiliary aggregate tail, pairwise-independent syndrome, or multiply-shift subset cannot repair an unpaid tilted-product entropy. This is the bridge between the terminal code/lattice result and the global value-delivery target, not a new certificate form.
+- Discharged that route-height gate under the concrete Gibbs near-mass condition. `cor:scaled-grs-gibbs-route-state-discharge` says that if the terminal scaled-GRS query sampler is the product Gibbs law \(\Pi_q\), and the near witness has sufficient block events \(E_j(p,q)\) of product mass \(H=\prod_j\Pi_{q,j}(E_j)\), then the conditional successful route has exact matched-Fano height \(\log(1/H)\). Therefore a bounded aggregate tail gives
+  \[
+  U_F(\varnothing)\ge (a_{\rm tail}/2)e^{-B_*}H
+  \]
+  (again without the \(1/2\) in the no-tail case), while retaining the terminal \(m^{\rho_c}\polylog m\) query/far work and \(m^{1+\rho_c}\polylog m\) storage. Averaged panel mass \(\mu=\mathbb EH\ge\log^{-A}m\) is enough: \(O(\log^A m)\) independent panels expose a realized route of height \(O(\log\log m)\) with constant probability. Thus the next global theorem is no longer a pseudo-random subset theorem; it is the near Gibbs mass estimate and bounded aggregate-tail audit for every unresolved localized route state.

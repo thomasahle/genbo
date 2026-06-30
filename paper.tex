@@ -104990,6 +104990,121 @@ tax]
    needed by the saturated min-cut.
 \end{proof}
 
+\begin{corollary}[Scaled-GRS Gibbs near mass discharges a route state]
+   \label{cor:scaled-grs-gibbs-route-state-discharge}
+   Continue with
+   \cref{cor:high-entropy-scaled-grs-terminal-filter} and
+   \cref{cor:scaled-grs-route-height-gate}.  Fix one localized route state, one
+   promised near witness \(p\), and one query \(q\).  Let
+   \[
+      \Pi_q=\prod_{j=1}^h\Pi_{q,j}
+      \tag{SGM1}
+   \]
+   be the product Gibbs law on the terminal scaled-GRS block labels, using the
+   same terminal weights that drive the scaled-GRS reporter.  Suppose that for
+   each block there is a sufficient storage event
+   \(E_j(p,q)\subseteq\mathcal C_j\) such that every terminal label
+   \[
+      c\in E(p,q):=\prod_{j=1}^hE_j(p,q)
+      \tag{SGM2}
+   \]
+   stores \(p\) and reaches \(p\), or another certified valid neighbor, after
+   terminal verification.  Put
+   \[
+      h_j=\Pi_{q,j}(E_j(p,q)),
+      \qquad
+      H=\prod_{j=1}^hh_j .
+      \tag{SGM3}
+   \]
+   If \(H>0\), let
+   \[
+      P^E_j(a)=\Pi_{q,j}(a\mid E_j(p,q)),
+      \qquad
+      a^E_j(a)=\Pi_{q,j}(a)\mathbf1_{\{a\in E_j(p,q)\}} .
+      \tag{SGM4}
+   \]
+
+   If an optional terminal aggregate tail
+   \[
+      F=\left\{c:\sum_jm_j(c_j)\ge s\right\}
+      \tag{SGM5}
+   \]
+   is imposed inside \(E(p,q)\), assume the bounded-tail likelihood audit of
+   \cref{cor:bounded-aggregate-tail-likelihood-toll} holds for the conditional
+   product law \(P^E=\prod_jP^E_j\) and activation masses \(a^E_j\), with
+   acceptance lower bound \(a_{\rm tail}\) and likelihood toll at most \(B_*\).
+   If no aggregate tail is imposed, set \(a_{\rm tail}=1\), \(B_*=0\), and
+   \(F=E(p,q)\).  Then the retained successful route trie satisfies
+   \[
+      U_F(\varnothing)
+      \ge
+      \frac{a_{\rm tail}}2 e^{-B_*}H,
+      \tag{SGM6}
+   \]
+   with the factor \(1/2\) omitted in the no-tail case.  Thus
+   \[
+      H\ge\log^{-A}m,
+      \qquad
+      a_{\rm tail}^{-1}e^{B_*}\le\log^A m
+      \tag{SGM7}
+   \]
+   imply inverse-polylogarithmic saturated value for this route state, while the
+   terminal query, invalid-candidate, and storage costs remain the clean
+   \(m^{\rho_c}\log^{O_c(1)}m\) and
+   \(m^{1+\rho_c}\log^{O_c(1)}m\) costs of
+   \cref{cor:high-entropy-scaled-grs-terminal-filter}.
+
+   The averaged version is equally explicit.  If the monomial scalings or
+   independent panels make \(H\) random, and the same aggregate-tail bounds
+   \(a_{\rm tail},B_*\) hold whenever \(H>0\), then
+   \[
+      \E U_F(\varnothing)
+      \ge
+      \frac{a_{\rm tail}}2 e^{-B_*}\E H .
+      \tag{SGM8}
+   \]
+   In particular, if
+   \[
+      \mu:=\E H\ge\log^{-A}m,
+      \tag{SGM9}
+   \]
+   then \(B_{\rm pan}=\lceil C\log^A m\rceil\) independent scaled-GRS panels
+   expose, with probability at least \(1-e^{-C/2}\), a sampled terminal Gibbs
+   label in \(E(p,q)\) whose realized matched-Fano route height is at most
+   \[
+      \log(2/\mu)=O_A(\log\log m).
+      \tag{SGM10}
+   \]
+   Running all \(B_{\rm pan}\) panels only multiplies the terminal work and
+   storage bounds by a polylogarithmic factor.  Therefore the remaining theorem
+   for the global one-tree route is the near-mass estimate \((SGM9)\), together
+   with the bounded aggregate-tail audit, for every unresolved localized state;
+   stronger randomness of the terminal subset is not the missing ingredient.
+\end{corollary}
+
+\begin{proof}
+   For \(H>0\), \cref{cor:gibbs-near-mass-matched-fano} applied to the events
+   \(E_j(p,q)\) gives the exact prefix height
+   \[
+      H_{P^E}(c)=\log\frac1H
+      \tag{SGM11}
+   \]
+   on every successful leaf.  The hypotheses on \(E(p,q)\) make these leaves
+   valid terminal successes.  Applying
+   \cref{cor:scaled-grs-route-height-gate} with \(H_0=\log(1/H)\) gives
+   \((SGM6)\); in the no-tail case the same corollary, or directly
+   \cref{lem:dominated-route-law}, omits the factor \(1/2\).
+
+   The work and storage bounds are inherited from
+   \cref{cor:high-entropy-scaled-grs-terminal-filter}, because conditioning on
+   the sufficient event and applying the aggregate tail only delete terminal
+   labels or restrict the successful route law.  Taking expectation in
+   \((SGM6)\) gives \((SGM8)\).  Finally,
+   \cref{cor:averaged-gibbs-mass-good-fano-hit} with \(\tau=\mu/2\) gives the
+   probability and height bound in \((SGM10)\), and polylogarithmically many
+   panels preserve the stated asymptotic costs.
+\end{proof}
+
 \begin{corollary}[Balanced checkpoints can absorb any fixed flat-volume excess]
    \label{cor:balanced-checkpoints-absorb-flat-volume-excess}
    Continue with the nearest-mesh scaled-GRS window of
