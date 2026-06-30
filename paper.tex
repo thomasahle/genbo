@@ -8061,6 +8061,95 @@ partition ignores the bias coordinates that certify the list size.
    \cref{cor:finite-state-checkpoint-collision-test} gives \((WDU5)\).
 \end{proof}
 
+\begin{corollary}[Long checkpoint chains require nearly unbiased difference laws]
+   \label{cor:long-checkpoint-bias-toll}
+   Consider a checkpoint chain with segments \(s=1,\ldots,r\).  Segment \(s\)
+   uses a syndrome group of size \(K_s\), a difference-universal hash family
+   with constant \(C_s\ge1\), and a live conditional witness law satisfying
+   \[
+      N_2(\nu_{s,w})\ge \eta_sK_s
+      \qquad\text{on every live prefix }w .
+      \tag{LCB1}
+   \]
+   Applying
+   \cref{cor:weighted-difference-universal-checkpoint-thinning} segment by
+   segment gives the certified one-panel hit probability
+   \[
+      P_{\rm cert}
+      \ge
+      \prod_{s=1}^r\frac{\eta_s}{1+C_s\eta_s}
+      =
+      \exp\!\left(
+         -\sum_{s=1}^r\log(C_s+\eta_s^{-1})
+      \right).
+      \tag{LCB2}
+   \]
+   Hence this biased-hash checkpoint certificate is inverse-polylogarithmic in
+   \(m\) only when
+   \[
+      \sum_{s=1}^r\log(C_s+\eta_s^{-1})=O(\log\log m).
+      \tag{LCB3}
+   \]
+   The unbiased pairwise-independent case is \(C_s=1\), where \((LCB3)\)
+   reduces to the usual checkpoint toll
+   \[
+      \sum_s\log(1+\eta_s^{-1})=O(\log\log m).
+      \tag{LCB4}
+   \]
+
+   In particular, the bias alone contributes the unavoidable toll
+   \[
+      \sum_s\log C_s\le
+      \sum_s\log(C_s+\eta_s^{-1}).
+      \tag{LCB5}
+   \]
+   Therefore, if \(r=\Theta(\log m/\log\log m)\) and
+   \(C_s\ge1+\epsilon\) on a positive fraction of the segments for some fixed
+   \(\epsilon>0\), the product lower bound supplied by this certificate is at
+   most
+   \[
+      \exp\!\left(-\Omega\!\left(\frac{\log m}{\log\log m}\right)\right),
+      \tag{LCB6}
+   \]
+   far below inverse-polylogarithmic.  More generally, a long checkpoint chain
+   can tolerate biased multiply-style hashes only if
+   \[
+      \sum_s\log C_s=O(\log\log m),
+      \tag{LCB7}
+   \]
+   or if the biased steps are not multiplied as independent lossy checkpoints
+   because a separate repetition, aggregation, or reporter charge absorbs them.
+
+   Thus the clean endpoint does not merely need ``some'' 2-independent-looking
+   hash.  For the many-checkpoint route it needs a genuinely unbiased
+   field-affine/carry-less difference law on almost all lossy segments, or a
+   structural reason that the biased hash is used only on \(O(\log\log m)\)
+   total checkpoint toll.  Ordinary integer multiply-shift can still be a
+   terminal or engineering primitive, but any two-adic or truncation bias must
+   be accounted for in \((LCB7)\).
+\end{corollary}
+
+\begin{proof}
+   Fix a retained live prefix at the start of segment \(s\).  The next segment
+   seed and target are fresh, while \(\nu_{s,w}\) is fixed.  By
+   \cref{cor:weighted-difference-universal-checkpoint-thinning} and
+   \((LCB1)\), the conditional probability that the segment support is hit is
+   at least
+   \[
+      \frac{\eta_sK_s}{K_s+C_s\eta_sK_s}
+      =
+      \frac{\eta_s}{1+C_s\eta_s}
+      =
+      \frac1{C_s+\eta_s^{-1}}.
+   \]
+   Multiplying these conditional bounds over the independent checkpoint
+   segments proves \((LCB2)\).  The equivalence with an inverse-polylogarithmic
+   lower bound is exactly the logarithmic condition \((LCB3)\), and \(C_s=1\)
+   gives \((LCB4)\).  Since \(C_s+\eta_s^{-1}\ge C_s\), \((LCB5)\) follows.
+   The displayed long-chain consequence is obtained by summing
+   \(\log(1+\epsilon)\) over \(\Theta(\log m/\log\log m)\) biased segments.
+\end{proof}
+
 \begin{corollary}[Difference bias is only a repetition loss]
    \label{cor:difference-bias-repetition-loss}
    In the setting of
@@ -8279,7 +8368,9 @@ partition ignores the bias coordinates that certify the list size.
    \cref{cor:weighted-difference-universal-checkpoint-thinning}: the same
    \(C_\Delta\) appears inside the collision-support hit factor, so a
    polylogarithmic bias is a terminal/repetition cost, not something that can
-   be multiplied over many lossy checkpoints for free.
+   be multiplied over many lossy checkpoints for free.  The route-level
+   condition is \(\sum_s\log C_s=O(\log\log m)\) in
+   \cref{cor:long-checkpoint-bias-toll}.
 
    The algebraic form is useful for decoding.  The retained tuples satisfy one
    random linear parity equation
