@@ -100745,6 +100745,105 @@ amplified in the next proposition.
    thinning identity \((CPFA3)\), proving the normal-form barrier.
 \end{proof}
 
+\begin{corollary}[Checkpoint boundary frontiers see the remaining product]
+   \label{cor:checkpoint-boundary-residual-frontier}
+   Continue in the setting of
+   \cref{cor:checkpoint-product-far-load-accounting}, but count unit terminal
+   or cut records for simplicity.  Let the records in \(\Omega_B\) be leaves
+   of the checkpointed trellis, and let \(\mathcal U_a\) be a prefix boundary
+   after segments \(1,\ldots,a\).  For \(u\in\mathcal U_a\), let
+   \[
+      A_u=\{\omega\in\Omega_B:p(\omega)\succeq u\}
+      \tag{CBRF1}
+   \]
+   be the support-valid emitted records extending \(u\).  Put
+   \[
+      K_{\le a}=\prod_{s\le a}K_s,
+      \qquad
+      K_{>a}=\prod_{s>a}K_s,
+      \qquad
+      K_{\rm tot}=K_{\le a}K_{>a}.
+      \tag{CBRF2}
+   \]
+   A boundary prefix \(u\) is live for the checkpointed branch-and-bound
+   decoder if its completed segments satisfy their checkpoint equations and
+   some record in \(A_u\) can complete all future checkpoint equations.  Then,
+   conditional on the checkpoint increments,
+   \[
+      \Pr_\sigma[u\ {\rm live}]
+      \le
+      K_{\le a}^{-1}
+      \min\left\{1,\frac{|A_u|}{K_{>a}}\right\}.
+      \tag{CBRF3}
+   \]
+   If, moreover, the future checkpoint syndromes of the records in every fixed
+   \(A_u\) are uniform and pairwise independent in
+   \(\prod_{s>a}G_s\), then
+   \[
+      \Pr[u\ {\rm live}]
+      \ge
+      K_{\le a}^{-1}
+      \frac{|A_u|}{K_{>a}+|A_u|}
+      \ge
+      \frac12K_{\le a}^{-1}
+      \min\left\{1,\frac{|A_u|}{K_{>a}}\right\}.
+      \tag{CBRF4}
+   \]
+
+   Consequently the expected boundary frontier is bounded by
+   \[
+      \E|\mathcal L_a|
+      \le
+      K_{\le a}^{-1}
+      \sum_{u\in\mathcal U_a}
+      \min\left\{1,\frac{|A_u|}{K_{>a}}\right\}
+      \le
+      \frac{|\Omega_B|}{K_{\rm tot}} .
+      \tag{CBRF5}
+   \]
+   Thus product checkpoint thinning does control branch-and-bound frontier
+   counts at checkpoint boundaries, but only relative to an oracle that can
+   answer the future suffix-residue occupancy question for \(A_u\).  Explicitly
+   materializing the future occupied residues falls under
+   \cref{cor:materialized-residue-summary-barrier}; it costs
+   \(\Omega(K_{>a})\) on prefixes with \(|A_u|\ge K_{>a}\).  The useful
+   code/lattice construction must therefore supply this oracle implicitly:
+   a low-width banded quotient trellis, a finite-state transfer matrix, a
+   meet-in-the-middle reporter, or a responsibility/leader aggregate.  In
+   \cref{cor:checkpoint-product-far-load-accounting}, this oracle cost is
+   exactly the prefix-work term \((CPFA5)\).
+\end{corollary}
+
+\begin{proof}
+   Fix \(u\) and condition on all checkpoint increments.  The completed
+   checkpoint sums in segments \(s\le a\) are deterministic for the prefix
+   \(u\), so the probability that all completed targets match is
+   \(K_{\le a}^{-1}\).  Conditional on this event, \(u\) is live only if the
+   future target vector
+   \[
+      (\sigma_s)_{s>a}\in\prod_{s>a}G_s
+   \]
+   lies in the set of future syndrome vectors attained by records in \(A_u\).
+   This set has size at most \(\min\{K_{>a},|A_u|\}\), proving \((CBRF3)\).
+
+   Under the pairwise-independent future-syndrome hypothesis, the same
+   Paley--Zygmund occupancy calculation as in
+   \cref{lem:syndrome-prefix-occupancy} shows that the expected fraction of
+   occupied future residue vectors is at least
+   \[
+      \frac{|A_u|}{K_{>a}+|A_u|}.
+   \]
+   Multiplying by the independent completed-segment factor gives
+   \((CBRF4)\).  Summing \((CBRF3)\) over \(u\in\mathcal U_a\) gives the first
+   inequality in \((CBRF5)\).  Since
+   \[
+      \sum_{u\in\mathcal U_a}|A_u|=|\Omega_B|
+   \]
+   and \(\min\{1,N/K_{>a}\}\le N/K_{>a}\), the second inequality follows.
+   The final paragraph is the interpretation together with
+   \cref{cor:materialized-residue-summary-barrier} and \((CPFA5)\).
+\end{proof}
+
 \begin{corollary}[Sliding-window trellises must carry forgotten quotient span]
    \label{cor:finite-memory-forgetting-quotient-barrier}
    Let
