@@ -99122,6 +99122,89 @@ amplified in the next proposition.
    left-hand side of \((AGF8)\).  This is the displayed depth warning.
 \end{proof}
 
+\begin{corollary}[Aggregate sign tails preserve value under prefix-tail stability]
+   \label{cor:aggregate-sign-tail-value-compiler}
+   Let \(\mathcal T\) be a finite successful-route trie with edge success
+   probabilities \(\gamma_{u,w}\), prefix masses \(A(u)\) as in
+   \cref{lem:saturated-value-mincut}, and leaf set \(\mathcal L\).  Let \(P\)
+   be a query-decodable product/code law on \(\mathcal L\).  Suppose the
+   unfiltered law already has prefix domination
+   \[
+      P(u)\le \frac{A(u)}{p_0}
+      \qquad (u\in\mathcal T)
+      \tag{ASV1}
+   \]
+   for some \(p_0>0\), where \(P(u)\) denotes \(P\)-mass of leaves below
+   \(u\).
+
+   Let \(F\subseteq\mathcal L\) be one terminal aggregate filter, for instance
+   \(F=\{c:W(c)\ge t,\ M(c)\ge s\}\), with \(P(F)>0\).  Assume the filter has
+   prefix-tail inflation at most \(B_F\):
+   \[
+      P(F\mid u)\le B_FP(F)
+      \qquad (u\in\mathcal T,\ P(u)>0).
+      \tag{ASV2}
+   \]
+   Then the filtered route law
+   \[
+      P_F(\ell)=P(\ell\mid F)
+      \tag{ASV3}
+   \]
+   is dominated by the same route prefix masses with loss \(B_F/p_0\):
+   \[
+      P_F(u)\le \frac{B_F}{p_0}A(u)
+      \qquad (u\in\mathcal T).
+      \tag{ASV4}
+   \]
+   Consequently the trie obtained by pruning to the filtered leaves has
+   saturated value at least
+   \[
+      U_F(\varnothing)\ge \frac{p_0}{B_F}.
+      \tag{ASV5}
+   \]
+
+   In particular, if \(p_0^{-1}\) and \(B_F\) are polylogarithmic, one
+   aggregate additive sign tail preserves inverse-polylogarithmic route value.
+   If, in addition, the aggregate filter satisfies the sampler hypotheses of
+   \cref{cor:aggregate-sign-tail-avoids-checkpoint-toll}, then the decoder can
+   sample the filtered leaf law with proposal overhead
+   \(O_{U,\kappa}(W_W\sqrt{\log K})\) and no exposed sign-state width.
+
+   Thus the remaining near-side question for the pseudo-random additive subset
+   is not another checkpoint certificate.  It is the prefix-tail stability
+   bound \((ASV2)\), or an already-equivalent cut-energy bound from
+   \cref{lem:cut-energy-route-law}, for the single aggregate tail under the
+   final tilted product/code law.  A prefix or stopping frontier for which
+   \(P(F\mid u)/P(F)\) is superpolylogarithmic is exactly a hidden value
+   bottleneck: terminal sampling can still be cheap, but the aggregate filter
+   has concentrated too much of its near law behind that prefix to discharge
+   \cref{asm:aggregate-value-delivery} by this route.
+\end{corollary}
+
+\begin{proof}
+   For \(P(u)>0\),
+   \[
+      P_F(u)
+      =
+      \frac{P(u\cap F)}{P(F)}
+      =
+      P(u)\frac{P(F\mid u)}{P(F)}
+      \le
+      \frac{A(u)}{p_0}B_F ,
+   \]
+   using \((ASV1)\) and \((ASV2)\).  If \(P(u)=0\), the same inequality is
+   trivial.  This proves \((ASV4)\).  Applying
+   \cref{lem:dominated-route-law} to the pruned filtered trie with route law
+   \(P_F\) and \(p=p_0/B_F\) gives \((ASV5)\).
+
+   The final sampler statement is the proposal bound from
+   \cref{cor:aggregate-sign-tail-avoids-checkpoint-toll}.  That sampler draws
+   complete filtered leaves from the final tilted law and rejects by the
+   likelihood ratio, so the sign sum \(M\) is not materialized as a prefix
+   state.  The only route-value loss left by filtering is therefore the
+   prefix-tail inflation quantified above.
+\end{proof}
+
 \begin{corollary}[Aligned linear charts compute rate-coverage sketches]
    \label{cor:aligned-linear-chart-rate-coverage-sketch}
    Work in the setting of
