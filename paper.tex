@@ -73,7 +73,15 @@ for Optimal Data-Dependent Euclidean ANN}
    \]
    The key self-contained ingredient is a spherical continuation-mass decoder with polylogarithmic loss; it lets the restart architecture improve from the older $7/9$ optimization to the $2/3$ exponent above. For terminal spherical search we also give a constant-depth smooth product filter with constant single-table recall and the same optimal exponent.  Terminal polylogarithmic thinning can be done either by a syndrome mask or, for the balanced product witnesses of that filter, by a second scalar auxiliary score and one combined product heap.  The latter is explicitly terminal: the required extreme-value balance tax is superpolylogarithmic on long cumulative-score routes.
 
-   We then record the remaining clean-endpoint routes.  The low-rate
+   We then record the remaining clean-endpoint routes.  On the code/lattice
+   side, the high-entropy scaled-GRS branch now gives a concrete terminal
+   Construction-A panel rather than an abstract low-rate-code certificate:
+   monomial column scalings supply the complete-theta spectrum, low-rate OSD
+   supplies the block reporter at polylogarithmic overhead, and balanced MDS
+   checkpoints absorb the unavoidable fixed flat-volume far excess.  The
+   resulting terminal panel has near survival \(1-o(1)\), query and invalid
+   candidate work \(m^{\rho_c}\polylog m\), and storage
+   \(m^{1+\rho_c}\polylog m\).  The low-rate
    score-band separator is no longer left as an abstract LP/SA certificate:
    leave-one-out overlap on a distance-three panel collapses to the true
    codeword hull, and greedy packing gives such panels with only polylogarithmic
@@ -176,6 +184,18 @@ has minimum Hamming distance at least \(3\), the projected overlap polytope is
 exactly the true codeword hull; greedy packing supplies such panels with only
 polylogarithmic slack.  Thus projected local pseudowords are no longer the
 source of subpolynomial loss in this route.
+
+For the Construction-A code route, the flat scaled-GRS branch is now resolved
+as a terminal panel.  The all-reporting flat saddle has an unavoidable
+complete-theta excess, but that excess is a fixed checkpoint budget, not a
+subpolynomial branch-and-bound loss.  In the high-entropy scaled-GRS window,
+the scalar flat gap is small enough for the critical two-threshold saddle,
+random monomial scalings give the dual theta spectrum, and low-rate OSD gives
+the reporter with only polylogarithmic overhead.  The resulting terminal panel
+has the clean \(m^{\rho_c}\polylog m\) query/far envelope and
+\(m^{1+\rho_c}\polylog m\) storage.  This closes that flat terminal
+code/lattice panel; it does not by itself prove the remaining global
+one-tree value-delivery theorem.
 
 Finally, we record posterior formulations because they are useful routes to more general certified child hierarchies. The finite-channel version is a coarse explicit-enumeration special case; the structured version is the sharper target suggested by the negative-moment accounting. The older cohort route still has a route-level cohort-or-leaf coupling condition, while the almost-total cap-thinning route isolates a narrower mixed-operator condition.
 
@@ -104771,7 +104791,13 @@ tax]
       \qquad
       \E(\text{prefix work}+\text{retained far work})
       \le
-      m^{\rho_c}\log^{O_c(1)}m .
+      m^{\rho_c}\log^{O_c(1)}m,
+   \]
+   and
+   \[
+      \E(\text{stored point-label incidences})
+      \le
+      m^{1+\rho_c}\log^{O_c(1)}m .
       \tag{SGP3}
    \]
    Equivalently, this parameter window discharges the flat-rate obligations
@@ -104805,7 +104831,65 @@ tax]
    by \((HEW6)\).  Condition \((SGP2)\) therefore gives the checkpoint
    thinning inequality for all large \(m\).  Applying
    \cref{cor:scaled-grs-construction-a-reporter-endpoint} and
-   \cref{cor:construction-a-theta-mds-cpfa-endpoint} proves \((SGP3)\).
+   \cref{cor:construction-a-theta-mds-cpfa-endpoint} proves the near,
+   prefix-work, and retained-far parts of \((SGP3)\).
+
+   It remains only to make explicit the storage estimate already used in the
+   flat-rate check.  The same complete-theta flatness substitution turns
+   \((SGR7)\) into the true storage partition inequality \((TPA14)\).  This is
+   the storage factor \((RB2)\) in
+   \cref{cor:product-panel-rate-bookkeeping}, and summing the corresponding
+   one-point exponential majorant over the \(m\) resident points gives
+   \(m^{1+\rho_c}\log^{O_c(1)}m\).  The checkpoint syndromes only filter
+   emitted query/cut records, or else delete stored labels if applied
+   symmetrically; they never increase the native product storage count.
+\end{proof}
+
+\begin{corollary}[High-entropy scaled-GRS terminal filter]
+   \label{cor:high-entropy-scaled-grs-terminal-filter}
+   Fix a terminal localized spherical subproblem of size \(m\) at the critical
+   normalization \((CTF0)\).  Suppose every promised near pair has block
+   correlation at least \(a_0-o(1)\), every invalid resident point for the
+   promised query has block correlation at most \(o(1)\), and the
+   high-entropy scaled-GRS parameters of
+   \cref{cor:high-entropy-coordinate-flat-window} are used with checkpoint
+   constants satisfying \((SGP2)\).  Then the deterministic monomially scaled
+   Construction-A/product panel of
+   \cref{cor:high-entropy-scaled-grs-clean-panel} is a terminal spherical
+   filter with
+   \[
+      \Prb[\text{one panel hits the near pair}]=1-o(1),
+   \]
+   expected query decoder plus invalid-candidate work
+   \[
+      m^{\rho_c}\log^{O_c(1)}m,
+   \]
+   and expected storage
+   \[
+      m^{1+\rho_c}\log^{O_c(1)}m .
+   \]
+   After the standard capped-expectation truncation and exact distance
+   verification, this gives a terminal ANN subindex with query
+   \(d\,m^{\rho_c}\log^{O_c(1)}m\) and space
+   \(dm+m^{1+\rho_c}\log^{O_c(1)}m\).
+
+   Thus, in this terminal flat panel, the answer to the random-subset question
+   is concrete: full random tuple sampling is unnecessary.  The only online
+   thinning randomness is segment-local pairwise-independent checkpoint
+   hashing with polylogarithmic local ranges, while the code randomness can be
+   fixed once in preprocessing by choosing monomial GRS column scalings that
+   pass the complete-theta screen.
+\end{corollary}
+
+\begin{proof}
+   The near-survival, query-prefix, retained-far, and storage estimates are
+   exactly \((SGP3)\).  A terminal query verifies all retained candidates in
+   the original metric, so valid candidates cannot create false positives and
+   invalid candidates are counted by the retained far-work term.  Since the
+   one-panel near survival is \(1-o(1)\), no subpolynomial amplification is
+   needed.  The usual Markov truncation of preprocessing storage and query
+   work loses only a constant factor in success probability, as in
+   \cref{prop:product-panel-spectrum-compiler}.
 \end{proof}
 
 \begin{corollary}[Balanced checkpoints can absorb any fixed flat-volume excess]

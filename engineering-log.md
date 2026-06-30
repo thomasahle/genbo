@@ -1380,3 +1380,9 @@
   \sum_w A_w^\perp\eta^w\le p^{-k}\sum_{w\ge k+1}\binom bw(p\eta)^w\le p^{-k}(1+p\eta)^b.
   \]
   The MDS cutoff helps only when \(p\eta=O(1)\), equivalently \(\lambda\ge\log p-O(1)\), which is too strong for the desired checkpoint mesh. Thus ordinary MDS distance is not the missing theorem; Reed--Solomon or AG codes would have to be used through their complete Lee/theta spectrum, likely via exponential-sum/Lee-list-decoding style estimates, not through the standard Hamming enumerator.
+- Promoted the high-entropy scaled-GRS panel to an explicit terminal filter statement. The storage bound was already present in the scalar saddle through \((SGR7)\), but the previous endpoint only displayed near survival and prefix/retained-far work. `cor:high-entropy-scaled-grs-clean-panel` now states
+  \[
+  \mathbb E[\text{stored point-label incidences}]
+  \le m^{1+\rho_c}\log^{O_c(1)}m,
+  \]
+  obtained by converting \((SGR7)\) to the true storage partition inequality \((TPA14)\) and summing the one-point majorant. The new `cor:high-entropy-scaled-grs-terminal-filter` composes this with retained far work and exact candidate verification: in the terminal flat spherical panel, query decoder plus invalid-candidate work is \(m^{\rho_c}\polylog m\), storage is \(m^{1+\rho_c}\polylog m\), and one-panel near survival is \(1-o(1)\). This is still deliberately scoped to the terminal flat scaled-GRS panel; it does not close the global one-tree value-delivery theorem.
