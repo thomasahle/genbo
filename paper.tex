@@ -23730,6 +23730,67 @@ partition ignores the bias coordinates that certify the list size.
    remaining scalar is exactly the expected resident-count work in \((FQS6)\).
 \end{proof}
 
+\begin{corollary}[Sampled bucket spectra do not bound resident load]
+   \label{cor:sampled-bucket-resident-load-barrier}
+   Let \(0<\rho<1\).  The sampled quotient conditions
+   \((BQ1)\)--\((BQ3)\), even with exact one-state trellis sampling, do not imply
+   the resident-count load required in \((FQS6)\).
+
+   More precisely, for every \(m\) there is a quotient panel with one bucket
+   \(b_*\), one query \(q\), and a resident set \(S\) of size \(m\), such that
+   \[
+      C_{b_*}=S,
+      \qquad
+      \Pi_q(b_*)=1,
+      \qquad
+      \{x\in S:\|x-q\|>r\}=\varnothing .
+      \tag{RPL1}
+   \]
+   Hence \((BQ1)\)--\((BQ3)\) hold with \(L_m=1\): the stored incidence is
+   \(m\le m^{1+\rho}\), the far load is zero, and every chosen near witness
+   \(p\in S\) has bucket mass one.  However the resident-count functional is
+   \[
+      L_q
+      =
+      \sum_{x\in S}\sum_{b:x\in C_b}\Pi_q(b)
+      =
+      m .
+      \tag{RPL2}
+   \]
+   In the equivalent one-path trellis realization this is
+   \(Z_q^{\rm res}/Z_q=m\).
+
+   Therefore the sampled terminal spectra certify that a sampled bucket contains
+   a near witness; they do not certify the work needed to locate a particular
+   resident or useful outgoing port inside that bucket.  If a local skeleton
+   state requires the singleton port of the near resident \(p\), and the bucket
+   implementation exposes no additional within-bucket index or verified
+   port-quotient, then any bucket-then-resident procedure needs
+   \(\Omega(m)\) resident inspections to output that port with constant
+   probability.  Thus the missing finite-state scalar is genuinely the
+   resident-count bound \((FQS6)\), or the analogous bound after replacing each
+   \(C_\pi\) by its verified output-port set.
+\end{corollary}
+
+\begin{proof}
+   The displayed one-bucket construction proves \((RPL1)\)--\((RPL2)\) directly.
+   It is realized by a one-state trellis with a single source-to-terminal path
+   whose resident set is \(S\).
+
+   For the inspection lower bound, choose the distinguished useful resident
+   \(p\) uniformly from \(S\).  Conditioned on the sampled bucket \(b_*\), any
+   deterministic procedure that has inspected only \(r\) distinct residents and
+   has no additional index or port quotient has success probability at most
+   \(r/m\).  Randomized procedures obey the same bound after conditioning on
+   their internal randomness, and the usual averaging argument gives a
+   worst-case \(p\).  Constant success probability therefore requires
+   \(r=\Omega(m)\).  This is not a terminal-ANN lower bound when any resident in
+   \(S\) is already an acceptable answer; in that case verification may stop at
+   the first resident.  It is exactly the obstruction for witness-list or
+   useful-port implementations that must recover the near resident's marked
+   output from a large resident plateau.
+\end{proof}
+
 \begin{remark}[How to use the finite-state test]
    \label{rem:finite-state-trellis-test-use}
    \Cref{cor:finite-state-trellis-rate-test} is the scalar audit for a concrete
