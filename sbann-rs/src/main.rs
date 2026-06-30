@@ -442,6 +442,14 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
         Ok(s) => s.split(',').filter_map(|x| x.trim().parse().ok()).filter(|&x: &usize| x >= 1).collect(),
         Err(_) => vec![tmul],
     };
+    // SBANN_ADAPT_SLACK="0,100,200" sweeps the adaptive early-exit margin within one build (reuse the
+    // index). Only meaningful with SBANN_ADAPT_RERANK; otherwise a single (ignored) pass.
+    let adapt = vq::ADAPT_RERANK.load(std::sync::atomic::Ordering::Relaxed);
+    let slacklist: Vec<i32> = match std::env::var("SBANN_ADAPT_SLACK") {
+        Ok(s) if adapt => s.split(',').filter_map(|x| x.trim().parse().ok()).collect(),
+        _ => vec![vq::ADAPT_SLACK.load(std::sync::atomic::Ordering::Relaxed)],
+    };
+    let measure_depth = adapt || vq::MEASURE_DEPTH.load(std::sync::atomic::Ordering::Relaxed);
     // big-ann reports BEST search time over run_count -> measure best-of-REPS to filter box-load
     // spikes on this contended box. SBANN_REPS overrides (default 1; use 3-5 for clean A/B tuning).
     let reps: usize = std::env::var("SBANN_REPS").ok().and_then(|s| s.parse().ok()).unwrap_or(1);
@@ -500,6 +508,8 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
         vq::LUT16_OFF.store(lm, std::sync::atomic::Ordering::Relaxed);
        for &vm in &modes {
         crate::simd::VNNI_ON.store(vm, std::sync::atomic::Ordering::Relaxed);
+       for &sl in &slacklist {
+        if adapt { vq::ADAPT_SLACK.store(sl, std::sync::atomic::Ordering::Relaxed); }
         // survivors kept for exact rerank (tmul tunes recall/speed). The rerank floor was 1000 but that
         // was a ~2x QPS@90% HANDICAP: int16 LUT ranks well enough that t_surv=p*tmul (~256-480) holds
         // recall (P111). Floor now 300 (only affects low-p/QPS@90%; high-p already exceeds it).
@@ -514,6 +524,7 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
             vq::PROF_SCAN_NS.store(0, std::sync::atomic::Ordering::Relaxed);
             vq::PROF_RERANK_NS.store(0, std::sync::atomic::Ordering::Relaxed);
         }
+        if measure_depth { vq::DEPTH_SUM.store(0, std::sync::atomic::Ordering::Relaxed); vq::DEPTH_NQ.store(0, std::sync::atomic::Ordering::Relaxed); }
         for _ in 0..reps.max(1) {
             let st = Instant::now();
             let r: Vec<Vec<u32>> = if batched {
@@ -532,7 +543,13 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
         }
         let vtag = if vnni_ab { if vm { " VNNI" } else { " AVX2" } } else { "" };
         let ltag = if lut_ab { if lm { " i8" } else { " i16" } } else { "" };
-        println!("  p={p:5} t={tm:3}{ltag}{vtag}: recall@10={:.4}  QPS={:.0} (best/{reps})", hit as f64 / (nq * 10) as f64, nq as f64 / dt);
+        let dtag = if measure_depth {
+            let ds = vq::DEPTH_SUM.load(std::sync::atomic::Ordering::Relaxed);
+            let dn = vq::DEPTH_NQ.load(std::sync::atomic::Ordering::Relaxed).max(1);
+            if adapt { format!(" slack={sl:5} meandepth={:7.1} (cap={t_surv})", ds as f64 / dn as f64) }
+            else { format!(" meandepth={:7.1} (t_surv={t_surv})", ds as f64 / dn as f64) }
+        } else { String::new() };
+        println!("  p={p:5} t={tm:3}{ltag}{vtag}{dtag}: recall@10={:.4}  QPS={:.0} (best/{reps})", hit as f64 / (nq * 10) as f64, nq as f64 / dt);
         if prof {
             let r = vq::PROF_ROUTE_NS.load(std::sync::atomic::Ordering::Relaxed) as f64;
             let s = vq::PROF_SCAN_NS.load(std::sync::atomic::Ordering::Relaxed) as f64;
@@ -541,6 +558,7 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
             println!("      [profile] route {:.1}%  scan {:.1}%  rerank {:.1}%  (sum {:.0}ms over {reps} reps)",
                 100.0 * r / tot, 100.0 * s / tot, 100.0 * k / tot, (r + s + k) / 1e6);
         }
+       }
        }
        }
       }
@@ -962,6 +980,10 @@ fn main() {
     if std::env::var("SBANN_POOLDEDUP").is_ok() { vq::POOLDEDUP.store(true, std::sync::atomic::Ordering::Relaxed); }
     if let Ok(s) = std::env::var("SBANN_DEDUP_A0") { if let Ok(v) = s.parse::<usize>() { vq::DEDUP_A0.store(v, std::sync::atomic::Ordering::Relaxed); } }
     if std::env::var("SBANN_PROFILE").is_ok() { vq::PROFILE.store(true, std::sync::atomic::Ordering::Relaxed); }
+    if std::env::var("SBANN_ADAPT_RERANK").is_ok() { vq::ADAPT_RERANK.store(true, std::sync::atomic::Ordering::Relaxed); }
+    if let Ok(s) = std::env::var("SBANN_ADAPT_SLACK") { if let Ok(v) = s.parse::<i32>() { vq::ADAPT_SLACK.store(v, std::sync::atomic::Ordering::Relaxed); } }
+    if let Ok(s) = std::env::var("SBANN_ADAPT_GATE") { if let Ok(v) = s.parse::<usize>() { vq::ADAPT_GATE.store(v, std::sync::atomic::Ordering::Relaxed); } }
+    if std::env::var("SBANN_MEASURE_DEPTH").is_ok() { vq::MEASURE_DEPTH.store(true, std::sync::atomic::Ordering::Relaxed); }
     if let Ok(s) = std::env::var("SBANN_ROUTE_SDIM") { if let Ok(v) = s.parse::<usize>() { vq::ROUTE_SDIM.store(v, std::sync::atomic::Ordering::Relaxed); } }
     if std::env::var("SBANN_ROUTE_ADC").is_ok() { vq::ROUTE_ADC.store(true, std::sync::atomic::Ordering::Relaxed); }
     if let Ok(s) = std::env::var("SBANN_ROUTE_ADC_KEEP") { if let Ok(v) = s.parse::<usize>() { vq::ROUTE_ADC_KEEP.store(v, std::sync::atomic::Ordering::Relaxed); } }

@@ -49,6 +49,24 @@ pub static PROFILE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBoo
 pub static PROF_ROUTE_NS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 pub static PROF_SCAN_NS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 pub static PROF_RERANK_NS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+/// SBANN_ADAPT_RERANK: per-query adaptive rerank depth (the deferred lever). Instead of exact-reranking
+/// ALL t_surv survivors, rerank them in ASCENDING approx-score order and STOP early once the running
+/// k-th-best EXACT score's approx coordinate is beaten by the next survivor's approx (+ ADAPT_SLACK).
+/// Easy queries stop shallow, hard ones go deep -> same recall at much lower MEAN rerank depth.
+pub static ADAPT_RERANK: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+/// SBANN_ADAPT_SLACK: early-exit margin in APPROX (i16-ADC) units. Stop when next survivor's approx
+/// score exceeds (approx of the current k-th best exact) + SLACK. Larger SLACK => deeper => higher
+/// recall. Negative => more aggressive. The recall/depth knob; per-query portable (the i8s LUT
+/// normalizes each query's per-subspace range to 127, so approx magnitudes are comparable across queries).
+pub static ADAPT_SLACK: std::sync::atomic::AtomicI32 = std::sync::atomic::AtomicI32::new(0);
+/// SBANN_ADAPT_GATE: 0 = gate off the approx of the k-th best exact (the decision boundary, default);
+/// 1 = gate off the MAX approx among the kept top-k (more conservative -> deeper at the same SLACK).
+pub static ADAPT_GATE: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+/// SBANN_MEASURE_DEPTH (or any adaptive run): accumulate the MEAN number of survivors exact-reranked
+/// per query, so the fixed-t_surv baseline and the adaptive path report on the SAME load-independent axis.
+pub static MEASURE_DEPTH: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+pub static DEPTH_SUM: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+pub static DEPTH_NQ: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 /// SBANN_ROUTE_SDIM: score only the first N dims of each centroid at the FINEST routing level (the 78%-of-
 /// routing term, P139). 0 = full d (exact). Approximate finest routing -> cheaper routing if recall@p holds.
 pub static ROUTE_SDIM: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
@@ -184,6 +202,60 @@ fn rerank_contig_pairs(raw: &[i8], d: usize, slot_orig: &[u32], q: &[i8], pool: 
     let mut v = heap.into_vec();
     v.sort_unstable();
     v
+}
+
+/// ADAPTIVE-DEPTH rerank (SBANN_ADAPT_RERANK). `pool` is the survivor set (approx_dist, slot), already
+/// deduped by orig and capped to t_surv. We rerank in ASCENDING approx order and stop early: once the
+/// running k-th best EXACT score is locked in, any later survivor whose approx exceeds the k-th's approx
+/// coordinate (+ SLACK) cannot plausibly beat it (approx is monotone-correlated with exact), so we halt.
+/// Returns (top-k orig ids by exact, number actually reranked). The mean of that count is the headline:
+/// matched recall at far lower mean depth than the fixed-t_surv baseline = the rerank fraction clawed back.
+fn rerank_contig_adapt(raw: &[i8], d: usize, slot_orig: &[u32], q: &[i8], pool: &mut [(i32, u32)], k: usize, by_orig: bool) -> (Vec<u32>, usize) {
+    let n = pool.len();
+    if n == 0 { return (Vec::new(), 0); }
+    // process best-approx first
+    pool.sort_unstable_by_key(|&(a, _)| a);
+    let avx = std::is_x86_feature_detected!("avx2");
+    let ip = IP_MODE.load(std::sync::atomic::Ordering::Relaxed);
+    let slack = ADAPT_SLACK.load(std::sync::atomic::Ordering::Relaxed);
+    let gate_max = ADAPT_GATE.load(std::sync::atomic::Ordering::Relaxed) == 1;
+    // bounded max-heap of the k smallest exact dists, each tagged with its approx coordinate and orig.
+    // peek() = the current k-th best exact (largest exact among the kept k); its .1 is that point's approx.
+    let mut heap: std::collections::BinaryHeap<(i32, i32, u32)> = std::collections::BinaryHeap::with_capacity(k + 1);
+    let mut reranked = 0usize;
+    for i in 0..n {
+        // early-exit BEFORE paying for the next exact dist: if the heap is full and this survivor's approx
+        // is already worse than the k-th-best's approx coordinate (+ slack), no remaining survivor (sorted
+        // ascending) can plausibly displace it.
+        if heap.len() >= k {
+            let gate = if gate_max { heap.iter().map(|e| e.1).max().unwrap() } else { heap.peek().unwrap().1 };
+            if pool[i].0 > gate.saturating_add(slack) { break; }
+        }
+        let slot = pool[i].1 as usize;
+        let orig = slot_orig[slot];
+        if i + 8 < n {
+            let nslot = pool[i + 8].1 as usize;
+            let ri = if by_orig { slot_orig[nslot] as usize } else { nslot };
+            unsafe { _mm_prefetch(raw.as_ptr().add(ri * d) as *const i8, _MM_HINT_T0) };
+        }
+        if orig == u32::MAX { continue; }
+        let ri = if by_orig { orig as usize } else { slot };
+        let row = &raw[ri * d..ri * d + d];
+        let dist = if ip { simd::negdot_i8(q, row) } else if avx { unsafe { simd::l2_i8_avx2(q, row) } } else { simd::l2_i8_scalar(q, row) };
+        reranked += 1;
+        let full = heap.len() >= k;
+        if full && dist >= heap.peek().unwrap().0 { continue; }
+        // SOAR multi-store (a0>1) leaves duplicate orig slots in the pool when it isn't pre-deduped
+        // (DEDUP_A0); the FIRST occurrence (smallest approx, sorted) already holds this orig, so skip
+        // later copies instead of letting identical-dist duplicates crowd the k slots (matches rerank_contig).
+        if heap.iter().any(|&(_, _, o)| o == orig) { continue; }
+        if full { heap.pop(); }
+        heap.push((dist, pool[i].0, orig));
+    }
+    let mut v = heap.into_vec();
+    v.sort_unstable();
+    let out = v.iter().take(k).map(|&(_, _, o)| o).collect();
+    (out, reranked)
 }
 
 // ---------------- Router: coarse quantizer (which cells) ----------------
@@ -1762,7 +1834,16 @@ impl Index {
         let tt = t.min(pool.len());
         if tt > 0 { pool.select_nth_unstable(tt - 1); pool.truncate(tt); }
         let _ = ds;
-        let out = rerank_contig(&self.raw, self.d, &self.slot_orig, q, &pool, k, self.raw_orig_indexed);
+        let adapt = ADAPT_RERANK.load(std::sync::atomic::Ordering::Relaxed);
+        let measure = adapt || MEASURE_DEPTH.load(std::sync::atomic::Ordering::Relaxed);
+        let out = if adapt {
+            let (out, depth) = rerank_contig_adapt(&self.raw, self.d, &self.slot_orig, q, &mut pool, k, self.raw_orig_indexed);
+            if measure { DEPTH_SUM.fetch_add(depth as u64, std::sync::atomic::Ordering::Relaxed); DEPTH_NQ.fetch_add(1, std::sync::atomic::Ordering::Relaxed); }
+            out
+        } else {
+            if measure { DEPTH_SUM.fetch_add(tt as u64, std::sync::atomic::Ordering::Relaxed); DEPTH_NQ.fetch_add(1, std::sync::atomic::Ordering::Relaxed); }
+            rerank_contig(&self.raw, self.d, &self.slot_orig, q, &pool, k, self.raw_orig_indexed)
+        };
         if let Some(tr) = tr { PROF_RERANK_NS.fetch_add(tr.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed); }
         out
     }
