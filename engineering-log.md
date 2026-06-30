@@ -1386,3 +1386,12 @@
   \le m^{1+\rho_c}\log^{O_c(1)}m,
   \]
   obtained by converting \((SGR7)\) to the true storage partition inequality \((TPA14)\) and summing the one-point majorant. The new `cor:high-entropy-scaled-grs-terminal-filter` composes this with retained far work and exact candidate verification: in the terminal flat spherical panel, query decoder plus invalid-candidate work is \(m^{\rho_c}\polylog m\), storage is \(m^{1+\rho_c}\polylog m\), and one-panel near survival is \(1-o(1)\). This is still deliberately scoped to the terminal flat scaled-GRS panel; it does not close the global one-tree value-delivery theorem.
+- Added the route-height gate for using that terminal scaled-GRS panel inside the budget-thinned one-tree route. `cor:scaled-grs-route-height-gate` composes the terminal panel with the existing product-prefix aggregate-tail theorem: if the scaled-GRS product route law has prefix domination height \(H_0\), and any terminal aggregate tail has bounded likelihood toll \(B_{\rm like}\) and acceptance \(a\), then the retained route trie has
+  \[
+  U_F(\varnothing)\ge (a/2)\exp\{-H_0-B_{\rm like}\}
+  \]
+  (without the \(1/2\) in the no-tail case). Matched Fano activation gives \(H_0=O(\log\log n)\). Conversely, product-prefix activation factors \(a_j\) force the entropy screen
+  \[
+  D(P\|\bar A)-\sum_j\log B_j\le O(\log\log n),
+  \]
+  so an auxiliary aggregate tail, pairwise-independent syndrome, or multiply-shift subset cannot repair an unpaid tilted-product entropy. This is the bridge between the terminal code/lattice result and the global value-delivery target, not a new certificate form.
