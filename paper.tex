@@ -7339,6 +7339,123 @@ partition ignores the bias coordinates that certify the list size.
    \((EWB5)\).
 \end{proof}
 
+\begin{corollary}[Broad upper caps convert square drift into checkpoint entropy]
+   \label{cor:upper-cap-square-drift-checkpoint-gain}
+   Let \(\mathcal C\) be a finite alphabet with positive weights
+   \(W(c)\), and consider a product checkpoint segment of length \(\ell\).
+   Put
+   \[
+      Z_1=\sum_{c\in\mathcal C}W(c),
+      \qquad
+      Z_2=\sum_{c\in\mathcal C}W(c)^2,
+      \qquad
+      h_{\rm coll}=2\log Z_1-\log Z_2 .
+      \tag{BUC1}
+   \]
+   Let \(G:\mathcal C\to\R\) be a scalar cap coordinate, and define the
+   first- and squared-temperature one-step laws
+   \[
+      P_1(c)=\frac{W(c)}{Z_1},
+      \qquad
+      P_2(c)=\frac{W(c)^2}{Z_2}.
+      \tag{BUC2}
+   \]
+   Write \(\mu_1=\E_{P_1}G\) and \(X(c)=G(c)-\mu_1\).  Assume that \(X\) is
+   non-degenerate under \(P_1\), has both signs in the support relevant to
+   \(P_1\), and that the squared law has positive cap drift
+   \[
+      \E_{P_2}X>0 .
+      \tag{BUC3}
+   \]
+   For a fixed \(H>0\), let
+   \[
+      E_H=\left\{(c_1,\ldots,c_\ell):
+      \sum_{j\le r}X(c_j)\le H\quad\text{for all }1\le r\le\ell\right\}.
+      \tag{BUC4}
+   \]
+   Finally define the one-sided squared-temperature Cramer rate
+   \[
+      I_2^{\rm cap}
+      =
+      \sup_{\lambda\ge0}
+      \left\{-\log\E_{P_2}e^{-\lambda X}\right\}.
+      \tag{BUC5}
+   \]
+   Then \(I_2^{\rm cap}>0\), and
+   \[
+      P_1^\ell(E_H)\ge c_H\ell^{-1/2},
+      \qquad
+      P_2^\ell(E_H)\le C_H\exp\{-I_2^{\rm cap}\ell\}.
+      \tag{BUC6}
+   \]
+   Therefore the checkpoint law obtained from the product tilted law
+   conditioned on the broad upper cap \(E_H\) has
+   \[
+      \log N_2(E_H)
+      \ge
+      \ell\bigl(h_{\rm coll}+I_2^{\rm cap}\bigr)-O_H(\log\ell).
+      \tag{BUC7}
+   \]
+   In particular, this capped product segment passes the checkpoint test
+   whenever
+   \[
+      \ell\bigl(h_{\rm coll}+I_2^{\rm cap}\bigr)
+      \ge
+      \log K_s+\log\eta_s+O_H(\log\ell).
+      \tag{BUC8}
+   \]
+
+   Thus broad upper caps are qualitatively different from sharp endpoint
+   windows.  They do not collapse first-temperature support: the first law
+   pays only the usual one-sided bridge factor.  But they can remove
+   collision-heavy square-temperature paths at an exponential rate.  The
+   resulting scalar \(I_2^{\rm cap}\) is the finite-alphabet version of the
+   analytical upper barrier used in \cref{lem:good-first-moment} and
+   \cref{lem:tame-second-moment}: it is useful only when the squared law has
+   a genuine upward drift in the capped coordinate.
+\end{corollary}
+
+\begin{proof}
+   Under \(P_1\), the increments \(X(c_j)\) are centered, bounded, and
+   non-degenerate.  The standard one-sided ballot estimate for centered
+   finite-variance random walks gives
+   \[
+      P_1^\ell\!\left[\max_{r\le\ell}\sum_{j\le r}X(c_j)\le H\right]
+      \ge c_H\ell^{-1/2}.
+   \]
+   This proves the first part of \((BUC6)\).
+
+   For the squared law, the event \(E_H\) implies
+   \(\sum_{j\le\ell}X(c_j)\le H\).  Hence, for every \(\lambda\ge0\),
+   Chernoff's inequality gives
+   \[
+      P_2^\ell(E_H)
+      \le
+      P_2^\ell\!\left[\sum_{j\le\ell}X(c_j)\le H\right]
+      \le
+      e^{\lambda H}\left(\E_{P_2}e^{-\lambda X}\right)^\ell .
+   \]
+   Optimizing over \(\lambda\) gives the second part of \((BUC6)\), after
+   absorbing \(e^{\lambda H}\) into \(C_H\).  Since
+   \(\E_{P_2}X>0\), the derivative at \(\lambda=0\) of
+   \(\log\E_{P_2}e^{-\lambda X}\) is negative, so the supremum in
+   \((BUC5)\) is positive.
+
+   The uncapped product collision support is
+   \(\exp\{\ell h_{\rm coll}\}\).  Applying
+   \cref{cor:checkpoint-bridge-barrier-correction} with
+   \(p_1=P_1^\ell(E_H)\) and \(p_2=P_2^\ell(E_H)\) gives
+   \[
+      \log N_2(E_H)
+      =
+      \ell h_{\rm coll}+2\log p_1-\log p_2
+      \ge
+      \ell(h_{\rm coll}+I_2^{\rm cap})-O_H(\log\ell),
+   \]
+   which is \((BUC7)\).  The checkpoint condition \(N_2(E_H)\ge\eta_sK_s\)
+   is exactly \((BUC8)\).
+\end{proof}
+
 \begin{corollary}[Difference-universal syndromes suffice with a random bucket]
    \label{cor:difference-universal-syndrome-thinning}
    Let \(G\) be a finite abelian group and let
