@@ -99781,6 +99781,128 @@ amplified in the next proposition.
    at most \(\eta\).
 \end{proof}
 
+\begin{corollary}[Activation volume must pay the score-tilt entropy]
+   \label{cor:activation-volume-score-tilt-screen}
+   Work in the product-prefix setting of
+   \cref{cor:product-prefix-route-height-bernstein}.  Put
+   \[
+      B_j=\sum_{c\in\mathcal C_j}a_j(c),
+      \qquad
+      \bar a_j(c)=\frac{a_j(c)}{B_j},
+      \qquad
+      B_A=\prod_{j=1}^hB_j,
+      \tag{AVS1}
+   \]
+   and let \(\bar A=\prod_j\bar a_j\) be the normalized activation-base law.
+   For any product route law \(P=\prod_jP_j\), if the complete-prefix height
+   obeys
+   \[
+      H_P(c)\le H_0
+      \qquad(P\text{-a.s.}),
+      \tag{AVS2}
+   \]
+   then necessarily
+   \[
+      D(P\|\bar A)\le \log B_A+H_0 .
+      \tag{AVS3}
+   \]
+   Equivalently, the clean endpoint can use this product route law only if
+   \[
+      D(P\|\bar A)-\log B_A
+      =
+      O_c(\log\log n).
+      \tag{AVS4}
+   \]
+   If this quantity is larger than logarithmic in \(\log n\), then the
+   \(H_P=O_c(\log\log n)\) hypothesis in
+   \cref{prop:bounded-aggregate-tail-value-delivery} has already failed,
+   before the aggregate tail is imposed.
+
+   In particular, suppose \(P\) is the activation-base saddlepoint tilt for an
+   additive score \(S(c)=\sum_js_j(c_j)\):
+   \[
+      P_j(c)=
+      \frac{\bar a_j(c)e^{\theta s_j(c)}}
+           {\E_{\bar a_j}e^{\theta s_j}},
+      \qquad \theta\ge0 .
+      \tag{AVS5}
+   \]
+   If
+   \[
+      \psi(\theta)=\sum_j\log\E_{\bar a_j}e^{\theta s_j},
+      \qquad
+      \mu_\theta=\E_PS=\psi'(\theta),
+      \tag{AVS6}
+   \]
+   then
+   \[
+      D(P\|\bar A)=\theta\mu_\theta-\psi(\theta).
+      \tag{AVS7}
+   \]
+   Hence a high-score product/code/lattice route can pass the clean
+   product-prefix value test only if
+   \[
+      \log B_A
+      \ge
+      \theta\mu_\theta-\psi(\theta)-O_c(\log\log n).
+      \tag{AVS8}
+   \]
+
+   This is the entropy accounting screen for concrete constructions.  If the
+   normalized activation-base score tail has polynomial large-deviation cost
+   \(I=\theta\mu_\theta-\psi(\theta)\), then the route activation measure must
+   already contain \(e^{I}\) leaf-level volume up to polylogarithmic factors.
+   A terminal aggregate sign or multiply-shift tail can thin a route whose
+   domination is already paid, but it cannot hide an unpaid polynomial
+   score-tilt entropy.  A code or lattice construction that keeps only a
+   compact raw list must therefore change the charged object: use quotient
+   bucket weights, Fano-priced prefixes, point-indexed responsibility, or a
+   leader/aggregate sampler, rather than relying on the activation-base
+   saddlepoint law alone.
+\end{corollary}
+
+\begin{proof}
+   For a complete leaf \(c\),
+   \[
+      \log\frac{P(c)}{A(c)}
+      =
+      \sum_{j=1}^h\log\frac{P_j(c_j)}{a_j(c_j)}
+      =
+      \log\frac{P(c)}{\bar A(c)}-\log B_A .
+      \tag{AVS9}
+   \]
+   Since the complete leaf is one of the prefixes in \(H_P(c)\),
+   \[
+      \log\frac{P(c)}{A(c)}
+      \le H_P(c)\le H_0
+      \tag{AVS10}
+   \]
+   \(P\)-almost surely.  Taking expectation of \((AVS9)\) under \(P\) gives
+   \[
+      D(P\|\bar A)-\log B_A
+      =
+      \E_P\log\frac{P(C)}{A(C)}
+      \le H_0,
+   \]
+   which is \((AVS3)\).
+
+   For the saddlepoint law \((AVS5)\),
+   \[
+      \log\frac{P_j(c)}{\bar a_j(c)}
+      =
+      \theta s_j(c)-\log\E_{\bar a_j}e^{\theta s_j}.
+   \]
+   Summing expectations over \(j\) gives
+   \[
+      D(P\|\bar A)
+      =
+      \theta\E_PS-\psi(\theta)
+      =
+      \theta\mu_\theta-\psi(\theta),
+   \]
+   proving \((AVS7)\) and hence \((AVS8)\).
+\end{proof}
+
 \begin{corollary}[Aligned linear charts compute rate-coverage sketches]
    \label{cor:aligned-linear-chart-rate-coverage-sketch}
    Work in the setting of
