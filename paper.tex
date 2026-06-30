@@ -106000,6 +106000,115 @@ tax]
    constant success.
 \end{proof}
 
+\begin{corollary}[Raw lens nets reintroduce subpolynomial storage]
+   \label{cor:raw-lens-net-discretization-barrier}
+   Continue in the flat score model and notation of
+   \cref{cor:query-centered-monte-carlo-lens-activation}.  Fix a unit point
+   \(p\), and consider the critical query sphere
+   \[
+      \mathcal Q_p=\{q\in\mathbb S^{d-1}:\ip{p}{q}=a_0\}.
+   \]
+   For \(q\in\mathcal Q_p\), the Euclidean projection of \(q\) onto the
+   storage ball \(B(p,R_0)\) is
+   \[
+      z(q)=p+\frac{R_0}{\|q-p\|}(q-p)=\frac{p+q}{2},
+      \tag{QND0}
+   \]
+   and the tangency set
+   \[
+      \mathcal M_p=\{z(q):q\in\mathcal Q_p\}
+      \tag{QND1}
+   \]
+   is a \((d-2)\)-sphere of radius
+   \[
+      r_c=\frac12\sqrt{1-a_0^2}
+      =
+      \frac{\sqrt{2c^2-1}}{2c^2}.
+      \tag{QND2}
+   \]
+   Let \(\mathcal L_p\subseteq B(p,R_0)\) be any raw finite label set that
+   stores \(p\).  Suppose a metric representative proof asks this same raw set
+   to preserve the query-centered lens exponent up to a polylogarithmic factor
+   for every critical query, in the pointwise sense that for some fixed
+   \(A>0\) and every \(q\in\mathcal Q_p\) there is a label
+   \(\lambda\in\mathcal L_p\) with
+   \[
+      \beta\bigl(S_q(z(q))-S_q(\lambda)\bigr)
+      \le A\log\log m .
+      \tag{QND3}
+   \]
+   Then, for all large \(m\),
+   \[
+      |\mathcal L_p|
+      \ge
+      \left(
+         c_c\sqrt{\frac{\beta}{A\log\log m}}
+      \right)^{d-2},
+      \tag{QND4}
+   \]
+   where \(c_c>0\) depends only on \(c\).  In particular, when
+   \(\beta=\Theta_c(\log m)\) and \(d\ge\kappa\log\log m\),
+   \[
+      |\mathcal L_p|
+      \ge
+      \exp\{\Omega_{c,A,\kappa}((\log\log m)^2)\}
+      =
+      \log^{\Omega_{c,A,\kappa}(\log\log m)}m .
+      \tag{QND5}
+   \]
+
+   Thus the Monte Carlo lens activation in
+   \cref{cor:query-centered-monte-carlo-lens-activation} should not be
+   instantiated by a raw Euclidean grid, a nearest-label net, or a lattice
+   panel that stores one independent bucket for every near-tangency
+   representative.  Such a discretization recreates the familiar
+   subpolynomial overhead even at live dimension \(O(\log\log m)\).  The clean
+   route must sample an aggregate object: a quotient bucket, a finite-state
+   code/lattice partition function, a responsibility-thinned resident list, or
+   another compact sampler whose charged storage is not the full tangency net.
+\end{corollary}
+
+\begin{proof}
+   For \(q\in\mathcal Q_p\),
+   \[
+      \|q-p\|=\sqrt{2(1-a_0)}=\frac{\sqrt2}{c}=2R_0,
+   \]
+   so the projection formula gives \(z(q)=(p+q)/2\).  Writing
+   \(q=a_0p+\sqrt{1-a_0^2}\,u\), \(u\perp p\), \(\|u\|=1\), gives
+   \[
+      z(q)=\frac{1+a_0}{2}p+\frac{\sqrt{1-a_0^2}}{2}u,
+   \]
+   hence \(\mathcal M_p\) is the sphere in \((QND2)\).
+
+   Since
+   \[
+      S_q(\lambda)=\frac12\|q\|^2-\frac12\|\lambda-q\|^2,
+   \]
+   and \(z(q)\) is the Euclidean projection of \(q\) onto the closed convex
+   ball \(B(p,R_0)\), every \(\lambda\in B(p,R_0)\) satisfies
+   \[
+      S_q(z(q))-S_q(\lambda)
+      =
+      \frac12\bigl(\|\lambda-q\|^2-\|z(q)-q\|^2\bigr)
+      \ge
+      \frac12\|\lambda-z(q)\|^2 .
+      \tag{QND6}
+   \]
+   Thus \((QND3)\) implies that \(\mathcal L_p\) is an \(r_m\)-net of
+   \(\mathcal M_p\), with
+   \[
+      r_m=\sqrt{\frac{2A\log\log m}{\beta}}.
+      \tag{QND7}
+   \]
+
+   For large \(m\), \(r_m\le r_c/8\).  A standard packing bound on a sphere of
+   radius \(r_c\) gives a \(2r_m\)-separated subset of \(\mathcal M_p\) of size
+   at least \((c_c r_c/r_m)^{d-2}\), with \(c_c\) absolute.  Distinct packed
+   points require distinct labels from any \(r_m\)-net, proving \((QND4)\) after
+   absorbing \(r_c\) into the constant.  Substituting
+   \(\beta=\Theta_c(\log m)\) and \(d\ge\kappa\log\log m\) gives \((QND5)\).
+\end{proof}
+
 \begin{corollary}[Balanced checkpoints can absorb any fixed flat-volume excess]
    \label{cor:balanced-checkpoints-absorb-flat-volume-excess}
    Continue with the nearest-mesh scaled-GRS window of
