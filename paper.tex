@@ -107310,6 +107310,93 @@ tax]
    quotients.
 \end{proof}
 
+\begin{corollary}[Port-transducer width is carry rank, not hash randomness]
+   \label{cor:port-transducer-width-dichotomy}
+   Work in the setting of
+   \cref{cor:port-state-transducer-quotient-sampler}, and suppose the
+   transducer state is additive in a finite abelian group \(G_B\):
+   \[
+      \eta(\pi)=\eta_0+\sum_{e\in\pi}a(e)\in G_B .
+      \tag{PTD1}
+   \]
+   For a native trellis vertex \(v\), let \(\mathcal P(v)\) be the set of
+   source-to-\(v\) prefixes and let
+   \[
+      S_\eta(v)=\{\eta_0+\sum_{e\in p}a(e):p\in\mathcal P(v)\}.
+      \tag{PTD2}
+   \]
+   Then the reachable transducer width in \((DPT8)\) is
+   \(Q_B=\max_v|S_\eta(v)|\), up to the harmless distinction between layers with
+   several native vertices.
+
+   If there is a subgroup \(L\le G_B\) and a potential
+   \(\Phi:\bigcup_iV_i\to G_B\) such that every edge \(e=(u,v)\) satisfies
+   \[
+      a(e)-(\Phi(v)-\Phi(u))\in L,
+      \tag{PTD3}
+   \]
+   then
+   \[
+      |S_\eta(v)|\le |L|\qquad\text{for every }v,
+      \qquad Q_B\le |L|.
+      \tag{PTD4}
+   \]
+   Consequently the port-state sampler has clean online work whenever
+   \[
+      \E_Z\!\left[
+         |L_{B(q,Z)}|\,|E_{B(q,Z)}|
+         +
+         \lambda_m P_{B(q,Z)}\log^{O_c(1)}m
+      \right]
+      \le Dm^{\rho_c}\log^{O_c(1)}m
+      \tag{PTD5}
+   \]
+   and the miss bound \((DPT9)\) holds.
+
+   Conversely, suppose that, conditional on the native trellis, for some vertex
+   \(v\) the prefix states \(\{\eta(p):p\in\mathcal P(v)\}\) are
+   pairwise-independent and uniform on \(G_B\), and put
+   \(M=|G_B|\), \(N_v=|\mathcal P(v)|\).  Then
+   \[
+      \E |S_\eta(v)|
+      \ge
+      M\,\frac{N_v}{M+N_v}
+      \ge \frac12\min\{M,N_v\}.
+      \tag{PTD6}
+   \]
+   Hence a random-looking affine, carry-less multiply, multiply-shift, or
+   auxiliary-weight state of range \(M\) does not reduce branch-and-bound work
+   merely by being pairwise independent.  On any merged native state carrying
+   \(N_v\ge M\) plausible prefixes, the exposed transducer has expected width
+   \(\Omega(M)\).  A density-\(M^{-1}\) pseudo-random subset therefore pays the
+   reciprocal thinning factor as state width unless the quotient is reset in
+   local checkpoint chunks, sampled by a tilted non-state-exposed tail sampler,
+   or aligned by a small carry subgroup \(L\) as in \((PTD3)\).
+\end{corollary}
+
+\begin{proof}
+   Under \((PTD3)\), summing along a source-to-\(v\) prefix gives
+   \[
+      \sum_{e\in p}a(e)-(\Phi(v)-\Phi(s))\in L.
+   \]
+   Thus all transducer states reaching \(v\) lie in the one coset
+   \(\eta_0+\Phi(v)-\Phi(s)+L\), proving \((PTD4)\).  Substituting
+   \(Q_B\le |L|\) into the work condition \((DPT10)\) gives \((PTD5)\), and
+   \cref{cor:port-state-transducer-quotient-sampler} supplies the terminalizer.
+
+   For the lower bound, fix \(\eta\in G_B\) and let
+   \(X_\eta=|\{p\in\mathcal P(v):\eta(p)=\eta\}|\).  Pairwise independence and
+   uniformity give
+   \[
+      \E X_\eta=N_v/M=:\mu,\qquad \E X_\eta^2\le\mu+\mu^2 .
+   \]
+   Paley--Zygmund gives
+   \(\Pr[X_\eta>0]\ge\mu/(1+\mu)\).  Summing over all \(\eta\in G_B\) proves
+   \((PTD6)\).  The interpretation is exactly the comparison between the
+   width term \(Q_B|E_B|\) in \((DPT10)\) and the intended thinning range
+   \(M\).
+\end{proof}
+
 \begin{corollary}[Balanced checkpoints can absorb any fixed flat-volume excess]
    \label{cor:balanced-checkpoints-absorb-flat-volume-excess}
    Continue with the nearest-mesh scaled-GRS window of
