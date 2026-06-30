@@ -24680,6 +24680,10 @@ partition ignores the bias coordinates that certify the list size.
    translating \((HRT1)\) to its residue-score threshold, the minimum
    information-set entropy must be \(O(\log\log m)\) at the critical
    threshold, while the marked spectrum still satisfies \((MTS4)\)--\((MTS5)\).
+   \Cref{cor:diffuse-information-set-osd-barrier} makes the corresponding
+   obstruction explicit: low-soft-entropy coordinates must span all but
+   \(O(\log\log m)\) information dimensions, so a diffuse posterior block is
+   not rescued by choosing a clever information set.
 
    Tanner, LDPC, polar, BCJR, and recursive Barnes--Wall/Barnes--Sloane
    decoders supply compact partition-function or threshold-enumeration
@@ -24761,6 +24765,109 @@ partition ignores the bias coordinates that certify the list size.
    that corollary gives the far-output and near-hit bounds, while \((OHR3)\)
    charges the OSD and resident-expansion work to the same
    \(m^\rho\operatorname{polylog}m\) query budget.
+\end{proof}
+
+\begin{corollary}[Diffuse information-set entropy blocks OSD heavy listers]
+   \label{cor:diffuse-information-set-osd-barrier}
+   Work in the setting of
+   \cref{cor:osd-heavy-responsibility-compiler} for one sampled pair
+   \((q,\ell)\), and choose a generator matrix \(G\) for
+   \(\mathcal C\).  For the same fixed \(\beta>0\), write
+   \[
+      \lambda_i(q,\ell)
+      =
+      \log\sum_{a\in\mathbb F}
+      \exp\bigl(\beta(\omega_i^{q,\ell}(a)
+      -\max_{b\in\mathbb F}\omega_i^{q,\ell}(b))\bigr),
+      \tag{DIO1}
+   \]
+   so \(0\le\lambda_i(q,\ell)\le\log|\mathbb F|\), and let
+   \(\Lambda_*(q,\ell)\) be the minimum information-set entropy in
+   \((OHR2)\).  For \(u\in[0,\log|\mathbb F|]\), let
+   \[
+      E_u(q,\ell)=\{i:\lambda_i(q,\ell)<u\},
+      \qquad
+      r_u(q,\ell)=\operatorname{rank}\{G_i:i\in E_u(q,\ell)\},
+      \tag{DIO2}
+   \]
+   where \(G_i\) is the \(i\)-th column of \(G\).  Then
+   \[
+      \Lambda_*(q,\ell)
+      \ge
+      \int_0^{\log|\mathbb F|}
+      \bigl(k-r_u(q,\ell)\bigr)\,du .
+      \tag{DIO3}
+   \]
+   In particular, if for some \(u_0>0\)
+   \[
+      r_{u_0}(q,\ell)\le k-s,
+      \tag{DIO4}
+   \]
+   then
+   \[
+      \Lambda_*(q,\ell)\ge s u_0 .
+      \tag{DIO5}
+   \]
+
+   Consequently, on any sampled bucket whose heavy-resident set is nonempty, the
+   OSD heavy-responsibility compiler can satisfy \((OHR2)\) only if
+   \[
+      \int_0^{\log|\mathbb F|}
+      \bigl(k-r_u(q,\ell)\bigr)\,du
+      \le
+      \log W_m-\beta(M_{q,\ell}-\Theta_{q,\ell}).
+      \tag{DIO6}
+   \]
+   Since the right-hand deficit term is nonnegative on such a bucket, a
+   polylogarithmic OSD lister with \(W_m=\log^{O_c(1)}m\) requires
+   \[
+      \int_0^{\log|\mathbb F|}
+      \bigl(k-r_u(q,\ell)\bigr)\,du
+      =
+      O_c(\log\log m).
+      \tag{DIO7}
+   \]
+   Equivalently, for every fixed entropy level \(u_0>0\), the coordinates with
+   \(\lambda_i(q,\ell)<u_0\) must span all but \(O_c(\log\log m/u_0)\)
+   information dimensions.  If they leave \(\omega(\log\log m)\) dimensions
+   outside their span, plain information-set OSD is not the missing
+   code/lattice heavy-resident lister; the construction must use a genuine
+   soft-decision/list-recovery decoder, a factorized quotient heap, a
+   responsibility-thinned point lister, or an aggregate sampler that charges a
+   different object.
+\end{corollary}
+
+\begin{proof}
+   Let \(I\) be any information set.  For every \(u\), at most \(r_u(q,\ell)\)
+   coordinates of \(I\) can lie in \(E_u(q,\ell)\), because \(I\) is an
+   independent set of columns and \(r_u(q,\ell)\) is the rank of the columns in
+   \(E_u(q,\ell)\).  Hence
+   \[
+      |\{i\in I:\lambda_i(q,\ell)\ge u\}|
+      =
+      k-|I\cap E_u(q,\ell)|
+      \ge
+      k-r_u(q,\ell).
+      \tag{DIO8}
+   \]
+   By the layer-cake identity for nonnegative bounded weights,
+   \[
+      \sum_{i\in I}\lambda_i(q,\ell)
+      =
+      \int_0^{\log|\mathbb F|}
+      |\{i\in I:\lambda_i(q,\ell)\ge u\}|\,du .
+      \tag{DIO9}
+   \]
+   Combining \((DIO8)\) and \((DIO9)\), and then minimizing over information
+   sets, gives \((DIO3)\).  The one-level bound \((DIO5)\) follows by integrating
+   only over \(0\le u\le u_0\).
+
+   If the heavy-resident set is nonempty, then \((OHR1)\) gives a codeword
+   \(c\) with \(S_{q,\ell}(c)\ge\Theta_{q,\ell}\), while
+   \(S_{q,\ell}(c)\le M_{q,\ell}\) by definition of the coordinate maxima.
+   Thus \(M_{q,\ell}-\Theta_{q,\ell}\ge0\).  Condition \((OHR2)\), together
+   with \((DIO3)\), gives the necessary inequality \((DIO6)\), and the
+   polylogarithmic specialization is \((DIO7)\).
 \end{proof}
 
 \begin{lemma}[Tilted weight feasibility is linear]
@@ -123344,6 +123451,12 @@ threshold over a linear residue code and the minimum information-set entropy
 at that threshold is controlled, ordered-statistics decoding lists all heavy
 residents before exact marked-ratio filtering; the only extra accounting is the
 sampled number of resident signatures expanded from the listed codewords.
+\Cref{cor:diffuse-information-set-osd-barrier} gives the matching rank-profile
+screen: for OSD to stay polylogarithmic, the coordinates with low soft entropy
+must span almost the whole message space.  If the low-entropy span leaves
+\(\omega(\log\log m)\) information dimensions behind at any fixed entropy level,
+OSD is the wrong heavy-resident lister and the construction needs a structured
+quotient, list-recovery, responsibility, or aggregate-sampler implementation.
 \Cref{lem:tilted-weight-linear-feasibility} shows that, for a fixed retained
 pool, choosing those weights is just a linear feasibility problem after
 clearing the tilted partition functions.  Failure has a concrete dual
