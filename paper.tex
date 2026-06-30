@@ -99450,6 +99450,119 @@ amplified in the next proposition.
    \le s\), proving the final claim.
 \end{proof}
 
+\begin{corollary}[Checkpointed quotient reporters keep only local syndrome state]
+   \label{cor:checkpointed-quotient-prefix-cut-compiler}
+   Work in the support-conditioned quotient-trellis setting of
+   \cref{cor:quotient-syndrome-trellis-support-sampler}.  Suppose the trellis
+   edges are partitioned into checkpoint segments \(I_1,\ldots,I_r\).  For
+   every segment \(s\), let \(G_s\) be a finite abelian group of size \(K_s\),
+   let \(\sigma_s\in G_s\), and let every edge \(e\in I_s\) carry a
+   checkpoint increment \(d_s(e)\in G_s\).  A path is retained by the
+   checkpoints when
+   \[
+      \sum_{e\in I_s\cap\pi_{\rm path}}d_s(e)=\sigma_s
+      \qquad(s=1,\ldots,r).
+      \tag{CQR1}
+   \]
+   It is support-valid when it also satisfies the terminal quotient condition
+   \((QST6)\).
+
+   Let \(E_{B,s}\) be the trellis edges in segment \(s\), and let \(Q_B\) be
+   the reachable quotient-syndrome width from \((QST4)\).  There is an exact
+   BCJR, stack, or threshold-list reporter for the paths satisfying both
+   \((CQR1)\) and \((QST6)\) whose augmented edge count is at most
+   \[
+      O\!\left(
+         Q_B\sum_{s=1}^r K_s|E_{B,s}|
+      \right).
+      \tag{CQR2}
+   \]
+   Equivalently, if \(K_{\max}=\max_sK_s\), the cost is
+   \(O(Q_BK_{\max}|E_B|)\).  The checkpoint component is reset after each
+   segment, so the state width contains \(K_s\) locally, never the product
+   \(\prod_sK_s\).
+
+   Consequently, the reporter remains in the clean local envelope whenever
+   \[
+      \E_Z\!\left[
+         Q_{B(q,Z)}\sum_s K_s|E_{B(q,Z),s}|
+      \right]
+      \le Dm^\rho\log^{O_c(1)}m
+      \tag{CQR3}
+   \]
+   and the original support-conditioned miss/load hypotheses
+   \((PMR1)\)--\((PMR2)\) hold.  The same conclusion follows from the
+   prefix-rank certificate of
+   \cref{cor:prefix-cut-rank-quotient-width} or the coboundary certificate of
+   \cref{cor:coboundary-quotient-trellis-width} after substituting their upper
+   bounds on \(Q_B\).
+
+   Now expose the checkpoint increments as independent segment seeds satisfying
+   the pairwise-independent weighted-syndrome hypothesis of
+   \cref{lem:weighted-syndrome-collision-thinning}.  Fix a near pair and a law
+   \(\nu\), independent of these seeds, supported on support-valid reporter
+   paths in the prefix cut.  If for every live segment prefix \(w\)
+   \[
+      N_2(\nu_{s,w})\ge \eta_sK_s,
+      \tag{CQR4}
+   \]
+   then one checkpointed quotient reporter returns a \(\nu\)-valid cut path
+   with probability at least
+   \[
+      \prod_{s=1}^r\frac{\eta_s}{1+\eta_s}.
+      \tag{CQR5}
+   \]
+   Hence if this product is inverse-polylogarithmic and \((CQR3)\) is
+   \(m^\rho\polylog m\), polylogarithmically many independent panels give a
+   constant-probability near hit without reintroducing a subpolynomial
+   branch-and-bound factor.
+
+   Thus the useful algebraic role of a pairwise-independent hash is twofold:
+   the seed gives the second-moment hit bound \((CQR5)\), while the linear
+   syndrome law lets the decoder carry a local \(G_s\)-state and a quotient
+   support state simultaneously.  Stronger randomness is not the missing
+   ingredient; the remaining construction burden is exactly the cut-support
+   condition \((CQR4)\), the quotient-width bound \(Q_B=\polylog m\), and the
+   far/list-size estimate in \((CQR3)\).
+\end{corollary}
+
+\begin{proof}
+   Build the augmented graph segment by segment.  Inside segment \(s\), a state
+   is a triple \((v,\eta,\kappa)\), where \(v\) is the native trellis vertex,
+   \(\eta\in S(v)\) is the accumulated support quotient syndrome, and
+   \(\kappa\in G_s\) is the current checkpoint partial sum.  An edge
+   \(e=(u,v)\in I_s\) sends
+   \[
+      (u,\eta,\kappa)
+      \longmapsto
+      (v,\eta+\bar c(e),\kappa+d_s(e))
+   \]
+   with the original edge weight.  At the end of segment \(s\), discard states
+   with \(\kappa\ne\sigma_s\) and reset the checkpoint component to \(0\) for
+   segment \(s+1\).  At the terminal layer, also require the quotient syndrome
+   \(\eta=\bar s_\star\), exactly as in \((QST6)\).  Therefore the backward
+   recursion or list decoder on this augmented graph counts, samples, or lists
+   exactly the support-valid paths satisfying all checkpoint equations.
+
+   Each original edge in segment \(s\) is copied for at most \(Q_BK_s\)
+   reachable pairs \((\eta,\kappa)\).  Summing over segments gives
+   \((CQR2)\).  Substituting the averaged cost bound \((CQR3)\) into
+   \cref{cor:quotient-syndrome-trellis-support-sampler} gives the clean
+   reporter endpoint.  The prefix-rank and coboundary variants are the same
+   substitution using \((PCW4)\) or \((CBQ4)\).
+
+   For the near-hit statement, ignore all paths outside the support of
+   \(\nu\).  Conditional on any retained live prefix \(w\) at the start of
+   segment \(s\), the next segment seed is fresh and the conditional law
+   \(\nu_{s,w}\) is fixed.  By
+   \cref{lem:weighted-syndrome-collision-thinning}, the checkpoint equation in
+   segment \(s\) has a continuation in the support of \(\nu_{s,w}\) with
+   probability at least \(\eta_s/(1+\eta_s)\).  Multiplying these conditional
+   bounds over the independent segments proves \((CQR5)\), and the augmented
+   reporter lists the resulting path because it satisfies both the checkpoint
+   equations and the terminal quotient support condition.
+\end{proof}
+
 \begin{corollary}[Coboundary quotient increments preserve trellis merging]
    \label{cor:coboundary-quotient-trellis-width}
    Work in the setting of
