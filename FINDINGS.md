@@ -2386,6 +2386,23 @@ P152. (*** 100M msspacev SCALE PROOF: engine builds+queries at 100M; + the LEADE
     (msturing 1M: ops correct -0.004 vs rebuild, runbook eval + compact_live built, tuning toward 0.998) +
     ood2 (1M OOD adaptive-rerank). Now also 10M streaming (msspacev, max-recall config) toward ~0.99.
 
+P153. (*** KEY: int8 has a RECALL CEILING vs the FLOAT leaderboard GT; FLOAT RERANK of survivors breaks it -- a lever for BOTH tracks ***)
+    streaming2 found: msturing GT is computed on the ORIGINAL FLOAT vectors; our base is int8. EXHAUSTIVE
+    exact-int8 search (probe all cells) caps at recall@10 = 0.9543 vs the float GT. So NO int8-only method can
+    exceed ~0.954 vs the leaderboard GT; the streaming leader's 0.99786 MUST use float precision. FIX (standard
+    high-recall recipe): int8 index for cheap candidate generation -> exact FLOAT rerank of the top-K survivors
+    (read float vectors ONLY for survivors -> cheap; we have a 1hr budget so K can be huge) -> top-10. Float
+    base+queries are present and aligned (cosine 0.99997): MSTuringANNS/base1b.fbin.crop_nb_1000000 (1M float).
+    *** GENERALIZES: this is why our int8 OOD recall vs the official FLOAT GT was capped too -- and float rerank
+    of survivors should reach OOD recall@10=0.90 with FEWER candidates -> HIGHER QPS@90% (the OOD metric, and
+    exactly ScaNN's float-AH advantage). The OOD float base IS here: text2image1B/base.1B.fbin.crop_nb_10000000
+    (10M float d=200) + query.public.100K.fbin. (Our t2i1m-gt was computed from the INT8 base -> int8-GT, so OOD
+    must be re-scored vs a FLOAT GT for the leaderboard-accurate number.) *** DATA REALITY: native-int8 datasets
+    (msspacev/SPACEV) have NO ceiling (int8 GT); FLOAT datasets (msturing, text2image) need float rerank. Float
+    crops local only at 1M for msturing (10M/100M = download). DISPATCH: streaming2 -> msturing 1M float-rerank
+    recall vs float GT (target >0.99786); ood2 -> OOD int8-scan + FLOAT-rerank, recall@p vs float GT, does it hit
+    0.90 at smaller p (QPS@90% win)? This could be the missing OOD lever AND the streaming-topping mechanism.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
