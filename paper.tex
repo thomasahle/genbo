@@ -101065,6 +101065,114 @@ amplified in the next proposition.
    side supplied by \((GWO5)\).
 \end{proof}
 
+\begin{corollary}[Lattice mesh windows are the deterministic occupancy test]
+   \label{cor:lattice-mesh-balanced-window}
+   Fix one coordinate in the balanced-window construction, and suppose a
+   one-dimensional lattice fiber supplies candidate symbols
+   \[
+      \mathcal L_i=a_i+\Delta_i\mathbb Z
+   \]
+   with query-centered quadratic weights
+   \[
+      W_i(z)=
+      \exp\!\left\{-\frac{\beta_i}{2}(z-y_i)^2\right\},
+      \qquad z\in\mathcal L_i .
+      \tag{LFW1}
+   \]
+   Let \(Q\ge2\).  If
+   \[
+      \beta_i\Delta_i^2Q^2\le8D ,
+      \tag{LFW2}
+   \]
+   then the \(Q\) lattice points nearest to \(y_i\) have dimensionless score
+   width at most \(D\):
+   \[
+      \max_{z,z'\in A_i}
+      \left|
+        \log W_i(z)-\log W_i(z')
+      \right|
+      \le D .
+      \tag{LFW3}
+   \]
+   Hence, when \(Q\) is a prime power, these points may be identified with
+   \(\mathbb F_Q\) and used as the coordinate alphabet in
+   \cref{cor:balanced-score-window-mds-segment} without any occupancy
+   randomness.
+
+   Conversely, suppose some \(Q\)-point subset
+   \(A_i\subseteq a_i+\Delta_i\mathbb Z\) has dimensionless score width at
+   most \(D\) for the weights \((LFW1)\).  Then
+   \[
+      Q
+      \le
+      2+\frac{2\sqrt{2D/\beta_i}}{\Delta_i}.
+      \tag{LFW4}
+   \]
+   Thus, up to constants, a lattice fiber can supply a \(Q\)-symbol balanced
+   score window only if
+   \[
+      \Delta_i\lesssim\frac{\sqrt D}{Q\sqrt{\beta_i}} .
+      \tag{LFW5}
+   \]
+
+   For a scaled Construction-A coordinate
+   \(\Delta_i(\iota(a)+p_i k)\), \(a\in\mathbb Z/p_i\mathbb Z\), the same
+   statement applies residue-wise whenever \(p_i\ge Q\): the \(Q\) consecutive
+   nearest integer lifts have distinct residues and form a balanced alphabet
+   under \((LFW2)\).  If \(p_i<Q\), or if the mesh violates \((LFW4)\), the
+   local MDS checkpoint cannot get its \(Q\) balanced symbols from that
+   coordinate fiber.  The obstruction is local and precedes the global CPFA
+   reporter estimates.
+\end{corollary}
+
+\begin{proof}
+   Let \(A_i\) be the \(Q\) closest mesh points to \(y_i\).  Every interval of
+   length \(Q\Delta_i\) contains at least \(Q\) points of
+   \(a_i+\Delta_i\mathbb Z\), so every point of \(A_i\) lies within distance
+   \(Q\Delta_i/2\) of \(y_i\).  Therefore
+   \[
+      \max_{z\in A_i}(z-y_i)^2-\min_{z\in A_i}(z-y_i)^2
+      \le \frac{Q^2\Delta_i^2}{4}.
+   \]
+   Multiplying by \(\beta_i/2\) gives \((LFW3)\) under \((LFW2)\), and the
+   balanced-window conclusion is exactly
+   \cref{cor:balanced-score-window-mds-segment}.
+
+   For the converse, put
+   \[
+      r_*=\min_{z\in A_i}|z-y_i|,
+      \qquad E=\frac{2D}{\beta_i}.
+   \]
+   Since the score width is at most \(D\), every \(z\in A_i\) has
+   \[
+      |z-y_i|^2\le r_*^2+E .
+   \]
+   Thus \(A_i\) is contained in the union of the two intervals
+   \[
+      [y_i-\sqrt{r_*^2+E},\,y_i-r_*]
+      \quad\text{and}\quad
+      [y_i+r_*,\,y_i+\sqrt{r_*^2+E}],
+   \]
+   each of length
+   \[
+      \sqrt{r_*^2+E}-r_*\le\sqrt E .
+   \]
+   A lattice interval of length \(L\) contains at most \(1+L/\Delta_i\) mesh
+   points, so
+   \[
+      Q\le 2+\frac{2\sqrt E}{\Delta_i}
+      =
+      2+\frac{2\sqrt{2D/\beta_i}}{\Delta_i},
+   \]
+   proving \((LFW4)\).
+
+   In a scaled Construction-A coordinate, \(Q\) consecutive integer lifts have
+   distinct residues modulo \(p_i\) when \(p_i\ge Q\).  Applying the preceding
+   lattice-fiber argument to those lifts proves the residue statement; the
+   impossibility statements are immediate from the lack of \(Q\) residues or
+   from \((LFW4)\).
+\end{proof}
+
 \begin{corollary}[Checkpoint products thin emissions, not prefix work]
    \label{cor:checkpoint-product-far-load-accounting}
    Work in the checkpointed quotient reporter of
