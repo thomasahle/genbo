@@ -107718,6 +107718,119 @@ intensity]
    exactly \cref{cor:unnormalized-port-intensity-compiler}.
 \end{proof}
 
+\begin{corollary}[Collision-universal terminal masks cost only repetitions]
+   \label{cor:collision-universal-terminal-port-mask}
+   Work in the setting of
+   \cref{cor:pairwise-checkpoint-useful-port-intensity}, but allow the terminal
+   mask family to have collision constant \(C_{\rm col}\ge1\):
+   \[
+      \Pr_H[H(\omega)=H(\omega')]\le\frac{C_{\rm col}}K
+      \qquad(\omega\ne\omega'\in\Omega_o(B)).
+      \tag{CUT1}
+   \]
+   Use \(R\) independent masks \(H_1,\ldots,H_R\), independent offsets
+   \(\sigma_1,\ldots,\sigma_R\), and superpose the retained useful-port
+   intensities
+   \[
+      \Lambda_o^{(R)}
+      =
+      \sum_{r=1}^R
+      \sum_{\omega\in\Omega_o(B)}
+      A_B(\omega)\mathbf 1\{H_r(\omega)=\sigma_r\}.
+      \tag{CUT2}
+   \]
+   Then
+   \[
+      \E\Lambda_o^{(R)}=\frac{R\mu_o}{K},
+      \qquad
+      \operatorname{Var}\Lambda_o^{(R)}
+      \le
+      R\left(
+         \frac{S_o}{K}
+         +(C_{\rm col}-1)\frac{\mu_o^2}{K^2}
+      \right).
+      \tag{CUT3}
+   \]
+   Consequently, for \(0<\theta<1\),
+   \[
+      \E e^{-\Lambda_o^{(R)}}
+      \le
+      \exp\!\left\{-(1-\theta)\frac{R\mu_o}{K}\right\}
+      +
+      \frac{K/N_{2,o}+C_{\rm col}-1}{\theta^2R}.
+      \tag{CUT4}
+   \]
+
+   Thus a collision-universal terminal hash, including a multiply-shift-style
+   bucketizer whose collision constant has actually been certified on the
+   charged record encoding, can be used in the unnormalized port reporter by
+   paying \(R\) independent terminal panels.  It remains clean whenever \(R\)
+   is polylogarithmic, the two near-side quantities
+   \[
+      \exp\!\left\{-(1-\theta)\frac{R\mu_o}{K}\right\},
+      \qquad
+      \frac{K/N_{2,o}+C_{\rm col}-1}{\theta^2R}
+      \tag{CUT5}
+   \]
+   are within the useful-port miss budget after tilted averaging, and
+   \[
+      \E\!\left[
+         T_{\rm term}^{(R)}
+         +
+         \frac{R\,\Lambda_{\rm port}^{\rm raw}}{K}\log^{O_c(1)}m
+      \right]
+      \le Dm^{\rho_c}\log^{O_c(1)}m .
+      \tag{CUT6}
+   \]
+
+   This is only a terminal-mask statement.  It does not make ordinary
+   multiply-shift a proof-safe long checkpoint syndrome, because the
+   branch-and-bound implementation still needs the difference law and the
+   low-carry or non-state-exposed access audit isolated in the syndrome and
+   multiply-shift sections.  Collision universality controls complete-record
+   useful intensity; it does not control the number of residue states exposed
+   at merged prefixes.
+\end{corollary}
+
+\begin{proof}
+   For one mask, the mean remains \(\mu_o/K\), since the offset is uniform.
+   The second-moment expansion in the proof of
+   \cref{cor:pairwise-checkpoint-useful-port-intensity}, with \((CUT1)\) in
+   place of \((PCU3)\), gives
+   \[
+      \E(\Lambda_o^{\rm ret})^2
+      \le
+      \frac{S_o}{K}
+      +\frac{C_{\rm col}}{K^2}(\mu_o^2-S_o).
+   \]
+   Subtracting \(\mu_o^2/K^2\) and using \(C_{\rm col}\ge1\) yields
+   \[
+      \operatorname{Var}\Lambda_o^{\rm ret}
+      \le
+      \frac{S_o}{K}
+      +(C_{\rm col}-1)\frac{\mu_o^2}{K^2}.
+   \]
+   The \(R\) panels are independent, so variances add and \((CUT3)\) follows.
+
+   Chebyshev's inequality gives
+   \[
+      \Pr\!\left[
+         \Lambda_o^{(R)}<(1-\theta)\frac{R\mu_o}{K}
+      \right]
+      \le
+      \frac{K/N_{2,o}+C_{\rm col}-1}{\theta^2R}.
+   \]
+   On the complementary event,
+   \(e^{-\Lambda_o^{(R)}}\le
+   \exp\{-(1-\theta)R\mu_o/K\}\), proving \((CUT4)\).  The work statement is
+   the same offset-thinning calculation as \((UIP5)\), multiplied by the
+   number of independent terminal masks \(R\), plus the terminal hash and
+   reporting work \(T_{\rm term}^{(R)}\).  Substituting \((CUT4)\) into
+   \((UIP3)\) and \((CUT6)\) into \((UIP4)\) gives the unnormalized
+   terminalizer by
+   \cref{cor:unnormalized-port-intensity-compiler}.
+\end{proof}
+
 \begin{corollary}[Balanced checkpoints can absorb any fixed flat-volume excess]
    \label{cor:balanced-checkpoints-absorb-flat-volume-excess}
    Continue with the nearest-mesh scaled-GRS window of
