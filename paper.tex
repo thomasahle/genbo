@@ -7828,6 +7828,121 @@ partition ignores the bias coordinates that certify the list size.
    \(r/(2\eta)=O(\log\log m)\).  This proves \((CLD5)\).
 \end{proof}
 
+\begin{corollary}[Polylog-state checkpoints can give polynomial thinning]
+   \label{cor:polylog-state-checkpoint-polynomial-thinning}
+   Work in the checkpoint-syndrome setting of
+   \cref{cor:checkpoint-syndrome-local-state}.  Put
+   \[
+      \mathcal K=\prod_{s=1}^rK_s,
+      \qquad
+      \mathcal S_{\rm loc}=\sum_{s=1}^rK_s(t_s-t_{s-1}).
+      \tag{PCT1}
+   \]
+   Then every fixed terminal set, independent of the checkpoint seeds, is
+   thinned in expectation by the factor \(\mathcal K^{-1}\).  Moreover, if the
+   near witness tree satisfies
+   \[
+      |\mathcal B_s(u)|\ge\eta_sK_s
+      \qquad
+      (u\in W_{s-1},\ s=1,\ldots,r),
+      \tag{PCT2}
+   \]
+   then one checkpoint-filtered panel hits the witness tree with probability
+   at least
+   \[
+      \prod_{s=1}^r\frac{\eta_s}{1+\eta_s}
+      =
+      \exp\left\{-\sum_{s=1}^r\log(1+\eta_s^{-1})\right\}.
+      \tag{PCT3}
+   \]
+
+   In particular, suppose
+   \[
+      r=\left\lceil\gamma\frac{\log m}{\log\log m}\right\rceil,
+      \qquad
+      K_s=\left\lceil(\log m)^A\right\rceil,
+      \qquad
+      h=\log^{O(1)}m,
+      \tag{PCT4}
+   \]
+   with fixed \(A,\gamma>0\), and suppose every checkpoint has
+   \[
+      \eta_s\ge C\frac{r}{\log\log m}
+      \tag{PCT5}
+   \]
+   for a fixed \(C>0\).  Then the local state cost is polylogarithmic,
+   \[
+      \mathcal S_{\rm loc}\le h(\log m)^A(1+o(1))=\log^{O(1)}m,
+      \tag{PCT6}
+   \]
+   while the total terminal thinning is polynomial,
+   \[
+      \mathcal K
+      =
+      \exp\{A\gamma\log m+o(\log m)\}
+      =
+      m^{A\gamma+o(1)}.
+      \tag{PCT7}
+   \]
+   The certified near-hit probability remains inverse-polylogarithmic:
+   \[
+      \Pr[\text{hit}]
+      \ge
+      \exp\{-(1/C+o(1))\log\log m\}
+      =
+      \log^{-1/C+o(1)}m.
+      \tag{PCT8}
+   \]
+
+   Thus full tuple randomness is not needed for a polynomial thinning factor:
+   pairwise-independent, checkpoint-local syndromes are enough, and their
+   state can be forgotten after each chunk.  The nontrivial condition is
+   segment-wise near entropy.  At almost every checkpoint the current near
+   prefix must have many more good continuations than the local syndrome
+   range; otherwise \cref{cor:checkpoint-syndrome-lossy-depth} converts the
+   missing continuation mass directly into a superpolylogarithmic
+   amplification toll.
+\end{corollary}
+
+\begin{proof}
+   The expectation statement is \((CPS3)\), and the hit lower bound is
+   \((CPS5)\).  The automaton in
+   \cref{cor:checkpoint-syndrome-local-state} carries only one local syndrome
+   at a time, so its total copied-state budget is bounded by
+   \(\mathcal S_{\rm loc}\).
+
+   Under \((PCT4)\),
+   \[
+      \mathcal S_{\rm loc}
+      =
+      \sum_sK_s|I_s|
+      \le
+      (\log m)^A(1+o(1))\sum_s|I_s|
+      =
+      h(\log m)^A(1+o(1)),
+   \]
+   proving \((PCT6)\).  Also
+   \[
+      \log\mathcal K
+      =
+      \sum_s\log K_s
+      =
+      r(A\log\log m+o(\log\log m))
+      =
+      A\gamma\log m+o(\log m),
+   \]
+   which proves \((PCT7)\).  Finally, using
+   \(\log(1+x)\le x\) and \((PCT5)\),
+   \[
+      \sum_s\log(1+\eta_s^{-1})
+      \le
+      \sum_s\eta_s^{-1}
+      \le
+      (1/C+o(1))\log\log m.
+   \]
+   Substituting this in \((PCT3)\) gives \((PCT8)\).
+\end{proof}
+
 \begin{corollary}[Oversampled product witnesses support polylog syndrome thinning]
    \label{cor:oversampled-product-syndrome-thinning}
    Work in the smooth product terminal filter of
