@@ -2967,6 +2967,22 @@ P182. (*** FINAL CRUX (reorder-depth/OPQ microbench COMPLETE both tracks incl m~
     re-arch, dpb=5 2.61x scan, int8-only memory fix, float-rerank breaking the int8 recall ceiling, and exhaustive
     data-backed refutation of every tuning lever (dpb/pool-t/collect/K/p/OPQ-rotation/eta) on both tracks.
 
+P183. (*** WALL-1 DE-RISK DECISIVE (USE512 A/B): the apq4 scan is MEMORY-BOUND (AVX-512 +7%, not 2x) -> a FastScan/vpshufb KERNEL alone won't fix coverage; needs scann's cache-friendly SoA LAYOUT. BOTH cheap gates negative. ***)
+    streaming2 USE512 A/B (op48 dpb=5 p=512 int8-only, sum-of-threads ms): scan_pool (apq4 fast-scan kernel) AVX2
+    1296 -> AVX-512 1200 = +7% (NOT the ~2x a compute-bound kernel would give); rerank_contig AVX2 3422 -> AVX-512
+    3239 = flat (memory-bound, expected). So AVX-512's 2x compute width barely moves the scan -> the apq4 fast-scan
+    is MEMORY-BOUND (reading the cell-scattered interleaved blocks), NOT compute-bound. => a better KERNEL (more
+    compute / vpshufb) will NOT deliver the ~2x coverage lever; the bottleneck is the memory ACCESS PATTERN, fixable
+    only by a cache-friendlier LAYOUT (scann's AH2 SoA packing). *** BOTH WALLS now decisively FUNDAMENTAL in our
+    engine, and they CONVERGE: WALL 1 (coverage/scan throughput) = memory-bound layout, kernel +7% won't help ->
+    needs scann's SoA layout; WALL 2 (rank-preservation) = coarse codes can't rank-preserve via OPQ+eta (P179/P182)
+    -> deep reorder unavoidable -> needs scann's anisotropic-VQ. scann's AH2 solves BOTH at once (cache-friendly SoA
+    layout that IS compute-bound + anisotropic rank-preserving codes). Neither of our CHEAP levers -- (a) a better
+    kernel (USE512, negative) nor (b) code tuning (reorder-depth/OPQ, negative) -- reaches top-3; BOTH require the
+    full algorithm+LAYOUT reimplementation = multi-day, the USER's call. *** SESSION EXHAUSTIVELY COMPLETE on BOTH
+    walls (both cheap de-risk gates NEGATIVE-DECISIVE). Top-3 = the FULL scann AH2 (SoA layout + anisotropic quant),
+    not kernel-alone or tuning. Honest finals stand: streaming eligible ~0.77 (valid), OOD QPS@90% ~1732 (bottom tier).
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
