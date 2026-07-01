@@ -1088,7 +1088,8 @@ fn stream_runbook(base: &str, qpath: &str, opspath: &str, router_s: &str, comp_s
     let mut n_live = 0usize; // running live count (scanning 30M live_src per search would be too slow)
     let (mut ins_total, mut ins_secs) = (0usize, 0f64);
     let (mut del_total, mut del_secs) = (0usize, 0f64);
-    let mut search_secs = 0f64; // total query-serving time (the part that must fit the 1-hour budget)
+    let mut search_secs = 0f64; // int8 candidate-gen (route+scan) time
+    let mut rerank_secs = 0f64; // exact float rerank time -- ALSO part of query-serving, must fit the 1-hour budget
     let mut peak_anon_mb = rss_anon_mb(); // 8GB DRAM cap: track peak resident anon over the runbook
     let mut n_compact = 0usize;
     let mut rec_sum = 0f64;
@@ -1158,6 +1159,7 @@ fn stream_runbook(base: &str, qpath: &str, opspath: &str, router_s: &str, comp_s
                 let cand: Vec<Vec<u32>> = (0..nq).into_par_iter().map(|qi| idx.search_stream(&full, qs.row(qi), p, t, rerank_k)).collect();
                 let search_s = sst.elapsed().as_secs_f64();
                 let qps = nq as f64 / search_s;
+                let rst = Instant::now();
                 let res: Vec<Vec<u32>> = if do_frerank {
                     let fb = fbase.as_ref().unwrap(); let fq = fquery.as_ref().unwrap();
                     let lf = &live_float; let fs = &fslot;
@@ -1177,8 +1179,10 @@ fn stream_runbook(base: &str, qpath: &str, opspath: &str, router_s: &str, comp_s
                 } else {
                     cand.iter().map(|c| c.iter().take(10).copied().collect()).collect()
                 };
+                let rerank_s = rst.elapsed().as_secs_f64();
                 n_search += 1;
                 search_secs += search_s;
+                rerank_secs += rerank_s;
                 let anon = rss_anon_mb(); peak_anon_mb = peak_anon_mb.max(anon);
                 if let Some(dir) = &gtdir {
                     // OFFICIAL per-step GT (leaderboard metric): step{step_idx}.gt100 over this step's live set.
@@ -1256,11 +1260,12 @@ fn stream_runbook(base: &str, qpath: &str, opspath: &str, router_s: &str, comp_s
         // the scored metric: avg recall@10 vs the official per-step GT. The streaming-track BUDGET is the
         // runbook OPS (insert+delete+search; compaction time is inside those) < 1hr — the cold-start router
         // training is OFFLINE setup, not on the benchmark clock. Eligibility ALSO requires peak anon < 8GB.
-        let q_tput = if search_secs > 0.0 { (n_search * nq) as f64 / search_secs } else { 0.0 };
-        let ops_wall = ins_secs + del_secs + search_secs;
+        let serve_secs = search_secs + rerank_secs; // full query-serving time (candidate-gen + float rerank)
+        let q_tput = if serve_secs > 0.0 { (n_search * nq) as f64 / serve_secs } else { 0.0 };
+        let ops_wall = ins_secs + del_secs + serve_secs;
         peak_anon_mb = peak_anon_mb.max(rss_anon_mb());
         println!("\n[stream_runbook SUMMARY] avg recall@10 (official per-step GT) = {avg_f:.4} over {n_search} search steps (NQ={nq})");
-        println!("  inserts: {ins_total} in {ins_secs:.1}s ({ins_tput:.0}/s) | deletes: {del_total} in {del_secs:.1}s ({del_tput:.0}/s) | search: {} q in {search_secs:.1}s ({q_tput:.0} q/s) | compactions: {n_compact}", n_search * nq);
+        println!("  inserts: {ins_total} in {ins_secs:.1}s ({ins_tput:.0}/s) | deletes: {del_total} in {del_secs:.1}s ({del_tput:.0}/s) | search: {} q in {serve_secs:.1}s ({q_tput:.0} q/s; scan {search_secs:.1}s + rerank {rerank_secs:.1}s) | compactions: {n_compact}", n_search * nq);
         println!("  RUNBOOK-OPS WALL = {ops_wall:.1}s ({:.1} min, excl. offline train) -- budget 3600s -> {}", ops_wall / 60.0, if ops_wall < 3600.0 { "WITHIN 1hr" } else { "OVER 1hr (FAILS)" });
         println!("  PEAK ANON = {:.2}GB -- cap 8GB -> {}  (total wall incl. train {total:.1}s)", peak_anon_mb / 1024.0, if peak_anon_mb < 8192.0 { "WITHIN 8GB" } else { "OVER 8GB (INELIGIBLE)" });
     } else {
