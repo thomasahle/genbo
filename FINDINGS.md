@@ -2731,6 +2731,25 @@ P169. (*** MAJOR CORRECTION to P168: the 0.77 was POOL-STARVED; recall RECOVERS 
     -> re-measure moderate-p deep-t at honest NQ=10000 budget. If >=0.922 in-budget = top-3; if collect won't speed
     up = the honest wall. The most promising lever of the session -- first time recall actually MOVED from a knob.
 
+P170. (*** FINAL streaming characterization: deep-t rerank is MEMORY-LATENCY bound -> dpb = precise-vs-fast tradeoff; eligible ceiling ~0.77; top-3 needs a FastScan kernel ***)
+    streaming2 traced the deep-t cost to code (committed f4d1682 tight bounded top-t, keep=t/prune@2t): the tight
+    collect gave IDENTICAL recall (0.9556, correctness OK) but NO QPS recovery (308->238 = noise) => the COLLECT was
+    NOT the bottleneck (my threshold-filter hypothesis was wrong). The real cost: after apq4 scan->top-t,
+    rerank_contig_pairs does an EXACT rerank reading a raw d-byte row for EVERY one of the t pool candidates = O(t)
+    SCATTERED raw-row reads/query = MEMORY-LATENCY bound. CLEAN RESOLUTION of the whole arc: dpb=5 speeds the apq4
+    SCAN 2.61x, BUT coarse codes force a ~4x DEEPER rerank pool t to recover recall, and deep rerank is memory-latency
+    -bound -> it EATS the scan gain at high-recall targets. Head-to-head: dpb=2 p512 t2048 = 0.9741 @ QPS506 BEATS
+    dpb=5 p512 t8192 = 0.9556 @ QPS308 on BOTH axes. dpb=5 wins ONLY at low-recall/shallow-t (scan-dominated) --
+    exactly why it lifted the ELIGIBLE ceiling 0.6->0.77 (cheap scan -> more coverage, shallow rerank OK at that
+    target). REAL, honest gain. *** VERDICT: eligible ceiling ~0.77 with this IVF+apq4 engine. Top-3 (0.922) requires
+    precise-AND-fast codes -- scann's AH2/FastScan ranks accurately in the quantized domain (shallow rerank) AT high
+    scan speed via a SoA/blocked SIMD layout. We have precise-OR-fast (dpb=2 precise+slow-scan; dpb=5 fast-scan+coarse
+    +deep-rerank), NOT both. THE path to top-3 = a FastScan-class kernel (precise apq4 at scann scan-speed) -- a
+    multi-week engine project, the SAME wall as OOD QPS@90%. *** CONFIG LEVERS EXHAUSTED. Wins banked: dpb=5 2.61x scan
+    (BW/compute confirmed), eligible 0.6->0.77, rerank-budget accounting fix (d63902d), tight bounded top-t collect
+    (f4d1682), 8GB memory audit, full config frontier characterized. OOD: dpb=5 helps at the 0.90 point (scan-
+    dominated) -> ~2.6x -> ~12-16k QPS@90% vs scann 43k (ood2 re-measuring). NEXT INNOVATION = the FastScan kernel.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
