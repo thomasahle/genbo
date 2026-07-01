@@ -3220,6 +3220,73 @@ P192. (*** OOD GAP-CLOSING WORKFLOW: COMBINED LEVERS vs ScaNN 1M SINGLE-THREAD (
     granul_kf16384_c768_b96_a3.idx, t2i1m_query.i8bin}; code on branch ood-levers-stacked (routing lever config-only;
     codes lever recompile on codes-aniso, discarded).
 
+P196. (*** ROUTE PRIMITIVE AUDIT + VNNI L2: the hierk router was AVX2-madd, NOT VNNI, despite Zen4 avx512_vnni.
+    Swapping to a recall-EXACT VNNI norm-decomposition L2 cuts the isolated route from 33.5 -> 23.1 us/q (1.45x,
+    -10.5us), now BELOW ScaNN's ~30us route. Branch route-primitive off ood-levers-stacked (P192 champion). ***)
+    SETUP: champion granul_kf16384_c768_b96_a3.idx (hierk C0=768 b0=96 a0=3 apq4, SBANN_IP/FASTSCAN2/PREFETCH), p=58,
+    2000 t2i queries, single-thread PINNED taskset -c 2, best-of-N. New `routebench` subcommand isolates router.probe
+    (true us/q best-of-N + a separate ROUTE_PROF phase-split pass + a per-query dist-eval counter). Box was LOUD the
+    whole session (load 25-44, 16 cores => 1.5-2.7x oversubscribed) so ALL e2e absolutes are suppressed; the route-
+    PRIMITIVE numbers are isolated best-of-N (contention-robust) and the e2e claims are interleaved A/B ratios only.
+
+    (a) WHERE THE ~33us GOES (perf + ROUTE_PROF, baseline AVX2):
+      PHASE split:  coarse-l2 6.0us(18%)  coarse-sel 1.8us(6%)  fine-expand 20.8us(63%)  final-sel 4.3us(13%).
+      perf self%:   l2_i8_block_avx2 66% (COMPUTE)  |  quicksort::partition 14% (select_nth)  |  gather_fine self
+                    8.5% + __memmove 5.3% (the fine-level nd gather/push+realloc).  IPC 3.58, ~0 L1 misses => the
+                    router is COMPUTE-bound, not memory-bound (all centroids are L2-resident).
+      dist-evals/q = 2784 exactly (768 coarse one-shot block + 96 beam * ~21 children = ~2016 fine, in 96 small
+                    per-coarse-cell block calls). Matches P192's ~2816.
+    (b) MORE evals AND traversal overhead vs ScaNN — but CHEAPER per eval:
+      - COUNT: we do 2784 int8 evals vs ScaNN's ~2000 float (+39%), because the 2-level beam re-scores ~2016 fine
+        centroids after 768 coarse.
+      - PER-EVAL: ours was on the AVX2 madd L2 (widen i8->i16, madd_epi16) = ~7.9ns/eval; ScaNN's float ~15ns/eval.
+        So per-eval we were already ~2x cheaper (int8) — the extra evals didn't make route slower on compute alone.
+      - OVERHEAD ScaNN's flat scan avoids: select_nth twice (coarse top-96 + final top-p, 14%) + the 2-level gather/
+        push/realloc (14%) = ~34% of route (~8us) is traversal+double-selection, inherent to the hierarchy (which is
+        what buys the finer routing). Net: route was ~33.5us isolated / ~36us contended vs ScaNN's ~30us.
+      ROOT CAUSE of the compute half: the routing L2 kernel (l2_i8_block_avx2) NEVER used VNNI even though Zen4 has
+      avx512_vnni (only the rerank dot had a VNNI path). dotbench d=200: VNNI 1.56x the AVX2 int8 dot (6.4 vs 10.0ns).
+    (c) WHAT I CHANGED (recall-EXACT, identical probed-cell set):
+      1. VNNI L2 via the exact integer decomposition  L2 = Sq^2 + Sc^2 - 2*<q,c>  (simd::l2_i8_block_vnni). The dot is
+         _mm512_dpbusd_epi32 (q shifted +128 via XOR 0x80 to feed dpbusd's u8*i8). SINGLE-CHAIN: fold +256*Sc into a
+         per-centroid constant cadj = Sc^2 + 256*Sc so the 128*Sc dpbusd offset cancels -> ONE dpbusd chain + ONE
+         horizontal reduce per centroid (no separate Sc accumulator), 4-wide centroid ILP to hide the ~4c dpbusd
+         latency over the short (d/64=3) loop; <64 tail dims exact-scalar. cadj derived from `cent` at build/load,
+         NOT persisted (index format byte-unchanged). Gated SBANN_ROUTE_VNNI, full-dim only (sd<d ROUTE_SDIM stays
+         on madd). Bit-identical to the madd L2 (selftest_l2_norm on d=100/200/204 asserted at startup).
+      2. EXACT nd capacity: sum the selected cells' child fan-out before the gather so `nd` never reallocs mid-fill
+         (the old sel.len()*8 hint under-provisioned at Kf/C0~21 -> the 5-8% __memmove growth). Recall-neutral.
+      VERIFICATION: routebench SBANN_ROUTE_VERIFY toggles VNNI per-query and compares SORTED probed-cell sets ->
+      0/2000 different at p=58 AND 0/2000 at p=512. Isolated A/B at matched reps: identical sink (sum of all probed
+      cell ids over 2000 q) BASE==VNNI. E2e recall bit-identical BASE vs VNNI: 0.9005 (p=58) / 0.9061 (p=62).
+    RESULT (isolated route, taskset -c 2, best-of-11):
+      BASE 33.54 us/q  ->  VNNI 23.08 us/q   = 1.45x, -10.5us.   coarse-l2 6.0->3.25 (1.85x), fine-expand 20.8->15.4
+      (1.35x; gather-limited), sel phases unchanged. New perf self%: l2_i8_block_vnni 52% | select_nth 20% | gather
+      12% | memmove 2% (down from 5-8%). Route is now compute 52% / selection 20% / gather 14%.
+    E2E (interleaved A/B, SBANN_PROFILE): route FRACTION of the float-rerank query drops 20% -> 14.6% (exactly what a
+      1.45x route predicts: (20/1.45)/(80+20/1.45)=14.6%). Direct QPS A/B at recall-matched p=62: VNNI +4.5/+6.2/+7.7%
+      over 3 interleaved rounds (p=58 noisier: -1% to +22%). Route is ~20% of e2e so a 1.45x route => ~6% e2e, observed.
+
+    *** VERDICT: route primitive is now ~23us <= ScaNN's ~30us — TARGET MET; ~10us shaved toward <1x, purely recall-
+    exact (0/2000 probed-set change). The audit CLEARED our router of wastefulness: per-eval we were already ~2x
+    cheaper than ScaNN (int8), the AVX2->VNNI swap halves the compute half (66%->52% at 1.45x route), and the 2784-vs-
+    2000 eval count + 2-level gather are the price of the finer hierarchical routing (they buy the P192 granularity
+    win). Route was NOT the dominant gap — P192 showed the ~1.77x ScaNN remainder is the SCAN (memory-bound scattered
+    PQ blocks vs ScaNN's cache-resident SoA AH), unchanged here; this lever removes route as a contributor and adds
+    ~6% e2e. ***
+    HONEST CAVEATS: (1) Box under load 25-44 all session (>=1.5x oversubscribed) => absolute e2e QPS and the ScaNN
+    head-to-head absolute (this window: ScaNN ~8000 vs eng ~4300, NOT the P192 quiet-box 1.77x) are contention-
+    distorted; ScaNN's one-call batched C++ tolerates oversubscription better than our per-query rayon loop, so a clean
+    e2e-vs-ScaNN re-measure needs a quiet box. The route-primitive 1.45x is isolated best-of-N and contention-robust.
+    (2) VNNI kept OPT-IN (SBANN_ROUTE_VNNI) matching the codebase flag pattern (SBANN_VNNI/FASTSCAN2); the champion
+    invocation should ADD it. (3) Zen4 double-pumps AVX-512 (256-bit datapath) so no downclock penalty — verified
+    in-situ (route IPC stayed high, 1.45x realized). (4) 1M ONLY, single-thread. (5) e2e QPS gain is modest (~6%)
+    because route is only ~20% of the float-rerank query; the big remaining lever stays the scan (structural, P192).
+    Artifacts: scratchpad/{routevnni_ab.sh, h2h_p196.sh, interleave_p192.sh, scann_measure.py, granul_kf16384_c768_
+    b96_a3.idx, t2i1m_query.i8bin}. Code on branch route-primitive: sbann-rs/src/simd.rs (l2_i8_block_vnni / cadj_i8 /
+    l2_i8_block_norm / selftest_l2_norm), src/vq.rs (HierRouter.cadj + gather_fine VNNI path + exact nd cap + ROUTE_VNNI/
+    ROUTE_PROF), src/main.rs (routebench + SBANN_ROUTE_VNNI gate).
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT

@@ -153,6 +153,116 @@ pub fn l2_i8_block(qn: &[i8], block: &[i8], ncand: usize, d: usize, sd: usize, o
     for j in 0..ncand { out[j] = l2_i8_scalar(qn, &block[j * d..j * d + sd]); }
 }
 
+/// Σx² for an i8 vector (exact i32). One-off per query for the VNNI L2 decomposition.
+#[inline]
+pub fn sqnorm_i8(x: &[i8]) -> i32 { x.iter().map(|&v| { let v = v as i32; v * v }).sum() }
+
+/// Per-centroid constant for the single-chain VNNI L2 (see `l2_i8_block_vnni`): `cadj = Σc² + 256·Σc`.
+/// The kernel computes Σ(q+128)·c (dpbusd for the bulk + scalar for the <64 tail) = Σqc + 128·Σc; folding
+/// +256·Σc into cadj cancels that offset, so L2 = Σq² + cadj − 2·Σ(q+128)c needs only ONE dpbusd chain.
+#[inline]
+pub fn cadj_i8(c: &[i8]) -> i32 {
+    let cnorm: i32 = c.iter().map(|&v| { let v = v as i32; v * v }).sum();
+    let sc: i32 = c.iter().map(|&v| v as i32).sum();
+    cnorm + 256 * sc
+}
+
+/// AVX-512 VNNI batched int8 L2 over a CONTIGUOUS [ncand x d] centroid block, via the exact decomposition
+/// L2 = Σq² + Σc² − 2·<q,c>. Single-chain: `_mm512_dpbusd_epi32((q+128), c)` = Σqc + 128·Σc_hi over the
+/// VNNI-covered dims, and the +128 offset is cancelled by the precomputed `cadj[j] = Σc² + 256·Σc_hi`, so
+/// there is ONE dpbusd chain + ONE horizontal reduce per centroid (no separate Σc accumulator). The <64 tail
+/// dims (d not a mult of 64) are added exactly in scalar. `qnorm` = Σq² (full d). 4 centroids/step for ILP.
+/// BIT-IDENTICAL to `l2_i8_block` -> recall-neutral. FULL dim only. P196 routing lever (~1.5x on Zen4).
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx512f,avx512bw,avx512vnni")]
+pub unsafe fn l2_i8_block_vnni(qn: &[i8], block: &[i8], cadj: &[i32], ncand: usize, d: usize, qnorm: i32, out: &mut [i32]) {
+    let m80 = _mm512_set1_epi8(0x80u8 as i8);
+    let kmax = d & !63; // largest multiple of 64
+    let qb = qnorm; // Σq²
+    let mut j = 0usize;
+    // 4-wide ILP: four independent dpbusd accumulator chains hide the ~4-cycle dpbusd latency across the
+    // short (d/64 ≈ 3-iteration) accumulation loop.
+    while j + 4 <= ncand {
+        let c0 = block.as_ptr().add(j * d);
+        let c1 = block.as_ptr().add((j + 1) * d);
+        let c2 = block.as_ptr().add((j + 2) * d);
+        let c3 = block.as_ptr().add((j + 3) * d);
+        let mut a0 = _mm512_setzero_si512();
+        let mut a1 = _mm512_setzero_si512();
+        let mut a2 = _mm512_setzero_si512();
+        let mut a3 = _mm512_setzero_si512();
+        let mut k = 0usize;
+        while k < kmax {
+            let xu = _mm512_xor_si512(_mm512_loadu_si512(qn.as_ptr().add(k) as *const __m512i), m80);
+            a0 = _mm512_dpbusd_epi32(a0, xu, _mm512_loadu_si512(c0.add(k) as *const __m512i));
+            a1 = _mm512_dpbusd_epi32(a1, xu, _mm512_loadu_si512(c1.add(k) as *const __m512i));
+            a2 = _mm512_dpbusd_epi32(a2, xu, _mm512_loadu_si512(c2.add(k) as *const __m512i));
+            a3 = _mm512_dpbusd_epi32(a3, xu, _mm512_loadu_si512(c3.add(k) as *const __m512i));
+            k += 64;
+        }
+        let mut r0 = _mm512_reduce_add_epi32(a0);
+        let mut r1 = _mm512_reduce_add_epi32(a1);
+        let mut r2 = _mm512_reduce_add_epi32(a2);
+        let mut r3 = _mm512_reduce_add_epi32(a3);
+        for kk in kmax..d {
+            let qk = *qn.get_unchecked(kk) as i32 + 128; // (q+128)·c matches dpbusd's u8·i8; cadj folds the 128·Σc back
+            r0 += qk * *c0.add(kk) as i32;
+            r1 += qk * *c1.add(kk) as i32;
+            r2 += qk * *c2.add(kk) as i32;
+            r3 += qk * *c3.add(kk) as i32;
+        }
+        *out.get_unchecked_mut(j) = qb + *cadj.get_unchecked(j) - 2 * r0;
+        *out.get_unchecked_mut(j + 1) = qb + *cadj.get_unchecked(j + 1) - 2 * r1;
+        *out.get_unchecked_mut(j + 2) = qb + *cadj.get_unchecked(j + 2) - 2 * r2;
+        *out.get_unchecked_mut(j + 3) = qb + *cadj.get_unchecked(j + 3) - 2 * r3;
+        j += 4;
+    }
+    while j < ncand {
+        let cptr = block.as_ptr().add(j * d);
+        let mut a0 = _mm512_setzero_si512();
+        let mut k = 0usize;
+        while k < kmax {
+            let xu = _mm512_xor_si512(_mm512_loadu_si512(qn.as_ptr().add(k) as *const __m512i), m80);
+            a0 = _mm512_dpbusd_epi32(a0, xu, _mm512_loadu_si512(cptr.add(k) as *const __m512i));
+            k += 64;
+        }
+        let mut r0 = _mm512_reduce_add_epi32(a0);
+        for kk in kmax..d { r0 += (*qn.get_unchecked(kk) as i32 + 128) * *cptr.add(kk) as i32; }
+        *out.get_unchecked_mut(j) = qb + *cadj.get_unchecked(j) - 2 * r0;
+        j += 1;
+    }
+}
+
+/// Dispatch: VNNI norm-decomposition L2 block if avx512vnni present, else the AVX2 madd block. Bit-identical.
+/// `cadj[..ncand]` = per-centroid `cadj_i8`, `qnorm` = Σq². Caller guarantees full-dim scoring (sd==d).
+#[inline]
+pub fn l2_i8_block_norm(qn: &[i8], block: &[i8], cadj: &[i32], ncand: usize, d: usize, qnorm: i32, out: &mut [i32]) {
+    #[cfg(target_arch = "x86_64")]
+    {
+        if is_x86_feature_detected!("avx512vnni") && is_x86_feature_detected!("avx512bw") && is_x86_feature_detected!("avx512f") {
+            unsafe { l2_i8_block_vnni(qn, block, cadj, ncand, d, qnorm, out) };
+            return;
+        }
+    }
+    l2_i8_block(qn, block, ncand, d, d, out);
+}
+
+/// Self-test: VNNI norm-decomposition L2 block must match the AVX2 madd block bit-for-bit.
+pub fn selftest_l2_norm(d: usize) -> bool {
+    let ncand = 39usize; // exercise the 4-wide body + 3-lane scalar remainder
+    let mut seed = 0x0bad_c0deu64;
+    let mut nb = || { seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1); ((seed >> 24) as i32 % 256 - 128) as i8 };
+    let q: Vec<i8> = (0..d).map(|_| nb()).collect();
+    let block: Vec<i8> = (0..ncand * d).map(|_| nb()).collect();
+    let cadj: Vec<i32> = (0..ncand).map(|j| cadj_i8(&block[j * d..j * d + d])).collect();
+    let qnorm = sqnorm_i8(&q);
+    let mut a = vec![0i32; ncand];
+    let mut b = vec![0i32; ncand];
+    l2_i8_block(&q, &block, ncand, d, d, &mut a);
+    l2_i8_block_norm(&q, &block, &cadj, ncand, d, qnorm, &mut b);
+    a == b
+}
+
 /// Opt-in VNNI for the int8 dot (set from SBANN_VNNI). Default off until proven faster than AVX2 on
 /// this HW (AVX-512 downclocking can make it slower -- cf. the vpermw scan dead-end).
 pub static VNNI_ON: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);

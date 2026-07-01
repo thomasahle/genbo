@@ -1194,6 +1194,70 @@ fn scanbench2(m: usize, nblk16: usize, scatter: bool, label: &str) {
 #[cfg(not(target_arch = "x86_64"))]
 fn scanbench2(_m: usize, _n: usize, _s: bool, _l: &str) {}
 
+/// ROUTE-PRIMITIVE microbench (P196, `routebench <base> <qpath>`): isolate router.probe on the loaded 1M
+/// index. Reports TRUE us/query (best-of-REPS, no instrumentation) then a SEPARATE ROUTE_PROF pass for the
+/// phase split (coarse l2 / coarse-select / fine-expand / final-select) + int8 dist-evals/query.
+/// Env: SBANN_INDEX_LOAD, SBANN_PLIST (p), SBANN_NQ, SBANN_REPS. IP/VNNI/router flags honored via main().
+fn routebench(base: &str, qpath: &str) {
+    let _ = base;
+    let lp = std::env::var("SBANN_INDEX_LOAD").expect("routebench needs SBANN_INDEX_LOAD");
+    let idx = vq::Index::load_from(&lp).expect("index load");
+    let qs = I8Bin::open(qpath).expect("q");
+    let p: usize = std::env::var("SBANN_PLIST").ok().and_then(|s| s.split(',').next().unwrap().parse().ok()).unwrap_or(58);
+    let nq = qs.nb.min(std::env::var("SBANN_NQ").ok().and_then(|s| s.parse().ok()).unwrap_or(2000));
+    let reps: usize = std::env::var("SBANN_REPS").ok().and_then(|s| s.parse().ok()).unwrap_or(7);
+    println!("[routebench] loaded {lp}  nc={}  p={p} nq={nq} reps={reps}", idx.router.n_cells());
+    // RECALL-EXACT proof: for each query, probe with ROUTE_VNNI off then on, compare the SORTED probed-cell
+    // SET. Any mismatch => the VNNI kernel changed which cells are probed (recall not neutral). Report count.
+    if std::env::var("SBANN_ROUTE_VERIFY").is_ok() {
+        use std::sync::atomic::Ordering::Relaxed;
+        let mut mism = 0usize;
+        for i in 0..nq {
+            vq::ROUTE_VNNI.store(false, Relaxed);
+            let mut a = idx.router.probe(qs.row(i), p); a.sort_unstable();
+            vq::ROUTE_VNNI.store(true, Relaxed);
+            let mut b = idx.router.probe(qs.row(i), p); b.sort_unstable();
+            if a != b { mism += 1; }
+        }
+        vq::ROUTE_VNNI.store(std::env::var("SBANN_ROUTE_VNNI").is_ok(), Relaxed);
+        println!("[routebench] RECALL-EXACT check: {mism}/{nq} queries with a DIFFERENT probed-cell set (want 0)");
+    }
+    let mut sink: u64 = 0;
+    // warm pages/caches
+    for i in 0..nq { sink = sink.wrapping_add(idx.router.probe(qs.row(i), p).len() as u64); }
+    // TRUE us/query: best-of-reps, NO instrumentation. Sum cell ids into sink so probe can't be elided.
+    let mut best = f64::INFINITY;
+    for _ in 0..reps {
+        let t0 = Instant::now();
+        for i in 0..nq {
+            sink = sink.wrapping_add(idx.router.probe(qs.row(i), p).iter().map(|&c| c as u64).sum::<u64>());
+        }
+        best = best.min(t0.elapsed().as_secs_f64());
+    }
+    let us = best / nq as f64 * 1e6;
+    println!("[routebench] ROUTE = {:.2} us/query   ({:.0} probes/s)   best/{reps}", us, nq as f64 / best);
+    // PHASE SPLIT: separate ROUTE_PROF pass. Instant per-phase (~4 calls/query) => sub-us distortion, used
+    // ONLY for the relative fractions, not the headline us above.
+    use std::sync::atomic::Ordering::Relaxed;
+    for c in [&vq::PROF_R_COARSE_NS, &vq::PROF_R_CSEL_NS, &vq::PROF_R_FINE_NS, &vq::PROF_R_FSEL_NS, &vq::PROF_R_NEVAL] { c.store(0, Relaxed); }
+    vq::ROUTE_PROF.store(true, Relaxed);
+    let tp = Instant::now();
+    for i in 0..nq { sink = sink.wrapping_add(idx.router.probe(qs.row(i), p).len() as u64); }
+    let prof_total = tp.elapsed().as_secs_f64();
+    vq::ROUTE_PROF.store(false, Relaxed);
+    let (c, cs, f, fs) = (vq::PROF_R_COARSE_NS.load(Relaxed) as f64, vq::PROF_R_CSEL_NS.load(Relaxed) as f64,
+                          vq::PROF_R_FINE_NS.load(Relaxed) as f64, vq::PROF_R_FSEL_NS.load(Relaxed) as f64);
+    let neval = vq::PROF_R_NEVAL.load(Relaxed) as f64;
+    let tot = (c + cs + f + fs).max(1.0);
+    let perq = |ns: f64| ns / nq as f64 / 1000.0; // us/query
+    println!("[routebench] PHASE (ROUTE_PROF pass, {:.2} us/q incl instr):", prof_total / nq as f64 * 1e6);
+    println!("  coarse-l2   {:5.2} us/q  {:5.1}%", perq(c), 100.0 * c / tot);
+    println!("  coarse-sel  {:5.2} us/q  {:5.1}%", perq(cs), 100.0 * cs / tot);
+    println!("  fine-expand {:5.2} us/q  {:5.1}%", perq(f), 100.0 * f / tot);
+    println!("  final-sel   {:5.2} us/q  {:5.1}%", perq(fs), 100.0 * fs / tot);
+    println!("  int8 dist-evals/query = {:.0}   sink={sink}", neval / nq as f64);
+}
+
 fn main() {
     let a: Vec<String> = std::env::args().collect();
     if std::env::var("SBANN_IP").is_ok() { vq::IP_MODE.store(true, std::sync::atomic::Ordering::Relaxed); }
@@ -1202,6 +1266,12 @@ fn main() {
     if std::env::var("SBANN_PROFILE").is_ok() { vq::PROFILE.store(true, std::sync::atomic::Ordering::Relaxed); }
     if let Ok(s) = std::env::var("SBANN_ROUTE_SDIM") { if let Ok(v) = s.parse::<usize>() { vq::ROUTE_SDIM.store(v, std::sync::atomic::Ordering::Relaxed); } }
     if std::env::var("SBANN_ROUTE_ADC").is_ok() { vq::ROUTE_ADC.store(true, std::sync::atomic::Ordering::Relaxed); }
+    if std::env::var("SBANN_ROUTE_VNNI").is_ok() {
+        // VNNI norm-decomposition routing L2 (P196). Must be BIT-IDENTICAL to the AVX2-madd L2 (recall-exact).
+        assert!(simd::selftest_l2_norm(200) && simd::selftest_l2_norm(204) && simd::selftest_l2_norm(100),
+            "VNNI route-L2 norm kernel != AVX2 madd L2!");
+        vq::ROUTE_VNNI.store(true, std::sync::atomic::Ordering::Relaxed);
+    }
     if let Ok(s) = std::env::var("SBANN_ROUTE_ADC_KEEP") { if let Ok(v) = s.parse::<usize>() { vq::ROUTE_ADC_KEEP.store(v, std::sync::atomic::Ordering::Relaxed); } }
     if std::env::var("SBANN_NOLUT16").is_ok() { vq::LUT16_OFF.store(true, std::sync::atomic::Ordering::Relaxed); }
     if std::env::var("SBANN_FASTSCAN").is_ok() {
@@ -1370,6 +1440,7 @@ fn main() {
         Some("prof") => prof(&a[2], &a[3], &a[4]),
         Some("fusedab") => fusedab(&a[2], &a[3], &a[4]),
         Some("scatterbench") => scanbench(&a[2], &a[3]),
+        Some("routebench") => routebench(&a[2], &a[3]),
         Some("rbench") => rbench(&a[2], &a[3], &a[4]),
         Some("build") => build(&a[2], a.get(3).map(|s| s.parse().unwrap()).unwrap_or(16384)),
         Some("bench") => bench(&a[2], &a[3], &a[4], a.get(5).map(|s| s.parse().unwrap()).unwrap_or(4096)),
