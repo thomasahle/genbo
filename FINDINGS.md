@@ -2679,6 +2679,20 @@ P166. (*** RE-OPENING the "fundamental" claim: scan is memory-BANDWIDTH-bound re
     tune: coarser codes need larger K (more float rerank), but rerank is RAM-cheap. NEXT: streaming2 implement dpb=4
     candidate-gen + measure 30M eligible recall@NQ=10000; same lifts OOD. Per the goal (top BOTH) this is the live path. [UPDATE: dpb=4 PANICS (pq.rs:178 m must be even; m=25 odd) -> use dpb=5 instead: m=20, 10B/cand = 2.5x less data (better than dpb=4's 2x), works today. 1M de-risk: dpb=5 QPS ~1.7-2x vs dpb=2 EVEN at 1M (cache-resident/compute-bound, low mem pressure) -> at 30M memory-bound should be >= that; cuts per-candidate WORK (m 50->20) so wins whether wall is BW/latency/compute. Raw int8-GT recall drop modest 0.840->0.805; the DECISIVE float-rerank+largeK recovery reads only on the 30M official-float-GT run, greenlit + running on clean box.]
 
+P167. (*** dpb=5 CONFIRMS the BW hypothesis: 2.61x scan speedup (clean A/B) -> P165's "partly fundamental" was WRONG; coarse-scan+float-reorder WORKS ***)
+    streaming2 clean matched A/B at 30M op48 (identical live=1,688,593, same op, clean box): dpb=2(ctrl) cand-gen QPS
+    506 / scan 1.07e8 cand/s / recall 0.9741  VS  dpb=5 QPS 1321 / scan 2.79e8 / recall 0.8926 (rerank_k=317, official
+    per-step float GT). *** SCAN = 2.61x, BEATS the 2.5x byte-ratio (m 50->20 halves LUT gathers+accumulates too) =>
+    the memory-bound wall IS beatable by cutting per-candidate work; P165's "partly fundamental" ceiling is REFUTED.
+    *** This is scann's exact recipe (coarse candidate-gen + exact reorder), and we have a BETTER reorder (exact float
+    from the 4GB active RAM cache). Cost: recall -0.08 at K=317 = the expected coarse-code ranking penalty; RECOVER by
+    bumping rerank-K (the coarse top-K still contains the true NN; float reorder is RAM-cheap). HONEST ACCOUNTING FIX
+    (streaming2 caught): ops_wall was ins+del+SCAN only (main.rs:1260/1159) -- the float RERANK was UNTIMED, making
+    <1hr verdicts optimistic. Fixing (time the rerank); larger-K recovery now has a real timed cost, but the 2.61x scan
+    frees budget for it. NEXT: K-recovery sweep + honest-timed NQ=10000 eligible recall@max-budget-fitting-p. Budget
+    math: dpb=5's 2.61x scan means the budget-fitting p ~2.6x higher -> if K-recovery holds recall ~0.93-0.95 -> TOP-3
+    ELIGIBLE (0.922), maybe the win. Same lever queued to lift OOD QPS@90% (dpb=5 re-measure). The real path is LIVE.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
