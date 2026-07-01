@@ -2169,31 +2169,41 @@ impl Index {
         use std::io::Write;
         let f = std::fs::File::create(path)?;
         let mut bw = std::io::BufWriter::new(f);
+        // Big arrays (raw/blocks/blocks_il) are written length-prefixed but in 256MB chunks each followed by
+        // flush + sync_data, so the OS dirty-page cache stays bounded. At 100M the index is ~13GB; writing it
+        // all before any writeback (the old single write_all) doubled memory pressure on top of the ~13GB live
+        // index and got the save OOM-KILLED mid-write (P151). Same on-disk format (Sw::bytes = u64 len + bytes).
+        fn synced(bw: &mut std::io::BufWriter<std::fs::File>, data: &[u8]) -> std::io::Result<()> {
+            bw.write_all(&(data.len() as u64).to_le_bytes())?;
+            for c in data.chunks(256 << 20) { bw.write_all(c)?; bw.flush()?; bw.get_ref().sync_data()?; }
+            Ok(())
+        }
         {
             let mut w = crate::persist::Sw { w: &mut bw };
             w.w.write_all(crate::persist::MAGIC)?;
             w.u32(crate::persist::VERSION)?;
-            // POD scalars
             w.usize(self.d)?;
             w.usize(self.bb)?;
             w.usize(self.a0)?;
             w.u8(self.raw_orig_indexed as u8)?;
-            // POD arrays (each length-prefixed)
             w.u32s(&self.cell_bstart)?;
             w.u32s(&self.slot_orig)?;
-            w.u8s(&self.blocks)?;
-            w.i32s(&self.xfn)?;
-            w.i8s(&self.raw)?;
-            w.u8s(&self.blocks_il)?;
+        }
+        synced(&mut bw, &self.blocks)?;
+        { let mut w = crate::persist::Sw { w: &mut bw }; w.i32s(&self.xfn)?; }
+        synced(&mut bw, bytemuck::cast_slice(&self.raw))?;
+        synced(&mut bw, &self.blocks_il)?;
+        {
+            let mut w = crate::persist::Sw { w: &mut bw };
             w.u32s(&self.cell_ilstart)?;
             w.u8s(&self.resid_codes)?;
             w.i8s(&self.rq_cent)?;
             save_opt_residpq(&self.resid_pq, &mut w)?;
-            // concrete router + compressor (each writes its own 1-byte type tag)
             self.router.save(&mut w)?;
             self.comp.save(&mut w)?;
         }
         bw.flush()?;
+        bw.get_ref().sync_data()?;
         Ok(())
     }
 
