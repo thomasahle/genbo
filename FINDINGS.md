@@ -2693,6 +2693,25 @@ P167. (*** dpb=5 CONFIRMS the BW hypothesis: 2.61x scan speedup (clean A/B) -> P
     math: dpb=5's 2.61x scan means the budget-fitting p ~2.6x higher -> if K-recovery holds recall ~0.93-0.95 -> TOP-3
     ELIGIBLE (0.922), maybe the win. Same lever queued to lift OOD QPS@90% (dpb=5 re-measure). The real path is LIVE.
 
+P168. (*** HONEST ELIGIBLE CEILING: dpb=5 full-runbook honest-timed recall@10 = 0.7736 -- real gain (0.6->0.77), NOT top-3; residual = COVERAGE gap = scann's AH2 moat ***)
+    streaming2 full 640-step run, dpb=5 p=64 K=800, official per-step float GT, rerank NOW counted in budget (fix
+    d63902d): avg recall@10 = 0.7736. WALL(NQ=1000)=1424s (inserts 1102 + del 5 + scan 261 + rerank 55). PEAK ANON
+    8.87GB > 8GB (memory-INELIGIBLE, ~5.8M sustained live). Project to scored NQ=10000 (inserts fixed, search x10):
+    wall = 1102+5+2613+554 = 4274s = 71min -> OVER 1hr at p=64; max-p fitting 1hr ~= 47 -> recall ~0.74. Eligible
+    ~0.74-0.77. DIAGNOSIS (clean): (1) dpb=5 scan win REAL (2.61x, 2.79e8 cand/s) -- moved the ceiling 0.6 (p<=16)
+    -> 0.77 (p~50-64). (2) RESIDUAL = COVERAGE: even at 2.79e8 cand/s the 1hr budget scans only ~1.5% of points
+    (p~47/C4096); scann uses 14% (700/5000) = ~10x coverage gap; dpb=5 closed 2.6x, leaving ~4x = scann's AH2 kernel
+    (FastScan/SoA SIMD layout keeping the scan near-peak at scale). (3) SECONDARY walls: inserts 1102s = 31% budget
+    (apq4 encode + O(live) block rebuilds); memory 8.87GB > 8GB. Fixing BOTH to ~0 only lifts max-p ~66 -> ~0.78.
+    *** VERDICT: honest eligible ceiling ~0.77-0.78 with THIS engine, NOT top-3 (0.922). The remaining ~4x is scann's
+    AH2 scan-LAYOUT moat -- partly the coverage math (fundamental-ish) + a major FastScan-class rewrite (days-weeks),
+    OR pushing coarsening further (dpb=10/25, untested, likely hits a recall floor). REAL WINS: dpb=5 2.61x scan
+    (confirmed the BW/compute hypothesis; P165's "partly fundamental" was half-right -- the SCAN was recoverable
+    2.6x, the COVERAGE gap is the fundamental part); eligible 0.6->0.77; the honest rerank-budget accounting fix; the
+    8GB memory audit. NEXT: map the coarsening frontier (dpb 10/25 + K-recovery, cheap) for exact max eligible +
+    memory fix <8GB for a VALID eligible number, then bank. Top-3 = gated on a FastScan/AH2 scan-layout rewrite (the
+    remaining innovation, multi-day). ood2 OOD identically capped: dpb=5 ~2.6x its scan -> ~12-16k QPS@90% vs scann 43k.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
