@@ -2677,7 +2677,7 @@ P166. (*** RE-OPENING the "fundamental" claim: scan is memory-BANDWIDTH-bound re
     memory-bound read -- NOT fundamental. Levers ranked: (1) COARSER candidate-gen codes (dpb 2->4/5) + larger-K float
     rerank [biggest, cuts the read]; (2) prefetch next cell's blocks; (3) SIMD/branchless bounded collect. Tradeoff to
     tune: coarser codes need larger K (more float rerank), but rerank is RAM-cheap. NEXT: streaming2 implement dpb=4
-    candidate-gen + measure 30M eligible recall@NQ=10000; same lifts OOD. Per the goal (top BOTH) this is the live path.
+    candidate-gen + measure 30M eligible recall@NQ=10000; same lifts OOD. Per the goal (top BOTH) this is the live path. [UPDATE: dpb=4 PANICS (pq.rs:178 m must be even; m=25 odd) -> use dpb=5 instead: m=20, 10B/cand = 2.5x less data (better than dpb=4's 2x), works today. 1M de-risk: dpb=5 QPS ~1.7-2x vs dpb=2 EVEN at 1M (cache-resident/compute-bound, low mem pressure) -> at 30M memory-bound should be >= that; cuts per-candidate WORK (m 50->20) so wins whether wall is BW/latency/compute. Raw int8-GT recall drop modest 0.840->0.805; the DECISIVE float-rerank+largeK recovery reads only on the 30M official-float-GT run, greenlit + running on clean box.]
 
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
