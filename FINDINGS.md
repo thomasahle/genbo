@@ -3349,6 +3349,19 @@ P200. (*** RANK-PRESERVING ESTIMATOR: NULL on <1x but a REAL primary-metric win 
     transfer to OOD text-vs-image). <1x = the full ScaNN codebook+layout CO-DESIGN (multi-week, uncertain -- aniso's
     non-transfer to our OOD is a real risk), NOT any single lever. Honest architecture ceiling: ~1.2x quiet / ~1.5x loaded.
 
+P201. (*** RICHER-CODES REFUTED (the last code-side lever): m=200 1-dim 4-bit isotropic @100B/vec cuts survivors 2.4x (840->350 @0.904, ranking gain REAL, int8-sat exact at m=200 via fs2 LUT cap; selftest m=200 added) BUT scan cost = clean 2.03x (102->207us isolated; 132->218 loaded) => e2e 0.75x champion QPS (3507 vs 4679 @0.904); interleaved vs fresh ScaNN 2.46x vs champion's 1.87x — WRONG DIRECTION. Hypothesis "latency-bound scan absorbs 2x bytes" FALSIFIED: real per-query working set is small/cell-clustered => throughput+bandwidth bound (2x vpshufb AND 2x bytes both scale); P195's 3x headroom is a kernel property the workload never sits in. ***)
+    Branch richer-codes 8a4dacb (worktree lsh-engine-wt-richer). ZERO new code needed: richer code == existing Apq4 with
+    SBANN_DPB=1 (d=200 -> m=200) + SBANN_ETA=1, reusing m-generic block_adc_i8_fastscan32_2x16. Controls: richer_m100iso
+    (dpb=2 eta=1) vs true champion (eta=4): IDENTICAL survivors at every operating point — anisotropy re-re-confirmed
+    NULL for OOD (third independent confirmation). Survivor floor: m200 ~290 @0.90 vs ScaNN ~78 — did not reach target
+    anyway. Refine dropped 47-50 -> 28us (as predicted) but +87-105us scan >> -19us refine; even FREE refine (survivors
+    ->16) cannot offset. OPQ variant SKIPPED (changes ranking, not the 100B scan cost — cannot alter conclusion).
+    *** ARCHITECTURAL CLOSURE: scan-time ∝ code-bytes (bandwidth-bound) + ranking ∝ code-bytes (information) =>
+    in-scan code enrichment is a WALL, not a lever. P193's "2x bits = break-even" was OPTIMISTIC (it's 0.75x).
+    Together with P182/P185/P192/P198/P200: EVERY code-side lever now empirically closed at 1M. Remaining untried:
+    SBANN_RESIDQ (residual-encode x - cell_centroid, same 50B, zero scan cost — free ranking if champion built without).
+    Scripts: richer_build.sh, surv_sweep.sh, richer_sweep.sh, richer_h2h.sh; indices richer_m200iso/m100iso.idx.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
