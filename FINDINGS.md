@@ -2712,6 +2712,25 @@ P168. (*** HONEST ELIGIBLE CEILING: dpb=5 full-runbook honest-timed recall@10 = 
     memory fix <8GB for a VALID eligible number, then bank. Top-3 = gated on a FastScan/AH2 scan-layout rewrite (the
     remaining innovation, multi-day). ood2 OOD identically capped: dpb=5 ~2.6x its scan -> ~12-16k QPS@90% vs scann 43k.
 
+P169. (*** MAJOR CORRECTION to P168: the 0.77 was POOL-STARVED; recall RECOVERS to 0.956 via deep pool-depth t -> recipe WORKS, top-3 path LIVE ***)
+    streaming2 (dpb=5, op48, live=1.69M; t = p*tmul = coarse-scan POOL kept before float rerank):
+      p=512 t=2048 K=317/1200 -> 0.8926 (K317==K1200: POOL DEPTH t was the bind, NOT K), QPS 1467
+      p=512 t=8192 K=4000     -> 0.9556 (deep pool RECOVERS recall, near dpb=2's 0.9741), QPS 308
+      p=128 t=4096 K=2000     -> 0.8714, QPS 452
+    The P168 "0.7736 @ p=64" was POOL-STARVED (t=64*4=256 < K=800) -> UNDERSTATED; P168's ~0.77 ceiling was WRONG.
+    INSIGHT: coarse dpb=5 codes rank the true NN DEEPER in the coarse ordering, so you need a DEEPER pool t to keep
+    it in the reranked set; exact float rerank then recovers it. t (pool depth) is the recall lever, not K. Recall
+    ~0.95 IS reachable. *** NEW (and final) bottleneck: cand-gen QPS collapses with deep t at IDENTICAL scan work
+    (1467->308 at t 2048->8192) -- it's the COLLECT/bounded-top-t pool handling (keep=t*4/cap=t*16/select_nth
+    materializes ~131k then sorts, thrashes at t=8192). The float rerank itself is CHEAP (K=4000 ~= 32s@NQ=10000).
+    *** LIVE PATH TO TOP-3 (NO kernel rewrite): an efficient bounded top-t collect (threshold-filter: ~2t buffer,
+    one-compare reject vs the t-th-best threshold, select_nth-prune only on overflow -> amortized O(n) tiny constant)
+    -> deep t becomes cheap -> a moderate-p deep-t config (p~128-192, t~6-8k, dpb=5, float rerank) runs at
+    scan-limited QPS (~1400 not 308) with recall ~0.92 IN honest budget = TOP-3. This is scann's own recipe done
+    BETTER (exact float reorder). streaming2 GREENLIT: profile the deep-t cost -> implement threshold-filter collect
+    -> re-measure moderate-p deep-t at honest NQ=10000 budget. If >=0.922 in-budget = top-3; if collect won't speed
+    up = the honest wall. The most promising lever of the session -- first time recall actually MOVED from a knob.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
