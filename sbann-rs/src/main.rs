@@ -1281,6 +1281,7 @@ fn main() {
     if std::env::var("SBANN_IP").is_ok() { vq::IP_MODE.store(true, std::sync::atomic::Ordering::Relaxed); }
     if std::env::var("SBANN_POOLDEDUP").is_ok() { vq::POOLDEDUP.store(true, std::sync::atomic::Ordering::Relaxed); }
     if let Ok(s) = std::env::var("SBANN_DEDUP_A0") { if let Ok(v) = s.parse::<usize>() { vq::DEDUP_A0.store(v, std::sync::atomic::Ordering::Relaxed); } }
+    if let Ok(s) = std::env::var("SBANN_KEEP_MUL") { if let Ok(v) = s.parse::<usize>() { if v >= 1 { vq::KEEP_MUL.store(v, std::sync::atomic::Ordering::Relaxed); } } }
     if std::env::var("SBANN_PROFILE").is_ok() { vq::PROFILE.store(true, std::sync::atomic::Ordering::Relaxed); }
     if let Ok(s) = std::env::var("SBANN_ROUTE_SDIM") { if let Ok(v) = s.parse::<usize>() { vq::ROUTE_SDIM.store(v, std::sync::atomic::Ordering::Relaxed); } }
     if std::env::var("SBANN_ROUTE_ADC").is_ok() { vq::ROUTE_ADC.store(true, std::sync::atomic::Ordering::Relaxed); }

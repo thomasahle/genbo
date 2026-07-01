@@ -43,6 +43,9 @@ pub static POOLDEDUP: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicB
 /// (1M OOD a0=3 = -0.003) but avoids the per-query dedup cost on the QPS@90% / msspacev champion configs.
 /// a0 >= this uses the correct before-cap dedup (needed at heavy duplication, e.g. a0>=6). Default 4.
 pub static DEDUP_A0: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(4);
+/// SBANN_KEEP_MUL: bounded-top-t collect keeps `t*KEEP_MUL` (prunes at 2x that). Default 1 = keep exactly t
+/// (tight; deep-t collect stays cheap). Set higher (old default 4) for A/B / looser-threshold headroom.
+pub static KEEP_MUL: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(1);
 /// SBANN_PROFILE: accumulate per-component query time (nanos) to see where the 10M query goes
 /// (route vs scan vs rerank). Load-robust (report the FRACTIONS, not absolute). main.rs prints+resets.
 pub static PROFILE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
@@ -1672,8 +1675,14 @@ impl Index {
         // may beat the threshold-bounded collect at high candidate counts (the per-candidate branch breaks
         // vectorization + prefetch). When set, !bound -> thr=MAX/cap=MAX -> unconditional push.
         let bound = t > 0 && !residq && std::env::var("SBANN_UNBOUNDED").is_err();
-        let keep = (t * 4).max(64);
-        let cap = (t * 16).max(256);
+        // TIGHT bounded top-t: keep exactly t (the result set), prune when the pool reaches 2t. With the old
+        // keep=4t/cap=16t the pool grew to 16t (thr=MAX until then) -> at deep t (e.g. 8192 -> 131072 pushes +
+        // a 131072-wide select_nth) the collect became memory-bound and dominated (QPS 1467->308 for the SAME
+        // scan). keep=t/cap=2t sets thr after ~2t pushes, so the far ~99% are rejected by a cheap compare and
+        // the pool never exceeds 2t. Correct: we always retain the t smallest seen (thr = t-th smallest, only
+        // decreases). Env-overridable for A/B (read once, not per-candidate).
+        let keep = (t * KEEP_MUL.load(std::sync::atomic::Ordering::Relaxed)).max(64);
+        let cap = (keep * 2).max(256);
         let mut thr = i32::MAX;
         // `bound` is loop-invariant -> the branch is perfectly predicted; the else-arm is the NATIVE
         // unconditional push (no per-candidate threshold compare) for the A/B.
