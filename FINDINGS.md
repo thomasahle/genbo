@@ -3275,6 +3275,22 @@ P196. (*** ROUTE PRIMITIVE: 33.5 -> 23.1us (1.45x, recall-EXACT) -> now BELOW Sc
     ~1.16x. Remaining gap to <1x = scan density ~9us + int8-refine survivor-count ~18us = ~27us, BOTH = ScaNN's
     anisotropic-AH codebook + learned dense partitioning. Combined measurement next.
 
+P197. (*** COMBINED best-effort = ~1.45x vs ScaNN (loaded), recall-EXACT, all 3 levers stacked cleanly (multiplicative, no interference): cascade +32% x route-VNNI +7% x fusedtopk. Config-levers EXHAUSTED at ~1.45x (loaded) / ~1.2x (quiet-projected). Remaining 54us(loaded)/~23us(quiet) gap = scan-density + int8-refine survivor-count = the CODEBOOK. ***)
+    combined-primitives (30e2b7b) = P192 champion + cherry-pick route-primitive + rerank-cascade (clean merge, both
+    SBANN_ROUTE_VNNI & SBANN_CASCADE work). RECALL-EXACT: p58 t8 baseline/+FUSEDTOPK/+ROUTE_VNNI/+CASCADE-K16 all
+    0.9005 bit-identical; 0/2000 route-set changes; K16 holds recall. Optimum p=54 t10 K16 = 0.9032 @ ~5850 QPS vs
+    ScaNN 0.9032 @ ~8410 same window = RATIO median 1.457x (5 rounds 1.425-1.472). Phase (e2e ~173us loaded): route
+    28 (16%) / scan 110 (64%) / int8-refine 25 (14%) / float 9 (5%); ScaNN ~119 -> gap 54us. Stacking: fused 4040 ->
+    +ROUTE_VNNI +6.1% -> +CASCADE +32% -> FULL +41.2% (1.32x1.07~1.41, mild super-additivity).
+    *** METHODOLOGY WRINKLE: box loaded 24-31 (~1.5-2x oversubscribed) INFLATES our ratio -- ScaNN's batched C++
+    tolerates oversubscription better than our per-query Rust loop, so the loaded 1.45x is PESSIMISTIC; quiet-box
+    phase-sums project ~1.2x (route23+scan85+int8~14+float~5 vs ScaNN 119). A QUIET-BOX re-measure is the fair number
+    (still NOT <1x; the structural gap remains). *** VERDICT: config-levers exhausted; route (23-28us) & float (9us)
+    near-floor; the ENTIRE residual is scan-density (scattered apq4 blocks) + int8-refine survivor-count -- both
+    downstream of apq4's 4-bit codes not rank-preserving. <1x needs OPQ/anisotropic-AH rank-preserving codes OR
+    learned anisotropic PARTITIONING (untested -- reduces candidates+survivors without the richer-code scan penalty).
+    Progress ledger: 25x(mirage) -> 2.22x(P190) -> 2.07x(P191) -> 1.77x(P192) -> 1.45x(P197), all recall-exact.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
