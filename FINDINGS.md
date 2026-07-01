@@ -2873,6 +2873,24 @@ P177. (*** OOD: dpb=5 CRATERS recall (never hits 0.90) -- coarse codes lose the 
     anisotropic eta): a finer-but-fast RANK-PRESERVING code could reach 0.90 (OOD) / shrink reorder t (streaming) WITH
     the scan win -> top-3 for both. The reorder-depth microbench should be run on BOTH msturing (L2) AND text2image (IP).
 
+P178. (*** HONEST OOD 10M NUMBER: QPS@90% ~1732 = BOTTOM tier (~15-25x behind); REAL 8-thread throughput (not contention); wall = SCAN THROUGHPUT; the OPQ-rotation (aopq/opql5) test is the only upside ***)
+    ood2 (committed 92017d0): text2image-10M vs float GT, dpb=2 (the OOD optimum), int8+t_surv-cut, REPS=5, RAYON=8
+    (matches D8lds_v5's 8 vCPU): p=768 recall 0.9040 QPS 1732 (the QPS@90% operating point); p=896 0.9069/1550;
+    p=1024 0.9089/1402. So OOD QPS@90% ~= 1732. *** SOBERING: this ~= the earlier load-48 "junk" -> QPS is NOT
+    contention-bound; it's the engine's REAL 8-thread throughput. The ~4.5-6k "clean-est" (P164) was TOO OPTIMISTIC.
+    Even generously extrapolating to a dedicated 8-vCPU box (~2.5-3.5k), we are BOTTOM tier vs hanns 46034 / scann
+    42854 / zilliz 33241 / mysteryann/pyanns ~22k / ... / diskann 4133 / cufe 3561 -> ~15-25x behind the top, at/below
+    diskann/cufe. *** Recall REACH is fine (float rerank hits 0.95); the wall is purely SCAN THROUGHPUT (~15-20x below
+    native), same as streaming. The dpb coarse-code lever (streaming's 2.6x) does NOT transfer to OOD: dpb=5 tops 0.807,
+    dpb=4 tops 0.8903 (never 0.90), dpb=2 reaches 0.90 at p~768 (craters coarser, P177). PATH FORWARD (the P176 shared
+    lever, DIRECTLY TESTABLE): ood2's branch ALREADY has comp=aopq (Opq4::train_aopq = OPQ learned rotation +
+    anisotropic) + opql5 (OPQ rotation @ dpb=5) + SBANN_ETA (code comment notes high eta for OOD/IP). So the
+    rank-preserving-fast-codes hypothesis is directly runnable: does aopq/opql5 + high eta make coarse (fast) codes
+    reach 0.90 on OOD/IP? = the ONLY untried OOD lever with upside, and it CONVERGES with streaming2's reorder-depth/
+    OPQ microbench (same OPQ-rotation lever). *** BOTH tracks' top-3 now hinges on the SAME decisive test: do
+    OPQ-rotation + anisotropic-eta codes stay RANK-PRESERVING while coarse/fast? (aopq/opql5). If yes -> top-3 path
+    for both; if no -> scann's proprietary quantization is the confirmed moat. This is THE experiment.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
