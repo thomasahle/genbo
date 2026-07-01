@@ -3189,6 +3189,25 @@ P191. (*** STACKED LEVERS: prefetch+float-rerank close 2.22x -> ~2.07x median (2
     UN-tested config levers (routing granularity toward scann's bigger contiguous leaves + float rerank; rerank depth;
     aopq/aniso-CD codes) before conceding the structural wall.
 
+P192. (*** SUB-2x ACHIEVED at 1M single-thread OOD: gap-closing workflow (routing/rerank/codes fan-out) drives 2.07x -> ~1.77x median (1.84x recall-matched to scann 0.9032), clean interleaved. The ONLY winner = DE-OVER-PROVISIONING the coarse router (C0 128->768, b0 32->96: coverage 25%->12.5%, 4224->2816 int8 dist-evals/q, holds 0.90 at same p=58). Rerank-depth & better-codes = confirmed NON-winners. Config-lever headroom now TAPPED at ~1.8x. ***)
+    3-agent parallel workflow, each measured QPS@recall0.90 single-thread pinned interleaved vs fresh ScaNN.
+    ROUTING (only winner, config-only): the "bigger contiguous leaves" hypothesis was FALSIFIED (KF32768 finer=worse;
+    bigger C0 alone=small); the real win is trimming the OVER-PROVISIONED coarse router (b0 beam 32->96 halves top-level
+    coverage 25%->12.5%, cutting route work ~33% while still reaching 0.90 at p=58 -- route was doing wasted dist-evals).
+    RERANK-DEPTH: NO win (already at the 0.90 knee; p=58/t=8 is the edge, p<=56 & t<=7 fall sub-0.90). CODES: NEGATIVE
+    (aopq + faithful anisotropic-VQ both reach 0.90 at MORE probes -- under FLOAT RERANK the code's only job is
+    isotropic pool-recall, so anisotropic optimizes the wrong target). Winners collapse to the single routing lever.
+    *** CLEAN INTERLEAVED (taskset -c 0, best-of-5, 5 rounds, load 11.6-13.9): ScaNN 0.9032 @ median 8429 QPS (+-1%) vs
+    ENG-COMBINED (C0=768 b0=96 idx + apq4 + p58 t8 float-rerank + prefetch) 0.9005 @ median 4746 = RATIO 1.77x; recall-
+    matched at p=60 (0.9033) = 1.84x. Recall confirmed >=0.90 (not cherry-picked). *** So: 25x(invalid) -> 2.22x(P190
+    true same-hw) -> 2.07x(P191 stacked) -> 1.77x(P192 routing). Clean sub-2x for the first time, ~15% relative cut.
+    NOT parity. Remaining ~1.8x is STRUCTURAL/execution-speed (unchanged P183/P187/P189): ScaNN's cache-resident SoA
+    anisotropic-AH scan (in-register LUT16 over a packed contiguous-leaf layout) vs our memory-bound scattered PQ-block
+    reads (0.2%-dense probes). No config lever crosses it recall-neutrally -> needs the layout rebuild. Committed
+    5419798 on ood-levers-stacked; harness interleave_p192.sh; idx granul_kf16384_c768_b96_a3.idx.
+    *** CAVEAT (P192-honest): interleaved ratio itself has ~+-5-7% window variance (scann float-scan vs our int8-scan
+    have different contention sensitivities); ~1.8x is the honest central estimate, not a hard 1.77.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
