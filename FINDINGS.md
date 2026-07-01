@@ -2950,6 +2950,23 @@ P181. (*** CORRECTION to P180 + DEFINITIVE CLOSE: the "rotation reaches 0.90 coa
     TOP-3 for either = the scoped multi-day scann-kernel+quantization rebuild, the USER's call. SESSION COMPLETE:
     config/tuning space EXHAUSTIVELY mapped with data on both tracks. (dpb=4 confirm ~5min, but the verdict is decided.)
 
+P182. (*** FINAL CRUX (reorder-depth/OPQ microbench COMPLETE both tracks incl m~25-40 target): rank-preservation is set by code BIT-RATE (m); a coarse-AND-rank-preserving code does NOT exist in our OPQ+eta family. SESSION DONE. ***)
+    streaming2 completed the reorder-depth/OPQ microbench on the CANDIDATE-GEN codes (recall-at-fixed-reorder-depth =
+    do the coarse codes rank-preserve; NOT float-refine). recall@10 vs reorder-depth (tmul 4/8/16/32):
+      IP text2image d=200, p=1024: FINE m=100(dpb2) 0.909/0.916/0.919/0.920 | COARSE m=40(dpb5) 0.684/0.770/0.839/0.882
+      L2 msturing d=100:           COARSE m=20(dpb5) apq4=0.8926, aopq(OPQ+eta)=0.8926, opql(OPQ)=+0.007@4x slower
+    eta 4=16=64 IDENTICAL (eta zero effect), eta>4 flat-to-worse; OPQ rotation ~0 on L2, +0.005 matched on IP. THE
+    PATTERN (both tracks): rank-preservation ∝ code BIT-RATE (m) -- finer m = shallower reorder-depth, coarser m =
+    deeper (m=40 IP only 0.88 even at reorder ~33k). Coarsening ALWAYS costs ranking; rotation/eta don't rescue it.
+    => the "coarse (fast) AND rank-preserving (shallow reorder)" code = scann's AH2 recipe does NOT exist in our
+    OPQ+eta knob-space. scann keeps codes coarse AND rank-preserving via proprietary anisotropic-VQ + learned
+    transforms; we cannot with the knobs we have. *** DECISIVE, BOTH TRACKS + the exact m~25-40 target: top-3 requires
+    reimplementing scann's quantization from their papers = a scoped multi-day algorithm project (the user's call);
+    tuning is EXHAUSTED. *** SESSION COMPLETE. Honest finals: streaming eligible recall@10 ~0.77 (VALID 8GB+1hr, from
+    ~0.6-ineligible); OOD QPS@90% ~1732 (bottom tier, of scann 42854). Real wins: the 8GB+1hr eligibility audit +
+    re-arch, dpb=5 2.61x scan, int8-only memory fix, float-rerank breaking the int8 recall ceiling, and exhaustive
+    data-backed refutation of every tuning lever (dpb/pool-t/collect/K/p/OPQ-rotation/eta) on both tracks.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
