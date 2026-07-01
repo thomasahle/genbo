@@ -3291,6 +3291,23 @@ P197. (*** COMBINED best-effort = ~1.45x vs ScaNN (loaded), recall-EXACT, all 3 
     learned anisotropic PARTITIONING (untested -- reduces candidates+survivors without the richer-code scan penalty).
     Progress ledger: 25x(mirage) -> 2.22x(P190) -> 2.07x(P191) -> 1.77x(P192) -> 1.45x(P197), all recall-exact.
 
+P199. (*** REFINE is a DEAD END (~0us shaved) and RECALL-LOCKED on every axis -> confirms the 24us int8-refine is the CODEBOOK gap (survivor count), not execution speed. Ratio unchanged ~1.45-1.48x loaded. Prefetch was ALREADY shipped (P194); leaner-refine sub-levers all break recall or give 0. ***)
+    Attacked the 24us int8-refine 3 ways, all recall-EXACT-verified: (1) PREFETCH already exploited -- rerank_cascade_float
+    already prefetched survivor i+8 (P194); made it tunable/full-row/primed (SBANN_CASC_PFDIST/PFLINES) but no variant
+    beats the shipped 1-line (HW adjacent-line streamer covers the rest); prefetch is worth ~15us (39->24) but already
+    banked. (2) CASC_DIM fewer bytes/row: recall CRATERS (dim200=0.9032, dim128=0.394, dim64=0.197 -- OOD needs all 200
+    dims; the 24us is per-row FIRST-MISS-LATENCY not bandwidth). (3) apq4 prefilter fewer rows: M=256 -> 0.8942 (<0.90);
+    even 280->256 breaks recall -- the int8 stage genuinely rescues true-top-10 apq4 mis-ranks; champion is on a razor
+    0.9032 w/ zero fat. (4) Asymmetric true-float-query x int8-row dot (dot_f32_i8, runtime AVX2+scalar fallback+selftest):
+    BIT-IDENTICAL recall (query int8-quant isn't lossy) -> 0us, 0 gain. *** Interleaved vs ScaNN best/5 8 rounds: ScaNN
+    8454 vs refine 5839 = median ~1.48x (best-round 1.38x). Phase unchanged: route 23/scan 85/int8-refine 24/float 9.
+    *** VERDICT: <1x UNREACHABLE via refine -- even zeroing the 24us lands ~1.19x (quiet phase-sum) / the loaded ratio
+    stays 1.45x. The 24us is survivor-COUNT (codebook), recall-locked on dims+rows+precision+prefetch. *** KEY FRAMING:
+    on a QUIET box route+scan+float(no-int8) ~= 117us ~= ScaNN 119us (~parity); the ONLY thing holding us above 1x is
+    the codebook-driven int8-refine (survivor count). So <1x = reduce survivor count, via rank-preserving codes (OPQ/
+    anisotropic-AH) OR anisotropic PARTITIONING (reduce candidates+survivors from routing side -- the still-running last
+    lever). Clean-code: dot_f32_i8 behind is_x86_feature_detected + scalar fallback + selftest. Branch refine-prefetch 024a0d0.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
