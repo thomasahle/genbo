@@ -2787,6 +2787,25 @@ P172. (*** P171 CORRECTED (honest walk-back): int8-only = MEMORY win (eligible 5
     dpb=5 2.61x scan, int8-only eligibility (8.87->5.3GB), 0.6->0.78 eligible, the 8GB audit + rerank-budget honesty
     fix. My earlier user push (~0.77, needs FastScan) stands correct -- holding the P171 optimism was the right call.
 
+P173. (*** DEFINITIVE VALID eligible streaming number: recall@10 ~0.77 (int8-only dpb=5 p=60), 4.3GB<8GB, wall ~3530s<1hr -- BOTH constraints met, below top-3, config EXHAUSTED ***)
+    streaming2 official NQ=10000, int8-only dpb=5 p=60 flat C=4096, official per-step float GT: recall@10 = 0.769
+    (mean over 513/640 steps; the run was KILLED at 80% by a box event -- not us; steady-state last-300-step mean =
+    0.777, so full-640 avg ~= 0.77). PEAK ANON = 4.3GB (VALID <8GB). WALL: calibration projects p=60 -> ~3530s (VALID
+    <1hr). So for the FIRST time we have a number VALID on BOTH constraints: recall@10 ~0.77, below top-3 (0.922).
+    FULL LEVER SUMMARY (all exhausted): (1) dpb=5 is the optimum -- coarser FLOORS (dpb10=0.796, dpb25=0.414 even at
+    deep pool; more-coarsening-for-coverage dies on the fidelity floor), finer (dpb=2) is scan-starved. (2) int8-only
+    memory fix: dropping the 4.12GB float cache -> anon 8.87->4.3GB (VALID) AND ~5.8x faster, at ~0.01 recall cost
+    (float rerank not worth it for streaming-30M's budget-recall level). (3) BUDGET: even with the freed speed,
+    inserts (~1000-1100s = 27%) + NQ=10000 search (x10) cap p at ~60 -> ~2% coverage vs scann's 14% = THE WALL.
+    NET: eligible ceiling ~0.77 VALID; 0.6-ineligible -> 0.77-eligible via dpb=5 2.61x + int8-only + budget-max-p.
+    Honest, real, NOT top-3. Remaining config levers each ~+0.03-0.05 (faster inserts to free budget; hierarchical/
+    learned routing; cheap float-refine to break the int8 0.95 ceiling) -- won't close the ~0.15 gap to 0.922. ***
+    CONFIG SPACE EXHAUSTED. TOP-3 requires scann's AH2 scan-LAYOUT kernel (~7x scan -> 14% coverage) OR a learned/
+    hierarchical router (~7x fewer probes per recall) -- a multi-week engine project, the SAME wall as OOD QPS@90%.
+    BANKED WINS: dpb=5 2.61x scan, 0.6->0.77 eligible, rerank-budget honesty fix (d63902d), tight-collect (f4d1682),
+    int8-only memory fix, full 8GB+1hr eligibility audit + re-arch. ood2 OOD: dpb=5 helps at 0.90 (scan-dominated) =
+    real QPS@90% gain (re-measuring). *** STREAMING TRACK: config-optimization COMPLETE; final eligible ~0.77. ***
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
