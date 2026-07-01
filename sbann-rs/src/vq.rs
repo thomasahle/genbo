@@ -25,6 +25,7 @@ pub static USE512FS: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBo
 /// (query_lut_f32_i8s_fs2) so hoist groups don't saturate. ~1.8x kernel vs the crude 16-wide int16
 /// fast-scan when compute/L2-bound; the exact rerank restores order past the coarser LUT. Set from
 /// SBANN_FASTSCAN2 (implies the Pq8 path, adds the 256-bit LUT regs). Do NOT combine with USE512FS.
+/// Champion default ON (set in main() when AVX2 is detected; SBANN_FASTSCAN2=0 disables).
 pub static FASTSCAN2: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 /// SBANN_FUSEDTOPK: ScaNN-style fused top-t collect. Instead of materializing EVERY candidate
 /// (dist,slot) into a pool and select_nth-ing over all of them, keep a running t-th-best threshold and
@@ -35,6 +36,7 @@ pub static FASTSCAN2: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicB
 /// O(candidates) scalar push + per-candidate slot_orig branch (the measured ~85% of the scan phase,
 /// FINDINGS P187) is replaced by a SIMD threshold-compare that only touches slot_orig for survivors.
 /// Gated to the NON-residq, non-pool-dedup path (see scan_rerank); falls back to scan_pool otherwise.
+/// Champion default ON (set in main(); SBANN_FUSEDTOPK=0 disables).
 pub static FUSEDTOPK: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 /// IDEA #4: build a SECOND finer 8-bit refine code (pq::ResidPq) in slot order and use it to refine
 /// the 4-bit-ADC survivor ranking before the exact raw rerank, so far fewer raw vectors are read.
@@ -82,10 +84,11 @@ pub static PROF_CASC_NS: std::sync::atomic::AtomicU64 = std::sync::atomic::Atomi
 /// t_surv (~464) down to CASCADE_K, then FLOAT-reorder only those K. int8 ranks far better than the 4-bit
 /// apq4 code, so the true float-top-10 survive the prune at small K -> cuts the ~180ns/vec float reorder
 /// count ~4-7x. Recall must be verified >= the float-rerank-only baseline (the prune is not free of risk).
+/// Champion default ON (set in main(); active only on the FLOAT_RERANK path; SBANN_CASCADE=0 disables).
 pub static CASCADE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
-/// CASCADE_K: how many int8-top survivors to pass to the float reorder (SBANN_CASCADE_K). Tuned to the
-/// minimum that HOLDS recall@10 >= baseline.
-pub static CASCADE_K: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(128);
+/// CASCADE_K: how many int8-top survivors to pass to the float reorder (SBANN_CASCADE_K). Default 16 =
+/// the P194 minimum that HOLDS recall@10 == the float-rerank-only baseline (K12 breaks it).
+pub static CASCADE_K: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(16);
 /// CASC_SORT (P194): sort the deduped survivor pool by SLOT before the int8 gather. `raw` is slot-
 /// contiguous, so slot-ascending order makes the int8 gather read MONOTONICALLY forward -> HW prefetch
 /// + TLB stream instead of a random scatter (the P189 scattered-read lever, applied to the int8 stage).
@@ -112,6 +115,7 @@ pub static ROUTE_ADC_KEEP: std::sync::atomic::AtomicUsize = std::sync::atomic::A
 /// SBANN_ROUTE_VNNI (P196): compute the routing centroid L2 with the VNNI norm-decomposition kernel
 /// (L2 = Σq²+Σc²−2·dot, dpbusd dot) instead of the AVX2-madd Σ(q−c)². Bit-identical cell selection
 /// (recall-EXACT), ~1.5x on the dominant compute (66% of route). Full-dim only; sd<d stays on madd.
+/// Champion default ON (set in main() when AVX-512 VNNI is detected; SBANN_ROUTE_VNNI=0 disables).
 pub static ROUTE_VNNI: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 /// SBANN_SORTCELLS (WALL-1 scattered-read lever): sort the probed cell list ASCENDING (= block/memory
 /// order, since cell_bstart is monotonic in cell id) before scanning. route_fine's select_nth returns
@@ -126,6 +130,7 @@ pub static SORTCELLS: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicB
 /// (default 13 = the full 800B PQ block). Recall-neutral (prefetch is a hint; results identical). Applied
 /// in scan_pool + kernel_only. Tuned on 1M OOD (P189): raises the scattered kernel FLOOR +45-53% Mcand/s,
 /// which nets +8-11% e2e QPS@recall>=0.90 (block-reads are only ~26% of the e2e query). pfdist 2, full block.
+/// Champion default ON (set in main(); SBANN_PREFETCH=0 disables).
 pub static PREFETCH: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 pub static PFDIST: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(2);
 pub static PFLINES: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(13);

@@ -471,13 +471,14 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
     // big-ann reports BEST search time over run_count -> measure best-of-REPS to filter box-load
     // spikes on this contended box. SBANN_REPS overrides (default 1; use 3-5 for clean A/B tuning).
     let reps: usize = std::env::var("SBANN_REPS").ok().and_then(|s| s.parse().ok()).unwrap_or(1);
-    // SBANN_BATCHSCAN (cell-major batched scan A/B, temporary scaffolding): route+LUT all nq queries,
-    // sweep cells in storage order reusing each cell's blocks across the queries that probe it, then
-    // per-query cascade+float. Only wired for the FLOAT_RERANK (champion) path. SBANN_BATCH_CHUNK splits
-    // the nq queries into fixed-size chunks (multiplicity ~ chunk_size) for the batch-size sensitivity
-    // sweep; default = whole nq. SBANN_BATCH_VERIFY runs the per-query path too and compares result ids.
-    let batchscan = std::env::var("SBANN_BATCHSCAN").is_ok();
-    let batch_chunk: usize = std::env::var("SBANN_BATCH_CHUNK").ok().and_then(|s| s.parse().ok()).filter(|&c| c >= 1).unwrap_or(nq);
+    // BATCHSCAN (P202, champion default ON): cell-major batched scan — route+LUT all nq queries, sweep
+    // cells in storage order reusing each cell's blocks across the queries that probe it, then per-query
+    // cascade+float. Recall-BIT-IDENTICAL to the per-query path (pure execution-order change). Only wired
+    // for the FLOAT_RERANK path. SBANN_BATCHSCAN=0 forces the per-query loop. SBANN_BATCH_CHUNK splits the
+    // nq queries into fixed-size chunks (multiplicity ~ chunk_size); default 1000 = the P202 saturation
+    // knee. SBANN_BATCH_VERIFY runs the per-query path too and compares result ids.
+    let batchscan = env_on("SBANN_BATCHSCAN", true);
+    let batch_chunk: usize = std::env::var("SBANN_BATCH_CHUNK").ok().and_then(|s| s.parse().ok()).filter(|&c| c >= 1).unwrap_or(1000);
     let batch_verify = std::env::var("SBANN_BATCH_VERIFY").is_ok();
     // SBANN_VNNI_AB: interleave VNNI off/on per (p,t) for a clean same-index rerank-kernel A/B.
     let vnni_ab = std::env::var("SBANN_VNNI_AB").is_ok();
@@ -1316,6 +1317,39 @@ fn routebench(base: &str, qpath: &str) {
     println!("  int8 dist-evals/query = {:.0}   sink={sink}", neval / nq as f64);
 }
 
+/// Read a boolean override flag. Unset -> `default`. Present and equal to "0" -> false; any other
+/// value -> true. The winning OOD levers (FINDINGS P194-P202) default ON via `env_on(name, true)`;
+/// pass `SBANN_<NAME>=0` to disable a lever for an A/B. Refuted/experimental flags keep their
+/// original opt-in `.is_ok()` reads (default OFF).
+fn env_on(name: &str, default: bool) -> bool {
+    match std::env::var(name) {
+        Ok(v) => v != "0",
+        Err(_) => default,
+    }
+}
+
+/// ── CHAMPION OOD STACK (default query path, FINDINGS P190-P202) ─────────────────────────────────
+/// The 1M text2image OOD head-to-head vs ScaNN converged on this stack; every lever below is
+/// recall-EXACT (verified in its P-entry) and now defaults ON. Each stays overridable with
+/// `SBANN_<NAME>=0` for A/B measurement — flip the default, keep the control.
+///   • FASTSCAN2  (P195) — 32-wide int8-saturating FastScan. Enabled only when AVX2 is detected
+///                         (falls back to the int16 LUT scan otherwise); kernel selftest asserted.
+///   • ROUTE_VNNI (P196) — VNNI norm-decomposition routing L2, bit-identical to the AVX2 madd L2.
+///                         Enabled only when AVX-512 VNNI is detected (falls back to the AVX2 route
+///                         L2 otherwise); norm-kernel selftest asserted.
+///   • CASCADE    (P194) — int8-VNNI mid-stage that prunes the apq4 survivor pool to CASCADE_K=16
+///                         before the exact float reorder (only active on the FLOAT_RERANK path).
+///                         The int8 rescore is runtime-dispatched VNNI→AVX2→scalar.
+///   • FUSEDTOPK  (P187) — ScaNN-style keep-only-survivors scan collect (recall-neutral).
+///   • BATCHSCAN  (P202) — cell-major batched FRR scan driver, chunked at BATCH_CHUNK=1000
+///                         (recall-bit-identical; only active on the FLOAT_RERANK path).
+///   • prefetch   (P194) — the QPS-critical survivor-gather prefetch is UNCONDITIONAL inline in the
+///                         rerank kernels (no flag). The per-cell scan prefetch (SBANN_PREFETCH,
+///                         P189, recall-neutral) also defaults ON to match the champion recipe.
+/// Dataset/mode selectors stay explicit (NOT folded): SBANN_IP (metric), SBANN_FLOAT_RERANK +
+/// SBANN_FBASE/FQUERY (needs float base vectors), SBANN_TFLOOR. Refuted levers (aniso partitioning/
+/// codes P182/P198, rank-preserving NormPq P200, richer codes P201, P2LAYOUT P195) live only on
+/// their experiment branches and are absent here.
 fn main() {
     let a: Vec<String> = std::env::args().collect();
     if std::env::var("SBANN_IP").is_ok() { vq::IP_MODE.store(true, std::sync::atomic::Ordering::Relaxed); }
@@ -1324,8 +1358,14 @@ fn main() {
     if std::env::var("SBANN_PROFILE").is_ok() { vq::PROFILE.store(true, std::sync::atomic::Ordering::Relaxed); }
     if let Ok(s) = std::env::var("SBANN_ROUTE_SDIM") { if let Ok(v) = s.parse::<usize>() { vq::ROUTE_SDIM.store(v, std::sync::atomic::Ordering::Relaxed); } }
     if std::env::var("SBANN_ROUTE_ADC").is_ok() { vq::ROUTE_ADC.store(true, std::sync::atomic::Ordering::Relaxed); }
-    if std::env::var("SBANN_ROUTE_VNNI").is_ok() {
-        // VNNI norm-decomposition routing L2 (P196). Must be BIT-IDENTICAL to the AVX2-madd L2 (recall-exact).
+    // ROUTE_VNNI (P196, champion default ON): VNNI norm-decomposition routing L2, BIT-IDENTICAL to the
+    // AVX2-madd L2 (recall-exact). Enabled only when AVX-512 VNNI is detected; vq::gather_fine falls back
+    // to the AVX2 block L2 otherwise. Disable with SBANN_ROUTE_VNNI=0.
+    if env_on("SBANN_ROUTE_VNNI", true)
+        && std::is_x86_feature_detected!("avx512vnni")
+        && std::is_x86_feature_detected!("avx512bw")
+        && std::is_x86_feature_detected!("avx512f")
+    {
         assert!(simd::selftest_l2_norm(200) && simd::selftest_l2_norm(204) && simd::selftest_l2_norm(100),
             "VNNI route-L2 norm kernel != AVX2 madd L2!");
         vq::ROUTE_VNNI.store(true, std::sync::atomic::Ordering::Relaxed);
@@ -1336,21 +1376,28 @@ fn main() {
         assert!(pq::selftest_i8_fast(50) && pq::selftest_i8_fast(100), "fast-scan kernel != scalar!");
         vq::FASTSCAN.store(true, std::sync::atomic::Ordering::Relaxed);
     }
-    if std::env::var("SBANN_FASTSCAN2").is_ok() {
-        // PROPER 32-wide int8-saturating FastScan (block_adc_i8_fastscan32_2x16 over the 16-block layout).
+    // FASTSCAN2 (P195, champion default ON): PROPER 32-wide int8-saturating FastScan
+    // (block_adc_i8_fastscan32_2x16 over the 16-block layout). The kernel + its 256-bit LUT regs need
+    // AVX2, so it is enabled only when AVX2 is detected; without AVX2 the scan falls back to the int16
+    // LUT path (Apq4::prepare_query). Kernel selftest asserted. Disable with SBANN_FASTSCAN2=0.
+    if env_on("SBANN_FASTSCAN2", true) && std::is_x86_feature_detected!("avx2") {
         assert!(pq::selftest_i8_fastscan32(50) && pq::selftest_i8_fastscan32(100) && pq::selftest_i8_fastscan32(20),
             "fastscan32 kernel != scalar!");
         vq::FASTSCAN2.store(true, std::sync::atomic::Ordering::Relaxed);
     }
-    if std::env::var("SBANN_FUSEDTOPK").is_ok() {
-        // ScaNN fused top-t: keep a running threshold + emit only survivors (kills the O(candidates)
-        // scalar collect, FINDINGS P187). Recall-neutral vs the materialize-all + select_nth path.
+    // FUSEDTOPK (P187, champion default ON): ScaNN fused top-t — keep a running threshold + emit only
+    // survivors (kills the O(candidates) scalar collect). Recall-neutral vs materialize-all + select_nth.
+    // Disable with SBANN_FUSEDTOPK=0.
+    if env_on("SBANN_FUSEDTOPK", true) {
         vq::FUSEDTOPK.store(true, std::sync::atomic::Ordering::Relaxed);
     }
     if std::env::var("SBANN_SCANDIAG").is_ok() { vq::SCANDIAG.store(true, std::sync::atomic::Ordering::Relaxed); }
     // WALL-1 scattered-read levers (P189): SORTCELLS = monotonic scan order; PREFETCH = SW-prefetch next cell.
     if std::env::var("SBANN_SORTCELLS").is_ok() { vq::SORTCELLS.store(true, std::sync::atomic::Ordering::Relaxed); }
-    if std::env::var("SBANN_PREFETCH").is_ok() { vq::PREFETCH.store(true, std::sync::atomic::Ordering::Relaxed); }
+    // PREFETCH (P189, champion default ON): SW-prefetch the next probed cell's blocks during the scan.
+    // Recall-neutral (a pure hint). The QPS-critical survivor-gather prefetch is separate & unconditional
+    // inline in the rerank kernels (vq.rs rerank_cascade_float / rerank_contig_float). SBANN_PREFETCH=0 off.
+    if env_on("SBANN_PREFETCH", true) { vq::PREFETCH.store(true, std::sync::atomic::Ordering::Relaxed); }
     if let Ok(s) = std::env::var("SBANN_PFDIST") { if let Ok(v) = s.parse::<usize>() { vq::PFDIST.store(v, std::sync::atomic::Ordering::Relaxed); } }
     if let Ok(s) = std::env::var("SBANN_PFLINES") { if let Ok(v) = s.parse::<usize>() { vq::PFLINES.store(v, std::sync::atomic::Ordering::Relaxed); } }
     if std::env::var("SBANN_USE512FS").is_ok() {
@@ -1377,9 +1424,11 @@ fn main() {
     // slot (n*a0*d) — shrinks the biggest index array ~a0x, bit-identical recall. Read at BUILD only; the
     // layout is recorded in the index (Index.raw_orig_indexed) so a LOAD restores it without the flag.
     if std::env::var("SBANN_RAW_DEDUP").is_ok() { vq::RAW_DEDUP.store(true, std::sync::atomic::Ordering::Relaxed); }
-    // SBANN_CASCADE (P194): int8-VNNI mid-stage that prunes the apq4 survivor pool to SBANN_CASCADE_K
-    // before the expensive float reorder. Only meaningful with SBANN_FLOAT_RERANK.
-    if std::env::var("SBANN_CASCADE").is_ok() { vq::CASCADE.store(true, std::sync::atomic::Ordering::Relaxed); }
+    // CASCADE (P194, champion default ON): int8 mid-stage that prunes the apq4 survivor pool to
+    // CASCADE_K (default 16) before the expensive float reorder. Int8 rescore is runtime-dispatched
+    // VNNI→AVX2→scalar (vq::rerank_cascade_float). Only active on the SBANN_FLOAT_RERANK path.
+    // Disable with SBANN_CASCADE=0.
+    if env_on("SBANN_CASCADE", true) { vq::CASCADE.store(true, std::sync::atomic::Ordering::Relaxed); }
     if let Ok(s) = std::env::var("SBANN_CASCADE_K") { if let Ok(v) = s.parse::<usize>() { vq::CASCADE_K.store(v, std::sync::atomic::Ordering::Relaxed); } }
     if std::env::var("SBANN_CASC_SORT").is_ok() { vq::CASC_SORT.store(true, std::sync::atomic::Ordering::Relaxed); }
     if let Ok(s) = std::env::var("SBANN_CASC_DIM") { if let Ok(v) = s.parse::<usize>() { vq::CASC_DIM.store(v, std::sync::atomic::Ordering::Relaxed); } }
