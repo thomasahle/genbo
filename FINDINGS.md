@@ -3332,6 +3332,64 @@ P194. (*** RERANK CASCADE: int8-VNNI mid-stage cuts float-reorder 464->16 recall
     scann_measure.py, scann_t2i1m_idx, granul_kf16384_c768_b96_a3.idx}; code on branch rerank-cascade
     (SBANN_CASCADE + SBANN_CASCADE_K, recompile).
 
+P197. (*** STACK ALL THREE SESSION LEVERS (route-VNNI + cascade K=16 + FUSEDTOPK + float-rerank) into ONE
+    config and measure the TRUE combined ratio vs ScaNN, OOD text2image 1M single-thread, recall@10>=0.90.
+    RESULT: 1.45x vs ScaNN (interleaved, recall-MATCHED 0.9032). Levers stack CLEANLY, zero interference.
+    STILL NOT <1x -- the remaining 54us/q is entirely scan-density + int8-refine survivor-count = the apq4
+    codebook gap, exactly as P194 predicted. Branch combined-primitives = ood-levers-stacked + cherry-pick
+    route-primitive(11bc954) + rerank-cascade(e6b0e20). ***)
+    MERGE: both branches were off the SAME base (5419798, P192 champion on ood-levers-stacked) and touch
+    simd.rs/vq.rs/main.rs in mostly DISTINCT functions/flags. Cherry-picked route-primitive clean; cascade
+    conflicted only in the vq.rs atomics block (both append after PROF_RERANK_NS) + FINDINGS -> resolved by
+    keeping BOTH (route's ROUTE_PROF/PROF_R_* + ROUTE_VNNI/cadj + cascade's PROF_CASC_NS/CASCADE*/rerank_
+    cascade_float). main.rs auto-merged (KLIST/CASCADE wiring + routebench/ROUTE_VNNI wiring don't overlap).
+    Recompiled RAYON=4 (free 26GB), 6 warnings only. BOTH flags coexist: SBANN_ROUTE_VNNI + SBANN_CASCADE.
+    VERIFY (recall-EXACT, all vs the P192 champion 0.9005 @ p58): baseline / +FUSEDTOPK / +ROUTE_VNNI /
+    +CASCADE-K16 ALL == recall@10 0.9005 BIT-IDENTICAL at p=58 t=8. routebench SBANN_ROUTE_VERIFY: 0/2000
+    queries change the probed-cell set (route-VNNI recall-exact). Cascade K=16 holds recall EXACTLY across
+    p (int8 top-16 always contains the float-top-10). => the stack is recall-neutral; recall did NOT shift.
+    (a) COMBINED QPS@recall0.90 + RATIO (interleaved core0, best/5, 5 rounds, load 24-31):
+      OPTIMUM op point = p=54 t=10 K=16 -> recall@10 0.9032 (== ScaNN's 0.9032, recall-MATCHED) @ ~5776-5936
+      QPS.  ScaNN(56,78) 0.9032 @ ~8410 QPS same window.  RATIO per round [1.428,1.472,1.457,1.425,1.459]
+      => MEDIAN 1.457x, mean 1.448x.  (p=58 t=8 0.9005 op point: ratio median 1.459x -- same, thinner recall.)
+      ScaNN's own QPS@0.90 frontier: (54,74)=0.8977 <0.90, (56,78)=0.9032@8292 -> (56,78) is its 0.90 point.
+    (b) PHASE SPLIT at the optimum (SBANN_PROFILE fractions x the clean best/5 e2e; profile absolute us are
+      load-inflated so trust the FRACTIONS). p=54 t=10, e2e ~173 us/q:
+        route 28us (16%)  |  scan 110us (64%)  |  int8-refine[cascade] 25us (14%)  |  float-reorder[K=16] 9us (5%).
+      ScaNN(56,78) e2e ~119 us/q.  GAP = 54 us/q.  route is now VNNI (isolated 23us, was 33.5) and float is
+      collapsed to 16 vecs -- those two total ~37us and are ~near-optimal (<2us headroom). The 54us gap sits
+      almost entirely in scan (110us) + int8-refine (25us).
+    (c) STACKING (marginal A/B, interleaved p=54 t=10, ALL recall 0.9032 identical, med of 3 rounds):
+      fused-only 4040 -> +ROUTE_VNNI 4285 (+6.1%) -> +CASCADE 5331 (+32.0%) -> FULL 5704 (+41.2% vs fused).
+      * CASCADE is the big lever (+32%: float reorder 540->16).  * ROUTE_VNNI stacks CLEANLY: +6.1% alone,
+      +7.0% ON TOP of cascade (LARGER on top, because cascade shrank the query so route is a bigger fraction
+      -- mild super-additivity, NOT interference).  * FUSEDTOPK is the foundation (collect elimination) all
+      rows share.  Full = 1.32 x 1.07 = 1.41 multiplicative, matches the observed 1.41x. NO lever was lost or
+      degraded in the merge; recall stayed 0.9032 for every combination.
+    *** VERDICT: the TRUE best ratio with ALL in-hand config-levers stacked = ~1.45x vs ScaNN (interleaved,
+    recall-matched 0.9032, 1M single-thread). NOT <1x -- ScaNN is ~45% faster. The stack recovered the P192
+    ~1.77-1.9x down to ~1.45x purely recall-exactly, but the wall is unchanged: to reach <1x the engine must
+    drop 173->~119 us/q, i.e. shave 54us, and route(28)+float(9)=37us are already near-floor. So the ENTIRE
+    remaining 54us is:  scan-density ~ the 110us scan (ScaNN's cache-resident SoA-AH scan vs our memory-bound
+    SCATTERED apq4 blocks) + int8-refine survivor-count ~ the 25us (apq4's poor 4-bit ranking forces
+    t_surv~464-540 survivors to int8-rescore). BOTH are downstream of the SAME root -- the apq4 code does not
+    rank-preserve, so we must scan MORE cells densely AND refine MORE survivors. This is the CODEBOOK gap:
+    only OPQ/anisotropic-AH rank-preserving codes cut both the scan density and the survivor count at once.
+    Config-levers are EXHAUSTED at ~1.45x; the last 45% is a codes problem (memory: ood-10m-standing), which
+    P182/P184 found our OPQ family can't yet deliver at coarse bit-rate. ***
+    HONEST CAVEATS: (1) Box loaded 24-31 (16 cores, ~1.5-2x oversubscribed) all session -> absolute QPS are
+    suppressed and the ratio window is +-5-7%; the 1.457x is 5-round interleaved same-window (contention-
+    robust), NOT a quiet-box number. ScaNN's one-call batched C++ tolerates oversubscription better than our
+    per-query rayon loop, so a quiet box would likely NARROW the ratio somewhat below 1.45x but not to <1x
+    (the 54us structural gap is real). (2) 1M ONLY, single-thread pinned taskset -c 0 (10M SIGKILL-risk per
+    constraints; free/loadavg checked >26GB before build). (3) recall vs the FLOAT-IP GT (t2i1m-floatgt),
+    float rerank on. (4) SBANN_P2LAYOUT (scan-primitive) deliberately EXCLUDED per P195 (net-neutral/neg on
+    cold e2e). (5) profile absolute us load-inflated -> reported fractions x clean QPS. Artifacts:
+    scratchpad/{interleave_combined_p197.sh, scann_measure.py, scann_t2i1m_idx, granul_kf16384_c768_b96_a3.idx,
+    t2i1m_query.i8bin}. Code on branch combined-primitives (cherry-picks 11bc954 + e6b0e20; recompile).
+    Champion invocation: SBANN_IP=1 SBANN_FASTSCAN2=1 SBANN_PREFETCH=1 SBANN_ROUTE_VNNI=1 SBANN_CASCADE=1
+    SBANN_CASCADE_K=16 SBANN_FUSEDTOPK=1 SBANN_FLOAT_RERANK=1  p=54 t=10 (or p=58 t=8).
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
