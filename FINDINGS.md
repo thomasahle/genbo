@@ -3003,6 +3003,55 @@ P184. (*** CLEAN BASELINE TABLE (streaming2, 1M L2+IP, reorder-depth sweep): our
     a faithful impl ALSO plateaus deep -> the moat is the full AH2 system (loss + SoA layout), confirmed at the deepest
     level. (streaming2 stood down; box idle for the anisotropic-VQ agent.)
 
+P185. (*** THE aopq-FAITHFULNESS QUESTION ANSWERED (agent, branch aniso-vq-faithful): our crude aopq/eta is NOT a faithful ScaNN anisotropic-VQ -- it drops the cross-subspace parallel coupling, so eta was near-INERT (explains P179/P182's "eta zero effect"). A FAITHFUL coordinate-descent impl makes eta a REAL lever & HELPS IP (+0.05-0.08 shallow-rr, best eta~8 +rotation) -- but STILL does NOT rank-preserve coarse codes. NO breakthrough; moat = full AH2 (bit-rate + SoA), not the loss. ***)
+    (a) FAITHFULNESS AUDIT (file:line): our `comp=aopq`/`apq4` anisotropic loss lives in pq.rs `train_f32_aniso`
+    (pq.rs:190-232) + `encode_f32` (pq.rs:462-...). It weights, PER SUBSPACE independently, (eta-1)*<r_sub, xhat_sub>^2
+    where xhat_sub is the subspace SLICE of the unit FULL vector. ScaNN's loss (Guo et al. 2020, confirmed from the
+    paper) weights the parallel residual of the FULL vector: (eta-1)*<r, xhat>^2 with <r,xhat>=Sum_j<r_j,xhat_j>, which
+    COUPLES all subspaces, optimized by COORDINATE DESCENT over subspaces (assigning subspace j depends on the residuals
+    of all OTHER subspaces; codebook update = Thm 4.2 with a +(eta-1)*s_{-j}*xhat_j cross term). Our impl DROPS that
+    coupling AND uses the tiny-norm subspace slice (||xhat_sub||^2 ~ dpb/d ~ 0.05), so the parallel penalty is a tiny
+    fraction of the subspace L2 -> eta barely moves the argmin. => our aopq is a BLOCK-DIAGONAL APPROXIMATION, NOT
+    faithful. This is the mechanistic cause of P179/P182's "eta 4=16=64 identical". VERDICT (a): NOT FAITHFUL.
+    (b) IMPLEMENTED the faithful version: pq.rs `train_f32_aniso_cd` + `encode_f32_cd` (coordinate descent, full-vector
+    parallel residual, cross-subspace coupling in BOTH assignment and the Thm-4.2 codebook update), gated by env
+    SBANN_ANISO_CD (main.rs). Verified eta now BITES (monotonic, strong effect) and converged (iters=10 == iters=30).
+    Reorder-depth microbench, MATCHED 1M scale, p=512 (12.5% cov), rr=512*{1,2,4,8,16,32}, coarse dpb=5:
+    L2 msturing-1M d=100 (m20), recall@10 vs rr:
+      crude apq4 eta=4 (baseline): 0.766 0.837 0.888 0.919 0.936 0.943
+      FAITHFUL eta=4:              0.764 0.835 0.886 0.919 0.936 0.943  (neutral)
+      FAITHFUL eta=16:             0.749 0.824 0.880 0.915 0.934 0.942  (worse)
+      FAITHFUL eta=50:             0.640 0.731 0.809 0.868 0.909 0.931  (much worse)
+      FAITHFUL eta=200:            0.340 0.427 0.524 0.627 0.727 0.815  (catastrophic)
+      FINE dpb2 (m50) reference:   ~0.942 flat by rr~1024
+      => L2: faithful aniso is NEUTRAL at eta~4 and STRICTLY HURTS as eta grows (parallel-weighting sacrifices the
+         orthogonal accuracy L2 ranking needs). No reorder-depth shrink. msturing is clustered/already-aligned.
+    IP text2image-1M d=200 (m40 = the m~25-40 target), recall@10 vs rr:
+      pq4 isotropic (clean ctrl):  0.558 0.694 0.803 0.882 0.925 0.948
+      crude apq4 eta=4 (baseline): 0.588 0.697 0.794 0.862 0.913 0.942
+      FAITHFUL eta=4:              0.628 0.733 0.819 0.883 0.926 0.948
+      FAITHFUL eta=8 (peak):       0.639 0.743 0.826 0.887 0.927 0.948
+      FAITHFUL eta=16:             0.636 0.739 0.823 0.885 0.925 0.946
+      FAITHFUL eta=50:             0.566 0.677 0.771 0.844 0.900 0.933  (over-weighted)
+      aopq(OPQ rot)+FAITHFUL eta16:0.668 0.774 0.849 0.901 0.932 0.948  <- BEST coarse (rotation +0.03 on top)
+      FINE dpb2 crude:             0.928 0.946 0.954 0.957 0.959 0.959
+      FINE dpb2 FAITHFUL eta8:     0.941 0.953 0.957 0.958 0.959 0.959  (faithful aniso helps the fine code too)
+      => IP: faithful aniso is a REAL, correctly-signed win -- +0.08 over isotropic (0.558->0.639) and +0.05 over the
+         crude "anisotropic" (0.588->0.639) at rr=512; the isotropic-pq4 control proves the gain is the LOSS, not just
+         better optimization. Peak eta~8 (much lower than the code comment's 16-64); +OPQ rotation another +0.03.
+    (c) VERDICT: NO BREAKTHROUGH. Even the BEST coarse config (OPQ rotation + faithful aniso eta16) reaches only
+      0.668/0.774 at rr=512/1024 and still needs rr~16384 for ~0.94 -- ~16-32x the FINE code's rr~512. The target
+      (coarse ~0.95 at rr~300-1000) is MISSED by a wide margin. Rank-preservation stays BIT-RATE-bound; the anisotropic
+      LOSS only SHIFTS the reorder-depth curve up ~0.05-0.08 at shallow rr, it does not change the SHAPE (coarse still
+      converges to the fine plateau only at rr~16k). Clean at MATCHED 1M scale (no P180-style scale artifact); converged
+      (not under-trained). *** THE CORRECTION to P179/P182/P184: "eta has zero effect / anisotropic is dead" was an
+      IMPLEMENTATION artifact (crude block-diagonal, coupling dropped), NOT a property of ScaNN's loss. Properly
+      implemented, the anisotropic loss IS a real lever and DOES help IP rank-preservation -- just not enough, alone, to
+      make COARSE codes rank-preserving. So the moat is confirmed to be the FULL AH2 SYSTEM: ScaNN keeps codes
+      rank-preserving by using FINE codes (m~100+) that their SoA 4-bit FastScan can afford to scan fast (WALL 1),
+      NOT by a coarse-and-rank-preserving code from the loss. The bounded lever that DOES survive: fold faithful
+      anisotropy into the FINE-code IP path (+0.013 at rr=512, free at scan time). Branch aniso-vq-faithful; SBANN_ANISO_CD.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT

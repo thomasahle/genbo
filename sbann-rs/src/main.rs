@@ -994,6 +994,12 @@ fn main() {
     // slot (n*a0*d) — shrinks the biggest index array ~a0x, bit-identical recall. Read at BUILD only; the
     // layout is recorded in the index (Index.raw_orig_indexed) so a LOAD restores it without the flag.
     if std::env::var("SBANN_RAW_DEDUP").is_ok() { vq::RAW_DEDUP.store(true, std::sync::atomic::Ordering::Relaxed); }
+    // SBANN_ANISO_CD: faithful ScaNN anisotropic-VQ (coordinate-descent, full-vector parallel residual,
+    // cross-subspace coupling) for apq4/aopq training + encoding, instead of the crude per-subspace approx.
+    if std::env::var("SBANN_ANISO_CD").is_ok() {
+        pq::ANISO_CD.store(true, std::sync::atomic::Ordering::Relaxed);
+        eprintln!("[SBANN_ANISO_CD] faithful ScaNN anisotropic-VQ (coordinate-descent) ON");
+    }
     match a.get(1).map(String::as_str) {
         Some("dotbench") => {
             // microbench: VNNI vs AVX2 int8 dot, dim d, REPS over a working set that fits L2 (warm).

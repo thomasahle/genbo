@@ -6,6 +6,13 @@
 #[cfg(target_arch = "x86_64")]
 use std::arch::x86_64::*;
 
+/// SBANN_ANISO_CD: use the FAITHFUL ScaNN anisotropic-VQ loss (coordinate-descent over subspaces,
+/// parallel residual on the FULL vector, cross-subspace coupling) for both codebook training and
+/// per-vector encoding. Default off = the crude block-diagonal per-subspace approximation (eta near-inert).
+pub static ANISO_CD: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+#[inline]
+fn aniso_cd_on() -> bool { ANISO_CD.load(std::sync::atomic::Ordering::Relaxed) }
+
 pub struct Pq {
     pub d: usize,
     pub dpb: usize,
@@ -172,6 +179,10 @@ impl Pq {
     /// by factor `eta`. Per-subspace assignment uses the anisotropic loss; centroid update is the
     /// matrix-weighted LS  c = (ΣA)^-1 ΣA x,  A = I + (eta-1) v v^T,  v = unit-full-vector slice.
     pub fn train_f32_aniso(data: &[f32], d: usize, dpb: usize, n: usize, iters: usize, eta: f32) -> Pq {
+        if aniso_cd_on() && eta > 1.0 {
+            let it = std::env::var("SBANN_ANISO_ITERS").ok().and_then(|s| s.parse().ok()).unwrap_or(iters.max(10));
+            return Pq::train_f32_aniso_cd(data, d, dpb, n, it, eta);
+        }
         use nalgebra::{DMatrix, DVector};
         assert!(d % dpb == 0);
         let m = d / dpb;
@@ -232,7 +243,225 @@ impl Pq {
         Pq { d, dpb, m, cent, eta }
     }
 
+    /// FAITHFUL ScaNN anisotropic-VQ PQ training (Guo et al. 2020). Unlike `train_f32_aniso` (which
+    /// decouples subspaces and weights the tiny subspace-slice of x̂, making eta near-inert), this
+    /// minimizes the anisotropic loss on the FULL residual:
+    ///   L_i = ‖r_i‖² + (eta-1)·⟨r_i, x̂_i⟩²   (eta = h_∥/h_⊥, h_⊥=1),  r_i = x_i - x̃_i, x̂_i = x_i/‖x_i‖.
+    /// x̃_i is the PQ reconstruction (concat of chosen subspace codewords), so ⟨r_i,x̂_i⟩ = Σ_j⟨r_{i,j},x̂_{i,j}⟩
+    /// COUPLES all subspaces. Optimized by coordinate descent over subspaces (ScaNN's algorithm):
+    ///   - Assignment (subspace j): pick codeword minimizing ‖x_{i,j}-c‖² + (eta-1)(s_{i,-j}+⟨x_{i,j}-c,x̂_{i,j}⟩)²
+    ///     where s_{i,-j} = Σ_{k≠j}⟨r_{i,k},x̂_{i,k}⟩ is the parallel residual from the OTHER subspaces.
+    ///   - Codebook update (Thm 4.2, PQ form): c_j = (Σ_i A_{i,j})⁻¹ Σ_i [A_{i,j} x_{i,j} + (eta-1) s_{i,-j} x̂_{i,j}],
+    ///     A_{i,j} = I + (eta-1) x̂_{i,j} x̂_{i,j}ᵀ (dpb×dpb block). The +(eta-1)s x̂ term is the cross-subspace
+    ///     coupling the crude version drops.
+    pub fn train_f32_aniso_cd(data: &[f32], d: usize, dpb: usize, n: usize, iters: usize, eta: f32) -> Pq {
+        use nalgebra::{DMatrix, DVector};
+        use rayon::prelude::*;
+        assert!(d % dpb == 0);
+        let m = d / dpb;
+        assert!(m % 2 == 0);
+        let em1 = eta - 1.0;
+        // unit-normalized full vectors (the parallel direction)
+        let mut xhat = vec![0f32; n * d];
+        xhat.par_chunks_mut(d).enumerate().for_each(|(i, o)| {
+            let mut nrm = 0f32;
+            for k in 0..d { nrm += data[i * d + k] * data[i * d + k]; }
+            let inv = 1.0 / nrm.sqrt().max(1e-9);
+            for k in 0..d { o[k] = data[i * d + k] * inv; }
+        });
+        // init centroids by random sampling per subspace
+        let mut cent = vec![0.0f32; m * 16 * dpb];
+        let mut seed = 0xa150_beef_u64;
+        for sub in 0..m {
+            let off = sub * dpb;
+            for c in 0..16 {
+                seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1);
+                let id = (seed >> 11) as usize % n;
+                cent[(sub * 16 + c) * dpb..(sub * 16 + c) * dpb + dpb]
+                    .copy_from_slice(&data[id * d + off..id * d + off + dpb]);
+            }
+        }
+        // proj of subspace j residual for point i onto x̂: ⟨x_{i,j}-c, x̂_{i,j}⟩
+        let proj = |i: usize, off: usize, c: &[f32]| -> f32 {
+            let mut s = 0f32;
+            for k in 0..dpb { s += (data[i * d + off + k] - c[k]) * xhat[i * d + off + k]; }
+            s
+        };
+        let l2 = |i: usize, off: usize, c: &[f32]| -> f32 {
+            let mut s = 0f32;
+            for k in 0..dpb { let e = data[i * d + off + k] - c[k]; s += e * e; }
+            s
+        };
+        // init assignment: plain L2 nearest per subspace
+        let mut code = vec![0u8; n * m];
+        code.par_chunks_mut(m).enumerate().for_each(|(i, oc)| {
+            for sub in 0..m {
+                let off = sub * dpb;
+                let mut best = f32::INFINITY; let mut bc = 0u8;
+                for c in 0..16 {
+                    let cc = &cent[(sub * 16 + c) * dpb..(sub * 16 + c) * dpb + dpb];
+                    let mut dd = 0f32;
+                    for k in 0..dpb { let e = data[i * d + off + k] - cc[k]; dd += e * e; }
+                    if dd < best { best = dd; bc = c as u8; }
+                }
+                oc[sub] = bc;
+            }
+        });
+        // p[i] = full parallel residual = Σ_j ⟨r_{i,j}, x̂_{i,j}⟩
+        let mut p = vec![0f32; n];
+        {
+            let cent_ro = &cent;
+            p.par_iter_mut().enumerate().for_each(|(i, pv)| {
+                let mut s = 0f32;
+                for sub in 0..m {
+                    let off = sub * dpb;
+                    let c = code[i * m + sub] as usize;
+                    let cc = &cent_ro[(sub * 16 + c) * dpb..(sub * 16 + c) * dpb + dpb];
+                    for k in 0..dpb { s += (data[i * d + off + k] - cc[k]) * xhat[i * d + off + k]; }
+                }
+                *pv = s;
+            });
+        }
+        let mut pj_old = vec![0f32; n];
+        for _ in 0..iters {
+            // guard against float drift: full recompute of p once per outer iter
+            {
+                let cent_ro = &cent;
+                p.par_iter_mut().enumerate().for_each(|(i, pv)| {
+                    let mut s = 0f32;
+                    for sub in 0..m {
+                        let off = sub * dpb;
+                        let c = code[i * m + sub] as usize;
+                        let cc = &cent_ro[(sub * 16 + c) * dpb..(sub * 16 + c) * dpb + dpb];
+                        for k in 0..dpb { s += (data[i * d + off + k] - cc[k]) * xhat[i * d + off + k]; }
+                    }
+                    *pv = s;
+                });
+            }
+            for sub in 0..m {
+                let off = sub * dpb;
+                // ---- ASSIGNMENT (parallel over points) ----
+                let csub = &cent[sub * 16 * dpb..(sub + 1) * 16 * dpb];
+                let updates: Vec<(u8, f32)> = (0..n).into_par_iter().map(|i| {
+                    let c_old = code[i * m + sub] as usize;
+                    let proj_old = proj(i, off, &csub[c_old * dpb..c_old * dpb + dpb]);
+                    let s = p[i] - proj_old; // parallel from OTHER subspaces
+                    let mut best = f32::INFINITY; let mut bc = 0u8; let mut bproj = proj_old;
+                    for c in 0..16 {
+                        let cc = &csub[c * dpb..c * dpb + dpb];
+                        let pj = proj(i, off, cc);
+                        let full = s + pj;
+                        let loss = l2(i, off, cc) + em1 * full * full;
+                        if loss < best { best = loss; bc = c as u8; bproj = pj; }
+                    }
+                    (bc, s + bproj)
+                }).collect();
+                for i in 0..n { code[i * m + sub] = updates[i].0; p[i] = updates[i].1; }
+                // ---- CODEBOOK UPDATE (weighted LS with cross-subspace coupling) ----
+                let csub = &cent[sub * 16 * dpb..(sub + 1) * 16 * dpb];
+                let (sa, sax): (Vec<f64>, Vec<f64>) = (0..n).into_par_iter()
+                    .fold(|| (vec![0f64; 16 * dpb * dpb], vec![0f64; 16 * dpb]),
+                        |(mut sa, mut sax), i| {
+                            let c = code[i * m + sub] as usize;
+                            let cc = &csub[c * dpb..c * dpb + dpb];
+                            let xs = &data[i * d + off..i * d + off + dpb];
+                            let v = &xhat[i * d + off..i * d + off + dpb];
+                            let pj_cur = { let mut s = 0f32; for k in 0..dpb { s += (xs[k] - cc[k]) * v[k]; } s };
+                            let s_other = p[i] - pj_cur; // s_{i,-j}
+                            let vx: f32 = (0..dpb).map(|k| v[k] * xs[k]).sum();
+                            for a in 0..dpb {
+                                for b in 0..dpb {
+                                    let aij = (if a == b { 1.0 } else { 0.0 }) + em1 * v[a] * v[b];
+                                    sa[(c * dpb + a) * dpb + b] += aij as f64;
+                                }
+                                sax[c * dpb + a] += (xs[a] + em1 * v[a] * vx + em1 * s_other * v[a]) as f64;
+                            }
+                            (sa, sax)
+                        })
+                    .reduce(|| (vec![0f64; 16 * dpb * dpb], vec![0f64; 16 * dpb]),
+                        |(mut sa, mut sax), (b1, b2)| {
+                            for k in 0..sa.len() { sa[k] += b1[k]; }
+                            for k in 0..sax.len() { sax[k] += b2[k]; }
+                            (sa, sax)
+                        });
+                // capture pj_old (with OLD centroid) so p can be corrected after the update
+                {
+                    let csub = &cent[sub * 16 * dpb..(sub + 1) * 16 * dpb];
+                    pj_old.par_iter_mut().enumerate().for_each(|(i, o)| {
+                        let c = code[i * m + sub] as usize;
+                        *o = proj(i, off, &csub[c * dpb..c * dpb + dpb]);
+                    });
+                }
+                // solve per codeword
+                for c in 0..16 {
+                    let am = DMatrix::<f64>::from_row_slice(dpb, dpb, &sa[c * dpb * dpb..(c + 1) * dpb * dpb]);
+                    let bv = DVector::<f64>::from_row_slice(&sax[c * dpb..(c + 1) * dpb]);
+                    if let Some(sol) = am.lu().solve(&bv) {
+                        for k in 0..dpb { cent[(sub * 16 + c) * dpb + k] = sol[k] as f32; }
+                    }
+                }
+                // correct p for the moved centroids of subspace j
+                {
+                    let csub = &cent[sub * 16 * dpb..(sub + 1) * 16 * dpb];
+                    let dps: Vec<f32> = (0..n).into_par_iter().map(|i| {
+                        let c = code[i * m + sub] as usize;
+                        proj(i, off, &csub[c * dpb..c * dpb + dpb]) - pj_old[i]
+                    }).collect();
+                    for i in 0..n { p[i] += dps[i]; }
+                }
+            }
+        }
+        Pq { d, dpb, m, cent, eta }
+    }
+
+    /// FAITHFUL anisotropic encode: coordinate descent over subspaces minimizing the full-vector
+    /// anisotropic loss (match `train_f32_aniso_cd`). Used when SBANN_ANISO_CD is on.
+    fn encode_f32_cd(&self, x: &[f32], out: &mut [u8]) {
+        let m = self.m; let dpb = self.dpb; let em1 = self.eta - 1.0;
+        let mut vhat = [0f32; 256];
+        let mut nrm = 0f32;
+        for k in 0..self.d { nrm += x[k] * x[k]; }
+        let inv = 1.0 / nrm.sqrt().max(1e-9);
+        for k in 0..self.d { vhat[k] = x[k] * inv; }
+        let projc = |off: usize, cc: &[f32]| -> f32 {
+            let mut s = 0f32; for k in 0..dpb { s += (x[off + k] - cc[k]) * vhat[off + k]; } s
+        };
+        for sub in 0..m {
+            let off = sub * dpb;
+            let mut best = f32::INFINITY; let mut bc = 0u8;
+            for c in 0..16 {
+                let cc = &self.cent[(sub * 16 + c) * dpb..(sub * 16 + c) * dpb + dpb];
+                let dd = sub_l2f(&x[off..off + dpb], cc);
+                if dd < best { best = dd; bc = c as u8; }
+            }
+            out[sub] = bc;
+        }
+        let mut p = 0f32;
+        for sub in 0..m {
+            let off = sub * dpb; let c = out[sub] as usize;
+            p += projc(off, &self.cent[(sub * 16 + c) * dpb..(sub * 16 + c) * dpb + dpb]);
+        }
+        for _ in 0..4 {
+            for sub in 0..m {
+                let off = sub * dpb;
+                let c_old = out[sub] as usize;
+                let proj_old = projc(off, &self.cent[(sub * 16 + c_old) * dpb..(sub * 16 + c_old) * dpb + dpb]);
+                let s = p - proj_old;
+                let mut best = f32::INFINITY; let mut bc = 0u8; let mut bproj = proj_old;
+                for c in 0..16 {
+                    let cc = &self.cent[(sub * 16 + c) * dpb..(sub * 16 + c) * dpb + dpb];
+                    let pj = projc(off, cc);
+                    let full = s + pj;
+                    let loss = sub_l2f(&x[off..off + dpb], cc) + em1 * full * full;
+                    if loss < best { best = loss; bc = c as u8; bproj = pj; }
+                }
+                out[sub] = bc; p = s + bproj;
+            }
+        }
+    }
+
     pub fn encode_f32(&self, x: &[f32], out: &mut [u8]) {
+        if aniso_cd_on() && self.eta > 1.0 { self.encode_f32_cd(x, out); return; }
         // anisotropic encode (match aniso training): assign by L2 + (eta-1)*(parallel error)^2
         let em1 = if self.eta > 0.0 { self.eta - 1.0 } else { 0.0 };
         let mut vhat = [0f32; 256];
