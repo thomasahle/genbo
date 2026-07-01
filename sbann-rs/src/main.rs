@@ -5,6 +5,7 @@
 //! All SIMD lives in `simd.rs` (Rust AVX2, scalar-validated). PQ-ADC bucket scan is the next
 //! kernel to fold into the query path; today's rerank is exact int8 L2 over the probed pool.
 
+mod fbin;
 mod ibin;
 mod kmeans;
 mod persist;
@@ -427,6 +428,25 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
     // SBANN_NQ caps the #queries (for fair same-NQ head-to-head vs the Python frontier's NQ=1000).
     let nq_cap = std::env::var("SBANN_NQ").ok().and_then(|s| s.parse().ok()).unwrap_or(usize::MAX);
     let nq = qs.nb.min(gnq).min(nq_cap);
+    // FLOAT-RERANK (SBANN_FLOAT_RERANK, P191 lever stack): int8 scan/route STAY (FASTSCAN2+PREFETCH),
+    // but the exact survivor rerank reads the ORIGINAL float vectors (SBANN_FBASE, first ds.nb rows)
+    // using the float queries (SBANN_FQUERY) -> float-precision ranking vs the leaderboard's float GT.
+    let float_rerank = std::env::var("SBANN_FLOAT_RERANK").is_ok();
+    let fbase: Option<fbin::FBin> = if float_rerank {
+        let p = std::env::var("SBANN_FBASE").expect("SBANN_FLOAT_RERANK set but SBANN_FBASE missing");
+        let fb = fbin::FBin::open(&p, ds.nb).expect("fbase");
+        assert_eq!(fb.d, ds.d, "fbase dim != index dim"); assert!(fb.nb >= ds.nb, "fbase has fewer rows than index");
+        println!("  [FLOAT_RERANK fbase={p} nb={} d={}]", fb.nb, fb.d);
+        Some(fb)
+    } else { None };
+    let fqf: Vec<f32> = if float_rerank {
+        let p = std::env::var("SBANN_FQUERY").expect("SBANN_FLOAT_RERANK set but SBANN_FQUERY missing");
+        let fq = fbin::FBin::open(&p, nq).expect("fquery");
+        assert_eq!(fq.d, ds.d, "fquery dim != index dim"); assert!(fq.nb >= nq, "fquery has fewer rows than nq");
+        let mut v = vec![0f32; nq * ds.d];
+        for i in 0..nq { v[i * ds.d..i * ds.d + ds.d].copy_from_slice(fq.row(i)); }
+        v
+    } else { Vec::new() };
     // avq cell count is cb^2 == c; keep probes well under nc
     // SBANN_PLIST="128,256,512" overrides the default sweep (lets a built index be probed at custom p).
     let plist: Vec<usize> = match std::env::var("SBANN_PLIST") {
@@ -516,7 +536,9 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
         }
         for _ in 0..reps.max(1) {
             let st = Instant::now();
-            let r: Vec<Vec<u32>> = if batched {
+            let r: Vec<Vec<u32>> = if let Some(fb) = fbase.as_ref() {
+                (0..nq).into_par_iter().map(|i| idx.search_frr(&ds, qs.row(i), &fqf[i * ds.d..i * ds.d + ds.d], fb, p, t_surv, 10)).collect()
+            } else if batched {
                 idx.search_batch(&ds, &qarr, nq, p, t_surv, 10)
             } else {
                 (0..nq).into_par_iter().map(|i| idx.search(&ds, qs.row(i), p, t_surv, 10)).collect()

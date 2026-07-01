@@ -3088,6 +3088,74 @@ P189. (*** WALL-1 SCATTERED-READ LEVER — DEFINITIVE (branch scan-prefetch off 
       WALL-1 lever: kernel USE512 (+7%, N-AVX512), fused-top-k (neutral, P188), and now sort (null) / prefetch
       (+7-12%, the win). e2e QPS@recall0.90 at 1M single-thread: ~2459 -> ~2640 with SBANN_PREFETCH=1.
 
+P191. (*** LEVERS-STACKED PAYOFF vs ScaNN (branch ood-levers-stacked off scan-prefetch): stacking PREFETCH + FLOAT
+    RERANK onto the P185/P190 head-to-head narrows the honest same-hardware single-thread OOD gap from 2.22x to
+    ~2.07x median (best round 2.01x, one round 1.995x) — we BRUSH 2x but do NOT reach clean sub-2x median or parity.
+    FLOAT RERANK is the mover (2.22->2.07); PREFETCH is ~null on this loaded box (memory bus saturated). ***)
+    Setup mirrors P185/P190 EXACTLY: 1M text2image OOD; ScaNN indexes true-float base+queries; OURS indexes int8
+    (t2i1m.i8bin + matched ~330.19-scale int8 queries); BOTH scored vs the identical float-IP top-10 GT (t2i1m-floatgt).
+    Single-thread pinned taskset -c 4, RAYON=1, best-of-5, INTERLEAVED (scann -> int8+PF -> float+PF, 5 rounds, never
+    overlapping on core 4; box load 16-19 the whole run). Our engine = the P185 config exactly (hierk Kf=16384 C0=128
+    b0=32 a0=3, SBANN_SOAR=1 SBANN_TREEEM=2 baked into the reused eng_t2i1m.idx; apq4, SBANN_IP + SBANN_FASTSCAN2 +
+    SBANN_TFLOOR=1 + TMUL=8) PLUS the two stacked levers.
+    LEVERS BUILT/STACKED this session (both on ood-levers-stacked):
+      1. SBANN_PREFETCH (P189, recall-BIT-IDENTICAL SW-prefetch of the next probed cell's PQ block). Already on the
+         scan-prefetch base (which also carries the faithful SBANN_FASTSCAN2 kernel).
+      2. FLOAT RERANK (ported from feat/ood2's e5fe96e onto this branch): SBANN_FLOAT_RERANK + SBANN_FBASE/FQUERY.
+         The int8 route+scan (FASTSCAN2+PREFETCH, same survivor pool) is UNCHANGED; ONLY the exact rerank of the
+         t_surv survivors is swapped from int8 L2/negdot to exact FLOAT IP over the original float vectors (mmap'd
+         crop_nb_10000000, only survivors paged). New: fbin.rs (mmap .fbin reader), simd::dot_f32_fast (AVX2+FMA),
+         vq::search_frr / scan_rerank_frr / rerank_contig_float, main.rs wiring. Recall is deterministic (load-indep).
+
+    == recall-exactness of PREFETCH (int8, same index, prefetch OFF vs ON, per p) ==
+      p=72: 0.8945 == 0.8945 | p=80: 0.9003 == 0.9003 | p=88: 0.9056 == 0.9056  -> delta 0.0000 everywhere (bit-exact).
+    == recall LIFT from FLOAT rerank (int8+PF vs float+PF, matched p) ==
+      p=80: int8 0.9003 -> float 0.9239 (+0.0236, breaks the int8 ~0.924 ceiling vs the FLOAT GT). Float thus reaches
+      0.90 at FEWER probes: crosses 0.90 at p~58 (0.9007) vs int8's p=80 (0.9003) = 1.38x fewer cells scanned.
+      (tmul<8 drops recall under 0.90 at these p — the int8-scan survivor POOL, not the rerank precision, is the p-floor.)
+
+    == INTERLEAVED 5-ROUND FRONTIER @ recall@10 >= 0.90 (QPS = best/5 each round, load 16-19) ==
+      ScaNN   lts56/reorder78 (0.9032): 8182 8221 8240 8294 8236   median 8236  (±1%, rock-steady)
+      int8+PF p=80          (0.9003): 3764 3825 3713 3725 3713   median 3725
+      float+PF p=58         (0.9007): 3824 4121 4022 3916 3971   median 3971  <-- OUR BEST @0.90
+      float+PF p=60         (0.9035): 3804 4019 3980 3869 3855   median 3869
+    Reference (same window, from the frontier sweep): int8 NO-prefetch p=80 (0.9003) = 3612.
+
+    *** HEADLINE RATIO @ recall@10 >= 0.90, single-thread, same box, interleaved:
+        ScaNN 0.9032 @ 8236  vs  OURS (float+PF) 0.9007 @ 3971  ->  RATIO = 2.07x median (best round 8294/4121 = 2.01x). ***
+    Lever decomposition (this window, vs ScaNN median 8236):
+        int8 no-PF   3612 -> 2.28x   (== P185 baseline point, this window)
+        int8 + PF    3725 -> 2.22x   (prefetch alone: +3% QPS, ratio barely moves)
+        float + PF   3971 -> 2.07x   (float rerank: the actual mover, +7% over int8+PF, +10% over no-PF)
+    So the FULL stack = +10% QPS@0.90 (3612->3971) = 2.28x -> 2.07x. vs the P185 locked ratio 8649/3903 = 2.22x, the
+    stacked levers close ~7% of the gap. Both legs are ~5% load-depressed vs P185's window (scann 8236 vs 8649; int8
+    3612 vs 3903) -> the RATIO is the invariant, as designed.
+
+    WHY PREFETCH IS ~NULL HERE (vs P189's +7-12%): P189 measured on a healthier isolated kernel; under load 17 the
+    memory bus is contended, so SW-prefetch has little latency headroom to hide -> +3% e2e (within ratio noise). Its
+    value is recall-exactness + likely larger benefit in a less-contended / 10M-latency-deeper regime (P189 (d)).
+    WHY FLOAT RERANK ONLY GIVES +10% (not more): confirms [[ood-float-rerank]] — float rerank reaches 0.90 at 1.38x
+    fewer probes (scan saving) but its 4x-byte + f32-dot rerank cost partially offsets it; NET +10% QPS@0.90 (not a TIE
+    as the earlier C=65536 config showed, because here the P185 hierk config's rerank share is smaller). It is REQUIRED
+    for any operating point above ~0.92 (int8 is hard-capped ~0.924 vs the float GT).
+
+    *** VERDICT: prefetch + float-rerank bring us to ~2.07x (median) / ~2.0x (best round) vs ScaNN — a real ~7% gap
+    reduction from 2.22x, BRUSHING 2x but NOT clean sub-2x median and NOT parity. The two in-hand levers are ~tapped
+    out at 1M single-thread under load. The SINGLE BIGGEST REMAINING LEVER is unchanged and STRUCTURAL: ScaNN's
+    cache-resident SoA anisotropic-AH scan (in-register 2-byte AH over a packed layout) vs our memory-bound scattered
+    PQ-block reads — the ~3.9x scattered-vs-compute-floor scan collapse (P183/P189). That is the multi-day rebuild;
+    prefetch/float-rerank/routing cannot cross it recall-neutrally. ***
+
+    HONEST CAVEATS: (1) 1M ONLY, single-thread (box was memory-thrashing; 10M SIGKILL-risk per constraints). (2) load
+    16-19 the whole run -> absolute QPS depressed ~5% vs P185; the interleaved RATIO is the deliverable, ±1-3% stable.
+    (3) FLOAT vs INT8 base as in P185 — each engine's native representation, both scored vs the identical float GT
+    (apples-to-apples at the leaderboard metric); float rerank is precisely us adopting ScaNN's float-reorder trick on
+    top of an int8 candidate-gen. (4) our best 0.90 point (p=58, 0.9007) sits right on the 0.90 edge; p=57 falls under,
+    so 3971 is the genuine max-QPS@>=0.90 (not cherry-picked headroom). (5) reused the P185 eng_t2i1m.idx (fastscan-soa
+    build); persist.rs/ibin.rs are byte-identical on this branch and the int8 recall reproduced EXACTLY (0.9003), so the
+    index is valid. Artifacts: scratchpad/{interleave_p191.sh, scann_measure.py, eng_t2i1m.idx, scann_t2i1m_idx,
+    t2i1m_query.i8bin}; code on branch ood-levers-stacked.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT

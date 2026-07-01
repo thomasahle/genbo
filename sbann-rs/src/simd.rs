@@ -283,6 +283,50 @@ pub fn dot_f32(a: &[f32], b: &[f32]) -> f32 {
     s
 }
 
+/// AVX2+FMA f32 inner product (4 independent accumulators for ILP). Used by the FLOAT-RERANK path
+/// (P191 lever stack) — the scalar `dot_f32` reduction doesn't vectorize (float assoc), so this is
+/// ~8x on the hot float dot. Falls back to scalar off-AVX2.
+#[inline]
+pub fn dot_f32_fast(a: &[f32], b: &[f32]) -> f32 {
+    if std::is_x86_feature_detected!("avx2") && std::is_x86_feature_detected!("fma") {
+        unsafe { dot_f32_avx2(a, b) }
+    } else {
+        dot_f32(a, b)
+    }
+}
+
+#[target_feature(enable = "avx2,fma")]
+unsafe fn dot_f32_avx2(a: &[f32], b: &[f32]) -> f32 {
+    let n = a.len();
+    let (pa, pb) = (a.as_ptr(), b.as_ptr());
+    let mut acc0 = _mm256_setzero_ps();
+    let mut acc1 = _mm256_setzero_ps();
+    let mut acc2 = _mm256_setzero_ps();
+    let mut acc3 = _mm256_setzero_ps();
+    let mut i = 0usize;
+    while i + 32 <= n {
+        acc0 = _mm256_fmadd_ps(_mm256_loadu_ps(pa.add(i)), _mm256_loadu_ps(pb.add(i)), acc0);
+        acc1 = _mm256_fmadd_ps(_mm256_loadu_ps(pa.add(i + 8)), _mm256_loadu_ps(pb.add(i + 8)), acc1);
+        acc2 = _mm256_fmadd_ps(_mm256_loadu_ps(pa.add(i + 16)), _mm256_loadu_ps(pb.add(i + 16)), acc2);
+        acc3 = _mm256_fmadd_ps(_mm256_loadu_ps(pa.add(i + 24)), _mm256_loadu_ps(pb.add(i + 24)), acc3);
+        i += 32;
+    }
+    while i + 8 <= n {
+        acc0 = _mm256_fmadd_ps(_mm256_loadu_ps(pa.add(i)), _mm256_loadu_ps(pb.add(i)), acc0);
+        i += 8;
+    }
+    let acc = _mm256_add_ps(_mm256_add_ps(acc0, acc1), _mm256_add_ps(acc2, acc3));
+    // horizontal sum of the 8 lanes
+    let lo = _mm256_castps256_ps128(acc);
+    let hi = _mm256_extractf128_ps(acc, 1);
+    let mut sum128 = _mm_add_ps(lo, hi);
+    sum128 = _mm_add_ps(sum128, _mm_movehl_ps(sum128, sum128));
+    sum128 = _mm_add_ss(sum128, _mm_shuffle_ps(sum128, sum128, 1));
+    let mut s = _mm_cvtss_f32(sum128);
+    while i < n { s += *pa.add(i) * *pb.add(i); i += 1; }
+    s
+}
+
 /// Assign `x` to its `k` nearest pivots (ascending), writing cell ids into `out[..k]`.
 #[inline]
 pub fn assign_topk(x: &[i8], pivots: &[i8], d: usize, k: usize, out: &mut [u32]) {
