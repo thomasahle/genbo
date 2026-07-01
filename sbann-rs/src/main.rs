@@ -956,6 +956,106 @@ fn stream(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a
         rec_b - rec_fresh);
 }
 
+/// One WALL-1 kernel-throughput measurement over `nblk16` 16-wide blocks (== nblk16*16 candidates).
+/// Compares: current AVX2 fast-scan (16-wide, i16 accum), current AVX-512-IL (64-wide, i16 accum),
+/// and the PROPER 32-wide int8-saturating FastScan. `scatter`=true iterates blocks in a shuffled
+/// order (mimics the cell-scattered real scan) instead of sequentially. Reports Mcand/s (best-of-5).
+#[cfg(target_arch = "x86_64")]
+fn scanbench2(m: usize, nblk16: usize, scatter: bool, label: &str) {
+    let bb16 = (m / 2) * 16;
+    let ncand = nblk16 * 16;
+    let bytes = nblk16 * bb16;
+    // reps so total scanned candidates ~ const (~3e8 for large, more for tiny to stay warm)
+    let target: u64 = 400_000_000;
+    let reps = ((target / ncand as u64).max(3)) as usize;
+    let mut st = 0x1234_5678u64;
+    let mut rng = || { st ^= st << 13; st ^= st >> 7; st ^= st << 17; st };
+    // 16-wide blocks (used by current AVX2 + AVX-512 kernels)
+    let blocks16: Vec<u8> = (0..bytes).map(|_| (rng() & 0xff) as u8).collect();
+    // bounded [0,15] LUT so the 32-wide int8-sat path is exact at HOIST=8 (no saturation loss); the
+    // 16-wide/int16 kernels are exact for any LUT, so this is a fair common input.
+    let lut8: Vec<i8> = (0..m * 16).map(|_| (rng() % 16) as i8).collect();
+    let regs8 = pq::lut_regs_i8(&lut8, m);          // 128-bit, current 16-wide kernel
+    let regs_y = pq::lut_regs_i8_y256(&lut8, m);    // 256-bit broadcast, new 32-wide kernel
+    // re-pack the SAME codes into 32-wide blocks (interleave block 2b and 2b+1 -> one 32-block) so the
+    // new kernel scans identical bytes / identical working set.
+    let nblk32 = nblk16 / 2;
+    let bb32 = (m / 2) * 32;
+    let mut blocks32: Vec<u8> = vec![0u8; nblk32 * bb32];
+    for b in 0..nblk32 {
+        let (s0, s1) = (2 * b, 2 * b + 1);
+        for g in 0..m / 2 {
+            let d = &mut blocks32[b * bb32 + g * 32..b * bb32 + g * 32 + 32];
+            d[..16].copy_from_slice(&blocks16[s0 * bb16 + g * 16..s0 * bb16 + g * 16 + 16]);
+            d[16..].copy_from_slice(&blocks16[s1 * bb16 + g * 16..s1 * bb16 + g * 16 + 16]);
+        }
+    }
+    // access order (shared shape for all kernels so scatter is comparable). For scatter we shuffle the
+    // 32-block order and derive the 16-block order as (2b, 2b+1) pairs in that shuffled order.
+    let mut order32: Vec<usize> = (0..nblk32).collect();
+    if scatter {
+        for i in (1..nblk32).rev() { let j = (rng() as usize) % (i + 1); order32.swap(i, j); }
+    }
+    let has512 = std::is_x86_feature_detected!("avx512f") && std::is_x86_feature_detected!("avx512bw");
+    let bestof = |f: &mut dyn FnMut() -> f64| -> f64 { (0..5).map(|_| f()).fold(f64::INFINITY, f64::min) };
+
+    // current AVX2 fast-scan (16-wide, int16 accum)
+    let mut o16 = [0i32; 16];
+    let mut sink = 0i64;
+    let t_cur16 = bestof(&mut || {
+        let t = Instant::now();
+        for &b32 in &order32 { for &b in &[2 * b32, 2 * b32 + 1] {
+            unsafe { pq::block_adc_i8_i16acc(&blocks16[b * bb16..(b + 1) * bb16], m, &regs8, &mut o16); }
+            sink += o16[0] as i64;
+        }}
+        t.elapsed().as_secs_f64()
+    });
+    // proper 32-wide int8-saturating FastScan
+    let mut o32 = [0i32; 32];
+    let t_fs32 = bestof(&mut || {
+        let t = Instant::now();
+        for &b in &order32 {
+            unsafe { pq::block_adc_i8_fastscan32(&blocks32[b * bb32..(b + 1) * bb32], m, &regs_y, &mut o32); }
+            sink += o32[0] as i64;
+        }
+        t.elapsed().as_secs_f64()
+    });
+    // current AVX-512 interleaved (64-wide, int16 accum) — build interleaved superblocks from 4 blocks
+    let (t_512, has_il) = if has512 && nblk16 >= 8 {
+        let regs8z = pq::lut_regs_i8_z512(&lut8, m);
+        let nsb = nblk16 / 4;
+        let sbb = (m / 2) * 64;
+        let mut sblocks = vec![0u8; nsb * sbb];
+        for s in 0..nsb {
+            let b = s * 4;
+            pq::interleave4(&blocks16[b * bb16..(b + 1) * bb16], &blocks16[(b + 1) * bb16..(b + 2) * bb16],
+                &blocks16[(b + 2) * bb16..(b + 3) * bb16], &blocks16[(b + 3) * bb16..(b + 4) * bb16],
+                m, &mut sblocks[s * sbb..(s + 1) * sbb]);
+        }
+        let mut order_sb: Vec<usize> = (0..nsb).collect();
+        if scatter { for i in (1..nsb).rev() { let j = (rng() as usize) % (i + 1); order_sb.swap(i, j); } }
+        let mut o64 = [0i32; 64];
+        let t = bestof(&mut || {
+            let t = Instant::now();
+            for &s in &order_sb {
+                unsafe { pq::block_adc_i8_i16acc_avx512_il(&sblocks[s * sbb..(s + 1) * sbb], m, &regs8z, &mut o64); }
+                sink += o64[0] as i64;
+            }
+            t.elapsed().as_secs_f64()
+        });
+        (t / (nsb * 64) as f64 * ncand as f64, true) // normalize to full ncand
+    } else { (0.0, false) };
+
+    let mcs = |t: f64| ncand as f64 / t / 1e6;
+    let kb = bytes as f64 / 1024.0;
+    print!("{label} m={m} ws={:.0}KB reps~{reps}: cur16w {:.0} Mcand/s | fs32(new) {:.0} Mcand/s ({:.2}x)",
+        kb, mcs(t_cur16), mcs(t_fs32), t_cur16 / t_fs32);
+    if has_il { print!(" | avx512-64w-il {:.0} Mcand/s ({:.2}x)", mcs(t_512), t_cur16 / t_512); }
+    println!("   [sink={sink}]");
+}
+#[cfg(not(target_arch = "x86_64"))]
+fn scanbench2(_m: usize, _n: usize, _s: bool, _l: &str) {}
+
 fn main() {
     let a: Vec<String> = std::env::args().collect();
     if std::env::var("SBANN_IP").is_ok() { vq::IP_MODE.store(true, std::sync::atomic::Ordering::Relaxed); }
@@ -969,6 +1069,12 @@ fn main() {
     if std::env::var("SBANN_FASTSCAN").is_ok() {
         assert!(pq::selftest_i8_fast(50) && pq::selftest_i8_fast(100), "fast-scan kernel != scalar!");
         vq::FASTSCAN.store(true, std::sync::atomic::Ordering::Relaxed);
+    }
+    if std::env::var("SBANN_FASTSCAN2").is_ok() {
+        // PROPER 32-wide int8-saturating FastScan (block_adc_i8_fastscan32_2x16 over the 16-block layout).
+        assert!(pq::selftest_i8_fastscan32(50) && pq::selftest_i8_fastscan32(100) && pq::selftest_i8_fastscan32(20),
+            "fastscan32 kernel != scalar!");
+        vq::FASTSCAN2.store(true, std::sync::atomic::Ordering::Relaxed);
     }
     if std::env::var("SBANN_USE512FS").is_ok() {
         // 64-wide AVX-512 interleaved fast-scan (needs FASTSCAN to produce the Pq8 / i8s LUT path).
@@ -1014,6 +1120,24 @@ fn main() {
             let ndot = (reps * nv) as f64;
             println!("dot d={d}: AVX2 {:.1} Mdot/s ({:.2}ns), VNNI {:.1} Mdot/s ({:.2}ns), speedup {:.2}x (acc={acc})",
                 ndot / t_avx2 / 1e6, t_avx2 / ndot * 1e9, ndot / t_vnni / 1e6, t_vnni / ndot * 1e9, t_avx2 / t_vnni);
+        }
+        Some("scanbench2") => {
+            // WALL-1 audit: current fast-scan kernels vs a PROPER 32-wide int8-saturating FastScan,
+            // measured at TWO working sets (L2-hot vs >L3) to separate cache from kernel throughput.
+            let m: usize = a.get(2).map(|s| s.parse().unwrap()).unwrap_or(50);
+            for &mm in &[2usize, 16, 50, 100, m] {
+                assert!(pq::selftest_i8_fast(mm), "fast-scan kernel != scalar at m={mm}");
+                assert!(pq::selftest_i8_fast_avx512(mm), "fast-scan AVX-512 64-wide kernel != scalar at m={mm}");
+                assert!(pq::selftest_i8_fastscan32(mm), "fastscan32 kernel != scalar at m={mm}");
+            }
+            println!("kernels selftest OK (m=2,16,50,100,{m})  [avx2-16w + avx512-64w + fastscan32-32w]");
+            let bb16 = (m / 2) * 16;
+            // L2-hot: total codes ~256KB (< 1MB L2). LARGE: ~384MB (>> 64MB L3).
+            let l2_blocks = (256 * 1024 / bb16) & !3;     // multiple of 4
+            let big_blocks = (384 * 1024 * 1024 / bb16) & !3;
+            scanbench2(m, l2_blocks, false, "L2-hot   ");
+            scanbench2(m, big_blocks, false, "LARGE-seq");
+            scanbench2(m, big_blocks, true, "LARGE-scat");
         }
         Some("scanbench") => {
             // selftest + microbench: fast-scan (i8 LUT, 1 vpshufb/subspace) vs int16 (2 vpshufb).

@@ -391,6 +391,60 @@ impl Pq {
         f.iter().map(|&v| (v * scale).round().clamp(0.0, 127.0) as i8).collect()
     }
 
+    /// BOUNDED L2 LUT for the PROPER FastScan (SBANN_FASTSCAN2): identical to query_lut_f32_i8s but the
+    /// per-subspace range is scaled to `FS2_CAP = 120/HOIST` (=15 at HOIST=8) so that any HOIST=8
+    /// consecutive subspaces sum to <=120 < 127 -> the int8 SATURATING accumulate never saturates within
+    /// a hoist group (exact vs the scalar-sat reference). Trades LUT resolution (~4 bit/subspace) for the
+    /// 32-wide int8-sat throughput; the exact rerank on the top-t survivors restores the final order.
+    pub fn query_lut_f32_i8s_fs2(&self, q: &[f32]) -> Vec<i8> {
+        let m = self.m;
+        let mut f = vec![0.0f32; m * 16];
+        let mut maxrange = 0.0f32;
+        for sub in 0..m {
+            let off = sub * self.dpb;
+            let qs = &q[off..off + self.dpb];
+            let mut smin = f32::INFINITY;
+            for c in 0..16 {
+                let dd = sub_l2f(qs, &self.cent[(sub * 16 + c) * self.dpb..(sub * 16 + c) * self.dpb + self.dpb]);
+                f[sub * 16 + c] = dd;
+                smin = smin.min(dd);
+            }
+            let mut smax = 0.0f32;
+            for c in 0..16 { f[sub * 16 + c] -= smin; smax = smax.max(f[sub * 16 + c]); }
+            maxrange = maxrange.max(smax);
+        }
+        let cap = (120.0 / FASTSCAN2_HOIST as f32).floor();
+        let scale = cap / maxrange.max(1e-9);
+        f.iter().map(|&v| (v * scale).round().clamp(0.0, cap) as i8).collect()
+    }
+
+    /// BOUNDED asymmetric-MIPS LUT for the PROPER FastScan (SBANN_FASTSCAN2 + IP). Like
+    /// query_lut_f32_i8s_ip but capped to FS2_CAP per HOIST group (see query_lut_f32_i8s_fs2).
+    pub fn query_lut_f32_i8s_ip_fs2(&self, q: &[f32]) -> Vec<i8> {
+        let m = self.m;
+        let mut f = vec![0.0f32; m * 16];
+        let mut maxrange = 0.0f32;
+        for sub in 0..m {
+            let off = sub * self.dpb;
+            let qs = &q[off..off + self.dpb];
+            let mut smin = f32::INFINITY;
+            for c in 0..16 {
+                let ct = &self.cent[(sub * 16 + c) * self.dpb..(sub * 16 + c) * self.dpb + self.dpb];
+                let mut dot = 0.0f32;
+                for k in 0..self.dpb { dot += qs[k] * ct[k]; }
+                let v = -dot;
+                f[sub * 16 + c] = v;
+                smin = smin.min(v);
+            }
+            let mut smax = 0.0f32;
+            for c in 0..16 { f[sub * 16 + c] -= smin; smax = smax.max(f[sub * 16 + c]); }
+            maxrange = maxrange.max(smax);
+        }
+        let cap = (120.0 / FASTSCAN2_HOIST as f32).floor();
+        let scale = cap / maxrange.max(1e-9);
+        f.iter().map(|&v| (v * scale).round().clamp(0.0, cap) as i8).collect()
+    }
+
     /// ASYMMETRIC MIPS LUT (int16): per subspace, the table value is (-<q_sub,cent>) shifted to be
     /// positive per subspace, so the i16-accumulating scan ranks candidates by APPROX INNER PRODUCT
     /// (smallest sum = largest IP). The per-subspace shift is a constant added to every candidate ->
@@ -730,6 +784,137 @@ pub fn block_adc_i8_scalar(block: &[u8], m: usize, lut: &[i8], out: &mut [i32; 1
         }
         out[i] = s;
     }
+}
+
+// ---------------- PROPER FastScan (SBANN_FASTSCAN2): 32-wide, int8 saturating + int16 hoist -----
+// André 2015 / Quicker-ADC: 256-bit vpshufb looks up 32 candidates/subspace from an in-register LUT
+// broadcast to BOTH 128-bit lanes; partial sums accumulate in int8 with _mm256_adds_epi8 (SATURATING),
+// and every HOIST subspaces the int8 acc is widened to int16 and reset (so the fast int8 add carries
+// most of the work but ranking resolution is preserved past the int8 range). This is the piece our
+// block_adc_i8_i16acc omitted: it is 16-wide (128-bit shuffle) AND widens every subspace (cvt+add),
+// costing ~2 accumulate uops/subspace for 16 lanes; this kernel is 32 lanes with ~1 uop/subspace.
+/// # subspaces summed in saturating int8 before hoisting to int16. Even (we add 2 subspaces/group).
+pub const FASTSCAN2_HOIST: usize = 8;
+
+/// LUT broadcast to BOTH 128-bit lanes of a ymm, so one _mm256_shuffle_epi8 indexes 32 candidates.
+#[cfg(target_arch = "x86_64")]
+pub fn lut_regs_i8_y256(lut: &[i8], m: usize) -> Vec<__m256i> {
+    (0..m).map(|s| unsafe {
+        let t = _mm_loadu_si128(lut.as_ptr().add(s * 16) as *const __m128i);
+        _mm256_set_m128i(t, t)
+    }).collect()
+}
+
+/// PROPER FastScan block: 32 candidates. block32[g*32 + i] = candidate i's code-byte for group g
+/// (low nibble = subspace 2g, high nibble = subspace 2g+1). Candidates 0..15 land in the low 128-bit
+/// lane, 16..31 in the high lane. out[0..32] = the 32 candidate scores.
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2")]
+pub unsafe fn block_adc_i8_fastscan32(block32: &[u8], m: usize, lut: &[__m256i], out: &mut [i32; 32]) {
+    let mask = _mm256_set1_epi8(0x0f);
+    let mut acc8 = _mm256_setzero_si256();   // int8 saturating, 32 lanes
+    let mut acc16a = _mm256_setzero_si256(); // int16, candidates 0..15
+    let mut acc16b = _mm256_setzero_si256(); // int16, candidates 16..31
+    let mut since = 0usize;
+    for g in 0..m / 2 {
+        let codes = _mm256_loadu_si256(block32.as_ptr().add(g * 32) as *const __m256i);
+        let lo = _mm256_and_si256(codes, mask);
+        let hi = _mm256_and_si256(_mm256_srli_epi16(codes, 4), mask);
+        acc8 = _mm256_adds_epi8(acc8, _mm256_shuffle_epi8(lut[2 * g], lo));
+        acc8 = _mm256_adds_epi8(acc8, _mm256_shuffle_epi8(lut[2 * g + 1], hi));
+        since += 2;
+        if since >= FASTSCAN2_HOIST {
+            acc16a = _mm256_add_epi16(acc16a, _mm256_cvtepi8_epi16(_mm256_castsi256_si128(acc8)));
+            acc16b = _mm256_add_epi16(acc16b, _mm256_cvtepi8_epi16(_mm256_extracti128_si256(acc8, 1)));
+            acc8 = _mm256_setzero_si256();
+            since = 0;
+        }
+    }
+    acc16a = _mm256_add_epi16(acc16a, _mm256_cvtepi8_epi16(_mm256_castsi256_si128(acc8)));
+    acc16b = _mm256_add_epi16(acc16b, _mm256_cvtepi8_epi16(_mm256_extracti128_si256(acc8, 1)));
+    let mut ta = [0i16; 16];
+    let mut tb = [0i16; 16];
+    _mm256_storeu_si256(ta.as_mut_ptr() as *mut __m256i, acc16a);
+    _mm256_storeu_si256(tb.as_mut_ptr() as *mut __m256i, acc16b);
+    for i in 0..16 { out[i] = ta[i] as i32; out[16 + i] = tb[i] as i32; }
+}
+
+/// DROP-IN 32-wide FastScan over the EXISTING 16-block layout: reads two consecutive 16-blocks (b0,b1)
+/// with no re-pack (b0 -> low lane = out[0..16], b1 -> high lane = out[16..32]). Same int8-saturating +
+/// int16-hoist math as block_adc_i8_fastscan32. Lets scan_block_x2 use the proper kernel with zero
+/// layout/build change (the two blocks are already contiguous in `blocks`, so this is one 2-block run).
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2")]
+pub unsafe fn block_adc_i8_fastscan32_2x16(b0: &[u8], b1: &[u8], m: usize, lut: &[__m256i], out: &mut [i32; 32]) {
+    let mask = _mm256_set1_epi8(0x0f);
+    let mut acc8 = _mm256_setzero_si256();
+    let mut acc16a = _mm256_setzero_si256();
+    let mut acc16b = _mm256_setzero_si256();
+    let mut since = 0usize;
+    for g in 0..m / 2 {
+        let c0 = _mm_loadu_si128(b0.as_ptr().add(g * 16) as *const __m128i);
+        let c1 = _mm_loadu_si128(b1.as_ptr().add(g * 16) as *const __m128i);
+        let codes = _mm256_set_m128i(c1, c0); // low lane = b0 (cands 0..15), high lane = b1 (16..31)
+        let lo = _mm256_and_si256(codes, mask);
+        let hi = _mm256_and_si256(_mm256_srli_epi16(codes, 4), mask);
+        acc8 = _mm256_adds_epi8(acc8, _mm256_shuffle_epi8(lut[2 * g], lo));
+        acc8 = _mm256_adds_epi8(acc8, _mm256_shuffle_epi8(lut[2 * g + 1], hi));
+        since += 2;
+        if since >= FASTSCAN2_HOIST {
+            acc16a = _mm256_add_epi16(acc16a, _mm256_cvtepi8_epi16(_mm256_castsi256_si128(acc8)));
+            acc16b = _mm256_add_epi16(acc16b, _mm256_cvtepi8_epi16(_mm256_extracti128_si256(acc8, 1)));
+            acc8 = _mm256_setzero_si256();
+            since = 0;
+        }
+    }
+    acc16a = _mm256_add_epi16(acc16a, _mm256_cvtepi8_epi16(_mm256_castsi256_si128(acc8)));
+    acc16b = _mm256_add_epi16(acc16b, _mm256_cvtepi8_epi16(_mm256_extracti128_si256(acc8, 1)));
+    let mut ta = [0i16; 16];
+    let mut tb = [0i16; 16];
+    _mm256_storeu_si256(ta.as_mut_ptr() as *mut __m256i, acc16a);
+    _mm256_storeu_si256(tb.as_mut_ptr() as *mut __m256i, acc16b);
+    for i in 0..16 { out[i] = ta[i] as i32; out[16 + i] = tb[i] as i32; }
+}
+
+/// Scalar reference mirroring the saturating-int8 + periodic-hoist arithmetic exactly (so the SIMD
+/// kernel is validated even when the LUT is large enough to saturate). block32 in the 32-wide layout.
+pub fn block_adc_i8_fastscan32_scalar(block32: &[u8], m: usize, lut: &[i8], out: &mut [i32; 32]) {
+    let sat = |a: i32, b: i32| -> i32 { (a + b).clamp(-128, 127) };
+    for i in 0..32 {
+        let mut acc8 = 0i32; // simulated saturating int8
+        let mut acc16 = 0i32;
+        let mut since = 0usize;
+        for g in 0..m / 2 {
+            let byte = block32[g * 32 + i];
+            acc8 = sat(acc8, lut[(2 * g) * 16 + (byte & 0x0f) as usize] as i32);
+            acc8 = sat(acc8, lut[(2 * g + 1) * 16 + (byte >> 4) as usize] as i32);
+            since += 2;
+            if since >= FASTSCAN2_HOIST { acc16 += acc8; acc8 = 0; since = 0; }
+        }
+        acc16 += acc8;
+        out[i] = acc16;
+    }
+}
+
+/// Self-test: the 32-wide FastScan kernel must match its saturating scalar reference. Uses a bounded
+/// [0,15] LUT (as the real recall path must, to keep HOIST=8 partials < 127 => no saturation loss).
+pub fn selftest_i8_fastscan32(m: usize) -> bool {
+    #[cfg(target_arch = "x86_64")]
+    {
+        if !std::is_x86_feature_detected!("avx2") { return true; }
+        let mut st = 0xd1b54a32d192ed03u64;
+        let mut rng = || { st ^= st << 13; st ^= st >> 7; st ^= st << 17; st };
+        let lut: Vec<i8> = (0..m * 16).map(|_| (rng() % 16) as i8).collect();
+        let mut block = vec![0u8; (m / 2) * 32];
+        for b in block.iter_mut() { *b = (rng() & 0xff) as u8; }
+        let regs = lut_regs_i8_y256(&lut, m);
+        let mut a = [0i32; 32];
+        let mut b = [0i32; 32];
+        unsafe { block_adc_i8_fastscan32(&block, m, &regs, &mut a); }
+        block_adc_i8_fastscan32_scalar(&block, m, &lut, &mut b);
+        if a != b { eprintln!("selftest_i8_fastscan32 MISMATCH m={m}: {a:?} vs {b:?}"); return false; }
+    }
+    true
 }
 
 /// Self-test: fast-scan AVX2 kernel must match the scalar reference for a random LUT + block.

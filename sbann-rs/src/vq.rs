@@ -5,7 +5,7 @@
 use crate::ibin::I8Bin;
 use crate::{kmeans, pq, simd};
 use rayon::prelude::*;
-use std::arch::x86_64::{__m128i, __m512i, _mm_prefetch, _MM_HINT_T0};
+use std::arch::x86_64::{__m128i, __m256i, __m512i, _mm_prefetch, _MM_HINT_T0};
 
 /// Global rerank mode: false = exact L2 (default), true = exact inner product (MIPS, via -dot so a
 /// min-heap keeps the MAX inner product). Set once at startup from SBANN_IP (for the OOD/cosine path).
@@ -20,6 +20,12 @@ pub static FASTSCAN: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBo
 /// 64-vector superblock layout built at index time. Only meaningful with FASTSCAN (i8s LUT / Pq8 ctx)
 /// + avx512bw. Identical distances to the AVX2 fast-scan (so recall is unchanged). Set from SBANN_USE512FS.
 pub static USE512FS: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+/// true => PROPER FastScan (André 2015 / Quicker-ADC): 32-wide 256-bit vpshufb + int8 SATURATING
+/// accumulate with periodic int16 hoist (block_adc_i8_fastscan32_2x16). Uses a BOUNDED [0,15] LUT
+/// (query_lut_f32_i8s_fs2) so hoist groups don't saturate. ~1.8x kernel vs the crude 16-wide int16
+/// fast-scan when compute/L2-bound; the exact rerank restores order past the coarser LUT. Set from
+/// SBANN_FASTSCAN2 (implies the Pq8 path, adds the 256-bit LUT regs). Do NOT combine with USE512FS.
+pub static FASTSCAN2: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 /// IDEA #4: build a SECOND finer 8-bit refine code (pq::ResidPq) in slot order and use it to refine
 /// the 4-bit-ADC survivor ranking before the exact raw rerank, so far fewer raw vectors are read.
 /// Set from SBANN_RESID. SBANN_RESID_DPB picks the refine subspace size (default 2 => m=d/2 bytes/vec).
@@ -864,8 +870,9 @@ pub enum QueryCtx {
     // i16 LUT: lo/hi byte-tables (AVX2 single-block) + zmm tables (AVX-512 32-wide pair). Full-res ranking.
     Pq16 { lo: Vec<__m128i>, hi: Vec<__m128i>, lut_z: Vec<__m512i>, scale: f32 }, // scale = i16-units/IP for RESIDQ offset
     // fast-scan: int8 LUT, 1 vpshufb/subspace, i16 accum. regs_z = same LUT broadcast to zmm lanes for
-    // the 64-wide AVX-512 path (empty unless USE512FS).
-    Pq8 { regs: Vec<__m128i>, regs_z: Vec<__m512i>, scale: f32 },
+    // the 64-wide AVX-512 path (empty unless USE512FS). regs_y = 256-bit LUT (both lanes) for the PROPER
+    // 32-wide int8-saturating FastScan (empty unless FASTSCAN2).
+    Pq8 { regs: Vec<__m128i>, regs_z: Vec<__m512i>, regs_y: Vec<__m256i>, scale: f32 },
     Scalar,                                      // exact int8: scan uses the raw query
     // RaBitQ: the rotated query qrot = P*q (global frame, c=0). `ip` selects IP vs L2 score assembly.
     RaBitQ { qrot: Vec<f32>, ip: bool },
@@ -978,11 +985,17 @@ impl Compressor for Apq4 {
         // fast-scan: int8 LUT, 1 vpshufb/subspace + i16 accum. ~1.7x scan at ~12-13 bit rank. L2 or IP.
         let ip = IP_MODE.load(std::sync::atomic::Ordering::Relaxed);
         let residq = RESIDQ.load(std::sync::atomic::Ordering::Relaxed);
+        if FASTSCAN2.load(std::sync::atomic::Ordering::Relaxed) {
+            // PROPER 32-wide int8-saturating FastScan: bounded LUT (hoist-safe), 256-bit LUT regs.
+            let l = if ip { self.pq.query_lut_f32_i8s_ip_fs2(&qf) } else { self.pq.query_lut_f32_i8s_fs2(&qf) };
+            return QueryCtx::Pq8 { regs: pq::lut_regs_i8(&l, self.pq.m), regs_z: Vec::new(),
+                regs_y: pq::lut_regs_i8_y256(&l, self.pq.m), scale: 0.0 };
+        }
         if FASTSCAN.load(std::sync::atomic::Ordering::Relaxed) {
             let l = if ip { self.pq.query_lut_f32_i8s_ip(&qf) } else { self.pq.query_lut_f32_i8s(&qf) };
             let regs_z = if USE512FS.load(std::sync::atomic::Ordering::Relaxed) { pq::lut_regs_i8_z512(&l, self.pq.m) } else { Vec::new() };
             let scale = if residq && ip { self.pq.ip_i8s_scale(&qf) } else { 0.0 };
-            return QueryCtx::Pq8 { regs: pq::lut_regs_i8(&l, self.pq.m), regs_z, scale };
+            return QueryCtx::Pq8 { regs: pq::lut_regs_i8(&l, self.pq.m), regs_z, regs_y: Vec::new(), scale };
         }
         if !LUT16_OFF.load(std::sync::atomic::Ordering::Relaxed) {
             let lut = if ip { self.pq.query_lut_f32_i16_ip(&qf) } else { self.pq.query_lut_f32_i16(&qf) };
@@ -1007,6 +1020,12 @@ impl Compressor for Apq4 {
         }
     }
     fn scan_block_x2(&self, b0: &[u8], b1: &[u8], ctx: &QueryCtx, out: &mut [i32; 32]) {
+        if let QueryCtx::Pq8 { regs_y, .. } = ctx {
+            if !regs_y.is_empty() { // PROPER 32-wide int8-sat FastScan over the two adjacent 16-blocks
+                unsafe { pq::block_adc_i8_fastscan32_2x16(b0, b1, self.pq.m, regs_y, out) };
+                return;
+            }
+        }
         if let QueryCtx::Pq16 { lut_z, .. } = ctx {
             if std::env::var("SBANN_USE512").is_ok() && std::is_x86_feature_detected!("avx512f") && std::is_x86_feature_detected!("avx512bw") {
                 unsafe { pq::block_adc_i16_avx512_x2(b0, b1, self.pq.m, lut_z, out) };
@@ -1178,6 +1197,12 @@ impl Compressor for Opq4 {
         }
     }
     fn scan_block_x2(&self, b0: &[u8], b1: &[u8], ctx: &QueryCtx, out: &mut [i32; 32]) {
+        if let QueryCtx::Pq8 { regs_y, .. } = ctx {
+            if !regs_y.is_empty() { // PROPER 32-wide int8-sat FastScan over the two adjacent 16-blocks
+                unsafe { pq::block_adc_i8_fastscan32_2x16(b0, b1, self.pq.m, regs_y, out) };
+                return;
+            }
+        }
         if let QueryCtx::Pq16 { lut_z, .. } = ctx {
             if std::env::var("SBANN_USE512").is_ok() && std::is_x86_feature_detected!("avx512f") && std::is_x86_feature_detected!("avx512bw") {
                 unsafe { pq::block_adc_i16_avx512_x2(b0, b1, self.pq.m, lut_z, out) };
