@@ -2750,6 +2750,25 @@ P170. (*** FINAL streaming characterization: deep-t rerank is MEMORY-LATENCY bou
     (f4d1682), 8GB memory audit, full config frontier characterized. OOD: dpb=5 helps at the 0.90 point (scan-
     dominated) -> ~2.6x -> ~12-16k QPS@90% vs scann 43k (ood2 re-measuring). NEXT INNOVATION = the FastScan kernel.
 
+P171. (*** P170 REFUTED (again): drop the 4GB float cache -> int8-only rerank = ELIGIBLE (0.9GB) + 5.8x faster -> high-p -> eligible ~0.86-0.90; TOP-3 in striking distance, NO kernel rewrite ***)
+    streaming2, two results: (1) dpb FRONTIER SETTLED: dpb=5 is OPTIMAL. At good coverage (p=512 t=8192 K=4000):
+    dpb=5=0.9556, dpb=10=0.7957, dpb=25=0.4137 -> coarser FLOORS on code fidelity (true NN lost from even top-8192),
+    so "more coarsening -> more coverage -> more recall" is REFUTED; dpb=5 confirmed best. (2) MEMORY FIX = the big
+    move: the 8.87GB was dominated by the 4.12GB FLOAT-rerank cache. DROPPING float rerank (int8-only rerank from the
+    cache-warm self.raw int8 copy) -> anon 0.9GB (ELIGIBLE) and recall BARELY changes (float bought only ~0.01 at
+    p=64) AND ~5.8x FASTER (QPS 6957 vs float's ~1200). int8-only dpb=5 op48 vs float GT: p64 0.7632, p128 0.8056,
+    p256 0.8279, p384 0.8619. So P170/P168's "~0.77 ceiling" was AGAIN too low -- it was FLOAT-CACHE-ANCHORED (both
+    the memory-ineligibility AND the ~1200-QPS speed anchor that capped p). int8-only ceiling ~0.86 @op48/p384, and
+    full-runbook avg is HIGHER (higher-live steps recall more) -> extrapolated budget-max-p (~320-384) ~0.88-0.90.
+    *** KEY REFRAME of P153/P156: exact float rerank is essential ONLY in the HIGH-recall regime (0.95+, where int8
+    caps 0.954); in the BUDGET-CONSTRAINED regime (~0.86-0.90, coverage-limited) int8 rerank ~= float (0.01 gap) at
+    5.8x less cost + eligible memory -> DROP the float cache for streaming. *** TOP-3 LEVER (in reach): a CHEAP
+    float-REFINE -- int8 narrows to top-~100, then mmap-float-rerank JUST those 100 (no 4GB cache, no deep-t latency)
+    = scann's reorder done right (shallow + on-demand) -> breaks the int8 ceiling at the top -> could push 0.86-0.90
+    -> 0.90-0.93 = TOP-3, still 0.9GB eligible. NEXT: full int8-only runbook @budget-max-p (calibrating) + the cheap
+    float-refine + official NQ=10000. TOP-3 genuinely in striking distance, no kernel rewrite. (P170's "FastScan-only"
+    verdict was premature -- the float-cache anchor was the real blocker. User update HELD until the calibrated number.)
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
