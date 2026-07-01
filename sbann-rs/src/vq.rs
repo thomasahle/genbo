@@ -26,6 +26,11 @@ pub static USE512FS: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBo
 /// fast-scan when compute/L2-bound; the exact rerank restores order past the coarser LUT. Set from
 /// SBANN_FASTSCAN2 (implies the Pq8 path, adds the 256-bit LUT regs). Do NOT combine with USE512FS.
 pub static FASTSCAN2: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+/// SBANN_P2LAYOUT: build the contiguous 32-wide paired-block layout at load time and scan it with the
+/// native block_adc_i8_fastscan32 (ONE 256-bit load/group) instead of the 2x16 kernel (two 128-bit
+/// loads/group). Recall-EXACT (same bytes/output, kernel validated == scalar); pure speed. Only meaningful
+/// with FASTSCAN2 (the Pq8 regs_y LUT). Closes the ~2.9x out-of-cache kernel collapse (P195).
+pub static P2LAYOUT: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 /// SBANN_FUSEDTOPK: ScaNN-style fused top-t collect. Instead of materializing EVERY candidate
 /// (dist,slot) into a pool and select_nth-ing over all of them, keep a running t-th-best threshold and
 /// SIMD-compare each block's kernel dists against it, pushing only survivors (dist<=thr) into a bounded
@@ -1587,6 +1592,13 @@ pub struct Index {
     // superblock index where cell `cell`'s superblocks begin. Empty unless built with USE512FS.
     pub blocks_il: Vec<u8>,
     pub cell_ilstart: Vec<u32>,
+    // CONTIGUOUS 32-wide paired-block layout (SBANN_P2LAYOUT): adjacent block pairs (b,b+1) in a cell
+    // are interleaved into ONE contiguous 32-block ((m/2)*32 bytes, group g = b0_g|b1_g) so the native
+    // block_adc_i8_fastscan32 does ONE 256-bit load/group instead of the 2x16 kernel's two 128-bit loads
+    // + vinserti128 (which collapses ~2.9x out-of-cache — the HW prefetcher can't track the split stream).
+    // cell_p2start[cell] = cumulative superblock index. Empty unless built (recall-EXACT: same bytes/output).
+    pub blocks_p2: Vec<u8>,
+    pub cell_p2start: Vec<u32>,
     // IDEA #4 refine code (empty unless SBANN_RESID): 8-bit PQ codes in SLOT order, m bytes/slot.
     pub resid_pq: Option<pq::ResidPq>,
     pub resid_codes: Vec<u8>,
@@ -1761,11 +1773,64 @@ impl Index {
         }
         Index {
             router, comp, cell_bstart, slot_orig, blocks, bb, xfn: Vec::new(), raw, d, blocks_il,
-            cell_ilstart, resid_pq, resid_codes, rq_cent, a0, raw_orig_indexed: raw_dedup,
+            cell_ilstart, blocks_p2: Vec::new(), cell_p2start: Vec::new(),
+            resid_pq, resid_codes, rq_cent, a0, raw_orig_indexed: raw_dedup,
             ins_blocks: vec![Vec::new(); nc], ins_gidx: vec![Vec::new(); nc], ins_full_blocks: vec![0; nc],
             ins_raw: Vec::new(), ins_orig: Vec::new(), ins_loc: std::collections::HashMap::new(),
             ins_dirty: Vec::new(), ins_count: 0, main_rev: None, n_main: n,
         }
+    }
+
+    /// Build the contiguous 32-wide paired-block layout (SBANN_P2LAYOUT). For each cell, adjacent block
+    /// pairs (b,b+1) are interleaved into one contiguous ((m/2)*32)-byte superblock (group g = b0_g|b1_g,
+    /// low 16 = block b's codes, high 16 = block b+1's) so native block_adc_i8_fastscan32 does ONE 256-bit
+    /// load/group. The odd trailing block (if any) stays in `blocks` and is scanned by the 16-wide kernel.
+    /// Recall-EXACT: identical bytes, identical scan output. Cheap (one ~156MB copy).
+    pub fn build_p2_layout(&mut self) {
+        let bb = self.bb;
+        if bb == 0 || self.blocks.is_empty() { return; }
+        let p2bb = bb * 2;
+        let m = bb / 8; // (m/2)*16 == bb
+        let nc = self.cell_bstart.len() - 1;
+        let mut cell_p2start = vec![0u32; nc + 1];
+        let mut total_pairs = 0u32;
+        for c in 0..nc {
+            total_pairs += (self.cell_bstart[c + 1] - self.cell_bstart[c]) / 2;
+            cell_p2start[c + 1] = total_pairs;
+        }
+        let mut blocks_p2 = vec![0u8; total_pairs as usize * p2bb];
+        // Parallel over cells: each cell owns a disjoint [cell_p2start[c], cell_p2start[c+1]) output range.
+        let ranges: Vec<(usize, usize)> = (0..nc).map(|c| (cell_p2start[c] as usize, cell_p2start[c + 1] as usize)).collect();
+        let out_cells: Vec<&mut [u8]> = {
+            let mut rem = &mut blocks_p2[..];
+            let mut v = Vec::with_capacity(nc);
+            let mut prev = 0usize;
+            for c in 0..nc {
+                let take = (ranges[c].1 - prev) * p2bb;
+                let (head, tail) = rem.split_at_mut(take);
+                v.push(head);
+                rem = tail;
+                prev = ranges[c].1;
+            }
+            v
+        };
+        let blocks = &self.blocks;
+        let cell_bstart = &self.cell_bstart;
+        out_cells.into_par_iter().enumerate().for_each(|(c, dstcell)| {
+            let bs = cell_bstart[c] as usize;
+            let npairs = ranges[c].1 - ranges[c].0;
+            for s in 0..npairs {
+                let dst = &mut dstcell[s * p2bb..(s + 1) * p2bb];
+                let b0 = &blocks[(bs + 2 * s) * bb..(bs + 2 * s + 1) * bb];
+                let b1 = &blocks[(bs + 2 * s + 1) * bb..(bs + 2 * s + 2) * bb];
+                for g in 0..m / 2 {
+                    dst[g * 32..g * 32 + 16].copy_from_slice(&b0[g * 16..g * 16 + 16]);
+                    dst[g * 32 + 16..g * 32 + 32].copy_from_slice(&b1[g * 16..g * 16 + 16]);
+                }
+            }
+        });
+        self.blocks_p2 = blocks_p2;
+        self.cell_p2start = cell_p2start;
     }
 
     pub fn search(&self, ds: &I8Bin, q: &[i8], p: usize, t: usize, k: usize) -> Vec<u32> {
@@ -1871,20 +1936,42 @@ impl Index {
         let prefetch = PREFETCH.load(std::sync::atomic::Ordering::Relaxed) && bb > 0 && !self.blocks.is_empty();
         let pfdist = PFDIST.load(std::sync::atomic::Ordering::Relaxed).max(1);
         let pflines = PFLINES.load(std::sync::atomic::Ordering::Relaxed);
-        let blk_ptr = self.blocks.as_ptr();
-        let blk_len = self.blocks.len();
+        // P2 contiguous 32-block layout (native 1-load fastscan32). Prefetch targets blocks_p2 then.
+        let use_p2 = !self.blocks_p2.is_empty() && matches!(ctx, QueryCtx::Pq8 { regs_y, .. } if !regs_y.is_empty()) && !need_rows;
+        let p2bb = bb * 2;
+        let (pf_ptr, pf_len) = if use_p2 { (self.blocks_p2.as_ptr(), self.blocks_p2.len()) } else { (self.blocks.as_ptr(), self.blocks.len()) };
         for ci in 0..cells.len() {
             let cell = cells[ci];
             // SW-prefetch the block memory of a cell `pfdist` ahead so its random-jump latency overlaps
             // the current cell's scan (the scan is memory-latency bound on p cross-cell jumps).
             if prefetch && ci + pfdist < cells.len() {
                 let nc = cells[ci + pfdist] as usize;
-                let nbs = self.cell_bstart[nc] as usize;
-                prefetch_lines(blk_ptr, blk_len, nbs * bb, pflines);
+                let byte_off = if use_p2 { self.cell_p2start[nc] as usize * p2bb } else { self.cell_bstart[nc] as usize * bb };
+                prefetch_lines(pf_ptr, pf_len, byte_off, pflines);
             }
             let pool_start = pool.len();
             let (bs, be) = (self.cell_bstart[cell as usize] as usize, self.cell_bstart[cell as usize + 1] as usize);
-            if need_rows {
+            if use_p2 {
+                // native 32-wide FastScan over the contiguous paired layout: ONE 256-bit load/group.
+                if let QueryCtx::Pq8 { regs_y, .. } = ctx {
+                    let m = bb / 8;
+                    let p2s = self.cell_p2start[cell as usize] as usize;
+                    let npairs = (be - bs) / 2;
+                    for s in 0..npairs {
+                        let sblk = &self.blocks_p2[(p2s + s) * p2bb..(p2s + s + 1) * p2bb];
+                        unsafe { pq::block_adc_i8_fastscan32(sblk, m, regs_y, &mut out32); }
+                        let b = bs + 2 * s;
+                        for j in 0..16 { let slot = b * 16 + j; if self.slot_orig[slot] != u32::MAX { pool.push((out32[j], slot as u32)); } }
+                        for j in 0..16 { let slot = (b + 1) * 16 + j; if self.slot_orig[slot] != u32::MAX { pool.push((out32[16 + j], slot as u32)); } }
+                    }
+                    if (be - bs) % 2 == 1 {
+                        let b = be - 1;
+                        let block = &self.blocks[b * bb..(b + 1) * bb];
+                        self.comp.scan_block(block, ctx, q, &[], &mut out16);
+                        for j in 0..16 { let slot = b * 16 + j; if self.slot_orig[slot] != u32::MAX { pool.push((out16[j], slot as u32)); } }
+                    }
+                }
+            } else if need_rows {
                 // exact-scan path: build raw rows, per-block
                 for b in bs..be {
                     let block = if bb > 0 { &self.blocks[b * bb..(b + 1) * bb] } else { &[][..] };
@@ -1980,10 +2067,31 @@ impl Index {
             && !self.blocks_il.is_empty()
             && matches!(ctx, QueryCtx::Pq8 { .. });
         let slot_orig = &self.slot_orig[..];
+        let use_p2 = !self.blocks_p2.is_empty() && matches!(ctx, QueryCtx::Pq8 { regs_y, .. } if !regs_y.is_empty()) && !need_rows && !use512fs;
+        let p2bb = bb * 2;
         let mut top = FusedTopT::new(t);
         for &cell in cells {
             let (bs, be) = (self.cell_bstart[cell as usize] as usize, self.cell_bstart[cell as usize + 1] as usize);
-            if need_rows {
+            if use_p2 {
+                if let QueryCtx::Pq8 { regs_y, .. } = ctx {
+                    let m = bb / 8;
+                    let p2s = self.cell_p2start[cell as usize] as usize;
+                    let npairs = (be - bs) / 2;
+                    for s in 0..npairs {
+                        let sblk = &self.blocks_p2[(p2s + s) * p2bb..(p2s + s + 1) * p2bb];
+                        unsafe { pq::block_adc_i8_fastscan32(sblk, m, regs_y, &mut out32); }
+                        let b = bs + 2 * s;
+                        top.emit(&out32[0..16], b * 16, slot_orig);
+                        top.emit(&out32[16..32], (b + 1) * 16, slot_orig);
+                    }
+                    if (be - bs) % 2 == 1 {
+                        let b = be - 1;
+                        let block = &self.blocks[b * bb..(b + 1) * bb];
+                        self.comp.scan_block(block, ctx, q, &[], &mut out16);
+                        top.emit(&out16, b * 16, slot_orig);
+                    }
+                }
+            } else if need_rows {
                 for b in bs..be {
                     let block = if bb > 0 { &self.blocks[b * bb..(b + 1) * bb] } else { &[][..] };
                     let rows16: Vec<&[i8]> = (0..16).map(|j| {
@@ -2064,17 +2172,35 @@ impl Index {
         let prefetch = PREFETCH.load(std::sync::atomic::Ordering::Relaxed) && bb > 0 && !self.blocks.is_empty();
         let pfdist = PFDIST.load(std::sync::atomic::Ordering::Relaxed).max(1);
         let pflines = PFLINES.load(std::sync::atomic::Ordering::Relaxed);
-        let blk_ptr = self.blocks.as_ptr();
-        let blk_len = self.blocks.len();
+        let use_p2 = !self.blocks_p2.is_empty() && matches!(ctx, QueryCtx::Pq8 { regs_y, .. } if !regs_y.is_empty()) && !need_rows;
+        let p2bb = bb * 2;
+        let (pf_ptr, pf_len) = if use_p2 { (self.blocks_p2.as_ptr(), self.blocks_p2.len()) } else { (self.blocks.as_ptr(), self.blocks.len()) };
         for ci in 0..cells.len() {
             let cell = cells[ci];
             if prefetch && ci + pfdist < cells.len() {
                 let nc = cells[ci + pfdist] as usize;
-                let nbs = self.cell_bstart[nc] as usize;
-                prefetch_lines(blk_ptr, blk_len, nbs * bb, pflines);
+                let byte_off = if use_p2 { self.cell_p2start[nc] as usize * p2bb } else { self.cell_bstart[nc] as usize * bb };
+                prefetch_lines(pf_ptr, pf_len, byte_off, pflines);
             }
             let (bs, be) = (self.cell_bstart[cell as usize] as usize, self.cell_bstart[cell as usize + 1] as usize);
-            if need_rows {
+            if use_p2 {
+                if let QueryCtx::Pq8 { regs_y, .. } = ctx {
+                    let m = bb / 8;
+                    let p2s = self.cell_p2start[cell as usize] as usize;
+                    let npairs = (be - bs) / 2;
+                    for s in 0..npairs {
+                        let sblk = &self.blocks_p2[(p2s + s) * p2bb..(p2s + s + 1) * p2bb];
+                        unsafe { pq::block_adc_i8_fastscan32(sblk, m, regs_y, &mut out32); }
+                        acc = acc.wrapping_add(out32[0] as i64).wrapping_add(out32[16] as i64);
+                    }
+                    if (be - bs) % 2 == 1 {
+                        let b = be - 1;
+                        let block = &self.blocks[b * bb..(b + 1) * bb];
+                        self.comp.scan_block(block, ctx, q, &[], &mut out16);
+                        acc = acc.wrapping_add(out16[0] as i64);
+                    }
+                }
+            } else if need_rows {
                 for b in bs..be {
                     let block = if bb > 0 { &self.blocks[b * bb..(b + 1) * bb] } else { &[][..] };
                     let rows16: Vec<&[i8]> = (0..16).map(|j| {
@@ -2689,13 +2815,16 @@ impl Index {
         let comp = load_comp(&mut r);
         let nc = router.n_cells();
         let n_main = slot_orig.iter().filter(|&&o| o != u32::MAX).count();
-        Ok(Index {
+        let mut idx = Index {
             router, comp, cell_bstart, slot_orig, blocks, bb, xfn, raw, d,
-            blocks_il, cell_ilstart, resid_pq, resid_codes, rq_cent, a0, raw_orig_indexed,
+            blocks_il, cell_ilstart, blocks_p2: Vec::new(), cell_p2start: Vec::new(),
+            resid_pq, resid_codes, rq_cent, a0, raw_orig_indexed,
             // a loaded index is the built main index, no pending inserts.
             ins_blocks: vec![Vec::new(); nc], ins_gidx: vec![Vec::new(); nc], ins_full_blocks: vec![0; nc],
             ins_raw: Vec::new(), ins_orig: Vec::new(), ins_loc: std::collections::HashMap::new(),
             ins_dirty: Vec::new(), ins_count: 0, main_rev: None, n_main,
-        })
+        };
+        if P2LAYOUT.load(std::sync::atomic::Ordering::Relaxed) { idx.build_p2_layout(); }
+        Ok(idx)
     }
 }

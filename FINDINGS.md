@@ -3220,6 +3220,85 @@ P192. (*** OOD GAP-CLOSING WORKFLOW: COMBINED LEVERS vs ScaNN 1M SINGLE-THREAD (
     granul_kf16384_c768_b96_a3.idx, t2i1m_query.i8bin}; code on branch ood-levers-stacked (routing lever config-only;
     codes lever recompile on codes-aniso, discarded).
 
+P195. (*** SCAN PRIMITIVE IS MEMORY-BOUND, NOT KERNEL-BOUND — the "runs at ~half the kernel floor" premise (P193)
+    is REFUTED. branch scan-primitive off ood-levers-stacked. The champion 1M-OOD scan (granul C0=768 b0=96 apq4
+    SBANN_FASTSCAN2) at ~177 Mcand/s is NOT a wrong-kernel-dispatch nor a slow kernel: it is DRAM-latency-bound on
+    cold scattered ~9.6KB cells over a 156MB index. Our kernel already EXCEEDS ScaNN's per-candidate rate when the
+    codes are cache-warm. Built + validated a recall-EXACT native-layout kernel (SBANN_P2LAYOUT); it converts +9%
+    cache-hot but ~0 on the cold real scan (memory, not compute, is the wall) -> gated OFF by default, no regression. ***)
+    All measured single-thread taskset -c 1, best-of-N, on AMD Zen4 EPYC 9R14 (L2 16MB/core, L3 32MB/CCX, THP=always).
+
+    DISPATCH AUDIT (kill the "wrong kernel" hypothesis first): champion path = apq4 + FASTSCAN2, a0=3 (< DEDUP_A0=4 so
+    need_dedup=FALSE), FUSEDTOPK unset -> scan_rerank_frr -> scan_pool -> scan_block_x2 -> block_adc_i8_fastscan32_2x16.
+    So it IS a 32-wide int8-SATURATING FastScan (NOT the 16-wide i16acc). No mis-dispatch. The 2x16 variant does TWO
+    128-bit loads + a vinserti128 per subspace-group; the native block_adc_i8_fastscan32 does ONE 256-bit load/group.
+
+    ISOLATED KERNEL FLOORS (scanbench2 m=100 = champion m [d=200,dpb=2], best-of-5; I ADDED an fs32-2x16 timing to the
+    microbench, which previously only timed the native fs32):
+      L2-hot(253KB) : 16w-i16acc 377 | native-fs32 685 | fs32-2x16 604 | avx512-64w-il 536 Mcand/s
+      LARGE-seq(393MB, pure sequential): 16w 297 | native-fs32 447 | fs32-2x16 155(!) | avx512-il 435
+      LARGE-scat(random 32-blk)         : 16w  58 | native-fs32  70 | fs32-2x16  60 | avx512-il  96
+    => the 2x16 kernel COLLAPSES 2.9x (447->155) on a PURE-sequential out-of-cache stream because the split two-stream
+    loads (b0 line, b1 line 800B apart, per group) defeat the HW prefetcher; the native contiguous 256-bit load streams
+    cleanly. This LOOKED like the culprit (it exactly matches the ~155-180 real rate) — but see the real-pattern test.
+
+    REAL CHAMPION SCAN (scatterbench = scan_kernel_only over the actual probed cells, p=80 -> 15165 cand/q):
+      COLD (each query hits fresh scattered cells = the real serving pattern): 2x16 ~168-205, native(P2) ~166-205 -> EQUAL.
+      CACHE-HOT (NQ=8, working set stays resident): 2x16 497, native(P2) 543 -> +9%. Kernel shape matters ONLY when warm.
+      => cold ~176 vs hot ~500 = a ~3x gap that is MEMORY, not the kernel. On the real cold pattern, swapping to the
+      native 1-load kernel is NULL (memory-bound); the 2.9x microbench collapse never materializes because the real
+      access is never the long sequential stream that the collapse needs.
+    perf stat (reps40): IPC 2.06, frontend-idle 0.74%, branch-miss 0.12% -> backend/memory-stall bound (not frontend,
+    not branches). THP=always (156MB ~= 78 x 2MB pages) so it is NOT a TLB problem — the generic AMD dTLB-miss event is
+    a red herring (reported misses >> loads; unreliable encoding).
+
+    WHY MEMORY & WHY SORTING/PREFETCH ARE NULL: blocks array 156MB >> 32MB L3; each query streams ~758KB (15165 x 50B)
+    FRESHLY from DRAM (NOT resident — every query hits different cells). The P193 "0.75MB fits L2" argument is wrong: that
+    0.75MB is cold every query. Only 80 of 16128 cells are probed, ~1.8MB apart even cell-id-SORTED, so the HW streamer
+    can't bridge the gaps -> SORTING is null (1.02x) AND kernel-swap is null AND SW-prefetch is ~null (pfdist=3/pflines=64
+    = +6% cold isolated, 176->187, but HURTS e2e via extra prefetch uops). All three nulls point the SAME way: latency-
+    bound, not order/compute-bound. Effective ~9 GB/s (758KB/84us) vs sequential-DRAM 22 GB/s (LARGE-seq native 447
+    Mcand x 50B) = the 2.4x scatter penalty is the wall.
+
+    vs ScaNN 368 Mcand/s (28000 cand / 76us, per P193): ScaNN = 2000 leaves x ~500 pts (~25KB CONTIGUOUS/leaf) vs our
+    16128 cells x ~61 pts (~9.6KB) — ScaNN's candidate memory is ~2.6x denser/more-contiguous -> closer to sequential
+    streaming -> higher effective Mcand/s. ScaNN's per-candidate edge is a candidate-DENSITY/layout effect, NOT a better
+    kernel: our kernel HOT (543) already > ScaNN's 368. Matching ScaNN on the cold path needs larger/denser cells = a
+    ROUTING change (explicitly out of scope here; and P192 already FALSIFIED naive bigger-leaves at recall>=0.90).
+
+    CHANGE BUILT (recall-EXACT, gated OFF by default): SBANN_P2LAYOUT — at load, interleave adjacent block-pairs into a
+    CONTIGUOUS 32-wide layout (blocks_p2 + cell_p2start) and scan with the native 1-load block_adc_i8_fastscan32. Wired
+    into scan_pool + scan_pool_fused + scan_kernel_only. RECALL-EXACT verified: scatterbench sink bit-identical
+    (9680377700) baseline vs P2; e2e recall identical (0.9005 @p58, 0.9033 @p60) every round; kernel selftest == scalar.
+    RESULT: +9% cache-hot kernel; ~0 on the cold real scan; and it doubles the blocks memory (156MB shadow array) so the
+    cold e2e is NEUTRAL-to-slightly-negative -> NOT enabled by default (no regression risk; available for the warm/dense
+    regime or a future denser-cell layout).
+
+    E2E (champion granul C0=768 b0=96 apq4 float-rerank p=58 t=8, recall 0.9005, single-thread RAYON=1 taskset -c 1,
+    best-of-5, back-to-back): the real e2e scan lever is FUSEDTOPK (pre-existing P187 collect-elimination), ~+3-6% QPS@90%
+    (clean 4-round p=58: P2+FUSED 4860/4899/4976/4874 vs BASE 4676/4722/4702/4810). Adding P2 ON TOP of FUSED is within
+    noise (memory-bound: FUSED vs P2+FUSED back-to-back = -20%/+2%/-13%/+1%). Scan is only ~42% of query time (rerank
+    ~40%, route ~17%), and the scan portion is memory- not kernel-bound, so NO recall-exact scan-primitive change moves
+    the cold e2e materially.
+
+    *** VERDICT: our scan primitive's per-candidate COMPUTE already BEATS ScaNN (543 Mcand/s hot vs 368). The ~177 figure
+    is NOT a kernel deficiency to close — it is the memory-latency floor of cold scattered 9.6KB cells over a 156MB index
+    (IPC 2.06, backend/memory-bound; not dispatch, not TLB, not the 2x16-vs-native kernel shape on the real pattern). The
+    recall-exact levers inside the scan primitive (native-layout kernel, prefetch tuning) do NOT convert on the cold path.
+    us shaved toward sub-1x vs ScaNN: ~0 from kernel changes on the cold e2e. Closing the remaining ScaNN per-candidate gap
+    needs denser candidate memory (routing/leaf-size), which is out of scope AND P192 showed is not free at recall>=0.90.
+    The honest banked scan lever remains FUSEDTOPK (collect), not the kernel. Premise "scan runs at half its potential"
+    = a mis-attribution (L2-hot floor vs a genuinely cold-scattered access pattern). ***
+    ARTIFACTS: branch scan-primitive; src/vq.rs (build_p2_layout + P2 paths in scan_pool/scan_pool_fused/scan_kernel_only,
+    static P2LAYOUT), src/main.rs (SBANN_P2LAYOUT parse + fs32-2x16 timing in scanbench2). Repro: `sbann scanbench2 100`
+    (kernel floors incl. new fs32-2x16); `SBANN_INDEX_LOAD=granul_kf16384_c768_b96_a3.idx SBANN_IP=1 SBANN_FASTSCAN2=1
+    SBANN_PREFETCH=1 SBANN_PLIST=80 [SBANN_P2LAYOUT=1] sbann scatterbench t2i1m.i8bin t2i10m_query.i8bin` (real scan,
+    NQ=8 for hot). HONEST CAVEATS: (1) 1M ONLY, single-thread (10M SIGKILL risk; free/load checked). (2) box load 26-58
+    during e2e -> best-of + back-to-back interleave only; isolated scatterbench (controlled) is the clean primitive number.
+    (3) P2's cold-neutrality is partly the 156MB shadow-array pressure; an in-place REPLACE of blocks (dropping the 16-wide
+    copy) would remove the doubling but the cold scan stays memory-bound (native==2x16 cold), so it buys ~0 cold — not
+    pursued. (4) ScaNN 368 Mcand/s taken from P193 (not re-measured this session).
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT

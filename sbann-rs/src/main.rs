@@ -1158,6 +1158,17 @@ fn scanbench2(m: usize, nblk16: usize, scatter: bool, label: &str) {
         }
         t.elapsed().as_secs_f64()
     });
+    // 2x16 FastScan (the REAL champion-path kernel): two 128-bit loads + vinserti128 over the 16-block
+    // layout (b, b+1 pair). Same 32-wide math as fs32 but the layout the actual scan_pool feeds it.
+    let t_fs32_2x16 = bestof(&mut || {
+        let t = Instant::now();
+        for &b32 in &order32 { let (s0, s1) = (2 * b32, 2 * b32 + 1);
+            unsafe { pq::block_adc_i8_fastscan32_2x16(&blocks16[s0 * bb16..(s0 + 1) * bb16],
+                &blocks16[s1 * bb16..(s1 + 1) * bb16], m, &regs_y, &mut o32); }
+            sink += o32[0] as i64;
+        }
+        t.elapsed().as_secs_f64()
+    });
     // current AVX-512 interleaved (64-wide, int16 accum) — build interleaved superblocks from 4 blocks
     let (t_512, has_il) = if has512 && nblk16 >= 8 {
         let regs8z = pq::lut_regs_i8_z512(&lut8, m);
@@ -1186,8 +1197,8 @@ fn scanbench2(m: usize, nblk16: usize, scatter: bool, label: &str) {
 
     let mcs = |t: f64| ncand as f64 / t / 1e6;
     let kb = bytes as f64 / 1024.0;
-    print!("{label} m={m} ws={:.0}KB reps~{reps}: cur16w {:.0} Mcand/s | fs32(new) {:.0} Mcand/s ({:.2}x)",
-        kb, mcs(t_cur16), mcs(t_fs32), t_cur16 / t_fs32);
+    print!("{label} m={m} ws={:.0}KB reps~{reps}: cur16w {:.0} Mcand/s | fs32(new) {:.0} Mcand/s ({:.2}x) | fs32-2x16(REAL) {:.0} Mcand/s ({:.2}x)",
+        kb, mcs(t_cur16), mcs(t_fs32), t_cur16 / t_fs32, mcs(t_fs32_2x16), t_cur16 / t_fs32_2x16);
     if has_il { print!(" | avx512-64w-il {:.0} Mcand/s ({:.2}x)", mcs(t_512), t_cur16 / t_512); }
     println!("   [sink={sink}]");
 }
@@ -1213,6 +1224,13 @@ fn main() {
         assert!(pq::selftest_i8_fastscan32(50) && pq::selftest_i8_fastscan32(100) && pq::selftest_i8_fastscan32(20),
             "fastscan32 kernel != scalar!");
         vq::FASTSCAN2.store(true, std::sync::atomic::Ordering::Relaxed);
+    }
+    if std::env::var("SBANN_P2LAYOUT").is_ok() {
+        // Contiguous 32-wide paired-block layout + native 1-load block_adc_i8_fastscan32 (P195). Closes the
+        // ~2.9x out-of-cache collapse of the 2x16 two-load kernel. Recall-EXACT (built at load, same bytes).
+        assert!(pq::selftest_i8_fastscan32(50) && pq::selftest_i8_fastscan32(100) && pq::selftest_i8_fastscan32(20),
+            "fastscan32 kernel != scalar!");
+        vq::P2LAYOUT.store(true, std::sync::atomic::Ordering::Relaxed);
     }
     if std::env::var("SBANN_FUSEDTOPK").is_ok() {
         // ScaNN fused top-t: keep a running threshold + emit only survivors (kills the O(candidates)
