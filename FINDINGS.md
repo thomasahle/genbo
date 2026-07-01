@@ -2662,6 +2662,23 @@ P165. (*** CRITICAL CORRECTION to P163/P164: the 14x is NOT clean recoverable pa
     eligibility re-architecture, the audit that caught the eligibility constraints, and this honest characterization.
     (NOTE: my earlier user push projecting top-3 was based on the now-refuted 5-8x -- correct it once prefetch lands.)
 
+P166. (*** RE-OPENING the "fundamental" claim: scan is memory-BANDWIDTH-bound reading ~25-62MB apq4 codes/query -> UNTRIED lever = COARSER scan codes + float rerank (scann's actual recipe) ***)
+    Re-examined the scan layout (vq.rs scan_pool ~L1698): blocks ARE stored CONTIGUOUS PER CELL
+    (cell_bstart[cell]..cell_bstart[cell+1], blocks[b*bb..]) -> within-cell reads already STREAM (not scattered as
+    I feared). So P165's "memory-latency, partly fundamental" is incomplete: the wall is memory-BANDWIDTH -- at p=512
+    the scan reads ~2.5M candidates x (m/2=25 bytes apq4 @ dpb=2, m=50) = ~62MB of codes/query. 62MB/query x ~484
+    QPS x8thr ~ memory-bound. THE REAL UNTRIED LEVER (= what scann ACTUALLY does): scann "AH2,reorder=317" uses
+    COARSE codes (fewer bytes/candidate) for a FAST scan, then exact-reorders only 317. We ALREADY have exact FLOAT
+    rerank (from the 4GB active RAM cache, cheap). So: quantize the CANDIDATE-GEN codes COARSER (dpb=4 -> m=25 ->
+    12.5 bytes/cand = HALF the read ~2x scan; or dpb=5/2-bit) -> faster memory-bound scan -> float-rerank a LARGER K
+    to recover the recall the coarse codes lose. The coarse-scan+float-reorder is scann's exact recipe and we have a
+    BETTER reorder (exact float vs scann's). Est: dpb=4 ~2x + prefetch ~1.3x + SIMD-collect ~1.4x -> ~3-4x -> p~192-256
+    (recall ~0.93-0.95) => AT/BORDERLINE top-3 (0.922), maybe the win. This is UNTRIED and directly attacks the
+    memory-bound read -- NOT fundamental. Levers ranked: (1) COARSER candidate-gen codes (dpb 2->4/5) + larger-K float
+    rerank [biggest, cuts the read]; (2) prefetch next cell's blocks; (3) SIMD/branchless bounded collect. Tradeoff to
+    tune: coarser codes need larger K (more float rerank), but rerank is RAM-cheap. NEXT: streaming2 implement dpb=4
+    candidate-gen + measure 30M eligible recall@NQ=10000; same lifts OOD. Per the goal (top BOTH) this is the live path.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
