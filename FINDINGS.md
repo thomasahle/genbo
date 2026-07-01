@@ -3155,6 +3155,30 @@ P189. (*** WALL-1 PREFETCH = the lone real recall-neutral scan lever: SW-prefetc
     (+7-12%, the win). OUR banked clean 1M single-thread QPS@recall0.90 ~= 2640 (w/ SBANN_PREFETCH) -- the number the
     same-hardware scann head-to-head (running) will be compared against.
 
+P190. (*** THE HEADLINE MEASUREMENT: DIRECT same-hardware ScaNN-vs-ours, 1M text2image OOD, single-thread pinned interleaved = ~2.2-2.4x (ScaNN faster), NOT the invalid cross-machine "25x". The "25x" was ~10x inflated by threading+hardware+contention (our contended box vs scann's idle-Azure published QPS). ***)
+    ScaNN 1.4.2 (pip, AVX-512), true FLOAT base (1M rows of base.1B.fbin) + float queries, dot_product,
+    tree(num_leaves=2000)+score_ah(2,thresh=0.2)+reorder(200) -- its best T2I recipe. OURS: fastscan-soa +
+    SBANN_FASTSCAN2, int8 (t2i1m.i8bin), hierk Kf=16384 C0=128 b0=32 a0=3 SOAR TREEEM apq4 IP, p=80 t=8. BOTH
+    scored vs identical FLOAT-IP GT t2i1m-floatgt (revalidated overlap 1.0000 vs exact float IP). BOTH single-thread
+    pinned taskset -c 4, best-of-5, INTERLEAVED 6 rounds (contention-robust ratio).
+    *** THE RATIO @ recall@10>=0.90: ScaNN 0.9032 @ 8649 QPS vs OURS 0.9003 @ 3903 QPS = 2.22x. Matched ~0.908:
+    8202/3384 = 2.42x. Rock-stable across 6 rounds (scann 8.5k +-1%, ours 3.8k +-3%) -- NOT load noise. Build/RSS
+    comparable (scann 65s/2.83GB/0.9GB-idx; ours ~50s/0.8GB-idx).
+    *** INTERPRETATION: the true same-hardware per-core OOD gap is ~2.2-2.4x, ARCHITECTURAL (scann's anisotropic
+    2-byte AH + in-register scan + float reorder~200 vs our 4-bit PQ + int8 no-float-rerank), consistent with the
+    old same-window "~2x OOD" (P130). NOT a measurement artifact -- but also NOT hopeless. UN-APPLIED levers that
+    narrow it: (1) SBANN_PREFETCH (P189, +7-12%, NOT in this run) -> ~4180-4370 QPS -> ratio ~2.0-2.1x; (2) float
+    rerank (breaks int8 recall ceiling, un-applied on this branch) -> reach 0.90 at lower p -> higher QPS;
+    (3) route/rerank each ~1/3 of query w/ headroom. So closing ~2.2x toward parity is PLAUSIBLE with identified
+    levers -- a completely different picture from the "25x, needs multi-day rebuild" framing this whole session
+    operated under. *** CAVEATS (honest): 1M + single-thread only; 10M same-hw ratio NOT yet measured (engine 10M
+    TREEEM build killed under memory-thrash/swap-full; scann 10M index IS built+cached on disk, 0.90 crossing
+    recall 0.9075 @ lts=120, for a clean re-run when box healthy); multi-thread scaling unverified; int8-vs-float
+    are each engine's intended representation (fair at the metric). scann-headtohead branch 40f3f87 (agent labeled
+    it P185 by mistake; this is the canonical P190). *** STRATEGIC PIVOT: the remaining engine levers (prefetch,
+    float rerank, routing) are now clearly WORTH STACKING to close a 2.2x gap -- vs the prior "only scann's full AH2
+    rebuild helps". The 25x mirage drove months of pessimism; the real target is ~2x and shrinking.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
