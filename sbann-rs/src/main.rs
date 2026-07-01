@@ -462,6 +462,12 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
         Ok(s) => s.split(',').filter_map(|x| x.trim().parse().ok()).filter(|&x: &usize| x >= 1).collect(),
         Err(_) => vec![tmul],
     };
+    // SBANN_KLIST="64,96,128" sweeps the int8-cascade prune width K within one index (P194). Only used
+    // when SBANN_CASCADE is set; otherwise a single no-op pass at the current CASCADE_K.
+    let klist: Vec<usize> = match std::env::var("SBANN_KLIST") {
+        Ok(s) => s.split(',').filter_map(|x| x.trim().parse().ok()).filter(|&x: &usize| x >= 1).collect(),
+        Err(_) => vec![vq::CASCADE_K.load(std::sync::atomic::Ordering::Relaxed)],
+    };
     // big-ann reports BEST search time over run_count -> measure best-of-REPS to filter box-load
     // spikes on this contended box. SBANN_REPS overrides (default 1; use 3-5 for clean A/B tuning).
     let reps: usize = std::env::var("SBANN_REPS").ok().and_then(|s| s.parse().ok()).unwrap_or(1);
@@ -520,6 +526,8 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
         vq::LUT16_OFF.store(lm, std::sync::atomic::Ordering::Relaxed);
        for &vm in &modes {
         crate::simd::VNNI_ON.store(vm, std::sync::atomic::Ordering::Relaxed);
+       for &kk in &klist {
+        vq::CASCADE_K.store(kk, std::sync::atomic::Ordering::Relaxed);
         // survivors kept for exact rerank (tmul tunes recall/speed). The rerank floor was 1000 but that
         // was a ~2x QPS@90% HANDICAP: int16 LUT ranks well enough that t_surv=p*tmul (~256-480) holds
         // recall (P111). Floor now 300 (only affects low-p/QPS@90%; high-p already exceeds it).
@@ -533,6 +541,7 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
             vq::PROF_ROUTE_NS.store(0, std::sync::atomic::Ordering::Relaxed);
             vq::PROF_SCAN_NS.store(0, std::sync::atomic::Ordering::Relaxed);
             vq::PROF_RERANK_NS.store(0, std::sync::atomic::Ordering::Relaxed);
+            vq::PROF_CASC_NS.store(0, std::sync::atomic::Ordering::Relaxed);
         }
         for _ in 0..reps.max(1) {
             let st = Instant::now();
@@ -554,15 +563,20 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
         }
         let vtag = if vnni_ab { if vm { " VNNI" } else { " AVX2" } } else { "" };
         let ltag = if lut_ab { if lm { " i8" } else { " i16" } } else { "" };
-        println!("  p={p:5} t={tm:3}{ltag}{vtag}: recall@10={:.4}  QPS={:.0} (best/{reps})", hit as f64 / (nq * 10) as f64, nq as f64 / dt);
+        let ktag = if vq::CASCADE.load(std::sync::atomic::Ordering::Relaxed) { format!(" K={kk}") } else { String::new() };
+        println!("  p={p:5} t={tm:3}{ltag}{vtag}{ktag}: recall@10={:.4}  QPS={:.0} (best/{reps})", hit as f64 / (nq * 10) as f64, nq as f64 / dt);
         if prof {
             let r = vq::PROF_ROUTE_NS.load(std::sync::atomic::Ordering::Relaxed) as f64;
             let s = vq::PROF_SCAN_NS.load(std::sync::atomic::Ordering::Relaxed) as f64;
             let k = vq::PROF_RERANK_NS.load(std::sync::atomic::Ordering::Relaxed) as f64;
-            let tot = (r + s + k).max(1.0);
-            println!("      [profile] route {:.1}%  scan {:.1}%  rerank {:.1}%  (sum {:.0}ms over {reps} reps)  [scan-ns/q={:.1}us]",
-                100.0 * r / tot, 100.0 * s / tot, 100.0 * k / tot, (r + s + k) / 1e6, s / nq as f64 / reps as f64 / 1000.0);
+            let c = vq::PROF_CASC_NS.load(std::sync::atomic::Ordering::Relaxed) as f64;
+            let tot = (r + s + k + c).max(1.0);
+            // cascade = int8-prune + float-reorder combined in PROF_CASC_NS (rerank stays 0 in cascade mode).
+            println!("      [profile] route {:.1}%  scan {:.1}%  rerank {:.1}%  cascade {:.1}%  (sum {:.0}ms/{reps}reps)  [scan-us/q={:.1} rerank-us/q={:.1} casc-us/q={:.1}]",
+                100.0 * r / tot, 100.0 * s / tot, 100.0 * k / tot, 100.0 * c / tot, (r + s + k + c) / 1e6,
+                s / nq as f64 / reps as f64 / 1000.0, k / nq as f64 / reps as f64 / 1000.0, c / nq as f64 / reps as f64 / 1000.0);
         }
+       }
        }
        }
       }
@@ -1319,6 +1333,12 @@ fn main() {
     // slot (n*a0*d) — shrinks the biggest index array ~a0x, bit-identical recall. Read at BUILD only; the
     // layout is recorded in the index (Index.raw_orig_indexed) so a LOAD restores it without the flag.
     if std::env::var("SBANN_RAW_DEDUP").is_ok() { vq::RAW_DEDUP.store(true, std::sync::atomic::Ordering::Relaxed); }
+    // SBANN_CASCADE (P194): int8-VNNI mid-stage that prunes the apq4 survivor pool to SBANN_CASCADE_K
+    // before the expensive float reorder. Only meaningful with SBANN_FLOAT_RERANK.
+    if std::env::var("SBANN_CASCADE").is_ok() { vq::CASCADE.store(true, std::sync::atomic::Ordering::Relaxed); }
+    if let Ok(s) = std::env::var("SBANN_CASCADE_K") { if let Ok(v) = s.parse::<usize>() { vq::CASCADE_K.store(v, std::sync::atomic::Ordering::Relaxed); } }
+    if std::env::var("SBANN_CASC_SORT").is_ok() { vq::CASC_SORT.store(true, std::sync::atomic::Ordering::Relaxed); }
+    if let Ok(s) = std::env::var("SBANN_CASC_DIM") { if let Ok(v) = s.parse::<usize>() { vq::CASC_DIM.store(v, std::sync::atomic::Ordering::Relaxed); } }
     match a.get(1).map(String::as_str) {
         Some("dotbench") => {
             // microbench: VNNI vs AVX2 int8 dot, dim d, REPS over a working set that fits L2 (warm).

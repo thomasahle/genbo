@@ -3287,6 +3287,51 @@ P196. (*** ROUTE PRIMITIVE AUDIT + VNNI L2: the hierk router was AVX2-madd, NOT 
     l2_i8_block_norm / selftest_l2_norm), src/vq.rs (HierRouter.cadj + gather_fine VNNI path + exact nd cap + ROUTE_VNNI/
     ROUTE_PROF), src/main.rs (routebench + SBANN_ROUTE_VNNI gate).
 
+P194. (*** RERANK CASCADE: int8-VNNI mid-stage cuts float-reorder 464->16 recall-EXACTLY-neutral, +30% QPS
+    vs P192 baseline, ratio 1.9x -> ~1.48x vs ScaNN -- but does NOT reach <1x (branch rerank-cascade). ***)
+    ATTACK: P193 localized the entire OOD 1M single-thread gap to RERANK DEPTH (we float-reorder ~464 apq4
+    survivors to reach 0.90; ScaNN reorders 78 with better anisotropic-AH codes). LEVER (a) CASCADE: insert a
+    cheap full-precision INT8 stage between the apq4 scan and the float reorder. New fn rerank_cascade_float
+    (src/vq.rs:308): dedup pool by orig (recall-neutral, SOAR a0=3 -> ~250-280 distinct) -> INT8-rescore each
+    survivor via VNNI dpbusd (src/simd.rs:74 dot_i8_vnni, dpbusd over the slot-contiguous raw i8 store) -> prune
+    to the K int8-smallest -> FLOAT-reorder only those K. int8 ranks far above the 4-bit apq4 code, so the true
+    float-top-10 survive the prune at tiny K.
+    RESULT (a): K=16 is the minimum that HOLDS recall EXACTLY. Proof (p=52 t=10, 2000q, best/5): no-cascade
+    float-rerank(520) = recall 0.9002 QPS 4384; cascade K=16 = recall 0.9002 (IDENTICAL) QPS 5850 (+33%); K=14
+    = 0.9000; K=12 = 0.8979 (drops). K-sweep at p=58 t=8: recall flat 0.9005 for ALL K in [16..464] (int8 top-16
+    always contains the float-top-10). The float reorder collapses 464->16 (clean e2e delta: float stage ~3.5us,
+    already BELOW ScaNN's ~13us reorder). The int8 stage costs ~28-31us clean (~100ns/vec over ~280 survivors --
+    ~1.75x cheaper/vec than the 177ns float gather because the slot-contiguous raw i8 row is 200B vs the orig-
+    scattered 800B float, partial bandwidth win; NOT compute -- see caveats). Best op point p=52 t=10 K=16 (lower
+    p than the p=58 baseline: cheaper route/scan outweighs the +survivors), recall 0.9002.
+    LEVER (b) CONTIGUOUS FLOAT STORE: NOT built. The cascade makes it moot -- the float reorder is now 16 vecs
+    (~3.5us); a slot-contiguous f32 copy (2.4GB) could shave <1us on 16 gathers, and P193 already measured "cell-
+    contiguous float store net null/negative". Superseded by the cascade, which cut the float COUNT (464->16),
+    far more than making 464 contiguous ever could.
+    STACKED (c) — 3-way INTERLEAVED same-window, core0 pinned, best/5, load 58-65 (ratios load-robust):
+    ScaNN(56,78) 0.9032 @ ~8111 QPS | P192-baseline(p58 t8 float-rerank) 0.9005 @ ~4208 (1.93x) | P194-cascade
+    (p52 t10 K16) 0.9002 @ ~5499 (1.475x). Cascade beats the baseline by +30% at equal recall (grows under load:
+    the baseline's 464 scattered FLOAT gathers suffer more than the cascade's 280 int8 + 16 float). PHASE SPLIT
+    (clean e2e ~171us cascade vs ~123us ScaNN): route+scan ~112 (ScaNN ~106) + int8 ~28-31 + float ~3.5.
+    VERDICT: did NOT reach <1x. Best ratio ~1.48x (down from ~1.9x); +30% QPS@0.90, recall-EXACT-neutral. The
+    remaining ~48us gap is the int8 refine pass (~28-31us) + a ~6us route/scan deficit. The int8 pass is
+    IRREDUCIBLE here: apq4's poor ranking forces t~520 survivors (t=348 -> 0.885), the IP int8 dot needs ALL
+    200 dims (partial-dim prune craters recall: dim128=0.4059, dim96=0.2958), and the gather is memory-latency-
+    bound so it must touch ~280 full rows. Even a FREE int8 stage floors at ~1.16x (route+scan already ~6us
+    behind ScaNN). <1x is NOT a rerank problem -- it needs BETTER CANDIDATE CODES (fewer survivors to touch),
+    i.e. the OPQ/anisotropic-AH rank-preserving-code path (memory: ood-10m-standing), which P182/P184 found our
+    OPQ family cannot deliver at coarse bit-rate. The cascade is the honest config-lever payoff: 1.9x -> 1.48x.
+    HONEST CAVEATS: (1) VNNI is 1.43x faster than AVX2 in cache-warm COMPUTE (dotbench d=200: 6.97 vs 9.98
+    ns/dot) but the cascade stage is GATHER-bound, so VNNI contributes only ~2% e2e -- the int8 win is the
+    smaller row (bandwidth/locality), not the dpbusd throughput. (2) slot-sort of the pool before the int8
+    gather (P189 lever) is net-NEGATIVE here (the i+8 prefetch already hides the slot-clustered latency; the
+    sort costs more), default OFF. (3) SBANN_PROFILE absolute us are load-INFLATED at load 58-65 (a spike gave
+    casc 364us); trust the interleaved QPS + the EXACT recall, not profile us. (4) 1M ONLY, single-thread pinned
+    (10M SIGKILL-risk per constraints; free/loadavg checked). (5) p=52 t=10 recall 0.9002 is thin; the safer
+    p=54 t=10 (0.9032) still ratios ~1.47x. Artifacts: scratchpad/{interleave_3way.sh, interleave_cascade.sh,
+    scann_measure.py, scann_t2i1m_idx, granul_kf16384_c768_b96_a3.idx}; code on branch rerank-cascade
+    (SBANN_CASCADE + SBANN_CASCADE_K, recompile).
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
