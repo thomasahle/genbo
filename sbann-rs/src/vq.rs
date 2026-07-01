@@ -65,6 +65,30 @@ pub static PROFILE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBoo
 pub static PROF_ROUTE_NS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 pub static PROF_SCAN_NS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 pub static PROF_RERANK_NS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+/// int8-cascade stage time (P194): the mid-precision VNNI int8 rerank that prunes the apq4 survivor pool
+/// down to CASCADE_K before the expensive FLOAT reorder. Separate counter so the profile can split
+/// int8-cascade vs float-reorder.
+pub static PROF_CASC_NS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+/// SBANN_CASCADE (P194 rerank cascade): after the apq4 scan yields the survivor pool, insert a CHEAP
+/// full-precision INT8 rerank (VNNI dpbusd over the slot-contiguous raw i8 store) to prune the pool from
+/// t_surv (~464) down to CASCADE_K, then FLOAT-reorder only those K. int8 ranks far better than the 4-bit
+/// apq4 code, so the true float-top-10 survive the prune at small K -> cuts the ~180ns/vec float reorder
+/// count ~4-7x. Recall must be verified >= the float-rerank-only baseline (the prune is not free of risk).
+pub static CASCADE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+/// CASCADE_K: how many int8-top survivors to pass to the float reorder (SBANN_CASCADE_K). Tuned to the
+/// minimum that HOLDS recall@10 >= baseline.
+pub static CASCADE_K: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(128);
+/// CASC_SORT (P194): sort the deduped survivor pool by SLOT before the int8 gather. `raw` is slot-
+/// contiguous, so slot-ascending order makes the int8 gather read MONOTONICALLY forward -> HW prefetch
+/// + TLB stream instead of a random scatter (the P189 scattered-read lever, applied to the int8 stage).
+/// Recall-EXACTLY-neutral (int8 dist is order-independent). Default OFF: measured NET-NEGATIVE (the
+/// per-query sort over ~250 survivors costs more than it saves; the i+8 prefetch already hides the
+/// slot-clustered gather latency). SBANN_CASC_SORT re-enables for A/B.
+pub static CASC_SORT: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+/// CASC_DIM (P194 probe): cap the #dims used in the int8-cascade dot (0 = full d). A coarse single-level
+/// prune reading fewer cache lines per survivor -> tests whether the int8 gather is BANDWIDTH-bound
+/// (fewer lines = faster) or LATENCY-bound (first-line miss dominates, no gain). Recall may drop.
+pub static CASC_DIM: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
 /// SBANN_SCANDIAG diagnostic: run ONLY the kernel floor (block reads + LUT, NO collect) and record its
 /// time as the scan phase, so a separate run gives collect = scan_full - scan_kernelonly (same per-query
 /// cold-cache pattern). Isolates how much of scan the fused top-t can actually remove (only the collect
@@ -266,6 +290,66 @@ fn rerank_contig_float(fbase: &crate::fbin::FBin, slot_orig: &[u32], qf: &[f32],
     for &(_, o) in &scored {
         if !out.contains(&o) { out.push(o); if out.len() == k { break; } }
     }
+    out
+}
+
+/// INT8-CASCADE FLOAT-RERANK (P194): a cheap mid-precision INT8 stage between the apq4 scan and the
+/// expensive float reorder. The apq4 survivor `pool` (up to t_surv slots, dist = 4-bit code score) is:
+///   (1) deduped by orig (SOAR a0>1 stores a point in several probed cells as duplicate slots; identical
+///       raw -> identical dist, so deduping is recall-neutral and shrinks the int8/float work);
+///   (2) INT8-rescored via VNNI dpbusd over the SLOT-CONTIGUOUS raw i8 store (200-dim int8 dot, ~4-6x
+///       fewer instrs than the AVX2 madd path and 4x less memory traffic than the 800B float row);
+///   (3) pruned to the `kk` int8-smallest;
+///   (4) FLOAT-reordered (exact IP vs the leaderboard float GT) over ONLY those `kk`.
+/// int8 ranks far better than the 4-bit apq4 code (int8 recall-ceiling ~0.924 on t2i OOD, >> the 0.90
+/// target), so the true float-top-k survive the prune at small kk -> the ~180ns/vec float reorder count
+/// drops from ~464 to kk (~64-128). Recall MUST be verified >= the float-rerank-only baseline.
+#[allow(clippy::too_many_arguments)]
+fn rerank_cascade_float(fbase: &crate::fbin::FBin, raw: &[i8], d: usize, raw_orig_indexed: bool,
+    slot_orig: &[u32], q: &[i8], qf: &[f32], pool: &mut Vec<(i32, u32)>, kk: usize, k: usize) -> Vec<u32> {
+    let prof = PROFILE.load(std::sync::atomic::Ordering::Relaxed);
+    let tc = if prof { Some(std::time::Instant::now()) } else { None };
+    // (1) dedup by orig (recall-neutral): keeps one slot per distinct orig, min apq4 dist.
+    dedup_pool_by_orig(pool, slot_orig);
+    let n = pool.len();
+    if n == 0 { return Vec::new(); }
+    // (1b) sort by slot so the slot-contiguous raw gather streams forward (recall-neutral).
+    if !raw_orig_indexed && CASC_SORT.load(std::sync::atomic::Ordering::Relaxed) {
+        pool.sort_unstable_by_key(|&(_, s)| s);
+    }
+    // (2) INT8 rescore. Prefer VNNI (dpbusd) when the CPU has it; else AVX2 madd; else scalar.
+    let vnni = std::is_x86_feature_detected!("avx512vnni") && std::is_x86_feature_detected!("avx512bw")
+        && std::is_x86_feature_detected!("avx512f");
+    let avx = std::is_x86_feature_detected!("avx2");
+    let cdim = CASC_DIM.load(std::sync::atomic::Ordering::Relaxed);
+    let dd = if cdim == 0 { d } else { cdim.min(d) };
+    let qd = &q[..dd];
+    let mut scored: Vec<(i32, u32)> = Vec::with_capacity(n);
+    for i in 0..n {
+        let slot = pool[i].1 as usize;
+        let orig = slot_orig[slot];
+        if i + 8 < n {
+            let nslot = pool[i + 8].1 as usize;
+            let ri = if raw_orig_indexed { slot_orig[nslot] as usize } else { nslot };
+            if ri != u32::MAX as usize { unsafe { _mm_prefetch(raw.as_ptr().add(ri * d) as *const i8, _MM_HINT_T0) }; }
+        }
+        if orig == u32::MAX { continue; }
+        let ri = if raw_orig_indexed { orig as usize } else { slot };
+        let row = &raw[ri * d..ri * d + dd];
+        // negdot: smaller = better (matches the IP float path's -dot).
+        let dist = if vnni { -unsafe { simd::dot_i8_vnni(qd, row) } }
+                   else if avx { -unsafe { simd::dot_i8_avx2(qd, row) } }
+                   else { simd::negdot_i8(qd, row) };
+        scored.push((dist, slot as u32));
+    }
+    // (3) prune to the kk int8-smallest (already distinct origs after the dedup above).
+    let kk = kk.min(scored.len());
+    if kk > 0 && kk < scored.len() { scored.select_nth_unstable(kk - 1); scored.truncate(kk); }
+    if let Some(tc) = tc { PROF_CASC_NS.fetch_add(tc.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed); }
+    // (4) exact float reorder over only the kk survivors.
+    let tr = if prof { Some(std::time::Instant::now()) } else { None };
+    let out = rerank_contig_float(fbase, slot_orig, qf, &scored, k);
+    if let Some(tr) = tr { PROF_RERANK_NS.fetch_add(tr.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed); }
     out
 }
 
@@ -2202,9 +2286,15 @@ impl Index {
         let ts = if prof { Some(std::time::Instant::now()) } else { None };
         let need_dedup = self.a0 >= DEDUP_A0.load(std::sync::atomic::Ordering::Relaxed) || POOLDEDUP.load(std::sync::atomic::Ordering::Relaxed);
         let residq_active = RESIDQ.load(std::sync::atomic::Ordering::Relaxed) && !self.rq_cent.is_empty();
+        let cascade = CASCADE.load(std::sync::atomic::Ordering::Relaxed);
+        let kk = CASCADE_K.load(std::sync::atomic::Ordering::Relaxed);
         if FUSEDTOPK.load(std::sync::atomic::Ordering::Relaxed) && !need_dedup && !residq_active {
-            let pool = self.scan_pool_fused(ds, q, cells, &ctx, t);
+            let mut pool = self.scan_pool_fused(ds, q, cells, &ctx, t);
             if let Some(ts) = ts { PROF_SCAN_NS.fetch_add(ts.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed); }
+            if cascade {
+                // int8-cascade prune (PROF_CASC_NS) then float reorder (PROF_RERANK_NS) — timed inside.
+                return rerank_cascade_float(fbase, &self.raw, self.d, self.raw_orig_indexed, &self.slot_orig, q, qf, &mut pool, kk, k);
+            }
             let tr = if prof { Some(std::time::Instant::now()) } else { None };
             let out = rerank_contig_float(fbase, &self.slot_orig, qf, &pool, k);
             if let Some(tr) = tr { PROF_RERANK_NS.fetch_add(tr.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed); }
@@ -2212,13 +2302,19 @@ impl Index {
         }
         let mut pool = self.scan_pool(ds, q, cells, &ctx);
         if let Some(ts) = ts { PROF_SCAN_NS.fetch_add(ts.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed); }
-        let tr = if prof { Some(std::time::Instant::now()) } else { None };
         if need_dedup {
             dedup_pool_by_orig(&mut pool, &self.slot_orig);
         }
         let tt = t.min(pool.len());
         if tt > 0 { pool.select_nth_unstable(tt - 1); pool.truncate(tt); }
         let _ = ds;
+        if cascade {
+            let tc = if prof { Some(std::time::Instant::now()) } else { None };
+            let out = rerank_cascade_float(fbase, &self.raw, self.d, self.raw_orig_indexed, &self.slot_orig, q, qf, &mut pool, kk, k);
+            if let Some(tc) = tc { PROF_CASC_NS.fetch_add(tc.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed); }
+            return out;
+        }
+        let tr = if prof { Some(std::time::Instant::now()) } else { None };
         let out = rerank_contig_float(fbase, &self.slot_orig, qf, &pool, k);
         if let Some(tr) = tr { PROF_RERANK_NS.fetch_add(tr.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed); }
         out
