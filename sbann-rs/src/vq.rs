@@ -26,6 +26,16 @@ pub static USE512FS: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBo
 /// fast-scan when compute/L2-bound; the exact rerank restores order past the coarser LUT. Set from
 /// SBANN_FASTSCAN2 (implies the Pq8 path, adds the 256-bit LUT regs). Do NOT combine with USE512FS.
 pub static FASTSCAN2: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+/// SBANN_FUSEDTOPK: ScaNN-style fused top-t collect. Instead of materializing EVERY candidate
+/// (dist,slot) into a pool and select_nth-ing over all of them, keep a running t-th-best threshold and
+/// SIMD-compare each block's kernel dists against it, pushing only survivors (dist<=thr) into a bounded
+/// buffer that is periodically pruned back to t. Recall-neutral: the buffer is provably a superset of
+/// the true top-t (thr only tightens, and a true-top-t element can never be pruned), so the final
+/// select_nth over the buffer yields the identical top-t set as select_nth over the full pool — but the
+/// O(candidates) scalar push + per-candidate slot_orig branch (the measured ~85% of the scan phase,
+/// FINDINGS P187) is replaced by a SIMD threshold-compare that only touches slot_orig for survivors.
+/// Gated to the NON-residq, non-pool-dedup path (see scan_rerank); falls back to scan_pool otherwise.
+pub static FUSEDTOPK: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 /// IDEA #4: build a SECOND finer 8-bit refine code (pq::ResidPq) in slot order and use it to refine
 /// the 4-bit-ADC survivor ranking before the exact raw rerank, so far fewer raw vectors are read.
 /// Set from SBANN_RESID. SBANN_RESID_DPB picks the refine subspace size (default 2 => m=d/2 bytes/vec).
@@ -55,6 +65,11 @@ pub static PROFILE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBoo
 pub static PROF_ROUTE_NS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 pub static PROF_SCAN_NS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 pub static PROF_RERANK_NS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+/// SBANN_SCANDIAG diagnostic: run ONLY the kernel floor (block reads + LUT, NO collect) and record its
+/// time as the scan phase, so a separate run gives collect = scan_full - scan_kernelonly (same per-query
+/// cold-cache pattern). Isolates how much of scan the fused top-t can actually remove (only the collect
+/// part; the scattered block reads + LUT are t-independent and untouchable by the fused path).
+pub static SCANDIAG: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 /// SBANN_ROUTE_SDIM: score only the first N dims of each centroid at the FINEST routing level (the 78%-of-
 /// routing term, P139). 0 = full d (exact). Approximate finest routing -> cheaper routing if recall@p holds.
 pub static ROUTE_SDIM: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
@@ -190,6 +205,111 @@ fn rerank_contig_pairs(raw: &[i8], d: usize, slot_orig: &[u32], q: &[i8], pool: 
     let mut v = heap.into_vec();
     v.sort_unstable();
     v
+}
+
+// ---------------- Fused top-t collect (SBANN_FUSEDTOPK, ScaNN keep-only-survivors) ----------------
+
+/// Running state for the fused top-t collect. `buf` holds the current survivor set; once `filled`,
+/// `thr` is the current t-th-smallest dist (admission threshold) and any candidate with dist>thr is
+/// dropped WITHOUT touching slot_orig. Pruned back to `t` whenever `buf` reaches `prune_cap`.
+struct FusedTopT {
+    buf: Vec<(i32, u32)>,
+    thr: i32,
+    t: usize,
+    prune_cap: usize,
+    filled: bool,
+}
+
+impl FusedTopT {
+    #[inline]
+    fn new(t: usize) -> Self {
+        // prune_cap = 2t: prune to t once the buffer doubles, so each O(prune_cap) select_nth is amortized
+        // over ~t admits (O(1) amortized). After the first prune thr is tight and survivors trickle in, so
+        // subsequent prunes are rare. (Tighter caps like t+t/4 prune far more often -> the select_nth
+        // passes dominate and net-lose; measured.) thr starts at MAX (admit everything until we have t).
+        let prune_cap = (2 * t).max(t + 64);
+        FusedTopT { buf: Vec::with_capacity(prune_cap + 64), thr: i32::MAX, t, prune_cap, filled: false }
+    }
+    #[inline]
+    fn maybe_prune(&mut self) {
+        if self.buf.len() >= self.prune_cap {
+            // keep the t smallest seen so far; thr := their max (= t-th smallest). A true-top-t element
+            // is always among the t smallest-so-far (fewer than t elements are globally smaller than it),
+            // so pruning never drops one -> the final result set is identical to select_nth over the full pool.
+            self.buf.select_nth_unstable(self.t - 1);
+            self.thr = self.buf[self.t - 1].0;
+            self.buf.truncate(self.t);
+            self.filled = true;
+        }
+    }
+    /// Emit survivors from one 16- or 32-lane block: `out[j]` is the kernel dist for slot `base+j`.
+    #[inline]
+    fn emit(&mut self, out: &[i32], base: usize, slot_orig: &[u32]) {
+        if self.filled {
+            // SIMD: mask of lanes with out[j] <= thr, then push only those (checking slot_orig per survivor).
+            let mut mask = unsafe { survivor_mask_leq(out, self.thr) };
+            while mask != 0 {
+                let j = mask.trailing_zeros() as usize;
+                mask &= mask - 1;
+                let slot = base + j;
+                if slot_orig[slot] != u32::MAX {
+                    self.buf.push((out[j], slot as u32));
+                }
+            }
+        } else {
+            // not yet t candidates: admit all valid lanes (thr is still MAX).
+            for (j, &d) in out.iter().enumerate() {
+                let slot = base + j;
+                if slot_orig[slot] != u32::MAX {
+                    self.buf.push((d, slot as u32));
+                }
+            }
+        }
+        self.maybe_prune();
+    }
+    /// Final cap: exactly the t smallest of the buffer (identical set to select_nth over the full pool).
+    #[inline]
+    fn finish(mut self) -> Vec<(i32, u32)> {
+        let tt = self.t.min(self.buf.len());
+        if tt > 0 && tt < self.buf.len() {
+            self.buf.select_nth_unstable(tt - 1);
+            self.buf.truncate(tt);
+        }
+        self.buf
+    }
+}
+
+/// Return a bitmask (bit j set) of lanes where `out[j] <= thr`, for `out.len()` <= 64. Uses AVX2
+/// packed 32-bit compare (out<=thr <=> !(out>thr) <=> (thr+1)>out via _mm256_cmpgt_epi32). Callers
+/// only invoke this once `thr` is a real (finite, < i32::MAX) dist, so thr+1 never overflows.
+#[inline]
+unsafe fn survivor_mask_leq(out: &[i32], thr: i32) -> u64 {
+    use std::arch::x86_64::*;
+    let n = out.len();
+    debug_assert!(n <= 64);
+    if std::is_x86_feature_detected!("avx2") {
+        let thr1 = _mm256_set1_epi32(thr.wrapping_add(1)); // out <= thr  <=>  thr+1 > out
+        let mut mask: u64 = 0;
+        let mut j = 0usize;
+        while j + 8 <= n {
+            let v = _mm256_loadu_si256(out.as_ptr().add(j) as *const __m256i);
+            let cmp = _mm256_cmpgt_epi32(thr1, v);
+            let m = _mm256_movemask_ps(_mm256_castsi256_ps(cmp)) as u32;
+            mask |= (m as u64) << j;
+            j += 8;
+        }
+        while j < n {
+            if out[j] <= thr { mask |= 1u64 << j; }
+            j += 1;
+        }
+        mask
+    } else {
+        let mut mask: u64 = 0;
+        for (j, &d) in out.iter().enumerate() {
+            if d <= thr { mask |= 1u64 << j; }
+        }
+        mask
+    }
 }
 
 // ---------------- Router: coarse quantizer (which cells) ----------------
@@ -1770,18 +1890,171 @@ impl Index {
         pool
     }
 
+    /// FUSED top-t collect (SBANN_FUSEDTOPK): identical kernel dispatch to `scan_pool` but replaces the
+    /// per-candidate scalar `pool.push + slot_orig branch` (+ terminal select_nth over ALL candidates)
+    /// with a running t-th-best threshold — each block's dists are SIMD-compared against it and only
+    /// survivors are pushed. Returns the ALREADY-capped top-t pool (identical set to
+    /// `scan_pool` -> select_nth(t)). Caller must ensure NO per-cell residq offset and NO pre-cap dedup
+    /// (both incompatible with threshold-during-scan); it gates on that and falls back to scan_pool.
+    fn scan_pool_fused(&self, ds: &I8Bin, q: &[i8], cells: &[u32], ctx: &QueryCtx, t: usize) -> Vec<(i32, u32)> {
+        let need_rows = self.comp.needs_raw_rows();
+        let mut out16 = [0i32; 16];
+        let mut out32 = [0i32; 32];
+        let bb = self.bb;
+        let use512fs = USE512FS.load(std::sync::atomic::Ordering::Relaxed)
+            && !self.blocks_il.is_empty()
+            && matches!(ctx, QueryCtx::Pq8 { .. });
+        let slot_orig = &self.slot_orig[..];
+        let mut top = FusedTopT::new(t);
+        for &cell in cells {
+            let (bs, be) = (self.cell_bstart[cell as usize] as usize, self.cell_bstart[cell as usize + 1] as usize);
+            if need_rows {
+                for b in bs..be {
+                    let block = if bb > 0 { &self.blocks[b * bb..(b + 1) * bb] } else { &[][..] };
+                    let rows16: Vec<&[i8]> = (0..16).map(|j| {
+                        let o = self.slot_orig[b * 16 + j];
+                        if o != u32::MAX { ds.row(o as usize) } else { &[][..] }
+                    }).collect();
+                    self.comp.scan_block(block, ctx, q, &rows16, &mut out16);
+                    top.emit(&out16, b * 16, slot_orig);
+                }
+            } else if use512fs {
+                if let QueryCtx::Pq8 { regs, regs_z, .. } = ctx {
+                    let m = bb / 8;
+                    let il0 = self.cell_ilstart[cell as usize] as usize;
+                    let nfull = (be - bs) / 4;
+                    let mut out64 = [0i32; 64];
+                    for s in 0..nfull {
+                        let sb = il0 + s;
+                        unsafe {
+                            pq::block_adc_i8_i16acc_avx512_il(&self.blocks_il[sb * bb * 4..(sb + 1) * bb * 4], m, regs_z, &mut out64);
+                        }
+                        let bbase = bs + 4 * s;
+                        for sub in 0..4 {
+                            top.emit(&out64[sub * 16..sub * 16 + 16], (bbase + sub) * 16, slot_orig);
+                        }
+                    }
+                    for b in (bs + 4 * nfull)..be {
+                        let block = &self.blocks[b * bb..(b + 1) * bb];
+                        unsafe { pq::block_adc_i8_i16acc(block, m, regs, &mut out16); }
+                        top.emit(&out16, b * 16, slot_orig);
+                    }
+                }
+            } else {
+                let mut b = bs;
+                while b + 1 < be {
+                    let b0 = &self.blocks[b * bb..(b + 1) * bb];
+                    let b1 = &self.blocks[(b + 1) * bb..(b + 2) * bb];
+                    self.comp.scan_block_x2(b0, b1, ctx, &mut out32);
+                    top.emit(&out32[0..16], b * 16, slot_orig);
+                    top.emit(&out32[16..32], (b + 1) * 16, slot_orig);
+                    b += 2;
+                }
+                if b < be {
+                    let block = &self.blocks[b * bb..(b + 1) * bb];
+                    self.comp.scan_block(block, ctx, q, &[], &mut out16);
+                    top.emit(&out16, b * 16, slot_orig);
+                }
+            }
+        }
+        top.finish()
+    }
+
+    /// DIAGNOSTIC (SBANN_SCANDIAG): run the SAME kernel dispatch as scan_pool over `cells` but do NO
+    /// collect (no slot_orig read, no push, no select_nth) — just consume `out` so the kernel isn't
+    /// optimized away. Returns a checksum. Timed separately from the full scan; scan - kernel = collect.
+    fn scan_kernel_only(&self, ds: &I8Bin, q: &[i8], cells: &[u32], ctx: &QueryCtx) -> i64 {
+        let need_rows = self.comp.needs_raw_rows();
+        let mut out16 = [0i32; 16];
+        let mut out32 = [0i32; 32];
+        let bb = self.bb;
+        let use512fs = USE512FS.load(std::sync::atomic::Ordering::Relaxed)
+            && !self.blocks_il.is_empty()
+            && matches!(ctx, QueryCtx::Pq8 { .. });
+        let mut acc: i64 = 0;
+        for &cell in cells {
+            let (bs, be) = (self.cell_bstart[cell as usize] as usize, self.cell_bstart[cell as usize + 1] as usize);
+            if need_rows {
+                for b in bs..be {
+                    let block = if bb > 0 { &self.blocks[b * bb..(b + 1) * bb] } else { &[][..] };
+                    let rows16: Vec<&[i8]> = (0..16).map(|j| {
+                        let o = self.slot_orig[b * 16 + j];
+                        if o != u32::MAX { ds.row(o as usize) } else { &[][..] }
+                    }).collect();
+                    self.comp.scan_block(block, ctx, q, &rows16, &mut out16);
+                    acc = acc.wrapping_add(out16[0] as i64);
+                }
+            } else if use512fs {
+                if let QueryCtx::Pq8 { regs, regs_z, .. } = ctx {
+                    let m = bb / 8;
+                    let il0 = self.cell_ilstart[cell as usize] as usize;
+                    let nfull = (be - bs) / 4;
+                    let mut out64 = [0i32; 64];
+                    for s in 0..nfull {
+                        let sb = il0 + s;
+                        unsafe { pq::block_adc_i8_i16acc_avx512_il(&self.blocks_il[sb * bb * 4..(sb + 1) * bb * 4], m, regs_z, &mut out64); }
+                        acc = acc.wrapping_add(out64[0] as i64);
+                    }
+                    for b in (bs + 4 * nfull)..be {
+                        let block = &self.blocks[b * bb..(b + 1) * bb];
+                        unsafe { pq::block_adc_i8_i16acc(block, m, regs, &mut out16); }
+                        acc = acc.wrapping_add(out16[0] as i64);
+                    }
+                }
+            } else {
+                let mut b = bs;
+                while b + 1 < be {
+                    let b0 = &self.blocks[b * bb..(b + 1) * bb];
+                    let b1 = &self.blocks[(b + 1) * bb..(b + 2) * bb];
+                    self.comp.scan_block_x2(b0, b1, ctx, &mut out32);
+                    acc = acc.wrapping_add(out32[0] as i64).wrapping_add(out32[16] as i64);
+                    b += 2;
+                }
+                if b < be {
+                    let block = &self.blocks[b * bb..(b + 1) * bb];
+                    self.comp.scan_block(block, ctx, q, &[], &mut out16);
+                    acc = acc.wrapping_add(out16[0] as i64);
+                }
+            }
+        }
+        acc
+    }
+
     /// Scan the given cells with the compressor, keep top-T by approx dist, exact-rerank to top-k.
     pub fn scan_rerank(&self, ds: &I8Bin, q: &[i8], cells: &[u32], t: usize, k: usize) -> Vec<u32> {
         let prof = PROFILE.load(std::sync::atomic::Ordering::Relaxed);
-        let ts = if prof { Some(std::time::Instant::now()) } else { None };
         let ctx = self.comp.prepare_query(q);
+        // DIAGNOSTIC (SBANN_SCANDIAG): time ONLY the kernel floor (block reads + LUT, NO collect) into
+        // PROF_SCAN_NS and return early. Run this in a SEPARATE process vs the normal run: the per-query
+        // cold-cache pattern is identical, so collect = scan_full - scan_kernelonly is measured unbiased.
+        if SCANDIAG.load(std::sync::atomic::Ordering::Relaxed) {
+            let ts = std::time::Instant::now();
+            let acc = self.scan_kernel_only(ds, q, cells, &ctx);
+            if prof { PROF_SCAN_NS.fetch_add(ts.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed); }
+            std::hint::black_box(acc);
+            return Vec::new();
+        }
+        let ts = if prof { Some(std::time::Instant::now()) } else { None };
+        // FUSED top-t collect (SBANN_FUSEDTOPK): only valid when no pre-cap dedup is needed (a0 dups must
+        // be collapsed BEFORE the cap) and no per-cell residq offset is applied during scan (the threshold
+        // compare runs on the same dist the cap ranks by). Otherwise fall back to the materialize-all path.
+        let need_dedup = self.a0 >= DEDUP_A0.load(std::sync::atomic::Ordering::Relaxed) || POOLDEDUP.load(std::sync::atomic::Ordering::Relaxed);
+        let residq_active = RESIDQ.load(std::sync::atomic::Ordering::Relaxed) && !self.rq_cent.is_empty();
+        if FUSEDTOPK.load(std::sync::atomic::Ordering::Relaxed) && !need_dedup && !residq_active {
+            let pool = self.scan_pool_fused(ds, q, cells, &ctx, t);
+            if let Some(ts) = ts { PROF_SCAN_NS.fetch_add(ts.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed); }
+            let tr = if prof { Some(std::time::Instant::now()) } else { None };
+            let out = rerank_contig(&self.raw, self.d, &self.slot_orig, q, &pool, k, self.raw_orig_indexed);
+            if let Some(tr) = tr { PROF_RERANK_NS.fetch_add(tr.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed); }
+            return out;
+        }
         let mut pool = self.scan_pool(ds, q, cells, &ctx);
         // SOAR multi-store (a0>1): dedup the pool by orig id BEFORE the cap so distinct survivors enter
         // rerank (deduping after the cap loses recall at high a0). a0==1 has no dups -> skip. The fast
         // reused open-addressing table replaces the per-query SipHash HashMap (the gap-widener, P134).
         if let Some(ts) = ts { PROF_SCAN_NS.fetch_add(ts.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed); }
         let tr = if prof { Some(std::time::Instant::now()) } else { None };
-        if self.a0 >= DEDUP_A0.load(std::sync::atomic::Ordering::Relaxed) || POOLDEDUP.load(std::sync::atomic::Ordering::Relaxed) {
+        if need_dedup {
             dedup_pool_by_orig(&mut pool, &self.slot_orig);
         }
         let tt = t.min(pool.len());

@@ -3003,6 +3003,45 @@ P184. (*** CLEAN BASELINE TABLE (streaming2, 1M L2+IP, reorder-depth sweep): our
     a faithful impl ALSO plateaus deep -> the moat is the full AH2 system (loss + SoA layout), confirmed at the deepest
     level. (streaming2 stood down; box idle for the anisotropic-VQ agent.)
 
+P188. (*** WALL-1 FUSED-TOP-K (ScaNN keep-only-survivors) LANDED + RECALL-EXACTLY-NEUTRAL, but REFUTES P187's
+    "collect = 85% of scan": a direct kernel-only measurement shows collect is only 20-30% of scan; the scan is
+    70-79% scattered PQ-block reads (t-independent, untouchable by fused). NOT the 1.5-1.6x lever -> end-to-end
+    neutral at the champion point, +2-6% only when t<<N. The real scan wall is the SoA layout, not the collect. ***)
+    Follows P187 (which projected fused-top-k as "a ~1.5-1.6x END-TO-END lever, the biggest available"). IMPLEMENTED
+    a faithful fused top-t behind SBANN_FUSEDTOPK (branch fused-topk off fastscan-soa), stacking on SBANN_FASTSCAN2:
+    vq.rs FusedTopT keeps a running t-th-best threshold, SIMD-compares each 16/32-lane block's kernel dists
+    (survivor_mask_leq: _mm256_cmpgt_epi32 + movemask), pushes ONLY survivors (slot_orig touched per-survivor, not
+    per-candidate), prunes a 2t buffer back to t via select_nth. Gated to the non-residq / non-pre-cap-dedup path
+    (scan_rerank), falls back to the materialize-all path otherwise. Default OFF -> zero change to existing runs.
+    *** RECALL NEUTRALITY (airtight, `fusedab` subcmd, per-query top-10 SET compare, 1M OOD text2image, SBANN_IP+
+    FASTSCAN2): champion p512 t4096 = 10000/10000 queries IDENTICAL top-10 set (delta 0.00000); t<<N p2048 t2048 =
+    5000/5000 IDENTICAL (delta 0.00000). Bit-identical to baseline by construction (the survivor buffer is provably a
+    superset of the true top-t: thr only tightens and a true-top-t element is always among the t-smallest-so-far, so
+    the final select_nth yields the same set). *** THE MEASUREMENT THAT REFUTES P187 (SBANN_SCANDIAG: time the
+    kernel floor = block reads + LUT with NO collect, separate run, identical per-query cold-cache pattern, so
+    collect = scan_full - scan_kernelonly), single-thread pinned taskset -c 0, best-of-N, Kf=262144 C0=4096 apq4 a0=3:
+      champion p512 t4096: scan_full 274us, kernel-only 190us -> COLLECT = 84us = 30% of scan (kernel/block-reads 70%)
+      t<<N   p2048 t2048: scan_full 741us, kernel-only 587us -> COLLECT = 154us = 21% of scan (kernel/block-reads 79%)
+    So P187's "scan phase ~85% the scalar collect" was WRONG -- it conflated the scattered-block-read memory STALLS
+    (which occur INSIDE scan_block/the LUT kernel, 70-79% of scan) with the scalar collect (20-30%). A clean
+    kernel-only-vs-full split separates them. This is the SAME scatter wall P183/P187-item-2 flagged, now quantified
+    as the 70-79% majority of scan. *** END-TO-END A/B (best-of-3..5, single-thread pinned, recall bit-identical):
+      champion p512 t4096 (t/N~0.7): baseline QPS ~1387 vs fused ~1375 = NEUTRAL (~-1%, within box noise). 2t>N so no
+        pruning fires; ~70% of candidates ARE genuine top-t survivors that must be pushed anyway -> nothing to filter.
+      t<<N  p2048 t2048 (t/N~0.09): baseline median ~787 vs fused ~806 = +2-6% (consistent across rounds). Pruning
+        filters ~90% of candidates from the slot_orig-read + push, but that only removes the 21%-of-scan collect.
+    *** WHY THE PROJECTION FAILED: fused can only remove the collect; with collect = 20-30% of scan, even a
+    ZERO-OVERHEAD fused caps at ~1.13-1.15x end-to-end (route 32% + scan 37% + rerank 31% at champion; removing all
+    collect = ~84us of a ~745us query). My real impl nets ~neutral at the champion op-point and +2-6% only in the
+    t<<N regime, which is NOT the QPS/recall frontier point. *** NEW BOTTLENECK BREAKDOWN (champion, single-thread):
+    route 32% / scan 37% / rerank 31%; WITHIN scan: kernel+scattered-block-reads 70% (THE wall) + collect 30%. The
+    dominant remaining WALL-1 cost is the scattered PQ-block reads (memory-bound, p=512 random jumps into the ~168MB
+    blocks array) -> the SoA / bigger-cell LAYOUT (P183), NOT fused-top-k. VERDICT: fused-top-k is a correct,
+    recall-exact, banked primitive (SBANN_FUSEDTOPK, default off) with a small win only when the candidate pool
+    N >> survivor count t; it is NOT the large end-to-end lever P187 projected, because the collect it targets is a
+    minor (20-30%) share of the scan on this index. Hardware-independent facts that stand: collect = 20-30% of scan
+    (not 85%), kernel/scattered-block-reads = 70-79% of scan, fused recall-exactly-neutral (15000/15000 identical).
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT

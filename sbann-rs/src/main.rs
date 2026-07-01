@@ -538,8 +538,8 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
             let s = vq::PROF_SCAN_NS.load(std::sync::atomic::Ordering::Relaxed) as f64;
             let k = vq::PROF_RERANK_NS.load(std::sync::atomic::Ordering::Relaxed) as f64;
             let tot = (r + s + k).max(1.0);
-            println!("      [profile] route {:.1}%  scan {:.1}%  rerank {:.1}%  (sum {:.0}ms over {reps} reps)",
-                100.0 * r / tot, 100.0 * s / tot, 100.0 * k / tot, (r + s + k) / 1e6);
+            println!("      [profile] route {:.1}%  scan {:.1}%  rerank {:.1}%  (sum {:.0}ms over {reps} reps)  [scan-ns/q={:.1}us]",
+                100.0 * r / tot, 100.0 * s / tot, 100.0 * k / tot, (r + s + k) / 1e6, s / nq as f64 / reps as f64 / 1000.0);
         }
        }
        }
@@ -839,6 +839,43 @@ fn rbench(base: &str, qpath: &str, gtpath: &str) {
     }
 }
 
+/// RECALL-NEUTRALITY PROOF for the fused top-t collect: load ONE index (SBANN_INDEX_LOAD), and for every
+/// query run scan_rerank with FUSEDTOPK off (baseline materialize-all + select_nth) and on (fused), then
+/// compare the top-10 id SETS. Reports how many queries have an identical set. Env: SBANN_IP, SBANN_FASTSCAN2,
+/// SBANN_PLIST (single p), SBANN_TMUL, SBANN_TFLOOR, SBANN_NQ. Same knobs as `run`.
+fn fusedab(base: &str, qpath: &str, gtpath: &str) {
+    let ds = I8Bin::open(base).expect("base");
+    let lp = std::env::var("SBANN_INDEX_LOAD").expect("fusedab needs SBANN_INDEX_LOAD");
+    let idx = vq::Index::load_from(&lp).expect("index load");
+    println!("[fusedab] loaded {lp}");
+    let qs = I8Bin::open(qpath).expect("q");
+    let (gnq, gk, gids) = read_gt(gtpath);
+    let nq = qs.nb.min(gnq).min(std::env::var("SBANN_NQ").ok().and_then(|s| s.parse().ok()).unwrap_or(10000));
+    let p: usize = std::env::var("SBANN_PLIST").ok().and_then(|s| s.split(',').next().unwrap().parse().ok()).unwrap_or(512);
+    let tmul: usize = std::env::var("SBANN_TMUL").ok().and_then(|s| s.parse().ok()).unwrap_or(8);
+    let tfloor: usize = std::env::var("SBANN_TFLOOR").ok().and_then(|s| s.parse().ok()).unwrap_or(1);
+    let t = (p * tmul).max(tfloor);
+    let (mut ident, mut hb, mut hf) = (0usize, 0usize, 0usize);
+    for i in 0..nq {
+        let cells = idx.router.probe(qs.row(i), p);
+        vq::FUSEDTOPK.store(false, std::sync::atomic::Ordering::Relaxed);
+        let mut b = idx.scan_rerank(&ds, qs.row(i), &cells, t, 10);
+        vq::FUSEDTOPK.store(true, std::sync::atomic::Ordering::Relaxed);
+        let mut f = idx.scan_rerank(&ds, qs.row(i), &cells, t, 10);
+        let (bs, fs): (std::collections::HashSet<u32>, std::collections::HashSet<u32>) =
+            (b.iter().copied().collect(), f.iter().copied().collect());
+        if bs == fs { ident += 1; }
+        let truth: std::collections::HashSet<u32> = gids[i * gk..i * gk + 10].iter().copied().collect();
+        b.truncate(10); f.truncate(10);
+        hb += b.iter().filter(|id| truth.contains(id)).count();
+        hf += f.iter().filter(|id| truth.contains(id)).count();
+    }
+    vq::FUSEDTOPK.store(false, std::sync::atomic::Ordering::Relaxed);
+    println!("[fusedab] p={p} t={t} nq={nq}: identical top-10 set for {ident}/{nq} queries ({:.4}%)  | recall@10 baseline={:.5} fused={:.5} (delta={:+.5})",
+        100.0 * ident as f64 / nq as f64, hb as f64 / (nq * 10) as f64, hf as f64 / (nq * 10) as f64,
+        (hf as f64 - hb as f64) / (nq * 10) as f64);
+}
+
 /// Streaming-mean of a dataset (parallel reduce); SBANN_NOMU -> zero mean (router uses raw space).
 fn mean_of(ds: &I8Bin) -> Vec<f32> {
     let n = ds.nb;
@@ -1076,6 +1113,12 @@ fn main() {
             "fastscan32 kernel != scalar!");
         vq::FASTSCAN2.store(true, std::sync::atomic::Ordering::Relaxed);
     }
+    if std::env::var("SBANN_FUSEDTOPK").is_ok() {
+        // ScaNN fused top-t: keep a running threshold + emit only survivors (kills the O(candidates)
+        // scalar collect, FINDINGS P187). Recall-neutral vs the materialize-all + select_nth path.
+        vq::FUSEDTOPK.store(true, std::sync::atomic::Ordering::Relaxed);
+    }
+    if std::env::var("SBANN_SCANDIAG").is_ok() { vq::SCANDIAG.store(true, std::sync::atomic::Ordering::Relaxed); }
     if std::env::var("SBANN_USE512FS").is_ok() {
         // 64-wide AVX-512 interleaved fast-scan (needs FASTSCAN to produce the Pq8 / i8s LUT path).
         assert!(pq::selftest_i8_fast_avx512(50) && pq::selftest_i8_fast_avx512(100), "avx512-64w fast-scan kernel != scalar!");
@@ -1219,6 +1262,7 @@ fn main() {
         }
         Some("abrun") => abrun(&a[2], &a[3], &a[4]),
         Some("prof") => prof(&a[2], &a[3], &a[4]),
+        Some("fusedab") => fusedab(&a[2], &a[3], &a[4]),
         Some("rbench") => rbench(&a[2], &a[3], &a[4]),
         Some("build") => build(&a[2], a.get(3).map(|s| s.parse().unwrap()).unwrap_or(16384)),
         Some("bench") => bench(&a[2], &a[3], &a[4], a.get(5).map(|s| s.parse().unwrap()).unwrap_or(4096)),
