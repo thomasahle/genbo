@@ -2826,6 +2826,21 @@ P174. (*** COVERAGE-VIA-COARSENING DECISIVELY REFUTED (with data): dpb=50 @ 14.6
     eligible 0.6->0.77; top-3 (0.922) requires scann's rank-preserving coarse quantization (anisotropic score-aware +
     learned rotation). Config + coverage space EXHAUSTIVELY tested WITH DATA. *** STREAMING TRACK: COMPLETE at ~0.77.
 
+P175. (*** PROFILED (airtight, from the other side): deep-t cost is O(t) rerank_contig raw-row reads (93%), NOT collect (7%), INDEPENDENT of p -> confirms the rank-preserving-quantization moat ***)
+    streaming2 profiled dpb=5 p=512 op48 (committed 6b3b0db), cand-gen split (sum-of-threads ms), t=2048(QPS1375) vs
+    t=8192(QPS328): route 1%(41ms)/0%(46ms); scan_pool [scan+COLLECT] 28%(1237ms)/7%(1650ms) = ~FLAT (1.3x);
+    rerank_contig [exact int8 rerank] 71%(3099ms)/93%(22570ms) = 7.3x EXPLOSION. So the 4.8x QPS drop at deep-t is
+    ENTIRELY rerank_contig_pairs = O(t) scattered raw-row reads/query = memory-latency-bound; the COLLECT barely moves
+    -> the tight-collect fix (keep=t/prune@2t, the threshold-filter steer) CANNOT unlock deep-t (confirms the null
+    result). CRUCIAL: rerank_contig is O(t) and INDEPENDENT of p -> "moderate-p deep-t" (p=128 t=8192) has the SAME
+    ~22570ms reorder -> QPS~330 -> ~8500s@NQ=10000, over budget; lowering p CANNOT dodge it. So the deep-t recall
+    recovery (0.89->0.956) is real but inherently memory-latency-bound and slow regardless of p. Exposes the moat
+    from the reorder side: scann's rank-preserving codes need t~317 reorder; our dpb=5 needs t~8192 (26x more raw-row
+    reads) to capture the same NN because our codes aren't rank-preserving -- converges with the coverage-collapse
+    (P174) on the SAME moat. *** AIRTIGHT & PROFILED: collect won't help, deep-t is O(t) memory-latency, moderate-p
+    can't dodge. Eligible optimum = dpb=5 int8-only shallow-t p=60 = ~0.77 (VALID). Top-3 needs rank-preserving coarse
+    codes (AH2) so the reorder set stays small. STREAMING TRACK: DONE -- argued AND profiled from both sides. Bank.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
