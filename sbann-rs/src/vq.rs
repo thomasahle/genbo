@@ -65,6 +65,14 @@ pub static PROFILE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBoo
 pub static PROF_ROUTE_NS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 pub static PROF_SCAN_NS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 pub static PROF_RERANK_NS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+/// ROUTE-PRIMITIVE attribution (P196): break gather_fine/route_fine into phases. Guarded by ROUTE_PROF so
+/// the hot path is untouched in normal runs. Populated only in a separate profiling pass (routebench).
+pub static ROUTE_PROF: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+pub static PROF_R_COARSE_NS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0); // coarse l2 block + build cd
+pub static PROF_R_CSEL_NS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);   // coarse select_nth + sel build
+pub static PROF_R_FINE_NS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);   // fine-level expand loop (l2 + gather)
+pub static PROF_R_FSEL_NS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);   // final top-p select_nth
+pub static PROF_R_NEVAL: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);     // int8 centroid dist-evals (coarse+fine)
 /// SBANN_SCANDIAG diagnostic: run ONLY the kernel floor (block reads + LUT, NO collect) and record its
 /// time as the scan phase, so a separate run gives collect = scan_full - scan_kernelonly (same per-query
 /// cold-cache pattern). Isolates how much of scan the fused top-t can actually remove (only the collect
@@ -77,6 +85,10 @@ pub static ROUTE_SDIM: std::sync::atomic::AtomicUsize = std::sync::atomic::Atomi
 /// many ADC-top children to exact-rescore (default 1024). Built only when the flag is set at train time.
 pub static ROUTE_ADC: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 pub static ROUTE_ADC_KEEP: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(1024);
+/// SBANN_ROUTE_VNNI (P196): compute the routing centroid L2 with the VNNI norm-decomposition kernel
+/// (L2 = Σq²+Σc²−2·dot, dpbusd dot) instead of the AVX2-madd Σ(q−c)². Bit-identical cell selection
+/// (recall-EXACT), ~1.5x on the dominant compute (66% of route). Full-dim only; sd<d stays on madd.
+pub static ROUTE_VNNI: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 /// SBANN_SORTCELLS (WALL-1 scattered-read lever): sort the probed cell list ASCENDING (= block/memory
 /// order, since cell_bstart is monotonic in cell id) before scanning. route_fine's select_nth returns
 /// cells in SCRAMBLED order, so consecutive scanned cells make random jumps across the ~168MB blocks
@@ -674,6 +686,18 @@ pub struct HierRouter {
     // finest codes re-laid into 16-cell vpshufb blocks (m/2 groups * 16 bytes each, cell order). Lets the
     // ADC finest scoring use block_adc_i8_i16acc (16 centroids/instr) instead of the scalar LUT-sum.
     rblocks: Vec<u8>,
+    // per-level, per-centroid `cadj = Σc² + 256·Σc` (i32, exact). Lets the routing L2 use the single-chain
+    // VNNI decomposition L2 = Σq² + cadj − 2·Σ(q+128)c (dpbusd; ~1.5x the AVX2-madd L2 on Zen4), bit-identical
+    // to the direct Σ(q-c)². Derived from `cent` at build/load (NOT persisted). Empty => VNNI path disabled.
+    cadj: Vec<Vec<i32>>,
+}
+
+/// `cadj = Σc² + 256·Σc` (simd::cadj_i8) for every centroid in each per-level block. Parallel to `cent`.
+fn cadj_of(cent: &[Vec<i8>], d: usize) -> Vec<Vec<i32>> {
+    cent.iter().map(|lvl| {
+        let n = if d > 0 { lvl.len() / d } else { 0 };
+        (0..n).map(|j| crate::simd::cadj_i8(&lvl[j * d..j * d + d])).collect()
+    }).collect()
 }
 
 impl HierRouter {
@@ -825,7 +849,8 @@ impl HierRouter {
             }
             rb
         } else { Vec::new() };
-        HierRouter { d, mu, kf, levels, cent, child, beam: beams.to_vec(), soar: 0.0, radc, rcodes, rblocks }
+        let cadj = cadj_of(&cent, d);
+        HierRouter { d, mu, kf, levels, cent, child, beam: beams.to_vec(), soar: 0.0, radc, rcodes, rblocks, cadj }
     }
 
     /// 2-level hierarchical k-means (back-compat wrapper): C0 coarse → Kf/C0 fine per coarse.
@@ -861,7 +886,9 @@ impl HierRouter {
         for (newpos, &oldj) in order.iter().enumerate() {
             cf[newpos * d..newpos * d + d].copy_from_slice(&cf0[oldj as usize * d..oldj as usize * d + d]);
         }
-        HierRouter { d, mu, kf, levels: 2, cent: vec![c0, cf], child: vec![gstart, Vec::new()], beam: vec![b0], soar: 0.0, radc: None, rcodes: Vec::new(), rblocks: Vec::new() }
+        let cent = vec![c0, cf];
+        let cadj = cadj_of(&cent, d);
+        HierRouter { d, mu, kf, levels: 2, cent, child: vec![gstart, Vec::new()], beam: vec![b0], soar: 0.0, radc: None, rcodes: Vec::new(), rblocks: Vec::new(), cadj }
     }
 
     /// Enable SOAR build-time spilled assignment with penalty λ (`s`). 0 disables (default path).
@@ -877,11 +904,24 @@ impl HierRouter {
         // routing was 20-46% of the 10M query (P139). `scores` scratch is reused across all levels.
         let mut scores: Vec<i32> = vec![0; l0.max(64)];
         let sdim = ROUTE_SDIM.load(std::sync::atomic::Ordering::Relaxed);
-        simd::l2_i8_block(qn, &self.cent[0], l0, d, d, &mut scores);
+        let rp = ROUTE_PROF.load(std::sync::atomic::Ordering::Relaxed);
+        let vnni = ROUTE_VNNI.load(std::sync::atomic::Ordering::Relaxed) && !self.cadj.is_empty();
+        let qnorm = if vnni { simd::sqnorm_i8(qn) } else { 0 };
+        let tc = if rp { Some(std::time::Instant::now()) } else { None };
+        if vnni {
+            simd::l2_i8_block_norm(qn, &self.cent[0], &self.cadj[0], l0, d, qnorm, &mut scores);
+        } else {
+            simd::l2_i8_block(qn, &self.cent[0], l0, d, d, &mut scores);
+        }
         let mut cd: Vec<(i32, u32)> = (0..l0).map(|q| (scores[q], q as u32)).collect();
+        if let Some(t) = tc { PROF_R_COARSE_NS.fetch_add(t.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed);
+            PROF_R_NEVAL.fetch_add(l0 as u64, std::sync::atomic::Ordering::Relaxed); }
+        let tcs = if rp { Some(std::time::Instant::now()) } else { None };
         let b = self.beam[0].min(cd.len());
         if b > 0 && b < cd.len() { cd.select_nth_unstable(b - 1); cd.truncate(b); }
         let mut sel: Vec<u32> = cd.iter().map(|&(_, c)| c).collect();
+        if let Some(t) = tcs { PROF_R_CSEL_NS.fetch_add(t.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed); }
+        let tf = if rp { Some(std::time::Instant::now()) } else { None };
         fd.clear();
         // ADC routing (#3): at the finest level, score children by 4-bit ADC (LUT+codes), keep the ADC-top
         // ROUTE_ADC_KEEP, then EXACT-rescore only those -> cheap finest scoring if recall holds.
@@ -894,11 +934,15 @@ impl HierRouter {
         } else { Vec::new() };
         for l in 1..self.levels {
             let finest = l == self.levels - 1;
-            let mut nd: Vec<(i32, u32)> = Vec::with_capacity(sel.len() * 8 + 16);
+            // EXACT capacity: sum the selected cells' child fan-out (prefix-sum lookups) so `nd` never
+            // reallocs mid-gather (the heuristic sel.len()*8 under-provisioned at Kf/C0≈21 -> memmove growth).
+            let cap: usize = sel.iter().map(|&p| (self.child[l - 1][p as usize + 1] - self.child[l - 1][p as usize]) as usize).sum();
+            let mut nd: Vec<(i32, u32)> = Vec::with_capacity(cap + 16);
             for &p in &sel {
                 let (s, e) = (self.child[l - 1][p as usize] as usize, self.child[l - 1][p as usize + 1] as usize);
                 let nc = e - s;
                 if nc == 0 { continue; }
+                if rp { PROF_R_NEVAL.fetch_add(nc as u64, std::sync::atomic::Ordering::Relaxed); }
                 if finest && adc {
                     if !adc_regs.is_empty() && s % 16 == 0 && (e - s) % 16 == 0 {
                         let gb = (adc_m / 2) * 16; // bytes per 16-cell block
@@ -920,7 +964,11 @@ impl HierRouter {
                     if scores.len() < nc { scores.resize(nc, 0); }
                     // finest level (the dominant routing term) may score a reduced dim prefix (SBANN_ROUTE_SDIM).
                     let sd = if finest && sdim > 0 && sdim < d { sdim } else { d };
-                    simd::l2_i8_block(qn, &self.cent[l][s * d..e * d], nc, d, sd, &mut scores);
+                    if vnni && sd == d {
+                        simd::l2_i8_block_norm(qn, &self.cent[l][s * d..e * d], &self.cadj[l][s..e], nc, d, qnorm, &mut scores);
+                    } else {
+                        simd::l2_i8_block(qn, &self.cent[l][s * d..e * d], nc, d, sd, &mut scores);
+                    }
                     for (i, c) in (s..e).enumerate() { nd.push((scores[i], c as u32)); }
                 }
             }
@@ -939,6 +987,7 @@ impl HierRouter {
                     // KEEP==0: NO exact rerank -- route_fine picks top-p straight from the ADC scores. The
                     // router only needs the RIGHT cells (scan+final rerank rank candidates), so ADC may suffice.
                 }
+                if let Some(t) = tf { PROF_R_FINE_NS.fetch_add(t.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed); }
                 *fd = nd;
                 return;
             }
@@ -954,7 +1003,9 @@ impl HierRouter {
         self.gather_fine(qn, &mut fd);
         out.clear();
         let k = k.min(fd.len());
+        let ts = if ROUTE_PROF.load(std::sync::atomic::Ordering::Relaxed) { Some(std::time::Instant::now()) } else { None };
         if k > 0 { fd.select_nth_unstable(k - 1); out.extend(fd[..k].iter().map(|&(_, f)| f)); }
+        if let Some(t) = ts { PROF_R_FSEL_NS.fetch_add(t.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed); }
     }
 
     /// SOAR-aware multi-assignment (idea #3). Gathers the SAME bounded finest-candidate set route_fine
@@ -2593,7 +2644,8 @@ fn load_router(r: &mut crate::persist::Pr) -> Box<dyn Router> {
             let radc = load_opt_pq(r);
             let rcodes = r.u8_vec();
             let rblocks = r.u8_vec();
-            Box::new(HierRouter { d, mu, kf, levels, cent, child, beam, soar, radc, rcodes, rblocks })
+            let cadj = cadj_of(&cent, d);
+            Box::new(HierRouter { d, mu, kf, levels, cent, child, beam, soar, radc, rcodes, rblocks, cadj })
         }
         _ => panic!("unknown router type tag {tag} in index file (only HierRouter={ROUTER_TAG_HIER} supported)"),
     }
