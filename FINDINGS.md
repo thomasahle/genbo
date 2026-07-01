@@ -2857,6 +2857,22 @@ P176. (*** THE REAL (BOUNDED) PATH forward: rank-preserving codes via learned ro
     proprietary quantization (multi-week), honestly confirmed. GREENLIT: recall is load-independent so the microbench
     can overlap ood2's recall work (coordinate around ood2's QPS timing). This is the live path -- NOT banking yet.
 
+P177. (*** OOD: dpb=5 CRATERS recall (never hits 0.90) -- coarse codes lose the IP ranking signal (NN ranked out of the pool); SAME rank-preservation wall (P176), WORSE for OOD/IP than L2 ***)
+    ood2 (clean box, dpb=5 int8, text2image-10M vs float GT, REPS=5, t_surv=p*4): p768=0.6531, p1024=0.6843,
+    p1536=0.7308, p2048=0.7640, p3072=0.8072 -- NEVER reaches 0.90, craters vs dpb=2's 0.9089@p1024. The true NN ARE
+    in the probed cells (~0.917 available at p=3072 from dpb=2 routing) but the COARSE ADC ranks them OUT of the
+    top-t_surv survivor pool -> even exact int8 rerank can't recover them. WHY it differs from streaming: msturing is
+    L2 and quantizes coarsely fine; text2image is OOD/IP and much HARDER to quantize -- coarsening the PQ (dpb 2->5,
+    m 100->40) destroys the IP ranking signal in candidate-gen. To reach 0.90 at dpb=5 you'd need a MUCH deeper
+    t_surv (rerank ~10-20% of the pool vs 2.7% now) -> eats the scan win. *** This IS the rank-preservation problem
+    (P176), on the OOD side and MORE severe: coarse codes aren't rank-preserving -> NN falls out of the pool. So the
+    coarse-for-speed lever (dpb=5) that gave streaming its 2.61x does NOT transfer to OOD/IP. NEXT: ood2 testing
+    dpb=4/3 (finer, still ~2x scan vs dpb=2, no odd-m panic at d=200) for an OOD sweet spot that reaches 0.90 WITH a
+    scan win. If none -> dpb=2 is the OOD optimum and the honest OOD QPS@90% is the dpb=2 baseline (~4.5-6k = mid-pack
+    vs scann 43k). *** The SHARED path for BOTH tracks = the P176 rank-preserving codes (OPQ learned rotation +
+    anisotropic eta): a finer-but-fast RANK-PRESERVING code could reach 0.90 (OOD) / shrink reorder t (streaming) WITH
+    the scan win -> top-3 for both. The reorder-depth microbench should be run on BOTH msturing (L2) AND text2image (IP).
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
