@@ -77,12 +77,44 @@ pub static ROUTE_SDIM: std::sync::atomic::AtomicUsize = std::sync::atomic::Atomi
 /// many ADC-top children to exact-rescore (default 1024). Built only when the flag is set at train time.
 pub static ROUTE_ADC: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 pub static ROUTE_ADC_KEEP: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(1024);
+/// SBANN_SORTCELLS (WALL-1 scattered-read lever): sort the probed cell list ASCENDING (= block/memory
+/// order, since cell_bstart is monotonic in cell id) before scanning. route_fine's select_nth returns
+/// cells in SCRAMBLED order, so consecutive scanned cells make random jumps across the ~168MB blocks
+/// array; sorting makes the block reads MONOTONICALLY forward -> HW prefetch + TLB stream instead of
+/// stall. RECALL-EXACTLY-NEUTRAL (same cells, same candidates, only the visit order changes; the top-t
+/// select is order-independent). Applied in scan_rerank (covers the full + SCANDIAG paths).
+pub static SORTCELLS: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+/// SBANN_PREFETCH: software-prefetch (T0) the NEXT probed cell's block memory while scanning the current
+/// cell, to hide the cross-cell random-jump latency (the scan is memory-LATENCY bound on p random jumps).
+/// SBANN_PFDIST = how many cells ahead to prefetch (default 2). SBANN_PFLINES = cache lines/cell to touch
+/// (default 13 = the full 800B PQ block). Recall-neutral (prefetch is a hint; results identical). Applied
+/// in scan_pool + kernel_only. Tuned on 1M OOD (P189): raises the scattered kernel FLOOR +45-53% Mcand/s,
+/// which nets +8-11% e2e QPS@recall>=0.90 (block-reads are only ~26% of the e2e query). pfdist 2, full block.
+pub static PREFETCH: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+pub static PFDIST: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(2);
+pub static PFLINES: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(13);
 
 thread_local! {
     // reused open-addressing table for the per-query pool dedup (a0>1). Entries: (orig_key, best_approx,
     // slot); orig_key==u32::MAX marks empty. Fibonacci-hashed + linear-probed -> far cheaper than a
     // per-query std HashMap (no SipHash, no alloc), keeping the min-approx slot per distinct orig id.
     static DEDUP_TBL: std::cell::RefCell<Vec<(u32, i32, u32)>> = std::cell::RefCell::new(Vec::new());
+}
+
+/// Software-prefetch (T0) `nlines` cache lines starting at `ptr`. Used by the per-cell scan loop to
+/// pull the NEXT probed cell's PQ blocks into cache while the current cell is still being scanned,
+/// hiding the ~100ns cross-cell random-jump latency. A hint only -> zero effect on results.
+#[inline(always)]
+fn prefetch_lines(base: *const u8, len: usize, byte_off: usize, nlines: usize) {
+    if byte_off >= len { return; }
+    let avail = len - byte_off;
+    let n = nlines.min(avail.div_ceil(64));
+    unsafe {
+        let p = base.add(byte_off);
+        for i in 0..n {
+            _mm_prefetch(p.add(i * 64) as *const i8, _MM_HINT_T0);
+        }
+    }
 }
 
 /// Dedup `pool` (approx_dist, slot) IN PLACE to one entry per distinct orig id (the min-approx slot),
@@ -1806,7 +1838,20 @@ impl Index {
         let rq_scale: f32 = match ctx { QueryCtx::Pq16 { scale, .. } | QueryCtx::Pq8 { scale, .. } => *scale, _ => 0.0 };
         let residq = rq_scale != 0.0 && !self.rq_cent.is_empty();
         let dd = self.d;
-        for &cell in cells {
+        let prefetch = PREFETCH.load(std::sync::atomic::Ordering::Relaxed) && bb > 0 && !self.blocks.is_empty();
+        let pfdist = PFDIST.load(std::sync::atomic::Ordering::Relaxed).max(1);
+        let pflines = PFLINES.load(std::sync::atomic::Ordering::Relaxed);
+        let blk_ptr = self.blocks.as_ptr();
+        let blk_len = self.blocks.len();
+        for ci in 0..cells.len() {
+            let cell = cells[ci];
+            // SW-prefetch the block memory of a cell `pfdist` ahead so its random-jump latency overlaps
+            // the current cell's scan (the scan is memory-latency bound on p cross-cell jumps).
+            if prefetch && ci + pfdist < cells.len() {
+                let nc = cells[ci + pfdist] as usize;
+                let nbs = self.cell_bstart[nc] as usize;
+                prefetch_lines(blk_ptr, blk_len, nbs * bb, pflines);
+            }
             let pool_start = pool.len();
             let (bs, be) = (self.cell_bstart[cell as usize] as usize, self.cell_bstart[cell as usize + 1] as usize);
             if need_rows {
@@ -1963,6 +2008,20 @@ impl Index {
     /// DIAGNOSTIC (SBANN_SCANDIAG): run the SAME kernel dispatch as scan_pool over `cells` but do NO
     /// collect (no slot_orig read, no push, no select_nth) — just consume `out` so the kernel isn't
     /// optimized away. Returns a checksum. Timed separately from the full scan; scan - kernel = collect.
+    /// Candidate count (occupied slots) over a cell list — for the scanbench Mcand/s denominator.
+    pub fn cell_cand_count(&self, cells: &[u32]) -> usize {
+        cells.iter().map(|&c| {
+            let (bs, be) = (self.cell_bstart[c as usize] as usize, self.cell_bstart[c as usize + 1] as usize);
+            (be - bs) * 16
+        }).sum()
+    }
+    /// Public wrapper so the scanbench harness can time the raw kernel floor (block reads + LUT, no
+    /// collect) over an arbitrary cell ORDER (scattered probe order vs cell-id-sorted memory order).
+    pub fn scan_kernel_bench(&self, ds: &I8Bin, q: &[i8], cells: &[u32], ctx: &QueryCtx) -> i64 {
+        self.scan_kernel_only(ds, q, cells, ctx)
+    }
+    /// Expose the compressor's query LUT prep for the scanbench harness.
+    pub fn prepare_query_pub(&self, q: &[i8]) -> QueryCtx { self.comp.prepare_query(q) }
     fn scan_kernel_only(&self, ds: &I8Bin, q: &[i8], cells: &[u32], ctx: &QueryCtx) -> i64 {
         let need_rows = self.comp.needs_raw_rows();
         let mut out16 = [0i32; 16];
@@ -1972,7 +2031,18 @@ impl Index {
             && !self.blocks_il.is_empty()
             && matches!(ctx, QueryCtx::Pq8 { .. });
         let mut acc: i64 = 0;
-        for &cell in cells {
+        let prefetch = PREFETCH.load(std::sync::atomic::Ordering::Relaxed) && bb > 0 && !self.blocks.is_empty();
+        let pfdist = PFDIST.load(std::sync::atomic::Ordering::Relaxed).max(1);
+        let pflines = PFLINES.load(std::sync::atomic::Ordering::Relaxed);
+        let blk_ptr = self.blocks.as_ptr();
+        let blk_len = self.blocks.len();
+        for ci in 0..cells.len() {
+            let cell = cells[ci];
+            if prefetch && ci + pfdist < cells.len() {
+                let nc = cells[ci + pfdist] as usize;
+                let nbs = self.cell_bstart[nc] as usize;
+                prefetch_lines(blk_ptr, blk_len, nbs * bb, pflines);
+            }
             let (bs, be) = (self.cell_bstart[cell as usize] as usize, self.cell_bstart[cell as usize + 1] as usize);
             if need_rows {
                 for b in bs..be {
@@ -2024,6 +2094,16 @@ impl Index {
     pub fn scan_rerank(&self, ds: &I8Bin, q: &[i8], cells: &[u32], t: usize, k: usize) -> Vec<u32> {
         let prof = PROFILE.load(std::sync::atomic::Ordering::Relaxed);
         let ctx = self.comp.prepare_query(q);
+        // SBANN_SORTCELLS: visit the probed cells in ASCENDING cell-id (= block/memory) order so the
+        // scattered PQ-block reads become monotonically forward. Recall-exactly-neutral (the top-t select
+        // is order-independent). The ~p-element sort (few us) is charged to the wall-clock query below.
+        let sorted_store;
+        let cells: &[u32] = if SORTCELLS.load(std::sync::atomic::Ordering::Relaxed) {
+            let mut v = cells.to_vec();
+            v.sort_unstable();
+            sorted_store = v;
+            &sorted_store
+        } else { cells };
         // DIAGNOSTIC (SBANN_SCANDIAG): time ONLY the kernel floor (block reads + LUT, NO collect) into
         // PROF_SCAN_NS and return early. Run this in a SEPARATE process vs the normal run: the per-query
         // cold-cache pattern is identical, so collect = scan_full - scan_kernelonly is measured unbiased.

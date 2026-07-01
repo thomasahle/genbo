@@ -3042,6 +3042,52 @@ P188. (*** WALL-1 FUSED-TOP-K (ScaNN keep-only-survivors) LANDED + RECALL-EXACTL
     minor (20-30%) share of the scan on this index. Hardware-independent facts that stand: collect = 20-30% of scan
     (not 85%), kernel/scattered-block-reads = 70-79% of scan, fused recall-exactly-neutral (15000/15000 identical).
 
+P189. (*** WALL-1 SCATTERED-READ LEVER — DEFINITIVE (branch scan-prefetch off fastscan-soa): the scattered PQ-block
+    reads are NOT fixable by REORDERING (sort/layout ~0%), only by SOFTWARE PREFETCH: +45-53% on the isolated scan
+    kernel FLOOR -> +7% e2e QPS@recall0.90, +11-12% at the champion, RECALL-BIT-IDENTICAL. The "6-11x streaming
+    floor" is UNREACHABLE recall-neutrally: probed cells are 0.2%-dense so even perfectly sorted access stays
+    latency-bound. Prefetch is the ONLY real WALL-1 lever found; the rest needs the ScaNN SoA layout (out of scope). ***)
+    Attacked the last un-tried structural scan lever on the CHAMPION 1M OOD index (t2i1m.idx, hierk Kf=262144 C0=4096
+    apq4 a0=3, SBANN_IP+FASTSCAN2), single-thread taskset -c 0, INTERLEAVED paired A/B (contention-robust ratio; box
+    load bounced 10-22 the whole session, a clean load<6 window never came -> ratios not absolute QPS).
+    *** (a) SCATTERED-READ COST, isolated (new `scatterbench` subcmd = kernel floor, block-reads+LUT, NO collect, over
+    the SAME candidate set in probe order vs cell-id-sorted order; the champion index has bb=800B, nc=262144,
+    ~1.9 blocks/cell = ~1.5KB/cell, avg 15778 cand/query over p=512 cells):
+      scattered (real probe order):        ~92 Mcand/s   (memory-LATENCY bound)
+      sorted (monotonic, SBANN_SORTCELLS): ~95 Mcand/s   (+4% only)
+      contiguous L2-hot kernel (compute floor, `scanbench 100` AVX2 FastScan): 356 Mcand/s
+    So the REAL collapse on this index = 356/92 = ~3.9x (not the 6-11x of the abstract microbench — that assumed a
+    FULLY-PACKED sequential read; the real scan can't be packed). CRUX: sorting cuts the avg cross-cell memory jump
+    49x (27.2MB -> 0.55MB) yet buys only +4%, because only 512 of 262144 cells are probed (0.2% dense) -> even sorted
+    access keeps 0.55MB gaps between cells, far beyond HW-prefetch/TLB range -> stays a per-cell cache miss.
+    REORDERING (query-side sort OR a build-side block permutation) CANNOT reach the packed floor; the probed set is
+    query-dependent and sparse. => layout-by-locality (P183's proposed lever #2) is REFUTED as a recall-neutral fix.
+    *** (b) THREE APPROACHES (all env-gated, default OFF; recall verified per-round, contention-independent):
+      1. SW-PREFETCH (SBANN_PREFETCH, vq.rs scan_pool + scan_kernel_only): prefetch the NEXT probed cell's PQ block
+         (T0, pfdist cells ahead, full 800B block) while scanning the current one. Recall BIT-IDENTICAL by construction
+         (hint only). On the kernel floor (scatterbench): 92->133-145 Mcand/s = +45-53%. Tuned pfdist{2,3,4,6} x
+         pflines{8,13}: pfdist 2, full-block is the robust default (every champion round positive).
+      2. SORTCELLS (SBANN_SORTCELLS, vq.rs scan_rerank): sort the probe list ascending (= block/memory order).
+         Recall identical (0.9116/0.9586). e2e ~0% (0.997-1.003x); kernel floor +4%. Kept as a documented NEGATIVE.
+      3. bigger cells (fallback): NOT NEEDED — approach 1 delivered; and (b1/b2) show the wall is latency not
+         granularity, so bigger contiguous cells would only trade routing recall for streaming (P183 territory).
+    *** (c) WINNER = PREFETCH (paired per-round median, single-thread pinned, recall bit-identical):
+      QPS@recall>=0.90  (p=160, recall 0.9116): base 2459 -> PF 2640 = +7.2% (n=6; one noisy round 0.995, rest positive)
+      champion          (p=512, recall 0.9586): base 1329 -> PF 1496 = +11.6% (n=5, ALL rounds positive, min +6.7%)
+      kernel-floor +45-53% but block-reads are only ~26% of the e2e query (70% of the 37% scan; route 32% + rerank 31%
+      untouched) -> Amdahl caps the e2e lever at ~+9-12%. HONEST CAVEAT: real and clean, but MODEST. SORT is a null.
+    *** (d) 10M PROJECTION (1M-only per constraints): the scatter is LATENCY-bound (TLB/page-walk over the blocks
+      array); at 10M the array is ~2.9GB (10x) and the collapse is known "6-11x worse" = deeper effective latency,
+      which is EXACTLY what prefetch hides -> the +45-53% kernel-floor win should HOLD or grow (more latency to
+      overlap), and since scan's share of the e2e query grows at 10M (P178: scan-throughput is the 10M wall), the
+      e2e lever likely lands ~+8-12% at 10M too. It does NOT close the ~20x gap to ScaNN (that needs the SoA layout).
+    *** (e) VERDICT: the scattered-read wall is only PARTIALLY fixable recall-neutrally in-engine. Prefetch is the
+      lone real WALL-1 lever (banked: SBANN_PREFETCH, +7% QPS@recall0.90 / +11-12% champion, 1M, recall-exact);
+      reordering is a null (0.2%-dense probes defeat it). The remaining ~3.9x scattered->compute-floor gap is
+      STRUCTURAL and needs ScaNN's cache-resident SoA AH layout (P183), out of scope. This closes the last cheap
+      WALL-1 lever: kernel USE512 (+7%, N-AVX512), fused-top-k (neutral, P188), and now sort (null) / prefetch
+      (+7-12%, the win). e2e QPS@recall0.90 at 1M single-thread: ~2459 -> ~2640 with SBANN_PREFETCH=1.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT

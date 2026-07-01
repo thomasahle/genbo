@@ -876,6 +876,85 @@ fn fusedab(base: &str, qpath: &str, gtpath: &str) {
         (hf as f64 - hb as f64) / (nq * 10) as f64);
 }
 
+/// WALL-1 SCATTERED-READ MICROBENCH (P189, `scanbench <base> <qpath>`). Isolates the scattered PQ-block
+/// read cost: times the raw kernel floor (block reads + LUT, NO collect) over the SAME candidate set in
+/// two memory orders — (A) probe order (scattered: route_fine's select_nth scrambles the beam-grouped
+/// cells) vs (B) cell-id-sorted (monotonic forward = the streaming floor). Single-thread, best-of-REPS.
+/// Env: SBANN_INDEX_LOAD, SBANN_IP, SBANN_FASTSCAN2, SBANN_PLIST (p, first), SBANN_NQ, SBANN_REPS.
+/// SBANN_PREFETCH/SBANN_PFDIST/SBANN_PFLINES compose (measures prefetch's effect on the kernel floor).
+fn scanbench(base: &str, qpath: &str) {
+    let ds = I8Bin::open(base).expect("base");
+    let lp = std::env::var("SBANN_INDEX_LOAD").expect("scanbench needs SBANN_INDEX_LOAD");
+    let idx = vq::Index::load_from(&lp).expect("index load");
+    let qs = I8Bin::open(qpath).expect("q");
+    let p: usize = std::env::var("SBANN_PLIST").ok().and_then(|s| s.split(',').next().unwrap().parse().ok()).unwrap_or(512);
+    let nq = qs.nb.min(std::env::var("SBANN_NQ").ok().and_then(|s| s.parse().ok()).unwrap_or(2000));
+    let reps: usize = std::env::var("SBANN_REPS").ok().and_then(|s| s.parse().ok()).unwrap_or(5);
+    let bb = idx.bb;
+    let nc = idx.cell_bstart.len() - 1;
+    let total_blocks = if bb > 0 { idx.blocks.len() / bb } else { 0 };
+    println!("[scanbench] loaded {lp}  nc={nc}  bb={bb}B  total_blocks={total_blocks}  blocks_array={:.1}MB  p={p} nq={nq} reps={reps}",
+        idx.blocks.len() as f64 / 1e6);
+
+    // precompute per-query probe cells (scattered order) + a cell-id-sorted copy + per-query LUT ctx.
+    let mut cells_scat: Vec<Vec<u32>> = Vec::with_capacity(nq);
+    let mut cells_sort: Vec<Vec<u32>> = Vec::with_capacity(nq);
+    let mut ctxs: Vec<vq::QueryCtx> = Vec::with_capacity(nq);
+    let mut total_cand: usize = 0;
+    let (mut sum_jump_scat, mut sum_jump_sort, mut njump) = (0f64, 0f64, 0usize);
+    let mut sum_blk_per_cell = 0f64;
+    for i in 0..nq {
+        let c = idx.router.probe(qs.row(i), p);
+        let mut cs = c.clone();
+        cs.sort_unstable();
+        total_cand += idx.cell_cand_count(&c);
+        // avg |Δ block-offset| between consecutive visited cells (scatter magnitude), scattered vs sorted.
+        for w in c.windows(2) {
+            let a0 = idx.cell_bstart[w[0] as usize] as i64;
+            let a1 = idx.cell_bstart[w[1] as usize] as i64;
+            sum_jump_scat += (a1 - a0).unsigned_abs() as f64;
+            njump += 1;
+        }
+        for w in cs.windows(2) {
+            let a0 = idx.cell_bstart[w[0] as usize] as i64;
+            let a1 = idx.cell_bstart[w[1] as usize] as i64;
+            sum_jump_sort += (a1 - a0).unsigned_abs() as f64;
+        }
+        for &cell in &c { sum_blk_per_cell += (idx.cell_bstart[cell as usize + 1] - idx.cell_bstart[cell as usize]) as f64; }
+        ctxs.push(idx.prepare_query_pub(qs.row(i)));
+        cells_scat.push(c);
+        cells_sort.push(cs);
+    }
+    let cand_per_q = total_cand as f64 / nq as f64;
+    println!("[scanbench] avg cand/query={:.0}  avg blocks/cell={:.2}  avg |Δblk| scattered={:.0} blk ({:.3}MB) -> sorted={:.0} blk ({:.3}MB)",
+        cand_per_q, sum_blk_per_cell / (nq * p) as f64,
+        sum_jump_scat / njump as f64, sum_jump_scat / njump as f64 * bb as f64 / 1e6,
+        sum_jump_sort / njump as f64, sum_jump_sort / njump as f64 * bb as f64 / 1e6);
+
+    // INTERLEAVE the two orders per rep (share the load window) -> robust ratio under residual noise.
+    let orders: [(&str, &Vec<Vec<u32>>); 2] = [("SCATTERED(probe)", &cells_scat), ("SORTED(memory) ", &cells_sort)];
+    let mut best = [f64::INFINITY; 2];
+    let mut sink: i64 = 0;
+    for _ in 0..reps {
+        for (oi, (_, cellsv)) in orders.iter().enumerate() {
+            let t0 = Instant::now();
+            let mut acc: i64 = 0;
+            for i in 0..nq {
+                acc = acc.wrapping_add(idx.scan_kernel_bench(&ds, qs.row(i), &cellsv[i], &ctxs[i]));
+            }
+            best[oi] = best[oi].min(t0.elapsed().as_secs_f64());
+            sink = sink.wrapping_add(acc);
+        }
+    }
+    for (oi, (name, _)) in orders.iter().enumerate() {
+        let mcand = total_cand as f64 / best[oi] / 1e6;
+        let us_per_q = best[oi] / nq as f64 * 1e6;
+        println!("  {name}: {mcand:7.1} Mcand/s   {us_per_q:6.1} us/query   (best/{reps})");
+    }
+    println!("[scanbench] SORTED/SCATTERED throughput ratio = {:.2}x (recall-neutral streaming headroom); sink={sink}",
+        best[0] / best[1]);
+}
+
 /// Streaming-mean of a dataset (parallel reduce); SBANN_NOMU -> zero mean (router uses raw space).
 fn mean_of(ds: &I8Bin) -> Vec<f32> {
     let n = ds.nb;
@@ -1119,6 +1198,11 @@ fn main() {
         vq::FUSEDTOPK.store(true, std::sync::atomic::Ordering::Relaxed);
     }
     if std::env::var("SBANN_SCANDIAG").is_ok() { vq::SCANDIAG.store(true, std::sync::atomic::Ordering::Relaxed); }
+    // WALL-1 scattered-read levers (P189): SORTCELLS = monotonic scan order; PREFETCH = SW-prefetch next cell.
+    if std::env::var("SBANN_SORTCELLS").is_ok() { vq::SORTCELLS.store(true, std::sync::atomic::Ordering::Relaxed); }
+    if std::env::var("SBANN_PREFETCH").is_ok() { vq::PREFETCH.store(true, std::sync::atomic::Ordering::Relaxed); }
+    if let Ok(s) = std::env::var("SBANN_PFDIST") { if let Ok(v) = s.parse::<usize>() { vq::PFDIST.store(v, std::sync::atomic::Ordering::Relaxed); } }
+    if let Ok(s) = std::env::var("SBANN_PFLINES") { if let Ok(v) = s.parse::<usize>() { vq::PFLINES.store(v, std::sync::atomic::Ordering::Relaxed); } }
     if std::env::var("SBANN_USE512FS").is_ok() {
         // 64-wide AVX-512 interleaved fast-scan (needs FASTSCAN to produce the Pq8 / i8s LUT path).
         assert!(pq::selftest_i8_fast_avx512(50) && pq::selftest_i8_fast_avx512(100), "avx512-64w fast-scan kernel != scalar!");
@@ -1263,6 +1347,7 @@ fn main() {
         Some("abrun") => abrun(&a[2], &a[3], &a[4]),
         Some("prof") => prof(&a[2], &a[3], &a[4]),
         Some("fusedab") => fusedab(&a[2], &a[3], &a[4]),
+        Some("scatterbench") => scanbench(&a[2], &a[3]),
         Some("rbench") => rbench(&a[2], &a[3], &a[4]),
         Some("build") => build(&a[2], a.get(3).map(|s| s.parse().unwrap()).unwrap_or(16384)),
         Some("bench") => bench(&a[2], &a[3], &a[4], a.get(5).map(|s| s.parse().unwrap()).unwrap_or(4096)),
