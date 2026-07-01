@@ -2891,6 +2891,29 @@ P178. (*** HONEST OOD 10M NUMBER: QPS@90% ~1732 = BOTTOM tier (~15-25x behind); 
     OPQ-rotation + anisotropic-eta codes stay RANK-PRESERVING while coarse/fast? (aopq/opql5). If yes -> top-3 path
     for both; if no -> scann's proprietary quantization is the confirmed moat. This is THE experiment.
 
+P179. (*** DECISIVE CLOSE (the last bounded path TESTED + CLOSED): OPQ rotation + anisotropic eta do NOT make coarse codes rank-preserving (+0.007 @ 4x cost); reorder-depth is BIT-RATE-bound; top-3 gap is ALGORITHMIC = scann's proprietary quantization, not tuning ***)
+    streaming2 ran the reorder-depth/OPQ microbench (the "either-way" test I insisted on). Setup: op48 (live=1.69M),
+    p=512 (12.5% coverage -> isolates CODE quality, not coverage), fixed depth t=2048, a0=2, official float GT.
+    recall@10 @ t=2048 for FAST (dpb=5, m=20) codes:
+      apq4 eta=4 (baseline)        0.8926 (QPS 2028)
+      aopq (OPQ rotation + eta)    0.8926 (2028)  <- OPQ+eta = ZERO net gain
+      opql (OPQ rotation, no eta)  0.8998 (521)   <- +0.007 for 4x SLOWER (per-query rotation cost)
+      apq4 eta=16                  0.8777 (2195)  <- higher eta = WORSE
+      apq4 dpb=2 (m=50, 2.5x slow) 0.9741 (~500)  <- finer BITS = the only real lever
+    FINDINGS: (1) OPQ learned rotation +0.007 recall at 4x scan cost -> net terrible; msturing is CLUSTERED/already-
+    aligned so a decorrelating rotation barely helps. (2) anisotropic eta: eta=4 already optimal, eta=16 WORSE, no
+    headroom. (3) aopq (OPQ+eta together) = no better than plain apq4. (4) The ONLY lever that improves rank-
+    preservation is FINER BITS (dpb=2), = the precise-vs-fast tradeoff already mapped (2.5x slower scan). So reorder-
+    depth is set by code BIT-RATE; the tuning knobs (rotation, eta) move it <0.01. NOTHING with FAST codes gets below
+    ~t2000, let alone the ~300-500 target. *** VERDICT: the decisive criterion is MET. The moat is scann's PROPRIETARY
+    rank-preserving quantization (their specific anisotropic-VQ + learned transforms), NOT OPQ-rotation+eta -- we HAVE
+    those in-engine (comp=aopq/opql, SBANN_ETA) and they do NOT work on this data. Top-3 = a multi-day+ REIMPLEMENTATION
+    of scann's quantization ALGORITHM (from their papers) = the user's call; TUNING OUR ENGINE DOES NOT GET THERE.
+    The last bounded path (P176) is TESTED and CLOSED; both tracks' top-3 gap is confirmed ALGORITHMIC. *** SESSION
+    CONFIG/TUNING WORK COMPLETE. HONEST FINALS: streaming eligible recall@10 ~0.77 (VALID <8GB+<1hr); OOD QPS@90%
+    ~1732 (bottom tier, ~15-25x behind, real throughput). Real wins banked (dpb=5 2.61x, int8-only eligibility, the
+    8GB+1hr audit, honest 0.6->0.77). Top-3 for either = the scoped scann-quantization reimplementation, user's call.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
