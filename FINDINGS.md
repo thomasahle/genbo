@@ -3385,6 +3385,8 @@ P202. (*** CELL-MAJOR BATCHED SCAN: real +27% e2e (recall-BIT-IDENTICAL), loaded
     ScaNN; the residual is STILL the survivor-count refine (codebook) + ScaNN's equal batching gain.
     Scripts: batchinv_verify.sh, batchinv_prof.sh, batchinv_chunk.sh, batchinv_decider.sh, scann_pqvsbatch.py.
 
+P203. (*** CONSOLIDATION PASS (user's clean-abstractions requirement, executed post-lever-stabilization): branch `champion` = batch-inverted + 55c0433. All winning levers folded to DEFAULT-ON behind runtime detection (env_on helper, SBANN_<X>=0 overrides kept): FASTSCAN2 (avx2+selftest gate), ROUTE_VNNI (avx512vnni gate, AVX2 fallback), CASCADE default-on w/ K default 128->16, FUSEDTOPK, BATCHSCAN w/ chunk default 1000 (P202 knee), PREFETCH. Refuted scaffolding (P2LAYOUT/ANISO_*/NormPq) confirmed ABSENT on this lineage (lives on experiment branches); RESIDQ + SOAR/TREEEM intact. Dispatch audit CLEAN: every intrinsic behind is_x86_feature_detected w/ scalar/AVX2 fallback, selftests assert at startup, no unguarded AVX-512. GATES: build clean; recall EXACT 0.9032 default-flags on BOTH batched and per-query paths, BATCH_VERIFY 2000/2000 set+order identical, bit-match vs flags-on reference; QPS sanity batched ~7000 / interleaved vs ScaNN ~1.19x (= P202). Doc block CHAMPION OOD STACK added above main(). Dataset/mode selectors (SBANN_IP, FLOAT_RERANK, FBASE/FQUERY, TFLOOR) deliberately left explicit. ***)
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
