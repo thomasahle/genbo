@@ -3259,6 +3259,22 @@ P195. (*** SCAN PRIMITIVE: the "2x kernel gap" DOESN'T EXIST. Our scan kernel pe
     scattered small cells). Closing it needs denser candidates = bigger leaves (P192/P193: not free at recall>=0.90 -> more
     candidates) OR ScaNN's learned partitioning+codebook. Kernel is a dead end. Branch scan-primitive 88f356b.
 
+P196. (*** ROUTE PRIMITIVE: 33.5 -> 23.1us (1.45x, recall-EXACT) -> now BELOW ScaNN's ~30us. Root cause: the routing L2 kernel NEVER used VNNI (only rerank did). Fix: VNNI L2 via exact integer decomp L2=|q|^2+|c|^2-2<q,c>, dpbusd single-chain w/ precomputed cadj. Gated SBANN_ROUTE_VNNI. Bit-identical probed set (0/2000 changes). ***)
+    routebench isolates router.probe: baseline 33.5us quiet/36 loaded; split coarse-l2 18% / coarse-select 6% /
+    fine-expand 63% / final-select 13%; 2784 int8 dist-evals/q (768 coarse + ~2016 fine beam), IPC 3.58 L1-clean =>
+    compute-bound, centroids L2-resident. vs ScaNN ~2000 float evals: we do +39% MORE evals but ~2x cheaper/eval
+    (AVX2-madd int8 7.9ns vs float 15ns); the hierarchy's select_nth x2 + 2-level gather = ~34% overhead (the price
+    of the P192 granularity win). *** Fix: l2_i8_block_vnni (dpbusd, fold +256*Sc into per-centroid cadj=Sc^2+256*Sc
+    so the +128 offset cancels -> 1 dpbusd chain + reduce, 4-wide ILP, exact tail). cadj derived at load, index bytes
+    UNCHANGED. + exact nd gather capacity (kills memmove realloc). RECALL-EXACT: selftest asserted, 0/2000 set diffs
+    @p58 AND p512, bit-identical sink, e2e recall 0.9005 unchanged. *** Isolated route 33.5->23.1 (1.45x, coarse-l2
+    1.85x, fine-expand 1.35x); e2e route frac 20%->14.6%, QPS +~6%. Route now <= ScaNN. Branch route-primitive 11bc954.
+    *** THREE-PRIMITIVE SUMMARY: route now BELOW ScaNN (23 vs 30, P196); rerank float 464->16 BELOW ScaNN (3.5 vs 13,
+    P194) but +new int8 refine ~28us (survivor-count-bound); scan kernel BEATS ScaNN compute (543 vs 368) but DRAM-
+    latency-bound at 177 (density, P195). Projected COMBINED (cascade+route-VNNI+fusedtopk): ~139us vs ScaNN ~120 =
+    ~1.16x. Remaining gap to <1x = scan density ~9us + int8-refine survivor-count ~18us = ~27us, BOTH = ScaNN's
+    anisotropic-AH codebook + learned dense partitioning. Combined measurement next.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
