@@ -2914,6 +2914,23 @@ P179. (*** DECISIVE CLOSE (the last bounded path TESTED + CLOSED): OPQ rotation 
     ~1732 (bottom tier, ~15-25x behind, real throughput). Real wins banked (dpb=5 2.61x, int8-only eligibility, the
     8GB+1hr audit, honest 0.6->0.77). Top-3 for either = the scoped scann-quantization reimplementation, user's call.
 
+P180. (*** GENUINE POSITIVE (OOD): OPQ rotation (aopq) DOES reach 0.90 COARSE on IP (0.9062 @ dpb=5 p=1024) where no-rotation dpb=5 CRATERED (0.807) -- rotation helps UNALIGNED IP but not aligned L2; QPS@90% win PENDING measurement ***)
+    ood2: aopq (OPQ learned rotation) dpb=5, text2image-1M vs float GT: p256=0.8515, p512=0.8862, p1024=0.9062,
+    p2048=0.9193 -> REACHES 0.90, vs no-rotation apq4 dpb=5 cratering at 0.807@10M (P177). CONFIRMS the P177/P178
+    nuance I flagged: OPQ learned rotation MATTERS on IP (text2image, unaligned) but NOT on L2 (msturing, clustered/
+    already-aligned = streaming2's +0.007). Eta is inert (P179 IP sweep); it's the ROTATION doing the work. So for OOD
+    the moat is NOT fully closed -- rotation is a real, in-engine lever (comp=aopq) we hadn't tested on IP. *** HONEST
+    QPS CAVEAT (ood2): reaching 0.90 is necessary, not sufficient. aopq dpb=5 needs p~950 for 0.90 vs apq4 dpb=2's
+    p~250 (~3.8x more probes). Coarse code is 2.5x cheaper/candidate but scans ~3.8x more -> net scan work p*m =
+    950*40=38000 vs 250*100=25000 (~1.5x MORE) + a 200x200 rotation matvec/query (negligible, per-query not per-cand).
+    So on the probe-count model aopq-dpb5 looks SLOWER than dpb=2 at 0.90 -- rotation buys recall but not enough
+    recall@p to offset the coarseness. *** BUT the QPS@90% OPTIMUM is UNTESTED: aopq-dpb4 (finer than 5, may hit 0.90
+    at lower p = the sweet spot) or aopq-dpb2 (rotation may lift the fine code too -> fewer probes -> faster, since the
+    rotation cost is negligible). ood2 measuring clean-box QPS@90% for apq4-dpb2 vs aopq-dpb5 vs aopq-dpb4, 1M then
+    10M -- THAT decides whether OOD moves off 1732. HOLDING the user close for the QPS verdict. (The recall half is a
+    real positive either way: rotation IS the right lever direction for IP -- and it's what scann's learned transform
+    does, so this is a partial in-engine step toward the moat, just not yet a QPS@90% win.)
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
