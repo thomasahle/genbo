@@ -3308,6 +3308,23 @@ P199. (*** REFINE is a DEAD END (~0us shaved) and RECALL-LOCKED on every axis ->
     anisotropic-AH) OR anisotropic PARTITIONING (reduce candidates+survivors from routing side -- the still-running last
     lever). Clean-code: dot_f32_i8 behind is_x86_feature_detected + scalar fallback + selftest. Branch refine-prefetch 024a0d0.
 
+P198. (*** ANISOTROPIC PARTITIONING = NULL/NEGATIVE: best variant 1.51x, WORSE than isotropic-SOAR 1.46x. Anisotropy scatters the true OOD neighbours OUT of the routed cells (text-query vs image-base breaks the MIPS parallel-weighting premise) -> recall@fixed-p craters, net candidates-at-0.90 flat-to-worse, survivors RISE 540->960. Mirrors P182 (aniso codes zero IP effect). The last untried config-lever, exhausted. ***)
+    HierRouter::route_fine_aniso (vq.rs, clean method on the partitioner, no hot-path branches; picks a0 cells minimizing
+    ScaNN loss ||x-c||^2+(eta-1)(r.xhat)^2 via one guarded dot_i8_avx2 + scalar fallback; eta=1==L2). Opt-b SBANN_ANISO_EM
+    makes TREEEM E-step anisotropic too. Higher eta sparsens cells (cand/q SOAR 10264->eta8 7217) but recall craters
+    (p54t10 eta1 .8695/eta2 .858/eta4 .846/eta8 .837) -> to recover 0.90 probe more -> net cand-at-0.90 flat/worse (eta8
+    12758@p96), survivors 540->960. Interleaved (ScaNN 8348): SOAR-champ 5820=1.459x | em_e4-best 5484=1.510x WORSE |
+    L2-top3 5156=1.647x. Nuance: aniso CENTROIDS (1.51) beat naive L2-spill (1.65) but neither beats isotropic SOAR
+    (orthogonal spread is a better use of a0=3 for OOD). Why: text-query/image-base violates the MIPS query-aligned-with-
+    neighbours premise, so weighting the datapoint-parallel residual HURTS coverage. Branch aniso-partition a15996a.
+    *** DEFINITIVE (P185-P199, 14 experiments): 25x(mirage)->1.45x loaded/~1.19x quiet, all recall-exact; route & rerank-
+    float BEAT ScaNN, scan kernel beats ScaNN compute; EVERY config-lever exhausted (routing granularity/rerank cascade/
+    scan layout/route-VNNI/refine prefetch/aniso partitioning/aniso codes). Residual = apq4 CODEBOOK: 50B/vec -> 464
+    survivors -> 24us int8-refine; ScaNN 100B/vec -> 78. On a QUIET box route+scan+float(no-int8) ~= ScaNN (~parity); the
+    int8-refine (survivor count) is the sole thing above 1x. Anisotropy (ScaNN's key trick) does NOT transfer to OOD text
+    2image for us. <1x needs a better rank-PRESERVING distance estimate (fewer survivors) at ~current bytes -- the one
+    genuinely untried code angle (norm-corrected/RaBitQ-style ADC), since aniso and naive 2x-bits are both refuted.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
