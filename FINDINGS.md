@@ -2983,6 +2983,26 @@ P183. (*** WALL-1 DE-RISK DECISIVE (USE512 A/B): the apq4 scan is MEMORY-BOUND (
     walls (both cheap de-risk gates NEGATIVE-DECISIVE). Top-3 = the FULL scann AH2 (SoA layout + anisotropic quant),
     not kernel-alone or tuning. Honest finals stand: streaming eligible ~0.77 (valid), OOD QPS@90% ~1732 (bottom tier).
 
+P184. (*** CLEAN BASELINE TABLE (streaming2, 1M L2+IP, reorder-depth sweep): our EXISTING aopq/opql/eta do NOT rank-preserve coarse codes -- coarse needs rr~16384 (~16x fine, ~30-50x the ~300-500 target). Baseline for the anisotropic-VQ test. ***)
+    streaming2 ran the reorder-depth microbench in the exact 1M held-out form (static, fixed p=512, TMUL sweep =
+    reorder-depth rr=512*tmul), recall@10 vs float GT:
+    L2 msturing-1M d=100, recall vs rr(512->16384):
+      apq4 dpb2 (m50 FINE):   0.942 0.944 0.945 0.945 0.945 0.945  -> plateau by rr~1024 (SHALLOW)
+      apq4 dpb5 (m20 COARSE): 0.764 0.834 0.886 0.918 0.936 0.943  -> needs rr~16384 (DEEP)
+      opql dpb5 (OPQ):        0.775 0.845 0.891 0.922 0.937 0.943  -> +0.01, NO shrink
+      aopq dpb5 (OPQ+eta):    0.768 0.839 0.889 0.920 0.935 0.942  -> no gain; eta=16/64 WORSE
+    IP text2image-1M d=200, recall vs rr(512->16384):
+      apq4 dpb2 (m100 FINE):  0.906 0.929 0.939 0.942 0.943 0.943  -> plateau by rr~4096 (SHALLOW)
+      apq4 dpb5 (m40 COARSE=the m~25-40 target): 0.603 0.726 0.822 0.892 0.929 0.941 -> needs rr~16384 (DEEP)
+      opql dpb5 (OPQ):        0.628 0.747 0.840 0.900 0.932 0.942  -> +0.004-0.02, NO shrink; aopq no gain; eta flat-worse
+    So our EXISTING compressors (apq4/opql/aopq + SBANN_ETA) do NOT produce a coarse-AND-shallow-reorder code on
+    EITHER track. *** OPEN CHECK (fresh agent a22fe7b1): is our aopq a FAITHFUL implementation of ScaNN's anisotropic
+    -VQ (Guo 2020 score-aware parallel-residual-weighted training loss), or is our "eta" a cruder version? If crude,
+    a PROPER implementation might rank-preserve where this baseline didn't. This table is the baseline to beat: a
+    proper anisotropic-VQ that makes coarse dpb=5 reach ~0.94 at rr~1024 (like the fine code) = the breakthrough. If
+    a faithful impl ALSO plateaus deep -> the moat is the full AH2 system (loss + SoA layout), confirmed at the deepest
+    level. (streaming2 stood down; box idle for the anisotropic-VQ agent.)
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
