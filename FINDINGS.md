@@ -3362,6 +3362,29 @@ P201. (*** RICHER-CODES REFUTED (the last code-side lever): m=200 1-dim 4-bit is
     SBANN_RESIDQ (residual-encode x - cell_centroid, same 50B, zero scan cost — free ranking if champion built without).
     Scripts: richer_build.sh, surv_sweep.sh, richer_sweep.sh, richer_h2h.sh; indices richer_m200iso/m100iso.idx.
 
+P202. (*** CELL-MAJOR BATCHED SCAN: real +27% e2e (recall-BIT-IDENTICAL), loaded h2h closes 1.53x -> 1.20x vs ScaNN — but NOT <1x, because ScaNN's h2h numbers were ALREADY batched (search_batched) and ScaNN gains the same ~1.22-1.27x from batching. Legitimate under leaderboard semantics (harness passes the whole query set). ***)
+    Branch batch-inverted 4982886 (worktree lsh-engine-wt-batchinv): search_batch_frr + extracted scan_cell_fused —
+    route all, build all LUTs, counting-sort (cell -> query list), sweep cells in ASCENDING STORAGE ORDER running the
+    UNCHANGED kernel per (cell,query), then per-query cascade+float unchanged. Kernels/Compressor untouched; gated
+    SBANN_BATCHSCAN/_CHUNK/_VERIFY (temporary A/B scaffolding). CORRECTNESS: 2000/2000 set-identical top-10 at p=54
+    (order-identical too), recall 0.9032 == per-query, p=40/80 same (one tie flip) — pure execution-order change.
+    *** Scan 117-129 -> 78-80us/q (~1.5-1.63x); QPS best/5: per-query 5640 -> chunk250 6673 / chunk1000 7121 /
+    chunk2000 7143 (curve FLAT by ~1000). KEY MECHANISM SURPRISE: chunk=250 (multiplicity 0.82!) already captures
+    most of the win => the gain is mostly SEQUENTIAL cell-order HW-prefetch, NOT cross-query block reuse; reuse
+    saturates at mult ~3.3 under LUT (~5-10MB) + FusedTopT pool (~18MB @ nq2000) L3 pressure + pool-scatter writes.
+    "Bigger batches keep winning" FALSIFIED past chunk~1000 on this box. *** DECIDER (interleaved core0, best/5,
+    rounds 2-5 stable, recall 0.9032 exact all): ScaNN-batched median 8162 | ours-batched 6762 | ours-perquery 5298.
+    Ratios: 1.20x batched-vs-batched (1.16-1.23) | 1.54x vs perquery (matches P197) | ours batching gain 1.28x.
+    ScaNN search() vs search_batched isolated: ~1.22-1.27x — BOTH engines gain equally; our batching competes
+    against an already-batched ScaNN. *** Why <1x failed: (1) scan fell 1.5x not the projected 2.5-3x-to-compute-
+    floor (P195's 3x cold-vs-hot headroom captured mostly as prefetch); (2) reuse saturates (L3 pressure), doesn't
+    scale with batch; (3) the 119us ScaNN target was already-batched ScaNN. Batched scan now ~24ns/cand LATENCY-bound
+    on LUT gather + per-(cell,query) pool scatter — no further amortization headroom identified. *** STANDING:
+    ~1.20x loaded batched-vs-batched (quiet-box re-measure pending — P197 pattern suggests quiet ~1.05-1.15x).
+    Post-P202 phase (loaded): route 23 / scan 78 / refine 24 / float 9. Scan & route & float at-or-better than
+    ScaNN; the residual is STILL the survivor-count refine (codebook) + ScaNN's equal batching gain.
+    Scripts: batchinv_verify.sh, batchinv_prof.sh, batchinv_chunk.sh, batchinv_decider.sh, scann_pqvsbatch.py.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
