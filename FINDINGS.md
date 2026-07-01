@@ -3220,6 +3220,89 @@ P192. (*** OOD GAP-CLOSING WORKFLOW: COMBINED LEVERS vs ScaNN 1M SINGLE-THREAD (
     granul_kf16384_c768_b96_a3.idx, t2i1m_query.i8bin}; code on branch ood-levers-stacked (routing lever config-only;
     codes lever recompile on codes-aniso, discarded).
 
+P193. (*** STREAMING-LEAF-SCAN LEVER — DEFINITIVELY REFUTED as the 1.8x, AND THE PREMISE IS WRONG (branch
+    p193-streaming-leaf-verdict off ood-levers-stacked). The task's hypothesis ("our scan is memory-bound scattered
+    at ~92 Mcand/s vs 356 compute-floor = the 1.8x") was measuring the OLD Kf=262144 index. On the CURRENT P192
+    granul champion (hierk Kf=16384), the scan ALREADY streams at 177 Mcand/s and is at PARITY with ScaNN's scan —
+    the ENTIRE ~90us/query gap is RERANK DEPTH (we reorder 464 float survivors vs ScaNN's 78), which is set by
+    candidate RANKING quality (our apq4 PQ vs ScaNN anisotropic-AH), NOT scan streaming. A bigger-contiguous-leaf
+    layout streams +52% faster PER CANDIDATE but needs 2.5-3.5x MORE candidates for recall 0.90, so net QPS@0.90 gets
+    WORSE — the recall/candidate tradeoff is FUNDAMENTAL. <1x is NOT reachable via any in-hand lever; the blocker is
+    ScaNN's anisotropic-AH codebook, unchanged from P182/P192. Current honest ratio holds at ~1.83x. ***)
+    Method (HARD constraints honored): 1M text2image OOD ONLY (free>=26GB + loadavg checked, NO 10M build); single-
+    thread pinned taskset -c 0, RAYON=1, best-of-5, INTERLEAVED vs FRESH ScaNN (serialized scann_t2i1m_idx, load ~0.7s);
+    QPS@recall@10>=0.90 vs the FLOAT GT (t2i1m-floatgt). Box load 15-22 the whole session -> interleaved RATIOS only.
+
+    *** (a) PROFILE — IS THE SCAN THE 1.8x? NO. Champion (granul Kf16384 C0=768 b0=96 a0=3 apq4, SBANN_IP+FASTSCAN2+
+      PREFETCH+FLOAT_RERANK, p=58 t=8, WARM per-phase profile via SBANN_PROFILE, single-thread):
+        route 17% (36us) | scan 41% (85us) | rerank 42% (88us)  -> 208us/query (QPS ~4800)
+      ScaNN (56,78)=118.7us decomposed EMPIRICALLY (swept lts and reorder on the serialized index, marginal-cost fit):
+        per-reorder-candidate ~166ns (reorder 10->1000 adds 164us/990); per-leaf-scan ~1.36us (~500pts)=~2.7ns/cand=~370 Mcand/s.
+        -> ScaNN ~= route+fixed 30us + scan(56 leaves) 76us + reorder(78) 13us.
+      PHASE-BY-PHASE GAP:  route +6us | scan +9us | RERANK +75us.  The ENTIRE gap is RERANK.
+      Our scan (11019 cand @ 177 Mcand/s = 85us incl collect) is at PARITY with ScaNN's (28000 cand @ ~370 = 76us).
+      Our rerank = 464 survivors * ~190ns (scattered float reads over the 8GB base) = 88us; ScaNN = 78 * ~166ns = 13us.
+      The per-candidate reorder cost is ~SAME (166 vs 190ns); the gap is purely the SURVIVOR COUNT (464 vs 78), which is
+      set by how well the approx scan RANKS the true top-10 (our PQ needs depth 464; ScaNN AH needs 78). => REDIRECT:
+      the 1.8x lives in rerank-depth/ranking-quality, NOT scan speed. (First p=58 profile read rerank 74% — that was
+      COLD float-base page-in; warm re-runs are stable at ~42%.)
+    *** SCAN THROUGHPUT vs GRANULARITY (scatterbench, kernel-only, scattered-probe vs cell-sorted order, best/5):
+      Kf=262144 (P189 old champ, ~1.9 blk/cell): scattered 92, sorted 95 Mcand/s   (26% of floor; the task's premise)
+      Kf=16384  (P192 granul champ, ~11.9 blk/cell): scattered 177, sorted 187      (50% of floor; SORT headroom 1.06x)
+      FlatIvf C=2000 a0=1 (~30.5 blk/cell): scattered 257-269, sorted 261-271       (74% of floor; SORT headroom 1.00x)
+      flatsoar C=2000 a0=2 (~61 blk/cell): scattered 236 (still streams; a0=2 doubles cell size)
+      AVX2 fast-i8 compute floor (scanbench m=100, L2-hot): 355 Mvec/s (AVX-512 interleaved 530, memory-bound N/A).
+      => bigger contiguous leaves DO convert scattered->streaming: 92->269 Mcand/s (P192's granularity change already
+      captured the bulk, 92->177; the task's "3.9x collapse" is stale). Sorting is a null at every size (probes sparse).
+    *** (b) CHEAP TEST — DOES BIG-LEAF STREAMING CLOSE QPS@0.90? NO — REFUTED (built FlatIvf C=2000 via new FlatIvf
+      serialization, ROUTER_TAG_FLAT in persist path; build 20-58s w/ threads, measured single-thread):
+        FlatIvf-2000 a0=1, float rerank, sweep p: recall 0.755(p16) 0.812(p24) 0.850(p32) 0.874(p40) — 0.90 needs p>~55.
+        flatsoar-2000 a0=2 (SOAR coverage, fair shot): reaches recall 0.8999 only at p=40, scanning ~39000 cand @ 241us
+          scan -> QPS 2559.  vs champion 4761 @ 0.9005 (11019 cand @ 85us). NET QPS@0.90 is ~1.9x WORSE.
+      MECHANISM: big flat leaves are COARSE -> the true top-10 spread across many leaves -> must probe 2.5-3.5x more
+      candidates for 0.90. The champion's candidate-efficiency (11019 cand) comes from FINE cells (Kf=16384) + a0=3
+      multi-store + hierarchical routing. Streaming per-candidate gain (+52%) is FULLY offset (and overwhelmed) by the
+      candidate-count blow-up. ScaNN squares this circle only because its anisotropic AH ranks well enough to tolerate
+      coarse 500-pt leaves AND scans them at ~370 Mcand/s — a codebook property, not a layout we can copy.
+    *** (c) SoA PACKING REBUILD: NOT DONE, and correctly so. Step-2 gate showed the recall/candidate tradeoff is
+      FUNDAMENTAL (not a packing-quality issue), and the scan is already at parity, so the multi-day SoA rebuild has no
+      QPS@0.90 upside at 1M single-thread. (De-risk gate fired exactly as the task specified.)
+    *** RERANK-LEVER PROBES (the ACTUAL gap; all cheap, no rebuild — none reach <1x):
+      - (p,t_surv) tradeoff: champion (58,464) is the recall knee; every "scan-more-reorder-less" point (64/6,70/5,
+        80/4,90/3,120/2...) falls sub-0.90. t_surv=464 is forced by PQ ranking depth.
+      - int16 LUT scan (finer ranking): +0.011 recall at matched (p,t) (0.9113 vs 0.9005) BUT ~1.5x slower scan ->
+        net QPS@0.90 LOSS. Confirms the champion's FASTSCAN2 (int8) choice.
+      - FUSEDTOPK collect (ScaNN keep-only-survivors, was default-OFF): recall bit-identical, QPS ~null/-1% (the
+        collect isn't the bottleneck; re-confirms P188).
+      - POOLDEDUP (a0=3 makes real DUPLICATE survivors — the coordinator's "redundant work" lever): dedup lifts recall
+        +0.0175 (0.9005->0.9180 at p=58 t=8) and reaches 0.90 at t_surv=290 — BUT the O(11019) open-addressing dedup
+        costs more than the rerank saving (QPS 4498->2670). a0-duplication is intrinsic to SOAR coverage (ScaNN spills
+        too); a cheaper coarse-cap-then-dedup MIGHT net ~1.4x but was not implemented (still short of <1x).
+      - cell-contiguous FLOAT rerank store (untested lever): the 464 survivors read SCATTERED over the 8GB float base
+        at ~190ns; the int8 cell-contiguous `raw` store reranks at ~106ns. A float cell-contiguous store (+800MB) would
+        land ~130-160ns -> rerank ~65us -> ~185us -> PROJECTED ~1.5x. Bounded by measured endpoints, not implemented
+        (memory + it cannot reach <1x; the survivor COUNT 464 is untouched).
+    *** (d) VERDICT: The streaming-leaf-scan layout does NOT close the 1.8x toward parity — it is REFUTED at 1M single-
+      thread: our scan already streams (177 Mcand/s) and is at PARITY with ScaNN; a ScaNN-sized big-leaf layout streams
+      +52% faster per candidate but the recall/candidate tradeoff makes NET QPS@0.90 ~1.9x WORSE. The 1.8x is
+      STRUCTURAL but lives in RERANK DEPTH (464 vs 78 reorder candidates), i.e. candidate RANKING QUALITY = ScaNN's
+      anisotropic-AH codebook (100 B/vec IP-optimized) vs our apq4 (50 B/vec near-isotropic). Path to <1x is BLOCKED by
+      the same wall as P182/P192: matching ScaNN's ranking needs ~2x code bits (dpb=1), which just moves cost scan<->
+      rerank (~break-even), and P192 showed anisotropic/OPQ codes HURT under float rerank (isotropic-reconstruction
+      task). BEST MEASURED RATIO reached this session: ~1.83x (interleaved anchor: ScaNN median 8538 @0.9032 vs champion
+      median 4675 @0.9005; recall-matched p=60 = 1.87x) — I did NOT beat the P192 champion (the scan lever refuted; the
+      rerank levers I could test cheaply all net null/negative). HOW FAR OFF <1x: ~1.83x; scan is at parity, but recall
+      needs a 464-deep float reorder vs ScaNN's 78 — a ~6x reorder-count deficit set by codebook ranking, ~75us/query.
+    *** (e) HONEST CAVEATS: (1) 1M ONLY, single-thread; box load 15-22 -> interleaved ratios (±3-5%), not absolute QPS.
+      (2) ScaNN internal decomposition is a marginal-cost fit (swept lts/reorder), not a true profiler read — the 76/13/
+      30us split is ±20%; the CONCLUSION (rerank count is the gap) is robust to that error bar. (3) the "cold p=58 74%
+      rerank" artifact shows profiling is page-fault sensitive; all cited splits are warm re-runs. (4) FlatIvf-2000 used
+      k-means iters=15, apq4 dpb=2 (matched to champion); a0=1 and a0=2 SOAR both tested. (5) the ~1.5x float-store and
+      ~1.4x cheap-dedup projections are BOUNDED by measured endpoints but NOT implemented — neither reaches <1x. Code
+      change this session: FlatIvf index serialization (persist path, ROUTER_TAG_FLAT) — enables single-thread measurement
+      of flat indices; recall-neutral, additive. Artifacts: scratchpad/{flativf2000_apq4.idx, flatsoar2000_apq4.idx,
+      granul_kf16384_c768_b96_a3.idx, scann_t2i1m_idx, interleave_p192.sh, scann_measure.py}; branch p193-streaming-leaf-verdict.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT

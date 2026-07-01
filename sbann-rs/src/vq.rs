@@ -557,6 +557,17 @@ impl Router for FlatIvf {
         cd.sort_unstable(); // nearest-first
         cd.iter().map(|&(_, j)| j).collect()
     }
+    /// Serialize: tag + d, c, pivots(i8), mu(f32), soar, rair. pivots_f32/cnorm recomputed on load.
+    fn save(&self, w: &mut crate::persist::Sw) -> std::io::Result<()> {
+        w.u8(ROUTER_TAG_FLAT)?;
+        w.usize(self.d)?;
+        w.usize(self.c)?;
+        w.i8s(&self.pivots)?;
+        w.f32s(&self.mu)?;
+        w.f32(self.soar)?;
+        w.u8(if self.rair { 1 } else { 0 })?;
+        Ok(())
+    }
 }
 
 /// Additive 2-codebook multi-index (AQ routing). Buckets = (i0,i1); k-means codebooks (balanced).
@@ -2535,6 +2546,7 @@ impl Index {
 // Trait objects are NOT serialized generically: each concrete Router/Compressor writes a 1-byte type
 // tag (these constants) + its POD fields; load_router/load_comp read the tag and rebuild the type.
 const ROUTER_TAG_HIER: u8 = 1;
+const ROUTER_TAG_FLAT: u8 = 2;
 const COMP_TAG_APQ4: u8 = 1;
 const COMP_TAG_PQ4: u8 = 2;
 
@@ -2595,7 +2607,18 @@ fn load_router(r: &mut crate::persist::Pr) -> Box<dyn Router> {
             let rblocks = r.u8_vec();
             Box::new(HierRouter { d, mu, kf, levels, cent, child, beam, soar, radc, rcodes, rblocks })
         }
-        _ => panic!("unknown router type tag {tag} in index file (only HierRouter={ROUTER_TAG_HIER} supported)"),
+        ROUTER_TAG_FLAT => {
+            let d = r.usize();
+            let c = r.usize();
+            let pivots = r.i8_vec();
+            let mu = r.f32_vec();
+            let soar = r.f32();
+            let rair = r.u8() != 0;
+            let pivots_f32: Vec<f32> = pivots.iter().map(|&v| v as f32).collect();
+            let cnorm: Vec<f32> = (0..c).map(|j| pivots_f32[j * d..j * d + d].iter().map(|&v| v * v).sum()).collect();
+            Box::new(FlatIvf { d, c, pivots, pivots_f32, cnorm, mu, soar, rair })
+        }
+        _ => panic!("unknown router type tag {tag} in index file (only HierRouter={ROUTER_TAG_HIER}, FlatIvf={ROUTER_TAG_FLAT} supported)"),
     }
 }
 
