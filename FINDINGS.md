@@ -3105,6 +3105,35 @@ P187. (*** WALL-1 FASTSCAN AUDIT: our scan kernel WAS crude (corrects P186 "alre
     (73-104). PATTERN across P185/P187: our engine has real unclaimed perf (crude impls), but closing to ScaNN needs
     reimplementing its core (anisotropic-VQ, fused-top-k, SoA) = a scoped multi-day rebuild = user's call.
 
+P188. (*** FUSED-TOP-K: recall-EXACT primitive built (SBANN_FUSEDTOPK, fused-topk 86793be) but NEUTRAL end-to-end -- and it CORRECTS P187's premise by direct measurement: the scalar collect is only 20-30% of scan, NOT 85%. The dominant scan cost is the SCATTERED PQ-block reads (memory-bound), = the SoA/bigger-cell LAYOUT lever (P183), triply-confirmed. Query is BALANCED: route 32 / scan 37 / rerank 31. ***)
+    ScaNN fused-top-k ("keep only survivors"): running t-th-best threshold, SIMD-compare each block's dists
+    (_mm256_cmpgt_epi32 + movemask), push only survivors so the per-candidate slot_orig branch runs t times not N,
+    prune a 2t buffer to t. RECALL-EXACT (bit-identical top-10 id sets: 1M OOD champion p512/t4096 = 10000/10000
+    identical delta 0.00000; t<<N p2048/t2048 = 5000/5000 identical) -- survivor buffer is provably a superset of the
+    true top-t. *** BUT NEUTRAL: direct measurement via SBANN_SCANDIAG (kernel-only floor = block reads + LUT, no
+    collect) shows collect = scan_full - scan_kernelonly = only 84us/274us = 30% of scan at champion p512/t4096
+    (154us/741us = 21% at p2048/t2048). P187's "collect = 85% of scan" CONFLATED the scattered-block-read memory
+    stalls (which occur INSIDE the LUT kernel, waiting on RAM) with the scalar collect. So even a zero-overhead
+    fused caps at ~1.13-1.15x here; measured QPS = neutral at champion (2t>N, no pruning, ~70% of candidates are
+    genuine survivors), +2-6% only when N>>t (off the recall frontier). Banked as a correct default-off primitive;
+    NOT an end-to-end lever at 1M OOD.
+    *** NEW BOTTLENECK BREAKDOWN (1M OOD champion, single-thread pinned): route 32% / scan 37% / rerank 31% -- the
+    query is BALANCED, NO silver bullet; within scan, kernel+scattered-block-reads = 70% (the wall), collect = 30%.
+    Implication: even a free scan caps e2e at ~1.6x; topping needs gains across route AND scan AND rerank, or a
+    structurally different design. *** THE REMAINING SCAN LEVER (triply-confirmed P183/P187/P188): the scattered PQ
+    block reads -- p=512 random jumps into a ~168MB blocks array, 73-104 Mcand/s scattered vs 321-660 sequential
+    (6-11x collapse, worse at 10M). Fix = SoA / bigger-cell LAYOUT so probes read big contiguous streams. This is
+    a recall/speed TRADEOFF (bigger cells = coarser routing = more candidates but streaming throughput), testable
+    at 1M as QPS@recall>=0.90 -- NOT yet done.
+    *** MEASUREMENT-CEILING NOTE (important, per user's 2026-07-01 methodology point): this shared box (16-core EPYC,
+    load 14-22, other tenants' mox-compile, ~26GB mem cap) CANNOT produce a leaderboard-valid number: can't build
+    10M-scale under the mem cap, can't run uncontended for wall-clock QPS, no same-box published-reference baseline.
+    Recall (streaming ~0.77 vs 0.998) IS hardware-independent and real; QPS/leaderboard-POSITION is NOT answerable
+    here. Topping requires the official harness on appropriate HW at 10M/100M scale. Pattern across P185/P187/P188:
+    three faithfulness audits, three real bounded wins (aniso-VQ +0.05-0.08 IP; FastScan 1.8x kernel; fused-top-k
+    recall-exact primitive), each correcting the prior's error -- but the query is balanced with no silver bullet,
+    and top-3 needs ScaNN's full design + a submission environment this box is not.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
