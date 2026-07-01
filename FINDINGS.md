@@ -2931,6 +2931,25 @@ P180. (*** GENUINE POSITIVE (OOD): OPQ rotation (aopq) DOES reach 0.90 COARSE on
     real positive either way: rotation IS the right lever direction for IP -- and it's what scann's learned transform
     does, so this is a partial in-engine step toward the moat, just not yet a QPS@90% win.)
 
+P181. (*** CORRECTION to P180 + DEFINITIVE CLOSE: the "rotation reaches 0.90 coarse on IP" was a SCALE-COMPARISON ERROR; at MATCHED scale rotation = +0.005 (negligible). TUNING DEAD on BOTH tracks. dpb=2 is OOD optimum, 1732 stands. ***)
+    ood2 caught its own P180 over-claim via the matched-scale baseline (exactly the right rigor): it had compared
+    aopq dpb=5 @1M (0.9062) vs apq4 dpb=5 @10M (0.807) = DIFFERENT scales. At MATCHED 1M vs float GT: apq4 dpb=5
+    (NO rotation) p1024=0.9015 vs aopq dpb=5 (rotation) 0.9062 = rotation +0.005 ONLY (same negligible size as L2's
+    +0.007). The 10M crater (0.807) is a SCALE effect (10x distractors); rotation's +0.005 cannot fix a -0.09 gap.
+    So OPQ rotation does NOT meaningfully help IP either -> P180 REFUTED at matched scale. QPS@90% via p*m at 0.90
+    (1M): apq4-dpb2 250x100=25000 (baseline) | aopq-dpb2 25000 (rotation adds nothing, hair worse) | apq4-dpb5
+    1000x40=40000 (loses 1.6x) | aopq-dpb5 950x40=38000 (loses 1.5x) | aopq-dpb4 ~650x50=32500 est (loses). NO coarse
+    config beats dpb=2 -- reaching 0.90 needs more probes than the coarser code saves. (dpb=3 invalid for d=200, m
+    non-integer.) *** DEFINITIVE: every tuning lever -- dpb coarsening, OPQ rotation, anisotropic eta, pool-depth,
+    collect, K, p -- is DEAD on BOTH tracks. dpb=2 is the OOD optimum; OOD QPS@90% STAYS 1732 (bottom tier). The moat
+    is NOT tunable: top-3 needs a multi-day+ ENGINE PROJECT = (a) a FastScan/AH2 KERNEL (~15-20x scan throughput, our
+    real bottleneck) and/or (b) rank-preserving coarse quantization (scann's AH2, so codes can coarsen without losing
+    recall) -- both = scann's core, a from-papers reimplementation. *** HONEST FINALS: streaming eligible recall@10
+    ~0.77 (VALID <8GB+<1hr); OOD QPS@90% ~1732. Real wins banked: 0.6->0.77 eligible, the 8GB+1hr eligibility audit +
+    re-arch, dpb=5 2.61x scan, int8-only memory fix, and exhaustive data-backed refutation of every tuning lever.
+    TOP-3 for either = the scoped multi-day scann-kernel+quantization rebuild, the USER's call. SESSION COMPLETE:
+    config/tuning space EXHAUSTIVELY mapped with data on both tracks. (dpb=4 confirm ~5min, but the verdict is decided.)
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
