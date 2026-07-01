@@ -3179,6 +3179,16 @@ P190. (*** THE HEADLINE MEASUREMENT: DIRECT same-hardware ScaNN-vs-ours, 1M text
     float rerank, routing) are now clearly WORTH STACKING to close a 2.2x gap -- vs the prior "only scann's full AH2
     rebuild helps". The 25x mirage drove months of pessimism; the real target is ~2x and shrinking.
 
+P191. (*** STACKED LEVERS: prefetch+float-rerank close 2.22x -> ~2.07x median (2.01x best round) vs ScaNN at 1M single-thread OOD. Float rerank is the MOVER (0.90 at p=58 vs p=80, +0.0236 recall, breaks int8 ceiling); prefetch ~null under contention (+3%). In-hand levers ~tapped out; remaining = structural SoA AH scan. Branch ood-levers-stacked 9fa173b. ***)
+    Ported float rerank onto the prefetch branch (fbin.rs, simd::dot_f32_fast, vq::search_frr/scan_rerank_frr/
+    rerank_contig_float). 1M text2image OOD, single-thread pinned interleaved best-of-5 (load 16-19):
+    int8-no-PF 0.9003@p80 3612 QPS (2.28x) -> +prefetch 3725 (2.22x, +3%) -> +float-rerank 0.9007@p58 3971/4121
+    (2.07x med / 2.01x best). Fresh scann 8236 @ 0.9032. Prefetch recall-EXACT (delta 0.0000); float rerank +0.0236
+    recall @ matched p80 (0.9003->0.9239). VERDICT: brushing 2x, not clean sub-2x, not parity. Biggest remaining =
+    ScaNN's cache-resident SoA anisotropic-AH scan vs our scattered PQ-block reads (~3.9x collapse). Next: sweep the
+    UN-tested config levers (routing granularity toward scann's bigger contiguous leaves + float rerank; rerank depth;
+    aopq/aniso-CD codes) before conceding the structural wall.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
