@@ -3156,6 +3156,70 @@ P191. (*** LEVERS-STACKED PAYOFF vs ScaNN (branch ood-levers-stacked off scan-pr
     index is valid. Artifacts: scratchpad/{interleave_p191.sh, scann_measure.py, eng_t2i1m.idx, scann_t2i1m_idx,
     t2i1m_query.i8bin}; code on branch ood-levers-stacked.
 
+P192. (*** OOD GAP-CLOSING WORKFLOW: COMBINED LEVERS vs ScaNN 1M SINGLE-THREAD (branch ood-levers-stacked). Three
+    lever agents forked off the P191 champion (hierk apq4 Kf=16384 C0=128 b0=32, float rerank, p=58 t=8; 2.07x). Only
+    ONE lever actually beat baseline. Combining the winners collapses to that single lever (the other two are already
+    at their optima in the champion), re-verified CLEANLY it narrows the honest same-window single-thread OOD gap from
+    2.07x to 1.77x median — we cross clean SUB-2x for the first time, but do NOT reach parity. ***)
+    LEVER TRIAGE (be skeptical; discard contention-noise + sub-0.90 drops):
+      1. ROUTING GRANULARITY (C0/b0 coarse-partition fan-out) = THE ONLY WINNER. The literal "bigger leaves" (lower Kf)
+         hypothesis was FALSIFIED (bigger contiguous leaves lose monotonically at recall>=0.90: with t_surv=464 float
+         survivors as the bottleneck, a bigger candidate pool is LESS pool-efficient). The real win is the OTHER knob
+         the task named: the champion's coarse partition C0=128 b0=32 (=sqrt(Kf), 25% coverage, 128+32*128=4224 int8
+         dist-evals/q) was OVER-provisioned. Raising to C0=768 b0=96 (12.5% coverage, 768+96*21=2816 evals) makes
+         routing BOTH cheaper AND finer-targeting -> reaches 0.90 at the SAME scan depth p=58. Config-only, NO recompile
+         (C0/b0 are baked at build; loaded from granul_kf16384_c768_b96_a3.idx). C0 sweep sweet spot: 512b96 +4%,
+         768b96 +12.6%, 1024b128 +8% -> C0~768 optimal.
+      2. RERANK DEPTH (t_surv = p*TMUL) = NO WIN. Already sitting exactly on the 0.90 knee, NOT over-provisioned.
+         Re-verified on the NEW finer C0=768 index: p=58 t=7 -> 0.8946 (sub-0.90), t=8 -> 0.9005 (knee); p=56 t=8 ->
+         0.8974, p=54 -> 0.8944. No trim available in either p or t. (The [[ood-rerank-depth-lever]] 1.65x was an EARLIER
+         over-provisioned t_surv, already absorbed into this config.) The 40% rerank fraction is a code-QUALITY floor,
+         not slack.
+      3. BETTER CODES (aopq OPQ-rotation; faithful ScaNN anisotropic-VQ via SBANN_ANISO_CD coordinate-descent, eta=4/8)
+         = NEGATIVE (required a recompile on branch codes-aniso). ALL variants reach 0.90 at MORE probes than plain
+         apq4: aopq p=64 (OPQ rotation trained on base misaligns OOD queries), aniso-CD e8 p=64 / e4 p=68. WHY: with
+         float rerank the code's ONLY job is getting the true top-10 into the top-(p*8) pool = an ISOTROPIC total-
+         reconstruction task; anisotropic-VQ deliberately sacrifices orthogonal accuracy to sharpen the IP direction,
+         which HURTS pool-recall. apq4's crude near-isotropic eta=4 is already the right endpoint. Better IP-codes are
+         the WRONG optimization target on the float-rerank path.
+
+    COMBINED CONFIG (the stack that survives triage) = routing winner C0=768 b0=96 baked in + apq4 (codes lever lost) +
+    p=58 t=8 (rerank lever at knee, unchanged). It is honestly the granularity lever alone, re-measured clean.
+
+    == CLEAN INTERLEAVED 5-ROUND, single-thread PINNED taskset -c 0, best-of-5, ScaNN(56,78) then engine back-to-back
+       (same contention window, box load 11.6-13.9), recall@10 vs FLOAT GT ==
+      ScaNN   lts56/reorder78 (0.9032): 8568 8440 8429 8406 8383   median 8429  (rock-steady)
+      ENG-COMBINED p=58 t=8   (0.9005): 4835 4750 4728 4746 4743   median 4746  <-- OUR BEST @>=0.90 (QPS@recall0.90)
+      ENG-COMBINED p=60 t=8   (0.9033): 4433 4576 4589 4633 4693   median 4589  (recall-MATCHED to ScaNN's 0.9032)
+    Matched per-round ratio ScaNN/eng:
+      p=58: 1.772 1.777 1.783 1.771 1.767  -> mean 1.774  (recall 0.9005, the QPS@recall>=0.90 operating point)
+      p=60: 1.933 1.844 1.837 1.814 1.786  -> mean 1.843  (recall 0.9033, exact recall-match with ScaNN 0.9032)
+
+    *** HEADLINE RATIO @ recall@10 >= 0.90, single-thread, same box, interleaved:
+        ScaNN 0.9032 @ 8429  vs  OURS (combined) 0.9005 @ 4746  ->  RATIO = 1.77x median (recall-matched at p=60: 1.84x). ***
+    vs P191 baseline (same-window interleaved) 2.07x: the routing-granularity lever alone closes ~0.30x of the ratio
+    (2.07 -> 1.77) = ~15% relative gap reduction, and BEATS lever-off in every one of 5 rounds. Absolute QPS 3971 (P191
+    window) -> 4746 (this window) is NOT comparable across windows; the 1.77x interleaved ratio is the contention-robust
+    deliverable. Mechanism is exact: 4224->2816 = 1408 fewer int8 dist-evals/q * 200 dims ~= 26-28us/q saved.
+
+    *** VERDICT: config levers on the existing binary get us to 1.77x vs ScaNN — we CROSS clean sub-2x for the first
+    time (P191 brushed 2x at 2.07x), driven ENTIRELY by de-over-provisioning the coarse router (C0 128->768). But we do
+    NOT reach parity. Rerank-depth and better-codes levers are confirmed NON-winners (rerank at the 0.90 knee; aniso/OPQ
+    codes are the wrong target under float rerank). The ~1.77x remainder is STRUCTURAL and execution-speed, unchanged
+    from P183/P191: ScaNN's cache-resident SoA anisotropic-AH scan (in-register 2-byte LUT16 over a packed layout) vs
+    our memory-bound scattered PQ-block reads. That gap is the multi-day rebuild; no config lever crosses it recall-
+    neutrally. Config-lever headroom at 1M single-thread is now TAPPED OUT at ~1.77x. ***
+    HONEST CAVEATS: (1) recall margin at p=58 is thin (0.9005); the safer recall-matched p=60 point (0.9033) still
+    ratios 1.84x, so the sub-2x cross survives adding margin. (2) 1M ONLY, single-thread (10M SIGKILL-risk per
+    constraints; free>=30GB checked before every run, NO rebuild needed — loaded the agent's prebuilt granul index in
+    0.54s). (3) "Combined" is honestly the single granularity lever: the other two were falsified/at-optimum, so there
+    was nothing compatible to stack on top; I re-verified the rerank knee ON the finer index (t=7 and p<=56 both fall
+    sub-0.90) to confirm no residual trim. (4) interleaved ratios ONLY, never cross-window — ScaNN was freshly measured
+    in the identical window (median 8429, ±1%). (5) C0 grid is coarse ({128,256,512,768,1024}); C0~640-768 holds the
+    optimum but wasn't finely resolved. Artifacts: scratchpad/{interleave_p192.sh, scann_measure.py, scann_t2i1m_idx,
+    granul_kf16384_c768_b96_a3.idx, t2i1m_query.i8bin}; code on branch ood-levers-stacked (routing lever config-only;
+    codes lever recompile on codes-aniso, discarded).
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
