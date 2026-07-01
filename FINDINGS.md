@@ -2841,6 +2841,22 @@ P175. (*** PROFILED (airtight, from the other side): deep-t cost is O(t) rerank_
     can't dodge. Eligible optimum = dpb=5 int8-only shallow-t p=60 = ~0.77 (VALID). Top-3 needs rank-preserving coarse
     codes (AH2) so the reorder set stays small. STREAMING TRACK: DONE -- argued AND profiled from both sides. Bank.
 
+P176. (*** THE REAL (BOUNDED) PATH forward: rank-preserving codes via learned rotation (OPQ) + anisotropic eta to SHRINK reorder depth -- we HAVE the pieces; reorder-depth microbench is the decisive test for BOTH tracks ***)
+    streaming2's FastScan scoping (honest, pre-commit): the profile (P175) proves the KERNEL alone won't break the
+    wall -- the eligible ceiling is the O(t) DEEP REORDER (rerank_contig raw-row reads, memory-latency), deep because
+    our dpb=5 codes need t~8192 to capture the true NN. Even an infinitely-fast scan leaves that reorder. So the CORE
+    lever = RANK-PRESERVING low-bit codes (shrink reorder depth t~8192 -> ~300, like scann's t~317); the fast-scan
+    SoA kernel is the SECOND lever that makes those codes affordable at high coverage. Both needed; the quantization
+    is the bigger/harder one. *** CRUCIAL: we ALREADY have the ingredients in-engine -- Opq4::train_learned (learned
+    rotation / OPQ) + Apq4's anisotropic eta. So rank-preserving codes may come from TUNING/COMBINING existing
+    features, NOT a multi-week reimplementation. *** THE DECISIVE MICROBENCH (bounded, high-value): measure "REORDER
+    DEPTH for 95% recall" as a function of (dpb, learned-rotation on/off, eta). Target: a code at m~25-40 that needs
+    only t~300-500 reorder (vs dpb=2's ~2048, dpb=5's ~8192). IF one exists -> the reorder is cheap AND high coverage
+    is affordable -> BREAKS THE WALL for BOTH streaming (recall in budget) AND OOD (QPS@90% up) -> top-3 becomes
+    reachable WITHOUT a multi-week grind. If no such code exists in our OPQ+eta space -> the moat is truly scann's
+    proprietary quantization (multi-week), honestly confirmed. GREENLIT: recall is load-independent so the microbench
+    can overlap ood2's recall work (coordinate around ood2's QPS timing). This is the live path -- NOT banking yet.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
