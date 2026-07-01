@@ -283,6 +283,163 @@ pub fn dot_f32(a: &[f32], b: &[f32]) -> f32 {
     s
 }
 
+// ---- f16 (IEEE half) rerank support ----------------------------------------------------------
+// The streaming rerank cache stores each ACTIVE point's float row as f16 (u16 bits) to HALVE the
+// resident cache (max_pts*d*2 vs *4): at the 30M final_runbook (max_pts=10.29M, d=100) that is
+// ~2.06GB vs ~4.12GB, which is what brings the peak anon under the streaming-track 8GB cap. f16 has
+// a 10-bit mantissa (~3 decimal digits) -- ample for a d=100 L2 RANKING on msturing embeddings; the
+// 1M f16==f32 gate MEASURES that this is recall-neutral. The QUERY stays f32; only the cached base
+// rows are f16, unpacked to f32 for the L2 (unpack is exact -- every f16 is representable in f32).
+
+/// Exact f16(bits) -> f32 (lossless). Scalar reference / fallback (ported from the `half` crate).
+#[inline]
+pub fn f16_to_f32(i: u16) -> f32 {
+    if i & 0x7fff == 0 { return f32::from_bits((i as u32) << 16); } // signed zero
+    let sign = (i & 0x8000) as u32;
+    let exp = (i & 0x7c00) as u32;
+    let man = (i & 0x03ff) as u32;
+    if exp == 0x7c00 { // Inf / NaN
+        let m = if man == 0 { 0x7f80_0000 } else { 0x7fc0_0000 | (man << 13) };
+        return f32::from_bits((sign << 16) | m);
+    }
+    let sign = sign << 16;
+    if exp == 0 { // subnormal
+        let e = (man as u16).leading_zeros() - 6;
+        let exp32 = (127 - 15 - e) << 23;
+        let man32 = (man << (14 + e)) & 0x007f_ffff;
+        return f32::from_bits(sign | exp32 | man32);
+    }
+    let unbiased = ((exp as i32) >> 10) - 15;
+    let exp32 = ((unbiased + 127) as u32) << 23;
+    f32::from_bits(sign | exp32 | (man << 13))
+}
+
+/// Round-to-nearest-even f32 -> f16(bits). Scalar PACK fallback (F16C used when present, below).
+#[inline]
+pub fn f32_to_f16(value: f32) -> u16 {
+    let x = value.to_bits();
+    let sign = x & 0x8000_0000;
+    let exp = x & 0x7f80_0000;
+    let man = x & 0x007f_ffff;
+    if exp == 0x7f80_0000 { // Inf / NaN
+        let nan = if man == 0 { 0 } else { 0x0200 | (man >> 13) };
+        return ((sign >> 16) | 0x7c00 | nan) as u16;
+    }
+    let half_sign = sign >> 16;
+    let half_exp = ((exp >> 23) as i32) - 127 + 15;
+    if half_exp >= 0x1f { return (half_sign | 0x7c00) as u16; } // overflow -> Inf
+    if half_exp <= 0 { // subnormal / underflow
+        if 14 - half_exp > 24 { return half_sign as u16; }
+        let man = man | 0x0080_0000; // hidden bit
+        let mut hm = man >> (14 - half_exp);
+        let round_bit = 1u32 << (13 - half_exp);
+        if (man & round_bit) != 0 && (man & (3 * round_bit - 1)) != 0 { hm += 1; }
+        return (half_sign | hm) as u16;
+    }
+    let half_exp = (half_exp as u32) << 10;
+    let half_man = man >> 13;
+    if (man & 0x1000) != 0 && (man & 0x2fff) != 0 {
+        ((half_sign | half_exp | half_man) + 1) as u16
+    } else {
+        (half_sign | half_exp | half_man) as u16
+    }
+}
+
+/// F16C+AVX pack: 8 f32 -> 8 f16 via `_mm256_cvtps_ph` (IEEE round-to-nearest-even, in hardware).
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "f16c,avx")]
+unsafe fn pack_f16_f16c(src: &[f32], dst: &mut [u16]) {
+    let n = src.len();
+    let mut k = 0usize;
+    while k + 8 <= n {
+        let v = _mm256_loadu_ps(src.as_ptr().add(k));
+        let h = _mm256_cvtps_ph::<0>(v); // 0 = round to nearest even
+        _mm_storeu_si128(dst.as_mut_ptr().add(k) as *mut __m128i, h);
+        k += 8;
+    }
+    while k < n { *dst.get_unchecked_mut(k) = f32_to_f16(*src.get_unchecked(k)); k += 1; }
+}
+
+/// Pack an f32 row into f16 bits (dispatch: F16C in hardware, else scalar round-to-nearest-even).
+#[inline]
+pub fn pack_f16(src: &[f32], dst: &mut [u16]) {
+    debug_assert_eq!(src.len(), dst.len());
+    #[cfg(target_arch = "x86_64")]
+    {
+        if is_x86_feature_detected!("f16c") && is_x86_feature_detected!("avx") {
+            unsafe { pack_f16_f16c(src, dst) };
+            return;
+        }
+    }
+    for k in 0..src.len() { dst[k] = f32_to_f16(src[k]); }
+}
+
+/// Scalar L2 between an f32 query and an f16-packed row (row unpacked exactly to f32).
+#[inline]
+pub fn l2_f16_scalar(q: &[f32], r: &[u16]) -> f32 {
+    let mut s = 0.0f32;
+    for k in 0..q.len() {
+        let e = q[k] - f16_to_f32(r[k]);
+        s += e * e;
+    }
+    s
+}
+
+/// F16C+AVX L2: load 8 f16 -> `_mm256_cvtph_ps` -> 8 f32, subtract from the f32 query, square, sum.
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "f16c,avx")]
+pub unsafe fn l2_f16_f16c(q: &[f32], r: &[u16]) -> f32 {
+    let n = q.len();
+    let mut acc = _mm256_setzero_ps();
+    let mut k = 0usize;
+    while k + 8 <= n {
+        let hv = _mm_loadu_si128(r.as_ptr().add(k) as *const __m128i); // 8 x u16
+        let rf = _mm256_cvtph_ps(hv);                                   // 8 x f32 (exact)
+        let qf = _mm256_loadu_ps(q.as_ptr().add(k));
+        let e = _mm256_sub_ps(qf, rf);
+        acc = _mm256_add_ps(acc, _mm256_mul_ps(e, e));
+        k += 8;
+    }
+    let mut tmp = [0f32; 8];
+    _mm256_storeu_ps(tmp.as_mut_ptr(), acc);
+    let mut s = tmp[0] + tmp[1] + tmp[2] + tmp[3] + tmp[4] + tmp[5] + tmp[6] + tmp[7];
+    while k < n { let e = q[k] - f16_to_f32(*r.get_unchecked(k)); s += e * e; k += 1; }
+    s
+}
+
+/// L2 between an f32 query and an f16-packed row (dispatch: F16C in hardware, else scalar).
+#[inline]
+pub fn l2_f16(q: &[f32], r: &[u16]) -> f32 {
+    #[cfg(target_arch = "x86_64")]
+    {
+        if is_x86_feature_detected!("f16c") && is_x86_feature_detected!("avx") {
+            return unsafe { l2_f16_f16c(q, r) };
+        }
+    }
+    l2_f16_scalar(q, r)
+}
+
+/// Self-test: the F16C L2 kernel must match the scalar f16 L2 (same stored bits) to a tiny epsilon,
+/// and hardware pack must agree with the scalar pack. Validates the streaming f16 rerank path.
+pub fn selftest_f16(d: usize) -> bool {
+    let mut seed = 0x2468_ace0_1357_bdf9u64;
+    let mut nf = || { seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1);
+        ((seed >> 32) as f32 / u32::MAX as f32 - 0.5) * 4.0 }; // ~U(-2,2): normal f16 range
+    for _ in 0..64 {
+        let q: Vec<f32> = (0..d).map(|_| nf()).collect();
+        let src: Vec<f32> = (0..d).map(|_| nf()).collect();
+        let mut packed = vec![0u16; d];
+        pack_f16(&src, &mut packed);
+        // hardware/scalar pack agreement (bit-exact over the normal range)
+        for k in 0..d { if packed[k] != f32_to_f16(src[k]) { return false; } }
+        // SIMD vs scalar L2 over the SAME stored bits (unpack path)
+        let a = l2_f16(&q, &packed);
+        let b = l2_f16_scalar(&q, &packed);
+        if (a - b).abs() > 1e-2 * (1.0 + b.abs()) { return false; }
+    }
+    true
+}
+
 /// Assign `x` to its `k` nearest pivots (ascending), writing cell ids into `out[..k]`.
 #[inline]
 pub fn assign_topk(x: &[i8], pivots: &[i8], d: usize, k: usize, out: &mut [u32]) {

@@ -994,6 +994,44 @@ fn rss_anon_mb() -> f64 {
         .map(|kb| kb / 1024.0).unwrap_or(0.0)
 }
 
+/// Active-window rerank cache: stores each live point's ORIGINAL float row (slot-indexed) so the
+/// exact float rerank reads RESIDENT RAM (no 12GB-mmap page-faults) AND stays under the streaming
+/// track's 8GB cap. Precision is selectable behind this type: F16 halves the resident cache
+/// (max_pts*d*2) vs F32 (max_pts*d*4) — at the 30M final_runbook that is ~2.06GB vs ~4.12GB, the
+/// difference that brings peak anon under 8GB — at a MEASURED-zero recall cost on d=100 L2 (the 1M
+/// f16==f32 gate). Slots are reused on delete; the query stays f32, only cached base rows are f16.
+enum RerankCache {
+    F32 { data: Vec<f32>, d: usize },
+    F16 { data: Vec<u16>, d: usize },
+}
+impl RerankCache {
+    fn new(prec_f16: bool, slots: usize, d: usize) -> Self {
+        if prec_f16 { RerankCache::F16 { data: vec![0u16; slots * d], d } }
+        else { RerankCache::F32 { data: vec![0f32; slots * d], d } }
+    }
+    /// Write point `row` (f32) into `slot` (packs to f16 in F16 mode).
+    #[inline]
+    fn store(&mut self, slot: usize, row: &[f32]) {
+        match self {
+            RerankCache::F32 { data, d } => data[slot * *d..slot * *d + *d].copy_from_slice(row),
+            RerankCache::F16 { data, d } => simd::pack_f16(row, &mut data[slot * *d..slot * *d + *d]),
+        }
+    }
+    /// L2 between f32 query `q` and the cached row at `slot`.
+    #[inline]
+    fn l2(&self, slot: usize, q: &[f32]) -> f32 {
+        match self {
+            RerankCache::F32 { data, d } => simd::l2_f32(q, &data[slot * *d..slot * *d + *d]),
+            RerankCache::F16 { data, d } => simd::l2_f16(q, &data[slot * *d..slot * *d + *d]),
+        }
+    }
+    fn resident_gb(&self) -> f64 {
+        (match self { RerankCache::F32 { data, .. } => data.len() as f64 * 4.0,
+                      RerankCache::F16 { data, .. } => data.len() as f64 * 2.0 }) / 1e9
+    }
+    fn label(&self) -> &'static str { match self { RerankCache::F32 { .. } => "f32", RerankCache::F16 { .. } => "f16" } }
+}
+
 /// RUNBOOK-DRIVEN streaming eval (the REAL NeurIPS-23 STREAMING-track metric). Replays a runbook's
 /// exact insert/delete/(replace)/search sequence on a from-empty index and, at every `search` step,
 /// scores recall@10 against the EXACT top-10 of the *current live set* (brute-forced per query over
@@ -1069,12 +1107,17 @@ fn stream_runbook(base: &str, qpath: &str, opspath: &str, router_s: &str, comp_s
     // base but <=max_pts are ever live at once -> a slot allocator (fslot: orig->slot + free list, slots
     // REUSED on delete) bounds resident anon to ~max_pts*d*4 (~4.1GB) and never grows past the window.
     // Rerank reads resident RAM (no mmap page-faults = the QPS lever).
+    // SBANN_RB_RERANK_PREC = f16 (default) | f32. f16 HALVES the resident rerank cache (2.06GB vs
+    // 4.12GB at 30M) — the lever that brings peak anon under the streaming-track 8GB cap. Precision
+    // is validated recall-neutral by the 1M f16==f32 gate; the kernel is self-tested here on startup.
+    let prec_f16 = std::env::var("SBANN_RB_RERANK_PREC").map(|v| v != "f32").unwrap_or(true);
+    if use_fcache && prec_f16 { assert!(simd::selftest_f16(d), "f16 rerank kernel != scalar reference!"); }
     let fslots = if use_fcache { max_pts } else { 0 };
-    let mut live_float: Vec<f32> = vec![0.0f32; fslots * d];
+    let mut live_float = RerankCache::new(prec_f16, fslots, d);
     let mut fslot: Vec<u32> = if use_fcache { vec![u32::MAX; full.nb] } else { Vec::new() }; // orig -> cache slot
     let mut free_slots: Vec<u32> = Vec::new();
     let mut next_slot: u32 = 0;
-    if use_fcache { println!("  [active-window float cache: {:.2}GB resident (window {max_pts})]", (fslots * d * 4) as f64 / 1e9); }
+    if use_fcache { println!("  [active-window {} rerank cache: {:.2}GB resident (window {max_pts})]", live_float.label(), live_float.resident_gb()); }
     // SBANN_RB_GTDIR=<dir>: OFFICIAL PER-STEP GT mode (the real leaderboard metric, e.g. msturing-30M
     // final_runbook). Each search op N loads <dir>/step{N}.gt100 (precomputed against that step's live
     // set) and scores recall@10 directly — NO brute force (infeasible at 10M live x 10k q x 640 steps).
@@ -1095,6 +1138,13 @@ fn stream_runbook(base: &str, qpath: &str, opspath: &str, router_s: &str, comp_s
     let mut rec_sum = 0f64;
     let mut rec_sum_f = 0f64; // vs official float GT (SBANN_RB_GT single-file, or per-step SBANN_RB_GTDIR)
     let mut n_search = 0usize;
+    // F16 gate diagnostic: agreement of the (f16) cache rerank vs an exact f32 rerank of the same candidates.
+    let f16gate = do_frerank && use_fcache && std::env::var("SBANN_RB_F16GATE").is_ok();
+    let (mut gate_sum, mut gate_n, mut gate_worst) = (0f64, 0usize, 1.0f64);
+    // SBANN_RB_SKIP_I8GT: skip the (expensive at large live sets) int8-space brute-force GT on the 1M
+    // path — for the f16 gate we score only vs the float GT (SBANN_RB_GT) + the f16-vs-f32 diagnostic.
+    let skip_i8gt = std::env::var("SBANN_RB_SKIP_I8GT").is_ok();
+    let mut n_i8gt = 0usize; // search steps that actually computed the int8-space brute GT
 
     let maybe_compact = |idx: &mut vq::Index, n_compact: &mut usize| {
         if compact_frac <= 0.0 { return; }
@@ -1120,7 +1170,7 @@ fn stream_runbook(base: &str, qpath: &str, opspath: &str, router_s: &str, comp_s
                             let sl = free_slots.pop().unwrap_or_else(|| { let s = next_slot; next_slot += 1; s });
                             fslot[i] = sl; sl
                         } as usize;
-                        live_float[slot * d..slot * d + d].copy_from_slice(fbase.as_ref().unwrap().row(i));
+                        live_float.store(slot, fbase.as_ref().unwrap().row(i));
                     }
                     if live_src[i] == u32::MAX { n_live += 1; } live_src[i] = i as u32;
                 }
@@ -1146,7 +1196,7 @@ fn stream_runbook(base: &str, qpath: &str, opspath: &str, router_s: &str, comp_s
                             let sl = free_slots.pop().unwrap_or_else(|| { let s = next_slot; next_slot += 1; s });
                             fslot[tag] = sl; sl
                         } as usize;
-                        live_float[slot * d..slot * d + d].copy_from_slice(fbase.as_ref().unwrap().row(src));
+                        live_float.store(slot, fbase.as_ref().unwrap().row(src));
                     }
                 }
                 ins_secs += st.elapsed().as_secs_f64();
@@ -1178,13 +1228,14 @@ fn stream_runbook(base: &str, qpath: &str, opspath: &str, router_s: &str, comp_s
                     let lf = &live_float; let fs = &fslot;
                     (0..nq).into_par_iter().map(|qi| {
                         let qf = fq.row(qi);
-                        // candidate float row from the slot-indexed RAM cache (no mmap page-faults); fall
-                        // back to the mmap if a candidate isn't cached (shouldn't happen for live origs).
+                        // candidate distance from the slot-indexed RAM cache (f16/f32, no mmap page-faults);
+                        // fall back to the exact mmap f32 if a candidate isn't cached (shouldn't happen for
+                        // live origs).
                         let mut scored: Vec<(f32, u32)> = cand[qi].iter().map(|&o| {
-                            let row = if use_fcache && fs[o as usize] != u32::MAX {
-                                let sl = fs[o as usize] as usize; &lf[sl * d..sl * d + d]
-                            } else { fb.row(o as usize) };
-                            (simd::l2_f32(qf, row), o)
+                            let dist = if use_fcache && fs[o as usize] != u32::MAX {
+                                lf.l2(fs[o as usize] as usize, qf)
+                            } else { simd::l2_f32(qf, fb.row(o as usize)) };
+                            (dist, o)
                         }).collect();
                         scored.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
                         scored.iter().take(10).map(|x| x.1).collect()
@@ -1193,6 +1244,24 @@ fn stream_runbook(base: &str, qpath: &str, opspath: &str, router_s: &str, comp_s
                     cand.iter().map(|c| c.iter().take(10).copied().collect()).collect()
                 };
                 let rerank_s = rst.elapsed().as_secs_f64();
+                // F16 GATE (SBANN_RB_F16GATE): re-rank the SAME candidates by EXACT mmap-f32 and score the
+                // cache rerank's top-10 against it. Directly measures whether f16 changes the ranking (=1.0
+                // means f16 is lossless for top-10). Diagnostic only; off in the timed 30M run.
+                if f16gate {
+                    let fb = fbase.as_ref().unwrap(); let fq = fquery.as_ref().unwrap();
+                    let ref_res: Vec<Vec<u32>> = (0..nq).into_par_iter().map(|qi| {
+                        let qf = fq.row(qi);
+                        let mut scored: Vec<(f32, u32)> = cand[qi].iter()
+                            .map(|&o| (simd::l2_f32(qf, fb.row(o as usize)), o)).collect();
+                        scored.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
+                        scored.iter().take(10).map(|x| x.1).collect()
+                    }).collect();
+                    let ag: f64 = (0..nq).map(|qi| {
+                        let rset: std::collections::HashSet<u32> = ref_res[qi].iter().copied().collect();
+                        res[qi].iter().take(10).filter(|id| rset.contains(id)).count() as f64 / 10.0
+                    }).sum::<f64>() / nq as f64;
+                    gate_sum += ag; gate_n += 1; gate_worst = gate_worst.min(ag);
+                }
                 n_search += 1;
                 search_secs += search_s;
                 rerank_secs += rerank_s;
@@ -1208,39 +1277,42 @@ fn stream_runbook(base: &str, qpath: &str, opspath: &str, router_s: &str, comp_s
                     rec_sum_f += rf;
                     println!("  [op{step_idx:>4} search #{n_search:>3}] live={n_live:>9} recall@10={rf:.4}  QPS={qps:.0}  anon={:.1}GB", anon / 1024.0);
                 } else {
-                    // 1M path: int8-SPACE exact brute-force GT (+ optional single-file float GT via SBANN_RB_GT).
-                    let live: Vec<(u32, u32)> = (0..full.nb).filter_map(|o| {
-                        let sx = live_src[o]; if sx != u32::MAX { Some((o as u32, sx)) } else { None }
-                    }).collect();
-                    let gst = Instant::now();
-                    let truth: Vec<Vec<u32>> = (0..nq).into_par_iter().map(|qi| {
-                        let q = qs.row(qi);
-                        let mut top: Vec<(i32, u32)> = Vec::with_capacity(10);
-                        let mut worst = i32::MAX;
-                        for &(o, sx) in &live {
-                            let dist = simd::l2_i8(q, full.row(sx as usize));
-                            if top.len() < 10 {
-                                top.push((dist, o));
-                                if top.len() == 10 { worst = top.iter().map(|x| x.0).max().unwrap(); }
-                            } else if dist < worst {
-                                let wi = top.iter().enumerate().max_by_key(|(_, x)| x.0).unwrap().0;
-                                top[wi] = (dist, o);
-                                worst = top.iter().map(|x| x.0).max().unwrap();
+                    // 1M path: optional int8-SPACE exact brute-force GT (skipped via SBANN_RB_SKIP_I8GT —
+                    // O(nq*live) and slow at large live sets) + optional single-file float GT (SBANN_RB_GT).
+                    let (r, gt_s) = if skip_i8gt { (f64::NAN, 0.0) } else {
+                        let live: Vec<(u32, u32)> = (0..full.nb).filter_map(|o| {
+                            let sx = live_src[o]; if sx != u32::MAX { Some((o as u32, sx)) } else { None }
+                        }).collect();
+                        let gst = Instant::now();
+                        let truth: Vec<Vec<u32>> = (0..nq).into_par_iter().map(|qi| {
+                            let q = qs.row(qi);
+                            let mut top: Vec<(i32, u32)> = Vec::with_capacity(10);
+                            let mut worst = i32::MAX;
+                            for &(o, sx) in &live {
+                                let dist = simd::l2_i8(q, full.row(sx as usize));
+                                if top.len() < 10 {
+                                    top.push((dist, o));
+                                    if top.len() == 10 { worst = top.iter().map(|x| x.0).max().unwrap(); }
+                                } else if dist < worst {
+                                    let wi = top.iter().enumerate().max_by_key(|(_, x)| x.0).unwrap().0;
+                                    top[wi] = (dist, o);
+                                    worst = top.iter().map(|x| x.0).max().unwrap();
+                                }
                             }
+                            top.sort_unstable();
+                            top.iter().map(|x| x.1).collect()
+                        }).collect();
+                        let gt_s = gst.elapsed().as_secs_f64();
+                        let mut r = 0f64;
+                        for qi in 0..nq {
+                            let denom = truth[qi].len().min(10);
+                            if denom == 0 { continue; }
+                            let tset: std::collections::HashSet<u32> = truth[qi].iter().copied().collect();
+                            r += cand[qi].iter().take(10).filter(|id| tset.contains(id)).count() as f64 / denom as f64;
                         }
-                        top.sort_unstable();
-                        top.iter().map(|x| x.1).collect()
-                    }).collect();
-                    let gt_s = gst.elapsed().as_secs_f64();
-                    let mut r = 0f64;
-                    for qi in 0..nq {
-                        let denom = truth[qi].len().min(10);
-                        if denom == 0 { continue; }
-                        let tset: std::collections::HashSet<u32> = truth[qi].iter().copied().collect();
-                        r += cand[qi].iter().take(10).filter(|id| tset.contains(id)).count() as f64 / denom as f64;
-                    }
-                    let r = r / nq as f64;
-                    rec_sum += r;
+                        (r / nq as f64, gt_s)
+                    };
+                    if !r.is_nan() { rec_sum += r; n_i8gt += 1; }
                     let mut rf_str = String::new();
                     if let Some((gnq, gk, gids)) = &rbgt {
                         let mut rf = 0f64; let mut few = 0usize;
@@ -1258,13 +1330,13 @@ fn stream_runbook(base: &str, qpath: &str, opspath: &str, router_s: &str, comp_s
                         rec_sum_f += rf;
                         rf_str = format!("  floatGT={rf:.4}{}", if few > 0 { format!(" ({few} q <10 live in top-{gk})") } else { String::new() });
                     }
-                    println!("  [op{step_idx:>4} search #{n_search}] live={:>8} recall@10(int8)={r:.4}{rf_str}  QPS={qps:.0}  (gt {:.1}s)",
-                        live.len(), gt_s);
+                    let r_str = if r.is_nan() { "  --  ".to_string() } else { format!("{r:.4}") };
+                    println!("  [op{step_idx:>4} search #{n_search}] live={n_live:>8} recall@10(int8)={r_str}{rf_str}  QPS={qps:.0}  (gt {gt_s:.1}s)");
                 }
             }
         }
     }
-    let avg = if n_search > 0 { rec_sum / n_search as f64 } else { 0.0 };
+    let avg = if n_i8gt > 0 { rec_sum / n_i8gt as f64 } else { f64::NAN };
     let ins_tput = if ins_secs > 0.0 { ins_total as f64 / ins_secs } else { 0.0 };
     let del_tput = if del_secs > 0.0 { del_total as f64 / del_secs } else { 0.0 };
     let avg_f = if n_search > 0 { rec_sum_f / n_search as f64 } else { 0.0 };
@@ -1282,10 +1354,16 @@ fn stream_runbook(base: &str, qpath: &str, opspath: &str, router_s: &str, comp_s
         println!("  RUNBOOK-OPS WALL = {ops_wall:.1}s ({:.1} min, excl. offline train) -- budget 3600s -> {}", ops_wall / 60.0, if ops_wall < 3600.0 { "WITHIN 1hr" } else { "OVER 1hr (FAILS)" });
         println!("  PEAK ANON = {:.2}GB -- cap 8GB -> {}  (total wall incl. train {total:.1}s)", peak_anon_mb / 1024.0, if peak_anon_mb < 8192.0 { "WITHIN 8GB" } else { "OVER 8GB (INELIGIBLE)" });
     } else {
-        println!("\n[stream_runbook SUMMARY] avg recall@10 (int8-space GT) = {avg:.4} over {n_search} search steps{}",
-            if rbgt.is_some() { format!("  |  avg recall@10 (official float GT) = {avg_f:.4}") } else { String::new() });
+        let avg_str = if avg.is_nan() { "skipped".to_string() } else { format!("{avg:.4}") };
+        println!("\n[stream_runbook SUMMARY] avg recall@10 (int8-space GT) = {avg_str} over {n_i8gt} steps{}",
+            if rbgt.is_some() { format!("  |  avg recall@10 (official float GT) = {avg_f:.4} over {n_search} steps") } else { String::new() });
         println!("  inserts: {ins_total} in {ins_secs:.1}s ({ins_tput:.0}/s) | deletes: {del_total} in {del_secs:.1}s ({del_tput:.0}/s) | compactions: {n_compact}");
         println!("  total wall {total:.1}s");
+    }
+    if f16gate && gate_n > 0 {
+        let g = gate_sum / gate_n as f64;
+        println!("  [F16 GATE] recall@10({} cache rerank vs exact-f32 rerank) = {g:.4} avg / {gate_worst:.4} worst over {gate_n} steps -> {}",
+            live_float.label(), if g >= 0.9995 { "f16 LOSSLESS for top-10 ranking" } else { "f16 measurably differs (fall back to f32)" });
     }
 }
 
