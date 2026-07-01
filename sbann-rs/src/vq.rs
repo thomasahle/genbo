@@ -2094,9 +2094,17 @@ impl Index {
     /// are already reflected (tombstoned slots/ins_orig are skipped). Falls back to the main path alone
     /// when nothing was inserted.
     pub fn search_stream(&self, ds: &I8Bin, q: &[i8], p: usize, t: usize, k: usize) -> Vec<u32> {
+        // SBANN_PROFILE splits the deep-t hotspot: ROUTE (probe) / SCAN (scan_pool = apq4 scan + bounded
+        // collect) / RERANK (narrow + rerank_contig_pairs = the exact int8 rerank's O(t) raw-row reads).
+        let prof = PROFILE.load(std::sync::atomic::Ordering::Relaxed);
+        let t_r = if prof { Some(std::time::Instant::now()) } else { None };
         let cells = self.router.probe(q, p);
+        if let Some(x) = t_r { PROF_ROUTE_NS.fetch_add(x.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed); }
+        let t_s = if prof { Some(std::time::Instant::now()) } else { None };
         let ctx = self.comp.prepare_query(q);
         let mut pool = self.scan_pool(ds, q, &cells, &ctx, t);
+        if let Some(x) = t_s { PROF_SCAN_NS.fetch_add(x.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed); }
+        let t_k = if prof { Some(std::time::Instant::now()) } else { None };
         if self.a0 >= DEDUP_A0.load(std::sync::atomic::Ordering::Relaxed) || POOLDEDUP.load(std::sync::atomic::Ordering::Relaxed) {
             dedup_pool_by_orig(&mut pool, &self.slot_orig);
         }
@@ -2117,6 +2125,7 @@ impl Index {
         for (_, orig) in cand {
             if seen.insert(orig) { out.push(orig); if out.len() == k { break; } }
         }
+        if let Some(x) = t_k { PROF_RERANK_NS.fetch_add(x.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed); }
         out
     }
 

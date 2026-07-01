@@ -1156,9 +1156,22 @@ fn stream_runbook(base: &str, qpath: &str, opspath: &str, router_s: &str, comp_s
                 idx.finalize_inserts();
                 // int8 index -> top-`rerank_k` candidates/query, then (optional) exact FLOAT rerank -> top-10.
                 let sst = Instant::now();
+                if std::env::var("SBANN_PROFILE").is_ok() {
+                    vq::PROF_ROUTE_NS.store(0, std::sync::atomic::Ordering::Relaxed);
+                    vq::PROF_SCAN_NS.store(0, std::sync::atomic::Ordering::Relaxed);
+                    vq::PROF_RERANK_NS.store(0, std::sync::atomic::Ordering::Relaxed);
+                }
                 let cand: Vec<Vec<u32>> = (0..nq).into_par_iter().map(|qi| idx.search_stream(&full, qs.row(qi), p, t, rerank_k)).collect();
                 let search_s = sst.elapsed().as_secs_f64();
                 let qps = nq as f64 / search_s;
+                if std::env::var("SBANN_PROFILE").is_ok() {
+                    let r = vq::PROF_ROUTE_NS.load(std::sync::atomic::Ordering::Relaxed) as f64;
+                    let s = vq::PROF_SCAN_NS.load(std::sync::atomic::Ordering::Relaxed) as f64;
+                    let k = vq::PROF_RERANK_NS.load(std::sync::atomic::Ordering::Relaxed) as f64;
+                    let tot = (r + s + k).max(1.0);
+                    println!("    [PROFILE cand-gen split] route {:.0}% | scan_pool(scan+collect) {:.0}% | rerank_contig(int8 raw-row reads) {:.0}%  (sum-of-threads ms: route {:.0} scan {:.0} rerank {:.0})",
+                        100.0*r/tot, 100.0*s/tot, 100.0*k/tot, r/1e6, s/1e6, k/1e6);
+                }
                 let rst = Instant::now();
                 let res: Vec<Vec<u32>> = if do_frerank {
                     let fb = fbase.as_ref().unwrap(); let fq = fquery.as_ref().unwrap();
