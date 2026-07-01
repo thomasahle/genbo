@@ -3325,6 +3325,30 @@ P198. (*** ANISOTROPIC PARTITIONING = NULL/NEGATIVE: best variant 1.51x, WORSE t
     2image for us. <1x needs a better rank-PRESERVING distance estimate (fewer survivors) at ~current bytes -- the one
     genuinely untried code angle (norm-corrected/RaBitQ-style ADC), since aniso and naive 2x-bits are both refuted.
 
+P200. (*** RANK-PRESERVING ESTIMATOR: NULL on <1x but a REAL primary-metric win -- NormPq (norm-rescaled ADC, +4B/vec) cuts the survivor pool ~1.8x (540->300 for recall 0.90), the FIRST thing to beat apq4's rank floor. But ratio gets WORSE (1.75x vs 1.51x): the gamma-rescale needs full-range i16 accumulation, which forfeits fastscan2's int8-SATURATING speed (-33% scan) > the pool-cut benefit (+28%). Even gamma-free-in-fastscan2 floors ~1.35x -- the pool-cut saves ~13us of a ~135us query; the ~110us SCAN is untouched by ANY estimator. ***)
+    NormPq compressor (vq.rs COMP_TAG_NORMPQ=3, SBANN_COMP=apq4n, selftest_normpq, clean in the Compressor abstraction):
+    apq4_ip x (||x||/||x_hat||) de-biases PQ norm-shrinkage that under-ranks large-norm MIPS winners. Screened offline
+    vs FLOAT-IP GT: NormPq 0.9024@t300 / 0.9058@324 vs apq4 CAPS at 0.872@pool300 (needs t~540) -> ~1.8x survivor cut,
+    i8-exact=1.0@t40 confirms the pool bottleneck is purely code approximation. RaBitQ screened (already in engine):
+    50B(2-bit) far worse 0.33@t40, only 100B(2x) near-perfect -> rotation buys nothing <=50B (confirms P144/145).
+    Higher-res PQ refuted (P145/195). *** Interleaved vs ScaNN ~8150: apq4-champ(fastscan2 p54t10) 5350=1.51x |
+    NormPq(i16 p54t6) 4640=1.75x. Phase(NormPq): scan 70% / route 17% / int8-refine 7.5% (pool-cut shrank it) / float 6%.
+    Attribution: apq4-fastscan2 3922 -> apq4-i16 2635 (i16 scan -33%) -> NormPq-i16 3383 (pool-cut +28%): +28 can't
+    recover -33. *** VERDICT: rank-preserving-code lever EXHAUSTED. The estimator quality was NEVER the ratio wall --
+    the SCAN is (64-70% of query, memory-bound scattered PQ blocks vs ScaNN's cache-resident SoA-AH). A tighter code
+    only shrinks the small refine and, worse, forces the slow scan regime. <1x needs the SoA-AH SCAN-LAYOUT co-design,
+    which P193 already refuted at recall>=0.90 (denser leaves -> more candidates). Branch rank-preserving-code c7c75cb.
+    *** ============ DEFINITIVE CLOSE (15 experiments P185-P200) ============
+    25x(mirage) -> 2.22x(P190 true same-hw) -> 1.51x loaded/~1.19-1.35x quiet (P197), ALL recall-exact. WINS that BEAT
+    ScaNN: route VNNI (P196), rerank cascade float 464->16 (P194), scan kernel compute 543>368 (P195). EVERY lever
+    exhausted: routing granularity (P192), scan SoA layout (P193 refuted at recall), route (P196 won), rerank refine
+    (P199 recall-locked), aniso partitioning (P198 neg), aniso codes (P182 neg), rank-preserving estimator (P200 cuts
+    survivors 1.8x but scan-trapped). THE WALL: ScaNN's 100B/vec anisotropic-AH codebook + cache-resident SoA scan give
+    it BOTH dense-useful-candidates (fast scan) AND tight ranking (few survivors) SIMULTANEOUSLY; our 50B/vec codes buy
+    one only by losing the other (tighter estimate -> slower i16 scan; denser leaves -> more candidates; aniso doesn't
+    transfer to OOD text-vs-image). <1x = the full ScaNN codebook+layout CO-DESIGN (multi-week, uncertain -- aniso's
+    non-transfer to our OOD is a real risk), NOT any single lever. Honest architecture ceiling: ~1.2x quiet / ~1.5x loaded.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
