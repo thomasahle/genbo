@@ -3052,6 +3052,30 @@ P185. (*** THE aopq-FAITHFULNESS QUESTION ANSWERED (agent, branch aniso-vq-faith
       NOT by a coarse-and-rank-preserving code from the loss. The bounded lever that DOES survive: fold faithful
       anisotropy into the FINE-code IP path (+0.013 at rr=512, free at scan time). Branch aniso-vq-faithful; SBANN_ANISO_CD.
 
+P186. (*** STRATEGIC CLOSE: bounded attempts EXHAUSTED across config + tuning + a FAITHFUL ScaNN anisotropic-VQ impl. Anisotropic-VQ CORRECTED our own artifact (real +0.05-0.08 IP lever) but no coarse rank-preservation. Moat = full AH2 SYSTEM; honest limit reached. ***)
+    The P185 anisotropic-VQ result is the deepest point we reached, and it CORRECTS an earlier conclusion: P179/P182/
+    P184's "eta is dead / anisotropic doesn't help" was an IMPLEMENTATION ARTIFACT -- our aopq/SBANN_ETA applied the
+    parallel-residual penalty PER-SUBSPACE (tiny slice norm ~dpb/d=0.05 -> near-inert), NOT ScaNN's full-vector
+    coordinate-descent loss (Guo 2020, Thm 4.2 with cross-subspace coupling). The fresh agent implemented the FAITHFUL
+    version (SBANN_ANISO_CD): eta now bites, and it is a REAL, correctly-signed lever on IP (text2image): +0.08 over
+    isotropic / +0.05 over crude at shallow reorder rr=512 (peak eta~8, +OPQ rotation ~+0.03). On L2 (msturing) it's
+    neutral at eta~4 and hurts as eta grows (parallel weighting is wrong for L2). *** BUT NO BREAKTHROUGH: even the
+    best coarse config reaches only 0.67/0.77 @ rr=512/1024 and still needs rr~16384 for 0.94 (~16-32x the fine
+    code's rr~512). Rank-preservation stays BIT-RATE-bound; the anisotropic loss shifts the curve up ~0.05-0.08 at
+    shallow rr without changing its shape. So a "coarse-AND-rank-preserving code from the loss" does NOT exist, even
+    with ScaNN's actual loss. *** THE REFRAME (key): ScaNN does NOT use coarse-rank-preserving codes -- it uses FINE
+    codes (m~100+) made affordable by a cache-friendly SoA 4-bit FastScan (WALL 1), + anisotropic-VQ as a secondary
+    boost. Our apq4 is ALREADY FastScan-like (blocked, 4-bit, in-register i8 LUT) and its scan is MEMORY-bound at
+    scale (P183 USE512 +7%) -- the working set exceeds cache, which a layout tweak within our design won't fix.
+    So the moat is the FULL AH2 SYSTEM (SoA layout + fine codes + anisotropic-VQ), a multi-day+ from-papers rebuild,
+    and our engine is already fairly optimized -> uncertain payoff. *** HONEST LIMIT: bounded autonomous attempts are
+    EXHAUSTED (config, tuning, proper anisotropic-VQ all tested with data). SURVIVING MARGINAL LEVER: faithful aniso
+    on the FINE-code IP path = +0.013 recall @ rr=512, free at scan time (could nudge OOD ~1732 slightly, not off the
+    bottom). Real deliverable kept: SBANN_ANISO_CD (correct ScaNN anisotropic-VQ) on branch aniso-vq-faithful (601a02b).
+    Top-3 = the full AH2 rebuild + likely a better router = a scoped multi-day project needing the user's greenlight +
+    sustained capacity. FINAL: streaming eligible ~0.77, OOD QPS@90% ~1732; did not top either; wall characterized to
+    the algorithm level with data at every rung.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
