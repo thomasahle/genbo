@@ -36,6 +36,22 @@ pub static FASTSCAN2: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicB
 /// FINDINGS P187) is replaced by a SIMD threshold-compare that only touches slot_orig for survivors.
 /// Gated to the NON-residq, non-pool-dedup path (see scan_rerank); falls back to scan_pool otherwise.
 pub static FUSEDTOPK: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+/// SBANN_ANISO_PART (P198): ANISOTROPIC (score-aware) COARSE PARTITIONING. At BUILD, each datapoint's
+/// primary (and multi-) cell assignment minimizes the ScaNN parallel-weighted residual loss
+///   L(x, c) = ‖r_perp‖² + eta·‖r_par‖²  =  ‖x-c‖² + (eta-1)·(r·x̂)²,   x̂ = x/‖x‖,  r = x-c
+/// instead of plain L2 (eta=1). Higher eta weights the residual component PARALLEL to the datapoint
+/// direction, which is the component that most distorts <q,x> for queries q aligned with x (its true
+/// MIPS neighbours). Hypothesis: concentrates true high-IP neighbours into fewer cells -> fewer probed
+/// candidates + fewer survivors at fixed recall. Distinct from anisotropic CODES (apq4 eta). BUILD-ONLY
+/// (assign()); query routing (probe) is unchanged. eta from SBANN_ANISO_ETA (bits below).
+pub static ANISO_PART: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+/// SBANN_ANISO_EM (P198): additionally make the TREEEM tree-Lloyd E-step leaf assignment anisotropic, so
+/// the CENTROIDS (not just membership) reflect the parallel-weighted objective (option b: closer to a
+/// full anisotropic Lloyd). Requires SBANN_TREEEM>0. Reads the same ANISO_ETA.
+pub static ANISO_EM: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+/// SBANN_ANISO_ETA: parallel-residual weight (f32 bits) for anisotropic partitioning. Default 4.0.
+pub static ANISO_ETA: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0x40800000); // 4.0f32
+#[inline] pub fn aniso_eta() -> f32 { f32::from_bits(ANISO_ETA.load(std::sync::atomic::Ordering::Relaxed)) }
 /// IDEA #4: build a SECOND finer 8-bit refine code (pq::ResidPq) in slot order and use it to refine
 /// the 4-bit-ADC survivor ranking before the exact raw rerank, so far fewer raw vectors are read.
 /// Set from SBANN_RESID. SBANN_RESID_DPB picks the refine subspace size (default 2 => m=d/2 bytes/vec).
@@ -864,6 +880,12 @@ impl HierRouter {
         // a MUCH smaller beam than a query — this is the structure accelerating its own EM (~10-50x cheaper
         // E-step vs using the full query beams, with negligible assignment loss the M-step averages out).
         let em_beam: usize = std::env::var("SBANN_TREEEM_BEAM").ok().and_then(|s| s.parse().ok()).unwrap_or(8);
+        // ANISO_EM (P198): make the E-step leaf assignment anisotropic (parallel-weighted), so the M-step
+        // means (centroids) reflect the score-aware partition, not just membership. xn is UNIT-norm (norm_f32)
+        // so x̂=x and r·x̂ = 1 - c·x; loss = ‖x-c‖² + (eta-1)(1-c·x)². Only the FINAL leaf pick is anisotropic
+        // (upper-level beam pruning stays L2 — the beam is wide enough that the aniso-optimal leaf is inside).
+        let aniso_em = ANISO_EM.load(std::sync::atomic::Ordering::Relaxed);
+        let em_w = aniso_eta() - 1.0;
         for r in 0..em_rounds {
             let t_em = std::time::Instant::now();
             // E-step: nearest leaf via SMALL-beam descent over current float centroids
@@ -877,7 +899,16 @@ impl HierRouter {
                     let fan = counts[l] / counts[l - 1];
                     let mut nd: Vec<(f32, u32)> = Vec::with_capacity(sel.len() * fan);
                     for &p in &sel { for c in (p as usize * fan)..((p as usize + 1) * fan) { nd.push((simd::l2_f32(x, &centf_lv[l][c * d..c * d + d]), c as u32)); } }
-                    if l == levels - 1 { return nd.iter().min_by(|a, b| a.0.total_cmp(&b.0)).map(|&(_, c)| c).unwrap_or(0); }
+                    if l == levels - 1 {
+                        if aniso_em {
+                            return nd.iter().map(|&(l2, c)| {
+                                let cc = &centf_lv[l][c as usize * d..c as usize * d + d];
+                                let rpar = 1.0 - simd::dot_f32(x, cc); // (x-c)·x̂, x unit-norm
+                                (l2 + em_w * rpar * rpar, c)
+                            }).min_by(|a, b| a.0.total_cmp(&b.0)).map(|(_, c)| c).unwrap_or(0);
+                        }
+                        return nd.iter().min_by(|a, b| a.0.total_cmp(&b.0)).map(|&(_, c)| c).unwrap_or(0);
+                    }
                     let b = beams[l].min(em_beam).min(nd.len());
                     if b > 0 && b < nd.len() { nd.select_nth_unstable_by(b - 1, |a, b| a.0.total_cmp(&b.0)); nd.truncate(b); }
                     sel = nd.iter().map(|&(_, c)| c).collect();
@@ -1141,6 +1172,52 @@ impl HierRouter {
             for &(_, f) in &loss[..take] { out.push(f); }
         }
     }
+
+    /// ANISOTROPIC PRIMARY assignment (P198, SBANN_ANISO_PART). Gathers the SAME bounded finest-candidate
+    /// set as route_fine (L2 beam), then picks the a0 cells minimizing the ScaNN parallel-weighted loss
+    ///   L = ‖x-c‖² + (eta-1)·(r·x̂)²,   x̂ = x/‖x‖,  r = x-c  (in i8² units; both qn & cf are i8*127-scale).
+    /// r·x̂ = ‖x‖ - (c·x)/‖x‖, so we need one i8 dot c·x per candidate. eta=1 reduces exactly to route_fine.
+    /// This changes cell MEMBERSHIP (anisotropic partitioning); centroids are unchanged unless SBANN_ANISO_EM.
+    fn route_fine_aniso(&self, qn: &[i8], a0: usize, eta: f32, out: &mut Vec<u32>) {
+        let d = self.d;
+        let cf = &self.cent[self.levels - 1]; // finest centroids
+        let mut fd: Vec<(i32, u32)> = Vec::new();
+        self.gather_fine(qn, &mut fd);
+        out.clear();
+        if fd.is_empty() { return; }
+        // PRE-FILTER to the top-K nearest by L2 before the scalar anisotropic dots (loss is L2-dominated:
+        // (r·x̂)² <= ‖r‖² = l2, so for bounded eta a candidate outside top-K-by-l2 can't win). Same trick
+        // as route_fine_soar. K scales with a0; 512 floor (a bit wider than SOAR's 256 since ALL a0 picks
+        // are anisotropic here, not just the spills).
+        let kcap = (a0 * 128).max(512);
+        if fd.len() > kcap { fd.select_nth_unstable(kcap - 1); fd.truncate(kcap); }
+        let qsq = simd::sqnorm_i8(qn) as f32;
+        let qnorm = qsq.sqrt().max(1e-9);
+        let inv = 1.0 / qnorm;
+        let w = eta - 1.0;
+        #[cfg(target_arch = "x86_64")]
+        let avx = std::is_x86_feature_detected!("avx2");
+        #[cfg(not(target_arch = "x86_64"))]
+        let avx = false;
+        let mut loss: Vec<(f32, u32)> = Vec::with_capacity(fd.len());
+        for &(l2, f) in fd.iter() {
+            let cfj = &cf[f as usize * d..f as usize * d + d];
+            let dot = if avx {
+                #[cfg(target_arch = "x86_64")]
+                unsafe { simd::dot_i8_avx2(qn, cfj) }
+                #[cfg(not(target_arch = "x86_64"))]
+                { qn.iter().zip(cfj).map(|(&a, &b)| a as i32 * b as i32).sum::<i32>() }
+            } else { qn.iter().zip(cfj).map(|(&a, &b)| a as i32 * b as i32).sum::<i32>() };
+            // r·x̂ = ‖qn‖ - (c·qn)/‖qn‖
+            let rpar = qnorm - dot as f32 * inv;
+            loss.push((l2 as f32 + w * rpar * rpar, f));
+        }
+        let take = a0.min(loss.len());
+        if take > 0 {
+            loss.select_nth_unstable_by(take - 1, |a, b| a.0.total_cmp(&b.0));
+            for &(_, f) in &loss[..take] { out.push(f); }
+        }
+    }
 }
 
 impl Router for HierRouter {
@@ -1148,7 +1225,10 @@ impl Router for HierRouter {
     fn assign(&self, row: &[i8], a0: usize, out: &mut Vec<u32>) {
         let mut qn = [0i8; 256];
         simd::normalize_i8(row, &self.mu, &mut qn[..self.d]);
-        if self.soar > 0.0 && a0 >= 2 {
+        if ANISO_PART.load(std::sync::atomic::Ordering::Relaxed) {
+            // anisotropic (score-aware) partitioning: ALL a0 picks minimize the parallel-weighted loss.
+            self.route_fine_aniso(&qn[..self.d], a0, aniso_eta(), out);
+        } else if self.soar > 0.0 && a0 >= 2 {
             self.route_fine_soar(&qn[..self.d], a0, self.soar, out);
         } else {
             self.route_fine(&qn[..self.d], a0, out);

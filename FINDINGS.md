@@ -3390,6 +3390,60 @@ P197. (*** STACK ALL THREE SESSION LEVERS (route-VNNI + cascade K=16 + FUSEDTOPK
     Champion invocation: SBANN_IP=1 SBANN_FASTSCAN2=1 SBANN_PREFETCH=1 SBANN_ROUTE_VNNI=1 SBANN_CASCADE=1
     SBANN_CASCADE_K=16 SBANN_FUSEDTOPK=1 SBANN_FLOAT_RERANK=1  p=54 t=10 (or p=58 t=8).
 
+P198. (*** LEARNED ANISOTROPIC (score-aware) PARTITIONING: the last untried lever -- NULL/NEGATIVE. Does NOT
+    move toward <1x; the best anisotropic variant is 1.51x vs ScaNN, WORSE than the 1.46x isotropic-SOAR
+    champion. Branch aniso-partition off combined-primitives. ***)
+    HYPOTHESIS (why tried): the ~1.45x residual is scan-density + survivor-count, both downstream of routing:
+    to hit recall 0.90 we scan ~10k candidates from many small cells because apq4 ranks loosely AND the true
+    top-10 spread across many cells. ScaNN partitions with a score-aware (anisotropic) loss that weights the
+    residual PARALLEL to the datapoint direction, concentrating high-IP neighbours into fewer cells. Our router
+    is plain isotropic hierk. HOPE: aniso partitioning -> fewer/denser probed cells for 0.90 -> fewer candidates
+    AND fewer survivors, WITHOUT adding code bits (dodges the P195 richer-codes-cost-proportional-scan wall).
+    (a) WHAT WAS IMPLEMENTED (src/vq.rs, method on the HierRouter partitioner, NOT scattered in hot paths):
+      route_fine_aniso() (vq.rs ~1145): gathers the same L2 finest-candidate beam as route_fine, then picks the
+      a0 cells minimizing the ScaNN parallel-weighted loss  L = ‖x-c‖² + (eta-1)·(r·x̂)²,  x̂=x/‖x‖, r=x-c
+      (r·x̂ = ‖x‖ - (c·x)/‖x‖, one i8 dot/cand via simd::dot_i8_avx2 with is_x86_feature_detected+scalar fallback).
+      eta=1 reduces EXACTLY to plain L2 top-a0. Gated SBANN_ANISO_PART + SBANN_ANISO_ETA (BUILD-only, assign();
+      query routing unchanged). OPTION (a) = this reassignment on the COARSE level (finest Kf cells), isotropic
+      k-means centroids. OPTION (b, SBANN_ANISO_EM) additionally makes the TREEEM tree-Lloyd E-step leaf pick
+      anisotropic (unit-norm xn: L=‖x-c‖²+(eta-1)(1-c·x)²) so the CENTROIDS reflect the score-aware partition,
+      not just membership. Champion structure held fixed: hierk C0=768 b0=96 Kf=16384 a0=3 apq4, TREEEM=2.
+    (b) DID IT REDUCE candidates-for-0.90 / survivor-count?  NO. At FIXED p=54 higher eta DOES make probed cells
+      sparser (avg cand/q: SOAR 10264, opt-a eta2 8993, eta4 7888, eta8 7217; blocks/cell 11.9->8.3) -- but that
+      is because anisotropy scatters the true neighbours OUT of the cells the (OOD text) query routes to, so
+      recall@fixed-p CRATERS monotonically (build-time int8 p54t10: iso-eta1 0.8695, eta2 0.8580, eta4 0.8457,
+      eta8 0.8369; float-rerank same rank order). To recover 0.90 you must probe MANY more cells, and net
+      candidates-at-0.90 is FLAT-TO-WORSE: SOAR 10264@p54 -> eta2 11960@p72 -> eta4 12215@p84 -> eta8 12758@p96;
+      survivors t_surv=p*10 RISE 540->960. Best variant em_e4 (opt-b eta4) 10404@p66, still not below SOAR's
+      10264@p54, survivors 660>540. So the density hypothesis is REFUTED for OOD: no candidate or survivor win.
+    (c) QPS@recall0.90 + RATIO (5-round INTERLEAVED, taskset -c 0, best-of-5, ScaNN(56,78) back-to-back same
+      window; ScaNN med 8348 QPS @ 0.9032):
+        SOAR-champ (isotropic)         p54 recall 0.9032  QPS med 5820  => 1.459x   (reproduces P197's 1.457x)
+        em_e4  best ANISO (opt-b eta4) p66 recall 0.9052  QPS med 5484  => 1.510x   <-- WORSE than champion
+        e1     eta=1 control (L2 top3) p62 recall 0.9024  QPS med 5156  => 1.647x
+      Best eta = as-low-as-possible; anisotropy is monotonically worse the higher eta goes (opt-a p@0.90/QPS:
+      eta2 72/4757, eta4 ~85/4722, eta8 96/2485). NOTE opt-b (aniso CENTROIDS, em_e4 1.51x) BEATS the naive
+      L2-top3 control (e1 1.65x) -- score-aware centroids improve routing over redundant L2 multi-assign -- but
+      it does NOT reach isotropic SOAR (i0 + ORTHOGONAL spilled coverage, 1.46x). SOAR's orthogonal spill is a
+      better use of a0=3 than either L2-top3 or anisotropic-top3 for this OOD workload.
+    (d) VERDICT: anisotropic PARTITIONING does NOT move us toward <1x. TRUE best ratio reached = 1.51x (opt-b
+      eta4), vs the 1.459x isotropic-SOAR champion -- i.e. anisotropy is a small NEGATIVE (~+3.5% ratio). It is
+      the last config-lever, and it is exhausted like the rest: the 1.45x wall is the apq4 CODEBOOK (scan-density
+      + survivor-count), unchanged. This mirrors P182 (anisotropic CODES eta had ZERO effect on IP rank-
+      preservation) -- now confirmed for anisotropic PARTITIONING too: the MIPS parallel-weighting assumption
+      (query aligned with its true-neighbour datapoints) does NOT hold on OOD text2image (text query vs image
+      base), so weighting the datapoint-parallel residual actively hurts routing coverage. The isotropic
+      orthogonality-spread lever (SOAR) already extracts the available partition-coverage gain.
+    HONEST CAVEATS: (1) box loaded 30-46 all session -> absolute QPS suppressed; the 1.459/1.510x are 5-round
+      interleaved same-window (contention-robust), SOAR-champ 1.459x matches P197's 1.457x = clean anchor.
+      (2) 1M only, single-thread taskset -c 0, free>28GB checked pre-build. (3) recall vs FLOAT-IP GT
+      (t2i1m-floatgt), float rerank on. (4) swept eta in {1,2,4,8} x {opt-a, opt-b}; finer eta won't cross
+      SOAR (gap consistent across 5 rounds + refuted by candidate counts). Code: src/vq.rs route_fine_aniso +
+      ANISO_PART/ANISO_EM/ANISO_ETA statics, src/main.rs env wiring; branch aniso-partition. Artifacts:
+      scratchpad/{aniso_build.sh, aniso_build_em.sh, aniso_sweep.sh, aniso_h2h_final.sh, aniso_e{1,2,4,8}.idx,
+      aniso_em_e{2,4}.idx, aniso_h2h_final.log}. Build: SBANN_ANISO_PART=1 SBANN_ANISO_ETA=E [SBANN_ANISO_EM=1]
+      SBANN_TREEEM=2 SBANN_C0=768 SBANN_B0=96, hierk apq4 3 16384.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT

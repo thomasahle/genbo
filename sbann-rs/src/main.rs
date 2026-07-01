@@ -1337,6 +1337,18 @@ fn main() {
     // before the expensive float reorder. Only meaningful with SBANN_FLOAT_RERANK.
     if std::env::var("SBANN_CASCADE").is_ok() { vq::CASCADE.store(true, std::sync::atomic::Ordering::Relaxed); }
     if let Ok(s) = std::env::var("SBANN_CASCADE_K") { if let Ok(v) = s.parse::<usize>() { vq::CASCADE_K.store(v, std::sync::atomic::Ordering::Relaxed); } }
+    // SBANN_ANISO_PART (P198): anisotropic (score-aware) coarse partitioning at BUILD. SBANN_ANISO_ETA sets
+    // the parallel-residual weight (default 4). SBANN_ANISO_EM=1 also makes the TREEEM E-step anisotropic
+    // (centroids reflect the score-aware partition, not just membership; requires SBANN_TREEEM>0).
+    if let Ok(s) = std::env::var("SBANN_ANISO_ETA") { if let Ok(v) = s.parse::<f32>() { vq::ANISO_ETA.store(v.to_bits(), std::sync::atomic::Ordering::Relaxed); } }
+    if std::env::var("SBANN_ANISO_PART").is_ok() {
+        vq::ANISO_PART.store(true, std::sync::atomic::Ordering::Relaxed);
+        println!("  [ANISO_PART: anisotropic coarse partitioning, eta={}]", vq::aniso_eta());
+    }
+    if std::env::var("SBANN_ANISO_EM").is_ok() {
+        vq::ANISO_EM.store(true, std::sync::atomic::Ordering::Relaxed);
+        println!("  [ANISO_EM: anisotropic TREEEM E-step, eta={}]", vq::aniso_eta());
+    }
     if std::env::var("SBANN_CASC_SORT").is_ok() { vq::CASC_SORT.store(true, std::sync::atomic::Ordering::Relaxed); }
     if let Ok(s) = std::env::var("SBANN_CASC_DIM") { if let Ok(v) = s.parse::<usize>() { vq::CASC_DIM.store(v, std::sync::atomic::Ordering::Relaxed); } }
     match a.get(1).map(String::as_str) {
