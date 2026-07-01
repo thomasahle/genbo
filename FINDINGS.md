@@ -2938,7 +2938,7 @@ P181. (*** CORRECTION to P180 + DEFINITIVE CLOSE: the "rotation reaches 0.90 coa
     +0.007). The 10M crater (0.807) is a SCALE effect (10x distractors); rotation's +0.005 cannot fix a -0.09 gap.
     So OPQ rotation does NOT meaningfully help IP either -> P180 REFUTED at matched scale. QPS@90% via p*m at 0.90
     (1M): apq4-dpb2 250x100=25000 (baseline) | aopq-dpb2 25000 (rotation adds nothing, hair worse) | apq4-dpb5
-    1000x40=40000 (loses 1.6x) | aopq-dpb5 950x40=38000 (loses 1.5x) | aopq-dpb4 ~650x50=32500 est (loses). NO coarse
+    1000x40=40000 (loses 1.6x) | aopq-dpb5 950x40=38000 (loses 1.5x) | aopq-dpb4 ACTUAL p~505x50=25250 = TIE with dpb=2 (closest coarse config, but a tie + rotation overhead = no win; ood2 final ledger 2fc5289). NO coarse
     config beats dpb=2 -- reaching 0.90 needs more probes than the coarser code saves. (dpb=3 invalid for d=200, m
     non-integer.) *** DEFINITIVE: every tuning lever -- dpb coarsening, OPQ rotation, anisotropic eta, pool-depth,
     collect, K, p -- is DEAD on BOTH tracks. dpb=2 is the OOD optimum; OOD QPS@90% STAYS 1732 (bottom tier). The moat
