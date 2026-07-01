@@ -2769,6 +2769,24 @@ P171. (*** P170 REFUTED (again): drop the 4GB float cache -> int8-only rerank = 
     float-refine + official NQ=10000. TOP-3 genuinely in striking distance, no kernel rewrite. (P170's "FastScan-only"
     verdict was premature -- the float-cache anchor was the real blocker. User update HELD until the calibrated number.)
 
+P172. (*** P171 CORRECTED (honest walk-back): int8-only = MEMORY win (eligible 5.3GB) but full-avg budget-max-p recall ~0.77-0.79, NOT 0.86-0.90; eligible ceiling CONFIRMED ~0.77-0.80, below top-3 ***)
+    streaming2 walked back P171's 0.86-0.90: those were op48 MID-STREAM (early tiny-live steps recall only 0.35-0.55
+    drag the full-640-avg) + OVER-BUDGET high-p. Calibration: int8-only dpb=5 p=256 FULL runbook (640 steps, NQ=1000,
+    official GT) = recall 0.8159, PEAK ANON 5.31GB (WITHIN 8GB = eligible!), inserts 973s, search 750.7s, wall 1728s.
+    BUT p=256 is 3.4x OVER the NQ=10000 budget (search x10 = 7507s + inserts 973 = 8485s = 141min). Budget-max p =
+    ~88 (inserts eat 27%) -> recall ~0.77-0.79, anon ~4.5GB, wall ~3560s (fits). So int8-only's real value = a MEMORY
+    FIX making the ~0.77-0.79 number VALID/eligible (5.3GB not 8.87GB) + confirms float rerank wasn't buying recall at
+    the budget-recall level (~0.01). It did NOT lift the ceiling; P171's 0.86-0.90 was over-budget. CONFIRMS P170. ***
+    THE WALL TO TOP-3 (config levers now genuinely EXHAUSTED across dpb/pool-t/collect/float-cache/K/p): budget-max
+    p~88 = ~2% coverage vs scann's 14%. Remaining levers: (a) faster SCAN = AH2/FastScan kernel (multi-week) -> more
+    coverage; (b) faster INSERTS (27% of budget; halving -> p~110 -> ~0.80, MINOR, not top-3); (c) better ROUTING
+    (learned/tree, multi-week) -> fewer candidates per recall. float-refine of top-100 is MOOT at budget-max p (the
+    loss is COVERAGE, not ranking -> can't refine an unscanned NN). *** HONEST FINAL (stable, confirmed by full-640-
+    avg): eligible ~0.77-0.79 VALID, below top-3 (0.922). dpb=5 + int8-only + budget-max-p took us 0.6(ineligible) ->
+    ~0.78(eligible). Top-3 needs a multi-week engine project (AH2/FastScan kernel OR learned router). Net wins banked:
+    dpb=5 2.61x scan, int8-only eligibility (8.87->5.3GB), 0.6->0.78 eligible, the 8GB audit + rerank-budget honesty
+    fix. My earlier user push (~0.77, needs FastScan) stands correct -- holding the P171 optimism was the right call.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
