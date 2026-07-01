@@ -2909,7 +2909,7 @@ P179. (*** DECISIVE CLOSE (the last bounded path TESTED + CLOSED): OPQ rotation 
     rank-preserving quantization (their specific anisotropic-VQ + learned transforms), NOT OPQ-rotation+eta -- we HAVE
     those in-engine (comp=aopq/opql, SBANN_ETA) and they do NOT work on this data. Top-3 = a multi-day+ REIMPLEMENTATION
     of scann's quantization ALGORITHM (from their papers) = the user's call; TUNING OUR ENGINE DOES NOT GET THERE.
-    The last bounded path (P176) is TESTED and CLOSED; both tracks' top-3 gap is confirmed ALGORITHMIC. *** SESSION
+    The last bounded path (P176) is TESTED and CLOSED; both tracks' top-3 gap is confirmed ALGORITHMIC. IP-SIDE CONFIRMATION (streaming2, text2image reorder-depth): apq4 dpb=2 p=1024, recall@10 vs depth(tmul) for eta=4/16/64: t4 0.9089/0.9085/0.9080, t8 0.9157/0.9158/0.9158, t16 0.9185/0.9188/0.9185, t32 0.9200/0.9200/0.9200 -- eta 4==16==64 IDENTICAL (+-0.001), REFUTING the code comment's 'd=200 wants eta 16-64'. So anisotropic eta has ZERO effect on IP rank-preservation, AND IP has the same deep-reorder wall (~0.92 even at t=32). => the ETA lever is dead on BOTH L2 and IP; rotation is +0.007 on L2 (already-aligned). REMAINING open piece (ood2's split): does OPQ ROTATION rescue a COARSE/fast dpb=4/5 code on IP (unaligned, where rotation could matter more than L2)? -- the one narrow place tuning might still help OOD. *** SESSION
     CONFIG/TUNING WORK COMPLETE. HONEST FINALS: streaming eligible recall@10 ~0.77 (VALID <8GB+<1hr); OOD QPS@90%
     ~1732 (bottom tier, ~15-25x behind, real throughput). Real wins banked (dpb=5 2.61x, int8-only eligibility, the
     8GB+1hr audit, honest 0.6->0.77). Top-3 for either = the scoped scann-quantization reimplementation, user's call.
