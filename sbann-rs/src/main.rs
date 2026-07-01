@@ -471,6 +471,14 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
     // big-ann reports BEST search time over run_count -> measure best-of-REPS to filter box-load
     // spikes on this contended box. SBANN_REPS overrides (default 1; use 3-5 for clean A/B tuning).
     let reps: usize = std::env::var("SBANN_REPS").ok().and_then(|s| s.parse().ok()).unwrap_or(1);
+    // SBANN_BATCHSCAN (cell-major batched scan A/B, temporary scaffolding): route+LUT all nq queries,
+    // sweep cells in storage order reusing each cell's blocks across the queries that probe it, then
+    // per-query cascade+float. Only wired for the FLOAT_RERANK (champion) path. SBANN_BATCH_CHUNK splits
+    // the nq queries into fixed-size chunks (multiplicity ~ chunk_size) for the batch-size sensitivity
+    // sweep; default = whole nq. SBANN_BATCH_VERIFY runs the per-query path too and compares result ids.
+    let batchscan = std::env::var("SBANN_BATCHSCAN").is_ok();
+    let batch_chunk: usize = std::env::var("SBANN_BATCH_CHUNK").ok().and_then(|s| s.parse().ok()).filter(|&c| c >= 1).unwrap_or(nq);
+    let batch_verify = std::env::var("SBANN_BATCH_VERIFY").is_ok();
     // SBANN_VNNI_AB: interleave VNNI off/on per (p,t) for a clean same-index rerank-kernel A/B.
     let vnni_ab = std::env::var("SBANN_VNNI_AB").is_ok();
     let modes: Vec<bool> = if vnni_ab { vec![false, true] } else { vec![crate::simd::VNNI_ON.load(std::sync::atomic::Ordering::Relaxed)] };
@@ -546,7 +554,20 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
         for _ in 0..reps.max(1) {
             let st = Instant::now();
             let r: Vec<Vec<u32>> = if let Some(fb) = fbase.as_ref() {
-                (0..nq).into_par_iter().map(|i| idx.search_frr(&ds, qs.row(i), &fqf[i * ds.d..i * ds.d + ds.d], fb, p, t_surv, 10)).collect()
+                if batchscan {
+                    // cell-major batched driver, chunked for the multiplicity-sensitivity sweep.
+                    let mut all: Vec<Vec<u32>> = Vec::with_capacity(nq);
+                    let mut s = 0usize;
+                    while s < nq {
+                        let e = (s + batch_chunk).min(nq);
+                        let sub = idx.search_batch_frr(&ds, &qarr[s * ds.d..e * ds.d], &fqf[s * ds.d..e * ds.d], fb, e - s, p, t_surv, 10);
+                        all.extend(sub);
+                        s = e;
+                    }
+                    all
+                } else {
+                    (0..nq).into_par_iter().map(|i| idx.search_frr(&ds, qs.row(i), &fqf[i * ds.d..i * ds.d + ds.d], fb, p, t_surv, 10)).collect()
+                }
             } else if batched {
                 idx.search_batch(&ds, &qarr, nq, p, t_surv, 10)
             } else {
@@ -556,6 +577,29 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
             res = r;
         }
         let dt = best_dt;
+        // CORRECTNESS GATE: the cell-major driver is a pure execution-order change -> per query it must
+        // produce the same final top-10 as the per-query path (modulo equal-score tie order). Compare
+        // result-id sets and recall for all nq queries.
+        if batchscan && batch_verify {
+            if let Some(fb) = fbase.as_ref() {
+                let refr: Vec<Vec<u32>> = (0..nq).into_par_iter()
+                    .map(|i| idx.search_frr(&ds, qs.row(i), &fqf[i * ds.d..i * ds.d + ds.d], fb, p, t_surv, 10)).collect();
+                let mut set_id = 0usize;   // queries whose top-10 id SET is identical
+                let mut exact = 0usize;    // queries whose top-10 id LIST is identical (order too)
+                let mut ref_hit = 0usize; let mut bat_hit = 0usize;
+                for i in 0..nq {
+                    let a: std::collections::HashSet<u32> = res[i].iter().take(10).copied().collect();
+                    let b: std::collections::HashSet<u32> = refr[i].iter().take(10).copied().collect();
+                    if a == b { set_id += 1; }
+                    if res[i].iter().take(10).eq(refr[i].iter().take(10)) { exact += 1; }
+                    let truth: std::collections::HashSet<u32> = gids[i * gk..i * gk + 10].iter().copied().collect();
+                    bat_hit += res[i].iter().take(10).filter(|id| truth.contains(id)).count();
+                    ref_hit += refr[i].iter().take(10).filter(|id| truth.contains(id)).count();
+                }
+                println!("  [VERIFY p={p} t_surv={t_surv}] set-identical {set_id}/{nq}  order-identical {exact}/{nq}  recall batched={:.4} perquery={:.4}",
+                    bat_hit as f64 / (nq * 10) as f64, ref_hit as f64 / (nq * 10) as f64);
+            }
+        }
         let mut hit = 0usize;
         for i in 0..nq {
             let truth: std::collections::HashSet<u32> = gids[i * gk..i * gk + 10].iter().copied().collect();

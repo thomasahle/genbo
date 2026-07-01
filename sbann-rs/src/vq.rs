@@ -2107,67 +2107,78 @@ impl Index {
     /// `scan_pool` -> select_nth(t)). Caller must ensure NO per-cell residq offset and NO pre-cap dedup
     /// (both incompatible with threshold-during-scan); it gates on that and falls back to scan_pool.
     fn scan_pool_fused(&self, ds: &I8Bin, q: &[i8], cells: &[u32], ctx: &QueryCtx, t: usize) -> Vec<(i32, u32)> {
-        let need_rows = self.comp.needs_raw_rows();
         let mut out16 = [0i32; 16];
         let mut out32 = [0i32; 32];
+        let mut top = FusedTopT::new(t);
+        for &cell in cells {
+            self.scan_cell_fused(ds, q, cell, ctx, &mut top, &mut out16, &mut out32);
+        }
+        top.finish()
+    }
+
+    /// Scan ONE cell's blocks with the FUSEDTOPK kernel dispatch, emitting survivors into `top`. Factored
+    /// out of `scan_pool_fused` (byte-identical body) so BOTH the per-query loop and the cell-major
+    /// batched driver (`search_batch_frr`) run the IDENTICAL kernel path — the only difference is cell
+    /// visitation order, which the FusedTopT top-t survivor SET is invariant to (see FusedTopT::maybe_prune).
+    /// `out16`/`out32` are caller-owned scratch (reused across cells to avoid per-cell zeroing).
+    #[inline]
+    fn scan_cell_fused(&self, ds: &I8Bin, q: &[i8], cell: u32, ctx: &QueryCtx,
+                       top: &mut FusedTopT, out16: &mut [i32; 16], out32: &mut [i32; 32]) {
+        let need_rows = self.comp.needs_raw_rows();
         let bb = self.bb;
         let use512fs = USE512FS.load(std::sync::atomic::Ordering::Relaxed)
             && !self.blocks_il.is_empty()
             && matches!(ctx, QueryCtx::Pq8 { .. });
         let slot_orig = &self.slot_orig[..];
-        let mut top = FusedTopT::new(t);
-        for &cell in cells {
-            let (bs, be) = (self.cell_bstart[cell as usize] as usize, self.cell_bstart[cell as usize + 1] as usize);
-            if need_rows {
-                for b in bs..be {
-                    let block = if bb > 0 { &self.blocks[b * bb..(b + 1) * bb] } else { &[][..] };
-                    let rows16: Vec<&[i8]> = (0..16).map(|j| {
-                        let o = self.slot_orig[b * 16 + j];
-                        if o != u32::MAX { ds.row(o as usize) } else { &[][..] }
-                    }).collect();
-                    self.comp.scan_block(block, ctx, q, &rows16, &mut out16);
-                    top.emit(&out16, b * 16, slot_orig);
-                }
-            } else if use512fs {
-                if let QueryCtx::Pq8 { regs, regs_z, .. } = ctx {
-                    let m = bb / 8;
-                    let il0 = self.cell_ilstart[cell as usize] as usize;
-                    let nfull = (be - bs) / 4;
-                    let mut out64 = [0i32; 64];
-                    for s in 0..nfull {
-                        let sb = il0 + s;
-                        unsafe {
-                            pq::block_adc_i8_i16acc_avx512_il(&self.blocks_il[sb * bb * 4..(sb + 1) * bb * 4], m, regs_z, &mut out64);
-                        }
-                        let bbase = bs + 4 * s;
-                        for sub in 0..4 {
-                            top.emit(&out64[sub * 16..sub * 16 + 16], (bbase + sub) * 16, slot_orig);
-                        }
+        let (bs, be) = (self.cell_bstart[cell as usize] as usize, self.cell_bstart[cell as usize + 1] as usize);
+        if need_rows {
+            for b in bs..be {
+                let block = if bb > 0 { &self.blocks[b * bb..(b + 1) * bb] } else { &[][..] };
+                let rows16: Vec<&[i8]> = (0..16).map(|j| {
+                    let o = self.slot_orig[b * 16 + j];
+                    if o != u32::MAX { ds.row(o as usize) } else { &[][..] }
+                }).collect();
+                self.comp.scan_block(block, ctx, q, &rows16, &mut *out16);
+                top.emit(&out16[..], b * 16, slot_orig);
+            }
+        } else if use512fs {
+            if let QueryCtx::Pq8 { regs, regs_z, .. } = ctx {
+                let m = bb / 8;
+                let il0 = self.cell_ilstart[cell as usize] as usize;
+                let nfull = (be - bs) / 4;
+                let mut out64 = [0i32; 64];
+                for s in 0..nfull {
+                    let sb = il0 + s;
+                    unsafe {
+                        pq::block_adc_i8_i16acc_avx512_il(&self.blocks_il[sb * bb * 4..(sb + 1) * bb * 4], m, regs_z, &mut out64);
                     }
-                    for b in (bs + 4 * nfull)..be {
-                        let block = &self.blocks[b * bb..(b + 1) * bb];
-                        unsafe { pq::block_adc_i8_i16acc(block, m, regs, &mut out16); }
-                        top.emit(&out16, b * 16, slot_orig);
+                    let bbase = bs + 4 * s;
+                    for sub in 0..4 {
+                        top.emit(&out64[sub * 16..sub * 16 + 16], (bbase + sub) * 16, slot_orig);
                     }
                 }
-            } else {
-                let mut b = bs;
-                while b + 1 < be {
-                    let b0 = &self.blocks[b * bb..(b + 1) * bb];
-                    let b1 = &self.blocks[(b + 1) * bb..(b + 2) * bb];
-                    self.comp.scan_block_x2(b0, b1, ctx, &mut out32);
-                    top.emit(&out32[0..16], b * 16, slot_orig);
-                    top.emit(&out32[16..32], (b + 1) * 16, slot_orig);
-                    b += 2;
-                }
-                if b < be {
+                for b in (bs + 4 * nfull)..be {
                     let block = &self.blocks[b * bb..(b + 1) * bb];
-                    self.comp.scan_block(block, ctx, q, &[], &mut out16);
-                    top.emit(&out16, b * 16, slot_orig);
+                    unsafe { pq::block_adc_i8_i16acc(block, m, regs, &mut *out16); }
+                    top.emit(&out16[..], b * 16, slot_orig);
                 }
             }
+        } else {
+            let mut b = bs;
+            while b + 1 < be {
+                let b0 = &self.blocks[b * bb..(b + 1) * bb];
+                let b1 = &self.blocks[(b + 1) * bb..(b + 2) * bb];
+                self.comp.scan_block_x2(b0, b1, ctx, &mut *out32);
+                top.emit(&out32[0..16], b * 16, slot_orig);
+                top.emit(&out32[16..32], (b + 1) * 16, slot_orig);
+                b += 2;
+            }
+            if b < be {
+                let block = &self.blocks[b * bb..(b + 1) * bb];
+                self.comp.scan_block(block, ctx, q, &[], &mut *out16);
+                top.emit(&out16[..], b * 16, slot_orig);
+            }
         }
-        top.finish()
     }
 
     /// DIAGNOSTIC (SBANN_SCANDIAG): run the SAME kernel dispatch as scan_pool over `cells` but do NO
@@ -2625,6 +2636,88 @@ impl Index {
         (0..nq).into_par_iter().map(|i| {
             self.scan_rerank(ds, &queries[i * d..i * d + d], &cells_all[i * pp..i * pp + pp], t, k)
         }).collect()
+    }
+
+    /// CELL-MAJOR BATCHED FLOAT-RERANK driver (SBANN_BATCHSCAN). A pure execution-order change vs the
+    /// per-query `search_frr` loop, mirroring the champion path (FUSEDTOPK scan -> cascade -> float top-k):
+    ///   1. route every query with the UNCHANGED per-query router + build its QueryCtx/LUT;
+    ///   2. counting-sort the (query,cell) pairs into cell-major order (O(pairs), no comparison sort);
+    ///   3. sweep cells in ASCENDING storage order — each cell's PQ blocks are read once per batch
+    ///      (sequential DRAM) and reused across every query that probes it (block stays L1/L2-hot),
+    ///      amortizing the ~3x cold-vs-hot scan headroom (P195). Each query keeps its own FusedTopT;
+    ///   4. per query, the UNCHANGED `rerank_cascade_float` (int8-prune + float reorder), exactly as today.
+    /// The FusedTopT top-t survivor SET is visit-order-invariant, so every query's pool -> final top-k is
+    /// identical to `search_frr` (modulo t-boundary equal-score ties). Kernels/Compressor UNCHANGED.
+    #[allow(clippy::too_many_arguments)]
+    pub fn search_batch_frr(&self, ds: &I8Bin, queries: &[i8], qf_all: &[f32],
+        fbase: &crate::fbin::FBin, nq: usize, p: usize, t: usize, k: usize) -> Vec<Vec<u32>> {
+        let prof = PROFILE.load(std::sync::atomic::Ordering::Relaxed);
+        let d = ds.d;
+        let ncell = self.router.n_cells();
+        // (1) route every query (UNCHANGED per-query router, honours ROUTE_VNNI via the global) into a
+        // flat cell array with per-query bounds, then build each query's LUT/QueryCtx.
+        let t0 = if prof { Some(std::time::Instant::now()) } else { None };
+        let mut cells_flat: Vec<u32> = Vec::with_capacity(nq * p);
+        let mut cell_off: Vec<u32> = Vec::with_capacity(nq + 1);
+        cell_off.push(0);
+        for i in 0..nq {
+            let mut c = self.router.probe(&queries[i * d..i * d + d], p);
+            cells_flat.append(&mut c);
+            cell_off.push(cells_flat.len() as u32);
+        }
+        if let Some(t0) = t0 { PROF_ROUTE_NS.fetch_add(t0.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed); }
+        let ctxs: Vec<QueryCtx> = (0..nq).map(|i| self.comp.prepare_query(&queries[i * d..i * d + d])).collect();
+
+        // (2) invert (query,cell) -> cell-major via a counting sort. cnt[c] = start offset of cell c's
+        // query list in cell_q; cell_q holds the probing query index for each (cell,query) pair.
+        let mut cnt = vec![0u32; ncell + 1];
+        for &c in &cells_flat { cnt[c as usize + 1] += 1; }
+        for c in 0..ncell { cnt[c + 1] += cnt[c]; }
+        let total = cnt[ncell] as usize;
+        let mut cell_q = vec![0u32; total];
+        let mut cursor = cnt.clone();
+        for i in 0..nq {
+            for &c in &cells_flat[cell_off[i] as usize..cell_off[i + 1] as usize] {
+                let pos = cursor[c as usize] as usize;
+                cell_q[pos] = i as u32;
+                cursor[c as usize] += 1;
+            }
+        }
+
+        // (3+4) sweep cells ascending; each cell's blocks read once per batch, reused across its queries.
+        let mut tops: Vec<FusedTopT> = (0..nq).map(|_| FusedTopT::new(t)).collect();
+        let mut out16 = [0i32; 16];
+        let mut out32 = [0i32; 32];
+        let ts = if prof { Some(std::time::Instant::now()) } else { None };
+        for c in 0..ncell {
+            let (qs, qe) = (cnt[c] as usize, cnt[c + 1] as usize);
+            for &qi in &cell_q[qs..qe] {
+                let qi = qi as usize;
+                self.scan_cell_fused(ds, &queries[qi * d..qi * d + d], c as u32, &ctxs[qi],
+                                     &mut tops[qi], &mut out16, &mut out32);
+            }
+        }
+        if let Some(ts) = ts { PROF_SCAN_NS.fetch_add(ts.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed); }
+
+        // (5) per-query cascade + float top-k, EXACTLY the per-query path (rerank_cascade_float UNCHANGED).
+        let cascade = CASCADE.load(std::sync::atomic::Ordering::Relaxed);
+        let kk = CASCADE_K.load(std::sync::atomic::Ordering::Relaxed);
+        let mut results: Vec<Vec<u32>> = Vec::with_capacity(nq);
+        for (i, top) in tops.into_iter().enumerate() {
+            let mut pool = top.finish();
+            let qi8 = &queries[i * d..i * d + d];
+            let qf = &qf_all[i * d..i * d + d];
+            let out = if cascade {
+                rerank_cascade_float(fbase, &self.raw, self.d, self.raw_orig_indexed, &self.slot_orig, qi8, qf, &mut pool, kk, k)
+            } else {
+                let tr = if prof { Some(std::time::Instant::now()) } else { None };
+                let o = rerank_contig_float(fbase, &self.slot_orig, qf, &pool, k);
+                if let Some(tr) = tr { PROF_RERANK_NS.fetch_add(tr.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed); }
+                o
+            };
+            results.push(out);
+        }
+        results
     }
 
     /// Adaptive early termination: probe cells nearest-first, stop when the k-th best APPROX dist
