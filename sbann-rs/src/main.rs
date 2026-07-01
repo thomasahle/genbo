@@ -1339,6 +1339,11 @@ fn main() {
     if let Ok(s) = std::env::var("SBANN_CASCADE_K") { if let Ok(v) = s.parse::<usize>() { vq::CASCADE_K.store(v, std::sync::atomic::Ordering::Relaxed); } }
     if std::env::var("SBANN_CASC_SORT").is_ok() { vq::CASC_SORT.store(true, std::sync::atomic::Ordering::Relaxed); }
     if let Ok(s) = std::env::var("SBANN_CASC_DIM") { if let Ok(v) = s.parse::<usize>() { vq::CASC_DIM.store(v, std::sync::atomic::Ordering::Relaxed); } }
+    // P199: software-pipeline prefetch for the int8-cascade gather (recall-exactly-neutral hint).
+    if let Ok(s) = std::env::var("SBANN_CASC_PFDIST") { if let Ok(v) = s.parse::<usize>() { vq::CASC_PFDIST.store(v, std::sync::atomic::Ordering::Relaxed); } }
+    if let Ok(s) = std::env::var("SBANN_CASC_PFLINES") { if let Ok(v) = s.parse::<usize>() { vq::CASC_PFLINES.store(v, std::sync::atomic::Ordering::Relaxed); } }
+    if let Ok(s) = std::env::var("SBANN_CASC_PREFILTER") { if let Ok(v) = s.parse::<usize>() { vq::CASC_PREFILTER.store(v, std::sync::atomic::Ordering::Relaxed); } }
+    if std::env::var("SBANN_CASC_ASYM").is_ok() { assert!(simd::selftest_asym(200) && simd::selftest_asym(196), "asym f32xi8 dot != scalar!"); vq::CASC_ASYM.store(true, std::sync::atomic::Ordering::Relaxed); }
     match a.get(1).map(String::as_str) {
         Some("dotbench") => {
             // microbench: VNNI vs AVX2 int8 dot, dim d, REPS over a working set that fits L2 (warm).

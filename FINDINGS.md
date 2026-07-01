@@ -3390,6 +3390,58 @@ P197. (*** STACK ALL THREE SESSION LEVERS (route-VNNI + cascade K=16 + FUSEDTOPK
     Champion invocation: SBANN_IP=1 SBANN_FASTSCAN2=1 SBANN_PREFETCH=1 SBANN_ROUTE_VNNI=1 SBANN_CASCADE=1
     SBANN_CASCADE_K=16 SBANN_FUSEDTOPK=1 SBANN_FLOAT_RERANK=1  p=54 t=10 (or p=58 t=8).
 
+P199. (*** ATTACK THE 25us INT8-REFINE (cascade mid-stage) to close the 1.45x -> <1x gap, OOD t2i-1M ST,
+    recall@10>=0.90. Branch refine-prefetch off combined-primitives(30e2b7b), core 1 (core 0 = other agent).
+    HYPOTHESIS (task): the int8-refine is GATHER-LATENCY bound (~280 slot-scattered 200B raw-i8 rows @ ~100ns)
+    and we know ALL survivor slots up front, so SW-prefetch should hide the DRAM latency and cut 25->~10us.
+    FINDING #1 -- the prefetch was ALREADY THERE and is SATURATED. rerank_cascade_float already prefetched
+    survivor i+8 (P194 shipped it); the task's premise (unexploited) was wrong. I made it TUNABLE + full-row
+    (CASC_PFDIST/CASC_PFLINES, all ceil(dd/64)=4 lines + a prime wave, vs the old 1 line). casc-us/q FLOOR
+    (min of 15 REPS=1 passes, least-contended ~= quiet): OFF(no pf)=39us | old-1line-d8=24.3 | full-row-d16=
+    24.2 | full-row-d24=24.6. => prefetch is worth ~15us (39->24, ALREADY banked in the champion), but NO
+    prefetch variant beats the existing 1-line: the HW adjacent-line/streamer covers the other 3 sequential
+    lines once line-0 is touched, so full-row adds only prefetch-instruction overhead for 0 latency gain. The
+    24us floor is NOT hideable gather -- it is the residual = ~5us VNNI compute + 56KB L2 bandwidth + per-row
+    first-miss latency tail + dedup/select_nth. ALL recall-EXACT 0.9032 (prefetch is a hint; K=16 set identical).
+    FINDING #2 -- bytes/row CANNOT be cut (recall). CASC_DIM probe (read fewer dims/row): dim200=0.9032 |
+    dim128(2L)=0.3937 | dim64(1L)=0.1971. OOD needs all 200 dims. And 1L-vs-4L moved the floor only ~28%
+    (35.8 vs 49.7 same window) => LATENCY-dominated per-row, not bandwidth -> shaving lines wouldn't help even
+    if recall allowed. So the ONLY lever is fewer ROWS.
+    FINDING #3 -- rows CANNOT be cut at this op point (recall). apq4-score prefilter (keep apq4-best M before
+    the int8 gather, CASC_PREFILTER): M=inf 0.9032 | 256=0.8942 | 224=0.8879 | 200=0.8818 | 160=0.8677 |
+    128=0.8494. Even M=256 (from ~280) breaks 0.90 -- the int8 stage genuinely RESCUES true-top-10 that apq4
+    mis-ranks within the pool (int8 >> apq4 4-bit ranking), and the champion is tuned to a razor 0.9032 (64
+    hits over 0.90) with ZERO fat. p=54,t=10 is the frontier optimum (t=8->0.8944, p=50->0.8970).
+    FINDING #4 -- ASYMMETRIC true-float-query x int8-row dot (lever 2, dot_f32_i8, runtime AVX2+scalar fallback
+    +selftest): the cascade already RECEIVES the true float query (qf, from SBANN_FQUERY -- main.rs:549) but
+    the int8 stage uses the int8-quantized query. Swapping to full-precision qf gave BIT-IDENTICAL recall in
+    every case (p54t10=0.9032, t8=0.8944, p50=0.8970). => query int8-quantization is NOT lossy enough to change
+    the top-16 selection; removing it buys nothing. The int8 refine is already at full useful precision.
+    (a) PREFETCH: PFDIST 8-24 all equal at the 24us floor; recall EXACT 0.9032; full-row saves ~0us over the
+      existing 1-line. e2e A/B (12 rounds, med QPS, load 33-40): rf_OFF 5148 | champ 5371 | rf_1line 5440 |
+      rf_full 5514. => the cascade prefetch is worth ~7% e2e (OFF vs on), but it was already shipped; full-row
+      is +1-3% (within the +-5% load noise), so ~neutral. Kept full-row as the branch default (never worse).
+    (b) LEANER REFINE: prefilter and asym BOTH dead -- neither shaves a us while HOLDING recall>=0.90 (F#3/F#4).
+      The 25us is structural: ~280 survivors is the minimum the apq4 pool needs and each is a scattered i8 row.
+    (c) FINAL best config == the P197 champion (no change): p=54 t=10 K=16, full-row cascade prefetch default.
+      Interleaved vs fresh ScaNN(56,78) core 1, best/5, 8 rounds (all recall 0.9032, ScaNN's (56,78) also 0.9032):
+      ScaNN best 8454 | refine best 5839.  Per-round ratio (ScaNN/refine, drop R5 where ScaNN was contention-
+      crushed to 5193): [1.62,1.46,1.38,1.48,1.47,1.60,1.51] -> MEDIAN ~1.48x, BEST-round 1.38x. == champion 1.45x.
+      Phase split unchanged: route 23 / scan 85 / int8-refine 24 / float 9 us (quiet-projected).
+    *** VERDICT: shaved ~0 us off the 25us int8-refine. It was ALREADY prefetch-optimized (the 25us is the
+    POST-prefetch floor, not a pre-prefetch number), and it is recall-LOCKED on all three remaining axes --
+    dims/row (F#2), rows (F#3), query precision (F#4). New ratio ~1.45-1.48x = UNCHANGED vs P197. Distance to
+    <1x: still ~54us/q, and the refine contributes only 24us of it -- even ZEROING it lands ~1.2x, so <1x is
+    unreachable via the refine alone. This CONFIRMS P197's diagnosis from the opposite side: the 24us survivor-
+    count is the apq4 CODEBOOK gap, not an execution-speed gap. The refine is at its floor; the only lever left
+    is rank-preserving codes (OPQ/anisotropic-AH) that shrink the survivor count itself -- a codes problem,
+    exactly per memory:ood-10m-standing. NEGATIVE result, rigorously bounded. ***
+    CLEAN-CODE: new int8-dot / prefetch kernels behind runtime is_x86_feature_detected dispatch with scalar
+    fallback + selftest (dot_f32_i8 / selftest_asym); SBANN_CASC_PFDIST/PFLINES/PREFILTER/ASYM are A/B
+    scaffolding (defaults preserve champion behavior). Artifacts: scratchpad/{interleave_p199.sh,
+    ab_prefetch_p199.sh, pf_casc_floor.sh, casc_dim_probe.sh}. Box loaded 33-64 all session (16 cores).
+    1M ONLY, single-thread taskset -c 1, recall vs t2i1m-floatgt, float rerank on. ***)
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT

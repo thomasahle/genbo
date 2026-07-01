@@ -437,6 +437,71 @@ unsafe fn dot_f32_avx2(a: &[f32], b: &[f32]) -> f32 {
     s
 }
 
+/// ASYMMETRIC dot: full-precision float query `q` x int8 candidate row `c` (P199). The int8-cascade
+/// rescore normally uses the int8-quantized query; using the true float query removes the query-side
+/// quantization error (candidate stays int8) — a per-byte-more-accurate ranker for the OOD refine.
+/// Runtime-dispatched: AVX2 (widen i8->i32->f32, fmadd) else scalar. Scalar fallback keeps non-AVX2 CPUs correct.
+#[inline]
+pub fn dot_f32_i8(q: &[f32], c: &[i8]) -> f32 {
+    if std::is_x86_feature_detected!("avx2") && std::is_x86_feature_detected!("fma") {
+        unsafe { dot_f32_i8_avx2(q, c) }
+    } else {
+        let mut s = 0.0f32;
+        for k in 0..q.len() { s += q[k] * c[k] as f32; }
+        s
+    }
+}
+
+#[target_feature(enable = "avx2,fma")]
+unsafe fn dot_f32_i8_avx2(q: &[f32], c: &[i8]) -> f32 {
+    let n = q.len();
+    let qp = q.as_ptr();
+    let cp = c.as_ptr();
+    let mut acc0 = _mm256_setzero_ps();
+    let mut acc1 = _mm256_setzero_ps();
+    let mut i = 0usize;
+    while i + 16 <= n {
+        // widen 8 i8 -> 8 i32 -> 8 f32, fmadd with the float query lane.
+        let c0 = _mm256_cvtepi32_ps(_mm256_cvtepi8_epi32(_mm_loadl_epi64(cp.add(i) as *const __m128i)));
+        let c1 = _mm256_cvtepi32_ps(_mm256_cvtepi8_epi32(_mm_loadl_epi64(cp.add(i + 8) as *const __m128i)));
+        acc0 = _mm256_fmadd_ps(_mm256_loadu_ps(qp.add(i)), c0, acc0);
+        acc1 = _mm256_fmadd_ps(_mm256_loadu_ps(qp.add(i + 8)), c1, acc1);
+        i += 16;
+    }
+    while i + 8 <= n {
+        let c0 = _mm256_cvtepi32_ps(_mm256_cvtepi8_epi32(_mm_loadl_epi64(cp.add(i) as *const __m128i)));
+        acc0 = _mm256_fmadd_ps(_mm256_loadu_ps(qp.add(i)), c0, acc0);
+        i += 8;
+    }
+    let acc = _mm256_add_ps(acc0, acc1);
+    let lo = _mm256_castps256_ps128(acc);
+    let hi = _mm256_extractf128_ps(acc, 1);
+    let mut sum128 = _mm_add_ps(lo, hi);
+    sum128 = _mm_add_ps(sum128, _mm_movehl_ps(sum128, sum128));
+    sum128 = _mm_add_ss(sum128, _mm_shuffle_ps(sum128, sum128, 1));
+    let mut s = _mm_cvtss_f32(sum128);
+    while i < n { s += *qp.add(i) * (*cp.add(i)) as f32; i += 1; }
+    s
+}
+
+/// Self-test: AVX2 asymmetric dot must match the scalar reference within f32 fp tolerance.
+pub fn selftest_asym(d: usize) -> bool {
+    let mut q = vec![0f32; d];
+    let mut c = vec![0i8; d];
+    let mut seed = 0x2468_ace0_1357_9bdfu64;
+    let mut nxt = || { seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1); seed };
+    for _ in 0..32 {
+        for k in 0..d {
+            q[k] = ((nxt() >> 24) as i32 % 512 - 256) as f32 * 0.5;
+            c[k] = ((nxt() >> 24) as i32 % 256 - 128) as i8;
+        }
+        let mut sc = 0.0f32; for k in 0..d { sc += q[k] * c[k] as f32; }
+        let v = dot_f32_i8(&q, &c);
+        if (v - sc).abs() > 1e-2 * (1.0 + sc.abs()) { return false; }
+    }
+    true
+}
+
 /// Assign `x` to its `k` nearest pivots (ascending), writing cell ids into `out[..k]`.
 #[inline]
 pub fn assign_topk(x: &[i8], pivots: &[i8], d: usize, k: usize, out: &mut [u32]) {

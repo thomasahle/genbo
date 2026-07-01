@@ -97,6 +97,29 @@ pub static CASC_SORT: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicB
 /// prune reading fewer cache lines per survivor -> tests whether the int8 gather is BANDWIDTH-bound
 /// (fewer lines = faster) or LATENCY-bound (first-line miss dominates, no gain). Recall may drop.
 pub static CASC_DIM: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+/// CASC_PFDIST / CASC_PFLINES (P199): software-pipeline prefetch for the int8-cascade gather. P194 found
+/// the int8 rescore is GATHER-LATENCY bound (~100ns/vec over ~280 slot-scattered 200-byte raw-i8 rows),
+/// NOT compute-bound. Unlike the scan, we know ALL survivor slots BEFORE the dots begin (they're in the
+/// deduped pool), so we can prefetch (T0) survivor i+CASC_PFDIST's FULL row (all CASC_PFLINES cache lines,
+/// 0 = auto = ceil(dd/64)) while computing survivor i, plus a prime wave over the first CASC_PFDIST rows.
+/// Recall-EXACTLY-NEUTRAL (prefetch is a hint; the int8 dist and the top-kk set are byte-identical). The
+/// old path prefetched only the FIRST line at a fixed dist of 8 -> the other 3 lines demand-missed cold.
+/// SBANN_CASC_PFDIST (default 16), SBANN_CASC_PFLINES (default 0 = all lines). CASC_PFDIST=0 disables.
+pub static CASC_PFDIST: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(16);
+pub static CASC_PFLINES: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+/// CASC_PREFILTER (P199): cap the #survivor rows fed to the int8 gather to the apq4-BEST M (SBANN_CASC_PREFILTER,
+/// 0 = off = all). The int8 stage is per-row-gather-latency bound over ~280 deduped survivors and CANNOT cut
+/// bytes/row (OOD needs all 200 dims — CASC_DIM<200 craters recall), so the only lever is fewer ROWS. The apq4
+/// code already coarse-ranks the pool; keeping its top-M skips the int8 gather+dot for the apq4-worst rows.
+/// NOT recall-neutral (a true top-k that apq4 mis-ranked past M is dropped) — tune M to the min that HOLDS
+/// recall@10 >= 0.90. Applied after dedup, before the slot-sort/int8 loop.
+pub static CASC_PREFILTER: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+/// CASC_ASYM (P199): use the TRUE full-precision float query (qf, from SBANN_FQUERY) x int8 candidate row
+/// for the int8-cascade rescore, instead of the int8-quantized query. Removes query-side quantization error
+/// (candidate stays int8, same gather) — a per-byte-more-accurate ranker for the OOD refine that may raise
+/// recall (margin to cut work). SBANN_CASC_ASYM. Order-key is a scaled i32 cast (only used to select the kk
+/// survivors; the float reorder re-derives exact distances, so the scale is rank-only).
+pub static CASC_ASYM: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 /// SBANN_SCANDIAG diagnostic: run ONLY the kernel floor (block reads + LUT, NO collect) and record its
 /// time as the scan phase, so a separate run gives collect = scan_full - scan_kernelonly (same per-query
 /// cold-cache pattern). Isolates how much of scan the fused top-t can actually remove (only the collect
@@ -323,6 +346,13 @@ fn rerank_cascade_float(fbase: &crate::fbin::FBin, raw: &[i8], d: usize, raw_ori
     let tc = if prof { Some(std::time::Instant::now()) } else { None };
     // (1) dedup by orig (recall-neutral): keeps one slot per distinct orig, min apq4 dist.
     dedup_pool_by_orig(pool, slot_orig);
+    // (1a) apq4-score prefilter (P199): keep only the apq4-best M rows before the int8 gather (pool.0 = apq4
+    // dist, smaller=better). Cuts the per-row-latency-bound int8 stage linearly in M. NOT recall-neutral.
+    let pf_m = CASC_PREFILTER.load(std::sync::atomic::Ordering::Relaxed);
+    if pf_m > 0 && pool.len() > pf_m {
+        pool.select_nth_unstable_by_key(pf_m - 1, |&(dist, _)| dist);
+        pool.truncate(pf_m);
+    }
     let n = pool.len();
     if n == 0 { return Vec::new(); }
     // (1b) sort by slot so the slot-contiguous raw gather streams forward (recall-neutral).
@@ -336,20 +366,35 @@ fn rerank_cascade_float(fbase: &crate::fbin::FBin, raw: &[i8], d: usize, raw_ori
     let cdim = CASC_DIM.load(std::sync::atomic::Ordering::Relaxed);
     let dd = if cdim == 0 { d } else { cdim.min(d) };
     let qd = &q[..dd];
+    let asym = CASC_ASYM.load(std::sync::atomic::Ordering::Relaxed);
+    let qfd = &qf[..dd.min(qf.len())];
+    // (2a) software-pipeline prefetch (P199, recall-EXACTLY-NEUTRAL): the int8 gather is latency-bound over
+    // ~n slot-scattered `dd`-byte rows; we know every survivor slot up front. Prefetch (T0) the FULL row
+    // (all `pfl` cache lines) of survivor i+pfd while computing survivor i, and prime the first pfd rows so
+    // the pipeline is warm from iteration 0. `raw` is i8 (1 byte/elem), so byte offset = row*d, len = raw.len().
+    let pfd = CASC_PFDIST.load(std::sync::atomic::Ordering::Relaxed);
+    let pfl = { let l = CASC_PFLINES.load(std::sync::atomic::Ordering::Relaxed); if l == 0 { dd.div_ceil(64) } else { l } };
+    let raw_ptr = raw.as_ptr() as *const u8;
+    let raw_bytes = raw.len();
+    let pf_row = |j: usize| {
+        let ns = pool[j].1 as usize;
+        let ri = if raw_orig_indexed { slot_orig[ns] as usize } else { ns };
+        if ri != u32::MAX as usize { prefetch_lines(raw_ptr, raw_bytes, ri * d, pfl); }
+    };
+    if pfd > 0 { for j in 0..pfd.min(n) { pf_row(j); } }
     let mut scored: Vec<(i32, u32)> = Vec::with_capacity(n);
     for i in 0..n {
         let slot = pool[i].1 as usize;
         let orig = slot_orig[slot];
-        if i + 8 < n {
-            let nslot = pool[i + 8].1 as usize;
-            let ri = if raw_orig_indexed { slot_orig[nslot] as usize } else { nslot };
-            if ri != u32::MAX as usize { unsafe { _mm_prefetch(raw.as_ptr().add(ri * d) as *const i8, _MM_HINT_T0) }; }
-        }
+        if pfd > 0 && i + pfd < n { pf_row(i + pfd); }
         if orig == u32::MAX { continue; }
         let ri = if raw_orig_indexed { orig as usize } else { slot };
         let row = &raw[ri * d..ri * d + dd];
         // negdot: smaller = better (matches the IP float path's -dot).
-        let dist = if vnni { -unsafe { simd::dot_i8_vnni(qd, row) } }
+        let dist = if asym {
+            // asymmetric true-float-query x int8-row; scaled i32 rank-key (saturating cast).
+            (-simd::dot_f32_i8(qfd, row) * 64.0) as i32
+        } else if vnni { -unsafe { simd::dot_i8_vnni(qd, row) } }
                    else if avx { -unsafe { simd::dot_i8_avx2(qd, row) } }
                    else { simd::negdot_i8(qd, row) };
         scored.push((dist, slot as u32));
