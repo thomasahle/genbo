@@ -2806,6 +2806,26 @@ P173. (*** DEFINITIVE VALID eligible streaming number: recall@10 ~0.77 (int8-onl
     int8-only memory fix, full 8GB+1hr eligibility audit + re-arch. ood2 OOD: dpb=5 helps at 0.90 (scan-dominated) =
     real QPS@90% gain (re-measuring). *** STREAMING TRACK: config-optimization COMPLETE; final eligible ~0.77. ***
 
+P174. (*** COVERAGE-VIA-COARSENING DECISIVELY REFUTED (with data): dpb=50 @ 14.6%cov (=scann's) = recall 0.09; the moat is RANK-PRESERVING quantization, not coverage. STREAMING TRACK COMPLETE. ***)
+    streaming2 ran the aggressive-dpb + budget-max-p + large-K (K=1500) float-rerank recipe (my coverage-via-
+    coarsening idea), op48 live=1.69M:
+      dpb=5  10B  p~60  1.5%cov -> 0.77 | dpb=10 5B p120 2.9% -> 0.65 | dpb=25 2B p300 7.3% -> 0.27 | dpb=50 1B p600
+      14.6%cov -> 0.09.
+    Coverage rises 10x (1.5->14.6%) but recall COLLAPSES (0.77->0.09). dpb=50 @ p=600 = scann's EXACT 14.6% coverage
+    and lands 0.09, NOT 0.92. So coverage-via-coarsening does NOT reach top-3 -- the fidelity floor collapses FASTER
+    than coverage rises. CRUX: coarse codes past dpb~5 lose the true NN from the CANDIDATE SET ENTIRELY (not just its
+    ranking) -- large-K float rerank CANNOT rerank a NN buried below the coarse top-K (it's not in the pool).
+    Confirmed 2 ways: (a) this budget-max-p sweep; (b) dpb=25 @ p=512 (12.5% coverage!) + t=8192 deep pool + K=4000 =
+    0.41 (MORE coverage + deeper pool + bigger K, still floors ~0.4). *** So scann's AH2 is NOT "coarse codes for
+    coverage" (tested: it collapses). AH2's real innovation = coarse codes that PRESERVE near-neighbor RANKING:
+    anisotropic score-aware loss + learned rotation + SoA reorder. Our apq4 IS anisotropic but NAIVE-coarse -- at
+    m=2-4 (dpb 25-50) it can't keep the NN rankable. THE MOAT = rank-preserving coarse quantization = a real ML/algo
+    project (multi-day+), NOT a config/coverage knob AND NOT merely a scan-LAYOUT kernel (my "FastScan de-risk
+    microbench" is MOOT -- the bottleneck is the QUANTIZATION quality, not scan speed). *** VERDICT (TRULY COMPLETE):
+    dpb=5 is the frontier optimum; coarsening past it collapses. VALID eligible ~0.77 stands (P173). Streaming took
+    eligible 0.6->0.77; top-3 (0.922) requires scann's rank-preserving coarse quantization (anisotropic score-aware +
+    learned rotation). Config + coverage space EXHAUSTIVELY tested WITH DATA. *** STREAMING TRACK: COMPLETE at ~0.77.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
