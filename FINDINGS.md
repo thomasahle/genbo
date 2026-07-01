@@ -3048,3 +3048,65 @@ NEXT: SBANN_PLIST env override now lets a built index be probed at custom p -> s
 get the high-QPS/lower-recall frontier and compare to Python 0.9486@3688. f32 GEMM routing =
 dead-end (N29). The bucket-select/batched-rerank ports are now LOWER priority (cell count mattered
 more). The Python sbtree_pq remains the tuned reference but the Rust gap is mostly closed.
+
+P185. (*** DIRECT same-hardware scann-vs-ours (1M text2image OOD): the honest gap is ~2.2-2.4x single-thread, NOT the invalid cross-machine "25x" ***)
+    Ran Google ScaNN 1.4.2 (pip wheel, AVX-512 box) and our engine (fastscan-soa, SBANN_FASTSCAN2) on THIS
+    box, SAME 1M text2image OOD base/queries/FLOAT-GT, single-thread pinned (taskset -c 4), best-of-5,
+    INTERLEAVED (scann, ours, scann, ours ... 6 rounds, never overlapping on core 4) so both see the same
+    average contention -> the RATIO is contention-robust even though absolute QPS is load-depressed. This
+    REPLACES the methodologically INVALID prior claim "OOD ~1732 QPS vs scann 42854 = ~25x behind", which
+    compared our QPS on this contended shared box against scann's PUBLISHED QPS on idle Azure D8lds_v5.
+    DATA (leaderboard-accurate, verified aligned): scann indexes the TRUE FLOAT base (first 1M rows of
+    base.1B.fbin) + TRUE FLOAT queries (first 2000 of query.public.100K); ours indexes the int8 quantization
+    (t2i1m.i8bin + matched ~330.19-scale int8 queries built this session). BOTH scored vs the exact float-IP
+    top-10 GT t2i1m-floatgt (revalidated: overlap 1.0000 vs recomputed float IP over the 1M float base).
+    ScaNN config (its best T2I shot): builder(X,10,"dot_product").tree(num_leaves=2000, num_leaves_to_search
+    swept).score_ah(2, anisotropic_quantization_threshold=0.2).reorder(200); search_batched (single-thread).
+    Ours: hierk Kf=16384 C0=128 b0=32 a0=3, SBANN_SOAR=1 SBANN_TREEEM=2, apq4, SBANN_IP + SBANN_FASTSCAN2,
+    SBANN_TFLOOR=1, tmul=8, RAYON_NUM_THREADS=1.
+
+    == ScaNN 1M frontier (true-float base, vs FLOAT GT, single-thread core 4, best-of-5) ==
+      lts= 30 reorder= 40: recall 0.8115  QPS 14106
+      lts= 45 reorder= 60: recall 0.8770  QPS 10488
+      lts= 52 reorder= 70: recall 0.8918  QPS  9450   (best-of-6 interleaved)
+      lts= 56 reorder= 78: recall 0.9032  QPS  8649   <-- max QPS @ recall>=0.90
+      lts= 60 reorder= 80: recall 0.9079  QPS  8202
+      lts= 80 reorder=120: recall 0.9404  QPS  6438
+      lts=120 reorder=200: recall 0.9689  QPS  4428
+      lts=200 reorder=300: recall 0.9835  QPS  2819
+      lts=400 reorder=500: recall 0.9941  QPS  1510
+    == OUR engine 1M frontier (int8 base+query, vs same FLOAT GT, single-thread core 4, best-of-6 interleaved) ==
+      p= 80 t=8: recall 0.9003  QPS 3903   <-- max QPS @ recall>=0.90
+      p= 96 t=8: recall 0.9096  QPS 3384
+      (8-thread context frontier: p64 0.8864, p80 0.9003, p96 0.9096, p112 0.9169)
+
+    *** HEADLINE RATIO @ recall@10 >= 0.90, single-thread, same box, interleaved:
+        ScaNN 0.9032 @ 8649 QPS  vs  ours 0.9003 @ 3903 QPS  ->  RATIO = 2.22x (scann faster).
+        Matched-recall ~0.908:  ScaNN 0.9079 @ 8202  vs  ours 0.9096 @ 3384  ->  2.42x. ***
+    STABILITY: rock-steady across 6 interleaved rounds (scann 8.5k +-1%, ours 3.8k +-3%) -> the ~2.3x is
+    NOT load-noise. Interpretation: the TRUE same-hardware single-thread OOD gap is ~2.2-2.4x, a ~10x
+    DEFLATION of the invalid "25x". It matches the earlier same-window "~2x OOD" estimates (P130) and
+    confirms them under a clean pinned/interleaved protocol. The gap is ARCHITECTURAL (ScaNN's anisotropic
+    2-byte AH + in-register scan + exact float reorder of only ~200 candidates, vs our 4-bit PQ + int8
+    rerank), NOT a machine/contention artifact.
+
+    BUILD/RSS (this box): ScaNN 1M build 65s (single-core), peak RSS 2.83GB (incl the 800MB float base numpy
+    + scann's copy + float reorder + AH), serialized index 0.9GB (dataset.npy 800MB float reorder + 100MB AH
+    + 3.2MB partitioner). Ours 1M build ~47-51s (multi-thread), saved index 0.797GB (int8 raw a0=3 + PQ4
+    codes). Comparable resident footprint (~0.8-0.9GB).
+
+    FAIRNESS CAVEATS: (1) FLOAT vs INT8 base: scann gets full float (its native precision + float reorder ->
+    can exceed the int8 GT-ceiling); ours gets int8 (its native compressed form; NO float rerank on the
+    fastscan-soa branch) yet still clears 0.90 vs the FLOAT GT at 0.9003/0.9096. Both are each engine's
+    intended representation; both scored vs the identical float-IP GT -> apples-to-apples at the leaderboard
+    metric. (2) SINGLE-THREAD both (RAYON=1 / search_batched), taskset -c 4, interleaved -> the per-core
+    ratio is the honest primitive; multi-thread could shift absolutes but not the architectural ratio.
+    (3) ScaNN tuned to its published T2I recipe (num_leaves~sqrt(n), AH-2 aniso 0.2, reorder 200) -- given
+    its best shot (an unfairly-crippled reference is worse than none). (4) Our engine used SBANN_FASTSCAN2
+    only; the scan-prefetch branch's SBANN_PREFETCH was NOT applied here and could narrow the gap further.
+
+    10M: DEFERRED. ScaNN 10M index built+serialized (num_leaves=4000, build 76s, peak RSS 23.8GB, 8.5GB on
+    disk) and its 0.90 crossing mapped (recall 0.9075 @ lts=120). But the box went memory-thrashing (swap
+    100% full, load ~28) during the engine's 10M TREEEM build, which was killed to avoid SIGKILL/instability.
+    No 10M same-hardware ratio; re-run when the box is healthy (scann 10M index is cached on disk).
+    Artifacts: scratchpad/{scann_t2i1m.py, scann_build.py, scann_measure.py, interleave.sh, t2i1m_query.i8bin}.
