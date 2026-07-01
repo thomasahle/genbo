@@ -3390,6 +3390,67 @@ P197. (*** STACK ALL THREE SESSION LEVERS (route-VNNI + cascade K=16 + FUSEDTOPK
     Champion invocation: SBANN_IP=1 SBANN_FASTSCAN2=1 SBANN_PREFETCH=1 SBANN_ROUTE_VNNI=1 SBANN_CASCADE=1
     SBANN_CASCADE_K=16 SBANN_FUSEDTOPK=1 SBANN_FLOAT_RERANK=1  p=54 t=10 (or p=58 t=8).
 
+P200. (*** RANK-PRESERVING ESTIMATOR (the "last lever" for <1x on OOD 1M single-thread): a tighter norm-
+    rescaled ADC DOES cut the survivor pool ~1.8x (540->~300) — a REAL, NEW primary-metric win — but does
+    NOT reach <1x; it makes the QPS ratio WORSE (~1.75x vs apq4's ~1.51x). The <1x wall is scan-density,
+    orthogonal to estimation quality. Branch rank-preserving-code. ***)
+    ATTACK (P199 framing): apq4's loose 4-bit ADC forces the candidate POOL to keep ~464-540 survivors to
+    hold recall@10>=0.90 (the int8-refine cascade then finds the true top-10, but must touch all ~540). A
+    TIGHTER estimator -> true top-10 rank higher -> smaller pool -> cheaper int8-refine -> maybe <1x.
+    METHOD (primary metric = survivor-count-at-recall0.90, load-independent recall; then interleaved QPS):
+    (0) BASELINE (granul apq4 index, float-rerank+cascade): pool t_surv=300 CAPS at ~0.88 for ALL p
+        (p54/80/120/200 = 0.872/0.880/0.881/0.877) -> confirms the apq4-RANK FLOOR (the true top-10 genuinely
+        sit past rank 300 in apq4's order); 0.90 needs t_surv~540 at p=54 (t=8/432=0.8944, t=10/540=0.9032).
+    (1) OFFLINE SCREEN (estim_lean.py, FAITHFUL: int8-domain estimator + engine-scaled int8 query, TRUTH =
+        FLOAT-IP top-10 = the leaderboard target; metric = recall@t_surv of float-top10-in-pool). Compared
+        apq4(50B) vs cheap norm corrections vs RaBitQ vs i8-exact ceiling. RESULT (recall@t): apq4 reaches
+        ~0.99 pool-containment at t~400-464; **NORM-RESCALE (apq4_ip * ||x||/||x_hat||, +4B) reaches it at
+        t~200-240 = ~HALVES the pool** (nrescale@t240=0.992 ~= apq4@t464=0.9918; nrescale@t80=0.960 vs
+        apq4 0.935). meanbias(+<mu_q,resid>, +4B) also helps but less. RaBitQ at matched 50B (2-bit) is FAR
+        WORSE (0.33@t40, naive quantizer) and 25B(1-bit) worse (confirms P144/P145: rotation buys nothing at
+        <=50B; only 100B/2x is near-perfect). i8-EXACT = 1.0 at t40 -> the pool bottleneck is PURELY the code
+        approximation (int8-refine finds the top-10 whenever the pool contains them). *** So the norm-rescale
+        win is NOT resolution/rotation (P145 refuted those) — it is de-biasing PQ's NORM-SHRINKAGE, which
+        systematically under-ranks the large-norm MIPS winners; a query-INDEPENDENT +4B scalar fixes it. ***
+    (2) IN-ENGINE (built NormPq compressor = Apq4 codes + per-vector f32 gamma=||x||/||x_hat|| in the block;
+        clean Compressor slot, COMP_TAG_NORMPQ=3, SBANN_COMP=apq4n, selftest_normpq gates the build; scan =
+        full-res i16 ADC * gamma because fastscan2's int8-SATURATING accumulate would clip the pre-multiply
+        magnitude gamma needs). Same hierk+SOAR+TREEEM routing/cascade/float-rerank as the champion.
+        SURVIVOR-COUNT (float-rerank+cascade, p=54): NormPq reaches **0.9024 at t_surv=300** and 0.9058 at
+        324, vs apq4's 0.90 at ~540 -> **CONFIRMED ~1.8x pool cut** (apq4 pool=300 caps 0.872; NormPq
+        pool=300 = 0.9024, and 0.925 at p=120 -> the rank floor is genuinely lifted).
+    (3) QPS RATIO (interleaved core0, best/5, recall-matched, load 34-44, vs FRESH ScaNN each window):
+        ScaNN(56,78)=0.9032 ~8100-8226 QPS | apq4-champion(fastscan2 p54 t10)=0.9032 ~5264-5432 => **1.51x** |
+        NormPq(i16 p54 t6)=0.9058 ~4600-4685 => **1.75x**. NormPq is ~14% SLOWER than the apq4 champion
+        despite the smaller pool. ATTRIBUTION (best/3 same window, pool held): apq4-fastscan2=3922 ->
+        apq4-i16(same 540 pool, fastscan2 OFF)=2635 = the i16 scan-kernel penalty **-33%** -> NormPq-i16(pool
+        324)=3383 = the pool-cut benefit **+28%** on top of i16. The +28% pool-cut does NOT recover the -33%
+        i16 scan penalty. (Aside: i16 also ranks BETTER than fastscan2 — apq4-i16 0.9114 vs fastscan2 0.9032
+        at the same 540 pool — but that recall margin isn't worth the scan cost either.)
+    *** VERDICT (definitive, the last lever measured): a rank-preserving estimator REACHES the primary goal
+    (survivor count 540->~300, ~1.8x — a genuinely NEW result the P144/P145 rotation/resolution bake-offs
+    could not get at matched bytes, because norm de-biasing != rotation) but DOES NOT reach <1x — it makes
+    the ratio WORSE (1.75x vs 1.51x). WHY: the tighter estimate is only computable in the FULL-RES i16 scan
+    regime (fastscan2's int8-saturating accumulate, its speed source, destroys the magnitude the gamma-
+    rescale needs), and scan is the 64%-DOMINANT phase; the pool-cut only shrinks the 14% int8-refine.
+    Even the BEST-CASE hypothetical (gamma applied for free inside fastscan2) floors at ~1.35x: the pool-cut
+    saves ~13us of int8-refine on a ~135us query, and the ~110us SCAN (ScaNN's cache-resident SoA-AH vs our
+    memory-bound scattered PQ blocks) is untouched by ANY estimator. So the <1x barrier is confirmed to be
+    the SCAN-DENSITY wall, ORTHOGONAL to candidate-ranking quality — reconfirming P195 (a tighter code costs
+    proportional scan) from the estimation side. The rank-preserving-code lever is EXHAUSTED at ~1.51x best
+    (the apq4-fastscan2 champion is already the QPS optimum; a tighter estimator can't beat it in this
+    engine). Config + code levers are done; <1x needs the SoA-AH scan-layout rebuild (a different work item).
+    HONEST CAVEATS: (1) box loaded 34-44 all session; interleaved same-window ratios are contention-robust
+    but absolute QPS suppressed and window variance +-5-7%. (2) 1M ONLY, single-thread pinned taskset -c 0
+    (10M SIGKILL-risk per constraints; free/loadavg checked). (3) NormPq scan uses the AVX2 i16 kernel (no
+    AVX-512 i16-x2 path wired for it) — a faster i16 kernel could narrow the -33% but never past the ~1.35x
+    scan floor. (4) offline screen = 150k subset proxy (relative estimator comparison; the in-engine build
+    is the load-bearing survivor-count + QPS measurement). Artifacts: scratchpad/{estim_lean.py,
+    normpq_t2i1m.idx, normpq_survivor.sh, normpq_h2h.sh}. Code: NormPq in vq.rs (COMP_TAG_NORMPQ,
+    selftest_normpq) + pq::ip_i16_offset + main SBANN_COMP=apq4n; branch rank-preserving-code. Invocation:
+    SBANN_IP=1 SBANN_PREFETCH=1 SBANN_ROUTE_VNNI=1 SBANN_CASCADE=1 SBANN_CASCADE_K=16 SBANN_FUSEDTOPK=1
+    SBANN_FLOAT_RERANK=1 SBANN_COMP=apq4n (build) / hierk apq4n ... ; p=54 t=6.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT

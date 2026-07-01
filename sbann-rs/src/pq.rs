@@ -490,6 +490,24 @@ impl Pq {
         }
         30000.0 / summax.max(1e-9)
     }
+    /// Per-query offset C_q for the norm-rescaled IP scan (NormPq). query_lut_f32_i16_ip stores
+    /// scale*(maxdot_sub - dot_c), so adc_i16 = scale*(A_q - <q,x_hat>) where A_q = sum_sub maxdot_sub.
+    /// The true rank score (-ip)*gamma needs the un-offset value: (-ip) = adc_i16/scale - A_q, so
+    /// rank_score ∝ (adc_i16 - scale*A_q) * gamma. This returns C_q = scale*A_q (the adc value at ip=0).
+    pub fn ip_i16_offset(&self, q: &[f32]) -> f32 {
+        let m = self.m; let mut summax = 0.0f32; let mut aq = 0.0f32;
+        for sub in 0..m {
+            let qs = &q[sub * self.dpb..sub * self.dpb + self.dpb];
+            let mut maxdot = f32::NEG_INFINITY; let mut mindot = f32::INFINITY;
+            for c in 0..16 {
+                let ct = &self.cent[(sub * 16 + c) * self.dpb..(sub * 16 + c) * self.dpb + self.dpb];
+                let mut dot = 0.0f32; for k in 0..self.dpb { dot += qs[k] * ct[k]; }
+                maxdot = maxdot.max(dot); mindot = mindot.min(dot);
+            }
+            aq += maxdot; summax += maxdot - mindot; // smax_sub = max_c(dot) - min_c(dot)
+        }
+        (30000.0 / summax.max(1e-9)) * aq
+    }
     /// Scale used by query_lut_f32_i8s_ip (= 127/maxrange), for the fast-scan residual-quant offset.
     pub fn ip_i8s_scale(&self, q: &[f32]) -> f32 {
         let m = self.m; let mut maxrange = 0.0f32;

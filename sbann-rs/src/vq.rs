@@ -1193,6 +1193,9 @@ pub enum QueryCtx {
     Scalar,                                      // exact int8: scan uses the raw query
     // RaBitQ: the rotated query qrot = P*q (global frame, c=0). `ip` selects IP vs L2 score assembly.
     RaBitQ { qrot: Vec<f32>, ip: bool },
+    // NormPq (P200 norm-rescaled ADC): i16 IP LUT + per-query offset cq. Per-vector score =
+    // (adc_i16 - cq) * gamma  (gamma = ||x||/||x_hat|| stored per vector) -> de-biases PQ norm shrink.
+    NormPq16 { lo: Vec<__m128i>, hi: Vec<__m128i>, cq: f32 },
 }
 
 pub trait Compressor: Send + Sync {
@@ -1704,6 +1707,119 @@ impl Compressor for RaBitQ {
             }
         }
     }
+}
+
+/// NormPq (P200, angle-1 "norm-rescaled ADC"): anisotropic 4-bit PQ (identical codes/training to Apq4)
+/// PLUS a per-vector f32 `gamma = ||x|| / ||x_hat||` (x_hat = PQ reconstruction of the raw int8 row).
+/// The IP estimate <q,x_hat> is de-biased for PQ's norm-shrinkage (which systematically UNDER-ranks the
+/// large-norm MIPS winners) by rescaling: corrected_ip = <q,x_hat> * gamma. This TIGHTENS the pool
+/// ranking (offline: ~halves the survivor count vs apq4 at matched recall) at +4 bytes/vec. Scan uses the
+/// full-res i16 ADC (the saturating fast-scan path would clip the pre-multiply magnitude gamma needs).
+/// Block layout: apq4 codes (m/2*16 B) followed by 16 little-endian f32 gammas (64 B).
+pub struct NormPq { pq: pq::Pq, d: usize, dpb: usize, eta: f32 }
+
+impl NormPq {
+    pub fn train(ds: &I8Bin, dpb: usize, iters: usize, eta: f32) -> Self {
+        let (n, d) = (ds.nb, ds.d);
+        let smp = n.min(40000);
+        let stride = (n / smp).max(1);
+        let mut x = vec![0f32; smp * d];
+        x.par_chunks_mut(d).enumerate().for_each(|(i, o)| { let r = ds.row(i * stride); for k in 0..d { o[k] = r[k] as f32; } });
+        NormPq { pq: pq::Pq::train_f32_aniso(&x, d, dpb, smp, iters, eta), d, dpb, eta }
+    }
+    #[inline]
+    fn gamma_of(&self, xf: &[f32], code: &[u8]) -> f32 {
+        let mut xhat = [0f32; 256];
+        self.pq.decode(code, &mut xhat[..self.d]);
+        let nx: f32 = xf.iter().map(|&v| v * v).sum::<f32>().sqrt();
+        let nh: f32 = xhat[..self.d].iter().map(|&v| v * v).sum::<f32>().sqrt();
+        if nh < 1e-6 { 1.0 } else { nx / nh }
+    }
+}
+
+impl Compressor for NormPq {
+    fn block_bytes(&self) -> usize { self.pq.m / 2 * 16 + 16 * 4 }
+    fn encode_block(&self, rows: &[&[i8]], n_real: usize, _cell_cent: &[i8], out: &mut Vec<u8>) {
+        let mut codes16 = [[0u8; 256]; 16];
+        let mut gammas = [0f32; 16];
+        let mut xf = vec![0f32; self.d];
+        for j in 0..16 {
+            if j < n_real {
+                for k in 0..self.d { xf[k] = rows[j][k] as f32; }
+                self.pq.encode_f32(&xf, &mut codes16[j][..self.pq.m]);
+                gammas[j] = self.gamma_of(&xf, &codes16[j][..self.pq.m]);
+            } else { for k in 0..self.pq.m { codes16[j][k] = 0; } gammas[j] = 0.0; }
+        }
+        pq::pack_block(&codes16, self.pq.m, out);
+        for &g in gammas.iter() { out.extend_from_slice(&g.to_le_bytes()); }
+    }
+    fn prepare_query(&self, q: &[i8]) -> QueryCtx {
+        let qf: Vec<f32> = q.iter().map(|&v| v as f32).collect();
+        let lut = self.pq.query_lut_f32_i16_ip(&qf);
+        let (lo, hi) = pq::lut_regs_i16(&lut, self.pq.m);
+        let cq = self.pq.ip_i16_offset(&qf);
+        QueryCtx::NormPq16 { lo, hi, cq }
+    }
+    fn scan_block(&self, block: &[u8], ctx: &QueryCtx, _q: &[i8], _r: &[&[i8]], out16: &mut [i32; 16]) {
+        if let QueryCtx::NormPq16 { lo, hi, cq } = ctx {
+            let mut adc = [0i32; 16];
+            unsafe { pq::block_adc_i16_avx2(block, self.pq.m, lo, hi, &mut adc) };
+            let gbase = self.pq.m / 2 * 16; // gammas follow the packed codes
+            for i in 0..16 {
+                let g = f32::from_le_bytes(block[gbase + i * 4..gbase + i * 4 + 4].try_into().unwrap());
+                // rank score = (adc - cq) * gamma  (smaller = closer; adc-cq ~ -scale*ip <= 0)
+                out16[i] = ((adc[i] as f32 - cq) * g).round() as i32;
+            }
+        }
+    }
+    fn save(&self, w: &mut crate::persist::Sw) -> std::io::Result<()> {
+        w.u8(COMP_TAG_NORMPQ)?;
+        w.usize(self.d)?;
+        w.usize(self.dpb)?;
+        w.f32(self.eta)?;
+        save_pq(&self.pq, w)
+    }
+}
+
+/// Selftest for NormPq.scan_block: verifies the gamma byte-read + (adc_i16 - cq)*gamma arithmetic
+/// against an independent scalar reference (block_adc_i16 scalar + hand-applied gamma). The AVX2 i16
+/// kernel itself is covered by pq::selftest_i16; this guards the norm-rescale wrapper.
+pub fn selftest_normpq() -> bool {
+    let (d, dpb) = (8usize, 2usize);
+    let m = d / dpb;
+    // random-ish centroids + query
+    let mut cent = vec![0f32; m * 16 * dpb];
+    let mut s = 0x1234u64;
+    for v in cent.iter_mut() { s = s.wrapping_mul(6364136223846793005).wrapping_add(1); *v = ((s >> 33) as f32 / (1u64 << 31) as f32) - 1.0; }
+    let pq = pq::Pq { d, dpb, m, cent, eta: 1.0 };
+    let comp = NormPq { pq, d, dpb, eta: 1.0 };
+    // 16 synthetic int8 rows
+    let rows_store: Vec<Vec<i8>> = (0..16).map(|j| (0..d).map(|k| ((j * 7 + k * 3) as i32 % 17 - 8) as i8).collect()).collect();
+    let rows: Vec<&[i8]> = rows_store.iter().map(|r| r.as_slice()).collect();
+    let mut block = Vec::new();
+    comp.encode_block(&rows, 16, &[], &mut block);
+    let q: Vec<i8> = (0..d).map(|k| ((k * 5) as i32 % 13 - 6) as i8).collect();
+    let ctx = comp.prepare_query(&q);
+    let mut got = [0i32; 16];
+    comp.scan_block(&block, &ctx, &q, &[], &mut got);
+    // scalar reference
+    let qf: Vec<f32> = q.iter().map(|&v| v as f32).collect();
+    let lut = comp.pq.query_lut_f32_i16_ip(&qf);
+    let cq = comp.pq.ip_i16_offset(&qf);
+    let gbase = m / 2 * 16;
+    let mut ok = true;
+    for i in 0..16 {
+        let mut adc = 0i32;
+        for g in 0..m { // scalar ADC mirroring block_adc_i16 (subspace-major nibble layout)
+            let byte = block[(g / 2) * 16 + i];
+            let code = if g % 2 == 0 { byte & 0x0f } else { byte >> 4 } as usize;
+            adc += lut[g * 16 + code] as i32;
+        }
+        let gam = f32::from_le_bytes(block[gbase + i * 4..gbase + i * 4 + 4].try_into().unwrap());
+        let want = ((adc as f32 - cq) * gam).round() as i32;
+        if got[i] != want { eprintln!("selftest_normpq lane {i}: got {} want {}", got[i], want); ok = false; }
+    }
+    ok
 }
 
 // ---------------- Index: compose Router + Compressor ----------------
@@ -2684,6 +2800,7 @@ impl Index {
 const ROUTER_TAG_HIER: u8 = 1;
 const COMP_TAG_APQ4: u8 = 1;
 const COMP_TAG_PQ4: u8 = 2;
+const COMP_TAG_NORMPQ: u8 = 3;
 
 fn save_pq(pq: &pq::Pq, w: &mut crate::persist::Sw) -> std::io::Result<()> {
     w.usize(pq.d)?;
@@ -2762,7 +2879,14 @@ fn load_comp(r: &mut crate::persist::Pr) -> Box<dyn Compressor> {
             let pq = load_pq(r);
             Box::new(Pq4 { pq })
         }
-        _ => panic!("unknown compressor type tag {tag} in index file (only Apq4={COMP_TAG_APQ4}, Pq4={COMP_TAG_PQ4} supported)"),
+        COMP_TAG_NORMPQ => {
+            let d = r.usize();
+            let dpb = r.usize();
+            let eta = r.f32();
+            let pq = load_pq(r);
+            Box::new(NormPq { pq, d, dpb, eta })
+        }
+        _ => panic!("unknown compressor type tag {tag} in index file (only Apq4={COMP_TAG_APQ4}, Pq4={COMP_TAG_PQ4}, NormPq={COMP_TAG_NORMPQ} supported)"),
     }
 }
 

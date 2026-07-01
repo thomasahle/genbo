@@ -405,6 +405,7 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
         "opql" => Box::new(vq::Opq4::train_learned(&ds, dpb, 6, 8)),
         "opql5" => Box::new(vq::Opq4::train_learned(&ds, 5, 6, 8)),
         "apq4" => Box::new(vq::Apq4::train(&ds, dpb, 6, eta)),
+        "apq4n" => { assert!(vq::selftest_normpq(), "NormPq scan selftest failed"); println!("  [normpq (P200 norm-rescaled apq4) dpb={dpb} eta={eta}]"); Box::new(vq::NormPq::train(&ds, dpb, 6, eta)) }
         "aopq" => Box::new(vq::Opq4::train_aopq(&ds, dpb, 6, 8, eta)),
         "i8" => Box::new(vq::ScalarI8::new(ds.d)),
         "rabitq" => { println!("  [rabitq B={rbq_bits} L={rbq_l}]"); Box::new(vq::RaBitQ::new(ds.d, rbq_bits, rbq_l, 0x5a17)) }
