@@ -3076,6 +3076,35 @@ P186. (*** STRATEGIC CLOSE: bounded attempts EXHAUSTED across config + tuning + 
     sustained capacity. FINAL: streaming eligible ~0.77, OOD QPS@90% ~1732; did not top either; wall characterized to
     the algorithm level with data at every rung.
 
+P187. (*** WALL-1 FASTSCAN AUDIT: our scan kernel WAS crude (corrects P186 "already FastScan-like"); faithful 32-wide int8-sat FastScan = real 1.8x KERNEL, committed (fastscan-soa d99ca6f, SBANN_FASTSCAN2) -- but only 1.07x END-TO-END because the kernel is ~6% of the query. Real scan cost = the scalar COLLECT (~85% of scan phase) + scattered cell reads (6-11x collapse). NOT top-3. ***)
+    Third faithfulness audit (after aniso-VQ P185). Result mirrors P185: an "it's fundamental" claim was actually a CRUDE
+    implementation. Our apq4 scan kernel block_adc_i8_i16acc (pq.rs:705) had in-register vpshufb LUT + 16-way SoA but
+    (a) 16-wide not 32-wide (used _mm_shuffle_epi8 not _mm256_), (b) int16 accumulate not int8-saturating (cvtepi8_epi16
+    + add_epi16, 2 uops/subspace) -- even the AVX-512 path stayed int16-accumulate, which is exactly why P183's USE512
+    A/B saw only +7%. So P186's "already FastScan-like" was WRONG. A faithful 32-wide int8-saturating FastScan (periodic
+    int16 hoist, bounded LUTs cap 15/subspace) is a REAL 1.8x on the KERNEL (single-core microbench, m=100: 372->680
+    Mcand/s L2-hot), recall-neutral (p512 0.9700 default vs 0.9698 fs2), committed behind SBANN_FASTSCAN2.
+    *** BUT END-TO-END ONLY 1.07x at 1M (1127->1206 QPS same-box A/B): the LUT kernel is only ~6% of the query. The
+    scan PHASE is ~85% the scalar COLLECT -- pool.push((out[j],slot)) + per-candidate slot_orig branch + select_nth
+    in scan_pool (vq.rs:1650). Query = route 19% + scan 46% + rerank 35%; kernel is a sliver. *** At 10M the
+    cell-SCATTERED access pattern collapses throughput 6-11x (m=50: 715 L2-hot -> 104 scattered): scan visits p=512
+    cells in probe order = 512 random jumps into a 100-250MB array. Sequential-large streams fine (321-660 Mcand/s),
+    so the wall is the SCATTER, not raw bandwidth -- refines P183. Could NOT build a real 10M A/B (shared-box memory
+    cap ~26GB, already ~28GB used); 10M projection rests on faithful scattered microbench + 1M end-to-end.
+    *** METHODOLOGY (per user, 2026-07-01): cross-machine QPS comparison (ours on a load-22 16-core shared box w/ other
+    tenants' mox-compile eating 5+ cores, vs scann on an idle standardized Azure VM) is INVALID; any "~22x short of
+    scann" projection INHERITS this flaw and is NOT restated as fact. Hardware-INDEPENDENT findings that DO stand:
+    kernel ~6% of query (structural), collect ~85% of scan phase, scatter collapses 6-11x. These locate the real
+    bottleneck WITHOUT the contaminated QPS number, and the two-walls conclusion never depended on QPS -- it rests on
+    recall (streaming ~0.77 vs 0.998) + reorder-depth (hardware-independent). Future QPS claims must be normalized
+    against a reference baseline measured on THIS box when idle (loadavg<4).
+    *** BOUNDED WIN BANKED: real 1.8x FastScan kernel (SBANN_FASTSCAN2, fastscan-soa d99ca6f), recall-neutral.
+    TWO remaining WALL-1 levers, both = ScaNN's actual design, both larger rewrites: (1) FUSED SIMD top-t that keeps a
+    running threshold + emits only survivors -> eliminates the O(candidates) scalar collect that is the measured ~85%
+    of the scan phase; (2) SoA / bigger-cell LAYOUT so the 10M scan STREAMS (321-660 Mcand/s) instead of SCATTERING
+    (73-104). PATTERN across P185/P187: our engine has real unclaimed perf (crude impls), but closing to ScaNN needs
+    reimplementing its core (anisotropic-VQ, fused-top-k, SoA) = a scoped multi-day rebuild = user's call.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
