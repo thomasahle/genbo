@@ -3243,6 +3243,22 @@ P194. (*** CASCADE rerank = real +30% QPS@recall0.90, recall-EXACT: 1.9x -> ~1.4
     scan cost is absorbed by the 2x scan-primitive fix) = ScaNN's exact recipe, and would cut the survivor count -> could
     break the ~1.16x floor. Combined measurement (cascade + scan-fix + route-fix) pending the other two agents.
 
+P195. (*** SCAN PRIMITIVE: the "2x kernel gap" DOESN'T EXIST. Our scan kernel per-candidate COMPUTE already BEATS ScaNN (543 Mcand/s hot vs ScaNN 368). The champion already uses the 32-wide int8-sat FastScan (no mis-dispatch). The ~177 Mcand/s is a DRAM-LATENCY floor of COLD SCATTERED small cells -- NOT kernel, NOT TLB, NOT ILP. ScaNN's higher rate = candidate-memory DENSITY (2000 leaves x500pt=25KB contiguous vs our ~9.6KB cells), i.e. the codebook/partitioning again. Kernel-side changes shave ~0us on cold e2e. ***)
+    Dispatch audit killed the wrong-kernel hypothesis: apq4+FASTSCAN2, a0=3<DEDUP_A0 -> scan_pool -> scan_block_x2 ->
+    block_adc_i8_fastscan32_2x16 (already 32-wide int8-sat). Isolated floors (scanbench2 m=100): L2-hot native-fs32 687 /
+    fs32-2x16 610 / 16w-i16acc 377; LARGE-seq native 447 / 2x16 155 (2.9x collapse, the 2x16 two-128b-loads defeat the
+    prefetcher on a long stream). BUT on the REAL champion scatterbench (p80, 15165 cand): COLD 2x16 ~= native ~= ~176
+    (kernel swap NULL); CACHE-HOT (NQ=8) 2x16 497 vs native 543 (+9%). cold~176 vs hot~500 => the 3x gap is MEMORY not
+    kernel. perf: IPC 2.06, frontend-idle 0.74%, branch-miss 0.12% => backend/mem-stall bound; THP=always (78 hugepages)
+    => NOT TLB. Root: 156MB blocks >> 32MB L3; each query streams a FRESH ~758KB cold from DRAM, 80/16128 cells probed
+    ~1.8MB apart => latency-bound; that's why sort(1.02x), kernel-swap(null), prefetch(+6% iso/hurts e2e) are ALL null.
+    *** Change SBANN_P2LAYOUT (contiguous 32-wide paired blocks + native 1-load fs32, recall-EXACT verified bit-identical):
+    +9% cache-HOT but ~0 on cold real scan (memory-bound), doubles blocks mem -> default OFF (no regression). Real scan
+    lever remains FUSEDTOPK (+3-6%). *** VERDICT: our scan primitive is NOT behind ScaNN's -- per-candidate compute we're
+    AHEAD (543 vs 368); ScaNN's edge is candidate-memory DENSITY (denser leaves stream bandwidth-bound vs our latency-bound
+    scattered small cells). Closing it needs denser candidates = bigger leaves (P192/P193: not free at recall>=0.90 -> more
+    candidates) OR ScaNN's learned partitioning+codebook. Kernel is a dead end. Branch scan-primitive 88f356b.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
