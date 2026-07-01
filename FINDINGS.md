@@ -3208,6 +3208,25 @@ P192. (*** SUB-2x ACHIEVED at 1M single-thread OOD: gap-closing workflow (routin
     *** CAVEAT (P192-honest): interleaved ratio itself has ~+-5-7% window variance (scann float-scan vs our int8-scan
     have different contention sensitivities); ~1.8x is the honest central estimate, not a hard 1.77.
 
+P193. (*** REFRAME (de-risk gate fired): the ~1.8x is NOT the scan -- it is the float-REORDER COUNT (rerank). Our scan ALREADY streams at parity with ScaNN; the streaming-leaf / SoA-layout lever is REFUTED. The entire gap is: we float-reorder 464 survivors to hit 0.90 vs ScaNN's 78 (~75us, ~6x), set by CODE RANKING QUALITY (our apq4 50B/vec vs ScaNN anisotropic-AH 100B/vec). ***)
+    Profile of P192 champion (208us/q, ~4800 QPS single-thread): route 36us / scan 85us / rerank 88us. ScaNN (118.7us)
+    decomposed by lts/reorder sweep: route+fixed ~30 / scan ~76 / reorder(78) ~13. Phase gap: route +6, scan +9,
+    RERANK +75us = the whole 1.8x. *** The old "scan scattered 92 Mcand/s = 3.9x collapse" was the OBSOLETE Kf=262144
+    index; the current granul Kf=16384 champion scan ALREADY streams at 177 Mcand/s (sorted 187 = 1.06x headroom) = at
+    ScaNN scan parity. Both reorder ~180ns/float-candidate; the gap is purely the COUNT (464 vs 78). *** FlatIvf-2000
+    big-leaf test (added FlatIvf serialization): scan streams FASTER (257-269 Mcand/s, 74% of 356 floor) but QPS@0.90
+    gets WORSE (2559 vs 4761) -- coarse leaves spread the true top-10 -> need 2.5-3.5x MORE candidates; recall/candidate
+    tradeoff overwhelms streaming. P192 falsification re-confirmed with a real SoA layout. SoA rebuild NOT done (gate
+    correctly fired: no QPS upside). *** Best ratio this window: 1.83x (scann 8538 vs champ 4675 @0.90; recall-matched
+    p60 1.87x) -- did NOT beat P192. Cheap rerank levers tried: int16 finer rank (+0.011 recall but 1.5x slower scan=net
+    loss); FUSEDTOPK (null, re-confirms P188); POOLDEDUP (a0=3 dupes: dedup +0.0175 recall but O(11019) cost > save,
+    4498->2670). *** WHAT BLOCKS <1x: the 464-vs-78 reorder deficit = ScaNN's anisotropic-AH codebook (IP-optimized,
+    100B/vec) vs apq4 (50B/vec). Matching needs ~2x code bits -> doubles scan cost -> just moves cost scan<->rerank
+    (break-even), and anisotropic hurts pool-recall under float rerank. UNIMPLEMENTED bounded rerank projections:
+    cell-contiguous float store ~1.5x (int8-contig 106ns vs float-scattered 190ns endpoints), coarse-cap+dedup ~1.4x --
+    NEITHER reaches <1x alone. Committed P193 on p193-streaming-leaf-verdict (+ FlatIvf serialization, recall-neutral).
+    NEXT: attack the rerank directly (CASCADE int8-prune->float + contiguous float store) -- the real bottleneck.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
