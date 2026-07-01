@@ -3227,6 +3227,22 @@ P193. (*** REFRAME (de-risk gate fired): the ~1.8x is NOT the scan -- it is the 
     NEITHER reaches <1x alone. Committed P193 on p193-streaming-leaf-verdict (+ FlatIvf serialization, recall-neutral).
     NEXT: attack the rerank directly (CASCADE int8-prune->float + contiguous float store) -- the real bottleneck.
 
+P194. (*** CASCADE rerank = real +30% QPS@recall0.90, recall-EXACT: 1.9x -> ~1.475x (same window). int8-VNNI rescore of survivors -> prune to K=16 -> float-reorder only 16. Float stage 464->16 reorders = ~3.5us (BELOW ScaNN's ~13us!). But a NEW int8 refine stage costs ~28-31us (gather-latency-bound), which is now the wall. Did NOT reach <1x. ***)
+    rerank_cascade_float (vq.rs:308, branch rerank-cascade e6b0e20): dedup apq4 pool by orig (SOAR a0=3 -> ~280 distinct),
+    INT8-rescore each with VNNI dpbusd (dot_i8_vnni, simd.rs:74) over slot-contiguous raw i8, prune to K int8-smallest,
+    FLOAT-reorder only K. SBANN_CASCADE/_K/_KLIST. K=16 = min holding recall EXACTLY (p52 t10: nocascade float(520)=0.9002
+    == cascade K16=0.9002; K12=0.8979). *** Contiguous-float store NOT built (moot: only 16 float reorders left, ~3.5us).
+    *** 3-way interleaved (core0, load 58-65): ScaNN 8111 (0.9032) | P192 base 4208 (1.93x) | cascade 5499 (1.475x, +30%).
+    Phase: route+scan ~112 (scann ~106) + int8 ~28-31 + float ~3.5. *** REMAINING to <1x = ~48us: int8 refine ~28-31us +
+    ~6us route/scan. int8 refine IRREDUCIBLE here: apq4's poor ranking forces t~280-520 survivors to touch (t=348->0.885);
+    IP int8 dot needs all 200 dims (partial-dim=128 craters to 0.406); gather latency-bound -> must touch ~280 full rows.
+    Even a FREE int8 stage floors ~1.16x. VNNI is 1.43x compute but stage is GATHER-bound so +2% e2e (win = smaller row
+    200B vs 800B, not dpbusd). *** cascade-agent VERDICT: <1x is NOT a rerank problem -- needs better candidate CODES
+    (fewer survivors to touch) = OPQ/anisotropic-AH, which P182/P184 say our code family can't deliver at coarse bit-rate.
+    *** BUT NOTE (mine): the scan-primitive fix (177->356, another agent) + RICHER codes (100B/vec like ScaNN, whose 2x
+    scan cost is absorbed by the 2x scan-primitive fix) = ScaNN's exact recipe, and would cut the survivor count -> could
+    break the ~1.16x floor. Combined measurement (cascade + scan-fix + route-fix) pending the other two agents.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
