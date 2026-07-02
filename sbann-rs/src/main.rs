@@ -818,8 +818,8 @@ fn build_router(dr: &I8Bin, router_s: &str, c: usize, mu: Vec<f32>) -> Option<Bo
     let b0 = std::env::var("SBANN_B0").ok().and_then(|s| s.parse().ok()).unwrap_or((cb / 4).max(8));
     let router: Box<dyn vq::Router> = match router_s {
         "flat" => Box::new(vq::FlatIvf::train(dr, c, mu.clone(), 15)),
-        "flatsoar" => Box::new(vq::FlatIvf::train_soar(dr, c, mu.clone(), 15, 1.0)),
-        "flatrair" => Box::new(vq::FlatIvf::train_rair(dr, c, mu.clone(), 15, 1.0)),
+        "flatsoar" => { assert!(simd::selftest_dot_f32(dr.d), "AVX2 f32 dot != scalar reference!"); Box::new(vq::FlatIvf::train_soar(dr, c, mu.clone(), 15, 1.0)) }
+        "flatrair" => { assert!(simd::selftest_dot_f32(dr.d), "AVX2 f32 dot != scalar reference!"); Box::new(vq::FlatIvf::train_rair(dr, c, mu.clone(), 15, 1.0)) }
         "flatrand" => Box::new(vq::FlatIvf::train(dr, c, mu.clone(), 0)),
         "avq" => Box::new(vq::AvqRouter::train(dr, cb, cb, mu.clone(), 15)),
         "hier" => { let mut r = vq::HierRouter::train(dr, c, c0, b0, mu.clone()); apply_soar(&mut r); Box::new(r) }
@@ -1373,6 +1373,7 @@ fn main() {
     if std::env::var("SBANN_POOLDEDUP").is_ok() { vq::POOLDEDUP.store(true, std::sync::atomic::Ordering::Relaxed); }
     if let Ok(s) = std::env::var("SBANN_DEDUP_A0") { if let Ok(v) = s.parse::<usize>() { vq::DEDUP_A0.store(v, std::sync::atomic::Ordering::Relaxed); } }
     if let Ok(s) = std::env::var("SBANN_KEEP_MUL") { if let Ok(v) = s.parse::<usize>() { if v >= 1 { vq::KEEP_MUL.store(v, std::sync::atomic::Ordering::Relaxed); } } }
+    if let Ok(s) = std::env::var("SBANN_SOAR_TOPK") { if let Ok(v) = s.parse::<usize>() { if v >= 1 { vq::SOAR_TOPK.store(v, std::sync::atomic::Ordering::Relaxed); } } }
     if std::env::var("SBANN_PROFILE").is_ok() { vq::PROFILE.store(true, std::sync::atomic::Ordering::Relaxed); }
     if let Ok(s) = std::env::var("SBANN_ROUTE_SDIM") { if let Ok(v) = s.parse::<usize>() { vq::ROUTE_SDIM.store(v, std::sync::atomic::Ordering::Relaxed); } }
     if std::env::var("SBANN_ROUTE_ADC").is_ok() { vq::ROUTE_ADC.store(true, std::sync::atomic::Ordering::Relaxed); }

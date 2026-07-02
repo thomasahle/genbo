@@ -274,13 +274,47 @@ pub fn l2_f32(a: &[f32], b: &[f32]) -> f32 {
     s
 }
 
+/// Scalar reference dot product (fallback + selftest oracle).
 #[inline]
-pub fn dot_f32(a: &[f32], b: &[f32]) -> f32 {
+pub fn dot_f32_scalar(a: &[f32], b: &[f32]) -> f32 {
     let mut s = 0.0;
     for k in 0..a.len() {
         s += a[k] * b[k];
     }
     s
+}
+
+/// AVX2+FMA f32 dot: 8-wide fused multiply-add accumulate. Used by the SOAR 2nd-assignment
+/// projection (bounded to the top-K nearest cells) and the AVQ routing GEMV.
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2,fma")]
+pub unsafe fn dot_f32_avx2(a: &[f32], b: &[f32]) -> f32 {
+    let n = a.len();
+    let mut acc = _mm256_setzero_ps();
+    let mut k = 0usize;
+    while k + 8 <= n {
+        let av = _mm256_loadu_ps(a.as_ptr().add(k));
+        let bv = _mm256_loadu_ps(b.as_ptr().add(k));
+        acc = _mm256_fmadd_ps(av, bv, acc);
+        k += 8;
+    }
+    let mut tmp = [0f32; 8];
+    _mm256_storeu_ps(tmp.as_mut_ptr(), acc);
+    let mut s = tmp[0] + tmp[1] + tmp[2] + tmp[3] + tmp[4] + tmp[5] + tmp[6] + tmp[7];
+    while k < n { s += *a.get_unchecked(k) * *b.get_unchecked(k); k += 1; }
+    s
+}
+
+/// f32 dot product (dispatch: AVX2+FMA if available, else scalar).
+#[inline]
+pub fn dot_f32(a: &[f32], b: &[f32]) -> f32 {
+    #[cfg(target_arch = "x86_64")]
+    {
+        if is_x86_feature_detected!("avx2") && is_x86_feature_detected!("fma") {
+            return unsafe { dot_f32_avx2(a, b) };
+        }
+    }
+    dot_f32_scalar(a, b)
 }
 
 // ---- f16 (IEEE half) rerank support ----------------------------------------------------------
@@ -417,6 +451,22 @@ pub fn l2_f16(q: &[f32], r: &[u16]) -> f32 {
         }
     }
     l2_f16_scalar(q, r)
+}
+
+/// Self-test: the AVX2+FMA dot must match the scalar dot to a tiny relative epsilon (FMA reassociates,
+/// so not bit-exact). Validates the SOAR-assignment projection kernel.
+pub fn selftest_dot_f32(d: usize) -> bool {
+    let mut seed = 0x1a2b_3c4d_5e6f_7081u64;
+    let mut nf = || { seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1);
+        ((seed >> 32) as f32 / u32::MAX as f32 - 0.5) * 2.0 };
+    for _ in 0..64 {
+        let a: Vec<f32> = (0..d).map(|_| nf()).collect();
+        let b: Vec<f32> = (0..d).map(|_| nf()).collect();
+        let x = dot_f32(&a, &b);
+        let y = dot_f32_scalar(&a, &b);
+        if (x - y).abs() > 1e-3 * (1.0 + y.abs()) { return false; }
+    }
+    true
 }
 
 /// Self-test: the F16C L2 kernel must match the scalar f16 L2 (same stored bits) to a tiny epsilon,

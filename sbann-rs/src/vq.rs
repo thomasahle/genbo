@@ -46,6 +46,11 @@ pub static DEDUP_A0: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicU
 /// SBANN_KEEP_MUL: bounded-top-t collect keeps `t*KEEP_MUL` (prunes at 2x that). Default 1 = keep exactly t
 /// (tight; deep-t collect stays cheap). Set higher (old default 4) for A/B / looser-threshold headroom.
 pub static KEEP_MUL: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(1);
+/// SBANN_SOAR_TOPK: the SOAR/RAIR 2nd (spill) assignment only searches the K nearest cells (by L2) for
+/// the orthogonality-minimizing pick — the ‖rj‖² term dominates for far cells, so the optimum is always
+/// among the nearest few. Bounds the per-point O(d) projection loop to K instead of all C cells (the
+/// single-threaded insert-path bottleneck: full-C scalar projection dropped inserts 7.3x). Default 256.
+pub static SOAR_TOPK: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(256);
 /// SBANN_PROFILE: accumulate per-component query time (nanos) to see where the 10M query goes
 /// (route vs scan vs rerank). Load-robust (report the FRACTIONS, not absolute). main.rs prints+resets.
 pub static PROFILE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
@@ -303,37 +308,45 @@ impl Router for FlatIvf {
         let mut qn = [0i8; 256];
         simd::normalize_i8(row, &self.mu, &mut qn[..d]);
         if self.soar > 0.0 && a0 == 2 {
-            // i0 = nearest; i1 = argmin l2 + soar*<residual_j, r0hat>^2 (orthogonality-amplified)
-            let mut l2v = vec![0f32; self.c];
-            let (mut bi0, mut b0) = (0usize, f32::INFINITY);
-            for j in 0..self.c {
-                let dist = simd::l2_i8(&qn[..d], &self.pivots[j * d..j * d + d]) as f32;
-                l2v[j] = dist;
-                if dist < b0 { b0 = dist; bi0 = j; }
-            }
+            // i0 = nearest; i1 = argmin l2 + soar*<residual_j, r0hat>^2 (orthogonality-amplified).
+            // loop1 (nearest): one batched-SIMD L2 pass over all pivots (l2_i8_block: single dispatch,
+            // 2-wide ILP) instead of per-pivot dispatched calls.
+            let mut l2i = vec![0i32; self.c];
+            simd::l2_i8_block(&qn[..d], &self.pivots, self.c, d, d, &mut l2i);
+            let (mut bi0, mut b0) = (0usize, i32::MAX);
+            for j in 0..self.c { if l2i[j] < b0 { b0 = l2i[j]; bi0 = j; } }
             // first residual r0 = qn - pivot[i0]
             let mut r0 = [0f32; 256];
             let mut nrm = 0.0f32;
             for k in 0..d { let v = qn[k] as f32 - self.pivots_f32[bi0 * d + k]; r0[k] = v; nrm += v * v; }
+            // BOUNDED spill (perf): only the K nearest cells can minimize the loss (l2 term dominates
+            // for far cells), so run the O(d) projection over the top-K by L2 instead of all C cells.
+            let topk = SOAR_TOPK.load(std::sync::atomic::Ordering::Relaxed).clamp(1, self.c);
+            let mut cand: Vec<u32> = (0..self.c as u32).collect();
+            if topk < self.c { cand.select_nth_unstable_by_key(topk - 1, |&j| l2i[j as usize]); }
             let (mut bi1, mut b1) = (bi0, f32::INFINITY);
             if self.rair {
                 // RAIR: loss = ‖rj‖² + λ (r0·rj). r0·rj = r0·qn - r0·pivot[j]; r0·qn const -> drop.
-                for j in 0..self.c {
+                for &jj in &cand[..topk] {
+                    let j = jj as usize;
                     if j == bi0 { continue; }
-                    let r0pj: f32 = (0..d).map(|k| r0[k] * self.pivots_f32[j * d + k]).sum();
-                    let loss = l2v[j] + self.soar * (-r0pj); // smaller when rj anti-parallel to r0
+                    let r0pj = simd::dot_f32(&r0[..d], &self.pivots_f32[j * d..j * d + d]);
+                    let loss = l2i[j] as f32 + self.soar * (-r0pj); // smaller when rj anti-parallel to r0
                     if loss < b1 { b1 = loss; bi1 = j; }
                 }
             } else {
                 // SOAR: orthogonal — penalize the squared parallel projection onto r̂0
                 let inv = 1.0 / nrm.sqrt().max(1e-9);
                 for k in 0..d { r0[k] *= inv; }
-                let qdot: f32 = (0..d).map(|k| qn[k] as f32 * r0[k]).sum();
-                for j in 0..self.c {
+                let mut qf = [0f32; 256];
+                for k in 0..d { qf[k] = qn[k] as f32; }
+                let qdot = simd::dot_f32(&qf[..d], &r0[..d]);
+                for &jj in &cand[..topk] {
+                    let j = jj as usize;
                     if j == bi0 { continue; }
-                    let pdot: f32 = (0..d).map(|k| self.pivots_f32[j * d + k] * r0[k]).sum();
+                    let pdot = simd::dot_f32(&self.pivots_f32[j * d..j * d + d], &r0[..d]);
                     let proj = qdot - pdot;
-                    let loss = l2v[j] + self.soar * proj * proj;
+                    let loss = l2i[j] as f32 + self.soar * proj * proj;
                     if loss < b1 { b1 = loss; bi1 = j; }
                 }
             }
