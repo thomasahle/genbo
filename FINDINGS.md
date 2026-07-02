@@ -3434,6 +3434,20 @@ P206. (*** QUERY-CALIBRATION ORACLE = the strongest GO of the fan-out, and embar
     (x1.20 realizable, retrained on the composed pipeline). Directed graph-impl to cherry-pick d02561a and run the
     composed decider: arms = ScaNN / champion p54 / gamma p29 / gamma+graph p'~18. Compound projection ~0.75-0.9.
 
+P207. (*** GRAPH-AUGMENTED POOL EXPANSION IMPLEMENTED (branch graph-expansion-impl 34b05f2+0290d4e): recall 0.9033 at p=30/M=25 — BIT-IDENTICAL to the P205 oracle on 2000/2000 queries; union-rescore gather hit the FAVORABLE spec (39-44 ns/row); decider = ScaNN 8234 / GRAPH 7396 / CHAMPION 6872 => 1.113x vs ScaNN (champion arm re-validated 1.198x), GRAPH beats champion EVERY round (+7.6%). Best OOD standing yet, NOT sub-1x alone. GAMMA COMPOSITION NOT YET RUN (directive crossed mid-decider) — that is the projected sub-1x arm. ***)
+    Clean build: SBANN_GRAPH_FILE flat n*k u32 IP-kNN sidecar (k=16, orthogonal to index serialization);
+    rerank_cascade_graph = pool top-M=25 origs -> 16 neighbors each -> cache-hot OPEN-ADDRESSING dedup union
+    (HashSet and a 4MB generation-stamp bitmap both SLOWER — cache-cold scatter) -> existing int8-VNNI rescore
+    w/ streaming prefetch -> K16 -> float16. Wired batched + per-query. Warm phase: route 23 / scan 49 /
+    graph-union 20 / rescore 22 / float 6.
+    *** KEEPER A/B: unsorted union + deep prefetch (pfdist 16) BEATS orig-sorted gather at moderate load (sort
+    CPU over ~560 random u32 > locality gain once prefetched); SBANN_GRAPH_SORT=1 restores sort (only wins under
+    extreme DRAM contention). *** WHY not sub-1x alone: frontier min-e2e at recall 0.9032 with p=30 is ~124us vs
+    ScaNN ~120; graph-union phase has ~5-7us trimmable overhead (20 vs 13 modeled); box memory pressure (30M
+    runbook evicts float-base mmap pages) taxes both arms equally — quiet projection 1.02-1.07x. Adaptive-p on
+    this pipeline ~5us => ~1.05-1.08, deferred. *** NEXT (the decisive arm): cherry-pick gamma d02561a; with
+    p'~15-22 the scan halves BEFORE the graph hop => modeled e2e ~100-110us vs ScaNN ~120 => sub-1x plausible.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
