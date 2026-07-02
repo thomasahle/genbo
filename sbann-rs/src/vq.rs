@@ -934,6 +934,31 @@ pub struct HierRouter {
     // VNNI decomposition L2 = Σq² + cadj − 2·Σ(q+128)c (dpbusd; ~1.5x the AVX2-madd L2 on Zen4), bit-identical
     // to the direct Σ(q-c)². Derived from `cent` at build/load (NOT persisted). Empty => VNNI path disabled.
     cadj: Vec<Vec<i32>>,
+    // QUERY-AWARE PROBE CALIBRATION (SBANN_ROUTE_GAMMA, A/B scaffolding): per-FINEST-cell additive i32
+    // bias (γ−1)·‖cent_f‖² applied to the finest-level routing score, so the probe ORDER ranks by
+    // γ‖c‖² − 2·q·c instead of L2's ‖c‖² − 2·q·c (γ=1 ≡ off, γ=0 ≡ pure IP routing). Rationale: routing
+    // L2 in the normalized space mis-calibrates OOD text queries vs the float-IP ground truth — cells
+    // with large centroid norm hold the high-IP true neighbours but L2 penalizes them; shrinking the
+    // ‖c‖² term pulls them earlier in the probe order (measured: p 54→29 at equal GT-cell coverage).
+    // Derived at build/load (NOT persisted); zero query-time cost beyond one i32 add per fine cell.
+    // SEARCH-time flag: do not set during build/insert (it would also skew the SOAR assignment).
+    gbias: Vec<i32>,
+}
+
+/// Per-finest-cell probe-calibration bias (γ−1)·‖c‖² from SBANN_ROUTE_GAMMA. Empty when unset/γ=1.
+fn gbias_of(cent: &[Vec<i8>], d: usize) -> Vec<i32> {
+    let g: f32 = match std::env::var("SBANN_ROUTE_GAMMA").ok().and_then(|s| s.parse().ok()) {
+        Some(v) => v,
+        None => return Vec::new(),
+    };
+    if (g - 1.0).abs() < 1e-9 { return Vec::new(); }
+    let fin = cent.last().expect("gbias: no centroid levels");
+    let n = if d > 0 { fin.len() / d } else { 0 };
+    (0..n).map(|j| {
+        let c = &fin[j * d..j * d + d];
+        let n2: i64 = c.iter().map(|&v| v as i64 * v as i64).sum();
+        ((g - 1.0) as f64 * n2 as f64).round() as i32
+    }).collect()
 }
 
 /// `cadj = Σc² + 256·Σc` (simd::cadj_i8) for every centroid in each per-level block. Parallel to `cent`.
@@ -1094,7 +1119,8 @@ impl HierRouter {
             rb
         } else { Vec::new() };
         let cadj = cadj_of(&cent, d);
-        HierRouter { d, mu, kf, levels, cent, child, beam: beams.to_vec(), soar: 0.0, radc, rcodes, rblocks, cadj }
+        let gbias = gbias_of(&cent, d);
+        HierRouter { d, mu, kf, levels, cent, child, beam: beams.to_vec(), soar: 0.0, radc, rcodes, rblocks, cadj, gbias }
     }
 
     /// 2-level hierarchical k-means (back-compat wrapper): C0 coarse → Kf/C0 fine per coarse.
@@ -1132,7 +1158,8 @@ impl HierRouter {
         }
         let cent = vec![c0, cf];
         let cadj = cadj_of(&cent, d);
-        HierRouter { d, mu, kf, levels: 2, cent, child: vec![gstart, Vec::new()], beam: vec![b0], soar: 0.0, radc: None, rcodes: Vec::new(), rblocks: Vec::new(), cadj }
+        let gbias = gbias_of(&cent, d);
+        HierRouter { d, mu, kf, levels: 2, cent, child: vec![gstart, Vec::new()], beam: vec![b0], soar: 0.0, radc: None, rcodes: Vec::new(), rblocks: Vec::new(), cadj, gbias }
     }
 
     /// Enable SOAR build-time spilled assignment with penalty λ (`s`). 0 disables (default path).
@@ -1213,7 +1240,13 @@ impl HierRouter {
                     } else {
                         simd::l2_i8_block(qn, &self.cent[l][s * d..e * d], nc, d, sd, &mut scores);
                     }
-                    for (i, c) in (s..e).enumerate() { nd.push((scores[i], c as u32)); }
+                    // probe calibration (SBANN_ROUTE_GAMMA): finest-level scores get the per-cell
+                    // (γ−1)‖c‖² bias so ranking becomes γ‖c‖²−2q·c (see gbias field doc). Exact i32 add.
+                    if finest && !self.gbias.is_empty() {
+                        for (i, c) in (s..e).enumerate() { nd.push((scores[i] + self.gbias[c], c as u32)); }
+                    } else {
+                        for (i, c) in (s..e).enumerate() { nd.push((scores[i], c as u32)); }
+                    }
                 }
             }
             if finest {
@@ -3008,7 +3041,8 @@ fn load_router(r: &mut crate::persist::Pr) -> Box<dyn Router> {
             let rcodes = r.u8_vec();
             let rblocks = r.u8_vec();
             let cadj = cadj_of(&cent, d);
-            Box::new(HierRouter { d, mu, kf, levels, cent, child, beam, soar, radc, rcodes, rblocks, cadj })
+            let gbias = gbias_of(&cent, d);
+            Box::new(HierRouter { d, mu, kf, levels, cent, child, beam, soar, radc, rcodes, rblocks, cadj, gbias })
         }
         _ => panic!("unknown router type tag {tag} in index file (only HierRouter={ROUTER_TAG_HIER} supported)"),
     }
