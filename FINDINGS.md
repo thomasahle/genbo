@@ -3533,10 +3533,10 @@ P216. (*** THE 0.93x BAR CLEARED — DIRECTLY MEASURED, in-round ScaNN, calm box
     gamma+graph+trim+t470 into branch champion with the full gate suite.
 
 P217. (*** 10M H2H (first ever, PROVISIONAL pending ScaNN-config sanity): 20 pairwise rounds, core 3, load ~25 — ScaNN 1272 QPS @ 0.9046 (lts=110, reord=180, cached P190 index) vs ENGINE 2512 QPS @ 0.9054 (gamma=0.5, t_surv=2000, p=45, Kf=131072 index) => ratio MEDIAN 0.505 (IQR 0.495-0.511, min 0.463 max 0.541) — engine ~2x FASTER at 10M. Tight IQR = stable measurement. ***)
-    CAUTION before declaring: ScaNN's 1M->10M drop here is 6.6x (8400->1272) vs ours 3.6x (9100->2512) — IF the
-    cached ScaNN 10M index is under-leaved (e.g. 2000 leaves = 5000 pts/leaf) its scan is handicapped and the
-    comparison flatters us; ScaNN's official 10M recipe is ~40k leaves. Asked gamma-10m for the cached index's
-    num_leaves + a rebuild-and-rerun if wrong. If the config checks out, the 10M margin being LARGER than 1M is
+    CAUTION CONFIRMED (lead-verified): the cached ScaNN 10M index has num_leaves=4000 (build script NL default,
+    all build logs agree) vs ScaNN's official ~40000 — its per-probe scan is ~10x heavier than the official
+    recipe, explaining the anomalous 6.6x drop. THE 0.505x IS FLATTERING; corrected measurement in flight
+    (rebuild at 40k leaves, re-find its 0.90 point, re-run 20-round pairwise). If the config checks out, the 10M margin being LARGER than 1M is
     mechanistically plausible: our cells stay ~76 pts (fine partition + gamma ordering + batched scan) while
     ScaNN's per-leaf scan grows with n/leaves, and our refine stays survivor-bound.
 
