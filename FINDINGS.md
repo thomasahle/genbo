@@ -3491,6 +3491,15 @@ P211. (*** GENERALIZED-CASCADE OPTUNA SWEEP (user's L-levels/P_i/R_i framework; 
     Gaps (harmless at the optimum): intermediate beams build-baked; gamma+ADC don't compose on the ADC path.
     Artifacts: cascade_sweep.py / cascade_sweep_log.csv / cascade_sweep.db / decide4_out.log (scratchpad).
 
+P212. (*** STREAMING 30M: FULLY ELIGIBLE HIGH-RECALL RESULT BANKED. Official msturing-30M final_runbook, all gates PASSED under load ~35: avg recall@10 = 0.9654 (640 steps, official per-step GT) | PEAK ANON 5.32GB < 8GB cap | RUNBOOK-OPS WALL 3178.5s = 53.0 min < 3600s. Config: flatsoar a0=2 C=4096 + bounded-spill VNNI-era insert fix (26k/s) + f16 rerank cache + compaction-cadence memory fix (peak 8.64 -> 5.32GB, recall unchanged). = 2nd OPEN-SOURCE tier on the leaderboard (pyanns 0.9597 < OURS 0.9654 < hwtl-closed 0.9675 < puck 0.9855). Branch feat/streaming-30m. ***)
+    The failed-run postmortems that got here: run1 unbounded SOAR = insert-bound 3x over budget (P204); run2 fast
+    inserts = 8.64GB peak (P208, compaction cadence vs 8.4x faster inserts); run3 died silently at op 598 (box fork
+    crunch); run4 = ALL GATES GREEN. OPEN ITEM: wall INCL offline train = 4175.6s = 69.6 min > 60 — eligibility
+    depends on whether the official harness times setup/train (ops-only => PASS with margin; incl-train => need
+    train trim ~997s-loaded, or a quiet-box run where train ~300-500s + ops ~35-40min likely passes anyway).
+    NEXT recall levers toward puck 0.9855: low-live steps are the tail (<0.5M live: 0.868) — adaptive-p by
+    live-count; leftover time budget (7 min quiet margin) buys deeper search.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
