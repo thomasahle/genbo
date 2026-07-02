@@ -3464,6 +3464,16 @@ P209. (*** SUB-1x vs ScaNN ACHIEVED at 1M OOD — the first legitimate same-hard
     gamma transfer to 10M, multi-thread scaling. Memory-pressure caveat: 30M runbook evicted float pages in these
     rounds — hits all arms equally, ratio honest.
 
+P210. (*** ADC ROUTING REFUTED for 1M/d=200 (user-requested experiment, branch adc-route 0aaf77d): route 23.7us exact-VNNI -> 37-40us with ADC at ANY KEEP (~1.7x SLOWER); e2e flips +9% -> -10% vs ScaNN (gamma-noADC 8590 vs gamma+ADC-K256 7030). ROOT CAUSE: at d=200 the route codebook is m=100 subspaces, so the 4-bit LUT scan per centroid ~= the VNNI exact eval cost; plus unaligned fan-out forces ~1.9x covering-block overscan + exact-rescore tail. Coarse route codebooks don't rescue: dpb4(m50)@K256 32.7us / dpb10(m20) 27.7us both > exact 23.7, and recall never recovers (dpb4 K512 0.9021, dpb10 K512 0.8869). NO (dpb,KEEP) is both faster than exact AND recall-neutral. The exact VNNI router is AT THE FLOOR for this dimensionality — consistent with ScaNN also routing exactly. ***)
+    Composition wiring was correct (gamma bias scaled into the ADC LUT domain via Pq::query_lut_with_scale, raw bias
+    on rescore; fidelity vs exact top-27: K64 .900 / K128 .976 / K256 .996; min recall-neutral KEEP=256). Also added
+    routeadc post-hoc codebook-swap rebuild (~2s) for cheap granularity sweeps — keep the tool.
+    *** INDEPENDENT SUB-1x REPLICATION (the important secondary result): on a REBUILT index (champion recipe
+    reproduced exactly: gamma-OFF p54 = 0.9032, gamma=0.5 p27 = 0.9032 recall-exact), interleaved best-of-6 this
+    window: ScaNN 7853 | gamma-noADC 8590 = 0.914x. Two independent implementations (graph-impl P209: 0.972x;
+    adc-route: 0.914x), two windows, both sub-1x => the gamma win is ROBUST, not a window artifact. Gotcha
+    documented: champion op-point uses FIXED t_surv~540 (not p*tmul) — with p*tmul gamma recall misleads.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
