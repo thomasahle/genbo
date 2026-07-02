@@ -447,6 +447,26 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
         for i in 0..nq { v[i * ds.d..i * ds.d + ds.d].copy_from_slice(fq.row(i)); }
         v
     } else { Vec::new() };
+    // GRAPH-AUGMENTED POOL EXPANSION (SBANN_GRAPH_FILE, temporary A/B sidecar): a raw little-endian u32
+    // n*k IP-kNN adjacency (no header). Enables the graph union rescore on the FLOAT_RERANK cascade path
+    // (batched + per-query). k is inferred from the file size; M/kedge/pfdist come from env (defaults set
+    // in vq). Orthogonal to the index -> no serialization change (fold into the index once the lever lands).
+    let graph: Option<vq::GraphAdj> = if let Ok(gp) = std::env::var("SBANN_GRAPH_FILE") {
+        use std::sync::atomic::Ordering::Relaxed;
+        let n = ds.nb;
+        let flen = std::fs::metadata(&gp).expect("graph file stat").len() as usize;
+        assert!(flen % (n * 4) == 0, "graph file {gp} size {flen} not divisible by n*4 ({})", n * 4);
+        let k = flen / (n * 4);
+        let g = vq::GraphAdj::load(&gp, n, k).expect("load graph sidecar");
+        if let Ok(v) = std::env::var("SBANN_GRAPH_M") { vq::GRAPH_M.store(v.parse().expect("SBANN_GRAPH_M"), Relaxed); }
+        if let Ok(v) = std::env::var("SBANN_GRAPH_KEDGE") { vq::GRAPH_KEDGE.store(v.parse().expect("SBANN_GRAPH_KEDGE"), Relaxed); }
+        if let Ok(v) = std::env::var("SBANN_GRAPH_PFDIST") { vq::GRAPH_PFDIST.store(v.parse().expect("SBANN_GRAPH_PFDIST"), Relaxed); }
+        if let Ok(v) = std::env::var("SBANN_GRAPH_SORT") { vq::GRAPH_SORT.store(v != "0", Relaxed); }
+        println!("  [GRAPH] {gp}  n={n} k={k}  M={} kedge={} pfdist={}",
+            vq::GRAPH_M.load(Relaxed), vq::GRAPH_KEDGE.load(Relaxed).min(k), vq::GRAPH_PFDIST.load(Relaxed));
+        Some(g)
+    } else { None };
+    let graph_ref = graph.as_ref();
     // avq cell count is cb^2 == c; keep probes well under nc
     // SBANN_PLIST="128,256,512" overrides the default sweep (lets a built index be probed at custom p).
     let plist: Vec<usize> = match std::env::var("SBANN_PLIST") {
@@ -551,6 +571,8 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
             vq::PROF_SCAN_NS.store(0, std::sync::atomic::Ordering::Relaxed);
             vq::PROF_RERANK_NS.store(0, std::sync::atomic::Ordering::Relaxed);
             vq::PROF_CASC_NS.store(0, std::sync::atomic::Ordering::Relaxed);
+            vq::PROF_GRAPH_NS.store(0, std::sync::atomic::Ordering::Relaxed);
+            vq::PROF_GRAPH_ROWS.store(0, std::sync::atomic::Ordering::Relaxed);
         }
         for _ in 0..reps.max(1) {
             let st = Instant::now();
@@ -561,13 +583,13 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
                     let mut s = 0usize;
                     while s < nq {
                         let e = (s + batch_chunk).min(nq);
-                        let sub = idx.search_batch_frr(&ds, &qarr[s * ds.d..e * ds.d], &fqf[s * ds.d..e * ds.d], fb, e - s, p, t_surv, 10);
+                        let sub = idx.search_batch_frr(&ds, &qarr[s * ds.d..e * ds.d], &fqf[s * ds.d..e * ds.d], fb, e - s, p, t_surv, 10, graph_ref);
                         all.extend(sub);
                         s = e;
                     }
                     all
                 } else {
-                    (0..nq).into_par_iter().map(|i| idx.search_frr(&ds, qs.row(i), &fqf[i * ds.d..i * ds.d + ds.d], fb, p, t_surv, 10)).collect()
+                    (0..nq).into_par_iter().map(|i| idx.search_frr(&ds, qs.row(i), &fqf[i * ds.d..i * ds.d + ds.d], fb, p, t_surv, 10, graph_ref)).collect()
                 }
             } else if batched {
                 idx.search_batch(&ds, &qarr, nq, p, t_surv, 10)
@@ -584,7 +606,7 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
         if batchscan && batch_verify {
             if let Some(fb) = fbase.as_ref() {
                 let refr: Vec<Vec<u32>> = (0..nq).into_par_iter()
-                    .map(|i| idx.search_frr(&ds, qs.row(i), &fqf[i * ds.d..i * ds.d + ds.d], fb, p, t_surv, 10)).collect();
+                    .map(|i| idx.search_frr(&ds, qs.row(i), &fqf[i * ds.d..i * ds.d + ds.d], fb, p, t_surv, 10, graph_ref)).collect();
                 let mut set_id = 0usize;   // queries whose top-10 id SET is identical
                 let mut exact = 0usize;    // queries whose top-10 id LIST is identical (order too)
                 let mut ref_hit = 0usize; let mut bat_hit = 0usize;
@@ -601,6 +623,20 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
                     bat_hit as f64 / (nq * 10) as f64, ref_hit as f64 / (nq * 10) as f64);
             }
         }
+        // SBANN_RESULT_DUMP=<path> (verification hook): write the nq x 10 final result ids (flat u32 LE,
+        // padded with u32::MAX) so an offline oracle can cross-check the engine's top-10 per query.
+        if let Ok(rp) = std::env::var("SBANN_RESULT_DUMP") {
+            use std::io::Write;
+            let mut w = std::io::BufWriter::new(std::fs::File::create(&rp).expect("result dump"));
+            w.write_all(&(nq as u32).to_le_bytes()).unwrap();
+            for i in 0..nq {
+                for j in 0..10 {
+                    let id = res[i].get(j).copied().unwrap_or(u32::MAX);
+                    w.write_all(&id.to_le_bytes()).unwrap();
+                }
+            }
+            println!("  [RESULT_DUMP] {rp}  ({nq} x 10 ids)");
+        }
         let mut hit = 0usize;
         for i in 0..nq {
             let truth: std::collections::HashSet<u32> = gids[i * gk..i * gk + 10].iter().copied().collect();
@@ -615,11 +651,18 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
             let s = vq::PROF_SCAN_NS.load(std::sync::atomic::Ordering::Relaxed) as f64;
             let k = vq::PROF_RERANK_NS.load(std::sync::atomic::Ordering::Relaxed) as f64;
             let c = vq::PROF_CASC_NS.load(std::sync::atomic::Ordering::Relaxed) as f64;
-            let tot = (r + s + k + c).max(1.0);
-            // cascade = int8-prune + float-reorder combined in PROF_CASC_NS (rerank stays 0 in cascade mode).
-            println!("      [profile] route {:.1}%  scan {:.1}%  rerank {:.1}%  cascade {:.1}%  (sum {:.0}ms/{reps}reps)  [scan-us/q={:.1} rerank-us/q={:.1} casc-us/q={:.1}]",
-                100.0 * r / tot, 100.0 * s / tot, 100.0 * k / tot, 100.0 * c / tot, (r + s + k + c) / 1e6,
-                s / nq as f64 / reps as f64 / 1000.0, k / nq as f64 / reps as f64 / 1000.0, c / nq as f64 / reps as f64 / 1000.0);
+            let g = vq::PROF_GRAPH_NS.load(std::sync::atomic::Ordering::Relaxed) as f64;
+            let grows = vq::PROF_GRAPH_ROWS.load(std::sync::atomic::Ordering::Relaxed) as f64;
+            let tot = (r + s + k + c + g).max(1.0);
+            // cascade (PROF_CASC_NS) = the int8 union rescore; graph (PROF_GRAPH_NS) = neighbour gather +
+            // union sort/dedup; rerank (PROF_RERANK_NS) = the exact float reorder of the K survivors.
+            // union-rescore ns/row = PROF_CASC_NS / total union rows (the decider metric: aim ~44, not ~74).
+            let nsrow = if grows > 0.0 { c / grows } else { 0.0 };
+            println!("      [profile] route {:.1}%  scan {:.1}%  graph {:.1}%  rescore {:.1}%  float {:.1}%  (sum {:.0}ms/{reps}reps)  [scan-us/q={:.1} graph-us/q={:.2} rescore-us/q={:.1} float-us/q={:.1} union/q={:.0} rescore-ns/row={:.1}]",
+                100.0 * r / tot, 100.0 * s / tot, 100.0 * g / tot, 100.0 * c / tot, 100.0 * k / tot, (r + s + k + c + g) / 1e6,
+                s / nq as f64 / reps as f64 / 1000.0, g / nq as f64 / reps as f64 / 1000.0,
+                c / nq as f64 / reps as f64 / 1000.0, k / nq as f64 / reps as f64 / 1000.0,
+                grows / nq as f64 / reps as f64, nsrow);
         }
        }
        }

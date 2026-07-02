@@ -135,11 +135,58 @@ pub static PREFETCH: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBo
 pub static PFDIST: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(2);
 pub static PFLINES: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(13);
 
+/// GRAPH-AUGMENTED POOL EXPANSION (SBANN_GRAPH_FILE, temporary A/B sidecar; fold into the index later).
+/// After the apq4 scan collects the survivor pool, its top-`GRAPH_M` nodes (by apq4 score) have their
+/// precomputed IP-kNN graph neighbours (`GRAPH_KEDGE` each) gathered and UNION-ed into the rescore set.
+/// The union is int8-VNNI rescored (same kernel as the cascade), pruned to CASCADE_K, float-reordered.
+/// The lever trades scan work (probe fewer cells, p~30 vs 54) for a small, targeted rescore expansion —
+/// deep true-neighbours that the coarse routing missed are recovered by one graph hop off the best hits.
+/// GRAPH_PFDIST = how many union rows ahead to software-prefetch in the (scattered orig-indexed) rescore
+/// gather — this gather is the critical section; the whole union id list is known up front so the whole
+/// batch is prefetched streaming-ahead. All three are set from env in main(); 0 disables the lever.
+pub static GRAPH_M: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(25);
+pub static GRAPH_KEDGE: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(16);
+pub static GRAPH_PFDIST: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(8);
+/// Sort the deduped union by orig id before the rescore gather (monotone addresses = prefetcher-friendly).
+/// Default ON; SBANN_GRAPH_SORT=0 A/Bs the unsorted (hash-order) gather against a deeper software prefetch.
+pub static GRAPH_SORT: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(true);
+/// Profile split for the graph lever: PROF_GRAPH_NS = neighbour gather + union sort/dedup; PROF_GRAPH_ROWS
+/// = cumulative union size (so union-rescore ns/row = PROF_CASC_NS/PROF_GRAPH_ROWS, the decider metric).
+pub static PROF_GRAPH_NS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+pub static PROF_GRAPH_ROWS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+/// Flat IP-kNN adjacency sidecar: `k` neighbour orig ids per base row, row-major (`n*k` u32). Loaded from
+/// a raw little-endian u32 file (no header) via SBANN_GRAPH_FILE; `neighbours(orig)` borrows one row.
+pub struct GraphAdj {
+    pub k: usize,
+    pub adj: Vec<u32>,
+}
+impl GraphAdj {
+    /// Load an `n x k` u32 adjacency from a raw little-endian file (exactly `n*k*4` bytes).
+    pub fn load(path: &str, n: usize, k: usize) -> std::io::Result<GraphAdj> {
+        let bytes = std::fs::read(path)?;
+        let want = n * k * 4;
+        assert_eq!(bytes.len(), want, "graph file {path}: have {} bytes, want n*k*4={want}", bytes.len());
+        let mut adj = vec![0u32; n * k];
+        for (i, o) in adj.iter_mut().enumerate() {
+            *o = u32::from_le_bytes([bytes[4 * i], bytes[4 * i + 1], bytes[4 * i + 2], bytes[4 * i + 3]]);
+        }
+        Ok(GraphAdj { k, adj })
+    }
+    #[inline]
+    fn neighbours(&self, orig: usize) -> &[u32] {
+        &self.adj[orig * self.k..orig * self.k + self.k]
+    }
+}
+
 thread_local! {
     // reused open-addressing table for the per-query pool dedup (a0>1). Entries: (orig_key, best_approx,
     // slot); orig_key==u32::MAX marks empty. Fibonacci-hashed + linear-probed -> far cheaper than a
     // per-query std HashMap (no SipHash, no alloc), keeping the min-approx slot per distinct orig id.
     static DEDUP_TBL: std::cell::RefCell<Vec<(u32, i32, u32)>> = std::cell::RefCell::new(Vec::new());
+    // GRAPH union dedup: a small open-addressing u32 set (u32::MAX = empty), sized ~2x the union per query
+    // so it stays cache-hot (a few KB) — O(union) dedup with no comparison sort and no 4MB scatter.
+    static GRAPH_SET: std::cell::RefCell<Vec<u32>> = std::cell::RefCell::new(Vec::new());
 }
 
 /// Software-prefetch (T0) `nlines` cache lines starting at `ptr`. Used by the per-cell scan loop to
@@ -367,6 +414,112 @@ fn rerank_cascade_float(fbase: &crate::fbin::FBin, raw: &[i8], d: usize, raw_ori
     let tr = if prof { Some(std::time::Instant::now()) } else { None };
     let out = rerank_contig_float(fbase, slot_orig, qf, &scored, k);
     if let Some(tr) = tr { PROF_RERANK_NS.fetch_add(tr.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed); }
+    out
+}
+
+/// Exact float-IP reorder over `cand` = (approx_dist, orig) survivors: read the mmap'd float rows
+/// (orig-indexed) and return the top-`k` orig ids by exact float IP (smaller `-dot` = better). `cand`
+/// is assumed distinct (the graph union is sorted+deduped upstream). Mirrors `rerank_contig_float`'s
+/// float stage but keyed directly on orig ids (no slot indirection).
+fn rerank_orig_float(fbase: &crate::fbin::FBin, qf: &[f32], cand: &[(i32, u32)], k: usize) -> Vec<u32> {
+    let n = cand.len();
+    let mut scored: Vec<(f32, u32)> = Vec::with_capacity(n);
+    for i in 0..n {
+        if i + 8 < n {
+            unsafe { _mm_prefetch(fbase.row(cand[i + 8].1 as usize).as_ptr() as *const i8, _MM_HINT_T0) };
+        }
+        let orig = cand[i].1;
+        scored.push((-simd::dot_f32_fast(qf, fbase.row(orig as usize)), orig));
+    }
+    let m = k.min(scored.len());
+    if m > 0 && m < scored.len() { scored.select_nth_unstable_by(m - 1, |a, b| a.0.total_cmp(&b.0)); scored.truncate(m); }
+    scored.sort_unstable_by(|a, b| a.0.total_cmp(&b.0));
+    scored.into_iter().take(k).map(|(_, o)| o).collect()
+}
+
+/// GRAPH-EXPANDED cascade rerank (SBANN_GRAPH_FILE). Like `rerank_cascade_float`, but before the int8
+/// rescore the pool's top-`m_expand` origs (by apq4 dist) have their `graph` IP-kNN neighbours unioned
+/// into the candidate set — recovering deep true-neighbours the coarse routing missed via one graph hop.
+/// The int8 rescore, prune-to-`kk`, and float-reorder are the SAME kernels as the cascade. The new work:
+///   - neighbour gather + `union1d` (sort+dedup, no HashSet in the hot path) -> PROF_GRAPH_NS;
+///   - a larger int8 rescore over the union -> PROF_CASC_NS (the rescore-gather is the critical section:
+///     rows are scattered orig-indexed in the full int8 base `ds`, so the whole known union id list is
+///     software-prefetched i+GRAPH_PFDIST ahead, and the union is orig-sorted so the gather is monotone).
+#[allow(clippy::too_many_arguments)]
+fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32],
+    q: &[i8], qf: &[f32], pool: &mut Vec<(i32, u32)>, graph: &GraphAdj,
+    m_expand: usize, kk: usize, k: usize) -> Vec<u32> {
+    use std::sync::atomic::Ordering::Relaxed;
+    let prof = PROFILE.load(Relaxed);
+    let tg = if prof { Some(std::time::Instant::now()) } else { None };
+    // (1) dedup -> one slot per distinct orig (min apq4 dist); recall-neutral (SOAR dups identical raw).
+    dedup_pool_by_orig(pool, slot_orig);
+    if pool.is_empty() { return Vec::new(); }
+    // (2) union candidate origs = all pool origs + the graph neighbours of the top-m_expand pool origs,
+    //     deduped in O(union) via a generation-stamped per-base-row buffer (no sort, no HashSet). The set
+    //     is identical to a sorted union1d, so the final top-k is unchanged (order-independent downstream).
+    let mm = m_expand.min(pool.len());
+    if mm > 0 && mm < pool.len() { pool.select_nth_unstable(mm - 1); } // m smallest apq4 dists into pool[..mm]
+    let ke = GRAPH_KEDGE.load(Relaxed).clamp(1, graph.k);
+    let est = pool.len() + mm * ke;
+    let mut union: Vec<u32> = Vec::with_capacity(est);
+    GRAPH_SET.with(|cell| {
+        let mut set = cell.borrow_mut();
+        let cap = (est * 2).next_power_of_two().max(64);
+        set.clear();
+        set.resize(cap, u32::MAX);
+        let mask = cap - 1;
+        // insert orig into the open-addressing set; push to `union` only on first insert (dedup).
+        macro_rules! insert { ($o:expr) => {{
+            let o = $o;
+            let mut h = (o.wrapping_mul(0x9E3779B1) as usize) & mask;
+            loop {
+                let e = set[h];
+                if e == u32::MAX { set[h] = o; union.push(o); break; }
+                if e == o { break; }
+                h = (h + 1) & mask;
+            }
+        }}; }
+        for &(_, s) in pool.iter() {
+            let o = slot_orig[s as usize];
+            if o != u32::MAX { insert!(o); }
+        }
+        for &(_, s) in pool[..mm].iter() {
+            let o = slot_orig[s as usize] as usize;
+            for &nb in &graph.neighbours(o)[..ke] { insert!(nb); }
+        }
+    });
+    // ascending-orig sort keeps the rescore gather monotone (kinder to the prefetcher); it is over the
+    // already-deduped union (~|union|, not pool*ke), and gated so the cost can be A/B'd (SBANN_GRAPH_SORT=0).
+    if GRAPH_SORT.load(Relaxed) { union.sort_unstable(); }
+    if let Some(tg) = tg { PROF_GRAPH_NS.fetch_add(tg.elapsed().as_nanos() as u64, Relaxed); }
+    PROF_GRAPH_ROWS.fetch_add(union.len() as u64, Relaxed);
+    // (3) int8 rescore the union (VNNI dpbusd -> AVX2 madd -> scalar), streaming-prefetched.
+    let tc = if prof { Some(std::time::Instant::now()) } else { None };
+    let vnni = std::is_x86_feature_detected!("avx512vnni") && std::is_x86_feature_detected!("avx512bw")
+        && std::is_x86_feature_detected!("avx512f");
+    let avx = std::is_x86_feature_detected!("avx2");
+    let pf = GRAPH_PFDIST.load(Relaxed).max(1);
+    let n = union.len();
+    let mut scored: Vec<(i32, u32)> = Vec::with_capacity(n);
+    for i in 0..n {
+        if i + pf < n {
+            unsafe { _mm_prefetch(ds.row(union[i + pf] as usize).as_ptr() as *const i8, _MM_HINT_T0) };
+        }
+        let row = ds.row(union[i] as usize);
+        // negdot: smaller = better (matches the IP float path's -dot).
+        let dist = if vnni { -unsafe { simd::dot_i8_vnni(q, row) } }
+                   else if avx { -unsafe { simd::dot_i8_avx2(q, row) } }
+                   else { simd::negdot_i8(q, row) };
+        scored.push((dist, union[i]));
+    }
+    let kk = kk.min(scored.len());
+    if kk > 0 && kk < scored.len() { scored.select_nth_unstable(kk - 1); scored.truncate(kk); }
+    if let Some(tc) = tc { PROF_CASC_NS.fetch_add(tc.elapsed().as_nanos() as u64, Relaxed); }
+    // (4) exact float reorder over only the kk int8-survivors.
+    let tr = if prof { Some(std::time::Instant::now()) } else { None };
+    let out = rerank_orig_float(fbase, qf, &scored, k);
+    if let Some(tr) = tr { PROF_RERANK_NS.fetch_add(tr.elapsed().as_nanos() as u64, Relaxed); }
     out
 }
 
@@ -2331,16 +2484,20 @@ impl Index {
     /// same lever stack as the int8 path; ONLY the final exact rerank of the t survivors is swapped to
     /// exact float IP over the original float vectors (`fbase`, `qf`). This breaks the int8 rerank's
     /// hard recall ceiling vs the float-computed OOD GT (reaches 0.90 at fewer probes -> higher QPS).
-    pub fn search_frr(&self, ds: &I8Bin, q: &[i8], qf: &[f32], fbase: &crate::fbin::FBin, p: usize, t: usize, k: usize) -> Vec<u32> {
+    pub fn search_frr(&self, ds: &I8Bin, q: &[i8], qf: &[f32], fbase: &crate::fbin::FBin, p: usize, t: usize, k: usize,
+        graph: Option<&GraphAdj>) -> Vec<u32> {
         let prof = PROFILE.load(std::sync::atomic::Ordering::Relaxed);
         let t0 = if prof { Some(std::time::Instant::now()) } else { None };
         let cells = self.router.probe(q, p);
         if let Some(t0) = t0 { PROF_ROUTE_NS.fetch_add(t0.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed); }
-        self.scan_rerank_frr(ds, q, qf, fbase, &cells, t, k)
+        self.scan_rerank_frr(ds, q, qf, fbase, &cells, t, k, graph)
     }
 
     /// Mirror of `scan_rerank` (same scan/dedup/cap) but reranks the survivors by exact float IP.
-    pub fn scan_rerank_frr(&self, ds: &I8Bin, q: &[i8], qf: &[f32], fbase: &crate::fbin::FBin, cells: &[u32], t: usize, k: usize) -> Vec<u32> {
+    /// `graph` = Some enables graph-augmented pool expansion (SBANN_GRAPH_FILE) on the FUSEDTOPK+cascade path.
+    #[allow(clippy::too_many_arguments)]
+    pub fn scan_rerank_frr(&self, ds: &I8Bin, q: &[i8], qf: &[f32], fbase: &crate::fbin::FBin, cells: &[u32], t: usize, k: usize,
+        graph: Option<&GraphAdj>) -> Vec<u32> {
         let prof = PROFILE.load(std::sync::atomic::Ordering::Relaxed);
         let ctx = self.comp.prepare_query(q);
         let sorted_store;
@@ -2358,6 +2515,11 @@ impl Index {
         if FUSEDTOPK.load(std::sync::atomic::Ordering::Relaxed) && !need_dedup && !residq_active {
             let mut pool = self.scan_pool_fused(ds, q, cells, &ctx, t);
             if let Some(ts) = ts { PROF_SCAN_NS.fetch_add(ts.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed); }
+            if let (Some(g), true) = (graph, cascade) {
+                // graph-augmented union rescore (SBANN_GRAPH_FILE), same expansion point as the batched path.
+                let gm = GRAPH_M.load(std::sync::atomic::Ordering::Relaxed);
+                return rerank_cascade_graph(ds, fbase, &self.slot_orig, q, qf, &mut pool, g, gm, kk, k);
+            }
             if cascade {
                 // int8-cascade prune (PROF_CASC_NS) then float reorder (PROF_RERANK_NS) — timed inside.
                 return rerank_cascade_float(fbase, &self.raw, self.d, self.raw_orig_indexed, &self.slot_orig, q, qf, &mut pool, kk, k);
@@ -2655,7 +2817,8 @@ impl Index {
     /// identical to `search_frr` (modulo t-boundary equal-score ties). Kernels/Compressor UNCHANGED.
     #[allow(clippy::too_many_arguments)]
     pub fn search_batch_frr(&self, ds: &I8Bin, queries: &[i8], qf_all: &[f32],
-        fbase: &crate::fbin::FBin, nq: usize, p: usize, t: usize, k: usize) -> Vec<Vec<u32>> {
+        fbase: &crate::fbin::FBin, nq: usize, p: usize, t: usize, k: usize,
+        graph: Option<&GraphAdj>) -> Vec<Vec<u32>> {
         let prof = PROFILE.load(std::sync::atomic::Ordering::Relaxed);
         let d = ds.d;
         let ncell = self.router.n_cells();
@@ -2707,12 +2870,16 @@ impl Index {
         // (5) per-query cascade + float top-k, EXACTLY the per-query path (rerank_cascade_float UNCHANGED).
         let cascade = CASCADE.load(std::sync::atomic::Ordering::Relaxed);
         let kk = CASCADE_K.load(std::sync::atomic::Ordering::Relaxed);
+        let gm = GRAPH_M.load(std::sync::atomic::Ordering::Relaxed);
         let mut results: Vec<Vec<u32>> = Vec::with_capacity(nq);
         for (i, top) in tops.into_iter().enumerate() {
             let mut pool = top.finish();
             let qi8 = &queries[i * d..i * d + d];
             let qf = &qf_all[i * d..i * d + d];
-            let out = if cascade {
+            let out = if let (Some(g), true) = (graph, cascade) {
+                // graph-augmented union rescore (SBANN_GRAPH_FILE); falls back to plain cascade if M=0.
+                rerank_cascade_graph(ds, fbase, &self.slot_orig, qi8, qf, &mut pool, g, gm, kk, k)
+            } else if cascade {
                 rerank_cascade_float(fbase, &self.raw, self.d, self.raw_orig_indexed, &self.slot_orig, qi8, qf, &mut pool, kk, k)
             } else {
                 let tr = if prof { Some(std::time::Instant::now()) } else { None };
