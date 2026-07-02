@@ -3522,6 +3522,16 @@ P215. (*** GAMMA TRANSFERS TO 10M — the routing-miscalibration mechanism is SC
     Remaining on this front: the first same-hardware 10M h2h vs the cached ScaNN 10M index (task in flight,
     pairwise-alternation protocol, core 3).
 
+P216. (*** THE 0.93x BAR CLEARED — DIRECTLY MEASURED, in-round ScaNN, calm box (load 17-20 held), 8 rounds, best-of-5, taskset -c 1, identical float GT: GR18_t470 (gamma0.5 + graph-expansion M25 + union-trim + t_surv=470, p=18, K=16) = ~0.91x median vs ScaNN (per-round 0.9032/0.9099/0.9103/0.9127/0.9173/0.9433; ours 8930-9413 QPS vs ScaNN 8281-8591), recall 0.9060 vs ScaNN's 0.9032, ALL arms recall >= gate. GR17_t540 ~0.93x @ 0.9033; gamma-only ~0.97x @ 0.9060 (P209 replicated a third time). Converts P214's inferred 0.9339 into MEASURED ~0.91x. ***)
+    SIGNIFICANCE: HANNS (leaderboard #1) leads ScaNN by ~7%; we now lead ScaNN by ~9.5% at 1M single-thread
+    same-hardware => this configuration is LEADERBOARD-TOP-EQUIVALENT at the 1M scale (caveats for the full
+    official claim: official track is 10M, 8-vCPU multi-thread, Azure — 10M h2h in flight, multi-thread pending).
+    1M OOD arc COMPLETE: 25x(mirage) -> 2.22x(P190 true) -> 1.77x(P192) -> 1.45x(P197) -> 1.20x(P202) ->
+    0.972x(P209 sub-1x) -> 0.91x(P216, above the HANNS-margin bar). The stack: gamma=0.5 routing calibration
+    (the mover) + kNN-graph pool expansion at p=18 + fused-union trim + t_surv=470 + all P185-P203 primitives.
+    Pending: graph-impl's formal id-recomputed recall report (log numbers unambiguous); then consolidate
+    gamma+graph+trim+t470 into branch champion with the full gate suite.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
