@@ -3402,6 +3402,22 @@ P204. (*** STREAMING 30M (OFFICIAL msturing-30M-clustered final_runbook, f16 rer
     *** NEXT: vectorize SOAR insert assignment (reuse P196 VNNI L2 nearest-centroid kernel) => make 0.9654
     eligible; then spend leftover budget on the low-live recall tail toward puck's 0.9855.
 
+P205. (*** ORACLE FAN-OUT for the next 1M OOD lever (3 parallel agents; the probe-count axis was the last untouched degree of freedom): GRAPH-AUGMENTED POOL EXPANSION = strongest GO (realizable x1.68 touched-rows, recall 0.9033 engine-faithful, projected ratio 1.02 [0.94-1.08]); ADAPTIVE PER-QUERY p = GO but modest (realizable x1.20, oracle ceiling x2.61 — routing-time features capture only part of the difficulty signal; e2e-validated recall 0.9038, +10% QPS, ratio -> ~1.09); query-calibration oracle still running. The two GO levers are COMPOSABLE (adaptive p around the graph-expanded baseline). ***)
+    ADAPTIVE-P (branch adaptive-probe b942b1e, route_profile + SBANN_DUMP_ROUTE/ASSIGN + SBANN_PLIST_FILE per-query
+    p in search_batch_frr): oracle p* mean 20.6 / median 17 / p90 45 vs fixed 54 (x2.61 candidates); ridge on
+    routing-time features (coarse/fine distance gaps/ratios) held-out realizable only x1.17-1.21 -> avg p 45.2,
+    recall 0.9038 >= 0.9032 e2e. The oracle-vs-realizable gap = per-query difficulty is only weakly visible in
+    centroid-distance profiles (the OOD signal lives deeper).
+    GRAPH-EXPANSION (branch graph-pool-expansion c89bdc7, SBANN_DUMP_POOL engine-faithful pools): k=16 IP kNN graph
+    on the 1M base built via ScaNN self-search, edge quality 0.9988 vs exact. Winner p'=30/t540/M=25: pool union
+    graph[top-25] -> exact int8 rescore (559 rows vs 322) -> K16 -> float16: recall 0.9033, scanned 5512 vs 9858
+    (-44%), touched 6071 vs 10180 (x1.68), projected e2e 124us vs 147 champion; 1-hop coverage ceilings 0.932/
+    0.948/0.958 @ p'=20/30/40; oracle UB x3.18 @ p'=15. COST-MODEL CAVEAT: ratio 1.078 (74.5ns/row amortized) ..
+    0.94 (44ns pure-latency) — the union-rescore GATHER EFFICIENCY decides which side of 1x; implementation must
+    prefetch like the existing cascade. NEXT: implement graph expansion in the engine (real interleaved h2h), then
+    layer adaptive-p RETRAINED on the graph-expanded pipeline (p*(q) distribution changes when the hop recovers
+    deep misses). Both dumps/tooling committed on their branches for reuse.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
