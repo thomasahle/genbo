@@ -92,7 +92,13 @@ impl Pq {
     }
 
     /// Per-query signed-i8 LUT: m*16 bytes, centered+scaled so saturating sums preserve ranking.
-    pub fn query_lut(&self, q: &[i8]) -> Vec<i8> {
+    pub fn query_lut(&self, q: &[i8]) -> Vec<i8> { self.query_lut_with_scale(q).0 }
+
+    /// Same LUT as `query_lut`, but also returns the per-query i8 scale factor (100/(maxabs·√m)) that
+    /// maps a raw (centered) squared-L2 subspace distance to LUT units. Callers that need to add an
+    /// external term in the ADC score's domain (e.g. the SBANN_ROUTE_GAMMA (γ−1)‖c‖² bias, which lives
+    /// in raw i8-L2 units) must multiply that term by this scale before adding it to the ADC sum.
+    pub fn query_lut_with_scale(&self, q: &[i8]) -> (Vec<i8>, f32) {
         let m = self.m;
         let mut f = vec![0.0f32; m * 16];
         for sub in 0..m {
@@ -115,7 +121,7 @@ impl Pq {
         for i in 0..m * 16 {
             lut[i] = (f[i] * scale).round().clamp(-127.0, 127.0) as i8;
         }
-        lut
+        (lut, scale)
     }
 }
 

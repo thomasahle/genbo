@@ -112,6 +112,9 @@ pub static ROUTE_SDIM: std::sync::atomic::AtomicUsize = std::sync::atomic::Atomi
 /// many ADC-top children to exact-rescore (default 1024). Built only when the flag is set at train time.
 pub static ROUTE_ADC: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 pub static ROUTE_ADC_KEEP: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(1024);
+/// SBANN_ROUTE_ADC_DPB: dims-per-block of the ADC routing codebook (build/rebuild time). Fewer subspaces
+/// (higher dpb) = cheaper 4-bit LUT scan but coarser quant. Default 2 (m=d/2). Requires (d/dpb) even.
+pub static ROUTE_ADC_DPB: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(2);
 /// SBANN_ROUTE_VNNI (P196): compute the routing centroid L2 with the VNNI norm-decomposition kernel
 /// (L2 = Σq²+Σc²−2·dot, dpbusd dot) instead of the AVX2-madd Σ(q−c)². Bit-identical cell selection
 /// (recall-EXACT), ~1.5x on the dominant compute (66% of route). Full-dim only; sd<d stays on madd.
@@ -482,6 +485,8 @@ pub trait Router: Send + Sync {
     fn probe(&self, q: &[i8], p: usize) -> Vec<u32>; // query: top-p cells
     /// top-p cells sorted NEAREST-FIRST (for adaptive early termination). Default: unranked probe.
     fn probe_ranked(&self, q: &[i8], p: usize) -> Vec<u32> { self.probe(q, p) }
+    /// Rebuild the ADC routing codebook at `dpb` dims-per-block (HierRouter only; no-op elsewhere).
+    fn rebuild_route_adc(&mut self, _dpb: usize) {}
     /// Batched routing: top-p cells for all nq queries (nq*p). Default: parallel per-query probe;
     /// FlatIvf overrides with a single GEMM (Q @ pivots^T) — far faster for large C.
     /// Serialize self (1-byte concrete-type tag + POD fields) for SBANN_INDEX_SAVE. Default: error —
@@ -934,38 +939,49 @@ impl HierRouter {
         let _ = &point_cell;
         // quantize all levels to i8 (after any EM refinement)
         let cent: Vec<Vec<i8>> = centf_lv.iter().map(|cf| cf.iter().map(|&v| (v * 127.0).round().clamp(-127.0, 127.0) as i8).collect()).collect();
-        // optional ADC routing codebook over the FINEST centroids (recall gate for #3)
-        let (radc, rcodes) = if ROUTE_ADC.load(std::sync::atomic::Ordering::Relaxed) && d % 4 == 0 {
-            let cf = &cent[levels - 1];
-            let kfn = cf.len() / d;
-            let rows: Vec<&[i8]> = (0..kfn).map(|i| &cf[i * d..i * d + d]).collect();
-            let pq = pq::Pq::train(&rows, d, 2, 8); // dpb=2 -> m=d/2 (even for d%4==0)
-            let m = pq.m;
-            let mut codes = vec![0u8; kfn * m];
-            for i in 0..kfn { pq.encode(&cf[i * d..i * d + d], &mut codes[i * m..i * m + m]); }
-            println!("  [ROUTE_ADC: 4-bit PQ over {kfn} finest centroids, m={m}]");
-            (Some(pq), codes)
-        } else { (None, Vec::new()) };
-        // re-lay the finest codes into 16-cell vpshufb blocks (only when kf%16==0; our Kf are powers of 2)
-        let rblocks: Vec<u8> = if let Some(pq) = &radc {
-            let m = pq.m; let nb = kf / 16; let mut rb = vec![0u8; nb * (m / 2) * 16];
-            if kf % 16 == 0 {
-                for b in 0..nb {
-                    for g in 0..m / 2 {
-                        for i in 0..16 {
-                            let c = b * 16 + i;
-                            let lo = rcodes[c * m + 2 * g] & 0x0f;
-                            let hi = rcodes[c * m + 2 * g + 1] & 0x0f;
-                            rb[(b * (m / 2) + g) * 16 + i] = lo | (hi << 4);
-                        }
-                    }
-                }
-            }
-            rb
-        } else { Vec::new() };
         let cadj = cadj_of(&cent, d);
         let gbias = gbias_of(&cent, d);
-        HierRouter { d, mu, kf, levels, cent, child, beam: beams.to_vec(), soar: 0.0, radc, rcodes, rblocks, cadj, gbias }
+        let mut hr = HierRouter { d, mu, kf, levels, cent, child, beam: beams.to_vec(), soar: 0.0, radc: None, rcodes: Vec::new(), rblocks: Vec::new(), cadj, gbias };
+        // optional ADC routing codebook over the FINEST centroids (recall gate for #3)
+        if ROUTE_ADC.load(std::sync::atomic::Ordering::Relaxed) {
+            hr.build_route_adc(ROUTE_ADC_DPB.load(std::sync::atomic::Ordering::Relaxed).max(1));
+        }
+        hr
+    }
+
+    /// Build (or replace) the 4-bit ADC routing codebook — a per-finest-centroid PQ (radc), its codes
+    /// (rcodes), and the 16-cell vpshufb block layout (rblocks) — at `dpb` dims-per-block. m = d/dpb must
+    /// be even (nibble packing) and the finest count divisible by 16 (block layout). No-op (clears the
+    /// codebook) when those don't hold. Called at build (SBANN_ROUTE_ADC) and post-hoc via the `routeadc`
+    /// subcommand to isolate codebook granularity from a fixed (champion) assignment.
+    pub fn build_route_adc(&mut self, dpb: usize) {
+        let (d, kf, levels) = (self.d, self.kf, self.levels);
+        let cf = &self.cent[levels - 1];
+        let kfn = cf.len() / d;
+        if dpb == 0 || d % dpb != 0 || (d / dpb) % 2 != 0 || kfn % 16 != 0 {
+            eprintln!("  [ROUTE_ADC: skipped — need d%dpb==0, (d/dpb) even, finest%16==0 (d={d} dpb={dpb} finest={kfn})]");
+            self.radc = None; self.rcodes = Vec::new(); self.rblocks = Vec::new();
+            return;
+        }
+        let rows: Vec<&[i8]> = (0..kfn).map(|i| &cf[i * d..i * d + d]).collect();
+        let pq = pq::Pq::train(&rows, d, dpb, 8);
+        let m = pq.m;
+        let mut codes = vec![0u8; kfn * m];
+        for i in 0..kfn { pq.encode(&cf[i * d..i * d + d], &mut codes[i * m..i * m + m]); }
+        let nb = kfn / 16;
+        let mut rb = vec![0u8; nb * (m / 2) * 16];
+        for b in 0..nb {
+            for g in 0..m / 2 {
+                for i in 0..16 {
+                    let c = b * 16 + i;
+                    let lo = codes[c * m + 2 * g] & 0x0f;
+                    let hi = codes[c * m + 2 * g + 1] & 0x0f;
+                    rb[(b * (m / 2) + g) * 16 + i] = lo | (hi << 4);
+                }
+            }
+        }
+        println!("  [ROUTE_ADC: 4-bit PQ over {kfn} finest centroids, dpb={dpb} m={m}]");
+        self.radc = Some(pq); self.rcodes = codes; self.rblocks = rb;
     }
 
     /// 2-level hierarchical k-means (back-compat wrapper): C0 coarse → Kf/C0 fine per coarse.
@@ -1043,7 +1059,11 @@ impl HierRouter {
         // ROUTE_ADC_KEEP, then EXACT-rescore only those -> cheap finest scoring if recall holds.
         let adc = ROUTE_ADC.load(std::sync::atomic::Ordering::Relaxed) && self.radc.is_some();
         let adc_m = self.radc.as_ref().map(|p| p.m).unwrap_or(0);
-        let adc_lut: Vec<i8> = if adc { self.radc.as_ref().unwrap().query_lut(qn) } else { Vec::new() };
+        // adc_scale maps the raw (γ−1)‖c‖² gamma bias into the ADC score's centered/scaled domain so the
+        // ADC pre-selection ranks by the SAME γ‖c‖²−2q·c order the exact-rescore uses (see below).
+        let (adc_lut, adc_scale): (Vec<i8>, f32) = if adc { self.radc.as_ref().unwrap().query_lut_with_scale(qn) } else { (Vec::new(), 1.0) };
+        // gamma probe calibration composed with ADC: add scale·gbias[c] to each cell's ADC score.
+        let gadc = adc && !self.gbias.is_empty();
         // vpshufb block path when codes are blocked + avx2; else scalar LUT-sum.
         let adc_regs = if adc && !self.rblocks.is_empty() && std::is_x86_feature_detected!("avx2") {
             pq::lut_regs_i8(&adc_lut, adc_m)
@@ -1060,19 +1080,29 @@ impl HierRouter {
                 if nc == 0 { continue; }
                 if rp { PROF_R_NEVAL.fetch_add(nc as u64, std::sync::atomic::Ordering::Relaxed); }
                 if finest && adc {
-                    if !adc_regs.is_empty() && s % 16 == 0 && (e - s) % 16 == 0 {
+                    // vpshufb block path (16 cells/instr) over the COVERING 16-blocks of this child range
+                    // [s,e): the fan-out (≈Kf/C0) is rarely 16-aligned, so score whole blocks and push only
+                    // in-range cells. A boundary block shared with the neighbouring probed range is re-scored
+                    // but never double-pushed (each cell belongs to exactly one range). gadc adds scale·gbias.
+                    if !adc_regs.is_empty() {
                         let gb = (adc_m / 2) * 16; // bytes per 16-cell block
                         let mut out16 = [0i32; 16];
-                        for jb in 0..(e - s) / 16 {
-                            let blk = s / 16 + jb;
+                        for blk in (s / 16)..((e + 15) / 16) {
                             unsafe { pq::block_adc_i8_i16acc(&self.rblocks[blk * gb..blk * gb + gb], adc_m, &adc_regs, &mut out16); }
-                            for i in 0..16 { nd.push((out16[i], (s + jb * 16 + i) as u32)); }
+                            let c0 = blk * 16;
+                            for i in 0..16 {
+                                let c = c0 + i;
+                                if c < s || c >= e { continue; }
+                                let sc = if gadc { out16[i] + (adc_scale * self.gbias[c] as f32).round() as i32 } else { out16[i] };
+                                nd.push((sc, c as u32));
+                            }
                         }
                     } else {
                         for c in s..e {
                             let code = &self.rcodes[c * adc_m..c * adc_m + adc_m];
                             let mut sc = 0i32;
                             for sub in 0..adc_m { sc += adc_lut[sub * 16 + code[sub] as usize] as i32; }
+                            if gadc { sc += (adc_scale * self.gbias[c] as f32).round() as i32; }
                             nd.push((sc, c as u32));
                         }
                     }
@@ -1101,9 +1131,14 @@ impl HierRouter {
                         // keep ADC-top-KEEP then EXACT-rescore them (precise cell distances).
                         let keep = keepv.min(nd.len());
                         if keep < nd.len() { nd.select_nth_unstable(keep - 1); nd.truncate(keep); }
+                        // EXACT-rescore the survivors in RAW i8-L2 units, adding the raw gamma bias so the
+                        // final probe order matches the non-ADC γ‖c‖²−2q·c ranking (adc_scale was only for
+                        // the ADC-domain pre-selection above).
                         for ent in nd.iter_mut() {
                             let c = ent.1 as usize;
-                            ent.0 = simd::l2_i8(qn, &self.cent[l][c * d..c * d + d]);
+                            let mut s0 = simd::l2_i8(qn, &self.cent[l][c * d..c * d + d]);
+                            if !self.gbias.is_empty() { s0 += self.gbias[c]; }
+                            ent.0 = s0;
                         }
                     }
                     // KEEP==0: NO exact rerank -- route_fine picks top-p straight from the ADC scores. The
@@ -1183,6 +1218,7 @@ impl HierRouter {
 
 impl Router for HierRouter {
     fn n_cells(&self) -> usize { self.kf }
+    fn rebuild_route_adc(&mut self, dpb: usize) { self.build_route_adc(dpb); }
     fn assign(&self, row: &[i8], a0: usize, out: &mut Vec<u32>) {
         let mut qn = [0i8; 256];
         simd::normalize_i8(row, &self.mu, &mut qn[..self.d]);

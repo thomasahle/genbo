@@ -1253,6 +1253,17 @@ fn scanbench2(m: usize, nblk16: usize, scatter: bool, label: &str) {
 #[cfg(not(target_arch = "x86_64"))]
 fn scanbench2(_m: usize, _n: usize, _s: bool, _l: &str) {}
 
+/// POST-HOC ADC codebook rebuild (`routeadc <in.idx> <out.idx> [dpb]`): load an index, rebuild its 4-bit
+/// ADC routing codebook at `dpb` dims-per-block over the EXISTING finest centroids, save. Isolates codebook
+/// granularity from the (fixed) point assignment — no rebuild/retrain, seconds not minutes.
+fn route_adc_rebuild(inp: &str, outp: &str, dpb: usize) {
+    let t = Instant::now();
+    let mut idx = vq::Index::load_from(inp).expect("routeadc: load");
+    idx.router.rebuild_route_adc(dpb);
+    idx.save_to(outp).expect("routeadc: save");
+    println!("[routeadc] {inp} -> {outp} dpb={dpb} in {:.2}s", t.elapsed().as_secs_f64());
+}
+
 /// ROUTE-PRIMITIVE microbench (P196, `routebench <base> <qpath>`): isolate router.probe on the loaded 1M
 /// index. Reports TRUE us/query (best-of-REPS, no instrumentation) then a SEPARATE ROUTE_PROF pass for the
 /// phase split (coarse l2 / coarse-select / fine-expand / final-select) + int8 dist-evals/query.
@@ -1280,6 +1291,25 @@ fn routebench(base: &str, qpath: &str) {
         }
         vq::ROUTE_VNNI.store(std::env::var("SBANN_ROUTE_VNNI").is_ok(), Relaxed);
         println!("[routebench] RECALL-EXACT check: {mism}/{nq} queries with a DIFFERENT probed-cell set (want 0)");
+    }
+    // ADC-ROUTE FIDELITY (SBANN_ROUTE_FID): fraction of the EXACT (ROUTE_ADC off) top-p probed cells that
+    // the ADC router (ROUTE_ADC on, at ROUTE_ADC_KEEP) also probes. gamma (if set) applies to BOTH arms,
+    // so this isolates the ADC pre-selection/rescore loss on top of the gamma-calibrated exact routing.
+    if std::env::var("SBANN_ROUTE_FID").is_ok() {
+        use std::sync::atomic::Ordering::Relaxed;
+        let adc_env = vq::ROUTE_ADC.load(Relaxed);
+        let mut inter = 0usize;
+        for i in 0..nq {
+            vq::ROUTE_ADC.store(false, Relaxed);
+            let a = idx.router.probe(qs.row(i), p);
+            vq::ROUTE_ADC.store(true, Relaxed);
+            let b = idx.router.probe(qs.row(i), p);
+            let aset: std::collections::HashSet<u32> = a.into_iter().collect();
+            inter += b.iter().filter(|c| aset.contains(c)).count();
+        }
+        vq::ROUTE_ADC.store(adc_env, Relaxed);
+        let keep = vq::ROUTE_ADC_KEEP.load(Relaxed);
+        println!("[routebench] ADC FIDELITY vs exact top-{p} (KEEP={keep}): {:.4} retained ({inter}/{})", inter as f64 / (nq * p) as f64, nq * p);
     }
     let mut sink: u64 = 0;
     // warm pages/caches
@@ -1358,6 +1388,7 @@ fn main() {
     if std::env::var("SBANN_PROFILE").is_ok() { vq::PROFILE.store(true, std::sync::atomic::Ordering::Relaxed); }
     if let Ok(s) = std::env::var("SBANN_ROUTE_SDIM") { if let Ok(v) = s.parse::<usize>() { vq::ROUTE_SDIM.store(v, std::sync::atomic::Ordering::Relaxed); } }
     if std::env::var("SBANN_ROUTE_ADC").is_ok() { vq::ROUTE_ADC.store(true, std::sync::atomic::Ordering::Relaxed); }
+    if let Ok(s) = std::env::var("SBANN_ROUTE_ADC_DPB") { if let Ok(v) = s.parse::<usize>() { vq::ROUTE_ADC_DPB.store(v.max(1), std::sync::atomic::Ordering::Relaxed); } }
     // ROUTE_VNNI (P196, champion default ON): VNNI norm-decomposition routing L2, BIT-IDENTICAL to the
     // AVX2-madd L2 (recall-exact). Enabled only when AVX-512 VNNI is detected; vq::gather_fine falls back
     // to the AVX2 block L2 otherwise. Disable with SBANN_ROUTE_VNNI=0.
@@ -1554,6 +1585,7 @@ fn main() {
         Some("fusedab") => fusedab(&a[2], &a[3], &a[4]),
         Some("scatterbench") => scanbench(&a[2], &a[3]),
         Some("routebench") => routebench(&a[2], &a[3]),
+        Some("routeadc") => route_adc_rebuild(&a[2], &a[3], a.get(4).and_then(|s| s.parse().ok()).unwrap_or(2)),
         Some("rbench") => rbench(&a[2], &a[3], &a[4]),
         Some("build") => build(&a[2], a.get(3).map(|s| s.parse().unwrap()).unwrap_or(16384)),
         Some("bench") => bench(&a[2], &a[3], &a[4], a.get(5).map(|s| s.parse().unwrap()).unwrap_or(4096)),
