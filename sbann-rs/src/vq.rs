@@ -2326,6 +2326,26 @@ impl Index {
         out
     }
 
+    /// ORACLE DUMP (flag-gated via SBANN_DUMP_POOL in main; NOT on any hot path): route + scan one
+    /// query with the exact same semantics as scan_rerank/scan_rerank_frr (same probe order, same
+    /// scan_pool candidates, same SOAR-dedup gate, same top-t cap) and return
+    /// (scanned_candidate_count, survivors) where survivors are (orig_id, approx_score) best-first.
+    /// Used by offline pool-expansion oracles (e.g. kNN-graph augmentation studies) that need the
+    /// engine-faithful survivor pool per (p, t_surv) without re-implementing routing/ADC in numpy.
+    pub fn dump_pool(&self, ds: &I8Bin, q: &[i8], p: usize, t: usize) -> (u64, Vec<(u32, i32)>) {
+        let cells = self.router.probe(q, p);
+        let ctx = self.comp.prepare_query(q);
+        let mut pool = self.scan_pool(ds, q, &cells, &ctx);
+        let scanned = pool.len() as u64;
+        if self.a0 >= DEDUP_A0.load(std::sync::atomic::Ordering::Relaxed) || POOLDEDUP.load(std::sync::atomic::Ordering::Relaxed) {
+            dedup_pool_by_orig(&mut pool, &self.slot_orig);
+        }
+        let tt = t.min(pool.len());
+        if tt > 0 { pool.select_nth_unstable(tt - 1); pool.truncate(tt); }
+        pool.sort_unstable();
+        (scanned, pool.into_iter().map(|(d, s)| (self.slot_orig[s as usize], d)).collect())
+    }
+
     /// FLOAT-RERANK search (P191 lever stack): route + int8 scan are BIT-IDENTICAL to `search`
     /// (same FASTSCAN2 kernel, PREFETCH, FUSEDTOPK, SOAR dedup, top-t cap) so the scan cost/QPS is the
     /// same lever stack as the int8 path; ONLY the final exact rerank of the t survivors is swapped to

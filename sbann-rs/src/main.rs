@@ -529,6 +529,39 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
         }
         return;
     }
+    // SBANN_DUMP_POOL=<prefix> (flag-gated oracle dump, no benching): for every p in SBANN_PLIST,
+    // write <prefix>.p<p>.bin = engine-faithful survivor pools for all nq queries. Binary layout:
+    // u32 nq, u32 t_surv, then per query { u32 scanned_candidates, u32 m, m x (u32 orig, i32 score) }.
+    // Survivors are best-first by approx (apq4) score; scanned_candidates counts every scanned row
+    // (SOAR multi-store duplicates included — it is the scan-kernel work counter). Then exits.
+    if let Ok(dprefix) = std::env::var("SBANN_DUMP_POOL") {
+        use std::io::Write;
+        let tm0 = *tlist.first().unwrap_or(&tmul);
+        let tfloor: usize = std::env::var("SBANN_TFLOOR").ok().and_then(|s| s.parse().ok()).unwrap_or(300);
+        for &p in &plist {
+            let t_surv = (p * tm0).max(tfloor);
+            let st = Instant::now();
+            let dumps: Vec<(u64, Vec<(u32, i32)>)> = (0..nq).into_par_iter()
+                .map(|i| idx.dump_pool(&ds, qs.row(i), p, t_surv)).collect();
+            let path = format!("{dprefix}.p{p}.bin");
+            let mut w = std::io::BufWriter::new(std::fs::File::create(&path).expect("dump file"));
+            w.write_all(&(nq as u32).to_le_bytes()).unwrap();
+            w.write_all(&(t_surv as u32).to_le_bytes()).unwrap();
+            let mut tot_scan = 0u64;
+            for (scanned, pool) in &dumps {
+                tot_scan += scanned;
+                w.write_all(&(*scanned as u32).to_le_bytes()).unwrap();
+                w.write_all(&(pool.len() as u32).to_le_bytes()).unwrap();
+                for &(o, s) in pool {
+                    w.write_all(&o.to_le_bytes()).unwrap();
+                    w.write_all(&s.to_le_bytes()).unwrap();
+                }
+            }
+            println!("  [DUMP_POOL p={p} t_surv={t_surv}] {path}  mean_scanned={:.0}  ({:.1}s)",
+                tot_scan as f64 / nq as f64, st.elapsed().as_secs_f64());
+        }
+        return;
+    }
     for &p in &plist {
       for &tm in &tlist {
        for &lm in &lmodes {
