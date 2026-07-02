@@ -3448,6 +3448,8 @@ P207. (*** GRAPH-AUGMENTED POOL EXPANSION IMPLEMENTED (branch graph-expansion-im
     this pipeline ~5us => ~1.05-1.08, deferred. *** NEXT (the decisive arm): cherry-pick gamma d02561a; with
     p'~15-22 the scan halves BEFORE the graph hop => modeled e2e ~100-110us vs ScaNN ~120 => sub-1x plausible.
 
+P208. (*** STREAMING 30M SOAR-INSERT FIX LANDED (branch feat/streaming-30m f626d2a, bounded spill assignment to top-K nearest cells): inserts 3109 -> 26175/s (8.4x, ABOVE the flat baseline's 22663!), avg recall@10 = 0.9653 == the unbounded SOAR's 0.9654 (the bound costs NOTHING), RUNBOOK-OPS WALL = 2759s = 46min < 3600s budget UNDER LOAD ~27-35 — the 1hr budget is PASSED with margin. ONE REMAINING BLOCKER: peak anon 8.64GB > 8GB cap (INELIGIBLE by 0.64GB) — the 8.4x-faster inserts outpace the SBANN_COMPACT=0.25 compaction cadence so append buffers peak higher than the slow run's 7.52GB. Fix = compaction/buffer tuning (recall-neutral fold), then the 0.9653 = 2nd-open-source run is FULLY ELIGIBLE. ***)
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
