@@ -3387,6 +3387,21 @@ P202. (*** CELL-MAJOR BATCHED SCAN: real +27% e2e (recall-BIT-IDENTICAL), loaded
 
 P203. (*** CONSOLIDATION PASS (user's clean-abstractions requirement, executed post-lever-stabilization): branch `champion` = batch-inverted + 55c0433. All winning levers folded to DEFAULT-ON behind runtime detection (env_on helper, SBANN_<X>=0 overrides kept): FASTSCAN2 (avx2+selftest gate), ROUTE_VNNI (avx512vnni gate, AVX2 fallback), CASCADE default-on w/ K default 128->16, FUSEDTOPK, BATCHSCAN w/ chunk default 1000 (P202 knee), PREFETCH. Refuted scaffolding (P2LAYOUT/ANISO_*/NormPq) confirmed ABSENT on this lineage (lives on experiment branches); RESIDQ + SOAR/TREEEM intact. Dispatch audit CLEAN: every intrinsic behind is_x86_feature_detected w/ scalar/AVX2 fallback, selftests assert at startup, no unguarded AVX-512. GATES: build clean; recall EXACT 0.9032 default-flags on BOTH batched and per-query paths, BATCH_VERIFY 2000/2000 set+order identical, bit-match vs flags-on reference; QPS sanity batched ~7000 / interleaved vs ScaNN ~1.19x (= P202). Doc block CHAMPION OOD STACK added above main(). Dataset/mode selectors (SBANN_IP, FLOAT_RERANK, FBASE/FQUERY, TFLOOR) deliberately left explicit. ***)
 
+P204. (*** STREAMING 30M (OFFICIAL msturing-30M-clustered final_runbook, f16 rerank): SOAR a0=2 avg recall@10 = 0.9654 => would rank 3rd overall / 2ND OPEN-SOURCE (leaderboard: puck 0.9855/0.9849, hwtl-closed 0.9675, pyanns 0.9597, diskann 0.8833, cufe 0.8189), fits 8GB (peak 7.52GB) — ONLY blocker = insert-bound wall (SOAR scalar assignment 3109/s vs 22663 flat = 7.3x, P116's deferred SIMD), 10981s vs 3600s budget even quiet-extrapolated. Baseline flat C=4096 a0=1: 0.9276, 5.87GB, wall 3750s loaded => quiet ~800-1200s FITS EASILY (would rank 4th, above diskann). Branch feat/streaming-30m 9976c2e. ***)
+    Protocol: 320 ins / 320 del / 640 search steps, live-window ~10.29M, metric avg recall@10 vs per-step gt100,
+    1hr budget, ~8GB, Azure D8lds_v5. Recall on 2000/10000 official queries (within ~0.001 of full set).
+    *** F16 RERANK GATE (1M): agreement f16-vs-f32 top-10 = 0.9995 avg / 0.9986 worst; runbook recall diff 0.0001
+    => LOSSLESS. Cache 2.06GB vs 4.12GB f32 — the halving that keeps SOAR a0=2 (doubled int8 store) under 8GB.
+    F16C _mm256_cvtph_ps behind is_x86_feature_detected + scalar fallback + startup selftest (clean-abstraction).
+    *** Recall by live-density (SOAR/c4096): <0.5M 0.868/0.808 | 0.5-2M 0.947/0.903 | 2-5M 0.964/0.924 |
+    5-8M 0.971/0.937 | 8-10.3M 0.979/0.947 — low-live steps are the recall tail (adaptive-p lever for later).
+    *** SCALING PATHOLOGIES: (1) cell count must track live density — Kf=262144 craters to 0.31-0.50 (88% of
+    runbook live<10M => empty probed cells); flat C=4096 stays occupied 38k->10M. (2) recall is 100% ROUTING-
+    COVERAGE-limited (true float-NN present in int8 top-14 candidates) — exactly why SOAR +3.8pt. (3) upstream
+    runbook_to_ops.py --scale-to clamps ids (span ~2.9x window) — scaled by target/id_max for the 1M gate.
+    *** NEXT: vectorize SOAR insert assignment (reuse P196 VNNI L2 nearest-centroid kernel) => make 0.9654
+    eligible; then spend leftover budget on the low-live recall tail toward puck's 0.9855.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
