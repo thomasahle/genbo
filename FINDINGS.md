@@ -3418,6 +3418,22 @@ P205. (*** ORACLE FAN-OUT for the next 1M OOD lever (3 parallel agents; the prob
     layer adaptive-p RETRAINED on the graph-expanded pipeline (p*(q) distribution changes when the hop recovers
     deep misses). Both dumps/tooling committed on their branches for reuse.
 
+P206. (*** QUERY-CALIBRATION ORACLE = the strongest GO of the fan-out, and embarrassingly simple: a SINGLE GLOBAL GAMMA on the centroid-norm term of the routing score (score = gamma*||c||^2 - 2*q.c, gamma=0.5, i.e. halfway L2 -> pure-dot) lets OOD text queries reach the SAME 0.9032 recall at HALF the probes: p=27-29 vs 54, candidates 10234->5837 = x1.75, at ZERO query-time cost (per-cell additive i32 bias). Interleaved +18.7% e2e (11 rounds) -> ratio ~1.01 alone (optimistic bound 0.90). Flag-gated SBANN_ROUTE_GAMMA, branch probe-calibration d02561a, default-off bit-exact. ***)
+    Fitted on the even query half, validated on held-out odd half AND full-2000 engine runs (gamma p=27 = 0.9032 ==
+    champion; conservative p=29 = 0.9052 held-out). WHY IT WORKS (the OOD mechanism, finally isolated): the router
+    orders cells by L2 in the IMAGE geometry; for IP search with text queries, large-norm centroids (= large-norm
+    cells that score high in IP) are systematically over-penalized by the ||c||^2 term -> true-NN cells sit deeper
+    in the probe order. gamma=0.5 interpolates L2 -> MIPS ordering. This is what P198's anisotropic PARTITIONING
+    tried to capture by rebuilding cells (and failed); the fix is a query-time SCORING correction, not a partition
+    change. Capacity ladder: free per-cell bias <=1.08x, diagonal metric 0.89x (both null) -> the global scalar IS
+    the whole signal. Oracle UB p=5 = 10.8x (greedy set-cover). Un-tuned upside: t_surv/K16 not re-tuned at the
+    smaller pool; the COARSE level (b0=96, route 23us) not gamma-calibrated. Alternative operating point: +2pp
+    recall (0.9230) at unchanged p=54.
+    *** COMPOSITION PLAN (all three GO levers are orthogonal): gamma (x1.75, free) x graph-expansion (P205, x1.68
+    touched rows at p'=30 WITHOUT gamma; with gamma the same coverage should arrive by p'~15-22) x adaptive-p
+    (x1.20 realizable, retrained on the composed pipeline). Directed graph-impl to cherry-pick d02561a and run the
+    composed decider: arms = ScaNN / champion p54 / gamma p29 / gamma+graph p'~18. Compound projection ~0.75-0.9.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
