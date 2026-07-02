@@ -482,6 +482,11 @@ pub trait Router: Send + Sync {
     fn probe(&self, q: &[i8], p: usize) -> Vec<u32>; // query: top-p cells
     /// top-p cells sorted NEAREST-FIRST (for adaptive early termination). Default: unranked probe.
     fn probe_ranked(&self, q: &[i8], p: usize) -> Vec<u32> { self.probe(q, p) }
+    /// DUMP-ONLY diagnostic (SBANN_DUMP_ROUTE, adaptive-probe analysis): the query's full routing
+    /// profile = (ALL coarse-level L2 scores sorted ascending, top-`pf` finest cells sorted
+    /// nearest-first with their L2 scores). Mirrors probe() exactly (same normalization, same
+    /// gather_fine candidate set); a full sort replaces select_nth. Default: unsupported (empty).
+    fn route_profile(&self, _q: &[i8], _pf: usize) -> (Vec<i32>, Vec<(i32, u32)>) { (Vec::new(), Vec::new()) }
     /// Batched routing: top-p cells for all nq queries (nq*p). Default: parallel per-query probe;
     /// FlatIvf overrides with a single GEMM (Q @ pivots^T) — far faster for large C.
     /// Serialize self (1-byte concrete-type tag + POD fields) for SBANN_INDEX_SAVE. Default: error —
@@ -1166,6 +1171,24 @@ impl Router for HierRouter {
         let mut out = Vec::new();
         self.route_fine(&qn[..self.d], p, &mut out);
         out
+    }
+    /// DUMP-ONLY (SBANN_DUMP_ROUTE): see the trait doc. Coarse scores via the same l2_i8_block the
+    /// non-VNNI route uses (bit-identical to the VNNI path, P196); fine candidates via gather_fine —
+    /// so the top-p prefix of the returned fine list IS probe(q,p)'s cell set for every p.
+    fn route_profile(&self, q: &[i8], pf: usize) -> (Vec<i32>, Vec<(i32, u32)>) {
+        let d = self.d;
+        let mut qn = [0i8; 256];
+        simd::normalize_i8(q, &self.mu, &mut qn[..d]);
+        let qn = &qn[..d];
+        let l0 = self.cent[0].len() / d;
+        let mut coarse = vec![0i32; l0];
+        simd::l2_i8_block(qn, &self.cent[0], l0, d, d, &mut coarse);
+        coarse.sort_unstable();
+        let mut fd: Vec<(i32, u32)> = Vec::new();
+        self.gather_fine(qn, &mut fd);
+        fd.sort_unstable();
+        fd.truncate(pf);
+        (coarse, fd)
     }
     fn save(&self, w: &mut crate::persist::Sw) -> std::io::Result<()> {
         w.u8(ROUTER_TAG_HIER)?;
@@ -2655,18 +2678,24 @@ impl Index {
     /// identical to `search_frr` (modulo t-boundary equal-score ties). Kernels/Compressor UNCHANGED.
     #[allow(clippy::too_many_arguments)]
     pub fn search_batch_frr(&self, ds: &I8Bin, queries: &[i8], qf_all: &[f32],
-        fbase: &crate::fbin::FBin, nq: usize, p: usize, t: usize, k: usize) -> Vec<Vec<u32>> {
+        fbase: &crate::fbin::FBin, nq: usize, p: usize, t: usize, k: usize,
+        p_over: Option<&[u32]>) -> Vec<Vec<u32>> {
         let prof = PROFILE.load(std::sync::atomic::Ordering::Relaxed);
         let d = ds.d;
         let ncell = self.router.n_cells();
         // (1) route every query (UNCHANGED per-query router, honours ROUTE_VNNI via the global) into a
         // flat cell array with per-query bounds, then build each query's LUT/QueryCtx.
+        // ADAPTIVE PROBE (SBANN_PLIST_FILE): `p_over` supplies a PER-QUERY probe count decided at
+        // routing time (query i of this chunk probes p_over[i] cells instead of the fixed p). The
+        // cell-major sweep below is count-agnostic — each query just contributes a shorter/longer
+        // probe list to the inversion — so easy queries scan fewer cells at identical semantics.
         let t0 = if prof { Some(std::time::Instant::now()) } else { None };
         let mut cells_flat: Vec<u32> = Vec::with_capacity(nq * p);
         let mut cell_off: Vec<u32> = Vec::with_capacity(nq + 1);
         cell_off.push(0);
         for i in 0..nq {
-            let mut c = self.router.probe(&queries[i * d..i * d + d], p);
+            let pi = p_over.map(|v| v[i] as usize).unwrap_or(p);
+            let mut c = self.router.probe(&queries[i * d..i * d + d], pi);
             cells_flat.append(&mut c);
             cell_off.push(cells_flat.len() as u32);
         }

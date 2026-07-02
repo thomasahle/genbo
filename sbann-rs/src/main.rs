@@ -428,6 +428,59 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
     // SBANN_NQ caps the #queries (for fair same-NQ head-to-head vs the Python frontier's NQ=1000).
     let nq_cap = std::env::var("SBANN_NQ").ok().and_then(|s| s.parse().ok()).unwrap_or(usize::MAX);
     let nq = qs.nb.min(gnq).min(nq_cap);
+    // ── ADAPTIVE-PROBE OFFLINE DUMPS (flag-gated, exit after writing; no effect on the bench path) ──
+    // SBANN_DUMP_ASSIGN=path: the base→cell assignment (incl. SOAR duplicate slots) as two flat LE-u32
+    //   arrays: header [ncells, nblocks], then cell_bstart (ncells+1) and slot_orig (nblocks*16,
+    //   u32::MAX = padding). Cell c's members are slot_orig[16*cell_bstart[c] .. 16*cell_bstart[c+1]].
+    // SBANN_DUMP_ROUTE=path: per query, the routing-time feature profile: header [nq, ncoarse, pf],
+    //   then per query: ncoarse i32 coarse L2 scores (sorted asc), pf u32 fine cell ids
+    //   (nearest-first = the probe order; prefix p == probe(q,p)'s set), pf i32 fine L2 scores.
+    if let Ok(pa) = std::env::var("SBANN_DUMP_ASSIGN") {
+        let mut buf: Vec<u32> = Vec::new();
+        let ncells = idx.cell_bstart.len() - 1;
+        let nblocks = idx.slot_orig.len() / 16;
+        buf.push(ncells as u32);
+        buf.push(nblocks as u32);
+        buf.extend_from_slice(&idx.cell_bstart);
+        buf.extend_from_slice(&idx.slot_orig);
+        std::fs::write(&pa, bytemuck::cast_slice::<u32, u8>(&buf)).expect("dump assign");
+        println!("[dumped assignment to {pa}: ncells={ncells} nblocks={nblocks}]");
+    }
+    if let Ok(pa) = std::env::var("SBANN_DUMP_ROUTE") {
+        let pf: usize = std::env::var("SBANN_DUMP_PF").ok().and_then(|s| s.parse().ok()).unwrap_or(160);
+        let td = Instant::now();
+        let mut buf: Vec<u32> = Vec::new();
+        let mut ncoarse = 0usize;
+        for i in 0..nq {
+            let (coarse, fine) = idx.router.route_profile(qs.row(i), pf);
+            assert!(!coarse.is_empty() && fine.len() >= pf, "route_profile unsupported or pf too large");
+            if i == 0 {
+                ncoarse = coarse.len();
+                buf.push(nq as u32); buf.push(ncoarse as u32); buf.push(pf as u32);
+            }
+            assert_eq!(coarse.len(), ncoarse);
+            buf.extend(coarse.iter().map(|&s| s as u32));
+            buf.extend(fine.iter().map(|&(_, c)| c));
+            buf.extend(fine.iter().map(|&(s, _)| s as u32));
+        }
+        std::fs::write(&pa, bytemuck::cast_slice::<u32, u8>(&buf)).expect("dump route");
+        println!("[dumped route profiles to {pa}: nq={nq} ncoarse={ncoarse} pf={pf} in {:.1}s]", td.elapsed().as_secs_f64());
+    }
+    if std::env::var("SBANN_DUMP_ASSIGN").is_ok() || std::env::var("SBANN_DUMP_ROUTE").is_ok() {
+        return; // dump-only invocation: skip the bench below
+    }
+    // ADAPTIVE PROBE (SBANN_PLIST_FILE): per-query probe counts (nq LE-u32), decided at ROUTING time
+    // by an offline rule on the route_profile features. Overrides the fixed p of SBANN_PLIST on the
+    // batched FRR driver; t_surv stays fixed (from SBANN_PLIST x SBANN_TMUL as usual).
+    let pq_plist: Option<Vec<u32>> = std::env::var("SBANN_PLIST_FILE").ok().map(|f| {
+        let bytes = std::fs::read(&f).expect("read SBANN_PLIST_FILE");
+        let v: Vec<u32> = bytemuck::cast_slice::<u8, u32>(&bytes).to_vec();
+        assert!(v.len() >= nq, "SBANN_PLIST_FILE has {} entries < nq={nq}", v.len());
+        let avg = v[..nq].iter().map(|&x| x as f64).sum::<f64>() / nq as f64;
+        println!("  [PLIST_FILE {f}: per-query p, avg={avg:.1} min={} max={}]",
+            v[..nq].iter().min().unwrap(), v[..nq].iter().max().unwrap());
+        v
+    });
     // FLOAT-RERANK (SBANN_FLOAT_RERANK, P191 lever stack): int8 scan/route STAY (FASTSCAN2+PREFETCH),
     // but the exact survivor rerank reads the ORIGINAL float vectors (SBANN_FBASE, first ds.nb rows)
     // using the float queries (SBANN_FQUERY) -> float-precision ranking vs the leaderboard's float GT.
@@ -561,7 +614,8 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
                     let mut s = 0usize;
                     while s < nq {
                         let e = (s + batch_chunk).min(nq);
-                        let sub = idx.search_batch_frr(&ds, &qarr[s * ds.d..e * ds.d], &fqf[s * ds.d..e * ds.d], fb, e - s, p, t_surv, 10);
+                        let sub = idx.search_batch_frr(&ds, &qarr[s * ds.d..e * ds.d], &fqf[s * ds.d..e * ds.d], fb, e - s, p, t_surv, 10,
+                            pq_plist.as_ref().map(|v| &v[s..e]));
                         all.extend(sub);
                         s = e;
                     }
