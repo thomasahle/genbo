@@ -1394,6 +1394,34 @@ fn env_on(name: &str, default: bool) -> bool {
 /// codes P182/P198, rank-preserving NormPq P200, richer codes P201, P2LAYOUT P195) live only on
 /// their experiment branches and are absent here.
 ///
+/// ── OOD CALIBRATION STACK (per-dataset, FINDINGS P206-P216) ──────────────────────────────────────
+/// The 1M text2image OOD head-to-head vs ScaNN reached ~0.91x (leaderboard-top-equivalent at 1M
+/// single-thread, P216) by adding three levers ON TOP of the default stack above. Unlike the P190-P202
+/// levers these are NOT default-on — gamma and graph are calibration knobs fitted on t2i OOD data, so
+/// they stay opt-in (in-distribution data likely wants γ≈1 / no graph, P206 caveat). The measured
+/// winning config is GR18_t470 = γ=0.5 + graph M=25 + union-trim + t_surv=470, at p=18 / K=16.
+///   • gamma       (P206) — SBANN_ROUTE_GAMMA=0.5. Per-finest-cell (γ−1)‖c‖² routing bias (see the
+///                          GENERALIZED CASCADE KNOBS block below). Default UNSET (γ=1, bit-identical).
+///                          The dominant OOD lever: halves p at fixed recall (p54→p29) at zero query
+///                          cost. SEARCH-time only — never set during build/insert (skews SOAR assign).
+///                          Fitted on t2i; re-fit per dataset (10M wants 0.5-0.6, P215).
+///   • graph       (P207/P209) — SBANN_GRAPH_FILE=<n×k u32 LE IP-kNN adjacency, no header>. Flag-gated
+///                          (needs an offline sidecar artifact). On the FLOAT_RERANK cascade path, the
+///                          survivor pool's top-M nodes (SBANN_GRAPH_M=25) have their k-NN graph edges
+///                          (SBANN_GRAPH_KEDGE=16) union-ed into the rescore set — recovers the deep
+///                          neighbours a shallow probe missed. BUILD RECIPE: ScaNN self-search k=16 over
+///                          the base vectors (scratchpad gexp_graph_build.py), dump raw u32. Composes
+///                          with gamma (additive, ~+4% e2e over gamma-only, P214); overlaps partially
+///                          (compound ~0.97 not multiplicative). Orthogonal to the index → no
+///                          serialization change (fold the sidecar into the index once the lever lands).
+///   • union-trim  (P214) — UNCONDITIONAL on the graph path (no flag): the pool-dedup + neighbour-union
+///                          is one open-addressing hash pass with adjacency prefetch, bit-identical to
+///                          the old two-pass (verified 2000/2000). SBANN_GRAPH_SORT=1 forces the sorted
+///                          gather (default off — deep prefetch wins, +3.7% e2e).
+///   • t_surv      (P214/P215) — SBANN_TFLOOR=470 is the OOD graph-mode operating point at 1M (p=18).
+///                          t_surv must scale with n: the 1M value CAPS recall at 10M (pool too shallow);
+///                          10M wants t_surv≈2000 (P215). Trades against p at a marginal-cost balance.
+///
 /// ── GENERALIZED CASCADE KNOBS (the L-level router as one tunable family, FINDINGS P210-P211) ──────
 /// The router is a general L-level cascade: level i takes the level-(i-1) beam, scores its children,
 /// keeps its own beam, recurses; the finest level returns `p` cells; the leaf datapoint scan is the
