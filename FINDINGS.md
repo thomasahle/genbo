@@ -3516,6 +3516,12 @@ P214. (*** THE 0.93x HANNS BAR REACHED (pairwise-inferred, pending direct confir
     pairwise-alternation protocol (gamma anchor mid-triple, median of adjacent-pair ratios) added to the
     measurement toolkit for loaded-box windows. 1M OOD progression: 2.22x -> 1.20x -> 0.972x -> inferred 0.934x.
 
+P215. (*** GAMMA TRANSFERS TO 10M — the routing-miscalibration mechanism is SCALE-INVARIANT, and the probe cut is SAME-OR-STRONGER than 1M: at t_surv=2000 on the fresh 10M index (eng_t2i10m_kf131072_c4096_b256_a3, built 41min, sanity 0.9022@p250 gamma-off), matched-recall probe requirements: recall~0.93 gamma-off p~220 vs gamma0.5 p~80 (2.7x); recall~0.94 gamma-off p~400 vs gamma0.5 p~160 (2.5x); gamma0.5 = 0.9315 AT p=80 where gamma-off is 0.8946. gamma 0.5-0.6 optimal at 10M (0.4 slightly below). RECALL curves are load-insensitive (box load 34-80 across arms — QPS columns not comparable). ***)
+    ALSO LEARNED: t_surv must scale with n — the 1M-tuned t_surv=540-800 CAPS recall at ~0.881 at 10M regardless
+    of p (pool too shallow to hold the true candidates); t=2000 releases it (agent self-caught via the plateau).
+    Remaining on this front: the first same-hardware 10M h2h vs the cached ScaNN 10M index (task in flight,
+    pairwise-alternation protocol, core 3).
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
