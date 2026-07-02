@@ -987,6 +987,19 @@ fn parse_ops(path: &str) -> (usize, Vec<RbOp>) {
 /// Resident ANONYMOUS memory (MB) from /proc/self/status RssAnon — the streaming track caps the
 /// container at 8GB DRAM, so we track this peak and fail loudly if a config breaches it (file-backed
 /// mmap pages don't count here; this is the hard-RSS the 8GB cgroup limit enforces).
+/// Return freed heap back to the OS. glibc keeps freed chunks in its (per-thread) arenas rather than
+/// unmapping them; the parallel `compact_live` rebuild churns 8 rayon-thread arenas, and at 8x-faster
+/// streaming inserts they reach a higher water mark that is never trimmed — inflating RssAnon ~1GB above
+/// the live logical size. Calling this after each compaction (and after cold-start training) makes the
+/// 8GB-cap peak track live memory. No-op off glibc/Linux; recall-neutral (pure allocator hint).
+#[cfg(target_os = "linux")]
+fn trim_heap() {
+    extern "C" { fn malloc_trim(pad: usize) -> i32; }
+    unsafe { malloc_trim(0); }
+}
+#[cfg(not(target_os = "linux"))]
+fn trim_heap() {}
+
 fn rss_anon_mb() -> f64 {
     std::fs::read_to_string("/proc/self/status").ok()
         .and_then(|s| s.lines().find(|l| l.starts_with("RssAnon:")).map(|l| l.to_string()))
@@ -1153,11 +1166,13 @@ fn stream_runbook(base: &str, qpath: &str, opspath: &str, router_s: &str, comp_s
             idx.finalize_inserts();
             let cs = Instant::now();
             idx.compact_live(a0);
+            trim_heap(); // return the parallel-rebuild's freed arena memory to the OS (8GB-cap peak)
             *n_compact += 1;
             println!("    [compact #{n_compact}] folded buffer -> main n={} in {:.2}s", idx.n_main, cs.elapsed().as_secs_f64());
         }
     };
 
+    trim_heap(); // free cold-start training residue before the timed runbook ops begin
     for op in ops.iter() {
         match *op {
             RbOp::Insert(s, e) => {
