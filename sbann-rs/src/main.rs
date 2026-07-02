@@ -1350,6 +1350,31 @@ fn env_on(name: &str, default: bool) -> bool {
 /// SBANN_FBASE/FQUERY (needs float base vectors), SBANN_TFLOOR. Refuted levers (aniso partitioning/
 /// codes P182/P198, rank-preserving NormPq P200, richer codes P201, P2LAYOUT P195) live only on
 /// their experiment branches and are absent here.
+///
+/// ── GENERALIZED CASCADE KNOBS (the L-level router as one tunable family, FINDINGS P210-P211) ──────
+/// The router is a general L-level cascade: level i takes the level-(i-1) beam, scores its children,
+/// keeps its own beam, recurses; the finest level returns `p` cells; the leaf datapoint scan is the
+/// last cascade stage (ADC → t_surv exact-rescore → K prune → float reorder). The knobs, coarse→fine:
+///   • DEPTH / SIZES  — `run` router arg picks depth: hierk (L=2), hierk3 (L=3), hierkn (any L via
+///                      SBANN_LEVELS=c0,c1,…,Kf). Per-level cell counts: SBANN_C0/C1 (or LEVELS);
+///                      finest count = Kf (positional). BUILD-time — one cached index per geometry.
+///   • BEAMS  P_i     — SBANN_B0/B1 (or SBANN_BEAMS, len L-1) = cells expanded per level. GAP: beams
+///                      are BUILT INTO HierRouter.beam[] (not read at search) — they are part of the
+///                      OUTER geometry, NOT a query-side knob. Retune ⇒ rebuild.
+///   • FINEST p       — SBANN_PLIST: #finest cells returned to the scan. The dominant search-time lever.
+///   • gamma          — SBANN_ROUTE_GAMMA: per-finest-cell (γ−1)‖c‖² bias, applied at level L-1 in ALL
+///                      depths. γ≈0.5 halves p at fixed OOD recall (P206); the single biggest lever.
+///   • ROUTE_ADC R_i  — SBANN_ROUTE_ADC + _KEEP: 4-bit ADC scoring of the FINEST routing cells, KEEP=0
+///                      pure-ADC / KEEP>0 ADC-top-then-exact-rescore. GAP: gbias is NOT added on the
+///                      ADC path, so gamma×ADC do not compose (fixable via Pq::query_lut_with_scale on
+///                      the adc-route branch). REFUTED at 1M/d=200 for every geometry incl. wide 3-level
+///                      finest fan-in (P210-P211, ~1.8× slower) — the exact VNNI router is at the floor.
+///   • LEAF R=t_surv  — SBANN_TFLOOR/TMUL: survivors exact-rescored (t_surv = max(p·TMUL, TFLOOR)).
+///   • LEAF K         — SBANN_CASCADE_K: int8-prune width before the float reorder (default 16).
+/// P211 optimum (1M t2i OOD): L=2, Kf≈16384, C0≈768, gamma≈0.5, exact routing — the champion geometry.
+/// Deeper trees only match (never beat) it, and only when kept LEAN (total cells scored ≈2500-2800);
+/// (p, t_surv) sits at a marginal-cost balance (one extra probe ≈ the extra gather-bound survivors it
+/// saves), so trading t_surv↑ for p↓ is a wash, not equal-work-per-level.
 fn main() {
     let a: Vec<String> = std::env::args().collect();
     if std::env::var("SBANN_IP").is_ok() { vq::IP_MODE.store(true, std::sync::atomic::Ordering::Relaxed); }
