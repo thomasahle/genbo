@@ -3540,6 +3540,13 @@ P217. (*** 10M H2H (first ever, PROVISIONAL pending ScaNN-config sanity): 20 pai
     mechanistically plausible: our cells stay ~76 pts (fine partition + gamma ordering + batched scan) while
     ScaNN's per-leaf scan grows with n/leaves, and our refine stays survivor-bound.
 
+P218. (*** CONSOLIDATION OF THE P216 WINNING STACK: branch `champion` @ 4aa59af (fast-forward of graph-expansion-impl: 34b05f2 graph sidecar / 0290d4e unsorted-union / 142a6b4 gamma / 1ab8134 trim + cherry-picked 330010b cascade-knob doc + 4aa59af OOD-calibration doc block). ALL GATES PASS: build clean; startup selftests (fastscan32 + l2_norm) + scanbench2 bit-identical; recall id-recomputed — champion-default p54 = 0.9032 BOTH paths set+order-identical 2000/2000 (nothing regressed), gamma-only p29/t540 = 0.9060, GR18_t470 = 0.9060; 5-round interleaved sanity (load ~38): GR18_t470 ~0.88x, gamma-only ~0.985x, recall exact every round (consistent w/ P216's calm 0.91x/0.97x). ***)
+    DEFAULTS POLICY (clean-abstractions): gamma = per-dataset calibration knob, default unset = bit-identical
+    (OOD recipe gamma=0.5 documented); graph = flag-gated sidecar (SBANN_GRAPH_FILE, build recipe documented);
+    union-trim unconditional on the graph path; t_surv documented 470 for 1M-OOD-graph (scales with n per P215).
+    GOTCHA documented: gamma arms need SBANN_TFLOOR=540 (fixed t_surv, not p*TMUL) — reproduces P210's gotcha.
+    `champion` is now the canonical branch carrying the full 0.91x stack.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
