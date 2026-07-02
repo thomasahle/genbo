@@ -3474,6 +3474,23 @@ P210. (*** ADC ROUTING REFUTED for 1M/d=200 (user-requested experiment, branch a
     adc-route: 0.914x), two windows, both sub-1x => the gamma win is ROBUST, not a window artifact. Gotcha
     documented: champion op-point uses FIXED t_surv~540 (not p*tmul) — with p*tmul gamma recall misleads.
 
+P211. (*** GENERALIZED-CASCADE OPTUNA SWEEP (user's L-levels/P_i/R_i framework; 160 recall-constrained trials over 7 geometries x query knobs, cached indexes, + 4-arm same-window decider): the gamma-p27 2-LEVEL REFERENCE IS ALREADY THE OPTIMUM. Sweep winners (L3 lean 8963 QPS, L2 p22/t900 8591) were LOAD ARTIFACTS — same-window they are 0.894x/0.949x of the reference. No engine changes warranted; no config beats gamma-p27. ***)
+    STRUCTURAL ANSWERS (the user's questions, settled empirically): (1) LEVELS = 2. A lean 3-level (finest fan-in
+    ~1024) MATCHES but never beats; wide-fan-in 3-level much worse. What matters is TOTAL cells scored (~2500-2800)
+    and 2 levels reaches it cheapest. (2) SIZES: Kf~16384 / C0~768 / b0=96 confirmed AT the optimum even post-gamma
+    (8192 slightly worse = bigger leaves more scan; 32768 worse = more routing) — P192's geometry survives the new
+    primitives. (3) ADC PAYS NOWHERE at 1M/d=200 — extends P210 to deeper trees and wide fan-ins (best ADC trial
+    5552 vs best exact 8963 across 56 ADC trials; even the 8192-cell L3 finest fan-in loses to exact). (4) The
+    BALANCED-WORK heuristic holds as MARGINAL-COST equalization, NOT equal wall-time: the optimum sits where one
+    more probe (cheap streaming scan) costs the same as the extra survivors needed to drop one (expensive gather-
+    bound rescore ~5x/row) — the cost asymmetry is exactly why t_surv stays modest (540-700) and gamma (probe
+    halving) was the dominant lever. Profile: REF p27/t540 vs WIN-L2 p22/t900 = 274 vs 272 us/q, a dead wash
+    (13us scan saved == 24us rescore added).
+    KNOB COMPLETENESS: the engine already exposes the whole framework (hierk/hierk3/hierkn depth, C0/C1/B0/B1
+    build-baked beams, gamma at finest level both depths, ROUTE_ADC+KEEP, t_surv via TFLOOR/TMUL, CASCADE_K).
+    Gaps (harmless at the optimum): intermediate beams build-baked; gamma+ADC don't compose on the ADC path.
+    Artifacts: cascade_sweep.py / cascade_sweep_log.csv / cascade_sweep.db / decide4_out.log (scratchpad).
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
