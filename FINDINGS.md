@@ -3507,6 +3507,15 @@ P213. (*** P212's OPEN ITEM SETTLED — the 1hr clock INCLUDES train (it's the c
     the 27s into inserts, negligible, recall/memory unchanged). Do before a real PR.
     NEXT recall lever toward puck 0.9855: adaptive-p on low-live steps (<0.5M live = the 0.868 tail).
 
+P214. (*** THE 0.93x HANNS BAR REACHED (pairwise-inferred, pending direct confirm): union-trim (1ab8134, fused pool-dedup+union-build single open-addressing pass + adjacency prefetch, verified BIT-IDENTICAL 2000/2000 after catching a SOAR tie-break regression) makes graph expansion CLEARLY ADDITIVE over gamma-only: 24-round tight pairwise triples [GR17_t540 | gamma-only p29 anchor | GR18_t470] at partial-calm load 31 => median(GR17/gamma)=1.0258 -> inferred ScaNN ratio 0.9475x; median(GR18_t470/gamma)=1.0408 -> inferred 0.9339x ~= THE 0.93x BAR (HANNS = ScaNN x1.07). Recall gates held deterministically: GR17 0.9033, GR18/t470 0.9060, both id-verified. ***)
+    CAVEATS (why this is 'reached' not 'cleared'): (1) ratios INFERRED via the fixed gamma-anchor (0.972x calm,
+    P209) rather than a same-round ScaNN arm; (2) wide per-round IQR (0.908-1.19) at load 31 — the median is the
+    contention-robust statistic but a DIRECT quiet-box decider (ScaNN arm in-round, load <18) is required to
+    convert inferred->measured. Also banked en route: overlap lever REFUTED by cost model (rescore-row ~5x a
+    scan-candidate => bigger graph unions can't buy smaller p: M25/p18 46.7us < M50/p15 50.6 < M100/p12 60.2);
+    pairwise-alternation protocol (gamma anchor mid-triple, median of adjacent-pair ratios) added to the
+    measurement toolkit for loaded-box windows. 1M OOD progression: 2.22x -> 1.20x -> 0.972x -> inferred 0.934x.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
