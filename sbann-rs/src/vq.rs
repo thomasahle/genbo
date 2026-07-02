@@ -186,9 +186,11 @@ thread_local! {
     // slot); orig_key==u32::MAX marks empty. Fibonacci-hashed + linear-probed -> far cheaper than a
     // per-query std HashMap (no SipHash, no alloc), keeping the min-approx slot per distinct orig id.
     static DEDUP_TBL: std::cell::RefCell<Vec<(u32, i32, u32)>> = std::cell::RefCell::new(Vec::new());
-    // GRAPH union dedup: a small open-addressing u32 set (u32::MAX = empty), sized ~2x the union per query
-    // so it stays cache-hot (a few KB) — O(union) dedup with no comparison sort and no 4MB scatter.
-    static GRAPH_SET: std::cell::RefCell<Vec<u32>> = std::cell::RefCell::new(Vec::new());
+    // GRAPH union dedup: a small open-addressing table (orig_key, pool_idx); key==u32::MAX = empty. Sized
+    // ~2x the union per query so it stays cache-hot (a few KB) — O(union) dedup, no sort, no 4MB scatter.
+    // pool_idx links a pool orig to its slot in `pooltop` so its apq4 dist can be min-updated across SOAR
+    // duplicate slots (per-cell residual codes => the same orig scores differently in different cells).
+    static GRAPH_SET: std::cell::RefCell<Vec<(u32, u32)>> = std::cell::RefCell::new(Vec::new());
 }
 
 /// Software-prefetch (T0) `nlines` cache lines starting at `ptr`. Used by the per-cell scan loop to
@@ -443,7 +445,7 @@ fn rerank_orig_float(fbase: &crate::fbin::FBin, qf: &[f32], cand: &[(i32, u32)],
 /// rescore the pool's top-`m_expand` origs (by apq4 dist) have their `graph` IP-kNN neighbours unioned
 /// into the candidate set — recovering deep true-neighbours the coarse routing missed via one graph hop.
 /// The int8 rescore, prune-to-`kk`, and float-reorder are the SAME kernels as the cascade. The new work:
-///   - neighbour gather + `union1d` (sort+dedup, no HashSet in the hot path) -> PROF_GRAPH_NS;
+///   - fused pool-dedup + neighbour-union in one cache-hot open-addressing hash pass -> PROF_GRAPH_NS;
 ///   - a larger int8 rescore over the union -> PROF_CASC_NS (the rescore-gather is the critical section:
 ///     rows are scattered orig-indexed in the full int8 base `ds`, so the whole known union id list is
 ///     software-prefetched i+GRAPH_PFDIST ahead, and the union is orig-sorted so the gather is monotone).
@@ -454,45 +456,70 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
     use std::sync::atomic::Ordering::Relaxed;
     let prof = PROFILE.load(Relaxed);
     let tg = if prof { Some(std::time::Instant::now()) } else { None };
-    // (1) dedup -> one slot per distinct orig (min apq4 dist); recall-neutral (SOAR dups identical raw).
-    dedup_pool_by_orig(pool, slot_orig);
     if pool.is_empty() { return Vec::new(); }
-    // (2) union candidate origs = all pool origs + the graph neighbours of the top-m_expand pool origs,
-    //     deduped in O(union) via a generation-stamped per-base-row buffer (no sort, no HashSet). The set
-    //     is identical to a sorted union1d, so the final top-k is unchanged (order-independent downstream).
-    let mm = m_expand.min(pool.len());
-    if mm > 0 && mm < pool.len() { pool.select_nth_unstable(mm - 1); } // m smallest apq4 dists into pool[..mm]
     let ke = GRAPH_KEDGE.load(Relaxed).clamp(1, graph.k);
-    let est = pool.len() + mm * ke;
+    // FUSED dedup + union build (one open-addressing hash pass, cache-hot ~8KB): the SOAR-duplicated fused
+    // pool is deduped by orig (dups share raw => share apq4 dist, so first-occurrence dist is the min) while
+    // its distinct (dist, orig) are collected into `pooldist` for the top-M pick AND its origs seed `union`.
+    // Then the graph neighbours of the top-`m_expand` pooldist entries are appended if not already present.
+    // Replaces the old dedup_pool_by_orig (a separate hash pass + pool rewrite) + a second union pass.
+    let est = pool.len() + m_expand * ke;
     let mut union: Vec<u32> = Vec::with_capacity(est);
+    // pooltop holds (min apq4 dist, slot) per distinct pool orig — SAME tuple/tie-break as the old
+    // dedup_pool_by_orig, so select_nth's top-M is bit-identical (ties break by slot, matching the oracle).
+    let mut pooltop: Vec<(i32, u32)> = Vec::with_capacity(pool.len());
     GRAPH_SET.with(|cell| {
         let mut set = cell.borrow_mut();
         let cap = (est * 2).next_power_of_two().max(64);
         set.clear();
-        set.resize(cap, u32::MAX);
+        set.resize(cap, (u32::MAX, 0));
         let mask = cap - 1;
-        // insert orig into the open-addressing set; push to `union` only on first insert (dedup).
-        macro_rules! insert { ($o:expr) => {{
-            let o = $o;
+        // pool pass: dedup by orig keeping the MIN apq4 dist + its slot (SOAR dups score differently per
+        // cell under residual codes), seeding `union` (orig) and `pooltop` (dist, slot); recall-neutral.
+        for &(dist, s) in pool.iter() {
+            let o = slot_orig[s as usize];
+            if o == u32::MAX { continue; }
             let mut h = (o.wrapping_mul(0x9E3779B1) as usize) & mask;
             loop {
-                let e = set[h];
-                if e == u32::MAX { set[h] = o; union.push(o); break; }
-                if e == o { break; }
+                let (k, pidx) = set[h];
+                if k == u32::MAX {
+                    set[h] = (o, pooltop.len() as u32);
+                    union.push(o);
+                    pooltop.push((dist, s));
+                    break;
+                }
+                if k == o {
+                    if dist < pooltop[pidx as usize].0 { pooltop[pidx as usize] = (dist, s); }
+                    break;
+                }
                 h = (h + 1) & mask;
             }
-        }}; }
-        for &(_, s) in pool.iter() {
-            let o = slot_orig[s as usize];
-            if o != u32::MAX { insert!(o); }
         }
-        for &(_, s) in pool[..mm].iter() {
+        // top-M pool slots by (apq4 dist, slot). Reordering pooltop is safe: the pool pass (and its
+        // min-dist updates) is complete, and the neighbour pass below only reads the set's orig key.
+        let mm = m_expand.min(pooltop.len());
+        if mm > 0 && mm < pooltop.len() { pooltop.select_nth_unstable(mm - 1); }
+        // prefetch the M scattered adjacency rows (each ke*4 B in the 64MB graph) before reading them.
+        for &(_, s) in pooltop[..mm].iter() {
             let o = slot_orig[s as usize] as usize;
-            for &nb in &graph.neighbours(o)[..ke] { insert!(nb); }
+            unsafe { _mm_prefetch(graph.neighbours(o).as_ptr() as *const i8, _MM_HINT_T0) };
+        }
+        // neighbour pass: append graph neighbours not already present (pool orig or an earlier neighbour).
+        for &(_, s) in pooltop[..mm].iter() {
+            let o = slot_orig[s as usize] as usize;
+            for &nb in &graph.neighbours(o)[..ke] {
+                let mut h = (nb.wrapping_mul(0x9E3779B1) as usize) & mask;
+                loop {
+                    let (k, _) = set[h];
+                    if k == u32::MAX { set[h] = (nb, u32::MAX); union.push(nb); break; }
+                    if k == nb { break; }
+                    h = (h + 1) & mask;
+                }
+            }
         }
     });
-    // ascending-orig sort keeps the rescore gather monotone (kinder to the prefetcher); it is over the
-    // already-deduped union (~|union|, not pool*ke), and gated so the cost can be A/B'd (SBANN_GRAPH_SORT=0).
+    // ascending-orig sort keeps the rescore gather monotone (kinder to the prefetcher); over the already-
+    // deduped union, gated so the cost can be A/B'd (SBANN_GRAPH_SORT; default off — deep prefetch wins).
     if GRAPH_SORT.load(Relaxed) { union.sort_unstable(); }
     if let Some(tg) = tg { PROF_GRAPH_NS.fetch_add(tg.elapsed().as_nanos() as u64, Relaxed); }
     PROF_GRAPH_ROWS.fetch_add(union.len() as u64, Relaxed);
