@@ -146,10 +146,12 @@ pub static PFLINES: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUs
 /// batch is prefetched streaming-ahead. All three are set from env in main(); 0 disables the lever.
 pub static GRAPH_M: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(25);
 pub static GRAPH_KEDGE: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(16);
-pub static GRAPH_PFDIST: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(8);
-/// Sort the deduped union by orig id before the rescore gather (monotone addresses = prefetcher-friendly).
-/// Default ON; SBANN_GRAPH_SORT=0 A/Bs the unsorted (hash-order) gather against a deeper software prefetch.
-pub static GRAPH_SORT: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(true);
+pub static GRAPH_PFDIST: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(16);
+/// Sort the deduped union by orig id before the rescore gather (monotone addresses). MEASURED (interleaved,
+/// load ~30): the sort's CPU cost (~5-8us over ~560 random u32) outweighs its gather-locality gain once the
+/// gather is deep-prefetched (pfdist=16), so default OFF wins (+3.7% e2e vs sorted). SBANN_GRAPH_SORT=1 to
+/// re-enable (helps only under extreme DRAM contention where the gather, not the sort, dominates).
+pub static GRAPH_SORT: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 /// Profile split for the graph lever: PROF_GRAPH_NS = neighbour gather + union sort/dedup; PROF_GRAPH_ROWS
 /// = cumulative union size (so union-rescore ns/row = PROF_CASC_NS/PROF_GRAPH_ROWS, the decider metric).
 pub static PROF_GRAPH_NS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
