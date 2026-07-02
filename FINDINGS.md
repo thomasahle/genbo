@@ -3450,6 +3450,20 @@ P207. (*** GRAPH-AUGMENTED POOL EXPANSION IMPLEMENTED (branch graph-expansion-im
 
 P208. (*** STREAMING 30M SOAR-INSERT FIX LANDED (branch feat/streaming-30m f626d2a, bounded spill assignment to top-K nearest cells): inserts 3109 -> 26175/s (8.4x, ABOVE the flat baseline's 22663!), avg recall@10 = 0.9653 == the unbounded SOAR's 0.9654 (the bound costs NOTHING), RUNBOOK-OPS WALL = 2759s = 46min < 3600s budget UNDER LOAD ~27-35 — the 1hr budget is PASSED with margin. ONE REMAINING BLOCKER: peak anon 8.64GB > 8GB cap (INELIGIBLE by 0.64GB) — the 8.4x-faster inserts outpace the SBANN_COMPACT=0.25 compaction cadence so append buffers peak higher than the slow run's 7.52GB. Fix = compaction/buffer tuning (recall-neutral fold), then the 0.9653 = 2nd-open-source run is FULLY ELIGIBLE. ***)
 
+P209. (*** SUB-1x vs ScaNN ACHIEVED at 1M OOD — the first legitimate same-hardware win, ending the arc 25x(mirage) -> 2.22x(P190) -> 1.20x(P202) -> 0.972-0.978x. Interleaved 8 rounds (taskset -c 1, best/5, load 17-26, identical float GT, recall INDEPENDENTLY recomputed from raw result ids): ScaNN 8279 @ 0.9032 | CHAMPION p54 6990 @ 0.9032 = 1.184x (rig re-validated) | GAMMA-only p29 8514 @ 0.9060 = 0.972x | GAMMA+GRAPH p18 8409 @ 0.9075 = 0.985x | GAMMA+GRAPH p17 8466 @ 0.9033 = 0.978x, SUB-1x IN ALL 8/8 ROUNDS (0.953-0.990). Branch graph-expansion-impl 34b05f2+0290d4e+142a6b4. ***)
+    ATTRIBUTION (honest): GAMMA IS THE MOVER — champion 1.184x -> gamma-only 0.972x in ONE step; the OOD gap was
+    ROUTING MISCALIBRATION (P206's single scalar), not the codebook. Graph expansion composes cleanly (knee p'
+    drops 30 -> 17-18 with gamma; M=25 > M=50) and is the most robustly sub-1x arm at the lowest probe count,
+    BUT the levers OVERLAP (both cut probe/pool waste): compound ~0.97 ~= best single lever, NOT gamma x graph
+    multiplicative. Phase (composed p18): route 21% / scan 33% / union 19% / rescore 23% / float 4%; union/q=544;
+    gather at spec 39-44ns/row. t_surv sweep: 470 holds 0.9060 @ p18 (further lever), 400 fails 0.9028.
+    *** WHAT REMAINS FOR THE LEADERBOARD: HANNS leads ScaNN by ~7% => the 1M bar is ~0.93x; current 0.972-0.978
+    needs ~4-5 more points. Levers in flight: ADC-route (route 23 -> ~10-14us projected = ~8-10 points), cascade
+    geometry grid re-sweep under gamma, t_surv=470, adaptive-p retrained on the composed pipeline, overlap-aware
+    graph placement. Also pending: quiet-box confirmation (loaded ratios were historically PESSIMISTIC for us),
+    gamma transfer to 10M, multi-thread scaling. Memory-pressure caveat: 30M runbook evicted float pages in these
+    rounds — hits all arms equally, ratio honest.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
