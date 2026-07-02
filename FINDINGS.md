@@ -3435,3 +3435,25 @@ NEXT: SBANN_PLIST env override now lets a built index be probed at custom p -> s
 get the high-QPS/lower-recall frontier and compare to Python 0.9486@3688. f32 GEMM routing =
 dead-end (N29). The bucket-select/batched-rerank ports are now LOWER priority (cell count mattered
 more). The Python sbtree_pq remains the tuned reference but the Rust gap is mostly closed.
+
+================================================================================
+P205 (adaptive-probe branch). (*** ADAPTIVE PER-QUERY PROBE TERMINATION: oracle x2.61 candidate
+cut, REALIZABLE routing-time rule x1.20 at recall 0.9038 (>= 0.9032), e2e-validated; projected
+ratio vs ScaNN 1.20 -> ~1.09, NOT <1x alone. ***)
+    Champion 1M OOD config (hierk Kf=16384 C0=768 b0=96 a0=3, apq4, p=54 t=540 cascade K16 float-
+    rerank). ORACLE p*(q) = min probe prefix (router's nearest-first fine-cell order) covering the
+    same GT-top10 ids fixed p=54 covers (any SOAR copy counts): mean 20.6 / median 17 / p90 45 /
+    p99 53 -- per-query difficulty varies hugely; coverage@54 = 0.9272 ceiling (pipeline 0.9032).
+    Oracle candidate cut 10264 -> 3934 cand/q = x2.61. REALIZABLE (leak-free: OOF ridge difficulty
+    score on routing features -- coarse/fine sorted L2 profile, gaps, cell-size cums, query norm --
+    binned Lagrangian probe allocation fit on train half, applied to held-out half): held-out score
+    corr ~0.5 caps it at x1.17-1.21; the SAME allocator with a PERFECT score = x2.48, so score
+    quality is the binding constraint, and richer routing-time features didn't move it (GBM ==
+    ridge after de-leaking; naive train-fit GBM overfits: train cov 0.927 -> test 0.871).
+    E2E (SBANN_PLIST_FILE, per-query p in the batched FRR driver, t_surv fixed 540): recall
+    0.9038 >= 0.9032 at avg p 45.2 (x1.20 candidates), paired loaded QPS ~ +10% (median of 9
+    interleaved rounds, noisy), consistent with scan 78 -> ~65us => ratio ~1.09. KEEP (nearly
+    free, recall-preserving) but it does NOT close the gap alone; the remaining headroom needs
+    mid-scan feedback (forbidden by the cell-major batched driver) or fundamentally better
+    routing-time difficulty signals. Tooling: SBANN_DUMP_ROUTE/DUMP_ASSIGN dumps + offline
+    scripts (scratchpad adaptp_*.py). Branch adaptive-probe b942b1e.
