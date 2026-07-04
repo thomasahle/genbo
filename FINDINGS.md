@@ -3003,392 +3003,549 @@ P184. (*** CLEAN BASELINE TABLE (streaming2, 1M L2+IP, reorder-depth sweep): our
     a faithful impl ALSO plateaus deep -> the moat is the full AH2 system (loss + SoA layout), confirmed at the deepest
     level. (streaming2 stood down; box idle for the anisotropic-VQ agent.)
 
-P188. (*** WALL-1 FUSED-TOP-K (ScaNN keep-only-survivors) LANDED + RECALL-EXACTLY-NEUTRAL, but REFUTES P187's
-    "collect = 85% of scan": a direct kernel-only measurement shows collect is only 20-30% of scan; the scan is
-    70-79% scattered PQ-block reads (t-independent, untouchable by fused). NOT the 1.5-1.6x lever -> end-to-end
-    neutral at the champion point, +2-6% only when t<<N. The real scan wall is the SoA layout, not the collect. ***)
-    Follows P187 (which projected fused-top-k as "a ~1.5-1.6x END-TO-END lever, the biggest available"). IMPLEMENTED
-    a faithful fused top-t behind SBANN_FUSEDTOPK (branch fused-topk off fastscan-soa), stacking on SBANN_FASTSCAN2:
-    vq.rs FusedTopT keeps a running t-th-best threshold, SIMD-compares each 16/32-lane block's kernel dists
-    (survivor_mask_leq: _mm256_cmpgt_epi32 + movemask), pushes ONLY survivors (slot_orig touched per-survivor, not
-    per-candidate), prunes a 2t buffer back to t via select_nth. Gated to the non-residq / non-pre-cap-dedup path
-    (scan_rerank), falls back to the materialize-all path otherwise. Default OFF -> zero change to existing runs.
-    *** RECALL NEUTRALITY (airtight, `fusedab` subcmd, per-query top-10 SET compare, 1M OOD text2image, SBANN_IP+
-    FASTSCAN2): champion p512 t4096 = 10000/10000 queries IDENTICAL top-10 set (delta 0.00000); t<<N p2048 t2048 =
-    5000/5000 IDENTICAL (delta 0.00000). Bit-identical to baseline by construction (the survivor buffer is provably a
-    superset of the true top-t: thr only tightens and a true-top-t element is always among the t-smallest-so-far, so
-    the final select_nth yields the same set). *** THE MEASUREMENT THAT REFUTES P187 (SBANN_SCANDIAG: time the
-    kernel floor = block reads + LUT with NO collect, separate run, identical per-query cold-cache pattern, so
-    collect = scan_full - scan_kernelonly), single-thread pinned taskset -c 0, best-of-N, Kf=262144 C0=4096 apq4 a0=3:
-      champion p512 t4096: scan_full 274us, kernel-only 190us -> COLLECT = 84us = 30% of scan (kernel/block-reads 70%)
-      t<<N   p2048 t2048: scan_full 741us, kernel-only 587us -> COLLECT = 154us = 21% of scan (kernel/block-reads 79%)
-    So P187's "scan phase ~85% the scalar collect" was WRONG -- it conflated the scattered-block-read memory STALLS
-    (which occur INSIDE scan_block/the LUT kernel, 70-79% of scan) with the scalar collect (20-30%). A clean
-    kernel-only-vs-full split separates them. This is the SAME scatter wall P183/P187-item-2 flagged, now quantified
-    as the 70-79% majority of scan. *** END-TO-END A/B (best-of-3..5, single-thread pinned, recall bit-identical):
-      champion p512 t4096 (t/N~0.7): baseline QPS ~1387 vs fused ~1375 = NEUTRAL (~-1%, within box noise). 2t>N so no
-        pruning fires; ~70% of candidates ARE genuine top-t survivors that must be pushed anyway -> nothing to filter.
-      t<<N  p2048 t2048 (t/N~0.09): baseline median ~787 vs fused ~806 = +2-6% (consistent across rounds). Pruning
-        filters ~90% of candidates from the slot_orig-read + push, but that only removes the 21%-of-scan collect.
-    *** WHY THE PROJECTION FAILED: fused can only remove the collect; with collect = 20-30% of scan, even a
-    ZERO-OVERHEAD fused caps at ~1.13-1.15x end-to-end (route 32% + scan 37% + rerank 31% at champion; removing all
-    collect = ~84us of a ~745us query). My real impl nets ~neutral at the champion op-point and +2-6% only in the
-    t<<N regime, which is NOT the QPS/recall frontier point. *** NEW BOTTLENECK BREAKDOWN (champion, single-thread):
-    route 32% / scan 37% / rerank 31%; WITHIN scan: kernel+scattered-block-reads 70% (THE wall) + collect 30%. The
-    dominant remaining WALL-1 cost is the scattered PQ-block reads (memory-bound, p=512 random jumps into the ~168MB
-    blocks array) -> the SoA / bigger-cell LAYOUT (P183), NOT fused-top-k. VERDICT: fused-top-k is a correct,
-    recall-exact, banked primitive (SBANN_FUSEDTOPK, default off) with a small win only when the candidate pool
-    N >> survivor count t; it is NOT the large end-to-end lever P187 projected, because the collect it targets is a
-    minor (20-30%) share of the scan on this index. Hardware-independent facts that stand: collect = 20-30% of scan
-    (not 85%), kernel/scattered-block-reads = 70-79% of scan, fused recall-exactly-neutral (15000/15000 identical).
+P185. (*** THE aopq-FAITHFULNESS QUESTION ANSWERED (agent, branch aniso-vq-faithful): our crude aopq/eta is NOT a faithful ScaNN anisotropic-VQ -- it drops the cross-subspace parallel coupling, so eta was near-INERT (explains P179/P182's "eta zero effect"). A FAITHFUL coordinate-descent impl makes eta a REAL lever & HELPS IP (+0.05-0.08 shallow-rr, best eta~8 +rotation) -- but STILL does NOT rank-preserve coarse codes. NO breakthrough; moat = full AH2 (bit-rate + SoA), not the loss. ***)
+    (a) FAITHFULNESS AUDIT (file:line): our `comp=aopq`/`apq4` anisotropic loss lives in pq.rs `train_f32_aniso`
+    (pq.rs:190-232) + `encode_f32` (pq.rs:462-...). It weights, PER SUBSPACE independently, (eta-1)*<r_sub, xhat_sub>^2
+    where xhat_sub is the subspace SLICE of the unit FULL vector. ScaNN's loss (Guo et al. 2020, confirmed from the
+    paper) weights the parallel residual of the FULL vector: (eta-1)*<r, xhat>^2 with <r,xhat>=Sum_j<r_j,xhat_j>, which
+    COUPLES all subspaces, optimized by COORDINATE DESCENT over subspaces (assigning subspace j depends on the residuals
+    of all OTHER subspaces; codebook update = Thm 4.2 with a +(eta-1)*s_{-j}*xhat_j cross term). Our impl DROPS that
+    coupling AND uses the tiny-norm subspace slice (||xhat_sub||^2 ~ dpb/d ~ 0.05), so the parallel penalty is a tiny
+    fraction of the subspace L2 -> eta barely moves the argmin. => our aopq is a BLOCK-DIAGONAL APPROXIMATION, NOT
+    faithful. This is the mechanistic cause of P179/P182's "eta 4=16=64 identical". VERDICT (a): NOT FAITHFUL.
+    (b) IMPLEMENTED the faithful version: pq.rs `train_f32_aniso_cd` + `encode_f32_cd` (coordinate descent, full-vector
+    parallel residual, cross-subspace coupling in BOTH assignment and the Thm-4.2 codebook update), gated by env
+    SBANN_ANISO_CD (main.rs). Verified eta now BITES (monotonic, strong effect) and converged (iters=10 == iters=30).
+    Reorder-depth microbench, MATCHED 1M scale, p=512 (12.5% cov), rr=512*{1,2,4,8,16,32}, coarse dpb=5:
+    L2 msturing-1M d=100 (m20), recall@10 vs rr:
+      crude apq4 eta=4 (baseline): 0.766 0.837 0.888 0.919 0.936 0.943
+      FAITHFUL eta=4:              0.764 0.835 0.886 0.919 0.936 0.943  (neutral)
+      FAITHFUL eta=16:             0.749 0.824 0.880 0.915 0.934 0.942  (worse)
+      FAITHFUL eta=50:             0.640 0.731 0.809 0.868 0.909 0.931  (much worse)
+      FAITHFUL eta=200:            0.340 0.427 0.524 0.627 0.727 0.815  (catastrophic)
+      FINE dpb2 (m50) reference:   ~0.942 flat by rr~1024
+      => L2: faithful aniso is NEUTRAL at eta~4 and STRICTLY HURTS as eta grows (parallel-weighting sacrifices the
+         orthogonal accuracy L2 ranking needs). No reorder-depth shrink. msturing is clustered/already-aligned.
+    IP text2image-1M d=200 (m40 = the m~25-40 target), recall@10 vs rr:
+      pq4 isotropic (clean ctrl):  0.558 0.694 0.803 0.882 0.925 0.948
+      crude apq4 eta=4 (baseline): 0.588 0.697 0.794 0.862 0.913 0.942
+      FAITHFUL eta=4:              0.628 0.733 0.819 0.883 0.926 0.948
+      FAITHFUL eta=8 (peak):       0.639 0.743 0.826 0.887 0.927 0.948
+      FAITHFUL eta=16:             0.636 0.739 0.823 0.885 0.925 0.946
+      FAITHFUL eta=50:             0.566 0.677 0.771 0.844 0.900 0.933  (over-weighted)
+      aopq(OPQ rot)+FAITHFUL eta16:0.668 0.774 0.849 0.901 0.932 0.948  <- BEST coarse (rotation +0.03 on top)
+      FINE dpb2 crude:             0.928 0.946 0.954 0.957 0.959 0.959
+      FINE dpb2 FAITHFUL eta8:     0.941 0.953 0.957 0.958 0.959 0.959  (faithful aniso helps the fine code too)
+      => IP: faithful aniso is a REAL, correctly-signed win -- +0.08 over isotropic (0.558->0.639) and +0.05 over the
+         crude "anisotropic" (0.588->0.639) at rr=512; the isotropic-pq4 control proves the gain is the LOSS, not just
+         better optimization. Peak eta~8 (much lower than the code comment's 16-64); +OPQ rotation another +0.03.
+    (c) VERDICT: NO BREAKTHROUGH. Even the BEST coarse config (OPQ rotation + faithful aniso eta16) reaches only
+      0.668/0.774 at rr=512/1024 and still needs rr~16384 for ~0.94 -- ~16-32x the FINE code's rr~512. The target
+      (coarse ~0.95 at rr~300-1000) is MISSED by a wide margin. Rank-preservation stays BIT-RATE-bound; the anisotropic
+      LOSS only SHIFTS the reorder-depth curve up ~0.05-0.08 at shallow rr, it does not change the SHAPE (coarse still
+      converges to the fine plateau only at rr~16k). Clean at MATCHED 1M scale (no P180-style scale artifact); converged
+      (not under-trained). *** THE CORRECTION to P179/P182/P184: "eta has zero effect / anisotropic is dead" was an
+      IMPLEMENTATION artifact (crude block-diagonal, coupling dropped), NOT a property of ScaNN's loss. Properly
+      implemented, the anisotropic loss IS a real lever and DOES help IP rank-preservation -- just not enough, alone, to
+      make COARSE codes rank-preserving. So the moat is confirmed to be the FULL AH2 SYSTEM: ScaNN keeps codes
+      rank-preserving by using FINE codes (m~100+) that their SoA 4-bit FastScan can afford to scan fast (WALL 1),
+      NOT by a coarse-and-rank-preserving code from the loss. The bounded lever that DOES survive: fold faithful
+      anisotropy into the FINE-code IP path (+0.013 at rr=512, free at scan time). Branch aniso-vq-faithful; SBANN_ANISO_CD.
 
-P189. (*** WALL-1 SCATTERED-READ LEVER — DEFINITIVE (branch scan-prefetch off fastscan-soa): the scattered PQ-block
-    reads are NOT fixable by REORDERING (sort/layout ~0%), only by SOFTWARE PREFETCH: +45-53% on the isolated scan
-    kernel FLOOR -> +7% e2e QPS@recall0.90, +11-12% at the champion, RECALL-BIT-IDENTICAL. The "6-11x streaming
-    floor" is UNREACHABLE recall-neutrally: probed cells are 0.2%-dense so even perfectly sorted access stays
-    latency-bound. Prefetch is the ONLY real WALL-1 lever found; the rest needs the ScaNN SoA layout (out of scope). ***)
-    Attacked the last un-tried structural scan lever on the CHAMPION 1M OOD index (t2i1m.idx, hierk Kf=262144 C0=4096
-    apq4 a0=3, SBANN_IP+FASTSCAN2), single-thread taskset -c 0, INTERLEAVED paired A/B (contention-robust ratio; box
-    load bounced 10-22 the whole session, a clean load<6 window never came -> ratios not absolute QPS).
-    *** (a) SCATTERED-READ COST, isolated (new `scatterbench` subcmd = kernel floor, block-reads+LUT, NO collect, over
-    the SAME candidate set in probe order vs cell-id-sorted order; the champion index has bb=800B, nc=262144,
-    ~1.9 blocks/cell = ~1.5KB/cell, avg 15778 cand/query over p=512 cells):
-      scattered (real probe order):        ~92 Mcand/s   (memory-LATENCY bound)
-      sorted (monotonic, SBANN_SORTCELLS): ~95 Mcand/s   (+4% only)
-      contiguous L2-hot kernel (compute floor, `scanbench 100` AVX2 FastScan): 356 Mcand/s
-    So the REAL collapse on this index = 356/92 = ~3.9x (not the 6-11x of the abstract microbench — that assumed a
-    FULLY-PACKED sequential read; the real scan can't be packed). CRUX: sorting cuts the avg cross-cell memory jump
-    49x (27.2MB -> 0.55MB) yet buys only +4%, because only 512 of 262144 cells are probed (0.2% dense) -> even sorted
-    access keeps 0.55MB gaps between cells, far beyond HW-prefetch/TLB range -> stays a per-cell cache miss.
-    REORDERING (query-side sort OR a build-side block permutation) CANNOT reach the packed floor; the probed set is
-    query-dependent and sparse. => layout-by-locality (P183's proposed lever #2) is REFUTED as a recall-neutral fix.
-    *** (b) THREE APPROACHES (all env-gated, default OFF; recall verified per-round, contention-independent):
-      1. SW-PREFETCH (SBANN_PREFETCH, vq.rs scan_pool + scan_kernel_only): prefetch the NEXT probed cell's PQ block
-         (T0, pfdist cells ahead, full 800B block) while scanning the current one. Recall BIT-IDENTICAL by construction
-         (hint only). On the kernel floor (scatterbench): 92->133-145 Mcand/s = +45-53%. Tuned pfdist{2,3,4,6} x
-         pflines{8,13}: pfdist 2, full-block is the robust default (every champion round positive).
-      2. SORTCELLS (SBANN_SORTCELLS, vq.rs scan_rerank): sort the probe list ascending (= block/memory order).
-         Recall identical (0.9116/0.9586). e2e ~0% (0.997-1.003x); kernel floor +4%. Kept as a documented NEGATIVE.
-      3. bigger cells (fallback): NOT NEEDED — approach 1 delivered; and (b1/b2) show the wall is latency not
-         granularity, so bigger contiguous cells would only trade routing recall for streaming (P183 territory).
-    *** (c) WINNER = PREFETCH (paired per-round median, single-thread pinned, recall bit-identical):
-      QPS@recall>=0.90  (p=160, recall 0.9116): base 2459 -> PF 2640 = +7.2% (n=6; one noisy round 0.995, rest positive)
-      champion          (p=512, recall 0.9586): base 1329 -> PF 1496 = +11.6% (n=5, ALL rounds positive, min +6.7%)
-      kernel-floor +45-53% but block-reads are only ~26% of the e2e query (70% of the 37% scan; route 32% + rerank 31%
-      untouched) -> Amdahl caps the e2e lever at ~+9-12%. HONEST CAVEAT: real and clean, but MODEST. SORT is a null.
-    *** (d) 10M PROJECTION (1M-only per constraints): the scatter is LATENCY-bound (TLB/page-walk over the blocks
-      array); at 10M the array is ~2.9GB (10x) and the collapse is known "6-11x worse" = deeper effective latency,
-      which is EXACTLY what prefetch hides -> the +45-53% kernel-floor win should HOLD or grow (more latency to
-      overlap), and since scan's share of the e2e query grows at 10M (P178: scan-throughput is the 10M wall), the
-      e2e lever likely lands ~+8-12% at 10M too. It does NOT close the ~20x gap to ScaNN (that needs the SoA layout).
-    *** (e) VERDICT: the scattered-read wall is only PARTIALLY fixable recall-neutrally in-engine. Prefetch is the
-      lone real WALL-1 lever (banked: SBANN_PREFETCH, +7% QPS@recall0.90 / +11-12% champion, 1M, recall-exact);
-      reordering is a null (0.2%-dense probes defeat it). The remaining ~3.9x scattered->compute-floor gap is
-      STRUCTURAL and needs ScaNN's cache-resident SoA AH layout (P183), out of scope. This closes the last cheap
-      WALL-1 lever: kernel USE512 (+7%, N-AVX512), fused-top-k (neutral, P188), and now sort (null) / prefetch
-      (+7-12%, the win). e2e QPS@recall0.90 at 1M single-thread: ~2459 -> ~2640 with SBANN_PREFETCH=1.
+P186. (*** STRATEGIC CLOSE: bounded attempts EXHAUSTED across config + tuning + a FAITHFUL ScaNN anisotropic-VQ impl. Anisotropic-VQ CORRECTED our own artifact (real +0.05-0.08 IP lever) but no coarse rank-preservation. Moat = full AH2 SYSTEM; honest limit reached. ***)
+    The P185 anisotropic-VQ result is the deepest point we reached, and it CORRECTS an earlier conclusion: P179/P182/
+    P184's "eta is dead / anisotropic doesn't help" was an IMPLEMENTATION ARTIFACT -- our aopq/SBANN_ETA applied the
+    parallel-residual penalty PER-SUBSPACE (tiny slice norm ~dpb/d=0.05 -> near-inert), NOT ScaNN's full-vector
+    coordinate-descent loss (Guo 2020, Thm 4.2 with cross-subspace coupling). The fresh agent implemented the FAITHFUL
+    version (SBANN_ANISO_CD): eta now bites, and it is a REAL, correctly-signed lever on IP (text2image): +0.08 over
+    isotropic / +0.05 over crude at shallow reorder rr=512 (peak eta~8, +OPQ rotation ~+0.03). On L2 (msturing) it's
+    neutral at eta~4 and hurts as eta grows (parallel weighting is wrong for L2). *** BUT NO BREAKTHROUGH: even the
+    best coarse config reaches only 0.67/0.77 @ rr=512/1024 and still needs rr~16384 for 0.94 (~16-32x the fine
+    code's rr~512). Rank-preservation stays BIT-RATE-bound; the anisotropic loss shifts the curve up ~0.05-0.08 at
+    shallow rr without changing its shape. So a "coarse-AND-rank-preserving code from the loss" does NOT exist, even
+    with ScaNN's actual loss. *** THE REFRAME (key): ScaNN does NOT use coarse-rank-preserving codes -- it uses FINE
+    codes (m~100+) made affordable by a cache-friendly SoA 4-bit FastScan (WALL 1), + anisotropic-VQ as a secondary
+    boost. Our apq4 is ALREADY FastScan-like (blocked, 4-bit, in-register i8 LUT) and its scan is MEMORY-bound at
+    scale (P183 USE512 +7%) -- the working set exceeds cache, which a layout tweak within our design won't fix.
+    So the moat is the FULL AH2 SYSTEM (SoA layout + fine codes + anisotropic-VQ), a multi-day+ from-papers rebuild,
+    and our engine is already fairly optimized -> uncertain payoff. *** HONEST LIMIT: bounded autonomous attempts are
+    EXHAUSTED (config, tuning, proper anisotropic-VQ all tested with data). SURVIVING MARGINAL LEVER: faithful aniso
+    on the FINE-code IP path = +0.013 recall @ rr=512, free at scan time (could nudge OOD ~1732 slightly, not off the
+    bottom). Real deliverable kept: SBANN_ANISO_CD (correct ScaNN anisotropic-VQ) on branch aniso-vq-faithful (601a02b).
+    Top-3 = the full AH2 rebuild + likely a better router = a scoped multi-day project needing the user's greenlight +
+    sustained capacity. FINAL: streaming eligible ~0.77, OOD QPS@90% ~1732; did not top either; wall characterized to
+    the algorithm level with data at every rung.
 
-P191. (*** LEVERS-STACKED PAYOFF vs ScaNN (branch ood-levers-stacked off scan-prefetch): stacking PREFETCH + FLOAT
-    RERANK onto the P185/P190 head-to-head narrows the honest same-hardware single-thread OOD gap from 2.22x to
-    ~2.07x median (best round 2.01x, one round 1.995x) — we BRUSH 2x but do NOT reach clean sub-2x median or parity.
-    FLOAT RERANK is the mover (2.22->2.07); PREFETCH is ~null on this loaded box (memory bus saturated). ***)
-    Setup mirrors P185/P190 EXACTLY: 1M text2image OOD; ScaNN indexes true-float base+queries; OURS indexes int8
-    (t2i1m.i8bin + matched ~330.19-scale int8 queries); BOTH scored vs the identical float-IP top-10 GT (t2i1m-floatgt).
-    Single-thread pinned taskset -c 4, RAYON=1, best-of-5, INTERLEAVED (scann -> int8+PF -> float+PF, 5 rounds, never
-    overlapping on core 4; box load 16-19 the whole run). Our engine = the P185 config exactly (hierk Kf=16384 C0=128
-    b0=32 a0=3, SBANN_SOAR=1 SBANN_TREEEM=2 baked into the reused eng_t2i1m.idx; apq4, SBANN_IP + SBANN_FASTSCAN2 +
-    SBANN_TFLOOR=1 + TMUL=8) PLUS the two stacked levers.
-    LEVERS BUILT/STACKED this session (both on ood-levers-stacked):
-      1. SBANN_PREFETCH (P189, recall-BIT-IDENTICAL SW-prefetch of the next probed cell's PQ block). Already on the
-         scan-prefetch base (which also carries the faithful SBANN_FASTSCAN2 kernel).
-      2. FLOAT RERANK (ported from feat/ood2's e5fe96e onto this branch): SBANN_FLOAT_RERANK + SBANN_FBASE/FQUERY.
-         The int8 route+scan (FASTSCAN2+PREFETCH, same survivor pool) is UNCHANGED; ONLY the exact rerank of the
-         t_surv survivors is swapped from int8 L2/negdot to exact FLOAT IP over the original float vectors (mmap'd
-         crop_nb_10000000, only survivors paged). New: fbin.rs (mmap .fbin reader), simd::dot_f32_fast (AVX2+FMA),
-         vq::search_frr / scan_rerank_frr / rerank_contig_float, main.rs wiring. Recall is deterministic (load-indep).
+P187. (*** WALL-1 FASTSCAN AUDIT: our scan kernel WAS crude (corrects P186 "already FastScan-like"); faithful 32-wide int8-sat FastScan = real 1.8x KERNEL, committed (fastscan-soa d99ca6f, SBANN_FASTSCAN2) -- but only 1.07x END-TO-END because the kernel is ~6% of the query. Real scan cost = the scalar COLLECT (~85% of scan phase) + scattered cell reads (6-11x collapse). NOT top-3. ***)
+    Third faithfulness audit (after aniso-VQ P185). Result mirrors P185: an "it's fundamental" claim was actually a CRUDE
+    implementation. Our apq4 scan kernel block_adc_i8_i16acc (pq.rs:705) had in-register vpshufb LUT + 16-way SoA but
+    (a) 16-wide not 32-wide (used _mm_shuffle_epi8 not _mm256_), (b) int16 accumulate not int8-saturating (cvtepi8_epi16
+    + add_epi16, 2 uops/subspace) -- even the AVX-512 path stayed int16-accumulate, which is exactly why P183's USE512
+    A/B saw only +7%. So P186's "already FastScan-like" was WRONG. A faithful 32-wide int8-saturating FastScan (periodic
+    int16 hoist, bounded LUTs cap 15/subspace) is a REAL 1.8x on the KERNEL (single-core microbench, m=100: 372->680
+    Mcand/s L2-hot), recall-neutral (p512 0.9700 default vs 0.9698 fs2), committed behind SBANN_FASTSCAN2.
+    *** BUT END-TO-END ONLY 1.07x at 1M (1127->1206 QPS same-box A/B): the LUT kernel is only ~6% of the query. The
+    scan PHASE is ~85% the scalar COLLECT -- pool.push((out[j],slot)) + per-candidate slot_orig branch + select_nth
+    in scan_pool (vq.rs:1650). Query = route 19% + scan 46% + rerank 35%; kernel is a sliver. *** At 10M the
+    cell-SCATTERED access pattern collapses throughput 6-11x (m=50: 715 L2-hot -> 104 scattered): scan visits p=512
+    cells in probe order = 512 random jumps into a 100-250MB array. Sequential-large streams fine (321-660 Mcand/s),
+    so the wall is the SCATTER, not raw bandwidth -- refines P183. Could NOT build a real 10M A/B (shared-box memory
+    cap ~26GB, already ~28GB used); 10M projection rests on faithful scattered microbench + 1M end-to-end.
+    *** METHODOLOGY (per user, 2026-07-01): cross-machine QPS comparison (ours on a load-22 16-core shared box w/ other
+    tenants' mox-compile eating 5+ cores, vs scann on an idle standardized Azure VM) is INVALID; any "~22x short of
+    scann" projection INHERITS this flaw and is NOT restated as fact. Hardware-INDEPENDENT findings that DO stand:
+    kernel ~6% of query (structural), collect ~85% of scan phase, scatter collapses 6-11x. These locate the real
+    bottleneck WITHOUT the contaminated QPS number, and the two-walls conclusion never depended on QPS -- it rests on
+    recall (streaming ~0.77 vs 0.998) + reorder-depth (hardware-independent). Future QPS claims must be normalized
+    against a reference baseline measured on THIS box when idle (loadavg<4).
+    *** BOUNDED WIN BANKED: real 1.8x FastScan kernel (SBANN_FASTSCAN2, fastscan-soa d99ca6f), recall-neutral.
+    TWO remaining WALL-1 levers, both = ScaNN's actual design, both larger rewrites: (1) FUSED SIMD top-t that keeps a
+    running threshold + emits only survivors -> eliminates the O(candidates) scalar collect that is the measured ~85%
+    of the scan phase; (2) SoA / bigger-cell LAYOUT so the 10M scan STREAMS (321-660 Mcand/s) instead of SCATTERING
+    (73-104). PATTERN across P185/P187: our engine has real unclaimed perf (crude impls), but closing to ScaNN needs
+    reimplementing its core (anisotropic-VQ, fused-top-k, SoA) = a scoped multi-day rebuild = user's call.
 
-    == recall-exactness of PREFETCH (int8, same index, prefetch OFF vs ON, per p) ==
-      p=72: 0.8945 == 0.8945 | p=80: 0.9003 == 0.9003 | p=88: 0.9056 == 0.9056  -> delta 0.0000 everywhere (bit-exact).
-    == recall LIFT from FLOAT rerank (int8+PF vs float+PF, matched p) ==
-      p=80: int8 0.9003 -> float 0.9239 (+0.0236, breaks the int8 ~0.924 ceiling vs the FLOAT GT). Float thus reaches
-      0.90 at FEWER probes: crosses 0.90 at p~58 (0.9007) vs int8's p=80 (0.9003) = 1.38x fewer cells scanned.
-      (tmul<8 drops recall under 0.90 at these p — the int8-scan survivor POOL, not the rerank precision, is the p-floor.)
+P188. (*** FUSED-TOP-K: recall-EXACT primitive built (SBANN_FUSEDTOPK, fused-topk 86793be) but NEUTRAL end-to-end -- and it CORRECTS P187's premise by direct measurement: the scalar collect is only 20-30% of scan, NOT 85%. The dominant scan cost is the SCATTERED PQ-block reads (memory-bound), = the SoA/bigger-cell LAYOUT lever (P183), triply-confirmed. Query is BALANCED: route 32 / scan 37 / rerank 31. ***)
+    ScaNN fused-top-k ("keep only survivors"): running t-th-best threshold, SIMD-compare each block's dists
+    (_mm256_cmpgt_epi32 + movemask), push only survivors so the per-candidate slot_orig branch runs t times not N,
+    prune a 2t buffer to t. RECALL-EXACT (bit-identical top-10 id sets: 1M OOD champion p512/t4096 = 10000/10000
+    identical delta 0.00000; t<<N p2048/t2048 = 5000/5000 identical) -- survivor buffer is provably a superset of the
+    true top-t. *** BUT NEUTRAL: direct measurement via SBANN_SCANDIAG (kernel-only floor = block reads + LUT, no
+    collect) shows collect = scan_full - scan_kernelonly = only 84us/274us = 30% of scan at champion p512/t4096
+    (154us/741us = 21% at p2048/t2048). P187's "collect = 85% of scan" CONFLATED the scattered-block-read memory
+    stalls (which occur INSIDE the LUT kernel, waiting on RAM) with the scalar collect. So even a zero-overhead
+    fused caps at ~1.13-1.15x here; measured QPS = neutral at champion (2t>N, no pruning, ~70% of candidates are
+    genuine survivors), +2-6% only when N>>t (off the recall frontier). Banked as a correct default-off primitive;
+    NOT an end-to-end lever at 1M OOD.
+    *** NEW BOTTLENECK BREAKDOWN (1M OOD champion, single-thread pinned): route 32% / scan 37% / rerank 31% -- the
+    query is BALANCED, NO silver bullet; within scan, kernel+scattered-block-reads = 70% (the wall), collect = 30%.
+    Implication: even a free scan caps e2e at ~1.6x; topping needs gains across route AND scan AND rerank, or a
+    structurally different design. *** THE REMAINING SCAN LEVER (triply-confirmed P183/P187/P188): the scattered PQ
+    block reads -- p=512 random jumps into a ~168MB blocks array, 73-104 Mcand/s scattered vs 321-660 sequential
+    (6-11x collapse, worse at 10M). Fix = SoA / bigger-cell LAYOUT so probes read big contiguous streams. This is
+    a recall/speed TRADEOFF (bigger cells = coarser routing = more candidates but streaming throughput), testable
+    at 1M as QPS@recall>=0.90 -- NOT yet done.
+    *** MEASUREMENT-CEILING NOTE (important, per user's 2026-07-01 methodology point): this shared box (16-core EPYC,
+    load 14-22, other tenants' mox-compile, ~26GB mem cap) CANNOT produce a leaderboard-valid number: can't build
+    10M-scale under the mem cap, can't run uncontended for wall-clock QPS, no same-box published-reference baseline.
+    Recall (streaming ~0.77 vs 0.998) IS hardware-independent and real; QPS/leaderboard-POSITION is NOT answerable
+    here. Topping requires the official harness on appropriate HW at 10M/100M scale. Pattern across P185/P187/P188:
+    three faithfulness audits, three real bounded wins (aniso-VQ +0.05-0.08 IP; FastScan 1.8x kernel; fused-top-k
+    recall-exact primitive), each correcting the prior's error -- but the query is balanced with no silver bullet,
+    and top-3 needs ScaNN's full design + a submission environment this box is not.
 
-    == INTERLEAVED 5-ROUND FRONTIER @ recall@10 >= 0.90 (QPS = best/5 each round, load 16-19) ==
-      ScaNN   lts56/reorder78 (0.9032): 8182 8221 8240 8294 8236   median 8236  (±1%, rock-steady)
-      int8+PF p=80          (0.9003): 3764 3825 3713 3725 3713   median 3725
-      float+PF p=58         (0.9007): 3824 4121 4022 3916 3971   median 3971  <-- OUR BEST @0.90
-      float+PF p=60         (0.9035): 3804 4019 3980 3869 3855   median 3869
-    Reference (same window, from the frontier sweep): int8 NO-prefetch p=80 (0.9003) = 3612.
+P189. (*** WALL-1 PREFETCH = the lone real recall-neutral scan lever: SW-prefetch +7% QPS@recall0.90 / +11-12% champion, RECALL-EXACT (SBANN_PREFETCH, scan-prefetch 3057030). Reordering/SortCells = NULL (refutes P183's layout-lever idea). Real scatter collapse = ~3.9x (not 6-11x). Our clean 1M single-thread QPS@recall0.90 ~= 2640 w/ prefetch. ***)
+    Attacked the scattered PQ-block reads (champion 1M OOD, hierk Kf=262144 C0=4096 apq4 a0=3, IP+FASTSCAN2),
+    single-thread pinned, interleaved paired A/B (box bounced load 10-26 all session, never clean -> ratios not
+    absolutes). scatterbench isolates it: ~1.9 blocks/cell (~1.5KB), 15778 cand/query over p=512 cells.
+    Scattered probe-order = ~92 Mcand/s; L2-hot compute floor = 356 Mcand/s -> real collapse ~3.9x (the abstract
+    "6-11x" assumed a fully-packed read the real 0.2%-dense scan can't achieve).
+    *** WINNER = SW-PREFETCH (SBANN_PREFETCH, vq.rs scan_pool ~L1839 + scan_kernel_only ~L2018): prefetch next
+    probed cell's 800B block (T0) while scanning current. Kernel floor 92->133-145 Mcand/s (+45-53%). RECALL
+    BIT-IDENTICAL (hint only). e2e QPS@recall>=0.90 (p160, recall 0.9116): 2459->2640 = +7.2%; champion (p512,
+    recall 0.9586): 1329->1496 = +11.6% (all 5 rounds positive). Amdahl caps it: scattered reads are only ~26% of
+    e2e (70% of the 37% scan); route 32% + rerank 31% untouched. *** NULL = SortCells/reordering (SBANN_SORTCELLS):
+    recall-identical but e2e ~0% -- sorting cuts the avg cross-cell jump 49x (27.2MB->0.55MB) yet buys +4%, because
+    only 512/262144 cells are probed (0.2% dense) so even sorted access keeps 0.55MB gaps beyond HW-prefetch/TLB
+    range. This REFUTES P183's "locality-preserving layout" as a recall-neutral fix.
+    *** 10M projection: prefetch hides latency that only deepens at 10M (~2.9GB blocks array) + scan's e2e share
+    grows -> lever likely holds ~+8-12%; does NOT close the gap to scann. The remaining ~3.9x scattered->compute-floor
+    is STRUCTURAL, needs scann's cache-resident SoA AH layout (out of scope).
+    *** CLOSES the cheap WALL-1 lever set: USE512 (+7% dead P183), fused-top-k (neutral P188), sort (null), PREFETCH
+    (+7-12%, the win). OUR banked clean 1M single-thread QPS@recall0.90 ~= 2640 (w/ SBANN_PREFETCH) -- the number the
+    same-hardware scann head-to-head (running) will be compared against.
 
-    *** HEADLINE RATIO @ recall@10 >= 0.90, single-thread, same box, interleaved:
-        ScaNN 0.9032 @ 8236  vs  OURS (float+PF) 0.9007 @ 3971  ->  RATIO = 2.07x median (best round 8294/4121 = 2.01x). ***
-    Lever decomposition (this window, vs ScaNN median 8236):
-        int8 no-PF   3612 -> 2.28x   (== P185 baseline point, this window)
-        int8 + PF    3725 -> 2.22x   (prefetch alone: +3% QPS, ratio barely moves)
-        float + PF   3971 -> 2.07x   (float rerank: the actual mover, +7% over int8+PF, +10% over no-PF)
-    So the FULL stack = +10% QPS@0.90 (3612->3971) = 2.28x -> 2.07x. vs the P185 locked ratio 8649/3903 = 2.22x, the
-    stacked levers close ~7% of the gap. Both legs are ~5% load-depressed vs P185's window (scann 8236 vs 8649; int8
-    3612 vs 3903) -> the RATIO is the invariant, as designed.
+P190. (*** THE HEADLINE MEASUREMENT: DIRECT same-hardware ScaNN-vs-ours, 1M text2image OOD, single-thread pinned interleaved = ~2.2-2.4x (ScaNN faster), NOT the invalid cross-machine "25x". The "25x" was ~10x inflated by threading+hardware+contention (our contended box vs scann's idle-Azure published QPS). ***)
+    ScaNN 1.4.2 (pip, AVX-512), true FLOAT base (1M rows of base.1B.fbin) + float queries, dot_product,
+    tree(num_leaves=2000)+score_ah(2,thresh=0.2)+reorder(200) -- its best T2I recipe. OURS: fastscan-soa +
+    SBANN_FASTSCAN2, int8 (t2i1m.i8bin), hierk Kf=16384 C0=128 b0=32 a0=3 SOAR TREEEM apq4 IP, p=80 t=8. BOTH
+    scored vs identical FLOAT-IP GT t2i1m-floatgt (revalidated overlap 1.0000 vs exact float IP). BOTH single-thread
+    pinned taskset -c 4, best-of-5, INTERLEAVED 6 rounds (contention-robust ratio).
+    *** THE RATIO @ recall@10>=0.90: ScaNN 0.9032 @ 8649 QPS vs OURS 0.9003 @ 3903 QPS = 2.22x. Matched ~0.908:
+    8202/3384 = 2.42x. Rock-stable across 6 rounds (scann 8.5k +-1%, ours 3.8k +-3%) -- NOT load noise. Build/RSS
+    comparable (scann 65s/2.83GB/0.9GB-idx; ours ~50s/0.8GB-idx).
+    *** INTERPRETATION: the true same-hardware per-core OOD gap is ~2.2-2.4x, ARCHITECTURAL (scann's anisotropic
+    2-byte AH + in-register scan + float reorder~200 vs our 4-bit PQ + int8 no-float-rerank), consistent with the
+    old same-window "~2x OOD" (P130). NOT a measurement artifact -- but also NOT hopeless. UN-APPLIED levers that
+    narrow it: (1) SBANN_PREFETCH (P189, +7-12%, NOT in this run) -> ~4180-4370 QPS -> ratio ~2.0-2.1x; (2) float
+    rerank (breaks int8 recall ceiling, un-applied on this branch) -> reach 0.90 at lower p -> higher QPS;
+    (3) route/rerank each ~1/3 of query w/ headroom. So closing ~2.2x toward parity is PLAUSIBLE with identified
+    levers -- a completely different picture from the "25x, needs multi-day rebuild" framing this whole session
+    operated under. *** CAVEATS (honest): 1M + single-thread only; 10M same-hw ratio NOT yet measured (engine 10M
+    TREEEM build killed under memory-thrash/swap-full; scann 10M index IS built+cached on disk, 0.90 crossing
+    recall 0.9075 @ lts=120, for a clean re-run when box healthy); multi-thread scaling unverified; int8-vs-float
+    are each engine's intended representation (fair at the metric). scann-headtohead branch 40f3f87 (agent labeled
+    it P185 by mistake; this is the canonical P190). *** STRATEGIC PIVOT: the remaining engine levers (prefetch,
+    float rerank, routing) are now clearly WORTH STACKING to close a 2.2x gap -- vs the prior "only scann's full AH2
+    rebuild helps". The 25x mirage drove months of pessimism; the real target is ~2x and shrinking.
 
-    WHY PREFETCH IS ~NULL HERE (vs P189's +7-12%): P189 measured on a healthier isolated kernel; under load 17 the
-    memory bus is contended, so SW-prefetch has little latency headroom to hide -> +3% e2e (within ratio noise). Its
-    value is recall-exactness + likely larger benefit in a less-contended / 10M-latency-deeper regime (P189 (d)).
-    WHY FLOAT RERANK ONLY GIVES +10% (not more): confirms [[ood-float-rerank]] — float rerank reaches 0.90 at 1.38x
-    fewer probes (scan saving) but its 4x-byte + f32-dot rerank cost partially offsets it; NET +10% QPS@0.90 (not a TIE
-    as the earlier C=65536 config showed, because here the P185 hierk config's rerank share is smaller). It is REQUIRED
-    for any operating point above ~0.92 (int8 is hard-capped ~0.924 vs the float GT).
+P191. (*** STACKED LEVERS: prefetch+float-rerank close 2.22x -> ~2.07x median (2.01x best round) vs ScaNN at 1M single-thread OOD. Float rerank is the MOVER (0.90 at p=58 vs p=80, +0.0236 recall, breaks int8 ceiling); prefetch ~null under contention (+3%). In-hand levers ~tapped out; remaining = structural SoA AH scan. Branch ood-levers-stacked 9fa173b. ***)
+    Ported float rerank onto the prefetch branch (fbin.rs, simd::dot_f32_fast, vq::search_frr/scan_rerank_frr/
+    rerank_contig_float). 1M text2image OOD, single-thread pinned interleaved best-of-5 (load 16-19):
+    int8-no-PF 0.9003@p80 3612 QPS (2.28x) -> +prefetch 3725 (2.22x, +3%) -> +float-rerank 0.9007@p58 3971/4121
+    (2.07x med / 2.01x best). Fresh scann 8236 @ 0.9032. Prefetch recall-EXACT (delta 0.0000); float rerank +0.0236
+    recall @ matched p80 (0.9003->0.9239). VERDICT: brushing 2x, not clean sub-2x, not parity. Biggest remaining =
+    ScaNN's cache-resident SoA anisotropic-AH scan vs our scattered PQ-block reads (~3.9x collapse). Next: sweep the
+    UN-tested config levers (routing granularity toward scann's bigger contiguous leaves + float rerank; rerank depth;
+    aopq/aniso-CD codes) before conceding the structural wall.
 
-    *** VERDICT: prefetch + float-rerank bring us to ~2.07x (median) / ~2.0x (best round) vs ScaNN — a real ~7% gap
-    reduction from 2.22x, BRUSHING 2x but NOT clean sub-2x median and NOT parity. The two in-hand levers are ~tapped
-    out at 1M single-thread under load. The SINGLE BIGGEST REMAINING LEVER is unchanged and STRUCTURAL: ScaNN's
-    cache-resident SoA anisotropic-AH scan (in-register 2-byte AH over a packed layout) vs our memory-bound scattered
-    PQ-block reads — the ~3.9x scattered-vs-compute-floor scan collapse (P183/P189). That is the multi-day rebuild;
-    prefetch/float-rerank/routing cannot cross it recall-neutrally. ***
+P192. (*** SUB-2x ACHIEVED at 1M single-thread OOD: gap-closing workflow (routing/rerank/codes fan-out) drives 2.07x -> ~1.77x median (1.84x recall-matched to scann 0.9032), clean interleaved. The ONLY winner = DE-OVER-PROVISIONING the coarse router (C0 128->768, b0 32->96: coverage 25%->12.5%, 4224->2816 int8 dist-evals/q, holds 0.90 at same p=58). Rerank-depth & better-codes = confirmed NON-winners. Config-lever headroom now TAPPED at ~1.8x. ***)
+    3-agent parallel workflow, each measured QPS@recall0.90 single-thread pinned interleaved vs fresh ScaNN.
+    ROUTING (only winner, config-only): the "bigger contiguous leaves" hypothesis was FALSIFIED (KF32768 finer=worse;
+    bigger C0 alone=small); the real win is trimming the OVER-PROVISIONED coarse router (b0 beam 32->96 halves top-level
+    coverage 25%->12.5%, cutting route work ~33% while still reaching 0.90 at p=58 -- route was doing wasted dist-evals).
+    RERANK-DEPTH: NO win (already at the 0.90 knee; p=58/t=8 is the edge, p<=56 & t<=7 fall sub-0.90). CODES: NEGATIVE
+    (aopq + faithful anisotropic-VQ both reach 0.90 at MORE probes -- under FLOAT RERANK the code's only job is
+    isotropic pool-recall, so anisotropic optimizes the wrong target). Winners collapse to the single routing lever.
+    *** CLEAN INTERLEAVED (taskset -c 0, best-of-5, 5 rounds, load 11.6-13.9): ScaNN 0.9032 @ median 8429 QPS (+-1%) vs
+    ENG-COMBINED (C0=768 b0=96 idx + apq4 + p58 t8 float-rerank + prefetch) 0.9005 @ median 4746 = RATIO 1.77x; recall-
+    matched at p=60 (0.9033) = 1.84x. Recall confirmed >=0.90 (not cherry-picked). *** So: 25x(invalid) -> 2.22x(P190
+    true same-hw) -> 2.07x(P191 stacked) -> 1.77x(P192 routing). Clean sub-2x for the first time, ~15% relative cut.
+    NOT parity. Remaining ~1.8x is STRUCTURAL/execution-speed (unchanged P183/P187/P189): ScaNN's cache-resident SoA
+    anisotropic-AH scan (in-register LUT16 over a packed contiguous-leaf layout) vs our memory-bound scattered PQ-block
+    reads (0.2%-dense probes). No config lever crosses it recall-neutrally -> needs the layout rebuild. Committed
+    5419798 on ood-levers-stacked; harness interleave_p192.sh; idx granul_kf16384_c768_b96_a3.idx.
+    *** CAVEAT (P192-honest): interleaved ratio itself has ~+-5-7% window variance (scann float-scan vs our int8-scan
+    have different contention sensitivities); ~1.8x is the honest central estimate, not a hard 1.77.
 
-    HONEST CAVEATS: (1) 1M ONLY, single-thread (box was memory-thrashing; 10M SIGKILL-risk per constraints). (2) load
-    16-19 the whole run -> absolute QPS depressed ~5% vs P185; the interleaved RATIO is the deliverable, ±1-3% stable.
-    (3) FLOAT vs INT8 base as in P185 — each engine's native representation, both scored vs the identical float GT
-    (apples-to-apples at the leaderboard metric); float rerank is precisely us adopting ScaNN's float-reorder trick on
-    top of an int8 candidate-gen. (4) our best 0.90 point (p=58, 0.9007) sits right on the 0.90 edge; p=57 falls under,
-    so 3971 is the genuine max-QPS@>=0.90 (not cherry-picked headroom). (5) reused the P185 eng_t2i1m.idx (fastscan-soa
-    build); persist.rs/ibin.rs are byte-identical on this branch and the int8 recall reproduced EXACTLY (0.9003), so the
-    index is valid. Artifacts: scratchpad/{interleave_p191.sh, scann_measure.py, eng_t2i1m.idx, scann_t2i1m_idx,
-    t2i1m_query.i8bin}; code on branch ood-levers-stacked.
+P193. (*** REFRAME (de-risk gate fired): the ~1.8x is NOT the scan -- it is the float-REORDER COUNT (rerank). Our scan ALREADY streams at parity with ScaNN; the streaming-leaf / SoA-layout lever is REFUTED. The entire gap is: we float-reorder 464 survivors to hit 0.90 vs ScaNN's 78 (~75us, ~6x), set by CODE RANKING QUALITY (our apq4 50B/vec vs ScaNN anisotropic-AH 100B/vec). ***)
+    Profile of P192 champion (208us/q, ~4800 QPS single-thread): route 36us / scan 85us / rerank 88us. ScaNN (118.7us)
+    decomposed by lts/reorder sweep: route+fixed ~30 / scan ~76 / reorder(78) ~13. Phase gap: route +6, scan +9,
+    RERANK +75us = the whole 1.8x. *** The old "scan scattered 92 Mcand/s = 3.9x collapse" was the OBSOLETE Kf=262144
+    index; the current granul Kf=16384 champion scan ALREADY streams at 177 Mcand/s (sorted 187 = 1.06x headroom) = at
+    ScaNN scan parity. Both reorder ~180ns/float-candidate; the gap is purely the COUNT (464 vs 78). *** FlatIvf-2000
+    big-leaf test (added FlatIvf serialization): scan streams FASTER (257-269 Mcand/s, 74% of 356 floor) but QPS@0.90
+    gets WORSE (2559 vs 4761) -- coarse leaves spread the true top-10 -> need 2.5-3.5x MORE candidates; recall/candidate
+    tradeoff overwhelms streaming. P192 falsification re-confirmed with a real SoA layout. SoA rebuild NOT done (gate
+    correctly fired: no QPS upside). *** Best ratio this window: 1.83x (scann 8538 vs champ 4675 @0.90; recall-matched
+    p60 1.87x) -- did NOT beat P192. Cheap rerank levers tried: int16 finer rank (+0.011 recall but 1.5x slower scan=net
+    loss); FUSEDTOPK (null, re-confirms P188); POOLDEDUP (a0=3 dupes: dedup +0.0175 recall but O(11019) cost > save,
+    4498->2670). *** WHAT BLOCKS <1x: the 464-vs-78 reorder deficit = ScaNN's anisotropic-AH codebook (IP-optimized,
+    100B/vec) vs apq4 (50B/vec). Matching needs ~2x code bits -> doubles scan cost -> just moves cost scan<->rerank
+    (break-even), and anisotropic hurts pool-recall under float rerank. UNIMPLEMENTED bounded rerank projections:
+    cell-contiguous float store ~1.5x (int8-contig 106ns vs float-scattered 190ns endpoints), coarse-cap+dedup ~1.4x --
+    NEITHER reaches <1x alone. Committed P193 on p193-streaming-leaf-verdict (+ FlatIvf serialization, recall-neutral).
+    NEXT: attack the rerank directly (CASCADE int8-prune->float + contiguous float store) -- the real bottleneck.
 
-P192. (*** OOD GAP-CLOSING WORKFLOW: COMBINED LEVERS vs ScaNN 1M SINGLE-THREAD (branch ood-levers-stacked). Three
-    lever agents forked off the P191 champion (hierk apq4 Kf=16384 C0=128 b0=32, float rerank, p=58 t=8; 2.07x). Only
-    ONE lever actually beat baseline. Combining the winners collapses to that single lever (the other two are already
-    at their optima in the champion), re-verified CLEANLY it narrows the honest same-window single-thread OOD gap from
-    2.07x to 1.77x median — we cross clean SUB-2x for the first time, but do NOT reach parity. ***)
-    LEVER TRIAGE (be skeptical; discard contention-noise + sub-0.90 drops):
-      1. ROUTING GRANULARITY (C0/b0 coarse-partition fan-out) = THE ONLY WINNER. The literal "bigger leaves" (lower Kf)
-         hypothesis was FALSIFIED (bigger contiguous leaves lose monotonically at recall>=0.90: with t_surv=464 float
-         survivors as the bottleneck, a bigger candidate pool is LESS pool-efficient). The real win is the OTHER knob
-         the task named: the champion's coarse partition C0=128 b0=32 (=sqrt(Kf), 25% coverage, 128+32*128=4224 int8
-         dist-evals/q) was OVER-provisioned. Raising to C0=768 b0=96 (12.5% coverage, 768+96*21=2816 evals) makes
-         routing BOTH cheaper AND finer-targeting -> reaches 0.90 at the SAME scan depth p=58. Config-only, NO recompile
-         (C0/b0 are baked at build; loaded from granul_kf16384_c768_b96_a3.idx). C0 sweep sweet spot: 512b96 +4%,
-         768b96 +12.6%, 1024b128 +8% -> C0~768 optimal.
-      2. RERANK DEPTH (t_surv = p*TMUL) = NO WIN. Already sitting exactly on the 0.90 knee, NOT over-provisioned.
-         Re-verified on the NEW finer C0=768 index: p=58 t=7 -> 0.8946 (sub-0.90), t=8 -> 0.9005 (knee); p=56 t=8 ->
-         0.8974, p=54 -> 0.8944. No trim available in either p or t. (The [[ood-rerank-depth-lever]] 1.65x was an EARLIER
-         over-provisioned t_surv, already absorbed into this config.) The 40% rerank fraction is a code-QUALITY floor,
-         not slack.
-      3. BETTER CODES (aopq OPQ-rotation; faithful ScaNN anisotropic-VQ via SBANN_ANISO_CD coordinate-descent, eta=4/8)
-         = NEGATIVE (required a recompile on branch codes-aniso). ALL variants reach 0.90 at MORE probes than plain
-         apq4: aopq p=64 (OPQ rotation trained on base misaligns OOD queries), aniso-CD e8 p=64 / e4 p=68. WHY: with
-         float rerank the code's ONLY job is getting the true top-10 into the top-(p*8) pool = an ISOTROPIC total-
-         reconstruction task; anisotropic-VQ deliberately sacrifices orthogonal accuracy to sharpen the IP direction,
-         which HURTS pool-recall. apq4's crude near-isotropic eta=4 is already the right endpoint. Better IP-codes are
-         the WRONG optimization target on the float-rerank path.
+P194. (*** CASCADE rerank = real +30% QPS@recall0.90, recall-EXACT: 1.9x -> ~1.475x (same window). int8-VNNI rescore of survivors -> prune to K=16 -> float-reorder only 16. Float stage 464->16 reorders = ~3.5us (BELOW ScaNN's ~13us!). But a NEW int8 refine stage costs ~28-31us (gather-latency-bound), which is now the wall. Did NOT reach <1x. ***)
+    rerank_cascade_float (vq.rs:308, branch rerank-cascade e6b0e20): dedup apq4 pool by orig (SOAR a0=3 -> ~280 distinct),
+    INT8-rescore each with VNNI dpbusd (dot_i8_vnni, simd.rs:74) over slot-contiguous raw i8, prune to K int8-smallest,
+    FLOAT-reorder only K. SBANN_CASCADE/_K/_KLIST. K=16 = min holding recall EXACTLY (p52 t10: nocascade float(520)=0.9002
+    == cascade K16=0.9002; K12=0.8979). *** Contiguous-float store NOT built (moot: only 16 float reorders left, ~3.5us).
+    *** 3-way interleaved (core0, load 58-65): ScaNN 8111 (0.9032) | P192 base 4208 (1.93x) | cascade 5499 (1.475x, +30%).
+    Phase: route+scan ~112 (scann ~106) + int8 ~28-31 + float ~3.5. *** REMAINING to <1x = ~48us: int8 refine ~28-31us +
+    ~6us route/scan. int8 refine IRREDUCIBLE here: apq4's poor ranking forces t~280-520 survivors to touch (t=348->0.885);
+    IP int8 dot needs all 200 dims (partial-dim=128 craters to 0.406); gather latency-bound -> must touch ~280 full rows.
+    Even a FREE int8 stage floors ~1.16x. VNNI is 1.43x compute but stage is GATHER-bound so +2% e2e (win = smaller row
+    200B vs 800B, not dpbusd). *** cascade-agent VERDICT: <1x is NOT a rerank problem -- needs better candidate CODES
+    (fewer survivors to touch) = OPQ/anisotropic-AH, which P182/P184 say our code family can't deliver at coarse bit-rate.
+    *** BUT NOTE (mine): the scan-primitive fix (177->356, another agent) + RICHER codes (100B/vec like ScaNN, whose 2x
+    scan cost is absorbed by the 2x scan-primitive fix) = ScaNN's exact recipe, and would cut the survivor count -> could
+    break the ~1.16x floor. Combined measurement (cascade + scan-fix + route-fix) pending the other two agents.
 
-    COMBINED CONFIG (the stack that survives triage) = routing winner C0=768 b0=96 baked in + apq4 (codes lever lost) +
-    p=58 t=8 (rerank lever at knee, unchanged). It is honestly the granularity lever alone, re-measured clean.
+P195. (*** SCAN PRIMITIVE: the "2x kernel gap" DOESN'T EXIST. Our scan kernel per-candidate COMPUTE already BEATS ScaNN (543 Mcand/s hot vs ScaNN 368). The champion already uses the 32-wide int8-sat FastScan (no mis-dispatch). The ~177 Mcand/s is a DRAM-LATENCY floor of COLD SCATTERED small cells -- NOT kernel, NOT TLB, NOT ILP. ScaNN's higher rate = candidate-memory DENSITY (2000 leaves x500pt=25KB contiguous vs our ~9.6KB cells), i.e. the codebook/partitioning again. Kernel-side changes shave ~0us on cold e2e. ***)
+    Dispatch audit killed the wrong-kernel hypothesis: apq4+FASTSCAN2, a0=3<DEDUP_A0 -> scan_pool -> scan_block_x2 ->
+    block_adc_i8_fastscan32_2x16 (already 32-wide int8-sat). Isolated floors (scanbench2 m=100): L2-hot native-fs32 687 /
+    fs32-2x16 610 / 16w-i16acc 377; LARGE-seq native 447 / 2x16 155 (2.9x collapse, the 2x16 two-128b-loads defeat the
+    prefetcher on a long stream). BUT on the REAL champion scatterbench (p80, 15165 cand): COLD 2x16 ~= native ~= ~176
+    (kernel swap NULL); CACHE-HOT (NQ=8) 2x16 497 vs native 543 (+9%). cold~176 vs hot~500 => the 3x gap is MEMORY not
+    kernel. perf: IPC 2.06, frontend-idle 0.74%, branch-miss 0.12% => backend/mem-stall bound; THP=always (78 hugepages)
+    => NOT TLB. Root: 156MB blocks >> 32MB L3; each query streams a FRESH ~758KB cold from DRAM, 80/16128 cells probed
+    ~1.8MB apart => latency-bound; that's why sort(1.02x), kernel-swap(null), prefetch(+6% iso/hurts e2e) are ALL null.
+    *** Change SBANN_P2LAYOUT (contiguous 32-wide paired blocks + native 1-load fs32, recall-EXACT verified bit-identical):
+    +9% cache-HOT but ~0 on cold real scan (memory-bound), doubles blocks mem -> default OFF (no regression). Real scan
+    lever remains FUSEDTOPK (+3-6%). *** VERDICT: our scan primitive is NOT behind ScaNN's -- per-candidate compute we're
+    AHEAD (543 vs 368); ScaNN's edge is candidate-memory DENSITY (denser leaves stream bandwidth-bound vs our latency-bound
+    scattered small cells). Closing it needs denser candidates = bigger leaves (P192/P193: not free at recall>=0.90 -> more
+    candidates) OR ScaNN's learned partitioning+codebook. Kernel is a dead end. Branch scan-primitive 88f356b.
 
-    == CLEAN INTERLEAVED 5-ROUND, single-thread PINNED taskset -c 0, best-of-5, ScaNN(56,78) then engine back-to-back
-       (same contention window, box load 11.6-13.9), recall@10 vs FLOAT GT ==
-      ScaNN   lts56/reorder78 (0.9032): 8568 8440 8429 8406 8383   median 8429  (rock-steady)
-      ENG-COMBINED p=58 t=8   (0.9005): 4835 4750 4728 4746 4743   median 4746  <-- OUR BEST @>=0.90 (QPS@recall0.90)
-      ENG-COMBINED p=60 t=8   (0.9033): 4433 4576 4589 4633 4693   median 4589  (recall-MATCHED to ScaNN's 0.9032)
-    Matched per-round ratio ScaNN/eng:
-      p=58: 1.772 1.777 1.783 1.771 1.767  -> mean 1.774  (recall 0.9005, the QPS@recall>=0.90 operating point)
-      p=60: 1.933 1.844 1.837 1.814 1.786  -> mean 1.843  (recall 0.9033, exact recall-match with ScaNN 0.9032)
+P196. (*** ROUTE PRIMITIVE: 33.5 -> 23.1us (1.45x, recall-EXACT) -> now BELOW ScaNN's ~30us. Root cause: the routing L2 kernel NEVER used VNNI (only rerank did). Fix: VNNI L2 via exact integer decomp L2=|q|^2+|c|^2-2<q,c>, dpbusd single-chain w/ precomputed cadj. Gated SBANN_ROUTE_VNNI. Bit-identical probed set (0/2000 changes). ***)
+    routebench isolates router.probe: baseline 33.5us quiet/36 loaded; split coarse-l2 18% / coarse-select 6% /
+    fine-expand 63% / final-select 13%; 2784 int8 dist-evals/q (768 coarse + ~2016 fine beam), IPC 3.58 L1-clean =>
+    compute-bound, centroids L2-resident. vs ScaNN ~2000 float evals: we do +39% MORE evals but ~2x cheaper/eval
+    (AVX2-madd int8 7.9ns vs float 15ns); the hierarchy's select_nth x2 + 2-level gather = ~34% overhead (the price
+    of the P192 granularity win). *** Fix: l2_i8_block_vnni (dpbusd, fold +256*Sc into per-centroid cadj=Sc^2+256*Sc
+    so the +128 offset cancels -> 1 dpbusd chain + reduce, 4-wide ILP, exact tail). cadj derived at load, index bytes
+    UNCHANGED. + exact nd gather capacity (kills memmove realloc). RECALL-EXACT: selftest asserted, 0/2000 set diffs
+    @p58 AND p512, bit-identical sink, e2e recall 0.9005 unchanged. *** Isolated route 33.5->23.1 (1.45x, coarse-l2
+    1.85x, fine-expand 1.35x); e2e route frac 20%->14.6%, QPS +~6%. Route now <= ScaNN. Branch route-primitive 11bc954.
+    *** THREE-PRIMITIVE SUMMARY: route now BELOW ScaNN (23 vs 30, P196); rerank float 464->16 BELOW ScaNN (3.5 vs 13,
+    P194) but +new int8 refine ~28us (survivor-count-bound); scan kernel BEATS ScaNN compute (543 vs 368) but DRAM-
+    latency-bound at 177 (density, P195). Projected COMBINED (cascade+route-VNNI+fusedtopk): ~139us vs ScaNN ~120 =
+    ~1.16x. Remaining gap to <1x = scan density ~9us + int8-refine survivor-count ~18us = ~27us, BOTH = ScaNN's
+    anisotropic-AH codebook + learned dense partitioning. Combined measurement next.
 
-    *** HEADLINE RATIO @ recall@10 >= 0.90, single-thread, same box, interleaved:
-        ScaNN 0.9032 @ 8429  vs  OURS (combined) 0.9005 @ 4746  ->  RATIO = 1.77x median (recall-matched at p=60: 1.84x). ***
-    vs P191 baseline (same-window interleaved) 2.07x: the routing-granularity lever alone closes ~0.30x of the ratio
-    (2.07 -> 1.77) = ~15% relative gap reduction, and BEATS lever-off in every one of 5 rounds. Absolute QPS 3971 (P191
-    window) -> 4746 (this window) is NOT comparable across windows; the 1.77x interleaved ratio is the contention-robust
-    deliverable. Mechanism is exact: 4224->2816 = 1408 fewer int8 dist-evals/q * 200 dims ~= 26-28us/q saved.
+P197. (*** COMBINED best-effort = ~1.45x vs ScaNN (loaded), recall-EXACT, all 3 levers stacked cleanly (multiplicative, no interference): cascade +32% x route-VNNI +7% x fusedtopk. Config-levers EXHAUSTED at ~1.45x (loaded) / ~1.2x (quiet-projected). Remaining 54us(loaded)/~23us(quiet) gap = scan-density + int8-refine survivor-count = the CODEBOOK. ***)
+    combined-primitives (30e2b7b) = P192 champion + cherry-pick route-primitive + rerank-cascade (clean merge, both
+    SBANN_ROUTE_VNNI & SBANN_CASCADE work). RECALL-EXACT: p58 t8 baseline/+FUSEDTOPK/+ROUTE_VNNI/+CASCADE-K16 all
+    0.9005 bit-identical; 0/2000 route-set changes; K16 holds recall. Optimum p=54 t10 K16 = 0.9032 @ ~5850 QPS vs
+    ScaNN 0.9032 @ ~8410 same window = RATIO median 1.457x (5 rounds 1.425-1.472). Phase (e2e ~173us loaded): route
+    28 (16%) / scan 110 (64%) / int8-refine 25 (14%) / float 9 (5%); ScaNN ~119 -> gap 54us. Stacking: fused 4040 ->
+    +ROUTE_VNNI +6.1% -> +CASCADE +32% -> FULL +41.2% (1.32x1.07~1.41, mild super-additivity).
+    *** METHODOLOGY WRINKLE: box loaded 24-31 (~1.5-2x oversubscribed) INFLATES our ratio -- ScaNN's batched C++
+    tolerates oversubscription better than our per-query Rust loop, so the loaded 1.45x is PESSIMISTIC; quiet-box
+    phase-sums project ~1.2x (route23+scan85+int8~14+float~5 vs ScaNN 119). A QUIET-BOX re-measure is the fair number
+    (still NOT <1x; the structural gap remains). *** VERDICT: config-levers exhausted; route (23-28us) & float (9us)
+    near-floor; the ENTIRE residual is scan-density (scattered apq4 blocks) + int8-refine survivor-count -- both
+    downstream of apq4's 4-bit codes not rank-preserving. <1x needs OPQ/anisotropic-AH rank-preserving codes OR
+    learned anisotropic PARTITIONING (untested -- reduces candidates+survivors without the richer-code scan penalty).
+    Progress ledger: 25x(mirage) -> 2.22x(P190) -> 2.07x(P191) -> 1.77x(P192) -> 1.45x(P197), all recall-exact.
 
-    *** VERDICT: config levers on the existing binary get us to 1.77x vs ScaNN — we CROSS clean sub-2x for the first
-    time (P191 brushed 2x at 2.07x), driven ENTIRELY by de-over-provisioning the coarse router (C0 128->768). But we do
-    NOT reach parity. Rerank-depth and better-codes levers are confirmed NON-winners (rerank at the 0.90 knee; aniso/OPQ
-    codes are the wrong target under float rerank). The ~1.77x remainder is STRUCTURAL and execution-speed, unchanged
-    from P183/P191: ScaNN's cache-resident SoA anisotropic-AH scan (in-register 2-byte LUT16 over a packed layout) vs
-    our memory-bound scattered PQ-block reads. That gap is the multi-day rebuild; no config lever crosses it recall-
-    neutrally. Config-lever headroom at 1M single-thread is now TAPPED OUT at ~1.77x. ***
-    HONEST CAVEATS: (1) recall margin at p=58 is thin (0.9005); the safer recall-matched p=60 point (0.9033) still
-    ratios 1.84x, so the sub-2x cross survives adding margin. (2) 1M ONLY, single-thread (10M SIGKILL-risk per
-    constraints; free>=30GB checked before every run, NO rebuild needed — loaded the agent's prebuilt granul index in
-    0.54s). (3) "Combined" is honestly the single granularity lever: the other two were falsified/at-optimum, so there
-    was nothing compatible to stack on top; I re-verified the rerank knee ON the finer index (t=7 and p<=56 both fall
-    sub-0.90) to confirm no residual trim. (4) interleaved ratios ONLY, never cross-window — ScaNN was freshly measured
-    in the identical window (median 8429, ±1%). (5) C0 grid is coarse ({128,256,512,768,1024}); C0~640-768 holds the
-    optimum but wasn't finely resolved. Artifacts: scratchpad/{interleave_p192.sh, scann_measure.py, scann_t2i1m_idx,
-    granul_kf16384_c768_b96_a3.idx, t2i1m_query.i8bin}; code on branch ood-levers-stacked (routing lever config-only;
-    codes lever recompile on codes-aniso, discarded).
+P199. (*** REFINE is a DEAD END (~0us shaved) and RECALL-LOCKED on every axis -> confirms the 24us int8-refine is the CODEBOOK gap (survivor count), not execution speed. Ratio unchanged ~1.45-1.48x loaded. Prefetch was ALREADY shipped (P194); leaner-refine sub-levers all break recall or give 0. ***)
+    Attacked the 24us int8-refine 3 ways, all recall-EXACT-verified: (1) PREFETCH already exploited -- rerank_cascade_float
+    already prefetched survivor i+8 (P194); made it tunable/full-row/primed (SBANN_CASC_PFDIST/PFLINES) but no variant
+    beats the shipped 1-line (HW adjacent-line streamer covers the rest); prefetch is worth ~15us (39->24) but already
+    banked. (2) CASC_DIM fewer bytes/row: recall CRATERS (dim200=0.9032, dim128=0.394, dim64=0.197 -- OOD needs all 200
+    dims; the 24us is per-row FIRST-MISS-LATENCY not bandwidth). (3) apq4 prefilter fewer rows: M=256 -> 0.8942 (<0.90);
+    even 280->256 breaks recall -- the int8 stage genuinely rescues true-top-10 apq4 mis-ranks; champion is on a razor
+    0.9032 w/ zero fat. (4) Asymmetric true-float-query x int8-row dot (dot_f32_i8, runtime AVX2+scalar fallback+selftest):
+    BIT-IDENTICAL recall (query int8-quant isn't lossy) -> 0us, 0 gain. *** Interleaved vs ScaNN best/5 8 rounds: ScaNN
+    8454 vs refine 5839 = median ~1.48x (best-round 1.38x). Phase unchanged: route 23/scan 85/int8-refine 24/float 9.
+    *** VERDICT: <1x UNREACHABLE via refine -- even zeroing the 24us lands ~1.19x (quiet phase-sum) / the loaded ratio
+    stays 1.45x. The 24us is survivor-COUNT (codebook), recall-locked on dims+rows+precision+prefetch. *** KEY FRAMING:
+    on a QUIET box route+scan+float(no-int8) ~= 117us ~= ScaNN 119us (~parity); the ONLY thing holding us above 1x is
+    the codebook-driven int8-refine (survivor count). So <1x = reduce survivor count, via rank-preserving codes (OPQ/
+    anisotropic-AH) OR anisotropic PARTITIONING (reduce candidates+survivors from routing side -- the still-running last
+    lever). Clean-code: dot_f32_i8 behind is_x86_feature_detected + scalar fallback + selftest. Branch refine-prefetch 024a0d0.
 
-P196. (*** ROUTE PRIMITIVE AUDIT + VNNI L2: the hierk router was AVX2-madd, NOT VNNI, despite Zen4 avx512_vnni.
-    Swapping to a recall-EXACT VNNI norm-decomposition L2 cuts the isolated route from 33.5 -> 23.1 us/q (1.45x,
-    -10.5us), now BELOW ScaNN's ~30us route. Branch route-primitive off ood-levers-stacked (P192 champion). ***)
-    SETUP: champion granul_kf16384_c768_b96_a3.idx (hierk C0=768 b0=96 a0=3 apq4, SBANN_IP/FASTSCAN2/PREFETCH), p=58,
-    2000 t2i queries, single-thread PINNED taskset -c 2, best-of-N. New `routebench` subcommand isolates router.probe
-    (true us/q best-of-N + a separate ROUTE_PROF phase-split pass + a per-query dist-eval counter). Box was LOUD the
-    whole session (load 25-44, 16 cores => 1.5-2.7x oversubscribed) so ALL e2e absolutes are suppressed; the route-
-    PRIMITIVE numbers are isolated best-of-N (contention-robust) and the e2e claims are interleaved A/B ratios only.
+P198. (*** ANISOTROPIC PARTITIONING = NULL/NEGATIVE: best variant 1.51x, WORSE than isotropic-SOAR 1.46x. Anisotropy scatters the true OOD neighbours OUT of the routed cells (text-query vs image-base breaks the MIPS parallel-weighting premise) -> recall@fixed-p craters, net candidates-at-0.90 flat-to-worse, survivors RISE 540->960. Mirrors P182 (aniso codes zero IP effect). The last untried config-lever, exhausted. ***)
+    HierRouter::route_fine_aniso (vq.rs, clean method on the partitioner, no hot-path branches; picks a0 cells minimizing
+    ScaNN loss ||x-c||^2+(eta-1)(r.xhat)^2 via one guarded dot_i8_avx2 + scalar fallback; eta=1==L2). Opt-b SBANN_ANISO_EM
+    makes TREEEM E-step anisotropic too. Higher eta sparsens cells (cand/q SOAR 10264->eta8 7217) but recall craters
+    (p54t10 eta1 .8695/eta2 .858/eta4 .846/eta8 .837) -> to recover 0.90 probe more -> net cand-at-0.90 flat/worse (eta8
+    12758@p96), survivors 540->960. Interleaved (ScaNN 8348): SOAR-champ 5820=1.459x | em_e4-best 5484=1.510x WORSE |
+    L2-top3 5156=1.647x. Nuance: aniso CENTROIDS (1.51) beat naive L2-spill (1.65) but neither beats isotropic SOAR
+    (orthogonal spread is a better use of a0=3 for OOD). Why: text-query/image-base violates the MIPS query-aligned-with-
+    neighbours premise, so weighting the datapoint-parallel residual HURTS coverage. Branch aniso-partition a15996a.
+    *** DEFINITIVE (P185-P199, 14 experiments): 25x(mirage)->1.45x loaded/~1.19x quiet, all recall-exact; route & rerank-
+    float BEAT ScaNN, scan kernel beats ScaNN compute; EVERY config-lever exhausted (routing granularity/rerank cascade/
+    scan layout/route-VNNI/refine prefetch/aniso partitioning/aniso codes). Residual = apq4 CODEBOOK: 50B/vec -> 464
+    survivors -> 24us int8-refine; ScaNN 100B/vec -> 78. On a QUIET box route+scan+float(no-int8) ~= ScaNN (~parity); the
+    int8-refine (survivor count) is the sole thing above 1x. Anisotropy (ScaNN's key trick) does NOT transfer to OOD text
+    2image for us. <1x needs a better rank-PRESERVING distance estimate (fewer survivors) at ~current bytes -- the one
+    genuinely untried code angle (norm-corrected/RaBitQ-style ADC), since aniso and naive 2x-bits are both refuted.
 
-    (a) WHERE THE ~33us GOES (perf + ROUTE_PROF, baseline AVX2):
-      PHASE split:  coarse-l2 6.0us(18%)  coarse-sel 1.8us(6%)  fine-expand 20.8us(63%)  final-sel 4.3us(13%).
-      perf self%:   l2_i8_block_avx2 66% (COMPUTE)  |  quicksort::partition 14% (select_nth)  |  gather_fine self
-                    8.5% + __memmove 5.3% (the fine-level nd gather/push+realloc).  IPC 3.58, ~0 L1 misses => the
-                    router is COMPUTE-bound, not memory-bound (all centroids are L2-resident).
-      dist-evals/q = 2784 exactly (768 coarse one-shot block + 96 beam * ~21 children = ~2016 fine, in 96 small
-                    per-coarse-cell block calls). Matches P192's ~2816.
-    (b) MORE evals AND traversal overhead vs ScaNN — but CHEAPER per eval:
-      - COUNT: we do 2784 int8 evals vs ScaNN's ~2000 float (+39%), because the 2-level beam re-scores ~2016 fine
-        centroids after 768 coarse.
-      - PER-EVAL: ours was on the AVX2 madd L2 (widen i8->i16, madd_epi16) = ~7.9ns/eval; ScaNN's float ~15ns/eval.
-        So per-eval we were already ~2x cheaper (int8) — the extra evals didn't make route slower on compute alone.
-      - OVERHEAD ScaNN's flat scan avoids: select_nth twice (coarse top-96 + final top-p, 14%) + the 2-level gather/
-        push/realloc (14%) = ~34% of route (~8us) is traversal+double-selection, inherent to the hierarchy (which is
-        what buys the finer routing). Net: route was ~33.5us isolated / ~36us contended vs ScaNN's ~30us.
-      ROOT CAUSE of the compute half: the routing L2 kernel (l2_i8_block_avx2) NEVER used VNNI even though Zen4 has
-      avx512_vnni (only the rerank dot had a VNNI path). dotbench d=200: VNNI 1.56x the AVX2 int8 dot (6.4 vs 10.0ns).
-    (c) WHAT I CHANGED (recall-EXACT, identical probed-cell set):
-      1. VNNI L2 via the exact integer decomposition  L2 = Sq^2 + Sc^2 - 2*<q,c>  (simd::l2_i8_block_vnni). The dot is
-         _mm512_dpbusd_epi32 (q shifted +128 via XOR 0x80 to feed dpbusd's u8*i8). SINGLE-CHAIN: fold +256*Sc into a
-         per-centroid constant cadj = Sc^2 + 256*Sc so the 128*Sc dpbusd offset cancels -> ONE dpbusd chain + ONE
-         horizontal reduce per centroid (no separate Sc accumulator), 4-wide centroid ILP to hide the ~4c dpbusd
-         latency over the short (d/64=3) loop; <64 tail dims exact-scalar. cadj derived from `cent` at build/load,
-         NOT persisted (index format byte-unchanged). Gated SBANN_ROUTE_VNNI, full-dim only (sd<d ROUTE_SDIM stays
-         on madd). Bit-identical to the madd L2 (selftest_l2_norm on d=100/200/204 asserted at startup).
-      2. EXACT nd capacity: sum the selected cells' child fan-out before the gather so `nd` never reallocs mid-fill
-         (the old sel.len()*8 hint under-provisioned at Kf/C0~21 -> the 5-8% __memmove growth). Recall-neutral.
-      VERIFICATION: routebench SBANN_ROUTE_VERIFY toggles VNNI per-query and compares SORTED probed-cell sets ->
-      0/2000 different at p=58 AND 0/2000 at p=512. Isolated A/B at matched reps: identical sink (sum of all probed
-      cell ids over 2000 q) BASE==VNNI. E2e recall bit-identical BASE vs VNNI: 0.9005 (p=58) / 0.9061 (p=62).
-    RESULT (isolated route, taskset -c 2, best-of-11):
-      BASE 33.54 us/q  ->  VNNI 23.08 us/q   = 1.45x, -10.5us.   coarse-l2 6.0->3.25 (1.85x), fine-expand 20.8->15.4
-      (1.35x; gather-limited), sel phases unchanged. New perf self%: l2_i8_block_vnni 52% | select_nth 20% | gather
-      12% | memmove 2% (down from 5-8%). Route is now compute 52% / selection 20% / gather 14%.
-    E2E (interleaved A/B, SBANN_PROFILE): route FRACTION of the float-rerank query drops 20% -> 14.6% (exactly what a
-      1.45x route predicts: (20/1.45)/(80+20/1.45)=14.6%). Direct QPS A/B at recall-matched p=62: VNNI +4.5/+6.2/+7.7%
-      over 3 interleaved rounds (p=58 noisier: -1% to +22%). Route is ~20% of e2e so a 1.45x route => ~6% e2e, observed.
+P200. (*** RANK-PRESERVING ESTIMATOR: NULL on <1x but a REAL primary-metric win -- NormPq (norm-rescaled ADC, +4B/vec) cuts the survivor pool ~1.8x (540->300 for recall 0.90), the FIRST thing to beat apq4's rank floor. But ratio gets WORSE (1.75x vs 1.51x): the gamma-rescale needs full-range i16 accumulation, which forfeits fastscan2's int8-SATURATING speed (-33% scan) > the pool-cut benefit (+28%). Even gamma-free-in-fastscan2 floors ~1.35x -- the pool-cut saves ~13us of a ~135us query; the ~110us SCAN is untouched by ANY estimator. ***)
+    NormPq compressor (vq.rs COMP_TAG_NORMPQ=3, SBANN_COMP=apq4n, selftest_normpq, clean in the Compressor abstraction):
+    apq4_ip x (||x||/||x_hat||) de-biases PQ norm-shrinkage that under-ranks large-norm MIPS winners. Screened offline
+    vs FLOAT-IP GT: NormPq 0.9024@t300 / 0.9058@324 vs apq4 CAPS at 0.872@pool300 (needs t~540) -> ~1.8x survivor cut,
+    i8-exact=1.0@t40 confirms the pool bottleneck is purely code approximation. RaBitQ screened (already in engine):
+    50B(2-bit) far worse 0.33@t40, only 100B(2x) near-perfect -> rotation buys nothing <=50B (confirms P144/145).
+    Higher-res PQ refuted (P145/195). *** Interleaved vs ScaNN ~8150: apq4-champ(fastscan2 p54t10) 5350=1.51x |
+    NormPq(i16 p54t6) 4640=1.75x. Phase(NormPq): scan 70% / route 17% / int8-refine 7.5% (pool-cut shrank it) / float 6%.
+    Attribution: apq4-fastscan2 3922 -> apq4-i16 2635 (i16 scan -33%) -> NormPq-i16 3383 (pool-cut +28%): +28 can't
+    recover -33. *** VERDICT: rank-preserving-code lever EXHAUSTED. The estimator quality was NEVER the ratio wall --
+    the SCAN is (64-70% of query, memory-bound scattered PQ blocks vs ScaNN's cache-resident SoA-AH). A tighter code
+    only shrinks the small refine and, worse, forces the slow scan regime. <1x needs the SoA-AH SCAN-LAYOUT co-design,
+    which P193 already refuted at recall>=0.90 (denser leaves -> more candidates). Branch rank-preserving-code c7c75cb.
+    *** ============ DEFINITIVE CLOSE (15 experiments P185-P200) ============
+    25x(mirage) -> 2.22x(P190 true same-hw) -> 1.51x loaded/~1.19-1.35x quiet (P197), ALL recall-exact. WINS that BEAT
+    ScaNN: route VNNI (P196), rerank cascade float 464->16 (P194), scan kernel compute 543>368 (P195). EVERY lever
+    exhausted: routing granularity (P192), scan SoA layout (P193 refuted at recall), route (P196 won), rerank refine
+    (P199 recall-locked), aniso partitioning (P198 neg), aniso codes (P182 neg), rank-preserving estimator (P200 cuts
+    survivors 1.8x but scan-trapped). THE WALL: ScaNN's 100B/vec anisotropic-AH codebook + cache-resident SoA scan give
+    it BOTH dense-useful-candidates (fast scan) AND tight ranking (few survivors) SIMULTANEOUSLY; our 50B/vec codes buy
+    one only by losing the other (tighter estimate -> slower i16 scan; denser leaves -> more candidates; aniso doesn't
+    transfer to OOD text-vs-image). <1x = the full ScaNN codebook+layout CO-DESIGN (multi-week, uncertain -- aniso's
+    non-transfer to our OOD is a real risk), NOT any single lever. Honest architecture ceiling: ~1.2x quiet / ~1.5x loaded.
 
-    *** VERDICT: route primitive is now ~23us <= ScaNN's ~30us — TARGET MET; ~10us shaved toward <1x, purely recall-
-    exact (0/2000 probed-set change). The audit CLEARED our router of wastefulness: per-eval we were already ~2x
-    cheaper than ScaNN (int8), the AVX2->VNNI swap halves the compute half (66%->52% at 1.45x route), and the 2784-vs-
-    2000 eval count + 2-level gather are the price of the finer hierarchical routing (they buy the P192 granularity
-    win). Route was NOT the dominant gap — P192 showed the ~1.77x ScaNN remainder is the SCAN (memory-bound scattered
-    PQ blocks vs ScaNN's cache-resident SoA AH), unchanged here; this lever removes route as a contributor and adds
-    ~6% e2e. ***
-    HONEST CAVEATS: (1) Box under load 25-44 all session (>=1.5x oversubscribed) => absolute e2e QPS and the ScaNN
-    head-to-head absolute (this window: ScaNN ~8000 vs eng ~4300, NOT the P192 quiet-box 1.77x) are contention-
-    distorted; ScaNN's one-call batched C++ tolerates oversubscription better than our per-query rayon loop, so a clean
-    e2e-vs-ScaNN re-measure needs a quiet box. The route-primitive 1.45x is isolated best-of-N and contention-robust.
-    (2) VNNI kept OPT-IN (SBANN_ROUTE_VNNI) matching the codebase flag pattern (SBANN_VNNI/FASTSCAN2); the champion
-    invocation should ADD it. (3) Zen4 double-pumps AVX-512 (256-bit datapath) so no downclock penalty — verified
-    in-situ (route IPC stayed high, 1.45x realized). (4) 1M ONLY, single-thread. (5) e2e QPS gain is modest (~6%)
-    because route is only ~20% of the float-rerank query; the big remaining lever stays the scan (structural, P192).
-    Artifacts: scratchpad/{routevnni_ab.sh, h2h_p196.sh, interleave_p192.sh, scann_measure.py, granul_kf16384_c768_
-    b96_a3.idx, t2i1m_query.i8bin}. Code on branch route-primitive: sbann-rs/src/simd.rs (l2_i8_block_vnni / cadj_i8 /
-    l2_i8_block_norm / selftest_l2_norm), src/vq.rs (HierRouter.cadj + gather_fine VNNI path + exact nd cap + ROUTE_VNNI/
-    ROUTE_PROF), src/main.rs (routebench + SBANN_ROUTE_VNNI gate).
+P201. (*** RICHER-CODES REFUTED (the last code-side lever): m=200 1-dim 4-bit isotropic @100B/vec cuts survivors 2.4x (840->350 @0.904, ranking gain REAL, int8-sat exact at m=200 via fs2 LUT cap; selftest m=200 added) BUT scan cost = clean 2.03x (102->207us isolated; 132->218 loaded) => e2e 0.75x champion QPS (3507 vs 4679 @0.904); interleaved vs fresh ScaNN 2.46x vs champion's 1.87x — WRONG DIRECTION. Hypothesis "latency-bound scan absorbs 2x bytes" FALSIFIED: real per-query working set is small/cell-clustered => throughput+bandwidth bound (2x vpshufb AND 2x bytes both scale); P195's 3x headroom is a kernel property the workload never sits in. ***)
+    Branch richer-codes 8a4dacb (worktree lsh-engine-wt-richer). ZERO new code needed: richer code == existing Apq4 with
+    SBANN_DPB=1 (d=200 -> m=200) + SBANN_ETA=1, reusing m-generic block_adc_i8_fastscan32_2x16. Controls: richer_m100iso
+    (dpb=2 eta=1) vs true champion (eta=4): IDENTICAL survivors at every operating point — anisotropy re-re-confirmed
+    NULL for OOD (third independent confirmation). Survivor floor: m200 ~290 @0.90 vs ScaNN ~78 — did not reach target
+    anyway. Refine dropped 47-50 -> 28us (as predicted) but +87-105us scan >> -19us refine; even FREE refine (survivors
+    ->16) cannot offset. OPQ variant SKIPPED (changes ranking, not the 100B scan cost — cannot alter conclusion).
+    *** ARCHITECTURAL CLOSURE: scan-time ∝ code-bytes (bandwidth-bound) + ranking ∝ code-bytes (information) =>
+    in-scan code enrichment is a WALL, not a lever. P193's "2x bits = break-even" was OPTIMISTIC (it's 0.75x).
+    Together with P182/P185/P192/P198/P200: EVERY code-side lever now empirically closed at 1M. Remaining untried:
+    SBANN_RESIDQ (residual-encode x - cell_centroid, same 50B, zero scan cost — free ranking if champion built without).
+    Scripts: richer_build.sh, surv_sweep.sh, richer_sweep.sh, richer_h2h.sh; indices richer_m200iso/m100iso.idx.
 
-P194. (*** RERANK CASCADE: int8-VNNI mid-stage cuts float-reorder 464->16 recall-EXACTLY-neutral, +30% QPS
-    vs P192 baseline, ratio 1.9x -> ~1.48x vs ScaNN -- but does NOT reach <1x (branch rerank-cascade). ***)
-    ATTACK: P193 localized the entire OOD 1M single-thread gap to RERANK DEPTH (we float-reorder ~464 apq4
-    survivors to reach 0.90; ScaNN reorders 78 with better anisotropic-AH codes). LEVER (a) CASCADE: insert a
-    cheap full-precision INT8 stage between the apq4 scan and the float reorder. New fn rerank_cascade_float
-    (src/vq.rs:308): dedup pool by orig (recall-neutral, SOAR a0=3 -> ~250-280 distinct) -> INT8-rescore each
-    survivor via VNNI dpbusd (src/simd.rs:74 dot_i8_vnni, dpbusd over the slot-contiguous raw i8 store) -> prune
-    to the K int8-smallest -> FLOAT-reorder only those K. int8 ranks far above the 4-bit apq4 code, so the true
-    float-top-10 survive the prune at tiny K.
-    RESULT (a): K=16 is the minimum that HOLDS recall EXACTLY. Proof (p=52 t=10, 2000q, best/5): no-cascade
-    float-rerank(520) = recall 0.9002 QPS 4384; cascade K=16 = recall 0.9002 (IDENTICAL) QPS 5850 (+33%); K=14
-    = 0.9000; K=12 = 0.8979 (drops). K-sweep at p=58 t=8: recall flat 0.9005 for ALL K in [16..464] (int8 top-16
-    always contains the float-top-10). The float reorder collapses 464->16 (clean e2e delta: float stage ~3.5us,
-    already BELOW ScaNN's ~13us reorder). The int8 stage costs ~28-31us clean (~100ns/vec over ~280 survivors --
-    ~1.75x cheaper/vec than the 177ns float gather because the slot-contiguous raw i8 row is 200B vs the orig-
-    scattered 800B float, partial bandwidth win; NOT compute -- see caveats). Best op point p=52 t=10 K=16 (lower
-    p than the p=58 baseline: cheaper route/scan outweighs the +survivors), recall 0.9002.
-    LEVER (b) CONTIGUOUS FLOAT STORE: NOT built. The cascade makes it moot -- the float reorder is now 16 vecs
-    (~3.5us); a slot-contiguous f32 copy (2.4GB) could shave <1us on 16 gathers, and P193 already measured "cell-
-    contiguous float store net null/negative". Superseded by the cascade, which cut the float COUNT (464->16),
-    far more than making 464 contiguous ever could.
-    STACKED (c) — 3-way INTERLEAVED same-window, core0 pinned, best/5, load 58-65 (ratios load-robust):
-    ScaNN(56,78) 0.9032 @ ~8111 QPS | P192-baseline(p58 t8 float-rerank) 0.9005 @ ~4208 (1.93x) | P194-cascade
-    (p52 t10 K16) 0.9002 @ ~5499 (1.475x). Cascade beats the baseline by +30% at equal recall (grows under load:
-    the baseline's 464 scattered FLOAT gathers suffer more than the cascade's 280 int8 + 16 float). PHASE SPLIT
-    (clean e2e ~171us cascade vs ~123us ScaNN): route+scan ~112 (ScaNN ~106) + int8 ~28-31 + float ~3.5.
-    VERDICT: did NOT reach <1x. Best ratio ~1.48x (down from ~1.9x); +30% QPS@0.90, recall-EXACT-neutral. The
-    remaining ~48us gap is the int8 refine pass (~28-31us) + a ~6us route/scan deficit. The int8 pass is
-    IRREDUCIBLE here: apq4's poor ranking forces t~520 survivors (t=348 -> 0.885), the IP int8 dot needs ALL
-    200 dims (partial-dim prune craters recall: dim128=0.4059, dim96=0.2958), and the gather is memory-latency-
-    bound so it must touch ~280 full rows. Even a FREE int8 stage floors at ~1.16x (route+scan already ~6us
-    behind ScaNN). <1x is NOT a rerank problem -- it needs BETTER CANDIDATE CODES (fewer survivors to touch),
-    i.e. the OPQ/anisotropic-AH rank-preserving-code path (memory: ood-10m-standing), which P182/P184 found our
-    OPQ family cannot deliver at coarse bit-rate. The cascade is the honest config-lever payoff: 1.9x -> 1.48x.
-    HONEST CAVEATS: (1) VNNI is 1.43x faster than AVX2 in cache-warm COMPUTE (dotbench d=200: 6.97 vs 9.98
-    ns/dot) but the cascade stage is GATHER-bound, so VNNI contributes only ~2% e2e -- the int8 win is the
-    smaller row (bandwidth/locality), not the dpbusd throughput. (2) slot-sort of the pool before the int8
-    gather (P189 lever) is net-NEGATIVE here (the i+8 prefetch already hides the slot-clustered latency; the
-    sort costs more), default OFF. (3) SBANN_PROFILE absolute us are load-INFLATED at load 58-65 (a spike gave
-    casc 364us); trust the interleaved QPS + the EXACT recall, not profile us. (4) 1M ONLY, single-thread pinned
-    (10M SIGKILL-risk per constraints; free/loadavg checked). (5) p=52 t=10 recall 0.9002 is thin; the safer
-    p=54 t=10 (0.9032) still ratios ~1.47x. Artifacts: scratchpad/{interleave_3way.sh, interleave_cascade.sh,
-    scann_measure.py, scann_t2i1m_idx, granul_kf16384_c768_b96_a3.idx}; code on branch rerank-cascade
-    (SBANN_CASCADE + SBANN_CASCADE_K, recompile).
+P202. (*** CELL-MAJOR BATCHED SCAN: real +27% e2e (recall-BIT-IDENTICAL), loaded h2h closes 1.53x -> 1.20x vs ScaNN — but NOT <1x, because ScaNN's h2h numbers were ALREADY batched (search_batched) and ScaNN gains the same ~1.22-1.27x from batching. Legitimate under leaderboard semantics (harness passes the whole query set). ***)
+    Branch batch-inverted 4982886 (worktree lsh-engine-wt-batchinv): search_batch_frr + extracted scan_cell_fused —
+    route all, build all LUTs, counting-sort (cell -> query list), sweep cells in ASCENDING STORAGE ORDER running the
+    UNCHANGED kernel per (cell,query), then per-query cascade+float unchanged. Kernels/Compressor untouched; gated
+    SBANN_BATCHSCAN/_CHUNK/_VERIFY (temporary A/B scaffolding). CORRECTNESS: 2000/2000 set-identical top-10 at p=54
+    (order-identical too), recall 0.9032 == per-query, p=40/80 same (one tie flip) — pure execution-order change.
+    *** Scan 117-129 -> 78-80us/q (~1.5-1.63x); QPS best/5: per-query 5640 -> chunk250 6673 / chunk1000 7121 /
+    chunk2000 7143 (curve FLAT by ~1000). KEY MECHANISM SURPRISE: chunk=250 (multiplicity 0.82!) already captures
+    most of the win => the gain is mostly SEQUENTIAL cell-order HW-prefetch, NOT cross-query block reuse; reuse
+    saturates at mult ~3.3 under LUT (~5-10MB) + FusedTopT pool (~18MB @ nq2000) L3 pressure + pool-scatter writes.
+    "Bigger batches keep winning" FALSIFIED past chunk~1000 on this box. *** DECIDER (interleaved core0, best/5,
+    rounds 2-5 stable, recall 0.9032 exact all): ScaNN-batched median 8162 | ours-batched 6762 | ours-perquery 5298.
+    Ratios: 1.20x batched-vs-batched (1.16-1.23) | 1.54x vs perquery (matches P197) | ours batching gain 1.28x.
+    ScaNN search() vs search_batched isolated: ~1.22-1.27x — BOTH engines gain equally; our batching competes
+    against an already-batched ScaNN. *** Why <1x failed: (1) scan fell 1.5x not the projected 2.5-3x-to-compute-
+    floor (P195's 3x cold-vs-hot headroom captured mostly as prefetch); (2) reuse saturates (L3 pressure), doesn't
+    scale with batch; (3) the 119us ScaNN target was already-batched ScaNN. Batched scan now ~24ns/cand LATENCY-bound
+    on LUT gather + per-(cell,query) pool scatter — no further amortization headroom identified. *** STANDING:
+    ~1.20x loaded batched-vs-batched (quiet-box re-measure pending — P197 pattern suggests quiet ~1.05-1.15x).
+    Post-P202 phase (loaded): route 23 / scan 78 / refine 24 / float 9. Scan & route & float at-or-better than
+    ScaNN; the residual is STILL the survivor-count refine (codebook) + ScaNN's equal batching gain.
+    Scripts: batchinv_verify.sh, batchinv_prof.sh, batchinv_chunk.sh, batchinv_decider.sh, scann_pqvsbatch.py.
 
-P197. (*** STACK ALL THREE SESSION LEVERS (route-VNNI + cascade K=16 + FUSEDTOPK + float-rerank) into ONE
-    config and measure the TRUE combined ratio vs ScaNN, OOD text2image 1M single-thread, recall@10>=0.90.
-    RESULT: 1.45x vs ScaNN (interleaved, recall-MATCHED 0.9032). Levers stack CLEANLY, zero interference.
-    STILL NOT <1x -- the remaining 54us/q is entirely scan-density + int8-refine survivor-count = the apq4
-    codebook gap, exactly as P194 predicted. Branch combined-primitives = ood-levers-stacked + cherry-pick
-    route-primitive(11bc954) + rerank-cascade(e6b0e20). ***)
-    MERGE: both branches were off the SAME base (5419798, P192 champion on ood-levers-stacked) and touch
-    simd.rs/vq.rs/main.rs in mostly DISTINCT functions/flags. Cherry-picked route-primitive clean; cascade
-    conflicted only in the vq.rs atomics block (both append after PROF_RERANK_NS) + FINDINGS -> resolved by
-    keeping BOTH (route's ROUTE_PROF/PROF_R_* + ROUTE_VNNI/cadj + cascade's PROF_CASC_NS/CASCADE*/rerank_
-    cascade_float). main.rs auto-merged (KLIST/CASCADE wiring + routebench/ROUTE_VNNI wiring don't overlap).
-    Recompiled RAYON=4 (free 26GB), 6 warnings only. BOTH flags coexist: SBANN_ROUTE_VNNI + SBANN_CASCADE.
-    VERIFY (recall-EXACT, all vs the P192 champion 0.9005 @ p58): baseline / +FUSEDTOPK / +ROUTE_VNNI /
-    +CASCADE-K16 ALL == recall@10 0.9005 BIT-IDENTICAL at p=58 t=8. routebench SBANN_ROUTE_VERIFY: 0/2000
-    queries change the probed-cell set (route-VNNI recall-exact). Cascade K=16 holds recall EXACTLY across
-    p (int8 top-16 always contains the float-top-10). => the stack is recall-neutral; recall did NOT shift.
-    (a) COMBINED QPS@recall0.90 + RATIO (interleaved core0, best/5, 5 rounds, load 24-31):
-      OPTIMUM op point = p=54 t=10 K=16 -> recall@10 0.9032 (== ScaNN's 0.9032, recall-MATCHED) @ ~5776-5936
-      QPS.  ScaNN(56,78) 0.9032 @ ~8410 QPS same window.  RATIO per round [1.428,1.472,1.457,1.425,1.459]
-      => MEDIAN 1.457x, mean 1.448x.  (p=58 t=8 0.9005 op point: ratio median 1.459x -- same, thinner recall.)
-      ScaNN's own QPS@0.90 frontier: (54,74)=0.8977 <0.90, (56,78)=0.9032@8292 -> (56,78) is its 0.90 point.
-    (b) PHASE SPLIT at the optimum (SBANN_PROFILE fractions x the clean best/5 e2e; profile absolute us are
-      load-inflated so trust the FRACTIONS). p=54 t=10, e2e ~173 us/q:
-        route 28us (16%)  |  scan 110us (64%)  |  int8-refine[cascade] 25us (14%)  |  float-reorder[K=16] 9us (5%).
-      ScaNN(56,78) e2e ~119 us/q.  GAP = 54 us/q.  route is now VNNI (isolated 23us, was 33.5) and float is
-      collapsed to 16 vecs -- those two total ~37us and are ~near-optimal (<2us headroom). The 54us gap sits
-      almost entirely in scan (110us) + int8-refine (25us).
-    (c) STACKING (marginal A/B, interleaved p=54 t=10, ALL recall 0.9032 identical, med of 3 rounds):
-      fused-only 4040 -> +ROUTE_VNNI 4285 (+6.1%) -> +CASCADE 5331 (+32.0%) -> FULL 5704 (+41.2% vs fused).
-      * CASCADE is the big lever (+32%: float reorder 540->16).  * ROUTE_VNNI stacks CLEANLY: +6.1% alone,
-      +7.0% ON TOP of cascade (LARGER on top, because cascade shrank the query so route is a bigger fraction
-      -- mild super-additivity, NOT interference).  * FUSEDTOPK is the foundation (collect elimination) all
-      rows share.  Full = 1.32 x 1.07 = 1.41 multiplicative, matches the observed 1.41x. NO lever was lost or
-      degraded in the merge; recall stayed 0.9032 for every combination.
-    *** VERDICT: the TRUE best ratio with ALL in-hand config-levers stacked = ~1.45x vs ScaNN (interleaved,
-    recall-matched 0.9032, 1M single-thread). NOT <1x -- ScaNN is ~45% faster. The stack recovered the P192
-    ~1.77-1.9x down to ~1.45x purely recall-exactly, but the wall is unchanged: to reach <1x the engine must
-    drop 173->~119 us/q, i.e. shave 54us, and route(28)+float(9)=37us are already near-floor. So the ENTIRE
-    remaining 54us is:  scan-density ~ the 110us scan (ScaNN's cache-resident SoA-AH scan vs our memory-bound
-    SCATTERED apq4 blocks) + int8-refine survivor-count ~ the 25us (apq4's poor 4-bit ranking forces
-    t_surv~464-540 survivors to int8-rescore). BOTH are downstream of the SAME root -- the apq4 code does not
-    rank-preserve, so we must scan MORE cells densely AND refine MORE survivors. This is the CODEBOOK gap:
-    only OPQ/anisotropic-AH rank-preserving codes cut both the scan density and the survivor count at once.
-    Config-levers are EXHAUSTED at ~1.45x; the last 45% is a codes problem (memory: ood-10m-standing), which
-    P182/P184 found our OPQ family can't yet deliver at coarse bit-rate. ***
-    HONEST CAVEATS: (1) Box loaded 24-31 (16 cores, ~1.5-2x oversubscribed) all session -> absolute QPS are
-    suppressed and the ratio window is +-5-7%; the 1.457x is 5-round interleaved same-window (contention-
-    robust), NOT a quiet-box number. ScaNN's one-call batched C++ tolerates oversubscription better than our
-    per-query rayon loop, so a quiet box would likely NARROW the ratio somewhat below 1.45x but not to <1x
-    (the 54us structural gap is real). (2) 1M ONLY, single-thread pinned taskset -c 0 (10M SIGKILL-risk per
-    constraints; free/loadavg checked >26GB before build). (3) recall vs the FLOAT-IP GT (t2i1m-floatgt),
-    float rerank on. (4) SBANN_P2LAYOUT (scan-primitive) deliberately EXCLUDED per P195 (net-neutral/neg on
-    cold e2e). (5) profile absolute us load-inflated -> reported fractions x clean QPS. Artifacts:
-    scratchpad/{interleave_combined_p197.sh, scann_measure.py, scann_t2i1m_idx, granul_kf16384_c768_b96_a3.idx,
-    t2i1m_query.i8bin}. Code on branch combined-primitives (cherry-picks 11bc954 + e6b0e20; recompile).
-    Champion invocation: SBANN_IP=1 SBANN_FASTSCAN2=1 SBANN_PREFETCH=1 SBANN_ROUTE_VNNI=1 SBANN_CASCADE=1
-    SBANN_CASCADE_K=16 SBANN_FUSEDTOPK=1 SBANN_FLOAT_RERANK=1  p=54 t=10 (or p=58 t=8).
+P203. (*** CONSOLIDATION PASS (user's clean-abstractions requirement, executed post-lever-stabilization): branch `champion` = batch-inverted + 55c0433. All winning levers folded to DEFAULT-ON behind runtime detection (env_on helper, SBANN_<X>=0 overrides kept): FASTSCAN2 (avx2+selftest gate), ROUTE_VNNI (avx512vnni gate, AVX2 fallback), CASCADE default-on w/ K default 128->16, FUSEDTOPK, BATCHSCAN w/ chunk default 1000 (P202 knee), PREFETCH. Refuted scaffolding (P2LAYOUT/ANISO_*/NormPq) confirmed ABSENT on this lineage (lives on experiment branches); RESIDQ + SOAR/TREEEM intact. Dispatch audit CLEAN: every intrinsic behind is_x86_feature_detected w/ scalar/AVX2 fallback, selftests assert at startup, no unguarded AVX-512. GATES: build clean; recall EXACT 0.9032 default-flags on BOTH batched and per-query paths, BATCH_VERIFY 2000/2000 set+order identical, bit-match vs flags-on reference; QPS sanity batched ~7000 / interleaved vs ScaNN ~1.19x (= P202). Doc block CHAMPION OOD STACK added above main(). Dataset/mode selectors (SBANN_IP, FLOAT_RERANK, FBASE/FQUERY, TFLOOR) deliberately left explicit. ***)
+
+P204. (*** STREAMING 30M (OFFICIAL msturing-30M-clustered final_runbook, f16 rerank): SOAR a0=2 avg recall@10 = 0.9654 => would rank 3rd overall / 2ND OPEN-SOURCE (leaderboard: puck 0.9855/0.9849, hwtl-closed 0.9675, pyanns 0.9597, diskann 0.8833, cufe 0.8189), fits 8GB (peak 7.52GB) — ONLY blocker = insert-bound wall (SOAR scalar assignment 3109/s vs 22663 flat = 7.3x, P116's deferred SIMD), 10981s vs 3600s budget even quiet-extrapolated. Baseline flat C=4096 a0=1: 0.9276, 5.87GB, wall 3750s loaded => quiet ~800-1200s FITS EASILY (would rank 4th, above diskann). Branch feat/streaming-30m 9976c2e. ***)
+    Protocol: 320 ins / 320 del / 640 search steps, live-window ~10.29M, metric avg recall@10 vs per-step gt100,
+    1hr budget, ~8GB, Azure D8lds_v5. Recall on 2000/10000 official queries (within ~0.001 of full set).
+    *** F16 RERANK GATE (1M): agreement f16-vs-f32 top-10 = 0.9995 avg / 0.9986 worst; runbook recall diff 0.0001
+    => LOSSLESS. Cache 2.06GB vs 4.12GB f32 — the halving that keeps SOAR a0=2 (doubled int8 store) under 8GB.
+    F16C _mm256_cvtph_ps behind is_x86_feature_detected + scalar fallback + startup selftest (clean-abstraction).
+    *** Recall by live-density (SOAR/c4096): <0.5M 0.868/0.808 | 0.5-2M 0.947/0.903 | 2-5M 0.964/0.924 |
+    5-8M 0.971/0.937 | 8-10.3M 0.979/0.947 — low-live steps are the recall tail (adaptive-p lever for later).
+    *** SCALING PATHOLOGIES: (1) cell count must track live density — Kf=262144 craters to 0.31-0.50 (88% of
+    runbook live<10M => empty probed cells); flat C=4096 stays occupied 38k->10M. (2) recall is 100% ROUTING-
+    COVERAGE-limited (true float-NN present in int8 top-14 candidates) — exactly why SOAR +3.8pt. (3) upstream
+    runbook_to_ops.py --scale-to clamps ids (span ~2.9x window) — scaled by target/id_max for the 1M gate.
+    *** NEXT: vectorize SOAR insert assignment (reuse P196 VNNI L2 nearest-centroid kernel) => make 0.9654
+    eligible; then spend leftover budget on the low-live recall tail toward puck's 0.9855.
+
+P205. (*** ORACLE FAN-OUT for the next 1M OOD lever (3 parallel agents; the probe-count axis was the last untouched degree of freedom): GRAPH-AUGMENTED POOL EXPANSION = strongest GO (realizable x1.68 touched-rows, recall 0.9033 engine-faithful, projected ratio 1.02 [0.94-1.08]); ADAPTIVE PER-QUERY p = GO but modest (realizable x1.20, oracle ceiling x2.61 — routing-time features capture only part of the difficulty signal; e2e-validated recall 0.9038, +10% QPS, ratio -> ~1.09); query-calibration oracle still running. The two GO levers are COMPOSABLE (adaptive p around the graph-expanded baseline). ***)
+    ADAPTIVE-P (branch adaptive-probe b942b1e, route_profile + SBANN_DUMP_ROUTE/ASSIGN + SBANN_PLIST_FILE per-query
+    p in search_batch_frr): oracle p* mean 20.6 / median 17 / p90 45 vs fixed 54 (x2.61 candidates); ridge on
+    routing-time features (coarse/fine distance gaps/ratios) held-out realizable only x1.17-1.21 -> avg p 45.2,
+    recall 0.9038 >= 0.9032 e2e. The oracle-vs-realizable gap = per-query difficulty is only weakly visible in
+    centroid-distance profiles (the OOD signal lives deeper).
+    GRAPH-EXPANSION (branch graph-pool-expansion c89bdc7, SBANN_DUMP_POOL engine-faithful pools): k=16 IP kNN graph
+    on the 1M base built via ScaNN self-search, edge quality 0.9988 vs exact. Winner p'=30/t540/M=25: pool union
+    graph[top-25] -> exact int8 rescore (559 rows vs 322) -> K16 -> float16: recall 0.9033, scanned 5512 vs 9858
+    (-44%), touched 6071 vs 10180 (x1.68), projected e2e 124us vs 147 champion; 1-hop coverage ceilings 0.932/
+    0.948/0.958 @ p'=20/30/40; oracle UB x3.18 @ p'=15. COST-MODEL CAVEAT: ratio 1.078 (74.5ns/row amortized) ..
+    0.94 (44ns pure-latency) — the union-rescore GATHER EFFICIENCY decides which side of 1x; implementation must
+    prefetch like the existing cascade. NEXT: implement graph expansion in the engine (real interleaved h2h), then
+    layer adaptive-p RETRAINED on the graph-expanded pipeline (p*(q) distribution changes when the hop recovers
+    deep misses). Both dumps/tooling committed on their branches for reuse.
+
+P206. (*** QUERY-CALIBRATION ORACLE = the strongest GO of the fan-out, and embarrassingly simple: a SINGLE GLOBAL GAMMA on the centroid-norm term of the routing score (score = gamma*||c||^2 - 2*q.c, gamma=0.5, i.e. halfway L2 -> pure-dot) lets OOD text queries reach the SAME 0.9032 recall at HALF the probes: p=27-29 vs 54, candidates 10234->5837 = x1.75, at ZERO query-time cost (per-cell additive i32 bias). Interleaved +18.7% e2e (11 rounds) -> ratio ~1.01 alone (optimistic bound 0.90). Flag-gated SBANN_ROUTE_GAMMA, branch probe-calibration d02561a, default-off bit-exact. ***)
+    Fitted on the even query half, validated on held-out odd half AND full-2000 engine runs (gamma p=27 = 0.9032 ==
+    champion; conservative p=29 = 0.9052 held-out). WHY IT WORKS (the OOD mechanism, finally isolated): the router
+    orders cells by L2 in the IMAGE geometry; for IP search with text queries, large-norm centroids (= large-norm
+    cells that score high in IP) are systematically over-penalized by the ||c||^2 term -> true-NN cells sit deeper
+    in the probe order. gamma=0.5 interpolates L2 -> MIPS ordering. This is what P198's anisotropic PARTITIONING
+    tried to capture by rebuilding cells (and failed); the fix is a query-time SCORING correction, not a partition
+    change. Capacity ladder: free per-cell bias <=1.08x, diagonal metric 0.89x (both null) -> the global scalar IS
+    the whole signal. Oracle UB p=5 = 10.8x (greedy set-cover). Un-tuned upside: t_surv/K16 not re-tuned at the
+    smaller pool; the COARSE level (b0=96, route 23us) not gamma-calibrated. Alternative operating point: +2pp
+    recall (0.9230) at unchanged p=54.
+    *** COMPOSITION PLAN (all three GO levers are orthogonal): gamma (x1.75, free) x graph-expansion (P205, x1.68
+    touched rows at p'=30 WITHOUT gamma; with gamma the same coverage should arrive by p'~15-22) x adaptive-p
+    (x1.20 realizable, retrained on the composed pipeline). Directed graph-impl to cherry-pick d02561a and run the
+    composed decider: arms = ScaNN / champion p54 / gamma p29 / gamma+graph p'~18. Compound projection ~0.75-0.9.
+
+P207. (*** GRAPH-AUGMENTED POOL EXPANSION IMPLEMENTED (branch graph-expansion-impl 34b05f2+0290d4e): recall 0.9033 at p=30/M=25 — BIT-IDENTICAL to the P205 oracle on 2000/2000 queries; union-rescore gather hit the FAVORABLE spec (39-44 ns/row); decider = ScaNN 8234 / GRAPH 7396 / CHAMPION 6872 => 1.113x vs ScaNN (champion arm re-validated 1.198x), GRAPH beats champion EVERY round (+7.6%). Best OOD standing yet, NOT sub-1x alone. GAMMA COMPOSITION NOT YET RUN (directive crossed mid-decider) — that is the projected sub-1x arm. ***)
+    Clean build: SBANN_GRAPH_FILE flat n*k u32 IP-kNN sidecar (k=16, orthogonal to index serialization);
+    rerank_cascade_graph = pool top-M=25 origs -> 16 neighbors each -> cache-hot OPEN-ADDRESSING dedup union
+    (HashSet and a 4MB generation-stamp bitmap both SLOWER — cache-cold scatter) -> existing int8-VNNI rescore
+    w/ streaming prefetch -> K16 -> float16. Wired batched + per-query. Warm phase: route 23 / scan 49 /
+    graph-union 20 / rescore 22 / float 6.
+    *** KEEPER A/B: unsorted union + deep prefetch (pfdist 16) BEATS orig-sorted gather at moderate load (sort
+    CPU over ~560 random u32 > locality gain once prefetched); SBANN_GRAPH_SORT=1 restores sort (only wins under
+    extreme DRAM contention). *** WHY not sub-1x alone: frontier min-e2e at recall 0.9032 with p=30 is ~124us vs
+    ScaNN ~120; graph-union phase has ~5-7us trimmable overhead (20 vs 13 modeled); box memory pressure (30M
+    runbook evicts float-base mmap pages) taxes both arms equally — quiet projection 1.02-1.07x. Adaptive-p on
+    this pipeline ~5us => ~1.05-1.08, deferred. *** NEXT (the decisive arm): cherry-pick gamma d02561a; with
+    p'~15-22 the scan halves BEFORE the graph hop => modeled e2e ~100-110us vs ScaNN ~120 => sub-1x plausible.
+
+P208. (*** STREAMING 30M SOAR-INSERT FIX LANDED (branch feat/streaming-30m f626d2a, bounded spill assignment to top-K nearest cells): inserts 3109 -> 26175/s (8.4x, ABOVE the flat baseline's 22663!), avg recall@10 = 0.9653 == the unbounded SOAR's 0.9654 (the bound costs NOTHING), RUNBOOK-OPS WALL = 2759s = 46min < 3600s budget UNDER LOAD ~27-35 — the 1hr budget is PASSED with margin. ONE REMAINING BLOCKER: peak anon 8.64GB > 8GB cap (INELIGIBLE by 0.64GB) — the 8.4x-faster inserts outpace the SBANN_COMPACT=0.25 compaction cadence so append buffers peak higher than the slow run's 7.52GB. Fix = compaction/buffer tuning (recall-neutral fold), then the 0.9653 = 2nd-open-source run is FULLY ELIGIBLE. ***)
+
+P209. (*** SUB-1x vs ScaNN ACHIEVED at 1M OOD — the first legitimate same-hardware win, ending the arc 25x(mirage) -> 2.22x(P190) -> 1.20x(P202) -> 0.972-0.978x. Interleaved 8 rounds (taskset -c 1, best/5, load 17-26, identical float GT, recall INDEPENDENTLY recomputed from raw result ids): ScaNN 8279 @ 0.9032 | CHAMPION p54 6990 @ 0.9032 = 1.184x (rig re-validated) | GAMMA-only p29 8514 @ 0.9060 = 0.972x | GAMMA+GRAPH p18 8409 @ 0.9075 = 0.985x | GAMMA+GRAPH p17 8466 @ 0.9033 = 0.978x, SUB-1x IN ALL 8/8 ROUNDS (0.953-0.990). Branch graph-expansion-impl 34b05f2+0290d4e+142a6b4. ***)
+    ATTRIBUTION (honest): GAMMA IS THE MOVER — champion 1.184x -> gamma-only 0.972x in ONE step; the OOD gap was
+    ROUTING MISCALIBRATION (P206's single scalar), not the codebook. Graph expansion composes cleanly (knee p'
+    drops 30 -> 17-18 with gamma; M=25 > M=50) and is the most robustly sub-1x arm at the lowest probe count,
+    BUT the levers OVERLAP (both cut probe/pool waste): compound ~0.97 ~= best single lever, NOT gamma x graph
+    multiplicative. Phase (composed p18): route 21% / scan 33% / union 19% / rescore 23% / float 4%; union/q=544;
+    gather at spec 39-44ns/row. t_surv sweep: 470 holds 0.9060 @ p18 (further lever), 400 fails 0.9028.
+    *** WHAT REMAINS FOR THE LEADERBOARD: HANNS leads ScaNN by ~7% => the 1M bar is ~0.93x; current 0.972-0.978
+    needs ~4-5 more points. Levers in flight: ADC-route (route 23 -> ~10-14us projected = ~8-10 points), cascade
+    geometry grid re-sweep under gamma, t_surv=470, adaptive-p retrained on the composed pipeline, overlap-aware
+    graph placement. Also pending: quiet-box confirmation (loaded ratios were historically PESSIMISTIC for us),
+    gamma transfer to 10M, multi-thread scaling. Memory-pressure caveat: 30M runbook evicted float pages in these
+    rounds — hits all arms equally, ratio honest.
+
+P210. (*** ADC ROUTING REFUTED for 1M/d=200 (user-requested experiment, branch adc-route 0aaf77d): route 23.7us exact-VNNI -> 37-40us with ADC at ANY KEEP (~1.7x SLOWER); e2e flips +9% -> -10% vs ScaNN (gamma-noADC 8590 vs gamma+ADC-K256 7030). ROOT CAUSE: at d=200 the route codebook is m=100 subspaces, so the 4-bit LUT scan per centroid ~= the VNNI exact eval cost; plus unaligned fan-out forces ~1.9x covering-block overscan + exact-rescore tail. Coarse route codebooks don't rescue: dpb4(m50)@K256 32.7us / dpb10(m20) 27.7us both > exact 23.7, and recall never recovers (dpb4 K512 0.9021, dpb10 K512 0.8869). NO (dpb,KEEP) is both faster than exact AND recall-neutral. The exact VNNI router is AT THE FLOOR for this dimensionality — consistent with ScaNN also routing exactly. ***)
+    Composition wiring was correct (gamma bias scaled into the ADC LUT domain via Pq::query_lut_with_scale, raw bias
+    on rescore; fidelity vs exact top-27: K64 .900 / K128 .976 / K256 .996; min recall-neutral KEEP=256). Also added
+    routeadc post-hoc codebook-swap rebuild (~2s) for cheap granularity sweeps — keep the tool.
+    *** INDEPENDENT SUB-1x REPLICATION (the important secondary result): on a REBUILT index (champion recipe
+    reproduced exactly: gamma-OFF p54 = 0.9032, gamma=0.5 p27 = 0.9032 recall-exact), interleaved best-of-6 this
+    window: ScaNN 7853 | gamma-noADC 8590 = 0.914x. Two independent implementations (graph-impl P209: 0.972x;
+    adc-route: 0.914x), two windows, both sub-1x => the gamma win is ROBUST, not a window artifact. Gotcha
+    documented: champion op-point uses FIXED t_surv~540 (not p*tmul) — with p*tmul gamma recall misleads.
+
+P211. (*** GENERALIZED-CASCADE OPTUNA SWEEP (user's L-levels/P_i/R_i framework; 160 recall-constrained trials over 7 geometries x query knobs, cached indexes, + 4-arm same-window decider): the gamma-p27 2-LEVEL REFERENCE IS ALREADY THE OPTIMUM. Sweep winners (L3 lean 8963 QPS, L2 p22/t900 8591) were LOAD ARTIFACTS — same-window they are 0.894x/0.949x of the reference. No engine changes warranted; no config beats gamma-p27. ***)
+    STRUCTURAL ANSWERS (the user's questions, settled empirically): (1) LEVELS = 2. A lean 3-level (finest fan-in
+    ~1024) MATCHES but never beats; wide-fan-in 3-level much worse. What matters is TOTAL cells scored (~2500-2800)
+    and 2 levels reaches it cheapest. (2) SIZES: Kf~16384 / C0~768 / b0=96 confirmed AT the optimum even post-gamma
+    (8192 slightly worse = bigger leaves more scan; 32768 worse = more routing) — P192's geometry survives the new
+    primitives. (3) ADC PAYS NOWHERE at 1M/d=200 — extends P210 to deeper trees and wide fan-ins (best ADC trial
+    5552 vs best exact 8963 across 56 ADC trials; even the 8192-cell L3 finest fan-in loses to exact). (4) The
+    BALANCED-WORK heuristic holds as MARGINAL-COST equalization, NOT equal wall-time: the optimum sits where one
+    more probe (cheap streaming scan) costs the same as the extra survivors needed to drop one (expensive gather-
+    bound rescore ~5x/row) — the cost asymmetry is exactly why t_surv stays modest (540-700) and gamma (probe
+    halving) was the dominant lever. Profile: REF p27/t540 vs WIN-L2 p22/t900 = 274 vs 272 us/q, a dead wash
+    (13us scan saved == 24us rescore added).
+    KNOB COMPLETENESS: the engine already exposes the whole framework (hierk/hierk3/hierkn depth, C0/C1/B0/B1
+    build-baked beams, gamma at finest level both depths, ROUTE_ADC+KEEP, t_surv via TFLOOR/TMUL, CASCADE_K).
+    Gaps (harmless at the optimum): intermediate beams build-baked; gamma+ADC don't compose on the ADC path.
+    Artifacts: cascade_sweep.py / cascade_sweep_log.csv / cascade_sweep.db / decide4_out.log (scratchpad).
+
+P212. (*** STREAMING 30M: FULLY ELIGIBLE HIGH-RECALL RESULT BANKED. Official msturing-30M final_runbook, all gates PASSED under load ~35: avg recall@10 = 0.9654 (640 steps, official per-step GT) | PEAK ANON 5.32GB < 8GB cap | RUNBOOK-OPS WALL 3178.5s = 53.0 min < 3600s. Config: flatsoar a0=2 C=4096 + bounded-spill VNNI-era insert fix (26k/s) + f16 rerank cache + compaction-cadence memory fix (peak 8.64 -> 5.32GB, recall unchanged). = 2nd OPEN-SOURCE tier on the leaderboard (pyanns 0.9597 < OURS 0.9654 < hwtl-closed 0.9675 < puck 0.9855). Branch feat/streaming-30m. ***)
+    The failed-run postmortems that got here: run1 unbounded SOAR = insert-bound 3x over budget (P204); run2 fast
+    inserts = 8.64GB peak (P208, compaction cadence vs 8.4x faster inserts); run3 died silently at op 598 (box fork
+    crunch); run4 = ALL GATES GREEN. OPEN ITEM: wall INCL offline train = 4175.6s = 69.6 min > 60 — eligibility
+    depends on whether the official harness times setup/train (ops-only => PASS with margin; incl-train => need
+    train trim ~997s-loaded, or a quiet-box run where train ~300-500s + ops ~35-40min likely passes anyway).
+    NEXT recall levers toward puck 0.9855: low-live steps are the tail (<0.5M live: 0.868) — adaptive-p by
+    live-count; leftover time budget (7 min quiet margin) buys deeper search.
+
+P213. (*** P212's OPEN ITEM SETTLED — the 1hr clock INCLUDES train (it's the container timeout: big-ann runner.py:322 container.wait(timeout), :297 timeout=3600 for streaming; run() does build() THEN run_task()), BUT our train is only 26.9s (k-means 2M -> 4096 flat cells; the '997s train' was a MIS-ATTRIBUTION: ~600-800s of the incl-train gap is OUR INLINE per-step GT recall scoring, which the official harness does OFFLINE — neurips23/streaming/run.py only calls query/get_results inside the timed run, never scores recall). Official-equivalent wall = 27s train + ops 3178.5s + finalize ≈ 3.2-3.6ks LOADED (load 35) -> ~1500-1900s on the idle official 8-vCPU box. STREAMING 30M IS ELIGIBLE ON EVERY DIMENSION WITH LARGE MARGIN. Final state: feat/streaming-30m @ c1c24e3 (9976c2e f16 cache | f626d2a SOAR spill bound + AVX2 dot | c1c24e3 glibc arena trim after compaction/train = the 8.64->5.32GB fix). ***)
+    COMPLIANCE NOTE for an eventual official submission: streaming setup(dtype,max_pts,ndims) passes no vectors —
+    our cold-start currently trains the router on a strided base sample from disk (peeks at future data,
+    technically mountable but not the intended contract). Clean version: train on the FIRST INSERT BATCH (folds
+    the 27s into inserts, negligible, recall/memory unchanged). Do before a real PR.
+    NEXT recall lever toward puck 0.9855: adaptive-p on low-live steps (<0.5M live = the 0.868 tail).
+
+P214. (*** THE 0.93x HANNS BAR REACHED (pairwise-inferred, pending direct confirm): union-trim (1ab8134, fused pool-dedup+union-build single open-addressing pass + adjacency prefetch, verified BIT-IDENTICAL 2000/2000 after catching a SOAR tie-break regression) makes graph expansion CLEARLY ADDITIVE over gamma-only: 24-round tight pairwise triples [GR17_t540 | gamma-only p29 anchor | GR18_t470] at partial-calm load 31 => median(GR17/gamma)=1.0258 -> inferred ScaNN ratio 0.9475x; median(GR18_t470/gamma)=1.0408 -> inferred 0.9339x ~= THE 0.93x BAR (HANNS = ScaNN x1.07). Recall gates held deterministically: GR17 0.9033, GR18/t470 0.9060, both id-verified. ***)
+    CAVEATS (why this is 'reached' not 'cleared'): (1) ratios INFERRED via the fixed gamma-anchor (0.972x calm,
+    P209) rather than a same-round ScaNN arm; (2) wide per-round IQR (0.908-1.19) at load 31 — the median is the
+    contention-robust statistic but a DIRECT quiet-box decider (ScaNN arm in-round, load <18) is required to
+    convert inferred->measured. Also banked en route: overlap lever REFUTED by cost model (rescore-row ~5x a
+    scan-candidate => bigger graph unions can't buy smaller p: M25/p18 46.7us < M50/p15 50.6 < M100/p12 60.2);
+    pairwise-alternation protocol (gamma anchor mid-triple, median of adjacent-pair ratios) added to the
+    measurement toolkit for loaded-box windows. 1M OOD progression: 2.22x -> 1.20x -> 0.972x -> inferred 0.934x.
+
+P215. (*** GAMMA TRANSFERS TO 10M — the routing-miscalibration mechanism is SCALE-INVARIANT, and the probe cut is SAME-OR-STRONGER than 1M: at t_surv=2000 on the fresh 10M index (eng_t2i10m_kf131072_c4096_b256_a3, built 41min, sanity 0.9022@p250 gamma-off), matched-recall probe requirements: recall~0.93 gamma-off p~220 vs gamma0.5 p~80 (2.7x); recall~0.94 gamma-off p~400 vs gamma0.5 p~160 (2.5x); gamma0.5 = 0.9315 AT p=80 where gamma-off is 0.8946. gamma 0.5-0.6 optimal at 10M (0.4 slightly below). RECALL curves are load-insensitive (box load 34-80 across arms — QPS columns not comparable). ***)
+    ALSO LEARNED: t_surv must scale with n — the 1M-tuned t_surv=540-800 CAPS recall at ~0.881 at 10M regardless
+    of p (pool too shallow to hold the true candidates); t=2000 releases it (agent self-caught via the plateau).
+    Remaining on this front: the first same-hardware 10M h2h vs the cached ScaNN 10M index (task in flight,
+    pairwise-alternation protocol, core 3).
+
+P216. (*** THE 0.93x BAR CLEARED — DIRECTLY MEASURED, in-round ScaNN, calm box (load 17-20 held), 8 rounds, best-of-5, taskset -c 1, identical float GT: GR18_t470 (gamma0.5 + graph-expansion M25 + union-trim + t_surv=470, p=18, K=16) = ~0.91x median vs ScaNN (per-round 0.9032/0.9099/0.9103/0.9127/0.9173/0.9433; ours 8930-9413 QPS vs ScaNN 8281-8591), recall 0.9060 vs ScaNN's 0.9032, ALL arms recall >= gate. GR17_t540 ~0.93x @ 0.9033; gamma-only ~0.97x @ 0.9060 (P209 replicated a third time). Converts P214's inferred 0.9339 into MEASURED ~0.91x. ***)
+    SIGNIFICANCE: HANNS (leaderboard #1) leads ScaNN by ~7%; we now lead ScaNN by ~9.5% at 1M single-thread
+    same-hardware => this configuration is LEADERBOARD-TOP-EQUIVALENT at the 1M scale (caveats for the full
+    official claim: official track is 10M, 8-vCPU multi-thread, Azure — 10M h2h in flight, multi-thread pending).
+    1M OOD arc COMPLETE: 25x(mirage) -> 2.22x(P190 true) -> 1.77x(P192) -> 1.45x(P197) -> 1.20x(P202) ->
+    0.972x(P209 sub-1x) -> 0.91x(P216, above the HANNS-margin bar). The stack: gamma=0.5 routing calibration
+    (the mover) + kNN-graph pool expansion at p=18 + fused-union trim + t_surv=470 + all P185-P203 primitives.
+    Pending: graph-impl's formal id-recomputed recall report (log numbers unambiguous); then consolidate
+    gamma+graph+trim+t470 into branch champion with the full gate suite.
+
+P217. (*** 10M H2H (first ever, PROVISIONAL pending ScaNN-config sanity): 20 pairwise rounds, core 3, load ~25 — ScaNN 1272 QPS @ 0.9046 (lts=110, reord=180, cached P190 index) vs ENGINE 2512 QPS @ 0.9054 (gamma=0.5, t_surv=2000, p=45, Kf=131072 index) => ratio MEDIAN 0.505 (IQR 0.495-0.511, min 0.463 max 0.541) — engine ~2x FASTER at 10M. Tight IQR = stable measurement. ***)
+    CAUTION CONFIRMED (lead-verified): the cached ScaNN 10M index has num_leaves=4000 (build script NL default,
+    all build logs agree) vs ScaNN's official ~40000 — its per-probe scan is ~10x heavier than the official
+    recipe, explaining the anomalous 6.6x drop. THE 0.505x IS FLATTERING; corrected measurement in flight
+    (rebuild at 40k leaves, re-find its 0.90 point, re-run 20-round pairwise). If the config checks out, the 10M margin being LARGER than 1M is
+    mechanistically plausible: our cells stay ~76 pts (fine partition + gamma ordering + batched scan) while
+    ScaNN's per-leaf scan grows with n/leaves, and our refine stays survivor-bound.
+
+P218. (*** CONSOLIDATION OF THE P216 WINNING STACK: branch `champion` @ 4aa59af (fast-forward of graph-expansion-impl: 34b05f2 graph sidecar / 0290d4e unsorted-union / 142a6b4 gamma / 1ab8134 trim + cherry-picked 330010b cascade-knob doc + 4aa59af OOD-calibration doc block). ALL GATES PASS: build clean; startup selftests (fastscan32 + l2_norm) + scanbench2 bit-identical; recall id-recomputed — champion-default p54 = 0.9032 BOTH paths set+order-identical 2000/2000 (nothing regressed), gamma-only p29/t540 = 0.9060, GR18_t470 = 0.9060; 5-round interleaved sanity (load ~38): GR18_t470 ~0.88x, gamma-only ~0.985x, recall exact every round (consistent w/ P216's calm 0.91x/0.97x). ***)
+    DEFAULTS POLICY (clean-abstractions): gamma = per-dataset calibration knob, default unset = bit-identical
+    (OOD recipe gamma=0.5 documented); graph = flag-gated sidecar (SBANN_GRAPH_FILE, build recipe documented);
+    union-trim unconditional on the graph path; t_surv documented 470 for 1M-OOD-graph (scales with n per P215).
+    GOTCHA documented: gamma arms need SBANN_TFLOOR=540 (fixed t_surv, not p*TMUL) — reproduces P210's gotcha.
+    `champion` is now the canonical branch carrying the full 0.91x stack.
 
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
