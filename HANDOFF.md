@@ -1,6 +1,13 @@
 # HANDOFF — big-ann leaderboard push (OOD + streaming, 1M/10M/100M)
 
-Written 2026-07-04. Previous agent: Claude session 06297076 (loop-driven, ~P185→P218 in FINDINGS.md).
+Written 2026-07-04, updated same day after the GitHub push. Previous agent: Claude session 06297076 (loop-driven, ~P185→P218 in FINDINGS.md).
+
+## GITHUB (added 2026-07-04)
+The project is now **`github.com/thomasahle/genbo`** ("genbo" = Danish for the neighbor across the street — cross-modal OOD search). 29 refs pushed: default branch **`champion`** (canonical engine), `aniso-vq-faithful` (FINDINGS ledger + this handoff), `feat/streaming-30m`, `master` (theory), and ~20 experiment branches (the provenance for every ledger claim).
+- Remote name: `genbo` (configured in the `lsh-engine` worktree; the underlying repo is `/home/thomas-ahle/lsh`, of which all `lsh-engine*` dirs are worktrees).
+- Auth: this box's SSH key and `gh` token are the **`thomasnormal`** account, a collaborator on the repo (the owner is `thomasahle`).
+- **Push discipline**: after committing FINDINGS entries or landing branch work, `git push genbo <branch>` — the remote is the only off-box copy of the ledger.
+- **Visibility**: the repo was PUBLIC at push time (user aware; check current setting before assuming).
 
 ## THE GOAL (user's standing directive)
 "Keep innovating, iterating and improving until we top the leaderboard for OOD and streaming. Both 1M, 10M and 100M."
@@ -23,7 +30,7 @@ Hard constraint from the user: **never use more than ~40% of system memory** (64
 ### OOD 10M — γ proven, honest h2h STILL OPEN (the main in-flight item)
 - γ transfers: **2.5–2.7× probe cut at matched recall** (P215). t_surv must scale with n (540@1M → 2000@10M; too-shallow pools cap recall at ~0.88 regardless of p).
 - Engine 10M index built: `eng_t2i10m_kf131072_c4096_b256_a3.idx` (scratchpad, 7.9GB). Engine arm: γ=0.5, t_surv=2000, p=45 → 2512 QPS @ 0.9054 (loaded).
-- **A 0.505× ratio vs ScaNN was measured but is QUARANTINED (P217)**: the cached ScaNN 10M index has num_leaves=4000 vs ScaNN's official ~40000 — under-leaved, flatters us. **The corrected measurement (ScaNN rebuilt @ 40k leaves) has failed ~4 times** — every attempt died during ScaNN's hashing phase (tenant load spikes / session crashes; details below under "infrastructure lessons"). The chain is `chain_10m_retry.sh` → `chain_10m_corrected.sh` → stages: build (`scann_build_40k.py`, needs ~17GB RSS transient, ~10–30 min) → lts sweep (`scann_measure10m.py`) → 20-round pairwise (`h2h_10m_pairwise.sh` pattern). Success marker `ALLDONE_CHAIN10M`; results land in `h2h_10m_40k.{log,csv}`. A tmux session `chain10m` may be running an attempt — CHECK `tmux ls`, the logs above, and `ps aux | grep scann_venv` before starting a new one.
+- **A 0.505× ratio vs ScaNN was measured but is QUARANTINED (P217)**: the cached ScaNN 10M index has num_leaves=4000 vs ScaNN's official ~40000 — under-leaved, flatters us. **The corrected measurement (ScaNN rebuilt @ 40k leaves) has failed ~4 times and is NOT currently running** (verified 2026-07-04: chain logs frozen at Jul 2 16:24, the `chain10m` tmux session holds a dead shell, zero scann processes). Every attempt died during ScaNN's hashing phase (tenant load spikes / session crashes; details under "infrastructure lessons"). To relaunch: `tmux kill-session -t chain10m; tmux new-session -d -s chain10m "bash <scratchpad>/chain_10m_retry.sh"` — the wrapper waits for load<35 & avail≥15GB, retries 3×. Stages: build (`scann_build_40k.py`, ~17GB RSS transient, ~10–30 min) → lts sweep (`scann_measure10m.py`) → 20-round pairwise. Success marker `ALLDONE_CHAIN10M`; results land in `h2h_10m_40k.{log,csv}`. Babysit stage 1 — it is the fragile part.
 - Expectation: corrected ratio likely lands between 0.6× and 1.0× (our fine-partition scaling advantage is mechanistically real, but 4k→40k leaves cuts ScaNN's per-probe scan ~10×).
 
 ### STREAMING 30M — WON (fully eligible), banked
