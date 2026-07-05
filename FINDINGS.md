@@ -3833,6 +3833,30 @@ P233. (100M OOD ENGINE BUILT + VALIDATED with the P230 aggressive-3-level geomet
     this is a scaling extension, leaves scaled sqrt(n)). The 3-level geometry (P230) built fast AND queries
     at competitive recall -> the aggressive-coarse-routing de-risk paid off.
 
+P234. (*** GEOMETRY SCALING LAWS (user idea): clean power laws from a graph-off min-cost sweep at
+    n={100k,300k,1M,3M,10M}, matching the routing cost model. Kf* ~ n^0.66, pts/leaf* ~ n^0.34, p90* ~
+    n^0.18, C0* ~ n^0.33. ***)
+    Method (load-INDEPENDENT): at each n, for each Kf (2-level, C0=sqrt(96*Kf), b0=C0/4, gamma=0.5,
+    graph-OFF, float rerank), find the MIN p reaching recall@10>=0.90 (deterministic), then the analytical
+    cost route(Eq)+scan(p*n/Kf*a0). The Kf minimizing total cost is the optimum. hierkn generic router
+    (confirms hierk3 is just a wrapper). Optima:
+      n=100k  Kf*=2048  49pts/leaf  p90=12
+      n=300k  Kf*=4096  73          p90=12
+      n=1M    Kf*=8192  122         p90=16
+      n=3M    Kf*=32768 92          p90=24
+      n=10M   Kf*=32768 305         p90=24
+    POWER LAWS (log-log fit): Kf* ~ 1.04 n^0.660, pts/leaf* = n/Kf* ~ 0.96 n^0.340, p90* ~ 1.39 n^0.180,
+    C0* ~ 9.96 n^0.330. INTERPRETATION: (1) pts/leaf GROWS as n^(1/3) -> the coarse-cell corollary
+    QUANTIFIED: bigger n wants coarser leaves (route O(sqrt Kf) grows, scan O(p n/Kf) is capped by growing
+    Kf). (2) p (coverage probes) grows slowly n^(1/5). (3) Kf ~ n^(2/3) (vs classic IVF sqrt(n)=n^0.5;
+    the higher exponent reflects our cheap fast-scan making finer cells affordable). CAVEATS: 2-level +
+    graph-OFF; the graph shifts the optimum COARSER still, and 3-level routing (cheaper, O(Kf^1/3)) shifts
+    it FINER -> the law calibrates the 2-level baseline. IMPLICATION for 100M: 2-level law extrapolates to
+    Kf~200k @ n=100M, but I built 3-level Kf=524288 (3-level affords finer) -> a graph-on Kf A/B at 100M
+    (262144 vs 524288) is the clean validation, queued behind the graph build. This is exactly the
+    principled-geometry backbone the paper needs (turns heuristic scaling into a measured law + 1B
+    extrapolation: Kf(1B)~n^0.66 ~ 1M cells, ~1000 pts/leaf). (logs/scaling_laws.csv)
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
