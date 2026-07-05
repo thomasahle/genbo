@@ -3760,6 +3760,13 @@ P229. (1M/10M FURTHER-TUNING ROUND: all four probed levers are NET-NEUTRAL-TO-NE
     NET: 1M is at its optimum; no lever this round converts recall-per-p into QPS. Good paper material
     (localizes WHY the coarse-cell win is scale-gated; a clean set of 1M-negatives). 1M stays 0.755x.
     Built artifacts (reusable): eng_t2i1m_kf{8192,4096,2048,1024}_*.idx, t2i1m_graph_k{24,32}.u32.
+    ADDENDUM (cascade-skip, the 5th 1M lever): profile @p18 = route 33% / scan 29% / rescore(int8 cascade)
+    25% / graph 9% / float 4% (balanced = well-optimized, no dominant phase). Tested skipping the int8
+    cascade (float-rerank the 4-bit-PQ-top-t directly): recall CRATERS 0.9049 -> 0.79-0.82 at every t (the
+    4-bit PQ pool ranks too coarsely for float alone) -> the int8 cascade (P194) is LOAD-BEARING, not
+    removable. CONCLUSION: 1M is at its optimum across all probed levers; further gain needs a new
+    primitive, not tuning. 10M freshly optimized via the P224 geometry knee (which IS the coarse-cell win).
+
 
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
