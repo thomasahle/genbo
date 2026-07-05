@@ -3740,6 +3740,27 @@ P228. (*** STREAMING BUDGET UNLOCKED: batch-parallel insert = 4.5x insert speedu
     finer routers trained at compliance checkpoints. Committed feat/streaming-30m@4173d70. NQ=10000
     definitive runs to follow the C-sweep. (logs/stream_batchins_val.log)
 
+P229. (1M/10M FURTHER-TUNING ROUND: all four probed levers are NET-NEUTRAL-TO-NEGATIVE on QPS -> 1M
+    confirmed AT its optimum; a load-drift MIRAGE was caught and killed. Explored while 100M builds.)
+    Baseline (champion 1M, single-thread): Kf=16384 C0=768 gamma0.5 graph-M25 t470 -> 0.9049@p18.
+    (a) GRAPH DEGREE k (16/24/32 edges/node): MORE edges do NOT help -- k24/k32 at kedge=24/32 give
+    -0.001 recall vs k16 (extra edges dilute the union pool). (b) GRAPH FAN-IN M (25->64): recall-per-p
+    rises monotonically (p16: M25 0.898 -> M64 0.910) BUT single-thread best/5 QPS FALLS (M25 p18 7732 ->
+    M64 p15 6766 at matched recall) -- the larger float-rerank union outweighs the ~3-probe scan saving.
+    (c) DEEPER TREE-EM (EM4 vs EM2, same geometry): FLAT (0.9056 vs 0.9049) -- EM converged by 2 rounds
+    at 1M. (d) COARSE-CELL GEOMETRY (the 10M knee lever) at 1M: recall-per-p much better (Kf=4096 hits
+    0.90 at p~11 vs champion p~18; Kf=8192 at p~14) BUT *** the coarse-cell corollary does NOT transfer
+    to 1M ***: paired same-core back-to-back A/B (the trustworthy measurement) = Kf4096-p11 / champion-p18
+    ratio 0.90-0.95 single-thread (coarse SLOWER), 0.98-1.12 at 8 threads (noisy, ~neutral). At 1M routing
+    is already cheap (P26), so coarser cells just inflate the scan pool (732 vs 183 pts/cell) more than the
+    fewer probes save; the tree/coarse benefit is 10M+ -specific (confirms the P31/P26 scale-gating).
+    *** MIRAGE CAUGHT: an initial cross-measurement read showed Kf4096 '1.85x faster' (6766 vs 3665) -- but
+    the 3665 champion number was a contended-instant artifact; the paired back-to-back A/B (both on core 44)
+    gave 0.93x. Classic load-drift confound, exactly what the tight-pairwise protocol exists to kill.
+    NET: 1M is at its optimum; no lever this round converts recall-per-p into QPS. Good paper material
+    (localizes WHY the coarse-cell win is scale-gated; a clean set of 1M-negatives). 1M stays 0.755x.
+    Built artifacts (reusable): eng_t2i1m_kf{8192,4096,2048,1024}_*.idx, t2i1m_graph_k{24,32}.u32.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
