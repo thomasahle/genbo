@@ -3801,6 +3801,26 @@ P231. (STREAMING ELIGIBILITY on THIS box is SEARCH-BOUND at ~0.90, despite the b
     cufe 0.819; < zilliz 0.922, pinecone 0.912). The gap is purely this box's slower per-core search, not the
     method. Compliance (P226) + batch-insert (P228) are real, HW-independent wins that transfer to Azure.
 
+P232. (ALGORITHMIC/LOW-LEVEL innovation round on 1M -- 3 more decisive NEGATIVES; the config+architecture
+    space is EXHAUSTED for this engine. Profile balanced (route 31/scan 29/rescore 27/graph 9/float 4).)
+    (a) UNION-vs-POOL double-rescore inefficiency: DOES NOT EXIST -- rerank_cascade_graph already dedups
+    graph neighbours against the scanned pool via one open-addressing hash pass (P214), only fresh
+    neighbours are rescored; the memory-latency scattered ds.row() reads are already SW-prefetched
+    (GRAPH_PFDIST streaming-ahead). No free lunch. (b) DIM-TRUNCATED ROUTING (ROUTE_SDIM, attacks the 31%
+    route): fixed a latent OOB bug in l2_i8_block_avx2's odd-centroid tail (full qn vs sd-length block ->
+    panic), then tested: recall CRATERS (sdim 200->160->128->100->80 = 0.905/0.866/0.824/0.759/0.666) AND
+    route% does NOT drop (~31%) because the truncated path loses VNNI (l2_i8_block_norm needs full-dim
+    cadj) -> AVX2-madd on 128 dims ~= VNNI on 200. DOUBLE loss. ROOT: the OOD embedding is near-isotropic
+    (P102: 128 dims=82.5% energy) so EVERY dim carries cell-ranking signal -- high intrinsic dim bites
+    ROUTING too, not just scan. Decisive dead end. (c) confirmed cascade-skip (P229) + graph-M (P229) +
+    coarse-geometry (P229) all negative. *** HONEST STANDING: 1M/10M are at their optima for this
+    IVF-tree+apq4+graph+float-rerank design; 8 levers across P229/P232 all neutral-or-negative. The
+    profile is balanced (no dominant phase) = the fingerprint of an optimized system. Further gain needs a
+    NEW PRIMITIVE (learned router / rank-preserving coarse codes = scann's AH2 moat), a research project,
+    not tuning. Real deliverables this round: an OOB bug fix + a clean characterization (OOD near-isotropy
+    caps dim-reduction on BOTH route and scan) = good paper negatives.
+
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
