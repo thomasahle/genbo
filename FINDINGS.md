@@ -3547,6 +3547,42 @@ P218. (*** CONSOLIDATION OF THE P216 WINNING STACK: branch `champion` @ 4aa59af 
     GOTCHA documented: gamma arms need SBANN_TFLOOR=540 (fixed t_surv, not p*TMUL) — reproduces P210's gotcha.
     `champion` is now the canonical branch carrying the full 0.91x stack.
 
+P219. (*** P217 RESOLVED — CORRECTED 10M OOD h2h vs OFFICIAL 40k-leaf ScaNN: ScaNN 1.24x AHEAD (median 1.239,
+    IQR [1.138,1.283], 12 warm-protocol rounds); the quarantined 0.505x was entirely the under-leaved (4k) ScaNN
+    index. Full rig rebuilt from scratch on the NEW box. ***)
+    ENVIRONMENT RESET: repo now ~/genbo (was ~/lsh-engine), new 96-core/371GB shared box; ALL old artifacts
+    (indexes, scann_venv, scratchpad, worktrees, datasets) were gone -> rig rebuilt: ~/big-ann-data/ holds t2i 10M
+    base crop (range-download 8GB/5min), queries, i8bin quant (shared scale 300.32 = 127/max|base|; base norms
+    0.814-0.990 mean 0.965 == P92's), exact float-IP GT (10k q x top-100, ScaNN-brute-force 28s@48thr, numpy
+    spot-checked). CPU etiquette (user): builds capped ~8-16 nice'd cores.
+    THE OPPONENT AT ITS BEST (the P217 fix): GCS pre-built official searcher is no longer public (403) -> rebuilt
+    from the VERBATIM official textproto (big-ann-benchmarks neurips23/ood/scann): 40000 leaves, SOAR spilling
+    (TWO_CENTER_ORTHOGONALITY_AMPLIFIED avq=1.6), AH2 LUT16 + residual quant + noise shaping 0.1, bf16 exact
+    reorder, top-level partitioner 700; official upsert->rebalance(config)-at-8M build path replicated exactly
+    (scann 1.4.2, py3.11). Sweep (single-thread pinned, best/5, our GT): QPS nearly FLAT in lts (lts27 0.8978@2482
+    -> lts65 0.9422@2067; the AH scan is ~free, reorder=150 dominates) -> its 0.90 point lts=28/reorder=150
+    (0.9001@~2330). reorder=140 variants: no better.
+    OUR ARM: engine index rebuilt at the P215 geometry (hierk Kf=131072 C0=4096 b0=256 a0=3 SOAR=1, apq4, 24min
+    @8cores). Rebuild lands ~1pt BELOW the old index at matched p (0.8945@p45 vs P217's 0.9054 — build RNG/SOAR
+    variance; float-rerank gamma0.5 t2000 throughout) -> honest re-sweep: 0.90 point = gamma0.5 p=52 t_surv=2000
+    (0.9025@2356 sweep-window). gamma=0.6 slightly worse everywhere; t_surv 2500/3000 LOSE at matched recall
+    (t2000 confirmed the marginal-cost balance, P211 logic holds at 10M).
+    PROTOCOL: 10k queries, both arms single-thread pinned to the SAME core, tight pairwise alternation (order
+    alternates per round), best-of-5, median of per-round ratios, recall gates >=0.90 both arms every round
+    (deterministic: scann 0.9001, eng 0.9025). v1 (20 rounds) had a warmth ASYMMETRY (scann resident across
+    rounds, engine cold-spawned per round re-faulting its 7.9GB index copy: engine 1810-1948 vs its warm 2140)
+    -> v2 scores the engine's LAST warm block per round (leaderboard warm-resident semantics both arms).
+    v1 median 1.233 / v2 median 1.239 (IQR 1.138-1.283, min 1.124 max 1.302) — same answer, banked as ~1.24x.
+    *** HONEST STANDING, 10M OOD single-thread QPS@0.90: ScaNN ~1.24x ahead (its ~2330-2450 vs our warm
+    ~1810-2140; our arm is more load-sensitive, P142 redux — calm-round ratios 1.12-1.13 are the floor).
+    Expectation range from HANDOFF (0.6-1.0x) was OPTIMISTIC; the 40k rebuild + top-level partitioner is a
+    stronger opponent than the 4k cache ever was. GAP TO CLOSE for the goal (beat HANNS bar = 0.93x): ~1.33x.
+    READY LEVERS (1M-proven, none in this arm yet): kNN-graph pool expansion + union-trim (P207/P214: champion
+    1.184 -> 0.978 at 1M when composed with gamma), tree-EM rounds (P130: +0.6-1.0pt recall at 10M, QPS-neutral),
+    geometry retune (Kf/C0/B0 at 10M was a single P215 point, never swept). Graph sidecar (ScaNN self-search k=16,
+    10M x 16 u32) + EM(2,beam8) index builds queued. (h2h_10m_pairwise.py, h2h_10m_40k{_v1_coldspawn,}.csv,
+    logs/h2h_10m_40k_v2.log, scann_build_40k.py, ~/big-ann-data/)
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
