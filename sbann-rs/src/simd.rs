@@ -134,7 +134,11 @@ pub unsafe fn l2_i8_block_avx2(qn: &[i8], block: &[i8], ncand: usize, d: usize, 
         j += 2;
     }
     while j < ncand {
-        *out.get_unchecked_mut(j) = l2_i8_avx2(qn, std::slice::from_raw_parts(block.as_ptr().add(j * d), sd));
+        // truncate the query slice to `sd` too, else the scalar tail of l2_i8_avx2 reads past the
+        // sd-length block slice (out-of-bounds when sd < d, the ROUTE_SDIM path).
+        *out.get_unchecked_mut(j) = l2_i8_avx2(
+            std::slice::from_raw_parts(qn.as_ptr(), sd),
+            std::slice::from_raw_parts(block.as_ptr().add(j * d), sd));
         j += 1;
     }
 }
