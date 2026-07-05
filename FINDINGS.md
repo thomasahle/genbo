@@ -3605,6 +3605,27 @@ P220. (*** 10M OOD: PARITY WITH OFFICIAL ScaNN REACHED — 1.239x -> 1.009x medi
     (4096+256x32 = 12288 cells scored/q) has never been swept; the 1M analog (P192 C0 lever) was worth 12.6%.
     (h2h_10m_pairwise.py + ENG_IDX/graph env, logs/h2h_10m_{graph,em_graph}.log, build_graph10m.py)
 
+P221. (*** 1M OOD RE-VALIDATED ON THE NEW BOX — 0.755x vs ScaNN (engine 1.32x FASTER), the cleanest h2h
+    ever recorded on this project: IQR [0.754,0.757] across 12 pairwise rounds. GOAL BAR (<=0.93 = HANNS-
+    equivalent) CLEARED at 1M on this machine. ***)
+    Rig: 1M crop of the same t2i files; quantization scale came out 330.1905 == P191's recorded "~330.19"
+    (max|x| 0.384626) — exact reproduction of the old rig's prep. Engine index rebuilt at champion geometry
+    (Kf=16384 C0=768 b0=96 a0=3 SOAR) + EM(2,beam8); 1M graph sidecar via scann self-search k=16. Full-stack
+    recall reproduces the ledger: gamma0.5 + graph M25 + t_surv=470 + p=18 -> 0.9049 (P216's GR18_t470 was
+    0.9060, within build RNG).
+    OPPONENT: fresh ScaNN 1M (2000 leaves, AH2 0.2, spherical, residual — ledger convention), swept fresh on
+    this box: its recall-per-config runs LOWER than the old rig (56/78 -> 0.8939 here vs 0.9032 there; fresh
+    index RNG + 10k-query GT) and its best 0.90 point moved to lts=42/reorder=110 = 0.9062 @ ~6040 (reorder
+    ~100-110 dominates the old 78 here).
+    H2H (12 rounds, warm protocol, same core, alternating order): ScaNN 0.9062 @ 6056-6058 vs ENGINE 0.9049 @
+    8026-8046 -> ratio 0.753-0.760 EVERY round, median 0.755. Both arms rock-steady (calm window) — the
+    tightest IQR in the project's history.
+    WHY BETTER THAN THE OLD 0.91x: this box runs scann-1M ~30% slower per-core than the old Zen4 (6.0k vs
+    8.3-8.6k) while the engine runs at parity (~8.0k vs ~8.4-9.4k) — per-core cache/memory characteristics
+    favor our small-working-set stack at 1M. Same-hardware ratios are machine-specific; on THIS machine
+    (the goal's arena) 1M is a decisive WIN. (chain_rig1m.sh, logs/h2h_1m.log, scann_t2i1m_2k/,
+    eng_t2i1m_kf16384_c768_b96_a3_em2.idx)
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
