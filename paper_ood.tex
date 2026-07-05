@@ -12,6 +12,9 @@
 \usepackage{graphicx}
 \usepackage{hyperref}
 \usepackage{xcolor}
+\usepackage[ruled,vlined,linesnumbered]{algorithm2e}
+\SetKwProg{Proc}{Procedure}{:}{}
+\SetKwFunction{Route}{Route}
 \newcommand{\todo}[1]{{\color{red}[TODO: #1]}}
 \newcommand{\pending}[1]{{\color{blue}[pending: #1]}}
 \newcommand{\effect}[1]{\par\smallskip\noindent\textbf{Effect.} #1}
@@ -159,6 +162,68 @@ and query paths, then delineate standard vs.\ contributed components
     the $K$ survivors (reading the original float vectors) unioned with the $k$-NN
     graph neighbors of the top-$M$; return the top-10.
 \end{enumerate}
+
+Algorithms~\ref{alg:build}--\ref{alg:query} state the pipeline precisely. All
+routing scores use the calibrated form $s_\gamma(q,c)=\gamma\lVert c\rVert^2-2\,
+q\!\cdot\!c$ (\S\ref{sec:gamma}); the constant $\lVert q\rVert^2$ is dropped, and
+smaller $s_\gamma$ means a better cell. Leaf centroids are $\{c_j\}_{j=1}^{K_f}$
+with precomputed bias $b_j=(\gamma-1)\lVert c_j\rVert^2$ so that
+$s_\gamma(q,c_j)=\lVert c_j\rVert^2-2q\!\cdot\!c_j+b_j$ is one dot product plus an
+additive constant.
+
+\begin{algorithm}[t]
+\caption{Build}
+\label{alg:build}
+\KwIn{float base $X_f\!\in\!\mathbb{R}^{n\times d}$; tree sizes $C_0,K_f$;
+  multi-assign $a_0$; calibration $\gamma$; EM rounds $R$; graph degree $k$}
+\KwOut{index $(\{Q_0\},\{c_j\},b,\text{PQ blocks},\text{raw},G)$}
+$\sigma \gets 127/\max_i\lVert X_f[i]\rVert_\infty$;\ \ $X \gets \mathrm{int8}(\sigma X_f)$
+  \tcp*{global-scale quantize}
+$\{Q_0\}\gets k\text{-means}(X,C_0)$;\ \ $\{c_j\}\gets$ fine $k$-means within each
+  coarse cell to $K_f$ leaves\;
+\For{$R$ rounds \tcp*[f]{tree-EM (\S\ref{sec:em}); optional}}{
+  \textbf{E:} assign each sample to its nearest leaf via \Route{$\cdot$,\,1}\;
+  \textbf{M:} recompute $\{Q_0\},\{c_j\}$ from the assignments\;
+}
+\ForEach{point $x_i$ \tcp*[f]{SOAR multi-assign (\S\ref{sec:soar})}}{
+  assign $x_i$ to its top-$a_0$ leaves; spill covers the residual of the 1st\;
+}
+per leaf: encode members as 4-bit anisotropic PQ, pack into 16-row \texttt{vpshufb}
+  blocks; store raw int8 in leaf order\;
+$b_j \gets (\gamma-1)\lVert c_j\rVert^2$ for all $j$ \tcp*{routing bias}
+$G \gets$ base-side $k$-NN graph (self-search; \S\ref{sec:graph})\;
+\Return index $(\{Q_0\},\{c_j\},b,\text{PQ blocks},\text{raw},G)$\;
+\end{algorithm}
+
+\begin{algorithm}[t]
+\caption{Route (tree descent) \textendash{} returns the $p$ best leaves}
+\label{alg:route}
+\Proc{\Route{$q$, $p$}}{
+  $S_0 \gets$ top-$b_0$ coarse cells minimizing $s_\gamma(q,Q_0)$
+    \tcp*{int8/VNNI kernel}
+  $\mathcal{L}\gets$ fine children of $S_0$\;
+  score each $c_j\!\in\!\mathcal{L}$ by $\lVert c_j\rVert^2-2q\!\cdot\!c_j+b_j$\;
+  \Return the $p$ leaves of $\mathcal{L}$ with smallest score\;
+}
+\end{algorithm}
+
+\begin{algorithm}[t]
+\caption{Query}
+\label{alg:query}
+\KwIn{int8 query $q$, float query $q_f$; probes $p$; pool depth $t$; prune $K$;
+  graph fan-in $M$}
+$\mathcal{C}\gets$ \Route{$q,p$}\;
+$\mathcal{P}\gets\emptyset$ \tcp*{bounded top-$t$ pool}
+\ForEach{cell $\in\mathcal{C}$}{
+  fast-scan its 4-bit PQ codes (\texttt{vpshufb} ADC, int16 accum) $\to$ approx.\ scores\;
+  keep the $t$ best in $\mathcal{P}$ (threshold-bounded collect)\;
+}
+$\mathcal{P}\gets$ dedup $\mathcal{P}$ by original id \tcp*{needed under $a_0\!>\!1$}
+$\mathcal{K}\gets$ top-$K$ of $\mathcal{P}$ by exact int8 IP (VNNI dot) \tcp*{cascade prune}
+$\mathcal{R}\gets \mathcal{K}\cup\bigcup_{r\in\text{top-}M(\mathcal{K})} G[r]$
+  \tcp*{$k$-NN-graph coverage union}
+\Return top-10 of $\mathcal{R}$ by exact float IP $\langle q_f, x_r\rangle$\;
+\end{algorithm}
 
 \begin{table}[t]
 \centering
