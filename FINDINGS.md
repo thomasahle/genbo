@@ -3786,6 +3786,21 @@ P230. (100M GEOMETRY DE-RISKED at 10M (user-directed careful balancing): AGGRESS
     (branch 2048->16->16), b0=512 (25% coarse, aggressive), b1=256, a0=3 -> route ~14336 evals (vs the killed
     2-level's ~35k). Building (eng_t2i100m_kf524288_c2048_c1_32768_b512_a3.idx).
 
+P231. (STREAMING ELIGIBILITY on THIS box is SEARCH-BOUND at ~0.90, despite the batch-insert fix -- the
+    box is ~2x slower per-core than the Azure-class leaderboard HW; recall CAPABILITY stays 0.965-0.98.)
+    After batch-insert (P228) removed the insert wall (30M inserts 450s = 66.6k/s), NQ=10000 runs expose
+    SEARCH as the sole budget constraint (640 steps x 10k queries = 6.4M query-evals):
+      p=224 (~0.965 config): recall 0.9648, WALL 148.8 min -- FAILS 1hr (2.5x over)
+      p=80:  recall 0.9010,  WALL 68.9 min -- FAILS by 9 min (search 3680s @ 1739 q/s + inserts 450s)
+      p=64:  running (projected ~56 min = eligible)
+    So on THIS 8-thread box the 1hr-eligible operating point is p~64-70 -> recall ~0.89-0.90 (search q/s is
+    the wall; the benchmark spec mandates 8 vCPU so I cannot use the box's spare cores). PEAK ANON 7.19GB <
+    8GB (memory fine). *** HONEST SPLIT (for the paper + goal): (a) recall CAPABILITY = 0.965 (p224) to 0.98
+    -- this is the leaderboard-relevant number on the official Azure D8lds_v5 HW, where P212 showed this
+    stack class fits p=256 @ 0.9654 in budget; (b) THIS-box 1hr-eligible = ~0.90 (mid-pack: > diskann 0.883,
+    cufe 0.819; < zilliz 0.922, pinecone 0.912). The gap is purely this box's slower per-core search, not the
+    method. Compliance (P226) + batch-insert (P228) are real, HW-independent wins that transfer to Azure.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
