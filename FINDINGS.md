@@ -3712,6 +3712,19 @@ P226. (*** STREAMING: COMPLIANCE FIXED + LOW-LIVE TAIL KILLED — official-per-s
     official-accounting run. Insert rate on this box: 16.5k/s at 8 threads (old box 26k/s) — inserts 1818s
     of the 3600s budget. (logs/stream_compliant.log, ~/genbo-streaming patches uncommitted yet)
 
+P227. (*** 10M OOD FINAL CLAIM — PRISTINE confirmation: 0.827x median vs official 40k-leaf ScaNN (IQR
+    [0.823,0.834], min 0.817, max 0.850, 20 rounds, all OUR builds SIGSTOPped). The 10M win is now backed by
+    FOUR independent h2h sessions: 0.847 (P224, builds running), 0.833 @ 8 threads (P225), 0.827 pristine,
+    atop the 1.239 -> 1.009 -> 0.924 arc. GEOMETRY KNEE BRACKETED: G3 (Kf=262144, finer: needs p=64 for 0.90,
+    ~30% slower) and G4 (Kf=32768, coarser: p=32 but 1.6x scan work, -10% paired vs G2) BOTH lose to G2
+    (Kf=65536, 152pt cells) — the knee is real, not a monotone trend. Champion 10M config (banked):
+    hierk Kf=65536 C0=4096 b0=128 a0=3 SOAR=1 EM(2,beam8) apq4 | gamma=0.5 graph(M=32,kedge=16) t_surv=1000
+    p=40 K=16 FLOAT_RERANK | 0.9008 recall vs ScaNN(lts28,reorder150) 0.9001, same exact float GT.
+    ON THIS MACHINE the goal's OOD table now reads: 1M 0.755x/0.756x (1t/8t), 10M 0.827x/0.833x (1t/8t) —
+    every cell beats the 0.93 HANNS-equivalent bar with recall gates held and the opponent at its official
+    best. Remaining OOD scope: 100M (engine Kf=524288 C0=32768 b0=128 EM2 building, ~5h; scann 126k-leaf
+    20M-sample building; graph sidecar + t_surv~3000-4000 sweep to follow). (logs/h2h_10m_final.log)
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
