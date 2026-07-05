@@ -3689,6 +3689,29 @@ P225. (*** PROTOCOL MATRIX COMPLETE — every cell a WIN on this machine, recall
     awaits the G4 knee answer; ~460 slots/cell scaling of G2's shape).
     (logs/h2h_10m_8t_g2.log)
 
+P226. (*** STREAMING: COMPLIANCE FIXED + LOW-LIVE TAIL KILLED — official-per-step-GT avg recall@10 = 0.9745
+    (640 steps, NQ=100 proxy), UP from the banked 0.9654 (P212), peak anon 5.38GB < 8GB. Two changes, both
+    on feat/streaming-30m (worktree ~/genbo-streaming): ***)
+    (1) COMPLIANCE (the P218 pre-submission blocker): cold-start now trains on the FIRST INSERT BATCH only
+    (op1's 38,806 rows — data the stream has legitimately seen; SBANN_NINIT=38806, no SBANN_TRAIN_FILE), plus
+    SBANN_RETRAIN_EVERY=<E>: at live = E, 2E, 4E, ... (geometric), retrain router+codebook on a ~200k strided
+    sample of the CURRENT live set and rebuild via compact_live (which re-assigns + re-encodes under the
+    swapped-in router/comp — Index fields are pub, no vq.rs change). 4 retrains fired (449k/1.24M/2.64M/5.43M
+    live; 39.5/43.0/50.9/72.3s, ~205s total on the insert clock). Recall at matched steps == the old
+    future-peeking strided-sample router (0.975 @ 2.4M, 0.983 @ 6.3M) -> THE COMPLIANCE FIX IS FREE.
+    (2) LOW-LIVE ADAPTIVE p (SBANN_RB_MINCAND=50000): grow p per search step so expected candidates
+    >= MINCAND (p_eff = max(P, MINCAND/(live*a0/C)), capped at C). The clustered runbook's early steps went
+    0.737 -> 0.9990 (step 1), steps 1-8 all >= 0.993; worst step overall 0.944 (was 0.737). Costs nothing
+    when live is large (no-op) and is cheap when it fires (few live points = fast scans).
+    NET: 0.9654 (banked, non-compliant) -> 0.9745 COMPLIANT — above hwtl-closed 0.9675, 2nd open-source
+    tier consolidated, puck 0.9855/0.9849 still ahead. CAVEATS: NQ=100 recall proxy (per-step GT, unweighted
+    mean, same protocol as smoke: smoke read 0.9735 vs P212's NQ=10000 0.9654 — subsample optimism possible,
+    final number needs NQ=10000); the run used the SLOW scan path (no SBANN_FASTSCAN/USE512FS — this branch
+    predates P203 default-on): search 272 q/s -> NQ=10000 projects ~7h, INELIGIBLE as-is. Budget calibration
+    with fast-scan flags running; eligible operating point (p, MINCAND) chosen from it, then the final
+    official-accounting run. Insert rate on this box: 16.5k/s at 8 threads (old box 26k/s) — inserts 1818s
+    of the 3600s budget. (logs/stream_compliant.log, ~/genbo-streaming patches uncommitted yet)
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
