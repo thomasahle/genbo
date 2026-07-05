@@ -3660,6 +3660,23 @@ P223. (*** 10M OOD BELOW THE HANNS BAR: 0.924x median vs official 40k-leaf ScaNN
     to cut the dominant scan phase), calm-window pfdist/chunk micro-tune, then the long confirmation run.
     (logs/h2h_10m_g1.log, paired G0/G1 A/B in-session)
 
+P224. (*** 10M OOD WON: 0.847x median vs official 40k-leaf ScaNN (IQR [0.842,0.848], min 0.826, max 0.852,
+    16 rounds — every round below the 0.93 HANNS bar). Full-day arc: 1.239 (P219) -> 1.009 (P220) -> 0.924
+    (P223) -> 0.847. Champion 10M arm = G2 geometry: Kf=65536 C0=4096 b0=128 a0=3 SOAR EM(2,beam8) + gamma 0.5
+    + graph M=32 kedge=16 + t_surv=1000 + p=40 + K=16 (recall 0.9008 vs ScaNN 0.9001, gates held all rounds). ***)
+    THE GEOMETRY SURPRISE (reverses the fine-cells intuition the 1M-era ledger carried): with the graph-union +
+    float-rerank cascade, COARSER fine cells win at 10M — G2 (152pt cells, routing evals 4096+128x16=6144/q)
+    beats G1 (76pt, 11264 evals) by +3.8% paired (2928 vs 2813 QPS) at the same 0.90 margin, which itself beat
+    G0 (12288 evals) by +6.9%. Mechanism: the graph expansion recovers deep neighbours a coarse probe misses,
+    so the index no longer needs fine granularity for coverage — it needs cheap routing + streamable cells;
+    eval-count is the routing cost driver (P139's lever, now geometry-sized). G4 (Kf=32768, 305pt cells, 3584
+    evals) queued to find the knee; G3 (Kf=262144, finer — the counter-hypothesis) building as control.
+    H2H window: calm (load 3-6), G3 build + scann-100M build on other cores (symmetric background); IQR is the
+    tightest of any 10M measurement yet. STATUS vs GOAL on this machine: 1M 0.755x/0.756x (1t/8t), 10M 0.847x
+    (1t) — BOTH below the 0.93 HANNS-equivalent bar. Remaining: 10M 8t re-run with G2 arm, pristine confirmation
+    run (builds SIGSTOPped), then 100M (both builds in flight) and streaming.
+    (logs/h2h_10m_g2.log, eng_t2i10m_kf65536_c4096_b128_a3_em2.idx)
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
