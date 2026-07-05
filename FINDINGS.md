@@ -3626,6 +3626,22 @@ P221. (*** 1M OOD RE-VALIDATED ON THE NEW BOX — 0.755x vs ScaNN (engine 1.32x 
     (the goal's arena) 1M is a decisive WIN. (chain_rig1m.sh, logs/h2h_1m.log, scann_t2i1m_2k/,
     eng_t2i1m_kf16384_c768_b96_a3_em2.idx)
 
+P222. (*** MULTI-THREAD PROTOCOL: 1M WON AT THREAD PARITY TOO — 0.756x @ 8 threads (engine 62.5k vs ScaNN
+    47.2k QPS), after finding+fixing a silent thread-scaling bug in the champion batched driver. ***)
+    THE BUG (explains the old P197 caveat "our per-query Rust loop suffers oversubscription"): the FLOAT_RERANK
+    batchscan path (champion default since P203) ran its query chunks in a SERIAL while-loop — RAYON_NUM_THREADS
+    never engaged, so 8-thread == single-thread (8.1k QPS) while ScaNN's search_batched_parallel scaled ~7.8x
+    (47k) -> first 8t h2h read a catastrophic 5.7x. FIX: rayon par_iter over the (independent) chunk ranges —
+    batching (P202 cell-major, +27%) and threading now COMPOSE. Pure execution-order change: recall BIT-IDENTICAL
+    (0.9049), single-thread QPS unchanged (~7.9k). Chunk size at 8t: 1000 -> 40.0k, 500 -> 52.8k, 250 -> 61.8k,
+    125 -> 60.6k QPS => knee at chunk~250 for 8 threads (the single-thread knee stays 1000; chunk should scale
+    ~nq/(4*threads)).
+    H2H (10 rounds, 8 threads both arms pinned to the same 8 cores, scann search_batched_parallel, warm
+    protocol): MEDIAN 0.756x [IQR 0.738-0.761] — IDENTICAL to the single-thread 0.755x (P221). The ratio is
+    thread-invariant once both engines actually scale; no oversubscription penalty remains. 1M OOD on this
+    machine: WON under BOTH protocols (single-thread 0.755x, 8-thread 0.756x), recall-matched, gates held.
+    (commit: 'Parallelize cell-major batched driver across chunks'; logs/h2h_1m_8t{,_v2}.log)
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
