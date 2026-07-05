@@ -78,12 +78,110 @@ its own measured effect, plus the informative negatives.}
     honest scope of what the ratios do and do not claim.
 \end{itemize}
 
-\section{Background}
+\section{Background: Standard Building Blocks}
 \label{sec:bg}
-\todo{IVF-PQ; anisotropic score-aware quantization (ScaNN AH+LUT16); $k$-NN graphs
-(HNSW, DiskANN); residual and exact re-ranking. The OOD track (text2image): image base,
-text queries, inner product, float ground truth. Base norms concentrated but not
-constant; queries unit-norm.}
+Our system is assembled from well-established components; we summarize them here so
+the contributions in \S\ref{sec:overview}--\S\ref{sec:soar} can be stated as deltas
+against known practice.
+
+\paragraph{Inverted file (IVF).} Partition the database into $C$ cells (the Voronoi
+regions of $C$ centroids). At query time, \emph{route} the query to its $p\!\ll\!C$
+nearest centroids and scan only those cells. End-to-end recall is capped by whether
+the true neighbor's cell is among the $p$ probed --- the routing question that this
+paper argues is the OOD bottleneck.
+
+\paragraph{Hierarchical routing.} Scoring all $C$ centroids per query is $O(Cd)$,
+which dominates at scale (fine $C$ is needed to keep cells small). A \emph{tree} of
+centroids --- coarse $k$-means over $C_0$ centroids, then fine $k$-means within each
+--- reduces routing to $O(L\,C^{1/L})$ for an $L$-level tree (FAISS uses an
+HNSW graph over the centroids for the same purpose). We use hierarchical $k$-means.
+
+\paragraph{Product quantization (PQ).} Split each vector's $d$ dimensions into $m$
+subspaces and quantize each subspace to a small codebook ($16$ codewords for
+$4$-bit PQ). Approximate distances are computed by lookup-and-add over per-subspace
+tables (ADC). With $4$-bit codes the table lookup is a register shuffle
+(\texttt{vpshufb}), enabling the SIMD ``fast-scan'' kernels (Quick-ADC, ScaNN, FAISS
+FastScan). \emph{Anisotropic} / score-aware quantization (ScaNN) weights the
+quantization loss to preserve inner-product ranking rather than reconstruction.
+
+\paragraph{Exact re-ranking.} The quantized scan is used only to select a shortlist;
+exact distances (int8 or float, read for the few shortlisted vectors) re-order it.
+The shortlist depth $t$ trades recall for cost.
+
+\paragraph{Multi-assignment.} Replicating each point into its top-$a_0$ cells (a
+space/time tradeoff) raises the chance a query's neighbor lands in a probed cell.
+
+\paragraph{The OOD workload.} The big-ANN OOD track (text2image) pairs
+\emph{image}-embedding base vectors ($d{=}200$) with \emph{text}-embedding queries
+under inner product, with a float ground truth. Base norms are concentrated but not
+constant ($\approx0.81$--$0.99$); queries are unit-norm. This distribution gap
+between base and queries is what breaks $L_2$-trained routing (\S\ref{sec:gamma}).
+
+\section{System Overview}
+\label{sec:overview}
+% The complete pipeline, so the per-idea sections have a home. Table~\ref{tab:oldnew}
+% marks standard blocks vs our contributions.
+Figure~\ref{fig:arch}\todo{(add diagram)} shows the pipeline; we describe the build
+and query paths, then delineate standard vs.\ contributed components
+(Table~\ref{tab:oldnew}).
+
+\paragraph{Build path.}
+\begin{enumerate}
+  \item \textbf{Quantize.} Float base $\to$ int8 via a single global scale
+    ($127/\max|x|$); the int8 base is the native scan/route representation.
+  \item \textbf{Train the routing tree.} Hierarchical $k$-means: $C_0$ coarse
+    centroids, then fine centroids within each coarse cell to $K_f$ leaves total
+    (2-level; generalizes to $L$ levels).
+  \item \textbf{Joint refinement (tree-EM, \S\ref{sec:em}).} Optionally re-optimize
+    all levels jointly (E: reassign sample points to their nearest leaf via the beam
+    descent; M: recompute every level's centroids).
+  \item \textbf{Multi-assign (SOAR, \S\ref{sec:soar}).} Assign each point to $a_0$
+    leaves with spill that covers the residual direction of the first.
+  \item \textbf{Encode.} $4$-bit anisotropic PQ ($m{=}d/2$ subspaces); pack codes
+    into cell-contiguous $16$-row blocks laid out for the \texttt{vpshufb} fast-scan.
+    Store the raw int8 vectors in cell order too (cache-warm re-rank gathers).
+  \item \textbf{Calibrate \& augment.} Precompute the per-cell $\gamma$ routing bias
+    (\S\ref{sec:gamma}); build the base-side $k$-NN graph sidecar (\S\ref{sec:graph}).
+\end{enumerate}
+
+\paragraph{Query path.}
+\begin{enumerate}
+  \item \textbf{Route (tree descent).} Score the $C_0$ coarse centroids (int8, VNNI
+    kernel), keep the top-$b_0$; expand to their fine children, score those with the
+    $\gamma$ bias added, and return the top-$p$ leaves.
+  \item \textbf{Scan.} Fast-scan the $4$-bit PQ codes of the $p$ probed cells
+    (\texttt{vpshufb} ADC with int16 accumulation for $\sim$12-bit selection
+    resolution; optional AVX-512 64-wide), collecting a bounded top-$t$ pool.
+  \item \textbf{Cascade re-rank.} Deduplicate the pool by original id (needed under
+    multi-assignment); exact-rescore the $t$ survivors in int8 (VNNI dot); prune to
+    the top-$K$ ($K{=}16$).
+  \item \textbf{Float re-rank + graph union.} Compute exact float inner products for
+    the $K$ survivors (reading the original float vectors) unioned with the $k$-NN
+    graph neighbors of the top-$M$; return the top-10.
+\end{enumerate}
+
+\begin{table}[t]
+\centering
+\caption{Components of the pipeline: standard building blocks vs.\ this work.}
+\label{tab:oldnew}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lll}
+\toprule
+Component & Basis & Our delta \\
+\midrule
+int8 IVF partition        & standard              & --- \\
+Hierarchical $k$-means tree & standard (FAISS-style) & fast int8/VNNI descent kernel \\
+$4$-bit anisotropic PQ    & ScaNN / FastScan family & int16-resolution + 32/64-wide fast-scan \\
+Multi-assignment (SOAR)   & ScaNN-derived         & dedup-before-cap correctness fix \\
+int8$\to$float re-rank cascade & folklore         & the specific $K{=}16$ composition \\
+$\gamma$ routing calibration & \textbf{ours}      & the OOD miscalibration fix \\
+$k$-NN-graph coverage union  & \textbf{ours}      & composition with $\gamma$ + float re-rank \\
+Coarse-cell geometry knee    & \textbf{ours}      & reverses ``finer is better'' \\
+Tree-EM joint optimization   & \textbf{ours}      & cross-level partition objective \\
+Batch-insert / adaptive-$p$ (streaming) & \textbf{ours} & \S\ref{sec:stream} \\
+\bottomrule
+\end{tabular}}
+\end{table}
 
 \section{Theoretical Grounding (Scoped)}
 \label{sec:theory}
