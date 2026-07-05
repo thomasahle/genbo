@@ -3642,6 +3642,24 @@ P222. (*** MULTI-THREAD PROTOCOL: 1M WON AT THREAD PARITY TOO — 0.756x @ 8 thr
     machine: WON under BOTH protocols (single-thread 0.755x, 8-thread 0.756x), recall-matched, gates held.
     (commit: 'Parallelize cell-major batched driver across chunks'; logs/h2h_1m_8t{,_v2}.log)
 
+P223. (*** 10M OOD BELOW THE HANNS BAR: 0.924x median vs official 40k-leaf ScaNN (IQR [0.900,0.940],
+    calm-load rounds 0.857-0.923) — arc 1.239 -> 1.009 -> 0.924 in one day. Winning lever = GEOMETRY (G1):
+    C0 4096->8192, b0 256->192 at Kf=131072 = +6.9% clean paired (2664 vs 2492 QPS, 6 rounds, dead-tight). ***)
+    GEOMETRY MECHANISM (the P192 lever transferred to 10M): finer coarse level + leaner beam cuts routing
+    evals 12288 -> 11264/query AND routes more precisely; recall-per-p gives up only 0.0015 (0.9009 vs 0.9024
+    @p48, still >= gate). G1 = eng_t2i10m_kf131072_c8192_b192_a3_em2.idx (90min build; C0=8192 coarse k-means
+    is the long pole). K sweep: K=16 confirmed floor (12 loses recall, 24 buys nothing). kedge=16 load-bearing
+    (8/12 lose ~0.003-0.008). gamma 0.5 optimal (0.40/0.45/0.55 worse).
+    H2H (16 rounds, warm protocol, same core, recall gates scann 0.9001 / eng 0.9009 every round): median
+    0.924 [0.900,0.940] min 0.857 max 0.958. Rounds 11-15 at load 3-9 (G2 build ended): 0.857-0.923 — ScaNN
+    rock-steady ~2450, engine rises 2636->2846 as box calms (P142 load-sensitivity, still true). The quiet-box
+    number is plausibly ~0.88-0.90; a fully-idle confirmation run pending (G2/G3 builds still occupy 8 cores).
+    ALSO THIS CYCLE: 10M @ 8 threads = 1.036x with the OLD G0 arm (pre-geometry, G1 build running) — thread
+    parity holds at 10M; will re-run with G1 for the banked number. STATUS vs GOAL: 1M 0.755/0.756 (won),
+    10M 0.924 median (bar ~cleared; margin thin, IQR upper 0.940 > 0.93) -> next: G3 (Kf=262144, finer cells
+    to cut the dominant scan phase), calm-window pfdist/chunk micro-tune, then the long confirmation run.
+    (logs/h2h_10m_g1.log, paired G0/G1 A/B in-session)
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
