@@ -579,15 +579,15 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
             let r: Vec<Vec<u32>> = if let Some(fb) = fbase.as_ref() {
                 if batchscan {
                     // cell-major batched driver, chunked for the multiplicity-sensitivity sweep.
-                    let mut all: Vec<Vec<u32>> = Vec::with_capacity(nq);
-                    let mut s = 0usize;
-                    while s < nq {
-                        let e = (s + batch_chunk).min(nq);
-                        let sub = idx.search_batch_frr(&ds, &qarr[s * ds.d..e * ds.d], &fqf[s * ds.d..e * ds.d], fb, e - s, p, t_surv, 10, graph_ref);
-                        all.extend(sub);
-                        s = e;
-                    }
-                    all
+                    // Chunks are independent query ranges -> run them rayon-parallel: batching (P202)
+                    // and threading compose. RAYON=1 degenerates to the old serial loop (bit-identical;
+                    // per-chunk results don't depend on execution order).
+                    let ranges: Vec<(usize, usize)> = (0..nq).step_by(batch_chunk.max(1))
+                        .map(|s| (s, (s + batch_chunk).min(nq))).collect();
+                    let subs: Vec<Vec<Vec<u32>>> = ranges.into_par_iter()
+                        .map(|(s, e)| idx.search_batch_frr(&ds, &qarr[s * ds.d..e * ds.d], &fqf[s * ds.d..e * ds.d], fb, e - s, p, t_surv, 10, graph_ref))
+                        .collect();
+                    subs.into_iter().flatten().collect()
                 } else {
                     (0..nq).into_par_iter().map(|i| idx.search_frr(&ds, qs.row(i), &fqf[i * ds.d..i * ds.d + ds.d], fb, p, t_surv, 10, graph_ref)).collect()
                 }
