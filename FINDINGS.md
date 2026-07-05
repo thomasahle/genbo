@@ -3857,6 +3857,20 @@ P234. (*** GEOMETRY SCALING LAWS (user idea): clean power laws from a graph-off 
     principled-geometry backbone the paper needs (turns heuristic scaling into a measured law + 1B
     extrapolation: Kf(1B)~n^0.66 ~ 1M cells, ~1000 pts/leaf). (logs/scaling_laws.csv)
 
+P235. (100M OOD ENGINE OPERATING POINT: recall 0.9031 @ ~6161 QPS (16 threads) -- the engine reaches 0.90
+    at 100M; graph PARAMETERS scale with n too (M, t_surv grow), a new dimension of the scaling law.)
+    100M engine (eng_t2i100m Kf=524288 3-level, P230/P233) + graph-on. INITIAL graph-on sweep looked WEAK
+    (M=32 t=3000: barely +0.017 over no-graph) -> NOT the graph edge quality (built via engine self-query),
+    but UNDER-SCALED graph params: at 100M the graph needs MORE expansion + a DEEPER pool. M/t sweep @p96:
+    M32/t3000=0.8774, M48/t5000=0.8989, M64/t5000=0.9010, M64/t8000=0.9106. So M and t_surv SCALE WITH n
+    (1M/10M used M=25-32/t=470-1000; 100M wants M=64/t=8000) -- more distractors need more graph expansion
+    and a deeper rerank pool to hold the expanded candidates. 0.90 crossing (M64 t8000 gamma0.5): p=80 ->
+    recall 0.9031 @ 6161 QPS (16thr) [p64 0.8929, p56 0.8860]. So the 100M engine operating point =
+    p=80/M=64/t=8000, ~6000 QPS@0.90 (16thr; ~3000 @8thr leaderboard-style). h2h vs ScaNN-100M PENDING
+    (scann 126k-leaf still in rebalance ~16h -- the long pole; no official 100M OOD recipe). NOTE: the
+    scaling law (P234) suggests a COARSER Kf (~262144) might route cheaper at 100M -- a Kf A/B is the
+    refinement (graph is base-side, reusable). The engine SCALES to 100M and reaches competitive recall.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
