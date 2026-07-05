@@ -3725,6 +3725,21 @@ P227. (*** 10M OOD FINAL CLAIM — PRISTINE confirmation: 0.827x median vs offic
     best. Remaining OOD scope: 100M (engine Kf=524288 C0=32768 b0=128 EM2 building, ~5h; scann 126k-leaf
     20M-sample building; graph sidecar + t_surv~3000-4000 sweep to follow). (logs/h2h_10m_final.log)
 
+P228. (*** STREAMING BUDGET UNLOCKED: batch-parallel insert = 4.5x insert speedup (30M inserts 1818s ->
+    406s, 73.9k/s, recall BIT-IDENTICAL 0.9746), runbook wall 46min -> 8.6min at NQ=100. The insert wall
+    (50%+ of the 1hr budget since P159) was the SOAR assignment run SERIALLY per point. ***)
+    The runbook Insert op looped idx.insert(row,i,a0) one point at a time; insert()'s cost is the router
+    assignment (~C=4096 cell dists x a0 per point). insert_batch_range (vq.rs) runs the assignment
+    rayon-parallel over the batch, then appends in row order -> provably bit-identical to the serial loop
+    (append order + ins_gidx/dirty identical). 30M inserts: 1817.7s (16.5k/s, 8 threads, the P226 number)
+    -> 405.8s (73.9k/s). Recall 0.9746 == P226's 0.9745 (noise). Peak 7.24GB < 8GB.
+    *** CONSEQUENCE: the streaming budget is no longer insert-bound. Old-box P159/P160 capped C at 4096
+    because fine routers made SERIAL inserts too slow; that cap is GONE. Now exploring finer cells
+    (C=8192/p=256, C=16384/p=512 at HALF the champion candidate fraction) — early steps read recall 0.993
+    @C=8192 -> if it holds, search halves AND recall rises. SBANN_RETRAIN_SAMPLE (default 30*C) keeps the
+    finer routers trained at compliance checkpoints. Committed feat/streaming-30m@4173d70. NQ=10000
+    definitive runs to follow the C-sweep. (logs/stream_batchins_val.log)
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
