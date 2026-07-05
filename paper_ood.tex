@@ -1,0 +1,196 @@
+\documentclass{article}
+% Empirical / methods paper (SEPARATE from the theory paper.tex, which is the
+% cumulative-score-and-ball proof paper). Target: NeurIPS main track, framed as
+% routing under query/database distribution shift; VLDB/SIGMOD fallback.
+% Swap \documentclass to the venue style (neurips_2026 / vldb / acmart) at submit time.
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\newcommand{\todo}[1]{{\color{red}[TODO: #1]}}
+\newcommand{\pending}[1]{{\color{blue}[pending: #1]}}
+
+\title{Routing Calibration for Out-of-Distribution Vector Search:\\
+Why $L_2$ Partitioners Misroute, and a One-Parameter Fix}
+\author{\todo{authors}}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Approximate nearest-neighbor (ANN) search at scale is dominated by inverted-file
+(IVF) methods that route a query to a small set of partition cells and then scan
+quantized codes within them. Partition cells are learned on the \emph{database}
+distribution, typically by $L_2$ $k$-means. We show that this is systematically
+\emph{miscalibrated} when queries are drawn from a different distribution than the
+base --- the out-of-distribution (OOD) regime exercised by cross-modal retrieval
+(e.g.\ text queries against image embeddings under inner product). The routing
+score decomposes as $\gamma\lVert c\rVert^2 - 2\,q\!\cdot\!c$ with $\gamma=1$ for
+$L_2$; we show the $\lVert c\rVert^2$ term over-penalizes exactly the high-norm
+centroids that inner-product-relevant neighbors concentrate near, and that a single
+global recalibration $\gamma\!<\!1$ removes most of the loss at zero query-time cost.
+We compose this with a $k$-NN-graph coverage step and exact float re-ranking, and
+report a corollary that reverses standard practice: once graph coverage is present,
+\emph{coarser} IVF cells outperform fine ones, because routing cost, not coverage,
+becomes the binding constraint. On the big-ANN text2image benchmark, evaluated under
+a same-hardware, tight-pairwise protocol against ScaNN at its official configuration,
+the resulting engine attains higher QPS at matched recall@10 across 1M, 10M
+\pending{and 100M} scales, and applies to the streaming track as well.
+We treat the evaluation methodology --- which repeatedly caught measurement mirages
+during development --- as a first-class contribution.
+\end{abstract}
+
+\section{Introduction}
+\label{sec:intro}
+% --- the OOD hook (NeurIPS-shaped): distribution shift, not "our system is fast" ---
+Vector search underlies retrieval-augmented generation, cross-modal search, and
+recommendation. The dominant scalable family is IVF+quantization: partition the
+database into $C$ cells, at query time \emph{route} to the $p\!\ll\!C$ most promising
+cells, \emph{scan} compressed codes inside them, and \emph{re-rank} a shortlist
+exactly. Routing quality --- does the true neighbor's cell get probed --- caps
+end-to-end recall, and the partition is learned on the database.
+
+We study the regime where the query distribution differs from the database
+distribution. This is not a corner case: the big-ANN ``OOD'' track (text2image-10M)
+pairs image-embedding \emph{base} vectors with text-embedding \emph{queries} under
+inner product, and it is exactly where the strongest published systems separate.
+Our starting observation is that an $L_2$-trained partitioner, which is optimal for
+in-distribution queries, is \emph{miscalibrated} out of distribution in a precise,
+correctable way.
+
+\paragraph{Contributions.}
+\begin{enumerate}
+  \item \textbf{A diagnosis (\S\ref{sec:miscal}).} The IVF routing score is
+    $s(q,c)=\gamma\lVert c\rVert^2-2\,q\!\cdot\!c$ with $\gamma=1$ recovering $L_2$
+    and $\gamma=0$ recovering pure inner product. Under OOD query shift the
+    $\gamma=1$ norm penalty misranks the cells that hold inner-product neighbors.
+  \item \textbf{A one-parameter fix (\S\ref{sec:gamma}).} A single global $\gamma$,
+    fit once, reaches the same recall at roughly half the probes, at zero
+    added query-time cost (it is a per-cell additive bias).
+  \item \textbf{Graph coverage and a coarse-cell corollary (\S\ref{sec:graph}).} A
+    $k$-NN-graph union over the shortlist restores the coverage fine cells provide;
+    given it, \emph{coarser} cells win, because they make routing cheaper without
+    losing recall. We bracket the resulting geometry knee empirically.
+  \item \textbf{A rigorous same-hardware evaluation (\S\ref{sec:method},
+    \S\ref{sec:eval}).} We give a measurement protocol robust to shared-machine
+    load, and results at 1M/10M\pending{/100M} plus streaming, with per-lever
+    ablations. We disclose the protocol's limits (single machine; ScaNN as the
+    measured baseline, leaderboard gaps to binary-only systems as inference).
+\end{enumerate}
+
+\section{Background}
+\label{sec:bg}
+\todo{IVF-PQ, anisotropic/score-aware quantization (ScaNN), $k$-NN graphs (HNSW/
+DiskANN), residual/exact re-ranking. Emphasize: partition trained on base; scan is
+SIMD over packed codes; re-rank reads few exact vectors. Position OOD as the axis
+prior work under-treats.}
+
+\section{OOD Routing Is Miscalibrated}
+\label{sec:miscal}
+\todo{Formalize $s(q,c)=\gamma\lVert c\rVert^2-2q\cdot c$. Base norms concentrated
+but not constant (text2image: $0.81$--$0.99$); unit-norm queries. Show that $L_2$
+($\gamma{=}1$) ranking of cells disagrees with the IP ranking of their members on
+OOD queries, and that the disagreement is a monotone function of the norm spread.
+Include the pool-recall-ceiling measurement: $L_2$ routing caps achievable recall
+below what the partition could deliver; the cap moves with $\gamma$.}
+
+\section{A One-Parameter Recalibration}
+\label{sec:gamma}
+\todo{$\gamma$ as a per-cell additive $i32$ bias precomputed at build; zero query
+cost. Half the probes at matched recall (cite the $p$ curve). Fit once per dataset;
+$\gamma\!\approx\!0.5$ on text2image at 1M and 10M. Ablate $\gamma\in\{0.4..0.6\}$.}
+
+\section{Graph Coverage and the Coarse-Cell Corollary}
+\label{sec:graph}
+\todo{$k$-NN-graph union over the top-$M$ shortlist members, unioned into the exact
+re-rank set. Composes additively with $\gamma$. THEN the reversal: with the graph
+carrying coverage, sweep cell granularity --- fine (Kf=262144), medium (65536),
+coarse (32768) --- and show medium/coarse win because routing evals/query, not
+coverage, bind. This is the "coarse cells win once graph covers" result.}
+
+\section{Evaluation Methodology}
+\label{sec:method}
+% This section is deliberately detailed: reproducible ANN comparison is itself a
+% contribution, and the discipline below caught several mirages during development.
+We report \emph{same-hardware ratios}, never cross-machine QPS. All comparisons run
+on one physical machine; each competitor is measured in the same session, seconds
+apart, at its own best operating point.
+
+\paragraph{Protocol.} For a target recall (here recall@10 $\ge 0.90$), we (i) fix
+each system's operating point by an independent sweep, requiring both to clear the
+recall gate against the \emph{same} exact ground truth; (ii) alternate the two
+systems round to round (order flips each round) so neither owns a load window;
+(iii) take best-of-$k$ within a round and report the \emph{median of per-round
+ratios}; (iv) recompute recall from raw result ids against a float ground truth,
+never trusting a cached number. On a shared machine, load drift between two builds
+minutes apart exceeds the effects being measured, so only \emph{interleaved}
+same-window ratios and load-independent recall are trusted; absolute QPS is not.
+
+\paragraph{Warm-resident semantics.} Both systems are measured warm and resident,
+matching leaderboard serving. A subtle asymmetry --- one system resident across
+rounds while the other re-spawns and re-faults its index --- biased an early run;
+we score each engine's warm block.
+
+\paragraph{Pristine confirmation.} For headline numbers we pause all other
+first-party jobs (SIGSTOP) so the measurement window is genuinely quiet, and confirm
+across $\ge 20$ rounds.
+
+\paragraph{The baseline at its best.} ScaNN is configured from its \emph{official}
+big-ANN recipe (e.g.\ 40{,}000 leaves for text2image-10M, anisotropic AH with LUT16,
+residual quantization, bfloat16 re-ordering) and given its own leaves/re-order sweep,
+including corner configurations. A win that depends on a handicapped baseline is
+quarantined; we describe one such quarantine (an under-leaved cached index) and its
+correction.
+
+\paragraph{What we do not claim.} These are same-hardware ratios on one (shared)
+machine, not a submission on the standardized challenge VM; and ScaNN is the measured
+opponent --- gaps to binary-only systems (e.g.\ the leaderboard's top entry) are
+stated as \emph{inference} from the public leaderboard, not head-to-head.
+
+\section{Results}
+\label{sec:eval}
+\todo{Table: recall@10-matched QPS ratio (ScaNN/ours; $<\!1$ = we are faster) at
+1M/10M\pending{/100M}, single- and 8-thread. Ablation table: base $\to$ +$\gamma$
+$\to$ +graph $\to$ +EM $\to$ +geometry, each row's ratio. The 10M arc
+($1.24\!\to\!1.01\!\to\!0.92\!\to\!0.85\!\to\!0.83$) as the ablation ladder.}
+
+\begin{table}[t]
+\centering
+\caption{OOD text2image, recall@10-matched QPS ratio (ScaNN$/$ours; $<1$ means our
+engine is faster). Same-hardware, tight-pairwise, opponent at official config.
+\pending{100M row}.}
+\label{tab:main}
+\begin{tabular}{lccc}
+\toprule
+Scale & 1-thread & 8-thread & recall@10 gate \\
+\midrule
+1M   & 0.755 & 0.756 & 0.905 \\
+10M  & 0.827 & 0.833 & 0.901 \\
+100M & \pending{} & \pending{} & \pending{} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Streaming}
+\label{sec:stream}
+\todo{msturing-30M-clustered final\_runbook; recall@10 metric under 1h + 8GB.
+Compliance (first-batch cold-start + periodic live-set retrain), low-live adaptive
+$p$, batch-parallel insert. Report eligible recall + peak memory + wall.
+\pending{final NQ=10000 number}.}
+
+\section{Related Work}
+\label{sec:rel}
+\todo{ScaNN (anisotropic VQ), DiskANN/HNSW (graphs), FAISS IVF-PQ, big-ANN
+challenge. OOD-specific routing is the gap. Distinguish from residual quantization
+(orthogonal) and from query-aware training (which we show fails here).}
+
+\section{Limitations}
+\label{sec:lim}
+\todo{Single machine; $\gamma$ fit per dataset; the coarse-cell result is shown on
+IP/OOD data and may not transfer to in-distribution $L_2$; HANNS gap is inference;
+filter/sparse tracks untouched.}
+
+\end{document}
