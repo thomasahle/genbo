@@ -3821,6 +3821,18 @@ P232. (ALGORITHMIC/LOW-LEVEL innovation round on 1M -- 3 more decisive NEGATIVES
     caps dim-reduction on BOTH route and scan) = good paper negatives.
 
 
+P233. (100M OOD ENGINE BUILT + VALIDATED with the P230 aggressive-3-level geometry: reaches recall 0.90;
+    graph sidecar building for the efficient operating point; ScaNN-100M baseline still building.)
+    Engine index eng_t2i100m_kf524288_c2048_c1_32768_b512_a3 (hierk3 C0=2048 C1=32768 b0=512 b1=256 a0=3,
+    Kf=524288 = 190 pts/leaf) built in 86 min (vs the 9h+ mis-balanced 2-level I killed, P230), 77GB.
+    NO-GRAPH gamma=0.5 recall (float rerank, 16thr): climbs with p AND t_surv (100M's 10x distractors need
+    deeper pools): t4000 p128 = 0.8824; t6000 p192 = 0.9079, p256 = 0.9123 -> crosses 0.90 at p~180
+    no-graph. The GRAPH (which took 1M 1.18->0.98, 10M 1.01->0.85) is the coverage lever that should drop
+    the 0.90 point to p~60-80 (building via selfknn self-query, ~1h). Then: graph sweep -> h2h vs
+    ScaNN-100M (126k leaves, 20M sample, 13h+ into its rebalance -- no OFFICIAL 100M OOD recipe exists;
+    this is a scaling extension, leaves scaled sqrt(n)). The 3-level geometry (P230) built fast AND queries
+    at competitive recall -> the aggressive-coarse-routing de-risk paid off.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
