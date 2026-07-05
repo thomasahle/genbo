@@ -15,6 +15,8 @@
 \usepackage[ruled,vlined,linesnumbered]{algorithm2e}
 \SetKwProg{Proc}{Procedure}{:}{}
 \SetKwFunction{Route}{Route}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta}
 \newcommand{\todo}[1]{{\color{red}[TODO: #1]}}
 \newcommand{\pending}[1]{{\color{blue}[pending: #1]}}
 \newcommand{\effect}[1]{\par\smallskip\noindent\textbf{Effect.} #1}
@@ -124,9 +126,49 @@ between base and queries is what breaks $L_2$-trained routing (\S\ref{sec:gamma}
 \label{sec:overview}
 % The complete pipeline, so the per-idea sections have a home. Table~\ref{tab:oldnew}
 % marks standard blocks vs our contributions.
-Figure~\ref{fig:arch}\todo{(add diagram)} shows the pipeline; we describe the build
+Figure~\ref{fig:arch} shows the pipeline; we describe the build
 and query paths, then delineate standard vs.\ contributed components
 (Table~\ref{tab:oldnew}).
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+  node distance=5mm and 8mm,
+  box/.style={draw, rounded corners, align=center, minimum height=9mm,
+    font=\small, inner sep=3pt},
+  idx/.style={draw, dashed, rounded corners, align=center, font=\footnotesize,
+    fill=black!4, inner sep=3pt},
+  ar/.style={-{Latex}, thick},
+  lbl/.style={font=\scriptsize, midway, above}
+]
+% query path (top row)
+\node[box] (q) {query\\$q,\,q_f$};
+\node[box, right=of q] (route) {\textbf{Route}\\tree descent};
+\node[box, right=of route] (scan) {fast-scan\\PQ codes};
+\node[box, right=of scan] (casc) {int8 cascade\\prune};
+\node[box, right=of casc] (rr) {float rerank\\$+$ graph};
+\node[box, right=of rr] (out) {top-10};
+\draw[ar] (q)--(route);
+\draw[ar] (route)--node[lbl]{$p$}(scan);
+\draw[ar] (scan)--node[lbl]{$t$}(casc);
+\draw[ar] (casc)--node[lbl]{$K$}(rr);
+\draw[ar] (rr)--(out);
+% index (bottom row), built offline
+\node[idx, below=13mm of route] (tree) {hier.\ $k$-means\\tree $+\,\gamma$ bias};
+\node[idx, below=13mm of scan] (pq) {PQ blocks\\$+$ raw int8};
+\node[idx, below=13mm of rr] (g) {$k$-NN graph\\$+$ float base};
+\draw[ar, dashed] (tree)--(route);
+\draw[ar, dashed] (pq)--(scan);
+\draw[ar, dashed] (g)--(rr);
+\node[font=\footnotesize\itshape, left=3mm of tree] {index};
+\end{tikzpicture}
+\caption{Query pipeline (top) and the offline-built index it consumes (bottom,
+dashed). Edge labels are the shrinking candidate set: $p$ probed leaves $\to$ top-$t$
+pool $\to$ $K$ cascade survivors $\to$ top-10. $\gamma$ calibration, the $k$-NN graph
+union, and the coarse-cell tree geometry are this work's contributions
+(Table~\ref{tab:oldnew}).}
+\label{fig:arch}
+\end{figure}
 
 \paragraph{Build path.}
 \begin{enumerate}
