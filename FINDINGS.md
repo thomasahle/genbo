@@ -3583,6 +3583,28 @@ P219. (*** P217 RESOLVED — CORRECTED 10M OOD h2h vs OFFICIAL 40k-leaf ScaNN: S
     10M x 16 u32) + EM(2,beam8) index builds queued. (h2h_10m_pairwise.py, h2h_10m_40k{_v1_coldspawn,}.csv,
     logs/h2h_10m_40k_v2.log, scann_build_40k.py, ~/big-ann-data/)
 
+P220. (*** 10M OOD: PARITY WITH OFFICIAL ScaNN REACHED — 1.239x -> 1.009x median in one session via the
+    1M-proven composition (graph sidecar + tree-EM + gamma), each lever's 10M transfer measured separately. ***)
+    All h2h = 10k queries, single-thread same-core tight pairwise, warm protocol (P219), recall gates >= 0.90
+    both arms every round vs the shared exact float GT; opponent fixed at its best (lts=28/reorder=150; its
+    high-lts/low-reorder corner swept and REJECTED: reorder=100/120 tops ~2270 < its r150 ~2330).
+    LEVER 1 — GRAPH SIDECAR at 10M (t2i10m_graph_k16.u32, 640MB, ScaNN self-search k=16, built 6min@16thr):
+    composes exactly as at 1M — the union expansion buys back the recall a HALVED rerank pool loses:
+    t_surv 2000->1000 with M=25-40 holds 0.90 at p 52-56 (t800 caps ~0.896 at ANY p/M — pool floor is real).
+    Wider M helps: M=32 t1000 needs p52, M=40 p48 (recall-only, load-indep). 12-round h2h (EM build running,
+    noisy window): median 1.118 [IQR 0.938-1.233] vs P219's 1.239.
+    LEVER 2 — TREE-EM(2, beam8) at 10M geometry (39min@8cores): +~0.003 recall at fixed p on BOTH the graph
+    and no-graph arms (0.90 crossing moves p52 -> p48, ~8% fewer probes), query-cost-free — P130's 10M EM
+    transfer reproduced on the new rig.
+    LEVER 3 — gamma refit: 0.5 stays optimal at 10M (0.40/0.45/0.55 all worse at matched p; P215 confirmed).
+    *** DECISIVE 16-round h2h, quiet box: ScaNN(28,150) 0.9001 vs ENGINE (EM2 idx + gamma0.5 + graph M=32 +
+    t_surv=1000 + p=48, recall 0.9024): MEDIAN 1.009x [IQR 0.951-1.143, min 0.876 max 1.184] = STATISTICAL
+    PARITY, engine ~2030-2290 QPS vs ScaNN ~2280-2370. Arc: 1.239 (P219) -> 1.118 (graph) -> 1.009 (EM+graph).
+    GOAL BAR (beat HANNS = ScaNN x1.07 => ratio <= 0.93): ~8.5% QPS short. IN FLIGHT: geometry variants
+    G1 (Kf=131072 C0=8192 b0=192) / G2 (Kf=65536 C0=4096 b0=128), both EM2 — the 10M routing geometry
+    (4096+256x32 = 12288 cells scored/q) has never been swept; the 1M analog (P192 C0 lever) was worth 12.6%.
+    (h2h_10m_pairwise.py + ENG_IDX/graph env, logs/h2h_10m_{graph,em_graph}.log, build_graph10m.py)
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
