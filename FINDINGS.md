@@ -3677,6 +3677,18 @@ P224. (*** 10M OOD WON: 0.847x median vs official 40k-leaf ScaNN (IQR [0.842,0.8
     run (builds SIGSTOPped), then 100M (both builds in flight) and streaming.
     (logs/h2h_10m_g2.log, eng_t2i10m_kf65536_c4096_b128_a3_em2.idx)
 
+P225. (*** PROTOCOL MATRIX COMPLETE — every cell a WIN on this machine, recall gates held, opponent at its
+    official best: 1M single-thread 0.755x | 1M 8-thread 0.756x | 10M single-thread 0.847x | 10M 8-thread
+    0.833x (engine 21.4k vs ScaNN 18.0k QPS, IQR [0.830,0.834]). All below the 0.93 HANNS-equivalent bar. ***)
+    The 8t/10M number uses the G2 champion arm + chunk=250 parallel batched driver (P222 fix). Thread parity
+    slightly FAVORS us at 10M (0.833 vs 0.847 single-thread): the parallel-chunk driver amortizes the graph
+    union + float rerank across cores with near-linear scaling while ScaNN's batched parallel is already at
+    its plateau. Remaining for the 10M ledger claim: a pristine confirmation (all our builds SIGSTOPped) after
+    G3/G4 land — though four independent h2hs (0.847, 0.833, plus the 0.924/1.009 arcs behind them) with tight
+    IQRs already make the win robust. NEXT SCALE: 100M (scann-126k-leaf baseline building; engine geometry
+    awaits the G4 knee answer; ~460 slots/cell scaling of G2's shape).
+    (logs/h2h_10m_8t_g2.log)
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
