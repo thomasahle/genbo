@@ -377,6 +377,29 @@ scale & $L$ & $K_f$ & cell counts & beams & route evals & pts/leaf \\
 \end{tabular}}
 \end{table}
 
+\subsection{Scaling laws for geometry}
+\label{sec:scaling}
+To set geometry at scale without per-$n$ retuning, we sweep $K_f$ at
+$n\in\{10^5,3{\cdot}10^5,10^6,3{\cdot}10^6,10^7\}$ (2-level, graph off), at each $n$
+finding the minimum $p$ that reaches recall@10 $\ge 0.90$ (deterministic, hence
+load-independent) and the resulting cost $\mathrm{route}+\mathrm{scan}$ from
+Eq.~\eqref{eq:route}. The cost-minimizing geometry follows clean power laws (log-log
+fit):
+\[
+K_f^\star \sim n^{0.66},\qquad
+\tfrac{n}{K_f^\star}\,(\text{pts/leaf}) \sim n^{0.34},\qquad
+p^\star \sim n^{0.18},\qquad
+C_0^\star \sim n^{0.33}.
+\]
+The central law is $\text{pts/leaf}\sim n^{1/3}$: optimal leaves \emph{grow} with $n$,
+because routing $O(\sqrt{K_f})$ rises while the scan $O(p\,n/K_f)$ is held down by the
+growing $K_f$ --- the coarse-cell corollary expressed as a scaling law. Probes grow
+only as $n^{1/5}$. Extrapolating, $n{=}10^9$ calls for $K_f\!\approx\!10^6$
+($\sim\!1000$ pts/leaf). These calibrate the 2-level baseline; graph coverage
+(\S\ref{sec:graph}) shifts the optimum coarser and a third routing level (cheaper,
+$O(K_f^{1/3})$) shifts it finer, so the 100M geometry is validated by direct A/B
+(\S\ref{sec:eval}) rather than read off the 2-level law.
+
 \subsection{The corollary}
 \todo{Sweep cell granularity at 10M with the graph on: fine (Kf=262144), medium
 (65536), coarse (32768); medium/coarse WIN. Bracket the knee with four builds.}
