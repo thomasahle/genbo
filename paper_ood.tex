@@ -329,15 +329,67 @@ missed. Composes additively with $\gamma$ (partial overlap, compound $\sim0.97$)
 \effect{At 1M, composed with $\gamma$, the ScaNN ratio drops $1.18\to0.98$
 (the first sub-1 result); at 10M it lets $t_{\text{surv}}$ halve at matched recall.}
 
-\section{The Coarse-Cell Corollary}
+\section{Routing Cost and the Coarse-Cell Corollary}
 \label{sec:coarse}
-% This is the session's genuinely new algorithmic finding; give it room.
-\todo{With the graph carrying coverage, sweep cell granularity: fine (Kf=262144),
-medium (65536), coarse (32768). Show medium/coarse WIN because routing evals/query
-(not coverage) now bind -- reversing the ``finer is better'' intuition. Bracket the
-knee with four index builds (both finer and coarser lose to the 152-pt-cell knee).}
+
+\subsection{A routing cost model}
+\label{sec:routecost}
+Consider an $L$-level tree over $K_f$ leaves with cell counts
+$C_0 < C_1 < \dots < C_{L-1} < C_L = K_f$ and per-level beam widths
+$b_0,\dots,b_{L-2}$ (the number of cells expanded when descending from level $i$ to
+level $i{+}1$). Routing a query costs, in centroid distance evaluations,
+\begin{equation}
+\label{eq:route}
+\mathrm{route}(q) \;=\; C_0 \;+\; \sum_{i=1}^{L-1} b_{i-1}\,\frac{C_i}{C_{i-1}},
+\end{equation}
+since the coarse level scores all $C_0$ centroids and level $i$ expands the $b_{i-1}$
+best parents from level $i{-}1$, each contributing $C_i/C_{i-1}$ children. The scan
+then reads $\mathrm{scan}(q)=p\cdot(n/K_f)\cdot a_0$ candidates ($p$ probed leaves
+$\times$ points/leaf $\times$ multi-assignment). For a 2-level tree \eqref{eq:route}
+is $C_0 + b_0 K_f/C_0$, minimized at $C_0=\sqrt{b_0 K_f}$ to give
+$2\sqrt{b_0 K_f}=O(\sqrt{K_f})$; with $L$ levels and balanced branching this falls to
+$O(L\,K_f^{1/L})$. The two costs pull oppositely in $K_f$: finer leaves shrink the scan
+($n/K_f$) but grow the routing. The beams $b_i$ are the ``routing aggression'' knob ---
+wider beams retain the true cell with higher probability at linear cost --- and OOD
+queries, which route poorly, need wider beams (\S\ref{sec:eval}).
+
+Table~\ref{tab:geom} gives geometry and routing cost by scale. Two levels suffice
+through 10M; at 100M a 2-level tree at its optimal $C_0=\sqrt{b_0 K_f}\approx16{,}400$
+would cost $\approx\!33{,}000$ evals, whereas the 3-level tree roughly halves this
+($14{,}336$) --- so the third level is introduced only at 100M, where routing is a
+large enough share of the query to matter.
+
+\begin{table}[t]
+\centering
+\caption{Tree geometry and per-query routing cost (Eq.~\ref{eq:route}) by scale.
+Beams are aggressive ($b_0\!\approx\!12$--$25\%$ of coarse cells) because OOD queries
+route poorly. \pending{100M validated via a scaling-law sweep (\S\ref{sec:routecost}).}}
+\label{tab:geom}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lcccccc}
+\toprule
+scale & $L$ & $K_f$ & cell counts & beams & route evals & pts/leaf \\
+\midrule
+1M   & 2 & 16{,}384  & $C_0{=}768$              & $b_0{=}96$            & $768+96{\cdot}21=2{,}816$ & 61 \\
+10M  & 2 & 65{,}536  & $C_0{=}4096$             & $b_0{=}128$           & $4096+128{\cdot}16=6{,}144$ & 152 \\
+100M & 3 & 524{,}288 & $C_0{=}2048,C_1{=}32768$ & $b_0{=}512,b_1{=}256$ & $2048+512{\cdot}16+256{\cdot}16=14{,}336$ & 190 \\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+\subsection{The corollary}
+\todo{Sweep cell granularity at 10M with the graph on: fine (Kf=262144), medium
+(65536), coarse (32768); medium/coarse WIN. Bracket the knee with four builds.}
+The cost model \eqref{eq:route} explains \emph{why}. Without graph coverage, recall
+demands fine $K_f$ (small leaves make the true neighbor's leaf likelier to be among
+the $p$ probed), paying $O(\sqrt{K_f})$ routing. The $k$-NN-graph union
+(\S\ref{sec:graph}) supplies that coverage \emph{independently of $K_f$}, so the tree
+can use \emph{coarser} leaves --- cheaper routing --- at fixed recall. The optimum is a
+knee: too fine wastes routing, too coarse inflates the scan ($p\cdot n/K_f$).
+Empirically the knee sits near 150 points/leaf at 10M, and both finer and coarser
+builds lose to it.
 \effect{At 10M, moving from the fine-cell to the 152-point-cell geometry takes the
-ScaNN ratio $1.01\to0.85$; routing evals/query drop $\sim$12000$\to$6144.}
+ScaNN ratio $1.01\to0.85$; routing evals/query drop $\sim$12{,}000$\to$6{,}144.}
 
 \section{Joint Cross-Level Partition Optimization (Tree-EM)}
 \label{sec:em}
