@@ -1663,6 +1663,41 @@ fn main() {
             a.get(5).map(|s| s.parse().unwrap()).unwrap_or(256),
             a.get(6).map(|s| s.parse().unwrap()).unwrap_or(256),
         ),
+        // selfknn <base.i8bin> <fbase.fbin> <out.u32> <k>: base-side IP-kNN adjacency sidecar
+        // (SBANN_GRAPH_FILE recipe) via engine self-query — top-(k+1) with float rerank, self
+        // filtered, n x k u32 LE, no header. Needs SBANN_INDEX_LOAD (+ SBANN_IP, usual flags);
+        // gamma deliberately NOT applied (base->base is in-distribution; run with it unset).
+        Some("selfknn") => {
+            let ds = I8Bin::open(&a[2]).expect("base");
+            let fb = fbin::FBin::open(&a[3], 0).expect("fbase");
+            let kk: usize = a[5].parse().unwrap_or(16);
+            let lp = std::env::var("SBANN_INDEX_LOAD").expect("selfknn needs SBANN_INDEX_LOAD");
+            let idx = vq::Index::load_from(&lp).expect("index load");
+            let p: usize = std::env::var("SBANN_PLIST").ok().and_then(|s| s.parse().ok()).unwrap_or(40);
+            let t_surv: usize = std::env::var("SBANN_TFLOOR").ok().and_then(|s| s.parse().ok()).unwrap_or(1000);
+            let n = ds.nb;
+            println!("[selfknn] n={n} k={kk} p={p} t={t_surv} -> {}", &a[4]);
+            let t0 = Instant::now();
+            let mut w = std::io::BufWriter::new(std::fs::File::create(&a[4]).expect("out"));
+            use std::io::Write;
+            let cb = 200_000;
+            let mut s = 0usize;
+            while s < n {
+                let e = (s + cb).min(n);
+                let rows: Vec<Vec<u32>> = (s..e).into_par_iter().map(|i| {
+                    let qf: Vec<f32> = fb.row(i).to_vec();
+                    let res = idx.search_frr(&ds, ds.row(i), &qf, &fb, p, t_surv, kk + 1, None);
+                    let mut out: Vec<u32> = res.into_iter().filter(|&x| x as usize != i).take(kk).collect();
+                    let pad = *out.last().unwrap_or(&(i as u32));
+                    while out.len() < kk { out.push(pad); }
+                    out
+                }).collect();
+                for r in &rows { for &v in r { w.write_all(&v.to_le_bytes()).unwrap(); } }
+                if (s / cb) % 50 == 0 { println!("  {:.0}M / {:.0}M ({:.0}s)", s as f64 / 1e6, n as f64 / 1e6, t0.elapsed().as_secs_f64()); }
+                s = e;
+            }
+            println!("[selfknn] done in {:.0}s", t0.elapsed().as_secs_f64());
+        }
         Some("run") => run(&a[2], &a[3], &a[4], &a[5], &a[6], a.get(7).map(|s| s.parse().unwrap()).unwrap_or(2), a.get(8).map(|s| s.parse().unwrap()).unwrap_or(4096), a.get(9).map(|s| s.parse().unwrap()).unwrap_or(30), false),
         Some("runb") => run(&a[2], &a[3], &a[4], &a[5], &a[6], a.get(7).map(|s| s.parse().unwrap()).unwrap_or(2), a.get(8).map(|s| s.parse().unwrap()).unwrap_or(4096), a.get(9).map(|s| s.parse().unwrap()).unwrap_or(30), true),
         Some("runa") => runa(&a[2], &a[3], &a[4], &a[5], &a[6], a.get(7).map(|s| s.parse().unwrap()).unwrap_or(2), a.get(8).map(|s| s.parse().unwrap()).unwrap_or(256)),
