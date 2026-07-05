@@ -3768,6 +3768,24 @@ P229. (1M/10M FURTHER-TUNING ROUND: all four probed levers are NET-NEUTRAL-TO-NE
     primitive, not tuning. 10M freshly optimized via the P224 geometry knee (which IS the coarse-cell win).
 
 
+P230. (100M GEOMETRY DE-RISKED at 10M (user-directed careful balancing): AGGRESSIVE coarse routing wins
+    recall; 3-level is a 100M lever (not 10M). Balance study before the expensive 100M build.)
+    Killed a mis-balanced first 100M build (2-level C0=32768: lopsided + expensive at build AND query;
+    then a stingy 3-level C0=1024 b0=48 = 4.7% coarse expansion). Per the user's guidance to balance
+    points-per-level and route aggression, swept THREE 3-level geometries at 10M (Kf=65536, recall + route%
+    the load-independent signals; QPS best/2 too noisy to use):
+      c256  (C0=256,  b0=96/256 =37.5% coarse, aggressive): 0.9023@p48, route 22%
+      c512  (C0=512,  b0=96/512 =18.75%):                    0.9004@p48, route 18%
+      c1024 (C0=1024, b0=128/1024=12.5%, stingy):            0.8992@p48, route 17%
+    FINDINGS: (1) AGGRESSIVE coarse routing wins recall (+0.003 c256 vs c1024 for +5% route) -- OOD queries
+    route poorly, so wide coarse beams matter (user was right). (2) scan dominates (~50%), route 17-25% ->
+    routing cost is second-order, so aggression is affordable. (3) NONE of the 3-level configs beats the
+    2-level G2 champion at 10M (0.9008@p40) -- 3-level's routing savings don't convert while scan dominates;
+    2-level stays the 10M champion (consistent with N18/N19/P109). 3-level is a 100M+ lever (routing a bigger
+    fraction there). 100M geometry chosen = c256 shape scaled: Kf=524288 (190 pts/leaf), C0=2048 C1=32768
+    (branch 2048->16->16), b0=512 (25% coarse, aggressive), b1=256, a0=3 -> route ~14336 evals (vs the killed
+    2-level's ~35k). Building (eng_t2i100m_kf524288_c2048_c1_32768_b512_a3.idx).
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
