@@ -3920,6 +3920,15 @@ P238. (*** BUILD-TIME CONSTRAINT (user-flagged): big-ann OOD limit = 12 HOURS on
     build all night); kept the 40k-lean h2h. If the 40k h2h is borderline, build ONE coarser eligible scann
     (25k, ~1.5h) to give scann its best-eligible; else 40k stands.
 
+    2H-GATE ADDENDUM (user directive): for the 100M experiment we impose a STRICTER 2h build gate (vs the
+    official 12h), both engines. genbo 100M builds in 86min (16c) -> WITHIN 2h. scann-40k at 100M is at
+    99min+ still in rebalance -> likely OVER 2h (the O(100M) AH-encode/bf16 work + 40k-leaf k-means).
+    Watchdog: 40k gets until the 2h mark; if it finishes it's the eligible baseline, else killed and a
+    coarser scann-20k (faster k-means) is built under a hard 2h timeout. So the 100M h2h uses scann's
+    best config that builds <=2h -- if even 20k can't, that itself is a finding (genbo builds a competitive
+    100M index in 86min; scann is build-constrained at 100M under 2h). Note: this is stricter than the
+    official 12h gate under which 40k IS eligible; the paper reports both (2h operational gate + 12h official).
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
