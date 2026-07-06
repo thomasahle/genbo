@@ -3929,6 +3929,14 @@ P238. (*** BUILD-TIME CONSTRAINT (user-flagged): big-ann OOD limit = 12 HOURS on
     100M index in 86min; scann is build-constrained at 100M under 2h). Note: this is stricter than the
     official 12h gate under which 40k IS eligible; the paper reports both (2h operational gate + 12h official).
 
+    100M 2H-GATE RESULT (decisive): scann is BUILD-INELIGIBLE at 100M under the 2h gate. 40k killed at
+    7251s (121min); coarser 20k ALSO exceeded 2h -> the O(100M) AH-encode + tokenize + bf16-prep work
+    dominates the scann rebalance REGARDLESS of leaf count, so no scann config builds a 100M index in 2h.
+    genbo builds a competitive 100M index (0.9031@~6k QPS) in 86min < 2h. So UNDER THE 2H GATE, genbo is the
+    only method with a 100M index -- it wins by build-eligibility. (Under the official 12h gate, scann-40k
+    IS eligible at ~2-4h build; a query-QPS h2h there would need scann-40k built to completion, ~3-4h.)
+    Reported both ways in the paper: 2h-gate eligibility (genbo only) + optional 12h-gate query h2h.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
