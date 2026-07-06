@@ -4011,6 +4011,15 @@ P243 [2026-07-06] cohere-10M v2 champion verdict + honest h2h status: v2 (dpb4+E
   if a gap remains. 100M: em3-on-524288 = +0.7pt at matched p (0.9028@p68 vs em0 0.8958) => ~12% probe cut at 0.90;
   clean QPS@0.90 pairwise also queued (expect ~7200-7500 vs 6764, would be new 100M champion).
 
+P245 [2026-07-06] P242a RESOLVED — 8t 'anomaly' was the batched driver's chunk size: SBANN_BATCH_CHUNK default 1000 = cohere's ENTIRE query set -> one chunk -> serial. chunk=125: 1757 -> 12850 QPS (7.3x); genbo-8t BEATS HNSW-8t 12835 vs ~11930 same-window (+0.2pt recall).
+  Quiet-box interleaved 8t rounds: genbo-v2 p16 {1961,1735,1757} vs HNSW ef40 {11931,12034,11849} — genbo stuck at
+  1x scaling. Cause (main.rs:513,597-599): cell-major batched driver splits nq into SBANN_BATCH_CHUNK=1000 chunks,
+  ranges.into_par_iter(); cohere NQ=1000 -> 1 chunk -> 1 rayon task. t2i (NQ=10000 -> 10 chunks) never exposed it.
+  With SBANN_BATCH_CHUNK=125: 12850/12820 QPS, recall 0.9390 bit-identical. VERDICT: cohere-10M won at BOTH thread
+  counts (1t median 1.098, 8t ~1.08 same-window). TODO: adaptive default chunk=clamp(nq/(2*threads),125,1000) —
+  needs a t2i NQ=10000 A/B first (chunk size trades cell-pass amortization vs parallelism; don't change champion
+  path blind).
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
