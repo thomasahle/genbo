@@ -318,7 +318,7 @@ pub fn l2_i8(x: &[i8], c: &[i8]) -> i32 {
 #[inline]
 pub fn normalize_i8(x: &[i8], mu: &[f32], out: &mut [i8]) {
     let d = x.len();
-    let mut tmp = [0f32; 256];
+    let mut tmp = [0f32; 1024];
     let mut nrm = 0f32;
     for k in 0..d {
         let v = x[k] as f32 - mu[k];
