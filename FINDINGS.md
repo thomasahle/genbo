@@ -3881,6 +3881,27 @@ P236. (ScaNN-100M was OVER-PROVISIONED by me -> ~day-long build blocking the h2h
     vs the engine (p=80 M=64 t=8000, 0.9031). LESSON: scale scann leaves by the OFFICIAL config's absolute
     count guidance, not a naive sqrt-of-the-already-aggressive-count.
 
+P237. (*** OPPONENT-AT-ITS-BEST AUDIT (user-prompted "are we using the wrong scann config?"): scann's 1M
+    leaf count was UNVERIFIED (2000, a convention) -- swept it; scann's true 1M PEAK is 1200 leaves, but the
+    1M WIN HOLDS (~0.72-0.77 recall-matched vs the original 0.755, marginal change). NOT a P217-class error. ***)
+    The 10M win used the VERBATIM official 40k-leaf textproto (correct). But 1M used 2000 leaves by convention,
+    never verified as scann's optimum -- the same "is the opponent at its best?" question that caught every
+    mirage, left unchecked at 1M. Swept scann-1M leaf count (build+lts/reorder sweep, best QPS@recall>=0.90,
+    clean window):
+      leaves= 800 -> 4794 | 1200 -> 6226 (PEAK) | 1600 -> 5745 | 2000 -> 5682 (what we used) |
+      4000 -> 4056 | 8000 -> 2578 | 16000 -> 1460
+    So (a) MORE leaves = SLOWER scann at 1M (routing over more leaves > finer-scan saving; scann's fast AH
+    handles big leaves) -- 2000 was NOT under-leafing scann (my fear was backwards); (b) true peak = 1200
+    (~10% faster than 2000). Re-measured h2h vs scann-1200: clean rounds 0.657 BUT scann ran at 0.9095 (over
+    our 0.9049 -> scann artificially slow); recall-matched + the leaf-sweep's clean 6226@0.90 -> honest ratio
+    ~0.72-0.77 vs engine ~8100. WIN HOLDS decisively (< 0.93 bar), essentially unchanged from 0.755.
+    LESSON: "verbatim official" covered 10M; at scales w/o an official recipe (1M, 100M) I let CONVENTION
+    stand in for the leaf-count sweep. FOLLOW-UPS: (1) clean recall-matched 1M h2h vs scann-1200 on a quiet
+    box (pending; box loaded by the 100M build). (2) SPOT-CHECK 10M: is 40k near scann's 10M speed-optimum
+    or would coarser be faster? (the 1M data says coarser can win -> the official 40k might not be scann's
+    speed-max, though it IS the leaderboard config). (3) 100M: sweep scann leaf count for ITS optimum before
+    any ratio claim (the lean 40k is a build-of-convenience, likely too coarse). scann_1m_leafsweep.py.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
