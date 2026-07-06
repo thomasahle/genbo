@@ -22,8 +22,8 @@
 \newcommand{\effect}[1]{\par\smallskip\noindent\textbf{Effect.} #1}
 \setlength{\emergencystretch}{3em} % absorb stray overfull boxes in this draft
 
-\title{Localizing and Beating the Out-of-Distribution Bottleneck in Vector Search:\\
-A Measured Collection of Routing, Coverage, and Systems Techniques}
+\title{Distribution-Robust Vector Search:\\
+Calibrated Routing, Coverage, and Precision-Adaptive Scanning for IVF-PQ}
 \author{\todo{authors}}
 \date{}
 
@@ -47,9 +47,19 @@ joint cross-level partition optimization; multi-assignment; and a corollary that
 win. Composed and evaluated under a same-hardware, tight-pairwise protocol against
 ScaNN at its official configuration, the engine attains higher QPS at matched
 recall@10 at 1M, 10M\pending{, and 100M}, and transfers to the streaming track.
-We report the negative results as first-class evidence for the localization, and
-treat the measurement methodology --- which repeatedly caught mirages during
-development --- as a contribution.
+We then turn to the \emph{in-distribution} regime (Cohere-768, cosine), where the
+same engine initially loses to HNSW by $2\times$ --- and localize \emph{that}
+bottleneck too: not the architecture but a \emph{scan-precision policy}. The int8
+saturating fast-scan caps each subspace lookup table at ${\sim}4$ bits; its
+quantization noise grows as $\sqrt{m}$ with the subspace count, harmless at
+$m{=}100$ ($d{=}200$) but fatal to the small cosine margins at $m{=}384$
+($d{=}768$), where in-pool ordering collapses to $0.07$. Switching the same codes
+to an int16 scan restores ordering to the pool ceiling ($0.87$), and precision
+auto-selection by $m$ --- plus the coverage levers above --- brings the engine to
+parity-or-better with HNSW in its home regime. We report the negative results as
+first-class evidence for both localizations, and treat the measurement
+methodology --- which repeatedly caught mirages during development --- as a
+contribution.
 \end{abstract}
 
 \section{Introduction}
@@ -64,12 +74,18 @@ fast-scan for the scan, product and residual codes for memory, graph indices as 
 alternative to IVF --- overwhelmingly evaluated where queries and database are drawn
 from the \emph{same} distribution.
 
-We study the \emph{out-of-distribution} (OOD) regime, where the query distribution
-differs from the database. This is not a corner case: cross-modal retrieval embeds a
-text query and searches image vectors under inner product, and the big-ANN
-``text2image'' track (image base, text queries, $d{=}200$) is exactly this setting.
-It is also where the strongest systems separate, and --- we argue --- where the
-conventional intuition about what to optimize is wrong.
+We study \emph{distribution robustness}: one engine, measured in two regimes that
+break different stages of the pipeline. The first is \emph{out-of-distribution}
+(OOD) search, where the query distribution differs from the database. This is not
+a corner case: cross-modal retrieval embeds a text query and searches image
+vectors under inner product, and the big-ANN ``text2image'' track (image base,
+text queries, $d{=}200$) is exactly this setting. It is where the strongest
+systems separate, and --- we argue --- where the conventional intuition about what
+to optimize is wrong. The second is the \emph{in-distribution, high-dimensional}
+regime (Cohere-768 embeddings under cosine), the bread-and-butter workload of
+graph indices like HNSW --- where the same IVF-PQ engine initially loses by
+$2\times$, for a reason that turns out to be neither routing nor architecture but
+arithmetic precision in the scan (\S\ref{sec:precision}).
 
 Our organizing claim is a \emph{bottleneck localization}: on OOD workloads the
 binding constraint is \emph{routing coverage} --- whether the true neighbor's cell is
@@ -101,6 +117,14 @@ configuration, the result attains higher QPS at matched recall@10 at 1M and 10M
     (\S\ref{sec:em}). \emph{Effect: $+0.6$--$1.0$ recall@10 points at 10M, QPS-neutral.}
   \item \textbf{Multi-assignment (SOAR)} (\S\ref{sec:soar}). \emph{Effect: raises the
     routing recall ceiling to baseline parity.}
+  \item \textbf{Scan precision as a function of code length}
+    (\S\ref{sec:precision}): the int8-saturating fast-scan's per-subspace
+    ${\sim}4$-bit LUT cap injects noise growing as $\sqrt{m}$; at $m{=}384$
+    (in-distribution $d{=}768$ cosine) it collapses in-pool ordering to $0.07$
+    while the \emph{same codes} under an int16 scan rank to the pool ceiling
+    ($0.87$). \emph{Effect: with precision auto-selected by $m$ (plus an AVX-512
+    int16 kernel and graph coverage), the engine goes from $2\times$ behind HNSW
+    on Cohere-768 to parity-or-better --- without abandoning the IVF-PQ cascade.}
   \item \textbf{Systems levers for streaming} (\S\ref{sec:stream}): batch-parallel
     insert (\emph{$4.5\times$}), low-live adaptive $p$ (\emph{worst step
     $0.74\to0.94$}), and a parallelization fix (\emph{$7.6\times$ at 8 threads}).
@@ -518,6 +542,59 @@ multi-assignment raises the routing-coverage ceiling.
 \effect{$a_0{=}2$ reaches OOD coverage parity with the baseline partition; higher
 $a_0$ extends the high-recall frontier at a storage/scan cost (quantified in table).}
 
+\section{Scan Precision Must Scale with Code Length}
+\label{sec:precision}
+The techniques so far repair \emph{routing and coverage}, the OOD bottleneck. The
+in-distribution, high-$d$ regime breaks a different stage, and localizing it is a
+second instance of the paper's method: measure stages in isolation until the
+failing one confesses.
+
+\paragraph{The symptom.} On Cohere-768 (10M, cosine, unit-norm) the engine needed
+an exact-re-rank pool of $t{\approx}32{,}000$ to reach recall $0.90$ ---
+$60\times$ the OOD operating depth --- and recall \emph{decreased} with more
+probes. Stage-isolation pinned it: the routed pool \emph{contains} the true
+neighbor (pool ceiling $0.87$--$0.94$), and an 8-bit re-ranker recovers exactly
+the ceiling, but the 4-bit fast-scan's \emph{own ordering} of the pool is
+catastrophic --- the true neighbor almost never ranks in its top-$100$ (in-pool
+ordering recall $0.07$).
+
+\paragraph{The cause is arithmetic, not codes.} The SIMD fast-scan
+accumulates lookup-table (LUT) values in \emph{saturating int8}; to avoid
+saturation within a hoist group, each subspace's LUT is quantized to a
+${\sim}4$-bit range (cap $\lfloor 120/\text{HOIST}\rfloor{=}15$). The resulting
+per-subspace quantization noise is independent across subspaces, so the total
+scan-score noise grows as $\sqrt{m}$ while the useful margin between neighbors
+does not. At $d{=}200$ ($m{=}100$ subspaces, wide OOD margins) this is harmless
+--- which is exactly why the int8 path is the right champion default there. At
+$d{=}768$ ($m{=}384$, small in-distribution cosine margins) the noise swamps the
+signal. The discriminating experiment holds the \emph{index and codes fixed} and
+changes only the scan arithmetic: int8-saturating scan orders the pool at $0.07$;
+an int16-LUT scan orders it at $0.87$ --- the pool ceiling --- at rank depth 100.
+
+\paragraph{The fix is a policy, not a rewrite.} Scan precision is selected by
+subspace count: $m\!\le\!128$ keeps the int8 fast-scan (bit-identical to the OOD
+champion path), $m\!>\!128$ uses int16 LUTs. Two systems consequences follow.
+First, the survivor cut becomes trustworthy, so the re-rank pool collapses from
+$32{,}000$ back to a few hundred. Second, the int16 kernel is worth engineering:
+a 32-wide AVX-512 (\texttt{vpermw}) int16 pair-scan --- with its dispatch hoisted
+out of the per-block hot loop, where a per-call environment lookup had been
+costing ${\sim}25\%$ of the scan --- is compute-bound at $m{=}384$
+(sorted-vs-scattered block order $= 1.00\times$), recall-bit-identical, and
+$+31\%$ end-to-end. Notably this \emph{reverses} the wider-SIMD negative of
+\S\ref{sec:neg}: at $m{=}100$ the scan is memory-bound and AVX-512 buys
+$\le\!7\%$; at $m{=}384$ it is LUT-compute-bound and the same width is decisive.
+Precision and width are functions of $m$, not constants.
+
+\paragraph{Composition.} With precision fixed, the OOD coverage levers apply
+unchanged in-distribution: $k$-NN-graph augmentation (edges from a base
+self-search) cuts probes ${\sim}3\times$ at matched recall, and a
+$\text{dpb}{=}4$ recode ($m{=}192$: half the LUT work per candidate) trades
+$0.7$ recall points for ${\sim}1.3\times$ QPS, net-positive on the frontier.
+\effect{Cohere-768 1M, 1 thread: $0.9197$@$1957$ QPS graph-off,
+$0.9220$@$3229$ with graph$+$dpb4 --- vs.\ HNSW $0.9122$@$1840$. At 10M the same
+stack reaches parity-or-better with HNSW (\S\ref{sec:eval});
+\pending{final quiet-box pairwise}.}
+
 \section{Systems Techniques (Streaming)}
 \label{sec:stream}
 \todo{msturing-30M-clustered final\_runbook; recall@10 under 1h + 8GB. Three levers:
@@ -546,13 +623,30 @@ peak $<$8GB.}
     bit-rate, and rotation/$\eta$ move it $<0.01$. Coverage-via-coarsening collapses
     (a scann-coverage-matched dpb=50 config yields recall $0.09$).
   \item \textbf{RaBitQ}: no ranking edge over PQ at matched bytes.
-  \item \textbf{Wider SIMD} (AVX-512 vpermw / 64-wide): scan is memory-bound, not
-    shuffle-bound; $\le$+7\%, sometimes negative (downclock/cross-lane).
+  \item \textbf{Wider SIMD} (AVX-512 vpermw / 64-wide): \emph{on OOD $d{=}200$}
+    the scan is memory-bound, not shuffle-bound; $\le$+7\%, sometimes negative
+    (downclock/cross-lane). The \emph{same} lever is decisive at $m{=}384$
+    (\S\ref{sec:precision}) --- the negative is regime-scoped, not universal.
   \item \textbf{Finer cells at matched probe}: lose recall (half the probe fraction).
   \item \textbf{PCA/LeanVec dim reduction on OOD}: near-isotropic embeddings; dead.
+    The same holds for \emph{raw-basis} routing-dimension truncation
+    in-distribution (Cohere-768: scoring a 384-dim prefix costs $1.6$ recall
+    points) --- prefix truncation needs a variance-ordering rotation to be
+    principled, in either regime.
+  \item \textbf{Residual-encoded PQ under inner product} (baseline fairness):
+    FAISS IVFPQ defaults \texttt{by\_residual=True}, which is $L_2$-specific; under
+    IP it caps text2image recall at $0.11$, \emph{decreasing} with probes. All
+    FAISS-IVFPQ baselines here use \texttt{by\_residual=False} plus exact refine
+    --- reporting the default would be a strawman.
+  \item \textbf{Int8-prefilter $+$ int16-rescore hybrid scan}: dominated at
+    $m{=}384$ --- the int8 pass's ordering is too noisy for any affordable keep
+    rate (top-$2000$ of $8000$ retains the true neighbor only $53\%$ of the time),
+    so the prefilter cannot shrink the int16 work without recall loss.
 \end{itemize}
-\emph{These cluster on the scan/code side and all fail; the \S5--9 levers cluster on
-routing/coverage and all succeed --- the localization made concrete.}
+\emph{The OOD negatives cluster on the scan/code side and all fail there; the
+\S5--9 levers cluster on routing/coverage and all succeed. In-distribution the
+pattern inverts: coverage was never the binding constraint, scan precision was
+(\S\ref{sec:precision}). Both localizations rest on the same isolation method.}
 
 \section{Evaluation Methodology}
 \label{sec:method}
@@ -637,15 +731,103 @@ $+$ pristine confirmation (20 rounds) & 0.83 \\
 \bottomrule
 \end{tabular}
 \end{table}
-\todo{Add per-lever isolation deltas; 8-thread scaling; streaming table (recall,
-peak mem, wall vs 1h budget). Note the ablation ordering is the actual development
-arc.}
+\begin{table}[t]
+\centering
+\caption{Multi-system baselines, OOD text2image-10M, 1 thread, same box, same
+exact ground truth. QPS at the listed recall@10 (each system swept to its knee;
+FAISS-IVFPQ uses \texttt{by\_residual=False} $+$ exact refine, its fair IP
+configuration). RoarGraph~\cite{roargraph} is the published OOD-specific
+graph method, built with its paper hyperparameters ($M_{sq}{=}100$,
+$M{=}35$, $L{=}500$, 2M sampled train queries, GT recall@100 $0.96$).}
+\label{tab:t2i-baselines}
+\begin{tabular}{lccl}
+\toprule
+System & recall@10 & QPS (1t) & note \\
+\midrule
+\textbf{ours}          & 0.905 & 7657 (1M) / \pending{10M} & IVF-PQ cascade \\
+ScaNN (official 40k)   & 0.901 & (ratio 0.827 vs ours) & IVF-AH \\
+RoarGraph              & 0.903 & 1469 & OOD bipartite graph \\
+HNSW (faiss, M32)      & 0.905 & 328  & needs ef$\ge$160 on OOD \\
+IVFPQ-FastScan$+$refine & \multicolumn{2}{c}{cannot reach 0.90 (caps 0.73)} & code-side fails OOD \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\centering
+\caption{In-distribution Cohere-768 (cosine, unit-norm), 1 thread, same box, same
+exact ground truth. At 1M all numbers final; at 10M \pending{quiet-box pairwise
+in flight} --- the contended same-window comparison is a statistical tie at
+matched recall (ratio median $0.92$, rounds $0.77$--$1.09$).}
+\label{tab:cohere}
+\begin{tabular}{llcc}
+\toprule
+Scale & System & recall@10 & QPS (1t) \\
+\midrule
+1M  & \textbf{ours} (int16$+$graph$+$dpb4) & 0.9220 & \textbf{3229} \\
+1M  & \textbf{ours} (int16, graph-off)     & 0.9197 & 1957 \\
+1M  & HNSW (ef40)                          & 0.9122 & 1840 \\
+1M  & ScaNN (2k leaves, reorder 600)       & 0.9147 & 1306 \\
+1M  & IVFPQ$+$refine (nprobe 256)          & 0.9014 & 877  \\
+\midrule
+10M & \textbf{ours} (v2: dpb4$+$EM3$+$SOAR3$+$graph) & 0.9390 & \pending{} \\
+10M & HNSW (ef40)                          & 0.9370 & \pending{} \\
+10M & ScaNN (8k leaves, deep reorder)      & 0.976  & 206 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\todo{Fill \pending{} cells from the quiet-box endgame run; add per-lever isolation
+deltas; 8-thread scaling; streaming table (recall, peak mem, wall vs 1h budget).
+Note the ablation ordering is the actual development arc.}
 
 \section{Related Work}
 \label{sec:rel}
-\todo{ScaNN (anisotropic VQ), DiskANN/HNSW (graphs), FAISS IVF-PQ, big-ANN
-challenge, RaBitQ. Position OOD-specific routing as the gap; distinguish $\gamma$
-from residual quantization (orthogonal) and from query-aware training (shown to fail).}
+\textbf{Quantization-side IVF.} ScaNN introduced anisotropic vector quantization
+(score-aware loss) and remains the measured opponent here at its official
+configurations; FAISS provides the reference IVF-PQ/fast-scan implementations
+(and \S\ref{sec:neg} documents an IP-fairness pitfall in its residual default).
+RaBitQ represents the recent binary-ish code family; at matched bytes it showed
+no ranking edge in our OOD setting. Our contribution on this side is not a new
+code but the observation that \emph{scan arithmetic precision must scale with
+code length} (\S\ref{sec:precision}).
+\textbf{Graph indices.} HNSW is the standard in-distribution baseline and is
+measured here at both regimes: dominant-until-matched in-distribution, and
+$>\!4\times$ behind on OOD at matched recall. RoarGraph (VLDB'24) is the
+OOD-specific graph method --- a query-aware bipartite projection built from
+sampled training queries; we build it with its published hyperparameters and
+measure it on the same box (Table~\ref{tab:t2i-baselines}). DiskANN/Vamana
+target the disk regime we do not evaluate.
+\textbf{OOD-specific routing.} Query-aware cell \emph{training} fails in our
+hands (\S\ref{sec:neg}); RoarGraph solves coverage with a query-aware graph;
+our $\gamma$ recalibration (\S\ref{sec:gamma}) instead keeps base-trained cells
+and corrects the \emph{scoring} of them, at zero query-time cost, composing with
+graph coverage rather than replacing the IVF skeleton.
+\textbf{Streaming.} The big-ANN streaming track constraints (1h wall, 8GB) shape
+\S\ref{sec:stream}; our levers there are systems-level (batch-parallel insert,
+adaptive probes) rather than index-structural.
+
+\begin{thebibliography}{9}\small
+\bibitem{scann} R.~Guo et al. Accelerating large-scale inference with anisotropic
+vector quantization. \emph{ICML}, 2020.
+\bibitem{soar} P.~Sun, R.~Guo, S.~Kumar. SOAR: improved indexing for approximate
+nearest neighbor search. \emph{NeurIPS}, 2023.
+\bibitem{hnsw} Yu.~Malkov, D.~Yashunin. Efficient and robust approximate nearest
+neighbor search using hierarchical navigable small world graphs. \emph{TPAMI}, 2020.
+\bibitem{faiss} M.~Douze et al. The Faiss library. \emph{arXiv:2401.08281}, 2024.
+\bibitem{roargraph} M.~Chen et al. RoarGraph: a projected bipartite graph for
+efficient cross-modal approximate nearest neighbor search. \emph{PVLDB}, 2024.
+\bibitem{diskann} S.~Jayaram Subramanya et al. DiskANN: fast accurate
+billion-point nearest neighbor search on a single node. \emph{NeurIPS}, 2019.
+\bibitem{rabitq} J.~Gao, C.~Long. RaBitQ: quantizing high-dimensional vectors
+with a theoretical error bound for approximate nearest neighbor search.
+\emph{SIGMOD}, 2024.
+\bibitem{bigann} H.~Simhadri et al. Results of the big-ANN: NeurIPS'23
+competition. \emph{arXiv:2409.17424}, 2024.
+\bibitem{quickeradc} F.~Andr\'e, A.-M.~Kermarrec, N.~Le~Scouarnec. Quicker ADC:
+unlocking the hidden potential of product quantization with SIMD. \emph{TPAMI},
+2021.
+\end{thebibliography}
 
 \section{Limitations}
 \label{sec:lim}
