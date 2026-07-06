@@ -382,12 +382,25 @@ $\gamma\in\{0.4,\dots,0.6\}$ near the optimum.
 
 \section{$k$-NN-Graph Coverage Augmentation}
 \label{sec:graph}
-\todo{Union the graph neighbors of the top-$M$ shortlist members into the exact
-re-rank set (base-side IP-kNN sidecar; built by ScaNN self-search or engine
-self-query, $\sim$92\% edge agreement). Recovers deep neighbors a shallow probe
-missed. Composes additively with $\gamma$ (partial overlap, compound $\sim0.97$).}
+Routing to $p$ cells can still miss a true neighbor whose cell went unprobed. We
+recover such misses with a graph, without probing more cells. Offline we build a
+base-side inner-product $k$-NN graph (a per-point adjacency list; constructed by
+ScaNN self-search or by the engine querying itself --- the two agree on $\sim$92\% of
+edges). At query time, after the scan yields a shortlist, we take the top-$M$
+shortlist members and \emph{union their graph neighbors into the exact re-rank set}.
+The intuition is transitive: a shortlisted point near the query is itself near the
+true neighbor, so the true neighbor tends to appear among that point's stored nearest
+neighbors even when its own cell was not probed. This adds coverage that is
+\emph{independent of the partition} --- the property that drives the coarse-cell
+corollary (\S\ref{sec:coarse}). It composes with $\gamma$: the two attack different
+misses (calibration fixes which cells are ranked highly; the graph reaches beyond the
+probed cells), overlapping only partially. The union is deduplicated against the
+scanned pool (already-scanned neighbors are not re-scored) and the adjacency reads are
+software-prefetched, so the added cost is a small, bounded re-rank increment.
 \effect{At 1M, composed with $\gamma$, the ScaNN ratio drops $1.18\to0.98$
-(the first sub-1 result); at 10M it lets $t_{\text{surv}}$ halve at matched recall.}
+(the first sub-1 result); at 10M it lets $t_{\text{surv}}$ halve at matched recall.
+Graph parameters scale with $n$: fan-in $M$ and pool depth grow from $M{\approx}25$
+at 1M to $M{=}64$ at 100M as distractors multiply.}
 
 \section{Routing Cost and the Coarse-Cell Corollary}
 \label{sec:coarse}
@@ -476,17 +489,32 @@ ScaNN ratio $1.01\to0.85$; routing evals/query drop $\sim$12{,}000$\to$6{,}144.}
 
 \section{Joint Cross-Level Partition Optimization (Tree-EM)}
 \label{sec:em}
-\todo{EM over the hierarchical partition: E-step reassigns to nearest leaf via the
-beam descent (objective = query-time search), M-step recomputes every level jointly.
-Cheap-beam E-step. Additive with $\gamma$/graph.}
+Hierarchical $k$-means trains each level greedily top-down, so a leaf centroid is
+optimized for its parent's Voronoi cell, not for the query-time beam descent that
+actually reaches it. We instead optimize all levels jointly by EM against the
+search objective: the E-step assigns each sample point to the leaf its \emph{beam
+descent} lands in (not its globally-nearest leaf), and the M-step recomputes every
+level's centroids from those assignments. Iterating co-adapts the levels so the
+descent lands better. The E-step is itself an ANN query against the tree's own
+centroids, so it runs at a shallow beam (a few probes, not the full query beam),
+making EM cheap; it is a build-time cost only and adds nothing at query time. It
+composes with $\gamma$ and the graph (it improves the partition; they improve
+routing and coverage on top).
 \effect{$+0.6$--$1.0$ recall@10 points at 10M at matched probe, QPS-neutral
 (build-time only).}
 
 \section{Multi-Assignment (SOAR)}
 \label{sec:soar}
-\todo{Replicate each point into $a_0$ cells; SOAR spill covers the residual
-direction of the first cell. A dedup fix (rerank by orig id before the survivor cap)
-was required to realize it. Raises the routing coverage ceiling.}
+The remaining coverage lever is redundancy: assign each point to its top-$a_0$ cells
+rather than one, so a query reaching any of them finds the point. Naive replication
+puts near-duplicate copies in adjacent cells; SOAR instead chooses the extra cells to
+cover the \emph{residual direction} of the first assignment, so the copies span
+different query directions and buy more coverage per unit storage. Realizing the gain
+required a correctness fix: the exact-re-rank shortlist must be deduplicated by
+original id \emph{before} the survivor cap, otherwise the $a_0$ duplicate copies of a
+point crowd the fixed-size shortlist and starve distinct ids (recall then falls, and
+paradoxically decreases with more probes --- the signature of the bug). With the fix,
+multi-assignment raises the routing-coverage ceiling.
 \effect{$a_0{=}2$ reaches OOD coverage parity with the baseline partition; higher
 $a_0$ extends the high-recall frontier at a storage/scan cost (quantified in table).}
 
