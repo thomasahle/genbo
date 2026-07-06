@@ -3996,6 +3996,21 @@ P242a [2026-07-06] OPEN: cohere-10M 8-thread scaling anomaly under build content
   page-cache eviction of the 30GB fbase by builds (float rerank faulting from NVMe), rayon+contention interaction.
   RE-MEASURE on quiet box after builds land before drawing any 8t conclusion. 1t dominance (P242) unaffected.
 
+P243 [2026-07-06] cohere-10M v2 champion verdict + honest h2h status: v2 (dpb4+EM3+a0=3) ~1.3x v1 at matched recall; genbo-vs-HNSW = TIE under RoarGraph noise, definitive quiet-box h2h pending.
+  v2 index eng_cohere10m_l2_65536_dpb4_em3_a3.idx (hierkn 2-level [4096,65536] b0=128, TREEEM=3 at 557-654s/round,
+  dpb4 m=192, SOAR a0=3; 87min build, 26.5GB). Recall at matched p=16 graph-M16: v2 0.9390 vs v1 0.9462 (-0.7pt,
+  deterministic); within-window QPS ratio v2/v1 = 1.43, 1.29, 1.36 (adjacent alternation) => v2 WINS frontier ~1.3x.
+  P242's 'dominance' (1246 vs 1208) compared DIFFERENT time windows — same-window 3-round h2h (best-of-15 in-process):
+  genbo-v2 p16 0.9390 vs HNSW ef40 0.9370: ratios 0.77/0.92/1.09 (median 0.92) = STATISTICAL TIE at +0.2pt recall.
+  Box noise (RoarGraph 16t build, cores 72-87): same config swings 457->1762 QPS between minutes; 3 rounds insufficient.
+  v2 p=16 profile: route 33% (~335us, now the largest lever), scan 39% (460us), rescore 22% (255us at 666ns/row —
+  cache-miss inflated), float 3.5%. ROUTE_SDIM on RAW basis (no rotation): 512 -0.6pt, 384 -1.6pt, 256 -4.6pt —
+  near-isotropic per-dim variance, as OOD t2i (P232); needs PCA pre-rotation (data-side: rotate base+queries, rebuild;
+  graph reusable — edges are id-based) to make prefix-routing principled. QUEUED: definitive quiet-box pairwise
+  (genbo v1/v2 x p12/16/20 vs HNSW ef40/80 vs scann, 5 rounds interleaved) when RoarGraph exits; PCA-rotation rebuild
+  if a gap remains. 100M: em3-on-524288 = +0.7pt at matched p (0.9028@p68 vs em0 0.8958) => ~12% probe cut at 0.90;
+  clean QPS@0.90 pairwise also queued (expect ~7200-7500 vs 6764, would be new 100M champion).
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
