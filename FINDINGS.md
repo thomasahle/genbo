@@ -3977,6 +3977,18 @@ P241 [2026-07-06] AVX-512 i16 pair-scan gate hoisted out of hot loop: cohere-10M
   (SDIM/ADC) once route is the largest slice. Projection: ~1550-1700 QPS stacked, ~1900+ with route trim.
   HNSW cohere-10M REAL 1t (same box, contended): 0.9370@1208 (ef40), 0.9623@671, 0.9803@340; 8t: 9051/5117/2629.
 
+P242 [2026-07-06] COHERE-10M FIRST DOMINANCE: genbo (avx512-i16 kernel + HNSW-derived graph) beats HNSW at 1 thread — 0.9462@1246 vs 0.9370@1208.
+  Stack on the OLD v1 index (kf65536 dpb2 a0=2 no-EM): P241 kernel + cohere10m_graph_k16.u32 (emitted by the faiss
+  HNSW-10M job via base self-search ef=64, 976s/16t) with SBANN_GRAPH_M=16.
+  Frontier (1t, NQ=1000, contended box — BOTH systems measured within the same hour on the same box):
+    p=12 t=400: 0.9350@1377 | p=16 t=400: 0.9462@1246 (STRICTLY DOMINATES HNSW ef40 0.9370@1208) | p=24 t=500:
+    0.9572@1097 | p=48 t=500: 0.9730@832.  HNSW-10M 1t: ef40 0.9370@1208, ef80 0.9623@671, ef160 0.9803@340
+    (8t: 9051/5117/2629). genbo 8t not yet re-measured post-P241.
+  Graph is a bigger recall lever at 10M than 1M: +3pt at matched p (0.9264->0.9572 at p=24-48 range).
+  CAVEAT: contended conditions (v2 + 100M builds running); final call = tight-pairwise on quiet box after builds
+  land. v2 index (dpb4+EM3+a0=3, building) projected to add ~30-50%: dpb4 halves the m=384 kernel, EM cuts probes.
+  HNSW-10M artifacts banked: cohere/hnsw_cohere10m.faiss (reusable), cohere10m_graph_k16.u32.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
