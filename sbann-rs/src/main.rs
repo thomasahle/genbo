@@ -1517,6 +1517,16 @@ fn main() {
             eprintln!("SBANN_USE512FS requested but avx512bw not detected; falling back to AVX2 fast-scan");
         }
     }
+    // USE512I16 (P241, default ON where supported): 32-wide AVX-512 vpermw kernel for the Pq16
+    // (int16-LUT) pair-scan — the path the m>128 scan-precision policy (P239) selects. Identical
+    // distances to the 16-wide scan (selftest-asserted), so recall is unchanged; only touches
+    // QueryCtx::Pq16, which the champion d=200 FASTSCAN2/Pq8 path never reaches. SBANN_USE512=0 disables.
+    if env_on("SBANN_USE512", true)
+        && std::is_x86_feature_detected!("avx512f") && std::is_x86_feature_detected!("avx512bw") {
+        assert!(pq::selftest_i16_avx512(50) && pq::selftest_i16_avx512(100) && pq::selftest_i16_avx512(384),
+            "avx512-32w i16 pair-scan kernel != scalar!");
+        vq::USE512I16.store(true, std::sync::atomic::Ordering::Relaxed);
+    }
     if std::env::var("SBANN_VNNI").is_ok() {
         assert!(simd::selftest_dot(200) && simd::selftest_dot(204), "VNNI int8 dot != scalar!");
         simd::VNNI_ON.store(true, std::sync::atomic::Ordering::Relaxed);

@@ -20,6 +20,13 @@ pub static FASTSCAN: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBo
 /// 64-vector superblock layout built at index time. Only meaningful with FASTSCAN (i8s LUT / Pq8 ctx)
 /// + avx512bw. Identical distances to the AVX2 fast-scan (so recall is unchanged). Set from SBANN_USE512FS.
 pub static USE512FS: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+/// true => the Pq16 (int16-LUT) pair-scan uses the 32-wide AVX-512 vpermw kernel
+/// (block_adc_i16_avx512_x2) instead of 2x 16-wide scan_block. Identical distances (non-saturating
+/// i16 accumulate, verbatim i16->i32 widening; selftest-asserted at startup), so recall is unchanged.
+/// P241: was formerly gated on a PER-CALL env::var("SBANN_USE512") in the hot loop (~890 calls/query
+/// at 10M = mutex+hash per block call) which ate most of the kernel win. Default ON when avx512f+bw
+/// are detected (set in main()); SBANN_USE512=0 disables for A/B.
+pub static USE512I16: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 /// true => PROPER FastScan (André 2015 / Quicker-ADC): 32-wide 256-bit vpshufb + int8 SATURATING
 /// accumulate with periodic int16 hoist (block_adc_i8_fastscan32_2x16). Uses a BOUNDED [0,15] LUT
 /// (query_lut_f32_i8s_fs2) so hoist groups don't saturate. ~1.8x kernel vs the crude 16-wide int16
@@ -1564,7 +1571,7 @@ impl Compressor for Apq4 {
             }
         }
         if let QueryCtx::Pq16 { lut_z, .. } = ctx {
-            if std::env::var("SBANN_USE512").is_ok() && std::is_x86_feature_detected!("avx512f") && std::is_x86_feature_detected!("avx512bw") {
+            if USE512I16.load(std::sync::atomic::Ordering::Relaxed) {
                 unsafe { pq::block_adc_i16_avx512_x2(b0, b1, self.pq.m, lut_z, out) };
                 return;
             }
@@ -1741,7 +1748,7 @@ impl Compressor for Opq4 {
             }
         }
         if let QueryCtx::Pq16 { lut_z, .. } = ctx {
-            if std::env::var("SBANN_USE512").is_ok() && std::is_x86_feature_detected!("avx512f") && std::is_x86_feature_detected!("avx512bw") {
+            if USE512I16.load(std::sync::atomic::Ordering::Relaxed) {
                 unsafe { pq::block_adc_i16_avx512_x2(b0, b1, self.pq.m, lut_z, out) };
                 return;
             }
