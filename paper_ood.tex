@@ -54,11 +54,36 @@ development --- as a contribution.
 
 \section{Introduction}
 \label{sec:intro}
-\todo{Motivate OOD vector search (RAG, cross-modal). The IVF+quant pipeline:
-route$\to$scan$\to$re-rank. Thesis sentence: on OOD the binding constraint is
-ROUTING/COVERAGE, not scan throughput or code fidelity -- and we show this by
-measuring both sides. Then: a collection of coverage/routing techniques, each with
-its own measured effect, plus the informative negatives.}
+Approximate nearest-neighbor (ANN) search is the retrieval primitive under
+retrieval-augmented generation, semantic search, and recommendation. At scale the
+dominant family is inverted-file with quantization (IVF-PQ): partition the database
+into $C$ cells, at query time \emph{route} to the $p\!\ll\!C$ most promising cells,
+\emph{scan} compressed codes within them, and exactly \emph{re-rank} a shortlist. A
+large literature has driven each stage --- anisotropic quantization and SIMD
+fast-scan for the scan, product and residual codes for memory, graph indices as an
+alternative to IVF --- overwhelmingly evaluated where queries and database are drawn
+from the \emph{same} distribution.
+
+We study the \emph{out-of-distribution} (OOD) regime, where the query distribution
+differs from the database. This is not a corner case: cross-modal retrieval embeds a
+text query and searches image vectors under inner product, and the big-ANN
+``text2image'' track (image base, text queries, $d{=}200$) is exactly this setting.
+It is also where the strongest systems separate, and --- we argue --- where the
+conventional intuition about what to optimize is wrong.
+
+Our organizing claim is a \emph{bottleneck localization}: on OOD workloads the
+binding constraint is \emph{routing coverage} --- whether the true neighbor's cell is
+among the $p$ probed and its members reachable --- not scan throughput or code
+fidelity. We support this from both sides. A battery of scan- and code-side
+improvements (wider SIMD, higher-resolution and rotated codes, RaBitQ, ADC routing)
+leaves OOD recall and QPS essentially unmoved (\S\ref{sec:neg}); meanwhile a small
+set of routing- and coverage-directed techniques each yields a measured gain
+(\S\ref{sec:gamma}--\S\ref{sec:soar}). We therefore present the work as a measured
+collection --- every technique reported with the effect it produces in isolation,
+and the negatives kept as first-class evidence for the localization. Composed and
+evaluated under a same-hardware, tight-pairwise protocol against ScaNN at its best
+configuration, the result attains higher QPS at matched recall@10 at 1M and 10M
+\pending{(and 100M)}, and transfers to the streaming track.
 
 \paragraph{Contributions (each measured in isolation).}
 \begin{itemize}
@@ -307,16 +332,51 @@ state we do NOT claim the recursive-tree polylog result (refuted at $\le$10M sca
 
 \section{Localizing the OOD Bottleneck}
 \label{sec:localize}
-\todo{Frame the diagnostic: pool-recall ceiling (re-rank the whole probed pool) vs
-scan-limited recall. Show scan is already extracting the pool (no scan headroom),
-so recall is set by routing/coverage. This motivates attacking routing (\S5-9) and
-predicts scan/code levers won't help (\S\ref{sec:neg}, the negatives).}
+We separate two ceilings. The \emph{pool-recall ceiling} is the recall obtainable by
+exactly re-ranking the \emph{entire} probed pool --- it depends only on routing
+(which cells, hence which points, are reachable), not on the scan's approximation.
+The \emph{scan-limited recall} is what the actual (quantized) scan plus shortlist
+delivers. If the two coincide, the scan is already extracting everything the routed
+pool contains and there is no scan headroom; recall is then a pure function of
+routing coverage.
+
+On OOD text2image this is what we observe: at a fixed probe budget the scan-limited
+recall sits at the pool-recall ceiling, and that ceiling --- not the scan --- is what
+moves when we change routing. Two consequences follow, and the rest of the paper is
+their systematic exploration. First, techniques that improve \emph{coverage} (route
+calibration, graph augmentation, joint partition optimization, multi-assignment)
+should raise recall; \S\ref{sec:gamma}--\S\ref{sec:soar} confirm each does, with a
+measured effect. Second, techniques that only improve the \emph{scan or the code}
+(wider SIMD, higher-resolution or rotated codes, alternative quantizers, ADC routing)
+should not help, because there is no scan headroom to recover; \S\ref{sec:neg}
+confirms each does not. The negatives are thus not incidental --- they are the
+control that localizes the bottleneck to routing coverage.
 
 \section{$\gamma$: One-Parameter Routing Recalibration}
 \label{sec:gamma}
-\todo{Per-cell additive $i32$ bias $(\gamma{-}1)\lVert c\rVert^2$ precomputed at
-build; zero per-query cost. Fit once per dataset ($\gamma\approx0.5$ on text2image,
-1M and 10M). Ablate $\gamma\in\{0.4,0.45,0.5,0.55,0.6\}$.}
+An IVF router ranks cells by a score over the query $q$ and centroid $c$. For $L_2$
+$k$-means the score is $\lVert q-c\rVert^2 = \lVert q\rVert^2 + \lVert c\rVert^2 -
+2\,q\!\cdot\!c$; dropping the query-constant term leaves
+$\lVert c\rVert^2 - 2\,q\!\cdot\!c$. We write the family
+\begin{equation}
+\label{eq:gamma}
+s_\gamma(q,c) \;=\; \gamma\lVert c\rVert^2 - 2\,q\!\cdot\!c ,
+\end{equation}
+where $\gamma{=}1$ recovers $L_2$ routing and $\gamma{\to}0$ recovers pure
+inner-product (angular) routing. Under distribution shift these disagree in a
+specific way: the $\lVert c\rVert^2$ penalty demotes high-norm centroids, but for
+OOD queries the inner-product-relevant neighbors concentrate precisely near those
+high-norm cells, so $\gamma{=}1$ systematically misroutes them. A single global
+$\gamma{<}1$ rebalances the two terms. It is grounded in the cap-vs-ball argument of
+\S\ref{sec:theory}: $\gamma$ slides routing along the additive-ball ($\gamma{=}1$,
+non-selective under concentration) to spherical-cap ($\gamma{\to}0$, selective) axis.
+
+Crucially the fix is \emph{free at query time}: $s_\gamma$ differs from the $L_2$
+score only by the per-cell constant $(\gamma{-}1)\lVert c\rVert^2$, which we fold
+into a precomputed integer bias added during cell scoring (no extra query work, no
+index-format change). We fit $\gamma$ once per dataset; $\gamma\!\approx\!0.5$ is
+optimal on text2image at both 1M and 10M, and the recall is flat across
+$\gamma\in\{0.4,\dots,0.6\}$ near the optimum.
 \effect{Reaches matched OOD recall at $\approx$half the probes ($p$: 54$\to$29 at
 1M; $\approx$2.5$\times$ probe cut at 10M). Zero query-time cost.}
 
