@@ -586,6 +586,18 @@ a convention-chosen leaf count can silently under- or over-partition the baselin
 win depending on a handicapped baseline is quarantined; we describe one (an
 under-leaved cached 10M index) and its correction.
 
+\paragraph{Build-time eligibility.} The benchmark caps index build at \textbf{12
+hours} on the 8-vCPU evaluation machine, so a baseline (or our own index) that cannot
+build in time is not merely slow --- it is ineligible. This is a real constraint at
+100M: a $\sqrt{n}$-scaled 126k-leaf ScaNN would take $\approx$32h at 8 vCPU (its
+partitioner $k$-means over the training sample), so the eligible ScaNN baseline is a
+coarser config that builds in time. Our indices build comfortably inside the limit and
+\emph{faster than ScaNN at scale}: on 16 cores, 1M in $131$s, 10M in $27$min, 100M in
+$86$min ($\approx\!3$h at 8 vCPU), versus ScaNN's $\approx\!1.5$h (10M) and $\approx\!2$h
+(100M, eligible config). We therefore report build time alongside QPS
+(Table~\ref{tab:main}); the hierarchical-$k$-means$+$PQ build is cheaper than ScaNN's
+partitioner-$k$-means$+$AH training, and the gap widens with $n$.
+
 \paragraph{What we do not claim.} Same-hardware ratios on one (shared) machine, not a
 standardized-VM submission; ScaNN is the \emph{measured} opponent --- gaps to
 binary-only leaderboard systems are \emph{inference} from the public leaderboard.
