@@ -4028,6 +4028,14 @@ P246 [2026-07-06] Adaptive batch-chunk default: t2i-10M 8t 14851 -> 20882 QPS (+
   NOTE: banked 8t OOD ratios (P222/P225/P227 era) were measured under the old default — genbo's 8t absolute was
   underreported; ratios vs scann stand (both sides measured), but a re-run would likely IMPROVE the 8t ratios.
 
+P247 [2026-07-06] 8t OOD 10M h2h refreshed under adaptive chunk (P246): ratio 0.833 -> 0.758 (median/5, IQR 0.754-0.760).
+  Proper harness (h2h_10m_pairwise.py, search_batched_parallel for scann, H2H_THREADS=8, cores 8-15, NQ=10000,
+  REPS=5, tight alternation): SCANN 0.9253@~16450 vs ENG 0.9008@~21700 (graph M32 g0.5 p40 t1000 exported via env
+  — the harness does NOT set graph itself; graph-off run showed 0.8736@~22800/ratio 0.727 = gate-fail, discarded).
+  Conservative: scann at 0.9253 recall (its swept point) vs eng at 0.9008. Paper tab:main 10M 8t cell updated.
+  Also: quick sed-hack scann-8t measurement (search_batched + set_num_threads) gave 2150 QPS = 8x under-read —
+  scann 8t REQUIRES search_batched_parallel; do not measure it any other way.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
