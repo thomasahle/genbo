@@ -486,11 +486,17 @@ warm and resident (leaderboard serving); an early cold-spawn asymmetry is correc
 by scoring each engine's warm block. Headline numbers pause all other first-party
 jobs (SIGSTOP) and confirm across $\ge$20 rounds.
 
-\paragraph{The baseline at its best.} ScaNN uses its \emph{official} big-ANN recipe
-(e.g.\ 40k leaves at 10M, anisotropic AH/LUT16, residual quant, bfloat16 re-order)
-with its own leaves/re-order sweep including corner configs. A win depending on a
-handicapped baseline is quarantined; we describe one (an under-leaved cached index)
-and its correction.
+\paragraph{The baseline at its best.} At 10M, where an \emph{official} big-ANN recipe
+exists, ScaNN uses it verbatim (40k leaves, anisotropic AH/LUT16, residual quant,
+bfloat16 re-order, top-level partitioner) with its own leaves-to-search / re-order
+sweep including corner configs. At scales with no official recipe (1M, 100M) we
+instead give ScaNN its \emph{speed-optimal} configuration, found by sweeping the leaf
+count: e.g.\ at 1M, ScaNN peaks at 1200 leaves (6.2k QPS@0.90), with both finer and
+coarser partitions slower --- coarser because routing over more leaves outweighs the
+finer scan, mirroring our own coarse-cell result (\S\ref{sec:coarse}). This matters:
+a convention-chosen leaf count can silently under- or over-partition the baseline. A
+win depending on a handicapped baseline is quarantined; we describe one (an
+under-leaved cached 10M index) and its correction.
 
 \paragraph{What we do not claim.} Same-hardware ratios on one (shared) machine, not a
 standardized-VM submission; ScaNN is the \emph{measured} opponent --- gaps to
