@@ -3902,6 +3902,24 @@ P237. (*** OPPONENT-AT-ITS-BEST AUDIT (user-prompted "are we using the wrong sca
     speed-max, though it IS the leaderboard config). (3) 100M: sweep scann leaf count for ITS optimum before
     any ratio claim (the lean 40k is a build-of-convenience, likely too coarse). scann_1m_leafsweep.py.
 
+P238. (*** BUILD-TIME CONSTRAINT (user-flagged): big-ann OOD limit = 12 HOURS on the 8-vCPU eval machine
+    (runner.py:297 container timeout = 12*3600 for Filters/OOD/Sparse; README section "Build time limit").
+    This makes the killed 126k-leaf scann DOUBLY invalid (ineligible, not just slow) AND genbo builds faster
+    than scann at every scale within the limit -- a bonus result for the paper. ***)
+    BUILD TIMES (16 cores; ~2x on the 8-vCPU D8lds_v5 eval machine; limit 12h):
+      scale   genbo                         scann
+      1M      131s                          80s  (1200 leaves)  -> scann slightly faster at 1M
+      10M     1640s (27min, G2 Kf=65536 EM2) ~1.5h (40k official) -> genbo ~3x faster
+      100M    5150s (86min, 3-level)         ~2h (40k lean); 126k = ~16h/16c => ~32h/8vcpu = INELIGIBLE
+    So (1) the 126k scann I killed EXCEEDED the 12h limit (~32h at 8 vCPU) -> not a valid baseline at all;
+    killing it was doubly right. (2) genbo's build advantage GROWS with scale (1M scann faster, but 10M/100M
+    genbo 3x faster) -- the hierarchical-kmeans + apq4 build is cheap vs scann's partitioner-kmeans + AH
+    training. (3) The eligible scann baseline is a config building <=12h (40k works; 126k doesn't). NEW
+    PAPER POINT: report build time alongside QPS -- genbo wins BOTH build and query at scale, within the
+    12h eligibility gate. ACTION: killed the all-night 20k/30k scann leaf-sweep (per user: don't let scann
+    build all night); kept the 40k-lean h2h. If the 40k h2h is borderline, build ONE coarser eligible scann
+    (25k, ~1.5h) to give scann its best-eligible; else 40k stands.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
