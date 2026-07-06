@@ -235,7 +235,7 @@ impl Pq {
     pub fn encode_f32(&self, x: &[f32], out: &mut [u8]) {
         // anisotropic encode (match aniso training): assign by L2 + (eta-1)*(parallel error)^2
         let em1 = if self.eta > 0.0 { self.eta - 1.0 } else { 0.0 };
-        let mut vhat = [0f32; 256];
+        let mut vhat = [0f32; 1024];
         if em1 != 0.0 {
             let mut nrm = 0f32;
             for k in 0..self.d { nrm += x[k] * x[k]; }
@@ -652,7 +652,7 @@ pub fn selftest_resid(d: usize, dpb: usize) -> bool {
 
 /// Pack the codes of 16 points (each `m` bytes) into a block: m/2 groups of 16 bytes,
 /// byte i of group g = code[i][2g] | (code[i][2g+1] << 4).
-pub fn pack_block(codes16: &[[u8; 256]], m: usize, out: &mut Vec<u8>) {
+pub fn pack_block(codes16: &[[u8; 512]], m: usize, out: &mut Vec<u8>) {
     for g in 0..m / 2 {
         for i in 0..16 {
             out.push(codes16[i][2 * g] | (codes16[i][2 * g + 1] << 4));

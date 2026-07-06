@@ -131,7 +131,7 @@ fn build_pq_index(ivf: &Ivf, ds: &I8Bin, pq: &pq::Pq) -> PqIndex {
     let mut blocks: Vec<u8> = Vec::new();
     let mut cell_bstart = vec![0u32; ivf.c + 1];
     let mut slot_orig: Vec<u32> = Vec::new();
-    let mut codes16 = [[0u8; 256]; 16];
+    let mut codes16 = [[0u8; 512]; 16];
     for cell in 0..ivf.c {
         let (s, e) = (ivf.cell_start[cell] as usize, ivf.cell_start[cell + 1] as usize);
         let pts = &ivf.ids[s..e];

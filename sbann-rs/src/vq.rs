@@ -768,7 +768,7 @@ impl Router for FlatIvf {
     fn n_cells(&self) -> usize { self.c }
     fn assign(&self, row: &[i8], a0: usize, out: &mut Vec<u32>) {
         let d = self.d;
-        let mut qn = [0i8; 256];
+        let mut qn = [0i8; 1024];
         simd::normalize_i8(row, &self.mu, &mut qn[..d]);
         if self.soar > 0.0 && a0 == 2 {
             // i0 = nearest; i1 = argmin l2 + soar*<residual_j, r0hat>^2 (orthogonality-amplified)
@@ -780,7 +780,7 @@ impl Router for FlatIvf {
                 if dist < b0 { b0 = dist; bi0 = j; }
             }
             // first residual r0 = qn - pivot[i0]
-            let mut r0 = [0f32; 256];
+            let mut r0 = [0f32; 1024];
             let mut nrm = 0.0f32;
             for k in 0..d { let v = qn[k] as f32 - self.pivots_f32[bi0 * d + k]; r0[k] = v; nrm += v * v; }
             let (mut bi1, mut b1) = (bi0, f32::INFINITY);
@@ -815,7 +815,7 @@ impl Router for FlatIvf {
     }
     fn probe(&self, q: &[i8], p: usize) -> Vec<u32> {
         let d = self.d;
-        let mut qn = [0i8; 256];
+        let mut qn = [0i8; 1024];
         simd::normalize_i8(q, &self.mu, &mut qn[..d]);
         let mut cd: Vec<(i32, u32)> = (0..self.c)
             .map(|j| (simd::l2_i8(&qn[..d], &self.pivots[j * d..j * d + d]), j as u32))
@@ -829,7 +829,7 @@ impl Router for FlatIvf {
     }
     fn probe_ranked(&self, q: &[i8], p: usize) -> Vec<u32> {
         let d = self.d;
-        let mut qn = [0i8; 256];
+        let mut qn = [0i8; 1024];
         simd::normalize_i8(q, &self.mu, &mut qn[..d]);
         let mut cd: Vec<(i32, u32)> = (0..self.c)
             .map(|j| (simd::l2_i8(&qn[..d], &self.pivots[j * d..j * d + d]), j as u32))
@@ -892,7 +892,7 @@ impl Router for AvqRouter {
         // cheap RQ assignment: top-a0 nearest c0, each with nearest c1-of-residual. O(c0+a0*c1)
         // per point instead of O(c0*c1) — makes the BUILD scale (vs scanning all 65536 cells).
         let d = self.d;
-        let mut qn = [0f32; 256];
+        let mut qn = [0f32; 1024];
         simd::norm_f32(row, &self.mu, &mut qn[..d]);
         let mut c0d: Vec<(f32, u32)> = (0..self.c0n)
             .map(|j| (simd::l2_f32(&qn[..d], &self.c0[j * d..j * d + d]), j as u32))
@@ -1340,7 +1340,7 @@ impl HierRouter {
         if a0 <= 1 { return; }
         // r̂0 = normalize(qn - cf[i0]); qdot = qn·r̂0 (so rj·r̂0 = qdot - cf[j]·r̂0)
         let off0 = i0 as usize * d;
-        let mut r0 = [0f32; 256];
+        let mut r0 = [0f32; 1024];
         let mut nrm = 0f32;
         for k in 0..d { let v = qn[k] as f32 - cf[off0 + k] as f32; r0[k] = v; nrm += v * v; }
         let inv = 1.0 / nrm.sqrt().max(1e-9);
@@ -1366,7 +1366,7 @@ impl HierRouter {
 impl Router for HierRouter {
     fn n_cells(&self) -> usize { self.kf }
     fn assign(&self, row: &[i8], a0: usize, out: &mut Vec<u32>) {
-        let mut qn = [0i8; 256];
+        let mut qn = [0i8; 1024];
         simd::normalize_i8(row, &self.mu, &mut qn[..self.d]);
         if self.soar > 0.0 && a0 >= 2 {
             self.route_fine_soar(&qn[..self.d], a0, self.soar, out);
@@ -1376,7 +1376,7 @@ impl Router for HierRouter {
         while out.len() < a0 { out.push(0); }
     }
     fn probe(&self, q: &[i8], p: usize) -> Vec<u32> {
-        let mut qn = [0i8; 256];
+        let mut qn = [0i8; 1024];
         simd::normalize_i8(q, &self.mu, &mut qn[..self.d]);
         let mut out = Vec::new();
         self.route_fine(&qn[..self.d], p, &mut out);
@@ -1458,7 +1458,7 @@ impl Pq4 {
 impl Compressor for Pq4 {
     fn block_bytes(&self) -> usize { self.pq.m / 2 * 16 }
     fn encode_block(&self, rows: &[&[i8]], n_real: usize, _cell_cent: &[i8], out: &mut Vec<u8>) {
-        let mut codes16 = [[0u8; 256]; 16];
+        let mut codes16 = [[0u8; 512]; 16];
         for j in 0..16 {
             if j < n_real { self.pq.encode(rows[j], &mut codes16[j][..self.pq.m]); }
             else { for k in 0..self.pq.m { codes16[j][k] = 0; } }
@@ -1500,7 +1500,7 @@ impl Apq4 {
 impl Compressor for Apq4 {
     fn block_bytes(&self) -> usize { self.pq.m / 2 * 16 }
     fn encode_block(&self, rows: &[&[i8]], n_real: usize, cell_cent: &[i8], out: &mut Vec<u8>) {
-        let mut codes16 = [[0u8; 256]; 16];
+        let mut codes16 = [[0u8; 512]; 16];
         let mut xf = vec![0f32; self.d];
         let resid = !cell_cent.is_empty(); // SBANN_RESIDQ: encode (row - cell_cent) in f32
         for j in 0..16 {
@@ -1672,8 +1672,8 @@ impl Opq4 {
             pq = pq::Pq::train_f32(&xr, d, dpb, smp, pq_iters);
             // reconstruct yhat in rotated space, then M = X^T Yhat
             let m_acc: Vec<f64> = (0..smp).into_par_iter().fold(|| vec![0f64; d * d], |mut acc, i| {
-                let mut code = [0u8; 256];
-                let mut yh = [0f32; 256];
+                let mut code = [0u8; 1024];
+                let mut yh = [0f32; 1024];
                 pq.encode_f32(&xr[i * d..i * d + d], &mut code[..pq.m]);
                 pq.decode(&code[..pq.m], &mut yh[..d]);
                 for a in 0..d {
@@ -1698,7 +1698,7 @@ impl Opq4 {
 impl Compressor for Opq4 {
     fn block_bytes(&self) -> usize { self.pq.m / 2 * 16 }
     fn encode_block(&self, rows: &[&[i8]], n_real: usize, _cell_cent: &[i8], out: &mut Vec<u8>) {
-        let mut codes16 = [[0u8; 256]; 16];
+        let mut codes16 = [[0u8; 512]; 16];
         let mut rot = vec![0f32; self.d];
         for j in 0..16 {
             if j < n_real {
