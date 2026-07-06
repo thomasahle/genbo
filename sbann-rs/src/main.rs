@@ -423,6 +423,18 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
     idx
     };
 
+    // SCAN-PRECISION POLICY (P239): FASTSCAN2's int8-sat accumulate caps each subspace LUT at ~4 bits
+    // (FS2_CAP=120/HOIST); LUT quantization noise grows ~sqrt(m), so at high subspace counts it drowns
+    // small (in-distribution) neighbor gaps — cohere768 m=384: in-pool ordering 0.07 (i8s) vs 0.87 (int16)
+    // on the SAME codes. Default to the int16 LUT path when m>128 (d>256 at dpb=2); an explicit
+    // SBANN_FASTSCAN2 always wins. d<=256 (m<=128, e.g. t2i d=200 m=100) is untouched: champion path.
+    let m_scan = idx.bb / 8; // 4-bit PQ blocks: bb = m/2*16 (non-PQ comps land >128 harmlessly: FS2 only scans PQ blocks)
+    if m_scan > 128 && std::env::var("SBANN_FASTSCAN2").is_err()
+        && vq::FASTSCAN2.load(std::sync::atomic::Ordering::Relaxed) {
+        vq::FASTSCAN2.store(false, std::sync::atomic::Ordering::Relaxed);
+        println!("  [scan-precision policy: m={m_scan}>128 -> int16 LUT scan (FASTSCAN2 auto-off; SBANN_FASTSCAN2=1 forces i8s)]");
+    }
+
     let qs = I8Bin::open(qpath).expect("q");
     let (gnq, gk, gids) = read_gt(gtpath);
     // SBANN_NQ caps the #queries (for fair same-NQ head-to-head vs the Python frontier's NQ=1000).
