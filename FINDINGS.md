@@ -4040,6 +4040,15 @@ P248 [2026-07-06] 1M 8t OOD ratio refreshed under adaptive chunk: 0.756 -> 0.746
   Same harness/protocol as P247 (search_batched_parallel, cores 8-15, NQ=10000, graph M25 g0.5 p18 t470 exported).
   Headline OOD table now: 1M 0.755 (1t) / 0.746 (8t); 10M 0.827 (1t) / 0.758 (8t).
 
+P249 [2026-07-06] STREAMING FINAL (NQ=10000, compliant runbook, this box): eligible frontier = p=64 -> 0.8821 @ 52.7min; p=80 -> 0.9010 @ 68.9min (15% over); puck 0.9855 unreachable on this box (p=224 -> 0.9648 @ 148.8min).
+  All from completed stream_elig_*/stream_nq10k_* runs (compliance retrain + adaptive-p + batch-insert, branch
+  feat/streaming-30m@4173d70): inserts 29.99M in 400-450s (~73k/s 8t), deletes 3.7-4.8s, search dominates
+  (2333 q/s at p=64, 8t). P246 chunk fix does NOT apply — stream search is per-query par_iter (verified).
+  VERDICT: recall-vs-budget is compute-bound on this box (2-3x slower at 8thr than old rig/Azure, see
+  streaming-eligibility memory); on the leaderboard machine p>=80-96 would be eligible (projected 0.90-0.92).
+  Paper reports the on-this-box frontier with the machine caveat. NQ=1000 numbers (0.9706-0.9745) were
+  small-NQ-optimistic; NQ=10000 is the honest series. Task closed at this frontier.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
