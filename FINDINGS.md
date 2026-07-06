@@ -4036,6 +4036,10 @@ P247 [2026-07-06] 8t OOD 10M h2h refreshed under adaptive chunk (P246): ratio 0.
   Also: quick sed-hack scann-8t measurement (search_batched + set_num_threads) gave 2150 QPS = 8x under-read —
   scann 8t REQUIRES search_batched_parallel; do not measure it any other way.
 
+P248 [2026-07-06] 1M 8t OOD ratio refreshed under adaptive chunk: 0.756 -> 0.746 (median/5, IQR 0.745-0.747; ENG 0.9049@60.7k vs SCANN 0.9005@45.2k, higher recall AND 1.34x QPS).
+  Same harness/protocol as P247 (search_batched_parallel, cores 8-15, NQ=10000, graph M25 g0.5 p18 t470 exported).
+  Headline OOD table now: 1M 0.755 (1t) / 0.746 (8t); 10M 0.827 (1t) / 0.758 (8t).
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
