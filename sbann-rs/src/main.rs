@@ -507,10 +507,15 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
     // cells in storage order reusing each cell's blocks across the queries that probe it, then per-query
     // cascade+float. Recall-BIT-IDENTICAL to the per-query path (pure execution-order change). Only wired
     // for the FLOAT_RERANK path. SBANN_BATCHSCAN=0 forces the per-query loop. SBANN_BATCH_CHUNK splits the
-    // nq queries into fixed-size chunks (multiplicity ~ chunk_size); default 1000 = the P202 saturation
-    // knee. SBANN_BATCH_VERIFY runs the per-query path too and compares result ids.
+    // nq queries into fixed-size chunks (multiplicity ~ chunk_size).
+    // DEFAULT (P245/P246): adaptive clamp(nq/(4*threads), 125, 1000). The old fixed 1000 (P202 knee) had two
+    // parallel pathologies: nq<=1000 -> ONE chunk -> the whole batched path runs SERIAL (cohere-10M 8t stuck at
+    // 1x, P245), and nq=10000/8t -> 10 chunks -> straggler imbalance (chunk=250: +43% at 8t, recall
+    // bit-identical, P246). 4 chunks/thread balances; floor 125 keeps cell-pass amortization; 1t unaffected
+    // (clamp hits 1000). Env SBANN_BATCH_CHUNK still overrides.
     let batchscan = env_on("SBANN_BATCHSCAN", true);
-    let batch_chunk: usize = std::env::var("SBANN_BATCH_CHUNK").ok().and_then(|s| s.parse().ok()).filter(|&c| c >= 1).unwrap_or(1000);
+    let batch_chunk: usize = std::env::var("SBANN_BATCH_CHUNK").ok().and_then(|s| s.parse().ok()).filter(|&c| c >= 1)
+        .unwrap_or_else(|| (nq / (4 * rayon::current_num_threads()).max(1)).clamp(125, 1000));
     let batch_verify = std::env::var("SBANN_BATCH_VERIFY").is_ok();
     // SBANN_VNNI_AB: interleave VNNI off/on per (p,t) for a clean same-index rerank-kernel A/B.
     let vnni_ab = std::env::var("SBANN_VNNI_AB").is_ok();
