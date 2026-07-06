@@ -4020,6 +4020,14 @@ P245 [2026-07-06] P242a RESOLVED — 8t 'anomaly' was the batched driver's chunk
   needs a t2i NQ=10000 A/B first (chunk size trades cell-pass amortization vs parallelism; don't change champion
   path blind).
 
+P246 [2026-07-06] Adaptive batch-chunk default: t2i-10M 8t 14851 -> 20882 QPS (+41%), recall bit-identical; 1t champion untouched.
+  chunk A/B on t2i-10M champion (NQ=10000, 8t, graph M32 g0.5 t1000 p40): chunk=1000 (old default) 14851; 250
+  21253; 125 21058 — the fixed 1000 was straggler-bound (10 chunks / 8 threads). New default (main.rs):
+  clamp(nq/(4*threads), 125, 1000), env-overridable; 1t hits the clamp=1000 => bit-identical champion path
+  (verified 0.9049 t2i-1M). Combined with P245 this also sets cohere-8t 12850 without needing the env.
+  NOTE: banked 8t OOD ratios (P222/P225/P227 era) were measured under the old default — genbo's 8t absolute was
+  underreported; ratios vs scann stand (both sides measured), but a re-run would likely IMPROVE the 8t ratios.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
