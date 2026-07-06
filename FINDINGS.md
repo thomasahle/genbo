@@ -3937,6 +3937,31 @@ P238. (*** BUILD-TIME CONSTRAINT (user-flagged): big-ann OOD limit = 12 HOURS on
     IS eligible at ~2-4h build; a query-QPS h2h there would need scann-40k built to completion, ~3-4h.)
     Reported both ways in the paper: 2h-gate eligibility (genbo only) + optional 12h-gate query h2h.
 
+P239 [2026-07-06] IN-DISTRIBUTION ROOT CAUSE: int8-sat fast-scan LUT cap breaks at high m — int16 path fixes it; genbo BEATS HNSW on cohere-1M.
+  Symptom: cohere768-1M (in-dist, cosine) genbo needed t_surv=32000 for 0.94 (456 QPS 1t); HNSW 0.9122@1840. In-pool ordering by
+  4-bit ADC was catastrophic: plain rr=100 -> recall 0.0701 (p=48, pool 8000).
+  Discriminating A/B (SAME index, SAME 4-bit codes, only scan arithmetic): FASTSCAN2 int8-sat rr=100 -> 0.070; SBANN_FASTSCAN2=0
+  (int16 LUT) rr=100 -> 0.8716 = pool ceiling. Verdict: codes fine; the FS2_CAP=15 (~4-bit) per-subspace LUT quantization is the
+  killer at m=384 (d=768, dpb=2): noise ~ sqrt(m) vs tiny in-dist cosine gaps. At d=200 (m=100, wide OOD gaps) FS2 is harmless ->
+  why it became champion default. POLICY: scan precision must scale with m (auto int16 when m>~128; d=200 unaffected).
+  Standard cascade under int16, cohere-1M graph-off 1t: p=32/t=300 0.9031@2035; p=40/t=300 0.9197@1957 (STRICTLY DOMINATES HNSW
+  ef40 0.9122@1840); p=64/t=500 0.9522@1245 vs HNSW ef80 0.9592@995. t collapsed 32000->300 (survivor cut now trustworthy).
+  8-bit RESID refine: ranks to ceiling (0.869@rr=100) but 222 QPS (LUT overhead over 8k survivors) — not the fix. Graph-on with
+  HNSW-quality edges: 676@0.9065 — helps (1.5x) but not the root cause. Baselines same box 1t: HNSW 0.9122@1840/0.9592@995,
+  IVFPQ+refine 0.9014@877 (by_residual=False REQUIRED for IP — default residual PQ caps at 0.11 even on OOD t2i), scann pending.
+  Cohere assets: cohere/base1m.{fbin,i8bin}, cohere1m_gt.ibin (exact, faiss FlatIP), cohere1m_graph_k16.u32 (HNSW self-search),
+  eng_cohere1m_kf16384.idx, eng_cohere1m_kf16384_resid.idx (+8-bit refine, dpb=2).
+
+P240 [2026-07-06] 100M Kf-geometry x tree-EM ablation: EM real (+0.6-1.0pt, 445s), coarser-Kf recall lift eaten by cell cost — QPS wash; EM-on-fine-geometry is the open lever.
+  Two concurrent 100M builds (single-variable axes): kf262144-em0 and kf262144-em3 (C0=2048 C1=23170 b0=512 b1=256; EM rounds
+  148s each on sample, beam-8 E-step). Recall@matched p (graph M64 t8000 g0.5, NQ=2000, load-independent):
+    p=48: 524288-em0 0.8830 | 262144-em0 0.8983 | 262144-em3 0.9084;  p=96: 0.9154 | 0.9250 | 0.9287.
+  Decomposition: coarser Kf +1.0-1.5pt at matched p; treeEM +0.6-1.0pt on top (3-level boundary repair, user hypothesis
+  CONFIRMED on recall). BUT clean uncontended QPS@0.90 (16t, NQ=10000, best/5): OLD 524288-em0 0.9011@6764 (p=76) vs NEW
+  262144-em3 0.9007@6700 (p=44) — WASH. Coarser cells scan 2x points/probe (381 vs 190/leaf); probe savings cancel. Scaling-law
+  'coarser wins' does NOT survive at QPS level at 100M (10M coarse-cell win was geometry-knee-specific, P227).
+  OPEN: EM3 on the FINE 524288 geometry (building) — EM probe-reduction without bigger cells projects ~7400 QPS@0.90.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
