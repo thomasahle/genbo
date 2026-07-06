@@ -3989,6 +3989,13 @@ P242 [2026-07-06] COHERE-10M FIRST DOMINANCE: genbo (avx512-i16 kernel + HNSW-de
   land. v2 index (dpb4+EM3+a0=3, building) projected to add ~30-50%: dpb4 halves the m=384 kernel, EM cuts probes.
   HNSW-10M artifacts banked: cohere/hnsw_cohere10m.faiss (reusable), cohere10m_graph_k16.u32.
 
+P242a [2026-07-06] OPEN: cohere-10M 8-thread scaling anomaly under build contention — 8t SLOWER than 1t (graph p16: 999 vs 1246; graph-off p48: 622 vs 991).
+  NOT the graph-rescore-bandwidth hypothesis (graph-off equally broken). Conditions: two 16-core builds live
+  (v2 cohere + 100M em3) hammering memory bus + page cache; t2i 8t scaled 7.6x post-P222 on quieter box; cohere
+  has only 1000 queries (chunked driver -> ~4 chunks at chunk~250: caps at 4x, cannot explain <1x). Candidates:
+  page-cache eviction of the 30GB fbase by builds (float rerank faulting from NVMe), rayon+contention interaction.
+  RE-MEASURE on quiet box after builds land before drawing any 8t conclusion. 1t dominance (P242) unaffected.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
