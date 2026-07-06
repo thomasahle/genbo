@@ -3871,6 +3871,16 @@ P235. (100M OOD ENGINE OPERATING POINT: recall 0.9031 @ ~6161 QPS (16 threads) -
     scaling law (P234) suggests a COARSER Kf (~262144) might route cheaper at 100M -- a Kf A/B is the
     refinement (graph is base-side, reusable). The engine SCALES to 100M and reaches competitive recall.
 
+P236. (ScaNN-100M was OVER-PROVISIONED by me -> ~day-long build blocking the h2h; rebuilt lean.)
+    Diagnosis (user asked why scann wasn't building): py-spy showed it ALIVE and running (819% CPU, R state,
+    200 CORE-HOURS) inside rebalance() -- NOT stuck, just enormous. Cause: I set 126k leaves + 20M training
+    sample (sqrt(n)-scaled from the 10M official's 40k/8M) = ~8x the partitioner k-means cost = ~12-16h.
+    My error. FIX: killed it, rebuilt with the 10M OFFICIAL config applied at 100M -- 40k leaves + 8M sample
+    (scann_build_100m_lean.py) -> ~2h, a fair+documented baseline (no official 100M OOD recipe; scann's fast
+    AH scan handles the larger 2500-pt leaves). 100M h2h chain queued: scann-lean build -> lts sweep -> pairwise
+    vs the engine (p=80 M=64 t=8000, 0.9031). LESSON: scale scann leaves by the OFFICIAL config's absolute
+    count guidance, not a naive sqrt-of-the-already-aggressive-count.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
