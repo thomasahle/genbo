@@ -3962,6 +3962,21 @@ P240 [2026-07-06] 100M Kf-geometry x tree-EM ablation: EM real (+0.6-1.0pt, 445s
   'coarser wins' does NOT survive at QPS level at 100M (10M coarse-cell win was geometry-knee-specific, P227).
   OPEN: EM3 on the FINE 524288 geometry (building) — EM probe-reduction without bigger cells projects ~7400 QPS@0.90.
 
+P241 [2026-07-06] AVX-512 i16 pair-scan gate hoisted out of hot loop: cohere-10M 756->991 QPS (+31%), recall bit-identical; 'collect overhead' was misattributed env::var tax.
+  The 32-wide avx512 vpermw i16 kernel (block_adc_i16_avx512_x2, selftested) existed but was gated on a PER-CALL
+  env::var("SBANN_USE512") + feature-detect INSIDE scan_block_x2 (~890 pair-block calls/query at 10M: mutex+hash each).
+  Fix: startup AtomicBool USE512I16, default ON when avx512f+bw (selftest-asserted), SBANN_USE512=0 disables; only
+  touches QueryCtx::Pq16 (the m>128 policy path) so d=200 champion (Pq8/FASTSCAN2) is untouched (commit 187c0ac).
+  cohere-10M p48 t500 1t contended: 756 -> 832 (env-set, per-call tax remains) -> 991 QPS (hoisted); recall 0.9264
+  bit-identical all three. scan-us/q 950.7 -> 605.9.
+  ATTRIBUTION CORRECTION (kills proposal P2): post-P1 scatterbench kernel floor (16-wide, no collect) = 594.6 us/q
+  vs full scan 605.9 -> fused-collect overhead is ~11 us/q, NOT ~310. The workflow recon's SCANDIAG split had folded
+  the env-var tax + x2-fallback copy into 'collect'. Threshold-fused-collect (P2) has nothing left to win; skip.
+  Post-P1 profile (contended): route 236 us (23%), scan 606 (57%), rescore 186 (17%, memory-bw inflated; 66 quiet),
+  float 30. Remaining levers: dpb4 (v2 index, m=384->192 halves kernel), graph (p 48->~32), then route trim
+  (SDIM/ADC) once route is the largest slice. Projection: ~1550-1700 QPS stacked, ~1900+ with route trim.
+  HNSW cohere-10M REAL 1t (same box, contended): 0.9370@1208 (ef40), 0.9623@671, 0.9803@340; 8t: 9051/5117/2629.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
