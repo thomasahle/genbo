@@ -155,6 +155,10 @@ pub static PFLINES: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUs
 /// gather — this gather is the critical section; the whole union id list is known up front so the whole
 /// batch is prefetched streaming-ahead. All three are set from env in main(); 0 disables the lever.
 pub static GRAPH_M: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(25);
+/// SBANN_GRAPH_HOPS (P253): rounds of graph repair. 1 = the champion one-hop union (bit-identical
+/// path). R>1: after int8-scoring each newly-added cohort, its top-GRAPH_M members are expanded in
+/// turn (expand -> rescore -> reselect), reaching graph-distance R with bounded, batched work.
+pub static GRAPH_HOPS: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(1);
 pub static GRAPH_KEDGE: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(16);
 pub static GRAPH_PFDIST: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(16);
 /// Sort the deduped union by orig id before the rescore gather (monotone addresses). MEASURED (interleaved,
@@ -473,7 +477,8 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
     // its distinct (dist, orig) are collected into `pooldist` for the top-M pick AND its origs seed `union`.
     // Then the graph neighbours of the top-`m_expand` pooldist entries are appended if not already present.
     // Replaces the old dedup_pool_by_orig (a separate hash pass + pool rewrite) + a second union pass.
-    let est = pool.len() + m_expand * ke;
+    let hops = GRAPH_HOPS.load(Relaxed).max(1);
+    let est = pool.len() + hops * m_expand * ke;
     let mut union: Vec<u32> = Vec::with_capacity(est);
     // pooltop holds (min apq4 dist, slot) per distinct pool orig — SAME tuple/tie-break as the old
     // dedup_pool_by_orig, so select_nth's top-M is bit-identical (ties break by slot, matching the oracle).
@@ -530,7 +535,8 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
     });
     // ascending-orig sort keeps the rescore gather monotone (kinder to the prefetcher); over the already-
     // deduped union, gated so the cost can be A/B'd (SBANN_GRAPH_SORT; default off — deep prefetch wins).
-    if GRAPH_SORT.load(Relaxed) { union.sort_unstable(); }
+    let pool_distinct = pooltop.len();
+    if hops == 1 && GRAPH_SORT.load(Relaxed) { union.sort_unstable(); }
     if let Some(tg) = tg { PROF_GRAPH_NS.fetch_add(tg.elapsed().as_nanos() as u64, Relaxed); }
     PROF_GRAPH_ROWS.fetch_add(union.len() as u64, Relaxed);
     // (3) int8 rescore the union (VNNI dpbusd -> AVX2 madd -> scalar), streaming-prefetched.
@@ -539,19 +545,50 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
         && std::is_x86_feature_detected!("avx512f");
     let avx = std::is_x86_feature_detected!("avx2");
     let pf = GRAPH_PFDIST.load(Relaxed).max(1);
-    let n = union.len();
-    let mut scored: Vec<(i32, u32)> = Vec::with_capacity(n);
-    for i in 0..n {
-        if i + pf < n {
-            unsafe { _mm_prefetch(ds.row(union[i + pf] as usize).as_ptr() as *const i8, _MM_HINT_T0) };
+    let mut scored: Vec<(i32, u32)> = Vec::with_capacity(union.len().max(est));
+    let mut lo = 0usize; // first unscored union index
+    for r in 0..hops {
+        let hi = union.len();
+        for i in lo..hi {
+            if i + pf < hi {
+                unsafe { _mm_prefetch(ds.row(union[i + pf] as usize).as_ptr() as *const i8, _MM_HINT_T0) };
+            }
+            let row = ds.row(union[i] as usize);
+            // negdot: smaller = better (matches the IP float path's -dot).
+            let dist = if vnni { -unsafe { simd::dot_i8_vnni(q, row) } }
+                       else if avx { -unsafe { simd::dot_i8_avx2(q, row) } }
+                       else { simd::negdot_i8(q, row) };
+            scored.push((dist, union[i]));
         }
-        let row = ds.row(union[i] as usize);
-        // negdot: smaller = better (matches the IP float path's -dot).
-        let dist = if vnni { -unsafe { simd::dot_i8_vnni(q, row) } }
-                   else if avx { -unsafe { simd::dot_i8_avx2(q, row) } }
-                   else { simd::negdot_i8(q, row) };
-        scored.push((dist, union[i]));
+        if r + 1 == hops { break; }
+        // frontier (P253): top-M of the cohort just scored, by INT8 rank (better seeds than hop-0's
+        // apq4). r=0 restricts to the hop-0 neighbours (pool's top-M was already expanded).
+        let fstart = if r == 0 { pool_distinct.min(hi) } else { lo };
+        let cohort = &mut scored[fstart..hi];
+        let mm = m_expand.min(cohort.len());
+        if mm == 0 { break; }
+        if mm < cohort.len() { cohort.select_nth_unstable(mm - 1); }
+        GRAPH_SET.with(|cell| {
+            let mut set = cell.borrow_mut();
+            let mask = set.len() - 1; // capacity fixed up-front (sized for `hops`), no resize
+            for &(_, o) in cohort[..mm].iter() {
+                unsafe { _mm_prefetch(graph.neighbours(o as usize).as_ptr() as *const i8, _MM_HINT_T0) };
+            }
+            for &(_, o) in cohort[..mm].iter() {
+                for &nb in &graph.neighbours(o as usize)[..ke] {
+                    let mut h = (nb.wrapping_mul(0x9E3779B1) as usize) & mask;
+                    loop {
+                        let (kx, _) = set[h];
+                        if kx == u32::MAX { set[h] = (nb, u32::MAX); union.push(nb); break; }
+                        if kx == nb { break; }
+                        h = (h + 1) & mask;
+                    }
+                }
+            }
+        });
+        lo = hi;
     }
+    PROF_GRAPH_ROWS.fetch_add((union.len().saturating_sub(pool_distinct + m_expand * ke)) as u64, Relaxed);
     let kk = kk.min(scored.len());
     if kk > 0 && kk < scored.len() { scored.select_nth_unstable(kk - 1); scored.truncate(kk); }
     if let Some(tc) = tc { PROF_CASC_NS.fetch_add(tc.elapsed().as_nanos() as u64, Relaxed); }

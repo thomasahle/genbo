@@ -4075,6 +4075,20 @@ P252 [2026-07-07] Packed-prefix routing centroids LAND: route 285 -> 98 us/q (2.
   unrotated v2 for >=0.935. FUTURE (if revisited): rotation WITHOUT the scale cost (per-block scale or
   route-only rotation) would make packed-SDIM a strict win; the primitive is ready.
 
+P253 [2026-07-07] MULTI-HOP GRAPH REPAIR (user idea): expand-rescore-reselect x R lands — R=2-3 beats one-hop on the cohere-1M frontier; hop gains decay geometrically (+1.9/+0.5/+0.4pt at p=12).
+  Impl: SBANN_GRAPH_HOPS (default 1 = bit-identical champion path, verified 0.9433@p24 exact) in
+  rerank_cascade_graph: hop r int8-scores the newly-unioned cohort, expands its top-GRAPH_M by INT8 rank
+  (better seeds than hop-0's apq4 rank), same up-front-sized hash set, bounded R*M*ke appends. Per-query path
+  only (BATCHSCAN=0); batched-driver port pending if promoted.
+  Grid (cohere-1M dpb2+graph M16 t300, NQ=1000, 1t, wiki-builds contended — recall trustworthy, QPS indicative):
+    matched ~0.943: R=3 p=16 0.9430@1954 vs R=1 p=24 0.9433@1841 (+6%)
+    high-recall extension: R=4 p=24 0.9591@1574 (R=1 cannot reach 0.955+ at sane p)
+    low-p regime: R=3 p=6 0.9053@2434 vs R=1 p=12 0.9066@1853
+  Compensation law: ~2 p-steps down per hop added at matched recall. Theory sufficed over optuna: gains decay
+  geometrically (P(true NN at graph-dist r | not closer)), R* = marginal-hop == marginal-p per us; smooth
+  low-dim space, 20-pt grid + coordinate descent resolves it. TODO if promoted: clean pairwise confirm,
+  batched-path port, t_surv/M re-tune at R=2-3, 10M transfer test.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
