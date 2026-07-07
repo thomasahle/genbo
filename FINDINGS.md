@@ -4049,6 +4049,12 @@ P249 [2026-07-06] STREAMING FINAL (NQ=10000, compliant runbook, this box): eligi
   Paper reports the on-this-box frontier with the machine caveat. NQ=1000 numbers (0.9706-0.9745) were
   small-NQ-optimistic; NQ=10000 is the honest series. Task closed at this frontier.
 
+P250 [2026-07-07] PCA-rotation gotcha: reusing the unrotated int8 scale CLIPS 55% of PC1 (max|rot|=0.926 vs clip 0.4485) -> rot-index recall 0.5621 (vs 0.939 unrotated). SDIM itself was recall-neutral post-rotation (0.5614-0.5621 across 192/256/384) — the truncation works; the quantization was the poison.
+  Fix: per-basis scale (127/max|rot| ~= 137); requant + ROT2 rebuild chain running (eng_cohere10m_ROT2_*.idx,
+  logs/build_cohere10m_rot2.log, marker ROT2_CHAIN_DONE; inline bench now includes graph+float rerank so save-time
+  recall is meaningful). Variance shares: top-256 = 92.8%, top-384 = 96.5% -> SDIM=256 routing should be ~free
+  once quantization is fixed; projected +20-30% cohere QPS (route was 33% of wall at p=16).
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
