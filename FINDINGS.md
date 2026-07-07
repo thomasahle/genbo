@@ -4055,6 +4055,17 @@ P250 [2026-07-07] PCA-rotation gotcha: reusing the unrotated int8 scale CLIPS 55
   recall is meaningful). Variance shares: top-256 = 92.8%, top-384 = 96.5% -> SDIM=256 routing should be ~free
   once quantization is fixed; projected +20-30% cohere QPS (route was 33% of wall at p=16).
 
+P251 [2026-07-07] ROT2 + SDIM verdict: rotation makes dim-truncation RECALL-FREE (0.9224 flat across SDIM 192-768 at p=16) but QPS-DEAD — the routing kernel is BANDWIDTH-bound on the full-d-strided centroid layout, so prefix-scoring saves ~0 (routebench: fine-expand 165->161 us with SDIM=256; coarse 103->95 with new SDIM0=256 knob).
+  Mechanism: cent arrays are contiguous d-strided; HW prefetcher streams whole 768B rows regardless of summed
+  prefix -> FLOP cut invisible. To realize the ~3x route cut the truncated prefix needs a PACKED copy
+  (cent_sdim[l] with 256B rows, built at load when SDIM set). Route split at ROT2 p=16: coarse-l2 103us (37%),
+  fine-expand 165us (59%), selects 13us. Projected with packed prefix: route 285->~100us -> wall ~700->~510 ->
+  ~2300-2900 QPS at 0.922-0.930, which would beat v2-unrotated's frontier (0.9298@2048 clean).
+  Also banked: ROT2 (scale=135, zero clip) baseline = 0.9249@p16 with full stack — the coarser global int8 scale
+  costs ~1.4pt vs unrotated v2 (0.9390); rotation is only net-positive IF the packed-prefix route win lands.
+  Code: SBANN_ROUTE_SDIM0 knob added (vq.rs gather_fine coarse branch; default off, champion untouched).
+  NEXT: packed-prefix centroid copies at load (cent + fine levels) gated on SDIM/SDIM0.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT

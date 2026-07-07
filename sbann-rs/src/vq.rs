@@ -115,6 +115,9 @@ pub static SCANDIAG: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBo
 /// SBANN_ROUTE_SDIM: score only the first N dims of each centroid at the FINEST routing level (the 78%-of-
 /// routing term, P139). 0 = full d (exact). Approximate finest routing -> cheaper routing if recall@p holds.
 pub static ROUTE_SDIM: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+/// SBANN_ROUTE_SDIM0: like ROUTE_SDIM but for the COARSE (level-0) centroids (P251; needs a
+/// variance-ordered basis to be principled). 0 = off (default, champion path).
+pub static ROUTE_SDIM0: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
 /// SBANN_ROUTE_ADC: 4-bit ADC scoring of the finest centroids (recall gate for #3). ROUTE_ADC_KEEP = how
 /// many ADC-top children to exact-rescore (default 1024). Built only when the flag is set at train time.
 pub static ROUTE_ADC: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
@@ -1213,10 +1216,15 @@ impl HierRouter {
         let vnni = ROUTE_VNNI.load(std::sync::atomic::Ordering::Relaxed) && !self.cadj.is_empty();
         let qnorm = if vnni { simd::sqnorm_i8(qn) } else { 0 };
         let tc = if rp { Some(std::time::Instant::now()) } else { None };
-        if vnni {
+        // COARSE-level dim truncation (SBANN_ROUTE_SDIM0, P251): with a variance-ordered (PCA-rotated)
+        // basis the coarse C0 x d term — which dominates routing at fat-coarse geometries like
+        // [4096,65536] d=768 — can score a prefix too. Off (0) by default; champion paths untouched.
+        let sdim0 = ROUTE_SDIM0.load(std::sync::atomic::Ordering::Relaxed);
+        let sd0 = if sdim0 > 0 && sdim0 < d { sdim0 } else { d };
+        if vnni && sd0 == d {
             simd::l2_i8_block_norm(qn, &self.cent[0], &self.cadj[0], l0, d, qnorm, &mut scores);
         } else {
-            simd::l2_i8_block(qn, &self.cent[0], l0, d, d, &mut scores);
+            simd::l2_i8_block(qn, &self.cent[0], l0, d, sd0, &mut scores);
         }
         let mut cd: Vec<(i32, u32)> = (0..l0).map(|q| (scores[q], q as u32)).collect();
         if let Some(t) = tc { PROF_R_COARSE_NS.fetch_add(t.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed);
