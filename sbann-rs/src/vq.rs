@@ -159,6 +159,11 @@ pub static GRAPH_M: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUs
 /// path). R>1: after int8-scoring each newly-added cohort, its top-GRAPH_M members are expanded in
 /// turn (expand -> rescore -> reselect), reaching graph-distance R with bounded, batched work.
 pub static GRAPH_HOPS: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(1);
+/// SBANN_GRAPH_BESTFIRST (P256): change the multi-hop frontier from per-cohort top-M (breadth-first by
+/// layer) to GLOBAL top-M of all unexpanded candidates (batched beam best-first, beam width M). Same
+/// R*M expansion budget, HNSW-like expansion ORDER, still SIMD-batched (no per-query heap). 0 = off
+/// (per-cohort, default). Only meaningful with graph + hops>=1.
+pub static GRAPH_BESTFIRST: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 pub static GRAPH_KEDGE: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(16);
 pub static GRAPH_PFDIST: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(16);
 /// Sort the deduped union by orig id before the rescore gather (monotone addresses). MEASURED (interleaved,
@@ -478,6 +483,7 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
     // Then the graph neighbours of the top-`m_expand` pooldist entries are appended if not already present.
     // Replaces the old dedup_pool_by_orig (a separate hash pass + pool rewrite) + a second union pass.
     let hops = GRAPH_HOPS.load(Relaxed).max(1);
+    let bestfirst = GRAPH_BESTFIRST.load(Relaxed);
     let est = pool.len() + hops * m_expand * ke;
     let mut union: Vec<u32> = Vec::with_capacity(est);
     // pooltop holds (min apq4 dist, slot) per distinct pool orig — SAME tuple/tie-break as the old
@@ -515,6 +521,9 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
         let mm = m_expand.min(pooltop.len());
         if mm > 0 && mm < pooltop.len() { pooltop.select_nth_unstable(mm - 1); }
         // prefetch the M scattered adjacency rows (each ke*4 B in the 64MB graph) before reading them.
+        // BESTFIRST (P256): skip the pre-loop expansion entirely; the beam loop below does all `hops`
+        // expansions from int8-ranked (not apq4-ranked) seeds, over a global frontier.
+        if !bestfirst {
         for &(_, s) in pooltop[..mm].iter() {
             let o = slot_orig[s as usize] as usize;
             unsafe { _mm_prefetch(graph.neighbours(o).as_ptr() as *const i8, _MM_HINT_T0) };
@@ -532,6 +541,7 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
                 }
             }
         }
+        } // end if !bestfirst
     });
     // ascending-orig sort keeps the rescore gather monotone (kinder to the prefetcher); over the already-
     // deduped union, gated so the cost can be A/B'd (SBANN_GRAPH_SORT; default off — deep prefetch wins).
@@ -546,6 +556,61 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
     let avx = std::is_x86_feature_detected!("avx2");
     let pf = GRAPH_PFDIST.load(Relaxed).max(1);
     let mut scored: Vec<(i32, u32)> = Vec::with_capacity(union.len().max(est));
+    macro_rules! score_range { ($lo:expr, $hi:expr) => {{
+        for i in $lo..$hi {
+            if i + pf < $hi { unsafe { _mm_prefetch(ds.row(union[i + pf] as usize).as_ptr() as *const i8, _MM_HINT_T0) }; }
+            let row = ds.row(union[i] as usize);
+            let dist = if vnni { -unsafe { simd::dot_i8_vnni(q, row) } }
+                       else if avx { -unsafe { simd::dot_i8_avx2(q, row) } }
+                       else { simd::negdot_i8(q, row) };
+            scored.push((dist, union[i]));
+        }
+    }}; }
+    if bestfirst {
+        // BATCHED BEAM BEST-FIRST (P256): union = pool origs only. Each round scores new frontier
+        // additions, then expands the GLOBAL top-M unexpanded (beam width M) — HNSW-like order, still
+        // SIMD-batched (no per-query heap). Same R*M budget as per-cohort. `exp` tracks expansion.
+        let mut exp: Vec<bool> = vec![false; union.len()];
+        let mut lo = 0usize;
+        for _hop in 0..hops {
+            let hi = union.len();
+            for i in lo..hi {
+                if i + pf < hi { unsafe { _mm_prefetch(ds.row(union[i + pf] as usize).as_ptr() as *const i8, _MM_HINT_T0) }; }
+                let row = ds.row(union[i] as usize);
+                let dist = if vnni { -unsafe { simd::dot_i8_vnni(q, row) } }
+                           else if avx { -unsafe { simd::dot_i8_avx2(q, row) } }
+                           else { simd::negdot_i8(q, row) };
+                scored.push((dist, union[i]));
+            }
+            exp.resize(scored.len(), false);
+            lo = hi;
+            // global frontier: top-M of ALL unexpanded scored candidates, by int8 dist.
+            let mut cand: Vec<u32> = (0..scored.len() as u32).filter(|&i| !exp[i as usize]).collect();
+            let mm = m_expand.min(cand.len());
+            if mm == 0 { break; }
+            if mm < cand.len() { cand.select_nth_unstable_by_key(mm - 1, |&i| scored[i as usize].0); }
+            GRAPH_SET.with(|cell| {
+                let mut set = cell.borrow_mut();
+                let mask = set.len() - 1;
+                for &ci in cand[..mm].iter() {
+                    unsafe { _mm_prefetch(graph.neighbours(scored[ci as usize].1 as usize).as_ptr() as *const i8, _MM_HINT_T0) };
+                }
+                for &ci in cand[..mm].iter() {
+                    exp[ci as usize] = true;
+                    for &nb in &graph.neighbours(scored[ci as usize].1 as usize)[..ke] {
+                        let mut h = (nb.wrapping_mul(0x9E3779B1) as usize) & mask;
+                        loop {
+                            let (kx, _) = set[h];
+                            if kx == u32::MAX { set[h] = (nb, u32::MAX); union.push(nb); break; }
+                            if kx == nb { break; }
+                            h = (h + 1) & mask;
+                        }
+                    }
+                }
+            });
+        }
+        score_range!(lo, union.len()); // score the last expansion's additions
+    } else {
     let mut lo = 0usize; // first unscored union index
     for r in 0..hops {
         let hi = union.len();
@@ -588,6 +653,7 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
         });
         lo = hi;
     }
+    } // end else (per-cohort)
     PROF_GRAPH_ROWS.fetch_add((union.len().saturating_sub(pool_distinct + m_expand * ke)) as u64, Relaxed);
     let kk = kk.min(scored.len());
     if kk > 0 && kk < scored.len() { scored.select_nth_unstable(kk - 1); scored.truncate(kk); }

@@ -4116,6 +4116,20 @@ P255 [2026-07-07] MULTI-HOP THEORY (2-modeler workflow + verification): recall(R
    thrashes), kedge 16 best (8:0.909, 12:0.922, 16:0.930). Champion default stays R=1 (bit-identical);
    R=2 M=24 is the promotion candidate if a clean pairwise confirms.
 
+P256 [2026-07-07] BEST-FIRST FRONTIER (user idea = HNSW-order, not HNSW-prune): batched beam best-first (expand GLOBAL top-M unexpanded per round, not per-cohort top-M) is a STRICT Pareto win over per-cohort multi-hop — beats it in all 12 tested cells at neutral/slightly-higher QPS.
+  SBANN_GRAPH_BESTFIRST (default off; champion hops=1 path bit-identical, verified 0.9433@p24). Impl: union=pool
+  only, R rounds of {score new, expand global-top-M-unexpanded by int8}, single terminal float rerank. Keeps
+  SIMD-batched rescore + no per-query heap + no mid-walk prune (the HNSW insight that TRANSFERS is expansion
+  ORDER, not pruning; pruning was correctly rejected — recall risk, no cost win at ~1k pools).
+  cohere-1M (M=16, t300, recall = the A/B, per-cohort -> bestfirst):
+    p=12: R2 .9253->.9285 | R3 .9303->.9381 | R4 .9346->.9444
+    p=16: R2 .9382->.9410 | R3 .9430->.9492 | R4 .9455->.9538
+  GAIN GROWS WITH R (+0.3pt@R2 -> +0.8-1.0pt@R4): global frontier compounds; deep hops stop being wasted.
+  REVERSES P255 width>depth: under bestfirst DEPTH wins — R4/M16/p16 .9538@2235 > R2/M24/p16 .9489@2398. New
+  frontier high for these params. New promotion candidate = bestfirst R=3-4 (not per-cohort R=2). Theory update:
+  best-first shrinks the effective per-hop miss-survival (hops more effective), so R* shifts UP vs P255.
+  TODO: clean pairwise on the dpb4 champion index + 10M transfer (queued in multihop_followup, now w/ bestfirst).
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT

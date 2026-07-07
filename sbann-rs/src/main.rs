@@ -472,6 +472,7 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
         let g = vq::GraphAdj::load(&gp, n, k).expect("load graph sidecar");
         if let Ok(v) = std::env::var("SBANN_GRAPH_M") { vq::GRAPH_M.store(v.parse().expect("SBANN_GRAPH_M"), Relaxed); }
         if let Ok(v) = std::env::var("SBANN_GRAPH_HOPS") { vq::GRAPH_HOPS.store(v.parse().expect("SBANN_GRAPH_HOPS"), Relaxed); }
+        if std::env::var("SBANN_GRAPH_BESTFIRST").is_ok() { vq::GRAPH_BESTFIRST.store(true, Relaxed); }
         if let Ok(v) = std::env::var("SBANN_GRAPH_KEDGE") { vq::GRAPH_KEDGE.store(v.parse().expect("SBANN_GRAPH_KEDGE"), Relaxed); }
         if let Ok(v) = std::env::var("SBANN_GRAPH_PFDIST") { vq::GRAPH_PFDIST.store(v.parse().expect("SBANN_GRAPH_PFDIST"), Relaxed); }
         if let Ok(v) = std::env::var("SBANN_GRAPH_SORT") { vq::GRAPH_SORT.store(v != "0", Relaxed); }
