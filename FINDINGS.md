@@ -4095,6 +4095,27 @@ P254 [2026-07-07] RoarGraph tight pairwise (t2i-10M OOD, 1t, matched ~0.90): gen
   7% of genbo — but requires the 8GB train-query set + 2M-query approx GT + multi-hour bipartite build; genbo's
   86min build + graph sidecar wins on both axes. Paper t2i baseline row amended to the pairwise numbers.
 
+P255 [2026-07-07] MULTI-HOP THEORY (2-modeler workflow + verification): recall(R,p) = per-probe reachability CEILING minus a geometric hop-gap, fit exact to noise floor. Optuna NOT needed. Width beats depth. Ceiling extrapolation: M1 (exp-floor) confirmed over M2 (logit).
+  Model: miss(R,p) = m_inf(p) + A(p)*delta^R; m_inf=0.105*exp(-0.040*p) (graph-UNREACHABLE island mass, only
+  p/t_surv cure), A=0.210*exp(-0.089*p) (repairable mass), delta=0.436 (per-hop miss survival; each hop closes
+  ~56% of remaining gap). R^2=0.992, RMS 0.0022 = NQ=1000 binomial noise floor. Geometric reachability
+  (P(captured at hop r)=(1-delta)delta^{r-1}) makes the P253 heuristic exact.
+  TUNING (no optuna — surface deterministic, monotone, ~2-D, 4-param closed form beats BO): set p FIRST
+  (ceiling = 1-m_inf(p), hops can't exceed it), then R by cost-neutral rule dp>cR/cp (~2.4 probes/hop) ->
+  R*=2 across most of the range, R=3 only chasing last tenths, never R>=4. <=15-run recipe banked in workflow
+  journal + HANDOFF.
+  DISAGREEMENTS RESOLVED BY DATA:
+   (a) width vs depth (co-tune, matched edge budget M*R=48-64): R=2 M=24 0.9321@2285 > R=3 M=16 0.9303@2278 >
+       R=4 M=12 0.9273@2269 — WIDE+SHALLOW wins recall AND QPS; no geodesic-floor population. Prefer M up, R=2.
+   (b) 2nd hop pays at every p (measured hop1->2 +0.010 = ~4 probes > 2.44 cost-neutral); use data test, not
+       M1's dp formula, near ceiling.
+   (c) ceiling extrapolation (R=3): p=32 0.9645, p=48 0.9742 — MATCHES M1 exp-floor (pred 0.977) NOT M2 logit
+       (0.958). Probing keeps climbing fast at high p; exp-decay miss floor is the right functional form ->
+       high-recall targets reachable by raising p, not just hops.
+  Co-tune knobs (cohere-1M p12): M concave (8:0.905, 32:0.939), t_surv flat 200-400 (coverage, cheap; 600
+   thrashes), kedge 16 best (8:0.909, 12:0.922, 16:0.930). Champion default stays R=1 (bit-identical);
+   R=2 M=24 is the promotion candidate if a clean pairwise confirms.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
