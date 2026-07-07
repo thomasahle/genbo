@@ -962,6 +962,11 @@ pub struct HierRouter {
     // ADC routing (#3, SBANN_ROUTE_ADC): a 4-bit PQ over the FINEST centroids so the finest-level expansion
     // (the 78%-of-routing term, P139) is scored by cheap ADC instead of exact i8 L2, then only the ADC-top
     // ROUTE_ADC_KEEP are exact-rescored. radc=codebook, rcodes=kf*m codes. Empty unless built with the flag.
+    // P251: packed dim-prefix copies of cent[l] (rows of sd bytes), built lazily on first probe when
+    // ROUTE_SDIM/ROUTE_SDIM0 are active. The d-strided cent layout is BANDWIDTH-bound under prefix
+    // scoring (HW prefetcher streams full rows, so FLOP cuts are invisible); packing the prefix makes
+    // route bandwidth scale with sd. Not persisted; rebuilt per process. Empty vecs when knobs off.
+    cent_pfx: std::sync::OnceLock<Vec<Vec<i8>>>,
     radc: Option<pq::Pq>,
     rcodes: Vec<u8>,
     // finest codes re-laid into 16-cell vpshufb blocks (m/2 groups * 16 bytes each, cell order). Lets the
@@ -1157,7 +1162,7 @@ impl HierRouter {
         } else { Vec::new() };
         let cadj = cadj_of(&cent, d);
         let gbias = gbias_of(&cent, d);
-        HierRouter { d, mu, kf, levels, cent, child, beam: beams.to_vec(), soar: 0.0, radc, rcodes, rblocks, cadj, gbias }
+        HierRouter { cent_pfx: std::sync::OnceLock::new(), d, mu, kf, levels, cent, child, beam: beams.to_vec(), soar: 0.0, radc, rcodes, rblocks, cadj, gbias }
     }
 
     /// 2-level hierarchical k-means (back-compat wrapper): C0 coarse → Kf/C0 fine per coarse.
@@ -1196,7 +1201,7 @@ impl HierRouter {
         let cent = vec![c0, cf];
         let cadj = cadj_of(&cent, d);
         let gbias = gbias_of(&cent, d);
-        HierRouter { d, mu, kf, levels: 2, cent, child: vec![gstart, Vec::new()], beam: vec![b0], soar: 0.0, radc: None, rcodes: Vec::new(), rblocks: Vec::new(), cadj, gbias }
+        HierRouter { cent_pfx: std::sync::OnceLock::new(), d, mu, kf, levels: 2, cent, child: vec![gstart, Vec::new()], beam: vec![b0], soar: 0.0, radc: None, rcodes: Vec::new(), rblocks: Vec::new(), cadj, gbias }
     }
 
     /// Enable SOAR build-time spilled assignment with penalty λ (`s`). 0 disables (default path).
@@ -1221,7 +1226,28 @@ impl HierRouter {
         // [4096,65536] d=768 — can score a prefix too. Off (0) by default; champion paths untouched.
         let sdim0 = ROUTE_SDIM0.load(std::sync::atomic::Ordering::Relaxed);
         let sd0 = if sdim0 > 0 && sdim0 < d { sdim0 } else { d };
-        if vnni && sd0 == d {
+        // lazily build the packed prefix copies (coarse: sd0-byte rows; finest: sdim-byte rows)
+        let pfx = self.cent_pfx.get_or_init(|| {
+            let mut v: Vec<Vec<i8>> = vec![Vec::new(); self.levels];
+            if sd0 < d {
+                let n0 = self.cent[0].len() / d;
+                let mut p = vec![0i8; n0 * sd0];
+                for i in 0..n0 { p[i * sd0..(i + 1) * sd0].copy_from_slice(&self.cent[0][i * d..i * d + sd0]); }
+                v[0] = p;
+            }
+            let sdv = ROUTE_SDIM.load(std::sync::atomic::Ordering::Relaxed);
+            if sdv > 0 && sdv < d && self.levels > 1 {
+                let lf = self.levels - 1;
+                let nf = self.cent[lf].len() / d;
+                let mut p = vec![0i8; nf * sdv];
+                for i in 0..nf { p[i * sdv..(i + 1) * sdv].copy_from_slice(&self.cent[lf][i * d..i * d + sdv]); }
+                v[lf] = p;
+            }
+            v
+        });
+        if !pfx[0].is_empty() {
+            simd::l2_i8_block(qn, &pfx[0], l0, sd0, sd0, &mut scores);
+        } else if vnni {
             simd::l2_i8_block_norm(qn, &self.cent[0], &self.cadj[0], l0, d, qnorm, &mut scores);
         } else {
             simd::l2_i8_block(qn, &self.cent[0], l0, d, sd0, &mut scores);
@@ -1277,7 +1303,10 @@ impl HierRouter {
                     if scores.len() < nc { scores.resize(nc, 0); }
                     // finest level (the dominant routing term) may score a reduced dim prefix (SBANN_ROUTE_SDIM).
                     let sd = if finest && sdim > 0 && sdim < d { sdim } else { d };
-                    if vnni && sd == d {
+                    if finest && sd < d && !pfx[l].is_empty() {
+                        // packed prefix rows: stride sd, bandwidth scales with the prefix (P251)
+                        simd::l2_i8_block(qn, &pfx[l][s * sd..e * sd], nc, sd, sd, &mut scores);
+                    } else if vnni && sd == d {
                         simd::l2_i8_block_norm(qn, &self.cent[l][s * d..e * d], &self.cadj[l][s..e], nc, d, qnorm, &mut scores);
                     } else {
                         simd::l2_i8_block(qn, &self.cent[l][s * d..e * d], nc, d, sd, &mut scores);
@@ -3084,7 +3113,7 @@ fn load_router(r: &mut crate::persist::Pr) -> Box<dyn Router> {
             let rblocks = r.u8_vec();
             let cadj = cadj_of(&cent, d);
             let gbias = gbias_of(&cent, d);
-            Box::new(HierRouter { d, mu, kf, levels, cent, child, beam, soar, radc, rcodes, rblocks, cadj, gbias })
+            Box::new(HierRouter { cent_pfx: std::sync::OnceLock::new(), d, mu, kf, levels, cent, child, beam, soar, radc, rcodes, rblocks, cadj, gbias })
         }
         _ => panic!("unknown router type tag {tag} in index file (only HierRouter={ROUTER_TAG_HIER} supported)"),
     }

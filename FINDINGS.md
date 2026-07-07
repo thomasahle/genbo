@@ -4066,6 +4066,15 @@ P251 [2026-07-07] ROT2 + SDIM verdict: rotation makes dim-truncation RECALL-FREE
   Code: SBANN_ROUTE_SDIM0 knob added (vq.rs gather_fine coarse branch; default off, champion untouched).
   NEXT: packed-prefix centroid copies at load (cent + fine levels) gated on SDIM/SDIM0.
 
+P252 [2026-07-07] Packed-prefix routing centroids LAND: route 285 -> 98 us/q (2.9x; coarse 103->48, fine 165->36), end-to-end ROT2 0.9224@2419 (+39%) / 0.9297@2016, recall bit-identical to unpacked SDIM. Verdict vs v2: PARITY at 0.93 (median 1.03x, rounds 1.03/1.10/0.98) — rotation's global-int8-scale cost (~1.4pt) eats the route win at the high-recall end.
+  Implementation (vq.rs, commit below): HierRouter.cent_pfx OnceLock<Vec<Vec<i8>>>, lazily packs cent[0] rows to
+  sd0 bytes (SBANN_ROUTE_SDIM0) and cent[finest] rows to sd bytes (SBANN_ROUTE_SDIM) on first probe; scoring uses
+  stride=sd so bandwidth scales with the prefix (P251 mechanism confirmed: the d-strided layout was the block).
+  Champion paths untouched (knobs default 0). Same-window HNSW ef40: ~1330-1537 -> both genbo stacks ~1.4x ahead
+  at the 0.93 point. ROTATION LINE CLOSED as frontier-dependent: use rotated+packed stack for <=0.93 targets;
+  unrotated v2 for >=0.935. FUTURE (if revisited): rotation WITHOUT the scale cost (per-block scale or
+  route-only rotation) would make packed-SDIM a strict win; the primitive is ready.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
