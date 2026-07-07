@@ -4130,6 +4130,14 @@ P256 [2026-07-07] BEST-FIRST FRONTIER (user idea = HNSW-order, not HNSW-prune): 
   best-first shrinks the effective per-hop miss-survival (hops more effective), so R* shifts UP vs P255.
   TODO: clean pairwise on the dpb4 champion index + 10M transfer (queued in multihop_followup, now w/ bestfirst).
 
+P257 [2026-07-07] SCALE MEMORY: faiss IndexHNSWFlat fp32 at 35M x 1024 OOM-killed at 271GB RSS (co-running with genbo-35M build on 371GB box). fp32 flat-HNSW vector storage = 35M*1024*4 = 143GB + ~2x add-transient. Fix = fp16 storage (IndexHNSWSQ QT_fp16, ~72GB), the STANDARD large-scale HNSW config (nobody deploys fp32 flat HNSW at 35M+); negligible recall impact for cosine. Relaunched fp16 on cores 40-55 (mem 133G used / 237G avail, safe alongside genbo).
+  Two takeaways: (1) sequence >100GB-RSS jobs, never co-run two; genbo build survived (25GB RSS — hierarchical
+  k-means+PQ is memory-light vs HNSW's full-vector graph). (2) PAPER POINT: HNSW's fp32 memory (143GB@35M,
+  ~4TB@1B) is itself a scaling liability — genbo's int8+PQ index is ~35GB at 35M; the memory gap widens with n
+  exactly like the build-time gap. genbo-35M build still running (~5h, dpb4+EM3 encode of 35M x 1024).
+  wiki_chain left UNTOUCHED (genbo is its foreground child; killing it would kill the build); it will emit
+  genbo numbers + WIKI35M_CHAIN_DONE when genbo saves. HNSW-fp16 + 3-way compare tracked separately.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
