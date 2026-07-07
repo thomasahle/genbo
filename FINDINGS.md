@@ -4141,6 +4141,13 @@ FAIRNESS AMENDMENT (user directive): HNSW must live within genbo's budget on BOT
   build, so within budget. Rule going forward: baseline gets <= the method's time AND space; if it can't fit,
   DECLARE the dataset out of the baseline's reasonable reach (that IS the result) rather than lavishing it
   resources. int8 fits, so wiki-35M stays a fair 3-way.
+BUILD-IMPRACTICAL AT SCALE (P257 cont.): genbo-35M-d1024 with the FULL stack (dpb4 + TREEEM=3 + SOAR a0=3 +
+  262144 leaves) did NOT complete in 10h on 16 cores (killed, no save; encode+EM of 35M x 1024 is the cost) —
+  ~20h-equiv@8vcpu, well OVER budget and SLOWER than HNSW-int8 (built 3h50m/16c = 7.7h-equiv, recall 0.967-0.972).
+  So at 35M/d=1024 the heavy genbo config LOSES on build. Reported genbo-35M = the budget-fair LIGHT config
+  (a0=2, NO EM, Kf=131072, dpb4; armed to build on HNSW's freed cores, target <=4h). HONEST SCALING CAVEAT for
+  the paper: genbo's build advantage is d=200-OOD-specific; at d=1024 the PQ-encode + tree-train dominate and a
+  lean config is required to stay build-competitive. Query-time verdict pending light build.
   wiki_chain left UNTOUCHED (genbo is its foreground child; killing it would kill the build); it will emit
   genbo numbers + WIKI35M_CHAIN_DONE when genbo saves. HNSW-fp16 + 3-way compare tracked separately.
 
