@@ -4135,6 +4135,12 @@ P257 [2026-07-07] SCALE MEMORY: faiss IndexHNSWFlat fp32 at 35M x 1024 OOM-kille
   k-means+PQ is memory-light vs HNSW's full-vector graph). (2) PAPER POINT: HNSW's fp32 memory (143GB@35M,
   ~4TB@1B) is itself a scaling liability — genbo's int8+PQ index is ~35GB at 35M; the memory gap widens with n
   exactly like the build-time gap. genbo-35M build still running (~5h, dpb4+EM3 encode of 35M x 1024).
+FAIRNESS AMENDMENT (user directive): HNSW must live within genbo's budget on BOTH axes, no handicap. fp16
+  (72GB) was still 2x genbo's ~40GB (int8 base 34GB + PQ ~5GB) -> switched to int8 HNSW (IndexHNSWSQ QT_8bit,
+  ~40GB = matched memory class, standard billion-scale HNSW storage). Time: HNSW adds ~3.2h < genbo ~5h EM
+  build, so within budget. Rule going forward: baseline gets <= the method's time AND space; if it can't fit,
+  DECLARE the dataset out of the baseline's reasonable reach (that IS the result) rather than lavishing it
+  resources. int8 fits, so wiki-35M stays a fair 3-way.
   wiki_chain left UNTOUCHED (genbo is its foreground child; killing it would kill the build); it will emit
   genbo numbers + WIKI35M_CHAIN_DONE when genbo saves. HNSW-fp16 + 3-way compare tracked separately.
 
