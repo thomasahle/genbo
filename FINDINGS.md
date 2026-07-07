@@ -4151,6 +4151,17 @@ BUILD-IMPRACTICAL AT SCALE (P257 cont.): genbo-35M-d1024 with the FULL stack (dp
   wiki_chain left UNTOUCHED (genbo is its foreground child; killing it would kill the build); it will emit
   genbo numbers + WIKI35M_CHAIN_DONE when genbo saves. HNSW-fp16 + 3-way compare tracked separately.
 
+P258 [2026-07-07] MULTI-HOP + BEST-FIRST VALIDATED at 1M AND 10M (promotable, champion still R=1 pending port+OOD test):
+  cohere-10M (per-cohort, graph M16/24, p12 t400, 1t): R1 0.9298@1784 -> R2/M16 0.9436@1559 -> R3/M16
+  0.9479@1610 (+1.8pt recall vs R1, -10% QPS) -> R2/M24 0.9514@1195. Multi-hop transfers STRONGER at 10M than
+  1M (more routing misses at scale -> graph repair more valuable) — matches P255 theory (bigger A(p) repairable mass).
+  cohere-1M clean 5-round pairwise: best-first R3/M24/p12 = 0.9460 @ median 2502 vs champion R1/M16/p24 = 0.9433
+  @ 2481 -> STRICT PARETO (+0.27pt recall, +0.8% QPS). (One 1896 blip; other 4 rounds 2431-2578.)
+  PROMOTION path (champion stays R=1 bit-identical for now): (1) batched-driver port (currently per-query
+  BATCHSCAN=0 only -> needed for 8t throughput), (2) OOD t2i multi-hop test (do hops help OOD or only
+  in-distribution? — the graph coverage lever already wins OOD at R=1, so R>1 upside there is unknown), (3)
+  8t confirm. If all pass, default hops=2-3 + bestfirst when a graph is present.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
