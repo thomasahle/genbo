@@ -4089,6 +4089,12 @@ P253 [2026-07-07] MULTI-HOP GRAPH REPAIR (user idea): expand-rescore-reselect x 
   low-dim space, 20-pt grid + coordinate descent resolves it. TODO if promoted: clean pairwise confirm,
   batched-path port, t_surv/M re-tune at R=2-3, 10M transfer test.
 
+P254 [2026-07-07] RoarGraph tight pairwise (t2i-10M OOD, 1t, matched ~0.90): genbo WINS median 1.07x (rounds 0.93/1.06/1.07/1.09/1.12) — genbo {2555,2358,2222,2151,2385}@0.9008 vs RoarGraph {2387,2160,2099,2319,2131}@0.9027.
+  AMENDS P244: the banked RoarGraph solo 1469@0.903 was COLD-cache; warm same-window is ~2100-2400. (Pairwise
+  discipline catches its own past mistakes.) RoarGraph is the strongest OOD baseline measured — ~7x HNSW, within
+  7% of genbo — but requires the 8GB train-query set + 2M-query approx GT + multi-hour bipartite build; genbo's
+  86min build + graph sidecar wins on both axes. Paper t2i baseline row amended to the pairwise numbers.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
