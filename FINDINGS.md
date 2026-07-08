@@ -4480,11 +4480,15 @@ KEY ENGINE FINDINGS this session (all flag-gated; champion OOD path VERIFIED bit
    dominance above. Theory: miss(R,p)=m_inf(p)+A(p)*delta^R, R^2=0.99, no optuna.
   Baseline-fairness fixes: faiss by_residual=False for IP; HNSW held to genbo's int8 memory+time budget.
 
-DOCUMENTED BOUNDARY (honest): 35M/d1024 in-distribution (Cohere-v3 wiki) — genbo routed-PQ hits a ROUTING
-  wall (~0.60; int8 centroids can't rank tight top-k cells at d=1024, verified NOT scan/PQ, P263), HNSW wins.
-  genbo build was FASTER there (1.9h vs 3.8h). Fix direction = higher-precision cell scoring (fp16 centroids),
-  NOT finer codes — deferred (invasive router change, needs fresh context). Maps genbo's in-dist frontier:
-  wins <=10M/d768, loses at 35M/d1024.
+*** RETRACTED BOUNDARY (was "35M/d1024 loss"): it was a BROKEN BENCHMARK, not a genbo loss (P272-276). ***
+  wiki35m_gt.ibin was computed over the FULL 35M base INCLUDING the 1000 query rows (off-by-one chunk in prep,
+  queries = last 1000 rows), so 38% of every GT top-10 were unrecoverable query self-matches/near-dupes -> a hard
+  0.6199 recall CEILING for any method searching the queries-excluded base. genbo hit that ceiling (~100% of
+  recoverable). HNSW's 0.967 came ONLY because its .faiss had ntotal=35M (queries in-index) so it returned the
+  self-matches. Against a CLEAN GT (queries excluded) + HNSW rebuilt on base[0:nb]: genbo dpb4 + multi-hop BEATS
+  HNSW across the practical high-recall range (>=0.955) by 1.4-2.8x, reaching 0.986 vs HNSW's 0.982 max (P276).
+  All older P259/261/263 "anisotropy/routing wall" analysis is SUPERSEDED — those were measuring the GT artifact.
+  => genbo's in-dist frontier: WINS at 1M/10M/d768 AND 35M/d1024. No documented loss remains.
 
 ARTIFACTS: paper_ood.tex reframed "distribution-robust" (compiles via tectonic, PDF pushed to github champion),
   confirmed same-hardware tables + honest Limitations. Ledger P1-P264. HANDOFF.md session-2 addendum current.
