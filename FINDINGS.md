@@ -4278,7 +4278,25 @@ P265 [2026-07-08] fp16-CENTROID ROUTING (SBANN_ROUTE_FP16) — implemented, vali
   Next diagnostic (running): sweep float-rerank DEPTH (TFLOOR) at fixed leaves to separate int8-PQ survivor-cut
   from leaf-coverage from a representation floor. fp16 flag stays OFF by default (no win, adds float storage).
 
-=== SESSION SUMMARY (current, 2026-07-08, through P265) ===
+P266 [2026-07-08] wiki-35M WALL DIAGNOSTIC — deepening exact float rerank has ZERO effect; true NN is absent from
+  the pool, not mis-ordered in it. On the fp16 index, float rerank ON (base.fbin/query.fbin), NQ=500:
+    p=192 tfloor= 8000: recall@10=0.5982
+    p=192 tfloor=30000: recall@10=0.5982   (10x deeper rerank -> identical to 4 digits)
+    p=192 tfloor=80000: recall@10=0.5982
+    p=512 tfloor=30000: recall@10=0.6050   (2.7x more leaves -> +0.7pt only)
+  Interpretation: giving the top-80000 int8-PQ candidates (~78% of the ~103k in 192 leaves) an EXACT float
+  second chance recovers NOTHING => the true NN is not among the scanned/survivor candidates at all; the int8-PQ
+  cut isn't merely mis-ranking it. Coverage helps only marginally (p192->512 = +0.7pt). => the candidate POOL
+  fundamentally lacks the true neighbor at 35M/d1024. Rules OUT: routing precision (P265), survivor-pool depth
+  (this), and rules coverage as weak. Remaining live hypotheses: (C) NN scattered across >>512 leaves (extreme
+  coverage), or (D) int8-QUERY quantization + 4-bit PQ at d=1024 is too coarse at 35M density so the true NN
+  never enters the top candidates from its own leaf (representation floor). Follow-up (running): extreme-coverage
+  p=2048/4096 + near-exhaustive p=65536 ORACLE (recall must ->~1.0 if pipeline/GT sound; if it caps ~0.6 that
+  implicates GT/base alignment or a structural scan issue). SCALE INTERACTION note: same data = 0.90+ at 1M
+  (P263) but 0.60 at 35M => signal (gap to true NN) shrinks with density while fixed quantization noise stays,
+  collapsing SNR at scale — the loss is a scale x precision interaction, consistent with (D).
+
+=== SESSION SUMMARY (current, 2026-07-08, through P266) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
