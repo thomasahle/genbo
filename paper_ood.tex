@@ -426,6 +426,26 @@ software-prefetched, so the added cost is a small, bounded re-rank increment.
 Graph parameters scale with $n$: fan-in $M$ and pool depth grow from $M{\approx}25$
 at 1M to $M{=}64$ at 100M as distractors multiply.}
 
+\paragraph{Repair depth (and where it helps).} The union above is one hop. Iterating
+it --- expand the current best-$M$ members' neighbors, re-score, reselect, for $R$
+rounds --- is a \emph{batched} graph walk (beam width $M$; the whole cohort is
+SIMD-rescored and a single exact re-rank closes it, so no per-query priority queue).
+It has a clean cost/quality model: each hop closes a geometric fraction
+($\approx\!56\%$) of the still-repairable miss mass, while $p$ and $t_{\text{surv}}$
+raise a per-probe reachability \emph{ceiling} that hops cannot exceed (fit to
+$R^2{=}0.99$ on a 20-point grid, so the two knobs tune independently, no black-box
+search). Crucially, extra hops are a matched-recall win \emph{only above a
+$\approx\!0.91$--$0.92$ crossover}: at the leaderboard's recall@10$\ge\!0.90$ gate the
+single-hop point is $\approx\!6\%$ faster (a second hop reaches 0.90 only by
+\emph{overshooting} recall at a QPS cost), whereas for high-recall targets
+($0.94$--$0.96$) a second or third hop reaches them at far lower $p$ than one hop. We
+therefore keep hop count a knob (default $1$), not a default --- a high-recall lever,
+not a gate-level one. A best-first frontier (expand the globally-best unexpanded node)
+adds $+0.3$--$0.8$ pt \emph{in-distribution} but is neutral OOD: base-metric edges do
+not align with off-manifold queries, so smarter reselection finds no better seeds.
+Reporting this required comparing at the recall \emph{gate}, not fixed $p$ --- a
+fixed-$p$ ``$+1.7$ pt'' reads as a win but is not one at the gate.
+
 \section{Routing Cost and the Coarse-Cell Corollary}
 \label{sec:coarse}
 
@@ -839,10 +859,22 @@ unlocking the hidden potential of product quantization with SIMD. \emph{TPAMI},
 
 \section{Limitations}
 \label{sec:lim}
-\todo{Single (shared) machine; $\gamma$ fit per dataset; the coarse-cell corollary is
-demonstrated on IP/OOD data and may not transfer to in-distribution $L_2$; the gap to
-binary-only leaderboard systems is inference; filter/sparse tracks untouched;
-standardized-VM submission is future work and the gating experiment for a leaderboard
-claim.}
+\textbf{An in-distribution scale$\times$dimension frontier.} The scan-precision fix
+(\S\ref{sec:precision}) makes the engine competitive-to-winning in-distribution at
+$10$M$/d{=}768$ (Cohere, Table~\ref{tab:cohere}), but the routed-PQ approach has a
+boundary: at $35$M$/d{=}1024$ (Wikipedia-v3, unit-norm, strongly anisotropic
+$\lVert\mu\rVert{=}0.48$) recall plateaus at $\approx\!0.60$ while HNSW reaches $0.97$.
+We verified the index is correct (self-queries return themselves) and ruled out
+mean-centering, tree granularity, routing-beam width, and probe/pool depth --- the
+cause is that in-distribution top-$k$ neighborhoods at this scale are packed tighter
+than the coarse routing can separate, so the true cell is often unprobed; full-precision
+graph traversal resolves them where 4-bit-code routing cannot. Notably our index
+\emph{builds faster} there ($1.9$h vs.\ HNSW's $3.8$h at matched int8 memory), so the
+gap is search quality, not build budget --- a target for finer/higher-bit routing codes
+or a query-time exactness stage. \textbf{Other scope:} single (shared) machine, not a
+standardized-VM submission (the gating experiment for a leaderboard claim); $\gamma$ and
+scan-precision are fit/selected per dataset; the coarse-cell corollary is shown on
+IP/OOD data; the gap to binary-only leaderboard systems is inference from public
+numbers; filter/sparse tracks are untouched.
 
 \end{document}
