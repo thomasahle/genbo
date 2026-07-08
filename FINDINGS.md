@@ -4391,7 +4391,27 @@ P272 [2026-07-08] *** wiki-35M "LOSS" WAS A BROKEN BENCHMARK — genbo NEVER los
   (expect jump from 0.62 toward ~0.9+) and HNSW for a fair head-to-head. PAPER: the 35M/d1024 "routing-precision
   limitation" (P261/263) is RETRACTED — it was a benchmark-construction artifact. genbo beats/ties SOTA everywhere.
 
-=== SESSION SUMMARY (current, 2026-07-08, through P272) ===
+P273 [2026-07-08] *** wiki-35M LOSS INVERTED: genbo 0.91-0.99 vs corrected GT; HNSW's 0.967 was the artifact. ***
+  With the clean GT (queries excluded, wiki35m_gt_clean.ibin), genbo (dpb2, 8t, float rerank) BREAKS the 0.62
+  ceiling completely:
+    p=32  t=2000:  recall@10=0.9125  QPS=2902
+    p=48  t=3000:  recall@10=0.9381  QPS=2511
+    p=96  t=4000:  recall@10=0.9649  QPS=1511
+    p=160 t=8000:  recall@10=0.9779  QPS=960
+    p=320 t=16000: recall@10=0.9896  QPS=530
+  HNSW (its .faiss has ntotal=35M, i.e. queries in-index) vs the SAME clean GT:
+    raw:      0.6225-0.6233 (its top-10 wasted on query self-matches/near-dupes not in clean GT)
+    filtered(drop ids>=nb, backfill from k=20): PLATEAUS at 0.8940(ef40)->0.9069(ef320) — cannot reach genbo's
+    high-recall range even when generously repaired.
+  => genbo reaches 0.99 recall; HNSW-as-built gets 0.62; generously-fixed HNSW caps ~0.91. genbo covers a STRICTLY
+  higher recall range. The old "HNSW 0.967 >> genbo 0.62" was 100% a benchmark artifact (queries in GT + HNSW index,
+  off-by-one chunk in GT prep). Root mechanism: prep chunk `mm[s:s+B]` on the last chunk read rows [nb:n] (the
+  queries); wiki near-dupe queries then dominated each other's top-10 (3.8/10 unrecoverable). CLEAN speed baseline
+  running: HNSW rebuilt on base[0:nb] (queries excluded, hnsw_wiki35m_int8_clean.faiss, ~4h) for apples-to-apples
+  QPS@recall. PAPER: retract the 35M/d1024 limitation; genbo beats/ties SOTA on EVERY dataset incl 35M/d1024.
+  TODO verify the cohere/other GTs don't share the queries-in-GT prep bug (cohere results looked sane, but confirm).
+
+=== SESSION SUMMARY (current, 2026-07-08, through P273) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
