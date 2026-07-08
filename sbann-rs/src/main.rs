@@ -1473,6 +1473,7 @@ fn main() {
     if std::env::var("SBANN_PROFILE").is_ok() { vq::PROFILE.store(true, std::sync::atomic::Ordering::Relaxed); }
     if let Ok(s) = std::env::var("SBANN_ROUTE_SDIM") { if let Ok(v) = s.parse::<usize>() { vq::ROUTE_SDIM.store(v, std::sync::atomic::Ordering::Relaxed); } }
     if let Ok(s) = std::env::var("SBANN_ROUTE_SDIM0") { if let Ok(v) = s.parse::<usize>() { vq::ROUTE_SDIM0.store(v, std::sync::atomic::Ordering::Relaxed); } }
+    if let Ok(s) = std::env::var("SBANN_BEAM0") { if let Ok(v) = s.parse::<usize>() { vq::BEAM0.store(v, std::sync::atomic::Ordering::Relaxed); } }
     if std::env::var("SBANN_ROUTE_ADC").is_ok() { vq::ROUTE_ADC.store(true, std::sync::atomic::Ordering::Relaxed); }
     // ROUTE_VNNI (P196, champion default ON): VNNI norm-decomposition routing L2, BIT-IDENTICAL to the
     // AVX2-madd L2 (recall-exact). Enabled only when AVX-512 VNNI is detected; vq::gather_fine falls back

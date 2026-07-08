@@ -4177,6 +4177,18 @@ P259 [2026-07-08] wiki-35M (Cohere-v3, d=1024, in-distribution) exposes a genbo 
   (+ maybe EM) then re-measure. Heavy-EM config was build-impractical (>10h, killed, P257). NEW GENBO DEFAULT
   CANDIDATE: auto-detect anisotropy (||mean|| large) -> enable mu-centering; NOMU should not be default for text.
   Build gotcha banked: nohup dies to tool-timeout SIGTERM; use setsid for long detached jobs.
+  P259 UPDATE (root cause narrowed): the 0.59 plateau is NOT mean-centering-at-1M (mu-noEM 1M=0.8997 ~ nomu
+  0.9087), NOT coverage (1M nomu p96/t2000 CLIMBS to 0.9704 — responsive), NOT coarse-beam width (35M beam0
+  128->768 flat 0.558->0.581). It is ROUTING-SCORE DEGENERACY under anisotropy: NOMU=1 + ||mean||=0.48 =>
+  every centroid ~parallel to the mean => query.centroid ~const across cells => routing returns ~arbitrary
+  cells, and NO routing knob (p/t/beam) recovers the ~40% of queries whose true cell is never scored
+  distinctly. Neutral at 1M (coarse 16384 tree still separates) but fatal at 35M/131072. FIX being tested:
+  mu-centered (drop NOMU) + coarser cohere-proven Kf=65536 (eng_wiki35m_mu_65536_dpb4_a2, building ~1h,
+  logs/build_wiki35m_mu.log, marker MU_REBUILD_DONE). If it lands >=~0.95, genbo-35M is rescued and NOMU
+  should NOT be default for anisotropic (text) embeddings — auto-center when ||mean|| large. Query knob added:
+  SBANN_BEAM0 (coarse-beam override, no rebuild needed to widen). If mu-rebuild still fails, wiki-35M is
+  banked as HNSW-wins (bonus scope) and the loop pivots to promoting the CONFIRMED multi-hop/best-first win.
+
 
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window

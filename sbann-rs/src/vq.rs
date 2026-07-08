@@ -118,6 +118,11 @@ pub static ROUTE_SDIM: std::sync::atomic::AtomicUsize = std::sync::atomic::Atomi
 /// SBANN_ROUTE_SDIM0: like ROUTE_SDIM but for the COARSE (level-0) centroids (P251; needs a
 /// variance-ordered basis to be principled). 0 = off (default, champion path).
 pub static ROUTE_SDIM0: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+/// SBANN_BEAM0: query-time OVERRIDE of the baked coarse (level-0) routing beam. 0 = use the built-in
+/// beam[0]. P260: coarse-beam coverage (beam0/C0) must scale with tree fanout; a beam baked too narrow
+/// for a fine tree caps recall regardless of p (the true fine cell's PARENT is never expanded). Lets us
+/// widen coverage on an existing index without a rebuild.
+pub static BEAM0: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
 /// SBANN_ROUTE_ADC: 4-bit ADC scoring of the finest centroids (recall gate for #3). ROUTE_ADC_KEEP = how
 /// many ADC-top children to exact-rescore (default 1024). Built only when the flag is set at train time.
 pub static ROUTE_ADC: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
@@ -1359,7 +1364,8 @@ impl HierRouter {
         if let Some(t) = tc { PROF_R_COARSE_NS.fetch_add(t.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed);
             PROF_R_NEVAL.fetch_add(l0 as u64, std::sync::atomic::Ordering::Relaxed); }
         let tcs = if rp { Some(std::time::Instant::now()) } else { None };
-        let b = self.beam[0].min(cd.len());
+        let b0ov = BEAM0.load(std::sync::atomic::Ordering::Relaxed);
+        let b = (if b0ov > 0 { b0ov } else { self.beam[0] }).min(cd.len());
         if b > 0 && b < cd.len() { cd.select_nth_unstable(b - 1); cd.truncate(b); }
         let mut sel: Vec<u32> = cd.iter().map(|&(_, c)| c).collect();
         if let Some(t) = tcs { PROF_R_CSEL_NS.fetch_add(t.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed); }
