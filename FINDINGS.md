@@ -4190,6 +4190,19 @@ P259 [2026-07-08] wiki-35M (Cohere-v3, d=1024, in-distribution) exposes a genbo 
   banked as HNSW-wins (bonus scope) and the loop pivots to promoting the CONFIRMED multi-hop/best-first win.
 
 
+P260 [2026-07-08] MULTI-HOP GENERALIZES to OOD (promotion path item #2 CLEARED); best-first is in-distribution-only.
+  t2i-10M OOD (champion idx, graph M32 g0.5 p=40, per-query 1t): R1 0.9186@2560 -> R2 0.9303@2476 ->
+  R3 0.9352@2333. +1.7pt recall at -9% QPS = matched-recall WIN (R1 needs p~65 to hit 0.9352). So multi-hop
+  per-cohort helps BOTH OOD (+1.7pt) and in-distribution (+1.8pt at 10M cohere, P258) — a general champion
+  lever, not regime-specific.
+  BEST-FIRST: on OOD, R2/R3 bestfirst = SAME recall as per-cohort (0.9303/0.9352) + slightly LOWER QPS ->
+  NO OOD gain. (In-distribution cohere-1M it was +0.27pt, P256.) Mechanism: base-metric graph edges don't
+  align with off-manifold OOD queries, so global-best-first reselection surfaces no better seeds than the
+  per-cohort frontier; the extra select is pure cost. => best-first stays an IN-DISTRIBUTION opt-in.
+  PROMOTION VERDICT: default SBANN_GRAPH_HOPS=2 (or 3) when a graph is present (helps both regimes, matched-
+  recall positive); keep SBANN_GRAPH_BESTFIRST opt-in (in-dist only). Remaining before flipping the default:
+  batched-driver port (currently per-query BATCHSCAN=0) + 8t confirm. Champion still R=1 until then (safe).
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
