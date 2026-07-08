@@ -46,7 +46,8 @@ joint cross-level partition optimization; multi-assignment; and a corollary that
 \emph{reverses} standard practice --- once graph coverage is present, coarser cells
 win. Composed and evaluated under a same-hardware, tight-pairwise protocol against
 ScaNN at its official configuration, the engine attains higher QPS at matched
-recall@10 at 1M, 10M\pending{, and 100M}, and transfers to the streaming track.
+recall@10 at 1M and 10M, extends to 100M --- where no ScaNN configuration builds
+within a 2h gate --- and transfers to the streaming track.
 We then turn to the \emph{in-distribution} regime (Cohere-768, cosine), where the
 same engine initially loses to HNSW by $2\times$ --- and localize \emph{that}
 bottleneck too: not the architecture but a \emph{scan-precision policy}. The int8
@@ -99,7 +100,8 @@ collection --- every technique reported with the effect it produces in isolation
 and the negatives kept as first-class evidence for the localization. Composed and
 evaluated under a same-hardware, tight-pairwise protocol against ScaNN at its best
 configuration, the result attains higher QPS at matched recall@10 at 1M and 10M
-\pending{(and 100M)}, and transfers to the streaming track.
+(and, where ScaNN cannot build within a 2h gate, remains the only method to index 100M),
+and transfers to the streaming track.
 
 \paragraph{Contributions (each measured in isolation).}
 \begin{itemize}
@@ -480,7 +482,7 @@ large enough share of the query to matter.
 \centering
 \caption{Tree geometry and per-query routing cost (Eq.~\ref{eq:route}) by scale.
 Beams are aggressive ($b_0\!\approx\!12$--$25\%$ of coarse cells) because OOD queries
-route poorly. \pending{100M validated via a scaling-law sweep (\S\ref{sec:routecost}).}}
+route poorly. The 100M geometry is validated by the routing-cost scaling law (\S\ref{sec:routecost}).}
 \label{tab:geom}
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{lcccccc}
@@ -726,7 +728,7 @@ binary-only leaderboard systems are \emph{inference} from the public leaderboard
 \centering
 \caption{OOD text2image, recall@10-matched QPS ratio (ScaNN$/$ours; $<1$ $=$ our
 engine faster). Same-hardware, tight-pairwise, opponent at official config.
-\pending{100M row}.}
+At 100M no ScaNN index builds within the gate (note), so the comparison is on build-eligibility.}
 \label{tab:main}
 \begin{tabular}{lccc}
 \toprule
@@ -734,8 +736,14 @@ Scale & 1-thread & 8-thread & recall@10 gate \\
 \midrule
 1M   & 0.755 & 0.746 & 0.905 \\
 10M  & 0.827 & 0.758 & 0.901 \\
-100M & \pending{} & \pending{} & \pending{} \\
+100M & \multicolumn{3}{c}{ScaNN build-ineligible ($>2$h gate; see note)} \\
 \bottomrule
+\multicolumn{4}{p{0.92\linewidth}}{\footnotesize At 100M no ScaNN configuration builds
+within the 2h gate (40k-leaf killed at 121\,min; a coarser 20k-leaf also exceeds 2h ---
+the $O(100\text{M})$ AH-encode/bf16 prep dominates regardless of leaf count), so no
+matched-recall ratio exists. Ours builds a $0.903$-recall index in $86$\,min and serves
+${\sim}6.7$k QPS at recall $0.90$ ($16$ threads) --- under the 2h gate it is the only
+method with a 100M index.} \\
 \end{tabular}
 \end{table}
 
