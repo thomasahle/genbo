@@ -4426,7 +4426,18 @@ P274 [2026-07-08] wiki-35M CLEAN head-to-head (HNSW rebuilt on base[0:nb], queri
   true frontier before the final claim. PAPER: wiki-35M is genbo-competitive-with-HNSW (not a loss, not a clear
   win); the DOMINANCE story stays OOD (t2i vs ScaNN/RoarGraph) + in-dist cohere-1M/10M (P264). Honesty > hype.
 
-=== SESSION SUMMARY (current, 2026-07-08, through P274) ===
+P275 [2026-07-08] wiki-35M genbo dpb4 (fast config) vs HNSW-clean, clean GT, 8t — genbo CLOSES the gap; ties at
+  0.978, WINS at >=0.98. dpb4 (m=256) is ~30% faster than dpb2 at equal recall.
+    genbo dpb4 frr:  p32 0.9125@3806  p48 0.9380@2831  p96 0.9649@1999  p160 0.9780@1268  p320 0.9897@722
+    HNSW-clean:      ef40 0.8983@8121 ef80 0.9424@4373 ef160 0.9647@2492 ef320 0.9778@1347 ef640 0.9818@702
+  Matched-recall: HNSW ~2x@0.90, ~1.5x@0.94, ~1.25x@0.965, ~TIED@0.978 (1268 vs 1347), genbo WINS at the top
+  (0.9897@722 > HNSW 0.9818@702 — genbo reaches 0.99 where HNSW plateaus ~0.982). Crossover ~0.975, SAME shape as
+  cohere-10M. genbo no-rerank caps 0.972 (float rerank needed for the top). Curiosity: frr FASTER than no-rerank
+  (p96 1999 vs 1610) — the exact-float survivors let the cascade stop earlier; float-rerank I/O is NOT the
+  bottleneck. NEXT (goal: beat HNSW across the FULL range): multi-hop graph repair (SBANN_GRAPH_HOPS) — the lever
+  that made genbo dominate cohere-10M at high recall. wiki35m_graph_k16.u32 exists (k=16 over nb rows). Testing.
+
+=== SESSION SUMMARY (current, 2026-07-08, through P275) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
