@@ -4452,7 +4452,16 @@ P276 [2026-07-08] *** wiki-35M is now a genbo WIN via multi-hop — beats HNSW a
   GOAL STATE: genbo now beats/ties every measured SOTA on EVERY benchmark on this box — OOD t2i (ScaNN/RoarGraph/
   HNSW), in-dist cohere-1M/10M (HNSW), AND in-dist wiki-35M/d1024 (HNSW) — all same-hardware, clean GTs.
 
-=== SESSION SUMMARY (current, 2026-07-08, through P276) ===
+P277 [2026-07-08] wiki-35M 1t CONFIRM — genbo's multi-hop win holds (larger margin at 1t). Clean GT, 1 thread:
+    genbo: hops2 p48 0.9708@450  hops2 p96 0.9853@302  hops3 p96 0.9861@286
+    HNSW : ef80 0.9424@576  ef160 0.9647@321  ef320 0.9778@173  ef640 0.9818@95 (max ~0.982)
+  Matched-recall 1t: 0.965 genbo 450 vs HNSW 321 (~1.4x+higher recall); 0.978 genbo 0.9853@302 vs HNSW
+  0.9778@173 (~1.75x); 0.982 genbo @302 vs HNSW-max @95 (~3.2x). genbo reaches 0.986 (HNSW can't). Margin is
+  LARGER at 1t than 8t (HNSW parallelizes a bit better) but genbo WINS the >=0.96 range at BOTH. wiki-35M/d1024
+  in-dist confirmed a genbo win, 1t and 8t, clean GT, HNSW rebuilt queries-excluded. Full 1t+8t data now in hand
+  for the paper rewrite (retract Limitations 35M loss -> document the win + queries-in-GT benchmark-hygiene note).
+
+=== SESSION SUMMARY (current, 2026-07-08, through P277) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann

@@ -862,18 +862,27 @@ unlocking the hidden potential of product quantization with SIMD. \emph{TPAMI},
 
 \section{Limitations}
 \label{sec:lim}
-\textbf{An in-distribution scale$\times$dimension frontier.} The scan-precision fix
+\textbf{In-distribution scaling to high dimension.} The scan-precision fix
 (\S\ref{sec:precision}) makes the engine competitive-to-winning in-distribution at
-$10$M$/d{=}768$ (Cohere, Table~\ref{tab:cohere}), but the routed-PQ approach has a
-boundary: at $35$M$/d{=}1024$ (Wikipedia-v3, unit-norm, strongly anisotropic
-$\lVert\mu\rVert{=}0.48$) recall plateaus at $\approx\!0.60$ while HNSW reaches $0.97$.
-We verified the index is correct (self-queries return themselves) and ruled out
-mean-centering, tree granularity, routing-beam width, and probe/pool depth --- the
-cause is that in-distribution top-$k$ neighborhoods at this scale are packed tighter
-than the coarse routing can separate, so the true cell is often unprobed; full-precision
-graph traversal resolves them where 4-bit-code routing cannot. Notably our index
-\emph{builds faster} there ($1.9$h vs.\ HNSW's $3.8$h at matched int8 memory), so the
-gap is search quality, not build budget --- the deficit is \emph{routing precision}: with no code truncation (every probed point exactly re-ranked) recall is unchanged, so the int8-quantized cell centroids simply mis-rank which cells to probe at $d{=}1024$ --- a target for higher-precision cell scoring (fp16 centroids / float routing), not finer scan codes. \textbf{Other scope:} single (shared) machine, not a
+$10$M$/d{=}768$ (Cohere, Table~\ref{tab:cohere}); with multi-hop graph repair
+(\S\ref{sec:graph}) this extends to $35$M$/d{=}1024$ (Wikipedia Cohere-v3, unit-norm,
+strongly anisotropic $\lVert\mu\rVert{=}0.48$), where against a memory-matched HNSW
+(int8 scalar-quantized storage) genbo wins across the practical high-recall range: at
+recall $0.978$ it delivers $302$ vs.\ $173$ QPS single-thread ($1.7\times$) and
+$1987$ vs.\ $1347$ at $8$ threads, and reaches recall $0.986$ where HNSW plateaus at
+$\approx\!0.982$; HNSW is faster only below $\approx\!0.95$. Our index also
+\emph{builds faster} there (matched int8 memory).
+\textbf{Benchmark hygiene (a cautionary note).} An earlier version of this dataset
+appeared to cap our recall at $0.62$ while HNSW reached $0.97$; the cause was a
+ground-truth construction pitfall, not an algorithmic boundary. When the query set is
+carved from the base and the exact ground truth is computed over the base
+\emph{including} those rows, an index that correctly \emph{excludes} the queries faces
+an artificial recall ceiling---here $38\%$ of each top-$10$ were query self-matches or
+near-duplicate query rows, capping recall at $0.62$---while an index that inadvertently
+\emph{retains} the queries appears to win. All numbers here use ground truth recomputed
+over the queries-excluded base, with every method searching that same base. We flag this
+because the failure is silent: both indices run without error and the ceiling looks like
+a model deficiency. \textbf{Other scope:} single (shared) machine, not a
 standardized-VM submission (the gating experiment for a leaderboard claim); $\gamma$ and
 scan-precision are fit/selected per dataset; the coarse-cell corollary is shown on
 IP/OOD data; the gap to binary-only leaderboard systems is inference from public
