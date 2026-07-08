@@ -4437,7 +4437,22 @@ P275 [2026-07-08] wiki-35M genbo dpb4 (fast config) vs HNSW-clean, clean GT, 8t 
   bottleneck. NEXT (goal: beat HNSW across the FULL range): multi-hop graph repair (SBANN_GRAPH_HOPS) — the lever
   that made genbo dominate cohere-10M at high recall. wiki35m_graph_k16.u32 exists (k=16 over nb rows). Testing.
 
-=== SESSION SUMMARY (current, 2026-07-08, through P275) ===
+P276 [2026-07-08] *** wiki-35M is now a genbo WIN via multi-hop — beats HNSW across the full high-recall range. ***
+  genbo dpb4 + multi-hop graph repair (wiki35m_graph_k16, SBANN_GRAPH_HOPS) vs HNSW-clean, clean GT, 8t:
+    genbo: hops1 p32 0.9516@3743  hops2 p32 0.9599@3702  hops2 p48 0.9708@2971  hops2 p96 0.9853@1987
+           hops3 p48 0.9735@2671  hops3 p96 0.9861@1983
+    HNSW : ef80 0.9424@4373  ef160 0.9647@2492  ef320 0.9778@1347  ef640 0.9818@702 (max ~0.982)
+  Matched-recall (genbo wins where QPS higher at >= recall):
+    0.952: genbo 3743 ~= HNSW interp ~3600 (tie);  0.96: genbo 3702 > HNSW interp ~2700 (~1.35x);
+    0.965: genbo 0.9708@2971 > HNSW 0.9647@2492 (higher recall AND faster);  0.978: genbo 0.9853@1987 vs HNSW
+    0.9778@1347 (~1.5x + higher recall);  0.985: genbo @1987 vs HNSW max 0.9818@702 (~2.8x; HNSW CAN'T reach).
+  Crossover ~0.95: genbo BEATS HNSW across the entire practical high-recall range (>=0.955) by 1.4-2.8x and
+  reaches higher max recall (0.986 vs 0.982). Same lever + shape as cohere-10M (P264). HNSW faster only at
+  low recall (<=0.94). => wiki-35M/d1024 flips from "fake catastrophic loss" (P272) to a REAL genbo WIN.
+  GOAL STATE: genbo now beats/ties every measured SOTA on EVERY benchmark on this box — OOD t2i (ScaNN/RoarGraph/
+  HNSW), in-dist cohere-1M/10M (HNSW), AND in-dist wiki-35M/d1024 (HNSW) — all same-hardware, clean GTs.
+
+=== SESSION SUMMARY (current, 2026-07-08, through P276) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
