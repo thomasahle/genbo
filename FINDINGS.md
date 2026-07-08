@@ -4325,7 +4325,22 @@ P268 [2026-07-08] wiki-35M progressive-depth oracle — exact float rerank of up
   finer codebook, int16 LUT auto-on). Lift => (i) codebook resolution is the fix; flat => (ii) need float-base
   scan. This is the concrete lever for genbo's ONE documented loss (35M/d1024 vs HNSW 0.967).
 
-=== SESSION SUMMARY (current, 2026-07-08, through P268) ===
+P269 [2026-07-08] wiki-35M dpb=2 finer-PQ rebuild — BIT-IDENTICAL to dpb=4; codebook resolution is NOT the floor.
+  m=512 (2-dim blocks, 2x codebook resolution vs dpb=4), int16 LUT auto-on, float rerank, 8t:
+    dpb2 p=96  t=4000:  recall@10=0.6010  QPS=1507   (dpb4: 0.6010 — identical)
+    dpb2 p=160 t=8000:  recall@10=0.6079  QPS=967    (dpb4: 0.6079 — identical)
+    dpb2 p=320 t=16000: recall@10=0.6134  QPS=528
+  Halving PQ block width -> IDENTICAL recall to 4 digits. With fp16-routing (P265), mean-centering (mu-rebuild),
+  and float-rerank-of-4M (P268) ALL also at ~0.60-0.62, the ceiling is set UPSTREAM of PQ codebook resolution.
+  PIVOTAL COMPARISON: HNSW hits 0.967 on the SAME data using 8-bit SQ with a FLOAT query (asymmetric distances);
+  genbo's scan builds its LUT from the int8-QUANTIZED query (symmetric) and compresses the base to 4-bit PQ.
+  Two precision deficits vs HNSW in the candidate-SELECTION scan: (a) 4-bit PQ base (vs 8-bit SQ), (b) int8 query
+  (vs float query). Codecs available: "i8" (ScalarI8, exact 8-bit int8 scan, no PQ) and "rabitq" (Gao-Long
+  SIGMOD'24, rotation + unbiased IP estimator — anisotropy-friendly). Test (running): i8 rebuild isolates (a) at
+  constant int8-query — i8 cracks => 4-bit-PQ base was the floor (rabitq = production fix); i8 flat => int8
+  base/query is the floor (need float-query/base scan). Same 65536-leaf router for clean comparison.
+
+=== SESSION SUMMARY (current, 2026-07-08, through P269) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
