@@ -4296,7 +4296,21 @@ P266 [2026-07-08] wiki-35M WALL DIAGNOSTIC — deepening exact float rerank has 
   (P263) but 0.60 at 35M => signal (gap to true NN) shrinks with density while fixed quantization noise stays,
   collapsing SNR at scale — the loss is a scale x precision interaction, consistent with (D).
 
-=== SESSION SUMMARY (current, 2026-07-08, through P266) ===
+P267 [2026-07-08] wiki-35M ORACLE — scanning the ENTIRE DB still caps at 0.60; the wall is int8-PQ SCAN precision,
+  not coverage or GT. Float rerank on, fp16 index:
+    p=2048 tfloor=20000 nq=300: recall@10=0.5963   (extreme coverage — no gain)
+    p=4096 tfloor=20000 nq=300: recall@10=0.5973
+    p=65536(ALL leaves) tfloor=60000 nq=20: recall@10=0.6000   <-- entire DB scanned, exact rerank of top-60k
+  Scanning ALL 35M points and exact-float-reranking the top-60000 int8-PQ survivors => still 0.60. Coverage and
+  routing are DEFINITIVELY OUT. GT is sound (HNSW scores 0.967 on the SAME gt file). Therefore the true NN is
+  ranked outside the top-60000 (of 35M, ~0.17%) by the int8/4-bit-PQ scan — the apq4 dpb=4 codebook (16 levels
+  per 4-dim block, m=256) is too coarse to make the true neighbor look close at d=1024 / 35M density. This is a
+  SCAN-PRECISION floor, distinct from the P239 LUT-accumulation policy (that fixes int16 accum, not codebook
+  resolution). Fix direction: finer PQ (dpb=2 -> m=512, half the block width) OR a float/fp16 rescore of a much
+  larger candidate set. Progressive-depth oracle (running) confirms whether the NN is merely deep in int8-PQ
+  ranking (finer PQ fixes) vs absent because int8-BASE quantization corrupts candidacy (needs float-base scan).
+
+=== SESSION SUMMARY (current, 2026-07-08, through P267) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
