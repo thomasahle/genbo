@@ -4340,7 +4340,20 @@ P269 [2026-07-08] wiki-35M dpb=2 finer-PQ rebuild — BIT-IDENTICAL to dpb=4; co
   constant int8-query — i8 cracks => 4-bit-PQ base was the floor (rabitq = production fix); i8 flat => int8
   base/query is the floor (need float-query/base scan). Same 65536-leaf router for clean comparison.
 
-=== SESSION SUMMARY (current, 2026-07-08, through P269) ===
+P270 [2026-07-08] wiki-35M i8 (exact 8-bit int8 scan) — NO BETTER than 4-bit PQ; base compression is not the
+  floor. Built in-process (no save; ScalarI8/RaBitQ are non-serializable — save_to panics "only Apq4/Pq4 are",
+  a genbo bug to fix only if this direction pays off). Float rerank, NQ=500:
+    i8 p=96:  recall@10=0.5882   (apq4: 0.6010)
+    i8 p=160: recall@10=0.5950   (apq4: 0.6079)
+  Exact 8-bit int8 selection is marginally WORSE than 4-bit PQ. => base bit-depth (4 vs 8) is irrelevant; the
+  floor is upstream of the base codec entirely. NOW ISOLATED to the ONE factor every genbo variant shares and
+  HNSW does NOT: the int8-QUANTIZED QUERY. apq4/i8/dpb2 all dot an int8 query; fp16-routing (P265) floated only
+  the CENTROIDS, never the query. HNSW's 0.967 uses a FLOAT query (asymmetric float-q vs SQ8-base). Float-query
+  has literally never been tested in genbo. Test (running): t_surv >> #candidates-in-leaves so EVERY routed
+  candidate gets exact-float reranked (= float SELECTION within int8-routed leaves) — if recall jumps, the
+  int8-query scan is the wall and an asymmetric float/fp16-query scan is the fix (buildable on the P265 f16 kernel).
+
+=== SESSION SUMMARY (current, 2026-07-08, through P270) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
