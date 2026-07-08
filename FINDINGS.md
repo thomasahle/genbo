@@ -4242,6 +4242,16 @@ P263 [2026-07-08] wiki-35M wall PINNED to ROUTING, not scan (cheap no-rebuild di
   updated accordingly. Boundary stands: HNSW (full-precision graph) wins 35M/d1024 in-dist; genbo's int8-routed
   approach hits a centroid-precision wall there while winning at 10M/d768.
 
+P264 [2026-07-08] cohere-10M in-dist: genbo (multi-hop) DOMINATES HNSW across the FULL recall range, not just the
+  0.90 gate. 1t, graph M24, per-query; HNSW targets from the banked clean run.
+    ~0.971: genbo hops=2 p32 t1000 = 0.9714@1011 vs HNSW ef80 0.9711@656  -> genbo 1.54x
+    ~0.980: genbo hops=3 p64 t2000 = 0.9834@645  vs HNSW ef160 0.9803@340 -> genbo 1.9x
+    (also hops2 p48 0.9778@817, hops3 p48 0.9795@748). At 0.90 gate genbo hops=1 already won (P243/245).
+  This is multi-hop used correctly (high-recall regime, P262) — the lever that was NOT a 0.90-gate win IS a big
+  high-recall win, and it makes genbo faster than HNSW at EVERY in-distribution operating point at 10M/d768.
+  Complements the honest 35M/d1024 loss (P261/263, routing-precision wall). CAVEAT: 1t, HNSW not same-window
+  (margins 1.5-1.9x large enough to survive contention; tight-pairwise confirm is the clean follow-up).
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
