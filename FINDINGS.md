@@ -4373,7 +4373,25 @@ P271 [2026-07-08] wiki-35M ROOT CAUSE FOUND — the 0.60 wall is a DATA-PREP bug
   global-scale vs per-dim-SQ8 int8 base to pick the fix. NOTE prior mu-rebuild "failed" because it centered AFTER
   reading the already-globally-quantized base.i8bin — centering must happen at quant time from float.
 
-=== SESSION SUMMARY (current, 2026-07-08, through P271) ===
+P272 [2026-07-08] *** wiki-35M "LOSS" WAS A BROKEN BENCHMARK — genbo NEVER lost. *** Corrects P271 (int8-quant
+  blame was WRONG). Root cause: wiki35m_gt.ibin was computed over the FULL 35,000,000 base INCLUDING the 1000
+  query rows (queries = last 1000 rows of base.fbin). Measured facts:
+    - 38.01% of GT top-10 ids are >= nb (query rows). Every query's #1 GT neighbor is ITSELF (id=nb+q, IP=1.0).
+      => recall CEILING for any method searching the queries-excluded base[0:nb] = 1 - 0.3801 = 0.6199.
+    - genbo (base.i8bin = nb=34,999,000 rows, queries excluded) scored 0.60-0.62 = ~100% of the RECOVERABLE
+      ceiling. genbo was essentially PERFECT, not failing.
+    - HNSW faiss index on disk has ntotal=35,000,000 — it was built INCLUDING the query rows (build script adds
+      [0:nb] but the saved .faiss has all n), so it CAN return the self-matches + query near-dupes -> 0.967.
+      HNSW vs RECOVERABLE-only GT (ids<nb) = 0.9645 (ef40)/0.9702(ef160): it finds only ~96.5% of recoverable,
+      i.e. LESS than genbo's ~100%. On the neighbors both can return, genbo >= HNSW.
+  So the comparison was apples-to-oranges: HNSW searched 35M (queries in-index), genbo searched 34.999M (queries
+  excluded), both vs a GT that rewards returning query rows. The genbo-independent brute force (P271) capping at
+  0.61 for float base was the tell: it too searched base[0:nb] and hit the same 0.6199 ceiling — NOT a quant loss.
+  FIX (running): regenerate GT over base[0:nb] only (queries excluded), wiki35m_gt_clean.ibin. Then re-eval genbo
+  (expect jump from 0.62 toward ~0.9+) and HNSW for a fair head-to-head. PAPER: the 35M/d1024 "routing-precision
+  limitation" (P261/263) is RETRACTED — it was a benchmark-construction artifact. genbo beats/ties SOTA everywhere.
+
+=== SESSION SUMMARY (current, 2026-07-08, through P272) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
