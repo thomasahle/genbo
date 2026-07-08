@@ -4217,6 +4217,20 @@ P261 [2026-07-08] wiki-35M CLOSED (honest boundary): genbo index VERIFIED CORREC
   faiss) all stand. PIVOT: loop to promoting the confirmed multi-hop win (P258/P260, +1.7-1.8pt both regimes) —
   batched-driver port so hops>1 works at 8t, then flip default hops=2 when graph present.
 
+P262 [2026-07-08] MULTI-HOP PROMOTION VERDICT CORRECTED (discipline catch): it is a HIGH-RECALL lever, NOT a
+  0.90-gate win; champion STAYS hops=1. Also: multi-hop ALREADY works in the batched 8t driver (search_batch_frr
+  calls the same rerank_cascade_graph reading GRAPH_HOPS/BESTFIRST statics) — no port was needed.
+  8t QPS@0.90 shootout (t2i-10M, graph M32 g0.5): hops=1 p=40 0.9008@19952 vs hops=2 p=30 0.9017@18749 ->
+  HOPS=1 WINS by ~6% at the 0.90 gate. hops=2 only overtakes above the ~0.91-0.92 CROSSOVER (hops=1 needs many
+  extra probes there; hops=2 reaches 0.94-0.96 cheaply). The P258/P260 "+1.7pt matched-recall win" was measured
+  at FIXED p (=40), which conflates "more recall" with "better frontier" — at the actual recall gate hops=1's
+  cheap operating point wins. CORRECTED SCOPE: keep SBANN_GRAPH_HOPS flag-gated (default 1); it's the tool for
+  HIGH-recall targets (>=0.92, e.g. cohere in-dist 0.94 where P258 showed R3 0.9460@2502 > R1 0.9433@2481) and
+  for OOD when chasing 0.95+. Does NOT change the headline 0.90-gate ratios (1M 0.755 / 10M 0.827 stand).
+  Best-first: in-dist-only (P260) AND high-recall-only -> niche; keep opt-in. Multi-hop line CLOSED: real,
+  useful, correctly scoped, NOT a champion default. Lesson re-learned: always compare at the RECALL GATE, not
+  fixed p (mirrors the P217 fixed-p mirage).
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
