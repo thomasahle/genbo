@@ -55,3 +55,6 @@
 
 ## Open / next
 - wiki-35M finer-PQ fix (deferred); paper: neurips class + authors at submit; 1B (int8 200GB fits, blocked on ~800GB download + GT + scann-1B baseline).
+
+## Regression check (2026-07-08, end session-2)
+After ALL session-2 binary changes, core OOD champions reproduce banked recall EXACTLY (1t): t2i-1M 0.9049@p18, t2i-10M 0.9008@p40. => every new kernel/flag (P239/241/245-6/251-2/259/253-262) is bit-identical on the champion path; won benchmarks safe. Next open frontier: fp16/float-centroid routing (P263) — routing precision, core-relevant (may also improve cohere-d768 margin), needs router change + rebuild.
