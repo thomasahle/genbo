@@ -4203,6 +4203,20 @@ P260 [2026-07-08] MULTI-HOP GENERALIZES to OOD (promotion path item #2 CLEARED);
   recall positive); keep SBANN_GRAPH_BESTFIRST opt-in (in-dist only). Remaining before flipping the default:
   batched-driver port (currently per-query BATCHSCAN=0) + 8t confirm. Champion still R=1 until then (safe).
 
+P261 [2026-07-08] wiki-35M CLOSED (honest boundary): genbo index VERIFIED CORRECT (self-query, query=indexed
+  rows 0..999, found themselves at the 0.1000 max-possible of a degenerate size-1-truth GT => 100% self-recall).
+  So the ~0.60 ceiling on held-out queries is a SEARCH-QUALITY wall, not a bug. Exhausted cheap levers, ALL fail:
+  mu-centering (0.60), coarser Kf=65536 (0.60) & 131072 (0.59), coarse beam0 128->768 (0.558->0.581), p 16->160
+  & t 400->8000 (flat 0.59). Root cause = tight in-distribution top-k at 35M/d1024: neighbors packed too close
+  for routing+4bit-PQ to surface the exact set; HNSW's full-precision graph resolves them (0.9670@1198 1t).
+  HONEST FRONTIER (paper-worthy): genbo WINS in-distribution at 10M/d768 (cohere, beat HNSW) but LOSES at
+  35M/d1024 (wiki) — a scale x dimension boundary for the routed-PQ approach in-distribution. Build-time genbo
+  was actually FASTER (light 1h52m vs HNSW 3h50m) and heavy-EM was build-impractical (>10h). Deferred to
+  dedicated debugging (finer PQ / higher-bit codes for tight in-dist top-k; or a query-time exactness stage).
+  NOT a core big-ann benchmark; core wins (t2i OOD 1M/10M/100M, cohere in-dist 1M/10M vs scann/HNSW/RoarGraph/
+  faiss) all stand. PIVOT: loop to promoting the confirmed multi-hop win (P258/P260, +1.7-1.8pt both regimes) —
+  batched-driver port so hops>1 works at 8t, then flip default hops=2 when graph present.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
