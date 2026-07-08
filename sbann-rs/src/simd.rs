@@ -484,3 +484,133 @@ pub fn selftest(d: usize) -> bool {
     }
     true
 }
+
+// ---------------- f16 (IEEE half) support for higher-precision cell routing (P265) ----------------
+// Centroids are unit-vector k-means means (norm <=1); stored as f16 keeps ~11-bit mantissa vs int8's
+// ~7 bits on 127*cf, removing the round(127*cf) mis-ranking at high d (P263). Conversions are scalar
+// (build-time store is one-time; selftest uses them); the query hot path uses F16C block-widening.
+
+/// IEEE-754 half (u16 bits) -> f32. Exact for all inputs (handles zero/subnormal/normal/inf/nan).
+#[inline]
+pub fn f16_to_f32(h: u16) -> f32 {
+    let sign = (h as u32 & 0x8000) << 16;
+    let exp = (h >> 10) & 0x1f;
+    let mant = h as u32 & 0x3ff;
+    let bits = if exp == 0 {
+        if mant == 0 { sign } else {
+            let mut e = 0i32; let mut m = mant;
+            while m & 0x400 == 0 { m <<= 1; e += 1; }
+            sign | (((127 - 15 - e) as u32) << 23) | ((m & 0x3ff) << 13)
+        }
+    } else if exp == 0x1f {
+        sign | 0x7f80_0000 | (mant << 13)
+    } else {
+        sign | ((exp as u32 + 112) << 23) | (mant << 13)
+    };
+    f32::from_bits(bits)
+}
+
+/// f32 -> IEEE-754 half (u16 bits), round-to-nearest-even. Good for our near-unit centroid values.
+#[inline]
+pub fn f32_to_f16(f: f32) -> u16 {
+    let x = f.to_bits();
+    let sign = ((x >> 16) & 0x8000) as u16;
+    let mut e = ((x >> 23) & 0xff) as i32 - 127 + 15;
+    let m = x & 0x7f_ffff;
+    if e >= 0x1f { return sign | 0x7c00; }            // overflow -> inf
+    if e <= 0 {                                        // subnormal / underflow
+        if e < -10 { return sign; }
+        let m = (m | 0x80_0000) >> (1 - e);
+        let round = (m & 0x1000) != 0 && ((m & 0x2fff) != 0 || (m & 0x2000) != 0);
+        return sign | ((m >> 13) as u16) + round as u16;
+    }
+    let half = (m & 0x1fff) as u32;
+    let mut out = sign | ((e as u16) << 10) | ((m >> 13) as u16);
+    // round-to-nearest-even
+    if half > 0x1000 || (half == 0x1000 && (out & 1) == 1) {
+        out += 1; // carries into exponent correctly since mantissa/exp are contiguous
+        let _ = &mut e;
+    }
+    out
+}
+
+/// Per-candidate float routing key for the coarse level (P265): out[j] = 127^2*||cf_j||^2 - 2*127*(qn.cf_j),
+/// where qn is the int8 (unit*127) query and cf_j is the true-float coarse centroid (f16-decoded). This is
+/// ||qn - 127*cf||^2 minus the per-query constant ||qn||^2 (dropped: coarse scores only feed the top-beam
+/// select). Lower = nearer. Uses F16C to widen 8 f16->f32 + cvtepi8 for qn; scalar fallback.
+pub fn f16_l2_block(qn: &[i8], cf16: &[u16], ncand: usize, d: usize, out: &mut [f32]) {
+    #[cfg(target_arch = "x86_64")]
+    {
+        if std::is_x86_feature_detected!("f16c") && std::is_x86_feature_detected!("avx2")
+            && std::is_x86_feature_detected!("fma") && d % 8 == 0 {
+            unsafe { return f16_l2_block_f16c(qn, cf16, ncand, d, out); }
+        }
+    }
+    for j in 0..ncand {
+        let c = &cf16[j * d..j * d + d];
+        let (mut qc, mut cn2) = (0f32, 0f32);
+        for k in 0..d {
+            let cf = f16_to_f32(c[k]);
+            qc += qn[k] as f32 * cf;
+            cn2 += cf * cf;
+        }
+        out[j] = 127.0 * 127.0 * cn2 - 2.0 * 127.0 * qc;
+    }
+}
+
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2,f16c,fma")]
+unsafe fn f16_l2_block_f16c(qn: &[i8], cf16: &[u16], ncand: usize, d: usize, out: &mut [f32]) {
+    use std::arch::x86_64::*;
+    for j in 0..ncand {
+        let c = cf16.as_ptr().add(j * d);
+        let mut acc_qc = _mm256_setzero_ps();
+        let mut acc_cn = _mm256_setzero_ps();
+        let mut k = 0usize;
+        while k + 8 <= d {
+            let cf = _mm256_cvtph_ps(_mm_loadu_si128(c.add(k) as *const __m128i)); // 8 f16 -> 8 f32
+            // load 8 int8 qn -> 8 f32
+            let qi = _mm_loadl_epi64(qn.as_ptr().add(k) as *const __m128i);
+            let qf = _mm256_cvtepi32_ps(_mm256_cvtepi8_epi32(qi));
+            acc_qc = _mm256_fmadd_ps(qf, cf, acc_qc);
+            acc_cn = _mm256_fmadd_ps(cf, cf, acc_cn);
+            k += 8;
+        }
+        // horizontal sums
+        let hsum = |v: __m256| -> f32 {
+            let lo = _mm256_castps256_ps128(v);
+            let hi = _mm256_extractf128_ps(v, 1);
+            let s = _mm_add_ps(lo, hi);
+            let s = _mm_hadd_ps(s, s);
+            let s = _mm_hadd_ps(s, s);
+            _mm_cvtss_f32(s)
+        };
+        let (mut qc, mut cn2) = (hsum(acc_qc), hsum(acc_cn));
+        while k < d { let cf = f16_to_f32(*c.add(k)); qc += *qn.get_unchecked(k) as f32 * cf; cn2 += cf * cf; k += 1; }
+        *out.get_unchecked_mut(j) = 127.0 * 127.0 * cn2 - 2.0 * 127.0 * qc;
+    }
+}
+
+/// selftest: f16 round-trip + f16_l2_block HW==scalar within eps.
+pub fn selftest_f16(d: usize) -> bool {
+    let mut ok = true;
+    // round-trip of representative near-unit values
+    for &v in &[0.0f32, 0.031, -0.031, 0.5, -0.5, 0.99, 1.0, 1.0/(d as f32).sqrt()] {
+        let r = f16_to_f32(f32_to_f16(v));
+        if (r - v).abs() > 0.002 * (1.0 + v.abs()) { ok = false; }
+    }
+    // kernel HW vs scalar
+    let nc = 5;
+    let qn: Vec<i8> = (0..d).map(|k| ((k as i32 * 37 % 255) - 127) as i8).collect();
+    let cf16: Vec<u16> = (0..nc * d).map(|i| f32_to_f16(((i as f32 * 0.017).sin()) / (d as f32).sqrt())).collect();
+    let mut a = vec![0f32; nc]; let mut b = vec![0f32; nc];
+    f16_l2_block(&qn, &cf16, nc, d, &mut a);
+    for j in 0..nc {
+        let c = &cf16[j * d..j * d + d];
+        let (mut qc, mut cn2) = (0f32, 0f32);
+        for k in 0..d { let cf = f16_to_f32(c[k]); qc += qn[k] as f32 * cf; cn2 += cf * cf; }
+        b[j] = 127.0 * 127.0 * cn2 - 2.0 * 127.0 * qc;
+    }
+    for j in 0..nc { if (a[j] - b[j]).abs() > 1e-2 * (1.0 + b[j].abs()) { ok = false; } }
+    ok
+}

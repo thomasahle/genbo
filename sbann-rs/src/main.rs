@@ -1473,6 +1473,7 @@ fn main() {
     if std::env::var("SBANN_PROFILE").is_ok() { vq::PROFILE.store(true, std::sync::atomic::Ordering::Relaxed); }
     if let Ok(s) = std::env::var("SBANN_ROUTE_SDIM") { if let Ok(v) = s.parse::<usize>() { vq::ROUTE_SDIM.store(v, std::sync::atomic::Ordering::Relaxed); } }
     if let Ok(s) = std::env::var("SBANN_ROUTE_SDIM0") { if let Ok(v) = s.parse::<usize>() { vq::ROUTE_SDIM0.store(v, std::sync::atomic::Ordering::Relaxed); } }
+    if std::env::var("SBANN_ROUTE_FP16").is_ok() { assert!(simd::selftest_f16(1024) && simd::selftest_f16(200), "f16 kernel != scalar"); vq::ROUTE_FP16.store(true, std::sync::atomic::Ordering::Relaxed); }
     if let Ok(s) = std::env::var("SBANN_BEAM0") { if let Ok(v) = s.parse::<usize>() { vq::BEAM0.store(v, std::sync::atomic::Ordering::Relaxed); } }
     if std::env::var("SBANN_ROUTE_ADC").is_ok() { vq::ROUTE_ADC.store(true, std::sync::atomic::Ordering::Relaxed); }
     // ROUTE_VNNI (P196, champion default ON): VNNI norm-decomposition routing L2, BIT-IDENTICAL to the

@@ -169,6 +169,10 @@ pub static GRAPH_HOPS: std::sync::atomic::AtomicUsize = std::sync::atomic::Atomi
 /// R*M expansion budget, HNSW-like expansion ORDER, still SIMD-batched (no per-query heap). 0 = off
 /// (per-cohort, default). Only meaningful with graph + hops>=1.
 pub static GRAPH_BESTFIRST: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+/// SBANN_ROUTE_FP16 (P265): score COARSE routing cells with f16 (true-float) centroids instead of the
+/// round(127*cf) int8 centroids — removes high-d cell mis-ranking (P263). Gates build population AND
+/// query scoring; empty cent_f16 => int8 path (champion bit-identical).
+pub static ROUTE_FP16: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 pub static GRAPH_KEDGE: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(16);
 pub static GRAPH_PFDIST: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(16);
 /// Sort the deduped union by orig id before the rescore gather (monotone addresses). MEASURED (interleaved,
@@ -1093,6 +1097,9 @@ pub struct HierRouter {
     // Derived at build/load (NOT persisted); zero query-time cost beyond one i32 add per fine cell.
     // SEARCH-time flag: do not set during build/insert (it would also skew the SOAR assignment).
     gbias: Vec<i32>,
+    // P265: per-level f16 bit-patterns of the true-float (unit-scale) centroids. Empty outer vec =>
+    // int8-only router (persist tag=1, bit-identical). First cut populates only [0] (coarse level).
+    cent_f16: Vec<Vec<u16>>,
 }
 
 /// Per-finest-cell probe-calibration bias (γ−1)·‖c‖² from SBANN_ROUTE_GAMMA. Empty when unset/γ=1.
@@ -1239,6 +1246,12 @@ impl HierRouter {
         let _ = &point_cell;
         // quantize all levels to i8 (after any EM refinement)
         let cent: Vec<Vec<i8>> = centf_lv.iter().map(|cf| cf.iter().map(|&v| (v * 127.0).round().clamp(-127.0, 127.0) as i8).collect()).collect();
+        // P265: optionally store the COARSE float centroids as f16 (true precision) for high-d routing.
+        let cent_f16: Vec<Vec<u16>> = if ROUTE_FP16.load(std::sync::atomic::Ordering::Relaxed) {
+            let mut v = vec![Vec::new(); levels];
+            v[0] = centf_lv[0].iter().map(|&x| simd::f32_to_f16(x)).collect();
+            v
+        } else { Vec::new() };
         // optional ADC routing codebook over the FINEST centroids (recall gate for #3)
         let (radc, rcodes) = if ROUTE_ADC.load(std::sync::atomic::Ordering::Relaxed) && d % 4 == 0 {
             let cf = &cent[levels - 1];
@@ -1270,7 +1283,7 @@ impl HierRouter {
         } else { Vec::new() };
         let cadj = cadj_of(&cent, d);
         let gbias = gbias_of(&cent, d);
-        HierRouter { cent_pfx: std::sync::OnceLock::new(), d, mu, kf, levels, cent, child, beam: beams.to_vec(), soar: 0.0, radc, rcodes, rblocks, cadj, gbias }
+        HierRouter { cent_pfx: std::sync::OnceLock::new(), d, mu, kf, levels, cent, child, beam: beams.to_vec(), soar: 0.0, radc, rcodes, rblocks, cadj, gbias, cent_f16 }
     }
 
     /// 2-level hierarchical k-means (back-compat wrapper): C0 coarse → Kf/C0 fine per coarse.
@@ -1309,7 +1322,7 @@ impl HierRouter {
         let cent = vec![c0, cf];
         let cadj = cadj_of(&cent, d);
         let gbias = gbias_of(&cent, d);
-        HierRouter { cent_pfx: std::sync::OnceLock::new(), d, mu, kf, levels: 2, cent, child: vec![gstart, Vec::new()], beam: vec![b0], soar: 0.0, radc: None, rcodes: Vec::new(), rblocks: Vec::new(), cadj, gbias }
+        HierRouter { cent_pfx: std::sync::OnceLock::new(), d, mu, kf, levels: 2, cent, child: vec![gstart, Vec::new()], beam: vec![b0], soar: 0.0, radc: None, rcodes: Vec::new(), rblocks: Vec::new(), cadj, gbias, cent_f16: Vec::new() }
     }
 
     /// Enable SOAR build-time spilled assignment with penalty λ (`s`). 0 disables (default path).
@@ -1365,9 +1378,21 @@ impl HierRouter {
             PROF_R_NEVAL.fetch_add(l0 as u64, std::sync::atomic::Ordering::Relaxed); }
         let tcs = if rp { Some(std::time::Instant::now()) } else { None };
         let b0ov = BEAM0.load(std::sync::atomic::Ordering::Relaxed);
-        let b = (if b0ov > 0 { b0ov } else { self.beam[0] }).min(cd.len());
-        if b > 0 && b < cd.len() { cd.select_nth_unstable(b - 1); cd.truncate(b); }
-        let mut sel: Vec<u32> = cd.iter().map(|&(_, c)| c).collect();
+        let bwant = if b0ov > 0 { b0ov } else { self.beam[0] };
+        let mut sel: Vec<u32>;
+        if ROUTE_FP16.load(std::sync::atomic::Ordering::Relaxed) && !self.cent_f16.is_empty() && !self.cent_f16[0].is_empty() {
+            // P265: higher-precision coarse routing via f16 true-float centroids.
+            let mut sf = vec![0f32; l0];
+            simd::f16_l2_block(qn, &self.cent_f16[0], l0, d, &mut sf);
+            let mut cdf: Vec<(f32, u32)> = (0..l0).map(|q| (sf[q], q as u32)).collect();
+            let b = bwant.min(cdf.len());
+            if b > 0 && b < cdf.len() { cdf.select_nth_unstable_by(b - 1, |a, c| a.0.total_cmp(&c.0)); cdf.truncate(b); }
+            sel = cdf.iter().map(|&(_, c)| c).collect();
+        } else {
+            let b = bwant.min(cd.len());
+            if b > 0 && b < cd.len() { cd.select_nth_unstable(b - 1); cd.truncate(b); }
+            sel = cd.iter().map(|&(_, c)| c).collect();
+        }
         if let Some(t) = tcs { PROF_R_CSEL_NS.fetch_add(t.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed); }
         let tf = if rp { Some(std::time::Instant::now()) } else { None };
         fd.clear();
@@ -1536,7 +1561,8 @@ impl Router for HierRouter {
         out
     }
     fn save(&self, w: &mut crate::persist::Sw) -> std::io::Result<()> {
-        w.u8(ROUTER_TAG_HIER)?;
+        let f16 = !self.cent_f16.is_empty();
+        w.u8(if f16 { ROUTER_TAG_HIER_F16 } else { ROUTER_TAG_HIER })?;
         w.usize(self.d)?;
         w.usize(self.kf)?;
         w.usize(self.levels)?;
@@ -1550,6 +1576,7 @@ impl Router for HierRouter {
         save_opt_pq(&self.radc, w)?;
         w.u8s(&self.rcodes)?;
         w.u8s(&self.rblocks)?;
+        if f16 { w.usize(self.cent_f16.len())?; for c in &self.cent_f16 { w.u8s(bytemuck::cast_slice::<u16, u8>(c))?; } }
         Ok(())
     }
 }
@@ -3162,6 +3189,7 @@ impl Index {
 // Trait objects are NOT serialized generically: each concrete Router/Compressor writes a 1-byte type
 // tag (these constants) + its POD fields; load_router/load_comp read the tag and rebuild the type.
 const ROUTER_TAG_HIER: u8 = 1;
+const ROUTER_TAG_HIER_F16: u8 = 2; // P265: HierRouter WITH trailing f16 coarse centroids
 const COMP_TAG_APQ4: u8 = 1;
 const COMP_TAG_PQ4: u8 = 2;
 
@@ -3206,7 +3234,7 @@ fn load_opt_residpq(r: &mut crate::persist::Pr) -> Option<pq::ResidPq> {
 fn load_router(r: &mut crate::persist::Pr) -> Box<dyn Router> {
     let tag = r.u8();
     match tag {
-        ROUTER_TAG_HIER => {
+        ROUTER_TAG_HIER | ROUTER_TAG_HIER_F16 => {
             let d = r.usize();
             let kf = r.usize();
             let levels = r.usize();
@@ -3220,9 +3248,13 @@ fn load_router(r: &mut crate::persist::Pr) -> Box<dyn Router> {
             let radc = load_opt_pq(r);
             let rcodes = r.u8_vec();
             let rblocks = r.u8_vec();
+            let cent_f16: Vec<Vec<u16>> = if tag == ROUTER_TAG_HIER_F16 {
+                let n = r.usize();
+                (0..n).map(|_| r.u8_vec().chunks_exact(2).map(|b| u16::from_le_bytes([b[0], b[1]])).collect()).collect()
+            } else { Vec::new() };
             let cadj = cadj_of(&cent, d);
             let gbias = gbias_of(&cent, d);
-            Box::new(HierRouter { cent_pfx: std::sync::OnceLock::new(), d, mu, kf, levels, cent, child, beam, soar, radc, rcodes, rblocks, cadj, gbias })
+            Box::new(HierRouter { cent_pfx: std::sync::OnceLock::new(), d, mu, kf, levels, cent, child, beam, soar, radc, rcodes, rblocks, cadj, gbias, cent_f16 })
         }
         _ => panic!("unknown router type tag {tag} in index file (only HierRouter={ROUTER_TAG_HIER} supported)"),
     }
