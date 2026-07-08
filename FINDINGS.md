@@ -4409,7 +4409,10 @@ P273 [2026-07-08] *** wiki-35M LOSS INVERTED: genbo 0.91-0.99 vs corrected GT; H
   queries); wiki near-dupe queries then dominated each other's top-10 (3.8/10 unrecoverable). CLEAN speed baseline
   running: HNSW rebuilt on base[0:nb] (queries excluded, hnsw_wiki35m_int8_clean.faiss, ~4h) for apples-to-apples
   QPS@recall. PAPER: retract the 35M/d1024 limitation; genbo beats/ties SOTA on EVERY dataset incl 35M/d1024.
-  TODO verify the cohere/other GTs don't share the queries-in-GT prep bug (cohere results looked sane, but confirm).
+  VERIFIED: cohere GTs are CLEAN (bug was wiki-35M-only). cohere_convert.py uses a SEPARATE held-out query set
+  (queries.parquet), base is a full round 10,000,000 rows (not 10M-1000), GT is exact top-100 over base with
+  queries disjoint. So the cohere-1M/10M "genbo dominates HNSW" results (P243-264) are UNAFFECTED and valid.
+  Only wiki-35M carved queries from the last 1000 base rows + had the off-by-one GT-prep chunk leak.
 
 === SESSION SUMMARY (current, 2026-07-08, through P273) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
