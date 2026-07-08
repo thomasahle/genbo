@@ -4461,7 +4461,18 @@ P277 [2026-07-08] wiki-35M 1t CONFIRM — genbo's multi-hop win holds (larger ma
   in-dist confirmed a genbo win, 1t and 8t, clean GT, HNSW rebuilt queries-excluded. Full 1t+8t data now in hand
   for the paper rewrite (retract Limitations 35M loss -> document the win + queries-in-GT benchmark-hygiene note).
 
-=== SESSION SUMMARY (current, 2026-07-08, through P277) ===
+P278 [2026-07-08] wiki-35M SDIM0 coarse-route truncation — recall ROBUST to 4x truncation, but NO QPS gain
+  (routing is not the bottleneck here). int8 routing + SBANN_ROUTE_SDIM0, clean GT, 8t, hops=2:
+    p=48: sdim0=0 0.9709@2990 | 512 0.9708@2939 | 256 0.9705@2979
+    p=96: sdim0=0 0.9854@1734 | 512 0.9853@1692 | 256 0.9847@1731
+  Truncating coarse routing to 256 of 1024 dims holds recall (0.9709->0.9705) but QPS is flat (2990->2979) —
+  even on the UNROTATED wiki base the first 256 dims carry enough energy for coarse cell selection. QPS flat =>
+  at wiki-35M the query cost is dominated by float-rerank I/O + scan + multi-hop graph expansion, NOT the d=1024
+  coarse-route floor; so SDIM0 is a no-op for wiki QPS (may still help routing-dominated OOD, P139). The wiki-35M
+  low-recall (<0.94) gap vs HNSW is STRUCTURAL (IVF rerank/scan floor vs cheap graph hops), not a trimmable
+  routing cost. Not pursuing further — genbo already WINS the practical range (>=0.955); the goal is met.
+
+=== SESSION SUMMARY (current, 2026-07-08, through P278) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
