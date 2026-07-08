@@ -4414,7 +4414,19 @@ P273 [2026-07-08] *** wiki-35M LOSS INVERTED: genbo 0.91-0.99 vs corrected GT; H
   queries disjoint. So the cohere-1M/10M "genbo dominates HNSW" results (P243-264) are UNAFFECTED and valid.
   Only wiki-35M carved queries from the last 1000 base rows + had the off-by-one GT-prep chunk leak.
 
-=== SESSION SUMMARY (current, 2026-07-08, through P273) ===
+P274 [2026-07-08] wiki-35M CLEAN head-to-head (HNSW rebuilt on base[0:nb], queries excluded, ntotal=34,999,000,
+  vs clean GT, 8t) — the fair speed baseline. Build 7205s (~2h).
+    HNSW-clean:  ef40 0.8983@8121  ef80 0.9424@4373  ef160 0.9647@2492  ef320 0.9778@1347  ef640 0.9818@702
+    genbo dpb2:  p32 0.9125@2902   p48 0.9381@2511    p96 0.9649@1511    p160 0.9779@960    p320 0.9896@530
+  HONEST READ: at matched recall HNSW-clean is ~1.5-1.7x FASTER than genbo-dpb2 here (0.9647: 2492 vs 1511;
+  0.9778: 1347 vs 960). genbo reaches slightly higher max recall (0.9896 vs 0.9818). So wiki-35M/d1024 is NOT a
+  genbo speed win — it is COMPETITIVE (same recall range, within ~1.5x), a huge correction from the fake 0.62-vs-
+  0.97 artifact (P272/273) but NOT a reversal to dominance. Do NOT overclaim. CAVEAT: dpb2 is genbo's SLOW config
+  (m=512 = 2x scan) WITH float-rerank base.fbin I/O; dpb4 (m=256) + rerank-tuning re-eval RUNNING to get genbo's
+  true frontier before the final claim. PAPER: wiki-35M is genbo-competitive-with-HNSW (not a loss, not a clear
+  win); the DOMINANCE story stays OOD (t2i vs ScaNN/RoarGraph) + in-dist cohere-1M/10M (P264). Honesty > hype.
+
+=== SESSION SUMMARY (current, 2026-07-08, through P274) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
