@@ -4162,6 +4162,22 @@ P258 [2026-07-07] MULTI-HOP + BEST-FIRST VALIDATED at 1M AND 10M (promotable, ch
   in-distribution? — the graph coverage lever already wins OOD at R=1, so R>1 upside there is unknown), (3)
   8t confirm. If all pass, default hops=2-3 + bestfirst when a graph is present.
 
+P259 [2026-07-08] wiki-35M (Cohere-v3, d=1024, in-distribution) exposes a genbo ANISOTROPY failure + honest 35M standings:
+  Data: CohereLabs/wikipedia-2023-11 en, 35M x 1024, unit-norm but ||mean||=0.4766 (STRONGLY anisotropic — ~half
+  the energy in one shared direction; typical of text embeddings). Queries=last 1000 rows, exact faiss GT.
+  HNSW-int8 (build-fair, ~40GB, IndexHNSWSQ QT_8bit): built 3h50m, 1t 0.9670@1198 / 0.9711@656, 8t 0.9670@8264. STRONG.
+  genbo-light (a0=2, NO EM, Kf=131072, dpb4, NOMU=1): built 1h52m (HALF HNSW's time) BUT recall PLATEAUS 0.56-0.59
+  across p=16..160 / t=400..8000 (graph-on or off) — a routing/representation CEILING, not coverage. float rerank on.
+  ROOT CAUSE (localizing): wiki-1M subset same nomu-noEM config = 0.9087 (WORKS) -> the 35M collapse is
+  scale/fine-tree x anisotropy: without mean-centering (SBANN_NOMU=1) the coarse k-means splits along the dominant
+  mean direction -> imbalanced cells -> routing to the right fine cell fails, and it COMPOUNDS at 131072 leaves /
+  35M (vs 16384 leaves / 1M). Testing mu-centering (drop NOMU) + EM at 1M to confirm; then rebuild 35M with mu.
+  HONEST STANDING: at 35M/d=1024 in-distribution, HNSW currently WINS (genbo mis-configured: NOMU wrong for
+  anisotropic data + no-EM at fine tree). This is a genbo config bug, not a fundamental limit — fix = mean-center
+  (+ maybe EM) then re-measure. Heavy-EM config was build-impractical (>10h, killed, P257). NEW GENBO DEFAULT
+  CANDIDATE: auto-detect anisotropy (||mean|| large) -> enable mu-centering; NOMU should not be default for text.
+  Build gotcha banked: nohup dies to tool-timeout SIGTERM; use setsid for long detached jobs.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT
