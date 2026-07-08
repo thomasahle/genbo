@@ -808,6 +808,34 @@ tight-pairwise median ratio ours/HNSW $= 1.098$ at $+0.2$pt recall.}
 \end{tabular}
 \end{table}
 
+\begin{table}[t]
+\centering
+\caption{In-distribution Wikipedia Cohere-v3 ($35$M, $d{=}1024$, unit-norm, strongly
+anisotropic $\lVert\mu\rVert{=}0.48$), 1 thread, same box. Ground truth is recomputed
+over the queries-excluded base and HNSW is rebuilt on that same base (int8 scalar-quantized
+storage), so both systems search identical data (\S\ref{sec:lim}). Recall is
+load-independent.}
+\label{tab:wiki35m}
+\begin{tabular}{llcc}
+\toprule
+Recall band & System & recall@10 & QPS (1t) \\
+\midrule
+${\sim}0.97$ & \textbf{ours} (dpb4 $+$ graph hops$=$2, $p{=}48$) & \textbf{0.9708} & \textbf{450} \\
+${\sim}0.97$ & HNSW (ef160)                                      & 0.9647 & 321 \\
+\midrule
+${\sim}0.98$ & \textbf{ours} (dpb4 $+$ graph hops$=$2, $p{=}96$) & \textbf{0.9853} & \textbf{302} \\
+${\sim}0.98$ & HNSW (ef320)                                      & 0.9778 & 173 \\
+\midrule
+top          & \textbf{ours} (hops$=$3, $p{=}96$)                & \textbf{0.9861} & 286 \\
+top          & HNSW (ef640, its ceiling)                         & 0.9818 & 95 \\
+\bottomrule
+\multicolumn{4}{p{0.92\linewidth}}{\footnotesize At matched recall ours is ${\sim}1.4\times$
+(recall $0.97$), ${\sim}1.7\times$ ($0.978$), and ${\sim}3\times$ ($0.982$) faster than
+HNSW single-thread, and reaches recall ($0.986$) HNSW cannot; the win holds at 8 threads
+($1.4\text{--}2.8\times$). HNSW is faster only below recall ${\approx}0.95$.} \\
+\end{tabular}
+\end{table}
+
 \todo{Fill \pending{} cells from the quiet-box endgame run; add per-lever isolation
 deltas; 8-thread scaling; streaming table (recall, peak mem, wall vs 1h budget).
 Note the ablation ordering is the actual development arc.}
@@ -867,11 +895,9 @@ unlocking the hidden potential of product quantization with SIMD. \emph{TPAMI},
 $10$M$/d{=}768$ (Cohere, Table~\ref{tab:cohere}); with multi-hop graph repair
 (\S\ref{sec:graph}) this extends to $35$M$/d{=}1024$ (Wikipedia Cohere-v3, unit-norm,
 strongly anisotropic $\lVert\mu\rVert{=}0.48$), where against a memory-matched HNSW
-(int8 scalar-quantized storage) genbo wins across the practical high-recall range: at
-recall $0.978$ it delivers $302$ vs.\ $173$ QPS single-thread ($1.7\times$) and
-$1987$ vs.\ $1347$ at $8$ threads, and reaches recall $0.986$ where HNSW plateaus at
-$\approx\!0.982$; HNSW is faster only below $\approx\!0.95$. Our index also
-\emph{builds faster} there (matched int8 memory).
+genbo wins across the practical high-recall range ($1.4\text{--}3\times$ at recall
+$\ge\!0.96$, reaching recall HNSW cannot; Table~\ref{tab:wiki35m}), with HNSW faster
+only below $\approx\!0.95$. Our index also \emph{builds faster} there (matched int8 memory).
 \textbf{Benchmark hygiene (a cautionary note).} An earlier version of this dataset
 appeared to cap our recall at $0.62$ while HNSW reached $0.97$; the cause was a
 ground-truth construction pitfall, not an algorithmic boundary. When the query set is
