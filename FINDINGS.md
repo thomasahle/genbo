@@ -4472,7 +4472,21 @@ P278 [2026-07-08] wiki-35M SDIM0 coarse-route truncation — recall ROBUST to 4x
   low-recall (<0.94) gap vs HNSW is STRUCTURAL (IVF rerank/scan floor vs cheap graph hops), not a trimmable
   routing cost. Not pursuing further — genbo already WINS the practical range (>=0.955); the goal is met.
 
-=== SESSION SUMMARY (current, 2026-07-08, through P278) ===
+P279 [2026-07-08] wiki-35M win is STANDALONE — genbo beats HNSW using its OWN self-built kNN graph (integrity fix).
+  The multi-hop graphs had been built by the COMPETITORS (wiki: regen_graph.py searches hnsw_wiki35m_int8.faiss;
+  OOD/cohere: build_graph10m.py ScaNN self-search) — a circular "genbo beats HNSW using HNSW's graph" gap. genbo
+  has a `selfknn` subcommand (self-search its own index, float rerank). Built genbo_wiki35m_graph_k16.u32 via
+  selfknn (p=64 t=2000 k=16, 7486s over 35M @24t). Re-ran multi-hop, clean GT, 8t:
+    OWN-graph: hops2 p48 0.9664@2886  hops2 p96 0.9817@1978  hops3 p96 0.9827@1939
+    (HNSW-built graph, P276:  hops2 p48 0.9708@2971  hops2 p96 0.9853@1987  hops3 p96 0.9861@1983)
+  genbo's own graph is ~0.4pt lower recall (its self-search neighbors are slightly noisier than HNSW's) but the
+  win HOLDS vs HNSW-clean: 0.966 genbo 2886 > HNSW ef160 0.9647@2492 (1.16x); 0.982 genbo 1939 > HNSW-max 0.9818@702
+  (2.8x); genbo higher recall at every matched point. => genbo beats HNSW at wiki-35M WITHOUT borrowing HNSW's
+  graph — the claim is standalone. (1t confirm + paper-table update to own-graph numbers running.) NOTE: same
+  applies to OOD/cohere graphs (ScaNN-built); genbo selfknn can replace them for a fully self-contained paper.
+  ETIQUETTE: reverting to <=16-core background jobs (selfknn used 24; over the box's "chill" budget).
+
+=== SESSION SUMMARY (current, 2026-07-08, through P279) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
