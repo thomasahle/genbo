@@ -4310,7 +4310,22 @@ P267 [2026-07-08] wiki-35M ORACLE — scanning the ENTIRE DB still caps at 0.60;
   larger candidate set. Progressive-depth oracle (running) confirms whether the NN is merely deep in int8-PQ
   ranking (finer PQ fixes) vs absent because int8-BASE quantization corrupts candidacy (needs float-base scan).
 
-=== SESSION SUMMARY (current, 2026-07-08, through P267) ===
+P268 [2026-07-08] wiki-35M progressive-depth oracle — exact float rerank of up to 4M candidates (11% of DB) is
+  DEAD FLAT at 0.62; the true NN is ranked below the 4-millionth int8-PQ position for ~38% of queries. All leaves
+  scanned (p=65536), NQ=10:
+    tfloor= 200000: recall@10=0.6200
+    tfloor=1000000: recall@10=0.6200
+    tfloor=4000000: recall@10=0.6200   (20x deeper rerank -> identical)
+  If the dpb=4 codebook were coarse-but-correlated, expanding the reranked pool would eventually include the NN
+  and recall would climb. It is flat => int8-PQ score is nearly UNCORRELATED with true distance for the failing
+  ~38%. Two readings, both "inject precision into candidate SELECTION": (i) dpb=4 (16 levels / 4-dim block, m=256)
+  makes PQ-distance shells so wide that millions tie near the NN and bury it beyond 4M; (ii) int8 base itself
+  loses the signal at d=1024. NOTE: an fp16/float RESCORE of an int8-PQ-selected pool cannot fix this (same
+  ceiling, already shown) — the SELECTION must change. Test (running): dpb=2 rebuild (m=512, 2-dim blocks,
+  finer codebook, int16 LUT auto-on). Lift => (i) codebook resolution is the fix; flat => (ii) need float-base
+  scan. This is the concrete lever for genbo's ONE documented loss (35M/d1024 vs HNSW 0.967).
+
+=== SESSION SUMMARY (current, 2026-07-08, through P268) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
