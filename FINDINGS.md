@@ -4353,7 +4353,27 @@ P270 [2026-07-08] wiki-35M i8 (exact 8-bit int8 scan) — NO BETTER than 4-bit P
   candidate gets exact-float reranked (= float SELECTION within int8-routed leaves) — if recall jumps, the
   int8-query scan is the wall and an asymmetric float/fp16-query scan is the fix (buildable on the P265 f16 kernel).
 
-=== SESSION SUMMARY (current, 2026-07-08, through P270) ===
+P271 [2026-07-08] wiki-35M ROOT CAUSE FOUND — the 0.60 wall is a DATA-PREP bug: base.i8bin uses a SINGLE GLOBAL
+  int8 scale. Two decisive steps:
+  (1) Float-SELECTION test (t_surv >> pool, every routed candidate exact-float reranked): p=96/160/320 =
+      0.577/0.583/0.591 (NQ=300; not directly comparable to NQ=1000 runs, but the internal p-trend is a clean
+      coverage curve). Float selection over routed leaves does NOT lift recall => not the int8-query scan cut.
+  (2) GENBO-INDEPENDENT brute force (numpy, exact IP over all 35M, NO routing/PQ, NQ=100):
+        int8-query x int8-base (symmetric):        recall@10=0.6080
+        float-query x int8-base (asymmetric,HNSW): recall@10=0.6070
+      Float query does NOT help. The wall is the int8-quantized BASE itself: exact ranking against base.i8bin
+      recovers only 0.61 of the true float top-10. prep_wiki35m.py quantizes with ONE global scalar
+      scale=127/max|x| over the whole dataset. For anisotropic d=1024 cohere-v3 (||mu||=0.48, few large dims,
+      most components ~0.03) that gives typical components only ~3-4 int8 levels => catastrophic loss. HNSW hits
+      0.967 because faiss SQ8 uses PER-DIMENSION scaling. So this was NEVER a genbo-algorithm loss — routing, PQ,
+      fp16, dpb, i8 all "failed" because they faithfully scan a base that already lost the signal at quant time.
+  FIX FORK (oracle2 running): mean-centering is RANKING-PRESERVING for IP (q.x = q.(x-mu) + q.mu, const/query) and
+  frees dynamic range if loss is mean-dominated (genbo-compatible, easy: mu-quantize base from float); per-dim SQ8
+  if variance-dominated (needs per-dim dequant in kernels). Oracle2 tests float-base (~1.0 sanity) vs mu-centered
+  global-scale vs per-dim-SQ8 int8 base to pick the fix. NOTE prior mu-rebuild "failed" because it centered AFTER
+  reading the already-globally-quantized base.i8bin — centering must happen at quant time from float.
+
+=== SESSION SUMMARY (current, 2026-07-08, through P271) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
