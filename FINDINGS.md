@@ -4261,7 +4261,24 @@ P264 [2026-07-08] cohere-10M in-dist: genbo (multi-hop) DOMINATES HNSW across th
 
 
 
-=== SESSION SUMMARY (current, 2026-07-08, through P264) ===
+P265 [2026-07-08] fp16-CENTROID ROUTING (SBANN_ROUTE_FP16) — implemented, validated, and a CLEAN NEGATIVE on the
+  wiki-35M/d1024 wall. Hypothesis (P263): the 0.60 recall wall at 35M/d1024 is int8 coarse-centroid quantization
+  mis-ranking leaves at high d; true-float (fp16) centroids should crack it. Implementation: simd.rs f16<->f32
+  (F16C _mm256_cvtph_ps + FMA hot path, scalar fallback, selftested == scalar at d=200/1024); vq.rs stores
+  cent_f16 alongside int8 (router tag 2, backward-compat load), coarse-select scores via f16_l2_block when
+  ROUTE_FP16 set, int8 path untouched. Champion OOD path VERIFIED bit-identical (t2i-10M 0.9008 exact, flag off).
+  RESULT (35M rebuilt SBANN_ROUTE_FP16=1, LEVELS=2048,65536, dpb4, SOAR a0=2, built 5437s; float rerank on):
+    fp16 p=96  t=4000: recall@10=0.6009   (int8 mu-rebuild: 0.6010)
+    fp16 p=160 t=8000: recall@10=0.6079   (int8 mu-rebuild: 0.6079)
+  fp16 == int8 to 3-4 digits. Routing PRECISION is NOT the wall — true-float centroids route to the SAME leaves.
+  Second clue in the same data: p=96->160 AND t=4000->8000 (both ~2x more leaves + survivors) moved recall only
+  0.601->0.608. So neither routing precision, nor leaf count, nor survivor-pool size is the bottleneck. Since this
+  same data hits 0.90+ at 1M (P263), the wall is a 35M-scale representation/pool phenomenon, not routing.
+  => re-localizes the one documented loss: it is NOT a routing-precision frontier (P261/263 wording corrected).
+  Next diagnostic (running): sweep float-rerank DEPTH (TFLOOR) at fixed leaves to separate int8-PQ survivor-cut
+  from leaf-coverage from a representation floor. fp16 flag stays OFF by default (no win, adds float storage).
+
+=== SESSION SUMMARY (current, 2026-07-08, through P265) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
