@@ -4251,6 +4251,10 @@ P264 [2026-07-08] cohere-10M in-dist: genbo (multi-hop) DOMINATES HNSW across th
   high-recall win, and it makes genbo faster than HNSW at EVERY in-distribution operating point at 10M/d768.
   Complements the honest 35M/d1024 loss (P261/263, routing-precision wall). CAVEAT: 1t, HNSW not same-window
   (margins 1.5-1.9x large enough to survive contention; tight-pairwise confirm is the clean follow-up).
+  P264 CONFIRMED (same-session 1t best/10, both indices resident): genbo hops=2 p32 0.9714@1056, hops=3 p64
+  0.9834@660; HNSW ef80 0.9623@859, ef160 0.9803@441. Matched-recall: ours ~1.6x @0.971 (HNSW interp ~650),
+  >1.5x @0.983 (HNSW needs ef>160, <441). Margins HOLD; caveat cleared. Paper cohere table = same-session numbers.
+
 
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
