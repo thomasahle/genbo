@@ -4254,6 +4254,11 @@ P264 [2026-07-08] cohere-10M in-dist: genbo (multi-hop) DOMINATES HNSW across th
   P264 CONFIRMED (same-session 1t best/10, both indices resident): genbo hops=2 p32 0.9714@1056, hops=3 p64
   0.9834@660; HNSW ef80 0.9623@859, ef160 0.9803@441. Matched-recall: ours ~1.6x @0.971 (HNSW interp ~650),
   >1.5x @0.983 (HNSW needs ef>160, <441). Margins HOLD; caveat cleared. Paper cohere table = same-session numbers.
+  P264 8t CONFIRMED (same-session, best/10, cores 8-15): genbo hops=2 p32 0.9714@6375, hops=3 p64 0.9834@4030;
+  HNSW ef80 0.9623@6257, ef160 0.9803@3298. Matched-recall: genbo ~1.35x @0.971 (HNSW interp ~4700), >1.2x
+  @0.983. Tighter than 1t (HNSW parallelizes well) but genbo WINS across the recall range at 8t too. => cohere-10M
+  in-dist: genbo beats HNSW at EVERY operating point (0.90 gate -> 0.98) at BOTH 1t and 8t. Dominance airtight.
+
 
 
 === SESSION SUMMARY (autonomous optimization push) ===
