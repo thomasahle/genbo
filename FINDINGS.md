@@ -4231,6 +4231,17 @@ P262 [2026-07-08] MULTI-HOP PROMOTION VERDICT CORRECTED (discipline catch): it i
   useful, correctly scoped, NOT a champion default. Lesson re-learned: always compare at the RECALL GATE, not
   fixed p (mirrors the P217 fixed-p mirage).
 
+P263 [2026-07-08] wiki-35M wall PINNED to ROUTING, not scan (cheap no-rebuild diagnostic): with t_surv=200k-600k
+  (>> probed pool, so NO PQ truncation — every probed point exactly float-reranked) recall stays 0.588-0.601
+  across p=96/160/256. So for ~40% of queries the true NN's cell is NOT among even the 256 nearest-ROUTED cells.
+  => it is a ROUTING-quality failure at 35M/d1024, NOT PQ-scan resolution. FINER/HIGHER-BIT PQ WOULD NOT HELP
+  (corrects P261's future-work guess). mu-centering didn't fix it (this was the mu index). Likely cause:
+  int8 CENTROID quantization (scale 415) too coarse to separate tight d=1024 clusters => router mis-ranks cells.
+  Future fix direction = ROUTING PRECISION: float/higher-precision cell scoring (store fp16 centroids or
+  route in float), or EM boundaries, or a better high-d router — NOT finer scan codes. Paper limitation
+  updated accordingly. Boundary stands: HNSW (full-precision graph) wins 35M/d1024 in-dist; genbo's int8-routed
+  approach hits a centroid-precision wall there while winning at 10M/d768.
+
 === SESSION SUMMARY (autonomous optimization push) ===
 WON: msspacev-10M, beat scann ~1.3-1.5x at QPS@90%recall (the leaderboard metric), clean same-window
 (P87/P89). Chain: profile->rerank bottleneck (P78)->i8 LUT resolution root cause (P84)->int16 LUT

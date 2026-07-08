@@ -870,8 +870,7 @@ cause is that in-distribution top-$k$ neighborhoods at this scale are packed tig
 than the coarse routing can separate, so the true cell is often unprobed; full-precision
 graph traversal resolves them where 4-bit-code routing cannot. Notably our index
 \emph{builds faster} there ($1.9$h vs.\ HNSW's $3.8$h at matched int8 memory), so the
-gap is search quality, not build budget --- a target for finer/higher-bit routing codes
-or a query-time exactness stage. \textbf{Other scope:} single (shared) machine, not a
+gap is search quality, not build budget --- the deficit is \emph{routing precision}: with no code truncation (every probed point exactly re-ranked) recall is unchanged, so the int8-quantized cell centroids simply mis-rank which cells to probe at $d{=}1024$ --- a target for higher-precision cell scoring (fp16 centroids / float routing), not finer scan codes. \textbf{Other scope:} single (shared) machine, not a
 standardized-VM submission (the gating experiment for a leaderboard claim); $\gamma$ and
 scan-precision are fit/selected per dataset; the coarse-cell corollary is shown on
 IP/OOD data; the gap to binary-only leaderboard systems is inference from public
