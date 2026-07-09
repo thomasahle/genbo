@@ -4512,7 +4512,21 @@ P281 [2026-07-09] *** HONEST CAVEAT: cohere-10M HIGH-RECALL win partly DEPENDS o
   the 1M gate win WAS graph-free (P243 0.9197@1957>HNSW); (b) a near-exact (method-neutral) graph via high-p
   selfknn or brute force would be the fair fix. NOTE: OOD + wiki standalone wins (P279/280) are UNAFFECTED.
 
-=== SESSION SUMMARY (current, 2026-07-09, through P281) ===
+P282 [2026-07-09] *** MAJOR CORRECTION: cohere-10M win is NOT standalone — with genbo's own/no graph, HNSW WINS. ***
+  Full 8t curves, clean GT. HNSW-8t: ef24 0.8971@17423, ef32 0.9218@14356, ef48 0.9440@10677, ef64 0.9552@8486,
+  ef96 0.9677@5907. genbo: graph-OFF p24 0.9091@10577 / p32 0.9243@9263; OWN-graph(p64 selfknn) hops1 p16
+  0.8998@13018; EXIST(HNSW-built)-graph hops1 p16 0.9475@12957.
+  Matched-recall: graph-OFF genbo LOSES to HNSW ~1.3-1.5x (0.92: genbo 9263 vs HNSW 14356). OWN-graph LOSES
+  (0.90: genbo 13018 vs HNSW ef24 17423). Only the EXIST (HNSW-BUILT) graph makes genbo win (0.9475@12957 >
+  HNSW ef48 0.9440@10677). => the P264 "cohere-10M dominates HNSW at every operating point" claim was an ARTIFACT
+  of borrowing HNSW's graph; standalone, HNSW beats genbo at 10M. (cohere-1M graph-free win P243 still stands —
+  scale-dependent: 1M genbo>HNSW graph-free, 10M not.) CAVEAT ON THE CAVEAT: genbo's own graph was a CHEAP p64
+  selfknn (worse neighbors than HNSW's efSearch=64); a higher-effort selfknn (near-exact base-kNN) may match/beat
+  HNSW's graph and restore a standalone win — TESTING (p128 rebuild). If even a high-quality own graph can't
+  beat HNSW at 10M, the honest paper claim is: genbo wins OOD decisively + cohere-1M + wiki-35M; cohere-10M is
+  HNSW's (genbo competitive only with a borrowed graph). This is why the graph-provenance audit mattered.
+
+=== SESSION SUMMARY (current, 2026-07-09, through P282) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
