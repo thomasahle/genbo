@@ -476,6 +476,7 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
         if let Ok(v) = std::env::var("SBANN_GRAPH_KEDGE") { vq::GRAPH_KEDGE.store(v.parse().expect("SBANN_GRAPH_KEDGE"), Relaxed); }
         if let Ok(v) = std::env::var("SBANN_GRAPH_PFDIST") { vq::GRAPH_PFDIST.store(v.parse().expect("SBANN_GRAPH_PFDIST"), Relaxed); }
         if let Ok(v) = std::env::var("SBANN_GRAPH_SORT") { vq::GRAPH_SORT.store(v != "0", Relaxed); }
+        if let Ok(v) = std::env::var("SBANN_SPLIT_RESCORE") { vq::SPLIT_RESCORE.store(v != "0", Relaxed); }
         println!("  [GRAPH] {gp}  n={n} k={k}  M={} kedge={} pfdist={}",
             vq::GRAPH_M.load(Relaxed), vq::GRAPH_KEDGE.load(Relaxed).min(k), vq::GRAPH_PFDIST.load(Relaxed));
         Some(g)

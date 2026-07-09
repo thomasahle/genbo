@@ -58,6 +58,10 @@ pub static RESIDQ: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool
 /// raw[orig*d] when set. Shrinks the largest index array by ~a0x with bit-identical recall (a duplicate
 /// slot's orig points at the same raw bytes either way). Set once at startup from the env in main().
 pub static RAW_DEDUP: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+/// SBANN_SPLIT_RESCORE (P289, #2): in the graph-expanded rescore read pool-orig rows from the RESIDENT `raw`
+/// store instead of the scattered 4KB-paged `ds` mmap (recall bit-identical; TLB/page-walk win, larger at
+/// scale). Default ON; set the env to 0 to force the old ds-only path for an isolated A/B.
+pub static SPLIT_RESCORE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(true);
 /// SBANN_POOLDEDUP: dedup the candidate pool by ORIG id (keep min approx-dist per id) BEFORE the
 /// t_surv survivor cap. With SOAR a0>1 a point lands in multiple probed cells as duplicate slots; the
 /// late dedup in rerank_contig (heap size k*4) gets crowded out by those duplicates, collapsing recall
@@ -570,7 +574,7 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
         && std::is_x86_feature_detected!("avx512f");
     let avx = std::is_x86_feature_detected!("avx2");
     let pf = GRAPH_PFDIST.load(Relaxed).max(1);
-    let use_raw = !raw.is_empty();
+    let use_raw = !raw.is_empty() && SPLIT_RESCORE.load(std::sync::atomic::Ordering::Relaxed);
     // #2: read a union row's int8 vector from the RESIDENT `raw` (pool origs via slot when slot-indexed, or
     // orig-indexed directly) instead of the scattered 4KB-paged `ds` mmap; graph neighbours fall back to `ds`.
     // raw[slot*d] is byte-identical to ds.row(orig) for a pool orig, so the rescore (and recall) is unchanged.
