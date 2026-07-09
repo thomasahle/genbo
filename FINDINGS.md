@@ -4614,7 +4614,23 @@ P290 [2026-07-09] *** cohere-10M FLIPS TO A WIN: genbo + method-neutral near-exa
   contention-noisy; 1t clean-ish + decisive. Clean SEQUENTIAL A/B running. genbo can't cheaply self-build a good
   graph (selfknn coverage-capped) -> win needs an offline near-exact kNN graph, disclosed as build preprocessing.
 
-=== SESSION SUMMARY (current, 2026-07-09, through P290) ===
+P291 [2026-07-09] *** cohere-10M WIN CONFIRMED CLEAN + SEQUENTIAL (no contention): genbo beats HNSW 1.3-1.9x. ***
+  Sequential A/B (genbo fully, THEN HNSW, same cores 8-15/8; quiet box). genbo + faiss near-exact graph (0.932):
+    genbo 8t: hops1 p16 0.9440@12695, hops2 p32 0.9699@8362, hops3 p64 0.9824@5424
+    genbo 1t: hops1 p16 0.9440@1746,  hops2 p32 0.9699@1187, hops3 p64 0.9824@761
+    HNSW 8t:  ef48 0.9440@9886, ef96 0.9677@5627, ef160 0.9803@3499, ef240 0.9859@2372
+    HNSW 1t:  ef48 0.9440@1308, ef96 0.9677@704,  ef160 0.9803@432,  ef240 0.9859@286
+  Matched-recall: 8t genbo 1.28x@0.944 / ~1.58x@0.97 / ~1.78x@0.982; 1t genbo 1.33x@0.944 / ~1.8x@0.97 / ~1.9x@0.982
+  (genbo higher recall at every matched point). HNSW only leads at the very top (0.986 ef240), which genbo reaches
+  with higher p. => cohere-10M is a DECISIVE genbo WIN. Earlier loss (P282-284) was genbo's 15%-exact self-built
+  graph; a method-neutral near-exact graph (faiss IVFFlat, NOT HNSW) fixes it. FINAL STANDING: genbo beats HNSW at
+  cohere-1M (graph-free) AND cohere-10M (near-exact graph), + OOD (ScaNN) + wiki-35M. HONEST DISCLOSURE for paper:
+  the 10M win needs an offline near-exact kNN graph genbo can't cheaply self-build (selfknn coverage-capped) -> big
+  build-time cost (IVF 87min + faiss graph ~5h vs HNSW 48min); it's a QUERY-QPS win at a build-time premium, graph
+  = standard offline preprocessing (DiskANN/NSG-style), method-neutral. FOLLOW-UP: faster/native graph build (GPU,
+  or NN-descent bootstrap via genbo's own graph-augmented search) for full self-containment + lower build cost.
+
+=== SESSION SUMMARY (current, 2026-07-09, through P291) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
