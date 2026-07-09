@@ -59,9 +59,10 @@ to an int16 scan restores ordering to the pool ceiling ($0.87$), and precision
 auto-selection by $m$ --- plus the coverage levers above --- makes the engine win in
 HNSW's home regime: it beats HNSW at 1M \emph{graph-free}, and at 10M/$d{=}768$ (HNSW's
 strongest setting) its query path beats HNSW across the recall range (${\sim}1.3$--$1.9\times$,
-reaching recall HNSW cannot) once given an \emph{offline} $k$-NN graph --- a
-method-neutral preprocessing artifact (which need not be near-exact) that the engine cannot
-cheaply self-build at 10M (a disclosed dependency). We report the negative results as
+reaching recall HNSW cannot) after a minutes-scale internal $k$-NN-graph
+build --- the engine \emph{self-builds} the graph by NN-descent (its routed self-search is
+coverage-capped at $d{=}768$ and cannot; local join sidesteps routing entirely), so the win is
+fully self-contained. We report the negative results as
 first-class evidence for both localizations, and treat the measurement
 methodology --- which repeatedly caught mirages during development --- as a
 contribution.
@@ -130,8 +131,8 @@ and transfers to the streaming track.
     while the \emph{same codes} under an int16 scan rank to the pool ceiling
     ($0.87$). \emph{Effect: with precision auto-selected by $m$ (plus an AVX-512
     int16 kernel and graph coverage), the engine goes from $2\times$ behind HNSW
-    on Cohere-768 to a graph-free \emph{win} at 1M and, given a (modest-quality) offline
-    $k$-NN graph, a ${\sim}1.3$--$1.9\times$ \emph{win} at 10M --- without abandoning the IVF-PQ cascade.}
+    on Cohere-768 to a graph-free \emph{win} at 1M and, after a minutes-scale internal
+    NN-descent graph build, a ${\sim}1.3$--$1.9\times$ \emph{win} at 10M --- without abandoning the IVF-PQ cascade.}
   \item \textbf{Systems levers for streaming} (\S\ref{sec:stream}): batch-parallel
     insert (\emph{$4.5\times$}), low-live adaptive $p$ (\emph{worst step
     $0.74\to0.94$}), and a parallelization fix (\emph{$7.6\times$ at 8 threads}).
@@ -418,8 +419,9 @@ $\gamma\in\{0.4,\dots,0.6\}$ near the optimum.
 Routing to $p$ cells can still miss a true neighbor whose cell went unprobed. We
 recover such misses with a graph, without probing more cells. Offline we build a
 base-side inner-product $k$-NN graph (a per-point adjacency list; constructed by
-ScaNN self-search or by the engine querying itself --- the two agree on $\sim$92\% of
-edges). The graph is a method-agnostic offline artifact, so the query-time comparison is
+ScaNN self-search, by the engine querying itself, or --- where routed self-search is
+coverage-capped --- by the engine's internal NN-descent pass, below; the first two agree
+on $\sim$92\% of edges). The graph is a method-agnostic offline artifact, so the query-time comparison is
 unaffected by which builder is used, and we verified this empirically: on OOD
 text2image-10M at the champion config, swapping the ScaNN-built graph for the engine's
 own self-built one changes recall by ${\le}0.1$pt and QPS within noise. Where the source
@@ -462,6 +464,24 @@ adds $+0.3$--$0.8$ pt \emph{in-distribution} but is neutral OOD: base-metric edg
 not align with off-manifold queries, so smarter reselection finds no better seeds.
 Reporting this required comparing at the recall \emph{gate}, not fixed $p$ --- a
 fixed-$p$ ``$+1.7$ pt'' reads as a win but is not one at the gate.
+
+\paragraph{Self-building the graph: internal NN-descent.} How the graph is \emph{built}
+matters for self-containment. The engine's \emph{routed} self-search cannot build a good
+graph at $10$M/$d{=}768$: routing is coverage-capped (\S\ref{sec:lim}), and no practical
+probe depth fixes it ($0.63$ overlap@$16$ even probing $6\%$ of cells). NN-descent~\cite{nndescent}
+sidesteps routing entirely: starting from a random (or cheaply routed) adjacency, each round
+joins every point against its neighbors-of-neighbors --- forward and (capped) reverse edges ---
+and keeps the top-$k$; convergence relies on transitivity of proximity, not on any partition.
+Our implementation is a race-free \emph{pull} variant (each point updates only its own row;
+int8 VNNI dots; per-thread stamped-hash dedup) with two fixes that matter at inner-product
+hubness: the capped reverse lists are \emph{reservoir-resampled each round} (a first-come cap
+freezes hub in-neighbors and permanently misses their pairings), and inserted edges stay
+``new'' for two rounds (one round of gating loses join chances at saturated hubs).
+\effect{Cohere 10M ($d{=}768$): random init reaches $0.785$ overlap@$16$ in $17$ min
+(16 threads); seeding with the engine's own cheap routed self-$k$NN reaches $\mathbf{0.897}$
+in under $7$ min of descent --- statistically indistinguishable from the multi-hour external
+near-exact graph at query time (recall $0.9867$ vs $0.9869$ at matched probes). At 1M:
+$0.895$ in ${\sim}1$ min. The $10$M win is therefore fully self-contained.}
 
 \section{Routing Cost and the Coarse-Cell Corollary}
 \label{sec:coarse}
@@ -859,13 +879,13 @@ reaches recall $0.99$ where HNSW plateaus ($\approx\!0.986$). The graph \emph{ne
 near-exact}: degrading its overlap@$16$ from $0.93$ to $0.65$ costs only ${\sim}0.4$pt recall at
 matched probes, and genbo still beats HNSW on \emph{both} recall and QPS with a $0.65$-overlap graph
 (at a modestly higher probe count); even a $0.28$-overlap graph recovers most of the coverage benefit.
-QPS is nearly flat across graph quality --- the graph buys coverage/recall, not speed ---
-so near-exactness only sharpens the margin. \emph{Caveat:} the
-graph is still an offline preprocessing artifact built by a \emph{method-neutral} kNN builder (e.g.\
-IVF-Flat / brute force, as in DiskANN/NSG~\cite{diskann} --- not the opponent's index); genbo's own $d{=}768$
-self-search is coverage-capped and cannot build even a modest one at 10M (its self-built-graph variant, last row,
-loses to HNSW), so this is a query-time win contingent on offline graph construction (a build-time
-premium). ScaNN trails throughout.}
+QPS is nearly flat across graph quality --- the graph buys coverage/recall, not speed.
+And the graph is \emph{self-built}: the engine's internal NN-descent pass (\S\ref{sec:graph})
+reaches $0.897$ overlap in minutes at 10M, and the resulting self-built-graph rows are
+statistically indistinguishable from the external near-exact graph at query time. (The
+\emph{routed} self-search variant, last row, is the one that fails --- it is coverage-capped
+at $d{=}768$ and loses to HNSW; NN-descent does not route, which is the point.)
+ScaNN trails throughout.}
 \end{tabular}
 \end{table}
 
@@ -938,6 +958,8 @@ neighbor search using hierarchical navigable small world graphs. \emph{TPAMI}, 2
 efficient cross-modal approximate nearest neighbor search. \emph{PVLDB}, 2024.
 \bibitem{diskann} S.~Jayaram Subramanya et al. DiskANN: fast accurate
 billion-point nearest neighbor search on a single node. \emph{NeurIPS}, 2019.
+\bibitem{nndescent} W.~Dong, M.~Charikar, K.~Li. Efficient $k$-nearest neighbor
+graph construction for generic similarity measures. \emph{WWW}, 2011.
 \bibitem{rabitq} J.~Gao, C.~Long. RaBitQ: quantizing high-dimensional vectors
 with a theoretical error bound for approximate nearest neighbor search.
 \emph{SIGMOD}, 2024.
@@ -950,25 +972,27 @@ unlocking the hidden potential of product quantization with SIMD. \emph{TPAMI},
 
 \section{Limitations}
 \label{sec:lim}
-\textbf{In-distribution at scale: an offline-graph dependency.} At Cohere $1$M/$d{=}768$ the
-engine wins \emph{graph-free}. At $10$M/$d{=}768$ (HNSW's strongest regime) its query path
+\textbf{In-distribution at scale: a graph-build premium (now internal).} At Cohere $1$M/$d{=}768$
+the engine wins \emph{graph-free}. At $10$M/$d{=}768$ (HNSW's strongest regime) its query path
 beats HNSW across the recall range (${\sim}1.3$--$1.9\times$, higher recall throughout, and it
-reaches $0.99$ where HNSW plateaus at $\approx\!0.986$; Table~\ref{tab:cohere}) --- but only when
-handed an \emph{offline} IP-$k$-NN graph. That graph need \emph{not} be near-exact: we degraded the
+reaches $0.99$ where HNSW plateaus at $\approx\!0.986$; Table~\ref{tab:cohere}) --- but only with
+an IP-$k$-NN graph. That graph need \emph{not} be near-exact: we degraded the
 $0.93$-overlap graph and find the win survives down to ${\sim}0.65$ overlap (genbo still beats HNSW
 on both recall and QPS, at a modestly higher probe count), with the recall benefit saturating
-quickly --- even a $0.28$-overlap graph recovers most of it. What genbo cannot do is build even that
-modest graph itself at 10M: its $d{=}768$ self-search is coverage-capped (a self-built graph reaches
-only ${\sim}0.53$ exact-overlap@$16$, and even probing $6\%$ of cells lifts this to just ${\sim}0.63$
---- the true neighbours are scattered across too many Voronoi cells for any practical probe count to
-cover), so the graph must come from a
-method-neutral offline builder (IVF-Flat / brute force, as graph methods like DiskANN/NSG already
-assume). This makes the 10M result a \emph{query-time} win contingent on offline graph construction
-(a build-time premium; the graph is standard preprocessing, not the opponent's index). The reason
-genbo needs the graph is a \emph{candidate-efficiency} gap we profiled: graph-free, to reach recall
+quickly --- even a $0.28$-overlap graph recovers most of it. Crucially, the graph no longer requires
+an external builder: genbo's \emph{routed} self-search is coverage-capped at this dimension (it
+reaches only ${\sim}0.53$ exact-overlap@$16$, and even probing $6\%$ of cells lifts this to just
+${\sim}0.63$ --- the true neighbours are scattered across too many Voronoi cells for any practical
+probe count to cover), but its internal \emph{NN-descent} pass (\S\ref{sec:graph}) does not route
+at all and self-builds a $0.897$-overlap graph in minutes at 10M --- query-time performance
+statistically indistinguishable from the multi-hour external near-exact graph. What remains is
+honest accounting of the \emph{build-time premium}: the descent pass adds minutes to the build
+(random init $17$ min; seeded under $7$ min at 16 threads), a cost graph methods like DiskANN/NSG
+already assume as their core build step. The reason genbo needs the graph at all is a
+\emph{candidate-efficiency} gap we profiled: graph-free, to reach recall
 $0.96$ it scans and exactly-rescores ${\sim}1600$ candidates/query (memory-latency-bound
 ${\sim}0.6\,\mu$s/row, already prefetched) where HNSW's greedy traversal touches fewer --- the
-near-exact graph supplies exactly the coverage the routing misses. Interestingly this dependency
+graph supplies exactly the coverage the routing misses. This need
 does \emph{not} persist
 at higher dimension: with multi-hop graph repair (\S\ref{sec:graph}) at $35$M/$d{=}1024$
 (Wikipedia Cohere-v3, unit-norm, strongly anisotropic $\lVert\mu\rVert{=}0.48$) genbo
