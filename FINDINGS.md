@@ -4574,7 +4574,15 @@ P286 [2026-07-09] cohere-10M in-design lever space EXHAUSTED (don't re-probe). C
   cohere-10M/d768 to HNSW. Paper (P284/285) reflects this. Halting autonomous experiments — good shared-box
   stewardship — until a new direction is given.
 
-=== SESSION SUMMARY (current, 2026-07-09, through P286) ===
+P287 [2026-07-09] Paper finalization: filled the last data cell (OOD baselines 10M). genbo t2i-10M OOD 1t
+  (standalone own-graph, g0.5): p48 0.9047@2804, p56 0.9082@2650. tab:t2i-baselines 10M = 2804 QPS@0.905 (>
+  RoarGraph 0.903@2250 ~1.25x; consistent with the 0.827x ScaNN ratio). ALL numeric \pending cells now filled
+  with standalone self-built-graph numbers; paper compiles. Remaining paper work is optional polish (per-lever
+  isolation deltas, an 8t scaling table, a streaming table) + the design-direction decision (AskUserQuestion
+  posted, no response — user away). Paper is submission-honest: genbo wins OOD all-scales + cohere-1M + wiki-35M
+  standalone, loses cohere-10M/d768 (documented architectural boundary).
+
+=== SESSION SUMMARY (current, 2026-07-09, through P287) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
