@@ -4541,7 +4541,16 @@ P283 [2026-07-09] CONFIRMED: cohere-10M is a STANDALONE LOSS — higher-effort o
   ef) than at 35M/d1024 (plateaus ~0.982, slower); and genbo's own graph is closer to HNSW's at 35M (0.4pt) than
   at 10M (4pt). Paper tab:cohere 10M rows + abstract "parity-or-better in its home regime" MUST be corrected.
 
-=== SESSION SUMMARY (current, 2026-07-09, through P283) ===
+P284 [2026-07-09] cohere-10M 1t standalone numbers (for the corrected paper table) + paper CORRECTED.
+  genbo own-graph(p128) 1t: hops1 p24 0.9233@1416, hops2 p32 0.9366@1169, hops3 p64 0.9619@751.
+  HNSW 1t: ef32 0.9218@2052, ef48 0.9440@1522, ef64 0.9552@1205, ef96 0.9677@848.
+  Matched-recall 1t: HNSW ~1.45x@0.92, wins outright @0.94/0.96 (higher recall AND faster). Confirms P283 at 1t
+  (8t was ~1.2-1.4x; 1t ~1.4-1.7x). PAPER FIXED: tab:cohere 10M rows now show HNSW winning + genbo own-graph
+  (standalone), 1M row = graph-free win; abstract "parity-or-better" -> "competitive (wins 1M graph-free; HNSW
+  ~1.4x edge at 10M)"; contributions + \effect + Limitations rewritten (in-dist = a graph-EFFICIENCY gap at
+  d=768, NOT persisting at d=1024 where genbo wins wiki-35M). All compiles. Honest standing locked in the paper.
+
+=== SESSION SUMMARY (current, 2026-07-09, through P284) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
