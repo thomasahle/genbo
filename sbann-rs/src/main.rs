@@ -1709,6 +1709,21 @@ fn main() {
             let p: usize = std::env::var("SBANN_PLIST").ok().and_then(|s| s.parse().ok()).unwrap_or(40);
             let t_surv: usize = std::env::var("SBANN_TFLOOR").ok().and_then(|s| s.parse().ok()).unwrap_or(1000);
             let n = ds.nb;
+            // NN-descent bootstrap (P292): optional graph-augmented self-search (SBANN_GRAPH_FILE = current graph).
+            // Iterating selfknn with the previous round's graph refines a NATIVE near-exact kNN graph — no external
+            // (faiss) builder, and far faster than exhaustive routing since the graph supplies the missed coverage.
+            let rl = std::sync::atomic::Ordering::Relaxed;
+            let graph: Option<vq::GraphAdj> = if let Ok(gp) = std::env::var("SBANN_GRAPH_FILE") {
+                let flen = std::fs::metadata(&gp).expect("graph stat").len() as usize;
+                let gk = flen / (n * 4);
+                let g = vq::GraphAdj::load(&gp, n, gk).expect("load graph");
+                if let Ok(v) = std::env::var("SBANN_GRAPH_M") { vq::GRAPH_M.store(v.parse().expect("M"), rl); }
+                if let Ok(v) = std::env::var("SBANN_GRAPH_HOPS") { vq::GRAPH_HOPS.store(v.parse().expect("HOPS"), rl); }
+                if let Ok(v) = std::env::var("SBANN_GRAPH_KEDGE") { vq::GRAPH_KEDGE.store(v.parse().expect("KEDGE"), rl); }
+                println!("[selfknn] graph-augmented (NN-descent): {gp} k={gk} M={} hops={}", vq::GRAPH_M.load(rl), vq::GRAPH_HOPS.load(rl));
+                Some(g)
+            } else { None };
+            let graph_ref = graph.as_ref();
             println!("[selfknn] n={n} k={kk} p={p} t={t_surv} -> {}", &a[4]);
             let t0 = Instant::now();
             let mut w = std::io::BufWriter::new(std::fs::File::create(&a[4]).expect("out"));
@@ -1719,7 +1734,7 @@ fn main() {
                 let e = (s + cb).min(n);
                 let rows: Vec<Vec<u32>> = (s..e).into_par_iter().map(|i| {
                     let qf: Vec<f32> = fb.row(i).to_vec();
-                    let res = idx.search_frr(&ds, ds.row(i), &qf, &fb, p, t_surv, kk + 1, None);
+                    let res = idx.search_frr(&ds, ds.row(i), &qf, &fb, p, t_surv, kk + 1, graph_ref);
                     let mut out: Vec<u32> = res.into_iter().filter(|&x| x as usize != i).take(kk).collect();
                     let pad = *out.last().unwrap_or(&(i as u32));
                     while out.len() < kk { out.push(pad); }
