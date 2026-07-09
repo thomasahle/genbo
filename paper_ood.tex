@@ -24,7 +24,7 @@
 
 \title{Distribution-Robust Vector Search:\\
 Calibrated Routing, Coverage, and Precision-Adaptive Scanning for IVF-PQ}
-\author{\todo{authors}}
+\author{Thomas Dybdahl Ahle\\Normal Computing\\\texttt{thomas@normalcomputing.com}}
 \date{}
 
 \begin{document}
@@ -351,15 +351,17 @@ Batch-insert / adaptive-$p$ (streaming) & \textbf{ours} & \S\ref{sec:stream} \\
 % Honest scope: we use the primitive-selection argument and two design principles
 % from the cumulative-score-and-ball line of work; we do NOT invoke its polylog-loss
 % recursive-tree result, which does not pay off at the scales evaluated here.
-\todo{(i) Cap-vs-ball under concentration: additive ball filters are non-selective
-in high dimension (everything within $R+r$), angular/spherical-cap filters remain
-selective; $k$-means on centered data realizes a data-dependent angular partition.
-(ii) This frames $\gamma$: the routing score $\gamma\lVert c\rVert^2-2q\cdot c$
-interpolates $\gamma{=}1$ (additive ball / $L_2$) to $\gamma{\to}0$ (pure inner
-product / cap), so the theory predicts $\gamma{<}1$ is needed precisely in the
-concentrated OOD regime -- which we confirm. (iii) Two principles we build on:
-route-precise/rank-cheap, and multi-assignment as a space/time tradeoff. Explicitly
-state we do NOT claim the recursive-tree polylog result (refuted at $\le$10M scale).}
+Under concentration, additive ball filters become non-selective --- in high
+dimension almost everything falls within $R+r$ --- whereas angular (spherical-cap)
+filters remain selective, and $k$-means on centered data realizes exactly such a
+data-dependent angular partition. This framing motivates $\gamma$: the routing score
+$\gamma\lVert c\rVert^2-2q\cdot c$ interpolates from an additive ball ($\gamma{=}1$,
+$L_2$) to a pure inner-product cap ($\gamma{\to}0$), so the geometry predicts that
+$\gamma{<}1$ is needed precisely in the concentrated OOD regime --- which our
+experiments confirm. We build on two principles from this line of work:
+\emph{route-precise, rank-cheap}, and \emph{multi-assignment as a space/time
+tradeoff}. We do \emph{not} claim the recursive-tree polylog-loss result, which does
+not pay off at the $\le$10M scales evaluated here.
 
 \section{Localizing the OOD Bottleneck}
 \label{sec:localize}
@@ -533,8 +535,6 @@ $O(K_f^{1/3})$) shifts it finer, so the 100M geometry is validated by direct A/B
 (\S\ref{sec:eval}) rather than read off the 2-level law.
 
 \subsection{The corollary}
-\todo{Sweep cell granularity at 10M with the graph on: fine (Kf=262144), medium
-(65536), coarse (32768); medium/coarse WIN. Bracket the knee with four builds.}
 The cost model \eqref{eq:route} explains \emph{why}. Without graph coverage, recall
 demands fine $K_f$ (small leaves make the true neighbor's leaf likelier to be among
 the $p$ probed), paying $O(\sqrt{K_f})$ routing. The $k$-NN-graph union
@@ -633,12 +633,16 @@ HNSW-constructed graph and does not hold standalone (\S\ref{sec:graph}).}
 
 \section{Systems Techniques (Streaming)}
 \label{sec:stream}
-\todo{msturing-30M-clustered final\_runbook; recall@10 under 1h + 8GB. Three levers:
-(i) batch-parallel insert (assignment parallelized over the batch, order-preserving,
-bit-identical); (ii) low-live adaptive $p$ (grow probes so expected candidates
-$\ge$ threshold when the live set is small); (iii) a parallelization fix (the batched
-re-rank driver ran chunks serially -> RAYON never engaged). Plus a compliance
-re-architecture: first-insert-batch cold start + periodic live-set retraining.}
+We evaluate the streaming track on the msturing-30M-clustered runbook, targeting
+recall@10 under the 1\,h $+$ 8\,GB budget. Three levers carry the result.
+\emph{Batch-parallel insert} parallelizes assignment over each insert batch while
+preserving order, so the index is bit-identical to serial insertion.
+\emph{Low-live adaptive $p$} grows the probe count when the live set is small, so the
+expected candidate count stays above threshold early in the stream. A
+\emph{parallelization fix} repairs the batched re-rank driver, which had run chunks
+serially so that Rayon never engaged. On top of these we add a compliance
+re-architecture: a first-insert-batch cold start followed by periodic live-set
+retraining.
 \effect{Batch insert: 30M inserts $1818\text{s}\to406\text{s}$ ($4.5\times$),
 recall-identical. Adaptive $p$: worst step $0.737\to0.944$. Parallelization fix:
 $7.6\times$ at 8 threads. Final compliant series (NQ$=$10000, 640 steps): the
@@ -672,7 +676,9 @@ low-live adaptive $p$ (worst step $0.737\!\to\!0.944$); a rerank parallelization
 \section{Negative Results (Evidence for the Localization)}
 \label{sec:neg}
 % First-class: these are WHY we believe the bottleneck is routing/coverage.
-\todo{Report each with its measured null/loss:}
+Each of the following was tried and \emph{did not} pay off; we report each with its
+measured null or loss, since these nulls are what localize the bottleneck to routing
+and coverage.
 \begin{itemize}
   \item \textbf{Query-aware routing} (train cells on the query distribution):
     \emph{worse} than base-trained ($0.76$ vs $0.89$ @ matched $p$) --- undertrained
@@ -888,10 +894,6 @@ below recall ${\approx}0.95$. (An HNSW-built graph lifts ours by ${\sim}0.4$pt m
 report the self-built result.)} \\
 \end{tabular}
 \end{table}
-
-\todo{All numeric cells filled (standalone, self-built-graph numbers); streaming table added
-(Table~\ref{tab:streaming}). Remaining optional polish: per-lever isolation deltas and a
-dedicated 8-thread scaling table. Note the ablation ordering is the actual development arc.}
 
 \section{Related Work}
 \label{sec:rel}
