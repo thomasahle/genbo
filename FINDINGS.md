@@ -4526,7 +4526,22 @@ P282 [2026-07-09] *** MAJOR CORRECTION: cohere-10M win is NOT standalone — wit
   beat HNSW at 10M, the honest paper claim is: genbo wins OOD decisively + cohere-1M + wiki-35M; cohere-10M is
   HNSW's (genbo competitive only with a borrowed graph). This is why the graph-provenance audit mattered.
 
-=== SESSION SUMMARY (current, 2026-07-09, through P282) ===
+P283 [2026-07-09] CONFIRMED: cohere-10M is a STANDALONE LOSS — higher-effort own graph doesn't rescue it.
+  p128 t4000 selfknn (2092s, 2x the p64 build) barely improved the graph: hops1 p16 0.9015 (vs 0.8998 p64,
+  +0.17pt), hops3 p64 0.9619 (vs 0.9613, +0.06pt) — still FAR below the HNSW-built graph (0.9475/0.9834).
+  So genbo cannot self-build a competitive cohere-10M graph: its d=768 in-dist SEARCH is the limiter (bounds
+  both query recall AND self-graph quality); more build effort (p) plateaus. Standalone vs HNSW-8t (matched
+  recall): 0.90 genbo 12829 vs HNSW ~16800 (~1.3x); 0.937 genbo 8356 vs ~11600 (~1.4x); 0.962 genbo 5497 vs
+  ~6700 (~1.2x). HNSW WINS cohere-10M by ~1.2-1.4x standalone; graph-off genbo also loses (P282). => the P264
+  cohere-10M "dominance at every operating point" is RETRACTED — it was the borrowed HNSW graph.
+  *** CORRECTED STANDING (standalone, self-built graphs only): genbo WINS OOD text2image 1M/10M/100M (vs ScaNN,
+  own graph == scann, P280), cohere-1M (graph-free, P243), wiki-35M/d1024 (own graph, 1.4-3.2x vs HNSW, P279);
+  genbo LOSES cohere-10M/d768 (HNSW ~1.2-1.4x, P282/283). NOT "beats SOTA everywhere" — one real in-dist loss at
+  10M/d768. *** Why win 35M/d1024 but lose 10M/d768? HNSW is much stronger at 10M/d768 (0.968@5907, fast at low
+  ef) than at 35M/d1024 (plateaus ~0.982, slower); and genbo's own graph is closer to HNSW's at 35M (0.4pt) than
+  at 10M (4pt). Paper tab:cohere 10M rows + abstract "parity-or-better in its home regime" MUST be corrected.
+
+=== SESSION SUMMARY (current, 2026-07-09, through P283) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
