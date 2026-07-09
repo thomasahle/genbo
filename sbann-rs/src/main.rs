@@ -1758,7 +1758,10 @@ fn main() {
         //      through the per-round reservoir-resampled reverse cap; 1 = classic single-round aging).
         Some("nndescent") => {
             let ds = I8Bin::open(&a[2]).expect("base");
-            let n = ds.nb;
+            // SBANN_ND_N: limit to the first N rows (queries-excluded protocols where the carved
+            // query rows are the tail of the base file, e.g. wiki-35M clean GT). Default: all rows.
+            let n = std::env::var("SBANN_ND_N").ok().and_then(|s| s.parse().ok())
+                .map(|v: usize| { assert!(v <= ds.nb, "SBANN_ND_N > nb"); v }).unwrap_or(ds.nb);
             let kk: usize = a.get(4).map(|s| s.parse().expect("k")).unwrap_or(16);
             let rounds: usize = std::env::var("SBANN_ND_ROUNDS").ok().and_then(|s| s.parse().ok()).unwrap_or(12);
             let rcap: usize = std::env::var("SBANN_ND_R").ok().and_then(|s| s.parse().ok()).unwrap_or(16);
