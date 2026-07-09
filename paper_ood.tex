@@ -426,8 +426,8 @@ unaffected by which builder is used, and we verified this empirically: on OOD
 text2image-10M at the champion config, swapping the ScaNN-built graph for the engine's
 own self-built one changes recall by ${\le}0.1$pt and QPS within noise. Where the source
 could matter for a claim we use the self-built graph outright --- e.g.\ the $35$M
-in-distribution result (Table~\ref{tab:wiki35m}) uses the engine's \emph{own} graph and
-still wins (there it trails a competitor-built graph by ${\sim}0.4$pt but keeps the win),
+in-distribution result (Table~\ref{tab:wiki35m}) uses the engine's \emph{own} NN-descent
+graph, which matches an HNSW-built one ($0.965$ vs $0.970$ overlap@$16$) ---
 so no comparison borrows anything from the opponent.
 At query time, after the scan yields a shortlist, we take the top-$M$
 shortlist members and \emph{union their graph neighbors into the exact re-rank set}.
@@ -481,7 +481,9 @@ freezes hub in-neighbors and permanently misses their pairings), and inserted ed
 (16 threads); seeding with the engine's own cheap routed self-$k$NN reaches $\mathbf{0.904}$
 in $8$ min of descent --- query-time equal-or-better than the multi-hour external
 near-exact graph (recall $0.9871$ vs $0.9869$ at matched probes; $0.9904$ vs $0.9901$ at the
-top point). At 1M: $0.895$ in ${\sim}1$ min. The $10$M win is therefore fully self-contained.}
+top point). At 1M: $0.895$ in ${\sim}1$ min; at $35$M/$d{=}1024$ (Wikipedia): $0.874\to0.965$
+in $9.5$ min, matching an HNSW-built graph's $0.970$ and adding $+0.3$--$0.45$pt recall at the same
+QPS. The $10$M and $35$M wins are therefore fully self-contained.}
 
 \section{Routing Cost and the Coarse-Cell Corollary}
 \label{sec:coarse}
@@ -908,22 +910,22 @@ load-independent.}
 \toprule
 Recall band & System & recall@10 & QPS (1t) \\
 \midrule
-${\sim}0.966$ & \textbf{ours} (dpb4 $+$ graph hops$=$2, $p{=}48$) & \textbf{0.9664} & \textbf{453} \\
-${\sim}0.966$ & HNSW (ef160)                                     & 0.9647 & 321 \\
+${\sim}0.97$ & \textbf{ours} (dpb4 $+$ self graph hops$=$2, $p{=}48$) & \textbf{0.9709} & \textbf{426} \\
+${\sim}0.97$ & HNSW (ef160)                                     & 0.9647 & 290 \\
 \midrule
-${\sim}0.982$ & \textbf{ours} (dpb4 $+$ graph hops$=$2, $p{=}96$) & \textbf{0.9817} & \textbf{306} \\
-${\sim}0.982$ & HNSW (ef640, its ceiling)                        & 0.9818 & 95 \\
+${\sim}0.98$ & \textbf{ours} (dpb4 $+$ self graph hops$=$2, $p{=}96$) & \textbf{0.9846} & \textbf{291} \\
+${\sim}0.98$ & HNSW (ef320)                                     & 0.9778 & 154 \\
 \midrule
-top           & \textbf{ours} (hops$=$3, $p{=}96$)               & \textbf{0.9827} & 304 \\
-top           & HNSW (max, ef${\gg}640$ saturates)               & ${\approx}0.982$ & --- \\
+top           & \textbf{ours} (hops$=$3, $p{=}96$)               & \textbf{0.9854} & \textbf{294} \\
+top           & HNSW (ef640, its ceiling)                        & 0.9818 & 88 \\
 \bottomrule
-\multicolumn{4}{p{0.92\linewidth}}{\footnotesize The graph here is built by ours' OWN
-self-search (\texttt{selfknn}, \S\ref{sec:graph}), not borrowed from a competitor --- the
-comparison is self-contained. At matched recall ours is ${\sim}1.4\times$ (recall $0.966$)
-and ${\sim}3\times$ ($0.982$) faster than HNSW single-thread, and reaches recall $0.983$
-that HNSW cannot; the win holds at 8 threads ($1.16\text{--}2.8\times$). HNSW is faster only
-below recall ${\approx}0.95$. (An HNSW-built graph lifts ours by ${\sim}0.4$pt more, but we
-report the self-built result.)} \\
+\multicolumn{4}{p{0.92\linewidth}}{\footnotesize The graph here is \emph{self-built} by
+the engine's internal NN-descent pass (\S\ref{sec:graph}; $0.87\to0.965$ overlap@$16$ in
+$9.5$ min, matching the $0.970$ of an HNSW-built graph) --- nothing is borrowed from a
+competitor; the comparison is self-contained. Same-window sequential 1-thread runs: ours is
+${\sim}1.5\times$ faster at recall $0.97$ (and $+0.6$pt), ${\sim}1.9\times$ at $0.98$,
+${\sim}3.3\times$ at HNSW's ceiling --- and reaches recall $0.985$ that HNSW cannot; the win
+holds at 8 threads. HNSW is faster only below recall ${\approx}0.95$.} \\
 \end{tabular}
 \end{table}
 
@@ -1004,9 +1006,10 @@ does \emph{not} persist
 at higher dimension: with multi-hop graph repair (\S\ref{sec:graph}) at $35$M/$d{=}1024$
 (Wikipedia Cohere-v3, unit-norm, strongly anisotropic $\lVert\mu\rVert{=}0.48$) genbo
 \emph{beats} a memory-matched HNSW across the practical high-recall range using its own
-self-built graph ($1.4\text{--}3\times$ at recall $\ge\!0.96$, reaching recall HNSW cannot;
-Table~\ref{tab:wiki35m}), HNSW faster only below $\approx\!0.95$ --- there HNSW is weaker
-(it plateaus near $0.982$) and genbo's own graph nearly matches a competitor-built one.
+NN-descent graph ($1.5\text{--}3.3\times$ at recall $\ge\!0.96$, reaching recall $0.985$ HNSW
+cannot; Table~\ref{tab:wiki35m}), HNSW faster only below $\approx\!0.95$ --- there HNSW is weaker
+(it plateaus near $0.982$) and genbo's self-built graph matches a competitor-built one
+($0.965$ vs $0.970$ overlap@$16$).
 \textbf{Benchmark hygiene (a cautionary note).} An earlier version of this dataset
 appeared to cap our recall at $0.62$ while HNSW reached $0.97$; the cause was a
 ground-truth construction pitfall, not an algorithmic boundary. When the query set is

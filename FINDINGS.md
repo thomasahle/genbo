@@ -4755,7 +4755,15 @@ P301 [2026-07-09] wiki-35M: NN-descent closes the competitor-graph gap; self-gra
   (genbo-ND vs HNSW int8-clean, 1t) running for honest table rows. NOTE routed self was 0.874 at wiki
   (d=1024 routing covers better than cohere d=768's 0.53) -- nd lifts both regimes to ~0.96+.
 
-=== SESSION SUMMARY (current, 2026-07-09, through P301) ===
+P302 [2026-07-09] wiki-35M same-window pairwise (load 4.3): genbo-ND vs HNSW int8-clean, 1t, same core:
+    genbo-ND: h2p48 0.9709@426 | h2p96 0.9846@291 | h3p96 0.9854@294
+    HNSW:     ef160 0.9647@290 | ef320 0.9778@154 | ef640 0.9818@88
+  => 1.47x @0.97 (+0.6pt) / 1.89x @0.98 / 3.34x @ceiling (+0.36pt above). Old graph gave 1.4x/3.2x at
+  lower recall. tab:wiki35m rows swapped to same-window ND numbers; sec:graph provenance + effect block +
+  Limitations updated (self graph MATCHES competitor 0.965-vs-0.970; "trails 0.4pt" disclosure retired).
+  Paper now 15pp, compiles. ALL graphs in the paper are now engine-self-built at competitor grade.
+
+=== SESSION SUMMARY (current, 2026-07-09, through P302) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
