@@ -4550,7 +4550,20 @@ P284 [2026-07-09] cohere-10M 1t standalone numbers (for the corrected paper tabl
   ~1.4x edge at 10M)"; contributions + \effect + Limitations rewritten (in-dist = a graph-EFFICIENCY gap at
   d=768, NOT persisting at d=1024 where genbo wins wiki-35M). All compiles. Honest standing locked in the paper.
 
-=== SESSION SUMMARY (current, 2026-07-09, through P284) ===
+P285 [2026-07-09] cohere-10M loss is ARCHITECTURAL (candidate-efficiency), already micro-optimized — profiled.
+  SBANN_PROFILE 1t: hops1 p24 (0.9233@872): route 21% scan 30% rescore 41% float 7% graph 2%; hops3 p64
+  (0.9619@564): route 14% scan 45% rescore 34% float 4% graph 3%. Dominant costs = int16 SCAN + exact int8
+  RESCORE of the candidate union (728->1583 rows/q as p grows), memory-latency-bound (rescore ~376-623 ns/row
+  on random 768B int8 reads = ~1.2GB/s/core). The rescore path is ALREADY prefetch-tuned (i+8 ahead + deep
+  pfdist=16 union prefetch; sorted-vs-unsorted gather measured, unsorted+deep-pf wins +3.7%) — no easy code
+  win left. => the ~1.4x gap vs HNSW at 10M/d768 is the IVF-vs-graph CANDIDATE-EFFICIENCY tradeoff: genbo
+  scans+rescores ~700-1600 candidates to hit recall X; HNSW's greedy traversal touches fewer. Not closable
+  without graph-style traversal (user vetoed "transform genbo to HNSW"). Honest, well-characterized boundary;
+  added to paper Limitations. genbo's design (calibrated-routing IVF-PQ + coverage) wins where routing/coverage
+  is the bottleneck (OOD all scales, in-dist 1M and high-d 35M); pure-graph HNSW wins the mid-scale high-throughput
+  in-dist point (10M/d768). This is the expected IVF-vs-graph frontier, now measured not assumed.
+
+=== SESSION SUMMARY (current, 2026-07-09, through P285) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann

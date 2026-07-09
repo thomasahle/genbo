@@ -918,10 +918,14 @@ unlocking the hidden potential of product quantization with SIMD. \emph{TPAMI},
 (\S\ref{sec:precision}) makes the engine competitive in-distribution but the picture is
 scale-dependent (Table~\ref{tab:cohere}): at Cohere $1$M/$d{=}768$ it wins graph-free, but
 at $10$M/$d{=}768$ --- HNSW's strongest regime --- HNSW leads by ${\sim}1.4$--$1.7\times$
-at matched recall once both use self-built graphs. The cause is a graph-\emph{efficiency}
-gap: HNSW's greedy traversal is very fast at this scale/dimension, and genbo's own graph
-(built by its $d{=}768$ self-search) is quality-capped by the same in-distribution scan
-limit, so more graph-build effort plateaus. Interestingly the gap does \emph{not} persist
+at matched recall once both use self-built graphs. The cause is a \emph{candidate-efficiency}
+gap, which we profiled: to reach recall $0.96$ genbo scans and exactly-rescores ${\sim}1600$
+candidates per query (the dominant cost --- scan plus an int8 rescore of the union, both
+memory-latency-bound at ${\sim}0.6\,\mu$s/row on random reads, and already software-prefetched),
+whereas HNSW's greedy traversal reaches the same recall touching fewer. genbo's own graph
+(built by its $d{=}768$ self-search) is additionally quality-capped by the same
+in-distribution scan limit, so more graph-build effort plateaus. Closing the gap would
+require graph-style traversal rather than an IVF-PQ cascade --- a different engine. Interestingly the gap does \emph{not} persist
 at higher dimension: with multi-hop graph repair (\S\ref{sec:graph}) at $35$M/$d{=}1024$
 (Wikipedia Cohere-v3, unit-norm, strongly anisotropic $\lVert\mu\rVert{=}0.48$) genbo
 \emph{beats} a memory-matched HNSW across the practical high-recall range using its own
