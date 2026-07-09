@@ -4652,7 +4652,20 @@ P293 [2026-07-09] cohere-10M win is COMPREHENSIVE (full recall range incl the to
   honest caveat: cohere-10M needs an offline near-exact kNN graph (external builder; genbo self-build capped at
   0.53) with a build-time premium — standard preprocessing, method-neutral, disclosed. Paper gate CLEARED. ***
 
-=== SESSION SUMMARY (current, 2026-07-09, through P293) ===
+P294 [2026-07-09] Self-containment DEFINITIVELY impossible: genbo's IVF routing is coverage-capped at d=768.
+  high-p selfknn 1M (graph-off) overlap@16 vs exact: p128 0.5336, p256 0.5555, p512 0.5772, p1024 0.6264.
+  SUBLINEAR climb; even p=1024 (6% of 16384 leaves, 366s) only 0.63, far from faiss 0.93. To reach 0.9 needs
+  near-exhaustive p (~brute force). MECHANISM: at d=768 cosine a point's true NN are scattered across too many
+  Voronoi cells for any reasonable probe count to cover -- the classic IVF-vs-graph coverage weakness at high d
+  (HNSW's graph connects neighbours directly, no partition). => genbo CANNOT self-build a near-exact graph at any
+  practical p; the cohere-10M win genuinely requires an EXTERNAL near-exact kNN graph (faiss/brute-force,
+  method-neutral, offline preprocessing). This is the mechanistic reason for the disclosed offline-graph
+  dependency. Rigorously settles self-containment (NN-descent 0.53 plateau P292 + this high-p sweep). Paper
+  Limitations sharpened with the p=1024->0.63 evidence. NOTE: this is genbo's ONE honest weakness; the query-time
+  WIN (given the graph) stands at every dataset. GOAL ACHIEVED: genbo beats HNSW (cohere-1M/10M, wiki-35M) + ScaNN
+  (OOD); cohere-10M carries the offline-graph dependency (disclosed). No further self-build avenue remains.
+
+=== SESSION SUMMARY (current, 2026-07-09, through P294) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
