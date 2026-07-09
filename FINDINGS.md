@@ -4486,7 +4486,19 @@ P279 [2026-07-08] wiki-35M win is STANDALONE — genbo beats HNSW using its OWN 
   applies to OOD/cohere graphs (ScaNN-built); genbo selfknn can replace them for a fully self-contained paper.
   ETIQUETTE: reverting to <=16-core background jobs (selfknn used 24; over the box's "chill" budget).
 
-=== SESSION SUMMARY (current, 2026-07-08, through P279) ===
+P280 [2026-07-09] OOD (primary result) win is STANDALONE too — genbo's OWN graph == ScaNN-built graph. Built
+  genbo_t2i10m_graph_k16.u32 via selfknn (p64 t1500, 365s over 10M @16t, d=200 fast). Clean A/B at the champion
+  OOD config (g0.5 M32 frr, clean GT, 8t):
+    p=32: scann-graph 0.8932@22734 | OWN 0.8922@23794
+    p=40: scann-graph 0.9008@21533 | OWN 0.8998@21694
+    p=56: scann-graph 0.9091@18372 | OWN 0.9082@17649
+  genbo's own graph matches ScaNN's to <=0.1pt recall and QPS-within-noise (own sometimes FASTER). => the OOD
+  win over ScaNN borrows NOTHING from ScaNN: the base-side kNN graph is in-distribution self-search (base queries
+  base), where genbo's recall is high, so its own graph is as good as the competitor's. Both headline wins now
+  proven standalone: OOD (own==scann, P280) and in-dist wiki-35M (own within 0.4pt, still beats HNSW, P279).
+  Graph-integrity concern fully closed; paper sec:graph disclosure updated with both A/Bs.
+
+=== SESSION SUMMARY (current, 2026-07-09, through P280) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann

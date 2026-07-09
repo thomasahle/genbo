@@ -413,10 +413,13 @@ recover such misses with a graph, without probing more cells. Offline we build a
 base-side inner-product $k$-NN graph (a per-point adjacency list; constructed by
 ScaNN self-search or by the engine querying itself --- the two agree on $\sim$92\% of
 edges). The graph is a method-agnostic offline artifact, so the query-time comparison is
-unaffected by which builder is used; where the source matters for a claim we say so ---
-e.g.\ the $35$M in-distribution result (Table~\ref{tab:wiki35m}) uses the engine's
-\emph{own} self-built graph and still wins, so that comparison borrows nothing from the
-opponent (the self-built graph trails a competitor-built one by only ${\sim}0.4$pt recall).
+unaffected by which builder is used, and we verified this empirically: on OOD
+text2image-10M at the champion config, swapping the ScaNN-built graph for the engine's
+own self-built one changes recall by ${\le}0.1$pt and QPS within noise. Where the source
+could matter for a claim we use the self-built graph outright --- e.g.\ the $35$M
+in-distribution result (Table~\ref{tab:wiki35m}) uses the engine's \emph{own} graph and
+still wins (there it trails a competitor-built graph by ${\sim}0.4$pt but keeps the win),
+so no comparison borrows anything from the opponent.
 At query time, after the scan yields a shortlist, we take the top-$M$
 shortlist members and \emph{union their graph neighbors into the exact re-rank set}.
 The intuition is transitive: a shortlisted point near the query is itself near the
