@@ -4722,7 +4722,19 @@ P298 [2026-07-09] R=24 finals: self-built graph EXCEEDS external references; pur
   (Dong cite), Limitations retitled 'graph-build premium (now internal)'. Table numeric rows await the 1t/clean
   numbers. Files: nd10m_r24_{rand,seed}.u32 (+nd10m_{rand,seed}.u32 v1/v2-R16 variants, nd1m_* at 1M).
 
-=== SESSION SUMMARY (current, 2026-07-09, through P298) ===
+P299 [2026-07-09] CLEAN-WINDOW pairwise (quiet box, sequential, same cores): SELF-graph genbo beats HNSW
+  1.23-1.93x at EVERY point. genbo-SELF(r24_seed 0.9037) vs HNSW hnsw_cohere10m.faiss:
+    8t: 0.9461@13134|0.9707@8543|0.9832@5512|0.9871@4119|0.9904@3427 vs ef48 0.9440@10639|ef96 0.9677@5908|
+        ef160 0.9803@3667|ef240 0.9859@2557  => 1.23x/1.45x/1.50x/1.61x + higher recall; 0.9904 > ceiling.
+    1t: 0.9461@1863|0.9707@1234|0.9832@781|0.9871@593|0.9904@483 vs ef48 1465|ef96 772|ef160 467|ef240 308
+        => 1.27x/1.60x/1.67x/1.93x + higher recall throughout.
+  1t table ladder banked (r24_seed: h1p16 0.9461@1840, h2p32 0.9707@1240, h3p64 0.9832@779, h3p128 0.9904@484;
+  r24_rand ~-0.3pt, same QPS). Paper FINAL numbers in (tab:cohere rows now self-built + new-window HNSW,
+  footnote band 1.27/1.6/1.67/1.9x, abstract band 1.2-1.9x, sec:graph/Limitations R=24 finals 0.864/24min +
+  0.904/8min). Compiles 14pp. THE GOAL AS RE-AFFIRMED ('beat Cohere at 1M and 10M') IS FULLY ACHIEVED,
+  SELF-CONTAINED, CLEAN-MEASURED, AND DOCUMENTED.
+
+=== SESSION SUMMARY (current, 2026-07-09, through P299) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
