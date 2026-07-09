@@ -646,6 +646,27 @@ Recall-vs-budget is compute-bound: eligibility is machine-relative, and the
 same configs project to $0.90$--$0.92$ eligible on the official 8-vCPU box.
 Peak memory $7.1$--$7.2$GB $<$ 8GB cap throughout.}
 
+\begin{table}[t]
+\centering
+\caption{Streaming (msturing-30M-clustered runbook; NQ$=$10000, 640 steps) on our
+shared box under the 8\,GB DRAM $+$ 1\,h budget. Recall-vs-budget is compute-bound and
+machine-relative --- this box runs ${\sim}2$--$3\times$ slower than the official 8-vCPU VM,
+where the same configs project to $0.90$--$0.92$ eligible.}
+\label{tab:streaming}
+\begin{tabular}{lccc}
+\toprule
+Operating point & recall@10 & wall (min) & peak mem \\
+\midrule
+budget-eligible frontier (this box) & 0.8821 & 52.7 & $7.1$--$7.2$\,GB \\
+higher recall (over 1\,h here)       & 0.9010 & 69.0 & $7.1$--$7.2$\,GB \\
+\bottomrule
+\multicolumn{4}{p{0.92\linewidth}}{\footnotesize Enabling levers (\S\ref{sec:stream}):
+batch-parallel insert (30M inserts $1818\!\to\!406$\,s, $4.5\times$, recall-identical);
+low-live adaptive $p$ (worst step $0.737\!\to\!0.944$); a rerank parallelization fix
+($7.6\times$ at 8 threads). Both points stay under the 8\,GB cap.}
+\end{tabular}
+\end{table}
+
 \section{Negative Results (Evidence for the Localization)}
 \label{sec:neg}
 % First-class: these are WHY we believe the bottleneck is routing/coverage.
@@ -860,9 +881,9 @@ report the self-built result.)} \\
 \end{tabular}
 \end{table}
 
-\todo{All numeric cells filled (standalone, self-built-graph numbers). Remaining polish:
-per-lever isolation deltas; a dedicated 8-thread scaling table; a streaming table (recall,
-peak mem, wall vs 1h budget). Note the ablation ordering is the actual development arc.}
+\todo{All numeric cells filled (standalone, self-built-graph numbers); streaming table added
+(Table~\ref{tab:streaming}). Remaining optional polish: per-lever isolation deltas and a
+dedicated 8-thread scaling table. Note the ablation ordering is the actual development arc.}
 
 \section{Related Work}
 \label{sec:rel}
