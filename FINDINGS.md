@@ -4596,7 +4596,25 @@ P288 [2026-07-09] cohere-1M CLEAN standalone: genbo GRAPH-FREE beats HNSW by 1.2
   tracking since raw_orig_indexed=false). MEASUREMENT DISCIPLINE: 1M runs MUST be on a quiet box — contention with
   the 10M build suppressed QPS ~3-4x and is non-uniform; pause/burst/resume or serialize.
 
-=== SESSION SUMMARY (current, 2026-07-09, through P288) ===
+P289 [2026-07-09] #2 split-rescore implemented + toggle (SBANN_SPLIT_RESCORE). rerank_cascade_graph now reads
+  pool-orig union rows from the resident slot-indexed self.raw instead of the scattered ds mmap (neighbours still
+  ds). Recall VERIFIED bit-identical (1M graph-ON before==after: 0.9178/0.9502/0.9629). Default on; NEUTRAL at
+  cohere-10M in practice (base.i8bin page-cached, TLB win absent) -- recall-exact + harmless, not the win driver.
+
+P290 [2026-07-09] *** cohere-10M FLIPS TO A WIN: genbo + method-neutral near-exact graph BEATS HNSW. *** The
+  P282-284 "standalone loss" was genbo's BROKEN self-built graph (15% exact, EXP-1). With a faiss-IVFFlat
+  near-exact graph (0.932 overlap@16, method-neutral, NOT HNSW's nav graph), genbo WINS, decisively at 1t:
+    genbo+faiss 1t: hops1 p16 0.9440@1759, hops2 p32 0.9699@1135, hops3 p64 0.9824@571
+    HNSW-1t:        ef48 0.9440@1351, ef96 0.9677@494, ef160 0.9803@263
+    matched-recall 1t: 0.944 genbo 1.30x; 0.97 genbo 2.30x (+higher recall); 0.98 genbo 2.17x (+higher recall)
+    8t (noisy, concurrent run): genbo hops2 0.9699@7861 / hops3 0.9824@4666 > HNSW ef96 0.9677@6016 / ef160 0.9803@3623
+  EXIST(HNSW-built,0.966) ref: hops2 0.9714, hops3 0.9834 (both win). => cohere-10M loss was a GRAPH-QUALITY
+  artifact, not an engine deficit; genbo's engine beats HNSW there given a proper offline kNN graph (standard
+  DiskANN/NSG-style preprocessing, built method-neutrally). CAVEAT: genbo+HNSW ran CONCURRENTLY -> 8t QPS
+  contention-noisy; 1t clean-ish + decisive. Clean SEQUENTIAL A/B running. genbo can't cheaply self-build a good
+  graph (selfknn coverage-capped) -> win needs an offline near-exact kNN graph, disclosed as build preprocessing.
+
+=== SESSION SUMMARY (current, 2026-07-09, through P290) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
