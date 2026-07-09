@@ -479,6 +479,7 @@ fn rerank_orig_float(fbase: &crate::fbin::FBin, qf: &[f32], cand: &[(i32, u32)],
 ///     software-prefetched i+GRAPH_PFDIST ahead, and the union is orig-sorted so the gather is monotone).
 #[allow(clippy::too_many_arguments)]
 fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32],
+    raw: &[i8], raw_orig_indexed: bool, d: usize,
     q: &[i8], qf: &[f32], pool: &mut Vec<(i32, u32)>, graph: &GraphAdj,
     m_expand: usize, kk: usize, k: usize) -> Vec<u32> {
     use std::sync::atomic::Ordering::Relaxed;
@@ -498,6 +499,10 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
     // pooltop holds (min apq4 dist, slot) per distinct pool orig — SAME tuple/tie-break as the old
     // dedup_pool_by_orig, so select_nth's top-M is bit-identical (ties break by slot, matching the oracle).
     let mut pooltop: Vec<(i32, u32)> = Vec::with_capacity(pool.len());
+    // #2 split-rescore: slot per distinct pool orig, captured in union insertion order (== union[0..pool_distinct],
+    // which is never reordered). Pool origs are resident in `raw` (raw[slot*d] == ds.row(orig), byte-identical, so
+    // recall-neutral); graph neighbours (union[pool_distinct..]) are read from the scattered `ds` mmap as before.
+    let mut pool_slot: Vec<u32> = Vec::with_capacity(pool.len());
     GRAPH_SET.with(|cell| {
         let mut set = cell.borrow_mut();
         let cap = (est * 2).next_power_of_two().max(64);
@@ -516,6 +521,7 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
                     set[h] = (o, pooltop.len() as u32);
                     union.push(o);
                     pooltop.push((dist, s));
+                    pool_slot.push(s);   // #2: union[i]'s resident slot for i<pool_distinct
                     break;
                 }
                 if k == o {
@@ -564,11 +570,31 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
         && std::is_x86_feature_detected!("avx512f");
     let avx = std::is_x86_feature_detected!("avx2");
     let pf = GRAPH_PFDIST.load(Relaxed).max(1);
+    let use_raw = !raw.is_empty();
+    // #2: read a union row's int8 vector from the RESIDENT `raw` (pool origs via slot when slot-indexed, or
+    // orig-indexed directly) instead of the scattered 4KB-paged `ds` mmap; graph neighbours fall back to `ds`.
+    // raw[slot*d] is byte-identical to ds.row(orig) for a pool orig, so the rescore (and recall) is unchanged.
+    macro_rules! rraw_idx { ($i:expr) => {{
+        let ii = $i as usize;
+        if !use_raw { usize::MAX }
+        else if raw_orig_indexed { union[ii] as usize }
+        else if ii < pool_distinct { pool_slot[ii] as usize }
+        else { usize::MAX }
+    }}; }
+    macro_rules! rrow { ($i:expr) => {{
+        let ii = $i as usize; let ri = rraw_idx!(ii);
+        if ri != usize::MAX { &raw[ri * d .. ri * d + d] } else { ds.row(union[ii] as usize) }
+    }}; }
+    macro_rules! rpf { ($i:expr) => {{
+        let ii = $i as usize; let ri = rraw_idx!(ii);
+        if ri != usize::MAX { unsafe { _mm_prefetch(raw.as_ptr().add(ri * d) as *const i8, _MM_HINT_T0) }; }
+        else { unsafe { _mm_prefetch(ds.row(union[ii] as usize).as_ptr() as *const i8, _MM_HINT_T0) }; }
+    }}; }
     let mut scored: Vec<(i32, u32)> = Vec::with_capacity(union.len().max(est));
     macro_rules! score_range { ($lo:expr, $hi:expr) => {{
         for i in $lo..$hi {
-            if i + pf < $hi { unsafe { _mm_prefetch(ds.row(union[i + pf] as usize).as_ptr() as *const i8, _MM_HINT_T0) }; }
-            let row = ds.row(union[i] as usize);
+            if i + pf < $hi { rpf!(i + pf); }
+            let row = rrow!(i);
             let dist = if vnni { -unsafe { simd::dot_i8_vnni(q, row) } }
                        else if avx { -unsafe { simd::dot_i8_avx2(q, row) } }
                        else { simd::negdot_i8(q, row) };
@@ -584,8 +610,8 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
         for _hop in 0..hops {
             let hi = union.len();
             for i in lo..hi {
-                if i + pf < hi { unsafe { _mm_prefetch(ds.row(union[i + pf] as usize).as_ptr() as *const i8, _MM_HINT_T0) }; }
-                let row = ds.row(union[i] as usize);
+                if i + pf < hi { rpf!(i + pf); }
+                let row = rrow!(i);
                 let dist = if vnni { -unsafe { simd::dot_i8_vnni(q, row) } }
                            else if avx { -unsafe { simd::dot_i8_avx2(q, row) } }
                            else { simd::negdot_i8(q, row) };
@@ -624,10 +650,8 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
     for r in 0..hops {
         let hi = union.len();
         for i in lo..hi {
-            if i + pf < hi {
-                unsafe { _mm_prefetch(ds.row(union[i + pf] as usize).as_ptr() as *const i8, _MM_HINT_T0) };
-            }
-            let row = ds.row(union[i] as usize);
+            if i + pf < hi { rpf!(i + pf); }
+            let row = rrow!(i);
             // negdot: smaller = better (matches the IP float path's -dot).
             let dist = if vnni { -unsafe { simd::dot_i8_vnni(q, row) } }
                        else if avx { -unsafe { simd::dot_i8_avx2(q, row) } }
@@ -2760,7 +2784,7 @@ impl Index {
             if let (Some(g), true) = (graph, cascade) {
                 // graph-augmented union rescore (SBANN_GRAPH_FILE), same expansion point as the batched path.
                 let gm = GRAPH_M.load(std::sync::atomic::Ordering::Relaxed);
-                return rerank_cascade_graph(ds, fbase, &self.slot_orig, q, qf, &mut pool, g, gm, kk, k);
+                return rerank_cascade_graph(ds, fbase, &self.slot_orig, &self.raw, self.raw_orig_indexed, self.d, q, qf, &mut pool, g, gm, kk, k);
             }
             if cascade {
                 // int8-cascade prune (PROF_CASC_NS) then float reorder (PROF_RERANK_NS) — timed inside.
@@ -3120,7 +3144,7 @@ impl Index {
             let qf = &qf_all[i * d..i * d + d];
             let out = if let (Some(g), true) = (graph, cascade) {
                 // graph-augmented union rescore (SBANN_GRAPH_FILE); falls back to plain cascade if M=0.
-                rerank_cascade_graph(ds, fbase, &self.slot_orig, qi8, qf, &mut pool, g, gm, kk, k)
+                rerank_cascade_graph(ds, fbase, &self.slot_orig, &self.raw, self.raw_orig_indexed, self.d, qi8, qf, &mut pool, g, gm, kk, k)
             } else if cascade {
                 rerank_cascade_float(fbase, &self.raw, self.d, self.raw_orig_indexed, &self.slot_orig, qi8, qf, &mut pool, kk, k)
             } else {
