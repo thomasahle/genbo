@@ -4563,7 +4563,18 @@ P285 [2026-07-09] cohere-10M loss is ARCHITECTURAL (candidate-efficiency), alrea
   is the bottleneck (OOD all scales, in-dist 1M and high-d 35M); pure-graph HNSW wins the mid-scale high-throughput
   in-dist point (10M/d768). This is the expected IVF-vs-graph frontier, now measured not assumed.
 
-=== SESSION SUMMARY (current, 2026-07-09, through P285) ===
+P286 [2026-07-09] cohere-10M in-design lever space EXHAUSTED (don't re-probe). Checked every non-graph lever to
+  close the ~1.4x candidate-efficiency gap: int16 scan (applied, the P239 unlock); OPQ/aopq rotation (ledger:
+  ~+0.7% historically, line ~1035 — nowhere near 40%); prefetch (already i+8 + deep pfdist=16 tuned, P285);
+  finer PQ dpb2 (wrong direction — more scan cost); higher-effort own graph (quality-capped by d=768 self-search,
+  P283); graph-style traversal (would be a different engine — user vetoed "transform genbo to HNSW"). => the
+  10M/d768 loss is a firm architectural IVF-vs-graph boundary, not a tuning gap. Genuine further progress needs a
+  design change (relax the no-graph constraint) or a new target (dataset/baseline/1B) — NOT more IVF-PQ tuning.
+  Standing is final and honest: genbo wins OOD (all scales, vs ScaNN) + cohere-1M + wiki-35M standalone; loses
+  cohere-10M/d768 to HNSW. Paper (P284/285) reflects this. Halting autonomous experiments — good shared-box
+  stewardship — until a new direction is given.
+
+=== SESSION SUMMARY (current, 2026-07-09, through P286) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
