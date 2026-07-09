@@ -4582,7 +4582,21 @@ P287 [2026-07-09] Paper finalization: filled the last data cell (OOD baselines 1
   posted, no response — user away). Paper is submission-honest: genbo wins OOD all-scales + cohere-1M + wiki-35M
   standalone, loses cohere-10M/d768 (documented architectural boundary).
 
-=== SESSION SUMMARY (current, 2026-07-09, through P287) ===
+P288 [2026-07-09] cohere-1M CLEAN standalone: genbo GRAPH-FREE beats HNSW by 1.2-1.6x (bigger than the recorded
+  ~1.06x). Measured on a QUIET box (10M faiss build SIGSTOP-paused for the burst, auto-resumed after). dpb4, IP
+  NOMU, float rerank, clean GT:
+    genbo gf 1t: p32 0.9063@1868, p48 0.9372@1493, p64 0.9539@1402 | 8t: p48 0.9372@14820, p64 0.9539@12140
+    HNSW-1M  1t: ef32 0.8997@1940, ef48 0.9309@1273, ef64 0.9464@1070, ef96 0.9625@749 | 8t ~8x
+  Matched-recall: ~parity @0.90; genbo WINS @0.93 (1.17x 1t / 1.38x 8t) and @0.95 (~1.4-1.6x), higher recall AND
+  faster, GRAPH-FREE (no graph dependency). KEY TRANSFER NOTE: this graph-free 1M win does NOT transfer to 10M
+  (there genbo graph-free LOSES — routing coverage degrades with scale while HNSW scales). So the 10M win needs
+  the graph (candidate coverage); the transferable levers are the near-exact graph (10M faiss build in progress)
+  and engine micro-opts (#2 split-rescore: rerank_cascade_graph reads the union from scattered ds mmap instead of
+  the resident slot-indexed self.raw; recall-exact +6-22%, helps the graph path + 1t; queued, needs union-slot
+  tracking since raw_orig_indexed=false). MEASUREMENT DISCIPLINE: 1M runs MUST be on a quiet box — contention with
+  the 10M build suppressed QPS ~3-4x and is non-uniform; pause/burst/resume or serialize.
+
+=== SESSION SUMMARY (current, 2026-07-09, through P288) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
