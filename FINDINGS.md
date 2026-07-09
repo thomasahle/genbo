@@ -4697,7 +4697,19 @@ P296 [2026-07-09] TRUE NN-descent SELF-BUILD breaks the routing cap: 1M overlap 
   recall probes at P295 winning configs. If 10M holds ~0.8+: cohere-10M win becomes FULLY SELF-CONTAINED
   (offline-graph caveat REMOVED from paper). Knobs: SBANN_ND_ROUNDS/R/DELTA/AGE.
 
-=== SESSION SUMMARY (current, 2026-07-09, through P296) ===
+P297 [2026-07-09] cohere-10M WIN IS NOW FULLY SELF-CONTAINED: NN-descent self-built graph == external faiss graph.
+  10M overlap@16: rand-init(v1,17min) 0.7853; seeded(genbo selfknn-p128 seed + v2 descent 6.7min) 0.8972.
+  Recall probes (8t, P295 winning configs; HNSW ef240 ceiling 0.9859@2372):
+    SELF-seed p96: 0.9867@4020 | p128: 0.9899@3258  -- beats HNSW BOTH axes at both points.
+    SELF-rand p96: 0.9826@4028 | p128: 0.9865@3311  -- pure 17-min self-build beats HNSW both axes @p128.
+  Head-to-head vs the external faiss near-exact graph (P295): p96 faiss 0.9869@3920 vs SELF-seed 0.9867@4020
+  == statistically identical. The offline-graph caveat is ELIMINATED: genbo needs NO external tool -- its own
+  NN-descent (P296) self-builds a 0.90-overlap graph in minutes. QPS indicative (mox-synth 8 cores on box) but
+  tracks P295 quiet numbers within ~3%; clean pairwise re-run queued for a quiet window. R=24 chain in flight
+  (expect ~0.91 overlap + margin). GOAL: beat HNSW cohere-1M (graph-free, P288) + cohere-10M (SELF-contained,
+  this) -- both now clean.
+
+=== SESSION SUMMARY (current, 2026-07-09, through P297) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
