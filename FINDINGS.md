@@ -4709,7 +4709,20 @@ P297 [2026-07-09] cohere-10M WIN IS NOW FULLY SELF-CONTAINED: NN-descent self-bu
   (expect ~0.91 overlap + margin). GOAL: beat HNSW cohere-1M (graph-free, P288) + cohere-10M (SELF-contained,
   this) -- both now clean.
 
-=== SESSION SUMMARY (current, 2026-07-09, through P297) ===
+P298 [2026-07-09] R=24 finals: self-built graph EXCEEDS external references; pure standalone build wins outright.
+  10M v2 R=24: rand-init overlap 0.8639 (23.7min, NOTHING external -- no seed/index); seeded 0.9037 (8min descent).
+  Recall probes 8t (HNSW ef240 ceiling 0.9859@2372; faiss-graph refs 0.9869@3920 p96 / 0.9884@3238 p128-0.65deg):
+    r24-rand p96 0.9859@4180 (TIES HNSW ceiling recall at 1.76x QPS), p128 0.9892@3297 (beats both axes).
+    r24-seed p96 0.9871@4101, p128 0.9904@3383 <- best 10M operating point measured all session,
+    edges the faiss-graph numbers themselves. R=24 over R=16: +0.079 rand / +0.007 seed overlap.
+  => The self-built graph is now QUERY-TIME SUPERIOR OR EQUAL to the external near-exact graph at matched
+  configs. Box quiet (mox-synth gone, load ~4): 1t table ladder (hops1p16/2p32/3p64/3p128, r24_seed+r24_rand)
+  + CLEAN sequential pairwise (genbo-SELF full ladder 8t+1t vs HNSW ef48-240 same cores) chained + running.
+  Paper structurally rewritten (commit 45405b1): caveat ELIMINATED, sec:graph gained NN-descent paragraph
+  (Dong cite), Limitations retitled 'graph-build premium (now internal)'. Table numeric rows await the 1t/clean
+  numbers. Files: nd10m_r24_{rand,seed}.u32 (+nd10m_{rand,seed}.u32 v1/v2-R16 variants, nd1m_* at 1M).
+
+=== SESSION SUMMARY (current, 2026-07-09, through P298) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
