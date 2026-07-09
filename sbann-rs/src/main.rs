@@ -1746,6 +1746,208 @@ fn main() {
             }
             println!("[selfknn] done in {:.0}s", t0.elapsed().as_secs_f64());
         }
+        // nndescent <base.i8bin> <out.u32> <k> [seed.u32]: TRUE NN-descent (Dong et al. local join:
+        // neighbor-of-neighbor expansion incl. reverse edges, per-edge new/old gating) — self-builds a
+        // base-side IP-kNN graph with NO routing in the loop, so the d=768 IVF coverage cap (P294)
+        // does not apply. Needs only the raw i8 base (no index, no SBANN_INDEX_LOAD). Output is the
+        // usual SBANN_GRAPH_FILE format: flat n x k u32 LE, no header. Seed optional (flat u32 rows,
+        // extra cols ignored; pads/dups/self replaced with random); unseeded = random init (pure
+        // self-build, no engine artifact at all). i8 dots (VNNI/AVX2/scalar), rows sorted desc by IP.
+        // env: SBANN_ND_ROUNDS (12), SBANN_ND_R (reverse-edge cap/node, 16), SBANN_ND_DELTA (0.001),
+        //      SBANN_ND_AGE (rounds an edge stays "new", 2 — hubs get multiple chances to propagate it
+        //      through the per-round reservoir-resampled reverse cap; 1 = classic single-round aging).
+        Some("nndescent") => {
+            let ds = I8Bin::open(&a[2]).expect("base");
+            let n = ds.nb;
+            let kk: usize = a.get(4).map(|s| s.parse().expect("k")).unwrap_or(16);
+            let rounds: usize = std::env::var("SBANN_ND_ROUNDS").ok().and_then(|s| s.parse().ok()).unwrap_or(12);
+            let rcap: usize = std::env::var("SBANN_ND_R").ok().and_then(|s| s.parse().ok()).unwrap_or(16);
+            let delta: f64 = std::env::var("SBANN_ND_DELTA").ok().and_then(|s| s.parse().ok()).unwrap_or(0.001);
+            let age0: u8 = std::env::var("SBANN_ND_AGE").ok().and_then(|s| s.parse().ok()).unwrap_or(2);
+            assert!(kk <= 64 && rcap <= 64 && n < (1usize << 31) && age0 >= 1);
+            let vnni = std::is_x86_feature_detected!("avx512vnni") && std::is_x86_feature_detected!("avx512bw")
+                && std::is_x86_feature_detected!("avx512f");
+            let avx = std::is_x86_feature_detected!("avx2");
+            println!("[nnd] n={} d={} k={kk} rounds={rounds} R={rcap} delta={delta} age={age0} vnni={vnni}", n, ds.d);
+            #[inline(always)]
+            fn nd_rand(mut x: u64) -> u64 { x ^= x >> 12; x ^= x << 25; x ^= x >> 27; x.wrapping_mul(0x2545F4914F6CDD1D) }
+            const HSZ: usize = 4096; // per-thread stamped dedup table; cands ≲1100 at K=R=16
+            #[inline(always)]
+            fn hins(ht: &mut [u64], vstamp: u64, key: u32) -> bool { // true = newly inserted
+                let mut h = ((key as u64).wrapping_mul(0x9E3779B97F4A7C15) >> 52) as usize & (HSZ - 1);
+                loop {
+                    let e = ht[h];
+                    if e & 0xFFFF_FFFF_0000_0000 != vstamp { ht[h] = vstamp | key as u64; return true; }
+                    if (e & 0xFFFF_FFFF) == key as u64 { return false; }
+                    h = (h + 1) & (HSZ - 1);
+                }
+            }
+            let t0 = Instant::now();
+            // --- init ids: seed file (dedup'd, self-filtered) or random ---
+            let mut g: Vec<u32> = vec![0; n * kk];
+            if let Some(sp) = a.get(5) {
+                let bytes = std::fs::read(sp).expect("seed read");
+                let ks = bytes.len() / (n * 4);
+                assert!(ks >= 1, "seed too small for n");
+                println!("[nnd] seed {} ks={}", sp, ks);
+                g.par_chunks_mut(kk).enumerate().for_each(|(i, row)| {
+                    let off = i * ks * 4;
+                    let mut m = 0usize;
+                    let mut seen = [u32::MAX; 64];
+                    for j in 0..ks {
+                        if m == kk { break; }
+                        let id = u32::from_le_bytes(bytes[off + j * 4..off + j * 4 + 4].try_into().unwrap());
+                        if id as usize >= n || id as usize == i || seen[..m].contains(&id) { continue; }
+                        seen[m] = id; row[m] = id; m += 1;
+                    }
+                    let mut s = (i as u64) ^ 0x9E37_79B9_7F4A_7C15;
+                    while m < kk {
+                        s = nd_rand(s);
+                        let id = (s % n as u64) as u32;
+                        if id as usize == i || seen[..m].contains(&id) { continue; }
+                        seen[m] = id; row[m] = id; m += 1;
+                    }
+                });
+            } else {
+                println!("[nnd] random init (pure self-build, no seed)");
+                g.par_chunks_mut(kk).enumerate().for_each(|(i, row)| {
+                    let mut s = (i as u64) ^ 0x9E37_79B9_7F4A_7C15;
+                    let mut m = 0usize;
+                    let mut seen = [u32::MAX; 64];
+                    while m < kk {
+                        s = nd_rand(s);
+                        let id = (s % n as u64) as u32;
+                        if id as usize == i || seen[..m].contains(&id) { continue; }
+                        seen[m] = id; row[m] = id; m += 1;
+                    }
+                });
+            }
+            // --- initial dots + sort rows desc by IP ---
+            let mut gd: Vec<i32> = vec![0; n * kk];
+            gd.par_chunks_mut(kk).zip(g.par_chunks_mut(kk)).enumerate().for_each(|(i, (dr, ir))| {
+                let q = ds.row(i);
+                let mut pairs: Vec<(i32, u32)> = (0..kk).map(|j| {
+                    let r = ds.row(ir[j] as usize);
+                    let dt = if vnni { unsafe { simd::dot_i8_vnni(q, r) } }
+                             else if avx { unsafe { simd::dot_i8_avx2(q, r) } }
+                             else { -simd::negdot_i8(q, r) };
+                    (dt, ir[j])
+                }).collect();
+                pairs.sort_unstable_by(|x, y| y.0.cmp(&x.0));
+                for j in 0..kk { dr[j] = pairs[j].0; ir[j] = pairs[j].1; }
+            });
+            println!("[nnd] init done ({:.0}s)", t0.elapsed().as_secs_f64());
+            // --- rounds: reverse pass, then race-free local join (each task owns row v of the next buffers) ---
+            use std::sync::atomic::AtomicU32;
+            let rl = std::sync::atomic::Ordering::Relaxed;
+            let rev: Vec<AtomicU32> = (0..n * rcap).map(|_| AtomicU32::new(u32::MAX)).collect();
+            let rev_cnt: Vec<AtomicU32> = (0..n).map(|_| AtomicU32::new(0)).collect();
+            let mut newf: Vec<u8> = vec![age0; n * kk]; // per-edge "new" age (>0 = new; decays per round)
+            for round in 0..rounds {
+                let tr = Instant::now();
+                rev.par_iter().for_each(|x| x.store(u32::MAX, rl));
+                rev_cnt.par_iter().for_each(|x| x.store(0, rl));
+                { // build capped reverse adjacency; top bit of the entry carries the fwd edge's new flag.
+                  // PER-ROUND RESERVOIR sampling (salted): over-cap in-neighbors replace a random slot with
+                  // prob rcap/(c+1), so hub reverse lists are freshly resampled each round instead of frozen
+                  // first-come — otherwise rev x rev pairs at hubs are missed permanently once flags age.
+                    let g = &g; let newf = &newf; let rev = &rev; let rev_cnt = &rev_cnt;
+                    let salt = nd_rand(0xD1B5_4A32 ^ (round as u64).wrapping_mul(0x9E37_79B9_7F4A_7C15));
+                    (0..n).into_par_iter().for_each(|v| {
+                        for j in 0..kk {
+                            let u = g[v * kk + j] as usize;
+                            let c = rev_cnt[u].fetch_add(1, rl) as usize;
+                            let tag = (v as u32) | if newf[v * kk + j] > 0 { 0x8000_0000 } else { 0 };
+                            if c < rcap {
+                                rev[u * rcap + c].store(tag, rl);
+                            } else {
+                                let r = (nd_rand(salt ^ ((v as u64) << 32) ^ u as u64) % (c as u64 + 1)) as usize;
+                                if r < rcap { rev[u * rcap + r].store(tag, rl); }
+                            }
+                        }
+                    });
+                }
+                let mut gn = g.clone();
+                let mut gdn = gd.clone();
+                let mut newn: Vec<u8> = vec![0; n * kk];
+                let updates: u64 = {
+                    let g = &g; let newf = &newf; let rev = &rev; let ds = &ds;
+                    gn.par_chunks_mut(kk).zip(gdn.par_chunks_mut(kk)).zip(newn.par_chunks_mut(kk)).enumerate()
+                        .map_init(|| (vec![u64::MAX; HSZ], Vec::<u32>::with_capacity(2048)),
+                                  |st, (v, ((grow, gdrow), nrow))| {
+                            let (ht, cand) = st;
+                            let vstamp = (v as u64) << 32;
+                            cand.clear();
+                            // carry surviving edges' age forward (decayed); inserts below re-stamp age0
+                            for j in 0..kk { nrow[j] = newf[v * kk + j].saturating_sub(1); }
+                            hins(ht, vstamp, v as u32);
+                            for j in 0..kk { hins(ht, vstamp, grow[j]); }
+                            // gather through bridge u: u's fwd row + u's rev list, gated on either edge being new
+                            macro_rules! bridge { ($u:expr, $un:expr) => {{
+                                let u = $u; let un = $un;
+                                let urow = &g[u * kk..u * kk + kk];
+                                let unf = &newf[u * kk..u * kk + kk];
+                                for t in 0..kk {
+                                    if un || unf[t] > 0 { let w = urow[t]; if hins(ht, vstamp, w) { cand.push(w); } }
+                                }
+                                for t in 0..rcap {
+                                    let e = rev[u * rcap + t].load(rl);
+                                    if e == u32::MAX { break; }
+                                    let x = e & 0x7FFF_FFFF;
+                                    if un || (e & 0x8000_0000 != 0) { if hins(ht, vstamp, x) { cand.push(x); } }
+                                }
+                            }}; }
+                            for j in 0..kk {
+                                if cand.len() + 2 * (kk + rcap) > HSZ / 2 { break; }
+                                bridge!(grow[j] as usize, newf[v * kk + j] > 0);
+                            }
+                            for t0i in 0..rcap {
+                                if cand.len() + 2 * (kk + rcap) > HSZ / 2 { break; }
+                                let e0 = rev[v * rcap + t0i].load(rl);
+                                if e0 == u32::MAX { break; }
+                                let u = (e0 & 0x7FFF_FFFF) as usize;
+                                let un = e0 & 0x8000_0000 != 0;
+                                if hins(ht, vstamp, u as u32) { cand.push(u as u32); } // rev neighbor itself
+                                bridge!(u, un);
+                            }
+                            // score with prefetch, maintain top-k desc
+                            let q = ds.row(v);
+                            let m = cand.len();
+                            let mut upd = 0u64;
+                            for ci in 0..m {
+                                #[cfg(target_arch = "x86_64")]
+                                if ci + 8 < m {
+                                    unsafe { std::arch::x86_64::_mm_prefetch(ds.row(cand[ci + 8] as usize).as_ptr() as *const i8, std::arch::x86_64::_MM_HINT_T0) };
+                                }
+                                let c = cand[ci];
+                                let r = ds.row(c as usize);
+                                let dt = if vnni { unsafe { simd::dot_i8_vnni(q, r) } }
+                                         else if avx { unsafe { simd::dot_i8_avx2(q, r) } }
+                                         else { -simd::negdot_i8(q, r) };
+                                if dt <= gdrow[kk - 1] { continue; }
+                                let mut pos = kk - 1;
+                                while pos > 0 && gdrow[pos - 1] < dt { pos -= 1; }
+                                for jj in (pos..kk - 1).rev() {
+                                    gdrow[jj + 1] = gdrow[jj]; grow[jj + 1] = grow[jj]; nrow[jj + 1] = nrow[jj];
+                                }
+                                gdrow[pos] = dt; grow[pos] = c; nrow[pos] = age0;
+                                upd += 1;
+                            }
+                            upd
+                        }).sum()
+                };
+                let frac = updates as f64 / (n * kk) as f64;
+                g = gn; gd = gdn; newf = newn;
+                println!("[nnd] round {round}: updates={updates} ({frac:.4}) {:.0}s (cum {:.0}s)",
+                         tr.elapsed().as_secs_f64(), t0.elapsed().as_secs_f64());
+                if frac < delta { break; }
+            }
+            let mut w = std::io::BufWriter::new(std::fs::File::create(&a[3]).expect("out"));
+            use std::io::Write;
+            for &v in &g { w.write_all(&v.to_le_bytes()).unwrap(); }
+            w.flush().unwrap();
+            println!("[nnd] done n={n} k={kk} -> {} in {:.0}s", &a[3], t0.elapsed().as_secs_f64());
+        }
         Some("run") => run(&a[2], &a[3], &a[4], &a[5], &a[6], a.get(7).map(|s| s.parse().unwrap()).unwrap_or(2), a.get(8).map(|s| s.parse().unwrap()).unwrap_or(4096), a.get(9).map(|s| s.parse().unwrap()).unwrap_or(30), false),
         Some("runb") => run(&a[2], &a[3], &a[4], &a[5], &a[6], a.get(7).map(|s| s.parse().unwrap()).unwrap_or(2), a.get(8).map(|s| s.parse().unwrap()).unwrap_or(4096), a.get(9).map(|s| s.parse().unwrap()).unwrap_or(30), true),
         Some("runa") => runa(&a[2], &a[3], &a[4], &a[5], &a[6], a.get(7).map(|s| s.parse().unwrap()).unwrap_or(2), a.get(8).map(|s| s.parse().unwrap()).unwrap_or(256)),
