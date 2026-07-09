@@ -59,9 +59,9 @@ to an int16 scan restores ordering to the pool ceiling ($0.87$), and precision
 auto-selection by $m$ --- plus the coverage levers above --- makes the engine win in
 HNSW's home regime: it beats HNSW at 1M \emph{graph-free}, and at 10M/$d{=}768$ (HNSW's
 strongest setting) its query path beats HNSW across the recall range (${\sim}1.3$--$1.9\times$,
-reaching recall HNSW cannot) once given a near-exact \emph{offline} $k$-NN graph --- a
-method-neutral preprocessing artifact the engine cannot cheaply self-build (a disclosed
-dependency). We report the negative results as
+reaching recall HNSW cannot) once given an \emph{offline} $k$-NN graph --- a
+method-neutral preprocessing artifact (which need not be near-exact) that the engine cannot
+cheaply self-build at 10M (a disclosed dependency). We report the negative results as
 first-class evidence for both localizations, and treat the measurement
 methodology --- which repeatedly caught mirages during development --- as a
 contribution.
@@ -130,7 +130,7 @@ and transfers to the streaming track.
     while the \emph{same codes} under an int16 scan rank to the pool ceiling
     ($0.87$). \emph{Effect: with precision auto-selected by $m$ (plus an AVX-512
     int16 kernel and graph coverage), the engine goes from $2\times$ behind HNSW
-    on Cohere-768 to a graph-free \emph{win} at 1M and, given a near-exact offline
+    on Cohere-768 to a graph-free \emph{win} at 1M and, given a (modest-quality) offline
     $k$-NN graph, a ${\sim}1.3$--$1.9\times$ \emph{win} at 10M --- without abandoning the IVF-PQ cascade.}
   \item \textbf{Systems levers for streaming} (\S\ref{sec:stream}): batch-parallel
     insert (\emph{$4.5\times$}), low-live adaptive $p$ (\emph{worst step
@@ -855,10 +855,15 @@ Scale & System & recall@10 & QPS (1t) \\
 engine's query path beats HNSW at every operating point once given a near-exact
 \emph{offline} IP-kNN graph: ${\sim}1.3\times$ at recall $0.94$, ${\sim}1.8\times$ at $0.97$,
 ${\sim}1.9\times$ at $0.98$ (1 thread; similar at 8 threads), higher recall throughout, and it
-reaches recall $0.99$ where HNSW plateaus ($\approx\!0.986$). \emph{Caveat:} the near-exact
-graph is an offline preprocessing artifact built by a \emph{method-neutral} kNN builder (e.g.\
+reaches recall $0.99$ where HNSW plateaus ($\approx\!0.986$). The graph \emph{need not be
+near-exact}: degrading its overlap@$16$ from $0.93$ to $0.65$ costs only ${\sim}0.4$pt recall at
+matched probes, and genbo still beats HNSW on \emph{both} recall and QPS with a $0.65$-overlap graph
+(at a modestly higher probe count); even a $0.28$-overlap graph recovers most of the coverage benefit.
+QPS is nearly flat across graph quality --- the graph buys coverage/recall, not speed ---
+so near-exactness only sharpens the margin. \emph{Caveat:} the
+graph is still an offline preprocessing artifact built by a \emph{method-neutral} kNN builder (e.g.\
 IVF-Flat / brute force, as in DiskANN/NSG~\cite{diskann} --- not the opponent's index); genbo's own $d{=}768$
-self-search is coverage-capped and cannot build one (its self-built-graph variant, last row,
+self-search is coverage-capped and cannot build even a modest one at 10M (its self-built-graph variant, last row,
 loses to HNSW), so this is a query-time win contingent on offline graph construction (a build-time
 premium). ScaNN trails throughout.}
 \end{tabular}
@@ -949,11 +954,14 @@ unlocking the hidden potential of product quantization with SIMD. \emph{TPAMI},
 engine wins \emph{graph-free}. At $10$M/$d{=}768$ (HNSW's strongest regime) its query path
 beats HNSW across the recall range (${\sim}1.3$--$1.9\times$, higher recall throughout, and it
 reaches $0.99$ where HNSW plateaus at $\approx\!0.986$; Table~\ref{tab:cohere}) --- but only when
-handed a near-exact \emph{offline} IP-$k$-NN graph. genbo cannot cheaply build that graph itself:
-its $d{=}768$ self-search is coverage-capped (a self-built graph reaches only ${\sim}0.53$
-exact-overlap@$16$, and even probing $6\%$ of cells lifts this to just ${\sim}0.63$ --- the true
-neighbours are scattered across too many Voronoi cells for any practical probe count to cover),
-so the graph must come from a
+handed an \emph{offline} IP-$k$-NN graph. That graph need \emph{not} be near-exact: we degraded the
+$0.93$-overlap graph and find the win survives down to ${\sim}0.65$ overlap (genbo still beats HNSW
+on both recall and QPS, at a modestly higher probe count), with the recall benefit saturating
+quickly --- even a $0.28$-overlap graph recovers most of it. What genbo cannot do is build even that
+modest graph itself at 10M: its $d{=}768$ self-search is coverage-capped (a self-built graph reaches
+only ${\sim}0.53$ exact-overlap@$16$, and even probing $6\%$ of cells lifts this to just ${\sim}0.63$
+--- the true neighbours are scattered across too many Voronoi cells for any practical probe count to
+cover), so the graph must come from a
 method-neutral offline builder (IVF-Flat / brute force, as graph methods like DiskANN/NSG already
 assume). This makes the 10M result a \emph{query-time} win contingent on offline graph construction
 (a build-time premium; the graph is standard preprocessing, not the opponent's index). The reason

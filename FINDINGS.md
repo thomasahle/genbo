@@ -4665,7 +4665,22 @@ P294 [2026-07-09] Self-containment DEFINITIVELY impossible: genbo's IVF routing 
   WIN (given the graph) stands at every dataset. GOAL ACHIEVED: genbo beats HNSW (cohere-1M/10M, wiki-35M) + ScaNN
   (OOD); cohere-10M carries the offline-graph dependency (disclosed). No further self-build avenue remains.
 
-=== SESSION SUMMARY (current, 2026-07-09, through P294) ===
+P295 [2026-07-09] Min-graph-quality-to-win cohere-10M: NEAR-EXACT NOT REQUIRED (softens the caveat).
+  Degraded the 0.932 faiss graph (replace fraction f of each node's 16 edges w/ random ids -> true
+  overlap ~= 0.932*(1-f)). Winning config 8t hops3 p96 t3000 (HNSW ref 0.9859@2372):
+    ovl0.93 R0.9869 Q3920 | ovl0.65 R0.9842 Q3749 | ovl0.47 R0.9820 Q3718 | ovl0.28 R0.9788 Q3833 | no-graph R0.9689 Q4095.
+  Graph's recall contribution SATURATES fast: 0.28-ovl already recovers +1.0pt of the +1.8pt total
+  (graph-free 0.9689 -> full 0.9869); QPS ~flat across quality (graph buys recall, not speed). To clear
+  HNSW 0.9859 at FIXED p96 needs ~0.9 ovl (the last 0.5pt). BUT a mediocre 0.65-ovl graph + slightly
+  more probes WINS OUTRIGHT: p128 t4000 -> 0.9884@3238 (beats HNSW on BOTH axes: +0.25pt recall,
+  1.37x QPS); p160 t5000 -> 0.9901@2656 (+0.42pt, 1.12x). => cohere-10M win needs only a MODEST
+  (~0.65-overlap) offline graph, not near-exact; near-exactness only sharpens the QPS margin.
+  NB genbo self-builds 0.63 ovl @1M(p1024, P294) -- essentially AT the now-lowered bar; but 1M already
+  wins graph-free, so the graph matters only @10M where self-build is far worse (0.15@p64). OPEN
+  (deferred; low expected payoff, multi-hr 10M build): can high-p 10M selfknn reach ~0.65? p64 flatness
+  says almost certainly no. Paper Limitations softened (near-exact -> modest-quality suffices).
+
+=== SESSION SUMMARY (current, 2026-07-09, through P295) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
