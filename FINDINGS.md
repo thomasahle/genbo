@@ -4680,7 +4680,24 @@ P295 [2026-07-09] Min-graph-quality-to-win cohere-10M: NEAR-EXACT NOT REQUIRED (
   (deferred; low expected payoff, multi-hr 10M build): can high-p 10M selfknn reach ~0.65? p64 flatness
   says almost certainly no. Paper Limitations softened (near-exact -> modest-quality suffices).
 
-=== SESSION SUMMARY (current, 2026-07-09, through P295) ===
+P296 [2026-07-09] TRUE NN-descent SELF-BUILD breaks the routing cap: 1M overlap 0.89 in 37s (bar 0.65).
+  New `nndescent` subcommand (commit 4538b11): Dong-style local join (fwd + capped-rev bridges, per-edge
+  new/old gating, stamped-hash dedup, VNNI i8 dots, race-free pull). NO routing in the loop => P294's
+  d=768 IVF coverage cap DOES NOT APPLY (P292's "NN-descent" failure was routed-search augmentation --
+  different thing; it inherited the cap). Needs only the raw i8 base -- no index, no seed required.
+  1M overlap@16 vs brute FlatIP (5k sample):
+    v1: rand-init 0.7791/71s; seeded(0.4976 29s selfknn p48) 0.8728/47s total.
+    v2 (fixes from adversarial review workflow -- 2 CONFIRMED majors: (a) first-come rev cap froze hub
+    in-neighbors => permanent rev-x-rev pair misses, fix = per-round salted RESERVOIR sampling; (b)
+    single-round new-flag aging killed second chances, fix = AGE counter default 2):
+    rand 0.8263/90s; seeded 0.8884/30s; seeded R=24 0.8949/37s (age=3: 0.8927, not worth it).
+  vs routing-based selfknn cap: 0.63 @ p=1024/366s (P294). vs faiss near-exact: 0.932 (multi-hr).
+  => genbo self-builds 0.89-overlap graphs ~10x faster than its own routed selfknn reaches 0.63, and
+  P295's win bar is only 0.65. 10M runs in flight (v1-rand done 1030s; v2 R=24 rand+seed chained) +
+  recall probes at P295 winning configs. If 10M holds ~0.8+: cohere-10M win becomes FULLY SELF-CONTAINED
+  (offline-graph caveat REMOVED from paper). Knobs: SBANN_ND_ROUNDS/R/DELTA/AGE.
+
+=== SESSION SUMMARY (current, 2026-07-09, through P296) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
