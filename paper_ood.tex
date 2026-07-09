@@ -83,12 +83,12 @@ We study \emph{distribution robustness}: one engine, measured in two regimes tha
 break different stages of the pipeline. The first is \emph{out-of-distribution}
 (OOD) search, where the query distribution differs from the database. This is not
 a corner case: cross-modal retrieval embeds a text query and searches image
-vectors under inner product, and the big-ANN ``text2image'' track (image base,
+vectors under inner product, and the big-ANN~\cite{bigann} ``text2image'' track (image base,
 text queries, $d{=}200$) is exactly this setting. It is where the strongest
 systems separate, and --- we argue --- where the conventional intuition about what
 to optimize is wrong. The second is the \emph{in-distribution, high-dimensional}
 regime (Cohere-768 embeddings under cosine), the bread-and-butter workload of
-graph indices like HNSW --- where the same IVF-PQ engine initially loses by
+graph indices like HNSW~\cite{hnsw} --- where the same IVF-PQ engine initially loses by
 $2\times$, for a reason that turns out to be neither routing nor architecture but
 arithmetic precision in the scan (\S\ref{sec:precision}).
 
@@ -96,13 +96,13 @@ Our organizing claim is a \emph{bottleneck localization}: on OOD workloads the
 binding constraint is \emph{routing coverage} --- whether the true neighbor's cell is
 among the $p$ probed and its members reachable --- not scan throughput or code
 fidelity. We support this from both sides. A battery of scan- and code-side
-improvements (wider SIMD, higher-resolution and rotated codes, RaBitQ, ADC routing)
+improvements (wider SIMD, higher-resolution and rotated codes, RaBitQ~\cite{rabitq}, ADC routing~\cite{quickeradc})
 leaves OOD recall and QPS essentially unmoved (\S\ref{sec:neg}); meanwhile a small
 set of routing- and coverage-directed techniques each yields a measured gain
 (\S\ref{sec:gamma}--\S\ref{sec:soar}). We therefore present the work as a measured
 collection --- every technique reported with the effect it produces in isolation,
 and the negatives kept as first-class evidence for the localization. Composed and
-evaluated under a same-hardware, tight-pairwise protocol against ScaNN at its best
+evaluated under a same-hardware, tight-pairwise protocol against ScaNN~\cite{scann} at its best
 configuration, the result attains higher QPS at matched recall@10 at 1M and 10M
 (and, where ScaNN cannot build within a 2h gate, remains the only method to index 100M),
 and transfers to the streaming track.
@@ -121,7 +121,7 @@ and transfers to the streaming track.
     graph coverage present, coarser cells win; at 10M $1.01\to0.85$.}
   \item \textbf{Joint cross-level partition optimization (tree-EM)}
     (\S\ref{sec:em}). \emph{Effect: $+0.6$--$1.0$ recall@10 points at 10M, QPS-neutral.}
-  \item \textbf{Multi-assignment (SOAR)} (\S\ref{sec:soar}). \emph{Effect: raises the
+  \item \textbf{Multi-assignment (SOAR~\cite{soar})} (\S\ref{sec:soar}). \emph{Effect: raises the
     routing recall ceiling to baseline parity.}
   \item \textbf{Scan precision as a function of code length}
     (\S\ref{sec:precision}): the int8-saturating fast-scan's per-subspace
@@ -154,7 +154,7 @@ paper argues is the OOD bottleneck.
 \paragraph{Hierarchical routing.} Scoring all $C$ centroids per query is $O(Cd)$,
 which dominates at scale (fine $C$ is needed to keep cells small). A \emph{tree} of
 centroids --- coarse $k$-means over $C_0$ centroids, then fine $k$-means within each
---- reduces routing to $O(L\,C^{1/L})$ for an $L$-level tree (FAISS uses an
+--- reduces routing to $O(L\,C^{1/L})$ for an $L$-level tree (FAISS~\cite{faiss} uses an
 HNSW graph over the centroids for the same purpose). We use hierarchical $k$-means.
 
 \paragraph{Product quantization (PQ).} Split each vector's $d$ dimensions into $m$
@@ -857,7 +857,7 @@ engine's query path beats HNSW at every operating point once given a near-exact
 ${\sim}1.9\times$ at $0.98$ (1 thread; similar at 8 threads), higher recall throughout, and it
 reaches recall $0.99$ where HNSW plateaus ($\approx\!0.986$). \emph{Caveat:} the near-exact
 graph is an offline preprocessing artifact built by a \emph{method-neutral} kNN builder (e.g.\
-IVF-Flat / brute force, as in DiskANN/NSG --- not the opponent's index); genbo's own $d{=}768$
+IVF-Flat / brute force, as in DiskANN/NSG~\cite{diskann} --- not the opponent's index); genbo's own $d{=}768$
 self-search is coverage-capped and cannot build one (its self-built-graph variant, last row,
 loses to HNSW), so this is a query-time win contingent on offline graph construction (a build-time
 premium). ScaNN trails throughout.}
