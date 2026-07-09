@@ -4734,7 +4734,19 @@ P299 [2026-07-09] CLEAN-WINDOW pairwise (quiet box, sequential, same cores): SEL
   0.904/8min). Compiles 14pp. THE GOAL AS RE-AFFIRMED ('beat Cohere at 1M and 10M') IS FULLY ACHIEVED,
   SELF-CONTAINED, CLEAN-MEASURED, AND DOCUMENTED.
 
-=== SESSION SUMMARY (current, 2026-07-09, through P299) ===
+P300 [2026-07-09] Routing-repair headroom MEASURED ~zero: tree descent loses <=0.1pt; 0.0pt with graph on.
+  User asked: could per-level routing repair (e.g. centroid kNN graphs per tree level) replace the global
+  point graph? A/B via SBANN_BEAM0=1000000 (= keep ALL coarse cells -> every finest centroid scored exactly
+  = exact flat routing over the same leaves; ~70k evals/q vs ~6k). cohere-10M 8t:
+    graph-OFF p96: tree 0.9689@3501 vs exact 0.9697@1107 (+0.08pt at 3.2x routing cost)
+    graph-OFF p128: 0.9764@2817 vs 0.9774@974 (+0.10pt)
+    graph-ON(r24_seed) p96: 0.9871@3158 vs 0.9871@1031 (+0.00pt -- graph absorbs ALL descent misses)
+  => loss(i) descent-miss <=0.1pt (ceiling of ANY per-level routing repair); loss(ii) centroid info cap
+  = the whole remaining ~2.1pt (0.9697->0.9904), recoverable only at point granularity. Also: beam0=128
+  on [4096,65536] is essentially loss-free -- the tree is well-tuned. Paper sec:neg gains this as
+  localization evidence. Question closed: per-level graphs not worth building.
+
+=== SESSION SUMMARY (current, 2026-07-09, through P300) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
