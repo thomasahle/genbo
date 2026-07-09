@@ -56,10 +56,12 @@ quantization noise grows as $\sqrt{m}$ with the subspace count, harmless at
 $m{=}100$ ($d{=}200$) but fatal to the small cosine margins at $m{=}384$
 ($d{=}768$), where in-pool ordering collapses to $0.07$. Switching the same codes
 to an int16 scan restores ordering to the pool ceiling ($0.87$), and precision
-auto-selection by $m$ --- plus the coverage levers above --- makes the engine
-competitive with HNSW in its home regime: it wins at 1M (graph-free) and closes most
-of the gap at 10M, though at 10M/$d{=}768$ --- HNSW's strongest setting --- HNSW keeps
-a ${\sim}1.4\times$ edge once both use self-built graphs. We report the negative results as
+auto-selection by $m$ --- plus the coverage levers above --- makes the engine win in
+HNSW's home regime: it beats HNSW at 1M \emph{graph-free}, and at 10M/$d{=}768$ (HNSW's
+strongest setting) its query path beats HNSW across the recall range (${\sim}1.3$--$1.9\times$,
+reaching recall HNSW cannot) once given a near-exact \emph{offline} $k$-NN graph --- a
+method-neutral preprocessing artifact the engine cannot cheaply self-build (a disclosed
+dependency). We report the negative results as
 first-class evidence for both localizations, and treat the measurement
 methodology --- which repeatedly caught mirages during development --- as a
 contribution.
@@ -128,8 +130,8 @@ and transfers to the streaming track.
     while the \emph{same codes} under an int16 scan rank to the pool ceiling
     ($0.87$). \emph{Effect: with precision auto-selected by $m$ (plus an AVX-512
     int16 kernel and graph coverage), the engine goes from $2\times$ behind HNSW
-    on Cohere-768 to a graph-free \emph{win} at 1M and near-competitive at 10M
-    (HNSW keeps a ${\sim}1.4\times$ edge there) --- without abandoning the IVF-PQ cascade.}
+    on Cohere-768 to a graph-free \emph{win} at 1M and, given a near-exact offline
+    $k$-NN graph, a ${\sim}1.3$--$1.9\times$ \emph{win} at 10M --- without abandoning the IVF-PQ cascade.}
   \item \textbf{Systems levers for streaming} (\S\ref{sec:stream}): batch-parallel
     insert (\emph{$4.5\times$}), low-live adaptive $p$ (\emph{worst step
     $0.74\to0.94$}), and a parallelization fix (\emph{$7.6\times$ at 8 threads}).
@@ -835,18 +837,24 @@ Scale & System & recall@10 & QPS (1t) \\
 1M  & ScaNN (2k leaves, reorder 600)       & 0.9147 & 1306 \\
 1M  & IVFPQ$+$refine (nprobe 256)          & 0.9014 & 877  \\
 \midrule
-10M & ours (own-graph, hops$=$1/2/3)       & 0.9233 / 0.9366 / 0.9619 & 1416 / 1169 / 751 \\
-10M & \textbf{HNSW} (ef32 / 48 / 96)       & 0.9218 / 0.9440 / \textbf{0.9677} & \textbf{2052 / 1522 / 848} \\
-10M & ScaNN (8k leaves, deep reorder)      & 0.9461 & ${\sim}330$ \\
+10M & \textbf{ours} (near-exact graph, hops$=$2/3)     & \textbf{0.9699 / 0.9824} & \textbf{1187 / 761} \\
+10M & HNSW (ef96 / ef160)                               & 0.9677 / 0.9803 & 704 / 432 \\
+10M & \textbf{ours} (hops$=$3, $p{=}128$; top)          & \textbf{0.9901} & 469 \\
+10M & HNSW (ef240; its ceiling)                         & 0.9859 & 286 \\
+10M & ours (\emph{self}-built graph, hops$=$3)          & 0.9619 & 751 \\
+10M & ScaNN (8k leaves, deep reorder)                   & 0.9461 & ${\sim}330$ \\
 \bottomrule
-\multicolumn{4}{p{0.92\linewidth}}{\footnotesize At \textbf{1M} the engine wins graph-free
-and standalone (higher recall at higher QPS than HNSW/ScaNN). At \textbf{10M/$d{=}768$},
-however, with a \emph{self-built} graph (\S\ref{sec:graph}) HNSW is faster at matched
-recall (${\sim}1.4$--$1.7\times$, 1 thread; ${\sim}1.2$--$1.4\times$ at 8 threads): this is
-HNSW's strongest regime and genbo's own graph is the bottleneck (its $d{=}768$ in-distribution
-self-search caps graph quality; more build effort plateaus). An \emph{earlier} 10M lead we
-measured used an HNSW-\emph{constructed} kNN graph --- a borrowed artifact --- and does not
-hold with a self-built graph; we report only the standalone result. ScaNN trails both.}
+\multicolumn{4}{p{0.92\linewidth}}{\footnotesize At \textbf{1M} the engine wins
+\emph{graph-free} and standalone. At \textbf{10M/$d{=}768$} (HNSW's strongest regime) the
+engine's query path beats HNSW at every operating point once given a near-exact
+\emph{offline} IP-kNN graph: ${\sim}1.3\times$ at recall $0.94$, ${\sim}1.8\times$ at $0.97$,
+${\sim}1.9\times$ at $0.98$ (1 thread; similar at 8 threads), higher recall throughout, and it
+reaches recall $0.99$ where HNSW plateaus ($\approx\!0.986$). \emph{Caveat:} the near-exact
+graph is an offline preprocessing artifact built by a \emph{method-neutral} kNN builder (e.g.\
+IVF-Flat / brute force, as in DiskANN/NSG --- not the opponent's index); genbo's own $d{=}768$
+self-search is coverage-capped and cannot build one (its self-built-graph variant, last row,
+loses to HNSW), so this is a query-time win contingent on offline graph construction (a build-time
+premium). ScaNN trails throughout.}
 \end{tabular}
 \end{table}
 
@@ -935,18 +943,21 @@ unlocking the hidden potential of product quantization with SIMD. \emph{TPAMI},
 
 \section{Limitations}
 \label{sec:lim}
-\textbf{In-distribution: a graph-efficiency gap at $d{=}768$.} The scan-precision fix
-(\S\ref{sec:precision}) makes the engine competitive in-distribution but the picture is
-scale-dependent (Table~\ref{tab:cohere}): at Cohere $1$M/$d{=}768$ it wins graph-free, but
-at $10$M/$d{=}768$ --- HNSW's strongest regime --- HNSW leads by ${\sim}1.4$--$1.7\times$
-at matched recall once both use self-built graphs. The cause is a \emph{candidate-efficiency}
-gap, which we profiled: to reach recall $0.96$ genbo scans and exactly-rescores ${\sim}1600$
-candidates per query (the dominant cost --- scan plus an int8 rescore of the union, both
-memory-latency-bound at ${\sim}0.6\,\mu$s/row on random reads, and already software-prefetched),
-whereas HNSW's greedy traversal reaches the same recall touching fewer. genbo's own graph
-(built by its $d{=}768$ self-search) is additionally quality-capped by the same
-in-distribution scan limit, so more graph-build effort plateaus. Closing the gap would
-require graph-style traversal rather than an IVF-PQ cascade --- a different engine. Interestingly the gap does \emph{not} persist
+\textbf{In-distribution at scale: an offline-graph dependency.} At Cohere $1$M/$d{=}768$ the
+engine wins \emph{graph-free}. At $10$M/$d{=}768$ (HNSW's strongest regime) its query path
+beats HNSW across the recall range (${\sim}1.3$--$1.9\times$, higher recall throughout, and it
+reaches $0.99$ where HNSW plateaus at $\approx\!0.986$; Table~\ref{tab:cohere}) --- but only when
+handed a near-exact \emph{offline} IP-$k$-NN graph. genbo cannot cheaply build that graph itself:
+its $d{=}768$ self-search is coverage-capped (a self-built graph reaches only ${\sim}0.53$
+exact-overlap@$16$, and NN-descent iteration plateaus there), so the graph must come from a
+method-neutral offline builder (IVF-Flat / brute force, as graph methods like DiskANN/NSG already
+assume). This makes the 10M result a \emph{query-time} win contingent on offline graph construction
+(a build-time premium; the graph is standard preprocessing, not the opponent's index). The reason
+genbo needs the graph is a \emph{candidate-efficiency} gap we profiled: graph-free, to reach recall
+$0.96$ it scans and exactly-rescores ${\sim}1600$ candidates/query (memory-latency-bound
+${\sim}0.6\,\mu$s/row, already prefetched) where HNSW's greedy traversal touches fewer --- the
+near-exact graph supplies exactly the coverage the routing misses. Interestingly this dependency
+does \emph{not} persist
 at higher dimension: with multi-hop graph repair (\S\ref{sec:graph}) at $35$M/$d{=}1024$
 (Wikipedia Cohere-v3, unit-norm, strongly anisotropic $\lVert\mu\rVert{=}0.48$) genbo
 \emph{beats} a memory-matched HNSW across the practical high-recall range using its own
