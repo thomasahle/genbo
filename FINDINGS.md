@@ -4498,7 +4498,21 @@ P280 [2026-07-09] OOD (primary result) win is STANDALONE too — genbo's OWN gra
   proven standalone: OOD (own==scann, P280) and in-dist wiki-35M (own within 0.4pt, still beats HNSW, P279).
   Graph-integrity concern fully closed; paper sec:graph disclosure updated with both A/Bs.
 
-=== SESSION SUMMARY (current, 2026-07-09, through P280) ===
+P281 [2026-07-09] *** HONEST CAVEAT: cohere-10M HIGH-RECALL win partly DEPENDS on the HNSW-built graph. *** Unlike
+  OOD (own==scann, P280) and wiki-35M (own within 0.4pt, P279), genbo's OWN self-built cohere-10M graph is
+  MATERIALLY WORSE. A/B at P264 cfg (IP NOMU M24 frr, clean GT, 8t):
+    hops2 p32: EXIST(HNSW-built) 0.9714@8632 | OWN 0.9348@8476  (-3.7pt)
+    hops3 p64: EXIST            0.9834@5928 | OWN 0.9613@5301  (-2.2pt)
+  With its OWN graph genbo does NOT clearly beat HNSW at high recall: own hops3 0.9613@5301 vs HNSW-8t ef80
+  0.9623@6257 (HNSW higher recall AND faster). WHY: at d=768 in-distribution genbo's self-search neighbors are
+  noisier (the same scan-precision limit the int16 policy addresses), so its self-built graph is lower quality;
+  HNSW is strong at d=768 in-dist so its emitted graph is better. => the cohere-10M HIGH-RECALL dominance (P264,
+  tab:cohere 0.971/0.983 rows) is graph-quality-dependent and should NOT be claimed as standalone. Selfknn build
+  p64 t2000 (1239s). OPEN: (a) does the 0.90-GATE cohere win survive with own-graph / graph-OFF? (testing) —
+  the 1M gate win WAS graph-free (P243 0.9197@1957>HNSW); (b) a near-exact (method-neutral) graph via high-p
+  selfknn or brute force would be the fair fix. NOTE: OOD + wiki standalone wins (P279/280) are UNAFFECTED.
+
+=== SESSION SUMMARY (current, 2026-07-09, through P281) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
