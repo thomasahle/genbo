@@ -4746,7 +4746,16 @@ P300 [2026-07-09] Routing-repair headroom MEASURED ~zero: tree descent loses <=0
   on [4096,65536] is essentially loss-free -- the tree is well-tuned. Paper sec:neg gains this as
   localization evidence. Question closed: per-level graphs not worth building.
 
-=== SESSION SUMMARY (current, 2026-07-09, through P300) ===
+P301 [2026-07-09] wiki-35M: NN-descent closes the competitor-graph gap; self-graph now competitor-grade.
+  Seeded nd (seed=routed-self 0.8743, R=24, n=34999000 queries-excluded): overlap 0.8743 -> 0.9649 in
+  9.5min (571s descent + init) -- vs HNSW-built competitor graph 0.9697 (gap 0.005, was 0.095).
+  1t ladder (fp16 idx, clean GT): hops2p48 OLD 0.9664@413 -> ND 0.9709@418 (+0.45pt, same QPS);
+  hops2p96 0.9817@299 -> 0.9846@290 (+0.29pt); hops3p96 0.9854@284 = NEW TOP (HNSW ceiling 0.9818).
+  Paper's "trails a competitor-built graph by ~0.4pt" disclosure now OBSOLETE. Same-window pairwise
+  (genbo-ND vs HNSW int8-clean, 1t) running for honest table rows. NOTE routed self was 0.874 at wiki
+  (d=1024 routing covers better than cohere d=768's 0.53) -- nd lifts both regimes to ~0.96+.
+
+=== SESSION SUMMARY (current, 2026-07-09, through P301) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
