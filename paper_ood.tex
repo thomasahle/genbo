@@ -1346,6 +1346,41 @@ pattern inverts: the catastrophic failure is scan precision, not coverage
 (\S\ref{sec:precision}) --- coverage binds again only at $10$M scale, where the
 self-built $k$-NN graph supplies what routing misses (\S\ref{sec:lim}). Both localizations rest on the same isolation method.}
 
+\section{Discussion: A Summary-Prediction Bottleneck}
+\label{sec:bottleneck}
+The localization result --- coverage-bound OOD, precision-bound in-distribution ---
+admits a single underlying mechanism, which an \emph{oracle-router} analysis makes
+quantitative. Dumping the index's point$\to$cell assignments and greedily set-covering
+each evaluation query's true top-10 (ground truth used only for analysis) shows the
+neighbors are \emph{cell-concentrated}: a median of 3--4 cells (with $a_0{=}3$
+multi-assignment) holds all ten, and an oracle that knew which cells would reach
+$100\%$ coverage at $p{=}16$ on both Cohere-10M and text2image-10M. The router's
+geometric score achieves $0.83$--$0.90$ at the same $p$: a $10$--$24$-point gap that
+is \emph{not} an occupancy problem but a \emph{prediction} problem --- which few cells
+hold a given query's neighbors is barely predictable from any query-independent cell
+summary. Three experiments bound the function class: evaluating the same score exactly
+(all centroids) adds $\le\!0.1$pt (\S\ref{sec:neg}); a \emph{learned} per-cell bias
+$b_j$ --- the general form of which $\gamma$ is the one-parameter special case ---
+trained on $50$k held-out queries adds nothing ($-0.8$pt at $p{=}16$: the class is
+saturated); and a per-query adaptive probe policy triggered by a label-free signal
+lands on the fixed-$p$ frontier rather than above it, because predicting per-query
+difficulty is the same estimation problem as routing. What crosses the bottleneck is
+\emph{point-level} information: the $k$-NN graph (one shortlisted point reveals its
+true neighborhood transitively), multi-assignment (each point buys $a_0$ cells of
+coverage at storage cost), and result-churn feedback (correlation $0.84$--$0.98$ with
+true recall gain, enabling label-free drift monitoring). The same lens explains why
+the seeder is load-bearing (seeds are the point-level entry: hops repair only
+reachable mass, and $p\!\le\!8$ starves the corrector at both distributions), why scan
+precision must scale with code length (the $\sqrt{m}$ noise law, validated against
+measured margins, protects point-level ordering through the scan), and why the
+geometry laws (\S\ref{sec:scaling}) are cost-side optima: once coverage cannot be
+routed into existence, geometry only balances routing against scan, and the graph
+decouples recall from it (\S\ref{sec:coarse}). A practical corollary: the graph can be
+maintained \emph{incrementally} --- patching a $10\%$ insert batch into a converged
+graph by NN-descent with per-edge aging costs $4.8\times$ less than a rebuild and
+yields a better graph ($0.888$ vs $0.847$ overlap), since converged rows keep their
+quality.
+
 \section{Evaluation Methodology}
 \label{sec:method}
 We report \emph{same-hardware ratios}, never cross-machine QPS. All comparisons run
