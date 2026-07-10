@@ -4878,7 +4878,25 @@ P311 [2026-07-10] IDEA #2 (architecture inversion / tiny-seed + deep hops): NEGA
   hop-crossover model + best-first-neutral-OOD result. dumpassign artifacts: 30M pairs each (a0=3 x 10M),
   wave1/assign_{t2i,cohere}10m.u32.
 
-=== SESSION SUMMARY (current, 2026-07-10, through P311) ===
+P312 [2026-07-10] *** CAMPAIGN CENTERPIECE: ORACLE ROUTER ANALYSIS (ideas #4/#10/#3/#9) ***
+  Setup: dumpassign (orig,cell) pairs incl. a0=3 multi-assign + eval GT -> greedy set-cover oracle.
+  #10 OCCUPANCY: all 10 true NN live in median 3 (cohere) / 4 (t2i) cells, p90 6-7, 0% uncoverable@128.
+    NEIGHBORS ARE CELL-CONCENTRATED. Reframes P294: the cap was never occupancy -- it is the SCORE's
+    inability to predict WHICH cells. (Primary-cell histogram: singletons dominate.)
+  #4 ORACLE vs ACHIEVED: oracle coverage@16 = 1.0000 BOTH datasets; achieved graph-off @16 = 0.8296
+    (t2i) / 0.9015 (cohere). Headroom at p16: +17.0pt / +9.9pt; even at p96/128: +10.8pt / +2.7pt.
+    A perfect router needs 6-8x fewer probes. Routing-score learning (gbias etc.) has a HUGE roofline;
+    open question whether query-independent b_j can capture it (oracle is per-query info).
+    Graph-on already recovers most of the gap (gon@16 0.9653 cohere) -> the graph IS the point-level
+    corrector for exactly this prediction error. Theory #10 core: coverage loss = score prediction
+    error; probes close it logarithmically; graph closes it transitively.
+  #3 ADAPTIVE-p bound ~6-6.7x: min-p for >=9/10 median 8-16 vs fixed 96-128 (t2i mean 16.0, 11.6%
+    unresolved at ladder max; cohere mean 19.1, 1.2%). Huge per-query variance confirmed.
+  #9 LABEL-FREE SIGNAL CONFIRMED: graph-churn (|top10_on delta top10_off|) vs true recall-gain
+    correlation 0.84-0.92 (t2i) / 0.95-0.98 (cohere) at every p. Online self-calibration is feasible
+    with zero ground truth.
+
+=== SESSION SUMMARY (current, 2026-07-10, through P312) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
