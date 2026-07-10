@@ -4896,7 +4896,19 @@ P312 [2026-07-10] *** CAMPAIGN CENTERPIECE: ORACLE ROUTER ANALYSIS (ideas #4/#10
     correlation 0.84-0.92 (t2i) / 0.95-0.98 (cohere) at every p. Online self-calibration is feasible
     with zero ground truth.
 
-=== SESSION SUMMARY (current, 2026-07-10, through P312) ===
+P313 [2026-07-10] IDEA #3 prototype (churn-gated two-stage adaptive p, emulated from wave1 dumps):
+  lands ON the fixed-p frontier, not above it. cohere tau=0: escalate 32%, recall 0.9799 @ cost 2.00x(p16)
+  vs fixed-p interpolation ~0.981 at same cost; t2i similar. Even with stage-1 work reuse (~1.68x) it only
+  ties. => The 6.7x oracle bound (P312) is real but UNHARVESTABLE with churn alone: predicting per-query
+  difficulty from query-time signals is the SAME information problem as routing itself. THEORY UNIFICATION
+  (#10): routing headroom, adaptive-p headroom, and self-calibration ceiling are one quantity -- what
+  point-level structure is predictable from summaries. The graph wins because it injects point-level
+  information; churn is point-level feedback and captures part (0.84-0.98 corr) but pays double-work.
+  Deeper triggers (score-gap features) = the introspective-search programme, not a free win.
+  IDEA #1 DEPRIORITIZED by P312: occupancy is already tight (median 3-4 cells hold all 10 NN) -- partition
+  refinement targets the wrong term; the score, not the partition, is the cap.
+
+=== SESSION SUMMARY (current, 2026-07-10, through P313) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
