@@ -4819,7 +4819,25 @@ P307 [2026-07-10] PAPER OVERHAUL (user-directed): standalone voice + 11 figures 
   order Related Work -> Limitations -> References -> Appendix. 21pp, compiles, all 12 figures visually
   verified page-by-page. Consistency sweep next.
 
-=== SESSION SUMMARY (current, 2026-07-10, through P307) ===
+P308 [2026-07-10] Post-rewrite polish sweep: 41/41 flags confirmed real, all fixed. 45-agent workflow
+  (voice/numbers/figure-prose/structure lenses + adversarial verify). Notable catches: (a) 8 of the new
+  figures were never \ref'd from body text (integration miss) -- all anchored now; (b) build-eligibility
+  paragraph was stale pre-experiment text claiming a 12h gate + an "eligible ScaNN 100M config" --
+  contradicted the 2h gate + build-ineligibility headline everywhere else; rewritten to the measured record;
+  (c) coarse-cell effect double-counted tree-EM's ladder step (1.01->0.85 claimed, 0.92->0.85 actual);
+  (d) contribution bullet conflated ND build times (0.90 in 8-24min claimed; actual 0.864/24min rand,
+  0.904/43min total); (e) abstract overclaimed ScaNN "official config at 1M" (official exists only at 10M;
+  1M uses swept speed-optimal -- stronger baseline, now stated); (f) fig:scaling 1B markers sat off the
+  drawn law (relabeled as rounded power-of-two choice w/ raw extrapolation disclosed); (g) oodfrontier
+  caption overclaimed "full parameter sweeps" (ours = hops2-3 probe sweep; scoped, conservative);
+  (h) dangling "we describe one (under-leaved cached 10M index)" promise from the original skeleton --
+  never fulfilled in ANY version -- cut; plus quarantine/voice/arithmetic/caption nits (1M route decomp
+  768+96*21 != 2816 -> 768+2048; beams "12-25%" vs actual 3.1% at 10M; "spill fraction" -> probe count;
+  pristine row removed from lever ladder; diskann bibitem re-cited; bib label width 9->10). 21pp, zero
+  unresolved refs, every figure+table referenced. Paper now: standalone voice, 12 figures, plot-led
+  results, appendix tables, three adversarial sweeps deep.
+
+=== SESSION SUMMARY (current, 2026-07-10, through P308) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
