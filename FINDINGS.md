@@ -4868,7 +4868,17 @@ P310 [2026-07-10] IDEA CAMPAIGN wave 1b-early (ideas #5 #7 #6):
     -> upper-bounds recall gain well under 0.5pt; dropped from active list. Datum: cohere d=768 max
     in-degree 18,575 (vs mean 16) -- extreme hubness, retroactively justifies ND reservoir fix (P296).
 
-=== SESSION SUMMARY (current, 2026-07-10, through P310) ===
+P311 [2026-07-10] IDEA #2 (architecture inversion / tiny-seed + deep hops): NEGATIVE, theory-consistent.
+  t2i-10M 1t: h3p2 0.7539@4409 | h4p4 0.8260@3506 | h5p4 0.8497@2596 | h4p8 0.8657@3029 -- ALL strictly
+  inside the champion frontier (h2p16 0.8776@3528 dominates h4p8). cohere-10M 1t: h3p2 0.9126@1814 |
+  h4p4 0.9465@1441 | h5p8 0.9639@1097 -- all dominated (champion 0.9461@1863 / 0.9707@1234).
+  => The IVF seeder is LOAD-BEARING: hop depth cannot substitute for seed quality; p sets a reachability
+  ceiling hops repair toward but never exceed (56%/hop closure of REPAIRABLE mass only). The IVF<->graph
+  dial's optimum is at genbo's existing design point, both in-dist and OOD. Consistent with the paper's
+  hop-crossover model + best-first-neutral-OOD result. dumpassign artifacts: 30M pairs each (a0=3 x 10M),
+  wave1/assign_{t2i,cohere}10m.u32.
+
+=== SESSION SUMMARY (current, 2026-07-10, through P311) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
