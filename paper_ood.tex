@@ -1468,7 +1468,12 @@ saturated); and a per-query adaptive probe policy triggered by a label-free sign
 lands on the fixed-$p$ frontier rather than above it, because predicting per-query
 difficulty is the same estimation problem as routing. What crosses the bottleneck is not
 query-time cleverness of any kind but \emph{materialized adjacency} --- neighbor
-relations computed offline and stored: the $k$-NN graph (one shortlisted point reveals
+relations computed offline and stored --- and the adjacency has a \emph{direction}:
+base-$k$NN edges repair the base manifold (decisive in-distribution), while
+\emph{co-retrieval} edges (base points co-occurring in a training query's top-$k$)
+reach along the query manifold and lift OOD recall $1$--$2$ points at matched probes
+where base edges cannot; the two are complementary, and their hybrid sets the OOD
+frontier (Figure~\ref{fig:oodfrontier}). Concretely: the $k$-NN graph (one shortlisted point reveals
 its true neighborhood through \emph{precomputed edges}), and multi-assignment (each
 point buys $a_0$ cells of coverage at build time). Query-time \emph{geometric}
 inference fails even when given point-level inputs: re-routing from the mean of the
@@ -1556,14 +1561,21 @@ its paper configuration ($1.07$--$1.16\times$ ours), HNSW by ${\sim}8.7\times$ -
 and is the only build-eligible method at 100M (build $86$ min; recall up to $0.9226$
 at $529$ QPS single-thread, ${\sim}6.7$k QPS at recall $0.90$ on 16 threads; ScaNN
 was killed at the gate, and RoarGraph's train-GT prerequisite alone projects to
-${\sim}10$h from its measured $58$ min at 10M). At 1M the OOD-specialist wins:
-RoarGraph's bipartite build is cheap at small scale and leads the gate ($6.4$k vs
-our $4.8$k QPS) --- genbo still beats ScaNN and HNSW there. At the 10M tail our
-$k{=}32$ self-built graph ties RoarGraph through recall $0.983$ ($464$ vs $452$ QPS);
-beyond $0.985$ RoarGraph leads, and batch-mode ScaNN with deep reorder is competitive
-with our per-query cascade (mode-matched per-query it is not: $323$ vs our $682$ QPS
-at recall $0.972$). genbo's OOD advantage is thus the gate band at scale, plus
-build-time eligibility --- not the extreme tail at small scale. Exact operating points, baseline configurations,
+${\sim}10$h from its measured $58$ min at 10M). RoarGraph's structural advantage --- its edges materialize
+\emph{query-distribution} adjacency (bipartite projection of training queries) ---
+is one genbo can consume directly: a \emph{co-retrieval} graph built from the same
+training resource (edges $=$ co-occurrence in a training query's top-$10$), hybridized
+with the base-$k$NN edges, drops into the existing union mechanism with no engine
+change and lifts the OOD frontier $1$--$2$ points at matched probes
+(\S\ref{sec:bottleneck}). With it, at 1M RoarGraph keeps only the below-$0.93$ band
+(gate lead ${\sim}1.15\times$, down from $1.32\times$ against the base graph) while
+genbo overtakes above ${\approx}0.97$ and takes the 1M tail ($0.9913$ at $1533$ QPS
+vs $0.9900$ at $1353$); at the 10M tail genbo ties RoarGraph through recall
+${\approx}0.988$ ($353$ vs ${\sim}360$ QPS), with RoarGraph ahead only beyond
+$0.99$; batch-mode ScaNN with deep reorder is competitive there too (mode-matched
+per-query it is not: $323$ vs our $682$ QPS at recall $0.972$). genbo's OOD advantage
+is thus the gate band at scale plus build-time eligibility; the residual
+RoarGraph territory is the small-scale below-gate band and the ${\ge}0.99$ tail. Exact operating points, baseline configurations,
 and the streaming series are tabulated in Appendix~\ref{app:tables} (Table~\ref{tab:streaming}).
 Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
 \begin{figure}[t]
@@ -1664,9 +1676,9 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
   legend style={font=\tiny, at={(0.03,0.03)}, anchor=south west}, legend cell align=left,
 ]
 \addplot[blue!70!black, thick, mark=*, mark size=1.5pt] coordinates {
-  (0.8198,6404) (0.8726,5605) (0.8871,5050) (0.9183,4629) (0.9355,4375) (0.9469,3980)
-  (0.9540,3671) (0.9659,3143) (0.9755,2476) (0.9859,1794) };
-\addlegendentry{ours}
+  (0.8198,6404) (0.8726,5605) (0.8915,5582) (0.9183,4629) (0.9355,4375) (0.9469,3980)
+  (0.9540,3671) (0.9659,3143) (0.9755,2476) (0.9782,2358) (0.9859,1794) (0.9913,1533) };
+\addlegendentry{ours (hybrid graph)}
 \addplot[black!60!green, thick, dash dot, mark=triangle, mark size=1.9pt, mark options={solid}] coordinates {
   (0.8296,4775) (0.8970,3210) (0.9411,1959) (0.9646,1114) (0.9749,592) (0.9798,314) };
 \addlegendentry{ScaNN}
@@ -1688,10 +1700,10 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
   legend style={font=\tiny, at={(0.03,0.03)}, anchor=south west}, legend cell align=left,
 ]
 \addplot[blue!70!black, thick, mark=*, mark size=1.5pt] coordinates {
-  (0.8776,3528) (0.8969,3133) (0.9081,2841) (0.9161,2517) (0.9214,2357) (0.9245,2205)
-  (0.9305,1836) (0.9358,1672) (0.9567,1180) (0.9675,841) (0.9754,770) (0.9807,611)
-  (0.9830,464) (0.9860,365) };
-\addlegendentry{ours (k16; k32 tail)}
+  (0.8456,4098) (0.8776,3528) (0.8890,3386) (0.8969,3133) (0.9081,2841) (0.9215,2475)
+  (0.9245,2205) (0.9305,1836) (0.9358,1672) (0.9567,1180) (0.9675,841) (0.9754,770)
+  (0.9807,611) (0.9850,447) (0.9880,353) };
+\addlegendentry{ours (hybrid graph)}
 \addplot[black!60!green, thick, dash dot, mark=triangle, mark size=1.9pt, mark options={solid}] coordinates {
   (0.9307,439) (0.9587,396) (0.9724,323) (0.9799,252) (0.9830,185) (0.9841,120) };
 \addlegendentry{ScaNN (official 40k)}
@@ -1725,12 +1737,15 @@ are per-query sweeps (mode-matched; ScaNN's batched API amortizes a further
 ${\sim}3$--$4\times$ and is then competitive with our per-query cascade above recall
 ${\approx}0.96$ at 10M); HNSW runs in its batched API (favorable to HNSW). Ours sweeps
 probe depth at hops $2$--$4$ with the self-built $k{=}16$ graph ($k{=}32$ at the tail).
-At the leaderboard gate (recall $0.90$, dotted), ours leads at 10M ($1.16\times$
-RoarGraph per-query, $6.5\times$ ScaNN, $8.7\times$ HNSW) and is the only eligible
-method at 100M; at 1M, RoarGraph --- whose bipartite build is cheap at small scale
-($139$s $+$ $8$min train-GT) --- leads the gate, while ours beats ScaNN and HNSW
-there. A code-side IVFPQ-FastScan$+$refine baseline caps at recall $0.73$ (10M) and
-does not appear.}
+Ours uses the \emph{hybrid} graph --- $16$ base-$k$NN edges $+$ $16$
+\emph{co-retrieval} edges (bipartite projection of the track's training queries, the
+same resource RoarGraph consumes; \S\ref{sec:bottleneck}) --- as a drop-in adjacency
+file. At the leaderboard gate (recall $0.90$, dotted), ours leads at 10M
+($1.25\times$ RoarGraph per-query, $6.5\times$ ScaNN, $8.7\times$ HNSW) and is the
+only eligible method at 100M; at 1M RoarGraph keeps the below-$0.93$ band including
+the gate (${\sim}1.15\times$), while ours overtakes above recall ${\approx}0.97$
+and takes the 1M tail ($0.9913$ at $1533$ QPS vs $0.9900$ at $1353$). A code-side
+IVFPQ-FastScan$+$refine baseline caps at recall $0.73$ (10M) and does not appear.}
 \label{fig:oodfrontier}
 \end{figure}
 

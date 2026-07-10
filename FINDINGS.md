@@ -5024,7 +5024,19 @@ P321 [2026-07-10] *** CO-RETRIEVAL GRAPH: query-aware materialized adjacency BEA
   co16 alone loses the tail to base-k32). The bottleneck currency is materialized adjacency ALIGNED WITH
   the query distribution. 1M co-graph test in flight (does it close Roar's 1M gate lead?).
 
-=== SESSION SUMMARY (current, 2026-07-10, through P321) ===
+P322 [2026-07-10] CO-RETRIEVAL AT 1M: THE 1M TAIL FLIPS TO US. hyb32(co+base) 1M sweeps (95.7% co
+  coverage): h2 p4 0.9063@4608 | p8 0.9302@4052 | p16 0.9516@3497 | h3 p16 0.9619@2976 | p40 0.9782@2358 |
+  p128 0.9913@1533; co16 p8 0.8915@5582. vs RoarGraph-1M: gate gap narrows 1.32x -> ~1.15x (Roar keeps
+  <0.93 band); OURS OVERTAKES >=0.97 and TAKES THE 1M TAIL: 0.9913@1533 vs Roar 0.9900@1353 (higher recall
+  AND QPS). FINAL ROARGRAPH SCOREBOARD (per-query, same box): 1M -- Roar <0.93 incl. gate (1.15x), ours
+  >=0.97 incl. tail; 10M -- ours gate (1.25x) through ~0.988, Roar >=0.99; 100M -- ours only (Roar
+  train-GT prereq ~10h). Paper updated: fig:oodfrontier ours-curves = hybrid frontier (merged pareto),
+  caption + Results prose scale-dependent-and-whole, Discussion gains the DIRECTIONAL-adjacency statement
+  (base edges repair base manifold; co-retrieval edges reach along query manifold; complementary; hybrid
+  sets the OOD frontier). The user's "can we beat RoarGraph?" -> mostly yes, via its own materialization
+  consumed by our engine; residual Roar territory: 1M below-gate band + >=0.99 tail.
+
+=== SESSION SUMMARY (current, 2026-07-10, through P322) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
