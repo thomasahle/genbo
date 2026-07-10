@@ -4908,7 +4908,36 @@ P313 [2026-07-10] IDEA #3 prototype (churn-gated two-stage adaptive p, emulated 
   IDEA #1 DEPRIORITIZED by P312: occupancy is already tight (median 3-4 cells hold all 10 NN) -- partition
   refinement targets the wrong term; the score, not the partition, is the cap.
 
-=== SESSION SUMMARY (current, 2026-07-10, through P313) ===
+P314 [2026-07-10] IDEAS #4 (trained gbias) NEGATIVE + #8 (incremental ND) STRONG POSITIVE.
+  #4: float-domain replication faithful (python cov@16 0.8300 vs engine goff 0.8296). Perceptron on 50k
+  RoarGraph train queries (true-cell-under-the-cut updates, scale-aware LR): eval coverage MONOTONICALLY
+  WORSE (-0.8pt @16 after 4 epochs; 70k updates/epoch, no convergence -- zero-sum ranking churn).
+  => QUERY-INDEPENDENT per-cell calibration is SATURATED by gamma; the oracle gap (P312) is per-(query,
+  cell) information. Cannot rule out small gains from better optimizers, but no large signal exists.
+  gamma is near the ceiling of its function class -- the answer to "is gamma optimal?".
+  #8: SBANN_ND_INCR_FROM patch of 100k new rows into converged 1M graph: 13s vs 62s full rebuild (4.8x)
+  AND better quality (all-rows 0.8882 vs 0.8468 -- old rows keep converged quality; new rows at parity
+  0.8323 vs 0.8353). Streaming-native graph maintenance VIABLE; dirty-set cost scales with batch size.
+
+P315 [2026-07-10] *** CAMPAIGN SYNTHESIS (#10): THE SUMMARY-PREDICTION BOTTLENECK ***
+  One mechanism explains all ten results: a query's true neighbors occupy few cells (median 3-4, P312)
+  but WHICH cells is barely predictable from any query-independent cell summary. Evidence chain:
+  (1) geometric score leaves 10-24pt coverage gap at p=16 vs oracle (P312); (2) exact execution of the
+  same score adds <=0.1pt (P300); (3) LEARNED per-cell biases add <=0 (P314) -- the class is saturated;
+  (4) per-query difficulty prediction hits the same wall (adaptive-p ties fixed frontier, P313) -- same
+  estimation problem; (5) only POINT-LEVEL information crosses: the kNN graph (transitivity, P290-299),
+  multi-assignment (3 cells/point at storage cost), churn feedback (corr 0.84-0.98, P312); (6) seeds are
+  the point-level entry -- too few starve the corrector (P311); (7) scan precision must respect margins
+  or point-level info is destroyed at the scan (sqrt-m law validated, P310); (8) delta/hub gains are thin
+  because neighborhoods are metrically wide (median delta-norm ~0.5-0.6 ||x||) and hub edge-mass is small
+  (P310); (9) geometry laws (pts/leaf ~ n^1/3) are the COST-side optimum given the bottleneck, and the
+  graph decouples recall from geometry (coarse-cell corollary). PREDICTIONS: query-independent router
+  features fail like gbias; trigger ceilings track routing ceilings across datasets; incremental graph
+  maintenance preserves quality (confirmed #8). Scorecard: 4 validated mechanisms (#7 #8 #9-signal #10),
+  2 bounded-modest (#5 #6), 3 clean negatives w/ theory value (#2 #3-harvest #4-bias), 1 deprioritized
+  by evidence (#1). ALL TEN CONSISTENT WITH ONE THEORY.
+
+=== SESSION SUMMARY (current, 2026-07-10, through P315) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
