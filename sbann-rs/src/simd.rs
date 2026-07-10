@@ -332,6 +332,8 @@ pub fn normalize_i8(x: &[i8], mu: &[f32], out: &mut [i8]) {
 }
 
 /// Argmin of L2 from `x` over a contiguous `[c_count x d]` i8 pivot matrix. Returns (best_j, dist).
+/// Utility kept for build-path experiments; currently unreferenced.
+#[allow(dead_code)]
 #[inline]
 pub fn assign_nearest(x: &[i8], pivots: &[i8], d: usize) -> (u32, i32) {
     let cc = pivots.len() / d;

@@ -1139,6 +1139,8 @@ pub fn selftest_i16_avx512(m: usize) -> bool {
 }
 
 /// Self-test: AVX2 i16 ADC must match the scalar i16 reference (bounded LUT -> no saturation).
+/// Kept callable for kernel debugging even when no startup path invokes it.
+#[allow(dead_code)]
 pub fn selftest_i16(m: usize) -> bool {
     let mut seed = 0x51ed_1234u64;
     let mut nb = || { seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1); (seed >> 33) as u8 };

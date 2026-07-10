@@ -241,8 +241,6 @@ fn benchavq(base: &str, qpath: &str, gtpath: &str, c0n: usize, c1n: usize) {
     let mut xn = vec![0f32; n * d];
     xn.par_chunks_mut(d).enumerate().for_each(|(i, row)| simd::norm_f32(ds.row(i), &mu, row));
     // codebook 0 (random normalized points), assign i0
-    let mut seed = 0x1234_5678u64;
-    let mut rid = |m: usize| { seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1); (seed >> 11) as usize % m };
     let smp = n.min(200_000); // k-means training sample
     let c0 = kmeans::kmeans_f32(&xn[..smp * d], smp, d, c0n, 15, 0xc0c0);
     let i0: Vec<u32> = (0..n).into_par_iter().map(|i| {
