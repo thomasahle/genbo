@@ -4782,7 +4782,19 @@ P304 [2026-07-10] cohere-1M TOP-BAND closed: graph-free win holds through HNSW's
   (4.6x vs ef640 near-matched). 1M claim now same strength as 10M ("every operating point"). tab:cohere 1M
   gains top-band rows. P288's 0.90-0.96 band numbers stand.
 
-=== SESSION SUMMARY (current, 2026-07-10, through P304) ===
+P305 [2026-07-10] Paper consistency sweep (16-agent workflow: 4 section scanners w/ P288-304 ground-truth
+  digest -> adversarial verify): 12/12 flags CONFIRMED real, 8 distinct fixes applied. HEADLINE CATCH: the
+  sec:precision effect block still said "HNSW leads ~1.4-1.7x once both use self-built graphs ... does not
+  hold standalone" -- a P284-era fossil (commit 204941e) that INVERTED the paper's headline result and
+  contradicted the abstract/tab:cohere/Limitations. Other fixes: "edges from base self-search" builder
+  framing -> NN-descent (+probe-cut grounded 3x@10M/1.7x@1M); "coverage was never the binding constraint"
+  overclaim -> binds at 10M; "dominant-until-matched" -> outperformed 1.2-3.3x; tab:cohere caption's stale
+  "5-round tight-pairwise median" protocol -> clean-window sequential pairs; "need does not persist at
+  higher dimension" contradiction -> same-recipe-carries; tab:geom caption validation-source contradiction;
+  unverifiable "~92% edge agreement" scaffold figure deleted (arithmetically impossible given the section's
+  own 0.99-overlap numbers). Compiles 15pp. LESSON: after result flips, sweep effect blocks -- they fossilize.
+
+=== SESSION SUMMARY (current, 2026-07-10, through P305) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann

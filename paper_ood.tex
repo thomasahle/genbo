@@ -420,8 +420,7 @@ Routing to $p$ cells can still miss a true neighbor whose cell went unprobed. We
 recover such misses with a graph, without probing more cells. Offline we build a
 base-side inner-product $k$-NN graph (a per-point adjacency list; constructed by
 ScaNN self-search, by the engine querying itself, or --- where routed self-search is
-coverage-capped --- by the engine's internal NN-descent pass, below; the first two agree
-on $\sim$92\% of edges). The graph is a method-agnostic offline artifact, so the query-time comparison is
+coverage-capped --- by the engine's internal NN-descent pass, below). The graph is a method-agnostic offline artifact, so the query-time comparison is
 unaffected by which builder is used, and we verified this empirically: on OOD
 text2image-10M at the champion config, swapping the ScaNN-built graph for the engine's
 own self-built one changes recall by ${\le}0.1$pt and QPS within noise. Where the source
@@ -522,7 +521,9 @@ large enough share of the query to matter.
 \centering
 \caption{Tree geometry and per-query routing cost (Eq.~\ref{eq:route}) by scale.
 Beams are aggressive ($b_0\!\approx\!12$--$25\%$ of coarse cells) because OOD queries
-route poorly. The 100M geometry is validated by the routing-cost scaling law (\S\ref{sec:routecost}).}
+route poorly. The 100M geometry is validated by direct A/B (\S\ref{sec:eval}), not read off the
+2-level scaling law (\S\ref{sec:scaling}); the cost model (\S\ref{sec:routecost}) motivates
+its third level.}
 \label{tab:geom}
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{lcccccc}
@@ -646,15 +647,16 @@ $\le\!7\%$; at $m{=}384$ it is LUT-compute-bound and the same width is decisive.
 Precision and width are functions of $m$, not constants.
 
 \paragraph{Composition.} With precision fixed, the OOD coverage levers apply
-unchanged in-distribution: $k$-NN-graph augmentation (edges from a base
-self-search) cuts probes ${\sim}3\times$ at matched recall, and a
+unchanged in-distribution: $k$-NN-graph augmentation (self-built by the internal NN-descent pass,
+\S\ref{sec:graph}) cuts probes ${\sim}3\times$ at matched recall at 10M
+(${\sim}1.7\times$ at 1M), and a
 $\text{dpb}{=}4$ recode ($m{=}192$: half the LUT work per candidate) trades
 $0.7$ recall points for ${\sim}1.3\times$ QPS, net-positive on the frontier.
 \effect{Cohere-768 1M, 1 thread: $0.9197$@$1957$ QPS \emph{graph-free} vs.\ HNSW
-$0.9122$@$1840$ --- a standalone win. At 10M/$d{=}768$, HNSW's strongest regime, HNSW
-leads by ${\sim}1.4$--$1.7\times$ (1t) at matched recall once both use \emph{self-built}
-graphs (Table~\ref{tab:cohere}); an earlier 10M lead we measured relied on an
-HNSW-constructed graph and does not hold standalone (\S\ref{sec:graph}).}
+$0.9122$@$1840$ --- a standalone win. At 10M/$d{=}768$, HNSW's strongest regime, the engine
+beats HNSW by ${\sim}1.27$--$1.9\times$ (1t) at matched recall once both use \emph{self-built}
+graphs (Table~\ref{tab:cohere}); the usable graph comes from the internal NN-descent pass,
+not from routed self-search, which is coverage-capped at this dimension (\S\ref{sec:graph}).}
 
 \section{Systems Techniques (Streaming)}
 \label{sec:stream}
@@ -743,8 +745,9 @@ and coverage.
 \end{itemize}
 \emph{The OOD negatives cluster on the scan/code side and all fail there; the
 \S5--9 levers cluster on routing/coverage and all succeed. In-distribution the
-pattern inverts: coverage was never the binding constraint, scan precision was
-(\S\ref{sec:precision}). Both localizations rest on the same isolation method.}
+pattern inverts: the catastrophic failure is scan precision, not coverage
+(\S\ref{sec:precision}) --- coverage binds again only at $10$M scale, where the
+self-built $k$-NN graph supplies what routing misses (\S\ref{sec:lim}). Both localizations rest on the same isolation method.}
 
 \section{Evaluation Methodology}
 \label{sec:method}
@@ -862,8 +865,8 @@ IVFPQ-FastScan$+$refine & \multicolumn{2}{c}{cannot reach 0.90 (caps 0.73)} & co
 \centering
 \caption{In-distribution Cohere-768 (cosine, unit-norm), 1 thread, same box, same
 exact ground truth. On the shared machine only interleaved same-window ratios are
-trusted (\S\ref{sec:method}); at 10M we report the 5-round tight-pairwise median
-ratio and the cleanest-window absolute pair. Recall is load-independent.}
+trusted (\S\ref{sec:method}); the 10M rows are clean-window sequential pairs
+(each genbo/HNSW pair run back-to-back on the same cores). Recall is load-independent.}
 \label{tab:cohere}
 \begin{tabular}{llcc}
 \toprule
@@ -948,7 +951,10 @@ no ranking edge in our OOD setting. Our contribution on this side is not a new
 code but the observation that \emph{scan arithmetic precision must scale with
 code length} (\S\ref{sec:precision}).
 \textbf{Graph indices.} HNSW is the standard in-distribution baseline and is
-measured here at both regimes: dominant-until-matched in-distribution, and
+measured here at both regimes: outperformed in-distribution across the
+practical recall range once scan precision and graph coverage are set
+(${\sim}1.2$--$3.3\times$ at 1M--35M, faster only below recall ${\approx}0.95$
+at 35M; Tables~\ref{tab:cohere},~\ref{tab:wiki35m}), and
 $>\!4\times$ behind on OOD at matched recall. RoarGraph (VLDB'24) is the
 OOD-specific graph method --- a query-aware bipartite projection built from
 sampled training queries; we build it with its published hyperparameters and
@@ -1009,9 +1015,9 @@ already assume as their core build step. The reason genbo needs the graph at all
 \emph{candidate-efficiency} gap we profiled: graph-free, to reach recall
 $0.96$ it scans and exactly-rescores ${\sim}1600$ candidates/query (memory-latency-bound
 ${\sim}0.6\,\mu$s/row, already prefetched) where HNSW's greedy traversal touches fewer --- the
-graph supplies exactly the coverage the routing misses. This need
-does \emph{not} persist
-at higher dimension: with multi-hop graph repair (\S\ref{sec:graph}) at $35$M/$d{=}1024$
+graph supplies exactly the coverage the routing misses. The same recipe --- self-built
+graph plus multi-hop repair (\S\ref{sec:graph}) --- carries to higher dimension and scale:
+at $35$M/$d{=}1024$
 (Wikipedia Cohere-v3, unit-norm, strongly anisotropic $\lVert\mu\rVert{=}0.48$) genbo
 \emph{beats} a memory-matched HNSW across the practical high-recall range using its own
 NN-descent graph ($1.5\text{--}3.3\times$ at recall $\ge\!0.96$, reaching recall $0.985$ HNSW
