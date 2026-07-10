@@ -4968,7 +4968,19 @@ P317 [2026-07-10] STREAMING-GRAPH PILOT (idea #8 follow-through): LARGEST graph 
   p/K_f coverage fraction, consistent with the materialized-adjacency framing -- the scarcer the probed
   fraction, the more the stored edges carry.
 
-=== SESSION SUMMARY (current, 2026-07-10, through P317) ===
+P318 [2026-07-10] k=8 STREAMING-GRAPH CHECK: NEGATIVE -- edge count is load-bearing at d=100.
+  k=8 ND-L2 build 513s (0.96GB): h2p8 0.6176@3554 (vs k16 0.7475@3389: -13pt same config); best k8
+  h3p32 0.7461@1654 = only ~1.8x over graph-off (vs k16's 3.4-3.7x). At tiny p/K_f the graph IS the
+  coverage -> halving edges halves union reach. INTEGRATION TRADE STUDY (honest): k16 graph 1.92GB +
+  runbook peak 7.1-7.2GB = ~9.1GB > 8GB cap. Options: live-set-only k16 (~1.0-1.3GB, peak ~8.3GB, still
+  over), k=12 (~1.44GB, expect ~2-2.5x), varint adjacency (~25% save), or engine-side memory cuts in the
+  streaming fork (unprofiled). No clean free win -- a real compliance-architecture decision. AUTONOMOUS
+  THREAD PAUSED HERE for user steer: which memory trade to take is a design call touching the streaming
+  compliance re-architecture. Query-side value is proven (P317); patch economics proven (P314).
+  Theory-consistent: the graph carries exactly what geometry cannot, and its capacity (edges) is the
+  currency.
+
+=== SESSION SUMMARY (current, 2026-07-10, through P318) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
