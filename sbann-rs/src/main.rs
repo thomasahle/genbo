@@ -1769,7 +1769,13 @@ fn main() {
             let vnni = std::is_x86_feature_detected!("avx512vnni") && std::is_x86_feature_detected!("avx512bw")
                 && std::is_x86_feature_detected!("avx512f");
             let avx = std::is_x86_feature_detected!("avx2");
-            println!("[nnd] n={} d={} k={kk} rounds={rounds} R={rcap} delta={delta} age={age0} vnni={vnni}", n, ds.d);
+            // SBANN_ND_L2=1: build the graph under L2 instead of IP -- rank candidates by
+            // 2*dot(x,y) - ||y||^2 (equivalent to -||x-y||^2 up to the constant ||x||^2).
+            let nd_l2 = std::env::var("SBANN_ND_L2").map(|v| v == "1").unwrap_or(false);
+            println!("[nnd] n={} d={} k={kk} rounds={rounds} R={rcap} delta={delta} age={age0} vnni={vnni} l2={nd_l2}", n, ds.d);
+            let sqn: Vec<i32> = if nd_l2 {
+                (0..n).into_par_iter().map(|i| simd::sqnorm_i8(ds.row(i))).collect()
+            } else { Vec::new() };
             #[inline(always)]
             fn nd_rand(mut x: u64) -> u64 { x ^= x >> 12; x ^= x << 25; x ^= x >> 27; x.wrapping_mul(0x2545F4914F6CDD1D) }
             const HSZ: usize = 4096; // per-thread stamped dedup table; cands ≲1100 at K=R=16
@@ -1829,9 +1835,10 @@ fn main() {
                 let q = ds.row(i);
                 let mut pairs: Vec<(i32, u32)> = (0..kk).map(|j| {
                     let r = ds.row(ir[j] as usize);
-                    let dt = if vnni { unsafe { simd::dot_i8_vnni(q, r) } }
+                    let mut dt = if vnni { unsafe { simd::dot_i8_vnni(q, r) } }
                              else if avx { unsafe { simd::dot_i8_avx2(q, r) } }
                              else { -simd::negdot_i8(q, r) };
+                    if nd_l2 { dt = 2 * dt - sqn[ir[j] as usize]; }
                     (dt, ir[j])
                 }).collect();
                 pairs.sort_unstable_by(|x, y| y.0.cmp(&x.0));
@@ -1930,9 +1937,10 @@ fn main() {
                                 }
                                 let c = cand[ci];
                                 let r = ds.row(c as usize);
-                                let dt = if vnni { unsafe { simd::dot_i8_vnni(q, r) } }
+                                let mut dt = if vnni { unsafe { simd::dot_i8_vnni(q, r) } }
                                          else if avx { unsafe { simd::dot_i8_avx2(q, r) } }
                                          else { -simd::negdot_i8(q, r) };
+                                if nd_l2 { dt = 2 * dt - sqn[c as usize]; }
                                 if dt <= gdrow[kk - 1] { continue; }
                                 let mut pos = kk - 1;
                                 while pos > 0 && gdrow[pos - 1] < dt { pos -= 1; }
