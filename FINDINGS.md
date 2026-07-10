@@ -4803,7 +4803,23 @@ P306 [2026-07-10] Honest build-cost accounting closed (favorably): the seeded 10
   STRENGTH, not a hidden cost. NB wiki-35M HNSW build was >=3.2h vs genbo's 9.5-min ND graph (no table claim
   made there, so no edit needed).
 
-=== SESSION SUMMARY (current, 2026-07-10, through P306) ===
+P307 [2026-07-10] PAPER OVERHAUL (user-directed): standalone voice + 11 figures + plots-over-tables.
+  (a) VOICE: removed all development-arc narration ("initially loses by 2x" etc.); abstract+intro rewritten
+  as system paper (results as facts, ablations as evidence: "the precision policy alone is worth 2x -- the
+  difference between trailing and winning"); NN-descent got its own contribution bullet; hygiene note
+  neutralized to pure methodology warning. (b) FIGURES (workflow-drafted, 9 agents + 2 hand-written):
+  fig:ceilings (two-ceiling localization), fig:capball (gamma geometry), fig:graphmech (union mechanism),
+  fig:selfbuild (build-method bars + ND convergence), fig:scaling (power laws, replaces tab:geom in body),
+  fig:knee (cost-model U), fig:precision (sqrt-m noise + 0.07-vs-0.87 bars), fig:stream (levers),
+  fig:frontier (3-panel big-ann-style QPS-recall 1M/10M/35M), fig:oodfrontier (t2i: fresh ours sweep
+  h2p16-80+h3 [0.878@3528 -> 0.936@1672 1t] + logged HNSW sweep + ScaNN/RoarGraph pairwise markers),
+  fig:saturation (graph-quality). (c) RESULTS: frontier figures now primary; tab:main/t2i-baselines/
+  cohere/wiki35m/geom/streaming moved to new Appendix A "Full Operating Points"; tab:ablation stays in
+  body. Fixed: Limitations had fallen into the appendix (source had it after bibliography) -> standard
+  order Related Work -> Limitations -> References -> Appendix. 21pp, compiles, all 12 figures visually
+  verified page-by-page. Consistency sweep next.
+
+=== SESSION SUMMARY (current, 2026-07-10, through P307) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
