@@ -4937,7 +4937,21 @@ P315 [2026-07-10] *** CAMPAIGN SYNTHESIS (#10): THE SUMMARY-PREDICTION BOTTLENEC
   2 bounded-modest (#5 #6), 3 clean negatives w/ theory value (#2 #3-harvest #4-bias), 1 deprioritized
   by evidence (#1). ALL TEN CONSISTENT WITH ONE THEORY.
 
-=== SESSION SUMMARY (current, 2026-07-10, through P315) ===
+P316 [2026-07-10] THEORY TEST (Wq vs PRF) -- prediction half-refuted; theory SHARPENED.
+  (A) ridge Wq (q -> mean true-cell centroid, 50k train queries, closed form): coverage COLLAPSES
+  (-40pt @16: 0.83 -> 0.43) -- regression-to-mean; the best linear query-side predictor of neighbor
+  location carries so little signal it destroys routing. No query-side linear correction beyond gamma.
+  (B) PRF re-route (q' = mean of top-4 engine results at p=8; POINT-LEVEL, per-query): ALSO NEGATIVE
+  (alpha=1: -2.7pt@16; alpha=0.5: -0.25pt@16, +2.2pt only at p=8). REFUTES P315's "point-level crosses"
+  as stated: found points' geometric positions do NOT reveal the missed cells.
+  REFINED THEORY: the bottleneck divides GEOMETRIC INFERENCE (query-time, any level: summaries, biases,
+  Wq, PRF, triggers -- all saturate) from MATERIALIZED ADJACENCY (offline-computed exact neighbor
+  relations: the kNN graph's edges, multi-assignment at build). The missing coverage information is not
+  recoverable from geometry at query time AT ALL -- it must be computed offline and stored. Explains:
+  graph irreplaceable; churn is a readable signal (it reads edge effects) but unconvertible to probe
+  savings; +2.2pt@p8 crumb = locality signal only where routing is worst. Paper Discussion updated.
+
+=== SESSION SUMMARY (current, 2026-07-10, through P316) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann

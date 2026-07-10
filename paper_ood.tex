@@ -1364,11 +1364,19 @@ $b_j$ --- the general form of which $\gamma$ is the one-parameter special case -
 trained on $50$k held-out queries adds nothing ($-0.8$pt at $p{=}16$: the class is
 saturated); and a per-query adaptive probe policy triggered by a label-free signal
 lands on the fixed-$p$ frontier rather than above it, because predicting per-query
-difficulty is the same estimation problem as routing. What crosses the bottleneck is
-\emph{point-level} information: the $k$-NN graph (one shortlisted point reveals its
-true neighborhood transitively), multi-assignment (each point buys $a_0$ cells of
-coverage at storage cost), and result-churn feedback (correlation $0.84$--$0.98$ with
-true recall gain, enabling label-free drift monitoring). The same lens explains why
+difficulty is the same estimation problem as routing. What crosses the bottleneck is not
+query-time cleverness of any kind but \emph{materialized adjacency} --- neighbor
+relations computed offline and stored: the $k$-NN graph (one shortlisted point reveals
+its true neighborhood through \emph{precomputed edges}), and multi-assignment (each
+point buys $a_0$ cells of coverage at build time). Query-time \emph{geometric}
+inference fails even when given point-level inputs: re-routing from the mean of the
+first-stage \emph{results} (pseudo-relevance style) loses $2.7$pt at $p{=}16$ --- found
+points' positions do not reveal the missed cells any better than the query does ---
+and a closed-form query transform trained to point at the true cells collapses
+coverage entirely ($-40$pt, regression to the mean). Result-churn feedback
+(correlation $0.84$--$0.98$ with true recall gain) is the read-out side of the same
+structure: it \emph{reads} the materialized edges' effect, enabling label-free drift
+monitoring, but cannot be converted into probe savings. The same lens explains why
 the seeder is load-bearing (seeds are the point-level entry: hops repair only
 reachable mass, and $p\!\le\!8$ starves the corrector at both distributions), why scan
 precision must scale with code length (the $\sqrt{m}$ noise law, validated against
