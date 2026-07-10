@@ -477,8 +477,9 @@ hubness: the capped reverse lists are \emph{reservoir-resampled each round} (a f
 freezes hub in-neighbors and permanently misses their pairings), and inserted edges stay
 ``new'' for two rounds (one round of gating loses join chances at saturated hubs).
 \effect{Cohere 10M ($d{=}768$): random init reaches $0.864$ overlap@$16$ in $24$ min
-(16 threads); seeding with the engine's own cheap routed self-$k$NN reaches $\mathbf{0.904}$
-in $8$ min of descent --- query-time equal-or-better than the multi-hour external
+(16 threads); warm-starting from a routed self-$k$NN pass (itself $35$ min) reaches
+$\mathbf{0.904}$ with $8$ min more of descent --- either path costs less than HNSW's own
+10M index \emph{build} ($48$ min, same box), and is query-time equal-or-better than the multi-hour external
 near-exact graph (recall $0.9871$ vs $0.9869$ at matched probes; $0.9904$ vs $0.9901$ at the
 top point). At 1M: $0.895$ in ${\sim}1$ min; at $35$M/$d{=}1024$ (Wikipedia): $0.874\to0.965$
 in $9.5$ min, matching an HNSW-built graph's $0.970$ and adding $+0.3$--$0.45$pt recall at the same
@@ -901,7 +902,8 @@ matched probes, and genbo still beats HNSW on \emph{both} recall and QPS with a 
 (at a modestly higher probe count); even a $0.28$-overlap graph recovers most of the coverage benefit.
 QPS is nearly flat across graph quality --- the graph buys coverage/recall, not speed.
 And the graph is \emph{self-built}: the engine's internal NN-descent pass (\S\ref{sec:graph})
-reaches $0.904$ overlap in minutes at 10M, and the resulting self-built-graph rows are
+reaches $0.864$ overlap in $24$ min standalone at 10M ($0.904$ warm-started; either under
+HNSW's own $48$-min build), and the resulting self-built-graph rows are
 query-time equal-or-better than the external near-exact graph. (The
 \emph{routed} self-search variant, last row, is the one that fails --- it is coverage-capped
 at $d{=}768$ and loses to HNSW; NN-descent does not route, which is the point.)
@@ -1010,7 +1012,8 @@ probe count to cover), but its internal \emph{NN-descent} pass (\S\ref{sec:graph
 at all and self-builds a $0.904$-overlap graph in minutes at 10M --- query-time performance
 equal-or-better than the multi-hour external near-exact graph. What remains is
 honest accounting of the \emph{build-time premium}: the descent pass adds minutes to the build
-(random init $24$ min for $0.864$ overlap; seeded $8$ min for $0.904$, at 16 threads), a cost graph methods like DiskANN/NSG
+(random init $24$ min for $0.864$ overlap; $8$ min of descent on a $35$-min routed
+self-$k$NN pass for $0.904$ --- either way under HNSW's own $48$-min 10M build on the same box), a cost graph methods like DiskANN/NSG
 already assume as their core build step. The reason genbo needs the graph at all is a
 \emph{candidate-efficiency} gap we profiled: graph-free, to reach recall
 $0.96$ it scans and exactly-rescores ${\sim}1600$ candidates/query (memory-latency-bound

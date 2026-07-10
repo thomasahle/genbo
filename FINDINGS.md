@@ -4794,7 +4794,16 @@ P305 [2026-07-10] Paper consistency sweep (16-agent workflow: 4 section scanners
   unverifiable "~92% edge agreement" scaffold figure deleted (arithmetically impossible given the section's
   own 0.99-overlap numbers). Compiles 15pp. LESSON: after result flips, sweep effect blocks -- they fossilize.
 
-=== SESSION SUMMARY (current, 2026-07-10, through P305) ===
+P306 [2026-07-10] Honest build-cost accounting closed (favorably): the seeded 10M graph's SEED cost was
+  unstated in the paper. Logs: routed selfknn p128 seed = 2092s (35 min, cohere_hq_graph.log); seeded total
+  = 43 min. HNSW's own 10M index build = 2868s (48 min, hnsw_cohere10m.log). => EVERY genbo graph path is
+  cheaper than HNSW's own build: rand-init 24 min (half of HNSW's), seeded 43 min total. Paper updated in 3
+  places (sec:graph effect, tab:cohere footnote, Limitations): dropped the wrong word "cheap" for the seed,
+  stated 35-min seed cost + the 48-min HNSW-build comparison. A reviewer adding up the pipeline now finds a
+  STRENGTH, not a hidden cost. NB wiki-35M HNSW build was >=3.2h vs genbo's 9.5-min ND graph (no table claim
+  made there, so no edit needed).
+
+=== SESSION SUMMARY (current, 2026-07-10, through P306) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
