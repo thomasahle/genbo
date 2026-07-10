@@ -4854,7 +4854,21 @@ P309 [2026-07-10] OOD TRIPLE-PANEL (fig 11 rebuilt, user-directed): full multi-s
   routing bias loader; gamma = its 1-param special case), SBANN_ND_INCR_FROM (incremental NN-descent);
   SBANN_RESULT_DUMP already existed.
 
-=== SESSION SUMMARY (current, 2026-07-10, through P309) ===
+P310 [2026-07-10] IDEA CAMPAIGN wave 1b-early (ideas #5 #7 #6):
+  #7 PRECISION THEORY VALIDATED: cohere 1M exact top-200 margins: median (rank10-rank100)/|s|=0.0237.
+    Predicted int8-4bit-LUT noise/|s| (from measured per-subspace LUT ranges, U-quant model, sqrt-sum):
+    m=384 dpb2: 0.0128 | m=192 dpb4: 0.0126 | m=100 dpb2: 0.0073. => at m=384 noise = 54% of the whole
+    90-rank window, 50x the adjacent-rank gap -> ordering scrambles (measured 0.07 ✓); int16 step /4096
+    -> noise ~270x smaller -> pool ceiling (0.87 ✓). Also explains dpb4 recode's mild cost (noise ~same,
+    0.0126: wider 4-dim LUT ranges offset fewer subspaces). The P239 policy is now DERIVED.
+  #5 DELTA CODING modest: median ||x_nbr - x||/||x|| = 0.62 (t2i d200) / 0.50 (cohere d768) -> only
+    ~0.7-1.0 bits/dim saved. Neighborhoods at 10M not tight enough for transformative edge-delta codes.
+    (Density datum for theory #10: NN distance ~ half the norm at n=10M.)
+  #6 HUBS weak for always-scan: top-10k (0.1%) in-degree share of edges = 0.97% (t2i) / 3.9% (cohere)
+    -> upper-bounds recall gain well under 0.5pt; dropped from active list. Datum: cohere d=768 max
+    in-degree 18,575 (vs mean 16) -- extreme hubness, retroactively justifies ND reservoir fix (P296).
+
+=== SESSION SUMMARY (current, 2026-07-10, through P310) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
