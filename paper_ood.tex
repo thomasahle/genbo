@@ -1549,16 +1549,21 @@ above HNSW at every operating point shown, at all three scales --- graph-free at
 ($1.5$--$2.4\times$, exceeding HNSW's recall ceiling), and with its self-built
 NN-descent graph at 10M ($1.2$--$1.9\times$) and 35M ($1.5$--$3.3\times$); HNSW
 plateaus (at $0.9945$/$0.9859$/$0.9818$ respectively) below recall genbo reaches.
-Out-of-distribution (Figure~\ref{fig:oodfrontier}), genbo leads every measured
-system at the recall-$0.90$ gate at every scale --- ScaNN at its official
-configuration ($0.83\times$ ratio at 10M), RoarGraph at its paper configuration
-($1.07\times$ ours), HNSW by ${\sim}8.5\times$ --- and the lead widens below the
-gate. Above recall ${\approx}0.96$ at 10M the picture is honest but different:
-batch-mode ScaNN with deep reorder and RoarGraph become competitive with our
-per-query cascade, so genbo's OOD advantage is the gate-to-$0.95$ band rather than
-the extreme tail. At 100M no baseline clears the 2h build gate, making genbo the
-only eligible method at that scale (build $86$ min; recall up to $0.9226$ at $529$
-QPS single-thread, ${\sim}6.7$k QPS at recall $0.90$ on 16 threads). Exact operating points, baseline configurations,
+Out-of-distribution (Figure~\ref{fig:oodfrontier}), the picture is scale-dependent
+and we report it whole. At the recall-$0.90$ gate genbo leads everything at 10M ---
+ScaNN at its official configuration ($0.83\times$ tight-pairwise ratio), RoarGraph at
+its paper configuration ($1.07$--$1.16\times$ ours), HNSW by ${\sim}8.7\times$ ---
+and is the only build-eligible method at 100M (build $86$ min; recall up to $0.9226$
+at $529$ QPS single-thread, ${\sim}6.7$k QPS at recall $0.90$ on 16 threads; ScaNN
+was killed at the gate, and RoarGraph's train-GT prerequisite alone projects to
+${\sim}10$h from its measured $58$ min at 10M). At 1M the OOD-specialist wins:
+RoarGraph's bipartite build is cheap at small scale and leads the gate ($6.4$k vs
+our $4.8$k QPS) --- genbo still beats ScaNN and HNSW there. At the 10M tail our
+$k{=}32$ self-built graph ties RoarGraph through recall $0.983$ ($464$ vs $452$ QPS);
+beyond $0.985$ RoarGraph leads, and batch-mode ScaNN with deep reorder is competitive
+with our per-query cascade (mode-matched per-query it is not: $323$ vs our $682$ QPS
+at recall $0.972$). genbo's OOD advantage is thus the gate band at scale, plus
+build-time eligibility --- not the extreme tail at small scale. Exact operating points, baseline configurations,
 and the streaming series are tabulated in Appendix~\ref{app:tables} (Table~\ref{tab:streaming}).
 Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
 \begin{figure}[t]
@@ -1603,6 +1608,9 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
         (0.9625,863) (0.9761,553) (0.9847,386)
         (0.9885,298) (0.9945,160)};
       \addlegendentry{HNSW}
+      \addplot[black!60!green,dash dot,mark=triangle,mark size=1.7pt,mark options={solid}] coordinates {
+        (0.9713,881) (0.9907,595)};
+      \addlegendentry{ScaNN (batched)}
     \end{axis}
   \end{tikzpicture}%
   \hfill
@@ -1617,6 +1625,8 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
         (0.9871,593) (0.9904,483)};
       \addplot[hnsw] coordinates {
         (0.9440,1465) (0.9677,772) (0.9803,467) (0.9859,308)};
+      \addplot[black!60!green,dash dot,mark=triangle,mark size=1.7pt,mark options={solid}] coordinates {
+        (0.9685,141) (0.9883,140)};
     \end{axis}
   \end{tikzpicture}%
   \hfill
@@ -1646,25 +1656,31 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
 \centering
 \begin{tikzpicture}
 \begin{axis}[
-  name=oa, width=0.375\textwidth, height=0.40\textwidth,
+  name=oa, width=0.375\textwidth, height=0.42\textwidth,
   title={\small text2image 1M},
   xlabel={\footnotesize recall@10}, ylabel={\footnotesize QPS (1 thread)},
-  ymode=log, xmin=0.82, xmax=1.0, ymin=250, ymax=10000,
+  ymode=log, xmin=0.75, xmax=1.0, ymin=250, ymax=16000,
   grid=both, grid style={black!10}, tick label style={font=\scriptsize},
   legend style={font=\tiny, at={(0.03,0.03)}, anchor=south west}, legend cell align=left,
 ]
 \addplot[blue!70!black, thick, mark=*, mark size=1.5pt] coordinates {
-  (0.9183,4629) (0.9355,4375) (0.9469,3980) (0.9540,3671) (0.9659,3143) (0.9755,2476) (0.9859,1794) };
+  (0.8198,6404) (0.8726,5605) (0.8871,5050) (0.9183,4629) (0.9355,4375) (0.9469,3980)
+  (0.9540,3671) (0.9659,3143) (0.9755,2476) (0.9859,1794) };
 \addlegendentry{ours}
 \addplot[black!60!green, thick, dash dot, mark=triangle, mark size=1.9pt, mark options={solid}] coordinates {
-  (0.8296,8453) (0.8970,6514) (0.9411,4599) (0.9646,2954) (0.9749,1693) (0.9798,953) };
+  (0.8296,4775) (0.8970,3210) (0.9411,1959) (0.9646,1114) (0.9749,592) (0.9798,314) };
 \addlegendentry{ScaNN}
+\addplot[orange!80!black, thick, densely dotted, mark=diamond, mark size=1.9pt, mark options={solid}] coordinates {
+  (0.7746,13141) (0.8306,10246) (0.8647,8503) (0.9035,6369) (0.9275,5160) (0.9528,3765)
+  (0.9661,2989) (0.9794,2105) (0.9900,1353) };
+\addlegendentry{RoarGraph}
 \addplot[red!60!black, thick, dashed, mark=square, mark size=1.5pt, mark options={solid}] coordinates {
   (0.8494,4136) (0.9180,2323) (0.9604,1249) (0.9818,650) };
 \addlegendentry{HNSW}
+\draw[densely dotted, black!60] (axis cs:0.90,250) -- (axis cs:0.90,16000);
 \end{axis}
 \begin{axis}[
-  at={(oa.outer east)}, anchor=outer west, width=0.375\textwidth, height=0.40\textwidth,
+  at={(oa.outer east)}, anchor=outer west, width=0.375\textwidth, height=0.42\textwidth,
   title={\small text2image 10M},
   xlabel={\footnotesize recall@10},
   ymode=log, xmin=0.73, xmax=1.0, ymin=60, ymax=8000,
@@ -1673,10 +1689,11 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
 ]
 \addplot[blue!70!black, thick, mark=*, mark size=1.5pt] coordinates {
   (0.8776,3528) (0.8969,3133) (0.9081,2841) (0.9161,2517) (0.9214,2357) (0.9245,2205)
-  (0.9305,1836) (0.9358,1672) (0.9567,1180) (0.9675,841) (0.9721,682) (0.9781,485) };
-\addlegendentry{ours}
+  (0.9305,1836) (0.9358,1672) (0.9567,1180) (0.9675,841) (0.9754,770) (0.9807,611)
+  (0.9830,464) (0.9860,365) };
+\addlegendentry{ours (k16; k32 tail)}
 \addplot[black!60!green, thick, dash dot, mark=triangle, mark size=1.9pt, mark options={solid}] coordinates {
-  (0.9307,2099) (0.9587,1666) (0.9724,1396) (0.9799,1005) (0.9830,664) (0.9841,406) };
+  (0.9307,439) (0.9587,396) (0.9724,323) (0.9799,252) (0.9830,185) (0.9841,120) };
 \addlegendentry{ScaNN (official 40k)}
 \addplot[orange!80!black, thick, densely dotted, mark=diamond, mark size=1.9pt, mark options={solid}] coordinates {
   (0.7508,6702) (0.8063,5056) (0.8395,4165) (0.8788,3033) (0.9027,2443) (0.9195,2031)
@@ -1688,7 +1705,7 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
 \draw[densely dotted, black!60] (axis cs:0.90,60) -- (axis cs:0.90,8000);
 \end{axis}
 \begin{axis}[
-  at={(oa.outer east)}, anchor=outer west, xshift=0.375\textwidth, width=0.375\textwidth, height=0.40\textwidth,
+  at={(oa.outer east)}, anchor=outer west, xshift=0.375\textwidth, width=0.375\textwidth, height=0.42\textwidth,
   title={\small text2image 100M},
   xlabel={\footnotesize recall@10},
   ymode=log, xmin=0.86, xmax=0.94, ymin=400, ymax=1000,
@@ -1698,23 +1715,22 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
 \addplot[blue!70!black, thick, mark=*, mark size=1.5pt] coordinates {
   (0.8789,751) (0.8944,713) (0.9043,638) (0.9145,583) (0.9226,529) };
 \addlegendentry{ours}
-\node[align=center, font=\scriptsize, black!70] at (axis cs:0.905,880)
-  {only build-eligible method\\(ScaNN $>$2h gate; HNSW\\not built at this scale)};
+\node[align=center, font=\scriptsize, black!70] at (axis cs:0.905,860)
+  {only build-eligible method:\\ScaNN killed at the 2h gate;\\RoarGraph's train-GT alone\\${\sim}10$h (measured $58$min at 10M)};
 \end{axis}
 \end{tikzpicture}
 \caption{Out-of-distribution frontiers (text2image, $d{=}200$, inner product): QPS vs.\
-recall@10, single thread, same box, at 1M, 10M, and 100M. Ours is a per-query
-probe-depth sweep (hops $2$--$3$; below the ${\approx}0.91$ hop crossover this slightly
-understates our frontier, \S\ref{sec:graph}); ScaNN and HNSW run in their batched APIs
-(batching amortizes their per-query cost ${\sim}3$--$4\times$ --- measured per-query,
-ScaNN's 10M curve drops from $1396$ to $323$ QPS at recall $0.972$ --- so the baseline
-curves are favorable to the baselines); RoarGraph uses its own harness at one thread.
-At the leaderboard gate (recall $0.90$, dotted) ours leads every system at every scale.
-Above recall ${\approx}0.96$ at 10M, batch-mode ScaNN (deep reorder) and RoarGraph
-become competitive with our per-query cascade --- genbo's OOD advantage is the
-gate-to-$0.95$ band --- while HNSW trails everywhere below its $0.97$ tail. At 100M no
-baseline clears the 2h build gate, so ours is the only curve. A code-side
-IVFPQ-FastScan$+$refine baseline caps at recall $0.73$ (10M) and does not appear.}
+recall@10, single thread, same box, at 1M, 10M, and 100M. Ours, ScaNN, and RoarGraph
+are per-query sweeps (mode-matched; ScaNN's batched API amortizes a further
+${\sim}3$--$4\times$ and is then competitive with our per-query cascade above recall
+${\approx}0.96$ at 10M); HNSW runs in its batched API (favorable to HNSW). Ours sweeps
+probe depth at hops $2$--$4$ with the self-built $k{=}16$ graph ($k{=}32$ at the tail).
+At the leaderboard gate (recall $0.90$, dotted), ours leads at 10M ($1.16\times$
+RoarGraph per-query, $6.5\times$ ScaNN, $8.7\times$ HNSW) and is the only eligible
+method at 100M; at 1M, RoarGraph --- whose bipartite build is cheap at small scale
+($139$s $+$ $8$min train-GT) --- leads the gate, while ours beats ScaNN and HNSW
+there. A code-side IVFPQ-FastScan$+$refine baseline caps at recall $0.73$ (10M) and
+does not appear.}
 \label{fig:oodfrontier}
 \end{figure}
 

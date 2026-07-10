@@ -4992,7 +4992,23 @@ P319 [2026-07-10] FIGURE PASS 2 (user-directed "more and better figures"): 3 new
   ScaNN curves on the in-dist frontier panels (serialized cohere indexes exist), ours-1M low-p splice,
   k32 tail, Roar-1M curve.
 
-=== SESSION SUMMARY (current, 2026-07-10, through P319) ===
+P320 [2026-07-10] OOD FIGURE COMPLETION (user-directed): RoarGraph at 1M + extended tails + honest rebalance.
+  (a) RoarGraph-1M pipeline built from scratch (base slice + faiss train-GT ~8min + 139s build): FULL curve
+  (0.7746,13141)...(0.9900,1353). HONEST NEW FACT: RoarGraph leads the 1M OOD gate (6369 vs our 4826 perq)
+  -- the OOD-specialist wins small scale; ours still beats ScaNN (perq 3210@0.897) + HNSW there.
+  (b) k=32 ND graph (519s, seeded from k16): lifts the 10M tail to (0.9754,770)(0.9807,611)(0.9830,464)
+  (0.9860,365) -- TIES RoarGraph at 0.983 (464 vs 452); Roar leads >=0.985.
+  (c) ours-1M low-p splice (clean window, anchor 4826 vs battery 4629 = 4%): (0.8198,6404)(0.8726,5605)
+  (0.8871,5050); BATCHSCAN pays at low p (6559/5758).
+  (d) ScaNN cohere IN-DIST curves (batched, serialized indexes): 10M 0.9685@141 vs ours 1234@0.9707 (~9x);
+  1M 0.9713@881 / 0.9907@595 -- added as reference series to fig:frontier (beats HNSW at 1M-0.99!).
+  (e) fig:oodfrontier rebuilt: per-query MODE-MATCHED ScaNN/Roar/ours (batch-ScaNN visual contradiction
+  with tabled tight-pairwise ratios resolved; batch noted in caption), Roar-1M curve, k32 tail, Roar-100M
+  ineligibility note (train-GT ~10h projected from measured 58min@10M). Results prose rewritten
+  scale-dependent + whole: gate wins at 10M/100M ours, 1M gate RoarGraph's, tail >=0.985 RoarGraph's.
+  23pp, renders verified.
+
+=== SESSION SUMMARY (current, 2026-07-10, through P320) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
