@@ -4773,7 +4773,16 @@ P303 [2026-07-10] t2i-10M ND check: query-time NULL (good) + i8-metric ceiling c
   exactly where ND's i8 ceiling binds (d=200 0.99 routed). Possible future work: final f32-refine round in
   nndescent to break the 0.97 i8 ceiling (no current need -- query-time equivalent).
 
-=== SESSION SUMMARY (current, 2026-07-10, through P303) ===
+P304 [2026-07-10] cohere-1M TOP-BAND closed: graph-free win holds through HNSW's ceiling (was unmeasured >0.9625).
+  Same-window 1t pairwise (load ~3): gf p96 0.9730@1286 | p128 0.9814@996 | p192 0.9895@715 | p256 0.9925@562 |
+  p384 0.9961@388 | p512 0.9971@302 vs HNSW-1M ef96 0.9625@863 | ef160 0.9761@553 | ef240 0.9847@386 |
+  ef320 0.9885@298 | ef640 0.9945@160(ceiling). => genbo graph-free beats HNSW at EVERY 1M point incl. the
+  ceiling: 1.49x@0.97(+1.1pt), 1.80x@0.98, 1.85-1.89x@0.99, 2.43x@ceiling(+0.16pt); exceeds HNSW's max recall
+  (0.9971 vs 0.9945). ND graph adds margin: hops3 p96 0.9856@1063 (2.75x vs ef240), hops3 p192 0.9936@736
+  (4.6x vs ef640 near-matched). 1M claim now same strength as 10M ("every operating point"). tab:cohere 1M
+  gains top-band rows. P288's 0.90-0.96 band numbers stand.
+
+=== SESSION SUMMARY (current, 2026-07-10, through P304) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann

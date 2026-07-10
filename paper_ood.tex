@@ -873,6 +873,8 @@ Scale & System & recall@10 & QPS (1t) \\
 1M  & HNSW (ef40)                          & 0.9122 & 1840 \\
 1M  & ScaNN (2k leaves, reorder 600)       & 0.9147 & 1306 \\
 1M  & IVFPQ$+$refine (nprobe 256)          & 0.9014 & 877  \\
+1M  & \textbf{ours} (graph-free, $p{=}192$ / $p{=}384$; top) & \textbf{0.9895 / 0.9961} & \textbf{715 / 388} \\
+1M  & HNSW (ef240 / ef640; its ceiling)    & 0.9847 / 0.9945 & 386 / 160 \\
 \midrule
 10M & \textbf{ours} (\emph{self-built} graph, hops$=$2/3) & \textbf{0.9707 / 0.9832} & \textbf{1234 / 781} \\
 10M & HNSW (ef96 / ef160)                               & 0.9677 / 0.9803 & 772 / 467 \\
@@ -882,7 +884,10 @@ Scale & System & recall@10 & QPS (1t) \\
 10M & ScaNN (8k leaves, deep reorder)                   & 0.9461 & ${\sim}330$ \\
 \bottomrule
 \multicolumn{4}{p{0.92\linewidth}}{\footnotesize At \textbf{1M} the engine wins
-\emph{graph-free} and standalone. At \textbf{10M/$d{=}768$} (HNSW's strongest regime) the
+\emph{graph-free} and standalone at every operating point through HNSW's ceiling
+($1.5{\times}$ at recall $0.97$ rising to $2.4{\times}$ at HNSW's $0.9945$ ceiling, which it
+exceeds --- $0.9971$ at $1.9\times$ the QPS; a $66$-second NN-descent graph adds a further
+${\sim}1.5\times$, e.g.\ $0.9936$ at $736$ vs ef640's $160$). At \textbf{10M/$d{=}768$} (HNSW's strongest regime) the
 engine beats HNSW at every operating point using its \emph{self-built} NN-descent graph
 (clean-window sequential runs, same cores): ${\sim}1.27\times$ at recall $0.946$,
 ${\sim}1.6\times$ at $0.97$, ${\sim}1.67\times$ at $0.983$, ${\sim}1.9\times$ at HNSW's
