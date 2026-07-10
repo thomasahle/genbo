@@ -1131,7 +1131,18 @@ pub struct HierRouter {
 }
 
 /// Per-finest-cell probe-calibration bias (γ−1)·‖c‖² from SBANN_ROUTE_GAMMA. Empty when unset/γ=1.
+/// SBANN_GBIAS_FILE overrides with a LEARNED bias vector (nc x i32 LE, no header) — the general
+/// (trainable) form of which γ is the one-parameter special case.
 fn gbias_of(cent: &[Vec<i8>], d: usize) -> Vec<i32> {
+    if let Ok(p) = std::env::var("SBANN_GBIAS_FILE") {
+        let fin = cent.last().expect("gbias: no centroid levels");
+        let n = if d > 0 { fin.len() / d } else { 0 };
+        let bytes = std::fs::read(&p).expect("gbias file");
+        assert_eq!(bytes.len(), n * 4, "gbias file must be nc x i32");
+        let v: Vec<i32> = bytes.chunks_exact(4).map(|c| i32::from_le_bytes(c.try_into().unwrap())).collect();
+        println!("[gbias] loaded {} learned per-cell biases from {}", v.len(), p);
+        return v;
+    }
     let g: f32 = match std::env::var("SBANN_ROUTE_GAMMA").ok().and_then(|s| s.parse().ok()) {
         Some(v) => v,
         None => return Vec::new(),

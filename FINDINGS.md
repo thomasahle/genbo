@@ -4837,7 +4837,24 @@ P308 [2026-07-10] Post-rewrite polish sweep: 41/41 flags confirmed real, all fix
   unresolved refs, every figure+table referenced. Paper now: standalone voice, 12 figures, plot-led
   results, appendix tables, three adversarial sweeps deep.
 
-=== SESSION SUMMARY (current, 2026-07-10, through P308) ===
+P309 [2026-07-10] OOD TRIPLE-PANEL (fig 11 rebuilt, user-directed): full multi-system frontiers at t2i
+  1M/10M/100M, all 1t, one battery window. NEW DATA:
+  ours-10M high-recall ext: p128 0.9567@1180 | p192 0.9675@841 | p256 0.9721@682 | p384 0.9781@485.
+  ours-1M: 0.9183@4629 ... 0.9859@1794 (8 pts). ours-100M (1t!): 0.8789@751 ... 0.9226@529 (5 pts).
+  ScaNN sweeps from serialized indexes (batched API): 10M-40k 0.9307@2099 ... 0.9841@406; 1M-1200
+  0.8296@8453 ... 0.9798@953. ScaNN PER-QUERY = 3-4x slower (10M L150: 1396 batched -> 323 perq) --
+  the tabled tight-pairwise ratios match its BATCH mode, so figure uses batched (conservative);
+  genbo's own BATCHSCAN is throughput-neutral (1076 vs 1091 -- cascade already per-query-efficient).
+  RoarGraph L_pq sweep (own harness, 1t): 0.751@6702 ... 0.983@452.
+  HONEST NEW FINDING: at 10M above ~0.96 recall, batch-ScaNN deep-reorder + RoarGraph become
+  competitive/ahead of our per-query cascade (ScaNN 0.9724@1396 vs ours 0.9721@682; Roar 0.983@452 vs
+  ours 0.9781@485) -- genbo's OOD edge is the gate-to-0.95 band; stated in fig caption + Results prose.
+  Gate claims unchanged (ours leads ALL at 0.90 at ALL scales; 100M ours-only). Also: infra landed for
+  the 10-idea campaign -- dumpassign subcommand (point->cell pairs), SBANN_GBIAS_FILE (learned per-cell
+  routing bias loader; gamma = its 1-param special case), SBANN_ND_INCR_FROM (incremental NN-descent);
+  SBANN_RESULT_DUMP already existed.
+
+=== SESSION SUMMARY (current, 2026-07-10, through P309) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann

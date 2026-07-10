@@ -1844,6 +1844,14 @@ fn main() {
             let rev: Vec<AtomicU32> = (0..n * rcap).map(|_| AtomicU32::new(u32::MAX)).collect();
             let rev_cnt: Vec<AtomicU32> = (0..n).map(|_| AtomicU32::new(0)).collect();
             let mut newf: Vec<u8> = vec![age0; n * kk]; // per-edge "new" age (>0 = new; decays per round)
+            // SBANN_ND_INCR_FROM=N (incremental maintenance): rows < N are an already-converged graph
+            // (edges start OLD -> no re-join among them); only rows >= N (e.g. a freshly inserted batch,
+            // seeded random/routed) start NEW. Local join then activates only around the dirty set.
+            if let Some(incr) = std::env::var("SBANN_ND_INCR_FROM").ok().and_then(|s| s.parse::<usize>().ok()) {
+                assert!(incr <= n);
+                newf[..incr * kk].fill(0);
+                println!("[nnd] incremental: rows 0..{incr} start OLD, {incr}..{n} start NEW");
+            }
             for round in 0..rounds {
                 let tr = Instant::now();
                 rev.par_iter().for_each(|x| x.store(u32::MAX, rl));
@@ -1948,6 +1956,30 @@ fn main() {
             for &v in &g { w.write_all(&v.to_le_bytes()).unwrap(); }
             w.flush().unwrap();
             println!("[nnd] done n={n} k={kk} -> {} in {:.0}s", &a[3], t0.elapsed().as_secs_f64());
+        }
+        // dumpassign <out.u32>: dump the loaded index's slot->orig mapping as flat (orig, finest_cell)
+        // u32 LE pairs (multi-assigned points emit one pair per stored copy; padded slots skipped).
+        // Enables offline oracle-coverage analysis (which cells hold each query's true neighbors).
+        // Needs SBANN_INDEX_LOAD.
+        Some("dumpassign") => {
+            let lp = std::env::var("SBANN_INDEX_LOAD").expect("dumpassign needs SBANN_INDEX_LOAD");
+            let idx = vq::Index::load_from(&lp).expect("index load");
+            let nc = idx.cell_bstart.len() - 1;
+            let mut w = std::io::BufWriter::new(std::fs::File::create(&a[2]).expect("out"));
+            use std::io::Write;
+            let mut npairs = 0u64;
+            for c in 0..nc {
+                let (bs, be) = (idx.cell_bstart[c] as usize, idx.cell_bstart[c + 1] as usize);
+                for s in bs * 16..be * 16 {
+                    let o = idx.slot_orig[s];
+                    if o == u32::MAX { continue; }
+                    w.write_all(&o.to_le_bytes()).unwrap();
+                    w.write_all(&(c as u32).to_le_bytes()).unwrap();
+                    npairs += 1;
+                }
+            }
+            w.flush().unwrap();
+            println!("[dumpassign] nc={nc} pairs={npairs} -> {}", &a[2]);
         }
         Some("run") => run(&a[2], &a[3], &a[4], &a[5], &a[6], a.get(7).map(|s| s.parse().unwrap()).unwrap_or(2), a.get(8).map(|s| s.parse().unwrap()).unwrap_or(4096), a.get(9).map(|s| s.parse().unwrap()).unwrap_or(30), false),
         Some("runb") => run(&a[2], &a[3], &a[4], &a[5], &a[6], a.get(7).map(|s| s.parse().unwrap()).unwrap_or(2), a.get(8).map(|s| s.parse().unwrap()).unwrap_or(4096), a.get(9).map(|s| s.parse().unwrap()).unwrap_or(30), true),
