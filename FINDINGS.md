@@ -5051,7 +5051,16 @@ P323 [2026-07-10] *** BEAT-ROAR BATTERY: 10M TAIL FALLS; P311 SUPERSEDED; profil
   1M Roar keeps 0.88-0.965 (fixed-cost walk vs our rerank-bound union), ours >=0.97 + tail. Figure +
   prose updated. All configs Roar-fair (same train resource).
 
-=== SESSION SUMMARY (current, 2026-07-10, through P323) ===
+P324 [2026-07-10] LOW-BAND UNION TRIMMING (profile-directed): co16/hyb with small M + tight t at 1M:
+  co16 M16h2p4t300 0.8239@7633 | M24h3p4 0.8596@6340 | hyb M24h3p4 0.9062@5132. Roar's 1M below-gate
+  lead narrows from >2x to ~1.25-1.4x (gate: 6369 vs 5132 = 1.24x). NOT flipped -- Roar's fixed-cost
+  walk vs our routing+scan+union stack is a real small-scale structural edge; honest endpoint.
+  FINAL ROAR SCOREBOARD: 10M ours EVERYWHERE through 0.9945 (incl. tail: 0.9927@382 > 0.9905@322);
+  100M ours only; 1M Roar <0.965 at 1.25-1.4x, ours >=0.97 + tail (0.9913@1533 > 0.9900@1353).
+  Fig + prose updated. RoarGraph campaign CLOSED: from "mostly not better" to "better everywhere at
+  scale; Roar keeps a 1.3x small-scale band and the >=0.995 extreme tail."
+
+=== SESSION SUMMARY (current, 2026-07-10, through P324) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
