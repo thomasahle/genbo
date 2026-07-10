@@ -4951,7 +4951,24 @@ P316 [2026-07-10] THEORY TEST (Wq vs PRF) -- prediction half-refuted; theory SHA
   graph irreplaceable; churn is a readable signal (it reads edge effects) but unconvertible to probe
   savings; +2.2pt@p8 crumb = locality signal only where routing is worst. Paper Discussion updated.
 
-=== SESSION SUMMARY (current, 2026-07-10, through P316) ===
+P317 [2026-07-10] STREAMING-GRAPH PILOT (idea #8 follow-through): LARGEST graph effect measured anywhere.
+  Static msturing-30M snapshot (d=100 L2; ND-L2 mode added to nndescent, commit d2d1803): random-init
+  ND-L2 graph 30M in 1466s (24.5min, 16t). Static index kf131072 built 403s (7.88GB).
+  1t sweeps (GT clu_msturing30M_gt100, float rerank): graph-OFF p16 0.5847@3117 ... p96 0.7567@904;
+  graph-ON h2: p8 0.7475@3389 | p16 0.7994@2784 | p32 0.8423@1952 | p64 0.8741@1225; h3 p32 0.8557@1893.
+  => ~3.4-3.7x QPS at matched recall (gon2 p8 ~= goff p96), or +9-12pt recall at matched QPS. The d=100
+  low-dim regime amplifies the coverage lever (131k cells, p/K tiny). NOTE: GT ceiling ~0.904 (build-bench
+  plateau) suggests ~10% of GT ids may sit outside this static base (clustered-runbook reference state);
+  on/off DELTAS valid regardless (same GT both arms).
+  INTEGRATION MATH (honest): graph k=16 = 1.92GB; runbook peaked 7.1-7.2GB of the 8GB cap -> OVER budget.
+  Mitigations: k=8 graph (0.96GB) or live-set-only graph (~0.6-1GB), + incremental patches (P314: 4.8x
+  cheaper, quality-preserving; dirty-set cost scales w/ batch). Query-side win is proven; the streaming
+  integration (genbo-streaming fork: graph plumbing + k=8 + patch scheduling inside the 1h budget) is a
+  well-scoped next project. THEORY NOTE (#10): effect size ordering d100 > d200 > d768-in-dist tracks
+  p/K_f coverage fraction, consistent with the materialized-adjacency framing -- the scarcer the probed
+  fraction, the more the stored edges carry.
+
+=== SESSION SUMMARY (current, 2026-07-10, through P317) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
