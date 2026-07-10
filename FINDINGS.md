@@ -4763,7 +4763,17 @@ P302 [2026-07-09] wiki-35M same-window pairwise (load 4.3): genbo-ND vs HNSW int
   Limitations updated (self graph MATCHES competitor 0.965-vs-0.970; "trails 0.4pt" disclosure retired).
   Paper now 15pp, compiles. ALL graphs in the paper are now engine-self-built at competitor grade.
 
-=== SESSION SUMMARY (current, 2026-07-09, through P302) ===
+P303 [2026-07-10] t2i-10M ND check: query-time NULL (good) + i8-metric ceiling characterized.
+  Existing t2i graph (routed self, d=200) is near-exact: 0.9917 overlap. ND seeded 68s -> 0.9699 (descent
+  slightly DEGRADES a 0.99 f32-exact seed: nndescent optimizes i8-quantized dots -> ~0.97 i8 fixpoint; the
+  v1-noted i8-vs-f32 ceiling, first time it binds). ND rand 316s -> 0.9246 pure self-build.
+  Champion A/B (gamma0.5 M32 p40 1t): OLD vs ND IDENTICAL -- R2 0.9161@2455 vs 0.9161@2495; R3 0.9214@2333
+  vs 0.9215@2327. => (a) graph-quality saturation (P295) holds OOD; uniform ND provenance viable at every
+  dataset; (b) SYMMETRY: NN-descent needed exactly where routing fails (d=768 0.53->0.90); routing suffices
+  exactly where ND's i8 ceiling binds (d=200 0.99 routed). Possible future work: final f32-refine round in
+  nndescent to break the 0.97 i8 ceiling (no current need -- query-time equivalent).
+
+=== SESSION SUMMARY (current, 2026-07-10, through P303) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
