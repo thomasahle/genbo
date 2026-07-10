@@ -1570,12 +1570,15 @@ change and lifts the OOD frontier $1$--$2$ points at matched probes
 (\S\ref{sec:bottleneck}). With it, at 1M RoarGraph keeps only the below-$0.93$ band
 (gate lead ${\sim}1.15\times$, down from $1.32\times$ against the base graph) while
 genbo overtakes above ${\approx}0.97$ and takes the 1M tail ($0.9913$ at $1533$ QPS
-vs $0.9900$ at $1353$); at the 10M tail genbo ties RoarGraph through recall
-${\approx}0.988$ ($353$ vs ${\sim}360$ QPS), with RoarGraph ahead only beyond
-$0.99$; batch-mode ScaNN with deep reorder is competitive there too (mode-matched
+vs $0.9900$ at $1353$); at 10M genbo leads the entire measured range through recall $0.9945$ --- the
+best-first beam over the hybrid edges (\S\ref{sec:graph}) reaches $0.9927$ at $382$
+QPS vs RoarGraph's $0.9905$ at $322$, with RoarGraph ahead only beyond
+${\approx}0.995$; batch-mode ScaNN with deep reorder is competitive there too (mode-matched
 per-query it is not: $323$ vs our $682$ QPS at recall $0.972$). genbo's OOD advantage
-is thus the gate band at scale plus build-time eligibility; the residual
-RoarGraph territory is the small-scale below-gate band and the ${\ge}0.99$ tail. Exact operating points, baseline configurations,
+is thus the full measured range at 10M and 100M plus build-time eligibility; the
+residual RoarGraph territory is the 1M $0.88$--$0.965$ band (its fixed-cost walk beats
+our union re-rank there --- profiling shows we are re-rank-bound, not routing-bound,
+at low $p$) and the extreme ${\ge}0.995$ tail. Exact operating points, baseline configurations,
 and the streaming series are tabulated in Appendix~\ref{app:tables} (Table~\ref{tab:streaming}).
 Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
 \begin{figure}[t]
@@ -1701,8 +1704,8 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
 ]
 \addplot[blue!70!black, thick, mark=*, mark size=1.5pt] coordinates {
   (0.8456,4098) (0.8776,3528) (0.8890,3386) (0.8969,3133) (0.9081,2841) (0.9215,2475)
-  (0.9245,2205) (0.9305,1836) (0.9358,1672) (0.9567,1180) (0.9675,841) (0.9754,770)
-  (0.9807,611) (0.9850,447) (0.9880,353) };
+  (0.9245,2205) (0.9305,1836) (0.9406,1755) (0.9567,1180) (0.9675,841) (0.9754,770)
+  (0.9807,611) (0.9850,447) (0.9922,415) (0.9927,382) (0.9939,329) (0.9945,279) };
 \addlegendentry{ours (hybrid graph)}
 \addplot[black!60!green, thick, dash dot, mark=triangle, mark size=1.9pt, mark options={solid}] coordinates {
   (0.9307,439) (0.9587,396) (0.9724,323) (0.9799,252) (0.9830,185) (0.9841,120) };
@@ -1741,9 +1744,11 @@ Ours uses the \emph{hybrid} graph --- $16$ base-$k$NN edges $+$ $16$
 \emph{co-retrieval} edges (bipartite projection of the track's training queries, the
 same resource RoarGraph consumes; \S\ref{sec:bottleneck}) --- as a drop-in adjacency
 file. At the leaderboard gate (recall $0.90$, dotted), ours leads at 10M
-($1.25\times$ RoarGraph per-query, $6.5\times$ ScaNN, $8.7\times$ HNSW) and is the
-only eligible method at 100M; at 1M RoarGraph keeps the below-$0.93$ band including
-the gate (${\sim}1.15\times$), while ours overtakes above recall ${\approx}0.97$
+($1.25\times$ RoarGraph per-query, $6.5\times$ ScaNN, $8.7\times$ HNSW), leads the
+entire measured 10M range through recall $0.9945$ (best-first beam over the hybrid
+edges: $0.9927$ at $382$ QPS vs RoarGraph's $0.9905$ at $322$), and is the only
+eligible method at 100M; at 1M RoarGraph keeps the $0.88$--$0.965$ band including the
+gate (${\sim}1.15$--$1.6\times$), while ours overtakes above recall ${\approx}0.97$
 and takes the 1M tail ($0.9913$ at $1533$ QPS vs $0.9900$ at $1353$). A code-side
 IVFPQ-FastScan$+$refine baseline caps at recall $0.73$ (10M) and does not appear.}
 \label{fig:oodfrontier}

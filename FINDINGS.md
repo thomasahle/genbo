@@ -5036,7 +5036,22 @@ P322 [2026-07-10] CO-RETRIEVAL AT 1M: THE 1M TAIL FLIPS TO US. hyb32(co+base) 1M
   sets the OOD frontier). The user's "can we beat RoarGraph?" -> mostly yes, via its own materialization
   consumed by our engine; residual Roar territory: 1M below-gate band + >=0.99 tail.
 
-=== SESSION SUMMARY (current, 2026-07-10, through P322) ===
+P323 [2026-07-10] *** BEAT-ROAR BATTERY: 10M TAIL FALLS; P311 SUPERSEDED; profile truth at low p ***
+  (1) PROFILE (1M p4 hybrid): rescore 48.2% (109us/q, 1061 union cands @103ns/row), route 33.4%, graph
+  8.3%, scan 4.4%, float 5.8% -> LOW-p is UNION-RERANK-BOUND, not routing-bound. Roar's low-band edge =
+  fewer dist comps, not a structural moat; closable by union trimming (M/KEDGE budget vs recall).
+  (2) TINY-SEED WALKS WORK ON HYBRID EDGES (P311 superseded by the directional theory): 1M h4p2 M48
+  0.9328@3287 | h5p4 M64 0.9639@2211; 10M h4p4 0.9021@2646 | h5p4 0.9218@1886 | h5p8 bf1 0.9406@1755.
+  vs base-edge P311 (t2i h4p4 0.8260@3506): +12.1pt at similar cost. The seeder was load-bearing ONLY
+  because base edges could not reach along the query manifold. 10M 0.94-band flips to us (1755 vs Roar 1427).
+  (3) BEST-FIRST BEAM TAIL (bf=1, hybrid, big M): 10M M96h4p384 0.9927@382 | M128h5p384 0.9939@329 |
+  M128h5p512 0.9945@279 | M96h6p256 0.9922@415. vs Roar 0.9905@322 / 0.9966@165: OURS LEADS THROUGH
+  0.9945 (higher recall AND QPS at 0.9927); Roar keeps only >=0.995. Note 0.9922@415 STRICTLY DOMINATES
+  the old 0.9880@353 tail. NEW SCOREBOARD: 10M ours everywhere measured through 0.9945; 100M ours only;
+  1M Roar keeps 0.88-0.965 (fixed-cost walk vs our rerank-bound union), ours >=0.97 + tail. Figure +
+  prose updated. All configs Roar-fair (same train resource).
+
+=== SESSION SUMMARY (current, 2026-07-10, through P323) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
