@@ -5008,7 +5008,23 @@ P320 [2026-07-10] OOD FIGURE COMPLETION (user-directed): RoarGraph at 1M + exten
   scale-dependent + whole: gate wins at 10M/100M ours, 1M gate RoarGraph's, tail >=0.985 RoarGraph's.
   23pp, renders verified.
 
-=== SESSION SUMMARY (current, 2026-07-10, through P320) ===
+P321 [2026-07-10] *** CO-RETRIEVAL GRAPH: query-aware materialized adjacency BEATS base-kNN edges OOD ***
+  (theory-directed attack on RoarGraph's structural edge). Built bipartite-projection graph from the SAME
+  train resource Roar uses (2M train queries' GT, which we computed): edges = co-occurrence in top-10,
+  ranked by count, base-kNN fallback (co coverage: most nodes); plus HYBRID k=32 = [16 co][16 base-nd].
+  Drop-in (SBANN_GRAPH_FILE), ZERO engine changes. t2i-10M 1t:
+    co16 h2: p8 0.8456@4098 (+1.7pt vs base-k16 same p) | p16 0.8890@3386 (+1.2pt AND faster) | p40 0.9215@2475.
+    hyb32 h2: p8 0.8861@3222 | p16 0.9161@2493 (base needed p40 for this recall).
+    hyb32 h3 tail: p384 0.9850@447 | p512 0.9880@353 (vs base-k32 0.9860@365) -> NEW TAIL BEST.
+  Gate QPS: ~2841 -> ~3000 (+5-7%); lead over RoarGraph at 10M gate grows 1.16x -> ~1.22-1.25x.
+  Roar extended tail (L=800/1600/3200): 0.9905@322 / 0.9966@165 / 0.9988@78 -> ours now TIED through
+  ~0.988 (353 vs ~360 interp); Roar keeps >=0.99 (its L=800+ regime).
+  THEORY COMPLETION: materialized adjacency has a DIRECTION -- base-kNN edges repair the base manifold,
+  co-retrieval edges reach along the QUERY manifold; they are COMPLEMENTARY (hybrid > either alone;
+  co16 alone loses the tail to base-k32). The bottleneck currency is materialized adjacency ALIGNED WITH
+  the query distribution. 1M co-graph test in flight (does it close Roar's 1M gate lead?).
+
+=== SESSION SUMMARY (current, 2026-07-10, through P321) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
