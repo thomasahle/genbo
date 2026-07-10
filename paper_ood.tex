@@ -485,6 +485,39 @@ control that localizes the bottleneck to routing coverage.
 \section{$\gamma$: One-Parameter Routing Recalibration}
 \begin{figure}[t]
 \centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.62\textwidth, height=0.40\textwidth,
+  xlabel={\footnotesize probes $p$}, ylabel={\footnotesize recall@10 (graph off)},
+  xmode=log, log basis x=2, xmin=7, xmax=72, ymin=0.62, ymax=0.92,
+  grid=both, grid style={black!10}, tick label style={font=\scriptsize},
+  legend style={font=\footnotesize, at={(0.97,0.03)}, anchor=south east}, legend cell align=left,
+]
+\addplot[blue!70!black, thick, mark=*, mark size=1.8pt] coordinates {(8,0.7556) (16,0.8296) (32,0.8693) (64,0.8886)};
+\addlegendentry{$\gamma=0.5$ (calibrated)}
+\addplot[black!60, thick, densely dotted, mark=triangle, mark size=2pt, mark options={solid}] coordinates {(8,0.7568) (16,0.8249) (32,0.8649) (64,0.8836)};
+\addlegendentry{$\gamma=0.3$}
+\addplot[red!60!black, thick, dashed, mark=square, mark size=1.8pt, mark options={solid}] coordinates {(8,0.6522) (16,0.7538) (32,0.8276) (64,0.8689)};
+\addlegendentry{$\gamma=1$ ($L_2$ routing)}
+\draw[-{Stealth}, black!70] (axis cs:16,0.7538) -- (axis cs:8.35,0.7522)
+  node[midway, below, font=\scriptsize, black!70] {$2\times$ fewer probes};
+\draw[-{Stealth}, black!70] (axis cs:32,0.8276) -- (axis cs:16.7,0.8262);
+\draw[-{Stealth}, black!70] (axis cs:64,0.8689) -- (axis cs:33.4,0.8667);
+\end{axis}
+\end{tikzpicture}
+\caption{The $\gamma$ recalibration effect on OOD routing (text2image-10M, graph off to
+isolate routing; recall is deterministic). At every operating point, $\gamma{=}0.5$
+matches the recall of $L_2$ routing ($\gamma{=}1$) at half the probes ---
+$0.7556$ at $p{=}8$ vs $0.7538$ at $p{=}16$, $0.8296$ at $16$ vs $0.8276$ at $32$,
+$0.8693$ at $32$ vs $0.8689$ at $64$ --- a uniform horizontal shift of the routing
+curve at zero query-time cost. $\gamma{=}0.3$ overshoots slightly, bracketing the
+optimum.}
+\label{fig:gammaeffect}
+\end{figure}
+
+
+\begin{figure}[t]
+\centering
 \begin{tikzpicture}[>=Stealth, font=\small, line cap=round, line join=round]
   % ---- (b) angular cap: narrow sector from the origin through q (drawn first, underneath) ----
   \path[pattern=north east lines, pattern color=red!60!black!50]
@@ -564,7 +597,8 @@ specific way: the $\lVert c\rVert^2$ penalty demotes high-norm centroids, but fo
 OOD queries the inner-product-relevant neighbors concentrate precisely near those
 high-norm cells, so $\gamma{=}1$ systematically misroutes them. A single global
 $\gamma{<}1$ rebalances the two terms. It is grounded in the cap-vs-ball argument of
-\S\ref{sec:theory}, illustrated in Figure~\ref{fig:capball}: $\gamma$ slides routing along the additive-ball ($\gamma{=}1$,
+\S\ref{sec:theory}, illustrated in Figure~\ref{fig:capball}; Figure~\ref{fig:gammaeffect}
+shows the measured effect: $\gamma$ slides routing along the additive-ball ($\gamma{=}1$,
 non-selective under concentration) to spherical-cap ($\gamma{\to}0$, selective) axis.
 
 Crucially the fix is \emph{free at query time}: $s_\gamma$ differs from the $L_2$
@@ -1053,6 +1087,32 @@ routing and coverage on top).
 (build-time only).}
 
 \section{Multi-Assignment (SOAR)}
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.55\textwidth, height=0.34\textwidth, ybar, bar width=9pt,
+  ylabel={\footnotesize cells to cover all 10 NN}, ymin=0, ymax=12,
+  symbolic x coords={t2i median, t2i p90, Cohere median, Cohere p90},
+  xtick=data, x tick label style={font=\scriptsize}, tick label style={font=\scriptsize},
+  legend style={font=\footnotesize}, legend cell align=left,
+  nodes near coords, every node near coord/.append style={font=\scriptsize},
+]
+\addplot[fill=red!25, draw=red!60!black] coordinates {(t2i median,7) (t2i p90,10) (Cohere median,7) (Cohere p90,9)};
+\addlegendentry{single assignment}
+\addplot[fill=blue!25, draw=blue!70!black] coordinates {(t2i median,4) (t2i p90,7) (Cohere median,3) (Cohere p90,6)};
+\addlegendentry{multi-assignment ($a_0{=}3$)}
+\end{axis}
+\end{tikzpicture}
+\caption{What multi-assignment buys, measured on the dumped assignments: the number of
+cells an oracle must probe to cover all 10 true neighbors drops by roughly half with
+$a_0{=}3$ (greedy set cover, 10M scale, both datasets). Each stored copy is a unit of
+\emph{materialized} coverage --- the same currency as the graph's edges
+(\S\ref{sec:bottleneck}).}
+\label{fig:soar}
+\end{figure}
+
+
 \label{sec:soar}
 The remaining coverage lever is redundancy: assign each point to its top-$a_0$ cells
 rather than one, so a query reaching any of them finds the point. Naive replication
@@ -1064,7 +1124,7 @@ original id \emph{before} the survivor cap, otherwise the $a_0$ duplicate copies
 point crowd the fixed-size shortlist and starve distinct ids (recall then falls, and
 paradoxically decreases with more probes --- the signature of the bug). With the fix,
 multi-assignment raises the routing-coverage ceiling.
-\effect{$a_0{=}2$ reaches OOD coverage parity with the baseline partition; higher
+\effect{$a_0{=}2$ reaches OOD coverage parity with the baseline partition (Figure~\ref{fig:soar}); higher
 $a_0$ extends the high-recall frontier at a storage/scan cost linear in $a_0$
 (the $a_0$ factor in the scan term, \S\ref{sec:routecost}).}
 
@@ -1348,9 +1408,51 @@ self-built $k$-NN graph supplies what routing misses (\S\ref{sec:lim}). Both loc
 
 \section{Discussion: A Summary-Prediction Bottleneck}
 \label{sec:bottleneck}
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  name=oa, width=0.46\textwidth, height=0.38\textwidth,
+  title={\small text2image-10M}, xlabel={\footnotesize probes $p$}, ylabel={\footnotesize coverage / recall@10},
+  xmode=log, log basis x=2, xmin=3.5, xmax=140, ymin=0.6, ymax=1.02,
+  grid=both, grid style={black!10}, tick label style={font=\scriptsize},
+  legend style={font=\tiny, at={(0.97,0.03)}, anchor=south east}, legend cell align=left,
+]
+\addplot[black, very thick] coordinates {(4,0.8900) (8,0.9960) (16,1.0) (32,1.0) (64,1.0) (96,1.0)};
+\addlegendentry{oracle router (GT set-cover)}
+\addplot[blue!70!black, thick, mark=*, mark size=1.5pt] coordinates {(8,0.8289) (16,0.8775) (24,0.8969) (40,0.9161) (64,0.9267) (96,0.9318)};
+\addlegendentry{achieved, graph on}
+\addplot[red!60!black, thick, dashed, mark=square, mark size=1.5pt, mark options={solid}] coordinates {(8,0.7556) (16,0.8296) (24,0.8560) (40,0.8780) (64,0.8886) (96,0.8919)};
+\addlegendentry{achieved, graph off}
+\end{axis}
+\begin{axis}[
+  at={(oa.outer east)}, anchor=outer west, width=0.46\textwidth, height=0.38\textwidth,
+  title={\small Cohere-10M}, xlabel={\footnotesize probes $p$},
+  xmode=log, log basis x=2, xmin=3.5, xmax=180, ymin=0.85, ymax=1.01,
+  grid=both, grid style={black!10}, tick label style={font=\scriptsize},
+  legend style={font=\tiny, at={(0.97,0.03)}, anchor=south east}, legend cell align=left,
+]
+\addplot[black, very thick] coordinates {(4,0.9480) (8,0.9989) (16,1.0) (32,1.0) (64,1.0) (128,1.0)};
+\addplot[blue!70!black, thick, mark=*, mark size=1.5pt] coordinates {(16,0.9653) (32,0.9768) (64,0.9848) (96,0.9871) (128,0.9893)};
+\addplot[red!60!black, thick, dashed, mark=square, mark size=1.5pt, mark options={solid}] coordinates {(16,0.9015) (32,0.9370) (64,0.9609) (96,0.9689) (128,0.9735)};
+\end{axis}
+\end{tikzpicture}
+\caption{The summary-prediction bottleneck, quantified. An oracle router that knew which
+cells hold each query's true neighbors (greedy set cover over the dumped assignments,
+ground truth used for analysis only) reaches $100\%$ coverage by $p{=}16$ on both
+datasets (black): the neighbors are cell-concentrated. The engine's calibrated
+geometric score (graph off, dashed) trails that roofline by $10$--$24$ points at
+$p{=}16$ and closes only logarithmically with more probes --- the gap is a
+\emph{prediction} failure, not an occupancy one. The $k$-NN graph (solid blue)
+recovers most of the gap at every $p$ by injecting materialized point-level adjacency
+(\S\ref{sec:bottleneck}).}
+\label{fig:oracle}
+\end{figure}
+
+
 The localization result --- coverage-bound OOD, precision-bound in-distribution ---
 admits a single underlying mechanism, which an \emph{oracle-router} analysis makes
-quantitative. Dumping the index's point$\to$cell assignments and greedily set-covering
+quantitative (Figure~\ref{fig:oracle}). Dumping the index's point$\to$cell assignments and greedily set-covering
 each evaluation query's true top-10 (ground truth used only for analysis) shows the
 neighbors are \emph{cell-concentrated}: a median of 3--4 cells (with $a_0{=}3$
 multi-assignment) holds all ten, and an oracle that knew which cells would reach

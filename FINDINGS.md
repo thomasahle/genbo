@@ -4980,7 +4980,19 @@ P318 [2026-07-10] k=8 STREAMING-GRAPH CHECK: NEGATIVE -- edge count is load-bear
   Theory-consistent: the graph carries exactly what geometry cannot, and its capacity (edges) is the
   currency.
 
-=== SESSION SUMMARY (current, 2026-07-10, through P318) ===
+P319 [2026-07-10] FIGURE PASS 2 (user-directed "more and better figures"): 3 new data figures + 2 new
+  measurements. (a) fig:oracle (Discussion centerpiece): oracle roofline vs achieved goff/gon coverage
+  curves, both 10M datasets -- the bottleneck made visual. (b) fig:gammaeffect: NEW gamma sweep
+  (recall-vs-p graph-off, load-independent, t2i-10M): gamma=0.5 matches gamma=1 at HALF the probes at
+  every point (0.7556@8 vs 0.7538@16 | 0.8296@16 vs 0.8276@32 | 0.8693@32 vs 0.8689@64); gamma=0.3
+  slightly under 0.5 (optimum bracketed). The paper's "half the probes" claim now a measured curve.
+  (c) fig:soar: NEW occupancy measurement from dumps: cells-to-cover-all-10 with primary-only vs a0=3:
+  t2i 7->4 median (p90 10->7), cohere 7->3 (9->6) -- multi-assignment HALVES oracle occupancy;
+  "materialized coverage, same currency as edges". 23pp, all render verified. QUEUED for clean window:
+  ScaNN curves on the in-dist frontier panels (serialized cohere indexes exist), ours-1M low-p splice,
+  k32 tail, Roar-1M curve.
+
+=== SESSION SUMMARY (current, 2026-07-10, through P319) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
