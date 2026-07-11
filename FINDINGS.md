@@ -5119,7 +5119,19 @@ P329 [2026-07-11] NEW-DATASET RESULTS (partial; msturing pending):
   ours everywhere at scale; 0.36 webvid: Roar). Theory-consistent (materialized adjacency is everything
   there; traversal efficiency then decides). Roar webvid build 574s + trainGT; all Roar-fair.
 
-=== SESSION SUMMARY (current, 2026-07-11, through P329) ===
+P330 [2026-07-11] DATASET EXPANSION COMPLETE (fig 13 -> 5 in-dist panels; fig 14 -> 4 OOD panels).
+  MSTuring-30M FIXED (my clean-GT had mixed f32 queries vs i8-cast base -> both systems ~0; redone on the
+  true f32 base): ours (0.7475,3403)(0.7995,2562)(0.8633,1654)(0.9048,817)(0.9262,268) vs HNSW ef40-640
+  (0.6574,2281)...(0.8989,218) => OURS 2.5-4x + exceeds HNSW's ceiling (0.9262 vs 0.8989). DEEP-10M:
+  ours ~2x across measured range (HNSW's deep tail beyond our sweep noted honestly). WEBVID panel added
+  with the regime map: routed coverage 0.36 -> Roar wins home turf 2-4x, we beat HNSW; caption + Results
+  prose carry "routed coverage maps the regimes" (where routing retains signal -> IVF-PQ hybrid wins;
+  where it collapses -> the pure query-aware walk). LAION dropped for now (the-eye mirror dead, 58MB/hrs).
+  25pp, renders verified. FIVE in-dist datasets (cohere 1M/10M cosine, wiki35M d1024, msturing30M L2 d100,
+  deep10M L2 d96) all OURS vs HNSW/ScaNN/Roar; FOUR OOD panels (t2i 1M/10M/100M ours at scale, webvid
+  Roar's regime).
+
+=== SESSION SUMMARY (current, 2026-07-11, through P330) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann

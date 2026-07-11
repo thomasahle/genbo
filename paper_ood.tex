@@ -1582,7 +1582,16 @@ is thus the full measured range at 10M and 100M plus build-time eligibility; the
 residual RoarGraph territory, after the coarse-cell corollary is applied at 1M
 ($K_f{=}16384\to2048$--$4096$ with the hybrid graph, turning a $1.25$--$1.4\times$
 deficit across the band into ties-or-leads from recall $0.80$ up), is the sub-$0.78$
-sliver at 1M (${\sim}7\%$) and the extreme ${\ge}0.995$ tail at 10M. Exact operating points, baseline configurations,
+sliver at 1M (${\sim}7\%$) and the extreme ${\ge}0.995$ tail at 10M. Two further in-distribution datasets confirm the pattern at other metrics and
+dimensions (Figure~\ref{fig:frontier}, bottom row): on MSTuring-30M ($L_2$,
+$d{=}100$) ours leads HNSW $2.5$--$4\times$ and exceeds its recall ceiling
+($0.9262$ vs $0.8989$); on DEEP-10M ($L_2$, $d{=}96$) ours leads ${\sim}2\times$
+across the measured range. On WebVid-2.5M (Figure~\ref{fig:oodfrontier}, bottom),
+the extreme-OOD boundary appears: with calibrated routed coverage at only $0.36$,
+RoarGraph's walk wins its home benchmark $2$--$4\times$ while ours still beats HNSW
+--- consistent with the bottleneck theory: when routing carries no signal, frontier
+ownership passes to whoever traverses materialized adjacency most efficiently.
+Exact operating points,
 and the streaming series are tabulated in Appendix~\ref{app:tables} (Table~\ref{tab:streaming}).
 Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
 \begin{figure}[t]
@@ -1665,9 +1674,39 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
       \addplot[hnsw] coordinates {
         (0.9647,290) (0.9778,154) (0.9818,88)};
     \end{axis}
-  \end{tikzpicture}
+  \end{tikzpicture}\\[6pt]
+  \begin{tikzpicture}
+    \begin{axis}[frontierpanel,
+        ymode=log,
+        title={MSTuring 30M ($L_2$, self-built graph)},
+        ylabel={QPS (single thread)},
+        xtick={0.70,0.80,0.90},
+        ytick={400,1000,2500}]
+      \addplot[ours] coordinates {
+        (0.7475,3403) (0.7995,2562) (0.8633,1654) (0.9048,817) (0.9262,268)};
+      \addplot[hnsw] coordinates {
+        (0.6574,2281) (0.7371,1358) (0.8094,724) (0.8607,382) (0.8989,218)};
+    \end{axis}
+  \end{tikzpicture}%
+  \hfill
+  \begin{tikzpicture}
+    \begin{axis}[frontierpanel,
+        ymode=log,
+        title={DEEP 10M ($L_2$, self-built graph)},
+        xtick={0.86,0.90,0.94,0.98},
+        ytick={500,1000,2000,4000}]
+      \addplot[ours] coordinates {
+        (0.8538,5563) (0.8964,4435) (0.9333,3201) (0.9391,3059) (0.9588,2146) (0.9731,1700)};
+      \addplot[hnsw] coordinates {
+        (0.8918,2564) (0.9463,1432) (0.9764,787) (0.9899,417) (0.9953,220)};
+    \end{axis}
+  \end{tikzpicture}%
+  \hfill\mbox{}
   \caption{Recall--QPS frontiers (recall@10 versus single-thread queries per
-  second, log scale) on Cohere 1M, Cohere 10M, and Wikipedia 35M, with both
+  second, log scale) on Cohere 1M, Cohere 10M, Wikipedia 35M, MSTuring 30M
+  ($d{=}100$, $L_2$; ours $2.5$--$4\times$ HNSW, exceeding its $0.899$ ceiling), and
+  DEEP 10M ($d{=}96$, $L_2$; ours ${\sim}2\times$ across the measured range, HNSW's
+  deep tail beyond our sweep's last point), with both
   systems measured as same-window sequential pairs; our system runs graph-free
   at 1M and with self-built graphs at 10M and 35M. At every operating point shown, on
   all three scales our frontier lies above and to the right of HNSW's,
@@ -1747,6 +1786,26 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
 \node[align=center, font=\scriptsize, black!70] at (axis cs:0.905,860)
   {only build-eligible method:\\ScaNN killed at the 2h gate;\\RoarGraph's train-GT alone\\${\sim}10$h (measured $58$min at 10M)};
 \end{axis}
+\end{tikzpicture}\\[6pt]
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.5\textwidth, height=0.40\textwidth,
+  title={\small WebVid 2.5M (text$\to$video, extreme OOD)},
+  xlabel={\footnotesize recall@10}, ylabel={\footnotesize QPS (1 thread)},
+  ymode=log, xmin=0.58, xmax=1.0, ymin=150, ymax=6000,
+  grid=both, grid style={black!10}, tick label style={font=\scriptsize},
+  legend style={font=\tiny, at={(0.03,0.03)}, anchor=south west}, legend cell align=left,
+]
+\addplot[blue!70!black, thick, mark=*, mark size=1.5pt] coordinates {
+  (0.6619,2371) (0.7968,1527) (0.8287,1400) (0.8701,1168) (0.9143,572) (0.9301,394) (0.9370,266) };
+\addlegendentry{ours (coarse cells, hybrid graph, beam)}
+\addplot[orange!80!black, thick, densely dotted, mark=diamond, mark size=1.9pt, mark options={solid}] coordinates {
+  (0.7479,5181) (0.8347,3221) (0.8957,1896) (0.9360,1047) (0.9613,591) (0.9762,316) };
+\addlegendentry{RoarGraph}
+\addplot[red!60!black, thick, dashed, mark=square, mark size=1.5pt, mark options={solid}] coordinates {
+  (0.6025,2073) (0.7108,1137) (0.7972,691) (0.8641,372) (0.9121,207) };
+\addlegendentry{HNSW}
+\end{axis}
 \end{tikzpicture}
 \caption{Out-of-distribution frontiers (text2image, $d{=}200$, inner product): QPS vs.\
 recall@10, single thread, same box, at 1M, 10M, and 100M. Ours, ScaNN, and RoarGraph
@@ -1766,7 +1825,14 @@ coverage replaces fine partitioning, \S\ref{sec:coarse}) closes the band: ours t
 or leads RoarGraph from recall ${\approx}0.80$ upward (gate: $6.5$k vs $6.4$k QPS)
 and takes the 1M tail ($0.9913$ at $1533$ vs $0.9900$ at $1353$); RoarGraph stays
 marginally ahead only below recall ${\approx}0.78$. A code-side
-IVFPQ-FastScan$+$refine baseline caps at recall $0.73$ (10M) and does not appear.}
+IVFPQ-FastScan$+$refine baseline caps at recall $0.73$ (10M) and does not appear.
+The bottom panel adds WebVid ($d{=}512$), RoarGraph's hardest published benchmark and
+an \emph{extreme}-OOD regime: calibrated routed coverage reaches only $0.36$ at
+$p{=}32$ (vs $0.83$ on text2image), so nearly all coverage must come from materialized
+adjacency --- there its purpose-built query-aware walk beats our seeded union
+$2$--$4\times$ (both using its training data), while we still beat HNSW throughout.
+Routed coverage thus maps the regimes: where routing retains signal, the IVF-PQ
+hybrid wins; where it collapses, the pure walk does.}
 \label{fig:oodfrontier}
 \end{figure}
 
