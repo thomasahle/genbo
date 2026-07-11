@@ -5105,7 +5105,21 @@ P328 [2026-07-11] NEW DATASETS (user: 1-2 more of each kind). Acquired: WebVid-2
   (cohere 1M/10M, wiki35M, msturing30M, deep10M) and fig:oodfrontier gains webvid (Roar's home turf)
   [+laion if download completes]. i8 conversion for f32-only datasets: symmetric scale 127/maxabs.
 
-=== SESSION SUMMARY (current, 2026-07-11, through P328) ===
+P329 [2026-07-11] NEW-DATASET RESULTS (partial; msturing pending):
+  DEEP-10M (in-dist L2 d96): OURS ~2x HNSW across range (gon p16 0.8964@4435, p64 0.9588@2146, h3p96
+  0.9731@1700 vs HNSW ef80 0.9463@1432, ef160 0.9764@787). Panel-ready. Builds: idx 113s, nd 452s.
+  WEBVID-2.5M (OOD text->video d512, Roar's hardest home benchmark): EXTREME-OOD regime discovered.
+  gamma calibration: gamma=1 -> 0.16 coverage@p32 (!), gamma~0.2 -> 0.36 (vs t2i 0.83) -- routing nearly
+  uninformative. First-shot config was 3-5x behind Roar; walk-end attack (kf4096 coarse cells + gamma0.2
+  + hybrid h5-h8 bestfirst M64-96) doubled it: (0.6619,2371)(0.7968,1527)(0.8701,1168)(0.9143,572)
+  (0.9301,394)(0.9370,266) -- BEATS HNSW everywhere (0.9121@207 max) but TRAILS ROAR 2-4x (Roar:
+  0.8957@1896, 0.9360@1047, 0.9762@316). HONEST VERDICT: webvid demarcates the design-space boundary --
+  as routed coverage -> 0, purpose-built query-aware walks (Roar M_pjbp=35 trained projection) beat
+  seeded-union traversal. REGIME MAP for the paper: routed-coverage@p32 predicts the winner (0.83 t2i:
+  ours everywhere at scale; 0.36 webvid: Roar). Theory-consistent (materialized adjacency is everything
+  there; traversal efficiency then decides). Roar webvid build 574s + trainGT; all Roar-fair.
+
+=== SESSION SUMMARY (current, 2026-07-11, through P329) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
