@@ -5084,7 +5084,18 @@ P326 [2026-07-11] ROARGRAPH IN-DISTRIBUTION (user: "maybe we beat roargraph iid?
   (GT+build ~20h+, gate-scale argument). Directional-adjacency theory now confirmed BOTH ways:
   co-edges lift OOD where base edges cannot (P321), and query-projection buys nothing in-dist (this).
 
-=== SESSION SUMMARY (current, 2026-07-11, through P326) ===
+P327 [2026-07-11] ROARGRAPH IN-DIST AT 10M: OURS LEADS 1.2-1.45x ACROSS THE RANGE. Build 5532s (92min,
+  16t, d=768) + 500k base-distributed train queries (GT 22min IVF-approx). Sweep (1t, exact cohere_gt
+  referee): (0.9118,2268)(0.9575,1319)(0.9781,719)(0.9891,367)(0.9947,198)(0.9964,109). vs ours:
+  0.9575: 1319 vs ~1570 (1.19x) | 0.9781: 719 vs ~960 (1.34x) | 0.9891: 367 vs ~525 (1.43x). Roar again
+  edges HNSW in-dist (0.9891@367 vs 0.9859@308) but sits inside our frontier. GLITCH LOG: first sweep
+  read recall 0.10-flat -- my hand-einsum'd gt DISTS were the culprit (ids were perfect, 1.0000 agreement
+  with faiss flat); withdist recall counting uses the dists. Rewrote gt via faiss-native (Dst,I) like the
+  working 1M path -> clean. Also earlier: bogus 3GB base.10M.fbin from the killed first launch (sed missed
+  the pack line) blocked the symlink; fixed. IN-DIST VERDICT COMPLETE: fig 13 panels 1M+10M now carry
+  Roar curves; it trails ours 1.2-2.4x everywhere in-dist. wiki-35M skipped (~20h pipeline).
+
+=== SESSION SUMMARY (current, 2026-07-11, through P327) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
