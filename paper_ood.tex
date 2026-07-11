@@ -1068,7 +1068,10 @@ knee (Figure~\ref{fig:knee}): too fine wastes routing, too coarse inflates the s
 Empirically the knee sits near 150 points/leaf at 10M, and both finer and coarser
 builds lose to it.
 \effect{At 10M, with $\gamma$, graph coverage, and tree-EM held fixed, moving from the
-fine-cell to the 152-point-cell geometry takes the ScaNN ratio $0.92\to0.85$; routing evals/query drop $\sim$12{,}000$\to$6{,}144.}
+fine-cell to the 152-point-cell geometry takes the ScaNN ratio $0.92\to0.85$; routing evals/query drop $\sim$12{,}000$\to$6{,}144.
+The same shift wins OOD at 1M: with the hybrid graph, $K_f{=}16384\to4096$
+($61\to244$ pts/leaf) is $+2$ recall points at $+8\%$ QPS at the gate, and it is
+what closes the small-scale frontier (Figure~\ref{fig:oodfrontier}).}
 
 \section{Joint Cross-Level Partition Optimization (Tree-EM)}
 \label{sec:em}
@@ -1576,10 +1579,10 @@ QPS vs RoarGraph's $0.9905$ at $322$, with RoarGraph ahead only beyond
 ${\approx}0.995$; batch-mode ScaNN with deep reorder is competitive there too (mode-matched
 per-query it is not: $323$ vs our $682$ QPS at recall $0.972$). genbo's OOD advantage
 is thus the full measured range at 10M and 100M plus build-time eligibility; the
-residual RoarGraph territory is the 1M below-$0.965$ band at ${\sim}1.25$--$1.4\times$
-(its fixed-cost walk beats our routing$+$union stack there; profiling shows we are
-re-rank-bound at low $p$, and union-budget trimming narrows the gap from over
-$2\times$) and the extreme ${\ge}0.995$ tail at 10M. Exact operating points, baseline configurations,
+residual RoarGraph territory, after the coarse-cell corollary is applied at 1M
+($K_f{=}16384\to2048$--$4096$ with the hybrid graph, turning a $1.25$--$1.4\times$
+deficit across the band into ties-or-leads from recall $0.80$ up), is the sub-$0.78$
+sliver at 1M (${\sim}7\%$) and the extreme ${\ge}0.995$ tail at 10M. Exact operating points, baseline configurations,
 and the streaming series are tabulated in Appendix~\ref{app:tables} (Table~\ref{tab:streaming}).
 Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
 \begin{figure}[t]
@@ -1680,10 +1683,10 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
   legend style={font=\tiny, at={(0.03,0.03)}, anchor=south west}, legend cell align=left,
 ]
 \addplot[blue!70!black, thick, mark=*, mark size=1.5pt] coordinates {
-  (0.8239,7633) (0.8596,6340) (0.8726,5605) (0.8915,5582) (0.9062,5132) (0.9183,4629)
-  (0.9355,4375) (0.9469,3980) (0.9540,3671) (0.9659,3143) (0.9755,2476) (0.9782,2358)
-  (0.9859,1794) (0.9913,1533) };
-\addlegendentry{ours (hybrid graph)}
+  (0.7583,12329) (0.8068,11457) (0.8492,8612) (0.8741,8512) (0.8986,6517) (0.9083,6181)
+  (0.9263,5539) (0.9355,4979) (0.9425,4514) (0.9540,3671) (0.9598,3351) (0.9659,3143)
+  (0.9755,2476) (0.9782,2358) (0.9859,1794) (0.9913,1533) };
+\addlegendentry{ours (hybrid graph, coarse cells)}
 \addplot[black!60!green, thick, dash dot, mark=triangle, mark size=1.9pt, mark options={solid}] coordinates {
   (0.8296,4775) (0.8970,3210) (0.9411,1959) (0.9646,1114) (0.9749,592) (0.9798,314) };
 \addlegendentry{ScaNN}
@@ -1749,10 +1752,11 @@ file. At the leaderboard gate (recall $0.90$, dotted), ours leads at 10M
 ($1.25\times$ RoarGraph per-query, $6.5\times$ ScaNN, $8.7\times$ HNSW), leads the
 entire measured 10M range through recall $0.9945$ (best-first beam over the hybrid
 edges: $0.9927$ at $382$ QPS vs RoarGraph's $0.9905$ at $322$), and is the only
-eligible method at 100M; at 1M RoarGraph keeps the below-$0.965$ band including the
-gate (${\sim}1.25$--$1.4\times$ after union-budget trimming), while ours overtakes
-above recall ${\approx}0.97$
-and takes the 1M tail ($0.9913$ at $1533$ QPS vs $0.9900$ at $1353$). A code-side
+eligible method at 100M; at 1M, applying the coarse-cell corollary ($K_f{=}16384\to2048$--$4096$; graph
+coverage replaces fine partitioning, \S\ref{sec:coarse}) closes the band: ours ties
+or leads RoarGraph from recall ${\approx}0.80$ upward (gate: $6.5$k vs $6.4$k QPS)
+and takes the 1M tail ($0.9913$ at $1533$ vs $0.9900$ at $1353$); RoarGraph stays
+marginally ahead only below recall ${\approx}0.78$. A code-side
 IVFPQ-FastScan$+$refine baseline caps at recall $0.73$ (10M) and does not appear.}
 \label{fig:oodfrontier}
 \end{figure}

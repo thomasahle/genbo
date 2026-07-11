@@ -5060,7 +5060,19 @@ P324 [2026-07-10] LOW-BAND UNION TRIMMING (profile-directed): co16/hyb with smal
   Fig + prose updated. RoarGraph campaign CLOSED: from "mostly not better" to "better everywhere at
   scale; Roar keeps a 1.3x small-scale band and the >=0.995 extreme tail."
 
-=== SESSION SUMMARY (current, 2026-07-10, through P324) ===
+P325 [2026-07-11] *** COARSE-CELL COROLLARY FLIPS THE 1M OOD BAND (user: "fig 14 still loses to Roar") ***
+  Our own corollary, never applied to 1M OOD: kf16384 (61/leaf, graph-off optimum) -> kf2048/4096
+  (244-488/leaf) with the hybrid graph. Scale-ladder indexes were on disk. Results (1t):
+  kf2048: p1 0.7583@12329 | p2 hyb 0.9083@6181 | p4 0.9425@4514. kf4096: p2co 0.8068@11457 |
+  p4co 0.8741@8512 | p2hyb 0.8986@6517 | p4hyb(M24) 0.9263@5539 | p4(M32) 0.9355@4979 | p8 0.9598@3351 |
+  h4p8 0.9725@2262 | h4p16 0.9808@1925. vs RoarGraph: ties-or-leads from 0.80 up (0.87: 8512 vs ~7900;
+  gate 6.5k vs 6.4k = PARITY; 0.93: 5539 vs 5160; 0.94-0.96 ours), Roar keeps only <0.78 (~7%).
+  Corollary validated OOD small-scale: kf16384->4096 = +2pt AND +8% QPS at the gate. Fig 14 1M curve
+  replaced (16-pt pareto), caption/prose/coarse-cell effect updated. FINAL Roar residuals: 1M sub-0.78
+  sliver + 10M >=0.995 tail. Theory note: geometry re-optimization under materialized coverage is part
+  of the same story -- coverage from edges frees cells to be cost-optimal.
+
+=== SESSION SUMMARY (current, 2026-07-11, through P325) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
