@@ -5095,7 +5095,17 @@ P327 [2026-07-11] ROARGRAPH IN-DIST AT 10M: OURS LEADS 1.2-1.45x ACROSS THE RANG
   the pack line) blocked the symlink; fixed. IN-DIST VERDICT COMPLETE: fig 13 panels 1M+10M now carry
   Roar curves; it trails ours 1.2-2.4x everywhere in-dist. wiki-35M skipped (~20h pipeline).
 
-=== SESSION SUMMARY (current, 2026-07-11, through P327) ===
+P328 [2026-07-11] NEW DATASETS (user: 1-2 more of each kind). Acquired: WebVid-2.5M (OOD text->video
+  CLIP d512, RoarGraph's own benchmark: base+train-2.5M+eval-10k+GT from Zenodo), DEEP-10M (in-dist image
+  d96 L2, yandex range-GET), MSTuring-30M static (in-dist L2 d100, on-disk from streaming + fresh exact
+  GT 2000x100 in 212s), LAION-10M (OOD, 20 shards from the-eye.eu -- downloading, flaky mirror,
+  deprioritized). Overnight chain launched (newdata_chain.sh, ~5-6h): per-dataset genbo idx + ND graph
+  (+co-retrieval/hybrid for webvid) + HNSW baselines (+Roar on webvid with ITS train data/config) +
+  1t sweeps, all vs exact GT referees. Goal: fig:frontier grows to 5 in-dist panels-worth of evidence
+  (cohere 1M/10M, wiki35M, msturing30M, deep10M) and fig:oodfrontier gains webvid (Roar's home turf)
+  [+laion if download completes]. i8 conversion for f32-only datasets: symmetric scale 127/maxabs.
+
+=== SESSION SUMMARY (current, 2026-07-11, through P328) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
