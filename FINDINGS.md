@@ -5072,7 +5072,19 @@ P325 [2026-07-11] *** COARSE-CELL COROLLARY FLIPS THE 1M OOD BAND (user: "fig 14
   sliver + 10M >=0.995 tail. Theory note: geometry re-optimization under materialized coverage is part
   of the same story -- coverage from edges frees cells to be cost-optimal.
 
-=== SESSION SUMMARY (current, 2026-07-11, through P325) ===
+P326 [2026-07-11] ROARGRAPH IN-DISTRIBUTION (user: "maybe we beat roargraph iid?"): THEORY CONFIRMED --
+  its advantage evaporates. Built Roar on cohere-1M (train queries = 500k HELD-OUT base rows 5M..5.5M,
+  paper hyperparams; build 405s + GT ~15min): (0.8767,2545)(0.9355,1326)(0.9590,765)(0.9751,510)
+  (0.9840,546*)(0.9911,399)(0.9939,259)(0.9969,144) [*non-monotone anomaly kept, favors Roar].
+  vs OURS (fig 13): 1.6-2.4x BEHIND across 0.93-0.997 (0.959: 765 vs ~1350; 0.9751: 510 vs ~1210;
+  0.9939: 259 vs ~540); marginal Roar only <0.90 (vs our graph-free curve). In-dist the query manifold
+  IS the base manifold -> bipartite projection == plain kNN graph + walk overheads at d=768. (Still
+  edges HNSW: 0.9911@399 vs 0.9885@298 -- graph-vs-graph note.) Fig 13 panel A + caption updated.
+  Roar cohere-10M launched in background (~3-4h; exact cohere_gt referee patched in). wiki-35M skipped
+  (GT+build ~20h+, gate-scale argument). Directional-adjacency theory now confirmed BOTH ways:
+  co-edges lift OOD where base edges cannot (P321), and query-projection buys nothing in-dist (this).
+
+=== SESSION SUMMARY (current, 2026-07-11, through P326) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
