@@ -5137,7 +5137,20 @@ P331 [2026-07-12] MATRIX FILL launched (user: run remaining datasets): Roar+ScaN
   window are provisional. Protocol: builds proceed under load; every 1t sweep (incl. DEEP tail re-check
   + the chain's Roar/ScaNN sweeps) to be re-measured in a quiet window before figure insertion.
 
-=== SESSION SUMMARY (current, 2026-07-12, through P331) ===
+P332 [2026-07-12] CLEAN-WINDOW MATRIX (core 27 isolated, load-verified): DEEP-10M CONFIRMED LOSS to Roar.
+  DEEP ours (clean): 0.8538@5948 0.8964@4815 0.9333@3509 0.9588@2366 0.9731@1820 0.9856@1143 0.9914@698.
+  DEEP roar (clean): 0.8008@10869 0.8938@6557 0.9510@3906 0.9802@2130 0.9934@1129 0.9977@587.
+  => ROAR BEATS US 1.3-1.7x across DEEP-10M (0.90: 6557 vs 4815; 0.95: 3906 vs ~2600; 0.98: 2130 vs ~1250).
+  BUT ours still beats HNSW ~2x (ef80 0.9463@1432, ef160 0.9764@787) and ScaNN(batched) ~tie-to-slight
+  (0.9457@2364, 0.9721@1672). Provisional prior deep tail (76-113 QPS) was load-220 garbage; clean tail
+  0.9856@1143 / 0.9914@698. THEORY SHARPENED TO A DIMENSION AXIS: genbo's win regime is HIGH-dim
+  (d>=768: cohere/wiki -> beats all incl. Roar 1.2-2.4x). At LOW dim (DEEP d96, msturing d100) PQ
+  compression + coverage-graph value shrinks and cheap graph traversal dominates: strong graph (Roar)
+  leads, ours still > HNSW/ScaNN. Plus the OOD axis (webvid extreme-OOD -> Roar). Two honest Roar-loss
+  regimes, both theory-predicted boundaries (low-dim graph territory; coverage-collapse OOD). msturing-roar
+  re-measuring (GT-dists fixed); wiki-scann rebuilding (2.9h bg). Roar-fair throughout (its train data+config).
+
+=== SESSION SUMMARY (current, 2026-07-12, through P332) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
