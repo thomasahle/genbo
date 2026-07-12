@@ -1582,15 +1582,21 @@ is thus the full measured range at 10M and 100M plus build-time eligibility; the
 residual RoarGraph territory, after the coarse-cell corollary is applied at 1M
 ($K_f{=}16384\to2048$--$4096$ with the hybrid graph, turning a $1.25$--$1.4\times$
 deficit across the band into ties-or-leads from recall $0.80$ up), is the sub-$0.78$
-sliver at 1M (${\sim}7\%$) and the extreme ${\ge}0.995$ tail at 10M. Two further in-distribution datasets confirm the pattern at other metrics and
-dimensions (Figure~\ref{fig:frontier}, bottom row): on MSTuring-30M ($L_2$,
-$d{=}100$) ours leads HNSW $2.5$--$4\times$ and exceeds its recall ceiling
-($0.9262$ vs $0.8989$); on DEEP-10M ($L_2$, $d{=}96$) ours leads ${\sim}2\times$
-across the measured range. On WebVid-2.5M (Figure~\ref{fig:oodfrontier}, bottom),
-the extreme-OOD boundary appears: with calibrated routed coverage at only $0.36$,
-RoarGraph's walk wins its home benchmark $2$--$4\times$ while ours still beats HNSW
---- consistent with the bottleneck theory: when routing carries no signal, frontier
-ownership passes to whoever traverses materialized adjacency most efficiently.
+sliver at 1M (${\sim}7\%$) and the extreme ${\ge}0.995$ tail at 10M. Two further datasets at \emph{low} dimension map the boundary of our regime
+(Figure~\ref{fig:frontier}, bottom row): on MSTuring-30M ($L_2$, $d{=}100$) ours
+leads HNSW $2.5$--$4\times$ and exceeds its recall ceiling ($0.9262$ vs $0.8989$),
+and on DEEP-10M ($L_2$, $d{=}96$) ours leads HNSW ${\sim}2\times$ and ties ScaNN ---
+but a strong pure graph index (RoarGraph) leads DEEP by $1.3$--$1.7\times$. This is
+the expected crossover: at $d{\lesssim}100$ the PQ codes compress little and the
+coverage graph earns less, while graph traversal is cheap, so graph indices reclaim
+the frontier; our advantage is the high-dimensional embedding regime ($d{\ge}768$)
+that dominates modern retrieval. The OOD axis has the same shape at its extreme: on
+WebVid-2.5M (Figure~\ref{fig:oodfrontier}, bottom) calibrated routed coverage reaches
+only $0.36$, so RoarGraph's query-aware walk wins its home benchmark $2$--$4\times$
+while ours still beats HNSW. Both boundaries obey the bottleneck theory: when routing
+carries little signal --- because dimension is low or the query is far
+off-distribution --- frontier ownership passes to whoever traverses materialized
+adjacency most cheaply; in between, the IVF-PQ$+$coverage hybrid wins.
 Exact operating points,
 and the streaming series are tabulated in Appendix~\ref{app:tables} (Table~\ref{tab:streaming}).
 Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
@@ -1692,31 +1698,36 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
   \begin{tikzpicture}
     \begin{axis}[frontierpanel,
         ymode=log,
-        title={DEEP 10M ($L_2$, self-built graph)},
+        title={DEEP 10M ($L_2$, $d{=}96$)},
         xtick={0.86,0.90,0.94,0.98},
-        ytick={500,1000,2000,4000}]
+        ytick={500,1000,2000,4000,8000}]
       \addplot[ours] coordinates {
-        (0.8538,5563) (0.8964,4435) (0.9333,3201) (0.9391,3059) (0.9588,2146) (0.9731,1700)};
+        (0.8538,5948) (0.8964,4815) (0.9333,3509) (0.9588,2366) (0.9731,1820) (0.9856,1143) (0.9914,698)};
       \addplot[hnsw] coordinates {
         (0.8918,2564) (0.9463,1432) (0.9764,787) (0.9899,417) (0.9953,220)};
+      \addplot[orange!80!black,densely dotted,mark=diamond,mark size=1.9pt,mark options={solid}] coordinates {
+        (0.8008,10869) (0.8938,6557) (0.9510,3906) (0.9802,2130) (0.9934,1129) (0.9977,587)};
+      \addlegendentry{Ours}\addlegendentry{HNSW}\addlegendentry{RoarGraph}
     \end{axis}
   \end{tikzpicture}%
   \hfill\mbox{}
-  \caption{Recall--QPS frontiers (recall@10 versus single-thread queries per
-  second, log scale) on Cohere 1M, Cohere 10M, Wikipedia 35M, MSTuring 30M
-  ($d{=}100$, $L_2$; ours $2.5$--$4\times$ HNSW, exceeding its $0.899$ ceiling), and
-  DEEP 10M ($d{=}96$, $L_2$; ours ${\sim}2\times$ across the measured range, HNSW's
-  deep tail beyond our sweep's last point), with both
-  systems measured as same-window sequential pairs; our system runs graph-free
-  at 1M and with self-built graphs at 10M and 35M. At every operating point shown, on
-  all three scales our frontier lies above and to the right of HNSW's,
-  i.e.\ higher throughput at equal recall and higher recall at equal
-  throughput; ScaNN (shown batched, favorable to it) and RoarGraph (built
-  in-distribution with $500$k base-distributed training queries; $1.6$--$2.4\times$
-  behind at 1M and $1.2$--$1.45\times$ at 10M --- its bipartite projection buys
-  nothing when the query manifold \emph{is} the base manifold, though it still edges
-  HNSW) trail both. HNSW's frontier also plateaus at recall 0.9945 (1M), 0.9859
-  (10M), and 0.9818 (35M), below the recall our system reaches.}
+  \caption{Recall--QPS frontiers (recall@10 versus single-thread queries per second,
+  log scale), same-window sequential pairs. \textbf{Top row (high-dimensional,
+  $d{\ge}768$): our regime.} On Cohere 1M/10M ($d{=}768$) and Wikipedia 35M
+  ($d{=}1024$) our system leads \emph{every} baseline --- graph-free at 1M and with
+  self-built graphs at 10M/35M; HNSW plateaus at recall $0.9945$/$0.9859$/$0.9818$
+  below what we reach, ScaNN (batched, favorable to it) trails, and RoarGraph, though
+  it edges HNSW, is $1.6$--$2.4\times$ (1M) / $1.2$--$1.45\times$ (10M) behind us ---
+  its query-aware bipartite projection buys nothing when the query manifold \emph{is}
+  the base manifold. \textbf{Bottom row (low-dimensional, $d{\le}100$): the boundary.}
+  On MSTuring 30M ($d{=}100$) and DEEP 10M ($d{=}96$) our system still beats HNSW
+  ($2.5$--$4\times$ / ${\sim}2\times$, exceeding HNSW's ceiling on MSTuring) and ScaNN,
+  but a strong pure graph index (RoarGraph) leads DEEP by $1.3$--$1.7\times$: at low
+  dimension the value of PQ compression and coverage augmentation shrinks while cheap
+  graph traversal dominates. Our advantage is thus the high-dimensional embedding
+  regime; the crossover near $d{\sim}100$ is where graph indices reclaim the frontier.
+  (RoarGraph's harness mis-counts recall on MSTuring's large-magnitude $L_2$
+  distances, so only its DEEP curve is shown.)}
   \label{fig:frontier}
 \end{figure}
 \begin{figure}[t]

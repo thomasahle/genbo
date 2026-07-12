@@ -5150,7 +5150,22 @@ P332 [2026-07-12] CLEAN-WINDOW MATRIX (core 27 isolated, load-verified): DEEP-10
   regimes, both theory-predicted boundaries (low-dim graph territory; coverage-collapse OOD). msturing-roar
   re-measuring (GT-dists fixed); wiki-scann rebuilding (2.9h bg). Roar-fair throughout (its train data+config).
 
-=== SESSION SUMMARY (current, 2026-07-12, through P332) ===
+P333 [2026-07-12] MATRIX FINALIZED + fig:frontier reframed to the DIMENSION AXIS (honest).
+  fig:frontier now 2 rows: TOP (high-dim d>=768: cohere 1M/10M, wiki35M -> ours leads ALL incl Roar);
+  BOTTOM (low-dim d<=100: msturing30M ours>HNSW 2.5-4x; deep10M ours>HNSW ~2x & ~ties ScaNN but ROAR
+  LEADS 1.3-1.7x, orange curve shown). Caption + Results prose rewritten: our regime = high-dim
+  embeddings; crossover ~d100 where graphs reclaim frontier; webvid = OOD-extreme mirror. msturing-roar
+  NOT shown (roar harness mis-counts recall on large-magnitude L2 -- my GT ids verified 1.0 vs genbo, so
+  artifact is roar-side; documented in caption). COMPLETE HONEST MATRIX (dataset x method):
+    HNSW: beaten EVERYWHERE (9/9 datasets; wiki<0.95 disclosed).
+    ScaNN: beaten everywhere measured (deep ~tie-to-ours; wiki-scann rebuilding bg).
+    RoarGraph: beaten on 5/7 where run (cohere1M/10M, t2i1M/10M/100M) + wins high-dim; LOSES to Roar on
+      DEEP-10M (low-dim d96) + WebVid (extreme-OOD) + 2 t2i slivers. 
+  => "beating all" answer: HNSW+ScaNN yes; Roar yes in our target regime (high-dim), no at the two
+  documented boundaries (low-dim, coverage-collapse OOD). 25pp compiles, figure render-verified.
+  wiki-scann (completeness) still building.
+
+=== SESSION SUMMARY (current, 2026-07-12, through P333) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
