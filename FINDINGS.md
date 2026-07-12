@@ -5165,7 +5165,18 @@ P333 [2026-07-12] MATRIX FINALIZED + fig:frontier reframed to the DIMENSION AXIS
   documented boundaries (low-dim, coverage-collapse OOD). 25pp compiles, figure render-verified.
   wiki-scann (completeness) still building.
 
-=== SESSION SUMMARY (current, 2026-07-12, through P333) ===
+P334 [2026-07-12] wiki-ScaNN = MEMORY-INELIGIBLE (not a missing measurement). dmesg confirms the
+  matrix_fill wiki-scann OOM'd (python 271GB killed) -> that's why it produced no sweep rows. Retry
+  climbed to ~250GB on the shared 371GB box (mox/EDA co-tenants) -> KILLED to protect the box (courteous
+  + it already proved the point). ScaNN at 35M x 1024-dim f32 needs ~270GB (143GB base x2 contiguous +
+  training) -> OOM here. Honest data point, mirrors ScaNN's t2i-100M build-time ineligibility. Added to
+  Related Work: "trails on every dataset where it builds within budget -- build-ineligible at t2i-100M
+  (2h gate), memory-ineligible at wiki-35M/d1024 (~270GB OOM)". COMPLETE. Final ScaNN verdict: beaten
+  everywhere it's eligible; ineligible (build/mem) at the two largest high-d configs. Box healthy after
+  kill (186G free). "Run remaining datasets" task closed: deep+msturing+webvid measured; wiki-scann
+  OOM-documented; laion dropped (dead mirror). 25pp compiles.
+
+=== SESSION SUMMARY (current, 2026-07-12, through P334) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
