@@ -5131,7 +5131,13 @@ P330 [2026-07-11] DATASET EXPANSION COMPLETE (fig 13 -> 5 in-dist panels; fig 14
   deep10M L2 d96) all OURS vs HNSW/ScaNN/Roar; FOUR OOD panels (t2i 1M/10M/100M ours at scale, webvid
   Roar's regime).
 
-=== SESSION SUMMARY (current, 2026-07-11, through P330) ===
+P331 [2026-07-12] MATRIX FILL launched (user: run remaining datasets): Roar+ScaNN on deep10m+msturing30m,
+  ScaNN on webvid+wiki35m (Roar-wiki excluded: ~20h documented). NOTE: box load 220 (co-tenants) --
+  the earlier DEEP tail sweep (76-113 QPS) was CONTENTION GARBAGE, not a loss; ALL sweeps from this
+  window are provisional. Protocol: builds proceed under load; every 1t sweep (incl. DEEP tail re-check
+  + the chain's Roar/ScaNN sweeps) to be re-measured in a quiet window before figure insertion.
+
+=== SESSION SUMMARY (current, 2026-07-12, through P331) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
 range in-distribution. (Supersedes ALL older summary text below the horizon — the ancient "8x behind scann
