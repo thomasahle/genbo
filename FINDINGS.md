@@ -5325,6 +5325,26 @@ P342 [2026-07-21] BUDGET-MATCHED ROAR (user steer: parameter-match the 2h gate, 
     t2i-1M/10M WIN, wiki WIN-ALL (budget-Roar beaten everywhere), t2i-100M only-eligible-method,
     DEEP >=0.95 WIN. Remaining under UNLIMITED-build rules: wiki 0.93-0.97 + DEEP <0.95 (both documented).
 
+P343 [2026-07-21/22] FOUR-BETS CONSERVATIVE PASS — WebVid FULLY FLIPPED; DEEP flip projected; wiki unlimited row cracking.
+  All our QPS at load 35-53 vs Roar's quiet curve = every margin a lower bound. Same-window champion ref
+  gives window factor ~1.85x (DEEP) for projections; projections are NOT claims — strict <18 chains confirm.
+  WEBVID FULL-FRONTIER WIN (conservative, CLAIMED): wide-hybrid graph (16 kNN + 48 co-retrieval, 11s build,
+    31% node coverage) + SQ4 + RESIDENT: 0.8062@4997 (Roar interp ~3760, 1.3x) 0.9024@2528 (~1720, 1.5x)
+    0.9121@2494 (1.7x) 0.9322@1690 (1.6x) + the P341 >=0.92 wins. The <0.88 concession is RETIRED; paper
+    fig 14 + CSV updated (13-point curve), caption = every-point win, loaded-vs-quiet noted.
+  DEEP KE64+RESIDENT grid (loaded): 0.8970@4182 0.9146@4024 0.9343@3219 (champion same-window 0.9012@2556
+    vs quiet 4716) -> projects 0.897@~7.7k vs Roar 6557@0.8938; 0.93@~5.9k vs ~4.9k. FLIP PROJECTED 0.89-0.94.
+  WIKI UNLIMITED ROW (k48 seeded 2.84h < Roar 6.5h, +stack): 0.9778@431 LOADED beats quiet-Roar interp ~390
+    -> first conservative WIN inside the 0.93-0.97 band vs the unlimited Roar; 0.9626@540 projects ~810 vs ~650.
+  KILLED: tiny-scan (t64 SLOWER than t450 in-engine — big pool seeds the beam better; sim missed it);
+    wiki co-retrieval (0.9721 vs 0.9720 — data-starved at 1.4% query density, P349, which also proves Roar's
+    wiki edge is STRUCTURAL not query-aware); QSEED-wiki (cov 0.03-0.06); WebVid pure-kNN k64 < hybrid k32 OOD.
+  ENGINE: OOB-id guards in beam neighbor loops (hybrid u32::MAX padding segfaulted — 2 earlier "load" deaths
+    were this bug); seeded nndescent timings (k32s 2.43h — 2h gate MISS at T16-under-load; k48s 2.84h).
+  ARMED: strict <18 chains 1-6 (wiki 2-row ABBA, cohere, DEEP RESIDENT ABBA + KEDGE grids + frontier).
+  Scorecard direction: WebVid WON-ALL (conservative). Remaining: DEEP <0.89 extreme corner + 0.89-0.94
+    strict confirm; wiki 0.93-0.96 vs unlimited Roar (0.978 won).
+
 === SESSION SUMMARY (current, 2026-07-12, through P334) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
