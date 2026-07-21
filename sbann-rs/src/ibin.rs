@@ -12,6 +12,11 @@ pub struct I8Bin {
     pub nb: usize,
     pub d: usize,
     base: *const i8, // start of the vector region (after the 8-byte header)
+    // RESIDENT-I8 (P346, SBANN_RESIDENT_I8): owned anonymous copy of the vector region. File-backed
+    // mmaps get 4KB pages only (no THP on this kernel/fs), so a scattered rescore pays a TLB miss +
+    // page walk per row; with THP=[always] an anonymous copy is 2MB-paged (~500x fewer TLB entries).
+    // When set, `base` points into this buffer instead of the mmap.
+    _resident: Option<Vec<i8>>,
 }
 
 // SAFETY: the mmap is read-only and immutable for the lifetime of I8Bin; rows are disjoint reads.
@@ -32,7 +37,7 @@ impl I8Bin {
             8 + nb * d
         );
         let base = unsafe { mmap.as_ptr().add(8) } as *const i8;
-        Ok(Self { _mmap: mmap, nb, d, base })
+        Ok(Self { _mmap: mmap, nb, d, base, _resident: None })
     }
 
     /// Open a CONTIGUOUS sub-range of an `.i8bin` as a logical dataset of `count` rows:
@@ -47,7 +52,18 @@ impl I8Bin {
         assert!(start + count <= nb_file, "range {}+{} exceeds file nb {}", start, count, nb_file);
         assert!(mmap.len() >= 8 + (start + count) * d, "file truncated for range");
         let base = unsafe { mmap.as_ptr().add(8 + start * d) } as *const i8;
-        Ok(Self { _mmap: mmap, nb: count, d, base })
+        Ok(Self { _mmap: mmap, nb: count, d, base, _resident: None })
+    }
+
+    /// RESIDENT-I8 (P346): copy the vector region into anonymous memory (THP-eligible under
+    /// `transparent_hugepage=[always]`) and repoint `base`. Kills the per-row TLB miss + page walk of
+    /// scattered rescore gathers over the 4KB-paged file mmap. Byte-identical data — recall unchanged.
+    pub fn make_resident(&mut self) {
+        let n = self.nb * self.d;
+        let mut buf = vec![0i8; n];
+        buf.copy_from_slice(unsafe { std::slice::from_raw_parts(self.base, n) });
+        self.base = buf.as_ptr();
+        self._resident = Some(buf);
     }
 
     /// Borrow row `i` as a `&[i8]` of length `d` (pages in from disk on first touch).

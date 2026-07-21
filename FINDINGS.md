@@ -5176,6 +5176,155 @@ P334 [2026-07-12] wiki-ScaNN = MEMORY-INELIGIBLE (not a missing measurement). dm
   kill (186G free). "Run remaining datasets" task closed: deep+msturing+webvid measured; wiki-scann
   OOM-documented; laion dropped (dead mirror). 25pp compiles.
 
+P335 [2026-07-14] BEAT-ROAR CAMPAIGN (tested small-first per user): flipped DEEP-10M from loss to WIN; halved
+  WebVid. Two NEW flag-gated engine features (champion path VERIFIED bit-identical): (a) `prune` subcommand =
+  Vamana/DiskANN RobustPrune of the nndescent kNN pool into a degree-diversified NAVIGABLE graph (L2 alpha^2 on
+  squared int8 L2; optional SBANN_PRUNE_REVERSE full-Vamana 2nd pass); (b) SBANN_SEED_IDS_FILE = QSEED per-query
+  beam seed injection (q_base-corrected for chunked batch).
+  DEEP-10M (L2 d96) -- WAS losing Roar 1.3-1.7x EVERYWHERE. Method: nndescent k64 -> prune R32 alpha1.2 -> bestfirst
+  KEDGE=32 + SBANN_CASCADE_K=32. FRONTIER (clean core27, reproduced 2 windows within 1-2%): 0.9014@4918 0.9337@3797
+  0.9603@3229 0.9804@2108 0.9855@1879 0.9933@1132 0.9960@863 0.9974@642 (kk64 tail: 0.9987@407). vs Roar (0.8938@6557
+  0.9510@3906 0.9802@2130 0.9934@1129 0.9977@587): CROSSOVER at ~0.975 -- Roar wins <0.97 (1.1-1.33x, its graph fast
+  at loose recall + our route+scan floor); OURS WINS/TIES >=0.98 (tie 0.98 & 0.9934, ours 1.06-1.09x at 0.985-0.998,
+  reaches 0.9987 past Roar's ceiling). Prune alone +35-60% over baseline (vs +18-27% at 1M -- navigability compounds
+  with N). CASCADE_K is the tail unlock: wider int8-survivor pool recovers ~4% int8-misranked neighbours (int8-vs-
+  float top10 overlap 0.9608) at ~0 QPS cost (float rerank 2.2%); kk16->32 = +0.0024 recall same QPS.
+  WebVid-2.5M (OOD d512) -- WAS 2-4x behind. QSEED (nearest TRAIN queries vote materialized GT base answers as seeds;
+  coverage gate: 42% of true nbrs in 32 seed POINTS vs routing 0.36 over 32 CELLS ~150x denser) = +40-50% QPS. +
+  CASCADE_K=64 lifted ceiling 0.935->0.9624. Best (core40): 0.9375@793 0.9548@501 0.9624@391 vs Roar (0.9360@1047
+  0.9613@591): still Roar 1.27-1.6x, gap WIDENS at high recall. WebVid extreme-OOD (routed cov 0.36) STAYS Roar's
+  regime -- honest boundary, HALVED not closed.
+  KILLED by measurement (small-first paid off, ~0 wasted build): NAVNORM (DEEP exactly unit-norm, IP==L2, metric
+  fix moot); graph-primary/skip-scan (low-p worse: scan's seeds save more hops than the scan costs); reverse-edges
+  (frontier identical -- IVF seeds already near query at every recall, long-range links never exercised); pruned
+  co-retrieval graph (RNG-by-base-geometry drops OOD-valuable long edges, ~=raw). Full record: big-ann-data/
+  BEAT_ROAR_IDEAS.md. PAPER UPDATE STAGED not applied (DEEP fig+prose loss->high-recall win) -- awaiting user (reframes
+  the low-dim boundary thesis; staged patch in big-ann-data/paper_deep_patch.txt). CASCADE_K default (16) may be
+  suboptimal for tight-margin datasets -- open question.
+
+P336 [2026-07-15] CORRECTION to P335 mechanism (isolating ablation, prompted by user). The DEEP +35-60% was
+  MIS-ATTRIBUTED to Vamana/RobustPrune navigability. Clean ablation (matched 32-edge budget, same k64 source
+  pool, KEDGE=32, only edge SELECTION differs): raw-32-nearest (k64 graph @KEDGE32) vs diversified-32 (vamana):
+    p32 0.9772@2177 vs 0.9804@2123 ; p64 0.9871@1561 vs 0.9885@1561 ; p96 0.9923@1157 vs 0.9933@1110 ;
+    p160 0.9957@534 vs 0.9960@479. (p256 row load-contaminated, ignore.)
+  => diversification is a WASH: +0.001-0.003 recall, no frontier gain. The DEEP win is EDGE COUNT (16->32) +
+  converged-pool quality (k64 vs k16) + CASCADE_K -- NOT graph navigability. Consistent with the reverse-edge
+  null result: our IVF-seeded short-hop rescore architecture does NOT benefit from HNSW-style graph refinement
+  (neither diversity nor reverse edges -- both optimize global greedy descent we never do). SIMPLER recipe: a
+  plain nndescent k=32 (or k64@KEDGE32) + CASCADE_K reproduces the crossover WIN; `prune` subcommand adds ~nothing
+  for us. DEEP crossover WIN itself STANDS (frontier reproduced); only the mechanism attribution changes. Staged
+  paper patch + memory corrected to "wider self-built graph + CASCADE_K".
+
+P337 [2026-07-17] GOAL-PUSH (beat all soundly): oracle-driven campaign closed most of both remaining gaps.
+  ORACLE-DECOMP (idea #2, in-tree dumpassign+GT injections) aimed everything + killed 3 dead ends: XMAP (WebVid
+  GT cell-concentrated ~12 cells/query, oracle-route ceiling ~1.0 -> learned router viable, re-cluster unneeded);
+  EASYGATE/ANYTIME (DEEP not bimodal, ~13 cells even easy); OODMAP learned-router (negative in sim).
+  *** WebVid TURNAROUND (biggest gap): oracle-seed proved WebVid PURELY seed-coverage-limited (GT ids as seeds ->
+  recall 1.0 @ p2/h2). So DENSE QSEED (t=48, top-100 GT, sim-weighted, S=512, coverage 0.42->0.76) wins BOTH axes.
+  Frontier: 0.9189@1702 0.9406@1010 0.9473@841 0.9590@602 0.9671@434 0.9745@303 vs Roar (0.8957@1896 0.9360@1047
+  0.9613@591 0.9762@316): OURS WINS <=0.94 (to 1.21x), ~tie mid, Roar <=1.06x high-recall tail. WAS 1.3-1.6x behind
+  EVERYWHERE -> near-tie. Pure seeding, no engine change. ***
+  DEEP RE-CHARACTERIZED: earlier "loss <0.97 1.3-1.7x" was suboptimal configs. Optimized shallow (h1-2,smallM):
+  crossover at 0.95 (0.9507@3886 = Roar 0.9510@3906 TIE); WIN >=0.95; lose only <0.95 (1.04-1.12x @0.90-0.92,
+  1.2-1.4x @ very-loose 0.80-0.85). 
+  RBQ-TIER (idea #1, rescore-floor) BUILT + KILLED: 1-bit codes can't rank near-neighbors (recall ceiling ~0.78 via
+  Hamming/rotation/asymmetric; the union is ALL near-nbrs, no cullable band). Speed real (+49%) but useless without
+  accuracy; asymmetric estimator also slow. Gated off SBANN_RBQ_NAV, champion bit-identical. Skip-int8/apq4->float
+  also killed (apq4 too coarse). NEW ENGINE (all flag-gated, champion bit-identical): SBANN_SEED_IDS_FILE already
+  had QSEED; added SBANN_RBQ_NAV (inert, failed exp); simd::hamming_u8; vq::random_orthogonal pub.
+  NET: HNSW/ScaNN beaten everywhere. Roar: beaten high-dim + t2i; DEEP win>=0.95/tie@0.95; WebVid win<=0.94/tie-high.
+  Remaining = thin loose-recall/tail boundaries (<=1.06-1.12x near crossover) = IVF-cascade floor vs pure-graph limit.
+  Records: big-ann-data/{PROFOUND_IDEAS.md, BEAT_ROAR_IDEAS.md}. Dense seeds: qseed_dense_T*_S*.u32.
+
+P339 [2026-07-20] ROAR-MEASUREMENT campaign (user: earn/drop wiki/msturing/t2i-100M claims) -- CORRECTS the record.
+  Measuring RoarGraph properly revealed a CROSSOVER landscape, not clean high-dim wins, AND unreliable citations both ways.
+  MSTURING-30M: was "artifact" -> actually a RoarGraph BUG (data_align pads d!=mult-8, d=100->104 inconsistent, returns
+    garbage; every working Roar dataset is d in {96,200,512,768}). Fixed by d=104 pre-pad. Roar 0.7250@2681..0.9780@170.
+    FAIR genbo (prune k64->R32 + CASCADE_K) 0.9109@1956..0.9883@208 -- old genbo config understated ~2x. genbo WINS
+    1.8-2.8x across frontier. CLEAN WIN, EARNED.
+  WIKI-35M: was UNMEASURED vs Roar (paper "leads ALL incl Roar" unsupported). Contamination trap (queries=base tail;
+    built base_clean 34.999M rows; genbo full-base is effectively-clean 0.986 not the 0.62 ceiling Roar hit on full base).
+    Roar clean 1t: 0.9326@1124..0.9925@97. genbo clean 1t (k16+CASCADE_K): 0.9516@595..0.9952@141. CROSSOVER ~0.98:
+    ROAR WINS 0.93-0.97 (1.2-1.4x); genbo WINS >=0.98 (to 0.9952 past Roar ceiling). Paper claim FALSE as stated -> PARTIAL win.
+  T2I-100M: Roar build ~18h (35M was 6.4h) >> 2h gate -> gate-INELIGIBLE like ScaNN (measuring anyway, ~20h bg).
+  PATTERN (honest): genbo(IVF-PQ+graph+rerank) wins HIGH recall everywhere; Roar(pure graph) wins LOOSE/MID recall
+    (short walks) -> crossovers on wiki(0.93-0.97), DEEP(<0.95), WebVid tail. Clean genbo wins: msturing, cohere. So
+    "beat Roar SOUNDLY on ALL" is NOT achieved -- architectural crossover boundaries at loose/mid recall.
+  META-LESSON: cited baselines unreliable BOTH ways (Roar d!=8 bug hid its capability; our recorded configs understated
+    genbo ~2x; wiki never measured). Running the baseline is mandatory. DEEP <0.95: config exhausted, architectural floor.
+  Records: big-ann-data/PROFOUND_IDEAS.md. Roar builds: RoarGraph/data/{msturing30m,wiki35m,t2i-100M}/.
+
+P340 [2026-07-20] SQ4-RUNG: the high-dim loose/mid-recall flip (round-3 ideation -> gates -> build in one day).
+  USER STEER (durable): do NOT beat a baseline by cloning its algorithm; extract the winning PROPERTY, build our own
+    mechanism. SBANN_ROARMODE (Roar's walk on our graph, built+validated 0.84@9.7k/1M) demoted to DIAGNOSTIC baseline.
+  NULL RESULTS that aimed the day (all DEEP-10M, each ~1h, mechanism identified):
+    PQ4-NAV LUT rung: loses both axes (scalar LUT 7x compute; nav noise degrades union; K-plateau). ADAPT-STOP
+    (bound-based hop stop): recall-safe, zero frontier gain. ADAPT-POOL (patience over apq4-ranked pool): skipping
+    ~250/450 rows moved QPS ZERO. PFDIST sweep: flat (prefetch saturated). MICRO-DECOMP (new PROF_SCORE_NS):
+    score loop ~105us/q (~115ns/row REAL warm cost), machinery only ~39us, route 22% at loose configs.
+    => at d=96 (2-line rows) NOTHING on the rescore floor pays; at d>=512 rows are 8-16 lines and line-bound.
+  SQ4-RUNG (SBANN_SQ4_NAV + SBANN_SQ4_INT8K, P343): resident nibble sidecar of the int8 rows (d/2 B/row), PER-DIM
+    robust ranges (global range collapsed WebVid: int8 values +-18), steps folded into the QUERY side (rank-exact),
+    dot_sq4_vnni kernel (unpack + 2x dpbusd), optional int8 re-rank of the top band before float. Gates first:
+    plain-PQ4 containment wiki 1.0@128 / webvid 0.9788@300 (RED->SQ4); SQ4 wiki 1.0@64, webvid 0.9990@300; engine-
+    exact 0.9998@64. RESULTS (same-window A/B, loaded box, QPS provisional):
+    wiki-1M k32: +18-34% QPS at EXACT recall parity. wiki-35M k16 losing band: 0.9516: 219->331 (+51%), 0.9710:
+    259->355 (+37%) -> projected quiet: 0.93-0.97 band flips to parity/win vs Roar BEFORE k32 stacks.
+    WebVid tuned frontier: +17-33% band-wide at <=0.003 recall (esc192); projected quiet: beats Roar at EVERY point
+    incl the 0.9762 tail. DEEP: SQ4 loses (regime boundary confirmed). Overnight quiet confirms armed
+    (confirm_quiet_all.sh, core 43, after t2i sentinel).
+  DEEP <0.95 CLOSED AS HONEST BOUNDARY (exhaustively): + SYMPACK-B (SymphonyQG-style packed adjacency, cited; built
+    SBANN_SYMPACK + sympack_walk): microbench 5.43x GREEN but 10M recall collapses; int8-walk CONTROL shows the WALK
+    FAMILY is GRAPH-QUALITY-bound at 10M on our Vamana (0.8676@L90 vs 1M 0.927@L80) -- matching Roar's walk means
+    adopting their query-aware bipartite build (fenced). All families now measured-dead for DEEP loose: config, 1-bit,
+    4-bit LUT, SQ4, adaptive depth/hops, prefetch, int8-walk, packed-walk. We keep DEEP >=0.95.
+  WIKI-K32: slice A/B GREEN (k32 dominates high band, +8% mid); 35M k32 nndescent measured ~6h >> 2h gate ->
+    GATE-INELIGIBLE ablation only; ELIGIBLE wiki recipe = k16 + SQ4 (sidecar builds in seconds at load).
+  28-AGENT ADVERSARIAL REVIEW of the day's diff: champion-path bit-identity CONFIRMED (proof note); 22 findings,
+    fixes applied (esc>=kk clamp, gated allocs, kk=0 guards, id bounds, seed-table guards, interleaved prefetch).
+  OPS: t2i-100M Roar build relaunched DETACHED (~03:00 done; completes the last "measure them" item).
+  Scorecard direction after quiet confirms (if they hold): Roar loses WebVid entirely, wiki crossover pushed from
+    0.98 down to ~0.93 or gone; remaining Roar territory = DEEP <0.95 only (documented boundary). Records:
+    big-ann-data/{PROFOUND_IDEAS.md,ROAR_GAP_BRIEF.md}; memory/novelty-over-copying.md.
+
+P341 [2026-07-20 evening] CONFIRM ROUND + F16 + t2i verdict — two datasets FULLY flipped; goal-gap narrows to wiki-band + DEEP-loose.
+  CONSERVATIVE-WINDOW WINS (ours at load 25-50 vs Roar's quiet refs — margins are lower bounds):
+    WEBVID FULL-FRONTIER WIN: sq4+esc S512: 0.9188@2221 ... 0.9677@532; TAIL sq4+S768: 0.9772@355 0.9799@230
+      vs Roar 0.8957@1896 ... 0.9762@316. Every point beaten + extends past Roar's ceiling.
+    MSTURING FULL-FRONTIER WIN: loose end 0.7268@3886 (1.45x) 0.8471@3207 (1.78x) + mid/high 1.8-2.8x (P339).
+  DEEP: ROUTE_SDIM wash at matched recall (loaded +75% was artifact); QSEED-DEEP dead (8k train queries too
+    sparse: cov 0.011); HUBSEED dead (needs 512-800 seeds for cov 0.62-0.70; DEEP isn't seed-limited). <0.95 stands.
+  WIKI MECHANISM FOUND (ABBA + profiles): 35M rescore ran at 11.5us/row (70x the 1M cost) = PAGE-CACHE THRASH —
+    wiki's working set (36GB i8 + 143GB f32 + 30GB idx + 18GB sq4) >> cache. SQ4 pays via FOOTPRINT (18 vs 36GB):
+    +74%/+20% ABBA-paired at h1p32. NEW LEVER RERANK-F16 (SBANN_RERANK_F16, P345): resident fp16 rerank base
+    (72GB vs 143GB f32 mmap) -> float stage 9397us -> 106-175us/q (50-90x stage win); recall -0.001 (fp16 near-ties);
+    DEEP-1M parity check passed. sq4+f16 stack @h2p48 (load 137!): 417 QPS vs int8 238 same window.
+    DEFINITIVE quiet 5-leg ABBA armed (wiki_quiet_final.sh: int8/int8+f16/sq4+f16/sq4/int8 x 4 configs + k32 stack).
+  T2I-100M CLOSED: Roar build 10.5h >> 2h gate (5x) = INELIGIBLE; search DEGENERATE on top (recall 0.000, 36 cmps/q,
+    entry-point collapse at 100M w/ approximate train GT; Roar's own counter agrees). genbo = only eligible method.
+  OPS lessons: pkill -f self-match killed our own shell 3x (bracket-escape AND keep pkill alone in the command);
+    never sed a script a live bash is executing. t2i pipeline end freed ~90GB (quiet window unlocked).
+  SCORECARD vs Roar now: WebVid WIN-ALL, msturing WIN-ALL, cohere WIN, t2i-1M/10M WIN, t2i-100M ineligible,
+    DEEP >=0.95 WIN / <0.95 Roar, wiki >=0.98 WIN / 0.93-0.97 pending the quiet ABBA (sq4+f16 projects to parity+).
+
+P342 [2026-07-21] BUDGET-MATCHED ROAR (user steer: parameter-match the 2h gate, don't disqualify) — wiki resolved fairly.
+  Build inventory (T16): Roar FITS the gate on webvid(10m)/deep10m(21m)/t2i-10M(35m)/cohere-10M(1.54h)/
+    msturing(1.78h) -> all our wins there stand vs FULL-strength Roar. Over: wiki 6.5h, t2i-100M 10.5h+5h GT.
+  t2i-10M L_pjpq ladder: L150 build ~= L500 (fixed bipartite phase dominates — L_pjpq NOT the main knob);
+    L50 = 55% build, -3..-4pt recall. Budget cuts cost Roar real recall.
+  WIKI: aggressive budget corner (L50 + 250k tq) = 11305s CPU (3.1h) — STILL 1.6x OVER the gate, and the
+    frontier collapses (ceiling 0.9605@~100qps vs full-Roar 0.9925, genbo 0.9952). VERDICT: no reasonable
+    parameterization fits Roar on wiki-35M within 2h. TWO-ROW SCORECARD: vs any gate-ELIGIBLE Roar genbo
+    WINS wiki everywhere; vs the 6.5h ineligible Roar the 0.93-0.97 band stays contested (our ineligible
+    k32-stack row pending a truly quiet window; EU-daytime load makes those rare).
+  Quiet-final attempt ran at load 91 (8h wait expired): same-config int8 legs spread 326-565 -> wiki
+    same-window SQ4-QPS INCONCLUSIVE at 35M; P339 quiet row (0.9516@595, 0.9710@459) stays quotable. The
+    SQ4 mechanism is proven at wiki-1M (profile: score stage 1.9x) and WebVid (full-frontier win); its 35M
+    end-to-end QPS effect under memory pressure needs the weekend quiet window.
+  GOAL STATE vs Roar (gate-eligible rules both sides): WebVid WIN-ALL, msturing WIN-ALL, cohere WIN,
+    t2i-1M/10M WIN, wiki WIN-ALL (budget-Roar beaten everywhere), t2i-100M only-eligible-method,
+    DEEP >=0.95 WIN. Remaining under UNLIMITED-build rules: wiki 0.93-0.97 + DEEP <0.95 (both documented).
+
 === SESSION SUMMARY (current, 2026-07-12, through P334) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall

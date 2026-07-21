@@ -188,6 +188,19 @@ pub static GRAPH_SORT: std::sync::atomic::AtomicBool = std::sync::atomic::Atomic
 /// = cumulative union size (so union-rescore ns/row = PROF_CASC_NS/PROF_GRAPH_ROWS, the decider metric).
 pub static PROF_GRAPH_NS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 pub static PROF_GRAPH_ROWS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+/// QSEED (SBANN_SEED_IDS_FILE): per-query external seed base-ids injected into the graph beam's initial
+/// union so the walk launches from on-manifold entry points (nearest-train-query-voted answers), bypassing
+/// coverage-collapsed routing on extreme-OOD queries. `(S, flat nq*S u32)`; row i = query i's S seeds.
+pub static SEED_IDS: std::sync::OnceLock<(usize, Vec<u32>)> = std::sync::OnceLock::new();
+/// RBQ-TIER (SBANN_RBQ_NAV): resident 1-bit sign codes (bit i set iff base coord i >= 0), row-major by
+/// orig id. `(bytes_per_row, signs)`. The graph beam navigates + selects top-kk by Hamming(query-signs,
+/// row-signs) instead of the full int8 dot -- d/8-byte gather, popcount arithmetic -- then the exact float
+/// rerank over kk restores order. Cuts the gather-bound int8 rescore (the 59% bottleneck). Pair with a
+/// generous SBANN_CASCADE_K so the coarser 1-bit ranking keeps true neighbours in the float-rerank pool.
+pub static RBQ_SIGNS: std::sync::OnceLock<(usize, Vec<u8>)> = std::sync::OnceLock::new();
+/// RBQ-TIER random orthonormal rotation P (d*d, row-major). Applied to base + query BEFORE taking signs so
+/// the 1-bit codes decorrelate the (correlated) embedding coordinates -> Hamming becomes a good angle estimator.
+pub static RBQ_ROT: std::sync::OnceLock<Vec<f32>> = std::sync::OnceLock::new();
 
 /// Flat IP-kNN adjacency sidecar: `k` neighbour orig ids per base row, row-major (`n*k` u32). Loaded from
 /// a raw little-endian u32 file (no header) via SBANN_GRAPH_FILE; `neighbours(orig)` borrows one row.
@@ -211,6 +224,224 @@ impl GraphAdj {
     fn neighbours(&self, orig: usize) -> &[u32] {
         &self.adj[orig * self.k..orig * self.k + self.k]
     }
+}
+
+/// PQ4-NAV (P341, gate-1-validated): resident plain 4-bit PQ sidecar — the union/beam is navigated and
+/// the float-rerank survivors selected by a 16-entry-per-sub LUT sum over m=d/2 one-byte codes (m bytes
+/// = ~1 cache line/row vs int8's d bytes), SKIPPING the int8 rescore stage entirely. Gate (DEEP-1M,
+/// worst-case union = exact top-2100): 4-bit top-128 containment of float top-10 = 0.9867 > the int8
+/// path's 0.9608 — precision is NOT the binding constraint at 4 bits (it was at 1 bit / RBQ-TIER).
+/// Champion bit-identical when SBANN_PQ4_NAV is unset.
+pub struct Pq4Nav {
+    pub m: usize,             // subquantizers (= d / dsub)
+    pub dsub: usize,          // dims per sub (2)
+    pub cent: Vec<f32>,       // m * 16 * dsub centroids, trained on int8 rows as f32
+    pub codes: Vec<u8>,       // nb * m, one code byte per sub (values 0..15)
+}
+pub static PQ4: std::sync::OnceLock<Pq4Nav> = std::sync::OnceLock::new();
+
+/// SQ4-RUNG (P343, gate-validated wiki 1.0000@64 / webvid 0.9990@300): resident nibble-packed 4-bit
+/// truncation of the int8 rows (d/2 bytes/row = half the cache lines). Union nav + survivor selection
+/// score via simd::dot_sq4_vnni; the int8 stage is skipped; float rerank fixes the tail. Aimed at
+/// d>=512 where rows are 8-16 lines (the DEEP d=96 2-line null does not apply). SBANN_SQ4_NAV gates.
+pub static SQ4: std::sync::OnceLock<Vec<u8>> = std::sync::OnceLock::new();
+/// Per-dim SQ4 steps (P343b): heterogeneous dims (WebVid: global range clips outlier dims -3-4pt recall)
+/// need per-dim lo/step. Rank-exactness is kept by folding step into the QUERY side: score
+/// = Σ (q[j]·step[j])·n[j] (+ per-query const Σ q·lo, dropped); q·step is requantized to i8 once per query.
+pub static SQ4_STEP: std::sync::OnceLock<Vec<f32>> = std::sync::OnceLock::new();
+/// SQ4 int8 escalation width (P343c): 0 = off (SQ4 scores select the float band directly). N>0: SQ4
+/// selects top-N, those N are int8-rescored (small scattered band), then top-kk by int8 go to float —
+/// recovers the double-quantization tail debt (WebVid -0.35pt) at ~N x d bytes extra per query.
+pub static SQ4_INT8K: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+
+/// SYMPACK-B (P344, SymphonyQG-style packed adjacency — cited transplant, composed with our IVF entry,
+/// SQ4 codes and int8/float escalation): per node one contiguous block = [ke neighbor ids (u32 LE)]
+/// [ke × d/2 nibble codes]. Expanding a walk node reads ONE sequential block (17ns/candidate measured)
+/// instead of ke scattered row gathers (94ns/row). Gates: microbench 5.43x; SQ4-guidance −1-3pt at
+/// matched L (recovered by +L, still ~4x net). Tuple = (ke, blk_bytes, blocks). SBANN_SYMPACK gates.
+pub static SYMPACK: std::sync::OnceLock<(usize, usize, Vec<u8>)> = std::sync::OnceLock::new();
+
+/// ADAPT-STOP (P342): per-query adaptive beam termination. Off by default (champion bit-identical).
+pub static ADAPT_STOP_ON: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+pub static ADAPT_STOP_MARGIN: std::sync::atomic::AtomicI64 = std::sync::atomic::AtomicI64::new(0);
+pub static PROF_ADAPT_STOPS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+/// ADAPT-POOL (P342b): patience-based adaptive rescore depth over the apq4-ranked POOL rows — the pool
+/// (t_surv) is the rescore floor at loose configs, not the graph hops. Value = patience C (stop int8
+/// scoring after C consecutive pool rows without improving the int8 top-kk). 0 = off (champion path).
+pub static ADAPT_POOL: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+pub static PROF_POOL_SKIPPED: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+/// P342c micro-decomp: time spent in the actual row-scoring loops (gather+dot+push), a SUBSET of
+/// PROF_CASC_NS. The remainder of casc = per-hop machinery (cand rebuild, exp resize, select, hash).
+pub static PROF_SCORE_NS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+/// SYMPACK-B walk (P344): best-first over packed neighbor blocks. Guidance + top-L selection by SQ4
+/// scores (block codes for expanded neighbors, flat SQ4 sidecar for the entry rows — SAME scale, so the
+/// heaps stay consistent). Caller int8-rescores the returned top-L and float-reranks the top-kk.
+/// Returns (sq4_negscore, orig) ascending.
+pub fn sympack_walk(ds: &I8Bin, q: &[i8], l: usize, entries: &[u32]) -> Vec<(i32, u32)> {
+    use std::cmp::Reverse;
+    use std::collections::BinaryHeap;
+    use std::sync::atomic::Ordering::Relaxed;
+    thread_local! {
+        static VISIT2: std::cell::RefCell<(Vec<u32>, u32)> = const { std::cell::RefCell::new((Vec::new(), 0)) };
+    }
+    let d = ds.d;
+    let hb = d / 2;
+    let (ke, blk, blocks) = SYMPACK.get().expect("SBANN_SYMPACK blocks not built");
+    let (ke, blk) = (*ke, *blk);
+    let sq4 = SQ4.get().expect("SYMPACK needs the flat SQ4 sidecar");
+    let steps = SQ4_STEP.get().expect("SQ4_STEP");
+    // same query prep as the rung: fold per-dim steps, requantize i8, deinterleave
+    let qs: Vec<f32> = (0..d).map(|j| q[j] as f32 * steps[j]).collect();
+    let mx = qs.iter().fold(0f32, |a, &v| a.max(v.abs())).max(1e-9);
+    let gsc = 127.0 / mx;
+    let qi = |j: usize| -> i8 { (qs[j] * gsc).round().clamp(-127.0, 127.0) as i8 };
+    let qe: Vec<i8> = (0..hb).map(|j| qi(2 * j)).collect();
+    let qo: Vec<i8> = (0..hb).map(|j| qi(2 * j + 1)).collect();
+    let score_flat = |o: u32| -> i32 {
+        -unsafe { simd::dot_sq4_vnni(&qe, &qo, &sq4[o as usize * hb..o as usize * hb + hb]) }
+    };
+    VISIT2.with(|cell| {
+        let mut b = cell.borrow_mut();
+        let (stamp, epoch) = &mut *b;
+        if stamp.len() < ds.nb { stamp.clear(); stamp.resize(ds.nb, 0); *epoch = 0; }
+        *epoch = epoch.wrapping_add(1);
+        if *epoch == 0 { stamp.iter_mut().for_each(|s| *s = 0); *epoch = 1; }
+        let ep = *epoch;
+        let mut cand: BinaryHeap<Reverse<(i32, u32)>> = BinaryHeap::with_capacity(4 * l);
+        let mut topl: BinaryHeap<(i32, u32)> = BinaryHeap::with_capacity(l + 1);
+        let (mut evals, mut hops) = (0u64, 0u64);
+        for &e in entries {
+            let ei = e as usize;
+            if ei >= ds.nb || stamp[ei] == ep { continue; }
+            stamp[ei] = ep;
+            let dv = score_flat(e);
+            evals += 1;
+            cand.push(Reverse((dv, e)));
+            topl.push((dv, e));
+            if topl.len() > l { topl.pop(); }
+        }
+        while let Some(Reverse((dcur, cur))) = cand.pop() {
+            if topl.len() >= l && dcur > topl.peek().unwrap().0 { break; }
+            hops += 1;
+            let base = cur as usize * blk;
+            let bptr = blocks.as_ptr();
+            // sequential block: prefetch the id header + first code lines; HW streamer follows
+            let mut off = 0usize;
+            while off < (ke * 4 + 4 * hb).min(blk) { unsafe { _mm_prefetch(bptr.add(base + off) as *const i8, _MM_HINT_T0) }; off += 64; }
+            let worst0 = if topl.len() >= l { topl.peek().unwrap().0 } else { i32::MAX };
+            for j in 0..ke {
+                let id = u32::from_le_bytes([blocks[base + j * 4], blocks[base + j * 4 + 1], blocks[base + j * 4 + 2], blocks[base + j * 4 + 3]]);
+                let ni = id as usize;
+                if ni >= ds.nb || stamp[ni] == ep { continue; }
+                stamp[ni] = ep;
+                let co = base + ke * 4 + j * hb;
+                let dv = -unsafe { simd::dot_sq4_vnni(&qe, &qo, &blocks[co..co + hb]) };
+                evals += 1;
+                if topl.len() < l {
+                    cand.push(Reverse((dv, id)));
+                    topl.push((dv, id));
+                } else if dv < topl.peek().unwrap().0 {
+                    cand.push(Reverse((dv, id)));
+                    topl.push((dv, id));
+                    topl.pop();
+                }
+            }
+            let _ = worst0;
+            if let Some(Reverse((_, nxt))) = cand.peek() {
+                unsafe { _mm_prefetch(blocks.as_ptr().add(*nxt as usize * blk) as *const i8, _MM_HINT_T0) };
+            }
+        }
+        ROAR_EVALS.fetch_add(evals, Relaxed);
+        ROAR_HOPS.fetch_add(hops, Relaxed);
+        let mut out = topl.into_vec();
+        out.sort_unstable();
+        out
+    })
+}
+
+/// ROAR-MODE walk diagnostics (evals = int8 row scores, hops = node expansions), reset per sweep point.
+pub static ROAR_EVALS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+pub static ROAR_HOPS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+/// ROAR-MODE (P340): pure best-first graph walk — NO route, NO scan, NO union rescore. The walk's own
+/// top-L IS the candidate set; cost adapts per query via DiskANN-style termination (stop when the best
+/// unexpanded candidate is worse than the L-th best seen). Guidance is int8 -dot (gate 2b: exactly
+/// matches a float walk on DEEP-1M at 1/4 the bytes RoarGraph's float walk gathers). Serves the
+/// loose/mid-recall regime where the fixed route+scan toll loses to short adaptive walks; the cascade
+/// keeps the >=0.95 regime (config dispatch). Gated behind SBANN_ROARMODE — champion bit-identical.
+/// Returns the top-l (negdot, orig) ascending; caller float-reranks.
+pub fn roar_walk(ds: &I8Bin, graph: &GraphAdj, q: &[i8], l: usize, entries: &[u32]) -> Vec<(i32, u32)> {
+    use std::cmp::Reverse;
+    use std::collections::BinaryHeap;
+    use std::sync::atomic::Ordering::Relaxed;
+    thread_local! {
+        // epoch-stamped visited marks: no per-query clear of an nb-sized array (stamp==epoch <=> visited).
+        static VISIT: std::cell::RefCell<(Vec<u32>, u32)> = const { std::cell::RefCell::new((Vec::new(), 0)) };
+    }
+    let d = ds.d;
+    let ke = GRAPH_KEDGE.load(Relaxed).clamp(1, graph.k).min(64);
+    VISIT.with(|cell| {
+        let mut b = cell.borrow_mut();
+        let (stamp, epoch) = &mut *b;
+        if stamp.len() < ds.nb { stamp.clear(); stamp.resize(ds.nb, 0); *epoch = 0; }
+        *epoch = epoch.wrapping_add(1);
+        if *epoch == 0 { stamp.iter_mut().for_each(|s| *s = 0); *epoch = 1; }
+        let ep = *epoch;
+        let mut cand: BinaryHeap<Reverse<(i32, u32)>> = BinaryHeap::with_capacity(4 * l);
+        let mut topl: BinaryHeap<(i32, u32)> = BinaryHeap::with_capacity(l + 1);
+        let (mut evals, mut hops) = (0u64, 0u64);
+        for &e in entries {
+            let ei = e as usize;
+            if ei >= ds.nb || stamp[ei] == ep { continue; }
+            stamp[ei] = ep;
+            let dv = simd::negdot_i8(q, ds.row(ei));
+            evals += 1;
+            cand.push(Reverse((dv, e)));
+            topl.push((dv, e));
+            if topl.len() > l { topl.pop(); }
+        }
+        let mut fresh = [0u32; 64]; // unvisited neighbours of the expanding node (ke clamped <= 64)
+        while let Some(Reverse((dcur, cur))) = cand.pop() {
+            if topl.len() >= l && dcur > topl.peek().unwrap().0 { break; }
+            hops += 1;
+            // pass 1: mark + prefetch the unvisited neighbour rows (overlap the scattered gathers)
+            let mut nf = 0usize;
+            for &nb in &graph.neighbours(cur as usize)[..ke] {
+                let ni = nb as usize;
+                if ni < ds.nb && stamp[ni] != ep {
+                    stamp[ni] = ep;
+                    fresh[nf] = nb;
+                    nf += 1;
+                    let ptr = ds.row(ni).as_ptr();
+                    let mut off = 0usize;
+                    while off < d { unsafe { _mm_prefetch(ptr.add(off) as *const i8, _MM_HINT_T0) }; off += 64; }
+                }
+            }
+            // pass 2: score; insert only candidates that can still make the top-L (bound-pruned heap ops)
+            for &nb in &fresh[..nf] {
+                let dv = simd::negdot_i8(q, ds.row(nb as usize));
+                evals += 1;
+                if topl.len() < l {
+                    cand.push(Reverse((dv, nb)));
+                    topl.push((dv, nb));
+                } else if dv < topl.peek().unwrap().0 {
+                    cand.push(Reverse((dv, nb)));
+                    topl.push((dv, nb));
+                    topl.pop();
+                }
+            }
+            // prefetch the adjacency row of the next expansion ahead of its pop
+            if let Some(Reverse((_, nxt))) = cand.peek() {
+                unsafe { _mm_prefetch(graph.neighbours(*nxt as usize).as_ptr() as *const i8, _MM_HINT_T0) };
+            }
+        }
+        ROAR_EVALS.fetch_add(evals, Relaxed);
+        ROAR_HOPS.fetch_add(hops, Relaxed);
+        let mut out = topl.into_vec();
+        out.sort_unstable();
+        out
+    })
 }
 
 thread_local! {
@@ -453,19 +684,72 @@ fn rerank_cascade_float(fbase: &crate::fbin::FBin, raw: &[i8], d: usize, raw_ori
     out
 }
 
+/// RERANK-F16 (P345): resident fp16 copy of the float base for the exact-rerank stage. At 35M x d1024
+/// the f32 rerank mmap is 143GB — alongside the 36GB int8 base + 30GB index + sidecars it exceeds page
+/// cache and every scattered rerank row is a page fault (measured 3.8ms/q float stage, rescore-ns/row
+/// 11.5us under thrash). fp16 halves the footprint (72GB) and is built resident (anonymous, THP-eligible)
+/// at load. Precision: fp16 has 11 mantissa bits vs int8's 8 — ordering the top-kk survivors in fp16 is
+/// strictly finer than the int8 stage that selected them; ties beyond 2^-11 relative are noise either way.
+/// SBANN_RERANK_F16 gates; off = champion f32 mmap path bit-identical.
+pub static F16BASE: std::sync::OnceLock<Vec<u16>> = std::sync::OnceLock::new();
+
+#[inline]
+fn dot_f16_row(qf: &[f32], row: &[u16]) -> f32 {
+    // f16c hardware conversion in 8-lane chunks via _mm256_cvtph_ps + FMA against the f32 query.
+    unsafe {
+        use std::arch::x86_64::*;
+        let d = qf.len();
+        let mut acc = _mm256_setzero_ps();
+        let mut j = 0usize;
+        while j + 8 <= d {
+            let h = _mm_loadu_si128(row.as_ptr().add(j) as *const __m128i);
+            let f = _mm256_cvtph_ps(h);
+            let q = _mm256_loadu_ps(qf.as_ptr().add(j));
+            acc = _mm256_fmadd_ps(f, q, acc);
+            j += 8;
+        }
+        let mut buf = [0f32; 8];
+        _mm256_storeu_ps(buf.as_mut_ptr(), acc);
+        let mut s: f32 = buf.iter().sum();
+        while j < d {
+            // scalar half->f32 (d%8 tail, e.g. msturing d=100): one-element cvtph
+            let h1 = _mm_cvtsi32_si128(row[j] as i32);
+            let f1 = _mm_cvtss_f32(_mm_cvtph_ps(h1));
+            s += f1 * qf[j];
+            j += 1;
+        }
+        s
+    }
+}
+
 /// Exact float-IP reorder over `cand` = (approx_dist, orig) survivors: read the mmap'd float rows
 /// (orig-indexed) and return the top-`k` orig ids by exact float IP (smaller `-dot` = better). `cand`
 /// is assumed distinct (the graph union is sorted+deduped upstream). Mirrors `rerank_contig_float`'s
 /// float stage but keyed directly on orig ids (no slot indirection).
+/// RERANK-F16: when the resident fp16 base is loaded, score from it instead (half the page footprint).
 fn rerank_orig_float(fbase: &crate::fbin::FBin, qf: &[f32], cand: &[(i32, u32)], k: usize) -> Vec<u32> {
     let n = cand.len();
+    let d = qf.len();
     let mut scored: Vec<(f32, u32)> = Vec::with_capacity(n);
-    for i in 0..n {
-        if i + 8 < n {
-            unsafe { _mm_prefetch(fbase.row(cand[i + 8].1 as usize).as_ptr() as *const i8, _MM_HINT_T0) };
+    if let Some(h) = F16BASE.get() {
+        for i in 0..n {
+            if i + 8 < n {
+                let p = cand[i + 8].1 as usize * d;
+                unsafe { _mm_prefetch(h.as_ptr().add(p) as *const i8, _MM_HINT_T0) };
+                unsafe { _mm_prefetch(h.as_ptr().add(p + 32) as *const i8, _MM_HINT_T0) };
+            }
+            let orig = cand[i].1;
+            let row = &h[orig as usize * d..orig as usize * d + d];
+            scored.push((-dot_f16_row(qf, row), orig));
         }
-        let orig = cand[i].1;
-        scored.push((-simd::dot_f32_fast(qf, fbase.row(orig as usize)), orig));
+    } else {
+        for i in 0..n {
+            if i + 8 < n {
+                unsafe { _mm_prefetch(fbase.row(cand[i + 8].1 as usize).as_ptr() as *const i8, _MM_HINT_T0) };
+            }
+            let orig = cand[i].1;
+            scored.push((-simd::dot_f32_fast(qf, fbase.row(orig as usize)), orig));
+        }
     }
     let m = k.min(scored.len());
     if m > 0 && m < scored.len() { scored.select_nth_unstable_by(m - 1, |a, b| a.0.total_cmp(&b.0)); scored.truncate(m); }
@@ -484,7 +768,7 @@ fn rerank_orig_float(fbase: &crate::fbin::FBin, qf: &[f32], cand: &[(i32, u32)],
 #[allow(clippy::too_many_arguments)]
 fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32],
     raw: &[i8], raw_orig_indexed: bool, d: usize,
-    q: &[i8], qf: &[f32], pool: &mut Vec<(i32, u32)>, graph: &GraphAdj,
+    q: &[i8], qf: &[f32], pool: &mut Vec<(i32, u32)>, graph: &GraphAdj, seeds: &[u32],
     m_expand: usize, kk: usize, k: usize) -> Vec<u32> {
     use std::sync::atomic::Ordering::Relaxed;
     let prof = PROFILE.load(Relaxed);
@@ -498,7 +782,8 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
     // Replaces the old dedup_pool_by_orig (a separate hash pass + pool rewrite) + a second union pass.
     let hops = GRAPH_HOPS.load(Relaxed).max(1);
     let bestfirst = GRAPH_BESTFIRST.load(Relaxed);
-    let est = pool.len() + hops * m_expand * ke;
+    let apool = ADAPT_POOL.load(Relaxed);
+    let est = pool.len() + seeds.len() + hops * m_expand * ke;
     let mut union: Vec<u32> = Vec::with_capacity(est);
     // pooltop holds (min apq4 dist, slot) per distinct pool orig — SAME tuple/tie-break as the old
     // dedup_pool_by_orig, so select_nth's top-M is bit-identical (ties break by slot, matching the oracle).
@@ -507,6 +792,9 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
     // which is never reordered). Pool origs are resident in `raw` (raw[slot*d] == ds.row(orig), byte-identical, so
     // recall-neutral); graph neighbours (union[pool_distinct..]) are read from the scattered `ds` mmap as before.
     let mut pool_slot: Vec<u32> = Vec::with_capacity(pool.len());
+    // ADAPT-POOL: apq4 dist per distinct pool orig, aligned with union[0..pool_distinct] insertion order
+    // (pooltop gets reordered by select_nth below, so a stable copy is kept when the lever is on).
+    let mut pool_apq4: Vec<i32> = Vec::with_capacity(if apool > 0 { pool.len() } else { 0 });
     GRAPH_SET.with(|cell| {
         let mut set = cell.borrow_mut();
         let cap = (est * 2).next_power_of_two().max(64);
@@ -526,10 +814,14 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
                     union.push(o);
                     pooltop.push((dist, s));
                     pool_slot.push(s);   // #2: union[i]'s resident slot for i<pool_distinct
+                    if apool > 0 { pool_apq4.push(dist); }
                     break;
                 }
                 if k == o {
-                    if dist < pooltop[pidx as usize].0 { pooltop[pidx as usize] = (dist, s); }
+                    if dist < pooltop[pidx as usize].0 {
+                        pooltop[pidx as usize] = (dist, s);
+                        if apool > 0 { pool_apq4[pidx as usize] = dist; }
+                    }
                     break;
                 }
                 h = (h + 1) & mask;
@@ -561,6 +853,20 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
             }
         }
         } // end if !bestfirst
+        // QSEED: inject this query's external on-manifold seed origs into the union (deduped against pool
+        // origs + neighbours). They land in union[pool_distinct..], so both the best-first and per-cohort
+        // frontiers score them and treat them as expansion entry points — the walk starts inside the
+        // neighbour region even when routing gave coverage-collapsed seeds.
+        for &s in seeds {
+            if s == u32::MAX || s as usize >= ds.nb { continue; }
+            let mut h = (s.wrapping_mul(0x9E3779B1) as usize) & mask;
+            loop {
+                let (kx, _) = set[h];
+                if kx == u32::MAX { set[h] = (s, u32::MAX); union.push(s); break; }
+                if kx == s { break; }
+                h = (h + 1) & mask;
+            }
+        }
     });
     // ascending-orig sort keeps the rescore gather monotone (kinder to the prefetcher); over the already-
     // deduped union, gated so the cost can be A/B'd (SBANN_GRAPH_SORT; default off — deep prefetch wins).
@@ -574,6 +880,55 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
         && std::is_x86_feature_detected!("avx512f");
     let avx = std::is_x86_feature_detected!("avx2");
     let pf = GRAPH_PFDIST.load(Relaxed).max(1);
+    // RBQ-TIER: pack the query's 1-bit sign code once; the beam then navigates + selects by Hamming to the
+    // resident base sign codes (d/8-byte gather, popcount) instead of the full int8 dot. Float rerank fixes order.
+    let rbq_nav = RBQ_SIGNS.get();
+    // RBQ-TIER asymmetric estimator: keep the (rotated) query in FULL precision; per row estimate
+    // <signs(P*x), P*q> = 2*(sum of qrot over set sign bits) - sum(qrot). Base is 1-bit (d/8-byte gather).
+    let (qrot, sumqrot): (Vec<f32>, f32) = if rbq_nav.is_some() {
+        let mut qr = vec![0f32; d];
+        if let Some(p) = RBQ_ROT.get() {
+            for j in 0..d { let prow = &p[j * d..j * d + d]; let mut s = 0f32; for k in 0..d { s += prow[k] * q[k] as f32; } qr[j] = s; }
+        } else { for i in 0..d { qr[i] = q[i] as f32; } }
+        let sm: f32 = qr.iter().sum();
+        (qr, sm)
+    } else { (Vec::new(), 0.0) };
+    // PQ4-NAV: per-query LUT — lut4[sub*16 + code] = -dot(q_sub, cent[sub][code]) rounded to i32. The
+    // 16*m i32 table (~3KB at m=48) stays L1-resident; per row the score is an m-term LUT sum over the
+    // row's m code bytes (1-line gather) instead of a d-byte int8 dot (2+ lines). Smaller = better,
+    // same -dot orientation as the int8 path, so selection/rerank downstream is unchanged.
+    // SQ4-RUNG: deinterleave the int8 query once per query (qe = even dims, qo = odd) to pair with the
+    // nibble layout (byte j = n[2j] | n[2j+1]<<4) in dot_sq4_vnni.
+    let sq4 = SQ4.get();
+    let (sq4_qe, sq4_qo): (Vec<i8>, Vec<i8>) = if sq4.is_some() {
+        // Fold the per-dim quantization steps into the query, then requantize to i8 with a per-query
+        // global scale g = 127/max|q·step| (query-side-only noise; base nibbles stay exact per dim).
+        let steps = SQ4_STEP.get().expect("SQ4_STEP set with SQ4");
+        let qs: Vec<f32> = (0..d).map(|j| q[j] as f32 * steps[j]).collect();
+        let mx = qs.iter().fold(0f32, |a, &v| a.max(v.abs())).max(1e-9);
+        let g = 127.0 / mx;
+        let qi = |j: usize| -> i8 { (qs[j] * g).round().clamp(-127.0, 127.0) as i8 };
+        ((0..d / 2).map(|j| qi(2 * j)).collect(), (0..d / 2).map(|j| qi(2 * j + 1)).collect())
+    } else { (Vec::new(), Vec::new()) };
+    let pq4 = PQ4.get();
+    let lut4: Vec<i32> = if let Some(p4) = pq4 {
+        let mut t = vec![0i32; p4.m * 16];
+        for mi in 0..p4.m {
+            for c in 0..16 {
+                let cent = &p4.cent[(mi * 16 + c) * p4.dsub..(mi * 16 + c + 1) * p4.dsub];
+                // -dot + |cent|^2/2 per sub => LUT sum == (L2(q,recon) - |q|^2)/2 exactly (monotone in
+                // the gate-validated L2-to-reconstruction). -dot ALONE mis-ranks: recon norms vary (PQ
+                // centroids shrink toward sub-means), unlike the ~const-norm raw rows the int8 path relies on.
+                let (mut s, mut cn) = (0f32, 0f32);
+                for j in 0..p4.dsub {
+                    s += q[mi * p4.dsub + j] as f32 * cent[j];
+                    cn += cent[j] * cent[j];
+                }
+                t[mi * 16 + c] = (0.5 * cn - s).round() as i32;
+            }
+        }
+        t
+    } else { Vec::new() };
     let use_raw = !raw.is_empty() && SPLIT_RESCORE.load(std::sync::atomic::Ordering::Relaxed);
     // #2: read a union row's int8 vector from the RESIDENT `raw` (pool origs via slot when slot-indexed, or
     // orig-indexed directly) instead of the scattered 4KB-paged `ds` mmap; graph neighbours fall back to `ds`.
@@ -594,33 +949,115 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
         if ri != usize::MAX { unsafe { _mm_prefetch(raw.as_ptr().add(ri * d) as *const i8, _MM_HINT_T0) }; }
         else { unsafe { _mm_prefetch(ds.row(union[ii] as usize).as_ptr() as *const i8, _MM_HINT_T0) }; }
     }}; }
+    // Nav score priority: SQ4 nibble dot > PQ4 LUT sum > RBQ Hamming > int8 -dot. All "smaller=better".
+    macro_rules! rbqdist { ($i:expr) => {{
+        let ii = $i as usize;
+        if let Some(codes) = sq4 {
+            let hb = d / 2;
+            let o = union[ii] as usize * hb;
+            -unsafe { simd::dot_sq4_vnni(&sq4_qe, &sq4_qo, &codes[o..o + hb]) }
+        } else if let Some(p4) = pq4 {
+            let o = union[ii] as usize;
+            let crow = &p4.codes[o * p4.m..o * p4.m + p4.m];
+            let mut s = 0i32;
+            for (mi, &c) in crow.iter().enumerate() { s += lut4[mi * 16 + c as usize]; }
+            s
+        } else if let Some((b, signs)) = rbq_nav {
+            let o = union[ii] as usize;
+            let srow = &signs[o * b .. o * b + b];
+            let mut pos = 0f32;
+            for j in 0..d { if srow[j >> 3] & (1u8 << (j & 7)) != 0 { pos += qrot[j]; } }
+            (-((2.0 * pos - sumqrot) * 256.0)) as i32
+        } else {
+            let row = rrow!(ii);
+            if vnni { -unsafe { simd::dot_i8_vnni(q, row) } }
+            else if avx { -unsafe { simd::dot_i8_avx2(q, row) } }
+            else { simd::negdot_i8(q, row) }
+        }
+    }}; }
+    macro_rules! rbqpf { ($i:expr) => {{
+        let ii = $i as usize;
+        if let Some(codes) = sq4 {
+            let hb = d / 2;
+            let base = union[ii] as usize * hb;
+            let ptr = codes.as_ptr();
+            let mut off = 0usize;
+            while off < hb { unsafe { _mm_prefetch(ptr.add(base + off) as *const i8, _MM_HINT_T0) }; off += 64; }
+        } else if let Some(p4) = pq4 {
+            let ptr = p4.codes.as_ptr();
+            let base = union[ii] as usize * p4.m;
+            let mut off = 0usize;
+            while off < p4.m { unsafe { _mm_prefetch(ptr.add(base + off) as *const i8, _MM_HINT_T0) }; off += 64; }
+        }
+        else if let Some((b, signs)) = rbq_nav { unsafe { _mm_prefetch(signs.as_ptr().add(union[ii] as usize * b) as *const i8, _MM_HINT_T0) }; }
+        else { rpf!(ii); }
+    }}; }
     let mut scored: Vec<(i32, u32)> = Vec::with_capacity(union.len().max(est));
     macro_rules! score_range { ($lo:expr, $hi:expr) => {{
+        let ts = if prof { Some(std::time::Instant::now()) } else { None };
         for i in $lo..$hi {
-            if i + pf < $hi { rpf!(i + pf); }
-            let row = rrow!(i);
-            let dist = if vnni { -unsafe { simd::dot_i8_vnni(q, row) } }
-                       else if avx { -unsafe { simd::dot_i8_avx2(q, row) } }
-                       else { simd::negdot_i8(q, row) };
+            if i + pf < $hi { rbqpf!(i + pf); }
+            let dist = rbqdist!(i);
             scored.push((dist, union[i]));
         }
+        if let Some(ts) = ts { PROF_SCORE_NS.fetch_add(ts.elapsed().as_nanos() as u64, Relaxed); }
     }}; }
     if bestfirst {
         // BATCHED BEAM BEST-FIRST (P256): union = pool origs only. Each round scores new frontier
         // additions, then expands the GLOBAL top-M unexpanded (beam width M) — HNSW-like order, still
         // SIMD-batched (no per-query heap). Same R*M budget as per-cohort. `exp` tracks expansion.
+        // ADAPT-STOP (P342, flag-gated): per-query adaptive hop termination — the property that makes
+        // short-walk indexes cheap at loose recall, applied to OUR beam. Before expanding a hop, if the
+        // best unexpanded frontier candidate is already worse than the current kk-th best score plus a
+        // margin, further expansion cannot improve the float-rerank set: stop. Easy queries pay 1 hop;
+        // `hops` becomes a CAP, not a fixed cost. SBANN_ADAPT_STOP=<margin i32> enables (0 = pure bound).
+        let adapt = ADAPT_STOP_ON.load(Relaxed) && kk >= 1;   // kk=0 (float-rerank-all) would panic the bound heap
+        let amargin = ADAPT_STOP_MARGIN.load(Relaxed) as i32;
+        // review P344: allocate the bound heap ONLY when a lever needs it (champion path alloc-identical)
+        let mut bound: std::collections::BinaryHeap<i32> = if adapt || (apool > 0 && kk >= 1) {
+            std::collections::BinaryHeap::with_capacity(kk + 1)
+        } else { std::collections::BinaryHeap::new() };
         let mut exp: Vec<bool> = vec![false; union.len()];
         let mut lo = 0usize;
+        // ADAPT-POOL (P342b): the pool (t_surv rows) IS the rescore floor at loose configs — hop
+        // termination alone can't touch it (measured). Score pool rows in apq4-ascending order and stop
+        // after `apool` consecutive rows that fail to improve the int8 top-kk; skipped rows never enter
+        // `scored` (not expandable, not float-selectable). QSEED seeds (union[pool_distinct..]) carry no
+        // apq4 rank and are left to the generic hop-0 range below (always scored).
+        if apool > 0 && kk >= 1 && pool_distinct > 0 && !(hops == 1 && GRAPH_SORT.load(Relaxed)) {
+            let mut ord: Vec<u32> = (0..pool_distinct as u32).collect();
+            ord.sort_unstable_by_key(|&i| pool_apq4[i as usize]);
+            let mut since = 0usize;
+            for oi in 0..ord.len() {
+                if oi + pf < ord.len() { rbqpf!(ord[oi + pf]); }
+                let i = ord[oi] as usize;
+                let dist = rbqdist!(i);
+                scored.push((dist, union[i]));
+                if bound.len() < kk { bound.push(dist); since = 0; }
+                else if dist < *bound.peek().unwrap() { bound.push(dist); bound.pop(); since = 0; }
+                else {
+                    since += 1;
+                    if since >= apool {
+                        PROF_POOL_SKIPPED.fetch_add((ord.len() - oi - 1) as u64, Relaxed);
+                        break;
+                    }
+                }
+            }
+            lo = pool_distinct;
+        }
         for _hop in 0..hops {
             let hi = union.len();
+            let ts = if prof { Some(std::time::Instant::now()) } else { None };
             for i in lo..hi {
-                if i + pf < hi { rpf!(i + pf); }
-                let row = rrow!(i);
-                let dist = if vnni { -unsafe { simd::dot_i8_vnni(q, row) } }
-                           else if avx { -unsafe { simd::dot_i8_avx2(q, row) } }
-                           else { simd::negdot_i8(q, row) };
+                if i + pf < hi { rbqpf!(i + pf); }
+                let dist = rbqdist!(i);
                 scored.push((dist, union[i]));
+                if adapt {
+                    if bound.len() < kk { bound.push(dist); }
+                    else if dist < *bound.peek().unwrap() { bound.push(dist); bound.pop(); }
+                }
             }
+            if let Some(ts) = ts { PROF_SCORE_NS.fetch_add(ts.elapsed().as_nanos() as u64, Relaxed); }
             exp.resize(scored.len(), false);
             lo = hi;
             // global frontier: top-M of ALL unexpanded scored candidates, by int8 dist.
@@ -628,6 +1065,11 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
             let mm = m_expand.min(cand.len());
             if mm == 0 { break; }
             if mm < cand.len() { cand.select_nth_unstable_by_key(mm - 1, |&i| scored[i as usize].0); }
+            if adapt && bound.len() >= kk {
+                let kkth = *bound.peek().unwrap();
+                let fbest = cand[..mm].iter().map(|&i| scored[i as usize].0).min().unwrap_or(i32::MAX);
+                if fbest > kkth.saturating_add(amargin) { PROF_ADAPT_STOPS.fetch_add(1, Relaxed); break; }
+            }
             GRAPH_SET.with(|cell| {
                 let mut set = cell.borrow_mut();
                 let mask = set.len() - 1;
@@ -654,12 +1096,9 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
     for r in 0..hops {
         let hi = union.len();
         for i in lo..hi {
-            if i + pf < hi { rpf!(i + pf); }
-            let row = rrow!(i);
-            // negdot: smaller = better (matches the IP float path's -dot).
-            let dist = if vnni { -unsafe { simd::dot_i8_vnni(q, row) } }
-                       else if avx { -unsafe { simd::dot_i8_avx2(q, row) } }
-                       else { simd::negdot_i8(q, row) };
+            if i + pf < hi { rbqpf!(i + pf); }
+            // negdot/hamming: smaller = better (matches the IP float path's -dot).
+            let dist = rbqdist!(i);
             scored.push((dist, union[i]));
         }
         if r + 1 == hops { break; }
@@ -692,6 +1131,25 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
     }
     } // end else (per-cohort)
     PROF_GRAPH_ROWS.fetch_add((union.len().saturating_sub(pool_distinct + m_expand * ke)) as u64, Relaxed);
+    // SQ4 int8 escalation (P343c): SQ4 picks a wide band, int8 re-ranks it, float takes the top-kk.
+    let esc = SQ4_INT8K.load(Relaxed);
+    if sq4.is_some() && esc > 0 && !scored.is_empty() {
+        // review P344: esc must be a WIDER band than kk, else KLIST points silently collapse to esc
+        let e = esc.max(kk).min(scored.len());
+        if e < scored.len() { scored.select_nth_unstable(e - 1); scored.truncate(e); }
+        // pf-ahead interleaved prefetch (review P344: a full-band prefetch pass overruns L2 at large esc)
+        for i in 0..scored.len() {
+            if i + pf < scored.len() {
+                let ptr = ds.row(scored[i + pf].1 as usize).as_ptr();
+                let mut off = 0usize;
+                while off < d { unsafe { _mm_prefetch(ptr.add(off) as *const i8, _MM_HINT_T0) }; off += 64; }
+            }
+            let row = ds.row(scored[i].1 as usize);
+            scored[i].0 = if vnni { -unsafe { simd::dot_i8_vnni(q, row) } }
+                          else if avx { -unsafe { simd::dot_i8_avx2(q, row) } }
+                          else { simd::negdot_i8(q, row) };
+        }
+    }
     let kk = kk.min(scored.len());
     if kk > 0 && kk < scored.len() { scored.select_nth_unstable(kk - 1); scored.truncate(kk); }
     if let Some(tc) = tc { PROF_CASC_NS.fetch_add(tc.elapsed().as_nanos() as u64, Relaxed); }
@@ -1804,7 +2262,7 @@ impl Compressor for Apq4 {
 }
 
 /// Random orthogonal d×d rotation (uniform entries + Gram-Schmidt rows).
-fn random_orthogonal(d: usize, mut seed: u64) -> Vec<f32> {
+pub fn random_orthogonal(d: usize, mut seed: u64) -> Vec<f32> {
     let mut m = vec![0f32; d * d];
     for v in m.iter_mut() {
         seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
@@ -2799,7 +3257,7 @@ impl Index {
             if let (Some(g), true) = (graph, cascade) {
                 // graph-augmented union rescore (SBANN_GRAPH_FILE), same expansion point as the batched path.
                 let gm = GRAPH_M.load(std::sync::atomic::Ordering::Relaxed);
-                return rerank_cascade_graph(ds, fbase, &self.slot_orig, &self.raw, self.raw_orig_indexed, self.d, q, qf, &mut pool, g, gm, kk, k);
+                return rerank_cascade_graph(ds, fbase, &self.slot_orig, &self.raw, self.raw_orig_indexed, self.d, q, qf, &mut pool, g, &[], gm, kk, k);
             }
             if cascade {
                 // int8-cascade prune (PROF_CASC_NS) then float reorder (PROF_RERANK_NS) — timed inside.
@@ -3099,7 +3557,7 @@ impl Index {
     #[allow(clippy::too_many_arguments)]
     pub fn search_batch_frr(&self, ds: &I8Bin, queries: &[i8], qf_all: &[f32],
         fbase: &crate::fbin::FBin, nq: usize, p: usize, t: usize, k: usize,
-        graph: Option<&GraphAdj>) -> Vec<Vec<u32>> {
+        graph: Option<&GraphAdj>, q_base: usize) -> Vec<Vec<u32>> {
         let prof = PROFILE.load(std::sync::atomic::Ordering::Relaxed);
         let d = ds.d;
         let ncell = self.router.n_cells();
@@ -3157,9 +3615,14 @@ impl Index {
             let mut pool = top.finish();
             let qi8 = &queries[i * d..i * d + d];
             let qf = &qf_all[i * d..i * d + d];
+            // QSEED: this query's global index is q_base + i (batch is chunked); slice its seed row.
+            let seeds_i: &[u32] = match SEED_IDS.get() {
+                Some((s, tbl)) if *s > 0 && (q_base + i + 1) * s <= tbl.len() => &tbl[(q_base + i) * s..(q_base + i + 1) * s],
+                _ => &[],
+            };
             let out = if let (Some(g), true) = (graph, cascade) {
                 // graph-augmented union rescore (SBANN_GRAPH_FILE); falls back to plain cascade if M=0.
-                rerank_cascade_graph(ds, fbase, &self.slot_orig, &self.raw, self.raw_orig_indexed, self.d, qi8, qf, &mut pool, g, gm, kk, k)
+                rerank_cascade_graph(ds, fbase, &self.slot_orig, &self.raw, self.raw_orig_indexed, self.d, qi8, qf, &mut pool, g, seeds_i, gm, kk, k)
             } else if cascade {
                 rerank_cascade_float(fbase, &self.raw, self.d, self.raw_orig_indexed, &self.slot_orig, qi8, qf, &mut pool, kk, k)
             } else {

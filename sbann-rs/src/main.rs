@@ -319,7 +319,16 @@ fn apply_soar(r: &mut vq::HierRouter) {
 /// compress=pq4|i8. Sweeps p, reports recall@10 / avg pool / QPS so routers compare at matched pool.
 fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: usize, c: usize, tmul: usize, batched: bool) {
     let t0 = Instant::now();
-    let ds = I8Bin::open(base).expect("base");
+    let mut ds = I8Bin::open(base).expect("base");
+    // RESIDENT-I8 (P346, flag-gated): anonymous THP-backed copy of the int8 base. The scattered union
+    // rescore pays a TLB miss + page walk per row on the 4KB-paged file mmap (~918 rows/q at DEEP loose
+    // configs); 2MB pages cut TLB entries ~500x. Data byte-identical — recall unchanged.
+    if std::env::var("SBANN_RESIDENT_I8").is_ok() {
+        let tr = Instant::now();
+        ds.make_resident();
+        println!("  [RESIDENT-I8] {}MB anonymous (THP-eligible)  setup={:.1}s", ds.nb * ds.d / 1_000_000, tr.elapsed().as_secs_f64());
+    }
+    let ds = ds;
     let n = ds.nb;
     // SBANN_INDEX_LOAD: skip the (minutes-long) router/comp train + encode and instead mmap+copy a
     // prebuilt index (seconds). Everything below in the else-branch (mean, route-train open, k-means,
@@ -449,6 +458,35 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
         println!("  [FLOAT_RERANK fbase={p} nb={} d={}]", fb.nb, fb.d);
         Some(fb)
     } else { None };
+    // RERANK-F16 (P345, flag-gated): convert the f32 rerank base to a RESIDENT fp16 copy (half the
+    // page footprint; fixes the 35M-scale page-cache thrash where the 143GB f32 mmap can't stay warm).
+    if float_rerank && std::env::var("SBANN_RERANK_F16").is_ok() {
+        let fb = fbase.as_ref().unwrap();
+        let t0 = Instant::now();
+        let (nb, dd) = (fb.nb, fb.d);
+        let mut h = vec![0u16; nb * dd];
+        h.par_chunks_mut(dd).enumerate().for_each(|(i, out)| {
+            let row = fb.row(i);
+            let mut j = 0usize;
+            unsafe {
+                use std::arch::x86_64::*;
+                while j + 8 <= dd {
+                    let f = _mm256_loadu_ps(row.as_ptr().add(j));
+                    let ph = _mm256_cvtps_ph(f, _MM_FROUND_TO_NEAREST_INT);
+                    _mm_storeu_si128(out.as_mut_ptr().add(j) as *mut __m128i, ph);
+                    j += 8;
+                }
+                while j < dd {
+                    let ph = _mm256_cvtps_ph(_mm256_set1_ps(row[j]), _MM_FROUND_TO_NEAREST_INT);
+                    out[j] = _mm_extract_epi16(ph, 0) as u16;
+                    j += 1;
+                }
+            }
+        });
+        println!("  [RERANK-F16] resident fp16 base {}MB (f32 mmap was {}MB)  setup={:.1}s",
+            nb * dd * 2 / 1_000_000, nb * dd * 4 / 1_000_000, t0.elapsed().as_secs_f64());
+        let _ = vq::F16BASE.set(h);
+    }
     let fqf: Vec<f32> = if float_rerank {
         let p = std::env::var("SBANN_FQUERY").expect("SBANN_FLOAT_RERANK set but SBANN_FQUERY missing");
         let fq = fbin::FBin::open(&p, nq).expect("fquery");
@@ -472,9 +510,247 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
         if let Ok(v) = std::env::var("SBANN_GRAPH_HOPS") { vq::GRAPH_HOPS.store(v.parse().expect("SBANN_GRAPH_HOPS"), Relaxed); }
         if std::env::var("SBANN_GRAPH_BESTFIRST").is_ok() { vq::GRAPH_BESTFIRST.store(true, Relaxed); }
         if let Ok(v) = std::env::var("SBANN_GRAPH_KEDGE") { vq::GRAPH_KEDGE.store(v.parse().expect("SBANN_GRAPH_KEDGE"), Relaxed); }
+        // ADAPT-STOP (P342): per-query adaptive beam termination; value = i32 margin on the int8 bound.
+        if let Ok(v) = std::env::var("SBANN_ADAPT_STOP") {
+            vq::ADAPT_STOP_ON.store(true, Relaxed);
+            vq::ADAPT_STOP_MARGIN.store(v.parse().unwrap_or(0), Relaxed);
+        }
+        // ADAPT-POOL (P342b): patience C for adaptive rescore depth over apq4-ranked pool rows.
+        if let Ok(v) = std::env::var("SBANN_ADAPT_POOL") {
+            vq::ADAPT_POOL.store(v.parse().expect("SBANN_ADAPT_POOL"), Relaxed);
+        }
+        // SQ4 int8 escalation width (P343c).
+        if let Ok(v) = std::env::var("SBANN_SQ4_INT8K") {
+            vq::SQ4_INT8K.store(v.parse().expect("SBANN_SQ4_INT8K"), Relaxed);
+        }
         if let Ok(v) = std::env::var("SBANN_GRAPH_PFDIST") { vq::GRAPH_PFDIST.store(v.parse().expect("SBANN_GRAPH_PFDIST"), Relaxed); }
         if let Ok(v) = std::env::var("SBANN_GRAPH_SORT") { vq::GRAPH_SORT.store(v != "0", Relaxed); }
         if let Ok(v) = std::env::var("SBANN_SPLIT_RESCORE") { vq::SPLIT_RESCORE.store(v != "0", Relaxed); }
+        // QSEED per-query seed table (SBANN_SEED_IDS_FILE): header <nq:u32,S:u32> then nq*S u32 seed base-ids.
+        if let Ok(sf) = std::env::var("SBANN_SEED_IDS_FILE") {
+            let bytes = std::fs::read(&sf).expect("seed ids file");
+            let snq = u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]) as usize;
+            let s = u32::from_le_bytes([bytes[4], bytes[5], bytes[6], bytes[7]]) as usize;
+            let data: Vec<u32> = bytes[8..8 + snq * s * 4].chunks_exact(4)
+                .map(|c| u32::from_le_bytes([c[0], c[1], c[2], c[3]])).collect();
+            println!("  [QSEED] {sf}  nq={snq} S={s}");
+            let _ = vq::SEED_IDS.set((s, data));
+        }
+        // RBQ-TIER (SBANN_RBQ_NAV): build the resident 1-bit sign store (bit i = base coord i >= 0), by orig.
+        if std::env::var("SBANN_RBQ_NAV").is_ok() {
+            let dd = ds.d; let bpr = (dd + 7) / 8;
+            // RBQ-TIER: random orthonormal rotation P; store signs of P*x per base row (decorrelated 1-bit codes).
+            let p = vq::random_orthogonal(dd, 0x5ba4_u64);
+            let mut signs = vec![0u8; n * bpr];
+            signs.par_chunks_mut(bpr).enumerate().for_each(|(o, out)| {
+                let row = ds.row(o);
+                for j in 0..dd {
+                    let prow = &p[j * dd..j * dd + dd];
+                    let mut s = 0f32;
+                    for k in 0..dd { s += prow[k] * row[k] as f32; }
+                    if s >= 0.0 { out[j >> 3] |= 1u8 << (j & 7); }
+                }
+            });
+            println!("  [RBQ-NAV] rotated signs nb={n} bpr={bpr}");
+            let _ = vq::RBQ_ROT.set(p);
+            let _ = vq::RBQ_SIGNS.set((bpr, signs));
+        }
+        // SQ4-RUNG (P343, flag-gated): nibble-packed 4-bit truncation of the int8 rows (d/2 B/row = half
+        // the cache lines). Union nav + selection score via dot_sq4_vnni; int8 stage skipped; float
+        // rerank fixes the tail. Gates: wiki 1.0000@64 (engine-exact 0.9998), webvid 0.9990@300.
+        if std::env::var("SBANN_SQ4_NAV").is_ok() {
+            assert!(std::is_x86_feature_detected!("avx512vnni"), "SQ4-NAV needs AVX-512 VNNI");
+            assert!(ds.d % 2 == 0, "SQ4-NAV wants even d");
+            let t0 = Instant::now();
+            let hb = ds.d / 2;
+            // PER-DIM robust affine range (p0.5..p99.5 per dim, P343b): dims are heterogeneous (WebVid:
+            // a global range clips outlier dims, -3-4pt recall). Per-dim steps are folded into the QUERY
+            // at query time (vq: qs[j] = q[j]*step[j] requantized i8), so the row score stays Σ nibble·qs.
+            let dd = ds.d;
+            let mstep = (n / 200_000).max(1);
+            let mut hist = vec![0u32; dd * 256];
+            let mut i = 0usize;
+            let mut nsamp = 0u32;
+            while i < n {
+                let row = ds.row(i);
+                for j in 0..dd { hist[j * 256 + (row[j] as i16 + 128) as usize] += 1; }
+                nsamp += 1;
+                i += mstep;
+            }
+            let cut = (nsamp / 200).max(1);
+            let mut lo = vec![0f32; dd];
+            let mut step = vec![0f32; dd];
+            for j in 0..dd {
+                let h = &hist[j * 256..(j + 1) * 256];
+                let (mut l, mut r, mut acc) = (-128i32, 127i32, 0u32);
+                for b in 0..256 { acc += h[b]; if acc >= cut { l = b as i32 - 128; break; } }
+                acc = 0;
+                for b in (0..256).rev() { acc += h[b]; if acc >= cut { r = b as i32 - 128; break; } }
+                let r = r.max(l + 1);
+                lo[j] = l as f32;
+                step[j] = (r - l) as f32 / 15.0;
+            }
+            // SBANN_SQ4_FILE: cache the encoded sidecar (header d:u32 pad:u32 n:u64, steps d*f32, codes n*hb).
+            // Steps are recomputed above (cheap, sample-only) and VALIDATED against the cached ones so a
+            // stale sidecar from a different base fails loudly instead of poisoning a sweep.
+            let sq4_file = std::env::var("SBANN_SQ4_FILE").ok();
+            let want = 16 + dd * 4 + n * hb;
+            let cached: Option<Vec<u8>> = sq4_file.as_ref().and_then(|p| std::fs::read(p).ok()).and_then(|bytes| {
+                if bytes.len() != want { return None; }
+                if u32::from_le_bytes(bytes[0..4].try_into().unwrap()) as usize != dd { return None; }
+                if u64::from_le_bytes(bytes[8..16].try_into().unwrap()) as usize != n { return None; }
+                for j in 0..dd {
+                    let o = 16 + j * 4;
+                    let s = f32::from_le_bytes(bytes[o..o + 4].try_into().unwrap());
+                    if (s - step[j]).abs() > 1e-4 { return None; }
+                }
+                Some(bytes[16 + dd * 4..].to_vec())
+            });
+            let codes = if let Some(c) = cached { println!("  [SQ4] sidecar cache hit"); c } else {
+                let mut codes = vec![0u8; n * hb];
+                codes.par_chunks_mut(hb).enumerate().for_each(|(o, out)| {
+                    let row = ds.row(o);
+                    for j in 0..hb {
+                        let ne = ((row[2 * j] as f32 - lo[2 * j]) / step[2 * j]).round().clamp(0.0, 15.0) as u8;
+                        let no = ((row[2 * j + 1] as f32 - lo[2 * j + 1]) / step[2 * j + 1]).round().clamp(0.0, 15.0) as u8;
+                        out[j] = ne | (no << 4);
+                    }
+                });
+                if let Some(p) = sq4_file.as_ref() {
+                    let mut bytes = Vec::with_capacity(want);
+                    bytes.extend_from_slice(&(dd as u32).to_le_bytes());
+                    bytes.extend_from_slice(&0u32.to_le_bytes());
+                    bytes.extend_from_slice(&(n as u64).to_le_bytes());
+                    for s in step.iter() { bytes.extend_from_slice(&s.to_le_bytes()); }
+                    bytes.extend_from_slice(&codes);
+                    std::fs::write(p, &bytes).expect("SQ4 sidecar write");
+                }
+                codes
+            };
+            println!("  [SQ4-NAV] nibble sidecar {hb}B/row (int8 {}B) nb={n} per-dim steps  setup={:.1}s", dd, t0.elapsed().as_secs_f64());
+            let _ = vq::SQ4_STEP.set(step);
+            let _ = vq::SQ4.set(codes);
+        }
+        // SYMPACK-B (P344, flag-gated): pack each node's ke neighbors' ids + SQ4 nibble codes into one
+        // contiguous block (ke*4 + ke*d/2 bytes) so a walk expansion is ONE sequential read (17ns/cand
+        // measured) instead of ke scattered gathers (94ns/row). Requires SBANN_SQ4_NAV (flat codes are
+        // the entry scorer + code source). SymphonyQG-style layout — cited transplant.
+        if std::env::var("SBANN_SYMPACK").is_ok() {
+            let sq4codes = vq::SQ4.get().expect("SBANN_SYMPACK requires SBANN_SQ4_NAV");
+            let t0 = Instant::now();
+            let hb = ds.d / 2;
+            let ke = vq::GRAPH_KEDGE.load(Relaxed).clamp(1, k).min(64);
+            let blk = ke * 4 + ke * hb;
+            let mut blocks = vec![0u8; n * blk];
+            blocks.par_chunks_mut(blk).enumerate().for_each(|(o, out)| {
+                let nbs = &g.adj[o * k..o * k + ke];
+                for (j, &nb) in nbs.iter().enumerate() {
+                    out[j * 4..j * 4 + 4].copy_from_slice(&nb.to_le_bytes());
+                }
+                let cb = ke * 4;
+                for (j, &nb) in nbs.iter().enumerate() {
+                    if (nb as usize) >= n { continue; } // padded/sentinel graph ids: leave zero codes
+                    let s = nb as usize * hb;
+                    out[cb + j * hb..cb + (j + 1) * hb].copy_from_slice(&sq4codes[s..s + hb]);
+                }
+            });
+            println!("  [SYMPACK] blocks ke={ke} blk={blk}B total={}MB  setup={:.1}s", n * blk / 1_000_000, t0.elapsed().as_secs_f64());
+            let _ = vq::SYMPACK.set((ke, blk, blocks));
+        }
+        // PQ4-NAV (P341, flag-gated): plain 4-bit PQ sidecar (own codebook, independent of the index's
+        // residual apq4 — this is what gate 1 validated as a LOWER bound). Nav + float-survivor selection
+        // run on m=d/2 code bytes/row (~1 cache line) and the int8 rescore stage is skipped entirely.
+        // SBANN_PQ4_FILE caches the trained sidecar across sweeps.
+        if std::env::var("SBANN_PQ4_NAV").is_ok() {
+            let t0 = Instant::now();
+            let dd = ds.d;
+            assert!(dd % 2 == 0, "PQ4-NAV wants even d");
+            let m = dd / 2;
+            let dsub = 2usize;
+            let sidecar = std::env::var("SBANN_PQ4_FILE").ok();
+            let want = 16 + m * 16 * dsub * 4 + n * m;
+            let loaded: Option<(Vec<f32>, Vec<u8>)> = sidecar.as_ref().and_then(|p| std::fs::read(p).ok()).and_then(|bytes| {
+                if bytes.len() != want { return None; }
+                let hm = u32::from_le_bytes(bytes[0..4].try_into().unwrap()) as usize;
+                let hn = u64::from_le_bytes(bytes[8..16].try_into().unwrap()) as usize;
+                if hm != m || hn != n { return None; }
+                let mut cent = vec![0f32; m * 16 * dsub];
+                for (i, c) in cent.iter_mut().enumerate() {
+                    let o = 16 + i * 4;
+                    *c = f32::from_le_bytes(bytes[o..o + 4].try_into().unwrap());
+                }
+                Some((cent, bytes[16 + m * 16 * dsub * 4..].to_vec()))
+            });
+            let (cent, codes) = if let Some(x) = loaded { println!("  [PQ4] sidecar loaded"); x } else {
+                // train: 16-centroid k-means per 2-dim sub on <=200k stride-sampled rows (Lloyd x8)
+                let ns = 200_000usize.min(n);
+                let step = (n / ns).max(1);
+                let mut cent = vec![0f32; m * 16 * dsub];
+                cent.par_chunks_mut(16 * dsub).enumerate().for_each(|(mi, cm)| {
+                    let mut xs = vec![0f32; ns * 2];
+                    for s in 0..ns {
+                        let row = ds.row(s * step);
+                        xs[s * 2] = row[mi * 2] as f32;
+                        xs[s * 2 + 1] = row[mi * 2 + 1] as f32;
+                    }
+                    for c in 0..16 { // spread init over the sample
+                        let s = c * ns / 16;
+                        cm[c * 2] = xs[s * 2]; cm[c * 2 + 1] = xs[s * 2 + 1];
+                    }
+                    let mut asg = vec![0u8; ns];
+                    for _ in 0..8 {
+                        for s in 0..ns {
+                            let (x0, x1) = (xs[s * 2], xs[s * 2 + 1]);
+                            let (mut bc, mut bd) = (0u8, f32::INFINITY);
+                            for c in 0..16 {
+                                let d0 = x0 - cm[c * 2]; let d1 = x1 - cm[c * 2 + 1];
+                                let dv = d0 * d0 + d1 * d1;
+                                if dv < bd { bd = dv; bc = c as u8; }
+                            }
+                            asg[s] = bc;
+                        }
+                        let mut sum = [[0f64; 2]; 16]; let mut cnt = [0usize; 16];
+                        for s in 0..ns {
+                            let c = asg[s] as usize;
+                            sum[c][0] += xs[s * 2] as f64; sum[c][1] += xs[s * 2 + 1] as f64; cnt[c] += 1;
+                        }
+                        for c in 0..16 {
+                            if cnt[c] > 0 {
+                                cm[c * 2] = (sum[c][0] / cnt[c] as f64) as f32;
+                                cm[c * 2 + 1] = (sum[c][1] / cnt[c] as f64) as f32;
+                            }
+                        }
+                    }
+                });
+                let mut codes = vec![0u8; n * m];
+                codes.par_chunks_mut(m).enumerate().for_each(|(o, out)| {
+                    let row = ds.row(o);
+                    for mi in 0..m {
+                        let x0 = row[mi * 2] as f32; let x1 = row[mi * 2 + 1] as f32;
+                        let cm = &cent[mi * 16 * 2..(mi + 1) * 16 * 2];
+                        let (mut bc, mut bd) = (0u8, f32::INFINITY);
+                        for c in 0..16 {
+                            let d0 = x0 - cm[c * 2]; let d1 = x1 - cm[c * 2 + 1];
+                            let dv = d0 * d0 + d1 * d1;
+                            if dv < bd { bd = dv; bc = c as u8; }
+                        }
+                        out[mi] = bc;
+                    }
+                });
+                if let Some(p) = sidecar.as_ref() {
+                    let mut bytes = Vec::with_capacity(want);
+                    bytes.extend_from_slice(&(m as u32).to_le_bytes());
+                    bytes.extend_from_slice(&(dsub as u32).to_le_bytes());
+                    bytes.extend_from_slice(&(n as u64).to_le_bytes());
+                    for c in cent.iter() { bytes.extend_from_slice(&c.to_le_bytes()); }
+                    bytes.extend_from_slice(&codes);
+                    std::fs::write(p, &bytes).expect("PQ4 sidecar write");
+                }
+                (cent, codes)
+            };
+            println!("  [PQ4-NAV] m={m} ({}B/row vs int8 {}B) nb={n}  setup={:.1}s", m, dd, t0.elapsed().as_secs_f64());
+            let _ = vq::PQ4.set(vq::Pq4Nav { m, dsub, cent, codes });
+        }
         println!("  [GRAPH] {gp}  n={n} k={k}  M={} kedge={} pfdist={}",
             vq::GRAPH_M.load(Relaxed), vq::GRAPH_KEDGE.load(Relaxed).min(k), vq::GRAPH_PFDIST.load(Relaxed));
         Some(g)
@@ -567,6 +843,110 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
         }
         return;
     }
+    // ROAR-MODE (P340, flag-gated — champion path untouched): pure best-first walk sweep. No route, no
+    // scan, no union rescore; the walk's top-L is the candidate set and cost adapts per query (DiskANN
+    // termination). Sim gates (2026-07-20): int8 -dot walk == float-walk quality; warm entry -25-30% evals;
+    // walk ceiling ~0.96 complements the cascade's >=0.95 win regime. SBANN_ROARMODE="30,50,80,120" (L
+    // sweep). Entry per query: QSEED seeds if SBANN_SEED_IDS_FILE is loaded (first SBANN_ROAR_ENTRIES of
+    // them), else nearest of an SBANN_ROAR_DIR-row stride-sampled directory (contiguous int8 scan), else
+    // the global medoid (argmax dot with the int8 mean — unit-norm/IP datasets; the loss regimes are such).
+    if let Ok(rl) = std::env::var("SBANN_ROARMODE") {
+        use std::sync::atomic::Ordering::Relaxed;
+        let llist: Vec<usize> = rl.split(',').filter_map(|x| x.trim().parse().ok()).filter(|&x: &usize| x >= 10).collect();
+        let graph = graph_ref.expect("SBANN_ROARMODE needs SBANN_GRAPH_FILE");
+        let fb = fbase.as_ref().expect("SBANN_ROARMODE needs SBANN_FLOAT_RERANK + SBANN_FBASE/FQUERY");
+        let n_entries: usize = std::env::var("SBANN_ROAR_ENTRIES").ok().and_then(|s| s.parse().ok()).unwrap_or(1);
+        let t0 = Instant::now();
+        let mut mean = vec![0f32; ds.d];
+        let mstep = (ds.nb / 1_000_000).max(1); // <=1M-row sample fixes the medoid plenty
+        let mut msamp = 0usize;
+        let mut i = 0usize;
+        while i < ds.nb { let r = ds.row(i); for j in 0..ds.d { mean[j] += r[j] as f32; } msamp += 1; i += mstep; }
+        for v in mean.iter_mut() { *v /= msamp as f32; }
+        let medoid = (0..ds.nb).into_par_iter().map(|o| {
+            let r = ds.row(o);
+            let mut s = 0f32; for j in 0..ds.d { s += mean[j] * r[j] as f32; }
+            (s, o as u32)
+        }).reduce(|| (f32::NEG_INFINITY, 0u32), |a, b| if b.0 > a.0 { b } else { a }).1;
+        // warm-entry directory: stride-sampled rows copied contiguous (sequential VNNI scan per query).
+        let dirn: usize = std::env::var("SBANN_ROAR_DIR").ok().and_then(|s| s.parse().ok()).unwrap_or(0);
+        let (dirids, dirbuf): (Vec<u32>, Vec<i8>) = if dirn > 0 {
+            let ids: Vec<u32> = (0..dirn).map(|j| ((j as u64 * ds.nb as u64 / dirn as u64) as u32)).collect();
+            let mut buf = vec![0i8; dirn * ds.d];
+            for (j, &o) in ids.iter().enumerate() { buf[j * ds.d..(j + 1) * ds.d].copy_from_slice(ds.row(o as usize)); }
+            (ids, buf)
+        } else { (Vec::new(), Vec::new()) };
+        let seeds = vq::SEED_IDS.get();
+        let etag = if seeds.is_some() { "qseed" } else if dirn > 0 { "dir" } else { "medoid" };
+        println!("  [ROARMODE] graph k={} kedge={} entries={etag}(x{n_entries}) dir={dirn} medoid={medoid} setup={:.1}s",
+            graph.k, vq::GRAPH_KEDGE.load(Relaxed).min(graph.k), t0.elapsed().as_secs_f64());
+        let ipm = vq::IP_MODE.load(Relaxed);
+        for &l in &llist {
+            vq::ROAR_EVALS.store(0, Relaxed);
+            vq::ROAR_HOPS.store(0, Relaxed);
+            let mut best_dt = f64::INFINITY;
+            let mut res: Vec<Vec<u32>> = Vec::new();
+            for _ in 0..reps.max(1) {
+                let st = Instant::now();
+                let r: Vec<Vec<u32>> = (0..nq).into_par_iter().map(|i| {
+                    let mut ebuf = [0u32; 16];
+                    let ne;
+                    if let Some((s, data)) = seeds.filter(|(s, data)| *s > 0 && (i + 1) * *s <= data.len()) {
+                        ne = n_entries.clamp(1, 16.min(*s));
+                        ebuf[..ne].copy_from_slice(&data[i * s..i * s + ne]);
+                    } else if dirn > 0 {
+                        // nearest directory row(s) by -dot over the contiguous buffer
+                        ne = n_entries.clamp(1, 16);
+                        let mut top: Vec<(i32, u32)> = (0..dirn).map(|j| {
+                            (simd::negdot_i8(qs.row(i), &dirbuf[j * ds.d..(j + 1) * ds.d]), dirids[j])
+                        }).collect();
+                        if ne < top.len() { top.select_nth_unstable(ne - 1); }
+                        for (k, &(_, o)) in top[..ne].iter().enumerate() { ebuf[k] = o; }
+                    } else {
+                        ne = 1; ebuf[0] = medoid;
+                    }
+                    let mut walk = if vq::SYMPACK.get().is_some() {
+                        // SYMPACK: SQ4-guided block walk -> int8 re-rank of the top-L -> top-kk to float
+                        let w = vq::sympack_walk(&ds, qs.row(i), l, &ebuf[..ne]);
+                        let mut w: Vec<(i32, u32)> = w.iter().map(|&(_, o)| {
+                            (simd::negdot_i8(qs.row(i), ds.row(o as usize)), o)
+                        }).collect();
+                        w.sort_unstable();
+                        w
+                    } else {
+                        vq::roar_walk(&ds, graph, qs.row(i), l, &ebuf[..ne])
+                    };
+                    let kkw = vq::CASCADE_K.load(std::sync::atomic::Ordering::Relaxed);
+                    if vq::SYMPACK.get().is_some() && kkw > 0 && kkw < walk.len() { walk.truncate(kkw); }
+                    // float rerank of the walk's top-L (exact tail ordering, CASCADE-style)
+                    let qv = &fqf[i * ds.d..(i + 1) * ds.d];
+                    let mut scored: Vec<(f32, u32)> = walk.iter().map(|&(_, o)| {
+                        let r = fb.row(o as usize);
+                        let s = if ipm {
+                            let mut acc = 0f32; for j in 0..ds.d { acc += qv[j] * r[j]; } -acc
+                        } else {
+                            let mut acc = 0f32; for j in 0..ds.d { let t = qv[j] - r[j]; acc += t * t; } acc
+                        };
+                        (s, o)
+                    }).collect();
+                    scored.sort_unstable_by(|a, b| a.partial_cmp(b).unwrap());
+                    scored.iter().take(10).map(|&(_, o)| o).collect()
+                }).collect();
+                best_dt = best_dt.min(st.elapsed().as_secs_f64());
+                res = r;
+            }
+            let mut hit = 0usize;
+            for i in 0..nq {
+                let truth: std::collections::HashSet<u32> = gids[i * gk..i * gk + 10].iter().copied().collect();
+                hit += res[i].iter().take(10).filter(|id| truth.contains(id)).count();
+            }
+            let nrun = (nq * reps.max(1)) as u64;
+            println!("  RW L={l:4} e={etag}: recall@10={:.4}  QPS={:.0} (best/{reps})  evals/q={}  hops/q={}",
+                hit as f64 / (nq * 10) as f64, nq as f64 / best_dt,
+                vq::ROAR_EVALS.load(Relaxed) / nrun, vq::ROAR_HOPS.load(Relaxed) / nrun);
+        }
+        return;
+    }
     for &p in &plist {
       for &tm in &tlist {
        for &lm in &lmodes {
@@ -603,7 +983,7 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
                     let ranges: Vec<(usize, usize)> = (0..nq).step_by(batch_chunk.max(1))
                         .map(|s| (s, (s + batch_chunk).min(nq))).collect();
                     let subs: Vec<Vec<Vec<u32>>> = ranges.into_par_iter()
-                        .map(|(s, e)| idx.search_batch_frr(&ds, &qarr[s * ds.d..e * ds.d], &fqf[s * ds.d..e * ds.d], fb, e - s, p, t_surv, 10, graph_ref))
+                        .map(|(s, e)| idx.search_batch_frr(&ds, &qarr[s * ds.d..e * ds.d], &fqf[s * ds.d..e * ds.d], fb, e - s, p, t_surv, 10, graph_ref, s))
                         .collect();
                     subs.into_iter().flatten().collect()
                 } else {
@@ -664,6 +1044,14 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
         let ltag = if lut_ab { if lm { " i8" } else { " i16" } } else { "" };
         let ktag = if vq::CASCADE.load(std::sync::atomic::Ordering::Relaxed) { format!(" K={kk}") } else { String::new() };
         println!("  p={p:5} t={tm:3}{ltag}{vtag}{ktag}: recall@10={:.4}  QPS={:.0} (best/{reps})", hit as f64 / (nq * 10) as f64, nq as f64 / dt);
+        if vq::ADAPT_STOP_ON.load(std::sync::atomic::Ordering::Relaxed) {
+            let stops = vq::PROF_ADAPT_STOPS.swap(0, std::sync::atomic::Ordering::Relaxed);
+            println!("      [adapt-stop] early-stopped {}/{} query-runs", stops, nq * reps.max(1));
+        }
+        if vq::ADAPT_POOL.load(std::sync::atomic::Ordering::Relaxed) > 0 {
+            let sk = vq::PROF_POOL_SKIPPED.swap(0, std::sync::atomic::Ordering::Relaxed);
+            println!("      [adapt-pool] skipped {} pool rows/query-run", sk / (nq * reps.max(1)) as u64);
+        }
         if prof {
             let r = vq::PROF_ROUTE_NS.load(std::sync::atomic::Ordering::Relaxed) as f64;
             let s = vq::PROF_SCAN_NS.load(std::sync::atomic::Ordering::Relaxed) as f64;
@@ -676,11 +1064,15 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
             // union sort/dedup; rerank (PROF_RERANK_NS) = the exact float reorder of the K survivors.
             // union-rescore ns/row = PROF_CASC_NS / total union rows (the decider metric: aim ~44, not ~74).
             let nsrow = if grows > 0.0 { c / grows } else { 0.0 };
-            println!("      [profile] route {:.1}%  scan {:.1}%  graph {:.1}%  rescore {:.1}%  float {:.1}%  (sum {:.0}ms/{reps}reps)  [scan-us/q={:.1} graph-us/q={:.2} rescore-us/q={:.1} float-us/q={:.1} union/q={:.0} rescore-ns/row={:.1}]",
+            // P342c: sco = tight row-scoring loops only (subset of casc); the casc remainder is per-hop
+            // machinery (cand rebuild, exp resize, select_nth, hash inserts) — the bookkeeping suspect.
+            let sco = vq::PROF_SCORE_NS.swap(0, std::sync::atomic::Ordering::Relaxed) as f64;
+            println!("      [profile] route {:.1}%  scan {:.1}%  graph {:.1}%  rescore {:.1}%  float {:.1}%  (sum {:.0}ms/{reps}reps)  [scan-us/q={:.1} graph-us/q={:.2} rescore-us/q={:.1} float-us/q={:.1} union/q={:.0} rescore-ns/row={:.1} score-us/q={:.1} mach-us/q={:.1}]",
                 100.0 * r / tot, 100.0 * s / tot, 100.0 * g / tot, 100.0 * c / tot, 100.0 * k / tot, (r + s + k + c + g) / 1e6,
                 s / nq as f64 / reps as f64 / 1000.0, g / nq as f64 / reps as f64 / 1000.0,
                 c / nq as f64 / reps as f64 / 1000.0, k / nq as f64 / reps as f64 / 1000.0,
-                grows / nq as f64 / reps as f64, nsrow);
+                grows / nq as f64 / reps as f64, nsrow,
+                sco / nq as f64 / reps as f64 / 1000.0, (c - sco).max(0.0) / nq as f64 / reps as f64 / 1000.0);
         }
        }
        }
@@ -1964,6 +2356,102 @@ fn main() {
             for &v in &g { w.write_all(&v.to_le_bytes()).unwrap(); }
             w.flush().unwrap();
             println!("[nnd] done n={n} k={kk} -> {} in {:.0}s", &a[3], t0.elapsed().as_secs_f64());
+        }
+        // prune <base.i8bin> <in_graph.u32> <out_graph.u32> [kin=64] [R=32] [alpha=1.2]:
+        // Vamana/DiskANN RobustPrune of a kNN graph into a degree-diversified NAVIGABLE graph. Raw kNN
+        // edges are near-parallel short hops, so the best-first beam re-expands the same tiny ball; the
+        // occlusion rule keeps a diverse spread of long+short escape edges so the beam converges in far
+        // fewer rescored rows. env SBANN_ND_L2=1 => L2 metric (alpha on true L2, i.e. alpha^2 on the
+        // squared int8 L2); else IP (rank by -dot). Drops straight into SBANN_GRAPH_FILE.
+        Some("prune") => {
+            let ds = I8Bin::open(&a[2]).expect("base");
+            let n = ds.nb; let d = ds.d;
+            let kin: usize = a.get(5).and_then(|s| s.parse().ok()).unwrap_or(64);
+            let rr: usize = a.get(6).and_then(|s| s.parse().ok()).unwrap_or(32);
+            let alpha: f64 = a.get(7).and_then(|s| s.parse().ok()).unwrap_or(1.2);
+            let nd_l2 = std::env::var("SBANN_ND_L2").map(|v| v == "1").unwrap_or(false);
+            assert!(rr <= kin && kin <= 64 && alpha >= 1.0);
+            let vnni = std::is_x86_feature_detected!("avx512vnni") && std::is_x86_feature_detected!("avx512bw")
+                && std::is_x86_feature_detected!("avx512f");
+            let avx = std::is_x86_feature_detected!("avx2");
+            let a2 = alpha * alpha; // squared-domain threshold for L2 (alpha*L2 <= .. <=> alpha^2*L2sq <= ..)
+            let t0 = Instant::now();
+            let gin: Vec<u32> = {
+                let bytes = std::fs::read(&a[3]).expect("in graph");
+                assert_eq!(bytes.len(), n * kin * 4, "in graph size != n*kin*4");
+                bytes.chunks_exact(4).map(|c| u32::from_le_bytes([c[0], c[1], c[2], c[3]])).collect()
+            };
+            println!("[prune] n={n} d={d} kin={kin} R={rr} alpha={alpha} l2={nd_l2} vnni={vnni}");
+            macro_rules! dst { ($x:expr, $y:expr) => {{
+                if nd_l2 { (if avx { unsafe { simd::l2_i8_avx2($x, $y) } } else { simd::l2_i8_scalar($x, $y) }) as i64 }
+                else { let dot = if vnni { unsafe { simd::dot_i8_vnni($x, $y) } }
+                                 else if avx { unsafe { simd::dot_i8_avx2($x, $y) } }
+                                 else { -simd::negdot_i8($x, $y) }; -(dot as i64) }
+            }}; }
+            let reverse = std::env::var("SBANN_PRUNE_REVERSE").map(|v| v == "1").unwrap_or(false);
+            let incap: usize = std::env::var("SBANN_PRUNE_INCAP").ok().and_then(|s| s.parse().ok()).unwrap_or(rr * 6);
+            // RobustPrune occlusion over a candidate id list (dedup'd, self-filtered) -> R selected out-edges
+            // (padded). Keep nearest unpruned p, then occlude any farther q whose alpha*d(p,q) <= d(v,q)
+            // (q sits "behind" p from v's view -> the p-edge already covers that direction).
+            macro_rules! robust { ($v:expr, $cand_ids:expr) => {{
+                let v = $v; let qv = ds.row(v);
+                let mut ids: Vec<u32> = $cand_ids.iter().copied().filter(|&c| c != u32::MAX && c as usize != v).collect();
+                ids.sort_unstable(); ids.dedup();
+                let mut cand: Vec<(i64, u32)> = ids.iter().map(|&c| (dst!(qv, ds.row(c as usize)), c)).collect();
+                cand.sort_unstable_by_key(|&(dd, _)| dd);
+                let mut sel: Vec<u32> = Vec::with_capacity(rr);
+                let mut occ = vec![false; cand.len()];
+                for i in 0..cand.len() {
+                    if occ[i] { continue; }
+                    let pi = cand[i].1;
+                    sel.push(pi);
+                    if sel.len() >= rr { break; }
+                    let prow = ds.row(pi as usize);
+                    for jx in (i + 1)..cand.len() {
+                        if occ[jx] { continue; }
+                        let (dvj, pj) = cand[jx];
+                        let dpj = dst!(prow, ds.row(pj as usize)) as f64;
+                        let lhs = if nd_l2 { a2 * dpj } else { alpha * dpj };
+                        if lhs <= dvj as f64 { occ[jx] = true; }
+                    }
+                }
+                if sel.len() < rr { for &(_, c) in cand.iter() { if sel.len() >= rr { break; } if !sel.contains(&c) { sel.push(c); } } }
+                while sel.len() < rr { sel.push(if sel.is_empty() { v as u32 } else { sel[sel.len() - 1] }); }
+                sel
+            }}; }
+            // pass 1: RobustPrune each node's kin-NN pool -> R diversified out-edges.
+            let mut out = vec![0u32; n * rr];
+            out.par_chunks_mut(rr).enumerate().for_each(|(v, orow)| {
+                let sel = robust!(v, &gin[v * kin..v * kin + kin]);
+                orow.copy_from_slice(&sel[..rr]);
+            });
+            // pass 2 (SBANN_PRUNE_REVERSE): add reverse edges (full Vamana) then re-prune. Reverse edges give
+            // long-range reachability so the beam reaches a neighbour ball from far seeds -> lifts the
+            // high-recall tail. Reverse in-edges per node capped at SBANN_PRUNE_INCAP to bound hub cost.
+            if reverse {
+                let mut roff = vec![0u32; n + 1];
+                for &p in out.iter() { if (p as usize) < n { roff[p as usize + 1] += 1; } }
+                for i in 0..n { roff[i + 1] += roff[i]; }
+                let total = roff[n] as usize;
+                let mut rin = vec![0u32; total];
+                let mut cur = roff.clone();
+                for v in 0..n { for j in 0..rr { let p = out[v * rr + j] as usize; if p < n { let pos = cur[p] as usize; rin[pos] = v as u32; cur[p] += 1; } } }
+                let out1 = out.clone();
+                out.par_chunks_mut(rr).enumerate().for_each(|(v, orow)| {
+                    let rs = roff[v] as usize; let re = roff[v + 1] as usize;
+                    let rin_v = &rin[rs..re];
+                    let mut ids: Vec<u32> = out1[v * rr..v * rr + rr].to_vec();
+                    if rin_v.len() > incap { ids.extend_from_slice(&rin_v[..incap]); } else { ids.extend_from_slice(rin_v); }
+                    let sel = robust!(v, &ids);
+                    orow.copy_from_slice(&sel[..rr]);
+                });
+                println!("[prune] reverse pass done (incap={incap})");
+            }
+            let mut w = std::io::BufWriter::new(std::fs::File::create(&a[4]).expect("out"));
+            use std::io::Write;
+            for &vv in &out { w.write_all(&vv.to_le_bytes()).unwrap(); }
+            w.flush().unwrap();
+            println!("[prune] done -> {} R={rr} alpha={alpha} rev={reverse} in {:.0}s", &a[4], t0.elapsed().as_secs_f64());
         }
         // dumpassign <out.u32>: dump the loaded index's slot->orig mapping as flat (orig, finest_cell)
         // u32 LE pairs (multi-assigned points emit one pair per stored copy; padded slots skipped).

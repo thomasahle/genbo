@@ -16,6 +16,25 @@ pub fn l2_i8_scalar(x: &[i8], c: &[i8]) -> i32 {
     s
 }
 
+/// Hamming distance (popcount of XOR) over two equal-length 1-bit-code byte slices. RBQ-TIER sign
+/// navigation: fewer differing signs = higher IP proxy (smaller = closer, matching -dot). u64-chunked
+/// POPCNT; d/8 bytes/row gather vs d for the int8 dot -> bandwidth-cheap prefilter/nav score.
+#[inline]
+pub fn hamming_u8(a: &[u8], b: &[u8]) -> u32 {
+    debug_assert_eq!(a.len(), b.len());
+    let n = a.len();
+    let mut s = 0u32;
+    let mut k = 0usize;
+    while k + 8 <= n {
+        let x = u64::from_le_bytes(a[k..k + 8].try_into().unwrap())
+              ^ u64::from_le_bytes(b[k..k + 8].try_into().unwrap());
+        s += x.count_ones();
+        k += 8;
+    }
+    while k < n { s += (a[k] ^ b[k]).count_ones(); k += 1; }
+    s
+}
+
 /// AVX2 squared L2: widen 16 i8 -> i16, diff, `madd_epi16(diff,diff)` -> 8 i32 lanes, accumulate.
 #[cfg(target_arch = "x86_64")]
 #[target_feature(enable = "avx2")]
@@ -88,6 +107,39 @@ pub unsafe fn dot_i8_vnni(x: &[i8], c: &[i8]) -> i32 {
     }
     let mut s = _mm512_reduce_add_epi32(acc) - 128 * _mm512_reduce_add_epi32(sc);
     while k < n { s += x[k] as i32 * c[k] as i32; k += 1; }
+    s
+}
+
+/// SQ4-RUNG dot (P343): score a nibble-packed 4-bit row (byte j = n[2j] | n[2j+1]<<4 where
+/// n = (x_i8+128)>>4, values 0..15 u8) against the query's deinterleaved halves qe (even dims) /
+/// qo (odd dims), both i8. score = Σ n[j]·q[j] — rank-equivalent to dot(q, recon): recon = 16n−120
+/// and Σq is a per-query constant. dpbusd(u8=nibbles, i8=query) is the natural pairing; d/2 bytes
+/// gathered per row vs int8's d (2x fewer cache lines).
+/// # Safety
+/// Caller must ensure AVX-512F/BW/VNNI. qe.len()==qo.len()==codes.len().
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx512f,avx512bw,avx512vnni")]
+pub unsafe fn dot_sq4_vnni(qe: &[i8], qo: &[i8], codes: &[u8]) -> i32 {
+    let n = codes.len();
+    let lo4 = _mm512_set1_epi8(0x0F);
+    let mut acc = _mm512_setzero_si512();
+    let mut k = 0usize;
+    while k + 64 <= n {
+        let cv = _mm512_loadu_si512(codes.as_ptr().add(k) as *const __m512i);
+        let vlo = _mm512_and_si512(cv, lo4);                          // even dims, u8 0..15
+        let vhi = _mm512_and_si512(_mm512_srli_epi16(cv, 4), lo4);    // odd dims
+        let qev = _mm512_loadu_si512(qe.as_ptr().add(k) as *const __m512i);
+        let qov = _mm512_loadu_si512(qo.as_ptr().add(k) as *const __m512i);
+        acc = _mm512_dpbusd_epi32(acc, vlo, qev);
+        acc = _mm512_dpbusd_epi32(acc, vhi, qov);
+        k += 64;
+    }
+    let mut s = _mm512_reduce_add_epi32(acc);
+    while k < n {
+        let b = codes[k];
+        s += (b & 0x0F) as i32 * qe[k] as i32 + (b >> 4) as i32 * qo[k] as i32;
+        k += 1;
+    }
     s
 }
 
