@@ -1650,19 +1650,13 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
         xtick={0.96,0.97,0.98,0.99},
         ytick={200,400,800,1600},
         legend pos=south west]
-      \addplot[ours] coordinates {
-        (0.9730,1286) (0.9814,996) (0.9895,715)
-        (0.9925,562) (0.9961,388) (0.9971,302)};
+      \addplot[ours] table[col sep=comma, x=recall, y=qps] {paperdata/cohere1m_ours.csv};
       \addlegendentry{Ours}
-      \addplot[hnsw] coordinates {
-        (0.9625,863) (0.9761,553) (0.9847,386)
-        (0.9885,298) (0.9945,160)};
+      \addplot[hnsw] table[col sep=comma, x=recall, y=qps] {paperdata/cohere1m_hnsw.csv};
       \addlegendentry{HNSW}
-      \addplot[black!60!green,dash dot,mark=triangle,mark size=1.7pt,mark options={solid}] coordinates {
-        (0.9713,881) (0.9907,595)};
+      \addplot[black!60!green,dash dot,mark=triangle,mark size=1.7pt,mark options={solid}] table[col sep=comma, x=recall, y=qps] {paperdata/cohere1m_scann.csv};
       \addlegendentry{ScaNN (batched)}
-      \addplot[orange!80!black,densely dotted,mark=diamond,mark size=1.8pt,mark options={solid}] coordinates {
-        (0.9751,510) (0.9840,546) (0.9911,399) (0.9939,259) (0.9969,144)};
+      \addplot[orange!80!black,densely dotted,mark=diamond,mark size=1.8pt,mark options={solid}] table[col sep=comma, x=recall, y=qps] {paperdata/cohere1m_roar.csv};
       \addlegendentry{RoarGraph}
     \end{axis}
   \end{tikzpicture}%
@@ -1673,15 +1667,10 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
         title={Cohere 10M (self-built graph)},
         xtick={0.94,0.96,0.98},
         ytick={400,800,1600}]
-      \addplot[ours] coordinates {
-        (0.9461,1863) (0.9707,1234) (0.9832,781)
-        (0.9871,593) (0.9904,483)};
-      \addplot[hnsw] coordinates {
-        (0.9440,1465) (0.9677,772) (0.9803,467) (0.9859,308)};
-      \addplot[black!60!green,dash dot,mark=triangle,mark size=1.7pt,mark options={solid}] coordinates {
-        (0.9685,141) (0.9883,140)};
-      \addplot[orange!80!black,densely dotted,mark=diamond,mark size=1.8pt,mark options={solid}] coordinates {
-        (0.9575,1319) (0.9781,719) (0.9891,367) (0.9947,198) (0.9964,109)};
+      \addplot[ours] table[col sep=comma, x=recall, y=qps] {paperdata/cohere10m_ours.csv};
+      \addplot[hnsw] table[col sep=comma, x=recall, y=qps] {paperdata/cohere10m_hnsw.csv};
+      \addplot[black!60!green,dash dot,mark=triangle,mark size=1.7pt,mark options={solid}] table[col sep=comma, x=recall, y=qps] {paperdata/cohere10m_scann.csv};
+      \addplot[orange!80!black,densely dotted,mark=diamond,mark size=1.8pt,mark options={solid}] table[col sep=comma, x=recall, y=qps] {paperdata/cohere10m_roar.csv};
     \end{axis}
   \end{tikzpicture}%
   \hfill
@@ -1694,14 +1683,10 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
         xtick={0.05,0.02,0.01,0.005},
         xticklabels={0.95,0.98,0.99,0.995},
         ytick={100,200,400,800}]
-      \addplot[ours] coordinates {
-        (0.0484,595) (0.0290,459) (0.0147,312) (0.0081,211) (0.0048,141)};
-      \addplot[hnsw] coordinates {
-        (0.0353,290) (0.0222,154) (0.0182,88)};
-      \addplot[black!45,densely dotted,mark=diamond,mark size=1.7pt,mark options={solid}] coordinates {
-        (0.0674,1124) (0.0349,622) (0.0182,337) (0.0096,179) (0.0075,97)};
-      \addplot[orange!80!black,densely dotted,mark=diamond,mark size=1.7pt,mark options={solid}] coordinates {
-        (0.0816,299) (0.0538,173) (0.0395,101)};
+      \addplot[ours] table[col sep=comma, x expr=1-\thisrow{recall}, y=qps] {paperdata/wiki35m_ours.csv};
+      \addplot[hnsw] table[col sep=comma, x expr=1-\thisrow{recall}, y=qps] {paperdata/wiki35m_hnsw.csv};
+      \addplot[black!45,densely dotted,mark=diamond,mark size=1.7pt,mark options={solid}] table[col sep=comma, x expr=1-\thisrow{recall}, y=qps] {paperdata/wiki35m_roar_full.csv};
+      \addplot[orange!80!black,densely dotted,mark=diamond,mark size=1.7pt,mark options={solid}] table[col sep=comma, x expr=1-\thisrow{recall}, y=qps] {paperdata/wiki35m_roar_budget.csv};
     \end{axis}
   \end{tikzpicture}\\[6pt]
   \begin{tikzpicture}
@@ -1711,12 +1696,9 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
         ylabel={QPS (single thread)},
         xtick={0.75,0.85,0.95},
         ytick={400,1000,2500}]
-      \addplot[ours] coordinates {
-        (0.7268,3886) (0.7900,3598) (0.8471,3207) (0.9109,1956) (0.9483,1258) (0.9686,729) (0.9819,384) (0.9883,208)};
-      \addplot[hnsw] coordinates {
-        (0.6574,2281) (0.7371,1358) (0.8094,724) (0.8607,382) (0.8989,218)};
-      \addplot[orange!80!black,densely dotted,mark=diamond,mark size=1.7pt,mark options={solid}] coordinates {
-        (0.7250,2681) (0.8284,1942) (0.8966,1123) (0.9388,609) (0.9653,319) (0.9780,170)};
+      \addplot[ours] table[col sep=comma, x=recall, y=qps] {paperdata/mst30m_ours.csv};
+      \addplot[hnsw] table[col sep=comma, x=recall, y=qps] {paperdata/mst30m_hnsw.csv};
+      \addplot[orange!80!black,densely dotted,mark=diamond,mark size=1.7pt,mark options={solid}] table[col sep=comma, x=recall, y=qps] {paperdata/mst30m_roar.csv};
     \end{axis}
   \end{tikzpicture}%
   \hfill
@@ -1730,12 +1712,9 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
         xticklabels={0.90,0.98,0.995,0.998},
         ytick={500,1000,2000,4000,8000},
         legend pos=north east]
-      \addplot[ours] coordinates {
-        (0.0986,4918) (0.0663,3797) (0.0397,3229) (0.0196,2108) (0.0145,1879) (0.0067,1132) (0.0040,863) (0.0026,642) (0.0013,407)};
-      \addplot[hnsw] coordinates {
-        (0.1082,2564) (0.0537,1432) (0.0236,787) (0.0101,417) (0.0047,220)};
-      \addplot[orange!80!black,densely dotted,mark=diamond,mark size=1.9pt,mark options={solid}] coordinates {
-        (0.1992,10869) (0.1062,6557) (0.0490,3906) (0.0198,2130) (0.0066,1129) (0.0023,587)};
+      \addplot[ours] table[col sep=comma, x expr=1-\thisrow{recall}, y=qps] {paperdata/deep10m_ours.csv};
+      \addplot[hnsw] table[col sep=comma, x expr=1-\thisrow{recall}, y=qps] {paperdata/deep10m_hnsw.csv};
+      \addplot[orange!80!black,densely dotted,mark=diamond,mark size=1.9pt,mark options={solid}] table[col sep=comma, x expr=1-\thisrow{recall}, y=qps] {paperdata/deep10m_roar.csv};
       \addlegendentry{Ours}\addlegendentry{HNSW}\addlegendentry{RoarGraph}
     \end{axis}
   \end{tikzpicture}%
@@ -1778,20 +1757,13 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
   grid=both, grid style={black!10}, tick label style={font=\scriptsize},
   legend style={font=\tiny, at={(0.03,0.03)}, anchor=south west}, legend cell align=left,
 ]
-\addplot[blue!70!black, thick, mark=*, mark size=1.5pt] coordinates {
-  (0.7583,12329) (0.8068,11457) (0.8492,8612) (0.8741,8512) (0.8986,6517) (0.9083,6181)
-  (0.9263,5539) (0.9355,4979) (0.9425,4514) (0.9540,3671) (0.9598,3351) (0.9659,3143)
-  (0.9755,2476) (0.9782,2358) (0.9859,1794) (0.9913,1533) };
+\addplot[blue!70!black, thick, mark=*, mark size=1.5pt] table[col sep=comma, x=recall, y=qps] {paperdata/t2i1m_ours.csv};
 \addlegendentry{ours (hybrid graph, coarse cells)}
-\addplot[black!60!green, thick, dash dot, mark=triangle, mark size=1.9pt, mark options={solid}] coordinates {
-  (0.8296,4775) (0.8970,3210) (0.9411,1959) (0.9646,1114) (0.9749,592) (0.9798,314) };
+\addplot[black!60!green, thick, dash dot, mark=triangle, mark size=1.9pt, mark options={solid}] table[col sep=comma, x=recall, y=qps] {paperdata/t2i1m_scann.csv};
 \addlegendentry{ScaNN}
-\addplot[orange!80!black, thick, densely dotted, mark=diamond, mark size=1.9pt, mark options={solid}] coordinates {
-  (0.7746,13141) (0.8306,10246) (0.8647,8503) (0.9035,6369) (0.9275,5160) (0.9528,3765)
-  (0.9661,2989) (0.9794,2105) (0.9900,1353) };
+\addplot[orange!80!black, thick, densely dotted, mark=diamond, mark size=1.9pt, mark options={solid}] table[col sep=comma, x=recall, y=qps] {paperdata/t2i1m_roar.csv};
 \addlegendentry{RoarGraph}
-\addplot[red!60!black, thick, dashed, mark=square, mark size=1.5pt, mark options={solid}] coordinates {
-  (0.8494,4136) (0.9180,2323) (0.9604,1249) (0.9818,650) };
+\addplot[red!60!black, thick, dashed, mark=square, mark size=1.5pt, mark options={solid}] table[col sep=comma, x=recall, y=qps] {paperdata/t2i1m_hnsw.csv};
 \addlegendentry{HNSW}
 \draw[densely dotted, black!60] (axis cs:0.90,250) -- (axis cs:0.90,16000);
 \end{axis}
@@ -1803,20 +1775,13 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
   grid=both, grid style={black!10}, tick label style={font=\scriptsize},
   legend style={font=\tiny, at={(0.03,0.03)}, anchor=south west}, legend cell align=left,
 ]
-\addplot[blue!70!black, thick, mark=*, mark size=1.5pt] coordinates {
-  (0.8456,4098) (0.8776,3528) (0.8890,3386) (0.8969,3133) (0.9081,2841) (0.9215,2475)
-  (0.9245,2205) (0.9305,1836) (0.9406,1755) (0.9567,1180) (0.9675,841) (0.9754,770)
-  (0.9807,611) (0.9850,447) (0.9922,415) (0.9927,382) (0.9939,329) (0.9945,279) };
+\addplot[blue!70!black, thick, mark=*, mark size=1.5pt] table[col sep=comma, x=recall, y=qps] {paperdata/t2i10m_ours.csv};
 \addlegendentry{ours (hybrid graph)}
-\addplot[black!60!green, thick, dash dot, mark=triangle, mark size=1.9pt, mark options={solid}] coordinates {
-  (0.9307,439) (0.9587,396) (0.9724,323) (0.9799,252) (0.9830,185) (0.9841,120) };
+\addplot[black!60!green, thick, dash dot, mark=triangle, mark size=1.9pt, mark options={solid}] table[col sep=comma, x=recall, y=qps] {paperdata/t2i10m_scann.csv};
 \addlegendentry{ScaNN (official 40k)}
-\addplot[orange!80!black, thick, densely dotted, mark=diamond, mark size=1.9pt, mark options={solid}] coordinates {
-  (0.7508,6702) (0.8063,5056) (0.8395,4165) (0.8788,3033) (0.9027,2443) (0.9195,2031)
-  (0.9421,1427) (0.9562,1117) (0.9708,783) (0.9830,452) };
+\addplot[orange!80!black, thick, densely dotted, mark=diamond, mark size=1.9pt, mark options={solid}] table[col sep=comma, x=recall, y=qps] {paperdata/t2i10m_roar.csv};
 \addlegendentry{RoarGraph}
-\addplot[red!60!black, thick, dashed, mark=square, mark size=1.5pt, mark options={solid}] coordinates {
-  (0.7537,1271) (0.8423,651) (0.9049,328) (0.9452,206) (0.9716,75) };
+\addplot[red!60!black, thick, dashed, mark=square, mark size=1.5pt, mark options={solid}] table[col sep=comma, x=recall, y=qps] {paperdata/t2i10m_hnsw.csv};
 \addlegendentry{HNSW}
 \draw[densely dotted, black!60] (axis cs:0.90,60) -- (axis cs:0.90,8000);
 \end{axis}
@@ -1828,8 +1793,7 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
   grid=both, grid style={black!10}, tick label style={font=\scriptsize},
   legend style={font=\tiny, at={(0.03,0.03)}, anchor=south west}, legend cell align=left,
 ]
-\addplot[blue!70!black, thick, mark=*, mark size=1.5pt] coordinates {
-  (0.8789,751) (0.8944,713) (0.9043,638) (0.9145,583) (0.9226,529) };
+\addplot[blue!70!black, thick, mark=*, mark size=1.5pt] table[col sep=comma, x=recall, y=qps] {paperdata/t2i100m_ours.csv};
 \addlegendentry{ours}
 \node[align=center, font=\scriptsize, black!70] at (axis cs:0.905,860)
   {only build-eligible method:\\ScaNN killed at the 2h gate;\\RoarGraph measured $10.5$h build\\($+5$h train-GT); its first 100M\\index also searched degenerately};
@@ -1847,14 +1811,11 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
   grid=both, grid style={black!10}, tick label style={font=\scriptsize},
   legend style={font=\tiny, at={(0.03,0.03)}, anchor=south west}, legend cell align=left,
 ]
-\addplot[blue!70!black, thick, mark=*, mark size=1.5pt] coordinates {
-  (0.0812,2221) (0.0617,1376) (0.0585,1243) (0.0477,992) (0.0374,689) (0.0323,532) (0.0276,456) (0.0228,355) (0.0201,230) };
+\addplot[blue!70!black, thick, mark=*, mark size=1.5pt] table[col sep=comma, x expr=1-\thisrow{recall}, y=qps] {paperdata/webvid_ours.csv};
 \addlegendentry{ours (dense query-seeds $+$ 4-bit rung)}
-\addplot[orange!80!black, thick, densely dotted, mark=diamond, mark size=1.9pt, mark options={solid}] coordinates {
-  (0.2521,5181) (0.1653,3221) (0.1043,1896) (0.0640,1047) (0.0387,591) (0.0238,316) };
+\addplot[orange!80!black, thick, densely dotted, mark=diamond, mark size=1.9pt, mark options={solid}] table[col sep=comma, x expr=1-\thisrow{recall}, y=qps] {paperdata/webvid_roar.csv};
 \addlegendentry{RoarGraph}
-\addplot[red!60!black, thick, dashed, mark=square, mark size=1.5pt, mark options={solid}] coordinates {
-  (0.3975,2073) (0.2892,1137) (0.2028,691) (0.1359,372) (0.0879,207) };
+\addplot[red!60!black, thick, dashed, mark=square, mark size=1.5pt, mark options={solid}] table[col sep=comma, x expr=1-\thisrow{recall}, y=qps] {paperdata/webvid_hnsw.csv};
 \addlegendentry{HNSW}
 \end{axis}
 \end{tikzpicture}
@@ -2184,22 +2145,24 @@ load-independent.}
 \toprule
 Recall band & System & recall@10 & QPS (1t) \\
 \midrule
-${\sim}0.97$ & \textbf{ours} (dpb4 $+$ self graph hops$=$2, $p{=}48$) & \textbf{0.9709} & \textbf{426} \\
+${\sim}0.97$ & \textbf{ours} (self graph hops$=$2, $p{=}48$, $kk{=}64$) & \textbf{0.9710} & \textbf{459} \\
 ${\sim}0.97$ & HNSW (ef160)                                     & 0.9647 & 290 \\
 \midrule
-${\sim}0.98$ & \textbf{ours} (dpb4 $+$ self graph hops$=$2, $p{=}96$) & \textbf{0.9846} & \textbf{291} \\
-${\sim}0.98$ & HNSW (ef320)                                     & 0.9778 & 154 \\
+${\sim}0.985$ & \textbf{ours} (self graph hops$=$2, $p{=}96$, $kk{=}64$) & \textbf{0.9853} & \textbf{312} \\
+${\sim}0.985$ & HNSW (ef320)                                     & 0.9778 & 154 \\
 \midrule
-top           & \textbf{ours} (hops$=$3, $p{=}96$)               & \textbf{0.9854} & \textbf{294} \\
+top           & \textbf{ours} (hops$=$3, $p{=}160$, $kk{=}128$; and beyond) & \textbf{0.9919 / 0.9952} & \textbf{211 / 141} \\
 top           & HNSW (ef640, its ceiling)                        & 0.9818 & 88 \\
 \bottomrule
 \multicolumn{4}{p{0.92\linewidth}}{\footnotesize The graph here is \emph{self-built} by
 the engine's internal NN-descent pass (\S\ref{sec:graph}; $0.87\to0.965$ overlap@$16$ in
 $9.5$ min, matching the $0.970$ of an HNSW-built graph) --- nothing is borrowed from a
-competitor; the comparison is self-contained. Same-window sequential 1-thread runs: ours is
-${\sim}1.5\times$ faster at recall $0.97$ (and $+0.6$pt), ${\sim}1.9\times$ at $0.98$,
-${\sim}3.3\times$ at HNSW's ceiling --- and reaches recall $0.985$ that HNSW cannot; the win
-holds at 8 threads. HNSW is faster only below recall ${\approx}0.95$.} \\
+competitor; the comparison is self-contained. Quiet-window 1-thread runs (the operating
+points of Figure~\ref{fig:frontier}): ours is ${\sim}1.6\times$ faster at recall $0.97$
+(and $+0.6$pt), ${\sim}2\times$ at $0.985$, ${\sim}4\times$ at HNSW's ceiling recall ---
+and reaches recall $0.9952$ that HNSW cannot; the win holds at 8 threads. HNSW is faster
+only below recall ${\approx}0.95$, where the RoarGraph comparison of
+Figure~\ref{fig:frontier} governs instead.} \\
 \end{tabular}
 \end{table}
 
