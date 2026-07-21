@@ -778,8 +778,7 @@ fixed-$p$ ``$+1.7$ pt'' reads as a win but is not one at the gate.
         ({rel axis cs:0,0}|-{axis cs:r128,0.932}) --
         ({rel axis cs:1,0}|-{axis cs:r128,0.932});
       \node[font=\footnotesize, anchor=center, align=center,
-            text=red!60!black, fill=white, fill opacity=0.9,
-            text opacity=1, inner sep=2pt]
+            text=red!60!black, inner sep=2pt]
         at ({rel axis cs:0.70,0}|-{axis cs:r128,0.65})
         {sufficient to beat HNSW\\(degradation experiment)};
       \node[font=\footnotesize, anchor=south east, fill=white,
@@ -934,8 +933,8 @@ large enough share of the query to matter.
 \addplot[only marks, mark=o, mark size=2.6pt, black]
   coordinates {(1e9,1000)};
 \node[font=\scriptsize, anchor=west] at (axis cs:1.5e5,700) {pts/leaf $\sim n^{0.34}$};
-\node[font=\scriptsize, anchor=north west, red!60!black] at (axis cs:2.2e7,175) {100M: finer than the};
-\node[font=\scriptsize, anchor=north west, red!60!black] at (axis cs:2.2e7,120) {2-level law (3rd level)};
+\node[font=\scriptsize, anchor=north east, red!60!black] at (axis cs:1.1e8,175) {100M: finer than the};
+\node[font=\scriptsize, anchor=north east, red!60!black] at (axis cs:1.1e8,120) {2-level law (3rd level)};
 \end{axis}
 \end{tikzpicture}
 \caption{Scaling laws for index geometry (log-log). Lines are the power laws fitted
@@ -1095,10 +1094,10 @@ routing and coverage on top).
 \begin{tikzpicture}
 \begin{axis}[
   width=0.55\textwidth, height=0.34\textwidth, ybar, bar width=9pt,
-  ylabel={\footnotesize cells to cover all 10 NN}, ymin=0, ymax=12,
+  ylabel={\footnotesize cells to cover all 10 NN}, ymin=0, ymax=14,
   symbolic x coords={t2i median, t2i p90, Cohere median, Cohere p90},
   xtick=data, x tick label style={font=\scriptsize}, tick label style={font=\scriptsize},
-  legend style={font=\footnotesize}, legend cell align=left,
+  legend style={font=\footnotesize, at={(0.03,0.97)}, anchor=north west}, legend cell align=left,
   nodes near coords, every node near coord/.append style={font=\scriptsize},
 ]
 \addplot[fill=red!25, draw=red!60!black] coordinates {(t2i median,7) (t2i p90,10) (Cohere median,7) (Cohere p90,9)};
@@ -1649,7 +1648,7 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
         ylabel={QPS (single thread)},
         xtick={0.96,0.97,0.98,0.99},
         ytick={200,400,800,1600},
-        legend pos=south west]
+        legend style={font=\tiny, at={(0.03,0.03)}, anchor=south west}]
       \addplot[ours] table[col sep=comma, x=recall, y=qps] {paperdata/cohere1m_ours.csv};
       \addlegendentry{Ours}
       \addplot[hnsw] table[col sep=comma, x=recall, y=qps] {paperdata/cohere1m_hnsw.csv};
@@ -1708,10 +1707,10 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
         title={DEEP 10M ($L_2$, $d{=}96$)},
         xlabel={Recall@10 (log-tail axis)},
         xmin=0.001, xmax=0.22,
-        xtick={0.1,0.02,0.005,0.002},
-        xticklabels={0.90,0.98,0.995,0.998},
+        xtick={0.1,0.02,0.002},
+        xticklabels={0.90,0.98,0.998},
         ytick={500,1000,2000,4000,8000},
-        legend pos=north east]
+        legend style={at={(0.03,0.03)},anchor=south west}]
       \addplot[ours] table[col sep=comma, x expr=1-\thisrow{recall}, y=qps] {paperdata/deep10m_ours.csv};
       \addplot[hnsw] table[col sep=comma, x expr=1-\thisrow{recall}, y=qps] {paperdata/deep10m_hnsw.csv};
       \addplot[orange!80!black,densely dotted,mark=diamond,mark size=1.9pt,mark options={solid}] table[col sep=comma, x expr=1-\thisrow{recall}, y=qps] {paperdata/deep10m_roar.csv};
@@ -1755,10 +1754,10 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
   xlabel={\footnotesize recall@10}, ylabel={\footnotesize QPS (1 thread)},
   ymode=log, xmin=0.75, xmax=1.0, ymin=250, ymax=16000,
   grid=both, grid style={black!10}, tick label style={font=\scriptsize},
-  legend style={font=\tiny, at={(0.03,0.03)}, anchor=south west}, legend cell align=left,
+  legend style={font=\tiny, at={(0.97,0.97)}, anchor=north east}, legend cell align=left,
 ]
 \addplot[blue!70!black, thick, mark=*, mark size=1.5pt] table[col sep=comma, x=recall, y=qps] {paperdata/t2i1m_ours.csv};
-\addlegendentry{ours (hybrid graph, coarse cells)}
+\addlegendentry{ours (hybrid graph)}
 \addplot[black!60!green, thick, dash dot, mark=triangle, mark size=1.9pt, mark options={solid}] table[col sep=comma, x=recall, y=qps] {paperdata/t2i1m_scann.csv};
 \addlegendentry{ScaNN}
 \addplot[orange!80!black, thick, densely dotted, mark=diamond, mark size=1.9pt, mark options={solid}] table[col sep=comma, x=recall, y=qps] {paperdata/t2i1m_roar.csv};
@@ -1795,7 +1794,7 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
 ]
 \addplot[blue!70!black, thick, mark=*, mark size=1.5pt] table[col sep=comma, x=recall, y=qps] {paperdata/t2i100m_ours.csv};
 \addlegendentry{ours}
-\node[align=center, font=\scriptsize, black!70] at (axis cs:0.905,860)
+\node[align=center, font=\tiny, black!70] at (axis cs:0.900,860)
   {only build-eligible method:\\ScaNN killed at the 2h gate;\\RoarGraph measured $10.5$h build\\($+5$h train-GT); its first 100M\\index also searched degenerately};
 \end{axis}
 \end{tikzpicture}\\[6pt]
@@ -2044,6 +2043,7 @@ engine faster). Same-hardware, tight-pairwise; ScaNN at its official config at 1
 and its swept speed-optimal config (1200 leaves) at 1M (\S\ref{sec:method}).
 At 100M no ScaNN index builds within the gate (note), so the comparison is on build-eligibility.}
 \label{tab:main}
+\vspace{3pt}
 \begin{tabular}{lccc}
 \toprule
 Scale & 1-thread & 8-thread & recall@10 gate \\
@@ -2070,6 +2070,7 @@ configuration). RoarGraph~\cite{roargraph} is the published OOD-specific
 graph method, built with its paper hyperparameters ($M_{sq}{=}100$,
 $M{=}35$, $L{=}500$, 2M sampled train queries, GT recall@100 $0.96$).}
 \label{tab:t2i-baselines}
+\vspace{3pt}
 \begin{tabular}{lccl}
 \toprule
 System & recall@10 & QPS (1t) & note \\
@@ -2091,6 +2092,7 @@ exact ground truth. On the shared machine only interleaved same-window ratios ar
 trusted (\S\ref{sec:method}); the 10M rows are clean-window sequential pairs
 (each genbo/HNSW pair run back-to-back on the same cores). Recall is load-independent.}
 \label{tab:cohere}
+\vspace{3pt}
 \begin{tabular}{llcc}
 \toprule
 Scale & System & recall@10 & QPS (1t) \\
