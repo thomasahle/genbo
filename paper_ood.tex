@@ -1598,20 +1598,27 @@ RoarGraph retains the loose-recall corner (recall ${<}0.96$: ${\sim}1.25\times$ 
 $0.90$, up to $1.33\times$ at very loose recall) --- there its short adaptive walk
 amortizes better than our fixed routing$+$scan cost. An ablation at matched edge budget shows the graph-side gain is
 edge \emph{count} and pool quality, not Vamana-style diversification (a wash for an
-IVF-seeded cascade). The OOD extreme flipped with two further levers: on WebVid-2.5M
-(Figure~\ref{fig:oodfrontier}, bottom) calibrated routed coverage reaches only
-$0.36$, and an oracle decomposition shows the deficit is purely \emph{seed coverage};
-densifying per-query entry seeds (nearest training queries vote their materialized
-ground-truth answers; coverage $0.42\to0.76$) plus a resident 4-bit scoring rung
-(per-dim scalar-quantized nibbles at $d/2$ bytes/row, rank-exact by folding the
-per-dim steps into the query, with an int8 re-rank of the top band) beats RoarGraph
-at every measured point from recall $0.92$ to $0.98$ --- past its published-benchmark
-ceiling. The remaining boundary obeys the bottleneck theory: among \emph{build-eligible}
-methods, only at low dimension and loose recall (DEEP ${<}0.96$) does frontier
-ownership pass to the cheapest materialized-adjacency walk; the build-unconstrained
-$6.5$h RoarGraph additionally keeps the Wikipedia $0.93$--$0.97$ band
-(Figure~\ref{fig:frontier} caption). Everywhere else the IVF-PQ$+$coverage hybrid
-now wins.
+IVF-seeded cascade). The OOD extreme flipped \emph{entirely} with three levers: on
+WebVid-2.5M (Figure~\ref{fig:oodfrontier}, bottom) calibrated routed coverage reaches
+only $0.36$, and an oracle decomposition shows the deficit is purely \emph{seed
+coverage}; densifying per-query entry seeds (nearest training queries vote their
+materialized ground-truth answers; coverage $0.42\to0.76$), a resident 4-bit scoring
+rung (per-dim scalar-quantized nibbles at $d/2$ bytes/row, rank-exact by folding the
+per-dim steps into the query, with an int8 re-rank of the top band), and --- for the
+loose corner --- a \emph{wide hybrid} adjacency ($16$ base-$k$NN $+$ $48$
+co-retrieval edges, built in $11$ s from the same training resource RoarGraph
+consumes) together beat RoarGraph at every measured point of its curve, recall
+$0.81$ through $0.98$, past its published-benchmark ceiling --- with our side
+measured on a loaded machine against its quiet-window curve, so each margin
+($1.3$--$1.7\times$) is a lower bound. The remaining boundary obeys the bottleneck
+theory: among \emph{build-eligible} methods, only at low dimension and loose recall
+(DEEP ${<}0.96$) does frontier ownership pass to the cheapest materialized-adjacency
+walk; the build-unconstrained $6.5$h RoarGraph additionally keeps the Wikipedia
+$0.93$--${\sim}0.975$ band (Figure~\ref{fig:frontier} caption) --- narrowed from
+above by a $48$-edge self-built graph ($2.8$ h seeded NN-descent, still under
+RoarGraph's $6.5$ h) with the resident stack, which reaches recall $0.9778$ at $431$
+QPS \emph{under load}, above quiet-RoarGraph's ${\sim}390$ there. Everywhere else
+the IVF-PQ$+$coverage hybrid now wins.
 Exact operating points,
 and the streaming series are tabulated in Appendix~\ref{app:tables} (Table~\ref{tab:streaming}).
 Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
@@ -1731,10 +1738,12 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
   \emph{is} the base manifold. On Wikipedia 35M ($d{=}1024$) we lead every
   \emph{build-eligible} baseline across the frontier and reach recall $0.9952$ beyond
   every ceiling; RoarGraph's shown curve required a $6.5$h build ($3.2\times$ our 2h
-  gate; our graph self-builds in $10$ min) and wins the $0.93$--$0.97$ band on that
-  budget --- a budget-matched RoarGraph ($L{=}50$, $250$k train queries) still takes
-  $3.1$h and collapses to a $0.9605$ ceiling at ${\sim}100$ QPS, below our curve
-  everywhere. \textbf{Bottom row (low-dimensional, $d{\le}100$).} On MSTuring 30M
+  gate; our graph self-builds in $10$ min) and keeps the $0.93$--${\sim}0.975$ band on
+  that budget --- narrowed from above by our $48$-edge seeded-NN-descent graph
+  ($2.8$ h, still under $6.5$ h) with the resident stack ($0.9778$ at $431$ QPS under
+  load vs its quiet ${\sim}390$); a budget-matched RoarGraph ($L{=}50$, $250$k train
+  queries) still takes $3.1$h and collapses to a $0.9605$ ceiling at ${\sim}100$ QPS,
+  below our curve everywhere. \textbf{Bottom row (low-dimensional, $d{\le}100$).} On MSTuring 30M
   ($d{=}100$) we beat every baseline at every measured point ($1.45$--$2.8\times$
   RoarGraph, exceeding HNSW's ceiling); RoarGraph's curve required padding its input
   to $d{=}104$ --- its released code silently corrupts dimensions not divisible by 8.
