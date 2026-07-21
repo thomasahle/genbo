@@ -843,6 +843,7 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
         for &(_, s) in pooltop[..mm].iter() {
             let o = slot_orig[s as usize] as usize;
             for &nb in &graph.neighbours(o)[..ke] {
+                if nb as usize >= ds.nb { continue; } // hybrid graphs pad missing edges with u32::MAX
                 let mut h = (nb.wrapping_mul(0x9E3779B1) as usize) & mask;
                 loop {
                     let (k, _) = set[h];
@@ -1079,6 +1080,7 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
                 for &ci in cand[..mm].iter() {
                     exp[ci as usize] = true;
                     for &nb in &graph.neighbours(scored[ci as usize].1 as usize)[..ke] {
+                        if nb as usize >= ds.nb { continue; } // padded hybrid edges
                         let mut h = (nb.wrapping_mul(0x9E3779B1) as usize) & mask;
                         loop {
                             let (kx, _) = set[h];
@@ -1117,6 +1119,7 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
             }
             for &(_, o) in cohort[..mm].iter() {
                 for &nb in &graph.neighbours(o as usize)[..ke] {
+                    if nb as usize >= ds.nb { continue; } // padded hybrid edges
                     let mut h = (nb.wrapping_mul(0x9E3779B1) as usize) & mask;
                     loop {
                         let (kx, _) = set[h];
