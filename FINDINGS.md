@@ -5361,6 +5361,19 @@ P344 [2026-07-22] QUOTABLE WINDOW (load ~33 = measured box floor; strict <18 sho
     0.93-0.975. Both residuals documented in paper; further attack requires either a new architecture
     idea for low-dim loose recall or query-aware construction (fenced by user).
 
+P345 [2026-07-22] CROSS-DATASET RERUN COMPLETE — no banked frontier displaced; SQ4 boundary pinned.
+  COHERE-10M (d=768): current int8 recalls reproduce; the SQ4+RESIDENT+f16 stack loses 0.0027-0.0031
+    recall and is not Pareto at the mid/tail rows. Existing champion curve remains authoritative.
+  MSTURING-30M (d=100): k64+KE64+RESIDENT buys recall against Vamana+KE32 at p=1..8 but gives back
+    enough QPS that it does not dominate the banked frontier. The d~100 resident null generalizes.
+  T2I-10M (d=200): fixed the rerun script's stale asset names and repeated the real champion protocol.
+    Published standalone row reproduces bit-exactly at 0.9047@2659 under load vs banked 0.9047@2804
+    (5% QPS window delta). Hybrid int8 recalls also reproduce exactly: 0.8861/0.9161/0.9850/0.9880.
+    Paired SQ4+RESIDENT wins the memory-pressured MID band: 0.9144@2058 vs int8 0.9161@1427 (+44%,
+    -0.0017 recall), 0.9401@1590 vs 0.9411@1173 (+36%, -0.0010), but remains below the banked fast-
+    window frontier and loses at the tail (0.9840@409 vs int8 0.9850@459). Thus d=200 is the honest
+    load-dependent boundary; no CSV/table point changes. Paper sec:resident effect block updated.
+
 === SESSION SUMMARY (current, 2026-07-12, through P334) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
