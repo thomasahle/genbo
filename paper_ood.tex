@@ -857,7 +857,11 @@ in $9.5$ min, matching an HNSW-built graph's $0.970$ and adding $+0.3$--$0.45$pt
 QPS. On OOD text2image-10M ($d{=}200$), where routed self-search is already near-exact
 ($0.992$ overlap), swapping in the NN-descent graph ($0.970$) leaves champion recall/QPS unchanged
 --- graph quality is saturated at both ends. The $10$M and $35$M wins are therefore fully
-self-contained.}
+self-contained. Wider graphs come cheap by \emph{seeding}: initializing the descent from a
+narrower finished graph (each row = seed edges $+$ random padding) collapses the early update
+mass --- at $35$M/$d{=}1024$ a $k{=}32$ graph seeded from $k{=}16$ builds in $2.4$\,h (vs
+$3.6$\,h random-init) and $k{=}48$ seeded from $k{=}32$ in $2.8$\,h, still under the $6.5$\,h
+RoarGraph build it is compared against in Figure~\ref{fig:frontier}.}
 
 \section{Routing Cost and the Coarse-Cell Corollary}
 \label{sec:coarse}
@@ -1270,6 +1274,56 @@ beats HNSW by ${\sim}1.27$--$1.9\times$ (1t) at matched recall once both use \em
 graphs (Table~\ref{tab:cohere}); the usable graph comes from the internal NN-descent pass,
 not from routed self-search, which is coverage-capped at this dimension (\S\ref{sec:graph}).}
 
+\section{Resident Tiers: a 4-bit Rung and the Memory System}
+\label{sec:resident}
+Three levers below the algorithmic level move the frontier at $d{\ge}512$, where a
+candidate row spans $8$--$16$ cache lines and the union rescore is line-fetch-bound
+(measured: prefetch-depth sweeps are flat, machinery is minor, the scoring loop is
+${\sim}115$\,ns/row).
+
+\paragraph{SQ4 rung.} A resident sidecar stores each int8 row scalar-quantized to
+4 bits per dimension (nibble-packed, $d/2$ bytes/row --- half the lines), with
+\emph{per-dimension} robust affine ranges (p$0.5$--p$99.5$; a single global range
+collapses datasets whose int8 mass sits in a narrow band, e.g.\ WebVid's $\pm18$).
+Ranking stays exact under quantization of the \emph{base} side: with
+$\text{recon}_j = \text{lo}_j + n_j\,\text{step}_j$, the query-side fold
+$q'_j = q_j\,\text{step}_j$ makes $\sum_j n_j q'_j$ rank-equivalent to
+$\langle q,\text{recon}\rangle$ (the $\sum_j q_j\,\text{lo}_j$ term is a per-query
+constant), so the sidecar needs no LUTs --- one \texttt{vpdpbusd} pair per 64 code
+bytes against the deinterleaved query halves. The union is navigated and pre-selected
+on the 4-bit scores; an optional int8 re-rank of the top band (a few hundred rows)
+recovers the double-quantization tail before the float rerank. Offline containment
+gates justify the precision: culling an \emph{exact} top-$2100$ union to $300$ by
+4-bit score retains $0.998$--$1.000$ of the float top-$10$ on Wikipedia/WebVid ---
+selection precision is not the binding constraint at 4 bits (it is at 1 bit, which
+fails the same gate at $0.44$--$0.78$).
+
+\paragraph{Hugepage residency.} The int8 base is a file-backed mmap and therefore
+4\,KB-paged on this kernel; a scattered union rescore pays a TLB miss and page walk
+\emph{per row}, which software prefetch cannot hide. A flag copies the base into
+anonymous (transparent-hugepage-eligible) memory at load --- byte-identical data,
+${\sim}500\times$ fewer TLB entries.
+
+\paragraph{fp16 rerank base.} At $35$M/$d{=}1024$ the float rerank's $143$\,GB f32
+mmap cannot stay page-cache-resident next to the other tiers, and the exact-rerank
+stage degrades to page-fault speed under memory pressure. A resident fp16 copy
+halves the footprint ($72$\,GB); fp16's 11-bit mantissa still out-resolves the int8
+stage that selected the survivors, so the final ordering is unchanged in practice.
+
+\effect{Wikipedia-1M ($d{=}1024$) engine A/B at the contested mid-recall band: the
+SQ4 rung is $+18$--$34\%$ QPS at \emph{identical} recall (score stage
+$442\to235\,\mu$s/query --- the byte cut, realized); WebVid-2.5M: $+17$--$33\%$
+across the tuned frontier at ${\le}0.003$ recall cost with the int8 re-rank band ---
+these are the margins behind Figure~\ref{fig:oodfrontier}'s every-point win. On
+DEEP-10M ($d{=}96$, 2-line rows) the same rung \emph{loses} --- there is nothing to
+save and the nibble noise costs recall --- a clean confirmation that the mechanism
+is the memory system, not arithmetic. Hugepage residency cuts the in-window rescore
+cost $2$--$3\times$ per matched profile legs ($372$--$862$ vs $1276$\,ns/row); the
+fp16 base cuts the wiki float stage from $9.4$\,ms to $106$--$175\,\mu$s/query under
+the same memory pressure at a $-0.001$ recall difference (DEEP-1M parity check
+$0.9613\to0.9604$). All three are load-time flags; none changes the champion path
+when off.}
+
 \section{Systems Techniques (Streaming)}
 \label{sec:stream}
 \begin{figure}[t]
@@ -1570,7 +1624,14 @@ is one genbo can consume directly: a \emph{co-retrieval} graph built from the sa
 training resource (edges $=$ co-occurrence in a training query's top-$10$), hybridized
 with the base-$k$NN edges, drops into the existing union mechanism with no engine
 change and lifts the OOD frontier $1$--$2$ points at matched probes
-(\S\ref{sec:bottleneck}). With it, at 1M RoarGraph keeps only the below-$0.93$ band
+(\S\ref{sec:bottleneck}); \emph{widening} the co-retrieval side ($16$ $k$NN $+$ $48$
+co-retrieval edges, an $11$-second post-processing pass) is what closes the extreme-OOD
+loose corner ($+4$--$5$ recall points at the leanest configurations, WebVid). The
+mechanism is data-density-bound, and honestly so: at in-distribution Wikipedia-35M the
+same $500$k training queries cover only $1.4\%$ of the base ($16$-deep ground truth
+touches $2.2$M of $35$M points) and the identical construction moves recall by
+$0.0001$ --- which also implies RoarGraph's own advantage there cannot come from
+query-awareness at that query density. With it, at 1M RoarGraph keeps only the below-$0.93$ band
 (gate lead ${\sim}1.15\times$, down from $1.32\times$ against the base graph) while
 genbo overtakes above ${\approx}0.97$ and takes the 1M tail ($0.9913$ at $1533$ QPS
 vs $0.9900$ at $1353$); at 10M genbo leads the entire measured range through recall $0.9945$ --- the
