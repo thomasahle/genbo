@@ -320,6 +320,21 @@ fn apply_soar(r: &mut vq::HierRouter) {
 fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: usize, c: usize, tmul: usize, batched: bool) {
     let t0 = Instant::now();
     let mut ds = I8Bin::open(base).expect("base");
+    let preset_env = std::env::var("SBANN_PRESET").ok();
+    let target_env = std::env::var("SBANN_TARGET_RECALL").ok();
+    let (search_preset, preset_source) = resolve_search_preset(
+        preset_env.as_deref(),
+        target_env.as_deref(),
+    )
+    .unwrap_or_else(|e| panic!("{e}"));
+    if std::env::var("SBANN_CASCADE_K").is_err()
+        && std::env::var("SBANN_KLIST").is_err()
+    {
+        vq::CASCADE_K.store(
+            search_preset.cascade_k(ds.d),
+            std::sync::atomic::Ordering::Relaxed,
+        );
+    }
     // RESIDENT-I8 (P346, flag-gated): anonymous THP-backed copy of the int8 base. The scattered union
     // rescore pays a TLB miss + page walk per row on the 4KB-paged file mmap (~918 rows/q at DEEP loose
     // configs); 2MB pages cut TLB entries ~500x. Data byte-identical — recall unchanged.
@@ -528,10 +543,29 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
         assert!(flen % (n * 4) == 0, "graph file {gp} size {flen} not divisible by n*4 ({})", n * 4);
         let k = flen / (n * 4);
         let g = vq::GraphAdj::load(&gp, n, k).expect("load graph sidecar");
-        if let Ok(v) = std::env::var("SBANN_GRAPH_M") { vq::GRAPH_M.store(v.parse().expect("SBANN_GRAPH_M"), Relaxed); }
-        if let Ok(v) = std::env::var("SBANN_GRAPH_HOPS") { vq::GRAPH_HOPS.store(v.parse().expect("SBANN_GRAPH_HOPS"), Relaxed); }
-        if std::env::var("SBANN_GRAPH_BESTFIRST").is_ok() { vq::GRAPH_BESTFIRST.store(true, Relaxed); }
-        if let Ok(v) = std::env::var("SBANN_GRAPH_KEDGE") { vq::GRAPH_KEDGE.store(v.parse().expect("SBANN_GRAPH_KEDGE"), Relaxed); }
+        if let Ok(v) = std::env::var("SBANN_GRAPH_M") {
+            vq::GRAPH_M.store(v.parse().expect("SBANN_GRAPH_M"), Relaxed);
+        } else {
+            vq::GRAPH_M.store(search_preset.graph_m(), Relaxed);
+        }
+        if let Ok(v) = std::env::var("SBANN_GRAPH_HOPS") {
+            vq::GRAPH_HOPS.store(v.parse().expect("SBANN_GRAPH_HOPS"), Relaxed);
+        } else {
+            vq::GRAPH_HOPS.store(search_preset.graph_hops(), Relaxed);
+        }
+        let bestfirst = if std::env::var("SBANN_GRAPH_BESTFIRST").is_ok() {
+            env_on("SBANN_GRAPH_BESTFIRST", false)
+        } else {
+            // The measured best-first gain is in-distribution/high-recall. L2 is a useful safe
+            // default signal; IP/cosine may be either in-distribution or OOD, so it stays off there.
+            search_preset != SearchPreset::Fast && !vq::IP_MODE.load(Relaxed)
+        };
+        vq::GRAPH_BESTFIRST.store(bestfirst, Relaxed);
+        if let Ok(v) = std::env::var("SBANN_GRAPH_KEDGE") {
+            vq::GRAPH_KEDGE.store(v.parse().expect("SBANN_GRAPH_KEDGE"), Relaxed);
+        } else {
+            vq::GRAPH_KEDGE.store(k.min(32), Relaxed);
+        }
         // ADAPT-STOP (P342): per-query adaptive beam termination; value = i32 margin on the int8 bound.
         if let Ok(v) = std::env::var("SBANN_ADAPT_STOP") {
             vq::ADAPT_STOP_ON.store(true, Relaxed);
@@ -773,17 +807,36 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
             println!("  [PQ4-NAV] m={m} ({}B/row vs int8 {}B) nb={n}  setup={:.1}s", m, dd, t0.elapsed().as_secs_f64());
             let _ = vq::PQ4.set(vq::Pq4Nav { m, dsub, cent, codes });
         }
-        println!("  [GRAPH] {gp}  n={n} k={k}  M={} kedge={} pfdist={}",
-            vq::GRAPH_M.load(Relaxed), vq::GRAPH_KEDGE.load(Relaxed).min(k), vq::GRAPH_PFDIST.load(Relaxed));
+        println!(
+            "  [GRAPH] {gp}  n={n} k={k}  hops={} M={} kedge={} bestfirst={} pfdist={}",
+            vq::GRAPH_HOPS.load(Relaxed),
+            vq::GRAPH_M.load(Relaxed),
+            vq::GRAPH_KEDGE.load(Relaxed).min(k),
+            vq::GRAPH_BESTFIRST.load(Relaxed),
+            vq::GRAPH_PFDIST.load(Relaxed)
+        );
         Some(g)
     } else { None };
     let graph_ref = graph.as_ref();
     // avq cell count is cb^2 == c; keep probes well under nc
-    // SBANN_PLIST="128,256,512" overrides the default sweep (lets a built index be probed at custom p).
+    // SBANN_PLIST="128,256,512" overrides the preset-centered default sweep.
     let plist: Vec<usize> = match std::env::var("SBANN_PLIST") {
         Ok(s) => s.split(',').filter_map(|x| x.trim().parse().ok()).filter(|&x: &usize| x >= 1).collect(),
-        Err(_) => vec![c / 256, c / 64, c / 16, c / 4].into_iter().map(|x| x.max(1)).collect(),
+        Err(_) => default_probe_ladder(search_preset, ds.d, idx.router.n_cells()),
     };
+    let tfloor: usize = std::env::var("SBANN_TFLOOR")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or_else(|| search_preset.survivor_floor(ds.nb, ds.d));
+    println!(
+        "  [SEARCH-PRESET] {} via {}  probes={:?} tfloor={} cascade_k={}{}",
+        search_preset.name(),
+        preset_source,
+        plist,
+        tfloor,
+        vq::CASCADE_K.load(std::sync::atomic::Ordering::Relaxed),
+        if graph_ref.is_some() { " graph=on" } else { " graph=off" }
+    );
     // contiguous query array (for batched GEMM routing)
     let mut qarr = vec![0i8; nq * ds.d];
     for i in 0..nq { qarr[i * ds.d..i * ds.d + ds.d].copy_from_slice(qs.row(i)); }
@@ -979,9 +1032,7 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
         vq::CASCADE_K.store(kk, std::sync::atomic::Ordering::Relaxed);
         // survivors kept for exact rerank (tmul tunes recall/speed). The rerank floor was 1000 but that
         // was a ~2x QPS@90% HANDICAP: int16 LUT ranks well enough that t_surv=p*tmul (~256-480) holds
-        // recall (P111). Floor now 300 (only affects low-p/QPS@90%; high-p already exceeds it).
-        // SBANN_TFLOOR overrides for sweeps.
-        let tfloor: usize = std::env::var("SBANN_TFLOOR").ok().and_then(|s| s.parse().ok()).unwrap_or(300);
+        // recall (P111). The preset supplies the scale/dimension-aware floor; SBANN_TFLOOR overrides.
         let t_surv = (p * tm).max(tfloor);
         let mut best_dt = f64::INFINITY;
         let mut res: Vec<Vec<u32>> = Vec::new();
@@ -1803,6 +1854,160 @@ fn env_on(name: &str, default: bool) -> bool {
     }
 }
 
+/// User-facing search policy. The preset chooses a measured-safe starting region; every low-level
+/// SBANN_* knob still has precedence. `SBANN_TARGET_RECALL` is a convenience selector when
+/// `SBANN_PRESET` is absent.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum SearchPreset {
+    Fast,
+    Balanced,
+    Accurate,
+}
+
+impl SearchPreset {
+    fn name(self) -> &'static str {
+        match self {
+            Self::Fast => "fast",
+            Self::Balanced => "balanced",
+            Self::Accurate => "accurate",
+        }
+    }
+
+    fn parse(value: &str) -> Result<Self, String> {
+        match value.trim().to_ascii_lowercase().as_str() {
+            "fast" | "loose" => Ok(Self::Fast),
+            "balanced" | "default" => Ok(Self::Balanced),
+            "accurate" | "high" => Ok(Self::Accurate),
+            _ => Err(format!(
+                "unknown SBANN_PRESET={value:?}; expected fast, balanced, or accurate"
+            )),
+        }
+    }
+
+    fn from_target(target: f64) -> Result<Self, String> {
+        if !(0.0..=1.0).contains(&target) {
+            return Err(format!(
+                "SBANN_TARGET_RECALL must be in [0,1], got {target}"
+            ));
+        }
+        Ok(if target <= 0.91 {
+            Self::Fast
+        } else if target <= 0.96 {
+            Self::Balanced
+        } else {
+            Self::Accurate
+        })
+    }
+
+    fn graph_hops(self) -> usize {
+        match self {
+            Self::Fast => 1,
+            Self::Balanced => 2,
+            Self::Accurate => 3,
+        }
+    }
+
+    fn graph_m(self) -> usize {
+        match self {
+            Self::Fast => 16,
+            Self::Balanced => 24,
+            Self::Accurate => 48,
+        }
+    }
+
+    fn cascade_k(self, d: usize) -> usize {
+        match (self, d > 512) {
+            (Self::Fast, false) => 32,
+            (Self::Fast, true) => 64,
+            (Self::Balanced, false) => 32,
+            (Self::Balanced, true) => 64,
+            (Self::Accurate, false) => 64,
+            (Self::Accurate, true) => 128,
+        }
+    }
+
+    /// Survivor floor at a 10M reference scale. Search depth grows approximately as sqrt(n)
+    /// across the measured 1M/10M/35M ladder, so `survivor_floor` applies that scale below.
+    fn survivor_floor_10m(self, d: usize) -> usize {
+        let band = if d <= 128 {
+            0
+        } else if d <= 256 {
+            1
+        } else if d <= 512 {
+            2
+        } else {
+            3
+        };
+        match self {
+            Self::Fast => [250, 500, 600, 400][band],
+            Self::Balanced => [450, 1000, 1200, 1000][band],
+            Self::Accurate => [1800, 3000, 2500, 3000][band],
+        }
+    }
+
+    fn survivor_floor(self, n: usize, d: usize) -> usize {
+        let scale = (n as f64 / 10_000_000.0).sqrt().clamp(0.5, 2.5);
+        ((self.survivor_floor_10m(d) as f64 * scale).round() as usize).max(128)
+    }
+
+    /// Center probe count at Kf=65536. Scaling by the actual cell count transfers the measured
+    /// operating regions to coarse 1M indices (Kf=4096/16384) without exposing raw p to users.
+    fn reference_probes(self, d: usize) -> usize {
+        match self {
+            Self::Fast if d <= 128 => 8,
+            Self::Balanced if d <= 128 => 8,
+            Self::Accurate if d <= 128 => 32,
+            // The wider top end is needed for uncalibrated OOD IP data: on text2image-1M,
+            // p=16 can stop just short of 0.90 while p=32 clears it. The ladder still starts
+            // at p=4 on a 16K-cell index, so the loose/high-QPS corner remains represented.
+            Self::Fast if d <= 256 => 32,
+            Self::Balanced if d <= 256 => 40,
+            Self::Accurate if d <= 256 => 128,
+            Self::Fast if d <= 512 => 32,
+            Self::Balanced if d <= 512 => 64,
+            Self::Accurate if d <= 512 => 256,
+            Self::Fast => 32,
+            Self::Balanced => 64,
+            Self::Accurate => 160,
+        }
+    }
+}
+
+fn resolve_search_preset(
+    preset: Option<&str>,
+    target_recall: Option<&str>,
+) -> Result<(SearchPreset, &'static str), String> {
+    if let Some(value) = preset {
+        return Ok((SearchPreset::parse(value)?, "SBANN_PRESET"));
+    }
+    if let Some(value) = target_recall {
+        let target = value
+            .parse::<f64>()
+            .map_err(|_| format!("invalid SBANN_TARGET_RECALL={value:?}"))?;
+        return Ok((SearchPreset::from_target(target)?, "SBANN_TARGET_RECALL"));
+    }
+    Ok((SearchPreset::Balanced, "default"))
+}
+
+fn default_probe_ladder(preset: SearchPreset, d: usize, n_cells: usize) -> Vec<usize> {
+    let reference = preset.reference_probes(d);
+    let center = ((reference * n_cells + 65_535) / 65_536)
+        .clamp(1, n_cells.max(1));
+    let candidates = [
+        (center / 2).max(1),
+        center,
+        center.saturating_mul(2).min(n_cells.max(1)),
+        center.saturating_mul(4).min(n_cells.max(1)),
+    ];
+    let mut out = Vec::with_capacity(candidates.len());
+    for p in candidates {
+        if out.last().copied() != Some(p) {
+            out.push(p);
+        }
+    }
+    out
+}
+
 /// ── CHAMPION OOD STACK (default query path, FINDINGS P190-P202) ─────────────────────────────────
 /// The 1M text2image OOD head-to-head vs ScaNN converged on this stack; every lever below is
 /// recall-EXACT (verified in its P-entry) and now defaults ON. Each stays overridable with
@@ -1812,7 +2017,7 @@ fn env_on(name: &str, default: bool) -> bool {
 ///   • ROUTE_VNNI (P196) — VNNI norm-decomposition routing L2, bit-identical to the AVX2 madd L2.
 ///                         Enabled only when AVX-512 VNNI is detected (falls back to the AVX2 route
 ///                         L2 otherwise); norm-kernel selftest asserted.
-///   • CASCADE    (P194) — int8-VNNI mid-stage that prunes the apq4 survivor pool to CASCADE_K=16
+///   • CASCADE    (P194) — int8-VNNI mid-stage that prunes the apq4 survivor pool to CASCADE_K
 ///                         before the exact float reorder (only active on the FLOAT_RERANK path).
 ///                         The int8 rescore is runtime-dispatched VNNI→AVX2→scalar.
 ///   • FUSEDTOPK  (P187) — ScaNN-style keep-only-survivors scan collect (recall-neutral).
@@ -1873,7 +2078,8 @@ fn env_on(name: &str, default: bool) -> bool {
 ///                      the adc-route branch). REFUTED at 1M/d=200 for every geometry incl. wide 3-level
 ///                      finest fan-in (P210-P211, ~1.8× slower) — the exact VNNI router is at the floor.
 ///   • LEAF R=t_surv  — SBANN_TFLOOR/TMUL: survivors exact-rescored (t_surv = max(p·TMUL, TFLOOR)).
-///   • LEAF K         — SBANN_CASCADE_K: int8-prune width before the float reorder (default 16).
+///   • LEAF K         — SBANN_CASCADE_K: int8-prune width before the float reorder. `run` chooses
+///                      32/64/128 from the search preset and dimension; an explicit value wins.
 /// P211 optimum (1M t2i OOD): L=2, Kf≈16384, C0≈768, gamma≈0.5, exact routing — the champion geometry.
 /// Deeper trees only match (never beat) it, and only when kept LEAN (total cells scored ≈2500-2800);
 /// (p, t_surv) sits at a marginal-cost balance (one extra probe ≈ the extra gather-bound survivors it
@@ -1966,7 +2172,8 @@ fn main() {
     // layout is recorded in the index (Index.raw_orig_indexed) so a LOAD restores it without the flag.
     if std::env::var("SBANN_RAW_DEDUP").is_ok() { vq::RAW_DEDUP.store(true, std::sync::atomic::Ordering::Relaxed); }
     // CASCADE (P194, champion default ON): int8 mid-stage that prunes the apq4 survivor pool to
-    // CASCADE_K (default 16) before the expensive float reorder. Int8 rescore is runtime-dispatched
+    // CASCADE_K before the expensive float reorder. `run` resolves K from the user-facing preset
+    // unless SBANN_CASCADE_K is explicit. Int8 rescore is runtime-dispatched
     // VNNI→AVX2→scalar (vq::rerank_cascade_float). Only active on the SBANN_FLOAT_RERANK path.
     // Disable with SBANN_CASCADE=0.
     if env_on("SBANN_CASCADE", true) { vq::CASCADE.store(true, std::sync::atomic::Ordering::Relaxed); }
@@ -2536,5 +2743,82 @@ fn main() {
             a.get(7).map(|s| s.parse().unwrap()).unwrap_or(1),
             a.get(8).map(|s| s.parse().unwrap()).unwrap_or(4096)),
         _ => eprintln!("usage: sbann build|bench|benchpq|benchavq|run|stream <base> <q> <gt> [router] [compress] [a0] [C]"),
+    }
+}
+
+#[cfg(test)]
+mod search_preset_tests {
+    use super::*;
+
+    #[test]
+    fn preset_aliases_and_target_bands() {
+        assert_eq!(SearchPreset::parse("loose").unwrap(), SearchPreset::Fast);
+        assert_eq!(
+            SearchPreset::parse("default").unwrap(),
+            SearchPreset::Balanced
+        );
+        assert_eq!(
+            SearchPreset::parse("high").unwrap(),
+            SearchPreset::Accurate
+        );
+        assert_eq!(
+            SearchPreset::from_target(0.90).unwrap(),
+            SearchPreset::Fast
+        );
+        assert_eq!(
+            SearchPreset::from_target(0.95).unwrap(),
+            SearchPreset::Balanced
+        );
+        assert_eq!(
+            SearchPreset::from_target(0.99).unwrap(),
+            SearchPreset::Accurate
+        );
+        assert!(SearchPreset::from_target(1.01).is_err());
+    }
+
+    #[test]
+    fn explicit_preset_precedes_target() {
+        let (preset, source) =
+            resolve_search_preset(Some("fast"), Some("0.99")).unwrap();
+        assert_eq!(preset, SearchPreset::Fast);
+        assert_eq!(source, "SBANN_PRESET");
+    }
+
+    #[test]
+    fn balanced_is_the_default() {
+        let (preset, source) = resolve_search_preset(None, None).unwrap();
+        assert_eq!(preset, SearchPreset::Balanced);
+        assert_eq!(source, "default");
+    }
+
+    #[test]
+    fn probe_ladders_track_dimension_and_cell_count() {
+        assert_eq!(
+            default_probe_ladder(SearchPreset::Balanced, 96, 65_536),
+            vec![4, 8, 16, 32]
+        );
+        assert_eq!(
+            default_probe_ladder(SearchPreset::Balanced, 200, 4_096),
+            vec![1, 3, 6, 12]
+        );
+        assert_eq!(
+            default_probe_ladder(SearchPreset::Fast, 200, 16_384),
+            vec![4, 8, 16, 32]
+        );
+        assert_eq!(
+            default_probe_ladder(SearchPreset::Balanced, 1024, 65_536),
+            vec![32, 64, 128, 256]
+        );
+    }
+
+    #[test]
+    fn dimension_aware_cascade_and_scale_aware_floor() {
+        assert_eq!(SearchPreset::Balanced.cascade_k(96), 32);
+        assert_eq!(SearchPreset::Balanced.cascade_k(1024), 64);
+        assert_eq!(SearchPreset::Balanced.survivor_floor(10_000_000, 96), 450);
+        assert!(
+            SearchPreset::Balanced.survivor_floor(35_000_000, 1024)
+                > SearchPreset::Balanced.survivor_floor(10_000_000, 1024)
+        );
     }
 }

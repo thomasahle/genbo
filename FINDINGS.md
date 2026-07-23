@@ -5402,6 +5402,25 @@ P346 [2026-07-23] FIVE POST-BOUNDARY IDEAS TRIED — four hard nulls; measuremen
     page-fault, load, and context-switch sample. Sanity A/B recovers the known graph-prefetch result:
     pfdist16 / pfdist1 = 3647 / 3572.5 median (+2.04%), recall-identical, zero major faults.
 
+P347 [2026-07-23] USER-FACING SEARCH POLICIES — balanced defaults replace accidental low-level constants.
+  MOTIVATION: DEEP-10M profiling at the loose corner attributes 59% of query time to scattered int8
+    union scoring and another 23% to float rerank (mmap); resident i8+fp16 shifts the same query from
+    2597 to 4123 QPS, proving that survivor/graph/rerank effort must be chosen together rather than by
+    a single fixed probe count.
+  IMPLEMENTED: SBANN_PRESET={fast,balanced,accurate}, balanced when unset; SBANN_TARGET_RECALL maps
+    <=0.91/<=0.96/tail to those measured search regions. The policy rescales its probe ladder by the
+    loaded router's Kf, survivor depth by sqrt(n/10M) with dimension bands, and jointly chooses graph
+    hops/M plus dimension-aware CASCADE_K. Every existing expert variable takes precedence; the
+    resolved policy is printed. Dataset semantics (metric, float/resident sidecars, OOD gamma) remain
+    explicit — gamma=0.5 is valuable on t2i OOD but unsafe as a universal IP default.
+  TRANSFER: untouched balanced spans DEEP-10M 0.9016-0.9654, Cohere-1M 0.9068-0.9670, and t2i-1M
+    0.8695-0.9505 (0.8933-0.9614 with its known gamma). DEEP fast/accurate span 0.7871-0.9155 /
+    0.9731-0.9940; Cohere 0.8072-0.9276 / 0.9615-0.9906. The initial d=200 fast ladder stopped short
+    without OOD calibration, so its top was widened to p=32; fresh untouched run reaches 0.9060.
+  VERIFIED: 5 release unit tests; release build; integration checks for unset->balanced,
+    target-recall->fast, and explicit PLIST/TFLOOR/CASCADE_K/graph overrides defeating accurate.
+    Documented in sbann-rs/README.md and paper sec:presets; no headline frontier/CSV claims changed.
+
 === SESSION SUMMARY (current, 2026-07-12, through P334) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall

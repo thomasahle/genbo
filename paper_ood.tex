@@ -10,6 +10,7 @@
 \usepackage{amsmath,amssymb}
 \usepackage{booktabs}
 \usepackage{graphicx}
+\usepackage{placeins}
 \usepackage{hyperref}
 \usepackage{xcolor}
 \usepackage[ruled,vlined,linesnumbered]{algorithm2e}
@@ -1326,6 +1327,39 @@ fp16 base cuts the wiki float stage from $9.4$\,ms to $106$--$175\,\mu$s/query u
 the same memory pressure at a $-0.001$ recall difference (DEEP-1M parity check
 $0.9613\to0.9604$). All three are load-time flags; none changes the champion path
 when off.}
+
+\FloatBarrier
+\section{Search Policies: Reasonable Defaults, Explicit Calibration}
+\label{sec:presets}
+The frontier has several coupled query-time knobs, but making every user rediscover
+their scale laws is unnecessary. We expose three policies --- \emph{fast},
+\emph{balanced} (the default), and \emph{accurate} --- while retaining every
+low-level override. A policy chooses a dimension-banded reference probe count
+$p_{\rm ref}$ at $K_f{=}65536$, rescales it to the loaded router as
+$p_0=\lceil p_{\rm ref}K_f/65536\rceil$, and evaluates the local ladder
+$\{p_0/2,p_0,2p_0,4p_0\}$. Its survivor floor follows the measured size law
+$T(n,d)=T_{10\mathrm{M}}(d)\,\mathrm{clip}(\sqrt{n/10\mathrm{M}},0.5,2.5)$.
+The same policy sets graph (hops, beam) to $(1,16)$, $(2,24)$, or $(3,48)$ and
+raises the int8-to-float cascade width with dimension and requested accuracy.
+A target-recall convenience input maps recall ${\le}0.91$, ${\le}0.96$, and the
+tail to these three search \emph{regions}; it is deliberately not advertised as
+a recall guarantee.
+
+Semantic and data-dependent choices remain explicit. In particular, metric,
+float/resident sidecars, and the OOD routing calibration $\gamma$ are not inferred:
+the $\gamma{=}0.5$ text-to-image correction is helpful out of distribution but is
+not a safe in-distribution default. Likewise, an explicit probe list, survivor
+floor, cascade width, or graph parameter always takes precedence, so the policy is
+a starting point rather than a second hidden tuner.
+\effect{Fresh validation with no low-level search-effort overrides (leaving each
+dataset's metric and sidecar selections unchanged) shows that \emph{balanced}
+brackets the useful middle frontier on three unlike workloads: DEEP-10M
+$0.9016$--$0.9654$, Cohere-1M $0.9068$--$0.9670$, and text-to-image-1M
+$0.8695$--$0.9505$ without OOD calibration ($0.8933$--$0.9614$ with its existing
+$\gamma$). On DEEP, \emph{fast} spans $0.7871$--$0.9155$ while \emph{accurate}
+spans $0.9731$--$0.9940$; on Cohere the corresponding bands are
+$0.8072$--$0.9276$ and $0.9615$--$0.9906$. Thus one default transfers across
+$d{=}96,200,768$ and $n{=}1$--$10$M without erasing expert control.}
 
 \section{Systems Techniques (Streaming)}
 \label{sec:stream}

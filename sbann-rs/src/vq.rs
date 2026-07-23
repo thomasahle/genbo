@@ -97,8 +97,9 @@ pub static PROF_CASC_NS: std::sync::atomic::AtomicU64 = std::sync::atomic::Atomi
 /// count ~4-7x. Recall must be verified >= the float-rerank-only baseline (the prune is not free of risk).
 /// Champion default ON (set in main(); active only on the FLOAT_RERANK path; SBANN_CASCADE=0 disables).
 pub static CASCADE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
-/// CASCADE_K: how many int8-top survivors to pass to the float reorder (SBANN_CASCADE_K). Default 16 =
-/// the P194 minimum that HOLDS recall@10 == the float-rerank-only baseline (K12 breaks it).
+/// CASCADE_K: how many int8-top survivors to pass to the float reorder (SBANN_CASCADE_K). The atomic
+/// fallback is the P194 minimum 16 (K12 breaks recall); the `run` command replaces it with the
+/// dimension-aware search-preset value unless the user supplies an explicit override.
 pub static CASCADE_K: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(16);
 /// CASC_SORT (P194): sort the deduped survivor pool by SLOT before the int8 gather. `raw` is slot-
 /// contiguous, so slot-ascending order makes the int8 gather read MONOTONICALLY forward -> HW prefetch
