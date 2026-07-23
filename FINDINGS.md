@@ -5374,6 +5374,34 @@ P345 [2026-07-22] CROSS-DATASET RERUN COMPLETE — no banked frontier displaced;
     window frontier and loses at the tail (0.9840@409 vs int8 0.9850@459). Thus d=200 is the honest
     load-dependent boundary; no CSV/table point changes. Paper sec:resident effect block updated.
 
+P346 [2026-07-23] FIVE POST-BOUNDARY IDEAS TRIED — four hard nulls; measurement tooling made permanent.
+  All cheap gates use DEEP-1M exact top-2100 unions (500 queries), then the surviving portal idea was
+  built and measured end-to-end on DEEP-10M. Records: deep10m/next_rungs_gate_nq500.json,
+  cell_portal_gate_i8.json, abba_portals_{m24,m24_fastkeep}_gate.json, abba_resident_gate.json.
+  RP8 projected-int8 prefilter: the float-ranking oracle looked tempting (64D/top256 containment 0.993),
+    but the ENGINE-FAITHFUL gate refuted it: 64D/top256 retains only 0.8531 of the full-int8 top-32;
+    80D reaches 0.9683 but still occupies two cache lines, so it saves no row fetch. KILLED.
+  EXACT PARTIAL-DOT BOUNDS: even after scoring the best query-adaptive 48/96 dimensions, an optimistic
+    oracle must finish 91.9% of rows to preserve top-32 (p90=100%); narrower stripes reject less. KILLED.
+  CROSS-QUERY COHORT SCORING: even an optimistic query-clustered batch of 16 has unique-row fraction
+    0.8196 (p90 0.9848), only 18% mean reuse before scheduling/transpose overhead; smaller batches worse.
+    KILLED.
+  CELL-LOCAL PORTALS: implemented end-to-end behind SBANN_PORTAL_FILE. A 16-portal/cell, a0=2 sidecar
+    builds in 122s and occupies 185MB. The quantized oracle is real: p8/keep1 raw coverage 0.4232 becomes
+    0.9134 after the existing 3-hop graph (1833 scored rows mean). But paired full-engine ABBA pins the
+    outcome to parity: M24 p6 portals 0.9010@3507.5 median vs PQ scan 0.9012@3488 (+0.56%, -0.0002
+    recall); M25 portals 0.9028@3457 vs 0.9012@3480.5 (-0.67%, +0.0016 recall). Fast keep-one selection
+    leaves the same result. It replaces scan work successfully, but does not reduce the graph/rescore
+    floor, hence NO banked frontier change. Kept opt-in as a falsifiable experimental path, not champion.
+  RESIDENT CONTROL (important methodology check, not a new path): at the same 0.9012 operating point,
+    anonymous/THP-eligible int8 residency beats mmap 3504.5 vs 2745.5 median QPS (+27.6%) in this
+    memory-pressure window. This explains the earlier cross-backend projection error; the banked
+    fast-window curve remains higher, so no CSV change.
+  ABBA HARNESS: experiments/abba_bench.py now chooses the least-busy physical core while counting its
+    SMT sibling, pins both arms, warms each, alternates ABBA/BAAB, and records every raw recall/QPS,
+    page-fault, load, and context-switch sample. Sanity A/B recovers the known graph-prefetch result:
+    pfdist16 / pfdist1 = 3647 / 3572.5 median (+2.04%), recall-identical, zero major faults.
+
 === SESSION SUMMARY (current, 2026-07-12, through P334) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall

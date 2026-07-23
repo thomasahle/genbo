@@ -226,6 +226,105 @@ impl GraphAdj {
     }
 }
 
+/// Base-only cell-local portal sidecar. Each IVF cell owns `p` spherical centroids and its members
+/// are partitioned into `p` contiguous id buckets. At query time we score only the centroids, keep
+/// `PORTAL_KEEP` buckets per routed cell, and use those ids as the initial best-first graph frontier.
+/// This bypasses the fixed PQ cell scan at loose recall. Flag-gated by SBANN_PORTAL_FILE.
+pub struct CellPortals {
+    pub n: usize,
+    pub d: usize,
+    pub nc: usize,
+    pub p: usize,
+    pub cent: Vec<i8>,
+    pub offsets: Vec<u32>,
+    pub ids: Vec<u32>,
+}
+pub static CELL_PORTALS: std::sync::OnceLock<CellPortals> = std::sync::OnceLock::new();
+pub static PORTAL_KEEP: std::sync::atomic::AtomicUsize =
+    std::sync::atomic::AtomicUsize::new(1);
+impl CellPortals {
+    pub fn load(path: &str) -> std::io::Result<Self> {
+        let bytes = std::fs::read(path)?;
+        assert!(bytes.len() >= 40, "portal sidecar too short");
+        assert_eq!(&bytes[..8], b"SBPORT2\0", "bad portal sidecar magic");
+        let n = u64::from_le_bytes(bytes[8..16].try_into().unwrap()) as usize;
+        let npairs = u64::from_le_bytes(bytes[16..24].try_into().unwrap()) as usize;
+        let d = u32::from_le_bytes(bytes[24..28].try_into().unwrap()) as usize;
+        let nc = u32::from_le_bytes(bytes[28..32].try_into().unwrap()) as usize;
+        let p = u32::from_le_bytes(bytes[32..36].try_into().unwrap()) as usize;
+        let ncent = nc * p * d;
+        let noff = nc * p + 1;
+        let want = 40 + ncent + noff * 4 + npairs * 4;
+        assert_eq!(bytes.len(), want, "portal sidecar length mismatch");
+        let cent = bytes[40..40 + ncent].iter().map(|&x| x as i8).collect();
+        let mut at = 40 + ncent;
+        let offsets = bytes[at..at + noff * 4]
+            .chunks_exact(4)
+            .map(|x| u32::from_le_bytes(x.try_into().unwrap()))
+            .collect();
+        at += noff * 4;
+        let ids = bytes[at..]
+            .chunks_exact(4)
+            .map(|x| u32::from_le_bytes(x.try_into().unwrap()))
+            .collect();
+        Ok(Self { n, d, nc, p, cent, offsets, ids })
+    }
+
+    pub fn select(&self, q: &[i8], cells: &[u32], keep: usize) -> Vec<u32> {
+        let vnni = std::is_x86_feature_detected!("avx512vnni")
+            && std::is_x86_feature_detected!("avx512bw")
+            && std::is_x86_feature_detected!("avx512f");
+        let avx = std::is_x86_feature_detected!("avx2");
+        let keep = keep.clamp(1, self.p);
+        let mean_bucket = self.ids.len() / (self.nc * self.p).max(1);
+        let mut out = Vec::with_capacity(cells.len() * keep * mean_bucket);
+        let mut score = Vec::with_capacity(self.p);
+        for &cell in cells {
+            let c = cell as usize;
+            if c >= self.nc { continue; }
+            if keep == 1 {
+                let mut best = (i32::MAX, 0);
+                for j in 0..self.p {
+                    let row = &self.cent[(c * self.p + j) * self.d..(c * self.p + j + 1) * self.d];
+                    let dot = if vnni {
+                        unsafe { simd::dot_i8_vnni(q, row) }
+                    } else if avx {
+                        unsafe { simd::dot_i8_avx2(q, row) }
+                    } else {
+                        -simd::negdot_i8(q, row)
+                    };
+                    best = best.min((-dot, j));
+                }
+                let b = c * self.p + best.1;
+                let lo = self.offsets[b] as usize;
+                let hi = self.offsets[b + 1] as usize;
+                out.extend_from_slice(&self.ids[lo..hi]);
+                continue;
+            }
+            score.clear();
+            for j in 0..self.p {
+                let row = &self.cent[(c * self.p + j) * self.d..(c * self.p + j + 1) * self.d];
+                let dot = if vnni {
+                    unsafe { simd::dot_i8_vnni(q, row) }
+                } else if avx {
+                    unsafe { simd::dot_i8_avx2(q, row) }
+                } else {
+                    -simd::negdot_i8(q, row)
+                };
+                score.push((-dot, j));
+            }
+            if keep < score.len() { score.select_nth_unstable(keep - 1); }
+            for &(_, j) in &score[..keep] {
+                let b = c * self.p + j;
+                let lo = self.offsets[b] as usize;
+                let hi = self.offsets[b + 1] as usize;
+                out.extend_from_slice(&self.ids[lo..hi]);
+            }
+        }
+        out
+    }
+}
+
 /// PQ4-NAV (P341, gate-1-validated): resident plain 4-bit PQ sidecar — the union/beam is navigated and
 /// the float-rerank survivors selected by a 16-entry-per-sub LUT sum over m=d/2 one-byte codes (m bytes
 /// = ~1 cache line/row vs int8's d bytes), SKIPPING the int8 rescore stage entirely. Gate (DEEP-1M,
@@ -773,7 +872,7 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
     use std::sync::atomic::Ordering::Relaxed;
     let prof = PROFILE.load(Relaxed);
     let tg = if prof { Some(std::time::Instant::now()) } else { None };
-    if pool.is_empty() { return Vec::new(); }
+    if pool.is_empty() && seeds.is_empty() { return Vec::new(); }
     let ke = GRAPH_KEDGE.load(Relaxed).clamp(1, graph.k);
     // FUSED dedup + union build (one open-addressing hash pass, cache-hot ~8KB): the SOAR-duplicated fused
     // pool is deduped by orig (dups share raw => share apq4 dist, so first-occurrence dist is the min) while
@@ -3241,7 +3340,6 @@ impl Index {
     pub fn scan_rerank_frr(&self, ds: &I8Bin, q: &[i8], qf: &[f32], fbase: &crate::fbin::FBin, cells: &[u32], t: usize, k: usize,
         graph: Option<&GraphAdj>) -> Vec<u32> {
         let prof = PROFILE.load(std::sync::atomic::Ordering::Relaxed);
-        let ctx = self.comp.prepare_query(q);
         let sorted_store;
         let cells: &[u32] = if SORTCELLS.load(std::sync::atomic::Ordering::Relaxed) {
             let mut v = cells.to_vec();
@@ -3249,6 +3347,42 @@ impl Index {
             sorted_store = v;
             &sorted_store
         } else { cells };
+        if let (Some(portals), Some(g), true) = (
+            CELL_PORTALS.get(),
+            graph,
+            CASCADE.load(std::sync::atomic::Ordering::Relaxed),
+        ) {
+            let ts = if prof { Some(std::time::Instant::now()) } else { None };
+            let seeds = portals.select(
+                q,
+                cells,
+                PORTAL_KEEP.load(std::sync::atomic::Ordering::Relaxed),
+            );
+            if let Some(ts) = ts {
+                PROF_SCAN_NS.fetch_add(
+                    ts.elapsed().as_nanos() as u64,
+                    std::sync::atomic::Ordering::Relaxed,
+                );
+            }
+            let mut empty_pool = Vec::new();
+            return rerank_cascade_graph(
+                ds,
+                fbase,
+                &self.slot_orig,
+                &self.raw,
+                self.raw_orig_indexed,
+                self.d,
+                q,
+                qf,
+                &mut empty_pool,
+                g,
+                &seeds,
+                GRAPH_M.load(std::sync::atomic::Ordering::Relaxed),
+                CASCADE_K.load(std::sync::atomic::Ordering::Relaxed),
+                k,
+            );
+        }
+        let ctx = self.comp.prepare_query(q);
         let ts = if prof { Some(std::time::Instant::now()) } else { None };
         let need_dedup = self.a0 >= DEDUP_A0.load(std::sync::atomic::Ordering::Relaxed) || POOLDEDUP.load(std::sync::atomic::Ordering::Relaxed);
         let residq_active = RESIDQ.load(std::sync::atomic::Ordering::Relaxed) && !self.rq_cent.is_empty();
@@ -3576,6 +3710,52 @@ impl Index {
             cell_off.push(cells_flat.len() as u32);
         }
         if let Some(t0) = t0 { PROF_ROUTE_NS.fetch_add(t0.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed); }
+        if let (Some(portals), Some(g), true) = (
+            CELL_PORTALS.get(),
+            graph,
+            CASCADE.load(std::sync::atomic::Ordering::Relaxed),
+        ) {
+            let gm = GRAPH_M.load(std::sync::atomic::Ordering::Relaxed);
+            let kk = CASCADE_K.load(std::sync::atomic::Ordering::Relaxed);
+            let keep = PORTAL_KEEP.load(std::sync::atomic::Ordering::Relaxed);
+            let mut results = Vec::with_capacity(nq);
+            for i in 0..nq {
+                let q = &queries[i * d..i * d + d];
+                let qf = &qf_all[i * d..i * d + d];
+                let cells = &cells_flat[cell_off[i] as usize..cell_off[i + 1] as usize];
+                let ts = if prof { Some(std::time::Instant::now()) } else { None };
+                let mut seeds = portals.select(q, cells, keep);
+                if let Some((s, tbl)) = SEED_IDS.get() {
+                    if *s > 0 && (q_base + i + 1) * s <= tbl.len() {
+                        seeds.extend_from_slice(&tbl[(q_base + i) * s..(q_base + i + 1) * s]);
+                    }
+                }
+                if let Some(ts) = ts {
+                    PROF_SCAN_NS.fetch_add(
+                        ts.elapsed().as_nanos() as u64,
+                        std::sync::atomic::Ordering::Relaxed,
+                    );
+                }
+                let mut empty_pool = Vec::new();
+                results.push(rerank_cascade_graph(
+                    ds,
+                    fbase,
+                    &self.slot_orig,
+                    &self.raw,
+                    self.raw_orig_indexed,
+                    self.d,
+                    q,
+                    qf,
+                    &mut empty_pool,
+                    g,
+                    &seeds,
+                    gm,
+                    kk,
+                    k,
+                ));
+            }
+            return results;
+        }
         let ctxs: Vec<QueryCtx> = (0..nq).map(|i| self.comp.prepare_query(&queries[i * d..i * d + d])).collect();
 
         // (2) invert (query,cell) -> cell-major via a counting sort. cnt[c] = start offset of cell c's

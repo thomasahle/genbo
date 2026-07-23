@@ -1458,6 +1458,29 @@ and coverage.
     $m{=}384$ --- the int8 pass's ordering is too noisy for any affordable keep
     rate (top-$2000$ of $8000$ retains the true neighbor only $53\%$ of the time),
     so the prefilter cannot shrink the int16 work without recall loss.
+  \item \textbf{Projected-int8 preselection at low dimension}: an engine-faithful
+    gate on exact top-$2100$ unions retains only $0.853$ of the full-int8 top-$32$
+    when a 64-dimensional random projection culls to 256 rows. At 80 of 96
+    dimensions containment reaches $0.968$, but both representations still fetch
+    two cache lines per row, so the projection saves no memory transaction.
+  \item \textbf{Exact partial-dot pruning}: even an optimistic oracle, given the
+    eventual top-$32$ threshold and allowed to read the query-adaptive best 48 of
+    96 dimensions first, must finish-score $91.9\%$ of rows (90th percentile
+    $100\%$). Smaller stripes reject less; bounds cannot amortize a second pass.
+  \item \textbf{Cross-query cohort scoring}: optimistically clustering waiting
+    queries before forming batches of 16 leaves a $0.820$ mean unique-candidate
+    fraction (90th percentile $0.985$). The resulting ${\le}18\%$ mean row reuse
+    cannot pay for scheduling and a query-by-row score tile; smaller batches are
+    worse.
+  \item \textbf{Cell-local portals}: partitioning every routed cell into 16
+    quantized spherical subclusters is a genuine coverage mechanism --- at
+    DEEP-10M, probing eight cells and one portal per cell reaches $0.913$ oracle
+    coverage after the same three-hop graph, from $0.423$ before it. Yet the
+    185\,MB sidecar merely replaces the cheap PQ scan without shrinking the
+    graph/rescore floor: paired end-to-end ABBA gives $0.9010$@$3508$ QPS versus
+    $0.9012$@$3488$ for the scan path (a $0.6\%$ tie), and a slightly wider walk
+    is $0.7\%$ slower for $+0.0016$ recall. It therefore remains an opt-in
+    experimental path, not a frontier point.
 \end{itemize}
 \emph{The OOD negatives cluster on the scan/code side and all fail there; the
 \S\ref{sec:gamma}--\S\ref{sec:soar} levers cluster on routing/coverage and all succeed. In-distribution the
@@ -1569,6 +1592,11 @@ within a round and report the \emph{median of per-round ratios}; (iv) recompute
 recall from raw ids, never trusting a cached number. On a shared machine, load drift
 between two builds minutes apart exceeds the effects being measured, so only
 interleaved same-window ratios and load-independent recall are trusted.
+For engine-level ablations a reusable runner pins both arms to the least-busy physical
+core (charging activity on its SMT sibling), warms each arm, alternates
+ABBA/BAAB, and preserves every raw result together with load, page faults, and
+involuntary context switches; a recall-identical prefetch control reproduces a
+$2.0\%$ known effect with zero major faults.
 
 \paragraph{Warm-resident semantics; pristine confirmation.} Both systems measured
 warm and resident (leaderboard serving); cold-spawn effects are excluded

@@ -495,6 +495,28 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
         for i in 0..nq { v[i * ds.d..i * ds.d + ds.d].copy_from_slice(fq.row(i)); }
         v
     } else { Vec::new() };
+    // CELL-PORTAL loose-recall path: base-only spherical subclusters inside each IVF cell. The selected
+    // buckets replace the PQ scan pool and seed the unchanged best-first graph continuation.
+    if let Ok(path) = std::env::var("SBANN_PORTAL_FILE") {
+        use std::sync::atomic::Ordering::Relaxed;
+        let portals = vq::CellPortals::load(&path).expect("load portal sidecar");
+        assert_eq!(portals.n, ds.nb, "portal/base row count mismatch");
+        assert_eq!(portals.d, ds.d, "portal/base dimension mismatch");
+        assert!(
+            portals.nc >= idx.router.n_cells(),
+            "portal sidecar has fewer cells than the loaded index"
+        );
+        if let Ok(v) = std::env::var("SBANN_PORTAL_KEEP") {
+            vq::PORTAL_KEEP.store(v.parse().expect("SBANN_PORTAL_KEEP"), Relaxed);
+        }
+        println!(
+            "  [CELL-PORTALS] {path} cells={} P={} keep={}",
+            portals.nc,
+            portals.p,
+            vq::PORTAL_KEEP.load(Relaxed)
+        );
+        let _ = vq::CELL_PORTALS.set(portals);
+    }
     // GRAPH-AUGMENTED POOL EXPANSION (SBANN_GRAPH_FILE, temporary A/B sidecar): a raw little-endian u32
     // n*k IP-kNN adjacency (no header). Enables the graph union rescore on the FLOAT_RERANK cascade path
     // (batched + per-query). k is inferred from the file size; M/kedge/pfdist come from env (defaults set
@@ -2476,6 +2498,32 @@ fn main() {
             }
             w.flush().unwrap();
             println!("[dumpassign] nc={nc} pairs={npairs} -> {}", &a[2]);
+        }
+        // dumproute <query.i8bin> <out.u32> <p> [nq]: dump the exact query-time router output.
+        // File format: nq:u32, p:u32, followed by nq*p cell ids in query-major order.
+        // This is a read-only oracle hook for cell-local portal and cohort experiments.
+        Some("dumproute") => {
+            let lp = std::env::var("SBANN_INDEX_LOAD").expect("dumproute needs SBANN_INDEX_LOAD");
+            let idx = vq::Index::load_from(&lp).expect("index load");
+            let qs = I8Bin::open(&a[2]).expect("query i8bin");
+            assert_eq!(qs.d, idx.d, "query/index dimension mismatch");
+            let p: usize = a[4].parse().expect("p");
+            let nq = a.get(5).map(|s| s.parse().expect("nq")).unwrap_or(qs.nb).min(qs.nb);
+            let routes = idx.router.probe_batch(
+                unsafe { std::slice::from_raw_parts(qs.row(0).as_ptr(), nq * qs.d) },
+                nq,
+                qs.d,
+                p,
+            );
+            let mut w = std::io::BufWriter::new(std::fs::File::create(&a[3]).expect("out"));
+            use std::io::Write;
+            w.write_all(&(nq as u32).to_le_bytes()).unwrap();
+            w.write_all(&(p as u32).to_le_bytes()).unwrap();
+            for c in routes {
+                w.write_all(&c.to_le_bytes()).unwrap();
+            }
+            w.flush().unwrap();
+            println!("[dumproute] nq={nq} p={p} -> {}", &a[3]);
         }
         Some("run") => run(&a[2], &a[3], &a[4], &a[5], &a[6], a.get(7).map(|s| s.parse().unwrap()).unwrap_or(2), a.get(8).map(|s| s.parse().unwrap()).unwrap_or(4096), a.get(9).map(|s| s.parse().unwrap()).unwrap_or(30), false),
         Some("runb") => run(&a[2], &a[3], &a[4], &a[5], &a[6], a.get(7).map(|s| s.parse().unwrap()).unwrap_or(2), a.get(8).map(|s| s.parse().unwrap()).unwrap_or(4096), a.get(9).map(|s| s.parse().unwrap()).unwrap_or(30), true),

@@ -1,0 +1,57 @@
+# Post-boundary experiment gates
+
+These scripts reproduce the P346 tests without changing the champion path.
+They intentionally use absolute paths to the local big-ANN corpus so the
+recorded JSON configurations are directly executable on the measurement host.
+
+## Cheap gates
+
+Run the projection, exact-bound, and query-cohort gates on DEEP-1M:
+
+```sh
+/home/thomas-ahle/scann_venv/bin/python gate_next_rungs.py \
+  --out /home/thomas-ahle/big-ann-data/deep10m/next_rungs_gate_nq500.json
+```
+
+The script requires NumPy and FAISS. Its exact top-2100 candidate set is a
+conservative adversarial union: all rows are genuine near neighbours.
+
+## Cell-local portals
+
+Dump the loaded index's assignment and exact router output:
+
+```sh
+SBANN_INDEX_LOAD=/home/thomas-ahle/big-ann-data/deep10m/eng_deep10m_kf65536.idx \
+  ../target/release/sbann dumpassign \
+  /home/thomas-ahle/big-ann-data/deep10m/deep10m_assign.u32
+
+SBANN_INDEX_LOAD=/home/thomas-ahle/big-ann-data/deep10m/eng_deep10m_kf65536.idx \
+  ../target/release/sbann dumproute \
+  /home/thomas-ahle/big-ann-data/deep10m/query2k.i8bin \
+  /home/thomas-ahle/big-ann-data/deep10m/routes_p8_nq500.u32 8 500
+```
+
+Then run the oracle and build the full sidecar:
+
+```sh
+python3 gate_cell_portals.py --nq 500 --portals 16 --keeps 1,2 \
+  --out /home/thomas-ahle/big-ann-data/deep10m/cell_portal_gate_i8.json
+python3 build_cell_portals.py
+```
+
+The engine path is opt-in through `SBANN_PORTAL_FILE`; `SBANN_PORTAL_KEEP`
+defaults to one. It also requires the existing graph cascade.
+
+## Paired measurements
+
+`abba_bench.py` selects and pins the least-busy physical core (including its
+SMT sibling in the activity score), warms both arms, alternates ABBA/BAAB, and
+records every raw result plus load, faults, and context switches:
+
+```sh
+python3 abba_bench.py abba_deep_portals.json --rounds 2 \
+  --out /home/thomas-ahle/big-ann-data/deep10m/abba_portals_gate.json
+```
+
+The prefetch and resident JSON files are positive-control and storage-backend
+controls for the same runner.
