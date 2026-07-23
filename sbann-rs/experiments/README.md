@@ -55,3 +55,32 @@ python3 abba_bench.py abba_deep_portals.json --rounds 2 \
 
 The prefetch and resident JSON files are positive-control and storage-backend
 controls for the same runner.
+
+## Graph-local physical layout
+
+First dump an exact engine union trace with `SBANN_DUMP_UNIONS`, then derive a
+query-independent cell-pair permutation and materialize the int8 base and graph
+under that same id relabeling:
+
+```sh
+python3 gate_graph_layout.py \
+  --materialize-layout cellpair --materialize-graph \
+  --sort-graph-neighbors --base-offset 64
+```
+
+At search time, supply all three matching artifacts:
+
+```sh
+SBANN_GRAPH_BASE=/home/thomas-ahle/big-ann-data/deep10m/graph_layout_gate.cellpair.aligned64.i8bin \
+SBANN_GRAPH_BASE_OFFSET=64 \
+SBANN_GRAPH_RANK=/home/thomas-ahle/big-ann-data/deep10m/graph_layout_gate.cellpair.u32 \
+SBANN_GRAPH_FILE=/home/thomas-ahle/big-ann-data/deep10m/graph_layout_gate.cellpair.graphsorted.u32 \
+SBANN_RESIDENT_I8=1 \
+  ../target/release/sbann run ...
+```
+
+`unionbench` replays the graph suffix of a `GUN1` trace without routing or graph
+bookkeeping. `abba_deep_graph_layout_aligned.json` measures the complete engine
+against the unchanged id order. `abba_deep_layout_vs_roar_090.json` additionally
+contains named `--variant` points from recall 0.90 through 0.991 for direct
+RoarGraph ABBA comparisons.

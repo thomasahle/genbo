@@ -18,6 +18,7 @@ Config schema:
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import os
 import re
@@ -30,6 +31,30 @@ from typing import Any
 
 
 RESULT_RE = re.compile(r"recall@10=([0-9.]+)\s+QPS=([0-9]+)")
+
+
+def apply_variant(cfg: dict[str, Any], name: str | None) -> dict[str, Any]:
+    if name is None:
+        return cfg
+    variants = {variant["name"]: variant for variant in cfg.get("variants", [])}
+    if name not in variants:
+        choices = ", ".join(sorted(variants)) or "(none)"
+        raise ValueError(f"unknown variant {name!r}; choices: {choices}")
+    out = copy.deepcopy(cfg)
+    variant = variants[name]
+    for key in ("a", "b"):
+        patch = variant.get(key, {})
+        arm = out[key]
+        if "name" in patch:
+            arm["name"] = patch["name"]
+        if "result_regex" in patch:
+            arm["result_regex"] = patch["result_regex"]
+        arm.setdefault("env", {}).update(patch.get("env", {}))
+        replacements = {
+            str(old): str(new) for old, new in patch.get("argv_replace", {}).items()
+        }
+        arm["argv"] = [replacements.get(str(arg), arg) for arg in arm["argv"]]
+    return out
 
 
 def cpu_busy_ticks() -> dict[int, int]:
@@ -118,17 +143,22 @@ def run_arm(
     )
     wall = time.monotonic() - t0
     ru1 = rusage_snapshot()
-    matches = RESULT_RE.findall(proc.stdout)
+    result_re = re.compile(cfg.get("result_regex", RESULT_RE.pattern), re.MULTILINE)
+    matches = list(result_re.finditer(proc.stdout))
     if proc.returncode != 0 or not matches:
         raise RuntimeError(
             f"{cfg['name']} failed rc={proc.returncode}, matches={len(matches)}\n"
             f"{proc.stdout[-4000:]}"
         )
-    recall, qps = matches[-1]
+    match = matches[-1]
+    if {"recall", "qps"} <= match.groupdict().keys():
+        recall, qps = match.group("recall"), match.group("qps")
+    else:
+        recall, qps = match.group(1), match.group(2)
     return {
         "arm": cfg["name"],
         "recall": float(recall),
-        "qps": int(qps),
+        "qps": float(qps),
         "wall_s": wall,
         "load1": load0[0],
         "load5": load0[1],
@@ -173,9 +203,10 @@ def main() -> None:
     ap.add_argument("--core", type=int)
     ap.add_argument("--no-warmup", action="store_true")
     ap.add_argument("--out", type=Path)
+    ap.add_argument("--variant", help="named arm override from config's variants list")
     args = ap.parse_args()
 
-    cfg = json.loads(args.config.read_text())
+    cfg = apply_variant(json.loads(args.config.read_text()), args.variant)
     arms = {"a": cfg["a"], "b": cfg["b"]}
     if args.core is None:
         core, siblings, busy = choose_core()

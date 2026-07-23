@@ -1275,12 +1275,13 @@ beats HNSW by ${\sim}1.27$--$1.9\times$ (1t) at matched recall once both use \em
 graphs (Table~\ref{tab:cohere}); the usable graph comes from the internal NN-descent pass,
 not from routed self-search, which is coverage-capped at this dimension (\S\ref{sec:graph}).}
 
-\section{Resident Tiers: a 4-bit Rung and the Memory System}
+\section{Resident Tiers, Physical Layout, and the Memory System}
 \label{sec:resident}
-Three levers below the algorithmic level move the frontier at $d{\ge}512$, where a
-candidate row spans $8$--$16$ cache lines and the union rescore is line-fetch-bound
-(measured: prefetch-depth sweeps are flat, machinery is minor, the scoring loop is
-${\sim}115$\,ns/row).
+Four levers below the algorithmic level move the frontier. The first three target
+$d{\ge}512$, where a candidate row spans $8$--$16$ cache lines and the union
+rescore is line-fetch-bound (measured: prefetch-depth sweeps are flat, machinery is
+minor, the scoring loop is ${\sim}115$\,ns/row); the fourth recovers locality even
+for short rows.
 
 \paragraph{SQ4 rung.} A resident sidecar stores each int8 row scalar-quantized to
 4 bits per dimension (nibble-packed, $d/2$ bytes/row --- half the lines), with
@@ -1305,6 +1306,18 @@ fails the same gate at $0.44$--$0.78$).
 anonymous (transparent-hugepage-eligible) memory at load --- byte-identical data,
 ${\sim}500\times$ fewer TLB entries.
 
+\paragraph{Graph-local physical order.} Original row ids are effectively random
+with respect to both IVF cells and graph edges, so a query's graph suffix scatters
+across almost one 4\,KB page per row. We derive a query-independent permutation
+from the unordered pair of fine cells to which each $a_0{=}2$ base row is assigned,
+then relabel the int8 base, graph rows, and graph edge ids together. IVF seeds are
+translated once on entry and the final shortlist once on exit; all distances and
+the float rerank still use original ids. Padding the file header to 64 bytes aligns
+the first dense row, and sorting each already-fixed adjacency by physical id adds
+spatial prefetch without changing its edge set. On an exact 2,000-query DEEP trace,
+the graph suffix averages 1,215 rows/query: distinct 4\,KB pages per graph row fall
+$1.020\to0.512$, while sampled graph edges within one page rise to $7.1\%$.
+
 \paragraph{fp16 rerank base.} At $35$M/$d{=}1024$ the float rerank's $143$\,GB f32
 mmap cannot stay page-cache-resident next to the other tiers, and the exact-rerank
 stage degrades to page-fault speed under memory pressure. A resident fp16 copy
@@ -1321,7 +1334,12 @@ rerun gains $35$--$44\%$ in the mid-band for $0.0010$--$0.0017$ recall, but does
 beat the banked fast-window frontier and loses at the high-recall tail. On DEEP-10M
 ($d{=}96$, 2-line rows) the same rung \emph{loses} outright --- there is nothing to
 save and the nibble noise costs recall --- a clean confirmation that the mechanism
-is the memory system, not arithmetic. Hugepage residency cuts the in-window rescore
+is the memory system, not arithmetic. The physical-order lever instead targets
+DEEP's scattered graph suffix directly: trace replay improves $17$--$18\%$, and a
+full-engine paired ABBA at recall $0.9012$ improves median QPS $2738\to3337$
+($+21.9\%$), with identical recall; the gain remains $17$--$21\%$ through recall
+$0.96$. Making that relabeled base hugepage-resident adds $12.4\%$ in a hostile
+cross-engine cache window. Hugepage residency cuts the in-window rescore
 cost $2$--$3\times$ per matched profile legs ($372$--$862$ vs $1276$\,ns/row); the
 fp16 base cuts the wiki float stage from $9.4$\,ms to $106$--$175\,\mu$s/query under
 the same memory pressure at a $-0.001$ recall difference (DEEP-1M parity check
@@ -1715,13 +1733,15 @@ the frontier, $2.6$--$10\times$ HNSW at matched recall (rising toward HNSW's $0.
 ceiling), exceeding both recall ceilings ($0.9883$) ---
 and on DEEP-10M ($L_2$, $d{=}96$) ours leads HNSW ${\sim}2\times$ and ties ScaNN.
 Against RoarGraph the outcome on DEEP is a \emph{crossover}: widening our self-built
-graph (doubling per-node degree from a converged $k$NN pool, $+35$--$60\%$ QPS) and
+graph (doubling per-node degree from a converged $k$NN pool, $+35$--$60\%$ QPS),
+placing its rows in graph-local physical order ($+17$--$22\%$), and
 widening the int8-survivor rerank pool (recovering ${\sim}4\%$ of quantization-
 misranked tail neighbours at ${\sim}0$ cost) lifts our frontier so that we win or tie
-the entire high-recall regime (ties at $0.98$ and $0.9934$, ahead $1.06$--$1.09\times$
-above recall $0.985$, reaching $0.9987$ beyond RoarGraph's measured ceiling), while
-RoarGraph retains the loose-recall corner (recall ${<}0.96$: ${\sim}1.25\times$ at
-$0.90$, up to $1.33\times$ at very loose recall) --- there its short adaptive walk
+the high-recall regime (strict paired medians: $1.07\times$ at recall
+$0.9814/0.9816$ and $1.16\times$ at $0.9907/0.9909$, reaching $0.9987$ beyond
+RoarGraph's measured ceiling), while RoarGraph retains the loose-recall corner
+(recall below ${\sim}0.98$: $1.84\times$ at $0.90$, narrowing to $1.17\times$ at
+$0.96$) --- there its short adaptive walk
 amortizes better than our fixed routing$+$scan cost. An ablation at matched edge budget shows the graph-side gain is
 edge \emph{count} and pool quality, not Vamana-style diversification (a wash for an
 IVF-seeded cascade). The OOD extreme flipped \emph{entirely} with three levers: on
@@ -1738,7 +1758,7 @@ $0.81$ through $0.98$, past its published-benchmark ceiling --- with our side
 measured on a loaded machine against its quiet-window curve, so each margin
 ($1.3$--$1.7\times$) is a lower bound. The remaining boundary obeys the bottleneck
 theory: among \emph{build-eligible} methods, only at low dimension and loose recall
-(DEEP ${<}0.96$) does frontier ownership pass to the cheapest materialized-adjacency
+(DEEP below ${\sim}0.98$) does frontier ownership pass to the cheapest materialized-adjacency
 walk; the build-unconstrained $6.5$h RoarGraph additionally keeps the Wikipedia
 $0.93$--${\sim}0.975$ band (Figure~\ref{fig:frontier} caption) --- narrowed from
 above by a $48$-edge self-built graph ($2.8$ h seeded NN-descent, still under
@@ -1873,10 +1893,12 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
   ($d{=}100$) we beat every baseline at every measured point ($1.45$--$2.8\times$
   RoarGraph, exceeding HNSW's ceiling); RoarGraph's curve required padding its input
   to $d{=}104$ --- its released code silently corrupts dimensions not divisible by 8.
-  On DEEP 10M ($d{=}96$) the outcome is a \emph{crossover}: we win or tie the entire
-  high-recall regime (recall ${\ge}0.98$, reaching $0.9987$ beyond RoarGraph's
-  ceiling) while RoarGraph retains the loose-recall corner (recall ${<}0.96$, up to
-  $1.3\times$) --- cheap short graph walks amortize better than our fixed
+  On DEEP 10M ($d{=}96$) the outcome is a \emph{crossover}: graph-local physical
+  ordering raises our QPS $17$--$22\%$, and strict paired runs put us
+  $1.07\times$ ahead at recall $0.9815$ and $1.16\times$ at $0.9908$ (reaching
+  $0.9987$ beyond RoarGraph's ceiling), while RoarGraph retains the loose-recall
+  corner below ${\sim}0.98$ (from $1.84\times$ at $0.90$ to $1.17\times$ at
+  $0.96$) --- cheap short graph walks amortize better than our fixed
   routing$+$scan cost when few neighbours are needed at low dimension.}
   \label{fig:frontier}
 \end{figure}

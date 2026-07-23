@@ -5421,6 +5421,34 @@ P347 [2026-07-23] USER-FACING SEARCH POLICIES — balanced defaults replace acci
     target-recall->fast, and explicit PLIST/TFLOOR/CASCADE_K/graph overrides defeating accurate.
     Documented in sbann-rs/README.md and paper sec:presets; no headline frontier/CSV claims changed.
 
+P348 [2026-07-23] GRAPH-LOCAL PHYSICAL ORDER — +22% DEEP engine gain; strict Roar crossover is ~0.98.
+  DIAGNOSIS: SBANN_DUMP_UNIONS records exact GUN1 engine unions. At the representative DEEP-10M
+    p2/h3/M24 point, the union averages 1643 rows/query, of which 1215 are the graph suffix. Original
+    ids scatter that suffix over 1.020 distinct 4KB pages/row; the rescore is the loose-corner floor.
+  LAYOUT: a query-independent permutation sorts each base row by its unordered pair of a0=2 IVF cells.
+    The int8 base, graph rows, and graph edge ids are relabeled together; IVF ids translate once on
+    entry and final ids once on exit. A 64-byte padded header aligns row zero; adjacency rows are
+    sorted by physical id without changing edges. The graph suffix falls to 0.512 pages/row, 3.18%
+    consecutive accesses land within 4KB, and 7.13% of sampled graph edges lie within 4KB.
+  GATES: unionbench exact-trace replay improves 99.0->81.7ns/row (17-18%); 64B row-origin alignment
+    gives a further 60.9->52.4ns/row in the warm replay. Full paired ABBA at recall 0.9012 improves
+    2737.5->3337 median QPS (+21.90%), zero major faults. Across p2/4/8/16 the complete engine gain
+    remains ~21/21/18/17% with recall unchanged except a +0.0001 equal-score tie at p4.
+  RESIDENCY: SBANN_RESIDENT_I8 now targets the active relabeled base and keeps it 64B-aligned without
+    also copying the unused original mmap. In cross-engine ABBA at recall 0.90 it raises genbo
+    3157.5->3550 median QPS (+12.4%); residency helps but does not erase the loose-corner algorithmic
+    floor. Profile at p2 remains route 22%, graph bookkeeping 6%, union rescore 45%, float 24%.
+  STRICT SOTA VERDICT (2 rounds, ABBA/BAAB, least-busy physical core, 1t, matched recalls):
+    recall 0.901/0.903: genbo 3550 vs Roar 6536 (Roar 1.84x);
+    0.924/0.926: 3398 vs 5472 (1.61x); 0.941/0.943: 3220 vs 4520 (1.40x);
+    0.960/0.961: 3001 vs 3497 (1.17x). The crossover is noisy near 0.972 (genbo 1.04x
+    median in a contention phase), then clean: 0.9814/0.9816 = 2308 vs 2158 (genbo 1.07x);
+    0.9907/0.9909 = 1660 vs 1431 (genbo 1.16x). Thus the old DEEP-<0.96 boundary was too
+    optimistic: Roar owns below ~0.98; genbo owns the high-recall tail.
+  TOOLING/ARTIFACTS: unionbench; gate_graph_layout.py; layout-aware exact engine path; ABBA custom
+    regex + named variants. Results in deep10m/{graph_layout_gate.json,abba_graph_layout_*,
+    abba_layout*_vs_roar_*.json}. Paper sec:resident, DEEP prose/caption, and frontier CSV updated.
+
 === SESSION SUMMARY (current, 2026-07-12, through P334) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall

@@ -25,18 +25,26 @@ unsafe impl Sync for I8Bin {}
 
 impl I8Bin {
     pub fn open(path: &str) -> io::Result<Self> {
+        Self::open_with_data_offset(path, 8)
+    }
+
+    /// Open an i8bin-compatible file whose two-u32 header is followed by explicit padding.
+    /// The graph-layout experiment uses offset 64 so row 0 starts on a cache-line boundary while
+    /// retaining the ordinary (nb,d) header and dense d-byte row stride.
+    pub fn open_with_data_offset(path: &str, data_offset: usize) -> io::Result<Self> {
+        assert!(data_offset >= 8, "i8bin data offset must retain the 8-byte header");
         let f = File::open(path)?;
         let mmap = unsafe { Mmap::map(&f)? };
         assert!(mmap.len() >= 8, "file too small for header");
         let nb = u32::from_le_bytes(mmap[0..4].try_into().unwrap()) as usize;
         let d = u32::from_le_bytes(mmap[4..8].try_into().unwrap()) as usize;
         assert!(
-            mmap.len() >= 8 + nb * d,
+            mmap.len() >= data_offset + nb * d,
             "file truncated: have {} need {}",
             mmap.len(),
-            8 + nb * d
+            data_offset + nb * d
         );
-        let base = unsafe { mmap.as_ptr().add(8) } as *const i8;
+        let base = unsafe { mmap.as_ptr().add(data_offset) } as *const i8;
         Ok(Self { _mmap: mmap, nb, d, base, _resident: None })
     }
 
@@ -57,12 +65,19 @@ impl I8Bin {
 
     /// RESIDENT-I8 (P346): copy the vector region into anonymous memory (THP-eligible under
     /// `transparent_hugepage=[always]`) and repoint `base`. Kills the per-row TLB miss + page walk of
-    /// scattered rescore gathers over the 4KB-paged file mmap. Byte-identical data — recall unchanged.
+    /// scattered rescore gathers over the 4KB-paged file mmap. The live region is explicitly
+    /// cache-line-aligned; large allocations are often page-aligned already, but Vec does not promise
+    /// that and the graph-layout path relies on a stable 64-byte row origin. Byte-identical data.
     pub fn make_resident(&mut self) {
         let n = self.nb * self.d;
-        let mut buf = vec![0i8; n];
-        buf.copy_from_slice(unsafe { std::slice::from_raw_parts(self.base, n) });
-        self.base = buf.as_ptr();
+        let src = self.base;
+        let mut buf = vec![0i8; n + 63];
+        let misalignment = buf.as_ptr() as usize & 63;
+        let offset = (64 - misalignment) & 63;
+        buf[offset..offset + n]
+            .copy_from_slice(unsafe { std::slice::from_raw_parts(src, n) });
+        self.base = unsafe { buf.as_ptr().add(offset) };
+        debug_assert_eq!(self.base as usize & 63, 0);
         self._resident = Some(buf);
     }
 

@@ -38,6 +38,14 @@ Expert settings always win over a preset. These overrides remain supported:
 - `SBANN_CASCADE_K`: width passed from the int8 stage to float reranking.
 - `SBANN_GRAPH_HOPS`, `SBANN_GRAPH_M`, `SBANN_GRAPH_KEDGE`, and
   `SBANN_GRAPH_BESTFIRST`: graph traversal policy.
+- `SBANN_GRAPH_BASE` and `SBANN_GRAPH_RANK`: a jointly relabeled physical
+  int8 base and original-id-to-physical-id permutation. The supplied
+  `SBANN_GRAPH_FILE` must be relabeled by the same permutation.
+- `SBANN_GRAPH_BASE_OFFSET`: byte offset of the relabeled base payload
+  (normally `64` for cache-line alignment).
+- `SBANN_RESIDENT_I8`: copy the active int8 scoring base into aligned,
+  transparent-hugepage-eligible memory. With a graph layout active this
+  applies to the relabeled base, without retaining a redundant original copy.
 
 Dataset semantics remain explicit: metric selection (`SBANN_IP`), float reranking
 and its files, resident-memory flags, and `SBANN_ROUTE_GAMMA` are not guessed.

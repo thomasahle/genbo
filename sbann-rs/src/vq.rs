@@ -189,6 +189,63 @@ pub static GRAPH_SORT: std::sync::atomic::AtomicBool = std::sync::atomic::Atomic
 /// = cumulative union size (so union-rescore ns/row = PROF_CASC_NS/PROF_GRAPH_ROWS, the decider metric).
 pub static PROF_GRAPH_NS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 pub static PROF_GRAPH_ROWS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+/// Diagnostic-only graph-union trace. Normal search never locks or allocates here: `run` enables it
+/// only when SBANN_DUMP_UNIONS is present, and the batched driver supplies the stable query index.
+/// Each row retains the pool/graph boundary so layout gates do not incorrectly credit permutation
+/// locality to the slot-resident IVF survivor prefix.
+#[derive(Clone, Default)]
+struct UnionTraceRow {
+    pool_distinct: u32,
+    ids: Vec<u32>,
+}
+static UNION_TRACE_ON: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+static UNION_TRACE: std::sync::Mutex<Vec<UnionTraceRow>> =
+    std::sync::Mutex::new(Vec::new());
+
+pub fn reset_union_trace(nq: usize) {
+    *UNION_TRACE.lock().expect("union trace lock") =
+        vec![UnionTraceRow::default(); nq];
+    UNION_TRACE_ON.store(true, std::sync::atomic::Ordering::Relaxed);
+}
+
+fn record_union_trace(qid: Option<usize>, pool_distinct: usize, ids: &[u32]) {
+    if !UNION_TRACE_ON.load(std::sync::atomic::Ordering::Relaxed) {
+        return;
+    }
+    let Some(qid) = qid else { return };
+    let mut trace = UNION_TRACE.lock().expect("union trace lock");
+    if let Some(row) = trace.get_mut(qid) {
+        row.pool_distinct = pool_distinct.min(u32::MAX as usize) as u32;
+        row.ids.clear();
+        row.ids.extend_from_slice(ids);
+    }
+}
+
+/// Write `GUN1`, nq, then (pool_distinct, union_len, ids...) for each query, all little-endian u32.
+pub fn write_union_trace(path: &str) -> std::io::Result<(usize, usize)> {
+    use std::io::Write;
+    UNION_TRACE_ON.store(false, std::sync::atomic::Ordering::Relaxed);
+    let trace = UNION_TRACE.lock().expect("union trace lock");
+    let mut out = std::io::BufWriter::new(std::fs::File::create(path)?);
+    out.write_all(b"GUN1")?;
+    out.write_all(&(trace.len() as u32).to_le_bytes())?;
+    let mut nonempty = 0usize;
+    let mut total = 0usize;
+    for row in trace.iter() {
+        if !row.ids.is_empty() {
+            nonempty += 1;
+            total += row.ids.len();
+        }
+        out.write_all(&row.pool_distinct.to_le_bytes())?;
+        out.write_all(&(row.ids.len() as u32).to_le_bytes())?;
+        for &id in &row.ids {
+            out.write_all(&id.to_le_bytes())?;
+        }
+    }
+    out.flush()?;
+    Ok((nonempty, total))
+}
 /// QSEED (SBANN_SEED_IDS_FILE): per-query external seed base-ids injected into the graph beam's initial
 /// union so the walk launches from on-manifold entry points (nearest-train-query-voted answers), bypassing
 /// coverage-collapsed routing on extreme-OOD queries. `(S, flat nq*S u32)`; row i = query i's S seeds.
@@ -202,6 +259,49 @@ pub static RBQ_SIGNS: std::sync::OnceLock<(usize, Vec<u8>)> = std::sync::OnceLoc
 /// RBQ-TIER random orthonormal rotation P (d*d, row-major). Applied to base + query BEFORE taking signs so
 /// the 1-bit codes decorrelate the (correlated) embedding coordinates -> Hamming becomes a good angle estimator.
 pub static RBQ_ROT: std::sync::OnceLock<Vec<f32>> = std::sync::OnceLock::new();
+
+/// Experimental graph-local node relabeling. `rank[original] = physical` is applied to IVF seeds;
+/// the supplied graph and int8 base are already stored in physical-id order. Only the final int8
+/// shortlist is translated back through `original[physical]` for the unchanged float rerank/output.
+pub struct GraphLayout {
+    pub base: I8Bin,
+    pub rank: Vec<u32>,
+    pub original: Vec<u32>,
+}
+pub static GRAPH_LAYOUT: std::sync::OnceLock<GraphLayout> = std::sync::OnceLock::new();
+
+pub fn install_graph_layout(
+    base_path: &str,
+    rank_path: &str,
+    data_offset: usize,
+    n: usize,
+    d: usize,
+    resident: bool,
+) {
+    let mut base = I8Bin::open_with_data_offset(base_path, data_offset)
+        .expect("SBANN_GRAPH_BASE");
+    assert_eq!((base.nb, base.d), (n, d), "graph-layout base shape mismatch");
+    if resident {
+        base.make_resident();
+    }
+    let raw = std::fs::read(rank_path).expect("SBANN_GRAPH_RANK");
+    assert_eq!(raw.len(), n * 4, "graph-layout rank must contain n u32 values");
+    let rank: Vec<u32> = raw
+        .chunks_exact(4)
+        .map(|b| u32::from_le_bytes(b.try_into().unwrap()))
+        .collect();
+    let mut original = vec![u32::MAX; n];
+    for (orig, &physical) in rank.iter().enumerate() {
+        assert!((physical as usize) < n, "graph-layout rank out of range");
+        let slot = &mut original[physical as usize];
+        assert_eq!(*slot, u32::MAX, "graph-layout rank is not a permutation");
+        *slot = orig as u32;
+    }
+    assert!(original.iter().all(|&o| o != u32::MAX));
+    GRAPH_LAYOUT
+        .set(GraphLayout { base, rank, original })
+        .unwrap_or_else(|_| panic!("graph layout installed twice"));
+}
 
 /// Flat IP-kNN adjacency sidecar: `k` neighbour orig ids per base row, row-major (`n*k` u32). Loaded from
 /// a raw little-endian u32 file (no header) via SBANN_GRAPH_FILE; `neighbours(orig)` borrows one row.
@@ -869,11 +969,18 @@ fn rerank_orig_float(fbase: &crate::fbin::FBin, qf: &[f32], cand: &[(i32, u32)],
 fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32],
     raw: &[i8], raw_orig_indexed: bool, d: usize,
     q: &[i8], qf: &[f32], pool: &mut Vec<(i32, u32)>, graph: &GraphAdj, seeds: &[u32],
-    m_expand: usize, kk: usize, k: usize) -> Vec<u32> {
+    m_expand: usize, kk: usize, k: usize, trace_qid: Option<usize>) -> Vec<u32> {
     use std::sync::atomic::Ordering::Relaxed;
     let prof = PROFILE.load(Relaxed);
     let tg = if prof { Some(std::time::Instant::now()) } else { None };
     if pool.is_empty() && seeds.is_empty() { return Vec::new(); }
+    let layout = GRAPH_LAYOUT.get();
+    let physical_of = |orig: u32| -> u32 {
+        layout.map_or(orig, |l| l.rank[orig as usize])
+    };
+    let original_of = |physical: u32| -> u32 {
+        layout.map_or(physical, |l| l.original[physical as usize])
+    };
     let ke = GRAPH_KEDGE.load(Relaxed).clamp(1, graph.k);
     // FUSED dedup + union build (one open-addressing hash pass, cache-hot ~8KB): the SOAR-duplicated fused
     // pool is deduped by orig (dups share raw => share apq4 dist, so first-occurrence dist is the min) while
@@ -906,18 +1013,19 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
         for &(dist, s) in pool.iter() {
             let o = slot_orig[s as usize];
             if o == u32::MAX { continue; }
-            let mut h = (o.wrapping_mul(0x9E3779B1) as usize) & mask;
+            let node = physical_of(o);
+            let mut h = (node.wrapping_mul(0x9E3779B1) as usize) & mask;
             loop {
                 let (k, pidx) = set[h];
                 if k == u32::MAX {
-                    set[h] = (o, pooltop.len() as u32);
-                    union.push(o);
+                    set[h] = (node, pooltop.len() as u32);
+                    union.push(node);
                     pooltop.push((dist, s));
                     pool_slot.push(s);   // #2: union[i]'s resident slot for i<pool_distinct
                     if apool > 0 { pool_apq4.push(dist); }
                     break;
                 }
-                if k == o {
+                if k == node {
                     if dist < pooltop[pidx as usize].0 {
                         pooltop[pidx as usize] = (dist, s);
                         if apool > 0 { pool_apq4[pidx as usize] = dist; }
@@ -936,12 +1044,12 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
         // expansions from int8-ranked (not apq4-ranked) seeds, over a global frontier.
         if !bestfirst {
         for &(_, s) in pooltop[..mm].iter() {
-            let o = slot_orig[s as usize] as usize;
+            let o = physical_of(slot_orig[s as usize]) as usize;
             unsafe { _mm_prefetch(graph.neighbours(o).as_ptr() as *const i8, _MM_HINT_T0) };
         }
         // neighbour pass: append graph neighbours not already present (pool orig or an earlier neighbour).
         for &(_, s) in pooltop[..mm].iter() {
-            let o = slot_orig[s as usize] as usize;
+            let o = physical_of(slot_orig[s as usize]) as usize;
             for &nb in &graph.neighbours(o)[..ke] {
                 if nb as usize >= ds.nb { continue; } // hybrid graphs pad missing edges with u32::MAX
                 let mut h = (nb.wrapping_mul(0x9E3779B1) as usize) & mask;
@@ -960,11 +1068,12 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
         // neighbour region even when routing gave coverage-collapsed seeds.
         for &s in seeds {
             if s == u32::MAX || s as usize >= ds.nb { continue; }
-            let mut h = (s.wrapping_mul(0x9E3779B1) as usize) & mask;
+            let node = physical_of(s);
+            let mut h = (node.wrapping_mul(0x9E3779B1) as usize) & mask;
             loop {
                 let (kx, _) = set[h];
-                if kx == u32::MAX { set[h] = (s, u32::MAX); union.push(s); break; }
-                if kx == s { break; }
+                if kx == u32::MAX { set[h] = (node, u32::MAX); union.push(node); break; }
+                if kx == node { break; }
                 h = (h + 1) & mask;
             }
         }
@@ -1037,17 +1146,21 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
     macro_rules! rraw_idx { ($i:expr) => {{
         let ii = $i as usize;
         if !use_raw { usize::MAX }
-        else if raw_orig_indexed { union[ii] as usize }
+        else if raw_orig_indexed && layout.is_none() { union[ii] as usize }
+        else if raw_orig_indexed && ii < pool_distinct { original_of(union[ii]) as usize }
         else if ii < pool_distinct { pool_slot[ii] as usize }
         else { usize::MAX }
     }}; }
     macro_rules! rrow { ($i:expr) => {{
         let ii = $i as usize; let ri = rraw_idx!(ii);
-        if ri != usize::MAX { &raw[ri * d .. ri * d + d] } else { ds.row(union[ii] as usize) }
+        if ri != usize::MAX { &raw[ri * d .. ri * d + d] }
+        else if let Some(gl) = layout { gl.base.row(union[ii] as usize) }
+        else { ds.row(union[ii] as usize) }
     }}; }
     macro_rules! rpf { ($i:expr) => {{
         let ii = $i as usize; let ri = rraw_idx!(ii);
         if ri != usize::MAX { unsafe { _mm_prefetch(raw.as_ptr().add(ri * d) as *const i8, _MM_HINT_T0) }; }
+        else if let Some(gl) = layout { unsafe { _mm_prefetch(gl.base.row(union[ii] as usize).as_ptr() as *const i8, _MM_HINT_T0) }; }
         else { unsafe { _mm_prefetch(ds.row(union[ii] as usize).as_ptr() as *const i8, _MM_HINT_T0) }; }
     }}; }
     // Nav score priority: SQ4 nibble dot > PQ4 LUT sum > RBQ Hamming > int8 -dot. All "smaller=better".
@@ -1055,16 +1168,16 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
         let ii = $i as usize;
         if let Some(codes) = sq4 {
             let hb = d / 2;
-            let o = union[ii] as usize * hb;
+            let o = original_of(union[ii]) as usize * hb;
             -unsafe { simd::dot_sq4_vnni(&sq4_qe, &sq4_qo, &codes[o..o + hb]) }
         } else if let Some(p4) = pq4 {
-            let o = union[ii] as usize;
+            let o = original_of(union[ii]) as usize;
             let crow = &p4.codes[o * p4.m..o * p4.m + p4.m];
             let mut s = 0i32;
             for (mi, &c) in crow.iter().enumerate() { s += lut4[mi * 16 + c as usize]; }
             s
         } else if let Some((b, signs)) = rbq_nav {
-            let o = union[ii] as usize;
+            let o = original_of(union[ii]) as usize;
             let srow = &signs[o * b .. o * b + b];
             let mut pos = 0f32;
             for j in 0..d { if srow[j >> 3] & (1u8 << (j & 7)) != 0 { pos += qrot[j]; } }
@@ -1080,17 +1193,17 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
         let ii = $i as usize;
         if let Some(codes) = sq4 {
             let hb = d / 2;
-            let base = union[ii] as usize * hb;
+            let base = original_of(union[ii]) as usize * hb;
             let ptr = codes.as_ptr();
             let mut off = 0usize;
             while off < hb { unsafe { _mm_prefetch(ptr.add(base + off) as *const i8, _MM_HINT_T0) }; off += 64; }
         } else if let Some(p4) = pq4 {
             let ptr = p4.codes.as_ptr();
-            let base = union[ii] as usize * p4.m;
+            let base = original_of(union[ii]) as usize * p4.m;
             let mut off = 0usize;
             while off < p4.m { unsafe { _mm_prefetch(ptr.add(base + off) as *const i8, _MM_HINT_T0) }; off += 64; }
         }
-        else if let Some((b, signs)) = rbq_nav { unsafe { _mm_prefetch(signs.as_ptr().add(union[ii] as usize * b) as *const i8, _MM_HINT_T0) }; }
+        else if let Some((b, signs)) = rbq_nav { unsafe { _mm_prefetch(signs.as_ptr().add(original_of(union[ii]) as usize * b) as *const i8, _MM_HINT_T0) }; }
         else { rpf!(ii); }
     }}; }
     let mut scored: Vec<(i32, u32)> = Vec::with_capacity(union.len().max(est));
@@ -1234,6 +1347,7 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
     }
     } // end else (per-cohort)
     PROF_GRAPH_ROWS.fetch_add((union.len().saturating_sub(pool_distinct + m_expand * ke)) as u64, Relaxed);
+    record_union_trace(trace_qid, pool_distinct, &union);
     // SQ4 int8 escalation (P343c): SQ4 picks a wide band, int8 re-ranks it, float takes the top-kk.
     let esc = SQ4_INT8K.load(Relaxed);
     if sq4.is_some() && esc > 0 && !scored.is_empty() {
@@ -1243,11 +1357,19 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
         // pf-ahead interleaved prefetch (review P344: a full-band prefetch pass overruns L2 at large esc)
         for i in 0..scored.len() {
             if i + pf < scored.len() {
-                let ptr = ds.row(scored[i + pf].1 as usize).as_ptr();
+                let ptr = layout
+                    .map_or_else(
+                        || ds.row(scored[i + pf].1 as usize),
+                        |gl| gl.base.row(scored[i + pf].1 as usize),
+                    )
+                    .as_ptr();
                 let mut off = 0usize;
                 while off < d { unsafe { _mm_prefetch(ptr.add(off) as *const i8, _MM_HINT_T0) }; off += 64; }
             }
-            let row = ds.row(scored[i].1 as usize);
+            let row = layout.map_or_else(
+                || ds.row(scored[i].1 as usize),
+                |gl| gl.base.row(scored[i].1 as usize),
+            );
             scored[i].0 = if vnni { -unsafe { simd::dot_i8_vnni(q, row) } }
                           else if avx { -unsafe { simd::dot_i8_avx2(q, row) } }
                           else { simd::negdot_i8(q, row) };
@@ -1256,6 +1378,11 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
     let kk = kk.min(scored.len());
     if kk > 0 && kk < scored.len() { scored.select_nth_unstable(kk - 1); scored.truncate(kk); }
     if let Some(tc) = tc { PROF_CASC_NS.fetch_add(tc.elapsed().as_nanos() as u64, Relaxed); }
+    if layout.is_some() {
+        for (_, id) in scored.iter_mut() {
+            *id = original_of(*id);
+        }
+    }
     // (4) exact float reorder over only the kk int8-survivors.
     let tr = if prof { Some(std::time::Instant::now()) } else { None };
     let out = rerank_orig_float(fbase, qf, &scored, k);
@@ -3381,6 +3508,7 @@ impl Index {
                 GRAPH_M.load(std::sync::atomic::Ordering::Relaxed),
                 CASCADE_K.load(std::sync::atomic::Ordering::Relaxed),
                 k,
+                None,
             );
         }
         let ctx = self.comp.prepare_query(q);
@@ -3395,7 +3523,7 @@ impl Index {
             if let (Some(g), true) = (graph, cascade) {
                 // graph-augmented union rescore (SBANN_GRAPH_FILE), same expansion point as the batched path.
                 let gm = GRAPH_M.load(std::sync::atomic::Ordering::Relaxed);
-                return rerank_cascade_graph(ds, fbase, &self.slot_orig, &self.raw, self.raw_orig_indexed, self.d, q, qf, &mut pool, g, &[], gm, kk, k);
+                return rerank_cascade_graph(ds, fbase, &self.slot_orig, &self.raw, self.raw_orig_indexed, self.d, q, qf, &mut pool, g, &[], gm, kk, k, None);
             }
             if cascade {
                 // int8-cascade prune (PROF_CASC_NS) then float reorder (PROF_RERANK_NS) — timed inside.
@@ -3753,6 +3881,7 @@ impl Index {
                     gm,
                     kk,
                     k,
+                    Some(q_base + i),
                 ));
             }
             return results;
@@ -3806,7 +3935,7 @@ impl Index {
             };
             let out = if let (Some(g), true) = (graph, cascade) {
                 // graph-augmented union rescore (SBANN_GRAPH_FILE); falls back to plain cascade if M=0.
-                rerank_cascade_graph(ds, fbase, &self.slot_orig, &self.raw, self.raw_orig_indexed, self.d, qi8, qf, &mut pool, g, seeds_i, gm, kk, k)
+                rerank_cascade_graph(ds, fbase, &self.slot_orig, &self.raw, self.raw_orig_indexed, self.d, qi8, qf, &mut pool, g, seeds_i, gm, kk, k, Some(q_base + i))
             } else if cascade {
                 rerank_cascade_float(fbase, &self.raw, self.d, self.raw_orig_indexed, &self.slot_orig, qi8, qf, &mut pool, kk, k)
             } else {

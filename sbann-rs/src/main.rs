@@ -335,10 +335,37 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
             std::sync::atomic::Ordering::Relaxed,
         );
     }
+    let resident_i8 = std::env::var("SBANN_RESIDENT_I8").is_ok();
+    let graph_layout_active = match (
+        std::env::var("SBANN_GRAPH_BASE"),
+        std::env::var("SBANN_GRAPH_RANK"),
+    ) {
+        (Ok(graph_base), Ok(graph_rank)) => {
+            let data_offset = std::env::var("SBANN_GRAPH_BASE_OFFSET")
+                .ok()
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(8usize);
+            vq::install_graph_layout(
+                &graph_base,
+                &graph_rank,
+                data_offset,
+                ds.nb,
+                ds.d,
+                resident_i8,
+            );
+            println!(
+                "  [GRAPH-LAYOUT] base={graph_base} offset={data_offset} rank={graph_rank}{}",
+                if resident_i8 { " resident+aligned64" } else { "" },
+            );
+            true
+        }
+        (Err(_), Err(_)) => false,
+        _ => panic!("SBANN_GRAPH_BASE and SBANN_GRAPH_RANK must be supplied together"),
+    };
     // RESIDENT-I8 (P346, flag-gated): anonymous THP-backed copy of the int8 base. The scattered union
     // rescore pays a TLB miss + page walk per row on the 4KB-paged file mmap (~918 rows/q at DEEP loose
     // configs); 2MB pages cut TLB entries ~500x. Data byte-identical — recall unchanged.
-    if std::env::var("SBANN_RESIDENT_I8").is_ok() {
+    if resident_i8 && !graph_layout_active {
         let tr = Instant::now();
         ds.make_resident();
         println!("  [RESIDENT-I8] {}MB anonymous (THP-eligible)  setup={:.1}s", ds.nb * ds.d / 1_000_000, tr.elapsed().as_secs_f64());
@@ -875,6 +902,19 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
     // SBANN_LUT_AB: interleave int16 (false) vs i8 (true) scan precision per (p,t) on one index.
     let lut_ab = std::env::var("SBANN_LUT_AB").is_ok();
     let lmodes: Vec<bool> = if lut_ab { vec![false, true] } else { vec![vq::LUT16_OFF.load(std::sync::atomic::Ordering::Relaxed)] };
+    // Diagnostic layout gate: capture the exact graph-expanded union for each stable batched query id.
+    // Single-config only so the file has an unambiguous policy and pool/graph boundary.
+    let union_dump = std::env::var("SBANN_DUMP_UNIONS").ok();
+    if union_dump.is_some() {
+        assert!(batchscan, "SBANN_DUMP_UNIONS requires the stable-query-id batched path");
+        assert!(graph_ref.is_some(), "SBANN_DUMP_UNIONS requires SBANN_GRAPH_FILE");
+        assert!(fbase.is_some(), "SBANN_DUMP_UNIONS requires SBANN_FLOAT_RERANK");
+        assert!(
+            plist.len() == 1 && tlist.len() == 1 && klist.len() == 1 && !vnni_ab && !lut_ab,
+            "SBANN_DUMP_UNIONS requires one PLIST/TMUL/CASCADE_K configuration"
+        );
+        vq::reset_union_trace(nq);
+    }
     // IDEA #4 refine sweep: with SBANN_RESID, sweep (refine off/on) x rr_depth (=raw-rerank depth)
     // at a FIXED refine pool t_surv, on ONE built index. Reports recall vs raw reads for both, so the
     // refined order's depth saving (same recall, fewer raw reads) is a clean same-index A/B.
@@ -1071,6 +1111,13 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
             res = r;
         }
         let dt = best_dt;
+        if let Some(up) = union_dump.as_deref() {
+            let (nonempty, total) = vq::write_union_trace(up).expect("union trace dump");
+            println!(
+                "  [UNION_DUMP] {up}  queries={nonempty}/{nq} rows={total} avg={:.1}",
+                total as f64 / nonempty.max(1) as f64
+            );
+        }
         // CORRECTNESS GATE: the cell-major driver is a pure execution-order change -> per query it must
         // produce the same final top-10 as the per-query path (modulo equal-score tie order). Compare
         // result-id sets and recall for all nq queries.
@@ -1843,6 +1890,112 @@ fn routebench(base: &str, qpath: &str) {
     println!("  int8 dist-evals/query = {:.0}   sink={sink}", neval / nq as f64);
 }
 
+/// Replay only the graph-neighbour suffixes from a GUN1 engine trace against a physical base layout.
+/// `rank_path`, when present, maps original id -> physical row and is applied once before timing, as a
+/// fully remapped index would; the hot loop therefore pays no artificial mapping lookup.
+fn unionbench(base: &str, qpath: &str, trace_path: &str, rank_path: Option<&str>) {
+    let data_offset = std::env::var("SBANN_GRAPH_BASE_OFFSET")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(8usize);
+    let ds = I8Bin::open_with_data_offset(base, data_offset)
+        .expect("unionbench base");
+    let qs = I8Bin::open(qpath).expect("unionbench query");
+    assert_eq!(ds.d, qs.d, "base/query dimension mismatch");
+    let bytes = std::fs::read(trace_path).expect("union trace");
+    assert!(bytes.len() >= 8 && &bytes[..4] == b"GUN1", "not a GUN1 trace");
+    let u32at = |off: usize| -> u32 {
+        u32::from_le_bytes(bytes[off..off + 4].try_into().unwrap())
+    };
+    let nq = u32at(4) as usize;
+    assert!(nq <= qs.nb, "trace has more queries than query file");
+    let rank: Option<Vec<u32>> = rank_path.map(|path| {
+        let raw = std::fs::read(path).expect("rank map");
+        assert_eq!(raw.len(), ds.nb * 4, "rank map must contain one u32 per base row");
+        raw.chunks_exact(4)
+            .map(|b| u32::from_le_bytes(b.try_into().unwrap()))
+            .collect()
+    });
+    let mut rows: Vec<Vec<u32>> = Vec::with_capacity(nq);
+    let mut off = 8usize;
+    for _ in 0..nq {
+        let pool = u32at(off) as usize;
+        let n = u32at(off + 4) as usize;
+        off += 8;
+        assert!(pool <= n && off + n * 4 <= bytes.len(), "truncated union trace");
+        let mut ids = Vec::with_capacity(n - pool);
+        for j in pool..n {
+            let id = u32at(off + j * 4) as usize;
+            assert!(id < ds.nb, "union id out of range");
+            ids.push(rank.as_ref().map_or(id as u32, |r| r[id]));
+        }
+        off += n * 4;
+        if env_on("SBANN_UNION_SORT", false) {
+            ids.sort_unstable();
+        }
+        rows.push(ids);
+    }
+    assert_eq!(off, bytes.len(), "trailing union trace bytes");
+
+    let pfdist = std::env::var("SBANN_GRAPH_PFDIST")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(16usize)
+        .max(1);
+    let reps = std::env::var("SBANN_REPS")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(5usize)
+        .max(1);
+    let vnni = std::is_x86_feature_detected!("avx512vnni")
+        && std::is_x86_feature_detected!("avx512bw")
+        && std::is_x86_feature_detected!("avx512f");
+    let avx = std::is_x86_feature_detected!("avx2");
+    let nrows: usize = rows.iter().map(Vec::len).sum();
+    let mut checksum = 0i64;
+    let mut run = || {
+        let t0 = Instant::now();
+        for (qi, ids) in rows.iter().enumerate() {
+            let q = qs.row(qi);
+            for i in 0..ids.len() {
+                if i + pfdist < ids.len() {
+                    #[cfg(target_arch = "x86_64")]
+                    unsafe {
+                        std::arch::x86_64::_mm_prefetch(
+                            ds.row(ids[i + pfdist] as usize).as_ptr() as *const i8,
+                            std::arch::x86_64::_MM_HINT_T0,
+                        );
+                    }
+                }
+                let row = ds.row(ids[i] as usize);
+                let score = if vnni {
+                    -unsafe { simd::dot_i8_vnni(q, row) }
+                } else if avx {
+                    -unsafe { simd::dot_i8_avx2(q, row) }
+                } else {
+                    simd::negdot_i8(q, row)
+                };
+                checksum = checksum.wrapping_add(score as i64);
+            }
+        }
+        t0.elapsed().as_secs_f64()
+    };
+    let _ = run(); // warm mappings and caches before the measured best-of series
+    let mut best = f64::INFINITY;
+    for _ in 0..reps {
+        best = best.min(run());
+    }
+    println!(
+        "[unionbench] nq={nq} rows={nrows} d={} layout={} sorted={} pfdist={pfdist} \
+         {:.1} ns/row {:.1} Mrow/s best/{reps} checksum={checksum}",
+        ds.d,
+        rank_path.unwrap_or("identity"),
+        env_on("SBANN_UNION_SORT", false),
+        best * 1e9 / nrows.max(1) as f64,
+        nrows as f64 / best / 1e6,
+    );
+}
+
 /// Read a boolean override flag. Unset -> `default`. Present and equal to "0" -> false; any other
 /// value -> true. The winning OOD levers (FINDINGS P194-P202) default ON via `env_on(name, true)`;
 /// pass `SBANN_<NAME>=0` to disable a lever for an A/B. Refuted/experimental flags keep their
@@ -2302,6 +2455,7 @@ fn main() {
         Some("fusedab") => fusedab(&a[2], &a[3], &a[4]),
         Some("scatterbench") => scanbench(&a[2], &a[3]),
         Some("routebench") => routebench(&a[2], &a[3]),
+        Some("unionbench") => unionbench(&a[2], &a[3], &a[4], a.get(5).map(String::as_str)),
         Some("rbench") => rbench(&a[2], &a[3], &a[4]),
         Some("build") => build(&a[2], a.get(3).map(|s| s.parse().unwrap()).unwrap_or(16384)),
         Some("bench") => bench(&a[2], &a[3], &a[4], a.get(5).map(|s| s.parse().unwrap()).unwrap_or(4096)),
