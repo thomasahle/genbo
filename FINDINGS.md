@@ -5449,6 +5449,32 @@ P348 [2026-07-23] GRAPH-LOCAL PHYSICAL ORDER — +22% DEEP engine gain; strict R
     regex + named variants. Results in deep10m/{graph_layout_gate.json,abba_graph_layout_*,
     abba_layout*_vs_roar_*.json}. Paper sec:resident, DEEP prose/caption, and frontier CSV updated.
 
+P349 [2026-07-24] DEEP LOW-RECALL RETUNE — most of the “architectural” gap was excess effort; crossover now ~0.97.
+  SWEEP: new resumable experiments/sweep_deep_low_recall.py pinned one physical core and checkpointed
+    every loaded-index run. 2,216 NQ500 screening points: hops 1-3, beam M 4-24, KEDGE 8-32, survivor
+    floors 192-450, cascade K 16-48, probes 2-40. Selected points were re-run NQ2000/reps2, then strict
+    two-round ABBA/BAAB against recall-matched RoarGraph.
+  POLICY FINDING: the old p2/h3/M24/T450 low-recall point was badly overconfigured. The tuned ladder is
+    recall-banded, not one global setting: 0.9039 uses h2/M8/e32/T192/K24/p15; 0.9265 uses
+    h2/M16/e24/T192/K16/p20; 0.9426 uses h2/M12/e32/T320/K32/p24; 0.9603 uses
+    h2/M24/e32/T256/K48/p28; 0.9718 uses h2/M24/e32/T384/K48/p48.
+  STRICT VERDICT (genbo vs Roar, median QPS):
+    0.9039/0.9031 = 4630/5952 (Roar 1.29x; old genbo 3550 and Roar 1.84x);
+    0.9265/0.9255 = 4449/4920 (Roar 1.11x);
+    0.9426/0.9430 = 3625/4049 (Roar 1.12x);
+    0.9603/0.9606 = 3037/3147 (Roar 1.04x);
+    0.9718/0.9718 = 2587/2554 (genbo 1.01x). Crossover moves ~0.98 -> ~0.97.
+  WARM FRONTIER (NQ2000 best/2): new curve points 0.9039@6293 0.9265@5592 0.9426@4779
+    0.9603@4150; preserve the already-banked 0.9720@3344 because it Pareto-dominates this
+    window's 0.9718@2902. Strict pairs carry the SOTA claims, not these best-window values.
+  BOTTLENECK MOVED: tuned 0.9039 profile = route 30.1%, scan 19.5%, graph machinery 4.3%, int8
+    rescore 20.1%, float 26.0%, union only 235 rows/q. The old 1,600-row/full-walk diagnosis is obsolete.
+    Next list is experiments/DEEP_LOW_RECALL_NEXT.md: fp16 rerank, BEAM0, seed-vs-pool decoupling,
+    confidence dispatch, batched routing/pipeline, then learned cell reranking. Explicit do-not-repeat
+    list quarantines the many already-killed DEEP ideas.
+  ARTIFACTS: deep10m/deep_low_{recall_sweep_{coarse,refine,shoulder},confirm_*}.json and
+    abba_deep_tuned_r{0903,0926,0943,0960,0972}.json. Paper DEEP CSV/prose/caption updated.
+
 === SESSION SUMMARY (current, 2026-07-12, through P334) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall

@@ -84,3 +84,21 @@ bookkeeping. `abba_deep_graph_layout_aligned.json` measures the complete engine
 against the unchanged id order. `abba_deep_layout_vs_roar_090.json` additionally
 contains named `--variant` points from recall 0.90 through 0.991 for direct
 RoarGraph ABBA comparisons.
+
+## Low-recall policy sweep
+
+`sweep_deep_low_recall.py` pins one physical core, checkpoints after every loaded
+index, and sweeps probes and cascade widths inside each process. The broad DEEP
+screen is:
+
+```sh
+python3 sweep_deep_low_recall.py \
+  --hops 1,2,3 --beams 4,8,12,16,24 --edges 8,16,24,32 \
+  --floors 320 --cascade-widths 32 \
+  --out /home/thomas-ahle/big-ann-data/deep10m/deep_low_recall_sweep_coarse.json
+```
+
+Use the unsorted relabeled graph when `SBANN_GRAPH_KEDGE` is below 32: sorting a
+row preserves its complete edge set but would change which prefix is selected.
+The named `tuned_r0903` through `tuned_r0972` variants in the Roar configuration
+are the full-query ABBA confirmations selected from the sweep.

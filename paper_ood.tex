@@ -1377,7 +1377,13 @@ $0.8695$--$0.9505$ without OOD calibration ($0.8933$--$0.9614$ with its existing
 $\gamma$). On DEEP, \emph{fast} spans $0.7871$--$0.9155$ while \emph{accurate}
 spans $0.9731$--$0.9940$; on Cohere the corresponding bands are
 $0.8072$--$0.9276$ and $0.9615$--$0.9906$. Thus one default transfers across
-$d{=}96,200,768$ and $n{=}1$--$10$M without erasing expert control.}
+$d{=}96,200,768$ and $n{=}1$--$10$M without erasing expert control. A subsequent
+targeted low-dimensional calibration (2,216 DEEP configurations) shows why the
+expert controls remain useful: the loose frontier wants two hops and a
+recall-banded $(M,k_e,T,K,p)$ ladder rather than the high-recall walk. Its strict
+paired points progress from $(8,32,192,24,15)$ at recall $0.9039$ to
+$(24,32,384,48,48)$ at $0.9718$, moving the RoarGraph crossover downward without
+changing the index.}
 
 \section{Systems Techniques (Streaming)}
 \label{sec:stream}
@@ -1687,8 +1693,9 @@ binary-only leaderboard systems are \emph{inference} from the public leaderboard
 \section{Results}
 \label{sec:eval}
 Figures~\ref{fig:frontier} and \ref{fig:oodfrontier} are the headline results:
-QPS--recall frontiers, single thread, same box, with every genbo/opponent pair from
-same-window sequential runs. In-distribution (Figure~\ref{fig:frontier}), genbo is
+QPS--recall frontiers, single thread, same box, showing each method's warm frontier
+over repeated runs; every quoted genbo/opponent ratio comes from same-window
+sequential runs. In-distribution (Figure~\ref{fig:frontier}), genbo is
 above HNSW at every operating point shown, at all three scales --- graph-free at 1M
 ($1.5$--$2.4\times$, exceeding HNSW's recall ceiling), and with its self-built
 NN-descent graph at 10M ($1.2$--$1.9\times$) and 35M ($1.5$--$3.3\times$); HNSW
@@ -1737,11 +1744,13 @@ graph (doubling per-node degree from a converged $k$NN pool, $+35$--$60\%$ QPS),
 placing its rows in graph-local physical order ($+17$--$22\%$), and
 widening the int8-survivor rerank pool (recovering ${\sim}4\%$ of quantization-
 misranked tail neighbours at ${\sim}0$ cost) lifts our frontier so that we win or tie
-the high-recall regime (strict paired medians: $1.07\times$ at recall
-$0.9814/0.9816$ and $1.16\times$ at $0.9907/0.9909$, reaching $0.9987$ beyond
-RoarGraph's measured ceiling), while RoarGraph retains the loose-recall corner
-(recall below ${\sim}0.98$: $1.84\times$ at $0.90$, narrowing to $1.17\times$ at
-$0.96$) --- there its short adaptive walk
+the high-recall regime. A final recall-banded low-dimensional sweep removes most
+of the remaining over-configuration: in strict pairs RoarGraph's lead falls to
+$1.29\times$ at recall $0.904$, $1.11\times$ at $0.926$--$0.943$, and
+$1.04\times$ at $0.960$; the systems tie at $0.9718$ (ours $1.01\times$), after
+which ours leads $1.07\times$ at $0.9815$ and $1.16\times$ at $0.9908$, reaching
+$0.9987$ beyond RoarGraph's measured ceiling. RoarGraph therefore retains only
+the loose-recall corner below ${\sim}0.97$ --- there its short adaptive walk
 amortizes better than our fixed routing$+$scan cost. An ablation at matched edge budget shows the graph-side gain is
 edge \emph{count} and pool quality, not Vamana-style diversification (a wash for an
 IVF-seeded cascade). The OOD extreme flipped \emph{entirely} with three levers: on
@@ -1758,7 +1767,7 @@ $0.81$ through $0.98$, past its published-benchmark ceiling --- with our side
 measured on a loaded machine against its quiet-window curve, so each margin
 ($1.3$--$1.7\times$) is a lower bound. The remaining boundary obeys the bottleneck
 theory: among \emph{build-eligible} methods, only at low dimension and loose recall
-(DEEP below ${\sim}0.98$) does frontier ownership pass to the cheapest materialized-adjacency
+(DEEP below ${\sim}0.97$) does frontier ownership pass to the cheapest materialized-adjacency
 walk; the build-unconstrained $6.5$h RoarGraph additionally keeps the Wikipedia
 $0.93$--${\sim}0.975$ band (Figure~\ref{fig:frontier} caption) --- narrowed from
 above by a $48$-edge self-built graph ($2.8$ h seeded NN-descent, still under
@@ -1872,7 +1881,10 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
   \end{tikzpicture}%
   \hfill\mbox{}
   \caption{Recall--QPS frontiers (recall@10 versus single-thread queries per second,
-  log scale), same-window sequential pairs. The Wikipedia and DEEP panels use a
+  log scale), showing each method's warm best-of-repeated frontier. Quoted ratios
+  use same-core sequential pairs; in particular, the DEEP ratios below are strict
+  ABBA/BAAB medians rather than ratios inferred from independently best plotted
+  points. The Wikipedia and DEEP panels use a
   \emph{log-tail} recall axis ($\log(1-\text{recall})$, reversed) so the high-recall
   contest is resolved rather than compressed into the right edge; on Wikipedia the
   greyed curve is the build-\emph{ineligible} $6.5$h RoarGraph, the orange curve the
@@ -1894,11 +1906,12 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
   RoarGraph, exceeding HNSW's ceiling); RoarGraph's curve required padding its input
   to $d{=}104$ --- its released code silently corrupts dimensions not divisible by 8.
   On DEEP 10M ($d{=}96$) the outcome is a \emph{crossover}: graph-local physical
-  ordering raises our QPS $17$--$22\%$, and strict paired runs put us
-  $1.07\times$ ahead at recall $0.9815$ and $1.16\times$ at $0.9908$ (reaching
-  $0.9987$ beyond RoarGraph's ceiling), while RoarGraph retains the loose-recall
-  corner below ${\sim}0.98$ (from $1.84\times$ at $0.90$ to $1.17\times$ at
-  $0.96$) --- cheap short graph walks amortize better than our fixed
+  ordering raises our QPS $17$--$22\%$, then recall-banded two-hop tuning closes
+  the strict-pair gap from RoarGraph $1.29\times$ at recall $0.904$ to
+  $1.04\times$ at $0.960$; we tie at $0.9718$ and lead $1.07\times$ at $0.9815$
+  / $1.16\times$ at $0.9908$ (reaching $0.9987$ beyond its ceiling). RoarGraph
+  retains the loose-recall corner below ${\sim}0.97$ --- cheap short graph walks
+  amortize better than our fixed
   routing$+$scan cost when few neighbours are needed at low dimension.}
   \label{fig:frontier}
 \end{figure}
