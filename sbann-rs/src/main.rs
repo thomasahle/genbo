@@ -2908,6 +2908,106 @@ fn main() {
             w.flush().unwrap();
             println!("[dumproute] nq={nq} p={p} -> {}", &a[3]);
         }
+        // dumproutefeat <query.i8bin> <out.rrf> <keep> [nq]: diagnostic-only
+        // query/cell features for the supervised routing gate. Format RRF1:
+        // header magic,nq,keep,d,record_words; each query stores d normalized
+        // i8 values followed by keep records of seven 32-bit words:
+        // cell,parent,fine_score,parent_score,fine_norm,parent_norm,occupancy.
+        Some("dumproutefeat") => {
+            let lp =
+                std::env::var("SBANN_INDEX_LOAD").expect("dumproutefeat needs SBANN_INDEX_LOAD");
+            let idx = vq::Index::load_from(&lp).expect("index load");
+            let qs = I8Bin::open(&a[2]).expect("query i8bin");
+            assert_eq!(qs.d, idx.d, "query/index dimension mismatch");
+            let keep: usize = a[4].parse().expect("keep");
+            assert!(keep > 0, "keep must be positive");
+            let nq = a
+                .get(5)
+                .map(|s| s.parse().expect("nq"))
+                .unwrap_or(qs.nb)
+                .min(qs.nb);
+            let nc = idx.router.n_cells();
+            let occupancy: Vec<u32> = (0..nc)
+                .map(|cell| {
+                    let start = idx.cell_bstart[cell] as usize * 16;
+                    let end = idx.cell_bstart[cell + 1] as usize * 16;
+                    idx.slot_orig[start..end]
+                        .iter()
+                        .filter(|&&orig| orig != u32::MAX)
+                        .count() as u32
+                })
+                .collect();
+            let mut w =
+                std::io::BufWriter::new(std::fs::File::create(&a[3]).expect("out"));
+            use std::io::Write;
+            w.write_all(b"RRF1").unwrap();
+            for value in [nq as u32, keep as u32, qs.d as u32, 7u32] {
+                w.write_all(&value.to_le_bytes()).unwrap();
+            }
+            for i in 0..nq {
+                let (normalized, rows) = idx.router.route_features(qs.row(i), keep);
+                assert_eq!(normalized.len(), qs.d);
+                assert_eq!(rows.len(), keep, "router returned fewer than keep cells");
+                w.write_all(unsafe {
+                    std::slice::from_raw_parts(normalized.as_ptr() as *const u8, normalized.len())
+                })
+                .unwrap();
+                for row in rows {
+                    w.write_all(&row.cell.to_le_bytes()).unwrap();
+                    w.write_all(&row.parent.to_le_bytes()).unwrap();
+                    w.write_all(&row.fine_score.to_le_bytes()).unwrap();
+                    w.write_all(&row.parent_score.to_le_bytes()).unwrap();
+                    w.write_all(&row.fine_norm.to_le_bytes()).unwrap();
+                    w.write_all(&row.parent_norm.to_le_bytes()).unwrap();
+                    w.write_all(&occupancy[row.cell as usize].to_le_bytes())
+                        .unwrap();
+                }
+            }
+            w.flush().unwrap();
+            println!(
+                "[dumproutefeat] nq={nq} keep={keep} d={} -> {}",
+                qs.d, &a[3]
+            );
+        }
+        // dumproutermeta <out.rcm>: finest centroid vectors and physical
+        // occupancy for reproducing low-rank query-cell models offline.
+        Some("dumproutermeta") => {
+            let lp =
+                std::env::var("SBANN_INDEX_LOAD").expect("dumproutermeta needs SBANN_INDEX_LOAD");
+            let idx = vq::Index::load_from(&lp).expect("index load");
+            let nc = idx.router.n_cells();
+            let mut w =
+                std::io::BufWriter::new(std::fs::File::create(&a[2]).expect("out"));
+            use std::io::Write;
+            w.write_all(b"RCM1").unwrap();
+            for value in [nc as u32, idx.d as u32] {
+                w.write_all(&value.to_le_bytes()).unwrap();
+            }
+            for cell in 0..nc {
+                let parent = idx
+                    .router
+                    .cell_parent(cell)
+                    .expect("router lacks cell-parent metadata");
+                let start = idx.cell_bstart[cell] as usize * 16;
+                let end = idx.cell_bstart[cell + 1] as usize * 16;
+                let occupancy = idx.slot_orig[start..end]
+                    .iter()
+                    .filter(|&&orig| orig != u32::MAX)
+                    .count() as u32;
+                let centroid = idx
+                    .router
+                    .cell_centroid(cell)
+                    .expect("router lacks centroid metadata");
+                w.write_all(&parent.to_le_bytes()).unwrap();
+                w.write_all(&occupancy.to_le_bytes()).unwrap();
+                w.write_all(unsafe {
+                    std::slice::from_raw_parts(centroid.as_ptr() as *const u8, centroid.len())
+                })
+                .unwrap();
+            }
+            w.flush().unwrap();
+            println!("[dumproutermeta] nc={nc} d={} -> {}", idx.d, &a[2]);
+        }
         Some("run") => run(&a[2], &a[3], &a[4], &a[5], &a[6], a.get(7).map(|s| s.parse().unwrap()).unwrap_or(2), a.get(8).map(|s| s.parse().unwrap()).unwrap_or(4096), a.get(9).map(|s| s.parse().unwrap()).unwrap_or(30), false),
         Some("runb") => run(&a[2], &a[3], &a[4], &a[5], &a[6], a.get(7).map(|s| s.parse().unwrap()).unwrap_or(2), a.get(8).map(|s| s.parse().unwrap()).unwrap_or(4096), a.get(9).map(|s| s.parse().unwrap()).unwrap_or(30), true),
         Some("runa") => runa(&a[2], &a[3], &a[4], &a[5], &a[6], a.get(7).map(|s| s.parse().unwrap()).unwrap_or(2), a.get(8).map(|s| s.parse().unwrap()).unwrap_or(256)),

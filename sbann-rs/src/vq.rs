@@ -1627,6 +1627,16 @@ unsafe fn survivor_mask_leq(out: &[i32], thr: i32) -> u64 {
 }
 
 // ---------------- Router: coarse quantizer (which cells) ----------------
+#[derive(Clone, Copy, Debug, Default)]
+pub struct RouteFeature {
+    pub cell: u32,
+    pub parent: u32,
+    pub fine_score: i32,
+    pub parent_score: i32,
+    pub fine_norm: i32,
+    pub parent_norm: i32,
+}
+
 pub trait Router: Send + Sync {
     fn n_cells(&self) -> usize;
     fn assign(&self, row: &[i8], a0: usize, out: &mut Vec<u32>); // build: point -> a0 cells
@@ -1635,6 +1645,26 @@ pub trait Router: Send + Sync {
     /// `probe`; the default avoids imposing a scoring API on other routers.
     fn probe_with_margin(&self, q: &[i8], p: usize) -> (Vec<u32>, i32) {
         (self.probe(q, p), 0)
+    }
+    /// Offline learned-routing gate: return the normalized query and scalar
+    /// features for the raw top-`keep` fine cells. Search never calls this path.
+    fn route_features(&self, q: &[i8], keep: usize) -> (Vec<i8>, Vec<RouteFeature>) {
+        let cells = self.probe(q, keep);
+        let rows = cells
+            .into_iter()
+            .map(|cell| RouteFeature {
+                cell,
+                ..RouteFeature::default()
+            })
+            .collect();
+        (q.to_vec(), rows)
+    }
+    /// Offline metadata hook used with `route_features`.
+    fn cell_centroid(&self, _cell: usize) -> Option<&[i8]> {
+        None
+    }
+    fn cell_parent(&self, _cell: usize) -> Option<u32> {
+        None
     }
     /// top-p cells sorted NEAREST-FIRST (for adaptive early termination). Default: unranked probe.
     fn probe_ranked(&self, q: &[i8], p: usize) -> Vec<u32> { self.probe(q, p) }
@@ -2442,6 +2472,70 @@ impl Router for HierRouter {
             0
         };
         (out, margin)
+    }
+    fn route_features(&self, q: &[i8], keep: usize) -> (Vec<i8>, Vec<RouteFeature>) {
+        let mut qn = vec![0i8; self.d];
+        simd::normalize_i8(q, &self.mu, &mut qn);
+        let mut fine = Vec::new();
+        self.gather_fine(&qn, &mut fine);
+        let take = keep.min(fine.len());
+        if take < fine.len() {
+            fine.select_nth_unstable(take - 1);
+            fine.truncate(take);
+        }
+        fine.sort_unstable();
+
+        let finest = self.levels - 1;
+        let parent_level = finest - 1;
+        let starts = &self.child[parent_level];
+        let mut rows = Vec::with_capacity(take);
+        for (fine_score, cell) in fine {
+            let cell_usize = cell as usize;
+            let parent = starts
+                .partition_point(|&start| start as usize <= cell_usize)
+                .saturating_sub(1)
+                .min(starts.len() - 2);
+            let fine_cent =
+                &self.cent[finest][cell_usize * self.d..(cell_usize + 1) * self.d];
+            let parent_cent =
+                &self.cent[parent_level][parent * self.d..(parent + 1) * self.d];
+            let fine_norm = fine_cent
+                .iter()
+                .map(|&value| value as i32 * value as i32)
+                .sum();
+            let parent_norm = parent_cent
+                .iter()
+                .map(|&value| value as i32 * value as i32)
+                .sum();
+            rows.push(RouteFeature {
+                cell,
+                parent: parent as u32,
+                fine_score,
+                parent_score: simd::l2_i8(&qn, parent_cent),
+                fine_norm,
+                parent_norm,
+            });
+        }
+        (qn, rows)
+    }
+    fn cell_centroid(&self, cell: usize) -> Option<&[i8]> {
+        if cell >= self.kf {
+            return None;
+        }
+        let finest = self.cent.last()?;
+        Some(&finest[cell * self.d..(cell + 1) * self.d])
+    }
+    fn cell_parent(&self, cell: usize) -> Option<u32> {
+        if cell >= self.kf || self.levels < 2 {
+            return None;
+        }
+        let starts = &self.child[self.levels - 2];
+        Some(
+            starts
+                .partition_point(|&start| start as usize <= cell)
+                .saturating_sub(1)
+                .min(starts.len() - 2) as u32,
+        )
     }
     fn save(&self, w: &mut crate::persist::Sw) -> std::io::Result<()> {
         let f16 = !self.cent_f16.is_empty();

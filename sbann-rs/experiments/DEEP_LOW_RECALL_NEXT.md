@@ -83,7 +83,7 @@ remain the SOTA evidence until a stable repeat.
    first cell blocks. This attacks the combined 50% route+scan wall without
    changing candidate sets. Require bit-identical results and >=8% QPS.
 
-7. **Supervised cell reranking (next; novel, higher risk).**
+7. **Supervised cell reranking (completed: rejected).**
    The structural goal is to reach recall 0.904 with roughly 10 probes instead of
    15. Train a small held-out-query correction over router score, parent score,
    cell occupancy, and query-centroid margin; rerank only the existing fine-cell
@@ -91,7 +91,17 @@ remain the SOTA evidence until a stable repeat.
    <=2/3 of the probes. This is the first idea that changes candidate efficiency,
    rather than only executing the same policy faster.
 
-8. **Physical page-cohort incremental walk (novel, currently lower priority).**
+   The leak-free gate used 50,000 disjoint DEEP training queries, 10,000
+   validation queries, and a public 2,000-query test set held out from selection. It tested a
+   scalar ranker, cell-embedding interactions at ranks 4/8/16, and shared diagonal
+   and full $96\times96$ query--centroid bilinear corrections. On validation the
+   best learned top-10 coverage was 0.8190 versus 0.8449 for raw top-15; on test,
+   the best model improved raw top-10 from 0.7513 to 0.7788 but remained below
+   raw top-15 at 0.8133. The same-shortlist greedy oracle reaches 0.9769. Thus
+   candidate-efficiency headroom exists, but these deployable geometric model
+   classes cannot recover it; no Rust search path was added.
+
+8. **Physical page-cohort incremental walk (next; novel, lower priority).**
    Revisit only if the stages above stall. In the tuned path graph bookkeeping is
    4% and the graph suffix is small, so a full walk rewrite has less headroom than
    route/rerank work. A trace oracle must first show >=15% total latency headroom.

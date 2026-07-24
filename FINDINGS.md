@@ -5501,6 +5501,24 @@ P350 [2026-07-24] DEEP NEXT 1--6 — corrected fp16 wins; five execution hypothe
     abba_next_fp16r12_r*.json; abba_next_chunk1000_r*.json; experiments/{sweep_deep_next.py,
     gate_deep_dispatch.py,abba_deep_next.json}. Next novel gate: supervised cell reranking.
 
+P351 [2026-07-24] DEEP SUPERVISED CELL RERANK (#7) — real oracle headroom, deployable predictors fail.
+  PROTOCOL: diagnostic RRF1 dumps the raw top-128 cells with normalized q, fine/parent ids and scores,
+    centroid norms, and occupancy. Train = 50k RoarGraph DEEP training queries; model/epoch/policy
+    selection = disjoint 10k validation tail; public 2k held out from all model/policy selection.
+    Labels are greedy marginal set-cover gains over each GT neighbour's two materialized IVF cells.
+  MODELS: scalar listwise ranker; per-cell query-interaction embeddings at ranks 4/8/16; shared
+    diagonal and full 96x96 bilinear q--centroid corrections. Raw-score blending and candidate caps
+    10/12/15/20/24/32/48/64/128 were selected on validation, not evaluation.
+  VALIDATION: raw top10/top15/oracle top10 = 0.7937/0.8449/0.9817. Best deployable model = full
+    bilinear, 0.8190; cell embeddings peak ~0.815 then overfit. Gate already fails before evaluation.
+  HELD-OUT EVAL: raw top10 = 0.7513; full bilinear = 0.7788 (+2.75pt); required raw top15 = 0.8133
+    (still -3.45pt); same-top128 greedy oracle = 0.9769. Candidate-efficiency headroom is enormous,
+    but query-time geometric features cannot identify it. Consistent with P316/materialized-adjacency.
+  VERDICT: REJECT #7; per predeclared gate no Rust hot-path model and no timing/SOTA claims. Retain only
+    dumproutefeat/dumproutermeta and experiments/gate_deep_cell_rerank.py for reproducibility
+    (reports deep_cell_rerank_gate.json and deep_cell_rerank_full12.json).
+    Next ranked experiment: #8 physical page-cohort incremental walk.
+
 === SESSION SUMMARY (current, 2026-07-12, through P334) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall

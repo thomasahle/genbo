@@ -126,3 +126,23 @@ without copying JSON. The complete verdict and artifact names are in
 `DEEP_LOW_RECALL_NEXT.md`. Pool trimming, tiled routing, and route/scan prefetch
 were removed after failing their gates; they are documented rather than left as
 inactive production branches.
+
+## Supervised cell-reranking gate
+
+`gate_deep_cell_rerank.py` prepares a raw top-128 route-feature dump, trains on
+50,000 disjoint RoarGraph DEEP training queries, chooses model capacity and epoch
+on a separate 10,000-query validation tail, and holds the public 2,000 queries
+out of all model and policy selection:
+
+```sh
+python3 gate_deep_cell_rerank.py --prepare \
+  --ranks 0,4,8,16 --geometry-models diag,full --epochs 12 \
+  --out /home/thomas-ahle/big-ann-data/deep10m/deep_cell_rerank_gate.json
+```
+
+The diagnostic `dumproutefeat` format contains the normalized query and, for
+each candidate, its fine/parent ids, distances, norms, and occupancy.
+`dumproutermeta` records the finest centroids for shared geometric models.
+Neither command is called by normal search. The gate failed, so no learned
+reranker was added to the Rust hot path; exact results are recorded in
+`DEEP_LOW_RECALL_NEXT.md`.
