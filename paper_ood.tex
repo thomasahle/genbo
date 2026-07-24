@@ -1322,7 +1322,11 @@ $1.020\to0.512$, while sampled graph edges within one page rise to $7.1\%$.
 mmap cannot stay page-cache-resident next to the other tiers, and the exact-rerank
 stage degrades to page-fault speed under memory pressure. A resident fp16 copy
 halves the footprint ($72$\,GB); fp16's 11-bit mantissa still out-resolves the int8
-stage that selected the survivors, so the final ordering is unchanged in practice.
+stage that selected the survivors. At low dimension, pure fp16 can nevertheless
+move a close top-$10$ boundary: we therefore select the best 12 candidates in fp16,
+rescore only that correction band from the original f32 mmap, and take the final
+top-$10$ exactly. The two extra f32 rows preserve the bandwidth reduction while
+restoring the baseline result quality in the measured regime.
 
 \effect{Wikipedia-1M ($d{=}1024$) engine A/B at the contested mid-recall band: the
 SQ4 rung is $+18$--$34\%$ QPS at \emph{identical} recall (score stage
@@ -1343,8 +1347,11 @@ cross-engine cache window. Hugepage residency cuts the in-window rescore
 cost $2$--$3\times$ per matched profile legs ($372$--$862$ vs $1276$\,ns/row); the
 fp16 base cuts the wiki float stage from $9.4$\,ms to $106$--$175\,\mu$s/query under
 the same memory pressure at a $-0.001$ recall difference (DEEP-1M parity check
-$0.9613\to0.9604$). All three are load-time flags; none changes the champion path
-when off.}
+$0.9613\to0.9604$). On the retuned DEEP-10M frontier, pure fp16 loses
+$0.0010$--$0.0016$ recall, whereas the 12-row exact correction restores all five
+f32 recalls exactly and improves paired median engine QPS by $14.5$--$35.4\%$
+at recall $0.9039$--$0.9718$. All four are load-time flags; none changes the
+champion path when off.}
 
 \FloatBarrier
 \section{Search Policies: Reasonable Defaults, Explicit Calibration}
@@ -1539,6 +1546,17 @@ and coverage.
     $0.9012$@$3488$ for the scan path (a $0.6\%$ tie), and a slightly wider walk
     is $0.7\%$ slower for $+0.0016$ recall. It therefore remains an opt-in
     experimental path, not a frontier point.
+  \item \textbf{Low-recall execution shortcuts on retuned DEEP}: the built
+    coarse beam is already fastest ($48.6\,\mu$s/query versus
+    $49.1$--$57.1\,\mu$s for overrides); using APQ-ranked pool rows as graph
+    seeds loses $1.1$--$1.8$ recall points even before trimming; and three
+    five-fold held-out confidence models reach only $0.9178$--$0.9183$ recall
+    when allowed to promote $30\%$ of queries toward a $0.9265$ target.
+    Reordering identical routing work across queries is also a systems null:
+    scalar and centroid-tiled routing both take $49$--$53\,\mu$s/query, while
+    route/scan prefetch peaks at $6615$ versus $6612$ QPS without it. These
+    jointly rule out hidden execution slack as the remaining loose-recall gap;
+    improving candidate efficiency requires a new predictor.
 \end{itemize}
 \emph{The OOD negatives cluster on the scan/code side and all fail there; the
 \S\ref{sec:gamma}--\S\ref{sec:soar} levers cluster on routing/coverage and all succeed. In-distribution the
@@ -2173,11 +2191,10 @@ query self-matches or near-duplicate query rows, capping achievable recall at $0
 --- while an index that inadvertently \emph{retains} the queries appears to win. All
 numbers here use ground truth recomputed over the queries-excluded base, with every
 method searching that same base. The failure mode is silent: both indices run without
-error and the ceiling looks like a model deficiency. \textbf{Other scope:} single (shared) machine, not a
-standardized-VM submission (the gating experiment for a leaderboard claim); $\gamma$ and
-scan-precision are fit/selected per dataset; the coarse-cell corollary is shown on
-IP/OOD data; the gap to binary-only leaderboard systems is inference from public
-numbers; filter/sparse tracks are untouched.
+error and look like model deficiency. \textbf{Other scope:} one shared machine, not a
+standardized-VM submission; $\gamma$ and scan precision are dataset-selected; the
+coarse-cell law is shown on IP/OOD data; binary-only comparisons use public numbers;
+filter/sparse tracks are untouched.
 
 
 \clearpage

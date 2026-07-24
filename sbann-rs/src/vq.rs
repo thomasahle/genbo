@@ -203,6 +203,86 @@ static UNION_TRACE_ON: std::sync::atomic::AtomicBool =
 static UNION_TRACE: std::sync::Mutex<Vec<UnionTraceRow>> =
     std::sync::Mutex::new(Vec::new());
 
+/// Diagnostic-only per-query features for confidence dispatch. The normal path
+/// performs no extra routing or sorting unless SBANN_DUMP_CONFIDENCE enables it.
+#[derive(Clone, Default)]
+struct ConfidenceTraceRow {
+    route_margin: i32,
+    pool_seed_margin: i32,
+    int8_top10_margin: i32,
+    int8_keep_margin: i32,
+    union_len: u32,
+}
+static CONFIDENCE_TRACE_ON: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+static CONFIDENCE_TRACE: std::sync::Mutex<Vec<ConfidenceTraceRow>> =
+    std::sync::Mutex::new(Vec::new());
+
+pub fn reset_confidence_trace(nq: usize) {
+    *CONFIDENCE_TRACE.lock().expect("confidence trace lock") =
+        vec![ConfidenceTraceRow::default(); nq];
+    CONFIDENCE_TRACE_ON.store(true, std::sync::atomic::Ordering::Relaxed);
+}
+
+fn record_route_confidence(qid: usize, margin: i32) {
+    if !CONFIDENCE_TRACE_ON.load(std::sync::atomic::Ordering::Relaxed) {
+        return;
+    }
+    if let Some(row) = CONFIDENCE_TRACE
+        .lock()
+        .expect("confidence trace lock")
+        .get_mut(qid)
+    {
+        row.route_margin = margin;
+    }
+}
+
+fn record_search_confidence(
+    qid: Option<usize>,
+    pool_seed_margin: i32,
+    int8_top10_margin: i32,
+    int8_keep_margin: i32,
+    union_len: usize,
+) {
+    if !CONFIDENCE_TRACE_ON.load(std::sync::atomic::Ordering::Relaxed) {
+        return;
+    }
+    let Some(qid) = qid else { return };
+    if let Some(row) = CONFIDENCE_TRACE
+        .lock()
+        .expect("confidence trace lock")
+        .get_mut(qid)
+    {
+        row.pool_seed_margin = pool_seed_margin;
+        row.int8_top10_margin = int8_top10_margin;
+        row.int8_keep_margin = int8_keep_margin;
+        row.union_len = union_len.min(u32::MAX as usize) as u32;
+    }
+}
+
+pub fn write_confidence_trace(path: &str) -> std::io::Result<usize> {
+    use std::io::Write;
+    CONFIDENCE_TRACE_ON.store(false, std::sync::atomic::Ordering::Relaxed);
+    let trace = CONFIDENCE_TRACE.lock().expect("confidence trace lock");
+    let mut out = std::io::BufWriter::new(std::fs::File::create(path)?);
+    writeln!(
+        out,
+        "qid,route_margin,pool_seed_margin,int8_top10_margin,int8_keep_margin,union_len"
+    )?;
+    for (qid, row) in trace.iter().enumerate() {
+        writeln!(
+            out,
+            "{qid},{},{},{},{},{}",
+            row.route_margin,
+            row.pool_seed_margin,
+            row.int8_top10_margin,
+            row.int8_keep_margin,
+            row.union_len
+        )?;
+    }
+    Ok(trace.len())
+}
+
 pub fn reset_union_trace(nq: usize) {
     *UNION_TRACE.lock().expect("union trace lock") =
         vec![UnionTraceRow::default(); nq];
@@ -892,6 +972,11 @@ fn rerank_cascade_float(fbase: &crate::fbin::FBin, raw: &[i8], d: usize, raw_ori
 /// strictly finer than the int8 stage that selected them; ties beyond 2^-11 relative are noise either way.
 /// SBANN_RERANK_F16 gates; off = champion f32 mmap path bit-identical.
 pub static F16BASE: std::sync::OnceLock<Vec<u16>> = std::sync::OnceLock::new();
+/// Optional exact-f32 refinement depth after the resident fp16 reranker. Zero keeps
+/// the pure-fp16 path. Values >= k select that many candidates by fp16, then restore
+/// exact ordering over the selected band from the original f32 mmap.
+pub static F16_REFINE: std::sync::atomic::AtomicUsize =
+    std::sync::atomic::AtomicUsize::new(0);
 
 #[inline]
 fn dot_f16_row(qf: &[f32], row: &[u16]) -> f32 {
@@ -941,6 +1026,28 @@ fn rerank_orig_float(fbase: &crate::fbin::FBin, qf: &[f32], cand: &[(i32, u32)],
             let orig = cand[i].1;
             let row = &h[orig as usize * d..orig as usize * d + d];
             scored.push((-dot_f16_row(qf, row), orig));
+        }
+        let refine = F16_REFINE
+            .load(std::sync::atomic::Ordering::Relaxed)
+            .max(k)
+            .min(scored.len());
+        if refine > k {
+            if refine < scored.len() {
+                scored.select_nth_unstable_by(refine - 1, |a, b| a.0.total_cmp(&b.0));
+                scored.truncate(refine);
+            }
+            for i in 0..refine {
+                if i + 8 < refine {
+                    unsafe {
+                        _mm_prefetch(
+                            fbase.row(scored[i + 8].1 as usize).as_ptr() as *const i8,
+                            _MM_HINT_T0,
+                        )
+                    };
+                }
+                let orig = scored[i].1;
+                scored[i].0 = -simd::dot_f32_fast(qf, fbase.row(orig as usize));
+            }
         }
     } else {
         for i in 0..n {
@@ -1002,6 +1109,7 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
     // ADAPT-POOL: apq4 dist per distinct pool orig, aligned with union[0..pool_distinct] insertion order
     // (pooltop gets reordered by select_nth below, so a stable copy is kept when the lever is on).
     let mut pool_apq4: Vec<i32> = Vec::with_capacity(if apool > 0 { pool.len() } else { 0 });
+    let mut pool_seed_margin = 0i32;
     GRAPH_SET.with(|cell| {
         let mut set = cell.borrow_mut();
         let cap = (est * 2).next_power_of_two().max(64);
@@ -1034,6 +1142,11 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
                 }
                 h = (h + 1) & mask;
             }
+        }
+        if CONFIDENCE_TRACE_ON.load(Relaxed) && m_expand > 0 && pooltop.len() > m_expand {
+            let mut values: Vec<i32> = pooltop.iter().map(|&(dist, _)| dist).collect();
+            values.sort_unstable();
+            pool_seed_margin = values[m_expand].saturating_sub(values[m_expand - 1]);
         }
         // top-M pool slots by (apq4 dist, slot). Reordering pooltop is safe: the pool pass (and its
         // min-dist updates) is complete, and the neighbour pass below only reads the set's orig key.
@@ -1375,6 +1488,24 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
                           else { simd::negdot_i8(q, row) };
         }
     }
+    if CONFIDENCE_TRACE_ON.load(Relaxed) {
+        let mut values: Vec<i32> = scored.iter().map(|&(dist, _)| dist).collect();
+        values.sort_unstable();
+        let boundary_margin = |rank: usize| -> i32 {
+            if rank > 0 && values.len() > rank {
+                values[rank].saturating_sub(values[rank - 1])
+            } else {
+                0
+            }
+        };
+        record_search_confidence(
+            trace_qid,
+            pool_seed_margin,
+            boundary_margin(10),
+            boundary_margin(kk),
+            union.len(),
+        );
+    }
     let kk = kk.min(scored.len());
     if kk > 0 && kk < scored.len() { scored.select_nth_unstable(kk - 1); scored.truncate(kk); }
     if let Some(tc) = tc { PROF_CASC_NS.fetch_add(tc.elapsed().as_nanos() as u64, Relaxed); }
@@ -1500,6 +1631,11 @@ pub trait Router: Send + Sync {
     fn n_cells(&self) -> usize;
     fn assign(&self, row: &[i8], a0: usize, out: &mut Vec<u32>); // build: point -> a0 cells
     fn probe(&self, q: &[i8], p: usize) -> Vec<u32>; // query: top-p cells
+    /// Diagnostic confidence at the selected-cell boundary. Normal routing calls
+    /// `probe`; the default avoids imposing a scoring API on other routers.
+    fn probe_with_margin(&self, q: &[i8], p: usize) -> (Vec<u32>, i32) {
+        (self.probe(q, p), 0)
+    }
     /// top-p cells sorted NEAREST-FIRST (for adaptive early termination). Default: unranked probe.
     fn probe_ranked(&self, q: &[i8], p: usize) -> Vec<u32> { self.probe(q, p) }
     /// Batched routing: top-p cells for all nq queries (nq*p). Default: parallel per-query probe;
@@ -2286,6 +2422,26 @@ impl Router for HierRouter {
         let mut out = Vec::new();
         self.route_fine(&qn[..self.d], p, &mut out);
         out
+    }
+    fn probe_with_margin(&self, q: &[i8], p: usize) -> (Vec<u32>, i32) {
+        let out = self.probe(q, p);
+        let mut qn = [0i8; 1024];
+        simd::normalize_i8(q, &self.mu, &mut qn[..self.d]);
+        let mut fd: Vec<(i32, u32)> = Vec::new();
+        self.gather_fine(&qn[..self.d], &mut fd);
+        let take = p.min(fd.len());
+        let margin = if take > 0 && take < fd.len() {
+            fd.select_nth_unstable(take);
+            let inside = fd[..take]
+                .iter()
+                .map(|&(score, _)| score)
+                .max()
+                .unwrap_or(0);
+            fd[take].0.saturating_sub(inside)
+        } else {
+            0
+        };
+        (out, margin)
     }
     fn save(&self, w: &mut crate::persist::Sw) -> std::io::Result<()> {
         let f16 = !self.cent_f16.is_empty();
@@ -3830,12 +3986,20 @@ impl Index {
         // (1) route every query (UNCHANGED per-query router, honours ROUTE_VNNI via the global) into a
         // flat cell array with per-query bounds, then build each query's LUT/QueryCtx.
         let t0 = if prof { Some(std::time::Instant::now()) } else { None };
+        let confidence_on = CONFIDENCE_TRACE_ON.load(std::sync::atomic::Ordering::Relaxed);
         let mut cells_flat: Vec<u32> = Vec::with_capacity(nq * p);
         let mut cell_off: Vec<u32> = Vec::with_capacity(nq + 1);
         cell_off.push(0);
         for i in 0..nq {
-            let mut c = self.router.probe(&queries[i * d..i * d + d], p);
-            cells_flat.append(&mut c);
+            let mut cells = if confidence_on {
+                let (routed, margin) =
+                    self.router.probe_with_margin(&queries[i * d..i * d + d], p);
+                record_route_confidence(q_base + i, margin);
+                routed
+            } else {
+                self.router.probe(&queries[i * d..i * d + d], p)
+            };
+            cells_flat.append(&mut cells);
             cell_off.push(cells_flat.len() as u32);
         }
         if let Some(t0) = t0 { PROF_ROUTE_NS.fetch_add(t0.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed); }

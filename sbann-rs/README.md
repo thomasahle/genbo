@@ -46,6 +46,11 @@ Expert settings always win over a preset. These overrides remain supported:
 - `SBANN_RESIDENT_I8`: copy the active int8 scoring base into aligned,
   transparent-hugepage-eligible memory. With a graph layout active this
   applies to the relabeled base, without retaining a redundant original copy.
+- `SBANN_RERANK_F16`: use a resident fp16 base to preselect exact-rerank
+  candidates. The default `SBANN_RERANK_F16_REFINE=12` then scores that small
+  band from the original f32 base before the final top-10, avoiding the
+  measurable recall loss of pure fp16. Set the refinement depth explicitly
+  only when reproducing an experiment.
 
 Dataset semantics remain explicit: metric selection (`SBANN_IP`), float reranking
 and its files, resident-memory flags, and `SBANN_ROUTE_GAMMA` are not guessed.

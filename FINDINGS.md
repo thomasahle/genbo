@@ -5475,6 +5475,32 @@ P349 [2026-07-24] DEEP LOW-RECALL RETUNE — most of the “architectural” gap
   ARTIFACTS: deep10m/deep_low_{recall_sweep_{coarse,refine,shoulder},confirm_*}.json and
     abba_deep_tuned_r{0903,0926,0943,0960,0972}.json. Paper DEEP CSV/prose/caption updated.
 
+P350 [2026-07-24] DEEP NEXT 1--6 — corrected fp16 wins; five execution hypotheses closed.
+  FP16 WIN: pure resident fp16 costs 0.0010--0.0016 recall. A 12-candidate fp16 shortlist followed
+    by exact f32 correction restores the exact baseline recall at all five tuned policies. Strict
+    2-round internal ABBA median gains: +21.1/+28.9/+35.4/+28.3/+14.5% at recall
+    0.9039/0.9265/0.9426/0.9603/0.9718. SBANN_RERANK_F16 now defaults its correction band to 12.
+  CLOSED #2 BEAM0: isolated routebench built/32/48/64/128 = 48.56/49.06/49.23/52.07/57.07us/q.
+    The built beam is the floor; no recall-preserving 15% route gain.
+  CLOSED #3 POOL: APQ seed selection already drops recall to 0.8858/0.9148/0.9290/0.9502/0.9612
+    before eligibility trimming (versus 0.9039/.../0.9718); keep96 is worse. Exact int8 pool
+    selection is essential, so the production branch was removed.
+  CLOSED #4 DISPATCH: promotion oracle needs 16.4% for 0.9265 and 28.5% for 0.9426, but five-fold
+    held-out ridge/hist/forest reach only 0.9178--0.9183 at the 30% cap for the first target
+    (OOF corr ~0.24); higher targets also fail. Retained only SBANN_DUMP_CONFIDENCE diagnostics.
+  CLOSED #5 TILED ROUTE: 0/2000 cell-set mismatches, but scalar and tiled both 49--53us/q. The
+    earlier ~100us target included profiler instrumentation. Failed production path removed.
+  CLOSED #6 PIPELINE: chunks 64--1000 x prefetch lines 0--2; best no-prefetch/prefetch =
+    6612/6615 QPS. Chunk1000 vs adaptive default is <=1% in strict ABBA. Branch removed.
+  SOTA CAUTION: a direct corrected-fp16/Roar run under load 50--61 suggests Roar only 1.14x at
+    recall .904 and a tie at .926, but higher rows are cache-phase-bimodal and quarantined. P349
+    clean cross-engine ratios remain the paper frontier until stable repetition; paper claims only
+    the engine-internal paired fp16 gain.
+  ARTIFACTS: deep10m/deep_next_{fp16_refine,beam0_confirm,pool_keep_screen,
+    batch_route_screen,pipeline_{screen,confirm},confidence_dump,policy_result_dumps}.json;
+    abba_next_fp16r12_r*.json; abba_next_chunk1000_r*.json; experiments/{sweep_deep_next.py,
+    gate_deep_dispatch.py,abba_deep_next.json}. Next novel gate: supervised cell reranking.
+
 === SESSION SUMMARY (current, 2026-07-12, through P334) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall

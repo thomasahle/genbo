@@ -528,6 +528,12 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
         println!("  [RERANK-F16] resident fp16 base {}MB (f32 mmap was {}MB)  setup={:.1}s",
             nb * dd * 2 / 1_000_000, nb * dd * 4 / 1_000_000, t0.elapsed().as_secs_f64());
         let _ = vq::F16BASE.set(h);
+        let refine = std::env::var("SBANN_RERANK_F16_REFINE")
+            .ok()
+            .map(|value| value.parse().expect("SBANN_RERANK_F16_REFINE"))
+            .unwrap_or(12);
+        vq::F16_REFINE.store(refine, std::sync::atomic::Ordering::Relaxed);
+        println!("  [RERANK-F16] exact-f32 correction band={refine}");
     }
     let fqf: Vec<f32> = if float_rerank {
         let p = std::env::var("SBANN_FQUERY").expect("SBANN_FLOAT_RERANK set but SBANN_FQUERY missing");
@@ -915,6 +921,18 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
         );
         vq::reset_union_trace(nq);
     }
+    let confidence_dump = std::env::var("SBANN_DUMP_CONFIDENCE").ok();
+    if confidence_dump.is_some() {
+        assert!(
+            batchscan && graph_ref.is_some() && fbase.is_some(),
+            "SBANN_DUMP_CONFIDENCE requires batched graph float-rerank"
+        );
+        assert!(
+            plist.len() == 1 && tlist.len() == 1 && klist.len() == 1 && !vnni_ab && !lut_ab,
+            "SBANN_DUMP_CONFIDENCE requires one search configuration"
+        );
+        vq::reset_confidence_trace(nq);
+    }
     // IDEA #4 refine sweep: with SBANN_RESID, sweep (refine off/on) x rr_depth (=raw-rerank depth)
     // at a FIXED refine pool t_surv, on ONE built index. Reports recall vs raw reads for both, so the
     // refined order's depth saving (same recall, fewer raw reads) is a clean same-index A/B.
@@ -1117,6 +1135,10 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
                 "  [UNION_DUMP] {up}  queries={nonempty}/{nq} rows={total} avg={:.1}",
                 total as f64 / nonempty.max(1) as f64
             );
+        }
+        if let Some(path) = confidence_dump.as_deref() {
+            let rows = vq::write_confidence_trace(path).expect("confidence trace dump");
+            println!("  [CONFIDENCE_DUMP] {path} rows={rows}");
         }
         // CORRECTNESS GATE: the cell-major driver is a pure execution-order change -> per query it must
         // produce the same final top-10 as the per-query path (modulo equal-score tie order). Compare

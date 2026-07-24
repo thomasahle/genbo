@@ -204,9 +204,31 @@ def main() -> None:
     ap.add_argument("--no-warmup", action="store_true")
     ap.add_argument("--out", type=Path)
     ap.add_argument("--variant", help="named arm override from config's variants list")
+    ap.add_argument("--a-env", action="append", default=[], metavar="KEY=VALUE")
+    ap.add_argument("--b-env", action="append", default=[], metavar="KEY=VALUE")
+    ap.add_argument("--a-unset", action="append", default=[], metavar="KEY")
+    ap.add_argument("--b-unset", action="append", default=[], metavar="KEY")
+    ap.add_argument("--a-name")
+    ap.add_argument("--b-name")
     args = ap.parse_args()
 
     cfg = apply_variant(json.loads(args.config.read_text()), args.variant)
+    for key, assignments, removals, name in (
+        ("a", args.a_env, args.a_unset, args.a_name),
+        ("b", args.b_env, args.b_unset, args.b_name),
+    ):
+        arm = cfg[key]
+        for variable in removals:
+            arm.setdefault("env", {}).pop(variable, None)
+        for assignment in assignments:
+            if "=" not in assignment:
+                raise ValueError(f"{key}-env must be KEY=VALUE, got {assignment!r}")
+            variable, value = assignment.split("=", 1)
+            if not variable:
+                raise ValueError(f"empty variable in {assignment!r}")
+            arm.setdefault("env", {})[variable] = value
+        if name:
+            arm["name"] = name
     arms = {"a": cfg["a"], "b": cfg["b"]}
     if args.core is None:
         core, siblings, busy = choose_core()
@@ -239,6 +261,7 @@ def main() -> None:
     names = [arms["a"]["name"], arms["b"]["name"]]
     report = {
         "config": str(args.config),
+        "resolved_arms": arms,
         "core": core,
         "siblings": siblings,
         "samples": rows,

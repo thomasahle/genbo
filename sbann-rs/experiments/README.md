@@ -102,3 +102,27 @@ Use the unsorted relabeled graph when `SBANN_GRAPH_KEDGE` is below 32: sorting a
 row preserves its complete edge set but would change which prefix is selected.
 The named `tuned_r0903` through `tuned_r0972` variants in the Roar configuration
 are the full-query ABBA confirmations selected from the sweep.
+
+## Post-retune experiments 1--6
+
+`sweep_deep_next.py` reproduces the retained fp16 correction-depth, coarse-beam,
+and batch-chunk screens. It can also dump final result ids and the diagnostic
+confidence CSV needed by `gate_deep_dispatch.py`:
+
+```sh
+python3 sweep_deep_next.py fp16-refine --values 10,12,16,24,48 \
+  --nq 2000 --reps 2 \
+  --out /home/thomas-ahle/big-ann-data/deep10m/deep_next_fp16_refine.json
+
+python3 sweep_deep_next.py beam0 --values 0,32,48,64,128 \
+  --nq 2000 --reps 2 \
+  --out /home/thomas-ahle/big-ann-data/deep10m/deep_next_beam0_confirm.json
+```
+
+`abba_deep_next.json` defines the five tuned policies for strict engine-internal
+ABBA. `abba_bench.py` accepts repeatable `--a-env`, `--b-env`, `--a-unset`, and
+`--b-unset` overrides, so the same configuration can compare correction depths
+without copying JSON. The complete verdict and artifact names are in
+`DEEP_LOW_RECALL_NEXT.md`. Pool trimming, tiled routing, and route/scan prefetch
+were removed after failing their gates; they are documented rather than left as
+inactive production branches.
