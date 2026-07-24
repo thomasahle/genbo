@@ -1637,6 +1637,157 @@ pub struct RouteFeature {
     pub parent_norm: i32,
 }
 
+/// Experimental finest-centroid graph router. The graph is installed only when
+/// `SBANN_CENTROID_GRAPH` is set; normal hierarchical routing remains untouched.
+/// `adj` is a raw row-major cell graph and `landmarks` are fixed, well-spread
+/// entry cells. Search scores every landmark, enters at the nearest one, and
+/// performs an exact-L2 best-first walk over the finest centroids.
+pub struct CentroidRouteGraph {
+    k: usize,
+    adj: Vec<u32>,
+    landmarks: Vec<u32>,
+    ef: usize,
+}
+
+pub static CENTROID_ROUTE_GRAPH: std::sync::OnceLock<CentroidRouteGraph> =
+    std::sync::OnceLock::new();
+
+pub fn install_centroid_route_graph(
+    graph_path: &str,
+    landmarks_path: &str,
+    k: usize,
+    ef: usize,
+) {
+    assert!(k > 0 && ef > 0);
+    let graph_bytes = std::fs::read(graph_path).expect("SBANN_CENTROID_GRAPH");
+    assert_eq!(graph_bytes.len() % (k * 4), 0, "centroid graph is not n*k u32");
+    let adj: Vec<u32> = graph_bytes
+        .chunks_exact(4)
+        .map(|b| u32::from_le_bytes(b.try_into().unwrap()))
+        .collect();
+    let landmark_bytes =
+        std::fs::read(landmarks_path).expect("SBANN_CENTROID_LANDMARKS");
+    assert_eq!(
+        landmark_bytes.len() % 4,
+        0,
+        "centroid landmarks are not raw u32"
+    );
+    let landmarks: Vec<u32> = landmark_bytes
+        .chunks_exact(4)
+        .map(|b| u32::from_le_bytes(b.try_into().unwrap()))
+        .collect();
+    assert!(!landmarks.is_empty());
+    CENTROID_ROUTE_GRAPH
+        .set(CentroidRouteGraph {
+            k,
+            adj,
+            landmarks,
+            ef,
+        })
+        .unwrap_or_else(|_| panic!("centroid route graph installed twice"));
+}
+
+fn centroid_graph_probe(
+    qn: &[i8],
+    centroids: &[i8],
+    d: usize,
+    p: usize,
+) -> Option<Vec<u32>> {
+    use std::cmp::Reverse;
+    use std::collections::BinaryHeap;
+    let route = CENTROID_ROUTE_GRAPH.get()?;
+    let n = centroids.len() / d;
+    assert_eq!(route.adj.len(), n * route.k, "centroid graph/index mismatch");
+    assert!(
+        route
+            .landmarks
+            .iter()
+            .all(|&cell| (cell as usize) < n)
+    );
+    let ef = route.ef.max(p);
+    thread_local! {
+        static CENTROID_VISIT: std::cell::RefCell<(Vec<u32>, u32)> =
+            const { std::cell::RefCell::new((Vec::new(), 0)) };
+    }
+    Some(CENTROID_VISIT.with(|cell| {
+        let started = if ROUTE_PROF.load(std::sync::atomic::Ordering::Relaxed) {
+            Some(std::time::Instant::now())
+        } else {
+            None
+        };
+        let mut state = cell.borrow_mut();
+        let (stamp, epoch) = &mut *state;
+        if stamp.len() < n {
+            stamp.clear();
+            stamp.resize(n, 0);
+            *epoch = 0;
+        }
+        *epoch = epoch.wrapping_add(1);
+        if *epoch == 0 {
+            stamp.fill(0);
+            *epoch = 1;
+        }
+        let current_epoch = *epoch;
+        let score = |id: u32| {
+            let id = id as usize;
+            simd::l2_i8(qn, &centroids[id * d..(id + 1) * d])
+        };
+
+        let mut best_entry = route.landmarks[0];
+        let mut best_entry_dist = i32::MAX;
+        let mut evals = 0u64;
+        for &entry in &route.landmarks {
+            stamp[entry as usize] = current_epoch;
+            let dist = score(entry);
+            evals += 1;
+            if (dist, entry) < (best_entry_dist, best_entry) {
+                best_entry = entry;
+                best_entry_dist = dist;
+            }
+        }
+
+        let mut candidates: BinaryHeap<Reverse<(i32, u32)>> =
+            BinaryHeap::with_capacity(4 * ef);
+        let mut best: BinaryHeap<(i32, u32)> = BinaryHeap::with_capacity(ef + 1);
+        candidates.push(Reverse((best_entry_dist, best_entry)));
+        best.push((best_entry_dist, best_entry));
+        while let Some(Reverse((distance, current))) = candidates.pop() {
+            if best.len() >= ef && distance > best.peek().unwrap().0 {
+                break;
+            }
+            let begin = current as usize * route.k;
+            let neighbours = &route.adj[begin..begin + route.k];
+            for &next in neighbours {
+                let next_index = next as usize;
+                if next_index >= n || stamp[next_index] == current_epoch {
+                    continue;
+                }
+                stamp[next_index] = current_epoch;
+                let next_distance = score(next);
+                evals += 1;
+                if best.len() < ef || next_distance < best.peek().unwrap().0 {
+                    candidates.push(Reverse((next_distance, next)));
+                    best.push((next_distance, next));
+                    if best.len() > ef {
+                        best.pop();
+                    }
+                }
+            }
+        }
+        let mut ranked = best.into_vec();
+        ranked.sort_unstable();
+        ranked.truncate(p.min(ranked.len()));
+        if let Some(t0) = started {
+            PROF_R_FINE_NS.fetch_add(
+                t0.elapsed().as_nanos() as u64,
+                std::sync::atomic::Ordering::Relaxed,
+            );
+            PROF_R_NEVAL.fetch_add(evals, std::sync::atomic::Ordering::Relaxed);
+        }
+        ranked.into_iter().map(|(_, cell)| cell).collect()
+    }))
+}
+
 pub trait Router: Send + Sync {
     fn n_cells(&self) -> usize;
     fn assign(&self, row: &[i8], a0: usize, out: &mut Vec<u32>); // build: point -> a0 cells
@@ -2449,11 +2600,19 @@ impl Router for HierRouter {
     fn probe(&self, q: &[i8], p: usize) -> Vec<u32> {
         let mut qn = [0i8; 1024];
         simd::normalize_i8(q, &self.mu, &mut qn[..self.d]);
+        if let Some(out) =
+            centroid_graph_probe(&qn[..self.d], &self.cent[self.levels - 1], self.d, p)
+        {
+            return out;
+        }
         let mut out = Vec::new();
         self.route_fine(&qn[..self.d], p, &mut out);
         out
     }
     fn probe_with_margin(&self, q: &[i8], p: usize) -> (Vec<u32>, i32) {
+        if CENTROID_ROUTE_GRAPH.get().is_some() {
+            return (self.probe(q, p), 0);
+        }
         let out = self.probe(q, p);
         let mut qn = [0i8; 1024];
         simd::normalize_i8(q, &self.mu, &mut qn[..self.d]);

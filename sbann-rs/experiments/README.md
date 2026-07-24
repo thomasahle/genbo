@@ -146,3 +146,37 @@ each candidate, its fine/parent ids, distances, norms, and occupancy.
 Neither command is called by normal search. The gate failed, so no learned
 reranker was added to the Rust hot path; exact results are recorded in
 `DEEP_LOW_RECALL_NEXT.md`.
+
+## Ten structural low-recall gates
+
+`deep_big_ideas_results.json` is the compact ledger for the subsequent
+centroid-router, query-memory, evidence-jump, conditional-selector, trace-edge,
+edge-sketch, page-slab, block-bound, query-hypergraph, and inverted-multi-index
+gates. The only engine-internal survivor is the opt-in finest-centroid graph
+router. Build its graph and landmarks from the loaded index's metadata, then
+reproduce its strict hierarchy comparison:
+
+```sh
+SBANN_INDEX_LOAD=/home/thomas-ahle/big-ann-data/deep10m/eng_deep10m_kf65536.idx \
+  ../target/release/sbann dumproutermeta \
+  /home/thomas-ahle/big-ann-data/deep10m/deep10m_router.rcm
+python3 build_centroid_route_graph.py \
+  /home/thomas-ahle/big-ann-data/deep10m/deep10m_router.rcm \
+  /home/thomas-ahle/big-ann-data/deep10m/deep10m_centroid
+python3 abba_bench.py abba_deep_centroid_router.json --rounds 3 \
+  --out /home/thomas-ahle/big-ann-data/deep10m/abba_centroid_router_vs_hier.json
+```
+
+The signed-4-bit displacement artifact used to reject the edge-sketch hot path
+can be regenerated without changing the engine:
+
+```sh
+python3 build_edge_sketch.py \
+  /home/thomas-ahle/big-ann-data/deep10m/graph_layout_gate.cellpair.aligned64.i8bin \
+  /home/thomas-ahle/big-ann-data/deep10m/graph_layout_gate.cellpair.graph.u32 \
+  /home/thomas-ahle/big-ann-data/deep10m/deep10m_edge_i4.cellpair.eds \
+  --base-offset 64 --n 10000000 --d 96 --k 32
+```
+
+The complete runtime branch was removed after the 10M test showed that
+decode/select overhead exceeded the avoided destination-row gathers.

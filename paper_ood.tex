@@ -894,6 +894,22 @@ would cost $\approx\!33{,}000$ evals, whereas the 3-level tree roughly halves th
 ($14{,}336$) --- so the third level is introduced only at 100M, where routing is a
 large enough share of the query to matter.
 
+\paragraph{A graph over the leaves.} Equation~\eqref{eq:route} assumes tree
+descent. At the low-dimensional loose-recall boundary, where routing is $31\%$ of
+end-to-end time, we also build a 16-edge Vamana-pruned graph over the 64,512 fine
+centroids (one-second self-build) and enter it through 64 fixed farthest-point
+landmarks. Exact-int8 best-first search with an $\mathrm{ef}=128$ frontier evaluates
+816 centroids/query instead of 3,200 and cuts routing $48.8\to36.6\,\mu$s/query.
+Because this is only a cheaper approximation to the \emph{same} centroid geometry,
+we co-tune the downstream budget rather than claim new coverage: on DEEP-10M,
+$(p,T,K)=(17,160,16)$ reaches recall $0.9032$. A 12-leg same-core ABBA (six
+samples per arm) against the
+hierarchical $(15,192,24)$ policy raises median QPS $5346\to5773$ ($+8.0\%$), but a
+second ABBA against RoarGraph gives $5653$ versus $6747$ QPS at matched recall.
+Thus centroid-graph routing moves our loose point without moving the structural
+crossover: the remaining deficit is the fixed scan$+$point-graph toll, not tree
+descent.
+
 
 
 \subsection{Scaling laws for geometry}
@@ -1388,7 +1404,8 @@ $d{=}96,200,768$ and $n{=}1$--$10$M without erasing expert control. A subsequent
 targeted low-dimensional calibration (2,216 DEEP configurations) shows why the
 expert controls remain useful: the loose frontier wants two hops and a
 recall-banded $(M,k_e,T,K,p)$ ladder rather than the high-recall walk. Its strict
-paired points progress from $(8,32,192,24,15)$ at recall $0.9039$ to
+paired points progress from a centroid-graph
+$(M,k_e,T,K,p)=(8,32,160,16,17)$ policy at recall $0.9032$ to
 $(24,32,384,48,48)$ at $0.9718$, moving the RoarGraph crossover downward without
 changing the index.}
 
@@ -1567,6 +1584,31 @@ and coverage.
     raw top-128 shortlist reaches $0.9769$. The gap is therefore not shortlist
     capacity but predictability from query-time geometry, consistent with the
     materialized-adjacency boundary in \S\ref{sec:bottleneck}.
+  \item \textbf{Training-query memories and trace shortcuts}: 400k disjoint
+    training queries do contain complementary evidence, but not cheaply enough.
+    Replacing five geometric cells by the answer union of the nearest 240 training
+    queries raises held-out coverage $0.8336\to0.8525$ at matched candidate count;
+    retrieving those queries from a self-built graph, however, costs 2,737
+    query-vector evaluations --- over three centroid-router budgets. Co-retrieval
+    shortcuts touch only 2.95M of 10M base nodes: replacing eight of 32 geometric
+    edges collapses recall, while retaining all 32 and adding eight reaches
+    $0.9022$@$6233$ QPS versus $0.9039$@$6282$ without them. A conditional
+    set-cover reranker adds only $0.0031$ held-out coverage, and graph-neighbour
+    votes used to launch a second IVF scan lose $24$--$45\%$ throughput for
+    $0.01$--$0.02$ recall. The signal is real; its indexing and selection cost
+    exceeds the saved scan.
+  \item \textbf{Compressed-edge, replicated-page, block-bound, and multi-index
+    alternatives}: edge-relative signed-4-bit sketches look excellent offline
+    (the exact best edge is in the sketch top-4 for $99.92\%$ of expansions), but
+    their 1.5\,KB sequential row plus decode/select makes matched-recall search
+    $3.6\%$ slower. Replicating eight hot destinations per 4\,KB source page costs
+    $19\%$ extra memory yet localizes only another $3.6\%$ of edges. For 16-row
+    IVF blocks, an oracle can discard $67.6\%$, but computable sphere/AABB bounds
+    discard only $0.03\%$/$0.16\%$ in 96 dimensions. Finally, an independently
+    trained $256{\times}256$ inverted multi-index is too imbalanced: one product
+    cell already scans 6,146 rows for $0.378$ coverage, and $0.842$ coverage costs
+    58,746 rows. These failures rule out four superficially promising ways to
+    hide the low-dimensional random-gather floor.
 \end{itemize}
 \emph{The OOD negatives cluster on the scan/code side and all fail there; the
 \S\ref{sec:gamma}--\S\ref{sec:soar} levers cluster on routing/coverage and all succeed. In-distribution the
@@ -1773,8 +1815,9 @@ placing its rows in graph-local physical order ($+17$--$22\%$), and
 widening the int8-survivor rerank pool (recovering ${\sim}4\%$ of quantization-
 misranked tail neighbours at ${\sim}0$ cost) lifts our frontier so that we win or tie
 the high-recall regime. A final recall-banded low-dimensional sweep removes most
-of the remaining over-configuration: in strict pairs RoarGraph's lead falls to
-$1.29\times$ at recall $0.904$, $1.11$--$1.12\times$ at $0.926$--$0.943$, and
+of the remaining over-configuration; centroid-graph routing then cuts another
+$8.0\%$ from our loose policy. In strict pairs RoarGraph's lead falls to
+$1.19\times$ at recall $0.903$, $1.11$--$1.12\times$ at $0.926$--$0.943$, and
 $1.04\times$ at $0.960$; the systems tie at $0.9718$ (ours $1.01\times$), after
 which ours leads $1.07\times$ at $0.9815$ and $1.16\times$ at $0.9908$, reaching
 $0.9987$ beyond RoarGraph's measured ceiling. RoarGraph therefore retains only
@@ -1934,8 +1977,9 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
   RoarGraph, exceeding HNSW's ceiling); RoarGraph's curve required padding its input
   to $d{=}104$ --- its released code silently corrupts dimensions not divisible by 8.
   On DEEP 10M ($d{=}96$) the outcome is a \emph{crossover}: graph-local physical
-  ordering raises our QPS $17$--$22\%$, then recall-banded two-hop tuning closes
-  the strict-pair gap from RoarGraph $1.29\times$ at recall $0.904$ to
+  ordering raises our QPS $17$--$22\%$, then recall-banded two-hop tuning and
+  centroid-graph routing close the strict-pair gap from RoarGraph $1.19\times$
+  at recall $0.903$ to
   $1.04\times$ at $0.960$; we tie at $0.9718$ and lead $1.07\times$ at $0.9815$
   / $1.16\times$ at $0.9908$ (reaching $0.9987$ beyond its ceiling). RoarGraph
   retains the loose-recall corner below ${\sim}0.97$ --- cheap short graph walks

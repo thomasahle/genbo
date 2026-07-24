@@ -5519,6 +5519,46 @@ P351 [2026-07-24] DEEP SUPERVISED CELL RERANK (#7) — real oracle headroom, dep
     (reports deep_cell_rerank_gate.json and deep_cell_rerank_full12.json).
     Next ranked experiment: #8 physical page-cohort incremental walk.
 
+P352 [2026-07-24] TEN BIG DEEP LOOSE-RECALL IDEAS — one internal 8% win; none erases Roar's structural corner.
+  PROTOCOL: first 400k Roar training queries for construction, queries 400k:402k for selection, public 2k
+    only for final engine checks. All runtime gates use the champion graph-local base, resident int8,
+    fp16+12-row f32 correction, same core, and unchanged float GT. Full ledger:
+    experiments/deep_big_ideas_results.json.
+  #1 CENTROID-GRAPH ROUTER SURVIVES INTERNALLY: self-built 16-edge Vamana graph over 64,512 finest
+    centroids + 64 farthest landmarks, ef128. Route evaluations 3200->816; route 48.82->36.62us.
+    Co-tuned p17/T160/K16 reaches .9032. Twelve-leg engine ABBA (six samples/arm) vs hierarchy p15/T192/K24:
+    median 5772.5 vs 5346 QPS = +7.98%, recall .9032 vs .9039. But direct Roar L44 ABBA:
+    5653 vs 6746.9 QPS at .9032/.90305 = ours 0.8379x. It improves genbo, not enough to win.
+  #2/#9 QUERY MEMORY/HYPERGRAPH: nearest-query cell votes are weak (.6688 coverage at 64 neighbours),
+    but the candidate signal is complementary: raw10+vote10 .8464 vs raw15 .8336; at matched ~6.8k
+    candidates raw10 + answers from exact nearest240 training queries reaches .8525. A 400k-query
+    kNN graph retrieves top240 at .917 overlap but costs 2736.5 vector evals (over 3x centroid-router
+    budget). Quality positive, latency reject.
+  #3 EVIDENCE CELL JUMPS: actual second-scan path p6 .8559@6287 -> extra4/seeds4 .8657@4763,
+    extra6/seeds8 .8709@3937, extra9/seeds8 .8766@3513. Signal too weak and second random scan too
+    expensive; production scaffolding removed.
+  #4 CONDITIONAL SET COVER: pairwise centroid similarity/parent penalties add .0031 validation
+    coverage over the learned scorer, but public .7812 remains below raw15 .8133. Relevance, not
+    redundancy, is binding.
+  #5 TRACE SHORTCUTS: 400k top10 traces produce 36M co-occurrence pairs but cover only 2.95M nodes.
+    Replacing 8/32 geometric edges gives .8931@6388; keeping all32+8 gives .9022@6233 versus baseline
+    .9039@6282. Sparse traces cannot replace local geometry; additive form has no matched-recall win.
+  #6 EDGE DISPLACEMENT SKETCH: edge-relative signed-i4 is extremely accurate (best exact edge in
+    sketch top4 99.92%; GT top4 retention 99.12%). Full 10M 15.68GB artifact and Rust hot-path test:
+    keep8 .9037@6211 vs baseline .9039@6444; keep4 retuned p16 .9043@6382. The 1.5KB sketch row plus
+    decode/select costs more than the exact row gathers saved. Hot path removed; builder retained.
+  #7 PAGE SLABS: 50k-page sample; same-page edges 4.34%. Eight replicas/page = 19% base overhead but
+    localizes only another 3.59% (7.93% total). Reject.
+  #8 BLOCK-WAND: at block16/top192, exact block-min oracle can skip 67.64%, proving selectivity exists;
+    sphere/AABB bounds skip only .03%/.16% in d96. Practical bounds are vacuous; reject.
+  #10 MULTI-INDEX: independently trained 256x256 half-space product partition is badly imbalanced.
+    One cell already costs 6146 candidates at .3785 coverage; .8421 costs 58,746. Twelve cheap
+    alternate 48-d views over existing cells also all lose to raw15. Reject.
+  COMBINATION: centroid routing + additive trace40 gives .9044@6968 standalone vs centroid/base
+    .9032@7069; no Pareto improvement. The residual low-corner deficit is therefore not ordinary
+    tuning or tree descent. It is the fixed scan + materialized point-graph toll against Roar's short,
+    fully adaptive walk. Paper method/negative/results prose and DEEP first frontier point updated.
+
 === SESSION SUMMARY (current, 2026-07-12, through P334) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall

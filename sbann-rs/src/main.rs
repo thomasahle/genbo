@@ -2283,6 +2283,22 @@ fn main() {
         vq::ROUTE_VNNI.store(true, std::sync::atomic::Ordering::Relaxed);
     }
     if let Ok(s) = std::env::var("SBANN_ROUTE_ADC_KEEP") { if let Ok(v) = s.parse::<usize>() { vq::ROUTE_ADC_KEEP.store(v, std::sync::atomic::Ordering::Relaxed); } }
+    if let Ok(graph_path) = std::env::var("SBANN_CENTROID_GRAPH") {
+        let landmarks_path = std::env::var("SBANN_CENTROID_LANDMARKS")
+            .expect("SBANN_CENTROID_GRAPH needs SBANN_CENTROID_LANDMARKS");
+        let k = std::env::var("SBANN_CENTROID_GRAPH_K")
+            .ok()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(16);
+        let ef = std::env::var("SBANN_CENTROID_GRAPH_EF")
+            .ok()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(192);
+        vq::install_centroid_route_graph(&graph_path, &landmarks_path, k, ef);
+        println!(
+            "  [CENTROID-GRAPH] graph={graph_path} k={k} ef={ef} landmarks={landmarks_path}"
+        );
+    }
     if std::env::var("SBANN_NOLUT16").is_ok() { vq::LUT16_OFF.store(true, std::sync::atomic::Ordering::Relaxed); }
     if std::env::var("SBANN_FASTSCAN").is_ok() {
         assert!(pq::selftest_i8_fast(50) && pq::selftest_i8_fast(100), "fast-scan kernel != scalar!");

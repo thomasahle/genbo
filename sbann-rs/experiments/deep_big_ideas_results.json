@@ -1,0 +1,141 @@
+{
+  "date_utc": "2026-07-24",
+  "dataset": "DEEP-10M, d=96, L2",
+  "protocol": {
+    "development": "first 400k RoarGraph training queries",
+    "validation": "training queries 400k:402k",
+    "public_eval": "official 2k queries, used only for final engine checks",
+    "target": "close the remaining low-recall gap near recall@10=0.903"
+  },
+  "ideas": [
+    {
+      "id": 1,
+      "name": "finest-centroid graph router",
+      "status": "internal_survivor_but_not_sota",
+      "results": {
+        "hierarchical_route_us": 48.82,
+        "graph_ef128_route_us": 36.62,
+        "graph_ef128_centroid_evaluations": 815.8,
+        "baseline_engine": "0.9039, ABBA median 5346 QPS",
+        "graph_router_engine": "0.9032, ABBA median 5772.5 QPS (p17, survivor floor 160, cascade 16)",
+        "paired_speedup_over_hierarchical_router": 1.0798,
+        "roar_same_window": "0.90305, ABBA median 6746.9 QPS",
+        "speed_ratio_to_roar": 0.8379
+      }
+    },
+    {
+      "id": 2,
+      "name": "nonparametric training-query memory",
+      "status": "rejected_as_standalone_router",
+      "results": {
+        "nearest_64_cell_vote_coverage": 0.6688,
+        "raw_10_plus_vote_10_cell_coverage": 0.8464,
+        "raw_15_cell_coverage": 0.83355,
+        "reason": "complementary candidates exist, but vote ranking is too weak and query-memory search cost is high"
+      }
+    },
+    {
+      "id": 3,
+      "name": "evidence-conditioned second-cell scan",
+      "status": "rejected_after_runtime_grid",
+      "results": {
+        "baseline_p6": "0.8559@6287",
+        "extra4_seeds4": "0.8657@4763",
+        "extra6_seeds8": "0.8709@3937",
+        "extra9_seeds8": "0.8766@3513",
+        "reason": "pre-graph pool identity is too weak and a second random scan is expensive"
+      }
+    },
+    {
+      "id": 4,
+      "name": "conditional set-cover cell selector",
+      "status": "rejected",
+      "results": {
+        "learned_validation_coverage": 0.81902,
+        "pairwise_aware_validation_coverage": 0.82213,
+        "pairwise_aware_public_coverage": 0.78115,
+        "raw_15_public_coverage": 0.8133,
+        "reason": "redundancy modeling adds only 0.0031 on validation; relevance prediction remains the bottleneck"
+      }
+    },
+    {
+      "id": 5,
+      "name": "training-trace shortcut graph",
+      "status": "rejected_after_runtime_grid",
+      "results": {
+        "training_queries": 400000,
+        "base_nodes_with_shortcuts": 2947185,
+        "replace_8_of_32": "0.8931@6388 (p15, h2, M8)",
+        "preserve_32_plus_8": "0.9022@6233 (p14, h2, M8)",
+        "baseline": "0.9039@6282 (p15, h2, M8)",
+        "reason": "shortcuts are too sparse to replace geometry; adding them preserves recall but not speed"
+      }
+    },
+    {
+      "id": 6,
+      "name": "signed-4-bit edge-displacement sketches",
+      "status": "rejected_after_full_runtime_gate",
+      "results": {
+        "exact_best_in_sketch_top4": 0.9992,
+        "exact_top8_overlap": 0.9356,
+        "ground_truth_edge_retention_top4": 0.9912,
+        "profile_union_rows_per_query": 235,
+        "profile_graph_phase_fraction": 0.059,
+        "profile_rescore_fraction": 0.327,
+        "baseline": "0.9039@6444",
+        "keep_8_of_32": "0.9037@6211",
+        "keep_4_of_32_retuned": "0.9043@6382 (p16)",
+        "reason": "1.5 KB sequential sketch-row fetch plus decode/select costs exceed the avoided exact row gathers"
+      }
+    },
+    {
+      "id": 7,
+      "name": "page-native replicated graph slabs",
+      "status": "rejected",
+      "results": {
+        "sampled_source_pages": 50000,
+        "same_page_edge_fraction": 0.04338,
+        "memory_overhead": 0.19,
+        "edge_fraction_local_or_replicated": 0.0793,
+        "reason": "19% duplication localizes only another 3.6% of edges"
+      }
+    },
+    {
+      "id": 8,
+      "name": "block-WAND IVF scan",
+      "status": "rejected",
+      "results": {
+        "block_rows": 16,
+        "survivor_target": 192,
+        "oracle_exact_block_skip": 0.6764,
+        "sphere_bound_skip": 0.0003,
+        "axis_aligned_box_skip": 0.0016,
+        "reason": "selectivity exists, but high-dimensional practical bounds are almost entirely vacuous"
+      }
+    },
+    {
+      "id": 9,
+      "name": "training-query hypergraph partition",
+      "status": "rejected_on_cost",
+      "results": {
+        "same_budget_raw_15_coverage": 0.8336,
+        "same_budget_raw_10_plus_240_nearest_query_answers": 0.8525,
+        "query_graph_ef256_vector_evaluations": 2736.5,
+        "query_graph_top240_overlap": 0.9174,
+        "reason": "quality signal is real, but query-side ANN costs roughly three centroid-router budgets"
+      }
+    },
+    {
+      "id": 10,
+      "name": "multi-index routing ensemble",
+      "status": "rejected",
+      "results": {
+        "half_space_product_cells": 65536,
+        "one_product_cell_coverage": 0.37845,
+        "one_product_cell_candidates": 6146.2,
+        "coverage_0_8421_candidates": 58745.6,
+        "reason": "independent 256x256 product cells are severely imbalanced; cheap alternate views of existing cells also reduce coverage"
+      }
+    }
+  ]
+}
