@@ -175,6 +175,36 @@ pub unsafe fn argmax_sq4p64_vnni(qe: &[i8], qo: &[i8], codes: &[u8]) -> usize {
     best_row
 }
 
+/// Append one SQ4 dot score per 64-byte padded row.  Unlike repeated
+/// `dot_sq4_vnni` calls, the query halves stay in registers for the whole
+/// contiguous portal bucket.
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx512f,avx512bw,avx512vnni")]
+pub unsafe fn score_sq4p64_vnni(
+    qe: &[i8],
+    qo: &[i8],
+    codes: &[u8],
+    out: &mut Vec<i32>,
+) {
+    debug_assert!(qe.len() >= 64 && qo.len() >= 64 && codes.len() % 64 == 0);
+    let lo4 = _mm512_set1_epi8(0x0F);
+    let qev = _mm512_loadu_si512(qe.as_ptr() as *const __m512i);
+    let qov = _mm512_loadu_si512(qo.as_ptr() as *const __m512i);
+    out.reserve(codes.len() / 64);
+    for row in 0..codes.len() / 64 {
+        let cv =
+            _mm512_loadu_si512(codes.as_ptr().add(row * 64) as *const __m512i);
+        let vlo = _mm512_and_si512(cv, lo4);
+        let vhi = _mm512_and_si512(_mm512_srli_epi16(cv, 4), lo4);
+        let acc = _mm512_dpbusd_epi32(
+            _mm512_dpbusd_epi32(_mm512_setzero_si512(), vlo, qev),
+            vhi,
+            qov,
+        );
+        out.push(_mm512_reduce_add_epi32(acc));
+    }
+}
+
 #[cfg(test)]
 mod sq4p64_tests {
     use super::*;
@@ -210,6 +240,20 @@ mod sq4p64_tests {
             .unwrap();
         let actual = unsafe { argmax_sq4p64_vnni(&qe, &qo, &codes) };
         assert_eq!(actual, expected);
+        let mut batch = Vec::new();
+        unsafe { score_sq4p64_vnni(&qe, &qo, &codes, &mut batch) };
+        let scalar: Vec<i32> = (0..rows)
+            .map(|row| {
+                (0..64)
+                    .map(|j| {
+                        let code = codes[row * 64 + j];
+                        (code & 15) as i32 * qe[j] as i32
+                            + (code >> 4) as i32 * qo[j] as i32
+                    })
+                    .sum()
+            })
+            .collect();
+        assert_eq!(batch, scalar);
     }
 }
 

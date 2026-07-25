@@ -993,6 +993,216 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
         }
         return;
     }
+    // PORTAL-TILE SCAN (graph-free loose-recall gate): route many fine cells,
+    // globally rank their spherical portal buckets, stream the selected
+    // portal-order SQ4 rows, then exact-float rerank a small survivor band.
+    // Unlike ROARMODE, there is no point adjacency, visited table, heap, or
+    // query-serial expansion. SBANN_PORTALSCAN is a comma-separated bucket
+    // count; SBANN_PORTAL_SURVIVORS and SBANN_PORTAL_SCAN_CELLS sweep the
+    // remaining two budgets.
+    if let Ok(spec) = std::env::var("SBANN_PORTALSCAN") {
+        use std::sync::atomic::Ordering::Relaxed;
+        let blist: Vec<usize> = spec
+            .split(',')
+            .filter_map(|value| value.trim().parse().ok())
+            .filter(|&value| value > 0)
+            .collect();
+        let slist: Vec<usize> = std::env::var("SBANN_PORTAL_SURVIVORS")
+            .ok()
+            .map(|value| {
+                value
+                    .split(',')
+                    .filter_map(|item| item.trim().parse().ok())
+                    .filter(|&item| item >= 10)
+                    .collect()
+            })
+            .filter(|values: &Vec<usize>| !values.is_empty())
+            .unwrap_or_else(|| vec![128]);
+        let portal_cells: usize = std::env::var("SBANN_PORTAL_SCAN_CELLS")
+            .ok()
+            .and_then(|value| value.parse().ok())
+            .unwrap_or(128);
+        let portals = vq::CELL_PORTALS
+            .get()
+            .expect("SBANN_PORTALSCAN needs SBANN_PORTAL_FILE");
+        let sq4 = vq::PORTAL_SQ4
+            .get()
+            .expect("SBANN_PORTALSCAN needs SBANN_PORTAL_SQ4_FILE");
+        let fb = fbase
+            .as_ref()
+            .expect("SBANN_PORTALSCAN needs SBANN_FLOAT_RERANK");
+        let ipm = vq::IP_MODE.load(Relaxed);
+        let portal_batch = env_on("SBANN_PORTAL_BATCH", false);
+        println!(
+            "  [PORTALSCAN] cells={portal_cells} buckets={blist:?} survivors={slist:?} batch={portal_batch}"
+        );
+        for &buckets in &blist {
+            for &survivors in &slist {
+                vq::PORTAL_SCAN_ROWS.store(0, Relaxed);
+                let mut best_dt = f64::INFINITY;
+                let mut res: Vec<Vec<u32>> = Vec::new();
+                for _ in 0..reps.max(1) {
+                    let started = Instant::now();
+                    let current: Vec<Vec<u32>> = if portal_batch {
+                        let prepared: Vec<(Vec<i8>, Vec<i8>, Vec<usize>)> =
+                            (0..nq)
+                                .into_par_iter()
+                                .map(|i| {
+                                    let cells =
+                                        idx.router.probe(qs.row(i), portal_cells);
+                                    let tiles = portals.rank_tiles(
+                                        qs.row(i),
+                                        &cells,
+                                        buckets,
+                                    );
+                                    let (qe, qo) =
+                                        sq4.encode_query(qs.row(i));
+                                    (qe, qo, tiles)
+                                })
+                                .collect();
+                        let mut requests =
+                            Vec::with_capacity(nq * buckets);
+                        for (query, (_, _, tiles)) in
+                            prepared.iter().enumerate()
+                        {
+                            requests.extend(
+                                tiles.iter().map(|&tile| (tile, query)),
+                            );
+                        }
+                        requests.sort_unstable();
+                        let mut pools: Vec<Vec<(i32, u32)>> =
+                            (0..nq).map(|_| Vec::new()).collect();
+                        for (tile, query) in requests {
+                            let (qe, qo, _) = &prepared[query];
+                            portals.score_tile(
+                                tile,
+                                qe,
+                                qo,
+                                sq4,
+                                &mut pools[query],
+                            );
+                        }
+                        vq::PORTAL_SCAN_ROWS.fetch_add(
+                            pools.iter().map(Vec::len).sum::<usize>() as u64,
+                            Relaxed,
+                        );
+                        pools
+                            .into_par_iter()
+                            .enumerate()
+                            .map(|(i, mut pool)| {
+                                let candidates =
+                                    vq::portal_tile_survivors(
+                                        &mut pool,
+                                        survivors,
+                                    );
+                                let qv =
+                                    &fqf[i * ds.d..(i + 1) * ds.d];
+                                let mut scored: Vec<(f32, u32)> =
+                                    candidates
+                                        .iter()
+                                        .map(|&(_, id)| {
+                                            let row = fb.row(id as usize);
+                                            let score = if ipm {
+                                                let mut acc = 0f32;
+                                                for j in 0..ds.d {
+                                                    acc += qv[j] * row[j];
+                                                }
+                                                -acc
+                                            } else {
+                                                let mut acc = 0f32;
+                                                for j in 0..ds.d {
+                                                    let delta =
+                                                        qv[j] - row[j];
+                                                    acc += delta * delta;
+                                                }
+                                                acc
+                                            };
+                                            (score, id)
+                                        })
+                                        .collect();
+                                scored.sort_unstable_by(|a, b| {
+                                    a.partial_cmp(b).unwrap()
+                                });
+                                scored
+                                    .iter()
+                                    .take(10)
+                                    .map(|&(_, id)| id)
+                                    .collect()
+                            })
+                            .collect()
+                    } else {
+                        (0..nq)
+                            .into_par_iter()
+                            .map(|i| {
+                                let cells =
+                                    idx.router.probe(qs.row(i), portal_cells);
+                                let candidates = portals.scan_tiles(
+                                    qs.row(i),
+                                    &cells,
+                                    buckets,
+                                    survivors,
+                                    sq4,
+                                );
+                            let qv = &fqf[i * ds.d..(i + 1) * ds.d];
+                            let mut scored: Vec<(f32, u32)> = candidates
+                                .iter()
+                                .map(|&(_, id)| {
+                                    let row = fb.row(id as usize);
+                                    let score = if ipm {
+                                        let mut acc = 0f32;
+                                        for j in 0..ds.d {
+                                            acc += qv[j] * row[j];
+                                        }
+                                        -acc
+                                    } else {
+                                        let mut acc = 0f32;
+                                        for j in 0..ds.d {
+                                            let delta = qv[j] - row[j];
+                                            acc += delta * delta;
+                                        }
+                                        acc
+                                    };
+                                    (score, id)
+                                })
+                                .collect();
+                            scored.sort_unstable_by(|a, b| {
+                                a.partial_cmp(b).unwrap()
+                            });
+                            scored
+                                .iter()
+                                .take(10)
+                                .map(|&(_, id)| id)
+                                .collect()
+                            })
+                            .collect()
+                    };
+                    best_dt = best_dt.min(started.elapsed().as_secs_f64());
+                    res = current;
+                }
+                let mut hit = 0usize;
+                for i in 0..nq {
+                    let truth: std::collections::HashSet<u32> =
+                        gids[i * gk..i * gk + 10]
+                            .iter()
+                            .copied()
+                            .collect();
+                    hit += res[i]
+                        .iter()
+                        .take(10)
+                        .filter(|id| truth.contains(id))
+                        .count();
+                }
+                let nrun = (nq * reps.max(1)) as u64;
+                println!(
+                    "  PS C={portal_cells:3} B={buckets:3} S={survivors:3}: recall@10={:.4}  QPS={:.0} (best/{reps}) rows/q={}",
+                    hit as f64 / (nq * 10) as f64,
+                    nq as f64 / best_dt,
+                    vq::PORTAL_SCAN_ROWS.load(Relaxed) / nrun,
+                );
+            }
+        }
+        return;
+    }
     // ADAPTIVE-WALK (P340/P353, flag-gated): the walk's top-L is the candidate set and cost adapts per
     // query (DiskANN termination); there is no IVF scan or union rescore.  The production loose-recall
     // entry composes the fine-centroid graph router with cell-local portals and a portal-order SQ4 top-1

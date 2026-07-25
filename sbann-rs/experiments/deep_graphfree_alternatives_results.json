@@ -1,0 +1,134 @@
+{
+  "date_utc": "2026-07-25",
+  "dataset": "DEEP-10M, d=96, official 2k queries unless noted",
+  "objective": "replace the point-level best-first loose-recall walk with a GenBO-style routed, tiered, graph-free path",
+  "reference": {
+    "method": "portal-SQ4 entries plus graph-local adaptive walk, L=88",
+    "recall": 0.9032,
+    "qps_best_repeated": 6773,
+    "qps_strict_abba_median": 6681
+  },
+  "alternatives": [
+    {
+      "id": 1,
+      "name": "global portal fan-out streaming",
+      "status": "rejected_end_to_end",
+      "offline": {
+        "cells": 128,
+        "buckets": 144,
+        "sq4_survivors": 128,
+        "recall": 0.9031,
+        "mean_assignment_rows": 6440.557
+      },
+      "engine": {
+        "recall": 0.9035,
+        "qps_best_of_5": 4266,
+        "ratio_to_walk_best": 0.6298,
+        "strict_abba_qps_median": 3738.5,
+        "strict_abba_qps_best": 3752,
+        "walk_strict_abba_qps_median": 6671.5,
+        "walk_strict_abba_qps_best": 6684,
+        "strict_median_ratio_to_walk": 0.5603687327
+      },
+      "reason": "6,440 streamed SQ4 assignments and 144 short bucket streams cost more than roughly 1,600 query-directed walk evaluations"
+    },
+    {
+      "id": 2,
+      "name": "fixed support-witness tiles",
+      "status": "rejected_on_bytes_before_engine_sidecar",
+      "results": {
+        "queries": 2000,
+        "portal_B112_containment": 0.90055,
+        "support8_B112_containment": 0.912,
+        "support8_pre256_B112_containment": 0.91005,
+        "support8_pre256_B112_rows": 5099.535,
+        "raw_portal_B128_containment": 0.9114,
+        "raw_portal_B128_rows": 5756.1165,
+        "minimum_support_header_bytes_per_query": 98304,
+        "padded_scan_bytes_saved_per_query": 42021
+      },
+      "reason": "even SQ4-compressed 8-witness headers cost over twice the scan bytes they save, before their second ranking pass"
+    },
+    {
+      "id": 3,
+      "name": "co-retrieval tile diffusion",
+      "status": "rejected",
+      "results": {
+        "training_queries": 60000,
+        "cell_level_public_queries": 500,
+        "best_cell_level_containment_near_6k_rows": 0.874,
+        "best_cell_level_rows": 5770.992,
+        "bucket_level_public_source_seen_fraction": 0.377375,
+        "best_bucket_level_containment_under_8k_rows": 0.3524
+      },
+      "reason": "cell transitions dilute query direction and bucket transitions are too sparse at the available training-query density"
+    },
+    {
+      "id": 4,
+      "name": "portal-local residual product enumeration",
+      "status": "rejected_by_exact_containment_upper_bound",
+      "results": {
+        "queries": 2000,
+        "best_containment_under_6k_rows": 0.1756,
+        "rows": 4637.5525,
+        "configuration": "32 routed cells, 512 product codes"
+      },
+      "reason": "the independently trained half-space product code is not aligned with the fine-cell residual geometry"
+    },
+    {
+      "id": 5,
+      "name": "portal-local WAND sphere bounds",
+      "status": "rejected_by_exact_bound_gate",
+      "results": {
+        "queries": 2000,
+        "buckets": 128,
+        "portal_rank_containment": 0.9114,
+        "portal_rank_rows": 5756.1165,
+        "exact_sphere_bound_containment": 0.6668,
+        "exact_sphere_bound_rows": 6548.7325
+      },
+      "reason": "even exact per-bucket radii produce vacuous high-dimensional bounds and preferentially select large, expensive buckets"
+    },
+    {
+      "id": 6,
+      "name": "learned maximum-relevance tile routing",
+      "status": "rejected_at_fixed_bytes",
+      "results": {
+        "training_queries": 5000,
+        "validation_queries": 2000,
+        "public_queries": 500,
+        "public_containment": 0.901,
+        "public_rows": 5183.85,
+        "method": "90% portal score plus 10% learned score and occupancy penalty"
+      },
+      "reason": "the small containment gain comes mainly from occupancy bias; it does not reach the actual-retrieval target with fewer bytes and adds 2,048 tree predictions per query"
+    },
+    {
+      "id": 7,
+      "name": "sparse residual-code voting",
+      "status": "rejected_by_exact_containment_upper_bound",
+      "results": {
+        "queries": 2000,
+        "best_containment_under_6k_rows": 0.35385,
+        "rows": 5726.6515,
+        "configuration": "32 routed cells, four codes per half, require both votes"
+      },
+      "reason": "independent subspace collisions are too weak at the candidate budget"
+    },
+    {
+      "id": 8,
+      "name": "cell-major batched portal streaming",
+      "status": "rejected_end_to_end",
+      "results": {
+        "bucket_request_reuse": 1.3199,
+        "cell_request_reuse": 6.3973,
+        "per_query_recall": 0.9035,
+        "per_query_qps_best_of_5": 4266,
+        "batched_recall": 0.9035,
+        "batched_qps_best_of_5": 4297
+      },
+      "reason": "page reuse is canceled by request sorting and materializing roughly 13M scored assignment tuples"
+    }
+  ],
+  "verdict": "The graph-free candidates validate GenBO's coverage model but do not replace the loose-recall walk. The walk remains the default because its query-directed work reduction is larger than the locality advantage of block streaming."
+}

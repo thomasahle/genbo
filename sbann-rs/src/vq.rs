@@ -454,9 +454,34 @@ impl PortalSq4 {
     pub fn assignments(&self) -> usize {
         self.codes().len() / self.stride
     }
+
+    pub fn encode_query(&self, q: &[i8]) -> (Vec<i8>, Vec<i8>) {
+        assert_eq!(q.len(), self.d, "portal SQ4 query dimension mismatch");
+        let weighted: Vec<f32> = q
+            .iter()
+            .zip(&self.step)
+            .map(|(&value, &step)| value as f32 * step)
+            .collect();
+        let max_abs = weighted
+            .iter()
+            .fold(0f32, |acc, &value| acc.max(value.abs()))
+            .max(1e-9);
+        let scale = 127.0 / max_abs;
+        let mut qe = vec![0i8; self.stride];
+        let mut qo = vec![0i8; self.stride];
+        for j in 0..self.d / 2 {
+            qe[j] = (weighted[2 * j] * scale).round().clamp(-127.0, 127.0) as i8;
+            qo[j] = (weighted[2 * j + 1] * scale)
+                .round()
+                .clamp(-127.0, 127.0) as i8;
+        }
+        (qe, qo)
+    }
 }
 
 pub static PORTAL_SQ4: std::sync::OnceLock<PortalSq4> = std::sync::OnceLock::new();
+pub static PORTAL_SCAN_ROWS: std::sync::atomic::AtomicU64 =
+    std::sync::atomic::AtomicU64::new(0);
 
 pub struct CellPortals {
     pub n: usize,
@@ -722,6 +747,129 @@ impl CellPortals {
         }
         out
     }
+
+    pub fn rank_tiles(
+        &self,
+        q: &[i8],
+        cells: &[u32],
+        bucket_keep: usize,
+    ) -> Vec<usize> {
+        let mut buckets = Vec::with_capacity(cells.len() * self.p);
+        for &cell in cells {
+            let c = cell as usize;
+            if c >= self.nc {
+                continue;
+            }
+            for portal in 0..self.p {
+                let centroid = &self.cent[(c * self.p + portal) * self.d
+                    ..(c * self.p + portal + 1) * self.d];
+                let score = unsafe { simd::dot_i8_vnni(q, centroid) };
+                buckets.push((-score, c * self.p + portal));
+            }
+        }
+        let bucket_keep = bucket_keep.clamp(1, buckets.len());
+        if bucket_keep < buckets.len() {
+            buckets.select_nth_unstable(bucket_keep - 1);
+            buckets.truncate(bucket_keep);
+        }
+        buckets.sort_unstable();
+        buckets
+            .into_iter()
+            .map(|(_, bucket)| bucket)
+            .collect()
+    }
+
+    pub fn score_tile(
+        &self,
+        bucket: usize,
+        qe: &[i8],
+        qo: &[i8],
+        sq4: &PortalSq4,
+        out: &mut Vec<(i32, u32)>,
+    ) {
+        let lo = self.offsets[bucket] as usize;
+        let hi = self.offsets[bucket + 1] as usize;
+        if lo == hi {
+            return;
+        }
+        let mut score = Vec::with_capacity(hi - lo);
+        unsafe {
+            simd::score_sq4p64_vnni(
+                qe,
+                qo,
+                &sq4.codes()[lo * sq4.stride..hi * sq4.stride],
+                &mut score,
+            );
+        }
+        out.extend(
+            score
+                .iter()
+                .zip(&self.ids[lo..hi])
+                .map(|(&value, &id)| (-value, id)),
+        );
+    }
+
+    /// Graph-free loose-recall path: globally rank portal buckets over the
+    /// routed cells, stream their contiguous SQ4 assignment rows, and retain
+    /// the best distinct base ids for exact float reranking.
+    pub fn scan_tiles(
+        &self,
+        q: &[i8],
+        cells: &[u32],
+        bucket_keep: usize,
+        survivors: usize,
+        sq4: &PortalSq4,
+    ) -> Vec<(i32, u32)> {
+        use std::sync::atomic::Ordering::Relaxed;
+
+        assert_eq!(sq4.d, self.d, "portal SQ4 dimension mismatch");
+        assert_eq!(sq4.stride, 64, "portal tile scan needs stride 64");
+        assert!(
+            std::is_x86_feature_detected!("avx512vnni")
+                && std::is_x86_feature_detected!("avx512bw")
+                && std::is_x86_feature_detected!("avx512f"),
+            "portal tile scan needs AVX-512 VNNI"
+        );
+        let (qe, qo) = sq4.encode_query(q);
+        let buckets = self.rank_tiles(q, cells, bucket_keep);
+
+        let row_capacity: usize = buckets
+            .iter()
+            .map(|&bucket| {
+                self.offsets[bucket + 1] as usize
+                    - self.offsets[bucket] as usize
+            })
+            .sum();
+        PORTAL_SCAN_ROWS.fetch_add(row_capacity as u64, Relaxed);
+        let mut pool: Vec<(i32, u32)> = Vec::with_capacity(row_capacity);
+        for &bucket in &buckets {
+            self.score_tile(bucket, &qe, &qo, sq4, &mut pool);
+        }
+        portal_tile_survivors(&mut pool, survivors)
+    }
+}
+
+pub fn portal_tile_survivors(
+    pool: &mut Vec<(i32, u32)>,
+    survivors: usize,
+) -> Vec<(i32, u32)> {
+    let take = (survivors.max(10) * 3).min(pool.len());
+    if take < pool.len() {
+        pool.select_nth_unstable(take - 1);
+        pool.truncate(take);
+    }
+    pool.sort_unstable();
+    let mut seen = std::collections::HashSet::with_capacity(survivors * 2);
+    let mut out = Vec::with_capacity(survivors);
+    for &candidate in pool.iter() {
+        if seen.insert(candidate.1) {
+            out.push(candidate);
+            if out.len() == survivors {
+                break;
+            }
+        }
+    }
+    out
 }
 
 /// PQ4-NAV (P341, gate-1-validated): resident plain 4-bit PQ sidecar — the union/beam is navigated and

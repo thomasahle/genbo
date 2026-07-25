@@ -5592,6 +5592,37 @@ P353 [2026-07-25] DEEP FULL-FRONTIER FLIP — portal-SQ4 entry + graph-local ada
     abba_deep_portal_walk{,_results}.json,abba_deep_roar_r{0926,0943,0960,0972,0994,09978}_current.json};
     deep10m/deep10m_portals16.sq4p64. Paper DEEP CSV/method/results/caption updated.
 
+P354 [2026-07-25] GRAPH-FREE LOOSE-RECALL SEARCH — seven alternatives and cell-major batching gated;
+  none replaces the adaptive walk.
+  DIRECT PORTAL FAN-OUT (FULL 2k + ENGINE): globally rank the 16 portals of 128 routed cells, stream
+    portal-order SQ4, then float-rerank. B144/S128 reaches .9031 offline and .9035@4266 best-of-5
+    end-to-end, versus the walk's .9032@6773 best / 6681 strict median. B176/S64 is .9029@4446.
+    Strict two-round ABBA/BAAB is stronger: graph-free .9035 median 3738.5 (best 3752) vs walk .9032
+    median 6671.5 (best 6684), only .560x as fast. The graph-free path is valid but 6440-7795 streamed
+    assignments and 144-176 short runs outweigh the walk's ~1600 query-directed evaluations. Kept
+    diagnostic as SBANN_PORTALSCAN.
+  SUPPORT TILES (FULL 2k): eight fixed witnesses improve B112 containment .9006->.9120; restricting
+    them to the portal-top-256 retains .9101. But the minimum SQ4 witness header is 256*8*48=98KB/q,
+    while B112 vs raw B128 saves only 42KB of padded scan traffic. The second rank pass makes the
+    byte-negative design a hard reject before a 400MB-1GB sidecar build.
+  CO-RETRIEVAL DIFFUSION: 60k disjoint training queries. Cell-level best near the scan budget is only
+    .874 containment at 5771 rows (500 public queries); bucket sources are observed only 37.7% of the
+    time and reach .352 at 7937 rows. Query density cannot support bucket transitions; cell transitions
+    erase direction. RESIDUAL PRODUCT ENUMERATION: exact containment upper bound .176 at 4638 rows.
+    SPARSE SUBSPACE VOTING: .354 at 5727. Both are structurally below the target, so no engine gate.
+  PORTAL-LOCAL WAND: even the exact per-bucket sphere radius ranks to only .667 containment at B128 /
+    6549 rows vs centroid rank .911/5756. High-dimensional bounds remain vacuous inside portals too.
+  LEARNED MAX-RELEVANCE ROUTER (leak-free: 5k train, 2k validation, 500 public): a cost-aware blend
+    reaches .901 containment at 5184 rows, but not the actual-retrieval target; its gain is mostly an
+    occupancy correction and would add 2048 tree predictions/query. Reject at fixed bytes.
+  CELL-MAJOR PORTAL BATCH: 288k B144 requests have 1.32x exact-bucket / 6.40x cell reuse. Grouping them
+    gives .9035@4297 vs per-query .9035@4266: page reuse is canceled by sorting and materializing ~13M
+    scored tuples. VERDICT: block streaming validates the coverage model, but adaptive point work
+    reduction is larger than its locality gain at d=96. The walk remains the fast default.
+  ARTIFACTS: experiments/gate_deep_{graphfree_coverage,graphfree_scan,support_tiles,tile_diffusion,
+    bucket_diffusion,learned_tiles}.py, abba_deep_graphfree_vs_walk{,_results}.json, and
+    deep_graphfree_alternatives_results.json.
+
 === SESSION SUMMARY (current, 2026-07-12, through P334) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall

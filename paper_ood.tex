@@ -1401,6 +1401,28 @@ in \S\ref{sec:resident}. A plain query-specific bucket scan proves the entry
 quality, while fixed medoids, one to eight central/diverse representatives, and a
 random-access PQ4 selector all fail the recall or runtime gate.
 
+\paragraph{Why retain a point walk?} We also tested a graph-free version aligned
+with the rest of the cascade: route more cells, globally rank their portal
+buckets, stream the selected SQ4 runs, and float-rerank. It reaches the target
+quality, but not the target cost: 128 routed cells, 144 buckets, and 128
+survivors give recall $0.9035$. Strict two-round ABBA/BAAB gives median
+3739 QPS versus 6672 QPS for the walk at $0.9032$ (only $0.560\times$ as
+fast). The graph-free path streams 6440 assignments/query; grouping requests
+cell-major across all 2000 queries raises QPS only $4266\to4297$, since page
+reuse is canceled by request sorting and pool materialization. Eight fixed
+support witnesses improve 112-bucket containment $0.9006\to0.9120$, but even
+scoring them only for the portal-top-256 costs 98\,KB/query in SQ4 headers to
+save 42\,KB of padded scan traffic. Exact portal-local sphere bounds are
+vacuous (128-bucket containment $0.667$ versus $0.911$ for centroid rank).
+Leak-free learned maximum-relevance routing reaches $0.901$ containment at
+5184 rows but adds 2048 predictions/query and does not reach the end-to-end
+target. One-wave co-retrieval diffusion, residual product enumeration, and
+sparse subspace voting reach at most $0.874$, $0.176$, and $0.354$ containment,
+respectively, near the same row budget. Thus this low-dimensional corner is an
+honest exception to our preference for block streaming: reducing
+\emph{query-directed work} by roughly $4\times$ matters more than making the
+larger candidate set sequential.
+
 \effect{DEEP-10M, one thread: the default loose ladder
 $L{=}25,34,44,53,66,76,88$ spans recall $0.8041$--$0.9032$ at
 $16{,}083$--$6{,}773$ QPS. It beats RoarGraph's stronger published curve at

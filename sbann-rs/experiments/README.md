@@ -64,6 +64,35 @@ python3 abba_bench.py abba_deep_portal_walk.json --rounds 2 \
 `gate_deep_portal_representatives.py` records the fixed-representative rejects;
 `gate_deep_portal_sq4.py` isolates entry quality before online routing cost.
 
+### Graph-free loose-recall alternatives
+
+The P354 gates test whether the adaptive point walk can be replaced by routed
+block streaming:
+
+```sh
+python3 gate_deep_graphfree_coverage.py --nq 2000
+python3 gate_deep_graphfree_scan.py --nq 2000
+python3 gate_deep_support_tiles.py --nq 2000
+python3 gate_deep_tile_diffusion.py --nq 500
+python3 gate_deep_bucket_diffusion.py --nq 500
+python3 gate_deep_learned_tiles.py
+```
+
+The first script also gates residual product enumeration and sparse component
+voting; the support-tile script includes exact portal-local sphere bounds. The
+consolidated verdict and exact budgets are in
+`deep_graphfree_alternatives_results.json`. The strongest direct path is
+executable in the engine with `SBANN_PORTALSCAN=144`,
+`SBANN_PORTAL_SCAN_CELLS=128`, and `SBANN_PORTAL_SURVIVORS=128`;
+`SBANN_PORTAL_BATCH=1` enables its cell-major scheduling A/B. Both are
+diagnostic flags—the measured adaptive walk remains the `fast` default.
+The strict same-window comparison is:
+
+```sh
+python3 abba_bench.py abba_deep_graphfree_vs_walk.json --rounds 2 \
+  --out abba_deep_graphfree_vs_walk_results.json
+```
+
 ## Paired measurements
 
 `abba_bench.py` selects and pins the least-busy physical core (including its
