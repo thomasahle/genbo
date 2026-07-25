@@ -13,7 +13,8 @@ before committing. Do not put coordinates inline in the .tex.
 
 Provenance: values digit-verified against FINDINGS P335–P342 (5-agent cross-check, 2026-07-21);
 the DEEP curve was rebuilt from P348–P353 artifacts (sbann-rs/experiments/*.json,
-deep_low_confirm_*.json) and audit-corrected 2026-07-25 (P355: 0.9032 row set to the
-artifact-backed 6773; join-band rows flagged parity-pending in the figure caption); wiki/msturing/deep Roar curves are our fair re-measures
+deep_low_confirm_*.json), audit-corrected in P355, and refreshed by the full-2k
+fixed-round strict pairs in P356 (`deep_round_walk_results.json`; the 0.9032 row
+is the direct-Roar best 8333); wiki/msturing/deep Roar curves are our fair re-measures
 (d=104 pad fix, clean GT, quiet windows); `wiki35m_roar_full` is the build-ineligible 6.5h
 build, `wiki35m_roar_budget` the gate-eligible L=50/250k-train-query build.

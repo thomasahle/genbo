@@ -42,7 +42,7 @@ python3 build_cell_portals.py
 The engine path is opt-in through `SBANN_PORTAL_FILE`; `SBANN_PORTAL_KEEP`
 defaults to one. It also requires the existing graph cascade.
 
-### Adaptive portal walk
+### Budgeted portal walk
 
 P353 reuses the portal partition only to choose graph-walk entries, bypassing
 the PQ scan and union. Build its portal-order, 64-byte-padded SQ4 tier:
@@ -52,17 +52,34 @@ python3 build_portal_sq4.py
 ```
 
 With `SBANN_PORTAL_FILE`, `SBANN_PORTAL_SQ4_FILE`, the fine-centroid graph, and
-the jointly relabeled graph/base loaded, `SBANN_PRESET=fast` selects the
-measured `L=25..88` loose ladder automatically. The full configuration and
-strict RoarGraph comparison are executable from:
+the jointly relabeled graph/base loaded, `SBANN_ROARMODE=preset` selects the
+measured `L=25..88` best-first reference ladder. P355 keeps this path explicit,
+not an implicit `fast` dispatch.
+
+P356 adds a fixed-round alternative. `SBANN_ROAR_ROUNDS=R` expands a synchronous
+frontier for exactly `R` layers, `SBANN_ROAR_FRONTIER=B` retains the best `B`
+new rows between layers, and `SBANN_ROARMODE=W` sets the global float-rerank
+width. Screen and full-query calibration are reproducible with:
 
 ```sh
-python3 abba_bench.py abba_deep_portal_walk.json --rounds 2 \
-  --out abba_deep_portal_walk_results.json
+python3 sweep_deep_fixed_walk.py --nq 500 --reps 2
+python3 sweep_deep_fixed_walk.py --modes round --nq 2000 --reps 5
+```
+
+The selected frontier keeps best-first `L=25` at recall 0.804, then uses
+`(R,B,W)=(4,11,14),(4,15,16),(4,19,16),(8,10,14),(9,10,20),(8,14,14)`.
+The full configuration, strict best-first comparison, and direct RoarGraph join
+comparison are executable from:
+
+```sh
+python3 abba_bench.py abba_deep_round_walk.json --variant r088 --rounds 2
+python3 abba_bench.py abba_deep_round_walk_vs_roar.json --rounds 2
 ```
 
 `gate_deep_portal_representatives.py` records the fixed-representative rejects;
 `gate_deep_portal_sq4.py` isolates entry quality before online routing cost.
+`deep_round_walk_results.json` consolidates the selected policies and all strict
+ratios.
 
 ### Graph-free loose-recall alternatives
 
@@ -85,7 +102,7 @@ consolidated verdict and exact budgets are in
 executable in the engine with `SBANN_PORTALSCAN=144`,
 `SBANN_PORTAL_SCAN_CELLS=128`, and `SBANN_PORTAL_SURVIVORS=128`;
 `SBANN_PORTAL_BATCH=1` enables its cell-major scheduling A/B. Both are
-diagnostic flags—the measured adaptive walk remains the `fast` default.
+diagnostic flags; the measured point-walk reference remains explicit.
 The strict same-window comparison is:
 
 ```sh

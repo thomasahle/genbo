@@ -1,0 +1,70 @@
+{
+  "date_utc": "2026-07-25",
+  "dataset": "DEEP-10M, d=96, L2, official 2k queries",
+  "common": {
+    "router": "fine-centroid Vamana16, 64 landmarks, ef=8, eight cells",
+    "entry": "one portal-order SQ4-selected point per cell",
+    "graph": "Vamana32, graph-local physical int8 base, kedge=32",
+    "rerank": "exact f32 top-10",
+    "threads": 1,
+    "inner_repetitions": 5,
+    "strict_rounds": 2,
+    "strict_order": "ABBA/BAAB"
+  },
+  "algorithm": {
+    "fixed_round": "expand the current frontier synchronously; score every new neighbor; retain the best B newly seen rows for the next round; retain the best W rows globally for float rerank",
+    "adaptive_reference": "best-first top-L with DiskANN termination",
+    "hard_cap_verdict": "no useful decoupling: DEEP best-first averaged essentially L expansions at every L",
+    "extreme_loose_verdict": "retain adaptive L25: fixed rounds were 0.9902x median at slightly lower recall"
+  },
+  "strict_fixed_round_vs_adaptive": [
+    {
+      "adaptive": {"l": 25, "recall": 0.8041, "qps_median": 17164.5, "qps_best": 17194},
+      "fixed_round": {"rounds": 3, "frontier": 12, "rerank_width": 12, "recall": 0.8034, "qps_median": 16995.5, "qps_best": 17116},
+      "median_ratio": 0.9901540971,
+      "selected": "adaptive"
+    },
+    {
+      "adaptive": {"l": 34, "recall": 0.8319, "qps_median": 13909, "qps_best": 14082},
+      "fixed_round": {"rounds": 4, "frontier": 11, "rerank_width": 14, "recall": 0.8334, "qps_median": 14754, "qps_best": 14833},
+      "median_ratio": 1.0607520311,
+      "selected": "fixed_round"
+    },
+    {
+      "adaptive": {"l": 44, "recall": 0.8536, "qps_median": 11566, "qps_best": 11697},
+      "fixed_round": {"rounds": 4, "frontier": 15, "rerank_width": 16, "recall": 0.8538, "qps_median": 12500.5, "qps_best": 12629},
+      "median_ratio": 1.0807971641,
+      "selected": "fixed_round"
+    },
+    {
+      "adaptive": {"l": 53, "recall": 0.8684, "qps_median": 10209, "qps_best": 10291},
+      "fixed_round": {"rounds": 4, "frontier": 19, "rerank_width": 16, "recall": 0.8682, "qps_median": 11239.5, "qps_best": 11439},
+      "median_ratio": 1.1009403468,
+      "selected": "fixed_round"
+    },
+    {
+      "adaptive": {"l": 66, "recall": 0.8840, "qps_median": 8733, "qps_best": 8766},
+      "fixed_round": {"rounds": 8, "frontier": 10, "rerank_width": 14, "recall": 0.8842, "qps_median": 9985.5, "qps_best": 10075},
+      "median_ratio": 1.1434215046,
+      "selected": "fixed_round"
+    },
+    {
+      "adaptive": {"l": 76, "recall": 0.8937, "qps_median": 7879.5, "qps_best": 7910},
+      "fixed_round": {"rounds": 9, "frontier": 10, "rerank_width": 20, "recall": 0.8941, "qps_median": 8877, "qps_best": 9004},
+      "median_ratio": 1.1265943271,
+      "selected": "fixed_round"
+    },
+    {
+      "adaptive": {"l": 88, "recall": 0.9032, "qps_median": 6966.5, "qps_best": 7010},
+      "fixed_round": {"rounds": 8, "frontier": 14, "rerank_width": 14, "recall": 0.9032, "qps_median": 8178.5, "qps_best": 8328},
+      "median_ratio": 1.1739754540,
+      "selected": "fixed_round"
+    }
+  ],
+  "strict_fixed_round_vs_roar_at_0903": {
+    "fixed_round": {"recall": 0.9032, "qps_median": 8324, "qps_best": 8333},
+    "roargraph_l44": {"recall": 0.90305, "qps_median": 6578.95, "qps_best": 6920.42},
+    "median_ratio": 1.2652474939,
+    "best_ratio": 1.2041176692
+  }
+}

@@ -5639,6 +5639,32 @@ P355 [2026-07-25] AUDIT of the gpt-5.6 agent's 11 commits (63c96bf..d1182af) —
   DEFERRED MINORS: PORTAL_BATCH feature-guard hoist, portal-QSEED per-query parity, preset flagless-
     default drift note (e9c03a5 changed CASCADE_K/TFLOOR/ladder defaults - historical commands need pins).
 
+P356 [2026-07-25] FIXED-ROUND LOCAL REFINEMENT — removes best-first closure above extreme loose recall.
+  ALGORITHM: keep the eight portal-SQ4 entries. Each of R synchronous rounds expands the current
+    frontier, exact-int8-scores every unseen neighbour, and retains the best B NEW rows for the next
+    round; globally retain only W rows for f32 top-10. No candidate priority queue, convergence test,
+    or HNSW fixed point. Portal routing is global placement; the graph performs a fixed local residual
+    correction program. Engine flags: SBANN_ROAR_ROUNDS=R, SBANN_ROAR_FRONTIER=B, SBANN_ROARMODE=W.
+  HARD-CAP NULL: the adaptive reference already averages essentially L expansions at L=25..88, so caps
+    reproduce/truncate it. At recall .80, fixed rounds lose: .8034@16995 median vs adaptive
+    .8041@17165 (0.990x), so retain best-first L25 there.
+  FULL-2K STRICT ABBA/BAAB (5 inner reps, 2 outer rounds), fixed vs adaptive:
+    .8334@14754 vs .8319@13909 = 1.061x (R4 B11 W14);
+    .8538@12501 vs .8536@11566 = 1.081x (R4 B15 W16);
+    .8682@11240 vs .8684@10209 = 1.101x (R4 B19 W16);
+    .8842@9986 vs .8840@8733 = 1.143x (R8 B10 W14);
+    .8941@8877 vs .8937@7880 = 1.127x (R9 B10 W20);
+    .9032@8179 vs .9032@6967 = 1.174x (R8 B14 W14).
+  DIRECT SOTA JOIN: fixed R8/B14/W14 .9032@8324 median vs RoarGraph L44
+    .90305@6579 = 1.265x; best 8333 vs 6920 = 1.204x. This retires P355's .903 join parity caveat;
+    .9265 (1.025x) and .9978 (1.062x) remain parity pending multi-window confirmation.
+  WHY: fixed rounds score somewhat more rows but replace ordered candidate/top-L heap work with regular
+    layer selection and shrink float W from 34-88 to 14-20. Deeper narrow fronts win the upper loose
+    band, supporting iterative local correction rather than breadth-only scanning.
+  ARTIFACTS: src/vq.rs round_walk + capped roar_walk; sweep_deep_fixed_walk.py; four screen/full JSON
+    families; abba_deep_round_walk{,_vs_roar}.json and strict results; consolidated
+    deep_round_walk_results.json. Paper method/effect/results/caption + DEEP CSV updated.
+
 === SESSION SUMMARY (current, 2026-07-12, through P334) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
