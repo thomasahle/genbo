@@ -48,7 +48,7 @@ Cohere-v3, $d{=}1024$) it beats HNSW in HNSW's home regime at every measured ope
 exceeds), and ${\sim}1.2$--$1.9\times$ at 10M and $1.5$--$3.3\times$ at 35M after a
 minutes-scale internal graph build.
 At low dimension (DEEP-96), where RoarGraph had retained the loose-recall corner,
-an adaptive scan-bypass policy closes the final boundary: a fine-cell graph routes
+an adaptive scan-bypass policy closes the final boundary among build-eligible baselines: a fine-cell graph routes
 to compact portal buckets, a portal-ordered 4-bit tier chooses point-graph entries,
 and a short best-first walk beats RoarGraph across its full measured recall range.
 The design rests on two \emph{bottleneck localizations}, each supported by
@@ -1425,14 +1425,17 @@ larger candidate set sequential.
 
 \effect{DEEP-10M, one thread: the default loose ladder
 $L{=}25,34,44,53,66,76,88$ spans recall $0.8041$--$0.9032$ at
-$16{,}083$--$6{,}773$ QPS. It beats RoarGraph's stronger published curve at
-every matched point by $1.16$--$1.48\times$. At the former boundary, strict
-two-round ABBA/BAAB gives $0.9032$ at median $6681$ QPS versus RoarGraph's
-$0.90305$ at $5780$ ($1.156\times$). The corrected-fp16 cascade then takes over:
-same-window medians are $1.025\times$ at recall $0.9265$,
-$1.191\times$ near $0.943$, $1.260\times$ near $0.960$, and
+$16{,}083$--$6{,}773$ QPS. It beats RoarGraph's stronger quiet-window re-measured curve at
+every matched point below recall $0.90$ by $1.16$--$1.48\times$. At the join band
+the margins are inside RoarGraph's own demonstrated ${\sim}1.2\times$ window-phase
+swing and we mark them \emph{parity, pending multi-window confirmation}: strict
+two-round ABBA/BAAB gives $0.9032$ at median $6681$ vs $5780$ ($1.156\times$, one
+window; a warmer RoarGraph window reached $6747$ there), and $1.025\times$ at
+$0.9265$. From recall ${\approx}0.94$ the corrected-fp16 cascade's margins clear
+the swing: $1.191\times$ near $0.943$, $1.260\times$ near $0.960$, and
 $1.303\times$ at $0.9718$. A final corrected-fp16 tail audit gives
-$1.379\times$ at recall $0.9940$ and $1.062\times$ at $0.9978$ (both at
+$1.379\times$ at recall $0.9940$ and $1.062\times$ at $0.9978$ (the latter also
+inside the swing; both at
 higher recall than RoarGraph), then reaches $0.9987$ beyond its ceiling. Thus
 the two policies join without a hidden crossover gap and genbo owns RoarGraph's
 full measured DEEP frontier.}
@@ -2048,13 +2051,13 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
   to $d{=}104$ --- its released code silently corrupts dimensions not divisible by 8.
   On DEEP 10M ($d{=}96$), graph-local physical ordering and corrected-fp16
   reranking win the tail, while the portal-SQ4 adaptive walk removes the loose
-  routing$+$scan toll. Ours beats RoarGraph at every measured point:
-  $1.16$--$1.48\times$ from recall $0.80$ to $0.90$ against its published curve,
-  and strict same-window medians of $1.156\times$ at $0.9032$,
-  $1.025\times$ at $0.9265$, $1.191\times$ near $0.943$,
-  $1.260\times$ near $0.960$, and $1.303\times$ at $0.9718$, before the
-  corrected-fp16 tail wins $1.379\times$ at $0.9940$ and $1.062\times$ at
-  $0.9978$, then reaches $0.9987$ beyond its ceiling.}
+  routing$+$scan toll. Ours beats RoarGraph $1.16$--$1.48\times$ from recall
+  $0.80$ to $0.90$ (vs its quiet-window re-measured curve) and by strict
+  same-window medians of $1.19$--$1.38\times$ from $0.943$ through $0.994$,
+  reaching $0.9987$ beyond its ceiling; the join band $0.90$--$0.93$ and the
+  $0.9978$ point sit at $1.03$--$1.16\times$ --- inside RoarGraph's demonstrated
+  ${\sim}1.2\times$ window-phase swing --- and are marked parity pending
+  multi-window confirmation.}
   \label{fig:frontier}
 \end{figure}
 \begin{figure}[tp]

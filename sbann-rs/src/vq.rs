@@ -1019,7 +1019,14 @@ pub static ROAR_HOPS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU6
 /// once and the walk runs entirely in the relabeled graph/base before results map back to original ids.
 /// Gated behind SBANN_ROARMODE — the normal cascade remains bit-identical.
 /// Returns the top-l (negdot, orig) ascending; caller float-reranks.
-pub fn roar_walk(ds: &I8Bin, graph: &GraphAdj, q: &[i8], l: usize, entries: &[u32]) -> Vec<(i32, u32)> {
+pub fn roar_walk(
+    ds: &I8Bin,
+    graph: &GraphAdj,
+    q: &[i8],
+    l: usize,
+    entries: &[u32],
+    max_hops: usize,
+) -> Vec<(i32, u32)> {
     use std::cmp::Reverse;
     use std::collections::BinaryHeap;
     use std::sync::atomic::Ordering::Relaxed;
@@ -1057,6 +1064,7 @@ pub fn roar_walk(ds: &I8Bin, graph: &GraphAdj, q: &[i8], l: usize, entries: &[u3
         let mut fresh = [0u32; 64]; // unvisited neighbours of the expanding node (ke clamped <= 64)
         while let Some(Reverse((dcur, cur))) = cand.pop() {
             if topl.len() >= l && dcur > topl.peek().unwrap().0 { break; }
+            if max_hops > 0 && hops as usize >= max_hops { break; }
             hops += 1;
             // pass 1: mark + prefetch the unvisited neighbour rows (overlap the scattered gathers)
             let mut nf = 0usize;
@@ -1088,6 +1096,133 @@ pub fn roar_walk(ds: &I8Bin, graph: &GraphAdj, q: &[i8], l: usize, entries: &[u3
             if let Some(Reverse((_, nxt))) = cand.peek() {
                 unsafe { _mm_prefetch(graph.neighbours(*nxt as usize).as_ptr() as *const i8, _MM_HINT_T0) };
             }
+        }
+        ROAR_EVALS.fetch_add(evals, Relaxed);
+        ROAR_HOPS.fetch_add(hops, Relaxed);
+        let mut out = topl.into_vec();
+        out.sort_unstable();
+        if let Some(value) = layout {
+            for (_, physical) in &mut out {
+                *physical = value.original[*physical as usize];
+            }
+        }
+        out
+    })
+}
+
+/// Fixed-round graph refinement (P355 gate): expand the portal-selected entries synchronously, retain
+/// only the best `frontier_width` newly discovered rows for the next round, and stop after `rounds`
+/// layers. Unlike `roar_walk`, this has no candidate priority queue and does not seek best-first
+/// closure. It tests a Genbo-shaped alternative: broad routing followed by a small, regular local
+/// refinement program with a fixed work envelope. The best `l` rows seen across every layer are
+/// returned for the unchanged float rerank.
+pub fn round_walk(
+    ds: &I8Bin,
+    graph: &GraphAdj,
+    q: &[i8],
+    l: usize,
+    entries: &[u32],
+    rounds: usize,
+    frontier_width: usize,
+) -> Vec<(i32, u32)> {
+    use std::collections::BinaryHeap;
+    use std::sync::atomic::Ordering::Relaxed;
+    thread_local! {
+        // Kept separate from ROAR-MODE's marks so either walk can be called during a paired diagnostic
+        // without clearing an nb-sized array.
+        static ROUND_VISIT: std::cell::RefCell<(Vec<u32>, u32)> =
+            const { std::cell::RefCell::new((Vec::new(), 0)) };
+    }
+    let layout = GRAPH_LAYOUT.get();
+    let walk_ds = layout.map(|value| &value.base).unwrap_or(ds);
+    let d = walk_ds.d;
+    let ke = GRAPH_KEDGE.load(Relaxed).clamp(1, graph.k).min(64);
+    let width = frontier_width.max(1);
+    ROUND_VISIT.with(|cell| {
+        let mut b = cell.borrow_mut();
+        let (stamp, epoch) = &mut *b;
+        if stamp.len() < walk_ds.nb {
+            stamp.clear();
+            stamp.resize(walk_ds.nb, 0);
+            *epoch = 0;
+        }
+        *epoch = epoch.wrapping_add(1);
+        if *epoch == 0 {
+            stamp.iter_mut().for_each(|value| *value = 0);
+            *epoch = 1;
+        }
+        let ep = *epoch;
+        let mut topl: BinaryHeap<(i32, u32)> = BinaryHeap::with_capacity(l + 1);
+        let mut frontier: Vec<(i32, u32)> = Vec::with_capacity(entries.len().max(width));
+        let mut next: Vec<(i32, u32)> = Vec::with_capacity(width * ke);
+        let (mut evals, mut hops) = (0u64, 0u64);
+        for &entry in entries {
+            let original = entry as usize;
+            if original >= ds.nb {
+                continue;
+            }
+            let physical = layout.map(|value| value.rank[original]).unwrap_or(entry);
+            let pi = physical as usize;
+            if stamp[pi] == ep {
+                continue;
+            }
+            stamp[pi] = ep;
+            let distance = simd::negdot_i8(q, walk_ds.row(pi));
+            evals += 1;
+            frontier.push((distance, physical));
+            topl.push((distance, physical));
+            if topl.len() > l {
+                topl.pop();
+            }
+        }
+        // Entry count is normally eight and therefore below the frontier width. Preserve the best
+        // `width` entries if a diagnostic supplies more.
+        if frontier.len() > width {
+            frontier.select_nth_unstable(width);
+            frontier.truncate(width);
+        }
+        let mut fresh = [0u32; 64];
+        for _ in 0..rounds {
+            if frontier.is_empty() {
+                break;
+            }
+            next.clear();
+            hops += frontier.len() as u64;
+            for &(_, current) in &frontier {
+                let mut nf = 0usize;
+                for &neighbor in &graph.neighbours(current as usize)[..ke] {
+                    let ni = neighbor as usize;
+                    if ni < walk_ds.nb && stamp[ni] != ep {
+                        stamp[ni] = ep;
+                        fresh[nf] = neighbor;
+                        nf += 1;
+                        let ptr = walk_ds.row(ni).as_ptr();
+                        let mut off = 0usize;
+                        while off < d {
+                            unsafe {
+                                _mm_prefetch(ptr.add(off) as *const i8, _MM_HINT_T0);
+                            }
+                            off += 64;
+                        }
+                    }
+                }
+                for &neighbor in &fresh[..nf] {
+                    let distance = simd::negdot_i8(q, walk_ds.row(neighbor as usize));
+                    evals += 1;
+                    next.push((distance, neighbor));
+                    if topl.len() < l {
+                        topl.push((distance, neighbor));
+                    } else if distance < topl.peek().unwrap().0 {
+                        topl.push((distance, neighbor));
+                        topl.pop();
+                    }
+                }
+            }
+            if next.len() > width {
+                next.select_nth_unstable(width);
+                next.truncate(width);
+            }
+            std::mem::swap(&mut frontier, &mut next);
         }
         ROAR_EVALS.fetch_add(evals, Relaxed);
         ROAR_HOPS.fetch_add(hops, Relaxed);

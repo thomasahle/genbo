@@ -5623,6 +5623,22 @@ P354 [2026-07-25] GRAPH-FREE LOOSE-RECALL SEARCH — seven alternatives and cell
     bucket_diffusion,learned_tiles}.py, abba_deep_graphfree_vs_walk{,_results}.json, and
     deep_graphfree_alternatives_results.json.
 
+P355 [2026-07-25] AUDIT of the gpt-5.6 agent's 11 commits (63c96bf..d1182af) — 31-agent adversarial pass.
+  STRONG WORK CONFIRMED: pinned-flag bit-identity exact; ledger complete (P345-P354); no destructive
+    changes; fence respected in construction (no bipartite/query-aware code); 7 graph-free alternatives
+    honestly gated; entry ablations prove portal-SQ4 entry is the load-bearing delta.
+  CORRECTIONS APPLIED (this commit): (1) join-band honesty — 0.90-0.93 + 0.9978 margins (1.03-1.16x) are
+    inside Roar's demonstrated ~1.2x window-phase swing (a warmer Roar window hit 6747@0.903 vs our
+    claimed 6681) -> marked PARITY PENDING multi-window confirmation in Effect + caption; (2) CSV
+    0.9032@7069 (prose-only provenance) -> artifact-backed 6773; (3) "published curve" -> "quiet-window
+    re-measured curve" (3 sites); (4) abstract re-scoped to build-eligible baselines; (5) README
+    provenance refreshed; (6) P340 STEER ENFORCED: fast-preset auto-dispatch to the walk reverted to
+    explicit SBANN_ROARMODE-only pending user adjudication of the headline question.
+  OPEN FOR USER: (a) fence verdict — portal-SQ4 walk as headline (ablation-backed distinct mechanism)
+    vs diagnostic-only; (b) join-band re-measure across >=3 windows to settle 0.90-0.93.
+  DEFERRED MINORS: PORTAL_BATCH feature-guard hoist, portal-QSEED per-query parity, preset flagless-
+    default drift note (e9c03a5 changed CASCADE_K/TFLOOR/ladder defaults - historical commands need pins).
+
 === SESSION SUMMARY (current, 2026-07-12, through P334) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall

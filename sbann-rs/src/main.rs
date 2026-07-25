@@ -1208,11 +1208,12 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
     // entry composes the fine-centroid graph router with cell-local portals and a portal-order SQ4 top-1
     // scan.  QSEED/directory/medoid entries remain diagnostic fallbacks.  The corrected-fp16 cascade
     // takes over above the walk's useful recall regime.
-    let adaptive_walk = std::env::var("SBANN_ROARMODE").ok().or_else(|| {
-        (search_preset == SearchPreset::Fast
-            && vq::CELL_PORTALS.get().is_some()
-            && vq::PORTAL_SQ4.get().is_some())
-        .then(|| "25,34,44,53,66,76,88".to_string())
+    // AUDIT P355: auto-dispatching the fast preset to the walk reversed the recorded P340 user
+    // steer (walk = diagnostic-only) without sign-off. Until the user adjudicates the headline
+    // question, the walk runs ONLY under an explicit SBANN_ROARMODE (the L-ladder below is the
+    // measured P353 default when the user opts in with SBANN_ROARMODE=preset).
+    let adaptive_walk = std::env::var("SBANN_ROARMODE").ok().map(|v| {
+        if v == "preset" { "25,34,44,53,66,76,88".to_string() } else { v }
     });
     if let Some(rl) = adaptive_walk {
         use std::sync::atomic::Ordering::Relaxed;
@@ -1238,6 +1239,22 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
             .ok()
             .and_then(|s| s.parse().ok())
             .unwrap_or(1);
+        let max_hops: usize = std::env::var("SBANN_ROAR_MAX_HOPS")
+            .ok()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(0);
+        let fixed_rounds: usize = std::env::var("SBANN_ROAR_ROUNDS")
+            .ok()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(0);
+        let round_frontier: usize = std::env::var("SBANN_ROAR_FRONTIER")
+            .ok()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(16);
+        assert!(
+            fixed_rounds == 0 || vq::SYMPACK.get().is_none(),
+            "SBANN_ROAR_ROUNDS is incompatible with SBANN_SYMPACK"
+        );
         let portal_sq4 = vq::PORTAL_SQ4.get();
         let online_portals = if portal_cells > 0 {
             Some(
@@ -1281,7 +1298,7 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
             "medoid"
         };
         println!(
-            "  [ROARMODE] graph k={} kedge={} entries={etag}(x{n_entries}) dir={dirn} medoid={medoid} portal={portal_cells}x{portal_buckets}x{portal_rows}{} setup={:.1}s",
+            "  [ROARMODE] graph k={} kedge={} entries={etag}(x{n_entries}) dir={dirn} medoid={medoid} portal={portal_cells}x{portal_buckets}x{portal_rows}{} max_hops={max_hops} rounds={fixed_rounds} frontier={round_frontier} setup={:.1}s",
             graph.k,
             vq::GRAPH_KEDGE.load(Relaxed).min(graph.k),
             if portal_sq4.is_some() {
@@ -1331,7 +1348,17 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
                         ebuf[0] = medoid;
                         &ebuf[..1]
                     };
-                    let mut walk = if vq::SYMPACK.get().is_some() {
+                    let mut walk = if fixed_rounds > 0 {
+                        vq::round_walk(
+                            &ds,
+                            graph,
+                            qs.row(i),
+                            l,
+                            entries,
+                            fixed_rounds,
+                            round_frontier,
+                        )
+                    } else if vq::SYMPACK.get().is_some() {
                         // SYMPACK: SQ4-guided block walk -> int8 re-rank of the top-L -> top-kk to float
                         let w = vq::sympack_walk(&ds, qs.row(i), l, entries);
                         let mut w: Vec<(i32, u32)> = w.iter().map(|&(_, o)| {
@@ -1340,7 +1367,7 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
                         w.sort_unstable();
                         w
                     } else {
-                        vq::roar_walk(&ds, graph, qs.row(i), l, entries)
+                        vq::roar_walk(&ds, graph, qs.row(i), l, entries, max_hops)
                     };
                     let kkw = vq::CASCADE_K.load(std::sync::atomic::Ordering::Relaxed);
                     if vq::SYMPACK.get().is_some() && kkw > 0 && kkw < walk.len() { walk.truncate(kkw); }
