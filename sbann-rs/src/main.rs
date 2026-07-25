@@ -565,6 +565,23 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
         );
         let _ = vq::CELL_PORTALS.set(portals);
     }
+    if let Ok(path) = std::env::var("SBANN_PORTAL_SQ4_FILE") {
+        let sq4 = vq::PortalSq4::load(&path).expect("load portal SQ4 sidecar");
+        assert_eq!(sq4.d, ds.d, "portal SQ4/base dimension mismatch");
+        let assignments = sq4.assignments();
+        if let Some(portals) = vq::CELL_PORTALS.get() {
+            assert_eq!(
+                assignments,
+                portals.ids.len(),
+                "portal SQ4/portal assignment mismatch"
+            );
+        }
+        println!(
+            "  [PORTAL-SQ4] {path} assignments={assignments} stride={}B",
+            sq4.stride
+        );
+        let _ = vq::PORTAL_SQ4.set(sq4);
+    }
     // GRAPH-AUGMENTED POOL EXPANSION (SBANN_GRAPH_FILE, temporary A/B sidecar): a raw little-endian u32
     // n*k IP-kNN adjacency (no header). Enables the graph union rescore on the FLOAT_RERANK cascade path
     // (batched + per-query). k is inferred from the file size; M/kedge/pfdist come from env (defaults set
@@ -976,19 +993,51 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
         }
         return;
     }
-    // ROAR-MODE (P340, flag-gated — champion path untouched): pure best-first walk sweep. No route, no
-    // scan, no union rescore; the walk's top-L is the candidate set and cost adapts per query (DiskANN
-    // termination). Sim gates (2026-07-20): int8 -dot walk == float-walk quality; warm entry -25-30% evals;
-    // walk ceiling ~0.96 complements the cascade's >=0.95 win regime. SBANN_ROARMODE="30,50,80,120" (L
-    // sweep). Entry per query: QSEED seeds if SBANN_SEED_IDS_FILE is loaded (first SBANN_ROAR_ENTRIES of
-    // them), else nearest of an SBANN_ROAR_DIR-row stride-sampled directory (contiguous int8 scan), else
-    // the global medoid (argmax dot with the int8 mean — unit-norm/IP datasets; the loss regimes are such).
-    if let Ok(rl) = std::env::var("SBANN_ROARMODE") {
+    // ADAPTIVE-WALK (P340/P353, flag-gated): the walk's top-L is the candidate set and cost adapts per
+    // query (DiskANN termination); there is no IVF scan or union rescore.  The production loose-recall
+    // entry composes the fine-centroid graph router with cell-local portals and a portal-order SQ4 top-1
+    // scan.  QSEED/directory/medoid entries remain diagnostic fallbacks.  The corrected-fp16 cascade
+    // takes over above the walk's useful recall regime.
+    let adaptive_walk = std::env::var("SBANN_ROARMODE").ok().or_else(|| {
+        (search_preset == SearchPreset::Fast
+            && vq::CELL_PORTALS.get().is_some()
+            && vq::PORTAL_SQ4.get().is_some())
+        .then(|| "25,34,44,53,66,76,88".to_string())
+    });
+    if let Some(rl) = adaptive_walk {
         use std::sync::atomic::Ordering::Relaxed;
         let llist: Vec<usize> = rl.split(',').filter_map(|x| x.trim().parse().ok()).filter(|&x: &usize| x >= 10).collect();
         let graph = graph_ref.expect("SBANN_ROARMODE needs SBANN_GRAPH_FILE");
         let fb = fbase.as_ref().expect("SBANN_ROARMODE needs SBANN_FLOAT_RERANK + SBANN_FBASE/FQUERY");
         let n_entries: usize = std::env::var("SBANN_ROAR_ENTRIES").ok().and_then(|s| s.parse().ok()).unwrap_or(1);
+        let portal_cells: usize = std::env::var("SBANN_ROAR_PORTAL_CELLS")
+            .ok()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| {
+                if vq::PORTAL_SQ4.get().is_some() {
+                    8
+                } else {
+                    0
+                }
+            });
+        let portal_buckets: usize = std::env::var("SBANN_ROAR_PORTAL_BUCKETS")
+            .ok()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(1);
+        let portal_rows: usize = std::env::var("SBANN_ROAR_PORTAL_ROWS")
+            .ok()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(1);
+        let portal_sq4 = vq::PORTAL_SQ4.get();
+        let online_portals = if portal_cells > 0 {
+            Some(
+                vq::CELL_PORTALS
+                    .get()
+                    .expect("SBANN_ROAR_PORTAL_CELLS needs SBANN_PORTAL_FILE"),
+            )
+        } else {
+            None
+        };
         let t0 = Instant::now();
         let mut mean = vec![0f32; ds.d];
         let mstep = (ds.nb / 1_000_000).max(1); // <=1M-row sample fixes the medoid plenty
@@ -1004,15 +1053,34 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
         // warm-entry directory: stride-sampled rows copied contiguous (sequential VNNI scan per query).
         let dirn: usize = std::env::var("SBANN_ROAR_DIR").ok().and_then(|s| s.parse().ok()).unwrap_or(0);
         let (dirids, dirbuf): (Vec<u32>, Vec<i8>) = if dirn > 0 {
-            let ids: Vec<u32> = (0..dirn).map(|j| ((j as u64 * ds.nb as u64 / dirn as u64) as u32)).collect();
+            let ids: Vec<u32> = (0..dirn)
+                .map(|j| (j as u64 * ds.nb as u64 / dirn as u64) as u32)
+                .collect();
             let mut buf = vec![0i8; dirn * ds.d];
             for (j, &o) in ids.iter().enumerate() { buf[j * ds.d..(j + 1) * ds.d].copy_from_slice(ds.row(o as usize)); }
             (ids, buf)
         } else { (Vec::new(), Vec::new()) };
         let seeds = vq::SEED_IDS.get();
-        let etag = if seeds.is_some() { "qseed" } else if dirn > 0 { "dir" } else { "medoid" };
-        println!("  [ROARMODE] graph k={} kedge={} entries={etag}(x{n_entries}) dir={dirn} medoid={medoid} setup={:.1}s",
-            graph.k, vq::GRAPH_KEDGE.load(Relaxed).min(graph.k), t0.elapsed().as_secs_f64());
+        let etag = if online_portals.is_some() {
+            "portal"
+        } else if seeds.is_some() {
+            "qseed"
+        } else if dirn > 0 {
+            "dir"
+        } else {
+            "medoid"
+        };
+        println!(
+            "  [ROARMODE] graph k={} kedge={} entries={etag}(x{n_entries}) dir={dirn} medoid={medoid} portal={portal_cells}x{portal_buckets}x{portal_rows}{} setup={:.1}s",
+            graph.k,
+            vq::GRAPH_KEDGE.load(Relaxed).min(graph.k),
+            if portal_sq4.is_some() {
+                "/sq4"
+            } else {
+                ""
+            },
+            t0.elapsed().as_secs_f64()
+        );
         let ipm = vq::IP_MODE.load(Relaxed);
         for &l in &llist {
             vq::ROAR_EVALS.store(0, Relaxed);
@@ -1023,31 +1091,46 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
                 let st = Instant::now();
                 let r: Vec<Vec<u32>> = (0..nq).into_par_iter().map(|i| {
                     let mut ebuf = [0u32; 16];
-                    let ne;
-                    if let Some((s, data)) = seeds.filter(|(s, data)| *s > 0 && (i + 1) * *s <= data.len()) {
-                        ne = n_entries.clamp(1, 16.min(*s));
-                        ebuf[..ne].copy_from_slice(&data[i * s..i * s + ne]);
+                    let online_entries;
+                    let entries: &[u32] = if let Some(portals) = online_portals {
+                        let cells = idx.router.probe(qs.row(i), portal_cells);
+                        online_entries = portals.entry_points(
+                            &ds,
+                            qs.row(i),
+                            &cells,
+                            portal_buckets,
+                            portal_rows,
+                            portal_sq4,
+                        );
+                        &online_entries
+                    } else if let Some((s, data)) =
+                        seeds.filter(|(s, data)| *s > 0 && (i + 1) * *s <= data.len())
+                    {
+                        let ne = n_entries.clamp(1, *s);
+                        &data[i * s..i * s + ne]
                     } else if dirn > 0 {
                         // nearest directory row(s) by -dot over the contiguous buffer
-                        ne = n_entries.clamp(1, 16);
+                        let ne = n_entries.clamp(1, 16);
                         let mut top: Vec<(i32, u32)> = (0..dirn).map(|j| {
                             (simd::negdot_i8(qs.row(i), &dirbuf[j * ds.d..(j + 1) * ds.d]), dirids[j])
                         }).collect();
                         if ne < top.len() { top.select_nth_unstable(ne - 1); }
                         for (k, &(_, o)) in top[..ne].iter().enumerate() { ebuf[k] = o; }
+                        &ebuf[..ne]
                     } else {
-                        ne = 1; ebuf[0] = medoid;
-                    }
+                        ebuf[0] = medoid;
+                        &ebuf[..1]
+                    };
                     let mut walk = if vq::SYMPACK.get().is_some() {
                         // SYMPACK: SQ4-guided block walk -> int8 re-rank of the top-L -> top-kk to float
-                        let w = vq::sympack_walk(&ds, qs.row(i), l, &ebuf[..ne]);
+                        let w = vq::sympack_walk(&ds, qs.row(i), l, entries);
                         let mut w: Vec<(i32, u32)> = w.iter().map(|&(_, o)| {
                             (simd::negdot_i8(qs.row(i), ds.row(o as usize)), o)
                         }).collect();
                         w.sort_unstable();
                         w
                     } else {
-                        vq::roar_walk(&ds, graph, qs.row(i), l, &ebuf[..ne])
+                        vq::roar_walk(&ds, graph, qs.row(i), l, entries)
                     };
                     let kkw = vq::CASCADE_K.load(std::sync::atomic::Ordering::Relaxed);
                     if vq::SYMPACK.get().is_some() && kkw > 0 && kkw < walk.len() { walk.truncate(kkw); }

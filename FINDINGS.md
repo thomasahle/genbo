@@ -5559,6 +5559,39 @@ P352 [2026-07-24] TEN BIG DEEP LOOSE-RECALL IDEAS — one internal 8% win; none 
     tuning or tree descent. It is the fixed scan + materialized point-graph toll against Roar's short,
     fully adaptive walk. Paper method/negative/results prose and DEEP first frontier point updated.
 
+P353 [2026-07-25] DEEP FULL-FRONTIER FLIP — portal-SQ4 entry + graph-local adaptive walk.
+  DIAGNOSIS/COMPOSITION: bypass the fixed PQ scan/union at loose recall. A 16-edge graph over the
+    64,512 fine centroids routes to p=8 cells at ef=8 (210 evaluations, 6.39us/query); 16 spherical
+    portals/cell choose one bucket; one point/bucket seeds a pure best-first Vamana32 walk whose top-L
+    is float-reranked. The corrected-fp16 cascade takes over above the loose band.
+  ENTRY GATES: query-exact bucket entries prove walk headroom (.9034 at L80 before online entry cost).
+    Fixed central reps R1/2/4/8 lose 2-3pt; farthest-first reps and 8-64 multi-entry variants still lose
+    or spend the saving in the walk. Direct 16-portal diverse reps approach quality but require an
+    ~800MB table and remain slow. Random-access PQ4 halves bytes but collapses end-to-end to 3964 QPS
+    at .8995. These failures identify random bucket gathers, not graph traversal, as the remaining toll.
+  WINNING ENTRY: duplicate the two materialized assignments in (cell,portal) order as robust per-dim
+    SQ4. Logical codes are 48B/assignment; pad to 64B so one VNNI pair scores a row. A batch argmax keeps
+    the query halves in registers and scans the selected buckets sequentially (485 rows/query mean).
+    Sidecar = 1.28GB / 128B per base row, built in 16.4s. Offline gate loses only .0022 recall at L80;
+    physical graph/base relabeling adds 12-19% to the pure walk with identical recall.
+  LOOSE FRONTIER (warm best-of-repeated): .8041@16083 .8319@13301 .8536@11182 .8684@9712
+    .8840@8307 .8937@7590 .9032@6773. Every point beats Roar's stronger published curve by
+    1.16-1.48x. Strict 2-round ABBA/BAAB at the former boundary: ours .9032 median 6681 (best 6784)
+    vs Roar .90305 median 5780 (best 6061) = 1.1558x median / 1.1194x best.
+  JOIN AUDIT (same-window A-B-B-A, corrected fp16): .9265 median 4986 vs Roar .9255@4866.6
+    (1.0245x); .9426@4797.5 vs .94295@4028.2 (1.1910x); .9603@3999.5 vs .9606@3175.1
+    (1.2596x); .9718@3322.5 vs .97175@2549.4 (1.3033x). FINAL TAIL AUDIT: corrected-fp16
+    p192 gives .9940 median 1446 vs Roar-L320 .9934@1048.7 (1.3789x); p608 gives .9978
+    median 618.5 vs Roar-L640 .99765@582.4 (1.0619x), and ours reaches .9987 beyond its
+    ceiling. VERDICT: DEEP changes from crossover to WON-ALL; Roar owns no measured recall band.
+  ENGINE: ROARMODE can route online through portals; portal-order padded-SQ4 loader + one-call VNNI
+    argmax; pure walk honors graph-local physical ids and maps results back; QSEED supports >16 entries.
+    With portal sidecars present, the fast preset defaults to L=25,34,44,53,66,76,88; balanced/accurate
+    retain the cascade. Normal path remains unchanged when sidecars are absent.
+  ARTIFACTS: experiments/{build_portal_sq4.py,gate_deep_portal_{sq4,representatives}.py,
+    abba_deep_portal_walk{,_results}.json,abba_deep_roar_r{0926,0943,0960,0972,0994,09978}_current.json};
+    deep10m/deep10m_portals16.sq4p64. Paper DEEP CSV/method/results/caption updated.
+
 === SESSION SUMMARY (current, 2026-07-12, through P334) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall

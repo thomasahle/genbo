@@ -42,6 +42,28 @@ python3 build_cell_portals.py
 The engine path is opt-in through `SBANN_PORTAL_FILE`; `SBANN_PORTAL_KEEP`
 defaults to one. It also requires the existing graph cascade.
 
+### Adaptive portal walk
+
+P353 reuses the portal partition only to choose graph-walk entries, bypassing
+the PQ scan and union. Build its portal-order, 64-byte-padded SQ4 tier:
+
+```sh
+python3 build_portal_sq4.py
+```
+
+With `SBANN_PORTAL_FILE`, `SBANN_PORTAL_SQ4_FILE`, the fine-centroid graph, and
+the jointly relabeled graph/base loaded, `SBANN_PRESET=fast` selects the
+measured `L=25..88` loose ladder automatically. The full configuration and
+strict RoarGraph comparison are executable from:
+
+```sh
+python3 abba_bench.py abba_deep_portal_walk.json --rounds 2 \
+  --out abba_deep_portal_walk_results.json
+```
+
+`gate_deep_portal_representatives.py` records the fixed-representative rejects;
+`gate_deep_portal_sq4.py` isolates entry quality before online routing cost.
+
 ## Paired measurements
 
 `abba_bench.py` selects and pins the least-busy physical core (including its

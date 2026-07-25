@@ -31,6 +31,13 @@ recall still depends on the index, graph, metric, and query distribution. The ru
 prints the resolved policy as `[SEARCH-PRESET]` and evaluates a four-point probe
 ladder around that region.
 
+When both `SBANN_PORTAL_FILE` and `SBANN_PORTAL_SQ4_FILE` are loaded, `fast`
+dispatches to the measured scan-bypass ladder
+`SBANN_ROARMODE=25,34,44,53,66,76,88`: eight fine cells select eight
+portal-bucket entries, followed by a graph-local adaptive walk. This is the
+DEEP-10M loose-recall default; without those optional sidecars, `fast` retains
+the generic IVF cascade above.
+
 Expert settings always win over a preset. These overrides remain supported:
 
 - `SBANN_PLIST`: exact comma-separated probe counts.
@@ -51,6 +58,9 @@ Expert settings always win over a preset. These overrides remain supported:
   band from the original f32 base before the final top-10, avoiding the
   measurable recall loss of pure fp16. Set the refinement depth explicitly
   only when reproducing an experiment.
+- `SBANN_ROARMODE`: explicit comma-separated adaptive-walk widths. It overrides
+  the `fast` portal ladder; `SBANN_ROAR_PORTAL_CELLS` defaults to eight when the
+  portal-SQ4 sidecar is loaded.
 
 Dataset semantics remain explicit: metric selection (`SBANN_IP`), float reranking
 and its files, resident-memory flags, and `SBANN_ROUTE_GAMMA` are not guessed.

@@ -47,6 +47,10 @@ Cohere-v3, $d{=}1024$) it beats HNSW in HNSW's home regime at every measured ope
 --- graph-free at 1M ($1.5$--$2.4\times$ QPS through HNSW's recall ceiling, which it
 exceeds), and ${\sim}1.2$--$1.9\times$ at 10M and $1.5$--$3.3\times$ at 35M after a
 minutes-scale internal graph build.
+At low dimension (DEEP-96), where RoarGraph had retained the loose-recall corner,
+an adaptive scan-bypass policy closes the final boundary: a fine-cell graph routes
+to compact portal buckets, a portal-ordered 4-bit tier chooses point-graph entries,
+and a short best-first walk beats RoarGraph across its full measured recall range.
 The design rests on two \emph{bottleneck localizations}, each supported by
 negative results reported as first-class evidence. First, OOD recall is capped by
 \emph{routing coverage} --- which cells are probed and which points are reachable ---
@@ -1369,6 +1373,48 @@ f32 recalls exactly and improves paired median engine QPS by $14.5$--$35.4\%$
 at recall $0.9039$--$0.9718$. All four are load-time flags; none changes the
 champion path when off.}
 
+\section{Adaptive Scan-Bypass Walk at Loose Recall}
+\label{sec:adaptivewalk}
+The low-dimensional loose-recall corner exposes a different fixed cost: at
+$d{=}96$, routing, PQ scanning, union formation, and exact rescoring can cost more
+than the short point-graph walk they merely initialize. We therefore dispatch the
+\emph{fast} policy to a scan-bypass path when its sidecars are present. A
+16-edge graph over the 64,512 finest centroids returns eight cells with
+$ef{=}8$ (210 centroid evaluations, $6.4\,\mu$s/query). Each cell owns 16
+spherical \emph{portals}; scoring their int8 centroids selects one small bucket.
+The selected buckets do not become a candidate union. Instead, a portal-ordered
+SQ4 sidecar chooses one entry point per cell, and those eight points initialize
+the graph-local exact-int8 best-first walk of \S\ref{sec:graph}. The walk's own
+top-$L$ is float-reranked, with $L$ the only recall knob.
+
+Two layout details make the entry lookup cheap without changing its winner under
+the 4-bit score. Because the index materializes each base row in two cells, the
+sidecar stores both assignments in $(\text{cell},\text{portal})$ order; logical
+codes are $48$ bytes/assignment. We pad each to 64 bytes so one
+\texttt{vpdpbusd} pair scores a row, then batch-argmax a contiguous bucket while
+the two query halves remain in registers. The sidecar is $1.28$\,GB at 10M
+($128$ bytes/base including padding), builds in 16\,s from the existing portal
+partition, and is used only to select eight entry ids; the graph walk immediately
+returns to exact int8 rows in the graph-local physical order. The robust
+per-dimension affine ranges and query-side step fold are the same as the SQ4 rung
+in \S\ref{sec:resident}. A plain query-specific bucket scan proves the entry
+quality, while fixed medoids, one to eight central/diverse representatives, and a
+random-access PQ4 selector all fail the recall or runtime gate.
+
+\effect{DEEP-10M, one thread: the default loose ladder
+$L{=}25,34,44,53,66,76,88$ spans recall $0.8041$--$0.9032$ at
+$16{,}083$--$6{,}773$ QPS. It beats RoarGraph's stronger published curve at
+every matched point by $1.16$--$1.48\times$. At the former boundary, strict
+two-round ABBA/BAAB gives $0.9032$ at median $6681$ QPS versus RoarGraph's
+$0.90305$ at $5780$ ($1.156\times$). The corrected-fp16 cascade then takes over:
+same-window medians are $1.025\times$ at recall $0.9265$,
+$1.191\times$ near $0.943$, $1.260\times$ near $0.960$, and
+$1.303\times$ at $0.9718$. A final corrected-fp16 tail audit gives
+$1.379\times$ at recall $0.9940$ and $1.062\times$ at $0.9978$ (both at
+higher recall than RoarGraph), then reaches $0.9987$ beyond its ceiling. Thus
+the two policies join without a hidden crossover gap and genbo owns RoarGraph's
+full measured DEEP frontier.}
+
 \FloatBarrier
 \section{Search Policies: Reasonable Defaults, Explicit Calibration}
 \label{sec:presets}
@@ -1402,10 +1448,12 @@ spans $0.9731$--$0.9940$; on Cohere the corresponding bands are
 $0.8072$--$0.9276$ and $0.9615$--$0.9906$. Thus one default transfers across
 $d{=}96,200,768$ and $n{=}1$--$10$M without erasing expert control. A subsequent
 targeted low-dimensional calibration (2,216 DEEP configurations) shows why the
-expert controls remain useful: the loose frontier wants two hops and a
-recall-banded $(M,k_e,T,K,p)$ ladder rather than the high-recall walk. Its strict
-paired points progress from a centroid-graph
-$(M,k_e,T,K,p)=(8,32,160,16,17)$ policy at recall $0.9032$ to
+expert controls remain useful: absent the portal sidecar, the loose frontier wants
+two hops and a recall-banded $(M,k_e,T,K,p)$ ladder. When the portal-SQ4 sidecar is
+loaded, \emph{fast} instead selects the adaptive $L{=}25$--$88$ walk of
+\S\ref{sec:adaptivewalk}; balanced and accurate keep the cascade. The cascade's
+strict paired points progress from a centroid-graph
+$(M,k_e,T,K,p)=(8,32,160,16,17)$ policy near recall $0.903$ to
 $(24,32,384,48,48)$ at $0.9718$, moving the RoarGraph crossover downward without
 changing the index.}
 
@@ -1561,8 +1609,10 @@ and coverage.
     185\,MB sidecar merely replaces the cheap PQ scan without shrinking the
     graph/rescore floor: paired end-to-end ABBA gives $0.9010$@$3508$ QPS versus
     $0.9012$@$3488$ for the scan path (a $0.6\%$ tie), and a slightly wider walk
-    is $0.7\%$ slower for $+0.0016$ recall. It therefore remains an opt-in
-    experimental path, not a frontier point.
+    is $0.7\%$ slower for $+0.0016$ recall. Thus portals are not a frontier
+    \emph{candidate-pool replacement}; \S\ref{sec:adaptivewalk} later succeeds
+    by using only their bucket identity to select point-walk entries and
+    eliminating the scan/union path entirely.
   \item \textbf{Low-recall execution shortcuts on retuned DEEP}: the built
     coarse beam is already fastest ($48.6\,\mu$s/query versus
     $49.1$--$57.1\,\mu$s for overrides); using APQ-ranked pool rows as graph
@@ -1572,8 +1622,9 @@ and coverage.
     Reordering identical routing work across queries is also a systems null:
     scalar and centroid-tiled routing both take $49$--$53\,\mu$s/query, while
     route/scan prefetch peaks at $6615$ versus $6612$ QPS without it. These
-    jointly rule out hidden execution slack as the remaining loose-recall gap;
-    improving candidate efficiency requires a new predictor.
+    jointly rule out hidden execution slack \emph{within the fixed cascade};
+    the successful response is the scan-bypass dispatch of
+    \S\ref{sec:adaptivewalk}, not another scheduling tweak.
   \item \textbf{Supervised query--cell reranking}: a leak-free DEEP-10M gate
     trained on $50$k queries, selected on a disjoint $10$k, and held the
     public $2$k out from model and policy selection. Scalar features, rank-4/8/16 query--cell embeddings,
@@ -1809,20 +1860,19 @@ beats every baseline at every measured point --- $1.45$--$2.8\times$ RoarGraph a
 the frontier, $2.6$--$10\times$ HNSW at matched recall (rising toward HNSW's $0.8989$
 ceiling), exceeding both recall ceilings ($0.9883$) ---
 and on DEEP-10M ($L_2$, $d{=}96$) ours leads HNSW ${\sim}2\times$ and ties ScaNN.
-Against RoarGraph the outcome on DEEP is a \emph{crossover}: widening our self-built
-graph (doubling per-node degree from a converged $k$NN pool, $+35$--$60\%$ QPS),
-placing its rows in graph-local physical order ($+17$--$22\%$), and
-widening the int8-survivor rerank pool (recovering ${\sim}4\%$ of quantization-
-misranked tail neighbours at ${\sim}0$ cost) lifts our frontier so that we win or tie
-the high-recall regime. A final recall-banded low-dimensional sweep removes most
-of the remaining over-configuration; centroid-graph routing then cuts another
-$8.0\%$ from our loose policy. In strict pairs RoarGraph's lead falls to
-$1.19\times$ at recall $0.903$, $1.11$--$1.12\times$ at $0.926$--$0.943$, and
-$1.04\times$ at $0.960$; the systems tie at $0.9718$ (ours $1.01\times$), after
-which ours leads $1.07\times$ at $0.9815$ and $1.16\times$ at $0.9908$, reaching
-$0.9987$ beyond RoarGraph's measured ceiling. RoarGraph therefore retains only
-the loose-recall corner below ${\sim}0.97$ --- there its short adaptive walk
-amortizes better than our fixed routing$+$scan cost. An ablation at matched edge budget shows the graph-side gain is
+Against RoarGraph, widening our self-built graph, placing its rows in graph-local
+physical order ($+17$--$22\%$), and using the 12-row-corrected fp16 rerank first
+take the high-recall regime. The adaptive scan-bypass walk of
+\S\ref{sec:adaptivewalk} then removes the remaining fixed routing$+$scan toll:
+the plotted loose ladder spans recall $0.8041$--$0.8937$ at
+$16{,}083$--$7590$ QPS, $1.16$--$1.48\times$ RoarGraph's published curve.
+Strict same-window pairs confirm the join rather than merely comparing plotted
+bests: ours is $1.156\times$ at recall $0.9032$, $1.025\times$ at $0.9265$,
+$1.191\times$ near $0.943$, $1.260\times$ near $0.960$, and
+$1.303\times$ at $0.9718$; strict tail pairs give $1.379\times$ at $0.9940$
+and $1.062\times$ at $0.9978$ (both at higher recall), before ours reaches
+$0.9987$ beyond RoarGraph's measured ceiling.
+DEEP therefore flips from a crossover to an every-point win. An ablation at matched edge budget shows the graph-side gain is
 edge \emph{count} and pool quality, not Vamana-style diversification (a wash for an
 IVF-seeded cascade). The OOD extreme flipped \emph{entirely} with three levers: on
 WebVid-2.5M (Figure~\ref{fig:oodfrontier}, bottom) calibrated routed coverage reaches
@@ -1836,10 +1886,8 @@ co-retrieval edges, built in $11$ s from the same training resource RoarGraph
 consumes) together beat RoarGraph at every measured point of its curve, recall
 $0.81$ through $0.98$, past its published-benchmark ceiling --- with our side
 measured on a loaded machine against its quiet-window curve, so each margin
-($1.3$--$1.7\times$) is a lower bound. The remaining boundary obeys the bottleneck
-theory: among \emph{build-eligible} methods, only at low dimension and loose recall
-(DEEP below ${\sim}0.97$) does frontier ownership pass to the cheapest materialized-adjacency
-walk; the build-unconstrained $6.5$h RoarGraph additionally keeps the Wikipedia
+($1.3$--$1.7\times$) is a lower bound. The remaining boundary is solely the
+build-unconstrained $6.5$h RoarGraph's Wikipedia
 $0.93$--${\sim}0.975$ band (Figure~\ref{fig:frontier} caption) --- narrowed from
 above by a $48$-edge self-built graph ($2.8$ h seeded NN-descent, still under
 RoarGraph's $6.5$ h) with the resident stack, which reaches recall $0.9778$ at $431$
@@ -1976,15 +2024,15 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
   ($d{=}100$) we beat every baseline at every measured point ($1.45$--$2.8\times$
   RoarGraph, exceeding HNSW's ceiling); RoarGraph's curve required padding its input
   to $d{=}104$ --- its released code silently corrupts dimensions not divisible by 8.
-  On DEEP 10M ($d{=}96$) the outcome is a \emph{crossover}: graph-local physical
-  ordering raises our QPS $17$--$22\%$, then recall-banded two-hop tuning and
-  centroid-graph routing close the strict-pair gap from RoarGraph $1.19\times$
-  at recall $0.903$ to
-  $1.04\times$ at $0.960$; we tie at $0.9718$ and lead $1.07\times$ at $0.9815$
-  / $1.16\times$ at $0.9908$ (reaching $0.9987$ beyond its ceiling). RoarGraph
-  retains the loose-recall corner below ${\sim}0.97$ --- cheap short graph walks
-  amortize better than our fixed
-  routing$+$scan cost when few neighbours are needed at low dimension.}
+  On DEEP 10M ($d{=}96$), graph-local physical ordering and corrected-fp16
+  reranking win the tail, while the portal-SQ4 adaptive walk removes the loose
+  routing$+$scan toll. Ours beats RoarGraph at every measured point:
+  $1.16$--$1.48\times$ from recall $0.80$ to $0.90$ against its published curve,
+  and strict same-window medians of $1.156\times$ at $0.9032$,
+  $1.025\times$ at $0.9265$, $1.191\times$ near $0.943$,
+  $1.260\times$ near $0.960$, and $1.303\times$ at $0.9718$, before the
+  corrected-fp16 tail wins $1.379\times$ at $0.9940$ and $1.062\times$ at
+  $0.9978$, then reaches $0.9987$ beyond its ceiling.}
   \label{fig:frontier}
 \end{figure}
 \begin{figure}[tp]

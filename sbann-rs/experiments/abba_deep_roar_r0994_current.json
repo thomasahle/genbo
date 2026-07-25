@@ -1,0 +1,187 @@
+{
+  "config": "sbann-rs/experiments/abba_deep_layout_vs_roar_090.json",
+  "core": 1,
+  "resolved_arms": {
+    "a": {
+      "argv": [
+        "/home/thomas-ahle/RoarGraph/build/tests/test_search_roargraph",
+        "--data_type",
+        "float",
+        "--dist",
+        "l2",
+        "--base_data_path",
+        "/home/thomas-ahle/big-ann-data/deep10m/base.10M.fbin",
+        "--projection_index_save_path",
+        "/home/thomas-ahle/RoarGraph/data/deep10m/roar.index",
+        "--gt_path",
+        "/home/thomas-ahle/RoarGraph/data/deep10m/gt.2k.withdist.ibin",
+        "--query_path",
+        "/home/thomas-ahle/RoarGraph/data/deep10m/query.2k.fbin",
+        "--L_pq",
+        "320",
+        "--k",
+        "10",
+        "-T",
+        "1",
+        "--evaluation_save_path",
+        "/tmp/abba_deep_roar_l44.csv"
+      ],
+      "env": {
+        "LD_LIBRARY_PATH": "/home/thomas-ahle/scann_venv/lib"
+      },
+      "name": "roar-L320",
+      "result_regex": "^320\\s+(?P<qps>[0-9.]+)\\s+[0-9.]+\\s+[0-9.]+\\s+(?P<recall>[0-9.]+)\\s+[0-9.]+"
+    },
+    "b": {
+      "argv": [
+        "/home/thomas-ahle/genbo/sbann-rs/target/release/sbann",
+        "run",
+        "/home/thomas-ahle/big-ann-data/deep10m/base.10M.i8bin",
+        "/home/thomas-ahle/big-ann-data/deep10m/query2k.i8bin",
+        "/home/thomas-ahle/big-ann-data/deep10m/deep10m_gt.ibin",
+        "hierkn",
+        "apq4",
+        "2",
+        "65536",
+        "8"
+      ],
+      "env": {
+        "SBANN_CASCADE_K": "64",
+        "SBANN_FBASE": "/home/thomas-ahle/big-ann-data/deep10m/base.10M.fbin",
+        "SBANN_FLOAT_RERANK": "1",
+        "SBANN_FQUERY": "/home/thomas-ahle/big-ann-data/deep10m/query2k.fbin",
+        "SBANN_GRAPH_BASE": "/home/thomas-ahle/big-ann-data/deep10m/graph_layout_gate.cellpair.aligned64.i8bin",
+        "SBANN_GRAPH_BASE_OFFSET": "64",
+        "SBANN_GRAPH_BESTFIRST": "1",
+        "SBANN_GRAPH_FILE": "/home/thomas-ahle/big-ann-data/deep10m/graph_layout_gate.cellpair.graph.u32",
+        "SBANN_GRAPH_HOPS": "3",
+        "SBANN_GRAPH_KEDGE": "32",
+        "SBANN_GRAPH_M": "24",
+        "SBANN_GRAPH_RANK": "/home/thomas-ahle/big-ann-data/deep10m/graph_layout_gate.cellpair.u32",
+        "SBANN_INDEX_LOAD": "/home/thomas-ahle/big-ann-data/deep10m/eng_deep10m_kf65536.idx",
+        "SBANN_NQ": "2000",
+        "SBANN_PLIST": "192",
+        "SBANN_REPS": "5",
+        "SBANN_RERANK_F16": "1",
+        "SBANN_RESIDENT_I8": "1",
+        "SBANN_TFLOOR": "450"
+      },
+      "name": "genbo-fp16-p192"
+    }
+  },
+  "samples": [
+    {
+      "arm": "roar-L320",
+      "involuntary_ctx": 13,
+      "leg": 0,
+      "load1": 19.6,
+      "load15": 16.13,
+      "load5": 16.97,
+      "major_faults": 0,
+      "maxrss_kb": 7506076,
+      "minor_faults": 1375832,
+      "output_tail": "load meta from file: /home/thomas-ahle/big-ann-data/deep10m/base.10M.fbin points_num: 10000000 dim: 96\nload meta from file: /home/thomas-ahle/RoarGraph/data/deep10m/query.2k.fbin points_num: 2000 dim: 96\nload data from file: /home/thomas-ahle/RoarGraph/data/deep10m/query.2k.fbin\npoints_num: 2000 dim: 96\nFinish load data from file: /home/thomas-ahle/RoarGraph/data/deep10m/query.2k.fbin points_num: 2000 dim: 96\nnew_dim: 96\nload gt from file: /home/thomas-ahle/RoarGraph/data/deep10m/gt.2k.withdist.ibin points_num: 2000 dim: 100\nUsing l2 as distance metric\nInside using L2 distance.\nload meta from file: /home/thomas-ahle/big-ann-data/deep10m/base.10M.fbin points_num: 10000000 dim: 96\nload data from file: /home/thomas-ahle/big-ann-data/deep10m/base.10M.fbin\npoints_num: 10000000 dim: 96\nFinish load data from file: /home/thomas-ahle/big-ann-data/deep10m/base.10M.fbin points_num: 10000000 dim: 96\nnew_dim: 96\nLoad graph index: /home/thomas-ahle/RoarGraph/data/deep10m/roar.index\nProjection graph, ep: 5278289\nProjection graph, avg_degree: 30.4129\nk: 10\nUsing thread: 1\nL_pq\t\tQPS\t\t\tavg_visited\tmean_latency\trecall@10\tavg_hops\n320\t\t1088.73\t\t6750.5\t\t0.9185\t\t0.9934\t\t326.795\n",
+      "qps": 1088.73,
+      "recall": 0.9934,
+      "returncode": 0,
+      "round": 0,
+      "sys_s": 3.459099,
+      "user_s": 3.439323,
+      "voluntary_ctx": 1,
+      "wall_s": 6.95597517490387
+    },
+    {
+      "arm": "genbo-fp16-p192",
+      "involuntary_ctx": 39,
+      "leg": 1,
+      "load1": 19.15,
+      "load15": 16.12,
+      "load5": 16.92,
+      "major_faults": 0,
+      "maxrss_kb": 12576644,
+      "minor_faults": 1385141,
+      "output_tail": "  [GRAPH-LAYOUT] base=/home/thomas-ahle/big-ann-data/deep10m/graph_layout_gate.cellpair.aligned64.i8bin offset=64 rank=/home/thomas-ahle/big-ann-data/deep10m/graph_layout_gate.cellpair.u32 resident+aligned64\n[loaded index from /home/thomas-ahle/big-ann-data/deep10m/eng_deep10m_kf65536.idx] in 1.05s (build skipped)\n  [FLOAT_RERANK fbase=/home/thomas-ahle/big-ann-data/deep10m/base.10M.fbin nb=10000000 d=96]\n  [RERANK-F16] resident fp16 base 1920MB (f32 mmap was 3840MB)  setup=1.9s\n  [RERANK-F16] exact-f32 correction band=12\n  [GRAPH] /home/thomas-ahle/big-ann-data/deep10m/graph_layout_gate.cellpair.graph.u32  n=10000000 k=32  hops=3 M=24 kedge=32 bestfirst=true pfdist=16\n  [SEARCH-PRESET] balanced via default  probes=[192] tfloor=450 cascade_k=64 graph=on\n  p=  192 t=  8 K=64: recall@10=0.9940  QPS=1443 (best/5)\n",
+      "qps": 1443.0,
+      "recall": 0.994,
+      "returncode": 0,
+      "round": 0,
+      "sys_s": 2.955076,
+      "user_s": 8.757237,
+      "voluntary_ctx": 16,
+      "wall_s": 11.803647758904845
+    },
+    {
+      "arm": "genbo-fp16-p192",
+      "involuntary_ctx": 64,
+      "leg": 2,
+      "load1": 19.12,
+      "load15": 16.16,
+      "load5": 17.01,
+      "major_faults": 0,
+      "maxrss_kb": 12576872,
+      "minor_faults": 1152458,
+      "output_tail": "  [GRAPH-LAYOUT] base=/home/thomas-ahle/big-ann-data/deep10m/graph_layout_gate.cellpair.aligned64.i8bin offset=64 rank=/home/thomas-ahle/big-ann-data/deep10m/graph_layout_gate.cellpair.u32 resident+aligned64\n[loaded index from /home/thomas-ahle/big-ann-data/deep10m/eng_deep10m_kf65536.idx] in 0.95s (build skipped)\n  [FLOAT_RERANK fbase=/home/thomas-ahle/big-ann-data/deep10m/base.10M.fbin nb=10000000 d=96]\n  [RERANK-F16] resident fp16 base 1920MB (f32 mmap was 3840MB)  setup=1.9s\n  [RERANK-F16] exact-f32 correction band=12\n  [GRAPH] /home/thomas-ahle/big-ann-data/deep10m/graph_layout_gate.cellpair.graph.u32  n=10000000 k=32  hops=3 M=24 kedge=32 bestfirst=true pfdist=16\n  [SEARCH-PRESET] balanced via default  probes=[192] tfloor=450 cascade_k=64 graph=on\n  p=  192 t=  8 K=64: recall@10=0.9940  QPS=1449 (best/5)\n",
+      "qps": 1449.0,
+      "recall": 0.994,
+      "returncode": 0,
+      "round": 0,
+      "sys_s": 2.735056,
+      "user_s": 8.763264999999999,
+      "voluntary_ctx": 16,
+      "wall_s": 11.586807038867846
+    },
+    {
+      "arm": "roar-L320",
+      "involuntary_ctx": 19,
+      "leg": 3,
+      "load1": 18.4,
+      "load15": 16.14,
+      "load5": 16.92,
+      "major_faults": 0,
+      "maxrss_kb": 12576872,
+      "minor_faults": 1258061,
+      "output_tail": "load meta from file: /home/thomas-ahle/big-ann-data/deep10m/base.10M.fbin points_num: 10000000 dim: 96\nload meta from file: /home/thomas-ahle/RoarGraph/data/deep10m/query.2k.fbin points_num: 2000 dim: 96\nload data from file: /home/thomas-ahle/RoarGraph/data/deep10m/query.2k.fbin\npoints_num: 2000 dim: 96\nFinish load data from file: /home/thomas-ahle/RoarGraph/data/deep10m/query.2k.fbin points_num: 2000 dim: 96\nnew_dim: 96\nload gt from file: /home/thomas-ahle/RoarGraph/data/deep10m/gt.2k.withdist.ibin points_num: 2000 dim: 100\nUsing l2 as distance metric\nInside using L2 distance.\nload meta from file: /home/thomas-ahle/big-ann-data/deep10m/base.10M.fbin points_num: 10000000 dim: 96\nload data from file: /home/thomas-ahle/big-ann-data/deep10m/base.10M.fbin\npoints_num: 10000000 dim: 96\nFinish load data from file: /home/thomas-ahle/big-ann-data/deep10m/base.10M.fbin points_num: 10000000 dim: 96\nnew_dim: 96\nLoad graph index: /home/thomas-ahle/RoarGraph/data/deep10m/roar.index\nProjection graph, ep: 5278289\nProjection graph, avg_degree: 30.4129\nk: 10\nUsing thread: 1\nL_pq\t\tQPS\t\t\tavg_visited\tmean_latency\trecall@10\tavg_hops\n320\t\t1008.57\t\t6750.5\t\t0.9915\t\t0.9934\t\t326.795\n",
+      "qps": 1008.57,
+      "recall": 0.9934,
+      "returncode": 0,
+      "round": 0,
+      "sys_s": 3.34061,
+      "user_s": 3.7023960000000002,
+      "voluntary_ctx": 1,
+      "wall_s": 7.103267563972622
+    }
+  ],
+  "siblings": [
+    1
+  ],
+  "summary": {
+    "genbo-fp16-p192": {
+      "involuntary_ctx_median": 51.5,
+      "major_faults_median": 0.0,
+      "minor_faults_median": 1268799.5,
+      "n": 2,
+      "qps_best": 1449.0,
+      "qps_mean": 1446.0,
+      "qps_median": 1446.0,
+      "qps_stdev": 4.242640687119285,
+      "recall_max": 0.994,
+      "recall_min": 0.994
+    },
+    "ratio": {
+      "best_b_over_a": 1.3309084897081922,
+      "median_b_over_a": 1.3789157488199113
+    },
+    "roar-L320": {
+      "involuntary_ctx_median": 16.0,
+      "major_faults_median": 0.0,
+      "minor_faults_median": 1316946.5,
+      "n": 2,
+      "qps_best": 1088.73,
+      "qps_mean": 1048.65,
+      "qps_median": 1048.65,
+      "qps_stdev": 56.68167957991363,
+      "recall_max": 0.9934,
+      "recall_min": 0.9934
+    }
+  }
+}

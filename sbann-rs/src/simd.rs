@@ -143,6 +143,76 @@ pub unsafe fn dot_sq4_vnni(qe: &[i8], qo: &[i8], codes: &[u8]) -> i32 {
     s
 }
 
+/// Return the maximum-SQ4-score row in a contiguous block of 64-byte padded
+/// codes.  Portal entry selection always needs argmax/top-1, so keeping the
+/// two query vectors in registers and never materializing per-row scores
+/// removes the allocation, selection pass, and one SIMD call per row.
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx512f,avx512bw,avx512vnni")]
+pub unsafe fn argmax_sq4p64_vnni(qe: &[i8], qo: &[i8], codes: &[u8]) -> usize {
+    debug_assert!(qe.len() >= 64 && qo.len() >= 64 && codes.len() % 64 == 0);
+    let lo4 = _mm512_set1_epi8(0x0F);
+    let qev = _mm512_loadu_si512(qe.as_ptr() as *const __m512i);
+    let qov = _mm512_loadu_si512(qo.as_ptr() as *const __m512i);
+    let mut best_score = i32::MIN;
+    let mut best_row = 0usize;
+    for row in 0..codes.len() / 64 {
+        let cv =
+            _mm512_loadu_si512(codes.as_ptr().add(row * 64) as *const __m512i);
+        let vlo = _mm512_and_si512(cv, lo4);
+        let vhi = _mm512_and_si512(_mm512_srli_epi16(cv, 4), lo4);
+        let acc = _mm512_dpbusd_epi32(
+            _mm512_dpbusd_epi32(_mm512_setzero_si512(), vlo, qev),
+            vhi,
+            qov,
+        );
+        let score = _mm512_reduce_add_epi32(acc);
+        if score > best_score {
+            best_score = score;
+            best_row = row;
+        }
+    }
+    best_row
+}
+
+#[cfg(test)]
+mod sq4p64_tests {
+    use super::*;
+
+    #[test]
+    fn batch_argmax_matches_scalar() {
+        if !std::is_x86_feature_detected!("avx512vnni")
+            || !std::is_x86_feature_detected!("avx512bw")
+            || !std::is_x86_feature_detected!("avx512f")
+        {
+            return;
+        }
+        let qe: Vec<i8> = (0..64).map(|j| ((j * 37 % 255) as i16 - 127) as i8).collect();
+        let qo: Vec<i8> = (0..64).map(|j| ((j * 71 % 255) as i16 - 127) as i8).collect();
+        let rows = 11;
+        let codes: Vec<u8> = (0..rows * 64)
+            .map(|j| {
+                let lo = (j * 5 + 3) % 16;
+                let hi = (j * 11 + j / 64) % 16;
+                (lo | (hi << 4)) as u8
+            })
+            .collect();
+        let expected = (0..rows)
+            .max_by_key(|&row| {
+                (0..64)
+                    .map(|j| {
+                        let code = codes[row * 64 + j];
+                        (code & 15) as i32 * qe[j] as i32
+                            + (code >> 4) as i32 * qo[j] as i32
+                    })
+                    .sum::<i32>()
+            })
+            .unwrap();
+        let actual = unsafe { argmax_sq4p64_vnni(&qe, &qo, &codes) };
+        assert_eq!(actual, expected);
+    }
+}
+
 /// Batched int8 L2 over a CONTIGUOUS [ncand x d] centroid block to one query `qn`, writing ncand i32
 /// distances into `out`. Beam-descent routing (gather_fine) was a SCALAR per-centroid l2_i8 loop -- which
 /// re-ran the avx2 dispatch every centroid and reloaded `qn` every time. This keeps `qn` hot and runs 2

@@ -411,6 +411,53 @@ impl GraphAdj {
 /// are partitioned into `p` contiguous id buckets. At query time we score only the centroids, keep
 /// `PORTAL_KEEP` buckets per routed cell, and use those ids as the initial best-first graph frontier.
 /// This bypasses the fixed PQ cell scan at loose recall. Flag-gated by SBANN_PORTAL_FILE.
+pub struct PortalSq4 {
+    pub d: usize,
+    pub stride: usize,
+    pub step: Vec<f32>,
+    storage: Vec<u8>,
+    code_start: usize,
+}
+
+impl PortalSq4 {
+    pub fn load(path: &str) -> std::io::Result<Self> {
+        let bytes = std::fs::read(path)?;
+        assert!(bytes.len() >= 24, "portal SQ4 sidecar too short");
+        assert_eq!(&bytes[..8], b"SBPSQ4\0\0", "bad portal SQ4 magic");
+        let nassign = u64::from_le_bytes(bytes[8..16].try_into().unwrap()) as usize;
+        let d = u32::from_le_bytes(bytes[16..20].try_into().unwrap()) as usize;
+        let stride = u32::from_le_bytes(bytes[20..24].try_into().unwrap()) as usize;
+        let code_start = 24 + d * 4;
+        assert_eq!(
+            bytes.len(),
+            code_start + nassign * stride,
+            "portal SQ4 length mismatch"
+        );
+        let step = bytes[24..code_start]
+            .chunks_exact(4)
+            .map(|chunk| f32::from_le_bytes(chunk.try_into().unwrap()))
+            .collect();
+        Ok(Self {
+            d,
+            stride,
+            step,
+            storage: bytes,
+            code_start,
+        })
+    }
+
+    #[inline]
+    pub fn codes(&self) -> &[u8] {
+        &self.storage[self.code_start..]
+    }
+
+    pub fn assignments(&self) -> usize {
+        self.codes().len() / self.stride
+    }
+}
+
+pub static PORTAL_SQ4: std::sync::OnceLock<PortalSq4> = std::sync::OnceLock::new();
+
 pub struct CellPortals {
     pub n: usize,
     pub d: usize,
@@ -500,6 +547,177 @@ impl CellPortals {
                 let lo = self.offsets[b] as usize;
                 let hi = self.offsets[b + 1] as usize;
                 out.extend_from_slice(&self.ids[lo..hi]);
+            }
+        }
+        out
+    }
+
+    /// Cheap point-graph entries for scan-bypass search.  For every routed
+    /// cell, score its resident spherical portal centroids, retain
+    /// `bucket_keep`, then exact-int8 score only the rows in those small
+    /// buckets and return `rows_per_bucket` representatives.  Unlike `select`,
+    /// this never materializes a bucket as a rerank pool: the chosen rows are
+    /// entry points for an adaptive graph walk.
+    pub fn entry_points(
+        &self,
+        ds: &I8Bin,
+        q: &[i8],
+        cells: &[u32],
+        bucket_keep: usize,
+        rows_per_bucket: usize,
+        portal_sq4: Option<&PortalSq4>,
+    ) -> Vec<u32> {
+        let vnni = std::is_x86_feature_detected!("avx512vnni")
+            && std::is_x86_feature_detected!("avx512bw")
+            && std::is_x86_feature_detected!("avx512f");
+        let avx = std::is_x86_feature_detected!("avx2");
+        let bucket_keep = bucket_keep.clamp(1, self.p);
+        let rows_per_bucket = rows_per_bucket.max(1);
+        let mut out =
+            Vec::with_capacity(cells.len() * bucket_keep * rows_per_bucket);
+        let (sq4_qe, sq4_qo): (Vec<i8>, Vec<i8>) =
+            if let Some(sq4) = portal_sq4 {
+                assert_eq!(sq4.d, self.d, "portal SQ4 dimension mismatch");
+                assert!(
+                    std::is_x86_feature_detected!("avx512vnni")
+                        && std::is_x86_feature_detected!("avx512bw")
+                        && std::is_x86_feature_detected!("avx512f"),
+                    "portal SQ4 needs AVX-512 VNNI"
+                );
+                let weighted: Vec<f32> = q
+                    .iter()
+                    .zip(&sq4.step)
+                    .map(|(&value, &step)| value as f32 * step)
+                    .collect();
+                let max_abs = weighted
+                    .iter()
+                    .fold(0f32, |acc, &value| acc.max(value.abs()))
+                    .max(1e-9);
+                let scale = 127.0 / max_abs;
+                let mut qe = vec![0i8; sq4.stride];
+                let mut qo = vec![0i8; sq4.stride];
+                for j in 0..self.d / 2 {
+                    qe[j] = (weighted[2 * j] * scale).round().clamp(-127.0, 127.0) as i8;
+                    qo[j] =
+                        (weighted[2 * j + 1] * scale).round().clamp(-127.0, 127.0) as i8;
+                }
+                (qe, qo)
+            } else {
+                (Vec::new(), Vec::new())
+            };
+        if let Some(sq4) = portal_sq4.filter(|_| bucket_keep == 1 && rows_per_bucket == 1) {
+            assert_eq!(sq4.stride, 64, "portal SQ4 fast path needs stride 64");
+            for &cell in cells {
+                let c = cell as usize;
+                if c >= self.nc {
+                    continue;
+                }
+                let mut best_portal = (i32::MIN, 0usize);
+                for portal in 0..self.p {
+                    let centroid = &self.cent[(c * self.p + portal) * self.d
+                        ..(c * self.p + portal + 1) * self.d];
+                    let score = if vnni {
+                        unsafe { simd::dot_i8_vnni(q, centroid) }
+                    } else if avx {
+                        unsafe { simd::dot_i8_avx2(q, centroid) }
+                    } else {
+                        -simd::negdot_i8(q, centroid)
+                    };
+                    if score > best_portal.0 {
+                        best_portal = (score, portal);
+                    }
+                }
+                let bucket = c * self.p + best_portal.1;
+                let lo = self.offsets[bucket] as usize;
+                let hi = self.offsets[bucket + 1] as usize;
+                if lo == hi {
+                    continue;
+                }
+                let code_lo = lo * sq4.stride;
+                let code_hi = hi * sq4.stride;
+                let local = unsafe {
+                    simd::argmax_sq4p64_vnni(
+                        &sq4_qe,
+                        &sq4_qo,
+                        &sq4.codes()[code_lo..code_hi],
+                    )
+                };
+                let id = self.ids[lo + local];
+                if (id as usize) < ds.nb {
+                    out.push(id);
+                }
+            }
+            return out;
+        }
+        let mut portal_scores = Vec::with_capacity(self.p);
+        let mut row_scores: Vec<(i32, u32)> = Vec::new();
+        for &cell in cells {
+            let c = cell as usize;
+            if c >= self.nc {
+                continue;
+            }
+            portal_scores.clear();
+            for portal in 0..self.p {
+                let row = &self.cent
+                    [(c * self.p + portal) * self.d..(c * self.p + portal + 1) * self.d];
+                let dot = if vnni {
+                    unsafe { simd::dot_i8_vnni(q, row) }
+                } else if avx {
+                    unsafe { simd::dot_i8_avx2(q, row) }
+                } else {
+                    -simd::negdot_i8(q, row)
+                };
+                portal_scores.push((-dot, portal));
+            }
+            if bucket_keep < portal_scores.len() {
+                portal_scores.select_nth_unstable(bucket_keep - 1);
+            }
+            portal_scores[..bucket_keep].sort_unstable();
+            for &(_, portal) in &portal_scores[..bucket_keep] {
+                let bucket = c * self.p + portal;
+                let lo = self.offsets[bucket] as usize;
+                let hi = self.offsets[bucket + 1] as usize;
+                row_scores.clear();
+                row_scores.reserve(hi - lo);
+                for (pair, &id) in self.ids[lo..hi].iter().enumerate() {
+                    if id as usize >= ds.nb {
+                        continue;
+                    }
+                    let negdot = if let Some(sq4) = portal_sq4 {
+                        let code_index = (lo + pair) * sq4.stride;
+                        -unsafe {
+                            simd::dot_sq4_vnni(
+                                &sq4_qe,
+                                &sq4_qo,
+                                &sq4.codes()[code_index..code_index + sq4.stride],
+                            )
+                        }
+                    } else {
+                        let row = if let Some(layout) = GRAPH_LAYOUT.get() {
+                            layout.base.row(layout.rank[id as usize] as usize)
+                        } else {
+                            ds.row(id as usize)
+                        };
+                        let dot = if vnni {
+                            unsafe { simd::dot_i8_vnni(q, row) }
+                        } else if avx {
+                            unsafe { simd::dot_i8_avx2(q, row) }
+                        } else {
+                            -simd::negdot_i8(q, row)
+                        };
+                        -dot
+                    };
+                    row_scores.push((negdot, id));
+                }
+                let take = rows_per_bucket.min(row_scores.len());
+                if take == 0 {
+                    continue;
+                }
+                if take < row_scores.len() {
+                    row_scores.select_nth_unstable(take - 1);
+                }
+                row_scores[..take].sort_unstable();
+                out.extend(row_scores[..take].iter().map(|&(_, id)| id));
             }
         }
         out
@@ -649,7 +867,9 @@ pub static ROAR_HOPS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU6
 /// unexpanded candidate is worse than the L-th best seen). Guidance is int8 -dot (gate 2b: exactly
 /// matches a float walk on DEEP-1M at 1/4 the bytes RoarGraph's float walk gathers). Serves the
 /// loose/mid-recall regime where the fixed route+scan toll loses to short adaptive walks; the cascade
-/// keeps the >=0.95 regime (config dispatch). Gated behind SBANN_ROARMODE — champion bit-identical.
+/// keeps the high-recall regime (config dispatch). If GRAPH_LAYOUT is installed, entry ids are mapped
+/// once and the walk runs entirely in the relabeled graph/base before results map back to original ids.
+/// Gated behind SBANN_ROARMODE — the normal cascade remains bit-identical.
 /// Returns the top-l (negdot, orig) ascending; caller float-reranks.
 pub fn roar_walk(ds: &I8Bin, graph: &GraphAdj, q: &[i8], l: usize, entries: &[u32]) -> Vec<(i32, u32)> {
     use std::cmp::Reverse;
@@ -659,7 +879,9 @@ pub fn roar_walk(ds: &I8Bin, graph: &GraphAdj, q: &[i8], l: usize, entries: &[u3
         // epoch-stamped visited marks: no per-query clear of an nb-sized array (stamp==epoch <=> visited).
         static VISIT: std::cell::RefCell<(Vec<u32>, u32)> = const { std::cell::RefCell::new((Vec::new(), 0)) };
     }
-    let d = ds.d;
+    let layout = GRAPH_LAYOUT.get();
+    let walk_ds = layout.map(|value| &value.base).unwrap_or(ds);
+    let d = walk_ds.d;
     let ke = GRAPH_KEDGE.load(Relaxed).clamp(1, graph.k).min(64);
     VISIT.with(|cell| {
         let mut b = cell.borrow_mut();
@@ -673,12 +895,15 @@ pub fn roar_walk(ds: &I8Bin, graph: &GraphAdj, q: &[i8], l: usize, entries: &[u3
         let (mut evals, mut hops) = (0u64, 0u64);
         for &e in entries {
             let ei = e as usize;
-            if ei >= ds.nb || stamp[ei] == ep { continue; }
-            stamp[ei] = ep;
-            let dv = simd::negdot_i8(q, ds.row(ei));
+            if ei >= ds.nb { continue; }
+            let physical = layout.map(|value| value.rank[ei]).unwrap_or(e);
+            let pi = physical as usize;
+            if stamp[pi] == ep { continue; }
+            stamp[pi] = ep;
+            let dv = simd::negdot_i8(q, walk_ds.row(pi));
             evals += 1;
-            cand.push(Reverse((dv, e)));
-            topl.push((dv, e));
+            cand.push(Reverse((dv, physical)));
+            topl.push((dv, physical));
             if topl.len() > l { topl.pop(); }
         }
         let mut fresh = [0u32; 64]; // unvisited neighbours of the expanding node (ke clamped <= 64)
@@ -689,18 +914,18 @@ pub fn roar_walk(ds: &I8Bin, graph: &GraphAdj, q: &[i8], l: usize, entries: &[u3
             let mut nf = 0usize;
             for &nb in &graph.neighbours(cur as usize)[..ke] {
                 let ni = nb as usize;
-                if ni < ds.nb && stamp[ni] != ep {
+                if ni < walk_ds.nb && stamp[ni] != ep {
                     stamp[ni] = ep;
                     fresh[nf] = nb;
                     nf += 1;
-                    let ptr = ds.row(ni).as_ptr();
+                    let ptr = walk_ds.row(ni).as_ptr();
                     let mut off = 0usize;
                     while off < d { unsafe { _mm_prefetch(ptr.add(off) as *const i8, _MM_HINT_T0) }; off += 64; }
                 }
             }
             // pass 2: score; insert only candidates that can still make the top-L (bound-pruned heap ops)
             for &nb in &fresh[..nf] {
-                let dv = simd::negdot_i8(q, ds.row(nb as usize));
+                let dv = simd::negdot_i8(q, walk_ds.row(nb as usize));
                 evals += 1;
                 if topl.len() < l {
                     cand.push(Reverse((dv, nb)));
@@ -720,6 +945,11 @@ pub fn roar_walk(ds: &I8Bin, graph: &GraphAdj, q: &[i8], l: usize, entries: &[u3
         ROAR_HOPS.fetch_add(hops, Relaxed);
         let mut out = topl.into_vec();
         out.sort_unstable();
+        if let Some(value) = layout {
+            for (_, physical) in &mut out {
+                *physical = value.original[*physical as usize];
+            }
+        }
         out
     })
 }

@@ -1,0 +1,98 @@
+{
+  "date_utc": "2026-07-25",
+  "dataset": "DEEP-10M, d=96, L2, official 2k queries",
+  "genbo_configuration": {
+    "router": "fine-centroid Vamana16, 64 landmarks, ef=8, p=8",
+    "entry": "16 portals/cell, one bucket/cell, portal-order robust SQ4 p64 batch argmax",
+    "walk": "Vamana32, graph-local physical base, exact-int8 best-first top-L, f32 top-10",
+    "threads": 1,
+    "repetitions": 9,
+    "sidecar_bytes": 1280000408,
+    "sidecar_build_seconds": 16.4
+  },
+  "genbo_loose_frontier": [
+    {"walk_l": 25, "recall": 0.8041, "qps": 16083},
+    {"walk_l": 34, "recall": 0.8319, "qps": 13301},
+    {"walk_l": 44, "recall": 0.8536, "qps": 11182},
+    {"walk_l": 53, "recall": 0.8684, "qps": 9712},
+    {"walk_l": 66, "recall": 0.8840, "qps": 8307},
+    {"walk_l": 76, "recall": 0.8937, "qps": 7590},
+    {"walk_l": 88, "recall": 0.9032, "qps": 6773}
+  ],
+  "roar_same_window_low_sweep": [
+    {"l_pq": 16, "recall": 0.76515, "qps": 11834.3},
+    {"l_pq": 20, "recall": 0.8008, "qps": 10416.7},
+    {"l_pq": 24, "recall": 0.82995, "qps": 9302.33},
+    {"l_pq": 28, "recall": 0.85185, "qps": 8264.46},
+    {"l_pq": 32, "recall": 0.86775, "qps": 7462.69},
+    {"l_pq": 36, "recall": 0.88305, "qps": 7042.25},
+    {"l_pq": 40, "recall": 0.89375, "qps": 6191.95}
+  ],
+  "strict_abba": {
+    "recall_0903": {
+      "genbo_recall": 0.9032,
+      "genbo_qps_median": 6681.0,
+      "roar_recall": 0.90305,
+      "roar_qps_median": 5780.395,
+      "ratio": 1.1558033664,
+      "rounds": 2
+    },
+    "recall_0926": {
+      "genbo_recall": 0.9265,
+      "genbo_qps_median": 4986.0,
+      "roar_recall": 0.9255,
+      "roar_qps_median": 4866.64,
+      "ratio": 1.0245261618
+    },
+    "recall_0943": {
+      "genbo_recall": 0.9426,
+      "genbo_qps_median": 4797.5,
+      "roar_recall": 0.94295,
+      "roar_qps_median": 4028.2,
+      "ratio": 1.1909786009
+    },
+    "recall_0960": {
+      "genbo_recall": 0.9603,
+      "genbo_qps_median": 3999.5,
+      "roar_recall": 0.9606,
+      "roar_qps_median": 3175.115,
+      "ratio": 1.2596394146
+    },
+    "recall_0972": {
+      "genbo_recall": 0.9718,
+      "genbo_qps_median": 3322.5,
+      "roar_recall": 0.97175,
+      "roar_qps_median": 2549.395,
+      "ratio": 1.3032503790
+    },
+    "recall_0994": {
+      "genbo_recall": 0.9940,
+      "genbo_qps_median": 1446.0,
+      "roar_recall": 0.9934,
+      "roar_qps_median": 1048.65,
+      "ratio": 1.3789157488
+    },
+    "recall_09978": {
+      "genbo_recall": 0.9978,
+      "genbo_qps_median": 618.5,
+      "roar_recall": 0.99765,
+      "roar_qps_median": 582.438,
+      "ratio": 1.0619156030
+    }
+  },
+  "genbo_corrected_fp16_tail": [
+    {"probes": 192, "recall": 0.9940, "qps_best": 1449},
+    {"probes": 224, "recall": 0.9948, "qps_best": 1284},
+    {"probes": 256, "recall": 0.9951, "qps_best": 1185},
+    {"probes": 320, "recall": 0.9959, "qps_best": 1010},
+    {"probes": 384, "recall": 0.9967, "qps_best": 877},
+    {"probes": 512, "recall": 0.9976, "qps_best": 706},
+    {"probes": 608, "recall": 0.9978, "qps_best": 621}
+  ],
+  "rejected_entry_variants": {
+    "fixed_central_or_diverse_representatives": "R=1/2/4/8 loses 1-3 recall points; multi-entry spends the saving in the walk",
+    "direct_all_portal_representatives": "quality approaches exact entry only at an approximately 800MB table and remains below the runtime target",
+    "random_access_pq4": "0.8995 at 3964 QPS end-to-end; scalar LUT and scattered code gathers dominate",
+    "exact_random_bucket_scan": "quality reference, but 485 scattered int8 rows/query leave genbo behind"
+  }
+}
