@@ -5675,6 +5675,12 @@ P357 [2026-07-25] AUDIT of 43bba44 (fixed-round refinement): mechanism GENUINE (
   round_walk engine code physically landed inside commit 97bd554 (my P355 git add -A swept the other
   agent's in-flight working tree) — 43bba44 is docs/data only; noted so git-show matches claims.
 
+P358 [2026-07-25] 0.9032 JOIN POINT SETTLED under matched-warmup protocol (REPS=2 both arms, warm pass
+  quoted, quiet load ~6.4): genbo round_walk R8/B14 8124.5 median vs Roar-L44 6400.0 = 1.269x (best 1.271x).
+  Protocol ladder fully mapped: cold-genbo-vs-warmed-Roar 0.85x (artifact: Roar's harness warms 100 queries,
+  ours ran cold); asymmetric best-of-5 1.265x; matched-warmup 1.27x = the fair number. Paper Effect updated
+  with the full disclosure trail. Artifacts: abba_deep_round_walk_vs_roar_{sym,w2}_results.json.
+
 === SESSION SUMMARY (current, 2026-07-12, through P334) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
