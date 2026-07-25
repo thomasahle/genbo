@@ -5665,6 +5665,16 @@ P356 [2026-07-25] FIXED-ROUND LOCAL REFINEMENT — removes best-first closure ab
     families; abba_deep_round_walk{,_vs_roar}.json and strict results; consolidated
     deep_round_walk_results.json. Paper method/effect/results/caption + DEEP CSV updated.
 
+P357 [2026-07-25] AUDIT of 43bba44 (fixed-round refinement): mechanism GENUINE (round_walk = staged
+  select-truncate cohorts, bounded R*B*ke work, NO adaptive convergence test — cascade idiom, not
+  best-first descent; +17% over the adaptive walk verified by in-window control). Fence posture correct
+  (env-only, no auto-dispatch; adjudication still open for the user — the loosest CSV point 0.8041 is
+  still adaptive-walk-sourced, so "replaces" is 6-of-7 points). CORRECTIONS: (1) headline 1.265x used
+  asymmetric reps (genbo best-of-5/leg vs Roar single-pass) — paper now leads with symmetric 1.204x
+  best-to-best; symmetric REPS=1 re-run launched (abba_deep_round_walk_vs_roar_sym). (2) ATTRIBUTION:
+  round_walk engine code physically landed inside commit 97bd554 (my P355 git add -A swept the other
+  agent's in-flight working tree) — 43bba44 is docs/data only; noted so git-show matches claims.
+
 === SESSION SUMMARY (current, 2026-07-12, through P334) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
