@@ -66,6 +66,23 @@ python3 sweep_deep_fixed_walk.py --nq 500 --reps 2
 python3 sweep_deep_fixed_walk.py --modes round --nq 2000 --reps 5
 ```
 
+The scale-transfer audit uses a separately built DEEP-1M index, portals, graph,
+and ground truth while retaining the same queries and graph degree:
+
+```sh
+python3 sweep_deep_fixed_walk.py --dataset deep1m --modes round \
+  --rounds 2,3,4,5,6,7,8 --frontiers 8,10,12,14,16,20 \
+  --walk-l 10,12,14,20,25,32 --nq 500 --reps 2 \
+  --out deep1m_fixed_walk_transfer.json
+python3 analyze_tuning_laws.py
+```
+
+`tuning_laws_results.json` separates exact work accounting
+(`H=E+(R-1)B`) from empirical transfer constants (unique-neighbor yield,
+geometric recall contraction, and rerank-width saturation). This distinction is
+intentional: work transfers, while the number of rounds needed for a target
+recall must be estimated on a small query pilot.
+
 The selected frontier keeps best-first `L=25` at recall 0.804, then uses
 `(R,B,W)=(4,11,14),(4,15,16),(4,19,16),(8,10,14),(9,10,20),(8,14,14)`.
 The full configuration, strict best-first comparison, and direct RoarGraph join

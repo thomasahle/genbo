@@ -1481,6 +1481,47 @@ A target-recall convenience input maps recall ${\le}0.91$, ${\le}0.96$, and the
 tail to these three search \emph{regions}; it is deliberately not advertised as
 a recall guarantee.
 
+\paragraph{A work normal form.} The raw knobs become easier to relate when
+expressed in the three currencies they purchase.  Scanning $p$ of $K_f$ cells
+materializes
+\[
+ S \simeq a_0p\,\frac{n}{K_f}
+\]
+codes (hence $p\propto K_f$ preserves scan mass).  For a fixed-round point walk
+with $E$ distinct entries, frontier $B$, $R$ rounds, graph degree $k_e$, and
+unique-neighbor fraction $\nu$, the expansion and scoring work are
+\[
+ H=E+(R-1)B,\qquad
+ G\simeq E+k_e\nu H .
+\]
+Finally, float work is proportional to the rerank width $W$.  A portable first
+cost model is therefore
+\[
+ C(q)\simeq C_{\rm route}
+ +c_{\rm seq}(d_{\rm code})S
+ +c_{\rm rand}(d_{\rm score})G
+ +c_{\rm float}(d)W .
+\]
+The coefficients are short microbenchmarks, not search-quality parameters.
+This form also chooses the path: a walk is attractive only when its reduction
+in rows exceeds the random-access and row-width penalty; otherwise the
+sequential SQ4 cascade should win (as it does at $d{=}1024$,
+\S\ref{sec:resident}).
+
+\paragraph{One-dimensional walk calibration.} Entries already provide basin
+diversity, so breadth need not grow independently with recall.  We start at
+$B\simeq1.5E$, bracket only $E$ and $2E$ if necessary, and tune $R$; at fixed
+$B$, the measured curve follows
+\[
+ \operatorname{recall}(R)=r_\infty-A\delta^{R-1}.
+\]
+Thus a small query pilot estimates the dataset-specific contraction $\delta$
+and ceiling $r_\infty$, after which $R$ is solved rather than grid-searched.
+The final shortlist starts at $W=2k$; $W=1.4k$ is the latency-biased neighbor,
+and it is raised only if a score-containment pilot says the final ranker is
+binding.  These ratios are defaults, not purported universal quality constants:
+graph reachability makes $\delta$ data-dependent.
+
 Semantic and data-dependent choices remain explicit. In particular, metric,
 float/resident sidecars, and the OOD routing calibration $\gamma$ are not inferred:
 the $\gamma{=}0.5$ text-to-image correction is helpful out of distribution but is
@@ -1505,7 +1546,17 @@ budgeted scan-bypass ladder of
 strict paired points progress from a centroid-graph
 $(M,k_e,T,K,p)=(8,32,160,16,17)$ policy near recall $0.903$ to
 $(24,32,384,48,48)$ at $0.9718$, moving the RoarGraph crossover downward without
-changing the index.}
+changing the index.  A scale-transfer audit of the scan-bypass path adds a
+252-point DEEP-1M grid to the deduplicated 560-point DEEP-10M screen.  Both obey
+$H=7+(R-1)B$ exactly; after the first two rounds, median $\nu$ is
+$0.575$ (1M) and $0.617$ (10M), and the same-policy score count transfers within
+$11\%$ in median.  At $B{=}12,W{=}20$, the geometric fits have
+$\delta=0.605$/$0.722$ and RMS recall error $0.00146$/$0.00104$ (1M/10M).
+The same policy is nevertheless $0.062$ recall better at 1M in median, proving
+that $n$ alone must not select $R$.  For reranking, $W=1.4k$ captures
+$94\%$/$86\%$ of the recall gain from $W=k$ to $3.2k$, while $W=2k$ captures
+$98\%$/$91\%$ (1M/10M).  The transferable object is therefore the work law and
+the one-dimensional calibration procedure, not a frozen parameter tuple.}
 
 \section{Systems Techniques (Streaming)}
 \label{sec:stream}

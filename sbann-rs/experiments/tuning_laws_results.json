@@ -1,0 +1,99 @@
+{
+  "datasets": {
+    "DEEP-10M": {
+      "entries": 7,
+      "expansion_identity": "H = 7 + (R - 1) B",
+      "geometric_round_fit_B12_W20": {
+        "amplitude": 0.2183400293798439,
+        "ceiling": 0.9266478374389908,
+        "contraction": 0.722,
+        "frontier": 12,
+        "rerank_width": 20,
+        "rmse": 0.0010391183417701728,
+        "round_max": 10,
+        "round_min": 3
+      },
+      "policies": 82,
+      "rerank_width_gain": {
+        "12": {
+          "median_fraction_of_W10_to_W32_gain": 0.7383582860092954,
+          "policies": 26
+        },
+        "14": {
+          "median_fraction_of_W10_to_W32_gain": 0.8571187584345492,
+          "policies": 26
+        },
+        "20": {
+          "median_fraction_of_W10_to_W32_gain": 0.9108280254777061,
+          "policies": 48
+        },
+        "25": {
+          "median_fraction_of_W10_to_W32_gain": 0.9368413276863974,
+          "policies": 48
+        }
+      },
+      "samples": 560,
+      "unique_neighbor_fraction_rounds_ge_3": {
+        "max": 0.7540760869565217,
+        "median": 0.6171923006021875,
+        "min": 0.5102072864321608
+      }
+    },
+    "DEEP-1M": {
+      "entries": 7,
+      "expansion_identity": "H = 7 + (R - 1) B",
+      "geometric_round_fit_B12_W20": {
+        "amplitude": 0.14859881637376904,
+        "ceiling": 0.9538640386710661,
+        "contraction": 0.605,
+        "frontier": 12,
+        "rerank_width": 20,
+        "rmse": 0.0014559247518326334,
+        "round_max": 8,
+        "round_min": 2
+      },
+      "policies": 42,
+      "rerank_width_gain": {
+        "12": {
+          "median_fraction_of_W10_to_W32_gain": 0.8194488188976375,
+          "policies": 42
+        },
+        "14": {
+          "median_fraction_of_W10_to_W32_gain": 0.9366568032499112,
+          "policies": 42
+        },
+        "20": {
+          "median_fraction_of_W10_to_W32_gain": 0.9787983218459698,
+          "policies": 42
+        },
+        "25": {
+          "median_fraction_of_W10_to_W32_gain": 0.9929327739486573,
+          "policies": 42
+        }
+      },
+      "samples": 252,
+      "unique_neighbor_fraction_rounds_ge_3": {
+        "max": 0.688858695652174,
+        "median": 0.5751131311527469,
+        "min": 0.5108418367346939
+      }
+    }
+  },
+  "proposed_calibration": {
+    "frontier": "start at B ~= 1.5 E; bracket only E and 2 E if the target lies between two round settings",
+    "path_choice": "compare predicted scattered score bytes against sequential scan bytes; do not use the walk merely because it wins at low d",
+    "rerank_width": "start at W=2k; test 1.4k when latency matters and raise W only if a score-containment pilot says the final ranker is binding",
+    "rounds": "sweep the one-dimensional R ladder and fit recall(R)=r_inf-A*delta^(R-1)",
+    "score_work": "N_score ~= E + k_edge * nu * [E + (R - 1) B]"
+  },
+  "same_policy_scale_transfer": {
+    "common_policies": 142,
+    "interpretation": "work accounting transfers closely, but recall does not; estimate the round contraction on a query pilot instead of scaling R from n alone",
+    "median_evals_1m_over_10m": 0.8940158615717375,
+    "median_recall_1m_minus_10m": 0.06230000000000002,
+    "recall_delta_range": [
+      0.040200000000000014,
+      0.10940000000000005
+    ]
+  }
+}

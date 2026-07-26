@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Checkpointed DEEP-10M sweep for bounded graph-refinement policies.
+"""Checkpointed DEEP sweep for bounded graph-refinement policies.
 
 The adaptive reference uses the existing DiskANN-style best-first termination.
 The capped arm adds a per-query expansion ceiling, while the round arm expands a
-fixed-width synchronous frontier for a fixed number of layers. All arms use the
-same portal entries, graph-local physical layout, int8 scoring, and float rerank.
+fixed-width synchronous frontier for a fixed number of layers. The DEEP-1M mode
+is a scale-transfer check: it uses the same query set and graph degree, but a
+separately built index, portal sidecars, and exact-L2 ground truth.
 """
 
 from __future__ import annotations
@@ -23,6 +24,7 @@ from abba_bench import choose_core
 
 ROOT = Path("/home/thomas-ahle/genbo")
 DATA = Path("/home/thomas-ahle/big-ann-data/deep10m")
+DATA_1M = Path("/home/thomas-ahle/big-ann-data/deep1m")
 RESULT_RE = re.compile(
     r"RW L=\s*(?P<l>\d+)\s+e=portal:\s+"
     r"recall@10=(?P<recall>[0-9.]+)\s+"
@@ -43,6 +45,7 @@ def write_report(path: Path, report: dict[str, Any]) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
+    parser.add_argument("--dataset", choices=("deep10m", "deep1m"), default="deep10m")
     parser.add_argument("--modes", default="adaptive,cap,round")
     parser.add_argument("--caps", default="8,16,24,32,48,64,96")
     parser.add_argument("--rounds", default="1,2,3,4")
@@ -55,7 +58,6 @@ def main() -> None:
     parser.add_argument(
         "--out",
         type=Path,
-        default=ROOT / "sbann-rs/experiments/deep_fixed_walk_screen.json",
     )
     args = parser.parse_args()
 
@@ -84,10 +86,58 @@ def main() -> None:
             for frontier in ints(args.frontiers)
         )
 
+    if args.dataset == "deep10m":
+        dataset_name = "DEEP-10M"
+        common_env = {
+            "SBANN_INDEX_LOAD": str(DATA / "eng_deep10m_kf65536.idx"),
+            "SBANN_CENTROID_GRAPH": str(DATA / "deep10m_centroid_vamana16.u32"),
+            "SBANN_CENTROID_LANDMARKS": str(DATA / "deep10m_centroid_landmarks64.u32"),
+            "SBANN_CENTROID_GRAPH_K": "16",
+            "SBANN_CENTROID_GRAPH_EF": "8",
+            "SBANN_PORTAL_FILE": str(DATA / "deep10m_portals16.side"),
+            "SBANN_PORTAL_SQ4_FILE": str(DATA / "deep10m_portals16.sq4p64"),
+            "SBANN_FBASE": str(DATA / "base.10M.fbin"),
+            "SBANN_FQUERY": str(DATA / "query2k.fbin"),
+            "SBANN_GRAPH_FILE": str(DATA / "graph_layout_gate.cellpair.graph.u32"),
+            "SBANN_GRAPH_BASE": str(DATA / "graph_layout_gate.cellpair.aligned64.i8bin"),
+            "SBANN_GRAPH_BASE_OFFSET": "64",
+            "SBANN_GRAPH_RANK": str(DATA / "graph_layout_gate.cellpair.u32"),
+        }
+        base = DATA / "base.10M.i8bin"
+        query = DATA / "query2k.i8bin"
+        ground_truth = DATA / "deep10m_gt.ibin"
+        cells = "65536"
+    else:
+        dataset_name = "DEEP-1M"
+        common_env = {
+            "SBANN_INDEX_LOAD": str(DATA_1M / "eng_deep1m_kf8192.idx"),
+            "SBANN_PORTAL_FILE": str(DATA_1M / "deep1m_portals16.side"),
+            "SBANN_PORTAL_SQ4_FILE": str(DATA_1M / "deep1m_portals16.sq4p64"),
+            "SBANN_FBASE": str(DATA_1M / "base.1M.fbin"),
+            "SBANN_FQUERY": str(DATA / "query2k.fbin"),
+            "SBANN_GRAPH_FILE": str(DATA_1M / "vamana_R32_a1.2.u32"),
+        }
+        base = DATA_1M / "base.1M.i8bin"
+        query = DATA / "query2k.i8bin"
+        ground_truth = DATA_1M / "deep1m_gt.ibin"
+        cells = "8192"
+
+    if args.out is None:
+        filename = (
+            "deep_fixed_walk_screen.json"
+            if args.dataset == "deep10m"
+            else "deep1m_fixed_walk_transfer.json"
+        )
+        args.out = ROOT / "sbann-rs/experiments" / filename
+
     if args.out.exists():
         report = json.loads(args.out.read_text())
+        if report.get("dataset") != dataset_name:
+            raise ValueError(
+                f"{args.out} contains {report.get('dataset')}, requested {dataset_name}"
+            )
     else:
-        report = {"dataset": "DEEP-10M", "samples": [], "runs": []}
+        report = {"dataset": dataset_name, "samples": [], "runs": []}
     completed = {
         (
             run["mode"],
@@ -102,26 +152,13 @@ def main() -> None:
         if run.get("returncode") == 0
     }
     walk_l = args.walk_l
-    common_env = {
+    common_env.update({
         "OMP_NUM_THREADS": "1",
         "RAYON_NUM_THREADS": "1",
-        "SBANN_INDEX_LOAD": str(DATA / "eng_deep10m_kf65536.idx"),
-        "SBANN_CENTROID_GRAPH": str(DATA / "deep10m_centroid_vamana16.u32"),
-        "SBANN_CENTROID_LANDMARKS": str(DATA / "deep10m_centroid_landmarks64.u32"),
-        "SBANN_CENTROID_GRAPH_K": "16",
-        "SBANN_CENTROID_GRAPH_EF": "8",
-        "SBANN_PORTAL_FILE": str(DATA / "deep10m_portals16.side"),
-        "SBANN_PORTAL_SQ4_FILE": str(DATA / "deep10m_portals16.sq4p64"),
         "SBANN_ROAR_PORTAL_CELLS": "8",
         "SBANN_ROAR_PORTAL_BUCKETS": "1",
         "SBANN_ROAR_PORTAL_ROWS": "1",
         "SBANN_FLOAT_RERANK": "1",
-        "SBANN_FBASE": str(DATA / "base.10M.fbin"),
-        "SBANN_FQUERY": str(DATA / "query2k.fbin"),
-        "SBANN_GRAPH_FILE": str(DATA / "graph_layout_gate.cellpair.graph.u32"),
-        "SBANN_GRAPH_BASE": str(DATA / "graph_layout_gate.cellpair.aligned64.i8bin"),
-        "SBANN_GRAPH_BASE_OFFSET": "64",
-        "SBANN_GRAPH_RANK": str(DATA / "graph_layout_gate.cellpair.u32"),
         "SBANN_GRAPH_M": "32",
         "SBANN_GRAPH_KEDGE": "32",
         "SBANN_IP": "1",
@@ -129,24 +166,25 @@ def main() -> None:
         "SBANN_ROARMODE": walk_l,
         "SBANN_NQ": str(args.nq),
         "SBANN_REPS": str(args.reps),
-    }
+    })
     argv = [
         "taskset",
         "-c",
         str(core),
         str(ROOT / "sbann-rs/target/release/sbann"),
         "run",
-        str(DATA / "base.10M.i8bin"),
-        str(DATA / "query2k.i8bin"),
-        str(DATA / "deep10m_gt.ibin"),
+        str(base),
+        str(query),
+        str(ground_truth),
         "hierkn",
         "apq4",
         "2",
-        "65536",
+        cells,
         "8",
     ]
 
     started = time.time()
+    new_runs = 0
     for index, policy in enumerate(policies, 1):
         key = (
             policy["mode"],
@@ -194,6 +232,7 @@ def main() -> None:
             "output_tail": proc.stdout[-3000:],
         }
         report["runs"].append(run)
+        new_runs += 1
         if proc.returncode != 0 or not matches:
             write_report(args.out, report)
             raise RuntimeError(
@@ -223,8 +262,9 @@ def main() -> None:
             f"evals={best['evals_per_query']} hops={best['hops_per_query']}",
             flush=True,
         )
-    report["elapsed_seconds"] = time.time() - started
-    write_report(args.out, report)
+    if new_runs:
+        report["elapsed_seconds"] = time.time() - started
+        write_report(args.out, report)
 
 
 if __name__ == "__main__":

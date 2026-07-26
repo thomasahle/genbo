@@ -5718,6 +5718,27 @@ P361 [2026-07-26] WIKI PORTAL-WALK TRANSFER: NULL — the 0.93-0.955 concession 
   6.5h Roar) is now a MEASURED, MECHANISM-EXPLAINED, FINAL concession. Artifacts: wiki_band_rows.log,
   wiki35m_portals16.sq4p64. Paper unchanged (walk rows sit below the plotted cascade curve).
 
+P362 [2026-07-26] GENERAL TUNING LAWS — fixed-round work transfers; target recall requires one scalar pilot.
+  New independent scale audit: built DEEP-1M assignment/portal/SQ4 sidecars from its own kf8192 index
+  (actual nonempty cells 7280), then measured 42 (R,B) policies x 6 rerank widths = 252 points; compared
+  to the deduplicated 560-point DEEP-10M screen.
+  EXACT WORK NORMAL FORM (all 812 points): E=7 nonduplicate entries and H=E+(R-1)B with ZERO error.
+    Scored rows follow G ~= E + kedge*nu*H; after R>=3, nu median=.575 (1M) / .617 (10M).
+    Same-policy 1M/10M eval-count ratio median=.894. Thus R/B map predictably to dots and random bytes.
+  QUALITY IS DATASET-SPECIFIC: same policy is +.0623 recall at 1M median (range +.0402..+.1094).
+    Holding B=12,W=20, recall(R)=r_inf-A*delta^(R-1) fits to the noise floor:
+      1M delta=.605, RMS=.00146 (R2..8); 10M delta=.722, RMS=.00104 (R3..10).
+    Therefore n must NOT directly choose R. A small query pilot estimates delta/r_inf, reducing the
+    coupled search to one dimension: start B~=1.5E; bracket E/2E only around a round boundary; tune R.
+  RERANK LAW: for k=10, W=1.4k captures 94%/86% of the W=k -> 3.2k recall gain (1M/10M);
+    W=2k captures 98%/91%. Start W=2k, try 1.4k for latency, increase only when containment binds.
+  SYSTEM LAW: compare Croute + cseq(dcode)*S + crand(dscore)*G + cfloat(d)*W, where
+    S~=a0*p*n/Kf. It explains both DEEP's walk win and wiki's transfer failure: universal work
+    accounting, dataset-estimated reachability, hardware-measured cost coefficients.
+  Artifacts: deep1m_fixed_walk_transfer.json, tuning_laws_results.json,
+    analyze_tuning_laws.py; sweep_deep_fixed_walk.py now has --dataset deep1m. Paper Sec.14 updated
+    in its established paragraph+Effect format; compiled to 30 pages and PNG-read pages 16-30.
+
 === SESSION SUMMARY (current, 2026-07-12, through P334) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
