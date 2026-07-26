@@ -5681,6 +5681,12 @@ P358 [2026-07-25] 0.9032 JOIN POINT SETTLED under matched-warmup protocol (REPS=
   ours ran cold); asymmetric best-of-5 1.265x; matched-warmup 1.27x = the fair number. Paper Effect updated
   with the full disclosure trail. Artifacts: abba_deep_round_walk_vs_roar_{sym,w2}_results.json.
 
+P359 [2026-07-26] DEEP scorecard COMPLETE under matched-warmup protocol (quiet, symmetric, warm):
+  0.9265: genbo 5549.5 vs Roar 5340.5 = 1.039x (recall 0.9265 vs 0.9255). 0.9978: 604.0 vs 595.4 = 1.014x
+  (0.9978 vs 0.99765). With P358's 1.27x@0.9032: genbo LEADS OR TIES AT EVERY MEASURED DEEP POINT; the
+  two thin points marked lead-or-tie, not sound wins. Scorecard: all datasets won under eligible rules;
+  wiki 0.93-0.975 vs the 6.5h Roar = the one documented concession. OPEN: user fence adjudication.
+
 === SESSION SUMMARY (current, 2026-07-12, through P334) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
