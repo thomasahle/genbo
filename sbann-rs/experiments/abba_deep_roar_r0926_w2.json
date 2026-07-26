@@ -1,0 +1,392 @@
+{
+ "cwd": "/home/thomas-ahle/genbo",
+ "common_env": {
+  "OMP_NUM_THREADS": "1",
+  "RAYON_NUM_THREADS": "1"
+ },
+ "a": {
+  "argv": [
+   "/home/thomas-ahle/RoarGraph/build/tests/test_search_roargraph",
+   "--data_type",
+   "float",
+   "--dist",
+   "l2",
+   "--base_data_path",
+   "/home/thomas-ahle/big-ann-data/deep10m/base.10M.fbin",
+   "--projection_index_save_path",
+   "/home/thomas-ahle/RoarGraph/data/deep10m/roar.index",
+   "--gt_path",
+   "/home/thomas-ahle/RoarGraph/data/deep10m/gt.2k.withdist.ibin",
+   "--query_path",
+   "/home/thomas-ahle/RoarGraph/data/deep10m/query.2k.fbin",
+   "--L_pq",
+   "55",
+   "--k",
+   "10",
+   "-T",
+   "1",
+   "--evaluation_save_path",
+   "/tmp/abba_deep_roar_l44.csv"
+  ],
+  "env": {
+   "LD_LIBRARY_PATH": "/home/thomas-ahle/scann_venv/lib"
+  },
+  "name": "roar-L55",
+  "result_regex": "^55\\s+(?P<qps>[0-9.]+)\\s+[0-9.]+\\s+[0-9.]+\\s+(?P<recall>[0-9.]+)\\s+[0-9.]+"
+ },
+ "b": {
+  "argv": [
+   "/home/thomas-ahle/genbo/sbann-rs/target/release/sbann",
+   "run",
+   "/home/thomas-ahle/big-ann-data/deep10m/base.10M.i8bin",
+   "/home/thomas-ahle/big-ann-data/deep10m/query2k.i8bin",
+   "/home/thomas-ahle/big-ann-data/deep10m/deep10m_gt.ibin",
+   "hierkn",
+   "apq4",
+   "2",
+   "65536",
+   "8"
+  ],
+  "env": {
+   "SBANN_CASCADE_K": "16",
+   "SBANN_FBASE": "/home/thomas-ahle/big-ann-data/deep10m/base.10M.fbin",
+   "SBANN_FLOAT_RERANK": "1",
+   "SBANN_FQUERY": "/home/thomas-ahle/big-ann-data/deep10m/query2k.fbin",
+   "SBANN_GRAPH_BASE": "/home/thomas-ahle/big-ann-data/deep10m/graph_layout_gate.cellpair.aligned64.i8bin",
+   "SBANN_GRAPH_BASE_OFFSET": "64",
+   "SBANN_GRAPH_BESTFIRST": "1",
+   "SBANN_GRAPH_FILE": "/home/thomas-ahle/big-ann-data/deep10m/graph_layout_gate.cellpair.graph.u32",
+   "SBANN_GRAPH_HOPS": "2",
+   "SBANN_GRAPH_KEDGE": "24",
+   "SBANN_GRAPH_M": "16",
+   "SBANN_GRAPH_RANK": "/home/thomas-ahle/big-ann-data/deep10m/graph_layout_gate.cellpair.u32",
+   "SBANN_INDEX_LOAD": "/home/thomas-ahle/big-ann-data/deep10m/eng_deep10m_kf65536.idx",
+   "SBANN_NQ": "2000",
+   "SBANN_PLIST": "20",
+   "SBANN_REPS": "2",
+   "SBANN_RERANK_F16": "1",
+   "SBANN_RESIDENT_I8": "1",
+   "SBANN_TFLOOR": "192"
+  },
+  "name": "genbo-fp16-r0926"
+ },
+ "variants": [
+  {
+   "name": "tuned_r0903",
+   "b": {
+    "name": "genbo-tuned-r0903",
+    "env": {
+     "SBANN_CASCADE_K": "24",
+     "SBANN_GRAPH_FILE": "/home/thomas-ahle/big-ann-data/deep10m/graph_layout_gate.cellpair.graph.u32",
+     "SBANN_GRAPH_HOPS": "2",
+     "SBANN_GRAPH_KEDGE": "32",
+     "SBANN_GRAPH_M": "8",
+     "SBANN_PLIST": "15",
+     "SBANN_RESIDENT_I8": "1",
+     "SBANN_TFLOOR": "192"
+    }
+   }
+  },
+  {
+   "name": "tuned_r0926",
+   "a": {
+    "name": "roar-L55",
+    "result_regex": "^55\\s+(?P<qps>[0-9.]+)\\s+[0-9.]+\\s+[0-9.]+\\s+(?P<recall>[0-9.]+)\\s+[0-9.]+",
+    "argv_replace": {
+     "44": "55"
+    }
+   },
+   "b": {
+    "name": "genbo-tuned-r0926",
+    "env": {
+     "SBANN_CASCADE_K": "16",
+     "SBANN_GRAPH_FILE": "/home/thomas-ahle/big-ann-data/deep10m/graph_layout_gate.cellpair.graph.u32",
+     "SBANN_GRAPH_HOPS": "2",
+     "SBANN_GRAPH_KEDGE": "24",
+     "SBANN_GRAPH_M": "16",
+     "SBANN_PLIST": "20",
+     "SBANN_RESIDENT_I8": "1",
+     "SBANN_TFLOOR": "192"
+    }
+   }
+  },
+  {
+   "name": "tuned_r0943",
+   "a": {
+    "name": "roar-L70",
+    "result_regex": "^70\\s+(?P<qps>[0-9.]+)\\s+[0-9.]+\\s+[0-9.]+\\s+(?P<recall>[0-9.]+)\\s+[0-9.]+",
+    "argv_replace": {
+     "44": "70"
+    }
+   },
+   "b": {
+    "name": "genbo-tuned-r0943",
+    "env": {
+     "SBANN_CASCADE_K": "32",
+     "SBANN_GRAPH_FILE": "/home/thomas-ahle/big-ann-data/deep10m/graph_layout_gate.cellpair.graph.u32",
+     "SBANN_GRAPH_HOPS": "2",
+     "SBANN_GRAPH_KEDGE": "32",
+     "SBANN_GRAPH_M": "12",
+     "SBANN_PLIST": "24",
+     "SBANN_RESIDENT_I8": "1",
+     "SBANN_TFLOOR": "320"
+    }
+   }
+  },
+  {
+   "name": "tuned_r0960",
+   "a": {
+    "name": "roar-L95",
+    "result_regex": "^95\\s+(?P<qps>[0-9.]+)\\s+[0-9.]+\\s+[0-9.]+\\s+(?P<recall>[0-9.]+)\\s+[0-9.]+",
+    "argv_replace": {
+     "44": "95"
+    }
+   },
+   "b": {
+    "name": "genbo-tuned-r0960",
+    "env": {
+     "SBANN_CASCADE_K": "48",
+     "SBANN_GRAPH_FILE": "/home/thomas-ahle/big-ann-data/deep10m/graph_layout_gate.cellpair.graph.u32",
+     "SBANN_GRAPH_HOPS": "2",
+     "SBANN_GRAPH_KEDGE": "32",
+     "SBANN_GRAPH_M": "24",
+     "SBANN_PLIST": "28",
+     "SBANN_RESIDENT_I8": "1",
+     "SBANN_TFLOOR": "256"
+    }
+   }
+  },
+  {
+   "name": "tuned_r0972",
+   "a": {
+    "name": "roar-L120",
+    "result_regex": "^120\\s+(?P<qps>[0-9.]+)\\s+[0-9.]+\\s+[0-9.]+\\s+(?P<recall>[0-9.]+)\\s+[0-9.]+",
+    "argv_replace": {
+     "44": "120"
+    }
+   },
+   "b": {
+    "name": "genbo-tuned-r0972",
+    "env": {
+     "SBANN_CASCADE_K": "48",
+     "SBANN_GRAPH_FILE": "/home/thomas-ahle/big-ann-data/deep10m/graph_layout_gate.cellpair.graph.u32",
+     "SBANN_GRAPH_HOPS": "2",
+     "SBANN_GRAPH_KEDGE": "32",
+     "SBANN_GRAPH_M": "24",
+     "SBANN_PLIST": "48",
+     "SBANN_RESIDENT_I8": "1",
+     "SBANN_TFLOOR": "384"
+    }
+   }
+  },
+  {
+   "name": "r090resident",
+   "b": {
+    "name": "genbo-layout-resident-p2",
+    "env": {
+     "SBANN_RESIDENT_I8": "1"
+    }
+   }
+  },
+  {
+   "name": "r0925",
+   "a": {
+    "name": "roar-L55",
+    "result_regex": "^55\\s+(?P<qps>[0-9.]+)\\s+[0-9.]+\\s+[0-9.]+\\s+(?P<recall>[0-9.]+)\\s+[0-9.]+",
+    "argv_replace": {
+     "44": "55"
+    }
+   },
+   "b": {
+    "name": "genbo-layout-p4",
+    "env": {
+     "SBANN_PLIST": "4"
+    }
+   }
+  },
+  {
+   "name": "r0942",
+   "a": {
+    "name": "roar-L70",
+    "result_regex": "^70\\s+(?P<qps>[0-9.]+)\\s+[0-9.]+\\s+[0-9.]+\\s+(?P<recall>[0-9.]+)\\s+[0-9.]+",
+    "argv_replace": {
+     "44": "70"
+    }
+   },
+   "b": {
+    "name": "genbo-layout-p8",
+    "env": {
+     "SBANN_PLIST": "8"
+    }
+   }
+  },
+  {
+   "name": "r0960",
+   "a": {
+    "name": "roar-L95",
+    "result_regex": "^95\\s+(?P<qps>[0-9.]+)\\s+[0-9.]+\\s+[0-9.]+\\s+(?P<recall>[0-9.]+)\\s+[0-9.]+",
+    "argv_replace": {
+     "44": "95"
+    }
+   },
+   "b": {
+    "name": "genbo-layout-p16",
+    "env": {
+     "SBANN_PLIST": "16"
+    }
+   }
+  },
+  {
+   "name": "r0925resident",
+   "a": {
+    "name": "roar-L55",
+    "result_regex": "^55\\s+(?P<qps>[0-9.]+)\\s+[0-9.]+\\s+[0-9.]+\\s+(?P<recall>[0-9.]+)\\s+[0-9.]+",
+    "argv_replace": {
+     "44": "55"
+    }
+   },
+   "b": {
+    "name": "genbo-layout-resident-p4",
+    "env": {
+     "SBANN_PLIST": "4",
+     "SBANN_RESIDENT_I8": "1"
+    }
+   }
+  },
+  {
+   "name": "r0942resident",
+   "a": {
+    "name": "roar-L70",
+    "result_regex": "^70\\s+(?P<qps>[0-9.]+)\\s+[0-9.]+\\s+[0-9.]+\\s+(?P<recall>[0-9.]+)\\s+[0-9.]+",
+    "argv_replace": {
+     "44": "70"
+    }
+   },
+   "b": {
+    "name": "genbo-layout-resident-p8",
+    "env": {
+     "SBANN_PLIST": "8",
+     "SBANN_RESIDENT_I8": "1"
+    }
+   }
+  },
+  {
+   "name": "r0960resident",
+   "a": {
+    "name": "roar-L95",
+    "result_regex": "^95\\s+(?P<qps>[0-9.]+)\\s+[0-9.]+\\s+[0-9.]+\\s+(?P<recall>[0-9.]+)\\s+[0-9.]+",
+    "argv_replace": {
+     "44": "95"
+    }
+   },
+   "b": {
+    "name": "genbo-layout-resident-p16",
+    "env": {
+     "SBANN_PLIST": "16",
+     "SBANN_RESIDENT_I8": "1"
+    }
+   }
+  },
+  {
+   "name": "r0972resident",
+   "a": {
+    "name": "roar-L120",
+    "result_regex": "^120\\s+(?P<qps>[0-9.]+)\\s+[0-9.]+\\s+[0-9.]+\\s+(?P<recall>[0-9.]+)\\s+[0-9.]+",
+    "argv_replace": {
+     "44": "120"
+    }
+   },
+   "b": {
+    "name": "genbo-layout-resident-p32",
+    "env": {
+     "SBANN_PLIST": "32",
+     "SBANN_RESIDENT_I8": "1"
+    }
+   }
+  },
+  {
+   "name": "r0982resident",
+   "a": {
+    "name": "roar-L170",
+    "result_regex": "^170\\s+(?P<qps>[0-9.]+)\\s+[0-9.]+\\s+[0-9.]+\\s+(?P<recall>[0-9.]+)\\s+[0-9.]+",
+    "argv_replace": {
+     "44": "170"
+    }
+   },
+   "b": {
+    "name": "genbo-layout-resident-p64",
+    "env": {
+     "SBANN_PLIST": "64",
+     "SBANN_RESIDENT_I8": "1"
+    }
+   }
+  },
+  {
+   "name": "r0991resident",
+   "a": {
+    "name": "roar-L265",
+    "result_regex": "^265\\s+(?P<qps>[0-9.]+)\\s+[0-9.]+\\s+[0-9.]+\\s+(?P<recall>[0-9.]+)\\s+[0-9.]+",
+    "argv_replace": {
+     "44": "265"
+    }
+   },
+   "b": {
+    "name": "genbo-layout-resident-p128",
+    "env": {
+     "SBANN_PLIST": "128",
+     "SBANN_RESIDENT_I8": "1"
+    }
+   }
+  },
+  {
+   "name": "tail_r09978",
+   "a": {
+    "name": "roar-L640",
+    "result_regex": "^640\\s+(?P<qps>[0-9.]+)\\s+[0-9.]+\\s+[0-9.]+\\s+(?P<recall>[0-9.]+)\\s+[0-9.]+",
+    "argv_replace": {
+     "44": "640"
+    }
+   },
+   "b": {
+    "name": "genbo-fp16-p608",
+    "env": {
+     "SBANN_CASCADE_K": "64",
+     "SBANN_GRAPH_FILE": "/home/thomas-ahle/big-ann-data/deep10m/graph_layout_gate.cellpair.graph.u32",
+     "SBANN_GRAPH_HOPS": "3",
+     "SBANN_GRAPH_KEDGE": "32",
+     "SBANN_GRAPH_M": "24",
+     "SBANN_PLIST": "608",
+     "SBANN_REPS": "5",
+     "SBANN_RERANK_F16": "1",
+     "SBANN_RESIDENT_I8": "1",
+     "SBANN_TFLOOR": "450"
+    }
+   }
+  },
+  {
+   "name": "tail_r0994",
+   "a": {
+    "name": "roar-L320",
+    "result_regex": "^320\\s+(?P<qps>[0-9.]+)\\s+[0-9.]+\\s+[0-9.]+\\s+(?P<recall>[0-9.]+)\\s+[0-9.]+",
+    "argv_replace": {
+     "44": "320"
+    }
+   },
+   "b": {
+    "name": "genbo-fp16-p192",
+    "env": {
+     "SBANN_CASCADE_K": "64",
+     "SBANN_GRAPH_FILE": "/home/thomas-ahle/big-ann-data/deep10m/graph_layout_gate.cellpair.graph.u32",
+     "SBANN_GRAPH_HOPS": "3",
+     "SBANN_GRAPH_KEDGE": "32",
+     "SBANN_GRAPH_M": "24",
+     "SBANN_PLIST": "192",
+     "SBANN_REPS": "5",
+     "SBANN_RERANK_F16": "1",
+     "SBANN_RESIDENT_I8": "1",
+     "SBANN_TFLOOR": "450"
+    }
+   }
+  }
+ ]
+}
