@@ -427,6 +427,11 @@ impl PortalSq4 {
         let nassign = u64::from_le_bytes(bytes[8..16].try_into().unwrap()) as usize;
         let d = u32::from_le_bytes(bytes[16..20].try_into().unwrap()) as usize;
         let stride = u32::from_le_bytes(bytes[20..24].try_into().unwrap()) as usize;
+        assert!(
+            stride % 64 == 0 && stride >= d / 2,
+            "portal SQ4 stride {stride} must be a multiple of 64 covering d/2={} code bytes",
+            d / 2
+        );
         let code_start = 24 + d * 4;
         assert_eq!(
             bytes.len(),
@@ -631,7 +636,7 @@ impl CellPortals {
                 (Vec::new(), Vec::new())
             };
         if let Some(sq4) = portal_sq4.filter(|_| bucket_keep == 1 && rows_per_bucket == 1) {
-            assert_eq!(sq4.stride, 64, "portal SQ4 fast path needs stride 64");
+            debug_assert!(sq4.stride % 64 == 0);
             for &cell in cells {
                 let c = cell as usize;
                 if c >= self.nc {
@@ -660,12 +665,30 @@ impl CellPortals {
                 }
                 let code_lo = lo * sq4.stride;
                 let code_hi = hi * sq4.stride;
-                let local = unsafe {
-                    simd::argmax_sq4p64_vnni(
-                        &sq4_qe,
-                        &sq4_qo,
-                        &sq4.codes()[code_lo..code_hi],
-                    )
+                let local = if sq4.stride == 64 {
+                    // Single-vector rows: the original register-resident kernel.
+                    unsafe {
+                        simd::argmax_sq4p64_vnni(
+                            &sq4_qe,
+                            &sq4_qo,
+                            &sq4.codes()[code_lo..code_hi],
+                        )
+                    }
+                } else {
+                    // stride = k*64 (d > 128): d-generic dot over each row's
+                    // d/2 code bytes inside its stride-sized slot.
+                    let block = &sq4.codes()[code_lo..code_hi];
+                    let dbytes = self.d / 2;
+                    let mut best = (i32::MIN, 0usize);
+                    for row in 0..hi - lo {
+                        let code = &block[row * sq4.stride..row * sq4.stride + dbytes];
+                        let score =
+                            unsafe { simd::dot_sq4_vnni(&sq4_qe, &sq4_qo, code) };
+                        if score > best.0 {
+                            best = (score, row);
+                        }
+                    }
+                    best.1
                 };
                 let id = self.ids[lo + local];
                 if (id as usize) < ds.nb {
@@ -793,13 +816,23 @@ impl CellPortals {
             return;
         }
         let mut score = Vec::with_capacity(hi - lo);
-        unsafe {
-            simd::score_sq4p64_vnni(
-                qe,
-                qo,
-                &sq4.codes()[lo * sq4.stride..hi * sq4.stride],
-                &mut score,
-            );
+        if sq4.stride == 64 {
+            unsafe {
+                simd::score_sq4p64_vnni(
+                    qe,
+                    qo,
+                    &sq4.codes()[lo * sq4.stride..hi * sq4.stride],
+                    &mut score,
+                );
+            }
+        } else {
+            // stride = k*64 (d > 128): d-generic dot per stride-sized slot.
+            let block = &sq4.codes()[lo * sq4.stride..hi * sq4.stride];
+            let dbytes = self.d / 2;
+            for row in 0..hi - lo {
+                let code = &block[row * sq4.stride..row * sq4.stride + dbytes];
+                score.push(unsafe { simd::dot_sq4_vnni(qe, qo, code) });
+            }
         }
         out.extend(
             score
@@ -823,7 +856,7 @@ impl CellPortals {
         use std::sync::atomic::Ordering::Relaxed;
 
         assert_eq!(sq4.d, self.d, "portal SQ4 dimension mismatch");
-        assert_eq!(sq4.stride, 64, "portal tile scan needs stride 64");
+        debug_assert!(sq4.stride % 64 == 0);
         assert!(
             std::is_x86_feature_detected!("avx512vnni")
                 && std::is_x86_feature_detected!("avx512bw")

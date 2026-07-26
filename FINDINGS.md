@@ -5697,6 +5697,27 @@ P360 [2026-07-26] WIKI BAND BREAKTHROUGH: gate-eligible k64 graph closes most of
   Scorecard now: every dataset, genbo wins or ties every measured point under fair protocol EXCEPT wiki
   0.93-0.966 vs the 6.5h Roar (eligible-vs-ineligible, <=1.4x, documented).
 
+P361 [2026-07-26] WIKI PORTAL-WALK TRANSFER: NULL — the 0.93-0.955 concession is final and fully mapped.
+  Test: does the DEEP loose-recall winner (CELL_PORTALS + portal-SQ4 round_walk) transfer to wiki's
+  contested band? Required generalizing the portal-SQ4 sidecar past d<=128 (was hardcoded stride=64):
+    builder stride = ceil((d/2)/64)*64 (DEEP d=96 -> 64 BYTE-IDENTICAL; wiki d=1024 -> 512);
+    vq.rs PortalSq4::load validates stride%64==0 && >= d/2; entry_points argmax + score_tile dispatch
+    stride==64 -> original kernels VERBATIM, k*64 -> d-generic dot_sq4_vnni per stride slot (same
+    first-max tie-break). simd.rs untouched; champion bit-identical flags-off. DEEP bit-identity
+    re-verified post-change: 0.9032 EXACT at R8/B14/L14. (Implementation: delegated agent; reviewed.)
+  wiki35m_portals16.sq4p64 built 924s (35.84GB, stride 512). Quiet REPS=5 band rows (load 7.1-8.1):
+    R4/B10/W40:  0.8994@853  (1445 evals/q, 37 hops)     R4/B14/W56: 0.9167@771  (1801, 49)
+    R6/B14/W40:  0.9382@633  (2756, 77)                  R8/B14/W56: 0.9487@588  (3693, 105)
+  VERDICT: transfer FAILS. vs Roar: 0.9382 -> Roar ~1038 (1.64x ahead); 0.9487 -> ~875 (1.49x).
+  vs OUR OWN cascade: 0.9580@670 strictly dominates the walk's best 0.9487@588; 0.9343@790 > 0.9382@633
+  on the frontier — the walk never even reaches our own curve, let alone Roar's.
+  MECHANISM (why DEEP transferred nothing): wiki rows are 512B SQ4 / 1KB i8 vs DEEP's 48B codes — each
+  walk eval costs ~10x more, and the fixed-round refinement needed 1445->3693 evals/q for +0.05 recall.
+  The cascade's contiguous SQ4 scan amortizes exactly the dimension toll the scattered walk pays in full.
+  This was the last untried lever from the P360 plan => wiki 0.93-0.955 (<=1.4x, eligible-vs-INELIGIBLE
+  6.5h Roar) is now a MEASURED, MECHANISM-EXPLAINED, FINAL concession. Artifacts: wiki_band_rows.log,
+  wiki35m_portals16.sq4p64. Paper unchanged (walk rows sit below the plotted cascade curve).
+
 === SESSION SUMMARY (current, 2026-07-12, through P334) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall

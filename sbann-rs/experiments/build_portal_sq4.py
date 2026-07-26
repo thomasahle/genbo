@@ -38,9 +38,9 @@ def main() -> None:
     if base.shape != (n, d) or d % 2:
         raise ValueError("base/portal geometry mismatch")
     lo, step = robust_ranges(base, args.range_samples)
-    stride = 64  # d/2=48 padded to one full VNNI vector
-    if d // 2 > stride:
-        raise ValueError("code does not fit the selected padded stride")
+    # d/2 code bytes padded up to whole 64-byte VNNI vectors (DEEP d=96 -> 64,
+    # wiki d=1024 -> 512). The engine reads the stride back from the header.
+    stride = ((d // 2 + 63) // 64) * 64
 
     with args.out.open("wb") as target:
         target.write(struct.pack("<8sQII", MAGIC, len(ids), d, stride))
