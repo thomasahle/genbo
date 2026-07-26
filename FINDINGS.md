@@ -5687,6 +5687,16 @@ P359 [2026-07-26] DEEP scorecard COMPLETE under matched-warmup protocol (quiet, 
   two thin points marked lead-or-tie, not sound wins. Scorecard: all datasets won under eligible rules;
   wiki 0.93-0.975 vs the 6.5h Roar = the one documented concession. OPEN: user fence adjudication.
 
+P360 [2026-07-26] WIKI BAND BREAKTHROUGH: gate-eligible k64 graph closes most of the last concession.
+  k64 seeded-from-k16: 4658s=1.29h -> CHAIN 1.46h < 2h gate (ELIGIBLE). KE64+RESIDENT+SQ4+F16, quiet
+  REPS=5 vs the 6.5h unlimited Roar quiet curve:
+    0.9343@790 (Roar ~1100, 0.72x)  0.9580@670 (~708, 0.95x)  0.9661@594 (622@0.9651, 0.955x higher recall)
+    0.9723@547 (~478, 1.14x WIN)    0.9860@417 (~247, 1.69x WIN)  0.9925@295 (97, 3.0x WIN at Roar ceiling)
+  => crossover 0.977 -> ~0.970; concession shrinks to 0.93-0.955 (<=1.4x) + near-tie 0.958-0.966 (0.95x);
+  >=0.972 an ELIGIBLE genbo beats the INELIGIBLE Roar. Paper wiki curve/caption updated (CSV = k64 rows).
+  Scorecard now: every dataset, genbo wins or ties every measured point under fair protocol EXCEPT wiki
+  0.93-0.966 vs the 6.5h Roar (eligible-vs-ineligible, <=1.4x, documented).
+
 === SESSION SUMMARY (current, 2026-07-12, through P334) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
