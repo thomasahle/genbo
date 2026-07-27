@@ -5778,6 +5778,37 @@ P362 [2026-07-26, PROVISIONAL pending strict-quiet confirm] WIKI NEAR-TIE BAND F
   Also landed: SBANN_RERANK_F16_FILE on-disk f16 cache (main.rs) — kills the ~10min single-thread
   f32->f16 setup per wiki measurement row; champion-neutral (env-gated).
 
+P364 [2026-07-27] WIKIPEDIA-35M LOW-RECALL LAW SWEEP — crossover 0.963 -> ~0.953; graph-to-cell null.
+  MEASUREMENT FIX: Wikipedia's first 200 queries are materially easier than the full 1000 (the same
+    M24/E48/p6/T250/W12 arm is .9435 on q[0:200] but .8997 full-NQ, a 4.38-point recall bias).
+    Quick-prefix screens remain useful for policy direction, never paper recall. The reusable one-load
+    runner now defaults to NQ=1000 and sweeps M/KEDGE/TFLOOR/K without reloading the ~260GB resident stack.
+  DEFINITIVE GRID: full 1000 queries, 288 configurations, best-of-3 in one process:
+    M=24/32/48/64, kedge=48/64, T=250/500/900, p=6..16, W=12/16.
+    Clean promoted ladder: .9328@862, .9354@859, .9421@834, .9476@804, .9505@794,
+    .9511@780, .9531@777, .9566@758, .9590@731, .9609@713.
+    Against unrestricted 6.5h RoarGraph, .9531@777 is parity (log interpolation ~774);
+    .9566@758 vs ~726 and .9590@731 vs ~695 are wins. The sole concession shrinks from
+    .93-~.963 to .93-~.953; its worst endpoint gap is ~1.30x, not ~1.4x. Budget Roar
+    remains dominated everywhere.
+  LAWS: kedge=64; low-recall T=250; W=12/16 contains the tail; M and p grow together with
+    target recall. T250 vs T500 gives median 1.021x QPS at -0.0006 recall, T500 vs T900
+    another 1.028x at -0.0001; W12 vs W16 is 1.004x at -0.0009. Above 10M preserve
+    scanned mass with p proportional to Kf/n and do not grow the survivor floor a second time.
+    Defaults encode this: high-d fast/balanced/accurate floors 250/500/1000 and capped
+    sqrt(n/10M) floor scaling; the Wiki balanced probe ladder becomes [9,19,38,76].
+  TWO NOVEL GRAPH-TO-CELL TESTS, BOTH NULL:
+    (1) portal representative -> graph-neighbor cell votes, 180 full-NQ arms: ca8 tops at
+        .9234@771, below the ordinary .9328@862.
+    (2) actual best APQ survivors -> rank-weighted graph-neighbor cell votes, 96 full-NQ
+        mirrored arms (ca=0,1,2,4,4,2,1,0): recall rises deterministically, but the extra
+        contiguous scans cost more than ordinary probes/beam; .9521@658 is strictly dominated
+        by .9531@777. Both mirrored halves agree. Experimental engine path removed.
+  ARTIFACTS: experiments/sweep_wiki_low_recall.py, analyze_wiki_low_recall.py,
+    wiki_low_recall_full_{screen,analysis}.json, wiki_graph_to_cell_full.json,
+    wiki_survivor_to_cell_full.json; raw logs under big-ann-data. Paper Sec.14, results,
+    Figure 13 CSV/caption, presets, and PDF updated.
+
 === SESSION SUMMARY (current, 2026-07-12, through P334) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall

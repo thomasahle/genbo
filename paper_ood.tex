@@ -1472,9 +1472,13 @@ their scale laws is unnecessary. We expose three policies --- \emph{fast},
 \emph{balanced} (the default), and \emph{accurate} --- while retaining every
 low-level override. A policy chooses a dimension-banded reference probe count
 $p_{\rm ref}$ at $K_f{=}65536$, rescales it to the loaded router as
-$p_0=\lceil p_{\rm ref}K_f/65536\rceil$, and evaluates the local ladder
+$p_0=\lceil p_{\rm ref}(K_f/65536)
+\min(1,10\mathrm{M}/n)\rceil$, and evaluates the local ladder
 $\{p_0/2,p_0,2p_0,4p_0\}$. Its survivor floor follows the measured size law
-$T(n,d)=T_{10\mathrm{M}}(d)\,\mathrm{clip}(\sqrt{n/10\mathrm{M}},0.5,2.5)$.
+$T(n,d)=T_{10\mathrm{M}}(d)\,
+\mathrm{clip}(\sqrt{n/10\mathrm{M}},0.5,1)$: once probes preserve scan mass,
+growing $T$ again double-counts scale.  At $d{>}512$ the fast/balanced/accurate
+reference floors are $250/500/1000$.
 The same policy sets graph (hops, beam) to $(1,16)$, $(2,24)$, or $(3,48)$ and
 sets the int8-to-float shortlist to $W/k=1.6$, $2.0$, or $4.8$ for
 fast/balanced/accurate.  The ratios are independent of dimension and probe depth:
@@ -1489,7 +1493,7 @@ materializes
 \[
  S \simeq a_0p\,\frac{n}{K_f}
 \]
-codes (hence $p\propto K_f$ preserves scan mass).  For a fixed-round point walk
+codes (hence $p\propto K_f/n$ preserves scan mass).  For a fixed-round point walk
 with $E$ distinct entries, frontier $B$, $R$ rounds, graph degree $k_e$, and
 unique-neighbor fraction $\nu$, the expansion and scoring work are
 \[
@@ -1569,10 +1573,18 @@ speed, and the refreshed curve spans $0.8796@966$ to $0.9233@667$.  WebVid is
 the instructive binding case: $W=20$ loses $0.0032$/$0.0062$ recall at the two
 loose anchors; buying the first loss back with more probes is slower, so its
 containment check correctly retains $W=32$/$48$.  Finally, applying the work
-law to Wikipedia's near-tie band selects $(M,p,W)=(64,22,32)$ and reaches
-$0.9677@640$, above RoarGraph's $0.9651@622$ despite our graph's shorter
-$1.46$\,h build.  The transferable object is therefore the work law and the
-one-dimensional calibration procedure, not a frozen parameter tuple.}
+law to a full-query, 288-point Wikipedia grid selects $k_e=64$, $T=250$,
+$W=12$--$16$, and increases $(M,p)$ together with target recall.  The resulting
+ladder reaches $0.9328@862$, joins unrestricted RoarGraph at
+$0.9531@777$, and leads at $0.9566@758$ and $0.9590@731$, before the
+$(64,22,32)$ tail point reaches $0.9677@640$.  This moves the crossover from
+$0.963$ to ${\sim}0.953$ without changing the index.  A graph-to-cell
+alternative is a useful negative control: voting extra IVF cells from either
+cell portals or the best scanned survivors raises recall, but every such point
+is dominated by spending the same work on the ordinary probe/beam ladder
+($0.9521@658$ versus $0.9531@777$).  The transferable object is therefore the
+work law and the one-dimensional calibration procedure, not a frozen parameter
+tuple.}
 
 \section{Systems Techniques (Streaming)}
 \label{sec:stream}
@@ -2007,10 +2019,11 @@ $0.81$ through $0.98$, past its published-benchmark ceiling --- with our side
 measured on a loaded machine against its quiet-window curve, so each margin
 ($1.3$--$1.7\times$) is a lower bound. The remaining boundary is solely the
 build-unconstrained $6.5$h RoarGraph's Wikipedia
-$0.93$--${\sim}0.963$ band (Figure~\ref{fig:frontier} caption).  The
+$0.93$--${\sim}0.953$ band (Figure~\ref{fig:frontier} caption).  The
 gate-eligible $64$-edge graph ($1.46$ h total, seeded from the $k{=}16$ pass)
-with the resident stack reaches $0.9677@640$, already above RoarGraph's
-$0.9651@622$ at lower recall, before widening the lead through the tail.
+with the resident stack reaches parity at $0.9531@777$ (RoarGraph
+${\sim}774$), then $0.9566@758$ versus ${\sim}726$ and $0.9677@640$ versus
+${\sim}565$, before widening the lead through the tail.
 Everywhere else the IVF-PQ$+$coverage hybrid now wins.
 Exact operating points,
 and the streaming series are tabulated in Appendix~\ref{app:tables} (Table~\ref{tab:streaming}).
@@ -2128,17 +2141,18 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
   greyed curve is the build-\emph{ineligible} $6.5$h RoarGraph, the orange curve the
   gate-eligible budget RoarGraph. \textbf{Top row (high-dimensional,
   $d{\ge}768$): our regime.} On Cohere 1M/10M ($d{=}768$) our system leads
-  \emph{every} baseline --- graph-free at 1M, self-built graph at 10M; RoarGraph,
+  \emph{every} baseline using its best eligible configuration; RoarGraph,
   though it edges HNSW, is $1.6$--$2.4\times$ (1M) / $1.2$--$1.45\times$ (10M) behind
   us --- its query-aware bipartite projection buys nothing when the query manifold
   \emph{is} the base manifold. On Wikipedia 35M ($d{=}1024$) our plotted curve is a
   $64$-edge graph seeded from the $k{=}16$ pass --- \emph{gate-eligible} at $1.46$\,h
   total build --- with the resident stack: it crosses even the $6.5$h
-  build-ineligible RoarGraph near recall $0.963$, reaching $0.9677@640$ versus
-  RoarGraph's $0.9651@622$ at lower recall, then leads by $1.14\times$ at $0.972$,
+  build-ineligible RoarGraph near recall $0.953$ ($0.9531@777$ versus
+  ${\sim}774$), leads at $0.9566@758$ versus ${\sim}726$, and reaches
+  $0.9677@640$ versus ${\sim}565$, then leads by $1.14\times$ at $0.972$,
   $1.69\times$ at $0.986$, and $3.0\times$ at RoarGraph's $0.9925$ ceiling.
-  It concedes only $0.93$--${\sim}0.963$ (up to ${\sim}1.4\times$ at $0.934$,
-  narrowing to a near-tie by $0.958$) --- an eligible-vs-ineligible comparison; a
+  It concedes only $0.93$--${\sim}0.953$ (up to ${\sim}1.3\times$ at $0.933$,
+  narrowing to parity by $0.953$) --- an eligible-vs-ineligible comparison; a
   budget-matched RoarGraph ($L{=}50$, $250$k train queries) still takes $3.1$h and
   collapses to a $0.9605$ ceiling at ${\sim}100$ QPS, below our curve everywhere. \textbf{Bottom row (low-dimensional, $d{\le}100$).} On MSTuring 30M
   ($d{=}100$) we beat every baseline at every measured point ($1.45$--$2.8\times$

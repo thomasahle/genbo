@@ -915,7 +915,12 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
     // SBANN_PLIST="128,256,512" overrides the preset-centered default sweep.
     let plist: Vec<usize> = match std::env::var("SBANN_PLIST") {
         Ok(s) => s.split(',').filter_map(|x| x.trim().parse().ok()).filter(|&x: &usize| x >= 1).collect(),
-        Err(_) => default_probe_ladder(search_preset, ds.d, idx.router.n_cells()),
+        Err(_) => default_probe_ladder(
+            search_preset,
+            ds.d,
+            idx.router.n_cells(),
+            ds.nb,
+        ),
     };
     let tfloor: usize = std::env::var("SBANN_TFLOOR")
         .ok()
@@ -945,6 +950,48 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
         Ok(s) => s.split(',').filter_map(|x| x.trim().parse().ok()).filter(|&x: &usize| x >= 1).collect(),
         Err(_) => vec![vq::CASCADE_K.load(std::sync::atomic::Ordering::Relaxed)],
     };
+    // One-load graph-policy sweeps.  Large resident datasets (Wikipedia-35M is
+    // ~260GB with its full scoring stack) must not reload that state for every
+    // beam/edge/floor arm.  Duplicates are intentionally preserved so callers
+    // can use mirrored orders.  When unset these are exact one-element no-ops.
+    let mlist: Vec<usize> = match std::env::var("SBANN_MLIST") {
+        Ok(s) => s.split(',').filter_map(|x| x.trim().parse().ok()).filter(|&x: &usize| x >= 1).collect(),
+        Err(_) => vec![vq::GRAPH_M.load(std::sync::atomic::Ordering::Relaxed)],
+    };
+    let kedgelist: Vec<usize> = match std::env::var("SBANN_KEDGELIST") {
+        Ok(s) => s.split(',').filter_map(|x| x.trim().parse().ok()).filter(|&x: &usize| x >= 1).collect(),
+        Err(_) => vec![vq::GRAPH_KEDGE.load(std::sync::atomic::Ordering::Relaxed)],
+    };
+    let floorlist: Vec<usize> = match std::env::var("SBANN_TFLOORLIST") {
+        Ok(s) => s.split(',').filter_map(|x| x.trim().parse().ok()).collect(),
+        Err(_) => vec![tfloor],
+    };
+    let portal_keeplist: Vec<usize> = match std::env::var("SBANN_PORTAL_KEEPLIST") {
+        Ok(s) => s.split(',').filter_map(|x| x.trim().parse().ok()).filter(|&x: &usize| x >= 1).collect(),
+        Err(_) => vec![vq::PORTAL_KEEP.load(std::sync::atomic::Ordering::Relaxed)],
+    };
+    assert!(
+        !mlist.is_empty()
+            && !kedgelist.is_empty()
+            && !floorlist.is_empty()
+            && !portal_keeplist.is_empty()
+    );
+    if std::env::var("SBANN_MLIST").is_ok()
+        || std::env::var("SBANN_KEDGELIST").is_ok()
+        || std::env::var("SBANN_TFLOORLIST").is_ok()
+        || std::env::var("SBANN_PORTAL_KEEPLIST").is_ok()
+    {
+        assert!(graph_ref.is_some(), "graph policy lists require SBANN_GRAPH_FILE");
+        if std::env::var("SBANN_PORTAL_KEEPLIST").is_ok() {
+            assert!(
+                vq::CELL_PORTALS.get().is_some(),
+                "SBANN_PORTAL_KEEPLIST requires SBANN_PORTAL_FILE"
+            );
+        }
+        println!(
+            "  [GRAPH-SWEEP] M={mlist:?} kedge={kedgelist:?} tfloor={floorlist:?} portal_keep={portal_keeplist:?}"
+        );
+    }
     // big-ann reports BEST search time over run_count -> measure best-of-REPS to filter box-load
     // spikes on this contended box. SBANN_REPS overrides (default 1; use 3-5 for clean A/B tuning).
     let reps: usize = std::env::var("SBANN_REPS").ok().and_then(|s| s.parse().ok()).unwrap_or(1);
@@ -1443,7 +1490,22 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
         }
         return;
     }
-    for &p in &plist {
+    let mut graph_policies = Vec::new();
+    for &portal_keep in &portal_keeplist {
+        for &gm in &mlist {
+            for &ke0 in &kedgelist {
+                let ke = graph_ref.map(|g| ke0.min(g.k)).unwrap_or(ke0);
+                for &floor in &floorlist {
+                    graph_policies.push((portal_keep, gm, ke, floor));
+                }
+            }
+        }
+    }
+    for &(portal_keep, gm, ke, floor) in &graph_policies {
+        vq::PORTAL_KEEP.store(portal_keep, std::sync::atomic::Ordering::Relaxed);
+        vq::GRAPH_M.store(gm, std::sync::atomic::Ordering::Relaxed);
+        vq::GRAPH_KEDGE.store(ke, std::sync::atomic::Ordering::Relaxed);
+        for &p in &plist {
       for &tm in &tlist {
        for &lm in &lmodes {
         vq::LUT16_OFF.store(lm, std::sync::atomic::Ordering::Relaxed);
@@ -1454,7 +1516,7 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
         // survivors kept for exact rerank (tmul tunes recall/speed). The rerank floor was 1000 but that
         // was a ~2x QPS@90% HANDICAP: int16 LUT ranks well enough that t_surv=p*tmul (~256-480) holds
         // recall (P111). The preset supplies the scale/dimension-aware floor; SBANN_TFLOOR overrides.
-        let t_surv = (p * tm).max(tfloor);
+        let t_surv = (p * tm).max(floor);
         let mut best_dt = f64::INFINITY;
         let mut res: Vec<Vec<u32>> = Vec::new();
         let prof = std::env::var("SBANN_PROFILE").is_ok();
@@ -1548,7 +1610,11 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
         let vtag = if vnni_ab { if vm { " VNNI" } else { " AVX2" } } else { "" };
         let ltag = if lut_ab { if lm { " i8" } else { " i16" } } else { "" };
         let ktag = if vq::CASCADE.load(std::sync::atomic::Ordering::Relaxed) { format!(" K={kk}") } else { String::new() };
-        println!("  p={p:5} t={tm:3}{ltag}{vtag}{ktag}: recall@10={:.4}  QPS={:.0} (best/{reps})", hit as f64 / (nq * 10) as f64, nq as f64 / dt);
+        println!(
+            "  p={p:5} t={tm:3}{ltag}{vtag}{ktag}: recall@10={:.4}  QPS={:.0} (best/{reps}) [M={gm} ke={ke} tf={floor} pk={portal_keep}]",
+            hit as f64 / (nq * 10) as f64,
+            nq as f64 / dt
+        );
         if vq::ADAPT_STOP_ON.load(std::sync::atomic::Ordering::Relaxed) {
             let stops = vq::PROF_ADAPT_STOPS.swap(0, std::sync::atomic::Ordering::Relaxed);
             println!("      [adapt-stop] early-stopped {}/{} query-runs", stops, nq * reps.max(1));
@@ -1582,6 +1648,7 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
        }
        }
        }
+      }
       }
     }
 }
@@ -2478,14 +2545,17 @@ impl SearchPreset {
             3
         };
         match self {
-            Self::Fast => [250, 500, 600, 400][band],
-            Self::Balanced => [450, 1000, 1200, 1000][band],
-            Self::Accurate => [1800, 3000, 2500, 3000][band],
+            Self::Fast => [250, 500, 600, 250][band],
+            Self::Balanced => [450, 1000, 1200, 500][band],
+            Self::Accurate => [1800, 3000, 2500, 1000][band],
         }
     }
 
     fn survivor_floor(self, n: usize, d: usize) -> usize {
-        let scale = (n as f64 / 10_000_000.0).sqrt().clamp(0.5, 2.5);
+        // Probe scaling below already keeps scanned rows approximately constant
+        // above 10M. Growing the survivor floor again double-counted dataset
+        // scale (Wikipedia-35M: balanced 1871 vs the measured 250--500 knee).
+        let scale = (n as f64 / 10_000_000.0).sqrt().clamp(0.5, 1.0);
         ((self.survivor_floor_10m(d) as f64 * scale).round() as usize).max(128)
     }
 
@@ -2528,10 +2598,20 @@ fn resolve_search_preset(
     Ok((SearchPreset::Balanced, "default"))
 }
 
-fn default_probe_ladder(preset: SearchPreset, d: usize, n_cells: usize) -> Vec<usize> {
+fn default_probe_ladder(
+    preset: SearchPreset,
+    d: usize,
+    n_cells: usize,
+    n_rows: usize,
+) -> Vec<usize> {
     let reference = preset.reference_probes(d);
-    let center = ((reference * n_cells + 65_535) / 65_536)
-        .clamp(1, n_cells.max(1));
+    // At fixed cell count, rows scanned are approximately p*n/Kf. Preserve the
+    // calibrated 10M work above that scale; below 10M retain the existing
+    // dataset-specific reachability defaults rather than extrapolating upward.
+    let row_scale = (10_000_000.0 / n_rows.max(1) as f64).min(1.0);
+    let center = ((reference as f64 * n_cells as f64 / 65_536.0) * row_scale)
+        .ceil() as usize;
+    let center = center.clamp(1, n_cells.max(1));
     let candidates = [
         (center / 2).max(1),
         center,
@@ -3450,20 +3530,34 @@ mod search_preset_tests {
     #[test]
     fn probe_ladders_track_dimension_and_cell_count() {
         assert_eq!(
-            default_probe_ladder(SearchPreset::Balanced, 96, 65_536),
+            default_probe_ladder(SearchPreset::Balanced, 96, 65_536, 10_000_000),
             vec![4, 8, 16, 32]
         );
         assert_eq!(
-            default_probe_ladder(SearchPreset::Balanced, 200, 4_096),
+            default_probe_ladder(SearchPreset::Balanced, 200, 4_096, 10_000_000),
             vec![1, 3, 6, 12]
         );
         assert_eq!(
-            default_probe_ladder(SearchPreset::Fast, 200, 16_384),
+            default_probe_ladder(SearchPreset::Fast, 200, 16_384, 10_000_000),
             vec![4, 8, 16, 32]
         );
         assert_eq!(
-            default_probe_ladder(SearchPreset::Balanced, 1024, 65_536),
+            default_probe_ladder(
+                SearchPreset::Balanced,
+                1024,
+                65_536,
+                10_000_000,
+            ),
             vec![32, 64, 128, 256]
+        );
+        assert_eq!(
+            default_probe_ladder(
+                SearchPreset::Balanced,
+                1024,
+                65_536,
+                35_000_000,
+            ),
+            vec![9, 19, 38, 76]
         );
     }
 
@@ -3474,9 +3568,9 @@ mod search_preset_tests {
         assert_eq!(SearchPreset::Balanced.cascade_k(1024), 20);
         assert_eq!(SearchPreset::Accurate.cascade_k(1024), 48);
         assert_eq!(SearchPreset::Balanced.survivor_floor(10_000_000, 96), 450);
-        assert!(
-            SearchPreset::Balanced.survivor_floor(35_000_000, 1024)
-                > SearchPreset::Balanced.survivor_floor(10_000_000, 1024)
+        assert_eq!(
+            SearchPreset::Balanced.survivor_floor(35_000_000, 1024),
+            500
         );
     }
 }
