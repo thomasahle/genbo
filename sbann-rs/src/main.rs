@@ -2410,14 +2410,15 @@ impl SearchPreset {
         }
     }
 
-    fn cascade_k(self, d: usize) -> usize {
-        match (self, d > 512) {
-            (Self::Fast, false) => 32,
-            (Self::Fast, true) => 64,
-            (Self::Balanced, false) => 32,
-            (Self::Balanced, true) => 64,
-            (Self::Accurate, false) => 64,
-            (Self::Accurate, true) => 128,
+    fn cascade_k(self, _d: usize) -> usize {
+        match self {
+            // Cross-dataset containment law (P363): width tracks requested rank, not
+            // dimension or probe depth.  1.6k is the measured latency knee; 2k is
+            // the balanced containment default; accurate leaves room for the
+            // WebVid-style binding cases. Explicit SBANN_CASCADE_K/KLIST still wins.
+            Self::Fast => 16,
+            Self::Balanced => 20,
+            Self::Accurate => 48,
         }
     }
 
@@ -3424,9 +3425,11 @@ mod search_preset_tests {
     }
 
     #[test]
-    fn dimension_aware_cascade_and_scale_aware_floor() {
-        assert_eq!(SearchPreset::Balanced.cascade_k(96), 32);
-        assert_eq!(SearchPreset::Balanced.cascade_k(1024), 64);
+    fn containment_width_and_scale_aware_floor() {
+        assert_eq!(SearchPreset::Fast.cascade_k(96), 16);
+        assert_eq!(SearchPreset::Balanced.cascade_k(96), 20);
+        assert_eq!(SearchPreset::Balanced.cascade_k(1024), 20);
+        assert_eq!(SearchPreset::Accurate.cascade_k(1024), 48);
         assert_eq!(SearchPreset::Balanced.survivor_floor(10_000_000, 96), 450);
         assert!(
             SearchPreset::Balanced.survivor_floor(35_000_000, 1024)

@@ -5739,6 +5739,30 @@ P362 [2026-07-26] GENERAL TUNING LAWS — fixed-round work transfers; target rec
     analyze_tuning_laws.py; sweep_deep_fixed_walk.py now has --dataset deep1m. Paper Sec.14 updated
     in its established paragraph+Effect format; compiled to 30 pages and PNG-read pages 16-30.
 
+P363 [2026-07-27] CROSS-DATASET LAW TRANSFER — containment, not dimension/probe depth, sets rerank width.
+  Protocol: every promoted new row is full-NQ and best-of-5 (100M best-of-2), with mirrored same-process
+  KLIST arms whenever two widths are compared. Cold first arms were retained in artifacts but excluded
+  from conclusions; plots use the paper's warm-best convention. Shared load is stamped per run.
+  DEFAULT LAW REFINED: latency W=1.6k (16 for top-10), balanced W=2k, accurate W=4.8k; escalate only
+  when a containment pilot binds. The old dimension-banded 32/64/128 defaults were not supported.
+  MSTURING-30M: W16 is recall-IDENTICAL to historical W32/64/128/256 on every full 2k-query point.
+    Width-only gain is 0-2.5% because d=100 float work is small, but current reruns refresh the plotted
+    tail: .9686@803, .9819@426, .9883@229 (old 729/384/208).
+  COHERE: 1M W20 improves .9730->.9732@1317, .9895->.9900@740, .9961->.9967@410.
+    10M middle keeps W16 (W20 buys .0002-.0006 recall for 5-7% QPS), tail adds .9912@470.
+  TEXT2IMAGE: 1M only the .978 shoulder improves (.9784@2368); 10M .9414@2065 reproduced in two
+    independent runs vs stale .9411@1257, and .9784@717 fills the tail. At 100M, one-load five-probe
+    ABBA gives a constant +.0007 recall for W20 at paired-parity speed; refreshed curve is
+    .8796@966 .8951@855 .9049@821 .9152@750 .9233@667 (old 751..529 QPS).
+  WEBVID CONTAINMENT BOUNDARY: W20 loses .0032/.0062 at the .8062/.9024 anchors; W16 loses more.
+    p2->p3 buys the first loss back (.8085) but drops 5445->5080 QPS, below the curve. Keep W32/W48;
+    refreshed loose rows .8062@5445, .9019@2779, .9024@2745.
+  WIKI LAW TRANSFER (existing clean P362v3 row now promoted): M64/p22/W32/i8k256 = .9677@640, strictly
+    dominates plotted .9661@594 and beats ineligible 6.5h Roar .9651@622 at higher recall. Crossover
+    is now ~.963; sole remaining unlimited-Roar concession is .93-~.963.
+  ARTIFACTS: sweep_transfer_laws.py, analyze_transfer_laws.py, law_transfer_results.json plus raw
+    law_transfer_* checkpoints. Paper Sec.14, both headline plot CSV groups, captions, and defaults updated.
+
 === SESSION SUMMARY (current, 2026-07-12, through P334) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall

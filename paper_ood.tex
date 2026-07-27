@@ -1476,7 +1476,9 @@ $p_0=\lceil p_{\rm ref}K_f/65536\rceil$, and evaluates the local ladder
 $\{p_0/2,p_0,2p_0,4p_0\}$. Its survivor floor follows the measured size law
 $T(n,d)=T_{10\mathrm{M}}(d)\,\mathrm{clip}(\sqrt{n/10\mathrm{M}},0.5,2.5)$.
 The same policy sets graph (hops, beam) to $(1,16)$, $(2,24)$, or $(3,48)$ and
-raises the int8-to-float cascade width with dimension and requested accuracy.
+sets the int8-to-float shortlist to $W/k=1.6$, $2.0$, or $4.8$ for
+fast/balanced/accurate.  The ratios are independent of dimension and probe depth:
+an explicit containment check, rather than row width, is what licenses escalation.
 A target-recall convenience input maps recall ${\le}0.91$, ${\le}0.96$, and the
 tail to these three search \emph{regions}; it is deliberately not advertised as
 a recall guarantee.
@@ -1517,8 +1519,8 @@ $B$, the measured curve follows
 \]
 Thus a small query pilot estimates the dataset-specific contraction $\delta$
 and ceiling $r_\infty$, after which $R$ is solved rather than grid-searched.
-The final shortlist starts at $W=2k$; $W=1.4k$ is the latency-biased neighbor,
-and it is raised only if a score-containment pilot says the final ranker is
+The final shortlist starts at $W=1.6k$ for latency or $2k$ balanced and is raised
+to $3.2k$/$4.8k$ only if a score-containment pilot says the final ranker is
 binding.  These ratios are defaults, not purported universal quality constants:
 graph reachability makes $\delta$ data-dependent.
 
@@ -1555,8 +1557,22 @@ $\delta=0.605$/$0.722$ and RMS recall error $0.00146$/$0.00104$ (1M/10M).
 The same policy is nevertheless $0.062$ recall better at 1M in median, proving
 that $n$ alone must not select $R$.  For reranking, $W=1.4k$ captures
 $94\%$/$86\%$ of the recall gain from $W=k$ to $3.2k$, while $W=2k$ captures
-$98\%$/$91\%$ (1M/10M).  The transferable object is therefore the work law and
-the one-dimensional calibration procedure, not a frozen parameter tuple.}
+$98\%$/$91\%$ (1M/10M).  A second containment audit transfers this law across
+all plotted datasets.  On MSTuring-30M, $W=16$ is recall-identical to the
+historical $W=32$--$256$ at every full-query point and refreshes the tail to
+$0.9686@803$, $0.9819@426$, and $0.9883@229$ QPS.  On Cohere-1M, $W=20$
+improves both ends of the tradeoff ($0.9732@1317$, $0.9900@740$,
+$0.9967@410$); at 10M it is useful only in the tail, reaching
+$0.9912@470$, while $W=16$ remains faster in the middle.  On text-to-image-100M,
+$W=20$ adds exactly $0.0007$ recall at all five probe depths at matched paired
+speed, and the refreshed curve spans $0.8796@966$ to $0.9233@667$.  WebVid is
+the instructive binding case: $W=20$ loses $0.0032$/$0.0062$ recall at the two
+loose anchors; buying the first loss back with more probes is slower, so its
+containment check correctly retains $W=32$/$48$.  Finally, applying the work
+law to Wikipedia's near-tie band selects $(M,p,W)=(64,22,32)$ and reaches
+$0.9677@640$, above RoarGraph's $0.9651@622$ despite our graph's shorter
+$1.46$\,h build.  The transferable object is therefore the work law and the
+one-dimensional calibration procedure, not a frozen parameter tuple.}
 
 \section{Systems Techniques (Streaming)}
 \label{sec:stream}
@@ -1926,8 +1942,8 @@ Out-of-distribution (Figure~\ref{fig:oodfrontier}), the picture is scale-depende
 and we report it whole. At the recall-$0.90$ gate genbo leads everything at 10M ---
 ScaNN at its official configuration ($0.83\times$ tight-pairwise ratio), RoarGraph at
 its paper configuration ($1.07$--$1.16\times$ ours), HNSW by ${\sim}8.7\times$ ---
-and is the only build-eligible method at 100M (build $86$ min; recall up to $0.9226$
-at $529$ QPS single-thread, ${\sim}6.7$k QPS at recall $0.90$ on 16 threads; ScaNN
+and is the only build-eligible method at 100M (build $86$ min; recall up to $0.9233$
+at $667$ QPS single-thread, ${\sim}6.7$k QPS at recall $0.90$ on 16 threads; ScaNN
 was killed at the gate, and RoarGraph measured $10.5$h for the graph build alone,
 plus ${\sim}5$h of train-GT preparation --- its first 100M index moreover searched
 degenerately, terminating after ${\sim}36$ comparisons per query). RoarGraph's structural advantage --- its edges materialize
@@ -1991,11 +2007,11 @@ $0.81$ through $0.98$, past its published-benchmark ceiling --- with our side
 measured on a loaded machine against its quiet-window curve, so each margin
 ($1.3$--$1.7\times$) is a lower bound. The remaining boundary is solely the
 build-unconstrained $6.5$h RoarGraph's Wikipedia
-$0.93$--${\sim}0.975$ band (Figure~\ref{fig:frontier} caption) --- narrowed from
-above by a $48$-edge self-built graph ($2.8$ h seeded NN-descent, still under
-RoarGraph's $6.5$ h) with the resident stack, which reaches recall $0.9778$ at $431$
-QPS \emph{under load}, above quiet-RoarGraph's ${\sim}390$ there. Everywhere else
-the IVF-PQ$+$coverage hybrid now wins.
+$0.93$--${\sim}0.963$ band (Figure~\ref{fig:frontier} caption).  The
+gate-eligible $64$-edge graph ($1.46$ h total, seeded from the $k{=}16$ pass)
+with the resident stack reaches $0.9677@640$, already above RoarGraph's
+$0.9651@622$ at lower recall, before widening the lead through the tail.
+Everywhere else the IVF-PQ$+$coverage hybrid now wins.
 Exact operating points,
 and the streaming series are tabulated in Appendix~\ref{app:tables} (Table~\ref{tab:streaming}).
 Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
@@ -2117,11 +2133,12 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
   us --- its query-aware bipartite projection buys nothing when the query manifold
   \emph{is} the base manifold. On Wikipedia 35M ($d{=}1024$) our plotted curve is a
   $64$-edge graph seeded from the $k{=}16$ pass --- \emph{gate-eligible} at $1.46$\,h
-  total build --- with the resident stack: it beats even the $6.5$h build-ineligible
-  RoarGraph from recall $0.972$ up ($1.14\times$ at $0.972$, $1.69\times$ at $0.986$,
-  $3.0\times$ at RoarGraph's $0.9925$ ceiling recall), near-ties $0.958$--$0.966$
-  ($0.95\times$ at equal-or-higher recall), and concedes only $0.93$--$0.955$ (up to
-  ${\sim}1.4\times$ at $0.934$) --- an eligible-vs-ineligible comparison; a
+  total build --- with the resident stack: it crosses even the $6.5$h
+  build-ineligible RoarGraph near recall $0.963$, reaching $0.9677@640$ versus
+  RoarGraph's $0.9651@622$ at lower recall, then leads by $1.14\times$ at $0.972$,
+  $1.69\times$ at $0.986$, and $3.0\times$ at RoarGraph's $0.9925$ ceiling.
+  It concedes only $0.93$--${\sim}0.963$ (up to ${\sim}1.4\times$ at $0.934$,
+  narrowing to a near-tie by $0.958$) --- an eligible-vs-ineligible comparison; a
   budget-matched RoarGraph ($L{=}50$, $250$k train queries) still takes $3.1$h and
   collapses to a $0.9605$ ceiling at ${\sim}100$ QPS, below our curve everywhere. \textbf{Bottom row (low-dimensional, $d{\le}100$).} On MSTuring 30M
   ($d{=}100$) we beat every baseline at every measured point ($1.45$--$2.8\times$
