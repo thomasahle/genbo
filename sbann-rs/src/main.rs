@@ -506,27 +506,70 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
         let fb = fbase.as_ref().unwrap();
         let t0 = Instant::now();
         let (nb, dd) = (fb.nb, fb.d);
-        let mut h = vec![0u16; nb * dd];
-        h.par_chunks_mut(dd).enumerate().for_each(|(i, out)| {
-            let row = fb.row(i);
-            let mut j = 0usize;
-            unsafe {
-                use std::arch::x86_64::*;
-                while j + 8 <= dd {
-                    let f = _mm256_loadu_ps(row.as_ptr().add(j));
-                    let ph = _mm256_cvtps_ph(f, _MM_FROUND_TO_NEAREST_INT);
-                    _mm_storeu_si128(out.as_mut_ptr().add(j) as *mut __m128i, ph);
-                    j += 8;
-                }
-                while j < dd {
-                    let ph = _mm256_cvtps_ph(_mm256_set1_ps(row[j]), _MM_FROUND_TO_NEAREST_INT);
-                    out[j] = _mm_extract_epi16(ph, 0) as u16;
-                    j += 1;
+        // SBANN_RERANK_F16_FILE: on-disk cache of the converted base (one sequential half-size
+        // read instead of read+convert of the f32 mmap, which measurement runs do on 1 thread).
+        let cache = std::env::var("SBANN_RERANK_F16_FILE").ok();
+        let mut h: Vec<u16> = Vec::new();
+        if let Some(path) = cache.as_deref() {
+            if let Ok(mut f) = std::fs::File::open(path) {
+                use std::io::Read;
+                let mut hdr = [0u8; 16];
+                f.read_exact(&mut hdr).expect("f16 cache header");
+                assert_eq!(&hdr[..8], b"SBF16\0\0\0", "f16 cache magic");
+                let cnb = u32::from_le_bytes(hdr[8..12].try_into().unwrap()) as usize;
+                let cd = u32::from_le_bytes(hdr[12..16].try_into().unwrap()) as usize;
+                if cnb == nb && cd == dd {
+                    h = vec![0u16; nb * dd];
+                    let bytes = unsafe {
+                        std::slice::from_raw_parts_mut(h.as_mut_ptr() as *mut u8, nb * dd * 2)
+                    };
+                    f.read_exact(bytes).expect("f16 cache body");
+                    println!("  [RERANK-F16] cache hit {path}  load={:.1}s", t0.elapsed().as_secs_f64());
+                } else {
+                    println!("  [RERANK-F16] cache {path} is {cnb}x{cd}, need {nb}x{dd} — reconverting");
                 }
             }
-        });
-        println!("  [RERANK-F16] resident fp16 base {}MB (f32 mmap was {}MB)  setup={:.1}s",
-            nb * dd * 2 / 1_000_000, nb * dd * 4 / 1_000_000, t0.elapsed().as_secs_f64());
+        }
+        if h.is_empty() {
+            h = vec![0u16; nb * dd];
+            h.par_chunks_mut(dd).enumerate().for_each(|(i, out)| {
+                let row = fb.row(i);
+                let mut j = 0usize;
+                unsafe {
+                    use std::arch::x86_64::*;
+                    while j + 8 <= dd {
+                        let f = _mm256_loadu_ps(row.as_ptr().add(j));
+                        let ph = _mm256_cvtps_ph(f, _MM_FROUND_TO_NEAREST_INT);
+                        _mm_storeu_si128(out.as_mut_ptr().add(j) as *mut __m128i, ph);
+                        j += 8;
+                    }
+                    while j < dd {
+                        let ph = _mm256_cvtps_ph(_mm256_set1_ps(row[j]), _MM_FROUND_TO_NEAREST_INT);
+                        out[j] = _mm_extract_epi16(ph, 0) as u16;
+                        j += 1;
+                    }
+                }
+            });
+            println!("  [RERANK-F16] resident fp16 base {}MB (f32 mmap was {}MB)  setup={:.1}s",
+                nb * dd * 2 / 1_000_000, nb * dd * 4 / 1_000_000, t0.elapsed().as_secs_f64());
+            if let Some(path) = cache.as_deref() {
+                use std::io::Write;
+                let tmp = format!("{path}.tmp");
+                let mut w = std::io::BufWriter::new(std::fs::File::create(&tmp).expect("f16 cache create"));
+                let mut hdr = [0u8; 16];
+                hdr[..8].copy_from_slice(b"SBF16\0\0\0");
+                hdr[8..12].copy_from_slice(&(nb as u32).to_le_bytes());
+                hdr[12..16].copy_from_slice(&(dd as u32).to_le_bytes());
+                w.write_all(&hdr).expect("f16 cache header write");
+                let bytes = unsafe {
+                    std::slice::from_raw_parts(h.as_ptr() as *const u8, nb * dd * 2)
+                };
+                w.write_all(bytes).expect("f16 cache body write");
+                w.into_inner().expect("f16 cache flush").sync_all().expect("f16 cache sync");
+                std::fs::rename(&tmp, path).expect("f16 cache rename");
+                println!("  [RERANK-F16] cache written {path} ({}MB)", nb * dd * 2 / 1_000_000);
+            }
+        }
         let _ = vq::F16BASE.set(h);
         let refine = std::env::var("SBANN_RERANK_F16_REFINE")
             .ok()

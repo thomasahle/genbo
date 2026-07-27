@@ -5763,6 +5763,21 @@ P363 [2026-07-27] CROSS-DATASET LAW TRANSFER — containment, not dimension/prob
   ARTIFACTS: sweep_transfer_laws.py, analyze_transfer_laws.py, law_transfer_results.json plus raw
     law_transfer_* checkpoints. Paper Sec.14, both headline plot CSV groups, captions, and defaults updated.
 
+P362 [2026-07-26, PROVISIONAL pending strict-quiet confirm] WIKI NEAR-TIE BAND FLIPS: M64 beam +
+  i8k256 escalation beat Roar's 0.9651@622 anchor outright.
+  Fine sweep (v2, quiet 7.3-8.9) + combination rows (v3, load 8.4-10.2) on the P360 k64 stack:
+    lever findings: SQ4_INT8K 512->256 costs ZERO recall at p24 (0.9661 both), +2% QPS; GRAPH_M
+    48->64 buys +0.002-0.003 recall for ~3% QPS (saturates by M80; M96 collapses QPS); KEDGE 48
+    strictly worse than 64; kk=24 no better than kk=32 at equal recall.
+  Stacked (M=64, i8k=256):
+    0.9658@632 (p20)  0.9677@640 (p22)  0.9690@589 (p24)
+  vs Roar 0.9651@622: p22 row has HIGHER recall AND higher QPS (Roar interp ~565@0.9677 -> 1.13x);
+  p24 -> interp ~539 (1.09x); gap rows 0.9609@673/0.9627@651/0.9647@632 tie the Roar chord exactly.
+  IF CONFIRMED at strict quiet (<10): concession shrinks 0.93-0.966 -> 0.93-~0.958, and the paper's
+  "near-tie 0.958-0.966" band becomes tie-or-WIN. Confirm queued (ABBA x2, load<10 gate).
+  Also landed: SBANN_RERANK_F16_FILE on-disk f16 cache (main.rs) — kills the ~10min single-thread
+  f32->f16 setup per wiki measurement row; champion-neutral (env-gated).
+
 === SESSION SUMMARY (current, 2026-07-12, through P334) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
