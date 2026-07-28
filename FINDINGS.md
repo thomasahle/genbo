@@ -5809,6 +5809,21 @@ P364 [2026-07-27] WIKIPEDIA-35M LOW-RECALL LAW SWEEP — crossover 0.963 -> ~0.9
     wiki_survivor_to_cell_full.json; raw logs under big-ann-data. Paper Sec.14, results,
     Figure 13 CSV/caption, presets, and PDF updated.
 
+P365 [2026-07-28] PORTAL-SEEDED CASCADE ON WIKI: NULL — third attack shape on the loose band, same mechanism.
+  Test: SBANN_PORTAL_FILE+PORTAL_KEEP in the normal cascade (portals.select reps replace the scan pool as
+  beam seeds, vq.rs:4805). One-load run (peer runner, load ~10.4, best-of-5, full NQ=1000):
+    pk1: 0.9104@745  0.9349@613  0.9517@450   pk2: 0.9319@614  0.9513@456  0.9644@296
+    pk4: 0.9504@472  0.9647@317  0.9768@182   (p=16/32/64, M64/ke64/tf900)
+  VERDICT: strictly dominated by the ordinary cascade everywhere (0.9349@613 vs champion 0.9354@859;
+  0.9644@296 vs 0.9690@610). Seeds-only pools pay scattered 512B beam evals for exactly the coverage the
+  contiguous cell scan streams at ~5x the byte rate. With P361 (walk), P364 (graph-to-cell votes x2), and
+  the 288-config cascade grid, the wiki 0.93-0.953 band has now survived FIVE attack shapes — all failing
+  by the same Law-1 mechanism (scattered high-d evals). Remaining structural lever: LOW-RANK NAV sidecar
+  (cut the 512B/row toll itself; d=1024 -> R=256 i8 = 256B/row); implementation delegated, gate =
+  P341-style containment on a 1M prefix before any 35M build.
+  P362 status: CONFIRMED FINAL via one-load re-measure (0.9677@627 p22, 0.9690@610 p24, tfloor-invariant
+  900-1200); already promoted into the paper curve by P363/P364.
+
 === SESSION SUMMARY (current, 2026-07-12, through P334) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
