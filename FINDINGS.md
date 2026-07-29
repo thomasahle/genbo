@@ -5856,6 +5856,23 @@ P367 [2026-07-29] STAGE C EXECUTED: 26 audited dead flags deleted (net ~-900 LOC
   uncommitted ~36h after their session ended; my deletions were adapted to its restructure, so the
   states are inseparable. Harness authored by the peer session, not this one.
 
+P368 [2026-07-29] STAGE B MERGED: pool-source refactor — search = compose(sources) -> fixed tail.
+  vq.rs PoolSource enum {Stream(cell-scan pool) | PortalSeeds | FileSeeds(QSEED) | Expand(graph,M)};
+  env flags are now pure aliases that construct sources; one shared fixed-tail dispatch (pool_tail).
+  Net +78 LOC (doc block + enum + constructors bought out the duplicated tail dispatch). No flag
+  added/removed; nav tiers + round_walk untouched. Commits 613fefa/b3d0599/792dbd5 (worktree, ff-merged).
+  VERIFICATION (strongest gate yet): per-step bit-identity on 3 wiki-1M arms; 16/16 extended recalls
+  identical (BATCHSCAN off/on, QSEED, DEEP-1M portal batched/per-query, portal+qseed multi-source);
+  SBANN_RESULT_DUMP files BYTE-IDENTICAL on the two most complex arms; SQ4_INT8K/LOWRANK/roar_walk/
+  round_walk tiers separately A/B'd identical; 7/7 tests, zero warnings at every step.
+  STRUCTURE FINDINGS (the refactor as an instrument): (1) the two stream kinds differ in ID DOMAIN
+  (slot- vs orig-indexed), not just quantum — folding scan_tiles into the tail is a behavior change,
+  left in the harness; (2) per-cohort expansion is NOT a pure fold (hop-0 pre-expansion interleaves
+  stream and seed ingestion order) — best-first IS clean; historical schedule frozen under bit-identity;
+  (3) per-query driver never consumed QSEED (batched only) — now explicit in pool_tail(qid: Option).
+  A-B-C COMPLETE: planner (78% retrodiction) + deletions (-900 LOC, 141->116 flags) + this abstraction.
+  (Delegated agent in isolated worktree; reviewed and ff-merged.)
+
 === SESSION SUMMARY (current, 2026-07-12, through P334) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
