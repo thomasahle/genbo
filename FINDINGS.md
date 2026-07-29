@@ -5824,6 +5824,24 @@ P365 [2026-07-28] PORTAL-SEEDED CASCADE ON WIKI: NULL — third attack shape on 
   P362 status: CONFIRMED FINAL via one-load re-measure (0.9677@627 p22, 0.9690@610 p24, tfloor-invariant
   900-1200); already promoted into the paper curve by P363/P364.
 
+P366 [2026-07-29, PROVISIONAL pending quiet band ABBA] LOWRANK-NAV: rank-256 PCA nav sidecar lands;
+  gate PASSED — the first lever that attacks the wiki scattered-eval mechanism instead of avoiding it.
+  Design: PCA-256 of the int8 base (explained var 0.80-0.86), per-dim p99.9 symmetric scales, codes
+  store y*scale (query folds the division once — SQ4_STEP pattern), beam neighbor scoring becomes a
+  VNNI int8 dot over 256B (4 lines) vs SQ4's 512B (8 lines). Dispatch LOWRANK>SQ4>PQ4>RBQ>int8;
+  SQ4_INT8K escalation composes; scan/rescore/rerank untouched; champion bit-identical flags-off
+  (verified vs pristine-HEAD build). Commit d68d344 (delegated agent; reviewed).
+  GATE (wiki-1M, P341 protocol, float-IP top-2100 unions): containment of float top-10 in nav top-K:
+    R=128: .8740/.9445/.9765 (K=64/128/256)   R=192: .9530/.9830/.9950
+    R=256: .9820/.9965/1.000  <- knee, PASS   R=320: .9945/.9995/1.000   SQ4: 1.000 everywhere
+  1M engine A/B: lowrank alone -.012; with i8k256 escalation -.0015..-.0045 — containment-consistent.
+  35M sidecar: lowrank256.side 8.96GB (588s build). E2E smoke clean (0.9320 loose config, loaded window).
+  Law-1 prediction: beam evals 8->4 lines halves the scattered term; gains should concentrate at loose
+  configs (T250 ladder) where beam share peaks. Band ABBA (L/S/S/L x 4 configs) armed quiet-gated.
+  Also running: k96 seeded ND graph (nd cap raised 64->128, k<=64 builds byte-identical) — edge-budget
+  law attack on the same band; DESIGN_LAWS.md + tuned_optima.md + flag_audit.md banked (Stage A/C prep);
+  Stage C deletion pass (26 audited flags) delegated on the committed tree.
+
 === SESSION SUMMARY (current, 2026-07-12, through P334) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
