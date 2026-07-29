@@ -270,26 +270,6 @@ impl Pq {
         }
     }
 
-    pub fn query_lut_f32(&self, q: &[f32]) -> Vec<i8> {
-        let m = self.m;
-        let mut f = vec![0.0f32; m * 16];
-        for sub in 0..m {
-            let off = sub * self.dpb;
-            let qs = &q[off..off + self.dpb];
-            let mut mean = 0.0f32;
-            for c in 0..16 {
-                let dd = sub_l2f(qs, &self.cent[(sub * 16 + c) * self.dpb..(sub * 16 + c) * self.dpb + self.dpb]);
-                f[sub * 16 + c] = dd;
-                mean += dd;
-            }
-            mean /= 16.0;
-            for c in 0..16 { f[sub * 16 + c] -= mean; }
-        }
-        let maxabs = f.iter().fold(0.0f32, |a, &v| a.max(v.abs())).max(1e-9);
-        let scale = 100.0 / (maxabs * (m as f32).sqrt());
-        f.iter().map(|&v| (v * scale).round().clamp(-127.0, 127.0) as i8).collect()
-    }
-
     /// int16 LUT (UNCENTERED positive distances, scaled so the worst-case sum just fits i16 ->
     /// i16 accumulation never saturates, full ~15-bit resolution). Much finer ranking than the i8
     /// LUT -> far fewer exact reranks (the LUT16 trick; pairs with block_adc_i16 / _avx2).
@@ -336,31 +316,6 @@ impl Pq {
         }
         let scale = 127.0 / maxrange.max(1e-9);
         f.iter().map(|&v| (v * scale).round().clamp(0.0, 127.0) as i8).collect()
-    }
-
-    /// ASYMMETRIC MIPS LUT (int8, sqrt(m)-scaled like the L2 i8 LUT): -<q_sub,cent> centered, for the
-    /// FAST i8 scan (1 vpshufb/subspace vs the i16 path's 2). Coarser ranking, but for OOD the exact-IP
-    /// rerank fixes the final order -> trades scan-resolution for ~2x scan speed (the OOD bottleneck).
-    pub fn query_lut_f32_ip_i8(&self, q: &[f32]) -> Vec<i8> {
-        let m = self.m;
-        let mut f = vec![0.0f32; m * 16];
-        for sub in 0..m {
-            let off = sub * self.dpb;
-            let qs = &q[off..off + self.dpb];
-            let mut mean = 0.0f32;
-            for c in 0..16 {
-                let ct = &self.cent[(sub * 16 + c) * self.dpb..(sub * 16 + c) * self.dpb + self.dpb];
-                let mut dot = 0.0f32;
-                for k in 0..self.dpb { dot += qs[k] * ct[k]; }
-                f[sub * 16 + c] = -dot;
-                mean += -dot;
-            }
-            mean /= 16.0;
-            for c in 0..16 { f[sub * 16 + c] -= mean; }
-        }
-        let maxabs = f.iter().fold(0.0f32, |a, &v| a.max(v.abs())).max(1e-9);
-        let scale = 100.0 / (maxabs * (m as f32).sqrt());
-        f.iter().map(|&v| (v * scale).round().clamp(-127.0, 127.0) as i8).collect()
     }
 
     /// FAST-SCAN ASYMMETRIC MIPS LUT (int8, int16-accumulating): like query_lut_f32_i16_ip but encoded
@@ -520,134 +475,6 @@ pub struct ResidPq {
     pub dpb: usize,
     pub m: usize,       // d/dpb subspaces; code = m bytes/vector
     pub cent: Vec<f32>, // m*256*dpb centroids (row-major: [(sub*256+c)*dpb + k])
-}
-
-impl ResidPq {
-    /// Train 256-centroid codebooks per subspace via a few Lloyd iterations on f32 rows (n x d).
-    /// Parallel over subspaces (256-way assignment is 16x the 4-bit cost, so we fan it out).
-    pub fn train_f32(data: &[f32], d: usize, dpb: usize, n: usize, iters: usize) -> ResidPq {
-        assert!(d % dpb == 0);
-        let m = d / dpb;
-        let nc = 256usize;
-        use rayon::prelude::*;
-        let subcents: Vec<Vec<f32>> = (0..m).into_par_iter().map(|sub| {
-            let off = sub * dpb;
-            let mut cent = vec![0f32; nc * dpb];
-            let mut seed = 0x9e37_79b9_7f4a_7c15u64 ^ ((sub as u64) << 32);
-            for c in 0..nc {
-                seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1);
-                let id = (seed >> 11) as usize % n;
-                cent[c * dpb..c * dpb + dpb].copy_from_slice(&data[id * d + off..id * d + off + dpb]);
-            }
-            for _ in 0..iters {
-                let mut sum = vec![0f64; nc * dpb];
-                let mut cnt = vec![0u32; nc];
-                for i in 0..n {
-                    let xs = &data[i * d + off..i * d + off + dpb];
-                    let mut best = f32::INFINITY;
-                    let mut bc = 0usize;
-                    for c in 0..nc {
-                        let dd = sub_l2f(xs, &cent[c * dpb..c * dpb + dpb]);
-                        if dd < best { best = dd; bc = c; }
-                    }
-                    cnt[bc] += 1;
-                    for k in 0..dpb { sum[bc * dpb + k] += xs[k] as f64; }
-                }
-                for c in 0..nc {
-                    if cnt[c] > 0 { for k in 0..dpb { cent[c * dpb + k] = (sum[c * dpb + k] / cnt[c] as f64) as f32; } }
-                }
-            }
-            cent
-        }).collect();
-        let mut cent = vec![0f32; m * nc * dpb];
-        for sub in 0..m { cent[sub * nc * dpb..(sub + 1) * nc * dpb].copy_from_slice(&subcents[sub]); }
-        ResidPq { d, dpb, m, cent }
-    }
-
-    /// Encode one f32 vector to `m` 8-bit codes (nearest centroid per subspace).
-    pub fn encode_f32(&self, x: &[f32], out: &mut [u8]) {
-        let nc = 256usize;
-        for sub in 0..self.m {
-            let off = sub * self.dpb;
-            let xs = &x[off..off + self.dpb];
-            let mut best = f32::INFINITY;
-            let mut bc = 0u8;
-            for c in 0..nc {
-                let dd = sub_l2f(xs, &self.cent[(sub * nc + c) * self.dpb..(sub * nc + c) * self.dpb + self.dpb]);
-                if dd < best { best = dd; bc = c as u8; }
-            }
-            out[sub] = bc;
-        }
-    }
-
-    /// Per-query refine LUT: m*256 f32 squared-L2 dists q_sub -> each subspace centroid.
-    pub fn query_lut_f32(&self, q: &[f32]) -> Vec<f32> {
-        let nc = 256usize;
-        let mut lut = vec![0f32; self.m * nc];
-        for sub in 0..self.m {
-            let off = sub * self.dpb;
-            let qs = &q[off..off + self.dpb];
-            for c in 0..nc {
-                lut[sub * nc + c] = sub_l2f(qs, &self.cent[(sub * nc + c) * self.dpb..(sub * nc + c) * self.dpb + self.dpb]);
-            }
-        }
-        lut
-    }
-
-    /// IP refine LUT: per-subspace -<q_sub, cent[c]> so adc() sums to -<q, decode8(code)> (smaller =
-    /// larger inner product). For OOD/MIPS: the 8-bit refine re-ranks IP candidates by APPROX IP, so it
-    /// can shrink the exact raw-IP rerank depth the same way the L2 LUT does for msspacev.
-    pub fn query_lut_f32_ip(&self, q: &[f32]) -> Vec<f32> {
-        let nc = 256usize;
-        let mut lut = vec![0f32; self.m * nc];
-        for sub in 0..self.m {
-            let off = sub * self.dpb;
-            let qs = &q[off..off + self.dpb];
-            for c in 0..nc {
-                let ct = &self.cent[(sub * nc + c) * self.dpb..(sub * nc + c) * self.dpb + self.dpb];
-                let mut dot = 0f32;
-                for k in 0..self.dpb { dot += qs[k] * ct[k]; }
-                lut[sub * nc + c] = -dot;
-            }
-        }
-        lut
-    }
-
-    /// Refined approx distance ||q - decode8(code)||^2 from the precomputed query LUT.
-    #[inline]
-    pub fn adc(&self, code: &[u8], lut: &[f32]) -> f32 {
-        let nc = 256usize;
-        let mut s = 0f32;
-        for sub in 0..self.m { s += lut[sub * nc + code[sub] as usize]; }
-        s
-    }
-}
-
-/// Self-test: refine ADC (LUT path) must equal the brute-force reconstruct-then-L2 for a random
-/// query + code. Pure scalar, but guards the LUT indexing / decode wiring.
-pub fn selftest_resid(d: usize, dpb: usize) -> bool {
-    if d % dpb != 0 { return true; }
-    let m = d / dpb;
-    let mut seed = 0x1234_9e37u64;
-    let mut nb = || { seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1); (((seed >> 33) as i64 % 255) - 127) as f32 };
-    let n = 600usize;
-    let data: Vec<f32> = (0..n * d).map(|_| nb()).collect();
-    let rpq = ResidPq::train_f32(&data, d, dpb, n, 2);
-    let q: Vec<f32> = (0..d).map(|_| nb()).collect();
-    let lut = rpq.query_lut_f32(&q);
-    let mut code = vec![0u8; m];
-    rpq.encode_f32(&data[0..d], &mut code);
-    let via_lut = rpq.adc(&code, &lut);
-    // brute force: reconstruct and L2
-    let mut brute = 0f32;
-    for sub in 0..m {
-        let c = code[sub] as usize;
-        for k in 0..dpb {
-            let e = q[sub * dpb + k] - rpq.cent[(sub * 256 + c) * dpb + k];
-            brute += e * e;
-        }
-    }
-    (via_lut - brute).abs() <= 1e-2 * (1.0 + brute.abs())
 }
 
 /// Pack the codes of 16 points (each `m` bytes) into a block: m/2 groups of 16 bytes,

@@ -390,11 +390,7 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
     // Routing cost/query ~= C0 + B0*(Kf/C0); the default C0=sqrt(Kf), B0=C0/4 is one point on that curve.
     let c0 = std::env::var("SBANN_C0").ok().and_then(|s| s.parse().ok()).unwrap_or(cb);
     let b0 = std::env::var("SBANN_B0").ok().and_then(|s| s.parse().ok()).unwrap_or((cb / 4).max(8));
-    // OOD-aware routing: train the cells on a SEPARATE distribution (e.g. query.learn) so OOD
-    // queries route to cells holding their true neighbors. Index is still BUILT on the base `ds`.
-    let route_path = std::env::var("SBANN_ROUTE_TRAIN").unwrap_or_else(|_| base.to_string());
-    let dr = I8Bin::open(&route_path).expect("route-train");
-    if route_path != base { println!("  [OOD routing trained on {route_path} n={}]", dr.nb); }
+    let dr = I8Bin::open(base).expect("route-train");
 
     let router: Box<dyn vq::Router> = match router_s {
         "flat" => Box::new(vq::FlatIvf::train(&dr, c, mu.clone(), 15)),
@@ -659,21 +655,11 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
         } else {
             vq::GRAPH_KEDGE.store(k.min(32), Relaxed);
         }
-        // ADAPT-STOP (P342): per-query adaptive beam termination; value = i32 margin on the int8 bound.
-        if let Ok(v) = std::env::var("SBANN_ADAPT_STOP") {
-            vq::ADAPT_STOP_ON.store(true, Relaxed);
-            vq::ADAPT_STOP_MARGIN.store(v.parse().unwrap_or(0), Relaxed);
-        }
-        // ADAPT-POOL (P342b): patience C for adaptive rescore depth over apq4-ranked pool rows.
-        if let Ok(v) = std::env::var("SBANN_ADAPT_POOL") {
-            vq::ADAPT_POOL.store(v.parse().expect("SBANN_ADAPT_POOL"), Relaxed);
-        }
         // SQ4 int8 escalation width (P343c).
         if let Ok(v) = std::env::var("SBANN_SQ4_INT8K") {
             vq::SQ4_INT8K.store(v.parse().expect("SBANN_SQ4_INT8K"), Relaxed);
         }
         if let Ok(v) = std::env::var("SBANN_GRAPH_PFDIST") { vq::GRAPH_PFDIST.store(v.parse().expect("SBANN_GRAPH_PFDIST"), Relaxed); }
-        if let Ok(v) = std::env::var("SBANN_GRAPH_SORT") { vq::GRAPH_SORT.store(v != "0", Relaxed); }
         if let Ok(v) = std::env::var("SBANN_SPLIT_RESCORE") { vq::SPLIT_RESCORE.store(v != "0", Relaxed); }
         // QSEED per-query seed table (SBANN_SEED_IDS_FILE): header <nq:u32,S:u32> then nq*S u32 seed base-ids.
         if let Ok(sf) = std::env::var("SBANN_SEED_IDS_FILE") {
@@ -684,25 +670,6 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
                 .map(|c| u32::from_le_bytes([c[0], c[1], c[2], c[3]])).collect();
             println!("  [QSEED] {sf}  nq={snq} S={s}");
             let _ = vq::SEED_IDS.set((s, data));
-        }
-        // RBQ-TIER (SBANN_RBQ_NAV): build the resident 1-bit sign store (bit i = base coord i >= 0), by orig.
-        if std::env::var("SBANN_RBQ_NAV").is_ok() {
-            let dd = ds.d; let bpr = (dd + 7) / 8;
-            // RBQ-TIER: random orthonormal rotation P; store signs of P*x per base row (decorrelated 1-bit codes).
-            let p = vq::random_orthogonal(dd, 0x5ba4_u64);
-            let mut signs = vec![0u8; n * bpr];
-            signs.par_chunks_mut(bpr).enumerate().for_each(|(o, out)| {
-                let row = ds.row(o);
-                for j in 0..dd {
-                    let prow = &p[j * dd..j * dd + dd];
-                    let mut s = 0f32;
-                    for k in 0..dd { s += prow[k] * row[k] as f32; }
-                    if s >= 0.0 { out[j >> 3] |= 1u8 << (j & 7); }
-                }
-            });
-            println!("  [RBQ-NAV] rotated signs nb={n} bpr={bpr}");
-            let _ = vq::RBQ_ROT.set(p);
-            let _ = vq::RBQ_SIGNS.set((bpr, signs));
         }
         // SQ4-RUNG (P343, flag-gated): nibble-packed 4-bit truncation of the int8 rows (d/2 B/row = half
         // the cache lines). Union nav + selection score via dot_sq4_vnni; int8 stage skipped; float
@@ -801,32 +768,6 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
             let lr = vq::LOWRANK.get().expect("SBANN_LOWRANK_NAV requires SBANN_LOWRANK_FILE");
             vq::LOWRANK_NAV_ON.store(true, Relaxed);
             println!("  [LOWRANK-NAV] beam neighbor scoring -> rank-{} int8 dots ({}B/row)", lr.r, lr.r);
-        }
-        // SYMPACK-B (P344, flag-gated): pack each node's ke neighbors' ids + SQ4 nibble codes into one
-        // contiguous block (ke*4 + ke*d/2 bytes) so a walk expansion is ONE sequential read (17ns/cand
-        // measured) instead of ke scattered gathers (94ns/row). Requires SBANN_SQ4_NAV (flat codes are
-        // the entry scorer + code source). SymphonyQG-style layout — cited transplant.
-        if std::env::var("SBANN_SYMPACK").is_ok() {
-            let sq4codes = vq::SQ4.get().expect("SBANN_SYMPACK requires SBANN_SQ4_NAV");
-            let t0 = Instant::now();
-            let hb = ds.d / 2;
-            let ke = vq::GRAPH_KEDGE.load(Relaxed).clamp(1, k).min(64);
-            let blk = ke * 4 + ke * hb;
-            let mut blocks = vec![0u8; n * blk];
-            blocks.par_chunks_mut(blk).enumerate().for_each(|(o, out)| {
-                let nbs = &g.adj[o * k..o * k + ke];
-                for (j, &nb) in nbs.iter().enumerate() {
-                    out[j * 4..j * 4 + 4].copy_from_slice(&nb.to_le_bytes());
-                }
-                let cb = ke * 4;
-                for (j, &nb) in nbs.iter().enumerate() {
-                    if (nb as usize) >= n { continue; } // padded/sentinel graph ids: leave zero codes
-                    let s = nb as usize * hb;
-                    out[cb + j * hb..cb + (j + 1) * hb].copy_from_slice(&sq4codes[s..s + hb]);
-                }
-            });
-            println!("  [SYMPACK] blocks ke={ke} blk={blk}B total={}MB  setup={:.1}s", n * blk / 1_000_000, t0.elapsed().as_secs_f64());
-            let _ = vq::SYMPACK.set((ke, blk, blocks));
         }
         // PQ4-NAV (P341, flag-gated): plain 4-bit PQ sidecar (own codebook, independent of the index's
         // residual apq4 — this is what gate 1 validated as a LOWER bound). Nav + float-survivor selection
@@ -1031,12 +972,6 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
     let batch_chunk: usize = std::env::var("SBANN_BATCH_CHUNK").ok().and_then(|s| s.parse().ok()).filter(|&c| c >= 1)
         .unwrap_or_else(|| (nq / (4 * rayon::current_num_threads()).max(1)).clamp(125, 1000));
     let batch_verify = std::env::var("SBANN_BATCH_VERIFY").is_ok();
-    // SBANN_VNNI_AB: interleave VNNI off/on per (p,t) for a clean same-index rerank-kernel A/B.
-    let vnni_ab = std::env::var("SBANN_VNNI_AB").is_ok();
-    let modes: Vec<bool> = if vnni_ab { vec![false, true] } else { vec![crate::simd::VNNI_ON.load(std::sync::atomic::Ordering::Relaxed)] };
-    // SBANN_LUT_AB: interleave int16 (false) vs i8 (true) scan precision per (p,t) on one index.
-    let lut_ab = std::env::var("SBANN_LUT_AB").is_ok();
-    let lmodes: Vec<bool> = if lut_ab { vec![false, true] } else { vec![vq::LUT16_OFF.load(std::sync::atomic::Ordering::Relaxed)] };
     // Diagnostic layout gate: capture the exact graph-expanded union for each stable batched query id.
     // Single-config only so the file has an unambiguous policy and pool/graph boundary.
     let union_dump = std::env::var("SBANN_DUMP_UNIONS").ok();
@@ -1045,7 +980,7 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
         assert!(graph_ref.is_some(), "SBANN_DUMP_UNIONS requires SBANN_GRAPH_FILE");
         assert!(fbase.is_some(), "SBANN_DUMP_UNIONS requires SBANN_FLOAT_RERANK");
         assert!(
-            plist.len() == 1 && tlist.len() == 1 && klist.len() == 1 && !vnni_ab && !lut_ab,
+            plist.len() == 1 && tlist.len() == 1 && klist.len() == 1,
             "SBANN_DUMP_UNIONS requires one PLIST/TMUL/CASCADE_K configuration"
         );
         vq::reset_union_trace(nq);
@@ -1057,53 +992,10 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
             "SBANN_DUMP_CONFIDENCE requires batched graph float-rerank"
         );
         assert!(
-            plist.len() == 1 && tlist.len() == 1 && klist.len() == 1 && !vnni_ab && !lut_ab,
+            plist.len() == 1 && tlist.len() == 1 && klist.len() == 1,
             "SBANN_DUMP_CONFIDENCE requires one search configuration"
         );
         vq::reset_confidence_trace(nq);
-    }
-    // IDEA #4 refine sweep: with SBANN_RESID, sweep (refine off/on) x rr_depth (=raw-rerank depth)
-    // at a FIXED refine pool t_surv, on ONE built index. Reports recall vs raw reads for both, so the
-    // refined order's depth saving (same recall, fewer raw reads) is a clean same-index A/B.
-    if vq::RESID.load(std::sync::atomic::Ordering::Relaxed) {
-        let mr = idx.resid_pq.as_ref().map(|p| p.m).unwrap_or(0);
-        let tmul0 = *tlist.first().unwrap_or(&tmul);
-        for &p in &plist {
-            let t_surv: usize = std::env::var("SBANN_TSURV").ok().and_then(|s| s.parse().ok())
-                .unwrap_or((p * tmul0).max(*plist.iter().max().unwrap_or(&p) * tmul0).max(2000));
-            let rrlist: Vec<usize> = match std::env::var("SBANN_RRLIST") {
-                Ok(s) => s.split(',').filter_map(|x| x.trim().parse().ok()).collect(),
-                Err(_) => vec![10, 25, 50, 100, 200, 400, 800, t_surv],
-            };
-            println!("  [RESID p={p} t_surv={t_surv} m_r={mr}B/vec raw={}B/vec]", ds.d);
-            for refine in [false, true] {
-                for &rr in &rrlist {
-                    let rr = rr.min(t_surv);
-                    let mut best_dt = f64::INFINITY;
-                    let mut res: Vec<Vec<u32>> = Vec::new();
-                    for _ in 0..reps.max(1) {
-                        let st = Instant::now();
-                        let r: Vec<Vec<u32>> = (0..nq).into_par_iter().map(|i| {
-                            let cells = idx.router.probe(qs.row(i), p);
-                            idx.scan_rerank_resid(&ds, qs.row(i), &cells, t_surv, rr, refine, 10)
-                        }).collect();
-                        best_dt = best_dt.min(st.elapsed().as_secs_f64());
-                        res = r;
-                    }
-                    let mut hit = 0usize;
-                    for i in 0..nq {
-                        let truth: std::collections::HashSet<u32> = gids[i * gk..i * gk + 10].iter().copied().collect();
-                        hit += res[i].iter().take(10).filter(|id| truth.contains(id)).count();
-                    }
-                    // raw-read-equiv bytes/query: refine path also reads t_surv*m_r refine bytes.
-                    let raw_bytes = rr * ds.d + if refine { t_surv * mr } else { 0 };
-                    let tag = if refine { "refine" } else { "plain " };
-                    println!("    {tag} rr={rr:5}: recall@10={:.4}  raw_reads={rr:5}  bytes/q={raw_bytes:8}  QPS={:.0}",
-                        hit as f64 / (nq * 10) as f64, nq as f64 / best_dt);
-                }
-            }
-        }
-        return;
     }
     // PORTAL-TILE SCAN (graph-free loose-recall gate): route many fine cells,
     // globally rank their spherical portal buckets, stream the selected
@@ -1324,12 +1216,58 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
     // steer (walk = diagnostic-only) without sign-off. Until the user adjudicates the headline
     // question, the walk runs ONLY under an explicit SBANN_ROARMODE (the L-ladder below is the
     // measured P353 default when the user opts in with SBANN_ROARMODE=preset).
-    let adaptive_walk = std::env::var("SBANN_ROARMODE").ok().map(|v| {
-        if v == "preset" { "25,34,44,53,66,76,88".to_string() } else { v }
+    // SBANN_ROAR_PLAN is the exact-point, one-load measurement form:
+    //   label:L:rounds:frontier;...
+    // Entries are executed in the supplied order and duplicates are preserved,
+    // allowing forward/reverse controls without reloading the resident stack.
+    let roar_plan_spec = std::env::var("SBANN_ROAR_PLAN").ok();
+    let adaptive_walk = roar_plan_spec.as_ref().map(|_| String::new()).or_else(|| {
+        std::env::var("SBANN_ROARMODE").ok().map(|v| {
+            if v == "preset" { "25,34,44,53,66,76,88".to_string() } else { v }
+        })
     });
     if let Some(rl) = adaptive_walk {
         use std::sync::atomic::Ordering::Relaxed;
-        let llist: Vec<usize> = rl.split(',').filter_map(|x| x.trim().parse().ok()).filter(|&x: &usize| x >= 10).collect();
+        let default_rounds: usize = std::env::var("SBANN_ROAR_ROUNDS")
+            .ok()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(0);
+        let default_frontier: usize = std::env::var("SBANN_ROAR_FRONTIER")
+            .ok()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(16);
+        let walk_points: Vec<(String, usize, usize, usize)> =
+            if let Some(spec) = roar_plan_spec.as_deref() {
+                spec.split(';')
+                    .filter(|row| !row.trim().is_empty())
+                    .map(|row| {
+                        let fields: Vec<&str> = row.split(':').collect();
+                        assert_eq!(
+                            fields.len(),
+                            4,
+                            "SBANN_ROAR_PLAN row must be label:L:rounds:frontier, got {row:?}"
+                        );
+                        let parse = |index: usize, name: &str| {
+                            fields[index].parse::<usize>().unwrap_or_else(|_| {
+                                panic!("invalid {name} in SBANN_ROAR_PLAN row {row:?}")
+                            })
+                        };
+                        (
+                            fields[0].to_string(),
+                            parse(1, "L"),
+                            parse(2, "rounds"),
+                            parse(3, "frontier"),
+                        )
+                    })
+                    .collect()
+            } else {
+                rl.split(',')
+                    .filter_map(|value| value.trim().parse().ok())
+                    .filter(|&l: &usize| l >= 10)
+                    .map(|l| (String::new(), l, default_rounds, default_frontier))
+                    .collect()
+            };
+        assert!(!walk_points.is_empty(), "empty walk measurement plan");
         let graph = graph_ref.expect("SBANN_ROARMODE needs SBANN_GRAPH_FILE");
         let fb = fbase.as_ref().expect("SBANN_ROARMODE needs SBANN_FLOAT_RERANK + SBANN_FBASE/FQUERY");
         let n_entries: usize = std::env::var("SBANN_ROAR_ENTRIES").ok().and_then(|s| s.parse().ok()).unwrap_or(1);
@@ -1355,18 +1293,6 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
             .ok()
             .and_then(|s| s.parse().ok())
             .unwrap_or(0);
-        let fixed_rounds: usize = std::env::var("SBANN_ROAR_ROUNDS")
-            .ok()
-            .and_then(|s| s.parse().ok())
-            .unwrap_or(0);
-        let round_frontier: usize = std::env::var("SBANN_ROAR_FRONTIER")
-            .ok()
-            .and_then(|s| s.parse().ok())
-            .unwrap_or(16);
-        assert!(
-            fixed_rounds == 0 || vq::SYMPACK.get().is_none(),
-            "SBANN_ROAR_ROUNDS is incompatible with SBANN_SYMPACK"
-        );
         let portal_sq4 = vq::PORTAL_SQ4.get();
         let online_portals = if portal_cells > 0 {
             Some(
@@ -1410,7 +1336,7 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
             "medoid"
         };
         println!(
-            "  [ROARMODE] graph k={} kedge={} entries={etag}(x{n_entries}) dir={dirn} medoid={medoid} portal={portal_cells}x{portal_buckets}x{portal_rows}{} max_hops={max_hops} rounds={fixed_rounds} frontier={round_frontier} setup={:.1}s",
+            "  [ROARMODE] graph k={} kedge={} entries={etag}(x{n_entries}) dir={dirn} medoid={medoid} portal={portal_cells}x{portal_buckets}x{portal_rows}{} max_hops={max_hops} points={} setup={:.1}s",
             graph.k,
             vq::GRAPH_KEDGE.load(Relaxed).min(graph.k),
             if portal_sq4.is_some() {
@@ -1418,10 +1344,11 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
             } else {
                 ""
             },
+            walk_points.len(),
             t0.elapsed().as_secs_f64()
         );
         let ipm = vq::IP_MODE.load(Relaxed);
-        for &l in &llist {
+        for (label, l, fixed_rounds, round_frontier) in walk_points {
             vq::ROAR_EVALS.store(0, Relaxed);
             vq::ROAR_HOPS.store(0, Relaxed);
             let mut best_dt = f64::INFINITY;
@@ -1460,7 +1387,7 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
                         ebuf[0] = medoid;
                         &ebuf[..1]
                     };
-                    let mut walk = if fixed_rounds > 0 {
+                    let walk = if fixed_rounds > 0 {
                         vq::round_walk(
                             &ds,
                             graph,
@@ -1470,19 +1397,9 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
                             fixed_rounds,
                             round_frontier,
                         )
-                    } else if vq::SYMPACK.get().is_some() {
-                        // SYMPACK: SQ4-guided block walk -> int8 re-rank of the top-L -> top-kk to float
-                        let w = vq::sympack_walk(&ds, qs.row(i), l, entries);
-                        let mut w: Vec<(i32, u32)> = w.iter().map(|&(_, o)| {
-                            (simd::negdot_i8(qs.row(i), ds.row(o as usize)), o)
-                        }).collect();
-                        w.sort_unstable();
-                        w
                     } else {
                         vq::roar_walk(&ds, graph, qs.row(i), l, entries, max_hops)
                     };
-                    let kkw = vq::CASCADE_K.load(std::sync::atomic::Ordering::Relaxed);
-                    if vq::SYMPACK.get().is_some() && kkw > 0 && kkw < walk.len() { walk.truncate(kkw); }
                     // float rerank of the walk's top-L (exact tail ordering, CASCADE-style)
                     let qv = &fqf[i * ds.d..(i + 1) * ds.d];
                     let mut scored: Vec<(f32, u32)> = walk.iter().map(|&(_, o)| {
@@ -1506,7 +1423,7 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
                 hit += res[i].iter().take(10).filter(|id| truth.contains(id)).count();
             }
             let nrun = (nq * reps.max(1)) as u64;
-            println!("  RW L={l:4} e={etag}: recall@10={:.4}  QPS={:.0} (best/{reps})  evals/q={}  hops/q={}",
+            println!("  RW L={l:4} e={etag}: recall@10={:.4}  QPS={:.0} (best/{reps})  evals/q={}  hops/q={} [plan={label} R={fixed_rounds} B={round_frontier}]",
                 hit as f64 / (nq * 10) as f64, nq as f64 / best_dt,
                 vq::ROAR_EVALS.load(Relaxed) / nrun, vq::ROAR_HOPS.load(Relaxed) / nrun);
         }
@@ -1523,17 +1440,88 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
             }
         }
     }
-    for &(portal_keep, gm, ke, floor) in &graph_policies {
+    // Exact arbitrary operating-point plan, used to rebuild complete frontiers
+    // under one resident load:
+    // label:p:tm:floor:K:M:kedge:hops:bestfirst:portal_keep:sq4_int8k;...
+    // The legacy list variables above still form the plan when this is unset.
+    let search_points: Vec<(
+        String,
+        usize,
+        usize,
+        usize,
+        usize,
+        usize,
+        usize,
+        usize,
+        bool,
+        usize,
+        usize,
+    )> = if let Ok(spec) = std::env::var("SBANN_SEARCH_PLAN") {
+        spec.split(';')
+            .filter(|row| !row.trim().is_empty())
+            .map(|row| {
+                let fields: Vec<&str> = row.split(':').collect();
+                assert_eq!(
+                    fields.len(),
+                    11,
+                    "SBANN_SEARCH_PLAN row must have 11 colon-separated fields, got {row:?}"
+                );
+                let parse = |index: usize, name: &str| {
+                    fields[index].parse::<usize>().unwrap_or_else(|_| {
+                        panic!("invalid {name} in SBANN_SEARCH_PLAN row {row:?}")
+                    })
+                };
+                (
+                    fields[0].to_string(),
+                    parse(1, "p"),
+                    parse(2, "tm"),
+                    parse(3, "floor"),
+                    parse(4, "K"),
+                    parse(5, "M"),
+                    parse(6, "kedge"),
+                    parse(7, "hops"),
+                    parse(8, "bestfirst") != 0,
+                    parse(9, "portal_keep"),
+                    parse(10, "sq4_int8k"),
+                )
+            })
+            .collect()
+    } else {
+        let mut points = Vec::new();
+        for &(portal_keep, gm, ke, floor) in &graph_policies {
+            for &p in &plist {
+                for &tm in &tlist {
+                    for &kk in &klist {
+                        points.push((
+                            String::new(),
+                            p,
+                            tm,
+                            floor,
+                            kk,
+                            gm,
+                            ke,
+                            vq::GRAPH_HOPS.load(std::sync::atomic::Ordering::Relaxed),
+                            vq::GRAPH_BESTFIRST.load(std::sync::atomic::Ordering::Relaxed),
+                            portal_keep,
+                            vq::SQ4_INT8K.load(std::sync::atomic::Ordering::Relaxed),
+                        ));
+                    }
+                }
+            }
+        }
+        points
+    };
+    assert!(!search_points.is_empty(), "empty search measurement plan");
+    for (label, p, tm, floor, kk, gm, ke0, hops, bestfirst, portal_keep, sq4_int8k)
+        in search_points
+    {
+        let ke = graph_ref.map(|graph| ke0.min(graph.k)).unwrap_or(ke0);
         vq::PORTAL_KEEP.store(portal_keep, std::sync::atomic::Ordering::Relaxed);
         vq::GRAPH_M.store(gm, std::sync::atomic::Ordering::Relaxed);
         vq::GRAPH_KEDGE.store(ke, std::sync::atomic::Ordering::Relaxed);
-        for &p in &plist {
-      for &tm in &tlist {
-       for &lm in &lmodes {
-        vq::LUT16_OFF.store(lm, std::sync::atomic::Ordering::Relaxed);
-       for &vm in &modes {
-        crate::simd::VNNI_ON.store(vm, std::sync::atomic::Ordering::Relaxed);
-       for &kk in &klist {
+        vq::GRAPH_HOPS.store(hops, std::sync::atomic::Ordering::Relaxed);
+        vq::GRAPH_BESTFIRST.store(bestfirst, std::sync::atomic::Ordering::Relaxed);
+        vq::SQ4_INT8K.store(sq4_int8k, std::sync::atomic::Ordering::Relaxed);
         vq::CASCADE_K.store(kk, std::sync::atomic::Ordering::Relaxed);
         // survivors kept for exact rerank (tmul tunes recall/speed). The rerank floor was 1000 but that
         // was a ~2x QPS@90% HANDICAP: int16 LUT ranks well enough that t_surv=p*tmul (~256-480) holds
@@ -1629,22 +1617,13 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
             let truth: std::collections::HashSet<u32> = gids[i * gk..i * gk + 10].iter().copied().collect();
             hit += res[i].iter().take(10).filter(|id| truth.contains(id)).count();
         }
-        let vtag = if vnni_ab { if vm { " VNNI" } else { " AVX2" } } else { "" };
-        let ltag = if lut_ab { if lm { " i8" } else { " i16" } } else { "" };
         let ktag = if vq::CASCADE.load(std::sync::atomic::Ordering::Relaxed) { format!(" K={kk}") } else { String::new() };
         println!(
-            "  p={p:5} t={tm:3}{ltag}{vtag}{ktag}: recall@10={:.4}  QPS={:.0} (best/{reps}) [M={gm} ke={ke} tf={floor} pk={portal_keep}]",
+            "  p={p:5} t={tm:3}{ktag}: recall@10={:.4}  QPS={:.0} (best/{reps}) [plan={label} M={gm} ke={ke} h={hops} bf={} tf={floor} pk={portal_keep} sq4k={sq4_int8k}]",
             hit as f64 / (nq * 10) as f64,
-            nq as f64 / dt
+            nq as f64 / dt,
+            usize::from(bestfirst),
         );
-        if vq::ADAPT_STOP_ON.load(std::sync::atomic::Ordering::Relaxed) {
-            let stops = vq::PROF_ADAPT_STOPS.swap(0, std::sync::atomic::Ordering::Relaxed);
-            println!("      [adapt-stop] early-stopped {}/{} query-runs", stops, nq * reps.max(1));
-        }
-        if vq::ADAPT_POOL.load(std::sync::atomic::Ordering::Relaxed) > 0 {
-            let sk = vq::PROF_POOL_SKIPPED.swap(0, std::sync::atomic::Ordering::Relaxed);
-            println!("      [adapt-pool] skipped {} pool rows/query-run", sk / (nq * reps.max(1)) as u64);
-        }
         if prof {
             let r = vq::PROF_ROUTE_NS.load(std::sync::atomic::Ordering::Relaxed) as f64;
             let s = vq::PROF_SCAN_NS.load(std::sync::atomic::Ordering::Relaxed) as f64;
@@ -1667,11 +1646,6 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
                 grows / nq as f64 / reps as f64, nsrow,
                 sco / nq as f64 / reps as f64 / 1000.0, (c - sco).max(0.0) / nq as f64 / reps as f64 / 1000.0);
         }
-       }
-       }
-       }
-      }
-      }
     }
 }
 
@@ -1788,7 +1762,7 @@ fn build(path: &str, c: usize) {
 /// Interleaved A/B: build several hierk+opql indices, then bench them ROUND-ROBIN so competing
 /// configs are timed seconds apart (same box-load window) instead of ~15min apart across separate
 /// builds. This is the only way to get drift-free cross-config QPS on a contended box (FINDINGS P72).
-/// Configs via SBANN_CONFIGS="Kf:C0:b0,Kf:C0:b0,..."; p via SBANN_PLIST; reps via SBANN_REPS.
+/// Fixed config list "Kf:C0:b0,Kf:C0:b0"; p via SBANN_PLIST; reps via SBANN_REPS.
 fn abrun(base: &str, qpath: &str, gtpath: &str) {
     let ds = I8Bin::open(base).expect("base");
     let n = ds.nb;
@@ -1798,7 +1772,7 @@ fn abrun(base: &str, qpath: &str, gtpath: &str) {
     let mu: Vec<f32> = if std::env::var("SBANN_NOMU").is_ok() { vec![0f32; ds.d] } else { sum.iter().map(|s| (s / n as f64) as f32).collect() };
 
     // config = "Kf:C0:b0[:comp[:eta]]" (comp = opql|apq4|aopq|opql5|i8; eta = anisotropy strength).
-    let cfgs_s = std::env::var("SBANN_CONFIGS").unwrap_or_else(|_| "262144:1024:128,524288:2048:128".into());
+    let cfgs_s = "262144:1024:128,524288:2048:128".to_string();
     let cfgs: Vec<(usize, usize, usize, String, f32)> = cfgs_s.split(',').filter_map(|c| {
         let parts: Vec<&str> = c.split(':').collect();
         let v: Vec<usize> = parts.iter().take(3).filter_map(|x| x.trim().parse().ok()).collect();
@@ -1874,7 +1848,7 @@ fn abrun(base: &str, qpath: &str, gtpath: &str) {
 }
 
 /// Profile where query time goes (route vs scan vs rerank) for the champion config, single-threaded
-/// (clean per-phase timing), at each p in SBANN_PLIST. SBANN_CONFIGS first entry = Kf:C0:b0.
+/// (clean per-phase timing), at each p in SBANN_PLIST. Fixed Kf:C0:b0 config, opql compressor.
 fn prof(base: &str, qpath: &str, gtpath: &str) {
     let ds = I8Bin::open(base).expect("base");
     let n = ds.nb;
@@ -1882,18 +1856,13 @@ fn prof(base: &str, qpath: &str, gtpath: &str) {
         .fold(|| vec![0f64; ds.d], |mut a, i| { let r = ds.row(i); for k in 0..ds.d { a[k] += r[k] as f64; } a })
         .reduce(|| vec![0f64; ds.d], |mut a, b| { for k in 0..ds.d { a[k] += b[k]; } a });
     let mu: Vec<f32> = if std::env::var("SBANN_NOMU").is_ok() { vec![0f32; ds.d] } else { sum.iter().map(|s| (s / n as f64) as f32).collect() };
-    let cfg = std::env::var("SBANN_CONFIGS").unwrap_or_else(|_| "262144:2048:128".into());
+    let cfg = "262144:2048:128".to_string();
     let v: Vec<usize> = cfg.split(',').next().unwrap().split(':').filter_map(|x| x.trim().parse().ok()).collect();
     let (kf, c0, b0) = (v[0], v[1], v[2]);
-    let comp_s = std::env::var("SBANN_COMP").unwrap_or_else(|_| "opql".into());
     let router: Box<dyn vq::Router> = Box::new(vq::HierRouter::train_hkmeans(&ds, kf, c0, b0, mu.clone()));
-    let comp: Box<dyn vq::Compressor> = match comp_s.as_str() {
-        "apq4" => Box::new(vq::Apq4::train(&ds, 2, 6, 4.0)),
-        "aopq" => Box::new(vq::Opq4::train_aopq(&ds, 2, 6, 8, 4.0)),
-        _ => Box::new(vq::Opq4::train_learned(&ds, 2, 6, 8)),
-    };
+    let comp: Box<dyn vq::Compressor> = Box::new(vq::Opq4::train_learned(&ds, 2, 6, 8));
     let idx = vq::Index::build(router, comp, &ds, 2);
-    println!("[prof Kf={kf} C0={c0} b0={b0} comp={comp_s}] built");
+    println!("[prof Kf={kf} C0={c0} b0={b0} comp=opql] built");
     let qs = I8Bin::open(qpath).expect("q");
     let (gnq, _gk, _gids) = read_gt(gtpath);
     let nq = qs.nb.min(gnq).min(std::env::var("SBANN_NQ").ok().and_then(|s| s.parse().ok()).unwrap_or(1000));
@@ -1928,7 +1897,7 @@ fn rbench(base: &str, qpath: &str, gtpath: &str) {
         .fold(|| vec![0f64; ds.d], |mut a, i| { let r = ds.row(i); for k in 0..ds.d { a[k] += r[k] as f64; } a })
         .reduce(|| vec![0f64; ds.d], |mut a, b| { for k in 0..ds.d { a[k] += b[k]; } a });
     let mu: Vec<f32> = if std::env::var("SBANN_NOMU").is_ok() { vec![0f32; ds.d] } else { sum.iter().map(|s| (s / n as f64) as f32).collect() };
-    let cfg = std::env::var("SBANN_CONFIGS").unwrap_or_else(|_| "262144:4096:128".into());
+    let cfg = "262144:4096:128".to_string();
     let v: Vec<usize> = cfg.split(',').next().unwrap().split(':').filter_map(|x| x.trim().parse().ok()).collect();
     let (kf, c0, b0) = (v[0], v[1], v[2]);
     let router: Box<dyn vq::Router> = Box::new(vq::HierRouter::train_hkmeans(&ds, kf, c0, b0, mu.clone()));
@@ -2694,8 +2663,8 @@ fn default_probe_ladder(
 ///                          serialization change (fold the sidecar into the index once the lever lands).
 ///   • union-trim  (P214) — UNCONDITIONAL on the graph path (no flag): the pool-dedup + neighbour-union
 ///                          is one open-addressing hash pass with adjacency prefetch, bit-identical to
-///                          the old two-pass (verified 2000/2000). SBANN_GRAPH_SORT=1 forces the sorted
-///                          gather (default off — deep prefetch wins, +3.7% e2e).
+///                          the old two-pass (verified 2000/2000). Unsorted gather + deep prefetch wins
+///                          (+3.7% e2e vs sorted; the sorted-gather A/B arm was removed).
 ///   • t_surv      (P214/P215) — SBANN_TFLOOR=470 is the OOD graph-mode operating point at 1M (p=18).
 ///                          t_surv must scale with n: the 1M value CAPS recall at 10M (pool too shallow);
 ///                          10M wants t_surv≈2000 (P215). Trades against p at a marginal-cost balance.
@@ -2728,11 +2697,8 @@ fn default_probe_ladder(
 fn main() {
     let a: Vec<String> = std::env::args().collect();
     if std::env::var("SBANN_IP").is_ok() { vq::IP_MODE.store(true, std::sync::atomic::Ordering::Relaxed); }
-    if std::env::var("SBANN_POOLDEDUP").is_ok() { vq::POOLDEDUP.store(true, std::sync::atomic::Ordering::Relaxed); }
     if let Ok(s) = std::env::var("SBANN_DEDUP_A0") { if let Ok(v) = s.parse::<usize>() { vq::DEDUP_A0.store(v, std::sync::atomic::Ordering::Relaxed); } }
     if std::env::var("SBANN_PROFILE").is_ok() { vq::PROFILE.store(true, std::sync::atomic::Ordering::Relaxed); }
-    if let Ok(s) = std::env::var("SBANN_ROUTE_SDIM") { if let Ok(v) = s.parse::<usize>() { vq::ROUTE_SDIM.store(v, std::sync::atomic::Ordering::Relaxed); } }
-    if let Ok(s) = std::env::var("SBANN_ROUTE_SDIM0") { if let Ok(v) = s.parse::<usize>() { vq::ROUTE_SDIM0.store(v, std::sync::atomic::Ordering::Relaxed); } }
     if std::env::var("SBANN_ROUTE_FP16").is_ok() { assert!(simd::selftest_f16(1024) && simd::selftest_f16(200), "f16 kernel != scalar"); vq::ROUTE_FP16.store(true, std::sync::atomic::Ordering::Relaxed); }
     if let Ok(s) = std::env::var("SBANN_BEAM0") { if let Ok(v) = s.parse::<usize>() { vq::BEAM0.store(v, std::sync::atomic::Ordering::Relaxed); } }
     if std::env::var("SBANN_ROUTE_ADC").is_ok() { vq::ROUTE_ADC.store(true, std::sync::atomic::Ordering::Relaxed); }
@@ -2765,7 +2731,6 @@ fn main() {
             "  [CENTROID-GRAPH] graph={graph_path} k={k} ef={ef} landmarks={landmarks_path}"
         );
     }
-    if std::env::var("SBANN_NOLUT16").is_ok() { vq::LUT16_OFF.store(true, std::sync::atomic::Ordering::Relaxed); }
     if std::env::var("SBANN_FASTSCAN").is_ok() {
         assert!(pq::selftest_i8_fast(50) && pq::selftest_i8_fast(100), "fast-scan kernel != scalar!");
         vq::FASTSCAN.store(true, std::sync::atomic::Ordering::Relaxed);
@@ -2786,23 +2751,12 @@ fn main() {
         vq::FUSEDTOPK.store(true, std::sync::atomic::Ordering::Relaxed);
     }
     if std::env::var("SBANN_SCANDIAG").is_ok() { vq::SCANDIAG.store(true, std::sync::atomic::Ordering::Relaxed); }
-    // WALL-1 scattered-read levers (P189): SORTCELLS = monotonic scan order; PREFETCH = SW-prefetch next cell.
-    if std::env::var("SBANN_SORTCELLS").is_ok() { vq::SORTCELLS.store(true, std::sync::atomic::Ordering::Relaxed); }
     // PREFETCH (P189, champion default ON): SW-prefetch the next probed cell's blocks during the scan.
     // Recall-neutral (a pure hint). The QPS-critical survivor-gather prefetch is separate & unconditional
     // inline in the rerank kernels (vq.rs rerank_cascade_float / rerank_contig_float). SBANN_PREFETCH=0 off.
     if env_on("SBANN_PREFETCH", true) { vq::PREFETCH.store(true, std::sync::atomic::Ordering::Relaxed); }
     if let Ok(s) = std::env::var("SBANN_PFDIST") { if let Ok(v) = s.parse::<usize>() { vq::PFDIST.store(v, std::sync::atomic::Ordering::Relaxed); } }
     if let Ok(s) = std::env::var("SBANN_PFLINES") { if let Ok(v) = s.parse::<usize>() { vq::PFLINES.store(v, std::sync::atomic::Ordering::Relaxed); } }
-    if std::env::var("SBANN_USE512FS").is_ok() {
-        // 64-wide AVX-512 interleaved fast-scan (needs FASTSCAN to produce the Pq8 / i8s LUT path).
-        assert!(pq::selftest_i8_fast_avx512(50) && pq::selftest_i8_fast_avx512(100), "avx512-64w fast-scan kernel != scalar!");
-        if std::is_x86_feature_detected!("avx512f") && std::is_x86_feature_detected!("avx512bw") {
-            vq::USE512FS.store(true, std::sync::atomic::Ordering::Relaxed);
-        } else {
-            eprintln!("SBANN_USE512FS requested but avx512bw not detected; falling back to AVX2 fast-scan");
-        }
-    }
     // USE512I16 (P241, default ON where supported): 32-wide AVX-512 vpermw kernel for the Pq16
     // (int16-LUT) pair-scan — the path the m>128 scan-precision policy (P239) selects. Identical
     // distances to the 16-wide scan (selftest-asserted), so recall is unchanged; only touches
@@ -2812,14 +2766,6 @@ fn main() {
         assert!(pq::selftest_i16_avx512(50) && pq::selftest_i16_avx512(100) && pq::selftest_i16_avx512(384),
             "avx512-32w i16 pair-scan kernel != scalar!");
         vq::USE512I16.store(true, std::sync::atomic::Ordering::Relaxed);
-    }
-    if std::env::var("SBANN_VNNI").is_ok() {
-        assert!(simd::selftest_dot(200) && simd::selftest_dot(204), "VNNI int8 dot != scalar!");
-        simd::VNNI_ON.store(true, std::sync::atomic::Ordering::Relaxed);
-    }
-    if std::env::var("SBANN_RESID").is_ok() {
-        assert!(pq::selftest_resid(100, 2) && pq::selftest_resid(96, 4), "resid refine ADC != reconstruct-L2!");
-        vq::RESID.store(true, std::sync::atomic::Ordering::Relaxed);
     }
     // RESIDUAL QUANTIZATION: encode x-cell_centroid as the primary 4-bit code + per-cell <q,cent> scan
     // offset (P124, +6-11pt IP pool-recall). apq4 only. Int16 IP path (don't combine with FASTSCAN yet).
@@ -2835,8 +2781,6 @@ fn main() {
     // Disable with SBANN_CASCADE=0.
     if env_on("SBANN_CASCADE", true) { vq::CASCADE.store(true, std::sync::atomic::Ordering::Relaxed); }
     if let Ok(s) = std::env::var("SBANN_CASCADE_K") { if let Ok(v) = s.parse::<usize>() { vq::CASCADE_K.store(v, std::sync::atomic::Ordering::Relaxed); } }
-    if std::env::var("SBANN_CASC_SORT").is_ok() { vq::CASC_SORT.store(true, std::sync::atomic::Ordering::Relaxed); }
-    if let Ok(s) = std::env::var("SBANN_CASC_DIM") { if let Ok(v) = s.parse::<usize>() { vq::CASC_DIM.store(v, std::sync::atomic::Ordering::Relaxed); } }
     match a.get(1).map(String::as_str) {
         Some("dotbench") => {
             // microbench: VNNI vs AVX2 int8 dot, dim d, REPS over a working set that fits L2 (warm).

@@ -10,16 +10,9 @@ use std::arch::x86_64::{__m128i, __m256i, __m512i, _mm_prefetch, _MM_HINT_T0};
 /// Global rerank mode: false = exact L2 (default), true = exact inner product (MIPS, via -dot so a
 /// min-heap keeps the MAX inner product). Set once at startup from SBANN_IP (for the OOD/cosine path).
 pub static IP_MODE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
-/// true => i8 scan (1 vpshufb/subspace) instead of int16 (2/subspace): faster, coarser. A global
-/// (not per-query env) so run() can A/B scan precision on one index. Set from SBANN_NOLUT16.
-pub static LUT16_OFF: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 /// true => FAST-SCAN: int8-LUT, 1 vpshufb/subspace + int16 accumulation (~1.7x scan vs int16 LUT16) at
 /// ~12-13 bit ranking resolution (vs int16's 15, the sqrt(m) i8 path's 8). Set from SBANN_FASTSCAN.
 pub static FASTSCAN: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
-/// true => use the 64-wide AVX-512 fast-scan (block_adc_i8_i16acc_avx512_il) over an INTERLEAVED
-/// 64-vector superblock layout built at index time. Only meaningful with FASTSCAN (i8s LUT / Pq8 ctx)
-/// + avx512bw. Identical distances to the AVX2 fast-scan (so recall is unchanged). Set from SBANN_USE512FS.
-pub static USE512FS: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 /// true => the Pq16 (int16-LUT) pair-scan uses the 32-wide AVX-512 vpermw kernel
 /// (block_adc_i16_avx512_x2) instead of 2x 16-wide scan_block. Identical distances (non-saturating
 /// i16 accumulate, verbatim i16->i32 widening; selftest-asserted at startup), so recall is unchanged.
@@ -31,7 +24,7 @@ pub static USE512I16: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicB
 /// accumulate with periodic int16 hoist (block_adc_i8_fastscan32_2x16). Uses a BOUNDED [0,15] LUT
 /// (query_lut_f32_i8s_fs2) so hoist groups don't saturate. ~1.8x kernel vs the crude 16-wide int16
 /// fast-scan when compute/L2-bound; the exact rerank restores order past the coarser LUT. Set from
-/// SBANN_FASTSCAN2 (implies the Pq8 path, adds the 256-bit LUT regs). Do NOT combine with USE512FS.
+/// SBANN_FASTSCAN2 (implies the Pq8 path, adds the 256-bit LUT regs).
 /// Champion default ON (set in main() when AVX2 is detected; SBANN_FASTSCAN2=0 disables).
 pub static FASTSCAN2: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 /// SBANN_FUSEDTOPK: ScaNN-style fused top-t collect. Instead of materializing EVERY candidate
@@ -45,13 +38,9 @@ pub static FASTSCAN2: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicB
 /// Gated to the NON-residq, non-pool-dedup path (see scan_rerank); falls back to scan_pool otherwise.
 /// Champion default ON (set in main(); SBANN_FUSEDTOPK=0 disables).
 pub static FUSEDTOPK: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
-/// IDEA #4: build a SECOND finer 8-bit refine code (pq::ResidPq) in slot order and use it to refine
-/// the 4-bit-ADC survivor ranking before the exact raw rerank, so far fewer raw vectors are read.
-/// Set from SBANN_RESID. SBANN_RESID_DPB picks the refine subspace size (default 2 => m=d/2 bytes/vec).
-pub static RESID: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 /// true => RESIDUAL QUANTIZATION (SBANN_RESIDQ): the PRIMARY scan code encodes x - cell_centroid (codebook
 /// retrained on residuals), and the scan adds the exact per-cell <q,centroid> offset. +6-11pt IP
-/// pool-recall (P124) -> shallower rerank pool for OOD. Distinct from RESID (8-bit refine, which failed).
+/// pool-recall (P124) -> shallower rerank pool for OOD.
 pub static RESIDQ: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 /// SBANN_RAW_DEDUP (Task B): store the exact-rerank `raw` array per DISTINCT ORIG point (n*d, indexed
 /// by orig id) instead of per SLOT (n*a0*d, a full a0x-oversized 2nd dataset copy). rerank_contig reads
@@ -62,11 +51,6 @@ pub static RAW_DEDUP: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicB
 /// store instead of the scattered 4KB-paged `ds` mmap (recall bit-identical; TLB/page-walk win, larger at
 /// scale). Default ON; set the env to 0 to force the old ds-only path for an isolated A/B.
 pub static SPLIT_RESCORE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(true);
-/// SBANN_POOLDEDUP: dedup the candidate pool by ORIG id (keep min approx-dist per id) BEFORE the
-/// t_surv survivor cap. With SOAR a0>1 a point lands in multiple probed cells as duplicate slots; the
-/// late dedup in rerank_contig (heap size k*4) gets crowded out by those duplicates, collapsing recall
-/// as a0 grows. This dedup measures the TRUE coverage of a multi-store routing (and shrinks the pool).
-pub static POOLDEDUP: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 /// SBANN_DEDUP_A0: smallest a0 at which scan_rerank dedups the pool by orig BEFORE the t_surv cap.
 /// a0 < this uses only the cheap dedup-in-rerank (after-cap) path -- negligible recall loss at low a0
 /// (1M OOD a0=3 = -0.003) but avoids the per-query dedup cost on the QPS@90% / msspacev champion configs.
@@ -101,28 +85,11 @@ pub static CASCADE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBoo
 /// fallback is the P194 minimum 16 (K12 breaks recall); the `run` command replaces it with the
 /// dimension-aware search-preset value unless the user supplies an explicit override.
 pub static CASCADE_K: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(16);
-/// CASC_SORT (P194): sort the deduped survivor pool by SLOT before the int8 gather. `raw` is slot-
-/// contiguous, so slot-ascending order makes the int8 gather read MONOTONICALLY forward -> HW prefetch
-/// + TLB stream instead of a random scatter (the P189 scattered-read lever, applied to the int8 stage).
-/// Recall-EXACTLY-neutral (int8 dist is order-independent). Default OFF: measured NET-NEGATIVE (the
-/// per-query sort over ~250 survivors costs more than it saves; the i+8 prefetch already hides the
-/// slot-clustered gather latency). SBANN_CASC_SORT re-enables for A/B.
-pub static CASC_SORT: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
-/// CASC_DIM (P194 probe): cap the #dims used in the int8-cascade dot (0 = full d). A coarse single-level
-/// prune reading fewer cache lines per survivor -> tests whether the int8 gather is BANDWIDTH-bound
-/// (fewer lines = faster) or LATENCY-bound (first-line miss dominates, no gain). Recall may drop.
-pub static CASC_DIM: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
 /// SBANN_SCANDIAG diagnostic: run ONLY the kernel floor (block reads + LUT, NO collect) and record its
 /// time as the scan phase, so a separate run gives collect = scan_full - scan_kernelonly (same per-query
 /// cold-cache pattern). Isolates how much of scan the fused top-t can actually remove (only the collect
 /// part; the scattered block reads + LUT are t-independent and untouchable by the fused path).
 pub static SCANDIAG: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
-/// SBANN_ROUTE_SDIM: score only the first N dims of each centroid at the FINEST routing level (the 78%-of-
-/// routing term, P139). 0 = full d (exact). Approximate finest routing -> cheaper routing if recall@p holds.
-pub static ROUTE_SDIM: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
-/// SBANN_ROUTE_SDIM0: like ROUTE_SDIM but for the COARSE (level-0) centroids (P251; needs a
-/// variance-ordered basis to be principled). 0 = off (default, champion path).
-pub static ROUTE_SDIM0: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
 /// SBANN_BEAM0: query-time OVERRIDE of the baked coarse (level-0) routing beam. 0 = use the built-in
 /// beam[0]. P260: coarse-beam coverage (beam0/C0) must scale with tree fanout; a beam baked too narrow
 /// for a fine tree caps recall regardless of p (the true fine cell's PARENT is never expanded). Lets us
@@ -137,13 +104,6 @@ pub static ROUTE_ADC_KEEP: std::sync::atomic::AtomicUsize = std::sync::atomic::A
 /// (recall-EXACT), ~1.5x on the dominant compute (66% of route). Full-dim only; sd<d stays on madd.
 /// Champion default ON (set in main() when AVX-512 VNNI is detected; SBANN_ROUTE_VNNI=0 disables).
 pub static ROUTE_VNNI: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
-/// SBANN_SORTCELLS (WALL-1 scattered-read lever): sort the probed cell list ASCENDING (= block/memory
-/// order, since cell_bstart is monotonic in cell id) before scanning. route_fine's select_nth returns
-/// cells in SCRAMBLED order, so consecutive scanned cells make random jumps across the ~168MB blocks
-/// array; sorting makes the block reads MONOTONICALLY forward -> HW prefetch + TLB stream instead of
-/// stall. RECALL-EXACTLY-NEUTRAL (same cells, same candidates, only the visit order changes; the top-t
-/// select is order-independent). Applied in scan_rerank (covers the full + SCANDIAG paths).
-pub static SORTCELLS: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 /// SBANN_PREFETCH: software-prefetch (T0) the NEXT probed cell's block memory while scanning the current
 /// cell, to hide the cross-cell random-jump latency (the scan is memory-LATENCY bound on p random jumps).
 /// SBANN_PFDIST = how many cells ahead to prefetch (default 2). SBANN_PFLINES = cache lines/cell to touch
@@ -180,11 +140,6 @@ pub static GRAPH_BESTFIRST: std::sync::atomic::AtomicBool = std::sync::atomic::A
 pub static ROUTE_FP16: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 pub static GRAPH_KEDGE: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(16);
 pub static GRAPH_PFDIST: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(16);
-/// Sort the deduped union by orig id before the rescore gather (monotone addresses). MEASURED (interleaved,
-/// load ~30): the sort's CPU cost (~5-8us over ~560 random u32) outweighs its gather-locality gain once the
-/// gather is deep-prefetched (pfdist=16), so default OFF wins (+3.7% e2e vs sorted). SBANN_GRAPH_SORT=1 to
-/// re-enable (helps only under extreme DRAM contention where the gather, not the sort, dominates).
-pub static GRAPH_SORT: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 /// Profile split for the graph lever: PROF_GRAPH_NS = neighbour gather + union sort/dedup; PROF_GRAPH_ROWS
 /// = cumulative union size (so union-rescore ns/row = PROF_CASC_NS/PROF_GRAPH_ROWS, the decider metric).
 pub static PROF_GRAPH_NS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
@@ -330,15 +285,6 @@ pub fn write_union_trace(path: &str) -> std::io::Result<(usize, usize)> {
 /// union so the walk launches from on-manifold entry points (nearest-train-query-voted answers), bypassing
 /// coverage-collapsed routing on extreme-OOD queries. `(S, flat nq*S u32)`; row i = query i's S seeds.
 pub static SEED_IDS: std::sync::OnceLock<(usize, Vec<u32>)> = std::sync::OnceLock::new();
-/// RBQ-TIER (SBANN_RBQ_NAV): resident 1-bit sign codes (bit i set iff base coord i >= 0), row-major by
-/// orig id. `(bytes_per_row, signs)`. The graph beam navigates + selects top-kk by Hamming(query-signs,
-/// row-signs) instead of the full int8 dot -- d/8-byte gather, popcount arithmetic -- then the exact float
-/// rerank over kk restores order. Cuts the gather-bound int8 rescore (the 59% bottleneck). Pair with a
-/// generous SBANN_CASCADE_K so the coarser 1-bit ranking keeps true neighbours in the float-rerank pool.
-pub static RBQ_SIGNS: std::sync::OnceLock<(usize, Vec<u8>)> = std::sync::OnceLock::new();
-/// RBQ-TIER random orthonormal rotation P (d*d, row-major). Applied to base + query BEFORE taking signs so
-/// the 1-bit codes decorrelate the (correlated) embedding coordinates -> Hamming becomes a good angle estimator.
-pub static RBQ_ROT: std::sync::OnceLock<Vec<f32>> = std::sync::OnceLock::new();
 
 /// Experimental graph-local node relabeling. `rank[original] = physical` is applied to IVF seeds;
 /// the supplied graph and int8 base are already stored in physical-id order. Only the final int8
@@ -1009,111 +955,9 @@ pub static LOWRANK: std::sync::OnceLock<LowRankNav> = std::sync::OnceLock::new()
 /// resident across in-process A/B sweeps. Off by default: champion path bit-identical.
 pub static LOWRANK_NAV_ON: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
-/// SYMPACK-B (P344, SymphonyQG-style packed adjacency — cited transplant, composed with our IVF entry,
-/// SQ4 codes and int8/float escalation): per node one contiguous block = [ke neighbor ids (u32 LE)]
-/// [ke × d/2 nibble codes]. Expanding a walk node reads ONE sequential block (17ns/candidate measured)
-/// instead of ke scattered row gathers (94ns/row). Gates: microbench 5.43x; SQ4-guidance −1-3pt at
-/// matched L (recovered by +L, still ~4x net). Tuple = (ke, blk_bytes, blocks). SBANN_SYMPACK gates.
-pub static SYMPACK: std::sync::OnceLock<(usize, usize, Vec<u8>)> = std::sync::OnceLock::new();
-
-/// ADAPT-STOP (P342): per-query adaptive beam termination. Off by default (champion bit-identical).
-pub static ADAPT_STOP_ON: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
-pub static ADAPT_STOP_MARGIN: std::sync::atomic::AtomicI64 = std::sync::atomic::AtomicI64::new(0);
-pub static PROF_ADAPT_STOPS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
-/// ADAPT-POOL (P342b): patience-based adaptive rescore depth over the apq4-ranked POOL rows — the pool
-/// (t_surv) is the rescore floor at loose configs, not the graph hops. Value = patience C (stop int8
-/// scoring after C consecutive pool rows without improving the int8 top-kk). 0 = off (champion path).
-pub static ADAPT_POOL: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
-pub static PROF_POOL_SKIPPED: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 /// P342c micro-decomp: time spent in the actual row-scoring loops (gather+dot+push), a SUBSET of
 /// PROF_CASC_NS. The remainder of casc = per-hop machinery (cand rebuild, exp resize, select, hash).
 pub static PROF_SCORE_NS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
-
-/// SYMPACK-B walk (P344): best-first over packed neighbor blocks. Guidance + top-L selection by SQ4
-/// scores (block codes for expanded neighbors, flat SQ4 sidecar for the entry rows — SAME scale, so the
-/// heaps stay consistent). Caller int8-rescores the returned top-L and float-reranks the top-kk.
-/// Returns (sq4_negscore, orig) ascending.
-pub fn sympack_walk(ds: &I8Bin, q: &[i8], l: usize, entries: &[u32]) -> Vec<(i32, u32)> {
-    use std::cmp::Reverse;
-    use std::collections::BinaryHeap;
-    use std::sync::atomic::Ordering::Relaxed;
-    thread_local! {
-        static VISIT2: std::cell::RefCell<(Vec<u32>, u32)> = const { std::cell::RefCell::new((Vec::new(), 0)) };
-    }
-    let d = ds.d;
-    let hb = d / 2;
-    let (ke, blk, blocks) = SYMPACK.get().expect("SBANN_SYMPACK blocks not built");
-    let (ke, blk) = (*ke, *blk);
-    let sq4 = SQ4.get().expect("SYMPACK needs the flat SQ4 sidecar");
-    let steps = SQ4_STEP.get().expect("SQ4_STEP");
-    // same query prep as the rung: fold per-dim steps, requantize i8, deinterleave
-    let qs: Vec<f32> = (0..d).map(|j| q[j] as f32 * steps[j]).collect();
-    let mx = qs.iter().fold(0f32, |a, &v| a.max(v.abs())).max(1e-9);
-    let gsc = 127.0 / mx;
-    let qi = |j: usize| -> i8 { (qs[j] * gsc).round().clamp(-127.0, 127.0) as i8 };
-    let qe: Vec<i8> = (0..hb).map(|j| qi(2 * j)).collect();
-    let qo: Vec<i8> = (0..hb).map(|j| qi(2 * j + 1)).collect();
-    let score_flat = |o: u32| -> i32 {
-        -unsafe { simd::dot_sq4_vnni(&qe, &qo, &sq4[o as usize * hb..o as usize * hb + hb]) }
-    };
-    VISIT2.with(|cell| {
-        let mut b = cell.borrow_mut();
-        let (stamp, epoch) = &mut *b;
-        if stamp.len() < ds.nb { stamp.clear(); stamp.resize(ds.nb, 0); *epoch = 0; }
-        *epoch = epoch.wrapping_add(1);
-        if *epoch == 0 { stamp.iter_mut().for_each(|s| *s = 0); *epoch = 1; }
-        let ep = *epoch;
-        let mut cand: BinaryHeap<Reverse<(i32, u32)>> = BinaryHeap::with_capacity(4 * l);
-        let mut topl: BinaryHeap<(i32, u32)> = BinaryHeap::with_capacity(l + 1);
-        let (mut evals, mut hops) = (0u64, 0u64);
-        for &e in entries {
-            let ei = e as usize;
-            if ei >= ds.nb || stamp[ei] == ep { continue; }
-            stamp[ei] = ep;
-            let dv = score_flat(e);
-            evals += 1;
-            cand.push(Reverse((dv, e)));
-            topl.push((dv, e));
-            if topl.len() > l { topl.pop(); }
-        }
-        while let Some(Reverse((dcur, cur))) = cand.pop() {
-            if topl.len() >= l && dcur > topl.peek().unwrap().0 { break; }
-            hops += 1;
-            let base = cur as usize * blk;
-            let bptr = blocks.as_ptr();
-            // sequential block: prefetch the id header + first code lines; HW streamer follows
-            let mut off = 0usize;
-            while off < (ke * 4 + 4 * hb).min(blk) { unsafe { _mm_prefetch(bptr.add(base + off) as *const i8, _MM_HINT_T0) }; off += 64; }
-            let worst0 = if topl.len() >= l { topl.peek().unwrap().0 } else { i32::MAX };
-            for j in 0..ke {
-                let id = u32::from_le_bytes([blocks[base + j * 4], blocks[base + j * 4 + 1], blocks[base + j * 4 + 2], blocks[base + j * 4 + 3]]);
-                let ni = id as usize;
-                if ni >= ds.nb || stamp[ni] == ep { continue; }
-                stamp[ni] = ep;
-                let co = base + ke * 4 + j * hb;
-                let dv = -unsafe { simd::dot_sq4_vnni(&qe, &qo, &blocks[co..co + hb]) };
-                evals += 1;
-                if topl.len() < l {
-                    cand.push(Reverse((dv, id)));
-                    topl.push((dv, id));
-                } else if dv < topl.peek().unwrap().0 {
-                    cand.push(Reverse((dv, id)));
-                    topl.push((dv, id));
-                    topl.pop();
-                }
-            }
-            let _ = worst0;
-            if let Some(Reverse((_, nxt))) = cand.peek() {
-                unsafe { _mm_prefetch(blocks.as_ptr().add(*nxt as usize * blk) as *const i8, _MM_HINT_T0) };
-            }
-        }
-        ROAR_EVALS.fetch_add(evals, Relaxed);
-        ROAR_HOPS.fetch_add(hops, Relaxed);
-        let mut out = topl.into_vec();
-        out.sort_unstable();
-        out
-    })
-}
 
 /// ROAR-MODE walk diagnostics (evals = int8 row scores, hops = node expansions), reset per sweep point.
 pub static ROAR_EVALS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
@@ -1546,17 +1390,11 @@ fn rerank_cascade_float(fbase: &crate::fbin::FBin, raw: &[i8], d: usize, raw_ori
     dedup_pool_by_orig(pool, slot_orig);
     let n = pool.len();
     if n == 0 { return Vec::new(); }
-    // (1b) sort by slot so the slot-contiguous raw gather streams forward (recall-neutral).
-    if !raw_orig_indexed && CASC_SORT.load(std::sync::atomic::Ordering::Relaxed) {
-        pool.sort_unstable_by_key(|&(_, s)| s);
-    }
     // (2) INT8 rescore. Prefer VNNI (dpbusd) when the CPU has it; else AVX2 madd; else scalar.
     let vnni = std::is_x86_feature_detected!("avx512vnni") && std::is_x86_feature_detected!("avx512bw")
         && std::is_x86_feature_detected!("avx512f");
     let avx = std::is_x86_feature_detected!("avx2");
-    let cdim = CASC_DIM.load(std::sync::atomic::Ordering::Relaxed);
-    let dd = if cdim == 0 { d } else { cdim.min(d) };
-    let qd = &q[..dd];
+    let qd = &q[..d];
     let mut scored: Vec<(i32, u32)> = Vec::with_capacity(n);
     for i in 0..n {
         let slot = pool[i].1 as usize;
@@ -1568,7 +1406,7 @@ fn rerank_cascade_float(fbase: &crate::fbin::FBin, raw: &[i8], d: usize, raw_ori
         }
         if orig == u32::MAX { continue; }
         let ri = if raw_orig_indexed { orig as usize } else { slot };
-        let row = &raw[ri * d..ri * d + dd];
+        let row = &raw[ri * d..ri * d + d];
         // negdot: smaller = better (matches the IP float path's -dot).
         let dist = if vnni { -unsafe { simd::dot_i8_vnni(qd, row) } }
                    else if avx { -unsafe { simd::dot_i8_avx2(qd, row) } }
@@ -1718,7 +1556,6 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
     // Replaces the old dedup_pool_by_orig (a separate hash pass + pool rewrite) + a second union pass.
     let hops = GRAPH_HOPS.load(Relaxed).max(1);
     let bestfirst = GRAPH_BESTFIRST.load(Relaxed);
-    let apool = ADAPT_POOL.load(Relaxed);
     let est = pool.len() + seeds.len() + hops * m_expand * ke;
     let mut union: Vec<u32> = Vec::with_capacity(est);
     // pooltop holds (min apq4 dist, slot) per distinct pool orig — SAME tuple/tie-break as the old
@@ -1728,9 +1565,6 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
     // which is never reordered). Pool origs are resident in `raw` (raw[slot*d] == ds.row(orig), byte-identical, so
     // recall-neutral); graph neighbours (union[pool_distinct..]) are read from the scattered `ds` mmap as before.
     let mut pool_slot: Vec<u32> = Vec::with_capacity(pool.len());
-    // ADAPT-POOL: apq4 dist per distinct pool orig, aligned with union[0..pool_distinct] insertion order
-    // (pooltop gets reordered by select_nth below, so a stable copy is kept when the lever is on).
-    let mut pool_apq4: Vec<i32> = Vec::with_capacity(if apool > 0 { pool.len() } else { 0 });
     let mut pool_seed_margin = 0i32;
     GRAPH_SET.with(|cell| {
         let mut set = cell.borrow_mut();
@@ -1752,13 +1586,11 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
                     union.push(node);
                     pooltop.push((dist, s));
                     pool_slot.push(s);   // #2: union[i]'s resident slot for i<pool_distinct
-                    if apool > 0 { pool_apq4.push(dist); }
                     break;
                 }
                 if k == node {
                     if dist < pooltop[pidx as usize].0 {
                         pooltop[pidx as usize] = (dist, s);
-                        if apool > 0 { pool_apq4[pidx as usize] = dist; }
                     }
                     break;
                 }
@@ -1813,10 +1645,7 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
             }
         }
     });
-    // ascending-orig sort keeps the rescore gather monotone (kinder to the prefetcher); over the already-
-    // deduped union, gated so the cost can be A/B'd (SBANN_GRAPH_SORT; default off — deep prefetch wins).
     let pool_distinct = pooltop.len();
-    if hops == 1 && GRAPH_SORT.load(Relaxed) { union.sort_unstable(); }
     if let Some(tg) = tg { PROF_GRAPH_NS.fetch_add(tg.elapsed().as_nanos() as u64, Relaxed); }
     PROF_GRAPH_ROWS.fetch_add(union.len() as u64, Relaxed);
     // (3) int8 rescore the union (VNNI dpbusd -> AVX2 madd -> scalar), streaming-prefetched.
@@ -1825,19 +1654,6 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
         && std::is_x86_feature_detected!("avx512f");
     let avx = std::is_x86_feature_detected!("avx2");
     let pf = GRAPH_PFDIST.load(Relaxed).max(1);
-    // RBQ-TIER: pack the query's 1-bit sign code once; the beam then navigates + selects by Hamming to the
-    // resident base sign codes (d/8-byte gather, popcount) instead of the full int8 dot. Float rerank fixes order.
-    let rbq_nav = RBQ_SIGNS.get();
-    // RBQ-TIER asymmetric estimator: keep the (rotated) query in FULL precision; per row estimate
-    // <signs(P*x), P*q> = 2*(sum of qrot over set sign bits) - sum(qrot). Base is 1-bit (d/8-byte gather).
-    let (qrot, sumqrot): (Vec<f32>, f32) = if rbq_nav.is_some() {
-        let mut qr = vec![0f32; d];
-        if let Some(p) = RBQ_ROT.get() {
-            for j in 0..d { let prow = &p[j * d..j * d + d]; let mut s = 0f32; for k in 0..d { s += prow[k] * q[k] as f32; } qr[j] = s; }
-        } else { for i in 0..d { qr[i] = q[i] as f32; } }
-        let sm: f32 = qr.iter().sum();
-        (qr, sm)
-    } else { (Vec::new(), 0.0) };
     // PQ4-NAV: per-query LUT — lut4[sub*16 + code] = -dot(q_sub, cent[sub][code]) rounded to i32. The
     // 16*m i32 table (~3KB at m=48) stays L1-resident; per row the score is an m-term LUT sum over the
     // row's m code bytes (1-line gather) instead of a d-byte int8 dot (2+ lines). Smaller = better,
@@ -1903,7 +1719,7 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
         else if let Some(gl) = layout { unsafe { _mm_prefetch(gl.base.row(union[ii] as usize).as_ptr() as *const i8, _MM_HINT_T0) }; }
         else { unsafe { _mm_prefetch(ds.row(union[ii] as usize).as_ptr() as *const i8, _MM_HINT_T0) }; }
     }}; }
-    // Nav score priority: LOWRANK R-byte dot > SQ4 nibble dot > PQ4 LUT sum > RBQ Hamming > int8 -dot.
+    // Nav score priority: LOWRANK R-byte dot > SQ4 nibble dot > PQ4 LUT sum > int8 -dot.
     // All "smaller=better".
     macro_rules! rbqdist { ($i:expr) => {{
         let ii = $i as usize;
@@ -1920,12 +1736,6 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
             let mut s = 0i32;
             for (mi, &c) in crow.iter().enumerate() { s += lut4[mi * 16 + c as usize]; }
             s
-        } else if let Some((b, signs)) = rbq_nav {
-            let o = original_of(union[ii]) as usize;
-            let srow = &signs[o * b .. o * b + b];
-            let mut pos = 0f32;
-            for j in 0..d { if srow[j >> 3] & (1u8 << (j & 7)) != 0 { pos += qrot[j]; } }
-            (-((2.0 * pos - sumqrot) * 256.0)) as i32
         } else {
             let row = rrow!(ii);
             if vnni { -unsafe { simd::dot_i8_vnni(q, row) } }
@@ -1952,7 +1762,6 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
             let mut off = 0usize;
             while off < p4.m { unsafe { _mm_prefetch(ptr.add(base + off) as *const i8, _MM_HINT_T0) }; off += 64; }
         }
-        else if let Some((b, signs)) = rbq_nav { unsafe { _mm_prefetch(signs.as_ptr().add(original_of(union[ii]) as usize * b) as *const i8, _MM_HINT_T0) }; }
         else { rpf!(ii); }
     }}; }
     let mut scored: Vec<(i32, u32)> = Vec::with_capacity(union.len().max(est));
@@ -1969,45 +1778,8 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
         // BATCHED BEAM BEST-FIRST (P256): union = pool origs only. Each round scores new frontier
         // additions, then expands the GLOBAL top-M unexpanded (beam width M) — HNSW-like order, still
         // SIMD-batched (no per-query heap). Same R*M budget as per-cohort. `exp` tracks expansion.
-        // ADAPT-STOP (P342, flag-gated): per-query adaptive hop termination — the property that makes
-        // short-walk indexes cheap at loose recall, applied to OUR beam. Before expanding a hop, if the
-        // best unexpanded frontier candidate is already worse than the current kk-th best score plus a
-        // margin, further expansion cannot improve the float-rerank set: stop. Easy queries pay 1 hop;
-        // `hops` becomes a CAP, not a fixed cost. SBANN_ADAPT_STOP=<margin i32> enables (0 = pure bound).
-        let adapt = ADAPT_STOP_ON.load(Relaxed) && kk >= 1;   // kk=0 (float-rerank-all) would panic the bound heap
-        let amargin = ADAPT_STOP_MARGIN.load(Relaxed) as i32;
-        // review P344: allocate the bound heap ONLY when a lever needs it (champion path alloc-identical)
-        let mut bound: std::collections::BinaryHeap<i32> = if adapt || (apool > 0 && kk >= 1) {
-            std::collections::BinaryHeap::with_capacity(kk + 1)
-        } else { std::collections::BinaryHeap::new() };
         let mut exp: Vec<bool> = vec![false; union.len()];
         let mut lo = 0usize;
-        // ADAPT-POOL (P342b): the pool (t_surv rows) IS the rescore floor at loose configs — hop
-        // termination alone can't touch it (measured). Score pool rows in apq4-ascending order and stop
-        // after `apool` consecutive rows that fail to improve the int8 top-kk; skipped rows never enter
-        // `scored` (not expandable, not float-selectable). QSEED seeds (union[pool_distinct..]) carry no
-        // apq4 rank and are left to the generic hop-0 range below (always scored).
-        if apool > 0 && kk >= 1 && pool_distinct > 0 && !(hops == 1 && GRAPH_SORT.load(Relaxed)) {
-            let mut ord: Vec<u32> = (0..pool_distinct as u32).collect();
-            ord.sort_unstable_by_key(|&i| pool_apq4[i as usize]);
-            let mut since = 0usize;
-            for oi in 0..ord.len() {
-                if oi + pf < ord.len() { rbqpf!(ord[oi + pf]); }
-                let i = ord[oi] as usize;
-                let dist = rbqdist!(i);
-                scored.push((dist, union[i]));
-                if bound.len() < kk { bound.push(dist); since = 0; }
-                else if dist < *bound.peek().unwrap() { bound.push(dist); bound.pop(); since = 0; }
-                else {
-                    since += 1;
-                    if since >= apool {
-                        PROF_POOL_SKIPPED.fetch_add((ord.len() - oi - 1) as u64, Relaxed);
-                        break;
-                    }
-                }
-            }
-            lo = pool_distinct;
-        }
         for _hop in 0..hops {
             let hi = union.len();
             let ts = if prof { Some(std::time::Instant::now()) } else { None };
@@ -2015,10 +1787,6 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
                 if i + pf < hi { rbqpf!(i + pf); }
                 let dist = rbqdist!(i);
                 scored.push((dist, union[i]));
-                if adapt {
-                    if bound.len() < kk { bound.push(dist); }
-                    else if dist < *bound.peek().unwrap() { bound.push(dist); bound.pop(); }
-                }
             }
             if let Some(ts) = ts { PROF_SCORE_NS.fetch_add(ts.elapsed().as_nanos() as u64, Relaxed); }
             exp.resize(scored.len(), false);
@@ -2028,11 +1796,6 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
             let mm = m_expand.min(cand.len());
             if mm == 0 { break; }
             if mm < cand.len() { cand.select_nth_unstable_by_key(mm - 1, |&i| scored[i as usize].0); }
-            if adapt && bound.len() >= kk {
-                let kkth = *bound.peek().unwrap();
-                let fbest = cand[..mm].iter().map(|&i| scored[i as usize].0).min().unwrap_or(i32::MAX);
-                if fbest > kkth.saturating_add(amargin) { PROF_ADAPT_STOPS.fetch_add(1, Relaxed); break; }
-            }
             GRAPH_SET.with(|cell| {
                 let mut set = cell.borrow_mut();
                 let mask = set.len() - 1;
@@ -2745,11 +2508,6 @@ pub struct HierRouter {
     // ADC routing (#3, SBANN_ROUTE_ADC): a 4-bit PQ over the FINEST centroids so the finest-level expansion
     // (the 78%-of-routing term, P139) is scored by cheap ADC instead of exact i8 L2, then only the ADC-top
     // ROUTE_ADC_KEEP are exact-rescored. radc=codebook, rcodes=kf*m codes. Empty unless built with the flag.
-    // P251: packed dim-prefix copies of cent[l] (rows of sd bytes), built lazily on first probe when
-    // ROUTE_SDIM/ROUTE_SDIM0 are active. The d-strided cent layout is BANDWIDTH-bound under prefix
-    // scoring (HW prefetcher streams full rows, so FLOP cuts are invisible); packing the prefix makes
-    // route bandwidth scale with sd. Not persisted; rebuilt per process. Empty vecs when knobs off.
-    cent_pfx: std::sync::OnceLock<Vec<Vec<i8>>>,
     radc: Option<pq::Pq>,
     rcodes: Vec<u8>,
     // finest codes re-laid into 16-cell vpshufb blocks (m/2 groups * 16 bytes each, cell order). Lets the
@@ -2774,18 +2532,7 @@ pub struct HierRouter {
 }
 
 /// Per-finest-cell probe-calibration bias (γ−1)·‖c‖² from SBANN_ROUTE_GAMMA. Empty when unset/γ=1.
-/// SBANN_GBIAS_FILE overrides with a LEARNED bias vector (nc x i32 LE, no header) — the general
-/// (trainable) form of which γ is the one-parameter special case.
 fn gbias_of(cent: &[Vec<i8>], d: usize) -> Vec<i32> {
-    if let Ok(p) = std::env::var("SBANN_GBIAS_FILE") {
-        let fin = cent.last().expect("gbias: no centroid levels");
-        let n = if d > 0 { fin.len() / d } else { 0 };
-        let bytes = std::fs::read(&p).expect("gbias file");
-        assert_eq!(bytes.len(), n * 4, "gbias file must be nc x i32");
-        let v: Vec<i32> = bytes.chunks_exact(4).map(|c| i32::from_le_bytes(c.try_into().unwrap())).collect();
-        println!("[gbias] loaded {} learned per-cell biases from {}", v.len(), p);
-        return v;
-    }
     let g: f32 = match std::env::var("SBANN_ROUTE_GAMMA").ok().and_then(|s| s.parse().ok()) {
         Some(v) => v,
         None => return Vec::new(),
@@ -2965,7 +2712,7 @@ impl HierRouter {
         } else { Vec::new() };
         let cadj = cadj_of(&cent, d);
         let gbias = gbias_of(&cent, d);
-        HierRouter { cent_pfx: std::sync::OnceLock::new(), d, mu, kf, levels, cent, child, beam: beams.to_vec(), soar: 0.0, radc, rcodes, rblocks, cadj, gbias, cent_f16 }
+        HierRouter { d, mu, kf, levels, cent, child, beam: beams.to_vec(), soar: 0.0, radc, rcodes, rblocks, cadj, gbias, cent_f16 }
     }
 
     /// 2-level hierarchical k-means (back-compat wrapper): C0 coarse → Kf/C0 fine per coarse.
@@ -3004,7 +2751,7 @@ impl HierRouter {
         let cent = vec![c0, cf];
         let cadj = cadj_of(&cent, d);
         let gbias = gbias_of(&cent, d);
-        HierRouter { cent_pfx: std::sync::OnceLock::new(), d, mu, kf, levels: 2, cent, child: vec![gstart, Vec::new()], beam: vec![b0], soar: 0.0, radc: None, rcodes: Vec::new(), rblocks: Vec::new(), cadj, gbias, cent_f16: Vec::new() }
+        HierRouter { d, mu, kf, levels: 2, cent, child: vec![gstart, Vec::new()], beam: vec![b0], soar: 0.0, radc: None, rcodes: Vec::new(), rblocks: Vec::new(), cadj, gbias, cent_f16: Vec::new() }
     }
 
     /// Enable SOAR build-time spilled assignment with penalty λ (`s`). 0 disables (default path).
@@ -3019,41 +2766,14 @@ impl HierRouter {
         // batched block L2 (qn held in registers, 2-wide ILP) instead of a scalar per-centroid l2_i8 loop;
         // routing was 20-46% of the 10M query (P139). `scores` scratch is reused across all levels.
         let mut scores: Vec<i32> = vec![0; l0.max(64)];
-        let sdim = ROUTE_SDIM.load(std::sync::atomic::Ordering::Relaxed);
         let rp = ROUTE_PROF.load(std::sync::atomic::Ordering::Relaxed);
         let vnni = ROUTE_VNNI.load(std::sync::atomic::Ordering::Relaxed) && !self.cadj.is_empty();
         let qnorm = if vnni { simd::sqnorm_i8(qn) } else { 0 };
         let tc = if rp { Some(std::time::Instant::now()) } else { None };
-        // COARSE-level dim truncation (SBANN_ROUTE_SDIM0, P251): with a variance-ordered (PCA-rotated)
-        // basis the coarse C0 x d term — which dominates routing at fat-coarse geometries like
-        // [4096,65536] d=768 — can score a prefix too. Off (0) by default; champion paths untouched.
-        let sdim0 = ROUTE_SDIM0.load(std::sync::atomic::Ordering::Relaxed);
-        let sd0 = if sdim0 > 0 && sdim0 < d { sdim0 } else { d };
-        // lazily build the packed prefix copies (coarse: sd0-byte rows; finest: sdim-byte rows)
-        let pfx = self.cent_pfx.get_or_init(|| {
-            let mut v: Vec<Vec<i8>> = vec![Vec::new(); self.levels];
-            if sd0 < d {
-                let n0 = self.cent[0].len() / d;
-                let mut p = vec![0i8; n0 * sd0];
-                for i in 0..n0 { p[i * sd0..(i + 1) * sd0].copy_from_slice(&self.cent[0][i * d..i * d + sd0]); }
-                v[0] = p;
-            }
-            let sdv = ROUTE_SDIM.load(std::sync::atomic::Ordering::Relaxed);
-            if sdv > 0 && sdv < d && self.levels > 1 {
-                let lf = self.levels - 1;
-                let nf = self.cent[lf].len() / d;
-                let mut p = vec![0i8; nf * sdv];
-                for i in 0..nf { p[i * sdv..(i + 1) * sdv].copy_from_slice(&self.cent[lf][i * d..i * d + sdv]); }
-                v[lf] = p;
-            }
-            v
-        });
-        if !pfx[0].is_empty() {
-            simd::l2_i8_block(qn, &pfx[0], l0, sd0, sd0, &mut scores);
-        } else if vnni {
+        if vnni {
             simd::l2_i8_block_norm(qn, &self.cent[0], &self.cadj[0], l0, d, qnorm, &mut scores);
         } else {
-            simd::l2_i8_block(qn, &self.cent[0], l0, d, sd0, &mut scores);
+            simd::l2_i8_block(qn, &self.cent[0], l0, d, d, &mut scores);
         }
         let mut cd: Vec<(i32, u32)> = (0..l0).map(|q| (scores[q], q as u32)).collect();
         if let Some(t) = tc { PROF_R_COARSE_NS.fetch_add(t.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed);
@@ -3117,15 +2837,10 @@ impl HierRouter {
                     }
                 } else {
                     if scores.len() < nc { scores.resize(nc, 0); }
-                    // finest level (the dominant routing term) may score a reduced dim prefix (SBANN_ROUTE_SDIM).
-                    let sd = if finest && sdim > 0 && sdim < d { sdim } else { d };
-                    if finest && sd < d && !pfx[l].is_empty() {
-                        // packed prefix rows: stride sd, bandwidth scales with the prefix (P251)
-                        simd::l2_i8_block(qn, &pfx[l][s * sd..e * sd], nc, sd, sd, &mut scores);
-                    } else if vnni && sd == d {
+                    if vnni {
                         simd::l2_i8_block_norm(qn, &self.cent[l][s * d..e * d], &self.cadj[l][s..e], nc, d, qnorm, &mut scores);
                     } else {
-                        simd::l2_i8_block(qn, &self.cent[l][s * d..e * d], nc, d, sd, &mut scores);
+                        simd::l2_i8_block(qn, &self.cent[l][s * d..e * d], nc, d, d, &mut scores);
                     }
                     // probe calibration (SBANN_ROUTE_GAMMA): finest-level scores get the per-cell
                     // (γ−1)‖c‖² bias so ranking becomes γ‖c‖²−2q·c (see gbias field doc). Exact i32 add.
@@ -3360,10 +3075,9 @@ pub enum QueryCtx {
     Pq { regs: Vec<__m128i> },                  // PQ/OPQ/AQ LUT registers (i8, saturating)
     // i16 LUT: lo/hi byte-tables (AVX2 single-block) + zmm tables (AVX-512 32-wide pair). Full-res ranking.
     Pq16 { lo: Vec<__m128i>, hi: Vec<__m128i>, lut_z: Vec<__m512i>, scale: f32 }, // scale = i16-units/IP for RESIDQ offset
-    // fast-scan: int8 LUT, 1 vpshufb/subspace, i16 accum. regs_z = same LUT broadcast to zmm lanes for
-    // the 64-wide AVX-512 path (empty unless USE512FS). regs_y = 256-bit LUT (both lanes) for the PROPER
-    // 32-wide int8-saturating FastScan (empty unless FASTSCAN2).
-    Pq8 { regs: Vec<__m128i>, regs_z: Vec<__m512i>, regs_y: Vec<__m256i>, scale: f32 },
+    // fast-scan: int8 LUT, 1 vpshufb/subspace, i16 accum. regs_y = 256-bit LUT (both lanes) for the
+    // PROPER 32-wide int8-saturating FastScan (empty unless FASTSCAN2).
+    Pq8 { regs: Vec<__m128i>, regs_y: Vec<__m256i>, scale: f32 },
     Scalar,                                      // exact int8: scan uses the raw query
     // RaBitQ: the rotated query qrot = P*q (global frame, c=0). `ip` selects IP vs L2 score assembly.
     RaBitQ { qrot: Vec<f32>, ip: bool },
@@ -3479,24 +3193,19 @@ impl Compressor for Apq4 {
         if FASTSCAN2.load(std::sync::atomic::Ordering::Relaxed) {
             // PROPER 32-wide int8-saturating FastScan: bounded LUT (hoist-safe), 256-bit LUT regs.
             let l = if ip { self.pq.query_lut_f32_i8s_ip_fs2(&qf) } else { self.pq.query_lut_f32_i8s_fs2(&qf) };
-            return QueryCtx::Pq8 { regs: pq::lut_regs_i8(&l, self.pq.m), regs_z: Vec::new(),
+            return QueryCtx::Pq8 { regs: pq::lut_regs_i8(&l, self.pq.m),
                 regs_y: pq::lut_regs_i8_y256(&l, self.pq.m), scale: 0.0 };
         }
         if FASTSCAN.load(std::sync::atomic::Ordering::Relaxed) {
             let l = if ip { self.pq.query_lut_f32_i8s_ip(&qf) } else { self.pq.query_lut_f32_i8s(&qf) };
-            let regs_z = if USE512FS.load(std::sync::atomic::Ordering::Relaxed) { pq::lut_regs_i8_z512(&l, self.pq.m) } else { Vec::new() };
             let scale = if residq && ip { self.pq.ip_i8s_scale(&qf) } else { 0.0 };
-            return QueryCtx::Pq8 { regs: pq::lut_regs_i8(&l, self.pq.m), regs_z, regs_y: Vec::new(), scale };
+            return QueryCtx::Pq8 { regs: pq::lut_regs_i8(&l, self.pq.m), regs_y: Vec::new(), scale };
         }
-        if !LUT16_OFF.load(std::sync::atomic::Ordering::Relaxed) {
-            let lut = if ip { self.pq.query_lut_f32_i16_ip(&qf) } else { self.pq.query_lut_f32_i16(&qf) };
-            let (lo, hi) = pq::lut_regs_i16(&lut, self.pq.m);
-            let lut_z = pq::lut_regs_i16_z(&lut, self.pq.m);
-            let scale = if residq && ip { self.pq.ip_i16_scale(&qf) } else { 0.0 };
-            QueryCtx::Pq16 { lo, hi, lut_z, scale }
-        } else {
-            { let l = if IP_MODE.load(std::sync::atomic::Ordering::Relaxed) { self.pq.query_lut_f32_ip_i8(&qf) } else { self.pq.query_lut_f32(&qf) }; QueryCtx::Pq { regs: pq::lut_regs(&l, self.pq.m) } }
-        }
+        let lut = if ip { self.pq.query_lut_f32_i16_ip(&qf) } else { self.pq.query_lut_f32_i16(&qf) };
+        let (lo, hi) = pq::lut_regs_i16(&lut, self.pq.m);
+        let lut_z = pq::lut_regs_i16_z(&lut, self.pq.m);
+        let scale = if residq && ip { self.pq.ip_i16_scale(&qf) } else { 0.0 };
+        QueryCtx::Pq16 { lo, hi, lut_z, scale }
     }
     fn scan_block(&self, block: &[u8], ctx: &QueryCtx, _q: &[i8], _r: &[&[i8]], out16: &mut [i32; 16]) {
         match ctx {
@@ -3667,14 +3376,10 @@ impl Compressor for Opq4 {
     fn prepare_query(&self, q: &[i8]) -> QueryCtx {
         let mut rot = vec![0f32; self.d];
         rotate(q, &self.r, self.d, &mut rot);
-        if !LUT16_OFF.load(std::sync::atomic::Ordering::Relaxed) {
-            let lut = if IP_MODE.load(std::sync::atomic::Ordering::Relaxed) { self.pq.query_lut_f32_i16_ip(&rot) } else { self.pq.query_lut_f32_i16(&rot) };
-            let (lo, hi) = pq::lut_regs_i16(&lut, self.pq.m);
-            let lut_z = pq::lut_regs_i16_z(&lut, self.pq.m);
-            QueryCtx::Pq16 { lo, hi, lut_z, scale: 0.0 }
-        } else {
-            { let l = if IP_MODE.load(std::sync::atomic::Ordering::Relaxed) { self.pq.query_lut_f32_ip_i8(&rot) } else { self.pq.query_lut_f32(&rot) }; QueryCtx::Pq { regs: pq::lut_regs(&l, self.pq.m) } }
-        }
+        let lut = if IP_MODE.load(std::sync::atomic::Ordering::Relaxed) { self.pq.query_lut_f32_i16_ip(&rot) } else { self.pq.query_lut_f32_i16(&rot) };
+        let (lo, hi) = pq::lut_regs_i16(&lut, self.pq.m);
+        let lut_z = pq::lut_regs_i16_z(&lut, self.pq.m);
+        QueryCtx::Pq16 { lo, hi, lut_z, scale: 0.0 }
     }
     fn scan_block(&self, block: &[u8], ctx: &QueryCtx, _q: &[i8], _rows16: &[&[i8]], out16: &mut [i32; 16]) {
         match ctx {
@@ -3891,12 +3596,12 @@ pub struct Index {
     pub xfn: Vec<i32>, // raw norms unused here; rerank reads ds
     pub raw: Vec<i8>,  // raw i8 vectors in SLOT order (cell-contiguous) -> cache-warm rerank gathers
     pub d: usize,
-    // 64-wide AVX-512 fast-scan (USE512FS): per cell, the full groups-of-4 blocks re-interleaved into
-    // superblocks (each (m/2)*64 bytes, group g = b0_g|b1_g|b2_g|b3_g). cell_ilstart[cell] = cumulative
-    // superblock index where cell `cell`'s superblocks begin. Empty unless built with USE512FS.
+    // Legacy 64-wide AVX-512 interleaved superblock arrays (USE512FS, deleted). Always empty; the
+    // fields + their save/load slots remain so the .idx serialization format is unchanged.
     pub blocks_il: Vec<u8>,
     pub cell_ilstart: Vec<u32>,
-    // IDEA #4 refine code (empty unless SBANN_RESID): 8-bit PQ codes in SLOT order, m bytes/slot.
+    // Legacy 8-bit refine sidecar (SBANN_RESID, deleted). Always None/empty; the fields + their
+    // save/load slots remain so the .idx serialization format is unchanged.
     pub resid_pq: Option<pq::ResidPq>,
     pub resid_codes: Vec<u8>,
     // RESIDUAL QUANTIZATION (SBANN_RESIDQ): per-cell raw centroids (nc*d i8). Empty unless RESIDQ.
@@ -3983,30 +3688,10 @@ impl Index {
         // encode blocks per cell
         let bb = comp.block_bytes();
         let d = ds.d;
-        // IDEA #4: train the 8-bit refine PQ and encode ALL points (parallel, by orig id) up front,
-        // so the sequential slot loop below just copies the precomputed code (256-way encode is 16x
-        // the 4-bit cost — must be fanned out, not done in the serial append loop).
-        let resid_on = RESID.load(std::sync::atomic::Ordering::Relaxed);
-        let (resid_pq, resid_by_orig): (Option<pq::ResidPq>, Vec<u8>) = if resid_on {
-            let dpb_r: usize = std::env::var("SBANN_RESID_DPB").ok().and_then(|s| s.parse().ok()).unwrap_or(2);
-            let iters_r: usize = std::env::var("SBANN_RESID_ITERS").ok().and_then(|s| s.parse().ok()).unwrap_or(6);
-            let smp = n.min(40000);
-            let stride = (n / smp).max(1);
-            let mut x = vec![0f32; smp * d];
-            x.par_chunks_mut(d).enumerate().for_each(|(i, o)| { let r = ds.row(i * stride); for k in 0..d { o[k] = r[k] as f32; } });
-            let rpq = pq::ResidPq::train_f32(&x, d, dpb_r, smp, iters_r);
-            let mr = rpq.m;
-            let mut v = vec![0u8; n * mr];
-            v.par_chunks_mut(mr).enumerate().for_each(|(i, out)| {
-                let r = ds.row(i);
-                let mut xf = vec![0f32; d];
-                for k in 0..d { xf[k] = r[k] as f32; }
-                rpq.encode_f32(&xf, out);
-            });
-            (Some(rpq), v)
-        } else { (None, Vec::new()) };
-        let mr = resid_pq.as_ref().map(|p| p.m).unwrap_or(0);
-        let mut resid_codes: Vec<u8> = Vec::new();
+        // resid_pq/resid_codes: legacy 8-bit refine sidecar (SBANN_RESID, deleted). Always None/empty
+        // now; the fields + their save/load slots remain for .idx format compatibility.
+        let resid_pq: Option<pq::ResidPq> = None;
+        let resid_codes: Vec<u8> = Vec::new();
         let mut blocks: Vec<u8> = Vec::new();
         let mut slot_orig: Vec<u32> = Vec::new();
         // RAW LAYOUT (Task B). Default: slot-indexed `raw` grown in the slot loop (n*a0*d, a full a0x copy).
@@ -4030,44 +3715,16 @@ impl Index {
                 for j in 0..16 {
                     slot_orig.push(if j < cnt { pts[i + j] } else { u32::MAX });
                     if !raw_dedup { if j < cnt { raw.extend_from_slice(rows[j]); } else { raw.resize(raw.len() + d, 0); } }
-                    if mr > 0 {
-                        if j < cnt { let o = pts[i + j] as usize; resid_codes.extend_from_slice(&resid_by_orig[o * mr..o * mr + mr]); }
-                        else { resid_codes.resize(resid_codes.len() + mr, 0); }
-                    }
                 }
                 i += 16;
             }
             cell_bstart[cell + 1] = if bb > 0 { (blocks.len() / bb) as u32 } else { (slot_orig.len() / 16) as u32 };
         }
-        // Optional 64-wide AVX-512 interleaved superblock layout: re-pack each cell's full groups of 4
-        // blocks (group g of the superblock = the 16 code-bytes of group g from each of the 4 blocks).
-        // Distances computed from this are bit-identical to the AVX2 fast-scan -> recall is unchanged.
-        let mut blocks_il: Vec<u8> = Vec::new();
-        let mut cell_ilstart: Vec<u32> = Vec::new();
-        if bb > 0 && USE512FS.load(std::sync::atomic::Ordering::Relaxed) {
-            let m = bb / 8; // bb = (m/2)*16  =>  m = bb/8
-            cell_ilstart = vec![0u32; nc + 1];
-            let mut nsb_total = 0u32;
-            for cell in 0..nc {
-                let nb = (cell_bstart[cell + 1] - cell_bstart[cell]) as usize;
-                nsb_total += (nb / 4) as u32;
-                cell_ilstart[cell + 1] = nsb_total;
-            }
-            blocks_il = vec![0u8; nsb_total as usize * bb * 4];
-            for cell in 0..nc {
-                let bs = cell_bstart[cell] as usize;
-                let nfull = (cell_bstart[cell + 1] - cell_bstart[cell]) as usize / 4;
-                for s in 0..nfull {
-                    let b = bs + 4 * s;
-                    let sb_idx = cell_ilstart[cell] as usize + s;
-                    let (b0, b1, b2, b3) = (
-                        &blocks[b * bb..(b + 1) * bb], &blocks[(b + 1) * bb..(b + 2) * bb],
-                        &blocks[(b + 2) * bb..(b + 3) * bb], &blocks[(b + 3) * bb..(b + 4) * bb],
-                    );
-                    pq::interleave4(b0, b1, b2, b3, m, &mut blocks_il[sb_idx * bb * 4..(sb_idx + 1) * bb * 4]);
-                }
-            }
-        }
+        // blocks_il/cell_ilstart: legacy 64-wide AVX-512 interleaved superblock arrays (USE512FS,
+        // deleted). Always empty now; the fields + their serialization slots remain for .idx
+        // format compatibility.
+        let blocks_il: Vec<u8> = Vec::new();
+        let cell_ilstart: Vec<u32> = Vec::new();
         Index {
             router, comp, cell_bstart, slot_orig, blocks, bb, xfn: Vec::new(), raw, d, blocks_il,
             cell_ilstart, resid_pq, resid_codes, rq_cent, a0, raw_orig_indexed: raw_dedup,
@@ -4082,15 +3739,7 @@ impl Index {
         let t0 = if prof { Some(std::time::Instant::now()) } else { None };
         let cells = self.router.probe(q, p);
         if let Some(t0) = t0 { PROF_ROUTE_NS.fetch_add(t0.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed); }
-        if RESID.load(std::sync::atomic::Ordering::Relaxed) && self.resid_pq.is_some() {
-            // refine pool = t survivors; exact-rerank depth from SBANN_RR_DEPTH (default = t = no
-            // shallowing); SBANN_RESID_REFINE=0 disables the 8-bit refine (plain-shallow baseline).
-            let rr: usize = std::env::var("SBANN_RR_DEPTH").ok().and_then(|s| s.parse().ok()).unwrap_or(t);
-            let refine = std::env::var("SBANN_RESID_REFINE").ok().map(|s| s != "0").unwrap_or(true);
-            self.scan_rerank_resid(ds, q, &cells, t, rr, refine, k)
-        } else {
-            self.scan_rerank(ds, q, &cells, t, k)
-        }
+        self.scan_rerank(ds, q, &cells, t, k)
     }
 
     /// OLD rerank path (gather from ds by orig id) -- kept for clean same-index A/B vs the new
@@ -4169,9 +3818,6 @@ impl Index {
         let mut out16 = [0i32; 16];
         let mut out32 = [0i32; 32];
         let bb = self.bb;
-        let use512fs = USE512FS.load(std::sync::atomic::Ordering::Relaxed)
-            && !self.blocks_il.is_empty()
-            && matches!(ctx, QueryCtx::Pq8 { .. });
         // RESIDQ: add the exact per-cell <q,centroid> offset (in scan i16-units) so candidate scores =
         // <q,cent>+<q,resid_hat>. scale=0 (non-residq) skips it. Applied once per cell after its blocks.
         let rq_scale: f32 = match ctx { QueryCtx::Pq16 { scale, .. } | QueryCtx::Pq8 { scale, .. } => *scale, _ => 0.0 };
@@ -4205,37 +3851,6 @@ impl Index {
                     for j in 0..16 {
                         let slot = b * 16 + j;
                         if self.slot_orig[slot] != u32::MAX { pool.push((out16[j], slot as u32)); }
-                    }
-                }
-            } else if use512fs {
-                // 64-wide AVX-512 fast-scan over the interleaved superblocks (4 blocks/superblock).
-                if let QueryCtx::Pq8 { regs, regs_z, .. } = ctx {
-                    let m = bb / 8;
-                    let il0 = self.cell_ilstart[cell as usize] as usize;
-                    let nfull = (be - bs) / 4;
-                    let mut out64 = [0i32; 64];
-                    for s in 0..nfull {
-                        let sb = il0 + s;
-                        unsafe {
-                            pq::block_adc_i8_i16acc_avx512_il(&self.blocks_il[sb * bb * 4..(sb + 1) * bb * 4], m, regs_z, &mut out64);
-                        }
-                        let bbase = bs + 4 * s;
-                        for sub in 0..4 {
-                            let slot0 = (bbase + sub) * 16;
-                            for j in 0..16 {
-                                let slot = slot0 + j;
-                                if self.slot_orig[slot] != u32::MAX { pool.push((out64[sub * 16 + j], slot as u32)); }
-                            }
-                        }
-                    }
-                    // remainder blocks (< 4): plain AVX2 fast-scan, per block
-                    for b in (bs + 4 * nfull)..be {
-                        let block = &self.blocks[b * bb..(b + 1) * bb];
-                        unsafe { pq::block_adc_i8_i16acc(block, m, regs, &mut out16); }
-                        for j in 0..16 {
-                            let slot = b * 16 + j;
-                            if self.slot_orig[slot] != u32::MAX { pool.push((out16[j], slot as u32)); }
-                        }
                     }
                 }
             } else {
@@ -4300,9 +3915,6 @@ impl Index {
                        top: &mut FusedTopT, out16: &mut [i32; 16], out32: &mut [i32; 32]) {
         let need_rows = self.comp.needs_raw_rows();
         let bb = self.bb;
-        let use512fs = USE512FS.load(std::sync::atomic::Ordering::Relaxed)
-            && !self.blocks_il.is_empty()
-            && matches!(ctx, QueryCtx::Pq8 { .. });
         let slot_orig = &self.slot_orig[..];
         let (bs, be) = (self.cell_bstart[cell as usize] as usize, self.cell_bstart[cell as usize + 1] as usize);
         if need_rows {
@@ -4314,28 +3926,6 @@ impl Index {
                 }).collect();
                 self.comp.scan_block(block, ctx, q, &rows16, &mut *out16);
                 top.emit(&out16[..], b * 16, slot_orig);
-            }
-        } else if use512fs {
-            if let QueryCtx::Pq8 { regs, regs_z, .. } = ctx {
-                let m = bb / 8;
-                let il0 = self.cell_ilstart[cell as usize] as usize;
-                let nfull = (be - bs) / 4;
-                let mut out64 = [0i32; 64];
-                for s in 0..nfull {
-                    let sb = il0 + s;
-                    unsafe {
-                        pq::block_adc_i8_i16acc_avx512_il(&self.blocks_il[sb * bb * 4..(sb + 1) * bb * 4], m, regs_z, &mut out64);
-                    }
-                    let bbase = bs + 4 * s;
-                    for sub in 0..4 {
-                        top.emit(&out64[sub * 16..sub * 16 + 16], (bbase + sub) * 16, slot_orig);
-                    }
-                }
-                for b in (bs + 4 * nfull)..be {
-                    let block = &self.blocks[b * bb..(b + 1) * bb];
-                    unsafe { pq::block_adc_i8_i16acc(block, m, regs, &mut *out16); }
-                    top.emit(&out16[..], b * 16, slot_orig);
-                }
             }
         } else {
             let mut b = bs;
@@ -4377,9 +3967,6 @@ impl Index {
         let mut out16 = [0i32; 16];
         let mut out32 = [0i32; 32];
         let bb = self.bb;
-        let use512fs = USE512FS.load(std::sync::atomic::Ordering::Relaxed)
-            && !self.blocks_il.is_empty()
-            && matches!(ctx, QueryCtx::Pq8 { .. });
         let mut acc: i64 = 0;
         let prefetch = PREFETCH.load(std::sync::atomic::Ordering::Relaxed) && bb > 0 && !self.blocks.is_empty();
         let pfdist = PFDIST.load(std::sync::atomic::Ordering::Relaxed).max(1);
@@ -4404,23 +3991,6 @@ impl Index {
                     self.comp.scan_block(block, ctx, q, &rows16, &mut out16);
                     acc = acc.wrapping_add(out16[0] as i64);
                 }
-            } else if use512fs {
-                if let QueryCtx::Pq8 { regs, regs_z, .. } = ctx {
-                    let m = bb / 8;
-                    let il0 = self.cell_ilstart[cell as usize] as usize;
-                    let nfull = (be - bs) / 4;
-                    let mut out64 = [0i32; 64];
-                    for s in 0..nfull {
-                        let sb = il0 + s;
-                        unsafe { pq::block_adc_i8_i16acc_avx512_il(&self.blocks_il[sb * bb * 4..(sb + 1) * bb * 4], m, regs_z, &mut out64); }
-                        acc = acc.wrapping_add(out64[0] as i64);
-                    }
-                    for b in (bs + 4 * nfull)..be {
-                        let block = &self.blocks[b * bb..(b + 1) * bb];
-                        unsafe { pq::block_adc_i8_i16acc(block, m, regs, &mut out16); }
-                        acc = acc.wrapping_add(out16[0] as i64);
-                    }
-                }
             } else {
                 let mut b = bs;
                 while b + 1 < be {
@@ -4444,16 +4014,6 @@ impl Index {
     pub fn scan_rerank(&self, ds: &I8Bin, q: &[i8], cells: &[u32], t: usize, k: usize) -> Vec<u32> {
         let prof = PROFILE.load(std::sync::atomic::Ordering::Relaxed);
         let ctx = self.comp.prepare_query(q);
-        // SBANN_SORTCELLS: visit the probed cells in ASCENDING cell-id (= block/memory) order so the
-        // scattered PQ-block reads become monotonically forward. Recall-exactly-neutral (the top-t select
-        // is order-independent). The ~p-element sort (few us) is charged to the wall-clock query below.
-        let sorted_store;
-        let cells: &[u32] = if SORTCELLS.load(std::sync::atomic::Ordering::Relaxed) {
-            let mut v = cells.to_vec();
-            v.sort_unstable();
-            sorted_store = v;
-            &sorted_store
-        } else { cells };
         // DIAGNOSTIC (SBANN_SCANDIAG): time ONLY the kernel floor (block reads + LUT, NO collect) into
         // PROF_SCAN_NS and return early. Run this in a SEPARATE process vs the normal run: the per-query
         // cold-cache pattern is identical, so collect = scan_full - scan_kernelonly is measured unbiased.
@@ -4468,7 +4028,7 @@ impl Index {
         // FUSED top-t collect (SBANN_FUSEDTOPK): only valid when no pre-cap dedup is needed (a0 dups must
         // be collapsed BEFORE the cap) and no per-cell residq offset is applied during scan (the threshold
         // compare runs on the same dist the cap ranks by). Otherwise fall back to the materialize-all path.
-        let need_dedup = self.a0 >= DEDUP_A0.load(std::sync::atomic::Ordering::Relaxed) || POOLDEDUP.load(std::sync::atomic::Ordering::Relaxed);
+        let need_dedup = self.a0 >= DEDUP_A0.load(std::sync::atomic::Ordering::Relaxed);
         let residq_active = RESIDQ.load(std::sync::atomic::Ordering::Relaxed) && !self.rq_cent.is_empty();
         if FUSEDTOPK.load(std::sync::atomic::Ordering::Relaxed) && !need_dedup && !residq_active {
             let pool = self.scan_pool_fused(ds, q, cells, &ctx, t);
@@ -4515,13 +4075,6 @@ impl Index {
     pub fn scan_rerank_frr(&self, ds: &I8Bin, q: &[i8], qf: &[f32], fbase: &crate::fbin::FBin, cells: &[u32], t: usize, k: usize,
         graph: Option<&GraphAdj>) -> Vec<u32> {
         let prof = PROFILE.load(std::sync::atomic::Ordering::Relaxed);
-        let sorted_store;
-        let cells: &[u32] = if SORTCELLS.load(std::sync::atomic::Ordering::Relaxed) {
-            let mut v = cells.to_vec();
-            v.sort_unstable();
-            sorted_store = v;
-            &sorted_store
-        } else { cells };
         if let (Some(portals), Some(g), true) = (
             CELL_PORTALS.get(),
             graph,
@@ -4560,7 +4113,7 @@ impl Index {
         }
         let ctx = self.comp.prepare_query(q);
         let ts = if prof { Some(std::time::Instant::now()) } else { None };
-        let need_dedup = self.a0 >= DEDUP_A0.load(std::sync::atomic::Ordering::Relaxed) || POOLDEDUP.load(std::sync::atomic::Ordering::Relaxed);
+        let need_dedup = self.a0 >= DEDUP_A0.load(std::sync::atomic::Ordering::Relaxed);
         let residq_active = RESIDQ.load(std::sync::atomic::Ordering::Relaxed) && !self.rq_cent.is_empty();
         let cascade = CASCADE.load(std::sync::atomic::Ordering::Relaxed);
         let kk = CASCADE_K.load(std::sync::atomic::Ordering::Relaxed);
@@ -4758,7 +4311,7 @@ impl Index {
         let cells = self.router.probe(q, p);
         let ctx = self.comp.prepare_query(q);
         let mut pool = self.scan_pool(ds, q, &cells, &ctx);
-        if self.a0 >= DEDUP_A0.load(std::sync::atomic::Ordering::Relaxed) || POOLDEDUP.load(std::sync::atomic::Ordering::Relaxed) {
+        if self.a0 >= DEDUP_A0.load(std::sync::atomic::Ordering::Relaxed) {
             dedup_pool_by_orig(&mut pool, &self.slot_orig);
         }
         let tt = t.min(pool.len());
@@ -4779,72 +4332,6 @@ impl Index {
             if seen.insert(orig) { out.push(orig); if out.len() == k { break; } }
         }
         out
-    }
-
-    /// IDEA #4 refine path. Scan -> select top-`t_surv` by 4-bit ADC -> (optional) REFINE that pool
-    /// with the 8-bit code (reads only m bytes/survivor from resid_codes, NOT the d-byte raw) -> keep
-    /// the top-`rr_depth` by the refined order -> exact raw rerank ONLY those rr_depth. `refine=false`
-    /// keeps the 4-bit-ADC order (plain-shallow baseline) for a clean same-index A/B. The headline:
-    /// at fixed recall, the refined order needs a far smaller rr_depth -> far fewer raw-vector reads.
-    pub fn scan_rerank_resid(&self, ds: &I8Bin, q: &[i8], cells: &[u32], t_surv: usize, rr_depth: usize, refine: bool, k: usize) -> Vec<u32> {
-        let ctx = self.comp.prepare_query(q);
-        let need_rows = self.comp.needs_raw_rows();
-        let mut pool: Vec<(i32, u32)> = Vec::with_capacity(8192);
-        let mut out16 = [0i32; 16];
-        let mut out32 = [0i32; 32];
-        let bb = self.bb;
-        for &cell in cells {
-            let (bs, be) = (self.cell_bstart[cell as usize] as usize, self.cell_bstart[cell as usize + 1] as usize);
-            if need_rows {
-                for b in bs..be {
-                    let block = if bb > 0 { &self.blocks[b * bb..(b + 1) * bb] } else { &[][..] };
-                    let rows16: Vec<&[i8]> = (0..16).map(|j| {
-                        let o = self.slot_orig[b * 16 + j];
-                        if o != u32::MAX { ds.row(o as usize) } else { &[][..] }
-                    }).collect();
-                    self.comp.scan_block(block, &ctx, q, &rows16, &mut out16);
-                    for j in 0..16 { let slot = b * 16 + j; if self.slot_orig[slot] != u32::MAX { pool.push((out16[j], slot as u32)); } }
-                }
-            } else {
-                let mut b = bs;
-                while b + 1 < be {
-                    let b0 = &self.blocks[b * bb..(b + 1) * bb];
-                    let b1 = &self.blocks[(b + 1) * bb..(b + 2) * bb];
-                    self.comp.scan_block_x2(b0, b1, &ctx, &mut out32);
-                    for j in 0..16 { let slot = b * 16 + j; if self.slot_orig[slot] != u32::MAX { pool.push((out32[j], slot as u32)); } }
-                    for j in 0..16 { let slot = (b + 1) * 16 + j; if self.slot_orig[slot] != u32::MAX { pool.push((out32[16 + j], slot as u32)); } }
-                    b += 2;
-                }
-                if b < be {
-                    let block = &self.blocks[b * bb..(b + 1) * bb];
-                    self.comp.scan_block(block, &ctx, q, &[], &mut out16);
-                    for j in 0..16 { let slot = b * 16 + j; if self.slot_orig[slot] != u32::MAX { pool.push((out16[j], slot as u32)); } }
-                }
-            }
-        }
-        // select top-t_surv by the 4-bit ADC distance (the candidate pool entering refine)
-        let tt = t_surv.min(pool.len());
-        if tt > 0 { pool.select_nth_unstable(tt - 1); pool.truncate(tt); }
-        // refine: re-key the survivors by the 8-bit refine distance (cheap m-byte reads), else keep ADC
-        let rpq = self.resid_pq.as_ref().expect("resid_pq");
-        let mr = rpq.m;
-        let mut keyed: Vec<(f32, u32)> = if refine {
-            let qf: Vec<f32> = q.iter().map(|&v| v as f32).collect();
-            // IP mode (OOD/MIPS): refine by approx INNER PRODUCT (-<q,decode>), matching the IP exact
-            // rerank below; L2 otherwise. Same 8-bit codes, just a different query LUT.
-            let lut = if IP_MODE.load(std::sync::atomic::Ordering::Relaxed) { rpq.query_lut_f32_ip(&qf) } else { rpq.query_lut_f32(&qf) };
-            pool.iter().map(|&(_, slot)| {
-                let code = &self.resid_codes[slot as usize * mr..slot as usize * mr + mr];
-                (rpq.adc(code, &lut), slot)
-            }).collect()
-        } else {
-            pool.iter().map(|&(adc, slot)| (adc as f32, slot)).collect()
-        };
-        // keep the top-rr_depth by the (refined or ADC) order -> these are the ONLY raw reads
-        let dd = rr_depth.min(keyed.len());
-        if dd > 0 { keyed.select_nth_unstable_by(dd - 1, |a, b| a.0.total_cmp(&b.0)); keyed.truncate(dd); }
-        let pool2: Vec<(i32, u32)> = keyed.iter().map(|&(_, slot)| (0i32, slot)).collect();
-        rerank_contig(&self.raw, self.d, &self.slot_orig, q, &pool2, k, self.raw_orig_indexed)
     }
 
     /// Batched search: GEMM-route ALL queries at once, then per-query scan+rerank in parallel.
@@ -5124,7 +4611,7 @@ fn load_router(r: &mut crate::persist::Pr) -> Box<dyn Router> {
             } else { Vec::new() };
             let cadj = cadj_of(&cent, d);
             let gbias = gbias_of(&cent, d);
-            Box::new(HierRouter { cent_pfx: std::sync::OnceLock::new(), d, mu, kf, levels, cent, child, beam, soar, radc, rcodes, rblocks, cadj, gbias, cent_f16 })
+            Box::new(HierRouter { d, mu, kf, levels, cent, child, beam, soar, radc, rcodes, rblocks, cadj, gbias, cent_f16 })
         }
         _ => panic!("unknown router type tag {tag} in index file (only HierRouter={ROUTER_TAG_HIER} supported)"),
     }
@@ -5187,7 +4674,7 @@ impl Index {
 
     /// Reconstruct an index from a file written by `save_to`. mmaps the file and COPIES each region into
     /// owned Vecs (the Index owns its arrays), then drops the mmap. Recall is bit-identical to the in-RAM
-    /// build (same arrays, same router/comp). The build/scan global flags (FASTSCAN/USE512FS/RESID/...)
+    /// build (same arrays, same router/comp). The build/scan global flags (FASTSCAN/FASTSCAN2/...)
     /// must match the build env, exactly as for the in-RAM path — they gate which arrays the search reads.
     pub fn load_from(path: &str) -> std::io::Result<Index> {
         let f = std::fs::File::open(path)?;

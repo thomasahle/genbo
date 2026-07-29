@@ -5842,6 +5842,20 @@ P366 [2026-07-29, PROVISIONAL pending quiet band ABBA] LOWRANK-NAV: rank-256 PCA
   law attack on the same band; DESIGN_LAWS.md + tuned_optima.md + flag_audit.md banked (Stage A/C prep);
   Stage C deletion pass (26 audited flags) delegated on the committed tree.
 
+P367 [2026-07-29] STAGE C EXECUTED: 26 audited dead flags deleted (net ~-900 LOC); bit-identity exact.
+  All 26 DELETE-candidates from flag_audit.md removed with full gated mechanisms (ADAPT_POOL/STOP,
+  CASC_DIM/SORT, COMP, CONFIGS, GBIAS_FILE, GRAPH_SORT, LUT_AB, NOLUT16, POOLDEDUP, RBQ_NAV, RESID
+  family, ROUTE_SDIM/SDIM0/TRAIN, RR_DEPTH, RRLIST, SORTCELLS, SYMPACK, USE512FS, VNNI, VNNI_AB;
+  +TSURV as disclosed collateral — sole parse site was inside the deleted RESID sweep). 5 UNSURE
+  flags held (BEAMS, ND_N, PQ4_FILE/NAV, RESIDQ). Env parse sites 141 -> 116. .idx FORMAT PRESERVED
+  (blocks_il/resid_pq slots kept empty — prebuilt champion indexes load unchanged; verified).
+  Bit-identity gate: pre- vs post-deletion binaries, wiki-1M, 3 arms (no-graph / per-cohort / best-
+  first) — recall identical to 4 decimals. cargo test 7/7; zero warnings. (Delegated agent; reviewed.)
+  CO-LANDED (attribution): this commit also carries a peer session's in-flight one-load measurement
+  harness (SBANN_SEARCH_PLAN 11-field exact-point rows + SBANN_ROAR_PLAN walk form) — stranded
+  uncommitted ~36h after their session ended; my deletions were adapted to its restructure, so the
+  states are inseparable. Harness authored by the peer session, not this one.
+
 === SESSION SUMMARY (current, 2026-07-12, through P334) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall

@@ -16,25 +16,6 @@ pub fn l2_i8_scalar(x: &[i8], c: &[i8]) -> i32 {
     s
 }
 
-/// Hamming distance (popcount of XOR) over two equal-length 1-bit-code byte slices. RBQ-TIER sign
-/// navigation: fewer differing signs = higher IP proxy (smaller = closer, matching -dot). u64-chunked
-/// POPCNT; d/8 bytes/row gather vs d for the int8 dot -> bandwidth-cheap prefilter/nav score.
-#[inline]
-pub fn hamming_u8(a: &[u8], b: &[u8]) -> u32 {
-    debug_assert_eq!(a.len(), b.len());
-    let n = a.len();
-    let mut s = 0u32;
-    let mut k = 0usize;
-    while k + 8 <= n {
-        let x = u64::from_le_bytes(a[k..k + 8].try_into().unwrap())
-              ^ u64::from_le_bytes(b[k..k + 8].try_into().unwrap());
-        s += x.count_ones();
-        k += 8;
-    }
-    while k < n { s += (a[k] ^ b[k]).count_ones(); k += 1; }
-    s
-}
-
 /// AVX2 squared L2: widen 16 i8 -> i16, diff, `madd_epi16(diff,diff)` -> 8 i32 lanes, accumulate.
 #[cfg(target_arch = "x86_64")]
 #[target_feature(enable = "avx2")]
@@ -433,38 +414,14 @@ pub fn selftest_l2_norm(d: usize) -> bool {
     a == b
 }
 
-/// Opt-in VNNI for the int8 dot (set from SBANN_VNNI). Default off until proven faster than AVX2 on
-/// this HW (AVX-512 downclocking can make it slower -- cf. the vpermw scan dead-end).
-pub static VNNI_ON: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
-
 /// int8 dot product (dispatch). Returned as a "distance" via NEGATION so min-heap = max inner product.
 #[inline]
 pub fn negdot_i8(x: &[i8], c: &[i8]) -> i32 {
     #[cfg(target_arch = "x86_64")]
     {
-        if VNNI_ON.load(std::sync::atomic::Ordering::Relaxed) {
-            return -unsafe { dot_i8_vnni(x, c) };
-        }
         if is_x86_feature_detected!("avx2") { return -unsafe { dot_i8_avx2(x, c) }; }
     }
     let mut s = 0i32; for k in 0..x.len() { s += x[k] as i32 * c[k] as i32; } -s
-}
-
-/// Self-test: VNNI int8 dot must match the scalar dot.
-pub fn selftest_dot(d: usize) -> bool {
-    #[cfg(target_arch = "x86_64")]
-    {
-        if !(is_x86_feature_detected!("avx512vnni") && is_x86_feature_detected!("avx512bw")) { return true; }
-        let mut seed = 0x1357_2468u64;
-        let mut nb = || { seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1); ((seed >> 24) as i32 % 256 - 128) as i8 };
-        for _ in 0..32 {
-            let x: Vec<i8> = (0..d).map(|_| nb()).collect();
-            let c: Vec<i8> = (0..d).map(|_| nb()).collect();
-            let scal: i32 = (0..d).map(|k| x[k] as i32 * c[k] as i32).sum();
-            if unsafe { dot_i8_vnni(&x, &c) } != scal { return false; }
-        }
-    }
-    true
 }
 
 /// Dispatch: AVX2 if available at runtime, else scalar.
