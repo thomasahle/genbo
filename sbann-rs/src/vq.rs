@@ -933,6 +933,82 @@ pub static SQ4_STEP: std::sync::OnceLock<Vec<f32>> = std::sync::OnceLock::new();
 /// recovers the double-quantization tail debt (WebVid -0.35pt) at ~N x d bytes extra per query.
 pub static SQ4_INT8K: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
 
+/// LOW-RANK NAV (flag-gated, P365 follow-up): resident rank-R PCA sidecar of the int8 rows,
+/// quantized to i8 per projected dim (R bytes/row; R=256 at d=1024 = 4 cache lines vs SQ4's 8 and
+/// int8's 16). Beam neighbor scoring (rbqdist!/rbqpf!) swaps to a VNNI int8 dot over the R-byte
+/// codes; the cell scan, int8 escalation (SBANN_SQ4_INT8K applies here too) and float rerank stay
+/// unchanged, so recall risk is confined to pool/band containment (the verified mid-cascade law).
+/// Built by experiments/build_lowrank_nav.py; SBANN_LOWRANK_FILE loads, SBANN_LOWRANK_NAV=1 gates.
+pub struct LowRankNav {
+    pub d: usize,
+    pub r: usize,
+    pub n: usize,
+    pub mean: Vec<f32>,  // d: training-sample mean of the int8 rows
+    pub p: Vec<f32>,     // d x r ROW-major (p[j*r + t]): top-R PCA eigenvectors as columns
+    pub scale: Vec<f32>, // r: code_t = clamp(round(y_t * scale_t), -127, 127), scale_t = 127/p99.9|y_t|
+    pub codes: Vec<i8>,  // n x r, orig-indexed, resident (anonymous memory like the SQ4 sidecar)
+}
+
+impl LowRankNav {
+    /// Sidecar layout (little-endian; documented in build_lowrank_nav.py):
+    ///   magic "SBLRNAV\0" (8B), d u32, R u32, n u64, mean d*f32, P d*R*f32 row-major,
+    ///   scales R*f32, codes n*R i8.
+    pub fn load(path: &str) -> std::io::Result<Self> {
+        use std::io::Read;
+        let mut f = std::io::BufReader::with_capacity(1 << 22, std::fs::File::open(path)?);
+        let mut hdr = [0u8; 24];
+        f.read_exact(&mut hdr)?;
+        assert_eq!(&hdr[..8], b"SBLRNAV\0", "bad low-rank nav magic");
+        let d = u32::from_le_bytes(hdr[8..12].try_into().unwrap()) as usize;
+        let r = u32::from_le_bytes(hdr[12..16].try_into().unwrap()) as usize;
+        let n = u64::from_le_bytes(hdr[16..24].try_into().unwrap()) as usize;
+        assert!(r % 64 == 0, "low-rank R={r} must be a multiple of 64 (VNNI dot width)");
+        let mut read_f32 = |len: usize| -> std::io::Result<Vec<f32>> {
+            let mut raw = vec![0u8; len * 4];
+            f.read_exact(&mut raw)?;
+            Ok(raw.chunks_exact(4).map(|c| f32::from_le_bytes(c.try_into().unwrap())).collect())
+        };
+        let mean = read_f32(d)?;
+        let p = read_f32(d * r)?;
+        let scale = read_f32(r)?;
+        // codes are read straight into the Vec<i8> allocation (no 9GB double-buffer at 35M).
+        let mut codes = vec![0i8; n * r];
+        f.read_exact(unsafe {
+            std::slice::from_raw_parts_mut(codes.as_mut_ptr() as *mut u8, n * r)
+        })?;
+        Ok(Self { d, r, n, mean, p, scale, codes })
+    }
+}
+
+/// Fold the low-rank query once per query: project the int8 query onto the PCA basis
+/// (qy = (q - mean) @ P), divide by the per-dim CODE scales (codes store y_t*scale_t, so the query
+/// carries 1/scale_t — scaling both sides by scale_t would silently reweight projected dims by
+/// scale_t^2, the P346 rp8_engine_gate lesson), then requantize to i8 with one per-query global
+/// multiplier (query-side-only noise; base codes stay exact per dim — same convention as SQ4_STEP).
+pub fn lowrank_fold_query(q: &[i8], lr: &LowRankNav) -> Vec<i8> {
+    assert_eq!(q.len(), lr.d, "low-rank query dimension mismatch");
+    let r = lr.r;
+    let mut qy = vec![0f32; r];
+    for j in 0..lr.d {
+        let c = q[j] as f32 - lr.mean[j];
+        let prow = &lr.p[j * r..j * r + r];
+        for t in 0..r {
+            qy[t] += c * prow[t];
+        }
+    }
+    for t in 0..r {
+        qy[t] /= lr.scale[t].max(1e-12);
+    }
+    let mx = qy.iter().fold(0f32, |a, &v| a.max(v.abs())).max(1e-9);
+    let g = 127.0 / mx;
+    qy.iter().map(|&v| (v * g).round().clamp(-127.0, 127.0) as i8).collect()
+}
+
+pub static LOWRANK: std::sync::OnceLock<LowRankNav> = std::sync::OnceLock::new();
+/// Nav swap gate (SBANN_LOWRANK_NAV=1). Separate from the sidecar load so the file can stay
+/// resident across in-process A/B sweeps. Off by default: champion path bit-identical.
+pub static LOWRANK_NAV_ON: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
 /// SYMPACK-B (P344, SymphonyQG-style packed adjacency — cited transplant, composed with our IVF entry,
 /// SQ4 codes and int8/float escalation): per node one contiguous block = [ke neighbor ids (u32 LE)]
 /// [ke × d/2 nibble codes]. Expanding a walk node reads ONE sequential block (17ns/candidate measured)
@@ -1768,6 +1844,11 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
     // same -dot orientation as the int8 path, so selection/rerank downstream is unchanged.
     // SQ4-RUNG: deinterleave the int8 query once per query (qe = even dims, qo = odd) to pair with the
     // nibble layout (byte j = n[2j] | n[2j+1]<<4) in dot_sq4_vnni.
+    // LOW-RANK NAV: project the int8 query onto the resident rank-R PCA basis once per query
+    // (d*R f32 MACs, ~R=256/d=1024: 256K — amortized over hundreds of beam evals); beam rows are
+    // then scored by a VNNI int8 dot over R bytes (4 lines at R=256 vs SQ4's d/2=8 at d=1024).
+    let lr = if LOWRANK_NAV_ON.load(Relaxed) { LOWRANK.get() } else { None };
+    let lr_q: Vec<i8> = if let Some(lr) = lr { lowrank_fold_query(q, lr) } else { Vec::new() };
     let sq4 = SQ4.get();
     let (sq4_qe, sq4_qo): (Vec<i8>, Vec<i8>) = if sq4.is_some() {
         // Fold the per-dim quantization steps into the query, then requantize to i8 with a per-query
@@ -1822,10 +1903,14 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
         else if let Some(gl) = layout { unsafe { _mm_prefetch(gl.base.row(union[ii] as usize).as_ptr() as *const i8, _MM_HINT_T0) }; }
         else { unsafe { _mm_prefetch(ds.row(union[ii] as usize).as_ptr() as *const i8, _MM_HINT_T0) }; }
     }}; }
-    // Nav score priority: SQ4 nibble dot > PQ4 LUT sum > RBQ Hamming > int8 -dot. All "smaller=better".
+    // Nav score priority: LOWRANK R-byte dot > SQ4 nibble dot > PQ4 LUT sum > RBQ Hamming > int8 -dot.
+    // All "smaller=better".
     macro_rules! rbqdist { ($i:expr) => {{
         let ii = $i as usize;
-        if let Some(codes) = sq4 {
+        if let Some(lr) = lr {
+            let o = original_of(union[ii]) as usize * lr.r;
+            -unsafe { simd::dot_i8_vnni(&lr_q, &lr.codes[o..o + lr.r]) }
+        } else if let Some(codes) = sq4 {
             let hb = d / 2;
             let o = original_of(union[ii]) as usize * hb;
             -unsafe { simd::dot_sq4_vnni(&sq4_qe, &sq4_qo, &codes[o..o + hb]) }
@@ -1850,7 +1935,12 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
     }}; }
     macro_rules! rbqpf { ($i:expr) => {{
         let ii = $i as usize;
-        if let Some(codes) = sq4 {
+        if let Some(lr) = lr {
+            let base = original_of(union[ii]) as usize * lr.r;
+            let ptr = lr.codes.as_ptr();
+            let mut off = 0usize;
+            while off < lr.r { unsafe { _mm_prefetch(ptr.add(base + off) as *const i8, _MM_HINT_T0) }; off += 64; }
+        } else if let Some(codes) = sq4 {
             let hb = d / 2;
             let base = original_of(union[ii]) as usize * hb;
             let ptr = codes.as_ptr();
@@ -2008,8 +2098,10 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
     PROF_GRAPH_ROWS.fetch_add((union.len().saturating_sub(pool_distinct + m_expand * ke)) as u64, Relaxed);
     record_union_trace(trace_qid, pool_distinct, &union);
     // SQ4 int8 escalation (P343c): SQ4 picks a wide band, int8 re-ranks it, float takes the top-kk.
+    // LOW-RANK NAV reuses the same stage (SBANN_SQ4_INT8K) so every low-rank-surfaced candidate can
+    // still pass the exact int8 rescore before float rerank; champion (both None) is untouched.
     let esc = SQ4_INT8K.load(Relaxed);
-    if sq4.is_some() && esc > 0 && !scored.is_empty() {
+    if (sq4.is_some() || lr.is_some()) && esc > 0 && !scored.is_empty() {
         // review P344: esc must be a WIDER band than kk, else KLIST points silently collapse to esc
         let e = esc.max(kk).min(scored.len());
         if e < scored.len() { scored.select_nth_unstable(e - 1); scored.truncate(e); }
@@ -5136,5 +5228,83 @@ impl Index {
             ins_raw: Vec::new(), ins_orig: Vec::new(), ins_loc: std::collections::HashMap::new(),
             ins_dirty: Vec::new(), ins_count: 0, main_rev: None, n_main,
         })
+    }
+}
+
+#[cfg(test)]
+mod lowrank_tests {
+    use super::*;
+
+    /// Deterministic xorshift so the test needs no rand dependency.
+    fn xorshift(state: &mut u64) -> u64 {
+        let mut x = *state;
+        x ^= x << 13;
+        x ^= x >> 7;
+        x ^= x << 17;
+        *state = x;
+        x
+    }
+    fn rand_f32(state: &mut u64) -> f32 {
+        // uniform in [-1, 1)
+        (xorshift(state) >> 40) as f32 / (1u64 << 23) as f32 * 2.0 - 1.0
+    }
+
+    /// LOW-RANK NAV correctness: (a) the engine's projected-quantized query fold matches an
+    /// independent f64 scalar reference elementwise (|diff| <= 1 code from f32-vs-f64 rounding,
+    /// >= 95% exact); (b) the VNNI R-byte dot used by rbqdist! equals the exact scalar i32 dot.
+    #[test]
+    fn lowrank_fold_query_matches_scalar_reference() {
+        let (d, r, n) = (96usize, 64usize, 32usize);
+        let mut st = 0x5eed_1234_5678_9abcu64;
+        let mut lr = LowRankNav {
+            d,
+            r,
+            n,
+            mean: (0..d).map(|_| rand_f32(&mut st) * 8.0).collect(),
+            p: (0..d * r).map(|_| rand_f32(&mut st) * 0.2).collect(),
+            scale: (0..r).map(|_| 0.05 + rand_f32(&mut st).abs() * 4.0).collect(),
+            codes: Vec::new(),
+        };
+        lr.codes = (0..n * r).map(|_| (rand_f32(&mut st) * 127.0) as i8).collect();
+        let q: Vec<i8> = (0..d).map(|_| (rand_f32(&mut st) * 127.0) as i8).collect();
+
+        // (a) engine fold vs f64 scalar reference (transposed accumulation order on purpose).
+        let folded = lowrank_fold_query(&q, &lr);
+        assert_eq!(folded.len(), r);
+        let mut qy = vec![0f64; r];
+        for t in 0..r {
+            for j in 0..d {
+                qy[t] += (q[j] as f64 - lr.mean[j] as f64) * lr.p[j * r + t] as f64;
+            }
+            qy[t] /= (lr.scale[t] as f64).max(1e-12);
+        }
+        let mx = qy.iter().fold(0f64, |a, &v| a.max(v.abs())).max(1e-9);
+        let g = 127.0 / mx;
+        let mut exact = 0usize;
+        for t in 0..r {
+            let want = (qy[t] * g).round().clamp(-127.0, 127.0) as i32;
+            let got = folded[t] as i32;
+            assert!(
+                (want - got).abs() <= 1,
+                "fold dim {t}: engine {got} vs reference {want}"
+            );
+            if want == got { exact += 1; }
+        }
+        assert!(exact * 100 >= r * 95, "only {exact}/{r} fold dims exact");
+
+        // (b) the rbqdist! kernel (VNNI dot over R bytes) is EXACTLY the scalar i32 dot.
+        if std::is_x86_feature_detected!("avx512vnni")
+            && std::is_x86_feature_detected!("avx512bw")
+            && std::is_x86_feature_detected!("avx512f")
+        {
+            for row in 0..n {
+                let codes = &lr.codes[row * r..(row + 1) * r];
+                let want: i32 = (0..r).map(|t| folded[t] as i32 * codes[t] as i32).sum();
+                let got = unsafe { crate::simd::dot_i8_vnni(&folded, codes) };
+                assert_eq!(got, want, "vnni dot mismatch on row {row}");
+            }
+        } else {
+            eprintln!("skipping VNNI half of the test: AVX-512 VNNI not detected");
+        }
     }
 }

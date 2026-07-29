@@ -780,6 +780,28 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
             let _ = vq::SQ4_STEP.set(step);
             let _ = vq::SQ4.set(codes);
         }
+        // LOW-RANK NAV (flag-gated, P365 follow-up): rank-R PCA int8 sidecar built offline by
+        // experiments/build_lowrank_nav.py (R bytes/row; R=256 at d=1024 = 4 cache lines vs SQ4's 8).
+        // SBANN_LOWRANK_FILE loads the codes RESIDENT (anonymous memory, like the SQ4 sidecar);
+        // SBANN_LOWRANK_NAV=1 swaps beam neighbor scoring (rbqdist!/rbqpf!) to a VNNI int8 dot over
+        // the R-byte codes. Cell scan, int8 escalation (SBANN_SQ4_INT8K) and float rerank unchanged.
+        if let Ok(path) = std::env::var("SBANN_LOWRANK_FILE") {
+            let t0 = Instant::now();
+            let lr = vq::LowRankNav::load(&path).expect("load low-rank nav sidecar");
+            assert_eq!(lr.d, ds.d, "low-rank sidecar dimension mismatch");
+            assert_eq!(lr.n, n, "low-rank sidecar row count mismatch");
+            println!(
+                "  [LOWRANK] {path} d={} R={} nb={} codes={}MB resident  load={:.1}s",
+                lr.d, lr.r, lr.n, lr.n * lr.r / 1_000_000, t0.elapsed().as_secs_f64()
+            );
+            let _ = vq::LOWRANK.set(lr);
+        }
+        if std::env::var("SBANN_LOWRANK_NAV").is_ok() {
+            assert!(std::is_x86_feature_detected!("avx512vnni"), "LOWRANK-NAV needs AVX-512 VNNI");
+            let lr = vq::LOWRANK.get().expect("SBANN_LOWRANK_NAV requires SBANN_LOWRANK_FILE");
+            vq::LOWRANK_NAV_ON.store(true, Relaxed);
+            println!("  [LOWRANK-NAV] beam neighbor scoring -> rank-{} int8 dots ({}B/row)", lr.r, lr.r);
+        }
         // SYMPACK-B (P344, flag-gated): pack each node's ke neighbors' ids + SQ4 nibble codes into one
         // contiguous block (ke*4 + ke*d/2 bytes) so a walk expansion is ONE sequential read (17ns/cand
         // measured) instead of ke scattered gathers (94ns/row). Requires SBANN_SQ4_NAV (flat codes are
@@ -3022,7 +3044,7 @@ fn main() {
             let rcap: usize = std::env::var("SBANN_ND_R").ok().and_then(|s| s.parse().ok()).unwrap_or(16);
             let delta: f64 = std::env::var("SBANN_ND_DELTA").ok().and_then(|s| s.parse().ok()).unwrap_or(0.001);
             let age0: u8 = std::env::var("SBANN_ND_AGE").ok().and_then(|s| s.parse().ok()).unwrap_or(2);
-            assert!(kk <= 64 && rcap <= 64 && n < (1usize << 31) && age0 >= 1);
+            assert!(kk <= 128 && rcap <= 128 && n < (1usize << 31) && age0 >= 1);
             let vnni = std::is_x86_feature_detected!("avx512vnni") && std::is_x86_feature_detected!("avx512bw")
                 && std::is_x86_feature_detected!("avx512f");
             let avx = std::is_x86_feature_detected!("avx2");
@@ -3035,7 +3057,7 @@ fn main() {
             } else { Vec::new() };
             #[inline(always)]
             fn nd_rand(mut x: u64) -> u64 { x ^= x >> 12; x ^= x << 25; x ^= x >> 27; x.wrapping_mul(0x2545F4914F6CDD1D) }
-            const HSZ: usize = 4096; // per-thread stamped dedup table; cands ≲1100 at K=R=16
+            const HSZ: usize = 16384; // per-thread stamped dedup table; cands ≲1100 at K=R=16, ~4k at K=96 (open addressing needs headroom)
             #[inline(always)]
             fn hins(ht: &mut [u64], vstamp: u64, key: u32) -> bool { // true = newly inserted
                 let mut h = ((key as u64).wrapping_mul(0x9E3779B97F4A7C15) >> 52) as usize & (HSZ - 1);
@@ -3057,7 +3079,7 @@ fn main() {
                 g.par_chunks_mut(kk).enumerate().for_each(|(i, row)| {
                     let off = i * ks * 4;
                     let mut m = 0usize;
-                    let mut seen = [u32::MAX; 64];
+                    let mut seen = [u32::MAX; 128];
                     for j in 0..ks {
                         if m == kk { break; }
                         let id = u32::from_le_bytes(bytes[off + j * 4..off + j * 4 + 4].try_into().unwrap());
@@ -3077,7 +3099,7 @@ fn main() {
                 g.par_chunks_mut(kk).enumerate().for_each(|(i, row)| {
                     let mut s = (i as u64) ^ 0x9E37_79B9_7F4A_7C15;
                     let mut m = 0usize;
-                    let mut seen = [u32::MAX; 64];
+                    let mut seen = [u32::MAX; 128];
                     while m < kk {
                         s = nd_rand(s);
                         let id = (s % n as u64) as u32;
