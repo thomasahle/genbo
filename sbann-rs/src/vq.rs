@@ -1533,14 +1533,63 @@ fn rerank_orig_float(fbase: &crate::fbin::FBin, qf: &[f32], cand: &[(i32, u32)],
 ///     rows are scattered orig-indexed in the full int8 base `ds`, so the whole known union id list is
 ///     software-prefetched i+GRAPH_PFDIST ahead, and the union is orig-sorted so the gather is monotone).
 #[allow(clippy::too_many_arguments)]
+// ---------------- POOL-SOURCE composition (Stage B unification) ----------------
+// Every search method in this engine is the same pipeline:
+//     pool assembly  ->  int8 rescore band  ->  exact float (f16/f32) rerank.
+// Pool assembly composes exactly three source kinds; the env flags are pure aliases that
+// construct sources (a flag changes WHICH sources exist, never the tail):
+//   STREAM — contiguous quantized scans producing scored rows:
+//     * whole-cell scan (champion apq4 fused/plain scan pool) -> `PoolSource::Stream` of
+//       (approx dist, slot) pairs, slot -> orig via slot_orig, SOAR dups allowed;
+//     * portal-bucket scan (PortalSq4 scan_tiles, SBANN_PORTALSCAN harness) is the same kind
+//       at a different quantum, but it emits ORIG-indexed pairs and feeds a band-cut +
+//       f32-only tail in main.rs — documented here, not routed through this function.
+//   EXPAND — ONE seeded one-shot graph traversal (`PoolSource::Expand`, SBANN_GRAPH_FILE):
+//     per-cohort (GRAPH_BESTFIRST=0: hop-0 pre-expansion of the stream pool's apq4 top-M,
+//     then int8-ranked cohorts) or global best-first (P256). Entry points are every ingested
+//     row: stream-pool origs + `PortalSeeds` (SBANN_PORTAL_FILE/PORTAL_KEEP representatives)
+//     + `FileSeeds` (SBANN_SEED_IDS_FILE / QSEED per-query row).
+//   FIXED TAIL — int8 rescore band (SQ4_INT8K escalation when a nav tier is active, then the
+//     CASCADE_K cut) and the exact float rerank (rerank_orig_float; F16BASE + f32 correction
+//     band inside). Unchanged by source composition.
+// BIT-IDENTITY: the union insertion schedule is FIXED to the historical order — Stream
+// sources (in Vec order), per-cohort hop-0 pre-expansion, seed sources (in Vec order),
+// traversal rounds. Per-cohort expansion is therefore NOT a pure fold over sources: its
+// hop-0 pre-expansion is order-entangled between stream and seed ingestion.
+pub enum PoolSource<'a> {
+    /// STREAM: whole-cell contiguous scan pool — (approx dist, slot) pairs (SOAR dups allowed).
+    Stream(Vec<(i32, u32)>),
+    /// EXPAND entries: portal-bucket representatives (SBANN_PORTAL_FILE, PORTAL_KEEP).
+    PortalSeeds(Vec<u32>),
+    /// EXPAND entries: external per-query seed row (SBANN_SEED_IDS_FILE / QSEED).
+    FileSeeds(&'a [u32]),
+    /// EXPAND: the one-shot seeded graph traversal (SBANN_GRAPH_FILE; beam width M = GRAPH_M,
+    /// hops/mode from GRAPH_HOPS/GRAPH_BESTFIRST). Exactly one per assembly.
+    Expand { graph: &'a GraphAdj, m: usize },
+}
+
+/// Pool assembly (composition over `sources`) + the fixed tail. Historically named for its
+/// stages: graph-augmented union build -> int8 rescore band -> exact float rerank.
 fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32],
     raw: &[i8], raw_orig_indexed: bool, d: usize,
-    q: &[i8], qf: &[f32], pool: &mut Vec<(i32, u32)>, graph: &GraphAdj, seeds: &[u32],
-    m_expand: usize, kk: usize, k: usize, trace_qid: Option<usize>) -> Vec<u32> {
+    q: &[i8], qf: &[f32], sources: Vec<PoolSource>,
+    kk: usize, k: usize, trace_qid: Option<usize>) -> Vec<u32> {
     use std::sync::atomic::Ordering::Relaxed;
     let prof = PROFILE.load(Relaxed);
     let tg = if prof { Some(std::time::Instant::now()) } else { None };
-    if pool.is_empty() && seeds.is_empty() { return Vec::new(); }
+    let mut expand: Option<(&GraphAdj, usize)> = None;
+    let mut n_stream = 0usize; // total stream rows (incl. SOAR dups), == old pool.len()
+    let mut n_seed = 0usize;   // total seed entries, == old seeds.len()
+    for src in &sources {
+        match src {
+            PoolSource::Stream(pool) => n_stream += pool.len(),
+            PoolSource::PortalSeeds(v) => n_seed += v.len(),
+            PoolSource::FileSeeds(v) => n_seed += v.len(),
+            PoolSource::Expand { graph, m } => expand = Some((graph, *m)),
+        }
+    }
+    let (graph, m_expand) = expand.expect("pool assembly requires an Expand source (SBANN_GRAPH_FILE)");
+    if n_stream == 0 && n_seed == 0 { return Vec::new(); }
     let layout = GRAPH_LAYOUT.get();
     let physical_of = |orig: u32| -> u32 {
         layout.map_or(orig, |l| l.rank[orig as usize])
@@ -1556,15 +1605,15 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
     // Replaces the old dedup_pool_by_orig (a separate hash pass + pool rewrite) + a second union pass.
     let hops = GRAPH_HOPS.load(Relaxed).max(1);
     let bestfirst = GRAPH_BESTFIRST.load(Relaxed);
-    let est = pool.len() + seeds.len() + hops * m_expand * ke;
+    let est = n_stream + n_seed + hops * m_expand * ke;
     let mut union: Vec<u32> = Vec::with_capacity(est);
     // pooltop holds (min apq4 dist, slot) per distinct pool orig — SAME tuple/tie-break as the old
     // dedup_pool_by_orig, so select_nth's top-M is bit-identical (ties break by slot, matching the oracle).
-    let mut pooltop: Vec<(i32, u32)> = Vec::with_capacity(pool.len());
+    let mut pooltop: Vec<(i32, u32)> = Vec::with_capacity(n_stream);
     // #2 split-rescore: slot per distinct pool orig, captured in union insertion order (== union[0..pool_distinct],
     // which is never reordered). Pool origs are resident in `raw` (raw[slot*d] == ds.row(orig), byte-identical, so
     // recall-neutral); graph neighbours (union[pool_distinct..]) are read from the scattered `ds` mmap as before.
-    let mut pool_slot: Vec<u32> = Vec::with_capacity(pool.len());
+    let mut pool_slot: Vec<u32> = Vec::with_capacity(n_stream);
     let mut pool_seed_margin = 0i32;
     GRAPH_SET.with(|cell| {
         let mut set = cell.borrow_mut();
@@ -1572,29 +1621,32 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
         set.clear();
         set.resize(cap, (u32::MAX, 0));
         let mask = cap - 1;
-        // pool pass: dedup by orig keeping the MIN apq4 dist + its slot (SOAR dups score differently per
+        // STREAM pass: dedup by orig keeping the MIN apq4 dist + its slot (SOAR dups score differently per
         // cell under residual codes), seeding `union` (orig) and `pooltop` (dist, slot); recall-neutral.
-        for &(dist, s) in pool.iter() {
-            let o = slot_orig[s as usize];
-            if o == u32::MAX { continue; }
-            let node = physical_of(o);
-            let mut h = (node.wrapping_mul(0x9E3779B1) as usize) & mask;
-            loop {
-                let (k, pidx) = set[h];
-                if k == u32::MAX {
-                    set[h] = (node, pooltop.len() as u32);
-                    union.push(node);
-                    pooltop.push((dist, s));
-                    pool_slot.push(s);   // #2: union[i]'s resident slot for i<pool_distinct
-                    break;
-                }
-                if k == node {
-                    if dist < pooltop[pidx as usize].0 {
-                        pooltop[pidx as usize] = (dist, s);
+        for src in &sources {
+            let PoolSource::Stream(pool) = src else { continue };
+            for &(dist, s) in pool.iter() {
+                let o = slot_orig[s as usize];
+                if o == u32::MAX { continue; }
+                let node = physical_of(o);
+                let mut h = (node.wrapping_mul(0x9E3779B1) as usize) & mask;
+                loop {
+                    let (k, pidx) = set[h];
+                    if k == u32::MAX {
+                        set[h] = (node, pooltop.len() as u32);
+                        union.push(node);
+                        pooltop.push((dist, s));
+                        pool_slot.push(s);   // #2: union[i]'s resident slot for i<pool_distinct
+                        break;
                     }
-                    break;
+                    if k == node {
+                        if dist < pooltop[pidx as usize].0 {
+                            pooltop[pidx as usize] = (dist, s);
+                        }
+                        break;
+                    }
+                    h = (h + 1) & mask;
                 }
-                h = (h + 1) & mask;
             }
         }
         if CONFIDENCE_TRACE_ON.load(Relaxed) && m_expand > 0 && pooltop.len() > m_expand {
@@ -1629,19 +1681,26 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
             }
         }
         } // end if !bestfirst
-        // QSEED: inject this query's external on-manifold seed origs into the union (deduped against pool
-        // origs + neighbours). They land in union[pool_distinct..], so both the best-first and per-cohort
-        // frontiers score them and treat them as expansion entry points — the walk starts inside the
-        // neighbour region even when routing gave coverage-collapsed seeds.
-        for &s in seeds {
-            if s == u32::MAX || s as usize >= ds.nb { continue; }
-            let node = physical_of(s);
-            let mut h = (node.wrapping_mul(0x9E3779B1) as usize) & mask;
-            loop {
-                let (kx, _) = set[h];
-                if kx == u32::MAX { set[h] = (node, u32::MAX); union.push(node); break; }
-                if kx == node { break; }
-                h = (h + 1) & mask;
+        // SEED pass (PortalSeeds/FileSeeds, in Vec order): inject external entry origs into the union
+        // (deduped against pool origs + neighbours). They land in union[pool_distinct..], so both the
+        // best-first and per-cohort frontiers score them and treat them as expansion entry points — the
+        // walk starts inside the neighbour region even when routing gave coverage-collapsed seeds.
+        for src in &sources {
+            let seeds: &[u32] = match src {
+                PoolSource::PortalSeeds(v) => v,
+                PoolSource::FileSeeds(v) => v,
+                _ => continue,
+            };
+            for &s in seeds {
+                if s == u32::MAX || s as usize >= ds.nb { continue; }
+                let node = physical_of(s);
+                let mut h = (node.wrapping_mul(0x9E3779B1) as usize) & mask;
+                loop {
+                    let (kx, _) = set[h];
+                    if kx == u32::MAX { set[h] = (node, u32::MAX); union.push(node); break; }
+                    if kx == node { break; }
+                    h = (h + 1) & mask;
+                }
             }
         }
     });
@@ -4092,7 +4151,6 @@ impl Index {
                     std::sync::atomic::Ordering::Relaxed,
                 );
             }
-            let mut empty_pool = Vec::new();
             return rerank_cascade_graph(
                 ds,
                 fbase,
@@ -4102,10 +4160,13 @@ impl Index {
                 self.d,
                 q,
                 qf,
-                &mut empty_pool,
-                g,
-                &seeds,
-                GRAPH_M.load(std::sync::atomic::Ordering::Relaxed),
+                vec![
+                    PoolSource::PortalSeeds(seeds),
+                    PoolSource::Expand {
+                        graph: g,
+                        m: GRAPH_M.load(std::sync::atomic::Ordering::Relaxed),
+                    },
+                ],
                 CASCADE_K.load(std::sync::atomic::Ordering::Relaxed),
                 k,
                 None,
@@ -4123,7 +4184,8 @@ impl Index {
             if let (Some(g), true) = (graph, cascade) {
                 // graph-augmented union rescore (SBANN_GRAPH_FILE), same expansion point as the batched path.
                 let gm = GRAPH_M.load(std::sync::atomic::Ordering::Relaxed);
-                return rerank_cascade_graph(ds, fbase, &self.slot_orig, &self.raw, self.raw_orig_indexed, self.d, q, qf, &mut pool, g, &[], gm, kk, k, None);
+                return rerank_cascade_graph(ds, fbase, &self.slot_orig, &self.raw, self.raw_orig_indexed, self.d, q, qf,
+                    vec![PoolSource::Stream(pool), PoolSource::Expand { graph: g, m: gm }], kk, k, None);
             }
             if cascade {
                 // int8-cascade prune (PROF_CASC_NS) then float reorder (PROF_RERANK_NS) — timed inside.
@@ -4395,10 +4457,12 @@ impl Index {
                 let qf = &qf_all[i * d..i * d + d];
                 let cells = &cells_flat[cell_off[i] as usize..cell_off[i + 1] as usize];
                 let ts = if prof { Some(std::time::Instant::now()) } else { None };
-                let mut seeds = portals.select(q, cells, keep);
+                let mut sources = vec![PoolSource::PortalSeeds(portals.select(q, cells, keep))];
                 if let Some((s, tbl)) = SEED_IDS.get() {
                     if *s > 0 && (q_base + i + 1) * s <= tbl.len() {
-                        seeds.extend_from_slice(&tbl[(q_base + i) * s..(q_base + i + 1) * s]);
+                        sources.push(PoolSource::FileSeeds(
+                            &tbl[(q_base + i) * s..(q_base + i + 1) * s],
+                        ));
                     }
                 }
                 if let Some(ts) = ts {
@@ -4407,7 +4471,7 @@ impl Index {
                         std::sync::atomic::Ordering::Relaxed,
                     );
                 }
-                let mut empty_pool = Vec::new();
+                sources.push(PoolSource::Expand { graph: g, m: gm });
                 results.push(rerank_cascade_graph(
                     ds,
                     fbase,
@@ -4417,10 +4481,7 @@ impl Index {
                     self.d,
                     q,
                     qf,
-                    &mut empty_pool,
-                    g,
-                    &seeds,
-                    gm,
+                    sources,
                     kk,
                     k,
                     Some(q_base + i),
@@ -4470,14 +4531,19 @@ impl Index {
             let mut pool = top.finish();
             let qi8 = &queries[i * d..i * d + d];
             let qf = &qf_all[i * d..i * d + d];
-            // QSEED: this query's global index is q_base + i (batch is chunked); slice its seed row.
-            let seeds_i: &[u32] = match SEED_IDS.get() {
-                Some((s, tbl)) if *s > 0 && (q_base + i + 1) * s <= tbl.len() => &tbl[(q_base + i) * s..(q_base + i + 1) * s],
-                _ => &[],
-            };
             let out = if let (Some(g), true) = (graph, cascade) {
                 // graph-augmented union rescore (SBANN_GRAPH_FILE); falls back to plain cascade if M=0.
-                rerank_cascade_graph(ds, fbase, &self.slot_orig, &self.raw, self.raw_orig_indexed, self.d, qi8, qf, &mut pool, g, seeds_i, gm, kk, k, Some(q_base + i))
+                let mut sources = vec![PoolSource::Stream(pool)];
+                // QSEED: this query's global index is q_base + i (batch is chunked); slice its seed row.
+                if let Some((s, tbl)) = SEED_IDS.get() {
+                    if *s > 0 && (q_base + i + 1) * s <= tbl.len() {
+                        sources.push(PoolSource::FileSeeds(
+                            &tbl[(q_base + i) * s..(q_base + i + 1) * s],
+                        ));
+                    }
+                }
+                sources.push(PoolSource::Expand { graph: g, m: gm });
+                rerank_cascade_graph(ds, fbase, &self.slot_orig, &self.raw, self.raw_orig_indexed, self.d, qi8, qf, sources, kk, k, Some(q_base + i))
             } else if cascade {
                 rerank_cascade_float(fbase, &self.raw, self.d, self.raw_orig_indexed, &self.slot_orig, qi8, qf, &mut pool, kk, k)
             } else {
