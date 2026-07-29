@@ -1568,6 +1568,32 @@ pub enum PoolSource<'a> {
     Expand { graph: &'a GraphAdj, m: usize },
 }
 
+/// Flag-alias constructors: each env flag's only job is to construct its pool source.
+impl<'a> PoolSource<'a> {
+    /// SBANN_PORTAL_FILE + SBANN_PORTAL_KEEP alias: the top `keep` portal-bucket
+    /// representatives per routed cell become beam entry points.
+    fn portal(portals: &CellPortals, q: &[i8], cells: &[u32], keep: usize) -> PoolSource<'static> {
+        PoolSource::PortalSeeds(portals.select(q, cells, keep))
+    }
+    /// SBANN_SEED_IDS_FILE (QSEED) alias: the per-query seed row for global query `qid`
+    /// (None when no table is loaded or it has no row for qid).
+    fn qseed(qid: usize) -> Option<PoolSource<'static>> {
+        match SEED_IDS.get() {
+            Some((s, tbl)) if *s > 0 && (qid + 1) * s <= tbl.len() => {
+                Some(PoolSource::FileSeeds(&tbl[qid * s..(qid + 1) * s]))
+            }
+            _ => None,
+        }
+    }
+    /// SBANN_GRAPH_FILE alias: the seeded beam traversal at the current GRAPH_M beam width.
+    fn expand(graph: &'a GraphAdj) -> PoolSource<'a> {
+        PoolSource::Expand {
+            graph,
+            m: GRAPH_M.load(std::sync::atomic::Ordering::Relaxed),
+        }
+    }
+}
+
 /// Pool assembly (composition over `sources`) + the fixed tail. Historically named for its
 /// stages: graph-augmented union build -> int8 rescore band -> exact float rerank.
 fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32],
@@ -4114,6 +4140,39 @@ impl Index {
         out
     }
 
+    /// FIXED TAIL dispatch, shared by the per-query (`scan_rerank_frr`) and batched
+    /// (`search_batch_frr`) drivers: assemble this query's source list from its stream pool
+    /// (+ QSEED row + Expand when the graph path is active), then run the tail.
+    /// Graph path = rerank_cascade_graph (union build -> int8 rescore band -> exact rerank);
+    /// no-Expand degenerate forms: int8 cascade prune (rerank_cascade_float) or the plain
+    /// exact rerank (rerank_contig_float) — the historical flag-for-flag dispatch.
+    /// `qid` = global query index: Some on the batched path (enables QSEED + trace), None on
+    /// the per-query path (which historically never consumed QSEED).
+    #[allow(clippy::too_many_arguments)]
+    fn pool_tail(&self, ds: &I8Bin, fbase: &crate::fbin::FBin, q: &[i8], qf: &[f32],
+        mut pool: Vec<(i32, u32)>, graph: Option<&GraphAdj>, cascade: bool, kk: usize,
+        k: usize, qid: Option<usize>) -> Vec<u32> {
+        if let (Some(g), true) = (graph, cascade) {
+            let mut sources = vec![PoolSource::Stream(pool)];
+            if let Some(qid) = qid {
+                if let Some(qs) = PoolSource::qseed(qid) { sources.push(qs); }
+            }
+            sources.push(PoolSource::expand(g));
+            return rerank_cascade_graph(ds, fbase, &self.slot_orig, &self.raw,
+                self.raw_orig_indexed, self.d, q, qf, sources, kk, k, qid);
+        }
+        if cascade {
+            // int8-cascade prune (PROF_CASC_NS) then float reorder (PROF_RERANK_NS) — timed inside.
+            return rerank_cascade_float(fbase, &self.raw, self.d, self.raw_orig_indexed,
+                &self.slot_orig, q, qf, &mut pool, kk, k);
+        }
+        let prof = PROFILE.load(std::sync::atomic::Ordering::Relaxed);
+        let tr = if prof { Some(std::time::Instant::now()) } else { None };
+        let out = rerank_contig_float(fbase, &self.slot_orig, qf, &pool, k);
+        if let Some(tr) = tr { PROF_RERANK_NS.fetch_add(tr.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed); }
+        out
+    }
+
     /// FLOAT-RERANK search (P191 lever stack): route + int8 scan are BIT-IDENTICAL to `search`
     /// (same FASTSCAN2 kernel, PREFETCH, FUSEDTOPK, SOAR dedup, top-t cap) so the scan cost/QPS is the
     /// same lever stack as the int8 path; ONLY the final exact rerank of the t survivors is swapped to
@@ -4140,7 +4199,8 @@ impl Index {
             CASCADE.load(std::sync::atomic::Ordering::Relaxed),
         ) {
             let ts = if prof { Some(std::time::Instant::now()) } else { None };
-            let seeds = portals.select(
+            let portal_src = PoolSource::portal(
+                portals,
                 q,
                 cells,
                 PORTAL_KEEP.load(std::sync::atomic::Ordering::Relaxed),
@@ -4160,13 +4220,7 @@ impl Index {
                 self.d,
                 q,
                 qf,
-                vec![
-                    PoolSource::PortalSeeds(seeds),
-                    PoolSource::Expand {
-                        graph: g,
-                        m: GRAPH_M.load(std::sync::atomic::Ordering::Relaxed),
-                    },
-                ],
+                vec![portal_src, PoolSource::expand(g)],
                 CASCADE_K.load(std::sync::atomic::Ordering::Relaxed),
                 k,
                 None,
@@ -4179,22 +4233,9 @@ impl Index {
         let cascade = CASCADE.load(std::sync::atomic::Ordering::Relaxed);
         let kk = CASCADE_K.load(std::sync::atomic::Ordering::Relaxed);
         if FUSEDTOPK.load(std::sync::atomic::Ordering::Relaxed) && !need_dedup && !residq_active {
-            let mut pool = self.scan_pool_fused(ds, q, cells, &ctx, t);
+            let pool = self.scan_pool_fused(ds, q, cells, &ctx, t);
             if let Some(ts) = ts { PROF_SCAN_NS.fetch_add(ts.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed); }
-            if let (Some(g), true) = (graph, cascade) {
-                // graph-augmented union rescore (SBANN_GRAPH_FILE), same expansion point as the batched path.
-                let gm = GRAPH_M.load(std::sync::atomic::Ordering::Relaxed);
-                return rerank_cascade_graph(ds, fbase, &self.slot_orig, &self.raw, self.raw_orig_indexed, self.d, q, qf,
-                    vec![PoolSource::Stream(pool), PoolSource::Expand { graph: g, m: gm }], kk, k, None);
-            }
-            if cascade {
-                // int8-cascade prune (PROF_CASC_NS) then float reorder (PROF_RERANK_NS) — timed inside.
-                return rerank_cascade_float(fbase, &self.raw, self.d, self.raw_orig_indexed, &self.slot_orig, q, qf, &mut pool, kk, k);
-            }
-            let tr = if prof { Some(std::time::Instant::now()) } else { None };
-            let out = rerank_contig_float(fbase, &self.slot_orig, qf, &pool, k);
-            if let Some(tr) = tr { PROF_RERANK_NS.fetch_add(tr.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed); }
-            return out;
+            return self.pool_tail(ds, fbase, q, qf, pool, graph, cascade, kk, k, None);
         }
         let mut pool = self.scan_pool(ds, q, cells, &ctx);
         if let Some(ts) = ts { PROF_SCAN_NS.fetch_add(ts.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed); }
@@ -4448,7 +4489,6 @@ impl Index {
             graph,
             CASCADE.load(std::sync::atomic::Ordering::Relaxed),
         ) {
-            let gm = GRAPH_M.load(std::sync::atomic::Ordering::Relaxed);
             let kk = CASCADE_K.load(std::sync::atomic::Ordering::Relaxed);
             let keep = PORTAL_KEEP.load(std::sync::atomic::Ordering::Relaxed);
             let mut results = Vec::with_capacity(nq);
@@ -4457,21 +4497,15 @@ impl Index {
                 let qf = &qf_all[i * d..i * d + d];
                 let cells = &cells_flat[cell_off[i] as usize..cell_off[i + 1] as usize];
                 let ts = if prof { Some(std::time::Instant::now()) } else { None };
-                let mut sources = vec![PoolSource::PortalSeeds(portals.select(q, cells, keep))];
-                if let Some((s, tbl)) = SEED_IDS.get() {
-                    if *s > 0 && (q_base + i + 1) * s <= tbl.len() {
-                        sources.push(PoolSource::FileSeeds(
-                            &tbl[(q_base + i) * s..(q_base + i + 1) * s],
-                        ));
-                    }
-                }
+                let mut sources = vec![PoolSource::portal(portals, q, cells, keep)];
+                if let Some(qs) = PoolSource::qseed(q_base + i) { sources.push(qs); }
                 if let Some(ts) = ts {
                     PROF_SCAN_NS.fetch_add(
                         ts.elapsed().as_nanos() as u64,
                         std::sync::atomic::Ordering::Relaxed,
                     );
                 }
-                sources.push(PoolSource::Expand { graph: g, m: gm });
+                sources.push(PoolSource::expand(g));
                 results.push(rerank_cascade_graph(
                     ds,
                     fbase,
@@ -4522,37 +4556,16 @@ impl Index {
         }
         if let Some(ts) = ts { PROF_SCAN_NS.fetch_add(ts.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed); }
 
-        // (5) per-query cascade + float top-k, EXACTLY the per-query path (rerank_cascade_float UNCHANGED).
+        // (5) per-query fixed tail, EXACTLY the per-query path (pool_tail; QSEED via the
+        // global query index q_base + i — the batch is chunked).
         let cascade = CASCADE.load(std::sync::atomic::Ordering::Relaxed);
         let kk = CASCADE_K.load(std::sync::atomic::Ordering::Relaxed);
-        let gm = GRAPH_M.load(std::sync::atomic::Ordering::Relaxed);
         let mut results: Vec<Vec<u32>> = Vec::with_capacity(nq);
         for (i, top) in tops.into_iter().enumerate() {
-            let mut pool = top.finish();
+            let pool = top.finish();
             let qi8 = &queries[i * d..i * d + d];
             let qf = &qf_all[i * d..i * d + d];
-            let out = if let (Some(g), true) = (graph, cascade) {
-                // graph-augmented union rescore (SBANN_GRAPH_FILE); falls back to plain cascade if M=0.
-                let mut sources = vec![PoolSource::Stream(pool)];
-                // QSEED: this query's global index is q_base + i (batch is chunked); slice its seed row.
-                if let Some((s, tbl)) = SEED_IDS.get() {
-                    if *s > 0 && (q_base + i + 1) * s <= tbl.len() {
-                        sources.push(PoolSource::FileSeeds(
-                            &tbl[(q_base + i) * s..(q_base + i + 1) * s],
-                        ));
-                    }
-                }
-                sources.push(PoolSource::Expand { graph: g, m: gm });
-                rerank_cascade_graph(ds, fbase, &self.slot_orig, &self.raw, self.raw_orig_indexed, self.d, qi8, qf, sources, kk, k, Some(q_base + i))
-            } else if cascade {
-                rerank_cascade_float(fbase, &self.raw, self.d, self.raw_orig_indexed, &self.slot_orig, qi8, qf, &mut pool, kk, k)
-            } else {
-                let tr = if prof { Some(std::time::Instant::now()) } else { None };
-                let o = rerank_contig_float(fbase, &self.slot_orig, qf, &pool, k);
-                if let Some(tr) = tr { PROF_RERANK_NS.fetch_add(tr.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed); }
-                o
-            };
-            results.push(out);
+            results.push(self.pool_tail(ds, fbase, qi8, qf, pool, graph, cascade, kk, k, Some(q_base + i)));
         }
         results
     }
