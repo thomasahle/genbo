@@ -1524,15 +1524,6 @@ fn rerank_orig_float(fbase: &crate::fbin::FBin, qf: &[f32], cand: &[(i32, u32)],
     scored.into_iter().take(k).map(|(_, o)| o).collect()
 }
 
-/// GRAPH-EXPANDED cascade rerank (SBANN_GRAPH_FILE). Like `rerank_cascade_float`, but before the int8
-/// rescore the pool's top-`m_expand` origs (by apq4 dist) have their `graph` IP-kNN neighbours unioned
-/// into the candidate set — recovering deep true-neighbours the coarse routing missed via one graph hop.
-/// The int8 rescore, prune-to-`kk`, and float-reorder are the SAME kernels as the cascade. The new work:
-///   - fused pool-dedup + neighbour-union in one cache-hot open-addressing hash pass -> PROF_GRAPH_NS;
-///   - a larger int8 rescore over the union -> PROF_CASC_NS (the rescore-gather is the critical section:
-///     rows are scattered orig-indexed in the full int8 base `ds`, so the whole known union id list is
-///     software-prefetched i+GRAPH_PFDIST ahead, and the union is orig-sorted so the gather is monotone).
-#[allow(clippy::too_many_arguments)]
 // ---------------- POOL-SOURCE composition (Stage B unification) ----------------
 // Every search method in this engine is the same pipeline:
 //     pool assembly  ->  int8 rescore band  ->  exact float (f16/f32) rerank.
@@ -1594,8 +1585,16 @@ impl<'a> PoolSource<'a> {
     }
 }
 
-/// Pool assembly (composition over `sources`) + the fixed tail. Historically named for its
-/// stages: graph-augmented union build -> int8 rescore band -> exact float rerank.
+/// Pool assembly (composition over `sources`, see `PoolSource`) + the fixed tail.
+/// GRAPH-EXPANDED cascade rerank (SBANN_GRAPH_FILE). Like `rerank_cascade_float`, but before the int8
+/// rescore the stream pool's top-M origs (by apq4 dist) have their `graph` IP-kNN neighbours unioned
+/// into the candidate set — recovering deep true-neighbours the coarse routing missed via one graph hop.
+/// The int8 rescore, prune-to-`kk`, and float-reorder are the SAME kernels as the cascade. The new work:
+///   - fused pool-dedup + neighbour-union in one cache-hot open-addressing hash pass -> PROF_GRAPH_NS;
+///   - a larger int8 rescore over the union -> PROF_CASC_NS (the rescore-gather is the critical section:
+///     rows are scattered orig-indexed in the full int8 base `ds`, so the whole known union id list is
+///     software-prefetched i+GRAPH_PFDIST ahead, and the union is orig-sorted so the gather is monotone).
+#[allow(clippy::too_many_arguments)]
 fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32],
     raw: &[i8], raw_orig_indexed: bool, d: usize,
     q: &[i8], qf: &[f32], sources: Vec<PoolSource>,
