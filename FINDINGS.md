@@ -5954,6 +5954,19 @@ P370 [2026-07-30] RERANK-F16 TRANSFER FALSIFIED for small-footprint datasets —
   as the resident_i8 44% retrodiction miss. plan_knobs.py needs no code change (it already carries the
   footprint gate; the retrodiction scorecard's diagnosis is amended by this entry).
 
+P371 [2026-07-30] SQ2 CONTAINMENT GATE: PASS on wiki (tight clips), FAIL on DEEP — Law 4 prediction
+  confirmed on BOTH sides; SQ2-RUNG build justified, SQ3 unnecessary.
+  Offline gate (P341/P366 protocol, exact top-2100 unions, 200q, harness anchor-validated vs the
+  engine SQ4 = 1.000@64): wiki SQ2 p2/98 = .9965@64, 1.000@128+ (bar .995@<=256 — PASS with margin);
+  p0.5/99.5 (the 15-level-tuned clip) = .9895@64 — CLIP TIGHTNESS is the 2-bit lever (3 levels want
+  p2/98); symmetric strictly worse. DEEP: best SQ2 variant .9398@256 FAIL (homogeneous unions — even
+  SQ4 first passes at K=192 there); SQ3 adds nothing wiki (SQ2 already lossless@128), no real DEEP
+  fallback. Selection-only stage => the P366 beam-ordering failure mode does NOT apply (scan is
+  feed-forward cut-then-rescore; int8 escalation covers the @64 tail).
+  Artifacts: sq2_gate.json, sq2_gate_summary.txt, experiments/gate_sq2_rungs.py.
+  NEXT: SQ2-RUNG implementation (256B/row contiguous scan, wiki-only tier) — predicted +15-25% e2e in
+  the 0.93-0.97 band per amended Law 1 (contiguous = bandwidth-bound, byte cuts pay in full there).
+
 === SESSION SUMMARY (current, 2026-07-12, through P334) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
