@@ -5977,6 +5977,23 @@ P372 [2026-07-30, PROVISIONAL pending quiet band ABBA] SQ2-RUNG lands (commit 5f
   2-bit pool scores (Law-4 ordering) — residual -0.001 recall; per-cohort mode unexposed.
   Quiet band ABBA armed (Q/S/S/Q x 4 configs, core 43). (Delegated agent; reviewed.)
 
+P372-CLOSED [2026-07-30] SQ2-RUNG: NULL on the wiki band — attack #8; the band is now FINAL by the
+  strongest standard we have. Quiet ABBA (Q/S/S/Q, loads 8.6-11.0, recalls rep-exact):
+    M24/p6:  Q .9050@865 vs S .9084@920 (-0.34pt, 0.94x)   M32/p10: Q .9352@805 vs S .9354@839 (-0.02pt, 0.96x)
+    M48/p14: Q .9521@719 vs S .9531@750 (-0.10pt, 0.96x)   M64/p22: Q .9670@608 vs S .9677@623 (-0.07pt, 0.98x)
+  MECHANISM (Law 1, second addendum): the predicted contiguous-scan gain never appears because
+  (a) scan share at band configs is only ~15-20% (SQ4 already crushed it — the previous rung ate the
+  headroom its successor needed), (b) the SQ2 kernel is COMPUTE-FLOOR bound (1.42x stream, not 2x:
+  same 16 vpdpbusd/row as SQ4 + extra unpack shifts — bytes halve, ops don't), (c) escalation +
+  cross-tier mapping overheads. Sub-4-bit rungs are compute-floored: byte cuts stop paying even on
+  contiguous stages once unpack ops/byte rise to the issue limit. Recall tax shrinks with pool size
+  (-0.34pt at p6 -> -0.07pt at p22, escalation coverage) — containment gate was right, per Law 4.
+  WIKI BAND STATUS: EIGHT attack shapes measured (walk, 2x graph-to-cell, portal-seed, 288-grid,
+  lowrank-nav, k96 edges, sq2 scan). Cost decomposition now accounts for the whole query: beam
+  first-touch (irreducible per P366), scan (SQ4-optimal per P372), rescore+rerank (width-law-optimal
+  per P363). The 0.93-0.953 concession vs 6.5h-ineligible Roar is mechanically final. Code stays
+  env-gated (SQ2 may pay at d>=2048 or in genuinely scan-dominated regimes).
+
 === SESSION SUMMARY (current, 2026-07-12, through P334) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
