@@ -5923,6 +5923,24 @@ P366-CLOSED [2026-07-30] LOWRANK-NAV: NULL on wiki — but it buys a refinement 
   scan tiers at very high d, or row-count-bound regimes. Wiki band attack count: SIX shapes, all null,
   all reducing to the same scattered-eval mechanism. k96 edge-budget test (attack #7) now running.
 
+P369 [2026-07-30] K96 EDGE-BUDGET TEST (attack #7): real loose-corner lever; band verdict unchanged.
+  k96 seeded-from-k64 (nd cap raise, 13.6h contended build — INELIGIBLE, unlimited-build column only).
+  Same-window pairs vs the k64 S-arms (quiet, REPS=5, both reps recall-exact):
+    M24/p6:  .9191@901 vs .9084@905 (+1.07pt FREE)    M32/p10: .9429@801 vs .9354@847 (+0.75pt, 0.95x)
+    M48/p14: .9583@709 vs .9531@760 (+0.52pt, 0.93x)  M64/p22: .9722@574 vs .9677@623 (+0.45pt, 0.92x)
+  ABLATION (edge count vs quality): ke64 ON the k96 graph = .9362@850 ~= the k64 graph's .9354@847 —
+  the k96 gain is USING 96 edges/hop, not better edges. Edge-Budget Primacy law confirmed directly.
+  FRONTIER: k96 dominates the loose corner (+1pt at same QPS — more useful bytes per first-touch,
+  exactly the P366 alpha-term economics), WASHES the mid band (k64 equally fast at .958), edges ahead
+  at .972 (574 vs ~547). vs Roar: worst-point gap narrows ~0.72x -> ~0.75x; crossover unchanged ~.953.
+  VERDICT: the 0.93-0.953 concession (vs 6.5h build-INELIGIBLE Roar) now stands after SEVEN attack
+  shapes — six nulls + one marginal-loose-gain — every one reducing to scattered high-d eval cost.
+  By the boundary-finality standard (retune + N shapes + one mechanism) this is as mapped as DEEP was
+  before its flip, with the difference that here the mechanism inventory is EXHAUSTED at current ideas.
+  ATTRIBUTION NOTE: commit 9617698 unintentionally included a live peer session's STAGED files
+  (uniform_frontier_* harness+results, 2 paperdata CSVs) — the shared index had them staged; their
+  authorship is the peer session's. Working trees were never disturbed.
+
 === SESSION SUMMARY (current, 2026-07-12, through P334) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
