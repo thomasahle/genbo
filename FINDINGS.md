@@ -5967,6 +5967,16 @@ P371 [2026-07-30] SQ2 CONTAINMENT GATE: PASS on wiki (tight clips), FAIL on DEEP
   NEXT: SQ2-RUNG implementation (256B/row contiguous scan, wiki-only tier) — predicted +15-25% e2e in
   the 0.93-0.97 band per amended Law 1 (contiguous = bandwidth-bound, byte cuts pay in full there).
 
+P372 [2026-07-30, PROVISIONAL pending quiet band ABBA] SQ2-RUNG lands (commit 5f131f4): 2-bit scan
+  tier, gate-justified (P371), bit-identical flags-off, engine containment == gate winner.
+  Kernel dot_sq2_vnni 1.54x scattered / 1.42x stream vs SQ4 (compute-floor, not bandwidth-bound —
+  same 16 vpdpbusd/row + unpack shifts). Cross-tier score-unit mapping (est_dot = score/g + Σq·lo)
+  merges 2-bit scan rows with 4-bit beam rows in one list. Stage micro: PARITY at 1M (sidecars
+  cache-comfortable — Law 1 footprint clause, again); the effect lives at 35M. Loaded smoke pair:
+  0.9290@746 (sq2) vs 0.9300@696 (sq4) = +7%/-0.10pt. Known exposure: best-first FRONTIER seeds from
+  2-bit pool scores (Law-4 ordering) — residual -0.001 recall; per-cohort mode unexposed.
+  Quiet band ABBA armed (Q/S/S/Q x 4 configs, core 43). (Delegated agent; reviewed.)
+
 === SESSION SUMMARY (current, 2026-07-12, through P334) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
