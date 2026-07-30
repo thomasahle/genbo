@@ -878,6 +878,28 @@ pub static SQ4_STEP: std::sync::OnceLock<Vec<f32>> = std::sync::OnceLock::new();
 /// selects top-N, those N are int8-rescored (small scattered band), then top-kk by int8 go to float —
 /// recovers the double-quantization tail debt (WebVid -0.35pt) at ~N x d bytes extra per query.
 pub static SQ4_INT8K: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+/// SQ4 per-dim lower clips (same indexing as SQ4_STEP). Only consumed when the SQ2 tier is live:
+/// mapping both tiers' scores to raw-dot units needs the per-query constant Σq·lo per tier
+/// (pure-SQ4 keeps its historical raw score with the constant dropped — bit-identical flags-off).
+pub static SQ4_LO: std::sync::OnceLock<Vec<f32>> = std::sync::OnceLock::new();
+
+/// SQ2-RUNG (P371, gate-validated wiki p2/98 clips: .9965@64, 1.000@128+; DEEP FAIL — wiki-only
+/// tier): resident 2-bit-packed truncation of the int8 rows (d/4 bytes/row = 256B at d=1024, half
+/// of SQ4 again). Scores ONLY the CELL-SCAN rows (union[..pool_distinct] in the graph cascade,
+/// via simd::dot_sq2_vnni); the graph beam keeps its existing tier (LOWRANK > SQ4 > int8) per the
+/// amended Law 1 (contiguous byte cuts pay in full; scattered beam evals do not) and Law 4 (walk
+/// guidance needs 4-8+ bits; the scan is feed-forward cut-then-rescore, selection-only).
+/// SBANN_SQ2_NAV gates; SBANN_SQ2_FILE caches the sidecar.
+pub static SQ2: std::sync::OnceLock<Vec<u8>> = std::sync::OnceLock::new();
+/// Per-dim SQ2 steps, p2/98 robust range (P371: clip tightness is THE 2-bit lever — 3 levels want
+/// p2/98, not the 15-level p0.5/99.5). Folded into the QUERY side exactly like SQ4_STEP.
+pub static SQ2_STEP: std::sync::OnceLock<Vec<f32>> = std::sync::OnceLock::new();
+/// Per-dim SQ2 lower clips: Σq·lo is the per-query constant that maps SQ2 scores to raw-dot units
+/// so the merged esc/CASCADE_K cut stays comparable with the beam tier (see rerank_cascade_graph).
+pub static SQ2_LO: std::sync::OnceLock<Vec<f32>> = std::sync::OnceLock::new();
+/// SQ2 int8 escalation width (SBANN_SQ2_INT8K, defaults to the SQ4 one at load): when the SQ2
+/// tier is live the escalation band takes THIS width (gate tail .9965@64 => 128+ covers it).
+pub static SQ2_INT8K: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
 
 /// LOW-RANK NAV (flag-gated, P365 follow-up): resident rank-R PCA sidecar of the int8 rows,
 /// quantized to i8 per projected dim (R bytes/row; R=256 at d=1024 = 4 cache lines vs SQ4's 8 and
@@ -1540,9 +1562,10 @@ fn rerank_orig_float(fbase: &crate::fbin::FBin, qf: &[f32], cand: &[(i32, u32)],
 //     then int8-ranked cohorts) or global best-first (P256). Entry points are every ingested
 //     row: stream-pool origs + `PortalSeeds` (SBANN_PORTAL_FILE/PORTAL_KEEP representatives)
 //     + `FileSeeds` (SBANN_SEED_IDS_FILE / QSEED per-query row).
-//   FIXED TAIL — int8 rescore band (SQ4_INT8K escalation when a nav tier is active, then the
-//     CASCADE_K cut) and the exact float rerank (rerank_orig_float; F16BASE + f32 correction
-//     band inside). Unchanged by source composition.
+//   FIXED TAIL — int8 rescore band (SQ4_INT8K escalation when a nav tier is active — at the
+//     SQ2_INT8K width instead when the SQ2 cell-scan tier is live — then the CASCADE_K cut)
+//     and the exact float rerank (rerank_orig_float; F16BASE + f32 correction band inside).
+//     Unchanged by source composition.
 // BIT-IDENTITY: the union insertion schedule is FIXED to the historical order — Stream
 // sources (in Vec order), per-cohort hop-0 pre-expansion, seed sources (in Vec order),
 // traversal rounds. Per-cohort expansion is therefore NOT a pure fold over sources: its
@@ -1750,6 +1773,14 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
     let lr = if LOWRANK_NAV_ON.load(Relaxed) { LOWRANK.get() } else { None };
     let lr_q: Vec<i8> = if let Some(lr) = lr { lowrank_fold_query(q, lr) } else { Vec::new() };
     let sq4 = SQ4.get();
+    // SQ2-RUNG (P371): 2-bit tier for the CELL-SCAN rows only (union[..pool_distinct]); the beam
+    // keeps its existing tier. Two nav tiers then share ONE merged scored list (frontier picks,
+    // esc band, CASCADE_K cut), so each live tier's raw score is mapped back to raw-dot units:
+    // est_dot = score/g + Σq·lo (both per-query constants). Pure-SQ4 keeps its historical raw
+    // score with the constant dropped — bit-identical when SQ2 is off.
+    let sq2 = SQ2.get();
+    let mut sq4_inv_g = 0f64; // dot-unit mapping for the SQ4 beam tier, used only when SQ2 is live
+    let mut sq4_qlo = 0f64;
     let (sq4_qe, sq4_qo): (Vec<i8>, Vec<i8>) = if sq4.is_some() {
         // Fold the per-dim quantization steps into the query, then requantize to i8 with a per-query
         // global scale g = 127/max|q·step| (query-side-only noise; base nibbles stay exact per dim).
@@ -1757,9 +1788,29 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
         let qs: Vec<f32> = (0..d).map(|j| q[j] as f32 * steps[j]).collect();
         let mx = qs.iter().fold(0f32, |a, &v| a.max(v.abs())).max(1e-9);
         let g = 127.0 / mx;
+        if sq2.is_some() {
+            let los = SQ4_LO.get().expect("SQ4_LO set with SQ4");
+            sq4_inv_g = 1.0 / g as f64;
+            sq4_qlo = (0..d).map(|j| q[j] as f64 * los[j] as f64).sum();
+        }
         let qi = |j: usize| -> i8 { (qs[j] * g).round().clamp(-127.0, 127.0) as i8 };
         ((0..d / 2).map(|j| qi(2 * j)).collect(), (0..d / 2).map(|j| qi(2 * j + 1)).collect())
     } else { (Vec::new(), Vec::new()) };
+    // SQ2 query fold: same convention as SQ4 (per-dim step folded in, one global i8 requant),
+    // four planes to pair with the 4-dims/byte layout of dot_sq2_vnni.
+    let (sq2_q0, sq2_q1, sq2_q2, sq2_q3, sq2_inv_g, sq2_qlo): (Vec<i8>, Vec<i8>, Vec<i8>, Vec<i8>, f64, f64) = if sq2.is_some() {
+        let steps = SQ2_STEP.get().expect("SQ2_STEP set with SQ2");
+        let los = SQ2_LO.get().expect("SQ2_LO set with SQ2");
+        let qs: Vec<f32> = (0..d).map(|j| q[j] as f32 * steps[j]).collect();
+        let mx = qs.iter().fold(0f32, |a, &v| a.max(v.abs())).max(1e-9);
+        let g = 127.0 / mx;
+        let qi = |j: usize| -> i8 { (qs[j] * g).round().clamp(-127.0, 127.0) as i8 };
+        let qb = d / 4;
+        let qlo: f64 = (0..d).map(|j| q[j] as f64 * los[j] as f64).sum();
+        ((0..qb).map(|j| qi(4 * j)).collect(), (0..qb).map(|j| qi(4 * j + 1)).collect(),
+         (0..qb).map(|j| qi(4 * j + 2)).collect(), (0..qb).map(|j| qi(4 * j + 3)).collect(),
+         1.0 / g as f64, qlo)
+    } else { (Vec::new(), Vec::new(), Vec::new(), Vec::new(), 0.0, 0.0) };
     let pq4 = PQ4.get();
     let lut4: Vec<i32> = if let Some(p4) = pq4 {
         let mut t = vec![0i32; p4.m * 16];
@@ -1803,17 +1854,25 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
         else if let Some(gl) = layout { unsafe { _mm_prefetch(gl.base.row(union[ii] as usize).as_ptr() as *const i8, _MM_HINT_T0) }; }
         else { unsafe { _mm_prefetch(ds.row(union[ii] as usize).as_ptr() as *const i8, _MM_HINT_T0) }; }
     }}; }
-    // Nav score priority: LOWRANK R-byte dot > SQ4 nibble dot > PQ4 LUT sum > int8 -dot.
-    // All "smaller=better".
+    // Nav score priority: SQ2 (cell-scan rows only) > LOWRANK R-byte dot > SQ4 nibble dot >
+    // PQ4 LUT sum > int8 -dot. All "smaller=better".
     macro_rules! rbqdist { ($i:expr) => {{
         let ii = $i as usize;
-        if let Some(lr) = lr {
+        if let Some(codes2) = sq2.filter(|_| ii < pool_distinct) {
+            // SQ2 cell-scan tier (P371): d/4-byte 2-bit dot, mapped to raw-dot units so the
+            // merged frontier/esc/CASCADE_K cuts stay comparable with the beam tier.
+            let qb = d / 4;
+            let o = original_of(union[ii]) as usize * qb;
+            let s = unsafe { simd::dot_sq2_vnni(&sq2_q0, &sq2_q1, &sq2_q2, &sq2_q3, &codes2[o..o + qb]) };
+            -((s as f64 * sq2_inv_g + sq2_qlo).round() as i32)
+        } else if let Some(lr) = lr {
             let o = original_of(union[ii]) as usize * lr.r;
             -unsafe { simd::dot_i8_vnni(&lr_q, &lr.codes[o..o + lr.r]) }
         } else if let Some(codes) = sq4 {
             let hb = d / 2;
             let o = original_of(union[ii]) as usize * hb;
-            -unsafe { simd::dot_sq4_vnni(&sq4_qe, &sq4_qo, &codes[o..o + hb]) }
+            let s = unsafe { simd::dot_sq4_vnni(&sq4_qe, &sq4_qo, &codes[o..o + hb]) };
+            if sq2.is_some() { -((s as f64 * sq4_inv_g + sq4_qlo).round() as i32) } else { -s }
         } else if let Some(p4) = pq4 {
             let o = original_of(union[ii]) as usize;
             let crow = &p4.codes[o * p4.m..o * p4.m + p4.m];
@@ -1829,7 +1888,13 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
     }}; }
     macro_rules! rbqpf { ($i:expr) => {{
         let ii = $i as usize;
-        if let Some(lr) = lr {
+        if let Some(codes2) = sq2.filter(|_| ii < pool_distinct) {
+            let qb = d / 4;
+            let base = original_of(union[ii]) as usize * qb;
+            let ptr = codes2.as_ptr();
+            let mut off = 0usize;
+            while off < qb { unsafe { _mm_prefetch(ptr.add(base + off) as *const i8, _MM_HINT_T0) }; off += 64; }
+        } else if let Some(lr) = lr {
             let base = original_of(union[ii]) as usize * lr.r;
             let ptr = lr.codes.as_ptr();
             let mut off = 0usize;
@@ -1947,8 +2012,10 @@ fn rerank_cascade_graph(ds: &I8Bin, fbase: &crate::fbin::FBin, slot_orig: &[u32]
     // SQ4 int8 escalation (P343c): SQ4 picks a wide band, int8 re-ranks it, float takes the top-kk.
     // LOW-RANK NAV reuses the same stage (SBANN_SQ4_INT8K) so every low-rank-surfaced candidate can
     // still pass the exact int8 rescore before float rerank; champion (both None) is untouched.
-    let esc = SQ4_INT8K.load(Relaxed);
-    if (sq4.is_some() || lr.is_some()) && esc > 0 && !scored.is_empty() {
+    // SQ2 (P371) reuses it too at its OWN width (SBANN_SQ2_INT8K, load-defaulted to the SQ4 one):
+    // the gate's @64 tail is .9965, so the 128+ band recovers the 2-bit near-cut misrankings.
+    let esc = if sq2.is_some() { SQ2_INT8K.load(Relaxed) } else { SQ4_INT8K.load(Relaxed) };
+    if (sq2.is_some() || sq4.is_some() || lr.is_some()) && esc > 0 && !scored.is_empty() {
         // review P344: esc must be a WIDER band than kk, else KLIST points silently collapse to esc
         let e = esc.max(kk).min(scored.len());
         if e < scored.len() { scored.select_nth_unstable(e - 1); scored.truncate(e); }

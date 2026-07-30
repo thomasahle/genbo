@@ -745,7 +745,106 @@ fn run(base: &str, qpath: &str, gtpath: &str, router_s: &str, comp_s: &str, a0: 
             };
             println!("  [SQ4-NAV] nibble sidecar {hb}B/row (int8 {}B) nb={n} per-dim steps  setup={:.1}s", dd, t0.elapsed().as_secs_f64());
             let _ = vq::SQ4_STEP.set(step);
+            let _ = vq::SQ4_LO.set(lo); // consumed only when the SQ2 tier is live (dot-unit mapping)
             let _ = vq::SQ4.set(codes);
+        }
+        // SQ2-RUNG (P371, flag-gated): 2-bit-packed truncation of the int8 rows (d/4 B/row = a
+        // quarter of the cache lines; 256B at d=1024). Gate: wiki p2/98 clips .9965@64, 1.000@128+
+        // (PASS with margin); DEEP FAIL — wiki-class tier only. Scores the CELL-SCAN rows only;
+        // the graph beam keeps its existing tier (Law 1 amendment: contiguous byte cuts pay in
+        // full, scattered do not; Law 4: beam guidance needs 4-8+ bits, the scan cut is
+        // selection-only). Int8 escalation (SBANN_SQ2_INT8K, default = SQ4's) covers the @64 tail.
+        if std::env::var("SBANN_SQ2_NAV").is_ok() {
+            assert!(std::is_x86_feature_detected!("avx512vnni"), "SQ2-NAV needs AVX-512 VNNI");
+            assert!(ds.d % 4 == 0, "SQ2-NAV wants d divisible by 4");
+            // The other nav sidecars' scores are NOT in raw-dot units; only the SQ4 beam tier is
+            // dot-unit-mapped when SQ2 is live. Fail loudly on incommensurate combinations.
+            assert!(std::env::var("SBANN_LOWRANK_NAV").is_err(),
+                "SQ2-NAV + LOWRANK-NAV: beam/scan score scales not commensurate (unsupported)");
+            assert!(std::env::var("SBANN_PQ4_NAV").is_err(),
+                "SQ2-NAV + PQ4-NAV: beam/scan score scales not commensurate (unsupported)");
+            let t0 = Instant::now();
+            let dd = ds.d;
+            let qb = dd / 4;
+            // PER-DIM robust affine range at p2/p98 (P371): clip tightness is THE 2-bit lever —
+            // 3 levels want p2/98 (.9965@64) where 15 levels want p0.5/99.5 (.9895@64). Same
+            // histogram machinery as SQ4 with a bits-dependent cut: 2% of samples (nsamp/50)
+            // instead of SQ4's 0.5% (nsamp/200) — gate_sq2_rungs.py arm sq2_p98, the winner.
+            let mstep = (n / 200_000).max(1);
+            let mut hist = vec![0u32; dd * 256];
+            let mut i = 0usize;
+            let mut nsamp = 0u32;
+            while i < n {
+                let row = ds.row(i);
+                for j in 0..dd { hist[j * 256 + (row[j] as i16 + 128) as usize] += 1; }
+                nsamp += 1;
+                i += mstep;
+            }
+            let cut = (nsamp / 50).max(1);
+            let mut lo = vec![0f32; dd];
+            let mut step = vec![0f32; dd];
+            for j in 0..dd {
+                let h = &hist[j * 256..(j + 1) * 256];
+                let (mut l, mut r, mut acc) = (-128i32, 127i32, 0u32);
+                for b in 0..256 { acc += h[b]; if acc >= cut { l = b as i32 - 128; break; } }
+                acc = 0;
+                for b in (0..256).rev() { acc += h[b]; if acc >= cut { r = b as i32 - 128; break; } }
+                let r = r.max(l + 1);
+                lo[j] = l as f32;
+                step[j] = (r - l) as f32 / 3.0;
+            }
+            // SBANN_SQ2_FILE: cache the encoded sidecar (header d:u32 pad:u32 n:u64, steps d*f32,
+            // codes n*qb — the SBANN_SQ4_FILE layout one bit-level down). Steps are recomputed
+            // above (cheap, sample-only) and VALIDATED against the cached ones so a stale sidecar
+            // from a different base fails loudly instead of poisoning a sweep.
+            let sq2_file = std::env::var("SBANN_SQ2_FILE").ok();
+            let want = 16 + dd * 4 + n * qb;
+            let cached: Option<Vec<u8>> = sq2_file.as_ref().and_then(|p| std::fs::read(p).ok()).and_then(|bytes| {
+                if bytes.len() != want { return None; }
+                if u32::from_le_bytes(bytes[0..4].try_into().unwrap()) as usize != dd { return None; }
+                if u64::from_le_bytes(bytes[8..16].try_into().unwrap()) as usize != n { return None; }
+                for j in 0..dd {
+                    let o = 16 + j * 4;
+                    let s = f32::from_le_bytes(bytes[o..o + 4].try_into().unwrap());
+                    if (s - step[j]).abs() > 1e-4 { return None; }
+                }
+                Some(bytes[16 + dd * 4..].to_vec())
+            });
+            let codes = if let Some(c) = cached { println!("  [SQ2] sidecar cache hit"); c } else {
+                let mut codes = vec![0u8; n * qb];
+                codes.par_chunks_mut(qb).enumerate().for_each(|(o, out)| {
+                    let row = ds.row(o);
+                    for j in 0..qb {
+                        let mut b = 0u8;
+                        for t in 0..4 {
+                            let jj = 4 * j + t;
+                            let nv = ((row[jj] as f32 - lo[jj]) / step[jj]).round().clamp(0.0, 3.0) as u8;
+                            b |= nv << (2 * t);
+                        }
+                        out[j] = b;
+                    }
+                });
+                if let Some(p) = sq2_file.as_ref() {
+                    let mut bytes = Vec::with_capacity(want);
+                    bytes.extend_from_slice(&(dd as u32).to_le_bytes());
+                    bytes.extend_from_slice(&0u32.to_le_bytes());
+                    bytes.extend_from_slice(&(n as u64).to_le_bytes());
+                    for s in step.iter() { bytes.extend_from_slice(&s.to_le_bytes()); }
+                    bytes.extend_from_slice(&codes);
+                    std::fs::write(p, &bytes).expect("SQ2 sidecar write");
+                }
+                codes
+            };
+            // escalation width: own env, load-defaulted to the SQ4 one (which was parsed above).
+            let esc2 = std::env::var("SBANN_SQ2_INT8K").ok()
+                .map(|v| v.parse().expect("SBANN_SQ2_INT8K"))
+                .unwrap_or_else(|| vq::SQ4_INT8K.load(Relaxed));
+            vq::SQ2_INT8K.store(esc2, Relaxed);
+            println!("  [SQ2-NAV] 2-bit sidecar {qb}B/row (sq4 {}B, int8 {}B) nb={n} per-dim p2/98 steps esc={esc2}  setup={:.1}s",
+                dd / 2, dd, t0.elapsed().as_secs_f64());
+            let _ = vq::SQ2_STEP.set(step);
+            let _ = vq::SQ2_LO.set(lo);
+            let _ = vq::SQ2.set(codes);
         }
         // LOW-RANK NAV (flag-gated, P365 follow-up): rank-R PCA int8 sidecar built offline by
         // experiments/build_lowrank_nav.py (R bytes/row; R=256 at d=1024 = 4 cache lines vs SQ4's 8).

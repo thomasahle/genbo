@@ -124,6 +124,187 @@ pub unsafe fn dot_sq4_vnni(qe: &[i8], qo: &[i8], codes: &[u8]) -> i32 {
     s
 }
 
+/// SQ2-RUNG dot (P371): score a 2-bit-packed row (byte j = n[4j] | n[4j+1]<<2 | n[4j+2]<<4 |
+/// n[4j+3]<<6, n = clip(round((x_i8-lo)/step), 0, 3) u8) against the query's four deinterleaved
+/// planes q0..q3 (dims = 0..3 mod 4), all i8. score = Σ n[j]·q[j] — rank-equivalent to
+/// dot(q, recon) by the same query-side step-folding convention as SQ4 (Σq·lo is a per-query
+/// constant). d/4 bytes per row vs SQ4's d/2 — half the cache lines again (256B at d=1024).
+/// Unpack = 4 mask/shift planes + 4 vpdpbusd per 64 code bytes (256 dims): same dpbusd count
+/// per dim as SQ4, half the bytes fetched, so the win is memory-side (Law 1 contiguous clause).
+/// # Safety
+/// Caller must ensure AVX-512F/BW/VNNI. q0..q3 lengths == codes.len().
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx512f,avx512bw,avx512vnni")]
+pub unsafe fn dot_sq2_vnni(q0: &[i8], q1: &[i8], q2: &[i8], q3: &[i8], codes: &[u8]) -> i32 {
+    let n = codes.len();
+    let lo2 = _mm512_set1_epi8(0x03);
+    // Four independent accumulators (one per plane): a single acc chains every dpbusd (5-cycle
+    // latency x 16/row at d=1024 ~ 27ns/row — the measured floor); per-plane accs cut the chain
+    // to 4. Integer adds are associative, so the result is exactly the single-acc sum.
+    let mut a0 = _mm512_setzero_si512();
+    let mut a1 = _mm512_setzero_si512();
+    let mut a2 = _mm512_setzero_si512();
+    let mut a3 = _mm512_setzero_si512();
+    let mut k = 0usize;
+    while k + 64 <= n {
+        let cv = _mm512_loadu_si512(codes.as_ptr().add(k) as *const __m512i);
+        // srli_epi16 shifts within 16-bit lanes; the bits that cross in from the neighbour byte
+        // land above bit 1 and are cleared by the 0x03 mask, so per-byte extraction is exact.
+        let v0 = _mm512_and_si512(cv, lo2);
+        let v1 = _mm512_and_si512(_mm512_srli_epi16(cv, 2), lo2);
+        let v2 = _mm512_and_si512(_mm512_srli_epi16(cv, 4), lo2);
+        let v3 = _mm512_and_si512(_mm512_srli_epi16(cv, 6), lo2);
+        a0 = _mm512_dpbusd_epi32(a0, v0, _mm512_loadu_si512(q0.as_ptr().add(k) as *const __m512i));
+        a1 = _mm512_dpbusd_epi32(a1, v1, _mm512_loadu_si512(q1.as_ptr().add(k) as *const __m512i));
+        a2 = _mm512_dpbusd_epi32(a2, v2, _mm512_loadu_si512(q2.as_ptr().add(k) as *const __m512i));
+        a3 = _mm512_dpbusd_epi32(a3, v3, _mm512_loadu_si512(q3.as_ptr().add(k) as *const __m512i));
+        k += 64;
+    }
+    let acc = _mm512_add_epi32(_mm512_add_epi32(a0, a1), _mm512_add_epi32(a2, a3));
+    let mut s = _mm512_reduce_add_epi32(acc);
+    while k < n {
+        let b = codes[k];
+        s += (b & 3) as i32 * q0[k] as i32
+            + ((b >> 2) & 3) as i32 * q1[k] as i32
+            + ((b >> 4) & 3) as i32 * q2[k] as i32
+            + ((b >> 6) & 3) as i32 * q3[k] as i32;
+        k += 1;
+    }
+    s
+}
+
+#[cfg(test)]
+mod sq2_tests {
+    use super::*;
+
+    fn scalar_sq2(q0: &[i8], q1: &[i8], q2: &[i8], q3: &[i8], codes: &[u8]) -> i32 {
+        codes
+            .iter()
+            .enumerate()
+            .map(|(j, &b)| {
+                (b & 3) as i32 * q0[j] as i32
+                    + ((b >> 2) & 3) as i32 * q1[j] as i32
+                    + ((b >> 4) & 3) as i32 * q2[j] as i32
+                    + ((b >> 6) & 3) as i32 * q3[j] as i32
+            })
+            .sum()
+    }
+
+    #[test]
+    fn dot_sq2_matches_scalar() {
+        if !std::is_x86_feature_detected!("avx512vnni")
+            || !std::is_x86_feature_detected!("avx512bw")
+            || !std::is_x86_feature_detected!("avx512f")
+        {
+            return;
+        }
+        // 256 = the d=1024 row (multiple of 64); 250/70/3 exercise the scalar tail.
+        for &len in &[256usize, 250, 70, 64, 3] {
+            let q0: Vec<i8> = (0..len).map(|j| ((j * 37 + 11) % 255) as i16 as i8).collect();
+            let q1: Vec<i8> = (0..len).map(|j| ((j * 71 + 3) % 255) as i16 as i8).collect();
+            let q2: Vec<i8> = (0..len).map(|j| ((j * 13 + 101) % 255) as i16 as i8).collect();
+            let q3: Vec<i8> = (0..len).map(|j| ((j * 97 + 55) % 255) as i16 as i8).collect();
+            let codes: Vec<u8> = (0..len).map(|j| ((j * 197 + 31) % 256) as u8).collect();
+            let expected = scalar_sq2(&q0, &q1, &q2, &q3, &codes);
+            let actual = unsafe { dot_sq2_vnni(&q0, &q1, &q2, &q3, &codes) };
+            assert_eq!(actual, expected, "len={len}");
+        }
+    }
+
+    /// Standalone row-throughput bench, SQ2 (256B rows) vs SQ4 (512B rows) at d=1024, scattered
+    /// orig-indexed access with the engine's pf-ahead prefetch (mirrors rbqdist!/rbqpf!).
+    /// Run: cargo test --release bench_sq2_vs_sq4 -- --ignored --nocapture (pin with taskset).
+    #[test]
+    #[ignore]
+    fn bench_sq2_vs_sq4() {
+        if !std::is_x86_feature_detected!("avx512vnni") {
+            return;
+        }
+        let d = 1024usize;
+        let nrows = 4_000_000usize; // sq4 2GB + sq2 1GB >> 108MB LLC
+        let hb = d / 2;
+        let qb = d / 4;
+        let codes4: Vec<u8> = (0..nrows * hb).map(|j| (j % 251) as u8).collect();
+        let codes2: Vec<u8> = (0..nrows * qb).map(|j| (j % 253) as u8).collect();
+        let qe: Vec<i8> = (0..hb).map(|j| ((j * 37) % 255) as i16 as i8).collect();
+        let qo: Vec<i8> = (0..hb).map(|j| ((j * 71) % 255) as i16 as i8).collect();
+        let q0: Vec<i8> = (0..qb).map(|j| ((j * 37) % 255) as i16 as i8).collect();
+        let q1: Vec<i8> = (0..qb).map(|j| ((j * 71) % 255) as i16 as i8).collect();
+        let q2: Vec<i8> = (0..qb).map(|j| ((j * 13) % 255) as i16 as i8).collect();
+        let q3: Vec<i8> = (0..qb).map(|j| ((j * 97) % 255) as i16 as i8).collect();
+        // scattered visit order (LCG permutation), same rows for both kernels; pf ahead like the engine
+        let nvisit = 400_000usize;
+        let order: Vec<usize> = {
+            let mut x = 12345u64;
+            (0..nvisit)
+                .map(|_| {
+                    x = x.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+                    (x >> 16) as usize % nrows
+                })
+                .collect()
+        };
+        let pf = 8usize;
+        let mut sink = 0i64;
+        let mut bench = |name: &str, rowb: usize, f: &dyn Fn(usize) -> i32, codes: &[u8]| -> f64 {
+            // warm pass then 3 timed passes, keep best
+            let mut best = f64::INFINITY;
+            for pass in 0..4 {
+                let t0 = std::time::Instant::now();
+                for (i, &r) in order.iter().enumerate() {
+                    if i + pf < order.len() {
+                        let base = order[i + pf] * rowb;
+                        let mut off = 0usize;
+                        while off < rowb {
+                            unsafe {
+                                _mm_prefetch(codes.as_ptr().add(base + off) as *const i8, _MM_HINT_T0)
+                            };
+                            off += 64;
+                        }
+                    }
+                    sink += f(r) as i64;
+                }
+                let ns = t0.elapsed().as_nanos() as f64 / nvisit as f64;
+                if pass > 0 && ns < best {
+                    best = ns;
+                }
+            }
+            println!("  {name}: {best:.1} ns/row");
+            best
+        };
+        let t4 = bench("sq4 512B scattered", hb, &|r| unsafe {
+            dot_sq4_vnni(&qe, &qo, &codes4[r * hb..r * hb + hb])
+        }, &codes4);
+        let t2 = bench("sq2 256B scattered", qb, &|r| unsafe {
+            dot_sq2_vnni(&q0, &q1, &q2, &q3, &codes2[r * qb..r * qb + qb])
+        }, &codes2);
+        println!("  scattered ratio sq4/sq2 = {:.2}x", t4 / t2);
+        // contiguous stream (the Law 1 bandwidth-bound regime the tier targets): row i+1 adjacent
+        let mut stream = |name: &str, rowb: usize, f: &dyn Fn(usize) -> i32| -> f64 {
+            let mut best = f64::INFINITY;
+            for pass in 0..4 {
+                let t0 = std::time::Instant::now();
+                for r in 0..nvisit {
+                    sink += f(r) as i64;
+                }
+                let ns = t0.elapsed().as_nanos() as f64 / nvisit as f64;
+                if pass > 0 && ns < best {
+                    best = ns;
+                }
+                let _ = rowb;
+            }
+            println!("  {name}: {best:.1} ns/row");
+            best
+        };
+        let s4 = stream("sq4 512B stream", hb, &|r| unsafe {
+            dot_sq4_vnni(&qe, &qo, &codes4[r * hb..r * hb + hb])
+        });
+        let s2 = stream("sq2 256B stream", qb, &|r| unsafe {
+            dot_sq2_vnni(&q0, &q1, &q2, &q3, &codes2[r * qb..r * qb + qb])
+        });
+        println!("  stream ratio sq4/sq2 = {:.2}x  (sink {sink})", s4 / s2);
+    }
+}
+
 /// Return the maximum-SQ4-score row in a contiguous block of 64-byte padded
 /// codes.  Portal entry selection always needs argmax/top-1, so keeping the
 /// two query vectors in registers and never materializing per-row scores
