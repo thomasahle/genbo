@@ -12,7 +12,7 @@ Full official query sets, one thread, best of five repetitions. Each artifact fa
 | mst30m | 8 | 0.7268--0.9883 | cascade |
 | t2i100m | 5 | 0.8796--0.9233 | nd16 |
 | t2i10m | 18 | 0.8456--0.9954 | co16, hybrid, nd16, nd32 |
-| t2i1m | 24 | 0.7984--0.9914 | kf16384-hybrid, kf16384-nd16, kf2048-hybrid, kf4096-co16, kf4096-hybrid |
+| t2i1m | 26 | 0.7984--0.9914 | kf16384-hybrid, kf16384-nd16, kf2048-hybrid, kf4096-co16, kf4096-hybrid, ndk64 |
 | webvid | 16 | 0.8062--0.9851 | seed128-k64, seed256-k64, seed512-k32, seed512-k64, seed64-k64, seed768-k32, seed768-k64 |
 | wiki35m | 13 | 0.9328--0.9925 | cascade |
 

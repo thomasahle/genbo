@@ -6016,7 +6016,8 @@ P374 [2026-07-30] EDGE-BUDGET GRADIENT ACROSS DATASETS — the lever's value tra
   P303/Materialized-Coverage — not built, the law already prices it. Edge budget is a COVERAGE
   currency: it pays where routed+seeded coverage is starved, washes where saturated. Consistent
   with P369 (wiki: loose corner only) and the k96 ablation (count, not quality).
-  t2i1m/ndk64 uniform family (p64/80/96 brackets) queued through the P369 protocol for the envelope.
+  t2i1m/ndk64 ACCEPTED (mirror 3.7%): envelope gains 0.9847@2138 / 0.9877@1951 / 0.9899@1802,
+  replacing 0.9859@1817 — the t2i-1M upper-mid stretch improves 15-20%. CSV/paper materialized.
 
 === SESSION SUMMARY (current, 2026-07-12, through P334) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
