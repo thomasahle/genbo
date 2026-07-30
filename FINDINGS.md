@@ -5941,6 +5941,19 @@ P369 [2026-07-30] K96 EDGE-BUDGET TEST (attack #7): real loose-corner lever; ban
   (uniform_frontier_* harness+results, 2 paperdata CSVs) — the shared index had them staged; their
   authorship is the peer session's. Working trees were never disturbed.
 
+P370 [2026-07-30] RERANK-F16 TRANSFER FALSIFIED for small-footprint datasets — Law 1's footprint gate
+  confirmed; the planner's "87 under-reported rows" resolve as law-over-prediction, tuning was right.
+  Quiet paired ABBAs (F/O/O/F, recall IDENTICAL at every config, correction band=12 clean):
+    cohere-1M (6 configs, full frontier): QPS ratio 1.00-1.03x — below threshold on 4/6, marginal at
+      p384/p512 only.  t2i-1M (6 configs incl hybrid arms): 0.97-1.00x — slight LOSS.
+  MECHANISM: both f32 bases (3GB/0.8GB) sit cache-comfortable — no thrash tier to escape, rerank W=16-20
+  rows a tiny share; the f16 path pays its cvtph conversion with no bandwidth relief. P350's gains were
+  the TIER effect (wiki 143->72GB) + DEEP's rerank share, not a final-tier universal.
+  VALUE: kills the planned 87-row remeasure campaign; DESIGN_LAWS Law-1 auto-set rule ("F16 iff rerank
+  base > ~0.5x RAM") stands as-written and gains direct falsification evidence; same pressure-term class
+  as the resident_i8 44% retrodiction miss. plan_knobs.py needs no code change (it already carries the
+  footprint gate; the retrodiction scorecard's diagnosis is amended by this entry).
+
 === SESSION SUMMARY (current, 2026-07-12, through P334) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
