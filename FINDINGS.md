@@ -5895,7 +5895,8 @@ P369 [2026-07-29] UNIFORM ALL-DATASET FRONTIER REFRESH — DEEP jaggedness expla
   0.9461@1754--0.9912@481; MSTuring30M 0.7268@3756--0.9883@245; wiki35M
   0.9328@804--0.9925@283 (unrestricted-Roar crossover now ~0.961, not 0.953);
   t2i100M 0.8796@977--0.9233@704; t2i10M 0.8456@3919--0.9954@275;
-  t2i1M 0.7984@11927--0.9914@1551; WebVid 0.8062@5527--0.9798@290.
+  t2i1M 0.7984@11927--0.9914@1551; WebVid initially 0.8062@5527--0.9798@290,
+  extended by P373 to 0.9851.
   PAPER: all nine ours CSVs rematerialized; methodology, values, claims, captions, and provenance synced.
   Figures use metric labels (MIPS/L2) and simple “ours” labels; DEEP alone names its two policies because
   separating them is semantically necessary. Tectonic clean except pre-existing package/underfull warnings;
@@ -5993,6 +5994,16 @@ P372-CLOSED [2026-07-30] SQ2-RUNG: NULL on the wiki band — attack #8; the band
   first-touch (irreducible per P366), scan (SQ4-optimal per P372), rescore+rerank (width-law-optimal
   per P363). The 0.93-0.953 concession vs 6.5h-ineligible Roar is mechanically final. Code stays
   env-gated (SQ2 may pay at d>=2048 or in genuinely scan-dominated regimes).
+
+P373 [2026-07-30] WEBVID WIDE-GRAPH MID/TAIL TRANSFER — accepted uniform families improve the plot.
+  Concurrent experiment process supplied two new k64 families; this session validated and materialized
+  them through the P369 uniform protocol. seed512-k64 mirror max 2.59%, seed768-k64 2.83%, both below
+  the 5% acceptance gate. New Pareto rows: 0.9409@1715, 0.9556@1050, 0.9657@773,
+  0.9767@448, 0.9797@398, 0.9827@314, 0.9851@247. The first three replace the k32 middle
+  by 1.18--1.30x at fixed recall; the latter four extend the reproduced ceiling 0.9798->0.9851,
+  beyond RoarGraph's published ceiling. Mechanism matches Edge-Budget Primacy: the wider adjacency
+  buys useful reachable mass after dense query seeding; it is not a scan-width effect. Updated
+  uniform results/manifest/summary, WebVid CSV, Results/caption ceiling, and the log-tail plot bound.
 
 === SESSION SUMMARY (current, 2026-07-12, through P334) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)

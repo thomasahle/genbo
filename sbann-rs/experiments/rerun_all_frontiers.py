@@ -703,6 +703,30 @@ def groups() -> list[Group]:
                 point("p128f5000", 128, 5000, 256, 128, 32, 10, True, 384),
             ],
         ),
+        # P373: wide-graph (k64, KEDGE=64) arms for the mid ladder — paired quiet ABBA
+        # (webvid_wide_mid.log) showed they dominate the k32 rows 1.18-1.30x at fixed
+        # recall (0.9409@1645 / 0.9556@1037 / 0.9657@777 vs the r9383..r9626 rungs).
+        (
+            "seed512-k64",
+            WEBVID / "hyb_webvid_k64.u32",
+            WEBVID / "qseed_dense_T48_S512.u32",
+            [
+                point("w9409", 2, 300, 64, 64, 64, 4, True, 384),
+                point("w9556", 4, 400, 128, 80, 64, 6, True, 384),
+                point("w9657", 16, 1000, 128, 96, 64, 6, True, 384),
+                point("w48f2000", 48, 2000, 192, 112, 64, 8, True, 384),
+            ],
+        ),
+        (
+            "seed768-k64",
+            WEBVID / "hyb_webvid_k64.u32",
+            WEBVID / "qseed_dense_T64_S768.u32",
+            [
+                point("w64f2500", 64, 2500, 192, 112, 64, 8, True, 384),
+                point("w96f3000", 96, 3000, 256, 128, 64, 8, True, 384),
+                point("w128f4000", 128, 4000, 256, 128, 64, 10, True, 384),
+            ],
+        ),
     ]
     for family, graph, seed, plans in webvid_specs:
         result.append(
