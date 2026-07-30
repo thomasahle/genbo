@@ -1374,6 +1374,24 @@ f32 recalls exactly and improves paired median engine QPS by $14.5$--$35.4\%$
 at recall $0.9039$--$0.9718$. All four are load-time flags; none changes the
 champion path when off.}
 
+\paragraph{Where byte cuts stop paying (two measured boundaries).}
+Two further byte-reduction levers, each individually validated by an offline
+containment gate before any build, bound this cost model from above.
+\emph{Scattered stages are first-touch dominated.} A rank-256 PCA navigation
+sidecar (int8, $256$\,B/row --- half the SQ4 nibble row) passes selection
+containment at $0.9965$, yet on Wikipedia's graph beam it returns
+$0.97$--$1.00\times$ QPS across four paired quiet configurations while costing
+$0.65$--$0.84$pt recall: halving an 8-line row to 4 trims only the streamed tail
+of a scattered fetch, not its expensive first touch, and a best-first beam
+consumes \emph{ordering}, which a selection gate does not measure.
+\emph{Sub-4-bit rungs hit a compute floor.} A 2-bit scan rung ($256$\,B/row
+contiguous, tighter p$2$--p$98$ clips, containment $1.000$ by top-$128$)
+delivers only $1.42\times$ per-row stream throughput (the same
+\texttt{vpdpbusd} count as 4-bit plus extra unpack shifts) and washes to
+$0.94$--$0.98\times$ end-to-end: the 4-bit rung had already shrunk the scan's
+share below what a successor's overheads must beat. Both levers remain
+load-time flags; both nulls are paired quiet-window measurements.
+
 \section{Budgeted Scan-Bypass Walk at Loose Recall}
 \label{sec:adaptivewalk}
 The low-dimensional loose-recall corner exposes a different fixed cost: at
@@ -2177,7 +2195,17 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
   $0.93$--${\sim}0.961$ (up to ${\sim}1.3\times$ at $0.933$, narrowing to
   parity by $0.961$) --- an eligible-vs-ineligible comparison; a
   budget-matched RoarGraph ($L{=}50$, $250$k train queries) still takes $3.1$h and
-  collapses to a $0.9605$ ceiling at ${\sim}100$ QPS, below our curve everywhere. \textbf{Bottom row (low-dimensional, $d{\le}100$).} On MSTuring 30M
+  collapses to a $0.9605$ ceiling at ${\sim}100$ QPS, below our curve everywhere.
+  We audited this conceded band with eight independent attack shapes ---
+  budgeted walks with portal entries, portal-seeded pools, two graph-to-cell
+  voting schemes, a $288$-configuration cascade grid, rank-256 navigation,
+  a 2-bit scan rung (\S\ref{sec:resident}), and a $96$-edge graph (whose
+  edge-truncation ablation shows the gain is edge \emph{count}, not quality) ---
+  and every one fails or washes by the same mechanism: at $d{=}1024$ a scattered
+  candidate evaluation is first-touch bound, which is precisely the toll a pure
+  graph search amortizes over a $6.5$h build and a cascade cannot avoid at loose
+  recall. We therefore report this band as a characterized boundary of the
+  regime, not an open tuning gap. \textbf{Bottom row (low-dimensional, $d{\le}100$).} On MSTuring 30M
   ($d{=}100$) we beat every baseline at every measured point ($1.45$--$2.8\times$
   RoarGraph, exceeding HNSW's ceiling); RoarGraph's curve required padding its input
   to $d{=}104$ --- its released code silently corrupts dimensions not divisible by 8.
