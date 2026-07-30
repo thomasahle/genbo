@@ -5873,6 +5873,56 @@ P368 [2026-07-29] STAGE B MERGED: pool-source refactor — search = compose(sour
   A-B-C COMPLETE: planner (78% retrodiction) + deletions (-900 LOC, 141->116 flags) + this abstraction.
   (Delegated agent in isolated worktree; reviewed and ff-merged.)
 
+P369 [2026-07-29] UNIFORM ALL-DATASET FRONTIER REFRESH — DEEP jaggedness explained and removed honestly.
+  PROTOCOL: all 9 plotted datasets, 22 compatible artifact families, full official query sets, 1 thread,
+  best of 5. Each family gets one highest-work full-query warmup followed by its exact plan forward and
+  reverse in one loaded process. Acceptance requires identical mirrored recall and <=5% QPS spread at
+  every point; latest accepted family run is used intact, never point-stitched across windows. Worst
+  accepted latest-family mirror spread = 3.67%. Harness/results/settings:
+  sbann-rs/experiments/{rerun_all_frontiers.py,uniform_frontier_results.json,
+  uniform_frontier_manifest.csv,uniform_frontier_summary.md}.
+  ROOT CAUSE: a first arm can cross a cold-mmap/cache/THP residency transition even with full queries
+  (observed 19.3% forward/reverse spread while the wiki35M NN-descent build reclaimed memory); after
+  pausing that first-party job and performing the explicit highest-work warmup, the same t2i1M families
+  reproduce at 2.1%/3.7%/0.7%. Scan width does not move recall in the reconstructed loose regime;
+  graph fanout does, while raising the survivor floor is nearly recall-neutral. This supports scaling
+  graph work rather than scan mass as the reasonable loose-recall default.
+  DEEP: fixed-round series 0.8041@17977 ... 0.9032@8678; cascade series 0.9265@5422 ...
+  0.9978@545, 0.9980@452. The mechanisms are now separate plot series with no line across the unmeasured
+  0.9032--0.9265 join. The legacy isolated 0.9987 row is RETRACTED from the plot: current corrected-fp16/
+  layout p=768--1024 reproducibly plateaus at 0.9980. No smoothing or invented interpolation.
+  OTHER REFRESHED ENVELOPES: cohere1M 0.9732@1321--0.9971@317; cohere10M
+  0.9461@1754--0.9912@481; MSTuring30M 0.7268@3756--0.9883@245; wiki35M
+  0.9328@804--0.9925@283 (unrestricted-Roar crossover now ~0.961, not 0.953);
+  t2i100M 0.8796@977--0.9233@704; t2i10M 0.8456@3919--0.9954@275;
+  t2i1M 0.7984@11927--0.9914@1551; WebVid 0.8062@5527--0.9798@290.
+  PAPER: all nine ours CSVs rematerialized; methodology, values, claims, captions, and provenance synced.
+  Figures use metric labels (MIPS/L2) and simple “ours” labels; DEEP alone names its two policies because
+  separating them is semantically necessary. Tectonic clean except pre-existing package/underfull warnings;
+  every affected rendered page 13--26 visually inspected as PNG, with the 3-panel OOD width overflow fixed.
+
+P366-CLOSED [2026-07-30] LOWRANK-NAV: NULL on wiki — but it buys a refinement of the master cost law.
+  Quiet band ABBA (L/S/S/L x 4 configs, loads 8.6-13.8 with one flagged 26-31 pair, recalls exact
+  across both reps everywhere; S arms reproduced .9084/.9354/.9531/.9677 — the P362 anchor's THIRD
+  exact reproduction):
+    M24/p6/T250:   L .9000@888  vs S .9084@905   (-0.84pt, 0.98x)
+    M32/p10/T250:  L .9285@818  vs S .9354@847   (-0.69pt, 0.97x)
+    M48/p14/T250:  L .9460@744  vs S .9531@760   (-0.71pt, 0.98x)
+    M64/p22/T1150: L .9612@625  vs S .9677@623   (-0.65pt, 1.00x)
+  TWO mechanism lessons, both law-grade:
+  (1) RECALL: the tax (~0.7pt) exceeds the containment gate's prediction (-0.15..-0.45pt) because the
+      best-first beam consumes ORDERING, not selection (SYMPACK-B class strikes again — the gate
+      measured selection containment; beams amplify mid-rank noise into path divergence).
+  (2) QPS: ZERO gain despite halving bytes/eval, because scattered access is FIRST-TOUCH dominated:
+      cost = alpha*rows_touched + beta*(lines-1), alpha >> beta. Halving 8 lines -> 4 trims the cheap
+      streamed tail, not the expensive head. This RETRODICTS the t2i 4-line SQ4 counterexample (paid
+      ~0 unpressured — Law 1's own strongest exception) and DEEP's 1-line walk economics. Law 1
+      amendment: byte cuts on SCATTERED stages pay only by reducing ROW COUNT or crossing <=1 line;
+      per-row byte cuts pay on CONTIGUOUS (bandwidth-bound) stages only.
+  Code stays (env-gated, champion-neutral, bit-identity verified): candidate uses elsewhere = contiguous
+  scan tiers at very high d, or row-count-bound regimes. Wiki band attack count: SIX shapes, all null,
+  all reducing to the same scattered-eval mechanism. k96 edge-budget test (attack #7) now running.
+
 === SESSION SUMMARY (current, 2026-07-12, through P334) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall

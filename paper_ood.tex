@@ -1441,8 +1441,8 @@ honest exception to our preference for block streaming: reducing
 \emph{query-directed work} by roughly $4\times$ matters more than making the
 larger candidate set sequential.
 
-\effect{DEEP-10M, one thread: the loose ladder spans recall
-$0.8041$--$0.9032$ at $17{,}194$--$8{,}333$ best-of-repeated QPS. The first point
+\effect{DEEP-10M, one thread: the uniformly re-measured loose ladder spans recall
+$0.8041$--$0.9032$ at $17{,}977$--$8{,}678$ best-of-repeated QPS. The first point
 retains best-first ($1.0\%$ faster in strict pairs); thereafter fixed rounds improve
 matched-recall median QPS over best-first by $6.1\%$, $8.1\%$, $10.1\%$,
 $14.3\%$, $12.7\%$, and $17.4\%$. All seven final choices were re-run on the full
@@ -1458,7 +1458,10 @@ the swing: $1.191\times$ near $0.943$, $1.260\times$ near $0.960$, and
 $1.303\times$ at $0.9718$. A final corrected-fp16 tail audit gives
 $1.379\times$ at recall $0.9940$ and $1.062\times$ at $0.9978$ (the latter also
 inside the swing; both at
-higher recall than RoarGraph), then reaches $0.9987$ beyond its ceiling. Thus
+higher recall than RoarGraph), then reaches a reproduced $0.9980$ beyond its
+ceiling. The earlier isolated $0.9987$ row is not retained: under the current
+corrected-fp16/layout stack, probes $768$--$1024$ reproducibly plateau at
+$0.9980$. Thus
 the two policies join without a hidden crossover gap; genbo leads or ties at every
 measured DEEP point; the $0.9265$ shoulder ($1.04\times$) and the $0.9978$ point
 ($1.01\times$ matched-warmup, genbo at higher recall) are marked
@@ -1564,25 +1567,25 @@ $94\%$/$86\%$ of the recall gain from $W=k$ to $3.2k$, while $W=2k$ captures
 $98\%$/$91\%$ (1M/10M).  A second containment audit transfers this law across
 all plotted datasets.  On MSTuring-30M, $W=16$ is recall-identical to the
 historical $W=32$--$256$ at every full-query point and refreshes the tail to
-$0.9686@803$, $0.9819@426$, and $0.9883@229$ QPS.  On Cohere-1M, $W=20$
-improves both ends of the tradeoff ($0.9732@1317$, $0.9900@740$,
+$0.9686@857$, $0.9819@458$, and $0.9883@245$ QPS.  On Cohere-1M, $W=20$
+improves both ends of the tradeoff ($0.9732@1321$, $0.9900@754$,
 $0.9967@410$); at 10M it is useful only in the tail, reaching
-$0.9912@470$, while $W=16$ remains faster in the middle.  On text-to-image-100M,
+$0.9912@481$, while $W=16$ remains faster in the middle.  On text-to-image-100M,
 $W=20$ adds exactly $0.0007$ recall at all five probe depths at matched paired
-speed, and the refreshed curve spans $0.8796@966$ to $0.9233@667$.  WebVid is
+speed, and the refreshed curve spans $0.8796@977$ to $0.9233@704$.  WebVid is
 the instructive binding case: $W=20$ loses $0.0032$/$0.0062$ recall at the two
 loose anchors; buying the first loss back with more probes is slower, so its
 containment check correctly retains $W=32$/$48$.  Finally, applying the work
 law to a full-query, 288-point Wikipedia grid selects $k_e=64$, $T=250$,
 $W=12$--$16$, and increases $(M,p)$ together with target recall.  The resulting
-ladder reaches $0.9328@862$, joins unrestricted RoarGraph at
-$0.9531@777$, and leads at $0.9566@758$ and $0.9590@731$, before the
-$(64,22,32)$ tail point reaches $0.9677@640$.  This moves the crossover from
-$0.963$ to ${\sim}0.953$ without changing the index.  A graph-to-cell
+ladder reaches $0.9328@804$ and progresses through $0.9531@731$,
+$0.9566@709$, and $0.9590@683$, before the $(64,22,32)$ tail reaches
+$0.9677@587$.  Against unrestricted RoarGraph's log-QPS interpolation it crosses
+near $0.961$ ($0.9609@672$ versus ${\sim}671$), without changing the index.  A graph-to-cell
 alternative is a useful negative control: voting extra IVF cells from either
 cell portals or the best scanned survivors raises recall, but every such point
 is dominated by spending the same work on the ordinary probe/beam ladder
-($0.9521@658$ versus $0.9531@777$).  The transferable object is therefore the
+($0.9521@658$ versus $0.9531@731$).  The transferable object is therefore the
 work law and the one-dimensional calibration procedure, not a frozen parameter
 tuple.}
 
@@ -1911,6 +1914,16 @@ warm and resident (leaderboard serving); cold-spawn effects are excluded
 by scoring each engine's warm block. Headline numbers pause all other first-party
 jobs (SIGSTOP) and confirm across $\ge$20 rounds.
 
+\paragraph{Uniform frontier refresh.} Every plotted genbo dataset is also
+re-measured on its full official query set, one thread, with five inner
+repetitions. Each compatible index/graph family receives one highest-work warm
+pass, then the identical explicit plan in forward and reverse order in the same
+loaded process. We accept a family only when mirrored recalls agree and every
+mirrored QPS pair differs by at most $5\%$; its latest accepted run is used intact,
+never stitched pointwise across machine windows. This gate exposed the apparent
+DEEP jaggedness as two distinct policies plus cold-to-warm residency transitions,
+not measurement noise to be smoothed away.
+
 \paragraph{The baseline at its best.} At 10M, where an \emph{official} big-ANN recipe
 exists, ScaNN uses it verbatim (40k leaves, anisotropic AH/LUT16, residual quant,
 bfloat16 re-order, top-level partitioner) with its own leaves-to-search / re-order
@@ -1943,9 +1956,11 @@ binary-only leaderboard systems are \emph{inference} from the public leaderboard
 \section{Results}
 \label{sec:eval}
 Figures~\ref{fig:frontier} and \ref{fig:oodfrontier} are the headline results:
-QPS--recall frontiers, single thread, same box, showing each method's warm frontier
-over repeated runs; every quoted genbo/opponent ratio comes from same-window
-sequential runs. In-distribution (Figure~\ref{fig:frontier}), genbo is
+QPS--recall frontiers, single thread, same box, under the uniform full-query
+protocol of \S\ref{sec:method}.
+Quoted genbo/opponent ratios still come from dedicated same-window sequential
+pairs rather than ratios inferred from independently best curves.
+In-distribution (Figure~\ref{fig:frontier}), genbo is
 above HNSW at every operating point shown, at all three scales --- graph-free at 1M
 ($1.5$--$2.4\times$, exceeding HNSW's recall ceiling), and with its self-built
 NN-descent graph at 10M ($1.2$--$1.9\times$) and 35M ($1.5$--$3.3\times$); HNSW
@@ -1955,7 +1970,7 @@ and we report it whole. At the recall-$0.90$ gate genbo leads everything at 10M 
 ScaNN at its official configuration ($0.83\times$ tight-pairwise ratio), RoarGraph at
 its paper configuration ($1.07$--$1.16\times$ ours), HNSW by ${\sim}8.7\times$ ---
 and is the only build-eligible method at 100M (build $86$ min; recall up to $0.9233$
-at $667$ QPS single-thread, ${\sim}6.7$k QPS at recall $0.90$ on 16 threads; ScaNN
+at $704$ QPS single-thread, ${\sim}6.7$k QPS at recall $0.90$ on 16 threads; ScaNN
 was killed at the gate, and RoarGraph measured $10.5$h for the graph build alone,
 plus ${\sim}5$h of train-GT preparation --- its first 100M index moreover searched
 degenerately, terminating after ${\sim}36$ comparisons per query). RoarGraph's structural advantage --- its edges materialize
@@ -1973,10 +1988,10 @@ touches $2.2$M of $35$M points) and the identical construction moves recall by
 $0.0001$ --- which also implies RoarGraph's own advantage there cannot come from
 query-awareness at that query density. With it, at 1M RoarGraph keeps only the below-$0.93$ band
 (gate lead ${\sim}1.15\times$, down from $1.32\times$ against the base graph) while
-genbo overtakes above ${\approx}0.97$ and takes the 1M tail ($0.9913$ at $1533$ QPS
-vs $0.9900$ at $1353$); at 10M genbo leads the entire measured range through recall $0.9945$ --- the
-best-first beam over the hybrid edges (\S\ref{sec:graph}) reaches $0.9927$ at $382$
-QPS vs RoarGraph's $0.9905$ at $322$, with RoarGraph ahead only beyond
+genbo overtakes above ${\approx}0.97$ and takes the 1M tail ($0.9914$ at $1551$ QPS
+vs $0.9900$ at $1353$); at 10M genbo leads the entire measured range through recall $0.9954$ --- the
+best-first beam over the hybrid edges (\S\ref{sec:graph}) reaches $0.9931$ at $402$
+QPS (and $0.9935@380$) vs RoarGraph's $0.9905$ at $322$, with RoarGraph ahead only beyond
 ${\approx}0.995$; batch-mode ScaNN with deep reorder is competitive there too (mode-matched
 per-query it is not: $323$ vs our $682$ QPS at recall $0.972$). genbo's OOD advantage
 is thus the full measured range at 10M and 100M plus build-time eligibility; the
@@ -1994,15 +2009,17 @@ physical order ($+17$--$22\%$), and using the 12-row-corrected fp16 rerank first
 take the high-recall regime. The budgeted scan-bypass walk of
 \S\ref{sec:adaptivewalk} then removes the remaining fixed routing$+$scan toll:
 the plotted loose ladder spans recall $0.8041$--$0.9032$ at
-$17{,}194$--$8333$ QPS; fixed rounds replace best-first above the first point and
+$17{,}977$--$8678$ QPS; fixed rounds replace best-first above the first point and
 add $6.1$--$17.4\%$ strict median QPS at matched recall.
 Strict same-window pairs confirm the join rather than merely comparing plotted
 bests: ours is $1.265\times$ at recall $0.9032$ (and $1.204\times$
 best-to-best), $1.025\times$ at $0.9265$,
 $1.191\times$ near $0.943$, $1.260\times$ near $0.960$, and
 $1.303\times$ at $0.9718$; strict tail pairs give $1.379\times$ at $0.9940$
-and $1.062\times$ at $0.9978$ (both at higher recall), before ours reaches
-$0.9987$ beyond RoarGraph's measured ceiling.
+and $1.062\times$ at $0.9978$ (both at higher recall), before ours reaches a
+reproduced $0.9980$ beyond RoarGraph's measured ceiling. The old isolated
+$0.9987$ row is omitted because the current stack plateaus at $0.9980$ for
+probes $768$--$1024$.
 DEEP therefore flips from a crossover to an every-point win. An ablation at matched edge budget shows the graph-side gain is
 edge \emph{count} and pool quality, not Vamana-style diversification (a wash for an
 IVF-seeded cascade). The OOD extreme flipped \emph{entirely} with three levers: on
@@ -2016,14 +2033,15 @@ loose corner --- a \emph{wide hybrid} adjacency ($16$ base-$k$NN $+$ $48$
 co-retrieval edges, built in $11$ s from the same training resource RoarGraph
 consumes) together beat RoarGraph at every measured point of its curve, recall
 $0.81$ through $0.98$, past its published-benchmark ceiling --- with our side
-measured on a loaded machine against its quiet-window curve, so each margin
-($1.3$--$1.7\times$) is a lower bound. The remaining boundary is solely the
+re-measured under the same mirrored acceptance rule; the two loosest points
+reproduce within $2\%$, and every point at recall ${\ge}0.92$ is stable across
+every measured window. The remaining boundary is solely the
 build-unconstrained $6.5$h RoarGraph's Wikipedia
-$0.93$--${\sim}0.953$ band (Figure~\ref{fig:frontier} caption).  The
+$0.93$--${\sim}0.961$ band (Figure~\ref{fig:frontier} caption).  The
 gate-eligible $64$-edge graph ($1.46$ h total, seeded from the $k{=}16$ pass)
-with the resident stack reaches parity at $0.9531@777$ (RoarGraph
-${\sim}774$), then $0.9566@758$ versus ${\sim}726$ and $0.9677@640$ versus
-${\sim}565$, before widening the lead through the tail.
+with the resident stack reaches parity at $0.9609@672$ (RoarGraph
+${\sim}671$), then $0.9677@587$ versus ${\sim}565$, before widening the lead
+through the tail.
 Everywhere else the IVF-PQ$+$coverage hybrid now wins.
 Exact operating points,
 and the streaming series are tabulated in Appendix~\ref{app:tables} (Table~\ref{tab:streaming}).
@@ -2051,6 +2069,7 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
       legend cell align=left,
     },
     ours/.style={oursline,solid,mark=*,mark size=1.7pt},
+    ourscascade/.style={oursline,dashed,mark=o,mark size=1.8pt},
     hnsw/.style={hnswline,dashed,mark=square,mark size=1.9pt,
                  mark options={solid}},
   }%
@@ -2122,17 +2141,21 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
         xmin=0.001, xmax=0.22,
         xtick={0.1,0.02,0.002},
         xticklabels={0.90,0.98,0.998},
-        ytick={500,1000,2000,4000,8000},
-        legend style={at={(0.03,0.03)},anchor=south west}]
-      \addplot[ours] table[col sep=comma, x expr=1-\thisrow{recall}, y=qps] {paperdata/deep10m_ours.csv};
+        ytick={500,1000,2000,4000,8000,16000},
+        legend style={font=\tiny,at={(0.97,0.97)},anchor=north east}]
+      \addplot[ours] table[col sep=comma, x expr=1-\thisrow{recall}, y=qps] {paperdata/deep10m_walk_ours.csv};
+      \addlegendentry{Ours: fixed rounds}
+      \addplot[ourscascade] table[col sep=comma, x expr=1-\thisrow{recall}, y=qps] {paperdata/deep10m_cascade_ours.csv};
+      \addlegendentry{Ours: cascade}
       \addplot[hnsw] table[col sep=comma, x expr=1-\thisrow{recall}, y=qps] {paperdata/deep10m_hnsw.csv};
       \addplot[orange!80!black,densely dotted,mark=diamond,mark size=1.9pt,mark options={solid}] table[col sep=comma, x expr=1-\thisrow{recall}, y=qps] {paperdata/deep10m_roar.csv};
-      \addlegendentry{Ours}\addlegendentry{HNSW}\addlegendentry{RoarGraph}
+      \addlegendentry{HNSW}\addlegendentry{RoarGraph}
     \end{axis}
   \end{tikzpicture}%
   \hfill\mbox{}
   \caption{Recall--QPS frontiers (recall@10 versus single-thread queries per second,
-  log scale), showing each method's warm best-of-repeated frontier. Quoted ratios
+  log scale). Every genbo curve uses the uniform full-query, highest-work-warmup,
+  forward/reverse, best-of-five protocol with a $5\%$ mirror-acceptance gate. Quoted ratios
   use same-core sequential pairs; in particular, the DEEP ratios below are strict
   ABBA/BAAB medians rather than ratios inferred from independently best plotted
   points. The Wikipedia and DEEP panels use a
@@ -2147,12 +2170,12 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
   \emph{is} the base manifold. On Wikipedia 35M ($d{=}1024$) our plotted curve is a
   $64$-edge graph seeded from the $k{=}16$ pass --- \emph{gate-eligible} at $1.46$\,h
   total build --- with the resident stack: it crosses even the $6.5$h
-  build-ineligible RoarGraph near recall $0.953$ ($0.9531@777$ versus
-  ${\sim}774$), leads at $0.9566@758$ versus ${\sim}726$, and reaches
-  $0.9677@640$ versus ${\sim}565$, then leads by $1.14\times$ at $0.972$,
-  $1.69\times$ at $0.986$, and $3.0\times$ at RoarGraph's $0.9925$ ceiling.
-  It concedes only $0.93$--${\sim}0.953$ (up to ${\sim}1.3\times$ at $0.933$,
-  narrowing to parity by $0.953$) --- an eligible-vs-ineligible comparison; a
+  build-ineligible RoarGraph near recall $0.961$ ($0.9609@672$ versus
+  ${\sim}671$), reaches $0.9677@587$ versus ${\sim}565$, then leads by
+  $1.10\times$ at $0.972$, $1.61\times$ at $0.986$, and $2.9\times$ at
+  RoarGraph's $0.9925$ ceiling. It concedes only
+  $0.93$--${\sim}0.961$ (up to ${\sim}1.3\times$ at $0.933$, narrowing to
+  parity by $0.961$) --- an eligible-vs-ineligible comparison; a
   budget-matched RoarGraph ($L{=}50$, $250$k train queries) still takes $3.1$h and
   collapses to a $0.9605$ ceiling at ${\sim}100$ QPS, below our curve everywhere. \textbf{Bottom row (low-dimensional, $d{\le}100$).} On MSTuring 30M
   ($d{=}100$) we beat every baseline at every measured point ($1.45$--$2.8\times$
@@ -2165,7 +2188,9 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
   a direct pair at $0.9032$ is $1.265\times$ RoarGraph ($1.204\times$
   best-to-best). Ours beats RoarGraph across the loose curve and by strict
   same-window medians of $1.19$--$1.38\times$ from $0.943$ through $0.994$,
-  reaching $0.9987$ beyond its ceiling; the $0.9265$ join shoulder and the
+  reaching a reproduced $0.9980$ beyond its ceiling. The two genbo mechanisms
+  are separate plotted series: no line interpolates across the unmeasured
+  $0.9032$--$0.9265$ gap. The $0.9265$ join shoulder and the
   $0.9978$ point remain inside RoarGraph's demonstrated ${\sim}1.2\times$
   window-phase swing and are marked parity pending multi-window confirmation; the $0.9032$ join point itself is confirmed across three window-separated quiet ABBA rounds (medians $1.09\times$, never behind under any symmetric convention).}
   \label{fig:frontier}
@@ -2174,7 +2199,7 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
 \centering
 \begin{tikzpicture}
 \begin{axis}[
-  name=oa, width=0.375\textwidth, height=0.42\textwidth,
+  name=oa, width=0.333\textwidth, height=0.42\textwidth,
   title={\small text2image 1M (MIPS)},
   xlabel={\footnotesize recall@10}, ylabel={\footnotesize QPS (1 thread)},
   ymode=log, xmin=0.75, xmax=1.0, ymin=250, ymax=16000,
@@ -2182,7 +2207,7 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
   legend style={font=\tiny, at={(0.97,0.97)}, anchor=north east}, legend cell align=left,
 ]
 \addplot[blue!70!black, thick, mark=*, mark size=1.5pt] table[col sep=comma, x=recall, y=qps] {paperdata/t2i1m_ours.csv};
-\addlegendentry{ours (hybrid graph)}
+\addlegendentry{ours}
 \addplot[black!60!green, thick, dash dot, mark=triangle, mark size=1.9pt, mark options={solid}] table[col sep=comma, x=recall, y=qps] {paperdata/t2i1m_scann.csv};
 \addlegendentry{ScaNN}
 \addplot[orange!80!black, thick, densely dotted, mark=diamond, mark size=1.9pt, mark options={solid}] table[col sep=comma, x=recall, y=qps] {paperdata/t2i1m_roar.csv};
@@ -2192,7 +2217,7 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
 \draw[densely dotted, black!60] (axis cs:0.90,250) -- (axis cs:0.90,16000);
 \end{axis}
 \begin{axis}[
-  at={(oa.outer east)}, anchor=outer west, width=0.375\textwidth, height=0.42\textwidth,
+  at={(oa.outer east)}, anchor=outer west, width=0.333\textwidth, height=0.42\textwidth,
   title={\small text2image 10M (MIPS)},
   xlabel={\footnotesize recall@10},
   ymode=log, xmin=0.73, xmax=1.0, ymin=60, ymax=8000,
@@ -2200,7 +2225,7 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
   legend style={font=\tiny, at={(0.03,0.03)}, anchor=south west}, legend cell align=left,
 ]
 \addplot[blue!70!black, thick, mark=*, mark size=1.5pt] table[col sep=comma, x=recall, y=qps] {paperdata/t2i10m_ours.csv};
-\addlegendentry{ours (hybrid graph)}
+\addlegendentry{ours}
 \addplot[black!60!green, thick, dash dot, mark=triangle, mark size=1.9pt, mark options={solid}] table[col sep=comma, x=recall, y=qps] {paperdata/t2i10m_scann.csv};
 \addlegendentry{ScaNN (official 40k)}
 \addplot[orange!80!black, thick, densely dotted, mark=diamond, mark size=1.9pt, mark options={solid}] table[col sep=comma, x=recall, y=qps] {paperdata/t2i10m_roar.csv};
@@ -2210,7 +2235,7 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
 \draw[densely dotted, black!60] (axis cs:0.90,60) -- (axis cs:0.90,8000);
 \end{axis}
 \begin{axis}[
-  at={(oa.outer east)}, anchor=outer west, xshift=0.375\textwidth, width=0.375\textwidth, height=0.42\textwidth,
+  at={(oa.outer east)}, anchor=outer west, xshift=0.333\textwidth, width=0.333\textwidth, height=0.42\textwidth,
   title={\small text2image 100M (MIPS)},
   xlabel={\footnotesize recall@10},
   ymode=log, xmin=0.86, xmax=0.94, ymin=400, ymax=1000,
@@ -2236,7 +2261,7 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
   legend style={font=\tiny, at={(0.03,0.03)}, anchor=south west}, legend cell align=left,
 ]
 \addplot[blue!70!black, thick, mark=*, mark size=1.5pt] table[col sep=comma, x expr=1-\thisrow{recall}, y=qps] {paperdata/webvid_ours.csv};
-\addlegendentry{ours (dense query-seeds $+$ 4-bit rung)}
+\addlegendentry{ours}
 \addplot[orange!80!black, thick, densely dotted, mark=diamond, mark size=1.9pt, mark options={solid}] table[col sep=comma, x expr=1-\thisrow{recall}, y=qps] {paperdata/webvid_roar.csv};
 \addlegendentry{RoarGraph}
 \addplot[red!60!black, thick, dashed, mark=square, mark size=1.5pt, mark options={solid}] table[col sep=comma, x expr=1-\thisrow{recall}, y=qps] {paperdata/webvid_hnsw.csv};
@@ -2254,12 +2279,12 @@ Ours uses the \emph{hybrid} graph --- $16$ base-$k$NN edges $+$ $16$
 same resource RoarGraph consumes; \S\ref{sec:bottleneck}) --- as a drop-in adjacency
 file. At the leaderboard gate (recall $0.90$, dotted), ours leads at 10M
 ($1.25\times$ RoarGraph per-query, $6.5\times$ ScaNN, $8.7\times$ HNSW), leads the
-entire measured 10M range through recall $0.9945$ (best-first beam over the hybrid
-edges: $0.9927$ at $382$ QPS vs RoarGraph's $0.9905$ at $322$), and is the only
+entire measured 10M range through recall $0.9954$ (best-first beam over the hybrid
+edges: $0.9931$ at $402$ QPS vs RoarGraph's $0.9905$ at $322$), and is the only
 eligible method at 100M; at 1M, applying the coarse-cell corollary ($K_f{=}16384\to2048$--$4096$; graph
 coverage replaces fine partitioning, \S\ref{sec:coarse}) closes the band: ours ties
-or leads RoarGraph from recall ${\approx}0.80$ upward (gate: $6.5$k vs $6.4$k QPS)
-and takes the 1M tail ($0.9913$ at $1533$ vs $0.9900$ at $1353$); RoarGraph stays
+or leads RoarGraph from recall ${\approx}0.80$ upward (gate: $6.6$k vs $6.4$k QPS)
+and takes the 1M tail ($0.9914$ at $1551$ vs $0.9900$ at $1353$); RoarGraph stays
 marginally ahead only below recall ${\approx}0.78$. A code-side
 IVFPQ-FastScan$+$refine baseline caps at recall $0.73$ (10M) and does not appear.
 The bottom panel adds WebVid ($d{=}512$), RoarGraph's hardest published benchmark and
@@ -2276,13 +2301,12 @@ graph for the loose corner ($16$ base-$k$NN $+$ $48$ co-retrieval edges, built i
 $11$s). With these, ours beats RoarGraph at \emph{every} measured point of its
 curve: $1.3\times$ at recall $0.81$, $1.5\times$ at $0.90$, $1.7\times$ at $0.91$,
 $1.6\times$ at $0.92$--$0.93$, $1.2\times$ at $0.963$, ahead through
-$0.98$ --- past its ceiling on its own benchmark. Per the big-ANN convention both
-sides report each point's best over repeated runs: ours were re-measured across
-independent windows on the shared machine (the two loosest points reproduce within
-$2\%$; all points ${\ge}0.92$ are additionally stable across \emph{every} window
-measured), while RoarGraph's curve is its own quiet-window best. Shared-box window
-variance is bimodal (${\sim}1.6\times$ between cache-phase modes), so a single
-unlucky window can read differently at the loosest points.}
+$0.98$ --- past its ceiling on its own benchmark. All genbo panels use the uniform
+full-query protocol: highest-work warmup, exact forward/reverse plan, five inner
+repetitions, and acceptance only when every mirrored QPS pair is within $5\%$.
+The two WebVid loosest points reproduce within $2\%$, while all points
+${\ge}0.92$ are stable across every measured window. RoarGraph's curve is its own
+quiet-window best.}
 \label{fig:oodfrontier}
 \end{figure}
 
