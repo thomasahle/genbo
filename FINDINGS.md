@@ -6005,6 +6005,19 @@ P373 [2026-07-30] WEBVID WIDE-GRAPH MID/TAIL TRANSFER — accepted uniform famil
   buys useful reachable mass after dense query seeding; it is not a scan-width effect. Updated
   uniform results/manifest/summary, WebVid CSV, Results/caption ceiling, and the log-tail plot bound.
 
+P374 [2026-07-30] EDGE-BUDGET GRADIENT ACROSS DATASETS — the lever's value tracks the
+  Manifold-Gap x Query-Density law exactly.
+  t2i-1M paired probe (nd k64s16 built 370s; W/N/N/W, quiet, NQ=2000, recalls rep-exact):
+    p40/h2:  W .9761@2379 vs N .9610@3489 (below old frontier ~2470 at .9755 — wash)
+    p80/h2:  W .9876@1879 vs N .9793@2451 — DOMINATES plotted .9859@1815 (both axes); +11% vs interp
+    hyb p40: W .9842@1577 (below frontier)   p128/h3: W .9940@1167 (below frontier)
+  GRADIENT: WebVid (extreme OOD, dense query seeds, coverage-starved) +18-30% frontier (P373);
+  t2i (moderate OOD) ONE dominating point; cohere (in-dist, coverage-saturated) predicted null per
+  P303/Materialized-Coverage — not built, the law already prices it. Edge budget is a COVERAGE
+  currency: it pays where routed+seeded coverage is starved, washes where saturated. Consistent
+  with P369 (wiki: loose corner only) and the k96 ablation (count, not quality).
+  t2i1m/ndk64 uniform family (p64/80/96 brackets) queued through the P369 protocol for the envelope.
+
 === SESSION SUMMARY (current, 2026-07-12, through P334) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall

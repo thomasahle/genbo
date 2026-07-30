@@ -644,6 +644,27 @@ def groups() -> list[Group]:
         ]
     )
 
+    # P374: wide-graph (nd k64s16, KEDGE=64) family for t2i-1M — paired probe
+    # (t2i1m_wide_probe.log) found one dominating point (0.9876@1879 vs plotted
+    # 0.9859@1815 at p80/h2/M32); brackets around it for the envelope.
+    t2i1m_wide_points = [
+        point("wk64p64", 64, 1600, 32, 32, 64, 2, True, 256),
+        point("wk64p80", 80, 2000, 32, 32, 64, 2, True, 256),
+        point("wk64p96", 96, 2400, 32, 32, 64, 2, True, 256),
+    ]
+    result.append(
+        from_spec(
+            "t2i1m",
+            "ndk64",
+            registry["t2i1m"],
+            t2i1m_wide_points,
+            env={
+                "SBANN_GRAPH_BESTFIRST": "1",
+                "SBANN_GRAPH_FILE": "/home/thomas-ahle/big-ann-data/nd_t2i1m_k64s16.u32",
+            },
+        )
+    )
+
     webvid_base_env = {
         "SBANN_GRAPH_BESTFIRST": "1",
         "SBANN_RESIDENT_I8": "1",
