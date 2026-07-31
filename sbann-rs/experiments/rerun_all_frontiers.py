@@ -665,6 +665,29 @@ def groups() -> list[Group]:
         )
     )
 
+    # P375: wide-graph (nd k64s16, KEDGE=64) family for t2i-10M — paired probe
+    # (t2i10m_wide_probe.log): .9469@1892 (above chord), .9798@916 (1.41x chord,
+    # dominates .9784@717), .9860@642 (dominates the old .9807@611 ceiling).
+    t2i10m_wide_points = [
+        point("wk64p32", 32, 1000, 32, 32, 64, 2, True, 256),
+        point("wk64p64", 64, 1500, 32, 32, 64, 2, True, 256),
+        point("wk64p128", 128, 2000, 32, 32, 64, 3, True, 256),
+        point("wk64p192", 192, 3000, 48, 48, 64, 3, True, 256),
+        point("wk64p256", 256, 4000, 48, 48, 64, 4, True, 256),
+    ]
+    result.append(
+        from_spec(
+            "t2i10m",
+            "ndk64",
+            registry["t2i10m"],
+            t2i10m_wide_points,
+            env={
+                "SBANN_GRAPH_BESTFIRST": "1",
+                "SBANN_GRAPH_FILE": "/home/thomas-ahle/big-ann-data/nd_t2i10m_k64s16.u32",
+            },
+        )
+    )
+
     webvid_base_env = {
         "SBANN_GRAPH_BESTFIRST": "1",
         "SBANN_RESIDENT_I8": "1",

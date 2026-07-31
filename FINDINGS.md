@@ -6019,6 +6019,18 @@ P374 [2026-07-30] EDGE-BUDGET GRADIENT ACROSS DATASETS — the lever's value tra
   t2i1m/ndk64 ACCEPTED (mirror 3.7%): envelope gains 0.9847@2138 / 0.9877@1951 / 0.9899@1802,
   replacing 0.9859@1817 — the t2i-1M upper-mid stretch improves 15-20%. CSV/paper materialized.
 
+P375 [2026-07-31] T2I-10M WIDE GRAPH: LARGE WIN — the edge-budget gradient was scale-dependent, not
+  dataset-dependent. nd k64s16 built 4030s (67min, gate-eligible incl 519s k16 chain). Paired probe
+  (W/N/N/W, load ~10.5, recalls rep-exact):
+    p32/h2/M32:  W .9469@1892 vs N(k16) .9231@2661  — above old chord (~1747 interp at .9469)
+    p128/h3/M32: W .9798@916  vs N(k16) .9669@1153  — 1.41x chord; dominates plotted .9784@717
+    p192/h3/M48: W .9860@642  vs N(k32) .9825@731   — DOMINATES old ceiling .9807@611 both axes
+  REFRAME of P374: t2i-1M looked like "one dominating point" because 1M was already coverage-rich;
+  at 10M (same distribution, 10x rows per cell, same k16 graph) edge starvation binds hard — the
+  gradient tracks COVERAGE PER ROW, i.e. Manifold-Gap x Query-Density x SCALE. Predicts: cohere-10M
+  probe worth one cheap pair after all (in-dist saturation may also be scale-gated); 100M even more.
+  t2i10m/ndk64 uniform family (p32..p256) queued for the envelope.
+
 === SESSION SUMMARY (current, 2026-07-12, through P334) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
