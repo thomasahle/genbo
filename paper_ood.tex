@@ -2183,7 +2183,8 @@ Table~\ref{tab:ablation} isolates each lever's contribution at OOD-10M.
   gate-eligible budget RoarGraph. \textbf{Top row (high-dimensional,
   $d{\ge}768$): our regime.} On Cohere 1M/10M ($d{=}768$) our system leads
   \emph{every} baseline using its best eligible configuration; RoarGraph,
-  though it edges HNSW, is $1.6$--$2.4\times$ (1M) / $1.2$--$1.45\times$ (10M) behind
+  though it edges HNSW, is $1.6$--$2.4\times$ (1M) / $2.0$--$3.2\times$ (10M, after
+  a $76$-minute self-built $k{=}64$ graph upgrade, chain ${\sim}84$\,min) behind
   us --- its query-aware bipartite projection buys nothing when the query manifold
   \emph{is} the base manifold. On Wikipedia 35M ($d{=}1024$) our plotted curve is a
   $64$-edge graph seeded from the $k{=}16$ pass --- \emph{gate-eligible} at $1.46$\,h
@@ -2302,8 +2303,9 @@ are per-query sweeps (mode-matched; ScaNN's batched API amortizes a further
 ${\sim}3$--$4\times$ and is then competitive with our per-query cascade above recall
 ${\approx}0.96$ at 10M); HNSW runs in its batched API (favorable to HNSW). Ours sweeps
 probe depth at hops $2$--$4$ with self-built graphs ($k{=}16$ loose; a $k{=}64$
-graph seeded from it --- $11$-minute chain --- carries the mid and upper-mid band,
-improving those points $1.2$--$1.6\times$ at fixed recall).
+graph seeded from it --- $6$-minute build at 1M, $67$ at 10M, chain well inside
+the $2$h gate --- carries the mid and upper-mid band, improving those points
+$1.2$--$1.6\times$ at fixed recall).
 Ours uses the \emph{hybrid} graph --- $16$ base-$k$NN edges $+$ $16$
 \emph{co-retrieval} edges (bipartite projection of the track's training queries, the
 same resource RoarGraph consumes; \S\ref{sec:bottleneck}) --- as a drop-in adjacency

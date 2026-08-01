@@ -6,7 +6,7 @@ Full official query sets, one thread, best of five repetitions. Each artifact fa
 
 | dataset | points | recall range | families |
 |---|---:|---:|---|
-| cohere10m | 5 | 0.9461--0.9912 | hybrid |
+| cohere10m | 7 | 0.9461--0.9951 | hybrid, ndk64 |
 | cohere1m | 6 | 0.9732--0.9971 | cascade |
 | deep10m | 21 | 0.8041--0.9980 | cascade, walk |
 | mst30m | 8 | 0.7268--0.9883 | cascade |
