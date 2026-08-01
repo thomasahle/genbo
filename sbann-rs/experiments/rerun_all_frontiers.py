@@ -665,6 +665,31 @@ def groups() -> list[Group]:
         )
     )
 
+    # P376: wide-graph (nd k64s16, KEDGE=64) family for cohere-10M — paired probe
+    # (cohere10m_wide_probe.log): every rung dominates the plotted curve
+    # (.9749@1507 vs .9707@1189; .9878@1020 vs .9871@587; .9939@658 vs .9912@481).
+    cohere10m_wide_points = [
+        point("wk64p16", 16, 500, 16, 24, 64, 1, True, 256),
+        point("wk64p24", 24, 750, 16, 24, 64, 2, True, 256),
+        point("wk64p32", 32, 1000, 16, 24, 64, 2, True, 256),
+        point("wk64p48", 48, 1500, 16, 24, 64, 3, True, 256),
+        point("wk64p64", 64, 2000, 16, 24, 64, 3, True, 256),
+        point("wk64p96", 96, 3000, 16, 24, 64, 3, True, 256),
+    ]
+    result.append(
+        from_spec(
+            "cohere10m",
+            "ndk64",
+            registry["cohere10m"],
+            cohere10m_wide_points,
+            env={
+                "SBANN_GRAPH_BESTFIRST": "1",
+                "SBANN_GRAPH_FILE": "/home/thomas-ahle/big-ann-data/cohere/nd_cohere10m_k64s16.u32",
+            },
+            nq=1000,
+        )
+    )
+
     # P375: wide-graph (nd k64s16, KEDGE=64) family for t2i-10M — paired probe
     # (t2i10m_wide_probe.log): .9469@1892 (above chord), .9798@916 (1.41x chord,
     # dominates .9784@717), .9860@642 (dominates the old .9807@611 ceiling).

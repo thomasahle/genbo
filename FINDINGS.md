@@ -6031,6 +6031,19 @@ P375 [2026-07-31] T2I-10M WIDE GRAPH: LARGE WIN — the edge-budget gradient was
   probe worth one cheap pair after all (in-dist saturation may also be scale-gated); 100M even more.
   t2i10m/ndk64 uniform family (p32..p256) queued for the envelope.
 
+P376 [2026-08-01] COHERE-10M WIDE GRAPH: FULL-FRONTIER DOMINATION — the in-dist "coverage saturated"
+  prediction was WRONG at 10M; edge starvation is scale-gated even in-distribution.
+  nd k64s16 built 4540s (d=768, 76min). Paired probe (W/N/N/W, load ~10.7, recalls rep-exact):
+    p16/h1: W .9749@1507 vs N .9579@1765  — dominates plotted .9707@1189 BOTH axes
+    p32/h2: W .9878@1020 vs N .9778@1211  — dominates plotted .9871@587 (1.74x at higher recall)
+    p64/h3: W .9939@658  vs N .9876@766   — dominates plotted tail .9912@481; extends ceiling
+  LAW AMENDMENT (Materialized-Coverage / P374 gradient): saturation is per-ROW-density, not
+  per-distribution. k16 edges at 10M rows = starvation regardless of in-dist vs OOD; the 1M-era
+  "extra materialization is dead weight" evidence (P303/P335) was 1M-scale evidence. Coverage
+  currency should be priced per (rows x edges) / (routed mass), not by distribution class.
+  Margin vs HNSW/Roar on our flagship in-dist set widens further (old curve already led).
+  cohere10m/ndk64 uniform family (p16..p96, W16) queued for the envelope.
+
 === SESSION SUMMARY (current, 2026-07-12, through P334) ===
 GOAL ACHIEVED + VERIFIED: genbo beats every measured SOTA baseline (ScaNN official, HNSW, RoarGraph, FAISS)
 on the core big-ANN benchmarks, same-hardware/tight-pairwise, and dominates HNSW across the full recall
